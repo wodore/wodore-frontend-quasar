@@ -1,0 +1,148 @@
+// Quasar SCSS (& Sass) Variables
+// --------------------------------------------------
+// To customize the look and feel of this app, you can override
+// the Sass/SCSS variables found in Quasar's source Sass/SCSS files.
+
+// Check documentation for full list of Quasar variables
+
+// Your own variables (that are declared here) and Quasar's own
+// ones will be available out of the box in your .vue/.scss/.sass files
+
+// It's highly recommended to change the default colors
+// to match your app's branding.
+// Tip: Use the "Theme Builder" on Quasar's documentation website.
+
+// check for different palettes::after
+// https://tailcolor.com/?color=346751I
+
+// color palettes source:
+// https://www.tints.dev/?primary=346751&accent=BFAB25&secondary=9DD9D2&positive=25BF5E&&negative=BF211E&info=2673BF&warning=FF3C38&dark=112119&black=000000&white=FFFFFF
+
+// settings:
+// hue=0 / saturation=2 / lightness max=80 / lightness min=10 / Lightness
+$primary: #346751;
+// hue=-2 / saturation=1 / lightness max=70 / lightness min=20 / Lightness
+$accent: #bfab25;
+// hue=5 / saturation=9 / lightness max=80 / lightness min=0 / Lightness
+$secondary: #9dd9d2;
+
+// hue=0 / saturation=0 / lightness max=40 / lightness min=5 / Lightness
+$dark: #112119;
+$dark-page: #0a140f;
+
+// hue=4 / saturation=0 / lightness max=80 / lightness min=20 / Lightness
+$positive: #25c15e;
+// hue=0 / saturation=0 / lightness max=90 / lightness min=20 / Lightness
+$negative: #bf211e;
+// hue=0 / saturation=1 / lightness max=90 / lightness min=10 / Lightness
+$info: #246eb9;
+// hue=-2 / saturation=0 / lightness max=80 / lightness min=20 / Lightness
+$warning: #ff3c38;
+
+// hue=0 / saturation=0 / lightness max=30 / lightness min=0 / Lightness
+$black: #171717;
+// hue=0 / saturation=0 / lightness max=60 / lightness min=90 / Luminance
+$white: #ffffff;
+
+$colors: (
+  'primary': (
+    100: #8fd6b7,
+    200: #6dc59f,
+    300: #4db286,
+    400: #408c6b,
+    500: #346751,
+    600: #2a5b46,
+    700: #224e3b,
+    800: #1a4231,
+    900: #133426,
+  ),
+  'secondary': (
+    100: #b2d7e1,
+    200: #aad7de,
+    300: #a7dadd,
+    400: #a3dbd9,
+    500: #9dd9d2,
+    600: #68c5c1,
+    700: #3f9da2,
+    800: #29626b,
+    900: #153037,
+  ),
+  'accent': (
+    100: #e8c563,
+    200: #e3c04f,
+    300: #debd3a,
+    400: #d8bb27,
+    500: #bfab25,
+    600: #ad951f,
+    700: #998019,
+    800: #846a15,
+    900: #6f5610,
+  ),
+  'positive': (
+    100: #8ce9c7,
+    200: #6ee3b0,
+    300: #50dd96,
+    400: #32d77a,
+    500: #25bf5e,
+    600: #21ab5d,
+    700: #1d9559,
+    800: #198053,
+    900: #156b4b,
+  ),
+  'negative': (
+    100: #f2acab,
+    200: #eb817f,
+    300: #e55a57,
+    400: #df3330,
+    500: #bf211e,
+    600: #ac1d1b,
+    700: #961a17,
+    800: #801614,
+    900: #6e1311,
+  ),
+  'info': (
+    100: #abcff2,
+    200: #84b8eb,
+    300: #5ea1e3,
+    400: #398ada,
+    500: #2673bf,
+    600: #1e61a4,
+    700: #174f87,
+    800: #113d69,
+    900: #0b2b4b,
+  ),
+  'warning': (
+    100: #ff8593,
+    200: #ff707c,
+    300: #ff6169,
+    400: #ff4d4f,
+    500: #ff3c38,
+    600: #ff0f13,
+    700: #e6000b,
+    800: #b8000f,
+    900: #8f0011,
+  ),
+  'dark': (
+    200: #315e47,
+    300: #264a38,
+    400: #1c3629,
+    500: #112119,
+    600: #101e17,
+    700: #0e1b14,
+  ),
+  'black': (
+    100: #575757,
+    200: #4a4a4a,
+    300: #3b3b3b,
+    400: #2b2b2b,
+    500: #1c1c1c,
+    600: #0f0f0f,
+    700: #000000,
+  ),
+  'white': (
+    500: #ffffff,
+    600: #fcfcfc,
+    700: #fafafa,
+    800: #f7f7f7,
+  ),
+);
