@@ -14,7 +14,7 @@ const active_classes = 'bg-accent text-white';
       :active-class="active_classes"
     >
       <q-item-section avatar>
-        <q-icon name="inbox" />
+        <q-icon name="eva-inbox" />
       </q-item-section>
 
       <q-item-section>Inbox</q-item-section>
@@ -28,7 +28,7 @@ const active_classes = 'bg-accent text-white';
       :active-class="active_classes"
     >
       <q-item-section avatar>
-        <q-icon name="send" />
+        <q-icon name="eva-paper-plane" />
       </q-item-section>
 
       <q-item-section>Outbox</q-item-section>
@@ -42,7 +42,7 @@ const active_classes = 'bg-accent text-white';
       :active-class="active_classes"
     >
       <q-item-section avatar>
-        <q-icon name="delete" />
+        <q-icon name="eva-trash" />
       </q-item-section>
 
       <q-item-section>Trash</q-item-section>
@@ -58,7 +58,7 @@ const active_classes = 'bg-accent text-white';
       :active-class="active_classes"
     >
       <q-item-section avatar>
-        <q-icon name="settings" />
+        <q-icon name="eva-settings" />
       </q-item-section>
 
       <q-item-section>Settings</q-item-section>
@@ -72,7 +72,7 @@ const active_classes = 'bg-accent text-white';
       :active-class="active_classes"
     >
       <q-item-section avatar>
-        <q-icon name="help" />
+        <q-icon name="eva-question-mark-circle" />
       </q-item-section>
 
       <q-item-section>Help</q-item-section>

@@ -4,10 +4,10 @@ import { ref, inject, watchEffect } from 'vue';
 import { SymbolLayerSpecification } from 'maplibre-gl';
 import {
   MglMap,
-  MglGeoJsonSource,
+  //MglGeoJsonSource,
   MglNavigationControl,
   MglScaleControl,
-  MglSymbolLayer,
+  //MglSymbolLayer,
   MglEvent,
   StyleSwitchItem,
   MglStyleSwitchControl,
@@ -50,35 +50,9 @@ if ($layout === undefined) {
   });
 }
 
-//import MglFrameRateControl from '@/lib/components/controls/frameRate.control';
-//import MglFullscreenControl from '@/lib/components/controls/fullscreen.control';
-//import MglAttributionControl from 'vue-maplibre-gl/src/lib/components';
-//import MglGeolocationControl from 'vue-maplibre-gl';
-//import MglCustomControl from '@/lib/components/controls/custom.control';
-//import MglButton from '@/lib/components/button.component';
-//import MglStyleSwitchControl from 'vue-maplibre-gl';
-//import MglMarker from '@/lib/components/marker.component';
-//import MglGeoJsonSource from 'vue-maplibre-gl';
-//import MglLineLayer from '@/lib/components/layers/line.layer';
-//import { FeatureCollection, LineString } from 'geojson';
-//import MglVectorSource from 'vue-maplibre-gl';
-//import MglCircleLayer from '@/lib/components/layers/circle.layer';
-//interface Props {
-//  title: string;
-//  todos?: Todo[];
-//  meta: Meta;
-//  active: boolean;
-//}
-
 const hutjson = ref(
   'https://api.wodore.com/v1/huts/huts.geojson?lang=de&limit=5000&embed_all=false&embed_type=true&embed_owner=false&embed_capacity=false&embed_sources=false&include_elevation=false&include_name=true&flat=true',
 );
-
-//const props = withDefaults(defineProps<Props>(), {
-//  todos: () => [],
-//});
-
-const map = ref(null);
 
 let imageSwitchZoom = 11;
 //if (Platform.is.mobile) {
@@ -220,7 +194,6 @@ function onMapStyledata(e: MglEvent) {
   </q-page-sticky> -->
   <MglMap
     language="de"
-    ref="map"
     @map:styledata="onMapStyledata"
     @map:load="onMapLoad"
     hash="map"

@@ -61,6 +61,7 @@ function toggleMenuDrawer() {
     <q-drawer
       v-model="menuDrawerOpen"
       bordered
+      :width="200"
       :breakpoint="610"
       class="shadow-2"
     >
