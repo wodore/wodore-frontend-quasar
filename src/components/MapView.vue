@@ -196,7 +196,7 @@ function onMapStyledata(e: MglEvent) {
     language="de"
     @map:styledata="onMapStyledata"
     @map:load="onMapLoad"
-    hash="map"
+    hash="p"
     :zoom="7.5"
     :center="[8.22, 46.7]"
     :map-style="mapStyles[0].style"

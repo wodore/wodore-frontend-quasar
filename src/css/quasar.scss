@@ -45,3 +45,51 @@
   background-color: rgba(color('white', 600), 0.6) !important;
 }
 // --
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Typography https://github.com/quasarframework/quasar/blob/dev/ui/src/css/core/typography.sass
+@each $heading, $value in $h-tags {
+  #{$heading} {
+    font-size: map-get($value, 'size');
+    font-weight: map-get($value, 'weight');
+    line-height: map-get($value, 'line-height');
+    letter-spacing: map-get($value, 'letter-spacing');
+    font-family: map-get($value, 'font-family');
+  }
+}
+
+.text- {
+  @each $heading, $value in $headings {
+    &#{$heading} {
+      font-size: map-get($value, 'size');
+      font-weight: map-get($value, 'weight');
+      line-height: map-get($value, 'line-height');
+      letter-spacing: map-get($value, 'letter-spacing');
+      font-family: map-get($value, 'font-family');
+    }
+  }
+}
+
+.q-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  font-family: $typography-font-family-heading;
+  position: relative;
+  outline: 0;
+  border: 0;
+  vertical-align: middle;
+  font-size: $button-font-size;
+  line-height: $button-line-height;
+  text-decoration: none;
+  color: inherit;
+  background: transparent;
+  font-weight: $button-font-weight;
+  text-transform: uppercase;
+  text-align: center;
+  width: auto;
+  height: auto;
+  cursor: default;
+  padding: $button-padding;
+  min-height: 2.572em;
+}

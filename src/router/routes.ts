@@ -3,13 +3,24 @@ import { RouteRecordRaw } from 'vue-router';
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
+    redirect: 'map',
     component: () => import('layouts/MainLayout.vue'),
     children: [
       {
-        path: '',
+        path: 'map',
+        name: 'map',
         components: {
           default: () => import('pages/MapPage.vue'),
           menu: () => import('components/MapMenu.vue'),
+        },
+      },
+      {
+        path: 'feedback',
+        name: 'feedback',
+        meta: { dialog: true },
+        components: {
+          default: () => import('pages/MapPage.vue'),
+          dialog: () => import('components/feedback/FeedbackForm.vue'),
         },
       },
     ],
