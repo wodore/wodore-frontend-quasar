@@ -11,6 +11,9 @@ function ajaxFilter(url: string) {
 const isMobile = computed(() => {
   return $q.screen.xs;
 });
+const logo_path = computed(() => {
+  return '/logos/wodore_' + (isMobile.value ? 'mobile' : 'desktop') + '.svg';
+});
 const menuDrawerOpen = ref(false);
 
 function toggleMenuDrawer() {
@@ -36,6 +39,7 @@ function toggleMenuDrawer() {
       <q-toolbar>
         <!-- MENU BUTTON -->
         <q-btn
+          v-if="!isMobile"
           flat
           dense
           round
@@ -47,13 +51,22 @@ function toggleMenuDrawer() {
         <!-- TOOLBAR -->
         <q-toolbar-title>
           <img
-            v-if="!isMobile"
-            height="45"
-            src="/logos/wodore_desktop.png"
+            height="32"
+            style="margin-bottom: -6px"
+            :src="logo_path"
             alt="Wodore"
           />
-          <img v-else height="30" src="/logos/wodore_mobile.png" alt="Wodore" />
+          <!-- <q-icon name="img:/logos/wodore_desktop.svg" /> -->
         </q-toolbar-title>
+        <q-btn
+          v-if="isMobile"
+          flat
+          dense
+          round
+          icon="eva-menu-outline"
+          aria-label="Menu"
+          @click="toggleMenuDrawer"
+        />
       </q-toolbar>
     </q-header>
 
@@ -61,6 +74,7 @@ function toggleMenuDrawer() {
     <q-drawer
       v-model="menuDrawerOpen"
       bordered
+      :side="isMobile ? 'right' : 'left'"
       :width="200"
       :breakpoint="610"
       class="shadow-2"
