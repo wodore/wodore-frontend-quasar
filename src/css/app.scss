@@ -1,1 +1,36 @@
 // app global css in SCSS form
+@use 'sass:map';
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// COLORS
+// .text-<category>[-<level>]
+// .bg-<category>[-<level>]
+// for example: .bg-accent-100, .text-negative
+.text-white {
+  color: $white !important;
+}
+.bg-white {
+  background: $white !important;
+}
+
+.text-black {
+  color: $black !important;
+}
+.bg-black {
+  background: $black !important;
+}
+// generate color classes
+@each $name, $schema in $colors {
+  @each $shade, $color in $schema {
+    .text-#{$name}-#{$shade} {
+      color: $color !important;
+    }
+    .bg-#{$name}-#{$shade} {
+      background: $color !important;
+    }
+  }
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// QUASAR overwrites
+@import './quasar.scss';

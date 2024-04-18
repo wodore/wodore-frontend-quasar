@@ -1,0 +1,3 @@
+[submodule "src/assets/wodore-design"]
+	path = src/assets/wodore-design
+	url = git@github.com:wodore/wodore-design.git

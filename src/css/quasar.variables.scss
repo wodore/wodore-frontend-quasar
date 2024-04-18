@@ -146,3 +146,9 @@ $colors: (
     800: #f7f7f7,
   ),
 );
+@function color($base, $shade: 500) {
+  $color: map-get(map-get($colors, $base), $shade);
+  @return $color;
+}
+$drawer-duration: 140ms;
+$drawer-transistion: ease-out;

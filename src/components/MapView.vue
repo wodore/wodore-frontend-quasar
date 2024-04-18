@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, inject, watchEffect } from 'vue';
 //import { Todo, Meta } from './models';
 import { SymbolLayerSpecification } from 'maplibre-gl';
 import {
@@ -12,6 +12,43 @@ import {
   StyleSwitchItem,
   MglStyleSwitchControl,
 } from 'vue-maplibre-gl';
+
+const $layout2 = inject('layout');
+
+type layoutType = {
+  header: { size: number; offset: number; space: boolean };
+  right: { size: number; offset: number; space: boolean };
+  footer: { size: number; offset: number; space: boolean };
+  left: { size: number; offset: number; space: boolean };
+};
+const $layout = inject<layoutType>('_q_l_');
+
+const top = ref('0');
+const right = ref('0');
+const bottom = ref('0');
+const left = ref('0');
+if ($layout === undefined) {
+  console.error('MapView needs to be child of QLayout');
+} else {
+  //const top = computed(() => $layout.header.offset);
+  //const right = computed(() => $layout.right.offset);
+  //const bottom = computed(() => $layout.footer.offset);
+  //const left = computed(() => $layout.left.offset);
+  watchEffect(() => {
+    top.value = `${$layout.header.offset}px`;
+    right.value = `${$layout.right.offset}px`;
+    bottom.value = `${$layout.footer.offset}px`;
+    left.value = `${$layout.left.offset}px`;
+    console.log('layout', $layout);
+    console.log('layout2', $layout2);
+    if ($layout) {
+      console.log('layout top: ', top.value);
+      console.log('layout right: ', right.value);
+      console.log('layout bottom: ', bottom.value);
+      console.log('layout left: ', left.value);
+    }
+  });
+}
 
 //import MglFrameRateControl from '@/lib/components/controls/frameRate.control';
 //import MglFullscreenControl from '@/lib/components/controls/fullscreen.control';
@@ -125,14 +162,29 @@ const mapStyles: Array<StyleSwitchItem> = [
       'https://api.maptiler.com/maps/outdoor-v2/style.json?key=yYYuZy3hwmMjY087FDvY',
   },
 ];
-const SPRITE_BASE_URL = 'https://api.wodore.com';
 //const SPRITE_BASE_URL = OpenApi.BASE
-const _spriteUrl = SPRITE_BASE_URL + '/static/huts/sprite';
 
-function onLoad(e: MglEvent) {
-  e.map.addSprite('wodore', _spriteUrl);
-  //mapVersion.value = e.map.version;
-  console.log(e.type, e, e.map.version);
+function onMapLoad(e: MglEvent) {
+  console.debug(`Maplibre version ${e.map.version} loaded`);
+  e.map.scrollZoom.setWheelZoomRate(0.003);
+  onMapStyledata(e);
+}
+const SPRITE_BASE_URL = 'https://api.wodore.com';
+const _spriteUrl = SPRITE_BASE_URL + '/static/huts/sprite';
+function onMapStyledata(e: MglEvent) {
+  console.debug('Style data changed');
+  const _wodoreSprite = e.map.getSprite();
+  console.debug("Check sprite 'wodore' in ", _wodoreSprite);
+  let _spriteAdded = false;
+  for (const sprite of _wodoreSprite) {
+    if (sprite.id == 'wodore') {
+      _spriteAdded = true;
+    }
+  }
+  if (!_spriteAdded) {
+    console.debug(`Add sprite 'wodore' from '${_spriteUrl}'`);
+    e.map.addSprite('wodore', _spriteUrl);
+  }
 }
 
 //@import '~maplibre-gl/dist/maplibre-gl.css';
@@ -141,39 +193,57 @@ function onLoad(e: MglEvent) {
 <style lang="scss">
 @import 'maplibre-gl/dist/maplibre-gl.css';
 @import 'vue-maplibre-gl/dist/vue-maplibre-gl.css';
+
+.maplibregl-control-container {
+  // from https://github.com/quasarframework/quasar/blob/dev/ui/src/components/layout/QLayout.sass .q-body--layout-animate .q-page-sticky
+  //@extend .q-body--layout-animate, .q-page-sticky; // not found
+  position: fixed;
+  top: v-bind(top);
+  left: v-bind(left);
+  bottom: v-bind(bottom);
+  right: v-bind(right);
+  pointer-events: none;
+  transition:
+    transform $drawer-duration $drawer-transistion,
+    left $drawer-duration $drawer-transistion,
+    right $drawer-duration $drawer-transistion,
+    top $drawer-duration $drawer-transistion,
+    bottom $drawer-duration $drawer-transistion !important;
+}
+//.maplibregl-ctrl-top-left {
+//  pointer-events: all;
+//}
 </style>
 <template>
-  <!-- <p>{{ title }}</p>
-    <ul>
-      <li v-for="todo in todos" :key="todo.id" @click="increment">
-        {{ todo.id }} - {{ todo.content }}
-      </li>
-    </ul>
-    <p>Count: {{ todoCount }} / {{ meta.totalCount }}</p>
-    <p>Active: {{ active ? 'yes' : 'no' }}</p>
-    <p>Clicks on todos: {{ clickCount }}</p> -->
+  <!-- <q-page-sticky position="top-left" :offset="[18, 18]" style="z-index: 5">
+    <q-btn round color="accent" icon="arrow_back" class="rotate-45" />
+  </q-page-sticky> -->
   <MglMap
-    language="en"
+    language="de"
     ref="map"
-    @map:styledata="onLoad"
-    @map:load="onLoad"
+    @map:styledata="onMapStyledata"
+    @map:load="onMapLoad"
     hash="map"
     :zoom="7.5"
     :center="[8.22, 46.7]"
     :map-style="mapStyles[0].style"
+    style="position: fixed; right: 0px; top: 0; bottom: 0; left: 0"
   >
     <!-- <MglAttributionControl /> -->
-    <!-- <MglGeolocationControl /> -->
+    <MglGeolocationControl />
     <MglNavigationControl />
     <MglScaleControl />
-    <MglStyleSwitchControl :map-styles="mapStyles" position="top-left" />
+    <MglStyleSwitchControl
+      :map-styles="mapStyles"
+      :map-style="mapStyles[0]"
+      position="top-left"
+    />
     <MglGeoJsonSource source-id="huts" :data="hutjson">
       <MglSymbolLayer
         :layout="hutsLayerLayout"
         :paint="hutsLayerPaint"
         layer-id="huts"
       ></MglSymbolLayer>
-      ></MglGeoJsonSource
-    >
+    </MglGeoJsonSource>
   </MglMap>
 </template>

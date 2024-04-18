@@ -1,0 +1,47 @@
+// QUASAR overwrites
+// https://github.com/quasarframework/quasar/tree/dev/ui/src/css
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// QLayout - https://github.com/quasarframework/quasar/blob/dev/ui/src/components/layout/QLayout.sass
+.q-body--layout-animate {
+  .q-drawer__backdrop {
+    transition: background-color $drawer-duration $drawer-transistion !important;
+  }
+  .q-drawer {
+    transition:
+      transform $drawer-duration $drawer-transistion,
+      width $drawer-duration $drawer-transistion,
+      top $drawer-duration $drawer-transistion,
+      bottom $drawer-duration $drawer-transistion !important;
+  }
+  .q-layout__section--marginal {
+    transition:
+      transform $drawer-duration $drawer-transistion,
+      left $drawer-duration $drawer-transistion,
+      right $drawer-duration $drawer-transistion !important;
+  }
+  .q-page-container {
+    transition:
+      padding-top $drawer-duration $drawer-transistion,
+      padding-right $drawer-duration $drawer-transistion,
+      padding-bottom $drawer-duration $drawer-transistion,
+      padding-left $drawer-duration $drawer-transistion !important;
+  }
+  .q-page-sticky {
+    transition:
+      transform $drawer-duration,
+      left $drawer-duration $drawer-transistion,
+      right $drawer-duration $drawer-transistion,
+      top $drawer-duration $drawer-transistion,
+      bottom $drawer-duration $drawer-transistion !important;
+  }
+}
+.q-drawer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  //z-index: $z-side;
+  backdrop-filter: blur(10px);
+  background-color: rgba(color('white', 600), 0.6) !important;
+}
+// --
