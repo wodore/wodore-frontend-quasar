@@ -18,6 +18,7 @@ const isMobile = computed(() => {
 });
 
 const menuDrawerOpen = ref(false);
+const contentDrawerOpen = ref(true);
 
 const showDialog = ref(false);
 
@@ -99,5 +100,14 @@ watchEffect(() => {
     <q-page-container>
       <router-view />
     </q-page-container>
+    <q-drawer
+      v-model="contentDrawerOpen"
+      side="right"
+      :width="400"
+      :breakpoint="0"
+      class="shadow-2"
+    >
+      <router-view name="content" />
+    </q-drawer>
   </q-layout>
 </template>

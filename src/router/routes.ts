@@ -12,6 +12,7 @@ const routes: RouteRecordRaw[] = [
         components: {
           default: () => import('pages/MapPage.vue'),
           menu: () => import('components/MapMenu.vue'),
+          content: () => import('components/huts/HutView.vue'),
         },
       },
       {
