@@ -16,6 +16,9 @@ function ajaxFilter(url: string) {
 const isMobile = computed(() => {
   return $q.screen.xs;
 });
+const showContentBottom = computed(() => {
+  return $q.screen.lt.md;
+});
 
 const menuDrawerOpen = ref(false);
 const contentDrawerOpen = ref(true);
@@ -44,7 +47,7 @@ watchEffect(() => {
 }
 </style>
 <template>
-  <q-layout view="hHh LpR fFf">
+  <q-layout view="hHh LpR lFf">
     <q-ajax-bar color="accent" :hijack-filter="ajaxFilter" />
     <q-header class="text-white shadow-6 app-header">
       <!-- TOOLBAR -->
@@ -105,13 +108,21 @@ watchEffect(() => {
     </q-page-container>
     <!-- MAP CONTENT -->
     <q-drawer
+      v-if="!showContentBottom"
       v-model="contentDrawerOpen"
       side="right"
-      :width="isMobile ? 250 : 450"
+      :width="450"
       :breakpoint="0"
       class="shadow-2"
     >
       <router-view name="content" />
     </q-drawer>
+    <q-footer
+      v-if="contentDrawerOpen && showContentBottom"
+      class="bg-white text-black scroll shadow-2"
+      style="max-height: 400px; height: 400px"
+    >
+      <router-view name="content" />
+    </q-footer>
   </q-layout>
 </template>
