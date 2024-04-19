@@ -27,6 +27,9 @@ const route = useRoute();
 watchEffect(() => {
   showDialog.value = route.meta?.dialog as boolean;
 });
+watchEffect(() => {
+  contentDrawerOpen.value = route.meta?.content as boolean;
+});
 </script>
 <style lang="scss">
 .app-header {
@@ -100,10 +103,11 @@ watchEffect(() => {
     <q-page-container>
       <router-view />
     </q-page-container>
+    <!-- MAP CONTENT -->
     <q-drawer
       v-model="contentDrawerOpen"
       side="right"
-      :width="400"
+      :width="isMobile ? 250 : 450"
       :breakpoint="0"
       class="shadow-2"
     >

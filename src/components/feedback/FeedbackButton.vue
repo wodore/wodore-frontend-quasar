@@ -6,7 +6,7 @@ const $q = useQuasar();
 const router = useRouter();
 
 function toggleModel() {
-  router.push('/feedback');
+  router.push({ name: 'feedback' });
 }
 </script>
 

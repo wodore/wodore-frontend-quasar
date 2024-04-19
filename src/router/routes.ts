@@ -7,6 +7,17 @@ const routes: RouteRecordRaw[] = [
     component: () => import('layouts/MainLayout.vue'),
     children: [
       {
+        path: 'map/hut/:slug',
+        name: 'map-hut',
+        meta: { content: true },
+        components: {
+          default: () => import('pages/MapPage.vue'),
+          menu: () => import('components/MapMenu.vue'),
+          content: () => import('components/huts/HutView.vue'),
+        },
+        props: { content: true },
+      },
+      {
         path: 'map',
         name: 'map',
         components: {

@@ -1,19 +1,21 @@
 <script setup lang="ts">
 import { ref, inject, watchEffect } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 //import { Todo, Meta } from './models';
-import { SymbolLayerSpecification } from 'maplibre-gl';
+import { SymbolLayerSpecification, MapLayerEventType } from 'maplibre-gl';
 import {
   MglMap,
   //MglGeoJsonSource,
   MglNavigationControl,
   MglScaleControl,
-  //MglSymbolLayer,
+  MglSymbolLayer,
   MglEvent,
   StyleSwitchItem,
   MglStyleSwitchControl,
 } from 'vue-maplibre-gl';
 
-const $layout2 = inject('layout');
+const router = useRouter();
+const route = useRoute();
 
 type layoutType = {
   header: { size: number; offset: number; space: boolean };
@@ -40,7 +42,6 @@ if ($layout === undefined) {
     bottom.value = `${$layout.footer.offset}px`;
     left.value = `${$layout.left.offset}px`;
     console.log('layout', $layout);
-    console.log('layout2', $layout2);
     if ($layout) {
       console.log('layout top: ', top.value);
       console.log('layout right: ', right.value);
@@ -143,6 +144,44 @@ function onMapLoad(e: MglEvent) {
   e.map.scrollZoom.setWheelZoomRate(0.003);
   onMapStyledata(e);
 }
+
+function onHutLayerClick(e: MapLayerEventType['click']) {
+  console.debug('Hut layer clicked:', e);
+  if (e.target.getZoom() > minHutClickZoom) {
+    let feature = e.features?.[0];
+    console.debug('  Selected feature:', feature);
+    if (feature) {
+      const slug = feature.properties.slug;
+      if (route.params.slug == slug) {
+        router.push({ name: 'map', hash: route.hash, query: route.query });
+      } else {
+        router.push({
+          name: 'map-hut',
+          params: { slug: slug },
+          hash: route.hash,
+          query: route.query,
+        });
+      }
+    }
+  }
+}
+
+const minHutClickZoom = 8;
+// Change the cursor to a pointer
+function onLayerEnter(e: MapLayerEventType['mouseenter']) {
+  console.debug('Hut layer entered:', e);
+  if (e.target.getZoom() > minHutClickZoom) {
+    e.target.getCanvas().style.cursor = 'pointer';
+  }
+}
+
+// Change it back to a pointer when it leaves.
+function onLayerLeave(e: MapLayerEventType['mouseleave']) {
+  console.debug('Hut layer left:', e);
+  if (e.target.getZoom() > minHutClickZoom) {
+    e.target.getCanvas().style.cursor = '';
+  }
+}
 const SPRITE_BASE_URL = 'https://api.wodore.com';
 const _spriteUrl = SPRITE_BASE_URL + '/static/huts/sprite';
 function onMapStyledata(e: MglEvent) {
@@ -213,6 +252,9 @@ function onMapStyledata(e: MglEvent) {
     />
     <MglGeoJsonSource source-id="huts" :data="hutjson">
       <MglSymbolLayer
+        @click="onHutLayerClick"
+        @mouseenter="onLayerEnter"
+        @mouseleave="onLayerLeave"
         :layout="hutsLayerLayout"
         :paint="hutsLayerPaint"
         layer-id="huts"
