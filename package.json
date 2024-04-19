@@ -8,17 +8,21 @@
   "private": true,
   "scripts": {
     "lint": "eslint --ext .js,.ts,.vue ./",
-    "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore",
+    "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\"",
     "test": "echo \"No test specified\" && exit 0",
     "dev": "quasar dev",
-    "build": "quasar build"
+    "build": "quasar build",
+    "gen:wodore": "openapi-typescript https://api.wodore.com/v1/openapi.json -o ./src/clients/wodore_v1.d.ts"
   },
   "dependencies": {
     "@fontsource/roboto-condensed": "^5.0.15",
     "@quasar/extras": "^1.16.11",
     "axios": "^1.2.1",
+    "crypto-js": "^4.2.0",
     "maplibre-gl": "^4.1.3",
     "mitt": "^3.0.1",
+    "openapi-fetch": "^0.9.3",
+    "openapi-typescript": "^6.7.5",
     "pinia": "^2.0.11",
     "quasar": "^2.6.0",
     "vue": "^3.4.18",
@@ -29,10 +33,12 @@
   "devDependencies": {
     "@intlify/unplugin-vue-i18n": "^2.0.0",
     "@quasar/app-vite": "^2.0.0-beta.5",
+    "@types/crypto-js": "^4.2.2",
     "@types/node": "^20.5.9",
     "@typescript-eslint/eslint-plugin": "^6.6.0",
     "@typescript-eslint/parser": "^6.6.0",
     "autoprefixer": "^10.4.2",
+    "dotenv": "^16.4.5",
     "eslint": "^8.11.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-vue": "^9.0.0",

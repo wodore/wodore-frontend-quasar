@@ -1,1 +1,45 @@
-import{d as t,a9 as o,al as s,aJ as e,f as a,ad as r,a8 as n}from"./index-DAawzX9R.js";const c={class:"fullscreen bg-blue text-white text-center q-pa-md flex flex-center"},l=e("div",{style:{"font-size":"30vh"}}," 404 ",-1),d=e("div",{class:"text-h2",style:{opacity:".4"}}," Oops. Nothing here... ",-1),_=t({name:"ErrorNotFound",__name:"ErrorNotFound",setup(i){return(u,p)=>(o(),s("div",c,[e("div",null,[l,d,a(r,{class:"q-mt-xl",color:"white","text-color":"blue",unelevated:"",to:"/",label:"Go Home","no-caps":""})])]))}}),h=n(_,[["__file","ErrorNotFound.vue"]]);export{h as default};
+import {
+  d as t,
+  a9 as o,
+  al as s,
+  aJ as e,
+  f as a,
+  ad as r,
+  a8 as n,
+} from './index-DAawzX9R.js';
+const c = {
+    class: 'fullscreen bg-blue text-white text-center q-pa-md flex flex-center',
+  },
+  l = e('div', { style: { 'font-size': '30vh' } }, ' 404 ', -1),
+  d = e(
+    'div',
+    { class: 'text-h2', style: { opacity: '.4' } },
+    ' Oops. Nothing here... ',
+    -1,
+  ),
+  _ = t({
+    name: 'ErrorNotFound',
+    __name: 'ErrorNotFound',
+    setup(i) {
+      return (u, p) => (
+        o(),
+        s('div', c, [
+          e('div', null, [
+            l,
+            d,
+            a(r, {
+              class: 'q-mt-xl',
+              color: 'white',
+              'text-color': 'blue',
+              unelevated: '',
+              to: '/',
+              label: 'Go Home',
+              'no-caps': '',
+            }),
+          ]),
+        ])
+      );
+    },
+  }),
+  h = n(_, [['__file', 'ErrorNotFound.vue']]);
+export { h as default };

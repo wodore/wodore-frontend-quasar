@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
+import getImageUrl from 'src/services/imageService';
 
 const $q = useQuasar();
 const router = useRouter();
@@ -55,6 +56,17 @@ function addUrl() {
 function removeUrl(idx: number) {
   urls.value.splice(idx, 1);
 }
+
+const imgPath =
+  'https://cdn.pixabay.com/photo/2014/05/11/11/12/mailbox-341744_1280.jpg';
+
+const headerImg = getImageUrl(imgPath, {
+  focal: '0.5,0.45',
+  size: '800x300',
+  quality: 50,
+  //filters: ['grayscale()'],
+});
+console.log(headerImg);
 //onBeforeUnmount(() => onClose());
 </script>
 
@@ -81,7 +93,7 @@ function removeUrl(idx: number) {
                 ]" -->
   <q-card class="card" style="min-width: 400px; width: 500px; max-width: 700px">
     <q-form @submit="onSubmit" @reset="onReset" class="fit">
-      <q-img src="/images/mailbox_blue_header.webp">
+      <q-img :src="headerImg">
         <div class="card-header absolute-bottom text-white text-h5"></div>
         <div
           class="absolute-bottom text-accent-400 text-h4 text-center card-header__text"

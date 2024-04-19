@@ -5,6 +5,10 @@
 
 import { configure } from 'quasar/wrappers';
 import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+import dotenv from 'dotenv';
+dotenv.config();
+// add any new variable to the 'env' section
 
 export default configure((ctx) => {
   return {
@@ -43,6 +47,10 @@ export default configure((ctx) => {
         node: 'node20',
       },
 
+      alias: {
+        // TODO: does not work
+        servies: path.join(__dirname, './src/services'),
+      },
       vueRouterMode: 'history', // available values: 'hash', 'history'
       // vueRouterBase,
       // vueDevtools,
@@ -52,7 +60,9 @@ export default configure((ctx) => {
 
       // publicPath: '/',
       // analyze: true,
-      // env: {},
+      env: {
+        IMAGOR_KEY: process.env.IMAGOR_KEY ? process.env.IMAGOR_KEY : 'my_key',
+      },
       // rawDefine: {}
       // ignorePublicFolder: true,
       // minify: false,
