@@ -1,0 +1,1 @@
+import{boot as i}from"quasar/wrappers/index.mjs";import a from"axios";const t=a.create({baseURL:"https://api.example.com"}),s=i(({app:o})=>{o.config.globalProperties.$axios=a,o.config.globalProperties.$api=t});export{t as api,s as default};

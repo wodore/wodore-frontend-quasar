@@ -32,22 +32,18 @@ const left = ref('0');
 if ($layout === undefined) {
   console.error('MapView needs to be child of QLayout');
 } else {
-  //const top = computed(() => $layout.header.offset);
-  //const right = computed(() => $layout.right.offset);
-  //const bottom = computed(() => $layout.footer.offset);
-  //const left = computed(() => $layout.left.offset);
   watchEffect(() => {
     top.value = `${$layout.header.offset}px`;
     right.value = `${$layout.right.offset}px`;
     bottom.value = `${$layout.footer.offset}px`;
     left.value = `${$layout.left.offset}px`;
-    console.log('layout', $layout);
-    if ($layout) {
-      console.log('layout top: ', top.value);
-      console.log('layout right: ', right.value);
-      console.log('layout bottom: ', bottom.value);
-      console.log('layout left: ', left.value);
-    }
+    console.debug(
+      'Layout offsets changed: (top, right, bottom, left): ',
+      top.value,
+      right.value,
+      bottom.value,
+      left.value,
+    );
   });
 }
 
@@ -146,10 +142,13 @@ function onMapLoad(e: MglEvent) {
 }
 
 function onHutLayerClick(e: MapLayerEventType['click']) {
-  console.debug('Hut layer clicked:', e);
+  console.debug('Hut layer clicked.');
   if (e.target.getZoom() > minHutClickZoom) {
     let feature = e.features?.[0];
-    console.debug('  Selected feature:', feature);
+    console.debug(
+      '  Selected huts:',
+      e.features?.map((v) => v.properties.slug),
+    );
     if (feature) {
       const slug = feature.properties.slug;
       if (route.params.slug == slug) {
@@ -169,7 +168,6 @@ function onHutLayerClick(e: MapLayerEventType['click']) {
 const minHutClickZoom = 8;
 // Change the cursor to a pointer
 function onLayerEnter(e: MapLayerEventType['mouseenter']) {
-  console.debug('Hut layer entered:', e);
   if (e.target.getZoom() > minHutClickZoom) {
     e.target.getCanvas().style.cursor = 'pointer';
   }
@@ -177,7 +175,6 @@ function onLayerEnter(e: MapLayerEventType['mouseenter']) {
 
 // Change it back to a pointer when it leaves.
 function onLayerLeave(e: MapLayerEventType['mouseleave']) {
-  console.debug('Hut layer left:', e);
   if (e.target.getZoom() > minHutClickZoom) {
     e.target.getCanvas().style.cursor = '';
   }
@@ -187,7 +184,7 @@ const _spriteUrl = SPRITE_BASE_URL + '/static/huts/sprite';
 function onMapStyledata(e: MglEvent) {
   console.debug('Style data changed');
   const _wodoreSprite = e.map.getSprite();
-  console.debug("Check sprite 'wodore' in ", _wodoreSprite);
+  //console.debug("Check sprite 'wodore' in ", _wodoreSprite);
   let _spriteAdded = false;
   for (const sprite of _wodoreSprite) {
     if (sprite.id == 'wodore') {

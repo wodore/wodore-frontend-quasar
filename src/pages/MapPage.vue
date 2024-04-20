@@ -27,7 +27,9 @@ const MapView = defineAsyncComponent(() => import('components/MapView.vue'));
 <template>
   <q-page>
     <Suspense>
-      <MapView style="min-height: inherit"></MapView>
+      <q-no-ssr>
+        <MapView style="min-height: inherit"></MapView>
+      </q-no-ssr>
       <template #fallback>
         <q-inner-loading :showing="true" class="background-map">
           <q-spinner-grid size="50px" color="secondary" />

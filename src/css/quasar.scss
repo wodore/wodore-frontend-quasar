@@ -49,6 +49,15 @@
   //top: 0;
   //bottom: 0;
   //z-index: $z-side;
+  //backdrop-filter: blur(10px);
+  //background-color: rgba(color('white', 600), 0.6) !important;
+  background-color: rgba(color('white', 600), 0) !important;
+}
+.background--blur {
+  //position: absolute;
+  //top: 0;
+  //bottom: 0;
+  //z-index: $z-side;
   backdrop-filter: blur(10px);
   background-color: rgba(color('white', 600), 0.6) !important;
 }

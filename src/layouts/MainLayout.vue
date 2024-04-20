@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, watchEffect } from 'vue';
 import { useQuasar } from 'quasar';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 //import FeedbackForm from 'components/feedback/FeedbackForm.vue';
 import FeedbackButton from 'components/feedback/FeedbackButton.vue';
+import MapContent from 'components/map/MapContent.vue';
 import MenuButton from 'components/toolbar/MenuButton.vue';
 import WodoreLogo from 'components/wodore/WodoreLogo.vue';
 
@@ -16,16 +17,13 @@ function ajaxFilter(url: string) {
 const isMobile = computed(() => {
   return $q.screen.xs;
 });
-const showContentBottom = computed(() => {
-  return $q.screen.lt.md;
-});
-
 const menuDrawerOpen = ref(false);
 const contentDrawerOpen = ref(true);
 
 const showDialog = ref(false);
 
 const route = useRoute();
+const router = useRouter();
 // check if route.meta.dialog is set
 watchEffect(() => {
   showDialog.value = route.meta?.dialog as boolean;
@@ -33,6 +31,16 @@ watchEffect(() => {
 watchEffect(() => {
   contentDrawerOpen.value = route.meta?.content as boolean;
 });
+
+function closeContent(mode: string) {
+  //contentDrawerOpen.value = false;
+  console.debug(`Closed content in ${mode} mode.`);
+  router.push({
+    name: 'map',
+    hash: route.hash,
+    query: route.query,
+  });
+}
 </script>
 <style lang="scss">
 .app-header {
@@ -107,22 +115,6 @@ watchEffect(() => {
       <router-view />
     </q-page-container>
     <!-- MAP CONTENT -->
-    <q-drawer
-      v-if="!showContentBottom"
-      v-model="contentDrawerOpen"
-      side="right"
-      :width="450"
-      :breakpoint="0"
-      class="shadow-2"
-    >
-      <router-view name="content" />
-    </q-drawer>
-    <q-footer
-      v-if="contentDrawerOpen && showContentBottom"
-      class="bg-white text-black scroll shadow-2"
-      style="max-height: 400px; height: 400px"
-    >
-      <router-view name="content" />
-    </q-footer>
+    <MapContent @close="closeContent" v-model="contentDrawerOpen" />
   </q-layout>
 </template>

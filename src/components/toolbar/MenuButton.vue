@@ -59,7 +59,7 @@ const showMenu = computed(() => {
     v-if="showMenu"
     :color="menuBtnColor"
     :icon="menuBtnIcon"
-    :style="props.side == 'right' ? 'transform: rotate(180deg)' : ''"
+    :class="{ 'rotate-180': props.side == 'right' }"
     :aria-label="menuArialLabel"
     @click="model = !model"
   >

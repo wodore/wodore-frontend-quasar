@@ -32,6 +32,14 @@
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// effects
+
+@each $name, $schema in $colors {
+  .text-#{$name}--halo {
+    text-shadow: 0px 0px 4px rgba(color($name, 700), 0.7);
+  }
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // QUASAR overwrites
 @import './quasar.scss';
 // additionl fonts

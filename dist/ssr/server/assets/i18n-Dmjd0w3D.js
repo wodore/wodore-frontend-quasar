@@ -1,0 +1,1 @@
+import{boot as o}from"quasar/wrappers/index.mjs";import{createI18n as c}from"vue-i18n/dist/vue-i18n.runtime.node.mjs";const n={failed:"Action failed",success:"Action was successful"},t={"en-US":n},l=o(({app:e})=>{const s=c({locale:"en-US",legacy:!1,messages:t});e.use(s)});export{l as default};

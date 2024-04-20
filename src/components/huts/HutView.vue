@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, watchEffect } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+//import { useRouter, useRoute } from 'vue-router';
 import { useQuasar } from 'quasar';
 import getImageUrl from 'src/services/imageService';
 import { clientWodore, schemasWodore } from 'src/clients';
 
 const $q = useQuasar();
-const router = useRouter();
-const route = useRoute();
+//const router = useRouter();
+//const route = useRoute();
 
 const isMobile = computed(() => {
   return $q.screen.xs;
@@ -28,7 +28,6 @@ watchEffect(() => {
         params: { path: { slug: props.slug } },
       })
       .then(({ data }) => {
-        console.log(data);
         if (data) {
           hut.value = data;
         }
@@ -58,13 +57,6 @@ watchEffect(() => {
   }
 });
 
-function onClose() {
-  router.push({
-    name: 'map',
-    hash: route.hash,
-    query: route.query,
-  });
-}
 //if (!error) {
 //} else {
 //  console.error(error);
@@ -90,15 +82,6 @@ function onClose() {
 
 <template>
   <div v-if="hut">
-    <q-btn
-      class="fixed-top"
-      color="accent-700"
-      size="lg"
-      flat
-      round
-      icon="eva-close"
-      @click="onClose()"
-    />
     <!-- lazy-rules
                 :rules="[
                   (val) => (val && val.length > 0) || 'Please type something',
