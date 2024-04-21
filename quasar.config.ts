@@ -18,7 +18,8 @@ export default configure((ctx) => {
     // app boot file (/src/boot)
     // --> boot files are part of "main.js"
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
-    boot: ['i18n', 'axios', { server: false, path: 'maplibre' }],
+    /// axios
+    boot: ['i18n', 'icons', { server: false, path: 'maplibre' }],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#css
     css: ['app.scss'],
@@ -33,7 +34,7 @@ export default configure((ctx) => {
       // 'line-awesome',
       // 'roboto-font-latin-ext', // this or either 'roboto-font', NEVER both!
 
-      'eva-icons',
+      //'eva-icons',
       //'fontawesome-v6',
 
       'roboto-font', // optional, you are not bound to it
@@ -115,7 +116,7 @@ export default configure((ctx) => {
       config: {},
 
       //iconSet: 'material-icons', // Quasar icon set
-      iconSet: 'eva-icons', // Quasar icon set
+      iconSet: 'svg-eva-icons', // Quasar icon set
       // lang: 'en-US', // Quasar language pack
 
       // For special cases outside of where the auto-import strategy can have an impact

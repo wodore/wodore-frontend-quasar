@@ -12,7 +12,7 @@ function toggleModel() {
 
 <template>
   <ToolbarButton
-    icon="eva-message-square"
+    icon="wd-message"
     @click="toggleModel"
     aria-label="Open feedback form"
   >

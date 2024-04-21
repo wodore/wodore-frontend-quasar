@@ -128,6 +128,9 @@ function toggleHutStar() {
 }
 </style>
 <style scoped lang="scss">
+.footer-toolbar {
+  border-top: 1px solid black;
+}
 .attribution {
   font-size: x-small;
   color: rgb(171, 171, 171);
@@ -174,38 +177,18 @@ function toggleHutStar() {
         >
           <h1 class="text-h5 q-ma-none q-mt-xs">{{ hut.name }}</h1>
         </q-toolbar-title>
-        <ToolbarButton
-          size="md"
-          :color="starHut ? 'accent' : 'primary-900'"
-          :icon="starHut ? 'eva-star' : 'eva-star-outline'"
-          @click="toggleHutStar"
-        />
-        <ToolbarButton
-          size="md"
-          :color="watchHut ? 'accent' : 'primary-900'"
-          :icon="watchHut ? 'eva-eye' : 'eva-eye-outline'"
-          @click="toggleHutWatch"
-        />
-        <ToolbarButton
-          size="md"
-          class="text-primary-900"
-          icon="eva-more-vertical-outline"
-        />
       </q-toolbar>
     </q-header>
     <q-page-container class="fit" style="height: 100%">
       <q-scroll-area style="height: 100%" class="fit">
         <q-page style="height: 100%" class="q-px-md fit">
           <!-- used to add shadow to header -->
-          <h2
-            v-intersection="addHeaderShadow"
-            class="text-subtitle1 text-accent-900 q-ma-none q-mb-sm"
-          >
+          <span v-intersection="addHeaderShadow" />
+          <h2 class="text-subtitle1 text-accent-900 q-ma-none q-mb-sm">
             {{ hut.owner?.name }}
           </h2>
           <!-- <q-scroll-area class="fit">
         </q-scroll-area> -->
-          <SourceButtons v-if="hut.sources && $q.screen.xs" :hut="hut" />
           <div class="row items-start row q-gutter-sm">
             <div class="col-md-12 col-sm-auto col-auto">
               <div
@@ -256,28 +239,34 @@ function toggleHutStar() {
               </div>
             </div>
           </div>
+          <SourceButtons v-if="hut.sources && $q.screen.xs" :hut="hut" />
           <body class="text-body2 q-my-lg">
             {{ hut.description }}
           </body>
         </q-page>
       </q-scroll-area>
     </q-page-container>
+    <q-footer class="footer-toolbar">
+      <q-toolbar>
+        <q-space />
+        <ToolbarButton
+          size="md"
+          :color="starHut ? 'accent' : 'primary-900'"
+          :icon="starHut ? 'wd-favorite' : 'wd-favorite-outline'"
+          @click="toggleHutStar"
+        />
+        <ToolbarButton
+          size="md"
+          :color="watchHut ? 'accent' : 'primary-900'"
+          :icon="watchHut ? 'wd-eye' : 'wd-eye-outline'"
+          @click="toggleHutWatch"
+        />
+        <ToolbarButton
+          size="md"
+          class="text-primary-900"
+          icon="wd-more-vertical"
+        />
+      </q-toolbar>
+    </q-footer>
   </q-layout>
-  <!-- lazy-rules
-                :rules="[
-                  (val) => (val && val.length > 0) || 'Please type something',
-                ]" -->
-  <!-- <q-img :src="headerImg">
-      <div class="card-header absolute-bottom"></div>
-      <div
-        class="absolute-bottom text-accent-400 text-center card-header__text"
-        :class="{ 'text-h5': isMobile, 'text-h4': !isMobile }"
-      >
-        {{ hut.name }}
-      </div>
-    </q-img>
-    <div class="col no-wrap items-center">
-      <a :href="hut.photos" targe="_blank">original photo</a>
-      <pre style="font-size: 8pt">{{ hut }}</pre>
-    </div> -->
 </template>

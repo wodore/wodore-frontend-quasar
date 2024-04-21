@@ -15,7 +15,8 @@ defineEmits<{ close: [mode: string] }>();
 //    query: route.query,
 //  });
 //}
-const topOffset = 38;
+const topOffset = 50;
+const bottomOffset = 105;
 const portraitHeight = ref(process.env.CLIENT ? window.innerHeight * 0.4 : 400);
 const portraitHeightMax = ref(
   process.env.CLIENT ? window.innerHeight - topOffset : 800,
@@ -29,11 +30,11 @@ const portraitHeightAvg = computed(() => {
 });
 const portraitHeightBtnIcon = computed(() => {
   if (draggingFab.value) {
-    return 'eva-code-outline';
+    return 'wd-arrow-up-down';
   } else if (portraitHeight.value < portraitHeightAvg.value) {
-    return 'eva-arrowhead-up';
+    return 'wd-arrowhead-up';
   } else {
-    return 'eva-arrowhead-down';
+    return 'wd-arrowhead-down';
   }
 });
 function setPortraitHeight() {
@@ -50,7 +51,8 @@ const moveFab: TouchPanValue = (ev) => {
   if (!(ev && ev.evt && ev.delta)) {
     return;
   }
-  draggingFab.value = ev.isFirst !== true && ev.isFinal !== true;
+  //draggingFab.value = ev.isFirst !== true && ev.isFinal !== true;
+  draggingFab.value = ev.isFinal !== true;
   const winHeight = (ev.evt as MouseEvent).view
     ? ((ev.evt as MouseEvent).view?.innerHeight as number)
     : 600;
@@ -62,10 +64,10 @@ const moveFab: TouchPanValue = (ev) => {
     }
   }
   if (ev.direction == 'down') {
-    if (portraitHeight.value >= 50) {
+    if (portraitHeight.value >= bottomOffset) {
       portraitHeight.value -= ev.delta.y as number;
     } else {
-      portraitHeight.value = 50;
+      portraitHeight.value = bottomOffset;
     }
   }
   if (ev.isFinal) {
@@ -106,7 +108,7 @@ const moveFab: TouchPanValue = (ev) => {
     <router-view name="content" />
   </q-drawer>
   <!-- PORTRAIT CONTENT (usually mobile) -->
-  <q-footer class="text-black scroll fixed-bottom">
+  <q-footer class="text-black fixed-bottom">
     <!-- <div
     style="
       min-height: 20px;
@@ -123,35 +125,37 @@ const moveFab: TouchPanValue = (ev) => {
       :style="{
         'max-height': portraitHeight + 'px',
         height: portraitHeight + 'px',
-        'padding-top': '20px',
+        'padding-top': '0px',
       }"
     >
       <div
-        style="top: -2px; right: 20px"
+        style="top: -20px; right: 50px"
         class="text-primary-100 absolute-top-right z-top q-pa-xs"
       >
         <q-btn
           round
           dense
-          color="accent"
+          unelevated
+          color="accent-100"
           :icon="portraitHeightBtnIcon"
-          :class="{ 'rotate-90': draggingFab }"
-          :size="$q.platform.is.mobile ? 'lg' : 'md'"
+          size="md"
+          class="text-primary-700"
           v-touch-pan.vertical.prevent.mouse="moveFab"
           @click="setPortraitHeight"
         />
         <q-btn
           round
           dense
-          color="accent"
-          icon="eva-close"
-          class="q-ml-md"
-          :size="$q.platform.is.mobile ? 'lg' : 'md'"
+          unelevated
+          color="accent-100"
+          icon="wd-close"
+          class="q-ml-md text-primary-700"
+          size="md"
           @click="$emit('close', 'portrait')"
         />
       </div>
       <div
-        style="padding-top: 25px"
+        style="padding-top: 0px"
         class="background--blur scroll shadow-2 fit"
       >
         <router-view name="content" />

@@ -30,8 +30,8 @@ const menuArialLabel = computed(() => {
   return model.value ? 'close menu' : 'open menu';
 });
 
-const menuIconOpen = 'eva-menu-outline';
-const menuIconClose = 'eva-menu-arrow';
+const menuIconOpen = 'wd-menu';
+const menuIconClose = 'wd-menu-arrow';
 const menuBtnIcon = computed(() => {
   if (props.function == 'open') {
     return menuIconOpen;

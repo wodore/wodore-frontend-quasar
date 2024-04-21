@@ -114,7 +114,7 @@ console.log(headerImg);
               placeholder="name@domain.com"
               type="email"
             >
-              <template v-slot:prepend> <q-icon name="eva-at" /> </template
+              <template v-slot:prepend> <q-icon name="wd-at" /> </template
             ></q-input>
 
             <q-input
@@ -124,7 +124,7 @@ console.log(headerImg);
               type="textarea"
             >
               <template v-slot:prepend>
-                <q-icon name="eva-file-text-outline" /> </template
+                <q-icon name="wd-text-outline" /> </template
             ></q-input>
             <q-input
               v-for="(url, idx) in urls"
@@ -135,10 +135,10 @@ console.log(headerImg);
               :placeholder="url.placeholder"
               type="url"
             >
-              <template v-slot:prepend> <q-icon name="eva-link" /> </template>
+              <template v-slot:prepend> <q-icon name="wd-link" /> </template>
               <template v-slot:append>
                 <q-icon
-                  name="eva-close"
+                  name="wd-close"
                   @click="removeUrl(idx)"
                   class="cursor-pointer"
                 />
@@ -150,7 +150,7 @@ console.log(headerImg);
               color="black"
               label="URL"
               flat
-              icon="eva-plus-square-outline"
+              icon="wd-add-outline"
             />
           </div>
         </div>

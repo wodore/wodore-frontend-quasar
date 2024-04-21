@@ -1,0 +1,74 @@
+@font-face {
+    font-family: "icons";
+    src: url("./icons.woff?277e5c4cb55d5faedbc8a7c9eeaf394b") format("woff"),
+url("./icons.woff2?277e5c4cb55d5faedbc8a7c9eeaf394b") format("woff2");
+}
+
+i[class^="wd-"]:before, i[class*=" wd-"]:before {
+    font-family: icons !important;
+    font-style: normal;
+    font-weight: normal !important;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.wd-text-outline:before {
+    content: "\f101";
+}
+.wd-question-mark:before {
+    content: "\f102";
+}
+.wd-more-vertical:before {
+    content: "\f103";
+}
+.wd-message:before {
+    content: "\f104";
+}
+.wd-menu:before {
+    content: "\f105";
+}
+.wd-menu-arrow:before {
+    content: "\f106";
+}
+.wd-link:before {
+    content: "\f107";
+}
+.wd-favorite:before {
+    content: "\f108";
+}
+.wd-favorite-outline:before {
+    content: "\f109";
+}
+.wd-eye:before {
+    content: "\f10a";
+}
+.wd-eye-outline:before {
+    content: "\f10b";
+}
+.wd-close:before {
+    content: "\f10c";
+}
+.wd-checkmark:before {
+    content: "\f10d";
+}
+.wd-at:before {
+    content: "\f10e";
+}
+.wd-arrowhead-up:before {
+    content: "\f10f";
+}
+.wd-arrowhead-down:before {
+    content: "\f110";
+}
+.wd-arrow-up-down:before {
+    content: "\f111";
+}
+.wd-add:before {
+    content: "\f112";
+}
+.wd-add-outline:before {
+    content: "\f113";
+}

@@ -20,10 +20,10 @@ const props = withDefaults(defineProps<Props>(), {
 
 const openIcon = computed(() => {
   return props.open
-    ? 'eva-checkmark-outline'
+    ? 'wd-checkmark'
     : props.open == false
-      ? 'eva-close-outline'
-      : 'eva-question-mark-outline';
+      ? 'wd-close'
+      : 'wd-question-mark';
 });
 
 const openColor = computed(() => {

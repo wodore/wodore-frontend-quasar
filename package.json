@@ -8,11 +8,28 @@
   "private": true,
   "scripts": {
     "lint": "eslint --ext .js,.ts,.vue ./",
+    "lint:fix": "eslint --fix --ext .js,.ts,.vue ./",
     "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\"",
     "test": "echo \"No test specified\" && exit 0",
-    "dev": "quasar dev",
-    "build": "quasar build",
-    "gen:wodore": "openapi-typescript https://api.wodore.com/v1/openapi.json -o ./src/clients/wodore_v1.d.ts"
+    "dev": "quasar run dev:spa",
+    "dev:spa": "quasar dev -m spa",
+    "dev:ssr": "quasar dev -m ssr",
+    "dev:pwa": "quasar dev -m pwa",
+    "build": "yarn run build:spa",
+    "build:spa": "quasar build -m spa",
+    "build:ssr": "quasar build -m ssr",
+    "build:pwa": "quasar build -m pwa",
+    "serve:spa": "quasar serve --history --port 9000 -H localhost --cors dist/spa/",
+    "serve:ssr": "quasar serve --history --port 9000 -H localhost --cors dist/ssr/",
+    "serve:pwa": "quasar serve --history --port 9000 -H localhost --cors dist/pwa/",
+    "serve": "yarn run serve:spa",
+    "gen:api": "openapi-typescript https://api.wodore.com/v1/openapi.json -o ./src/clients/wodore_v1.d.ts",
+    "preicons:fix": "npm exec -c 'rm -rf src/extras/icons/svg/build/fixed/*'",
+    "icons:fix": "yarn run oslllo-svg-fixer -s src/extras/icons/svg/source/ -d src/extras/icons/svg/build/fixed --sp",
+    "pregen:icons": "yarn run icons:fix",
+    "gen:icons": "fantasticon src/extras/icons/svg/build/fixed -o src/extras/icons/dist -p wd --normalize -t woff woff2",
+    "gen:icons:watch": "watch 'yarn run gen:icons' src/extras/icons/svg/source",
+    "postgen:icons": "yarn run eslint --fix src/extras/icons/dist/icons.ts"
   },
   "dependencies": {
     "@fontsource/roboto-condensed": "^5.0.15",
@@ -28,7 +45,8 @@
     "vue": "^3.4.18",
     "vue-i18n": "^9.2.2",
     "vue-maplibre-gl": "^3.1.3",
-    "vue-router": "^4.0.12"
+    "vue-router": "^4.0.12",
+    "watch": "^1.0.2"
   },
   "devDependencies": {
     "@intlify/unplugin-vue-i18n": "^2.0.0",
@@ -42,6 +60,8 @@
     "eslint": "^8.11.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-vue": "^9.0.0",
+    "fantasticon": "^3.0.0",
+    "oslllo-svg-fixer": "^4.0.1",
     "prettier": "^3.0.3",
     "typescript": "~5.3.0",
     "vite-plugin-checker": "^0.6.4",
