@@ -7,11 +7,9 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
-    copy: typeof import('./src/components/huts/WdHutView copy.vue')['default']
-    HutType: typeof import('./src/components/huts/HutType.vue')['default']
-    IEvaCheckmarkFill: (typeof import('~icons/eva/checkmark-fill'))['default']
-    IEvaQuestionMarkFill: (typeof import('~icons/eva/question-mark-fill'))['default']
-    OpenMonthly: typeof import('./src/components/huts/OpenMonthly.vue')['default']
+    IconFa6SolidCopy: typeof import('~icons/fa6-solid/copy')['default']
+    IconFa6SolidLocationCrosshairs: typeof import('~icons/fa6-solid/location-crosshairs')['default']
+    IconMingcuteMountain2Fill: typeof import('~icons/mingcute/mountain2-fill')['default']
     QIconify: typeof import('./src/components/quasar/QIconify.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
@@ -22,7 +20,6 @@ declare module 'vue' {
     WdHutType: typeof import('./src/components/huts/WdHutType.vue')['default']
     WdHutTypeChip: typeof import('./src/components/huts/WdHutTypeChip.vue')['default']
     WdHutView: typeof import('./src/components/huts/WdHutView.vue')['default']
-    WdIcon: (typeof import('./src/components/WdIcon.vue'))['default']
     WdMapContent: typeof import('./src/components/map/WdMapContent.vue')['default']
     WdMapMenu: typeof import('./src/components/map/WdMapMenu.vue')['default']
     WdMapView: typeof import('./src/components/map/WdMapView.vue')['default']

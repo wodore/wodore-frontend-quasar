@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watchEffect, computed } from 'vue';
 //import { useRouter, useRoute } from 'vue-router';
+import { copyToClipboard } from 'quasar';
 import { IntersectionValue, useQuasar } from 'quasar';
 import getImageUrl from 'src/services/imageService';
 import { clientWodore, schemasWodore } from 'src/clients';
@@ -259,6 +260,49 @@ const addHeaderShadow: IntersectionValue = (entry) => {
             :type_open="hut.type_open"
             :type_closed="hut.type_closed"
           />
+          <!--LOCATION-->
+          <div class="text-subtitle1 text-accent">{{ $t('location') }}</div>
+          <q-list dense>
+            <q-item v-if="hut.location">
+              <q-item-section side>
+                <q-icon size="xs">
+                  <IconFa6SolidLocationCrosshairs />
+                </q-icon>
+              </q-item-section>
+              <q-item-section>
+                <q-item-label
+                  >{{ hut.location.lat.toPrecision(7) }},
+                  {{ hut.location.lon.toPrecision(6) }}</q-item-label
+                >
+              </q-item-section>
+              <q-item-section
+                side
+                @click="
+                  copyToClipboard(
+                    hut.location.lat.toPrecision(7).toString() +
+                      ', ' +
+                      hut.location.lon.toPrecision(6).toString(),
+                  )
+                "
+              >
+                <q-btn flat dense round size="10pt">
+                  <q-icon size="10pt">
+                    <IconFa6SolidCopy />
+                  </q-icon>
+                </q-btn>
+              </q-item-section>
+            </q-item>
+            <q-item v-if="hut.elevation">
+              <q-item-section side>
+                <q-icon size="xs">
+                  <IconMingcuteMountain2Fill />
+                </q-icon>
+              </q-item-section>
+              <q-item-section>
+                <q-item-label>{{ hut.elevation }} m</q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-list>
         </q-page>
       </q-scroll-area>
     </q-page-container>
