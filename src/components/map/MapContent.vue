@@ -99,7 +99,7 @@ const moveFab: TouchPanValue = (ev) => {
         flat
         round
         dense
-        icon="eva-close"
+        icon="wd-close"
         class="text-primary-900"
         size="lg"
         @click="$emit('close', 'landscape')"
