@@ -55,7 +55,7 @@ function closeContent(mode: string) {
 }
 </style>
 <template>
-  <q-layout view="hHh LpR lFf">
+  <q-layout view="hHh LpR lFf" class="overflow-hidden">
     <q-ajax-bar color="accent" :hijack-filter="ajaxFilter" />
     <q-header class="text-white shadow-6 app-header">
       <!-- TOOLBAR -->
@@ -112,7 +112,11 @@ function closeContent(mode: string) {
 
     <!-- PAGE -->
     <q-page-container>
-      <router-view />
+      <router-view v-slot="{ Component }">
+        <component :is="Component" />
+        <!-- <keep-alive>
+        </keep-alive> -->
+      </router-view>
     </q-page-container>
     <!-- MAP CONTENT -->
     <MapContent @close="closeContent" v-model="contentDrawerOpen" />

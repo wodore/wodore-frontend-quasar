@@ -2,7 +2,11 @@
 import { ref, inject, watchEffect } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 //import { Todo, Meta } from './models';
-import { SymbolLayerSpecification, MapLayerEventType } from 'maplibre-gl';
+import {
+  LngLatLike,
+  SymbolLayerSpecification,
+  MapLayerEventType,
+} from 'maplibre-gl';
 import {
   MglMap,
   //MglGeoJsonSource,
@@ -35,7 +39,12 @@ if ($layout === undefined) {
   watchEffect(() => {
     top.value = `${$layout.header.offset}px`;
     right.value = `${$layout.right.offset}px`;
-    bottom.value = `${$layout.footer.offset}px`;
+    if (
+      process.env.CLIENT &&
+      $layout.footer.offset < window.innerHeight - 250
+    ) {
+      bottom.value = `${$layout.footer.offset}px`;
+    }
     left.value = `${$layout.left.offset}px`;
     console.debug(
       'Layout offsets changed: (top, right, bottom, left): ',
@@ -196,7 +205,8 @@ function onMapStyledata(e: MglEvent) {
     e.map.addSprite('wodore', _spriteUrl);
   }
 }
-
+const mapCenter: LngLatLike = [8.22, 46.7];
+const mapZoom: number = 7.5;
 //@import '~maplibre-gl/dist/maplibre-gl.css';
 //@import '~vue-maplibre-gl/dist/vue-maplibre-gl.css';
 </script>
@@ -233,8 +243,8 @@ function onMapStyledata(e: MglEvent) {
     @map:styledata="onMapStyledata"
     @map:load="onMapLoad"
     hash="p"
-    :zoom="7.5"
-    :center="[8.22, 46.7]"
+    :zoom="mapZoom"
+    :center="mapCenter"
     :map-style="mapStyles[0].style"
     style="position: fixed; right: 0px; top: 0; bottom: 0; left: 0"
   >
@@ -249,7 +259,7 @@ function onMapStyledata(e: MglEvent) {
     />
     <MglGeoJsonSource source-id="huts" :data="hutjson">
       <MglSymbolLayer
-        @click="onHutLayerClick"
+        @click.prevent="onHutLayerClick"
         @mouseenter="onLayerEnter"
         @mouseleave="onLayerLeave"
         :layout="hutsLayerLayout"

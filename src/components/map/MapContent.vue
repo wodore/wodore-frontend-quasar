@@ -15,10 +15,12 @@ defineEmits<{ close: [mode: string] }>();
 //    query: route.query,
 //  });
 //}
-
-const portraitHeight = ref(400);
-const portraitHeightMax = ref(800);
-const portraitHeightMin = ref(200);
+const topOffset = 38;
+const portraitHeight = ref(process.env.CLIENT ? window.innerHeight * 0.4 : 400);
+const portraitHeightMax = ref(
+  process.env.CLIENT ? window.innerHeight - topOffset : 800,
+);
+const portraitHeightMin = ref(portraitHeight.value);
 const portraitHeightAvg = computed(() => {
   return (
     portraitHeightMin.value +
@@ -53,10 +55,10 @@ const moveFab: TouchPanValue = (ev) => {
     ? ((ev.evt as MouseEvent).view?.innerHeight as number)
     : 600;
   if (ev.direction == 'up') {
-    if (portraitHeight.value <= winHeight - 200) {
+    if (portraitHeight.value <= winHeight - 150) {
       portraitHeight.value -= ev.delta.y as number;
     } else {
-      portraitHeight.value = winHeight - 38;
+      portraitHeight.value = winHeight - topOffset;
     }
   }
   if (ev.direction == 'down') {
@@ -78,64 +80,83 @@ const moveFab: TouchPanValue = (ev) => {
 </script>
 <template>
   <!-- we use a drawer and footer in order to work correct with the QLayout component -->
-  <!-- LANGSCAPE CONTENT (usually desktop) -->
+  <!-- LANDSCAPE CONTENT (usually desktop) -->
   <q-drawer
     v-if="!showContentBottom"
     v-model="model"
     side="right"
-    :width="450"
+    :width="400"
     :breakpoint="0"
     class="shadow-2"
   >
-    <div class="text-primary-100 absolute-top z-top q-pa-xs">
+    <div
+      class="text-primary-100 absolute-top z-max q-pa-xs"
+      style="width: 50px"
+    >
       <q-btn
         flat
         round
         dense
         icon="eva-close"
-        class="text-black--halo"
+        class="text-primary-900"
         size="lg"
         @click="$emit('close', 'landscape')"
       />
     </div>
     <router-view name="content" />
   </q-drawer>
-  <!-- PORTRAOT CONTENT (usually mobile) -->
-  <q-footer
-    v-if="model && showContentBottom"
-    class="bg-white text-black scroll"
-    :style="{
-      'max-height': portraitHeight + 'px',
-      height: portraitHeight + 'px',
-      'padding-top': '20px',
-    }"
-  >
+  <!-- PORTRAIT CONTENT (usually mobile) -->
+  <q-footer class="text-black scroll fixed-bottom">
+    <!-- <div
+    style="
+      min-height: 20px;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background-color: rgba(0, 0, 0, 0);
+    "
+    class="text-black scroll fixed-bottom z-max"
+  > -->
     <div
-      style="top: -2px; right: 30px"
-      class="text-primary-100 absolute-top-right z-top q-pa-xs"
+      v-if="model && showContentBottom"
+      :style="{
+        'max-height': portraitHeight + 'px',
+        height: portraitHeight + 'px',
+        'padding-top': '20px',
+      }"
     >
-      <q-btn
-        round
-        dense
-        color="accent"
-        :icon="portraitHeightBtnIcon"
-        :class="{ 'rotate-90': draggingFab }"
-        :size="$q.platform.is.mobile ? 'lg' : 'md'"
-        v-touch-pan.vertical.prevent.mouse="moveFab"
-        @click="setPortraitHeight"
-      />
-      <q-btn
-        round
-        dense
-        color="accent"
-        icon="eva-close"
-        class="q-ml-md"
-        :size="$q.platform.is.mobile ? 'lg' : 'md'"
-        @click="$emit('close', 'portrait')"
-      />
+      <div
+        style="top: -2px; right: 20px"
+        class="text-primary-100 absolute-top-right z-top q-pa-xs"
+      >
+        <q-btn
+          round
+          dense
+          color="accent"
+          :icon="portraitHeightBtnIcon"
+          :class="{ 'rotate-90': draggingFab }"
+          :size="$q.platform.is.mobile ? 'lg' : 'md'"
+          v-touch-pan.vertical.prevent.mouse="moveFab"
+          @click="setPortraitHeight"
+        />
+        <q-btn
+          round
+          dense
+          color="accent"
+          icon="eva-close"
+          class="q-ml-md"
+          :size="$q.platform.is.mobile ? 'lg' : 'md'"
+          @click="$emit('close', 'portrait')"
+        />
+      </div>
+      <div
+        style="padding-top: 25px"
+        class="background--blur scroll shadow-2 fit"
+      >
+        <router-view name="content" />
+      </div>
     </div>
-    <div class="background--blur scroll">
-      <router-view name="content" />
-    </div>
+    <!-- </div> -->
   </q-footer>
 </template>
