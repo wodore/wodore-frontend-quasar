@@ -30,7 +30,10 @@ const props = withDefaults(defineProps<Props>(), {
 }
 </style>
 <template>
-  <div class="content justify-start row" :class="{ column: $q.screen.gt.xs }">
+  <div
+    class="justify-start row"
+    :class="{ column: $q.screen.gt.xs, content: $q.screen.gt.xs }"
+  >
     <div :key="ref.name" v-for="ref in props.hut?.sources" class="col">
       <q-btn
         :href="ref.link"
@@ -42,7 +45,7 @@ const props = withDefaults(defineProps<Props>(), {
       >
         <!--{{ ref.slug }}-->
         <img
-          :style="{ height: $q.platform.is.mobile ? '30px' : '20px' }"
+          :style="{ height: $q.platform.is.mobile ? '24px' : '20px' }"
           :src="ref.logo"
         />
         <q-tooltip :hide-delay="150" :delay="150">

@@ -171,11 +171,12 @@ function toggleHutStar() {
       <q-toolbar class="">
         <q-toolbar-title
           :style="
-            ($q.screen.gt.sm ? 'margin-left: 40px' : '') + '; text-wrap: wrap;'
+            ($q.screen.gt.sm ? 'margin-left: 40px; ' : '') +
+            'text-wrap: wrap; margin-top:12px;'
           "
           class="text-primary-900"
         >
-          <h1 class="text-h5 q-ma-none q-mt-xs">{{ hut.name }}</h1>
+          <h1 class="text-h6 q-ma-none q-mt-xs">{{ hut.name }}</h1>
         </q-toolbar-title>
       </q-toolbar>
     </q-header>
@@ -183,8 +184,15 @@ function toggleHutStar() {
       <q-scroll-area style="height: 100%" class="fit">
         <q-page style="height: 100%" class="q-px-md fit">
           <!-- used to add shadow to header -->
-          <span v-intersection="addHeaderShadow" />
-          <h2 class="text-subtitle1 text-accent-900 q-ma-none q-mb-sm">
+          <h2
+            :style="
+              ($q.screen.gt.sm ? 'margin-left: 36px; ' : '') +
+              ($q.screen.gt.sm ? 'margin-top: -3px; ' : '') +
+              'text-wrap: wrap;'
+            "
+            class="text-subtitle1 text-accent-900 q-ma-none q-mb-sm"
+          >
+            <span v-intersection="addHeaderShadow" />
             {{ hut.owner?.name }}
           </h2>
           <!-- <q-scroll-area class="fit">
@@ -239,7 +247,6 @@ function toggleHutStar() {
               </div>
             </div>
           </div>
-          <SourceButtons v-if="hut.sources && $q.screen.xs" :hut="hut" />
           <body class="text-body2 q-my-lg">
             {{ hut.description }}
           </body>
@@ -248,6 +255,7 @@ function toggleHutStar() {
     </q-page-container>
     <q-footer class="footer-toolbar">
       <q-toolbar>
+        <SourceButtons v-if="hut.sources && $q.screen.xs" :hut="hut" />
         <q-space />
         <ToolbarButton
           size="md"
