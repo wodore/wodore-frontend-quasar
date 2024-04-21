@@ -1,0 +1,71 @@
+{
+  "map_styles": "Maps",
+  "contact": "Contact",
+  "less": "fewer",
+  "more": "more",
+  "hut": {
+    "serviced": "serviced",
+    "not_serviced": "no service",
+    "alp": "Alp",
+    "basic_hotel": "Basic Hotel",
+    "basic_shelter": "Emergency shelter",
+    "camping": "Camping",
+    "hotel": "Hotel",
+    "others": "Others",
+    "hut": "Hut",
+    "unknown": "Unkown",
+    "bivouac": "Bivouc",
+    "hostel": "Hostel",
+    "unattended_hut": "Unattended Hut"
+  },
+  "lang": {
+    "english": "English",
+    "french": "French",
+    "german": "German",
+    "italian": "Italian",
+    "de": "@:lang.german",
+    "en": "@:lang.english",
+    "fr": "@:lang.french",
+    "it": "@:lang.italian"
+  },
+  "menu": {
+    "select_language": "select language"
+  },
+  "missing": "Missing",
+  "transport": {
+    "no_results": "No Results",
+    "max_time": "Maximum Time",
+    "station": "Station",
+    "travel_time": "Travel Time",
+    "max_walk_time": "Maximum Walkingtime",
+    "time_range": "Time range",
+    "add_station": "Add Station",
+    "no_connection": "No Connection",
+    "departures": "Departures"
+  },
+  "map_style": "Map",
+  "overlay_style": "Layers",
+  "feb": "Feb",
+  "mar": "Mar",
+  "apr": "Apr",
+  "may": "May",
+  "jun": "Jun",
+  "jul": "Jul",
+  "aug": "Aug",
+  "sep": "Sep",
+  "oct": "Oct",
+  "nov": "Nov",
+  "dec": "Dec",
+  "hut_type": "Hut Type",
+  "jan": "Jan",
+  "location": "Location",
+  "map": {
+    "layers": "Layers"
+  },
+  "layers": "Layers",
+  "maps": "Maps",
+  "filter": "Filter",
+  "booking_service_unavailable": "Booking service not available",
+  "service_unavailable": "Service Error",
+  "error_caption": "Error"
+}

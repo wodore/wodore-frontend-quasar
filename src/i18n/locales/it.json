@@ -1,0 +1,52 @@
+{
+  "overlay_style": "Strati",
+  "map_styles": "Mappe",
+  "hut": {
+    "not_serviced": "nessun servizio",
+    "serviced": "servito",
+    "basic_hotel": "Hotel essenziale",
+    "hut.alp": "Alpe",
+    "basic_shelter": "Rifugio d'emergenza",
+    "camping": "Campeggio",
+    "hotel": "Hotel",
+    "others": "Altri",
+    "hut": "Capanna",
+    "unknown": "Sconosciuto",
+    "bivouac": "Bivacco",
+    "hostel": "Ostello",
+    "unattended_hut": "Capanna incustodita"
+  },
+  "contact": "Contatto",
+  "less": "meno",
+  "more": "di più",
+  "lang": {
+    "english": "Inglese",
+    "french": "Francese",
+    "german": "Tedesco",
+    "italian": "Italiano",
+    "de": "@:lang.german",
+    "en": "@:lang.english",
+    "fr": "@:lang.french",
+    "it": "@:lang.italian"
+  },
+  "menu": {
+    "select_language": "seleziona la lingua"
+  },
+  "missing": "mancante",
+  "transport": {
+    "no_results": "Nessun risultato",
+    "max_time": "Tempo Massimo",
+    "station": "fermata dell'autobus",
+    "travel_time": "Tempo di viaggio",
+    "max_walk_time": "Tempo massimo di percorrenza",
+    "time_range": "Intervallo di tempo",
+    "add_station": "Aggiungi stazione",
+    "no_connection": "Nessuna connessione"
+  },
+  "map_style": "Carta geografica",
+  "location": "Posizione",
+  "layers": "Strati",
+  "maps": "Carte",
+  "booking_service_unavailable": "Prenotazioni non disponibili",
+  "error_caption": "Errore"
+}

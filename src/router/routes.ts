@@ -12,8 +12,8 @@ const routes: RouteRecordRaw[] = [
         meta: { content: true },
         components: {
           default: () => import('pages/MapPage.vue'),
-          menu: () => import('components/MapMenu.vue'),
-          content: () => import('components/huts/HutView.vue'),
+          menu: () => import('components/map/WdMapMenu.vue'),
+          content: () => import('components/huts/WdHutView.vue'),
         },
         props: { content: true },
       },
@@ -22,8 +22,8 @@ const routes: RouteRecordRaw[] = [
         name: 'map',
         components: {
           default: () => import('pages/MapPage.vue'),
-          menu: () => import('components/MapMenu.vue'),
-          content: () => import('components/huts/HutView.vue'),
+          menu: () => import('components/map/WdMapMenu.vue'),
+          content: () => import('components/huts/WdHutView.vue'),
         },
       },
       {
@@ -32,7 +32,7 @@ const routes: RouteRecordRaw[] = [
         meta: { dialog: true },
         components: {
           default: () => import('pages/MapPage.vue'),
-          dialog: () => import('components/feedback/FeedbackForm.vue'),
+          dialog: () => import('components/feedback/WdFeedbackForm.vue'),
         },
       },
     ],

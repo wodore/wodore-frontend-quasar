@@ -5,9 +5,19 @@
 
 import { configure } from 'quasar/wrappers';
 import { fileURLToPath } from 'node:url';
-import path from 'node:path';
+
+import IconsResolver from 'unplugin-icons/resolver';
+
+// export default defineConfig({
+//   plugins: [
+//     Icons({ /* options */ }),
+//   ],
+// })
+
+//import path from 'node:path';
 import dotenv from 'dotenv';
 dotenv.config();
+
 // add any new variable to the 'env' section
 
 export default configure((ctx) => {
@@ -48,10 +58,12 @@ export default configure((ctx) => {
         node: 'node20',
       },
 
-      alias: {
-        // TODO: does not work
-        servies: path.join(__dirname, './src/services'),
-      },
+      //alias: {
+      //  // TODO: does not work
+      //  services: path.join(__dirname, './src/services'),
+      //  extras: path.join(__dirname, './src/extras'),
+      //  clients: path.join(__dirname, './src/clients'),
+      //},
       vueRouterMode: 'history', // available values: 'hash', 'history'
       // vueRouterBase,
       // vueDevtools,
@@ -102,6 +114,12 @@ export default configure((ctx) => {
           },
           { server: false },
         ],
+        ['unplugin-icons/vite', { compiler: 'vue3' }],
+        [
+          'unplugin-vue-components/vite',
+          { resolvers: [IconsResolver({ componentPrefix: 'icon' })] },
+        ],
+        ['vite-tsconfig-paths', {}],
       ],
     },
 

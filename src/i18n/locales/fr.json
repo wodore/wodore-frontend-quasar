@@ -1,0 +1,52 @@
+{
+  "map_styles": "Plans",
+  "contact": "Contact",
+  "less": "moins",
+  "more": "plus",
+  "overlay_style": "Couches",
+  "hut": {
+    "not_serviced": "pas de service",
+    "serviced": "desservis",
+    "alp": "Alp",
+    "basic_hotel": "Hôtel basique",
+    "basic_shelter": "Abri d'urgence",
+    "camping": "Camping",
+    "hotel": "Hôtel",
+    "others": "Autres",
+    "hut": "Cabane",
+    "unknown": "Inconnu",
+    "bivouac": "Bivouac",
+    "hostel": "Auberge",
+    "unattended_hut": "Cabane sans surveillance"
+  },
+  "lang": {
+    "english": "Anglais",
+    "german": "Allemand",
+    "italian": "italien",
+    "french": "Français",
+    "de": "@:lang.german",
+    "en": "@:lang.english",
+    "fr": "@:lang.french",
+    "it": "@:lang.italian"
+  },
+  "menu": {
+    "select_language": "choisir la langue"
+  },
+  "missing": "Manquant",
+  "transport": {
+    "no_results": "Aucun résultat",
+    "max_time": "Durée Maximale",
+    "station": "Arrêt",
+    "travel_time": "Temps de voyage",
+    "max_walk_time": "Temps de marche maximum",
+    "time_range": "Intervalle de temps",
+    "add_station": "Ajouter une gare",
+    "no_connection": "Pas de connection"
+  },
+  "map_style": "Carte",
+  "location": "Lieu",
+  "layers": "Couches",
+  "maps": "Cartes",
+  "booking_service_unavailable": "Réservations non disponibles",
+  "error_caption": "Erreur"
+}

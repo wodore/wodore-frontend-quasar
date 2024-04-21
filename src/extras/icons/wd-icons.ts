@@ -1,6 +1,8 @@
 /* There are some icons that are needed but not available
    so we import them from MDI as svg */
 
+// NOTE: not used yet, at the moment svg-eva is used for quasar
+
 import {
   mdiFormatBold,
   mdiFormatItalic,

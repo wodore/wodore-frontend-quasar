@@ -1,7 +1,22 @@
 {
   "extends": "@quasar/app-vite/tsconfig-preset",
   "compilerOptions": {
-    "baseUrl": "."
+    "baseUrl": ".",
+    "types": ["unplugin-icons/types/vue", "./components"],
+    "paths": {
+      "src/*": ["src/*"],
+      "app/*": ["*"],
+      "components/*": ["src/components/*"],
+      "layouts/*": ["src/layouts/*"],
+      "pages/*": ["src/pages/*"],
+      "assets/*": ["src/assets/*"],
+      "boot/*": ["src/boot/*"],
+      "stores/*": ["src/stores/*"],
+
+      "services/*": ["src/services/*"],
+      "extras/*": ["src/extras/*"],
+      "@clients/*": ["src/clients/*"]
+    }
   },
   "exclude": [
     "./dist",

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { defineAsyncComponent } from 'vue';
-const MapView = defineAsyncComponent(() => import('components/MapView.vue'));
-//import MapView from 'components/MapView.vue';
+const WdMapView = defineAsyncComponent(
+  () => import('components/map/WdMapView.vue'),
+);
 </script>
 
 <style lang="scss" scoped>
@@ -28,7 +29,7 @@ const MapView = defineAsyncComponent(() => import('components/MapView.vue'));
   <q-page>
     <Suspense>
       <q-no-ssr>
-        <MapView style="min-height: inherit"></MapView>
+        <WdMapView style="min-height: inherit" />
       </q-no-ssr>
       <template #fallback>
         <q-inner-loading :showing="true" class="background-map">

@@ -2,10 +2,6 @@
 import { ref, computed, watchEffect } from 'vue';
 import { useQuasar } from 'quasar';
 import { useRoute, useRouter } from 'vue-router';
-//import FeedbackForm from 'components/feedback/FeedbackForm.vue';
-import FeedbackButton from 'components/feedback/FeedbackButton.vue';
-import MapContent from 'components/map/MapContent.vue';
-import MenuButton from 'components/toolbar/MenuButton.vue';
 import WodoreLogo from 'components/wodore/WodoreLogo.vue';
 
 const $q = useQuasar();
@@ -60,11 +56,11 @@ function closeContent(mode: string) {
     <q-header class="text-white shadow-6 app-header">
       <!-- TOOLBAR -->
       <q-toolbar>
-        <MenuButton desktop v-model="menuDrawerOpen" />
+        <WdMenuButton desktop v-model="menuDrawerOpen" />
         <q-toolbar-title>
           <WodoreLogo class="text-h4" :text="!isMobile" icon />
         </q-toolbar-title>
-        <FeedbackButton v-if="!isMobile" />
+        <WdFeedbackButton v-if="!isMobile" />
         <!-- MAIN DIALOG -->
         <q-dialog
           v-model="showDialog"
@@ -79,7 +75,7 @@ function closeContent(mode: string) {
         </q-dialog>
 
         <!-- MENU BUTTON mobile open -->
-        <MenuButton
+        <WdMenuButton
           mobile
           function="open"
           side="right"
@@ -102,10 +98,10 @@ function closeContent(mode: string) {
           <WodoreLogo text class="text-h5" />
         </q-toolbar-title>
 
-        <FeedbackButton size="md" />
+        <WdFeedbackButton size="md" />
 
         <!-- MENU BUTTON mobile close -->
-        <MenuButton mobile side="right" v-model="menuDrawerOpen" />
+        <WdMenuButton mobile side="right" v-model="menuDrawerOpen" />
       </q-toolbar>
       <router-view name="menu" />
     </q-drawer>
@@ -119,6 +115,6 @@ function closeContent(mode: string) {
       </router-view>
     </q-page-container>
     <!-- MAP CONTENT -->
-    <MapContent @close="closeContent" v-model="contentDrawerOpen" />
+    <WdMapContent @close="closeContent" v-model="contentDrawerOpen" />
   </q-layout>
 </template>

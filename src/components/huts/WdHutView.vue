@@ -1,0 +1,271 @@
+<script setup lang="ts">
+import { ref, watchEffect, computed } from 'vue';
+//import { useRouter, useRoute } from 'vue-router';
+import { IntersectionValue, useQuasar } from 'quasar';
+import getImageUrl from 'src/services/imageService';
+import { clientWodore, schemasWodore } from 'src/clients';
+import WdHutOpenMonthly from './WdHutOpenMonthly.vue';
+
+const $q = useQuasar();
+//const router = useRouter();
+//const route = useRoute();
+
+interface Props {
+  slug?: string | undefined;
+}
+
+const props = defineProps<Props>();
+
+const hut = ref<schemasWodore['HutSchemaDetails'] | null>(null);
+
+const headerShadow = ref(false);
+//const { data, error } = await
+watchEffect(() => {
+  hut.value = null;
+  headerShadow.value = false;
+  if (props.slug) {
+    clientWodore
+      .GET('/v1/huts/{slug}', {
+        params: { path: { slug: props.slug } },
+      })
+      .then(({ data }) => {
+        if (data) {
+          hut.value = data;
+        }
+      });
+  }
+});
+
+const headerImg = ref('');
+
+const hutToolbarTop = computed(() => $q.screen.gt.sm);
+const defaultImg =
+  'https://cdn.pixabay.com/photo/2020/07/20/21/49/moist-5424448_1280.jpg';
+watchEffect(() => {
+  if (hut.value?.photos) {
+    headerImg.value = getImageUrl(hut.value?.photos, {
+      size: '600x400',
+      smart: true,
+      fit: true,
+      //filters: ['grayscale()'],
+    });
+  } else {
+    headerImg.value = getImageUrl(defaultImg, {
+      size: '600x400',
+      smart: true,
+      fit: true,
+      filters: ['blur(4)'],
+    });
+  }
+});
+
+//if (!error) {
+//} else {
+//  console.error(error);
+//}
+//onBeforeUnmount(() => onClose());
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const addHeaderShadow: IntersectionValue = (entry) => {
+  headerShadow.value = !entry.isIntersecting;
+  return true;
+};
+</script>
+
+<style lang="scss" scoped>
+.no-background {
+  background: none !important;
+}
+.card-header {
+  filter: blur(15px);
+  height: 60px;
+}
+.card-header__text {
+  background: none !important;
+  text-shadow: 0px 0px 8px $black;
+}
+
+.card {
+  border: 2px solid rgba($black, 0.607);
+  border-radius: 0 !important;
+}
+.hut-image {
+  border-radius: 25px !important;
+  max-width: 300px;
+  min-width: 300px;
+}
+@media (width <= $breakpoint-xs-max) {
+  .hut-image {
+    max-width: 300px;
+    min-width: 200px;
+  }
+}
+@media (width >= $breakpoint-sm-max) {
+  .hut-image {
+    max-width: 100%;
+  }
+}
+</style>
+<style lang="scss">
+.q-layout-container > div > div {
+  min-height: 0;
+  max-height: 100%;
+  height: 100%;
+}
+.q-layout-container .q-layout {
+  min-height: 100%;
+  height: 100%;
+}
+</style>
+<style scoped lang="scss">
+.footer-toolbar {
+  border-top: 1px solid black;
+}
+.attribution {
+  font-size: x-small;
+  color: rgb(171, 171, 171);
+  padding: 6px 20px 6px 10px;
+  border-radius: 10px 0 0 0;
+}
+.img-link :deep(a:active),
+.img-link :deep(a:visited),
+.img-link :deep(a:hover),
+.img-link :deep(a:link),
+.img-link :deep(a) {
+  color: rgb(171, 171, 171) !important;
+  text-decoration: underline dotted;
+  text-decoration-color: rgb(132, 132, 132);
+}
+.img-link :deep(a:hover) {
+  color: rgb(242, 242, 242) !important;
+}
+.img-link {
+  color: rgb(171, 171, 171) !important;
+}
+</style>
+
+<template>
+  <q-layout
+    view="lhh LpR lff"
+    container
+    class="no-background fit"
+    :class="$q.dark.isActive ? 'bg-grey-9' : 'bg-grey-3'"
+    style="height: 100%"
+  >
+    <q-header
+      class="no-background"
+      :class="{ 'shadow-2': headerShadow }"
+      style="transition: box-shadow 0.2s ease-in-out"
+    >
+      <WdHutToolbar :hut="hut" v-if="hutToolbarTop">
+        <WdSourceButtons :hut="hut" class="q-ml-xl" />
+      </WdHutToolbar>
+      <q-toolbar class="" v-if="hut">
+        <q-toolbar-title
+          style="text-wrap: wrap; margin-top: 12px; margin-left: 3px"
+          class="text-primary-900"
+        >
+          <h1 class="text-h6 q-ma-none q-mt-xs">{{ hut.name }}</h1>
+        </q-toolbar-title>
+      </q-toolbar>
+    </q-header>
+    <q-page-container class="fit" style="height: 100%">
+      <q-scroll-area style="height: 100%" class="fit">
+        <q-page style="height: 100%" class="q-px-md fit" v-if="hut">
+          <!-- used to add shadow to header -->
+          <h2
+            :style="
+              ($q.screen.gt.sm ? 'margin-top: -3px; ' : '') + 'text-wrap: wrap;'
+            "
+            class="text-subtitle1 text-accent-900 q-ma-none q-mb-sm"
+          >
+            <span v-intersection="addHeaderShadow" />
+            {{ hut.owner?.name }}
+          </h2>
+
+          <div class="row items-start row q-gutter-sm">
+            <div class="col-md-12 col-sm-auto col-auto">
+              <div
+                :class="{
+                  'q-ma-sm': $q.screen.gt.sm,
+                  'q-ma-lg': $q.screen.gt.md,
+                }"
+              >
+                <q-img
+                  :src="headerImg"
+                  class="hut-image"
+                  :class="{ 'shadow-8': $q.screen.gt.sm }"
+                >
+                  <WdSourceButtons
+                    v-if="hut.sources && $q.screen.gt.xs"
+                    :hut="hut"
+                    class="column"
+                    background
+                    style="position: absolute; top: 12px; left: 12px"
+                  />
+                  <div class="absolute-bottom-right row attribution">
+                    <q-icon class="q-mr-sm" name="eva-camera-outline" />
+                    <div class="img-link" v-html="hut.photos_attribution" />
+                  </div>
+                </q-img>
+              </div>
+            </div>
+            <div class="col-md-12 col-sm-4 col-4">
+              <div
+                class="row items-start justify-start q-gutter-sm"
+                :class="{
+                  'justify-center': $q.screen.gt.sm,
+                  'q-gutter-lg': $q.screen.gt.sm,
+                }"
+              >
+                <WdHutTypeChip
+                  class="shadow-0 col-md-6 col-sm-12 col-12"
+                  :type="hut.type_open"
+                  :capacity="hut.capacity_open"
+                  :open="undefined"
+                  color="green-4"
+                  color2="green-2"
+                />
+                <WdHutTypeChip
+                  class="shadow-0 col-md-6 col-sm-12 col-12"
+                  :type="hut.type_closed"
+                  :capacity="hut.capacity_closed"
+                  :open="true"
+                  color="brown-3"
+                  color2="brown-2"
+                />
+                <!-- <WdHutType
+                  class="shadow-0 col-md-6 col-sm-12 col-12"
+                  :type="hut.type_open"
+                  :capacity="hut.capacity_open"
+                  :open="undefined"
+                  color="green-3"
+                />
+                <WdHutType
+                  class="shadow-0 col-md-6 col-sm-12 col-12"
+                  :type="hut.type_closed"
+                  :capacity="hut.capacity_closed"
+                  :open="undefined"
+                  color="blue-2"
+                /> -->
+              </div>
+            </div>
+          </div>
+          <body class="text-body2 q-my-lg">
+            {{ hut.description }}
+          </body>
+          <WdHutOpenMonthly
+            :open_monthly="hut.open_monthly"
+            :type_open="hut.type_open"
+            :type_closed="hut.type_closed"
+          />
+        </q-page>
+      </q-scroll-area>
+    </q-page-container>
+    <q-footer class="footer-toolbar">
+      <WdHutToolbar :hut="hut" v-if="!hutToolbarTop">
+        <WdSourceButtons :hut="hut" />
+      </WdHutToolbar>
+    </q-footer>
+  </q-layout>
+</template>
