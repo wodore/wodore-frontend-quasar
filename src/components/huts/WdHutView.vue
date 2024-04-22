@@ -172,7 +172,17 @@ const addHeaderShadow: IntersectionValue = (entry) => {
       </q-toolbar>
     </q-header>
     <q-page-container class="fit" style="height: 100%">
-      <q-scroll-area style="height: 100%" class="fit">
+      <q-scroll-area
+        visible
+        :thumb-style="{
+          width: '6px',
+          backgroundColor: '#998019',
+          opacity: '0.5',
+          borderRadius: '8px 0 0 8px',
+        }"
+        style="height: 100%"
+        class="fit"
+      >
         <q-page style="height: 100%" class="q-px-md fit" v-if="hut">
           <!-- used to add shadow to header -->
           <h2
@@ -257,6 +267,7 @@ const addHeaderShadow: IntersectionValue = (entry) => {
           <body class="text-body2 q-my-lg">
             {{ hut.description }}
           </body>
+
           <WdHutOpenMonthly
             :open_monthly="hut.open_monthly"
             :type_open="hut.type_open"

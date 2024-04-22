@@ -79,41 +79,24 @@ function getUnknownIcon(): string {
 <template>
   <div v-if="props.open_monthly">
     <div class="text-subtitle1 text-accent">{{ $t('hut_type') }}</div>
-    <div class="row monthly overflow-hidden">
+    <div class="row monthly overflow-hidden" v-if="!$q.platform.is.mobile">
       <div v-for="m in monthList" :key="m" class="col-md-2 col-sm-1 col-2">
         <WdMonthly :icons="monthOpenIcon(m)" :month="m" />
       </div>
     </div>
-
-    <!-- <div class="text-subtitle1 text-accent">{{ $t('hut_type') }}</div>
-    <q-scroll-area style="height: 70px" class="q-ma-xs q-mt-md">
-      <q-markup-table dense flat separator="vertical">
-        <thead>
-          <tr>
-            <th v-for="m in monthNames" :key="m[0]" class="text-center">
-              {{ m[1] }}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="monthNames">
-            <td v-for="m in monthNames" :key="m[0]" class="text-center">
-              <q-icon
-                v-for="img in hutAnswerIcons[
-                  props.open_monthly['month_' + m[0]] as
-                    | 'yes'
-                    | 'maybe'
-                    | 'no'
-                    | 'unknown'
-                ]"
-                :key="img"
-                :name="img"
-                size="20px"
-              />
-            </td>
-          </tr>
-        </tbody>
-      </q-markup-table>
-    </q-scroll-area> -->
+    <q-scroll-area
+      style="height: 55px"
+      class="monthly overflow-hidden"
+      v-if="$q.platform.is.mobile"
+      :horizontal-thumb-style="{ height: '3px' }"
+    >
+      <div style="height: 50px; width: 700px">
+        <div class="row monthly overflow-hidden">
+          <div v-for="m in monthList" :key="m" class="col-1">
+            <WdMonthly :icons="monthOpenIcon(m)" :month="m" />
+          </div>
+        </div>
+      </div>
+    </q-scroll-area>
   </div>
 </template>
