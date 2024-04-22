@@ -7,11 +7,8 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
-    copy: typeof import('./src/components/huts/WdHutTypeChip copy.vue')['default']
     IconFa6SolidCopy: typeof import('~icons/fa6-solid/copy')['default']
     IconFa6SolidLocationCrosshairs: typeof import('~icons/fa6-solid/location-crosshairs')['default']
-    IconFaLocationCrosshairs: typeof import('~icons/fa/location-crosshairs')['default']
-    IconHeroiconsOutlineClipboardCopy: typeof import('~icons/heroicons-outline/clipboard-copy')['default']
     IconMingcuteMountain2Fill: typeof import('~icons/mingcute/mountain2-fill')['default']
     QIconify: typeof import('./src/components/quasar/QIconify.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
