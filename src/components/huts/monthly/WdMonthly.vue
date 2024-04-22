@@ -16,29 +16,33 @@ const monthNumber = computed<number>(() => parseInt(props.month));
 </script>
 <style lang="scss" scoped>
 .card {
-  border-radius: 5px;
-  min-width: 60px;
-  max-width: 100px;
-  border: 1px solid rgba(color('primary', 400), 0.1);
-  background-color: rgba(color('primary', 200), 0.2);
+  //border-radius: 5px;
+  min-width: 50px;
+  max-width: 200px;
+  height: 100%;
+  //border: 1px solid rgba(color('primary', 400), 0.1);
 }
 .header {
   background-color: black;
   width: 100%;
-  border-radius: 5px;
+  //border-radius: 5px;
 }
-
-@import 'month.css';
 </style>
 <template>
-  <div class="card column items-center overflow-hidden">
-    <div class="text-caption header text-left row" :class="'month_' + month">
+  <div
+    class="card column items-center overflow-hidden q-mb-xs"
+    :class="'month_' + month + '--gradient-light'"
+  >
+    <div
+      class="text-caption header text-left row"
+      :class="'month_' + month + '--gradient'"
+    >
       <span class="q-px-xs"> </span>
       <b> {{ monthNumber }}</b> <q-space />
       {{ monthName }}
       <span class="q-px-xs"> </span>
     </div>
-    <div class="q-ma-xs">
+    <div class="q-ma-xs row items-center justify-center">
       <q-icon size="24px" v-for="i in icons" :key="i" :name="i" />
     </div>
   </div>

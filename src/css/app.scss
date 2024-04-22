@@ -39,6 +39,10 @@
     text-shadow: 0px 0px 4px rgba(color($name, 700), 0.7);
   }
 }
+
+// months colors
+@import './months.scss';
+
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // QUASAR overwrites
 @import './quasar.scss';

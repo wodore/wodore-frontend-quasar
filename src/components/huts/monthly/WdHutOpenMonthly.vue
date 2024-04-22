@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { ref, defineProps, withDefaults } from 'vue';
+import { ref, computed, withDefaults } from 'vue';
+import { useQuasar } from 'quasar';
+const $q = useQuasar();
 //import { HutTypeSchema, OpenMonthlySchema } from '@/clients/wodore_v1';
 //import { storeToRefs } from 'pinia';
 //import { useI18n } from 'vue-i18n';
@@ -18,12 +20,12 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {});
 //const { hutTypesRecords } = storeToRefs(useHutTypesStore());
 
-const unknown_type_icon = ref('wd-question-mark');
+const isMobile = computed(() => $q.platform.is.mobile);
 const hutAnswerIcons = ref<Record<schemasWodore['AnswerEnum'], string[]>>({
-  yes: ['img:' + props.type_open?.symbol],
+  yes: [getOpenIcon()],
   no: [getClosedIcon()],
-  maybe: ['img:' + props.type_open?.symbol, getClosedIcon()],
-  unknown: [unknown_type_icon.value],
+  maybe: [getOpenIcon(), getClosedIcon()],
+  unknown: [getUnknownIcon()],
 });
 
 function isMonthOpen(
@@ -42,18 +44,43 @@ function monthOpenIcon(month: TypeMonths): string[] {
 }
 
 function getClosedIcon(): string {
-  return props.type_closed
-    ? 'img:' + props.type_closed.symbol
-    : unknown_type_icon.value;
-  //: 'fa-solid fa-question';
+  if (isMobile.value) {
+    return props.type_closed
+      ? 'img:' + props.type_closed.symbol
+      : getUnknownIcon();
+  } else {
+    return props.type_closed
+      ? 'img:' + props.type_closed.symbol_simple
+      : getUnknownIcon();
+  }
+}
+
+function getOpenIcon(): string {
+  if (isMobile.value) {
+    return 'img:' + props.type_open?.symbol;
+  } else {
+    return 'img:' + props.type_open?.symbol_simple;
+  }
+}
+
+function getUnknownIcon(): string {
+  if (isMobile.value) {
+    return 'img:https://api.wodore.com/media/huts/types/symbols/detailed/unknown.png';
+  } else {
+    return 'img:https://api.wodore.com/media/huts/types/symbols/simple/unknown.png';
+  }
 }
 </script>
-<style scoped></style>
+<style scoped>
+.monthly {
+  border-radius: 5px;
+}
+</style>
 <template>
   <div v-if="props.open_monthly">
     <div class="text-subtitle1 text-accent">{{ $t('hut_type') }}</div>
-    <div class="row q-gutter-xs">
-      <div v-for="m in monthList" :key="m" class="col-auto">
+    <div class="row monthly overflow-hidden">
+      <div v-for="m in monthList" :key="m" class="col-md-2 col-sm-1 col-2">
         <WdMonthly :icons="monthOpenIcon(m)" :month="m" />
       </div>
     </div>

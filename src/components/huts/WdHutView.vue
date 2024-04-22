@@ -36,11 +36,12 @@ watchEffect(() => {
   }
 });
 
-const headerImg = ref('');
+const headerImg = ref<string | undefined>(undefined);
 
 const hutToolbarTop = computed(() => $q.screen.gt.sm);
-const defaultImg =
-  'https://cdn.pixabay.com/photo/2020/07/20/21/49/moist-5424448_1280.jpg';
+//const defaultImg =
+//  'https://cdn.pixabay.com/photo/2020/07/20/21/49/moist-5424448_1280.jpg';
+
 watchEffect(() => {
   if (hut.value?.photos) {
     headerImg.value = getImageUrl(hut.value?.photos, {
@@ -50,12 +51,13 @@ watchEffect(() => {
       //filters: ['grayscale()'],
     });
   } else {
-    headerImg.value = getImageUrl(defaultImg, {
-      size: '600x400',
-      smart: true,
-      fit: true,
-      filters: ['blur(4)'],
-    });
+    headerImg.value = undefined;
+    //getImageUrl(defaultImg, {
+    //  size: '600x400',
+    //  smart: true,
+    //  fit: true,
+    //  filters: ['blur(4)'],
+    //});
   }
 });
 
@@ -192,6 +194,7 @@ const addHeaderShadow: IntersectionValue = (entry) => {
                 }"
               >
                 <q-img
+                  v-if="headerImg"
                   :src="headerImg"
                   class="hut-image"
                   :class="{ 'shadow-8': $q.screen.gt.sm }"
@@ -214,7 +217,7 @@ const addHeaderShadow: IntersectionValue = (entry) => {
               <div
                 class="row items-start justify-start q-gutter-sm"
                 :class="{
-                  'justify-center': $q.screen.gt.sm,
+                  'justify-center': $q.screen.gt.sm && headerImg,
                   'q-gutter-lg': $q.screen.gt.sm,
                 }"
               >

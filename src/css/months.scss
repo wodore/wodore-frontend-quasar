@@ -1,0 +1,103 @@
+/* https://chat.openai.com/share/8d3a31df-c32f-4c6e-bbdd-7d6f54758350 */
+
+$winter-color: #bfefff; // Light blue representing the cold winter skies
+$spring-color: #ffd699; // Warm peach symbolizing the onset of spring
+$summer-color: #ffe9a8; // Bright yellow representing the warmth of summer
+$autumn-color: #ffcccc; // Soft pink indicating the transition to autumn
+
+$months-bg: (
+  month_01: $winter-color,
+  // January: Light blue representing the cold winter skies
+  month_02: $winter-color,
+  // February: Smooth transition from winter to spring
+  month_03: mix($winter-color, $spring-color, 50%),
+  // March: Smooth transition from winter to spring
+  month_04: $spring-color,
+  // April: Smooth transition from spring to summer
+  month_05: mix($spring-color, $summer-color, 90%),
+  // May: Smooth transition from spring to summer
+  month_06: $summer-color,
+  // June: Smooth transition from summer to autumn
+  month_07: mix($summer-color, $autumn-color, 80%),
+  // July: Smooth transition from summer to autumn
+  month_08: mix($summer-color, $autumn-color, 40%),
+  // August: Soft pink indicating the transition to autumn
+  month_09: $autumn-color,
+  // September: Soft pink indicating the transition to autumn
+  month_10: $autumn-color,
+  // October: Soft pink indicating the transition to autumn
+  month_11: mix($autumn-color, $winter-color, 10%),
+  // November: Smooth transition from autumn to winter
+  month_12: mix($autumn-color, $winter-color, 20%)
+    // December: Smooth transition from autumn to winter,,,,,,,,,,,,,,,,,,,,,
+);
+
+$months-fg: (
+  month_01: #333,
+  month_02: #333,
+  month_03: #333,
+  month_04: #333,
+  month_05: #333,
+  month_06: #333,
+  month_07: #333,
+  month_08: #333,
+  month_09: #333,
+  month_10: #333,
+  month_11: #333,
+  month_12: #333,
+);
+
+$grad-start: 30%;
+$grad-end: 70%;
+$darken-amount: 20%;
+$lighten-amount: 5%;
+$opacity-default: 0.95;
+$opacity-dark: 0.2;
+$opacity-light: 0.7;
+
+@each $month, $color in $months-bg {
+  $keys: map-keys($months-bg);
+  $index: index($keys, $month);
+  $prev-index: if($index == 1, length($keys), $index - 1);
+  $next-index: if($index == length($keys), 1, $index + 1);
+  $prev-month: nth($keys, $prev-index);
+  $next-month: nth($keys, $next-index);
+  $prev-color: map-get($months-bg, $prev-month);
+  $next-color: map-get($months-bg, $next-month);
+
+  $start-color: mix($prev-color, $color, 50%);
+  $end-color: mix($color, $next-color, 50%);
+
+  .#{$month}--gradient {
+    background: linear-gradient(
+      to right,
+      rgba($start-color, $opacity-default) 0%,
+      rgba($color, $opacity-default) $grad-start,
+      rgba($color, $opacity-default) $grad-end,
+      rgba($end-color, $opacity-default) 100%
+    );
+    color: map-get($months-fg, $month); /* Text color */
+  }
+
+  .#{$month}--gradient-dark {
+    background: linear-gradient(
+      to right,
+      rgba(darken($start-color, $darken-amount), $opacity-dark) 0%,
+      rgba(darken($color, $darken-amount), $opacity-dark) $grad-start,
+      rgba(darken($color, $darken-amount), $opacity-dark) $grad-end,
+      rgba(darken($end-color, $darken-amount), $opacity-dark) 100%
+    );
+    color: map-get($months-fg, $month); /* Text color */
+  }
+
+  .#{$month}--gradient-light {
+    background: linear-gradient(
+      to right,
+      rgba(lighten($start-color, $lighten-amount), $opacity-light) 0%,
+      rgba(lighten($color, $lighten-amount), $opacity-light) $grad-start,
+      rgba(lighten($color, $lighten-amount), $opacity-light) $grad-end,
+      rgba(lighten($end-color, $lighten-amount), $opacity-light) 100%
+    );
+    color: map-get($months-fg, $month); /* Text color */
+  }
+}
