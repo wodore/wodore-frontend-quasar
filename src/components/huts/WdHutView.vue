@@ -5,7 +5,6 @@ import { copyToClipboard } from 'quasar';
 import { IntersectionValue, useQuasar } from 'quasar';
 import getImageUrl from 'src/services/imageService';
 import { clientWodore, schemasWodore } from 'src/clients';
-import WdHutOpenMonthly from './WdHutOpenMonthly.vue';
 
 const $q = useQuasar();
 //const router = useRouter();

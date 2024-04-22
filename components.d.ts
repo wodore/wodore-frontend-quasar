@@ -7,15 +7,19 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
+    copy: typeof import('./src/components/huts/WdHutTypeChip copy.vue')['default']
     IconFa6SolidCopy: typeof import('~icons/fa6-solid/copy')['default']
     IconFa6SolidLocationCrosshairs: typeof import('~icons/fa6-solid/location-crosshairs')['default']
+    IconFaLocationCrosshairs: typeof import('~icons/fa/location-crosshairs')['default']
+    IconHeroiconsOutlineClipboardCopy: typeof import('~icons/heroicons-outline/clipboard-copy')['default']
     IconMingcuteMountain2Fill: typeof import('~icons/mingcute/mountain2-fill')['default']
     QIconify: typeof import('./src/components/quasar/QIconify.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     WdFeedbackButton: typeof import('./src/components/feedback/WdFeedbackButton.vue')['default']
     WdFeedbackForm: typeof import('./src/components/feedback/WdFeedbackForm.vue')['default']
-    WdHutOpenMonthly: typeof import('./src/components/huts/WdHutOpenMonthly.vue')['default']
+    WdHutOpenMonthly: typeof import('./src/components/huts/monthly/WdHutOpenMonthly.vue')['default']
+    WdHutOpenMonthlyBack: typeof import('./src/components/huts/WdHutOpenMonthlyBack.vue')['default']
     WdHutToolbar: typeof import('./src/components/huts/WdHutToolbar.vue')['default']
     WdHutType: typeof import('./src/components/huts/WdHutType.vue')['default']
     WdHutTypeChip: typeof import('./src/components/huts/WdHutTypeChip.vue')['default']
@@ -24,6 +28,7 @@ declare module 'vue' {
     WdMapMenu: typeof import('./src/components/map/WdMapMenu.vue')['default']
     WdMapView: typeof import('./src/components/map/WdMapView.vue')['default']
     WdMenuButton: typeof import('./src/components/toolbar/WdMenuButton.vue')['default']
+    WdMonthly: typeof import('./src/components/huts/monthly/WdMonthly.vue')['default']
     WdSourceButtons: typeof import('./src/components/huts/WdSourceButtons.vue')['default']
     WdToolbarButton: typeof import('./src/components/toolbar/WdToolbarButton.vue')['default']
     WodoreLogo: typeof import('./src/components/wodore/WodoreLogo.vue')['default']
