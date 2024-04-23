@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
-import { useMonthly, TypeMonths } from './index';
+import { useMonthly, TypeMonths, TypeMonthIconsPath } from './index';
 
 const { getMonthName } = useMonthly();
 
 interface Props {
   month: TypeMonths;
-  icons: string[];
+  icons: TypeMonthIconsPath;
 }
 const props = defineProps<Props>();
 
@@ -37,8 +37,15 @@ const monthName = computed(() => getMonthName(props.month));
     >
       {{ monthName }}
     </div>
-    <div class="q-ma-xs row items-center justify-center">
-      <q-icon size="24px" v-for="i in icons" :key="i" :name="i" />
+    <div class="q-ma-xs row items-center justify-center no-wrap">
+      <q-icon size="24px" :name="icons.main0" />
+      <q-icon size="24px" v-if="icons.main1" :name="icons.main1" />
+      <q-icon
+        size="20px"
+        v-if="icons.minor"
+        :name="icons.minor"
+        style="transform: translate(-2px, 7px)"
+      />
     </div>
   </div>
 </template>

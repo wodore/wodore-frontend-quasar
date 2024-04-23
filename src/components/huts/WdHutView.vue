@@ -94,14 +94,15 @@ const addHeaderShadow: IntersectionValue = (entry) => {
 .hut-image {
   border-radius: 25px !important;
   max-width: 300px;
-  min-width: 300px;
+  min-width: 200px;
 }
 @media (width <= $breakpoint-xs-max) {
   .hut-image {
     max-width: 300px;
-    min-width: 200px;
+    min-width: 100px;
   }
 }
+
 @media (width >= $breakpoint-sm-max) {
   .hut-image {
     max-width: 100%;
@@ -196,7 +197,7 @@ const addHeaderShadow: IntersectionValue = (entry) => {
           </h2>
 
           <div class="row items-start row q-gutter-sm">
-            <div class="col-md-12 col-sm-auto col-auto">
+            <div class="col-md-12 col-sm-7 col-7">
               <div
                 :class="{
                   'q-ma-sm': $q.screen.gt.sm,
@@ -209,13 +210,6 @@ const addHeaderShadow: IntersectionValue = (entry) => {
                   class="hut-image"
                   :class="{ 'shadow-8': $q.screen.gt.sm }"
                 >
-                  <WdSourceButtons
-                    v-if="hut.sources && $q.screen.gt.xs"
-                    :hut="hut"
-                    class="column"
-                    background
-                    style="position: absolute; top: 12px; left: 12px"
-                  />
                   <div class="absolute-bottom-right row attribution">
                     <q-icon class="q-mr-sm" name="eva-camera-outline" />
                     <div class="img-link" v-html="hut.photos_attribution" />
