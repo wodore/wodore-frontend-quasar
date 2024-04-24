@@ -15,7 +15,7 @@
     "dev:spa": "quasar dev -m spa",
     "dev:ssr": "quasar dev -m ssr",
     "dev:pwa": "quasar dev -m pwa",
-    "build": "yarn run build:spa",
+    "build": "yarn run build:pwa",
     "build:spa": "quasar build -m spa",
     "build:ssr": "quasar build -m ssr",
     "build:pwa": "quasar build -m pwa",

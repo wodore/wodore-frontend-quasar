@@ -2,7 +2,7 @@
   "params": {
     "skipTrim": false,
     "themeColor": "315e47",
-    "icon": "src/assets/wodore-design/logo/exports/icongenie/favicon.png",
+    "icon": "src/assets/wodore-design/logo/exports/icongenie/favicon_accent.png",
     "include": [
       "spa",
       "pwa",
