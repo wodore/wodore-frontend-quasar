@@ -1,0 +1,18 @@
+{
+  "params": {
+    "skipTrim": false,
+    "themeColor": "315e47",
+    "icon": "src/assets/wodore-design/logo/exports/icongenie/splashscreen2.png",
+    "filter": "splashscreen",
+    "include": [
+      "spa",
+      "pwa",
+      "ssr"
+    ],
+    "padding": [
+      0,
+      0
+    ]
+  },
+  "assets": []
+}

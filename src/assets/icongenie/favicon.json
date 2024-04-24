@@ -1,0 +1,17 @@
+{
+  "params": {
+    "skipTrim": false,
+    "themeColor": "315e47",
+    "icon": "src/assets/wodore-design/logo/exports/icongenie/favicon.png",
+    "include": [
+      "spa",
+      "pwa",
+      "ssr"
+    ],
+    "padding": [
+      0,
+      0
+    ]
+  },
+  "assets": []
+}

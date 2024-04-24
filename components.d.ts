@@ -7,6 +7,7 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
+    IconEvaExternalLinkFill: typeof import('~icons/eva/external-link-fill')['default']
     IconFa6SolidCopy: typeof import('~icons/fa6-solid/copy')['default']
     IconFa6SolidLocationCrosshairs: typeof import('~icons/fa6-solid/location-crosshairs')['default']
     IconMingcuteMountain2Fill: typeof import('~icons/mingcute/mountain2-fill')['default']
@@ -15,6 +16,7 @@ declare module 'vue' {
     RouterView: typeof import('vue-router')['RouterView']
     WdFeedbackButton: typeof import('./src/components/feedback/WdFeedbackButton.vue')['default']
     WdFeedbackForm: typeof import('./src/components/feedback/WdFeedbackForm.vue')['default']
+    WdHutHeader: typeof import('./src/components/huts/WdHutHeader.vue')['default']
     WdHutOpenMonthly: typeof import('./src/components/huts/monthly/WdHutOpenMonthly.vue')['default']
     WdHutToolbar: typeof import('./src/components/huts/WdHutToolbar.vue')['default']
     WdHutType: typeof import('./src/components/huts/WdHutType.vue')['default']

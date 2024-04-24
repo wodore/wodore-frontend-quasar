@@ -155,23 +155,11 @@ const addHeaderShadow: IntersectionValue = (entry) => {
     :class="$q.dark.isActive ? 'bg-grey-9' : 'bg-grey-3'"
     style="height: 100%"
   >
-    <q-header
-      class="no-background"
-      :class="{ 'shadow-2': headerShadow }"
-      style="transition: box-shadow 0.2s ease-in-out"
-    >
+    <WdHutHeader :hut="hut" :ontop="headerShadow">
       <WdHutToolbar :hut="hut" v-if="hutToolbarTop">
         <WdSourceButtons :hut="hut" class="q-ml-xl" />
       </WdHutToolbar>
-      <q-toolbar class="" v-if="hut">
-        <q-toolbar-title
-          style="text-wrap: wrap; margin-top: 12px; margin-left: 3px"
-          class="text-primary-900"
-        >
-          <h1 class="text-h6 q-ma-none q-mt-xs">{{ hut.name }}</h1>
-        </q-toolbar-title>
-      </q-toolbar>
-    </q-header>
+    </WdHutHeader>
     <q-page-container class="fit" style="height: 100%">
       <q-scroll-area
         visible
@@ -241,20 +229,6 @@ const addHeaderShadow: IntersectionValue = (entry) => {
                   color="brown-3"
                   color2="brown-2"
                 />
-                <!-- <WdHutType
-                  class="shadow-0 col-md-6 col-sm-12 col-12"
-                  :type="hut.type_open"
-                  :capacity="hut.capacity_open"
-                  :open="undefined"
-                  color="green-3"
-                />
-                <WdHutType
-                  class="shadow-0 col-md-6 col-sm-12 col-12"
-                  :type="hut.type_closed"
-                  :capacity="hut.capacity_closed"
-                  :open="undefined"
-                  color="blue-2"
-                /> -->
               </div>
             </div>
           </div>

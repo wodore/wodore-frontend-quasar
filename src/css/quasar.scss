@@ -72,6 +72,19 @@
     line-height: map-get($value, 'line-height');
     letter-spacing: map-get($value, 'letter-spacing');
     font-family: map-get($value, 'font-family');
+    a:active,
+    a:visited,
+    a:hover,
+    a:link,
+    a {
+      //color: rgb(171, 171, 171);
+      color: unset;
+      text-decoration: underline dotted;
+      text-decoration-color: color('accent', 800);
+    }
+    a:hover {
+      text-decoration-color: color('accent', 300);
+    }
   }
 }
 
