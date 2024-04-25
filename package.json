@@ -1,8 +1,8 @@
 {
-  "name": "wodore",
+  "name": "Wodore",
   "version": "0.0.1",
   "description": "Find the next best location in the mountains.",
-  "productName": "wodore",
+  "productName": "Wodore",
   "author": "Tobias Burgherr <tb@wodore.com>",
   "type": "module",
   "private": true,
