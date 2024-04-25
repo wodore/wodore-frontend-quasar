@@ -1,5 +1,5 @@
 {
-  "name": "wodore-frontend-quasar",
+  "name": "wodore",
   "version": "0.0.1",
   "description": "Find the next best location in the mountains.",
   "productName": "wodore",
@@ -30,6 +30,7 @@
     "gen:icons": "fantasticon src/extras/icons/svg/build/fixed -o src/extras/icons/dist -p wd --normalize -t woff woff2",
     "gen:icons:watch": "watch 'yarn run gen:icons' src/extras/icons/svg/source",
     "postgen:icons": "yarn run eslint --fix src/extras/icons/dist/icons.ts",
+    "pregen:favs": "icongenie generate -p src/assets/icongenie/icons.json",
     "gen:favs": "icongenie generate -p src/assets/icongenie/favicon.json",
     "postgen:favs": "icongenie generate -p src/assets/icongenie/splashscreen.json"
   },
