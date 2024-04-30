@@ -1,24 +1,21 @@
 {
   "params": {
     "skipTrim": true,
-    "themeColor": "bfab25",
-    "icon": "src/assets/wodore-design/logo/exports/icongenie/favicon_primary.png",
+    "themeColor": "8fd6b7",
+    "icon": "src/assets/wodore-design/logo/exports/icongenie/favicon_maskable.png",
     "padding": [
-      10,
-      10
+      0,
+      0
     ]
   },
   "assets": [
     {
       "generator": "png",
-      "name": "icon-{size}x{size}-maskable.png",
+      "name": "icon-maskable-{size}x{size}.png",
       "folder": "public/icons",
       "background": true,
       "sizes": [
-        128,
         192,
-        256,
-        384,
         512
       ]
     }
