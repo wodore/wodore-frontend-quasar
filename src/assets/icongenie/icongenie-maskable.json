@@ -16,6 +16,8 @@
       "background": true,
       "sizes": [
         192,
+        256,
+        384,
         512
       ]
     }

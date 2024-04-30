@@ -1,7 +1,7 @@
 {
   "params": {
     "skipTrim": true,
-    "themeColor": "8fd6b7",
+    "themeColor": "315e47",
     "icon": "src/assets/wodore-design/logo/exports/icongenie/favicon_shape.png",
     "padding": [
       0,
@@ -11,28 +11,12 @@
   "assets": [
     {
       "generator": "png",
-      "name": "apple-icon-{size}x{size}.png",
-      "folder": "public/icons",
-      "background": true,
-      "sizes": [
-        120,
-        152,
-        167,
-        180
-      ]
-    },
-    {
-      "generator": "svg",
-      "name": "safari-pinned-tab.svg",
-      "folder": "public/icons"
-    },
-    {
-      "generator": "png",
       "name": "ms-icon-{size}x{size}.png",
       "folder": "public/icons",
       "sizes": [
         144
-      ]
+      ],
+      "tag": "<meta name=\"msapplication-TileImage\" content=\"/icons/{name}\" />"
     },
     {
       "generator": "png",
