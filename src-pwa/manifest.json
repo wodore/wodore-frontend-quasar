@@ -11,7 +11,7 @@
   ],
   "icons": [
     {
-      "src": "/icons/favicon_shape.svg",
+      "src": "/favicon_shape.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
@@ -41,7 +41,7 @@
       "purpose": "any"
     },
     {
-      "src": "/icons/favicon_maskable.svg",
+      "src": "/favicon_maskable.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "maskable"
