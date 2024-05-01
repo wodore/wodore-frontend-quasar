@@ -1,0 +1,65 @@
+{
+  "masterPicture": "./src/assets/wodore-design/logo/exports/icongenie/favicon_simple.png",
+  "iconsPath": "/",
+  "design": {
+    "ios": {
+      "masterPicture": "./src/assets/wodore-design/logo/exports/icongenie/favicon_maskable.png",
+      "pictureAspect": "noChange",
+      "assets": {
+        "ios6AndPriorIcons": false,
+        "ios7AndLaterIcons": false,
+        "precomposedIcons": false,
+        "declareOnlyDefaultIcon": true
+      },
+      "appName": "Wodore"
+    },
+    "desktopBrowser": {
+      "design": "raw"
+    },
+    "windows": {
+      "masterPicture": "./src/assets/wodore-design/logo/exports/icongenie/favicon_mono.png",
+      "pictureAspect": "whiteSilhouette",
+      "backgroundColor": "#315e47",
+      "onConflict": "override",
+      "assets": {
+        "windows80Ie10Tile": false,
+        "windows10Ie11EdgeTiles": {
+          "small": false,
+          "medium": true,
+          "big": false,
+          "rectangle": false
+        }
+      },
+      "appName": "Wodore"
+    },
+    "androidChrome": {
+      "masterPicture": "./src/assets/wodore-design/logo/exports/icongenie/favicon_shape.png",
+      "pictureAspect": "noChange",
+      "themeColor": "#ffffff",
+      "manifest": {
+        "name": "Wodore",
+        "display": "standalone",
+        "orientation": "notSet",
+        "onConflict": "override",
+        "declared": false
+      },
+      "assets": {
+        "legacyIcon": false,
+        "lowResolutionIcons": false
+      }
+    },
+    "safariPinnedTab": {
+      "masterPicture": "./src/assets/wodore-design/logo/exports/icongenie/favicon_mono.png",
+      "pictureAspect": "silhouette",
+      "themeColor": "#315e47"
+    }
+  },
+  "settings": {
+    "compression": 2,
+    "scalingAlgorithm": "Mitchell",
+    "errorOnImageTooSmall": false,
+    "readmeFile": false,
+    "htmlCodeFile": false,
+    "usePathAsIs": false
+  }
+}

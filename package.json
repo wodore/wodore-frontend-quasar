@@ -30,7 +30,8 @@
     "gen:icons": "fantasticon src/extras/icons/svg/build/fixed -o src/extras/icons/dist -p wd --normalize -t woff woff2",
     "gen:icons:watch": "watch 'yarn run gen:icons' src/extras/icons/svg/source",
     "postgen:icons": "yarn run eslint --fix src/extras/icons/dist/icons.ts",
-    "gen:favs": "icongenie generate -p src/assets/icongenie/"
+    "gen:favs": "icongenie generate -p src/assets/icongenie/",
+    "postgen:favs": "real-favicon generate src/assets/realfavgen.json src/assets/realfavgen_result.json public/"
   },
   "dependencies": {
     "@fontsource/roboto-condensed": "^5.0.15",
@@ -60,6 +61,7 @@
     "@typescript-eslint/parser": "^6.6.0",
     "@vue/compiler-sfc": "^3.4.23",
     "autoprefixer": "^10.4.2",
+    "cli-real-favicon": "^0.0.8",
     "dotenv": "^16.4.5",
     "eslint": "^8.11.0",
     "eslint-config-prettier": "^9.0.0",
