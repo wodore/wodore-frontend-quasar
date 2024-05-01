@@ -1,0 +1,20 @@
+{
+  "params": {
+    "skipTrim": false,
+    "themeColor": "8fd6b7",
+    "svgColor": "000",
+    "icon": "src/assets/wodore-design/logo/exports/icongenie/favicon_mono.png",
+    "padding": [
+      20,
+      20
+    ]
+  },
+  "assets": [
+    {
+      "generator": "svg",
+      "name": "safari-pinned-tab.svg",
+      "folder": "public",
+      "tag": "<link rel=\"mask-icon\" color=\"#315e47\" href=\"{name}\">"
+    }
+  ]
+}

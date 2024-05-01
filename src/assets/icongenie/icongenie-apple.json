@@ -1,38 +1,23 @@
 {
   "params": {
-    "skipTrim": true,
+    "skipTrim": false,
     "themeColor": "8fd6b7",
     "icon": "src/assets/wodore-design/logo/exports/icongenie/favicon_maskable.png",
     "padding": [
-      0,
-      0
+      20,
+      20
     ]
   },
   "assets": [
     {
       "generator": "png",
-      "name": "apple-icon-{size}x{size}.png",
-      "folder": "public/icons",
+      "name": "apple-touch-icon.png",
+      "folder": "public",
       "background": true,
       "sizes": [
-        57,
-        60,
-        72,
-        76,
-        114,
-        120,
-        144,
-        152,
-        167,
         180
       ],
-      "tag": "<link rel=\"apple-touch-icon\" sizes=\"{size}x{size}\" href=\"icons/{name}\">"
-    },
-    {
-      "generator": "svg",
-      "name": "safari-pinned-tab.svg",
-      "folder": "public/icons",
-      "tag": "<link rel=\"mask-icon\" color=\"#8fd6b7\" href=\"icons/{name}\">"
+      "tag": "<link rel=\"apple-touch-icon\" sizes=\"{size}x{size}\" href=\"{name}\">"
     }
   ]
 }

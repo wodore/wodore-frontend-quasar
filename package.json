@@ -31,7 +31,7 @@
     "gen:icons:watch": "watch 'yarn run gen:icons' src/extras/icons/svg/source",
     "postgen:icons": "yarn run eslint --fix src/extras/icons/dist/icons.ts",
     "gen:favs": "icongenie generate -p src/assets/icongenie/",
-    "postgen:favs": "real-favicon generate src/assets/realfavgen.json src/assets/realfavgen_result.json public/"
+    "gen:realfavs": "real-favicon generate src/assets/realfavgen.json src/assets/realfavgen_result.json public/realfavgen"
   },
   "dependencies": {
     "@fontsource/roboto-condensed": "^5.0.15",

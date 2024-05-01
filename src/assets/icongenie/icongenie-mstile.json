@@ -1,0 +1,22 @@
+{
+  "params": {
+    "skipTrim": true,
+    "themeColor": "315e47",
+    "icon": "src/assets/wodore-design/logo/exports/icongenie/favicon_mono_white.png",
+    "padding": [
+      70,
+      70
+    ]
+  },
+  "assets": [
+    {
+      "generator": "png",
+      "name": "mstile-150x150.png",
+      "folder": "public",
+      "sizes": [
+        270
+      ],
+      "tag": "<meta name=\"msapplication-TileColor\" content=\"#315e47\" />"
+    }
+  ]
+}
