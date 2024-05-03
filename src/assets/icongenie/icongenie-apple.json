@@ -27,12 +27,11 @@
       "background": true,
       "sizes": [
         180
-      ],
-      "tag": "<link rel=\"apple-touch-icon\" sizes=\"{size}x{size}\" href=\"{name}\">"
+      ]
     },
     {
       "generator": "png",
-      "name": "apple-touch-icon-{size}x{size}.png",
+      "name": "apple-icon-{size}x{size}.png",
       "folder": "public/icons",
       "background": true,
       "sizes": [
