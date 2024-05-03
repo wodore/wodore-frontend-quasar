@@ -22,7 +22,7 @@
     "serve:spa": "quasar serve --history --port 9000 -H localhost --cors dist/spa/",
     "serve:ssr": "quasar serve --history --port 9000 -H localhost --cors dist/ssr/",
     "serve:pwa": "quasar serve --history --port 9000 -H localhost --cors dist/pwa/",
-    "serve": "yarn run serve:spa",
+    "serve": "yarn run serve:pwa",
     "gen:api": "openapi-typescript https://api.wodore.com/v1/openapi.json -o ./src/clients/wodore_v1.d.ts",
     "preicons:fix": "npm exec -c 'rm -rf src/extras/icons/svg/build/fixed/*'",
     "icons:fix": "yarn run oslllo-svg-fixer -s src/extras/icons/svg/source/ -d src/extras/icons/svg/build/fixed --sp",

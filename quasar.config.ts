@@ -51,6 +51,7 @@ export default configure((ctx) => {
       //'material-icons', // optional, you are not bound to it
     ],
 
+    htmlVariables: { faviconVersion: 1 },
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#build
     build: {
       target: {
@@ -120,6 +121,7 @@ export default configure((ctx) => {
           { resolvers: [IconsResolver({ componentPrefix: 'icon' })] },
         ],
         ['vite-tsconfig-paths', {}],
+        // ['vite-plugin-html-resolve-alias', {}], // still some alias issues
       ],
     },
 
