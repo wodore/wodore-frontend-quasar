@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { schemasWodore } from 'src/clients';
+import { schemasWodore } from '@clients/index';
 
 interface Props {
   type:

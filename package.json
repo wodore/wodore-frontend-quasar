@@ -1,5 +1,5 @@
 {
-  "name": "Wodore",
+  "name": "wodore",
   "version": "0.0.1",
   "description": "Find the next best location in the mountains.",
   "productName": "Wodore",
@@ -44,6 +44,7 @@
     "openapi-typescript": "^6.7.5",
     "pinia": "^2.0.11",
     "quasar": "^2.6.0",
+    "register-service-worker": "^1.0.0",
     "vue": "^3.4.18",
     "vue-i18n": "^9.2.2",
     "vue-maplibre-gl": "^3.1.3",

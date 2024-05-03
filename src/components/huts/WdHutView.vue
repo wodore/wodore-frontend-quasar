@@ -3,8 +3,8 @@ import { ref, watchEffect, computed } from 'vue';
 //import { useRouter, useRoute } from 'vue-router';
 import { copyToClipboard } from 'quasar';
 import { IntersectionValue, useQuasar } from 'quasar';
-import getImageUrl from 'src/services/imageService';
-import { clientWodore, schemasWodore } from 'src/clients';
+import getImageUrl from '@services/imageService';
+import { clientWodore, schemasWodore } from '@clients/index';
 
 const $q = useQuasar();
 //const router = useRouter();

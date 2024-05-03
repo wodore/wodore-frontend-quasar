@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { schemasWodore } from 'src/clients';
+import { schemasWodore } from '@clients/index';
 export type TypeMonths =
   | '01'
   | '02'

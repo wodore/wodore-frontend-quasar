@@ -1,6 +1,6 @@
 <script setup lang="ts">
 //import { ref } from 'vue';
-import { schemasWodore } from 'src/clients';
+import { schemasWodore } from '@clients/index';
 
 interface Props {
   hut?: schemasWodore['HutSchemaDetails'] | null;

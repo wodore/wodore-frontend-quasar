@@ -5,17 +5,25 @@
     "types": ["unplugin-icons/types/vue", "./components"],
     "paths": {
       "src/*": ["src/*"],
+      "@/*": ["src/*"],
       "app/*": ["*"],
+      "@app/*": ["*"],
       "components/*": ["src/components/*"],
+      "@components/*": ["src/components/*"],
       "layouts/*": ["src/layouts/*"],
+      "@layouts/*": ["src/layouts/*"],
       "pages/*": ["src/pages/*"],
+      "@pages/*": ["src/pages/*"],
       "assets/*": ["src/assets/*"],
       "@assets/*": ["src/assets/*"],
       "boot/*": ["src/boot/*"],
+      "@boot/*": ["src/boot/*"],
       "stores/*": ["src/stores/*"],
+      "@stores/*": ["src/stores/*"],
 
-      "services/*": ["src/services/*"],
-      "extras/*": ["src/extras/*"],
+      "@services/*": ["src/services/*"],
+      "@extras/*": ["src/extras/*"],
+      "clients/*": ["src/clients/*"],
       "@clients/*": ["src/clients/*"]
     }
   },

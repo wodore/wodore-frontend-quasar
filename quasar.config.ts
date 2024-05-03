@@ -51,7 +51,7 @@ export default configure((ctx) => {
       //  // TODO: does not work
       //  services: path.join(__dirname, './src/services'),
       //  extras: path.join(__dirname, './src/extras'),
-      //  clients: path.join(__dirname, './src/clients'),
+      //  '@clients': path.join(__dirname, './src/clients'),
       //},
       vueRouterMode: 'history', // available values: 'hash', 'history'
       // vueRouterBase,

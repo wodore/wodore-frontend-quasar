@@ -8,7 +8,7 @@ const $q = useQuasar();
 //import { useHutTypesStore } from '../../stores/huts/hut-types-store';
 //import HutType from './HutType.vue';
 //const { t } = useI18n();
-import { schemasWodore } from 'src/clients';
+import { schemasWodore } from '@clients/index';
 import {
   TypeMonths,
   monthList,

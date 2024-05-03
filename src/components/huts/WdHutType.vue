@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, defineProps, withDefaults } from 'vue';
 
-import { schemasWodore } from 'src/clients';
+import { schemasWodore } from '@clients/index';
 
 import IconCheckmarkFill from '~icons/eva/checkmark-fill';
 import IconQuestionMarkFill from '~icons/eva/question-mark-fill';
