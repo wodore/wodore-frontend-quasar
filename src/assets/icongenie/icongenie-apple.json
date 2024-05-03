@@ -1,11 +1,12 @@
 {
   "params": {
     "skipTrim": false,
-    "themeColor": "8fd6b7",
-    "icon": "src/assets/wodore-design/logo/exports/icongenie/favicon_maskable.png",
+    "themeColor": "6dc59f",
+    "icon": "src/assets/wodore-design/logo/exports/icongenie/favicon_apple.png",
+    "quality": 10,
     "padding": [
-      20,
-      20
+      0,
+      0
     ]
   },
   "assets": [
