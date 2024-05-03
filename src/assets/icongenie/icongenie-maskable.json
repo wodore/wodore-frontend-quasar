@@ -2,7 +2,7 @@
   "params": {
     "skipTrim": true,
     "themeColor": "8fd6b7",
-    "icon": "src/assets/wodore-design/logo/exports/icongenie/favicon_maskable.png",
+    "icon": "src/assets/wodore-design/logo/exports/favicon_maskable.png",
     "padding": [
       0,
       0

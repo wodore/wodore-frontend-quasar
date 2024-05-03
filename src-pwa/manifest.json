@@ -11,37 +11,37 @@
   ],
   "icons": [
     {
-      "src": "/favicon_shape.svg?v=1",
+      "src": "/favicon_shape.svg?v=2",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-192x192.png?v=1",
+      "src": "/icons/icon-192x192.png?v=2",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-512x512.png?v=1",
+      "src": "/icons/icon-512x512.png?v=2",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/favicon_maskable.svg?v=1",
+      "src": "/favicon_maskable.svg?v=2",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "maskable"
     },
     {
-      "src": "/icons/icon-maskable-192x192.png?v=1",
+      "src": "/icons/icon-maskable-192x192.png?v=2",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/icons/icon-maskable-512x512.png?v=1",
+      "src": "/icons/icon-maskable-512x512.png?v=2",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
