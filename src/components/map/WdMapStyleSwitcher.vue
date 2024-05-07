@@ -9,6 +9,7 @@ import { inject, ref } from 'vue';
 //const active_classes = 'bg-accent text-white';
 
 const switcherOpen = ref<boolean>(false);
+const switcherLocked = ref<boolean>(false);
 
 const map = inject(mapSymbol)!; //, isMapLoaded = inject(isLoadedSymbol)!;
 // function setStyleByMap() {
@@ -63,16 +64,15 @@ function setStyle(s: StyleSwitchItem): boolean {
     model.value[i].active = false;
   }
   s.active = true;
-  switcherOpen.value = false;
+  if (!switcherLocked.value) {
+    switcherOpen.value = false;
+  }
   return true;
-  //if (props.modelValue === undefined) {
-  //  modelValue.value = s;
-  //}
-  //emit('update:modelValue', s);
-
-  //toggleOpen(false);
 }
 
+function toggleSwitcherLocked() {
+  switcherLocked.value = !switcherLocked.value;
+}
 const model = defineModel<Array<StyleSwitchItem>>();
 interface Props {
   //mapStyles: Array<StyleSwitchItem>;
@@ -85,6 +85,11 @@ const props = withDefaults(defineProps<Props>(), {
   position: 'top-left',
 });
 console.debug(props.mapStyle);
+
+const switchIcon =
+  'img:' +
+  new URL('/src/assets/wodore-design/icons/style-switch.svg', import.meta.url)
+    .href;
 </script>
 
 <template>
@@ -93,7 +98,7 @@ console.debug(props.mapStyle);
       ref="fabStyleRef"
       push
       vertical-actions-align="left"
-      icon="img:src/assets/wodore-design/icons/style-switch.svg"
+      :icon="switchIcon"
       padding="sm"
       direction="right"
       persistent
@@ -114,6 +119,20 @@ console.debug(props.mapStyle);
         :key="style.name"
         :item="style"
       />
+      <!-- class="bg-primary" -->
+      <q-btn
+        round
+        flat
+        style="padding: 0"
+        :ripple="false"
+        :color="switcherLocked ? 'accent-500' : 'secondary-800'"
+        @click="toggleSwitcherLocked"
+      >
+        <q-icon>
+          <IconEvaLockFill v-if="switcherLocked" />
+          <IconEvaUnlockOutline v-if="!switcherLocked" />
+        </q-icon>
+      </q-btn>
       <!-- </div> -->
     </q-fab>
   </q-page-sticky>

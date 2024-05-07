@@ -8,6 +8,8 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     IconEvaExternalLinkFill: typeof import('~icons/eva/external-link-fill')['default']
+    IconEvaLockFill: typeof import('~icons/eva/lock-fill')['default']
+    IconEvaUnlockOutline: typeof import('~icons/eva/unlock-outline')['default']
     IconFa6SolidCopy: typeof import('~icons/fa6-solid/copy')['default']
     IconFa6SolidLocationCrosshairs: typeof import('~icons/fa6-solid/location-crosshairs')['default']
     IconMingcuteMountain2Fill: typeof import('~icons/mingcute/mountain2-fill')['default']
