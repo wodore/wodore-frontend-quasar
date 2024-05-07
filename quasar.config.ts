@@ -15,8 +15,8 @@ import IconsResolver from 'unplugin-icons/resolver';
 // })
 
 //import path from 'node:path';
-import dotenv from 'dotenv';
-dotenv.config();
+// import { dotenv } from 'dotenv';
+// dotenv.config();
 
 // add any new variable to the 'env' section
 
@@ -39,7 +39,8 @@ export default configure((ctx) => {
       'roboto-font', // optional, you are not bound to it
     ],
 
-    htmlVariables: { faviconVersion: 2 },
+    // FAVICON version, change manually in src-pwa/manifest.json as well!
+    htmlVariables: { faviconVersion: 3 },
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#build
     build: {
       target: {
@@ -62,9 +63,9 @@ export default configure((ctx) => {
 
       // publicPath: '/',
       // analyze: true,
-      env: {
-        IMAGOR_KEY: process.env.IMAGOR_KEY ? process.env.IMAGOR_KEY : 'my_key',
-      },
+      //env: {
+      //  IMAGOR_KEY: process.env.IMAGOR_KEY ? process.env.IMAGOR_KEY : 'my_key',
+      //},
       // rawDefine: {}
       // ignorePublicFolder: true,
       // minify: false,

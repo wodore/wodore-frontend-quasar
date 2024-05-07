@@ -1,4 +1,4 @@
-import { SymbolLayerSpecification } from 'maplibre-gl';
+import { SymbolLayerSpecification, StyleSpecification } from 'maplibre-gl';
 import { StyleSwitchItem } from 'vue-maplibre-gl';
 
 const imageSwitchZoom = 11;
@@ -60,13 +60,71 @@ export const hutsLayerPaint = {
   ],
 } as SymbolLayerSpecification['paint'];
 
+interface getRasterArgs {
+  name: string;
+  tiles: string[];
+  attribution?: string;
+}
+function getRaster({
+  name,
+  tiles,
+  attribution,
+}: getRasterArgs): StyleSpecification {
+  const style: StyleSpecification = {
+    version: 8,
+    sources: {},
+    glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
+    //sprite: { id: 'default', url: 'http://localhost:9000/huts/sprite' },
+    layers: [
+      {
+        id: `${name}-raster-layer`,
+        type: 'raster',
+        source: `${name}-raster-tiles`,
+        minzoom: 0,
+        maxzoom: 22,
+      },
+    ],
+  };
+  style.sources[`${name}-raster-tiles`] = {
+    type: 'raster',
+    tiles: tiles,
+    tileSize: 256,
+    attribution: attribution,
+  };
+  return style;
+}
+
+const swissTopoRasterStyle = getRaster({
+  name: 'swiss-raster',
+  tiles: [
+    'https://wmts0.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
+    'https://wmts1.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
+    'https://wmts2.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
+    'https://wmts3.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
+    'https://wmts4.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
+    'https://wmts5.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
+    'https://wmts6.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
+    'https://wmts7.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
+    'https://wmts8.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
+    'https://wmts9.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
+  ],
+  attribution:
+    '<a href="https://www.swisstopo.admin.ch/" target="_blank">&copy; swisstop</a>',
+});
+
 export const mapStyles: Array<StyleSwitchItem> = [
   {
     name: 'swiss-vector',
-    label: 'Swisstopo',
+    label: 'Topo Vector',
     // icon : { path: mdiRoad },
     style:
       'https://api.maptiler.com/maps/ch-swisstopo-lbm-vivid/style.json?key=yYYuZy3hwmMjY087FDvY',
+  },
+  {
+    name: 'swiss-raster',
+    label: 'Topo Raster',
+    // icon : { path: mdiRoad },
+    style: swissTopoRasterStyle,
   },
   {
     name: 'satellite',

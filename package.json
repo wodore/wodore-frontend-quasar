@@ -43,7 +43,7 @@
     "openapi-fetch": "^0.9.3",
     "openapi-typescript": "^6.7.5",
     "pinia": "^2.0.11",
-    "quasar": "^2.6.0",
+    "quasar": "^2.16.1",
     "register-service-worker": "^1.0.0",
     "vue": "^3.4.18",
     "vue-i18n": "^9.2.2",
@@ -54,7 +54,7 @@
   "devDependencies": {
     "@iconify/json": "^2.2.202",
     "@intlify/unplugin-vue-i18n": "^2.0.0",
-    "@quasar/app-vite": "^2.0.0-beta.5",
+    "@quasar/app-vite": "^2.0.0-beta.12",
     "@quasar/icongenie": "^4.0.0",
     "@types/crypto-js": "^4.2.2",
     "@types/node": "^20.5.9",

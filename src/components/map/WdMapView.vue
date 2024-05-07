@@ -53,7 +53,7 @@ if ($layout === undefined) {
 }
 
 const hutjson = ref(
-  'https://api.wodore.com/v1/huts/huts.geojson?lang=de&limit=5000&embed_all=false&embed_type=true&embed_owner=false&embed_capacity=false&embed_sources=false&include_elevation=false&include_name=true&flat=true',
+  `${process.env.API_HOST}/${process.env.API_VERSION}/huts/huts.geojson?lang=de&limit=5000&embed_all=false&embed_type=true&embed_owner=false&embed_capacity=false&embed_sources=false&include_elevation=false&include_name=true&flat=true`,
 );
 
 function onMapLoad(e: MglEvent) {
@@ -100,7 +100,7 @@ function onLayerLeave(e: MapLayerEventType['mouseleave']) {
     e.target.getCanvas().style.cursor = '';
   }
 }
-const SPRITE_BASE_URL = 'https://api.wodore.com';
+const SPRITE_BASE_URL = process.env.API_HOST;
 const _spriteUrl = SPRITE_BASE_URL + '/static/huts/sprite';
 function onMapStyledata(e: MglEvent) {
   console.debug('Style data changed');

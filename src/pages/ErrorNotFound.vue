@@ -9,17 +9,20 @@ defineOptions({
     class="fullscreen bg-primary text-white text-center q-pa-md flex flex-center"
   >
     <div>
-      <q-icon size="13vh" name="img:errors/logo_404.svg" />
+      <a href="/">
+        <q-icon size="13vh" name="img:/errors/logo_404.svg" />
+      </a>
       <div style="font-size: 12vh" class="text-white">404</div>
       <div class="text-h4" style="opacity: 0.4">Oops. Wrong way...</div>
 
       <q-btn
         class="q-mt-xl"
         color="accent"
-        text-color="white"
+        text-color="accent"
         to="/"
         size="lg"
-        label="track back"
+        label="back on track"
+        flat
         no-caps
       />
     </div>
