@@ -17,6 +17,6 @@ defineProps<Props>();
     <q-avatar size="55px">
       <img style="padding: 3px" :src="item.img" />
     </q-avatar>
-    <q-tooltip> {{ item.label }} </q-tooltip>
+    <q-tooltip v-if="$q.platform.is.desktop"> {{ item.label }} </q-tooltip>
   </q-btn>
 </template>

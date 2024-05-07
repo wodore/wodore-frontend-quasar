@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { mapSymbol } from 'vue-maplibre-gl';
 //import { Map } from 'maplibre-gl';
-import { QPageStickyProps } from 'quasar';
+import { QPageStickyProps, useQuasar } from 'quasar';
 import WdMapStyleSwitchItem from './WdMapStyleSwitchItem.vue';
 import { StyleSwitchItem } from './styles';
 import { inject, ref } from 'vue';
 //const link = ref('outbox');
 //const active_classes = 'bg-accent text-white';
 
+const $q = useQuasar();
 const switcherOpen = ref<boolean>(false);
 const switcherLocked = ref<boolean>(false);
 
@@ -67,6 +68,7 @@ function setStyle(s: StyleSwitchItem): boolean {
   if (!switcherLocked.value) {
     switcherOpen.value = false;
   }
+  $q.localStorage.set('currentStyle', s);
   return true;
 }
 
@@ -123,6 +125,7 @@ const switchIcon =
       />
       <!-- class="bg-primary" -->
       <q-btn
+        v-if="$q.screen.gt.xs"
         round
         flat
         style="padding: 0"

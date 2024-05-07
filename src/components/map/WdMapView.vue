@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, inject, watchEffect } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { hutsLayerLayout, hutsLayerPaint } from './styles';
+import { StyleSwitchItem, hutsLayerLayout, hutsLayerPaint } from './styles';
+import { useQuasar } from 'quasar';
 import { useMapStylesStore } from '@stores/map/map-styles-store';
 //import { Todo, Meta } from './models';
 import { LngLatLike, MapLayerEventType } from 'maplibre-gl';
@@ -15,6 +16,7 @@ import {
   MglStyleSwitchControl,
 } from 'vue-maplibre-gl';
 
+const $q = useQuasar();
 const router = useRouter();
 const route = useRoute();
 const styleStore = useMapStylesStore();
@@ -121,6 +123,11 @@ function onMapStyledata(e: MglEvent) {
 }
 const mapCenter: LngLatLike = [8.22, 46.7];
 const mapZoom: number = 7.5;
+// @ts-expect-error type is correct
+const currentStyle: StyleSwitchItem = $q.localStorage.hasItem('currentStyle')
+  ? ($q.localStorage.getItem('currentStyle') as StyleSwitchItem)
+  : styleStore.styles[0];
+styleStore.setActiveStyle(currentStyle.name);
 //@import '~maplibre-gl/dist/maplibre-gl.css';
 //@import '~vue-maplibre-gl/dist/vue-maplibre-gl.css';
 </script>
@@ -156,7 +163,7 @@ const mapZoom: number = 7.5;
     hash="p"
     :zoom="mapZoom"
     :center="mapCenter"
-    :map-style="styleStore.styles[0].style"
+    :map-style="currentStyle.style"
     style="position: fixed; right: 0px; top: 0; bottom: 0; left: 0"
   >
     <!-- <MglAttributionControl /> -->

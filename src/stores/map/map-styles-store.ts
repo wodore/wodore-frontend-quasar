@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 
+import { ref } from 'vue';
 import { getRasterStyle, StyleSwitchItem } from '@components/map/styles';
 
 const swissTopoRasterStyle = getRasterStyle({
@@ -27,7 +28,17 @@ function getImageUrl(name: string): string {
   ).href;
 }
 export const useMapStylesStore = defineStore('map-styles', () => {
-  const styles: Array<StyleSwitchItem> = [
+  function setActiveStyle(name: string) {
+    for (const style of styles.value) {
+      if (style.name == name) {
+        style.active = true;
+      } else {
+        style.active = false;
+      }
+    }
+    return undefined;
+  }
+  const styles = ref<Array<StyleSwitchItem>>([
     {
       name: 'swiss-vector',
       label: 'Topo Vector',
@@ -58,6 +69,6 @@ export const useMapStylesStore = defineStore('map-styles', () => {
       style:
         'https://api.maptiler.com/maps/outdoor-v2/style.json?key=yYYuZy3hwmMjY087FDvY',
     },
-  ];
-  return { styles };
+  ]);
+  return { styles, setActiveStyle };
 });
