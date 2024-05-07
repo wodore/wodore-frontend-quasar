@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, inject, watchEffect } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { mapStyles, hutsLayerLayout, hutsLayerPaint } from './styles';
+import { hutsLayerLayout, hutsLayerPaint } from './styles';
+import { useMapStylesStore } from '@stores/map/map-styles-store';
 //import { Todo, Meta } from './models';
 import { LngLatLike, MapLayerEventType } from 'maplibre-gl';
 import {
@@ -16,6 +17,7 @@ import {
 
 const router = useRouter();
 const route = useRoute();
+const styleStore = useMapStylesStore();
 
 type layoutType = {
   header: { size: number; offset: number; space: boolean };
@@ -147,9 +149,6 @@ const mapZoom: number = 7.5;
 //}
 </style>
 <template>
-  <!-- <q-page-sticky position="top-left" :offset="[18, 18]" style="z-index: 5">
-    <q-btn round color="accent" icon="arrow_back" class="rotate-45" />
-  </q-page-sticky> -->
   <MglMap
     language="de"
     @map:styledata="onMapStyledata"
@@ -157,17 +156,21 @@ const mapZoom: number = 7.5;
     hash="p"
     :zoom="mapZoom"
     :center="mapCenter"
-    :map-style="mapStyles[0].style"
+    :map-style="styleStore.styles[0].style"
     style="position: fixed; right: 0px; top: 0; bottom: 0; left: 0"
   >
     <!-- <MglAttributionControl /> -->
+    <WdMapStyleSwitcher
+      v-model="styleStore.styles"
+      :map-style="styleStore.styles[0]"
+    />
     <MglGeolocationControl />
     <MglNavigationControl />
     <MglScaleControl />
     <MglStyleSwitchControl
-      :map-styles="mapStyles"
-      :map-style="mapStyles[0]"
-      position="top-left"
+      :map-styles="styleStore.styles"
+      :map-style="styleStore.styles[0]"
+      position="top-right"
     />
     <MglGeoJsonSource source-id="huts" :data="hutjson">
       <MglSymbolLayer

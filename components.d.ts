@@ -25,6 +25,8 @@ declare module 'vue' {
     WdHutView: typeof import('./src/components/huts/WdHutView.vue')['default']
     WdMapContent: typeof import('./src/components/map/WdMapContent.vue')['default']
     WdMapMenu: typeof import('./src/components/map/WdMapMenu.vue')['default']
+    WdMapStyleSwitcher: typeof import('./src/components/map/WdMapStyleSwitcher.vue')['default']
+    WdMapStyleSwitchItem: typeof import('./src/components/map/WdMapStyleSwitchItem.vue')['default']
     WdMapView: typeof import('./src/components/map/WdMapView.vue')['default']
     WdMenuButton: typeof import('./src/components/toolbar/WdMenuButton.vue')['default']
     WdMonthly: typeof import('./src/components/huts/monthly/WdMonthly.vue')['default']

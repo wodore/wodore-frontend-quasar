@@ -1,5 +1,4 @@
 import { SymbolLayerSpecification, StyleSpecification } from 'maplibre-gl';
-import { StyleSwitchItem } from 'vue-maplibre-gl';
 
 const imageSwitchZoom = 11;
 export const hutsLayerLayout = {
@@ -65,7 +64,7 @@ interface getRasterArgs {
   tiles: string[];
   attribution?: string;
 }
-function getRaster({
+export function getRasterStyle({
   name,
   tiles,
   attribution,
@@ -94,48 +93,11 @@ function getRaster({
   return style;
 }
 
-const swissTopoRasterStyle = getRaster({
-  name: 'swiss-raster',
-  tiles: [
-    'https://wmts0.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
-    'https://wmts1.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
-    'https://wmts2.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
-    'https://wmts3.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
-    'https://wmts4.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
-    'https://wmts5.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
-    'https://wmts6.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
-    'https://wmts7.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
-    'https://wmts8.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
-    'https://wmts9.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
-  ],
-  attribution:
-    '<a href="https://www.swisstopo.admin.ch/" target="_blank">&copy; swisstop</a>',
-});
-
-export const mapStyles: Array<StyleSwitchItem> = [
-  {
-    name: 'swiss-vector',
-    label: 'Topo Vector',
-    // icon : { path: mdiRoad },
-    style:
-      'https://api.maptiler.com/maps/ch-swisstopo-lbm-vivid/style.json?key=yYYuZy3hwmMjY087FDvY',
-  },
-  {
-    name: 'swiss-raster',
-    label: 'Topo Raster',
-    // icon : { path: mdiRoad },
-    style: swissTopoRasterStyle,
-  },
-  {
-    name: 'satellite',
-    label: 'Satellite',
-    style:
-      'https://api.maptiler.com/maps/hybrid/style.json?key=cQX2iET1gmOW38bedbUh',
-  },
-  {
-    name: 'outdoor-osm',
-    label: 'Outdoor OSM',
-    style:
-      'https://api.maptiler.com/maps/outdoor-v2/style.json?key=yYYuZy3hwmMjY087FDvY',
-  },
-];
+export interface StyleSwitchItem {
+  name: string;
+  label: string;
+  img: string;
+  active?: boolean;
+  show?: boolean;
+  style: StyleSpecification | string;
+}
