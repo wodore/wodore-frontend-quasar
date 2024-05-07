@@ -88,8 +88,10 @@ console.debug(props.mapStyle);
 
 const switchIcon =
   'img:' +
-  new URL('/src/assets/wodore-design/icons/style-switch.svg', import.meta.url)
-    .href;
+  new URL(
+    '/src/assets/wodore-design/icons/export/style-switch.svg',
+    import.meta.url,
+  ).href;
 </script>
 
 <template>
