@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, inject, watchEffect } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { StyleSwitchItem, hutsLayerLayout, hutsLayerPaint } from './styles';
+import { hutsLayerLayout, hutsLayerPaint } from '../../stores/map/styles';
 import { useQuasar } from 'quasar';
-import { useMapStylesStore } from '@stores/map/map-styles-store';
+import { useBasemapStore } from '@stores/map/basemap-store';
 //import { Todo, Meta } from './models';
 import { LngLatLike, MapLayerEventType } from 'maplibre-gl';
 import {
@@ -13,13 +13,14 @@ import {
   MglScaleControl,
   MglSymbolLayer,
   MglEvent,
-  MglStyleSwitchControl,
+  //MglStyleSwitchControl,
+  MglAttributionControl,
 } from 'vue-maplibre-gl';
 
 const $q = useQuasar();
 const router = useRouter();
 const route = useRoute();
-const styleStore = useMapStylesStore();
+const basemapStore = useBasemapStore();
 
 type layoutType = {
   header: { size: number; offset: number; space: boolean };
@@ -123,13 +124,6 @@ function onMapStyledata(e: MglEvent) {
 }
 const mapCenter: LngLatLike = [8.22, 46.7];
 const mapZoom: number = 7.5;
-// @ts-expect-error type is correct
-const currentStyle: StyleSwitchItem = $q.localStorage.hasItem('currentStyle')
-  ? ($q.localStorage.getItem('currentStyle') as StyleSwitchItem)
-  : styleStore.styles[0];
-styleStore.setActiveStyle(currentStyle.name);
-//@import '~maplibre-gl/dist/maplibre-gl.css';
-//@import '~vue-maplibre-gl/dist/vue-maplibre-gl.css';
 </script>
 <style lang="scss">
 @import 'maplibre-gl/dist/maplibre-gl.css';
@@ -161,24 +155,17 @@ styleStore.setActiveStyle(currentStyle.name);
     @map:styledata="onMapStyledata"
     @map:load="onMapLoad"
     hash="p"
+    :map-style="basemapStore.getBasemap()?.style"
     :zoom="mapZoom"
+    :attribution-control="false"
     :center="mapCenter"
-    :map-style="currentStyle.style"
     style="position: fixed; right: 0px; top: 0; bottom: 0; left: 0"
   >
-    <!-- <MglAttributionControl /> -->
-    <WdMapStyleSwitcher
-      v-model="styleStore.styles"
-      :map-style="styleStore.styles[0]"
-    />
+    <WdBasemapSwitch position="bottom-right" direction="left" />
     <MglGeolocationControl />
-    <MglNavigationControl />
+    <MglNavigationControl v-if="$q.platform.is.desktop" />
     <MglScaleControl />
-    <MglStyleSwitchControl
-      :map-styles="styleStore.styles"
-      :map-style="styleStore.styles[0]"
-      position="top-right"
-    />
+    <MglAttributionControl position="bottom-right" />
     <MglGeoJsonSource source-id="huts" :data="hutjson">
       <MglSymbolLayer
         @click.prevent="onHutLayerClick"

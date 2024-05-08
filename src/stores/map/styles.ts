@@ -63,11 +63,13 @@ interface getRasterArgs {
   name: string;
   tiles: string[];
   attribution?: string;
+  tileSize?: number;
 }
 export function getRasterStyle({
   name,
   tiles,
   attribution,
+  tileSize = 256,
 }: getRasterArgs): StyleSpecification {
   const style: StyleSpecification = {
     version: 8,
@@ -87,13 +89,13 @@ export function getRasterStyle({
   style.sources[`${name}-raster-tiles`] = {
     type: 'raster',
     tiles: tiles,
-    tileSize: 256,
+    tileSize: tileSize,
     attribution: attribution,
   };
   return style;
 }
 
-export interface StyleSwitchItem {
+export interface BasemapSwitchItem {
   name: string;
   label: string;
   img: string;
