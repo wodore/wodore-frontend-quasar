@@ -1,11 +1,12 @@
 import { defineStore } from 'pinia';
 import { reactive } from 'vue';
 import { getRasterStyle, BasemapSwitchItem } from '@stores/map/styles';
-import { useMap } from 'vue-maplibre-gl';
+import { useMap } from '@indoorequal/vue-maplibre-gl';
+//import type { Emitter } from 'mitt';
 import { LocalStorage } from 'quasar';
 
 const swissTopoRasterStyle = getRasterStyle({
-  name: 'swiss-raster',
+  name: 'ch-swisstopo-raster',
   tiles: [
     'https://wmts0.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
     'https://wmts1.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
@@ -51,6 +52,10 @@ function getImageUrl(name: string): string {
 }
 export const useBasemapStore = defineStore('basemap', () => {
   const mapRef = useMap();
+  //let emitter: Emitter<MglEvents> | undefined = undefined;
+  //function setEmitter(em: Emitter<MglEvents>) {
+  //  emitter = em;
+  //}
 
   function getBasemap(): BasemapSwitchItem | undefined {
     for (const style of basemaps) {
@@ -71,7 +76,39 @@ export const useBasemapStore = defineStore('basemap', () => {
      * Skip diff as long as Maplibre-GL doesn't fie `style.load` correctly
      * @see https://github.com/maplibre/maplibre-gl-js/issues/2587
      */
-    mapRef.map?.setStyle(s.style, { diff: false });
+    //mapRef.map?.setStyle(s.style, { diff: false });
+    mapRef.map?.setStyle(s.style, {
+      diff: true,
+      transformStyle: (previousStyle, nextStyle) => {
+        //console.debug('setStyle (prev, next)', previousStyle, nextStyle);
+        const custom_layers =
+          previousStyle !== undefined
+            ? previousStyle.layers.filter((layer) => {
+                return layer.id.startsWith('wd-');
+              })
+            : [];
+        const layers = nextStyle.layers.concat(custom_layers);
+        //console.debug('updated layers', custom_layers, layers);
+
+        const sources = nextStyle.sources;
+        if (previousStyle !== undefined) {
+          for (const [key, value] of Object.entries(previousStyle.sources)) {
+            if (key.startsWith('wd-')) {
+              sources[key] = value;
+            }
+          }
+        }
+        //console.debug('updated sources', sources);
+        const newStyle = {
+          ...nextStyle,
+          sources: sources,
+          layers: layers,
+        };
+        console.debug('new style', newStyle);
+        return newStyle;
+      },
+    });
+    //const emitter = inject(emitterSymbol)!;
     for (const style of basemaps) {
       if (style.name == s.name) {
         style.active = true;
@@ -86,28 +123,40 @@ export const useBasemapStore = defineStore('basemap', () => {
 
   const basemaps = reactive<Array<BasemapSwitchItem>>([
     {
-      name: 'swiss-vector',
+      name: 'CH swisstopo LBM Vivid',
       label: 'Schweiz Topo Vector',
       active: true,
       show: true,
       img: getImageUrl('swiss-vector.png'),
       style:
         'https://api.maptiler.com/maps/ch-swisstopo-lbm-vivid/style.json?key=yYYuZy3hwmMjY087FDvY',
+      layers: {
+        ways: { before: 'Other place labels' },
+        background: { before: 'Building line' },
+      },
     },
     {
-      name: 'swiss-raster',
+      name: 'ch-swisstopo-raster',
       label: 'Schweiz Topo Raster',
       show: true,
       img: getImageUrl('swiss-raster.png'),
       style: swissTopoRasterStyle,
+      layers: {
+        ways: { before: undefined },
+        background: { before: undefined },
+      },
     },
     {
-      name: 'satellite',
+      name: 'Satellite Hybrid',
       label: 'Satellite',
       show: true,
       img: getImageUrl('satellite.png'),
       style:
         'https://api.maptiler.com/maps/hybrid/style.json?key=cQX2iET1gmOW38bedbUh',
+      layers: {
+        ways: { before: 'Tunnel' },
+        background: { before: 'State labels' },
+      },
     },
     {
       name: 'outdoor-osm',
@@ -116,6 +165,10 @@ export const useBasemapStore = defineStore('basemap', () => {
       img: getImageUrl('outdoor-v2.png'),
       style:
         'https://api.maptiler.com/maps/outdoor-v2/style.json?key=yYYuZy3hwmMjY087FDvY',
+      layers: {
+        background: { before: 'Contour index' },
+        ways: { before: 'Park' },
+      },
     },
     // Original does not work due to relativ paths
     // json from https://github.com/trafficon/basemap-at-maplibre/tree/main copied to public folder
@@ -128,13 +181,21 @@ export const useBasemapStore = defineStore('basemap', () => {
       show: false,
       img: getImageUrl('swiss-vector.png'),
       style: 'styles/basemapv-bmapv-3857-resources-styles-root.json',
+      layers: {
+        ways: { before: undefined },
+        background: { before: undefined },
+      },
     },
     {
       name: 'oe-raster',
       label: 'Östereich Topo Raster',
-      show: true,
+      show: false,
       img: getImageUrl('oe-raster.png'),
       style: oeTopoRasterStyle,
+      layers: {
+        ways: { before: undefined },
+        background: { before: undefined },
+      },
     },
   ]);
   // get current base layer from local storage
@@ -147,5 +208,6 @@ export const useBasemapStore = defineStore('basemap', () => {
     basemaps,
     setBasemap,
     getBasemap,
+    //setEmitter,
   };
 });

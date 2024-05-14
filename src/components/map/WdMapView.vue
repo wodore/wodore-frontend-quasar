@@ -6,17 +6,21 @@ import { useQuasar } from 'quasar';
 import { useBasemapStore } from '@stores/map/basemap-store';
 //import { Todo, Meta } from './models';
 import { LngLatLike, MapLayerEventType } from 'maplibre-gl';
+// https://indoorequal.github.io/vue-maplibre-gl/
 import {
   MglMap,
   //MglGeoJsonSource,
+  //MglCustomControl,
   MglNavigationControl,
   MglScaleControl,
-  MglSymbolLayer,
+  //MglSymbolLayer,
   MglEvent,
   //MglStyleSwitchControl,
+  MglGeolocateControl,
   MglAttributionControl,
-} from 'vue-maplibre-gl';
+} from '@indoorequal/vue-maplibre-gl';
 
+// import MglStyleSwitchControl from './styleSwitch.control';
 const $q = useQuasar();
 const router = useRouter();
 const route = useRoute();
@@ -108,7 +112,29 @@ function onLayerLeave(e: MapLayerEventType['mouseleave']) {
 const SPRITE_BASE_URL = process.env.API_HOST;
 const _spriteUrl = SPRITE_BASE_URL + '/static/huts/sprite';
 function onMapStyledata(e: MglEvent) {
-  console.debug('Style data changed');
+  console.debug('Style data changed', e);
+  console.debug('Huts layer:', e.map.getLayer('wd-huts'));
+  if (e.map.getSource('wd-huts') === undefined) {
+    e.map.addSource('wd-huts', {
+      data: hutjson.value,
+      buffer: 512,
+      tolerance: 0.7,
+      promoteId: 'slug',
+      type: 'geojson',
+    });
+  }
+  if (e.map.getLayer('wd-huts') === undefined) {
+    e.map.addLayer({
+      layout: hutsLayerLayout,
+      paint: hutsLayerPaint,
+      id: 'wd-huts',
+      type: 'symbol',
+      source: 'wd-huts',
+    });
+    e.map.on('mouseenter', 'wd-huts', onLayerEnter);
+    e.map.on('mouseleave', 'wd-huts', onLayerLeave);
+    e.map.on('click', 'wd-huts', onHutLayerClick);
+  }
   const _wodoreSprite = e.map.getSprite();
   //console.debug("Check sprite 'wodore' in ", _wodoreSprite);
   let _spriteAdded = false;
@@ -127,7 +153,7 @@ const mapZoom: number = 7.5;
 </script>
 <style lang="scss">
 @import 'maplibre-gl/dist/maplibre-gl.css';
-@import 'vue-maplibre-gl/dist/vue-maplibre-gl.css';
+//@import 'vue-maplibre-gl/dist/vue-maplibre-gl.css';
 
 .maplibregl-control-container {
   // from https://github.com/quasarframework/quasar/blob/dev/ui/src/components/layout/QLayout.sass .q-body--layout-animate .q-page-sticky
@@ -145,36 +171,52 @@ const mapZoom: number = 7.5;
     top $drawer-duration $drawer-transistion,
     bottom $drawer-duration $drawer-transistion !important;
 }
+
+.maplibregl-map {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+}
 //.maplibregl-ctrl-top-left {
 //  pointer-events: all;
 //}
 </style>
 <template>
   <MglMap
-    language="de"
     @map:styledata="onMapStyledata"
     @map:load="onMapLoad"
     hash="p"
     :map-style="basemapStore.getBasemap()?.style"
     :zoom="mapZoom"
-    :attribution-control="false"
     :center="mapCenter"
-    style="position: fixed; right: 0px; top: 0; bottom: 0; left: 0"
+    :attribution-control="false"
   >
+    <!-- <MglStyleSwitchControl :map-styles="basemapStore.basemaps" /> -->
+    <!-- <MglCustomControl position="top-right" class=""> -->
     <WdBasemapSwitch position="bottom-right" direction="left" />
-    <MglGeolocationControl />
+    <!-- </MglCustomControl> -->
+    <MglGeolocateControl />
     <MglNavigationControl v-if="$q.platform.is.desktop" />
     <MglScaleControl />
     <MglAttributionControl position="bottom-right" />
-    <MglGeoJsonSource source-id="huts" :data="hutjson">
-      <MglSymbolLayer
+    <!-- <MglGeoJsonSource
+      source-id="wd-huts"
+      :data="hutjson"
+      :buffer="512"
+      :tolerance="0.7"
+      promote-id="slug"
+    > -->
+    <!-- <MglSymbolLayer
         @click.prevent="onHutLayerClick"
         @mouseenter="onLayerEnter"
         @mouseleave="onLayerLeave"
         :layout="hutsLayerLayout"
         :paint="hutsLayerPaint"
-        layer-id="huts"
-      ></MglSymbolLayer>
-    </MglGeoJsonSource>
+        layer-id="wd-huts"
+        :before="basemapStore.getBasemap()?.layers.ways.before"
+      ></MglSymbolLayer> -->
+    <!-- </MglGeoJsonSource> -->
   </MglMap>
 </template>

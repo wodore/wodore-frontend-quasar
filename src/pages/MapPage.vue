@@ -29,7 +29,7 @@ const WdMapView = defineAsyncComponent(
   <q-page>
     <Suspense>
       <q-no-ssr>
-        <WdMapView style="min-height: inherit" />
+        <WdMapView />
       </q-no-ssr>
       <template #fallback>
         <q-inner-loading :showing="true" class="background-map">

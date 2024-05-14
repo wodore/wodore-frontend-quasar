@@ -73,6 +73,7 @@ export function getRasterStyle({
 }: getRasterArgs): StyleSpecification {
   const style: StyleSpecification = {
     version: 8,
+    name: name,
     sources: {},
     glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
     //sprite: { id: 'default', url: 'http://localhost:9000/huts/sprite' },
@@ -95,6 +96,14 @@ export function getRasterStyle({
   return style;
 }
 
+type LayerOptions = {
+  before: string | undefined;
+};
+type Layers = {
+  ways: LayerOptions;
+  background: LayerOptions;
+};
+
 export interface BasemapSwitchItem {
   name: string;
   label: string;
@@ -102,4 +111,5 @@ export interface BasemapSwitchItem {
   active?: boolean;
   show?: boolean;
   style: StyleSpecification | string;
+  layers: Layers;
 }
