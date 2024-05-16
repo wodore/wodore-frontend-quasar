@@ -193,6 +193,9 @@ const mapZoom: number = 7.5;
     :bearing-snap="30"
     :center="mapCenter"
     :attribution-control="false"
+    :min-zoom="7"
+    :max-zoom="20"
+    :max-bounds="[3.6, 43, 18.7, 49.7]"
   >
     <!-- <MglStyleSwitchControl :map-styles="basemapStore.basemaps" /> -->
     <!-- <MglCustomControl position="top-right" class=""> -->
@@ -214,7 +217,8 @@ const mapZoom: number = 7.5;
     />
     <!-- </MglCustomControl> -->
     <MglGeolocateControl />
-    <MglNavigationControl :show-zoom="$q.platform.is.desktop" />
+    <!-- <MglNavigationControl :show-zoom="$q.platform.is.desktop" /> -->
+    <MglNavigationControl :show-zoom="false" />
     <MglScaleControl />
     <MglAttributionControl position="bottom-right" />
     <!-- <MglGeoJsonSource
