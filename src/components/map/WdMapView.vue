@@ -160,7 +160,6 @@ const mapCenter: LngLatLike = [8.22, 46.7];
 const mapZoom: number = 7.5;
 </script>
 <style lang="scss">
-@import 'maplibre-gl/dist/maplibre-gl.css';
 //@import 'vue-maplibre-gl/dist/vue-maplibre-gl.css';
 
 .maplibregl-control-container {
@@ -180,13 +179,6 @@ const mapZoom: number = 7.5;
     bottom $drawer-duration $drawer-transistion !important;
 }
 
-.maplibregl-map {
-  position: fixed;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
-}
 //.maplibregl-ctrl-top-left {
 //  pointer-events: all;
 //}
@@ -208,21 +200,21 @@ const mapZoom: number = 7.5;
       :position="$q.platform.is.mobile ? 'bottom-right' : 'top-left'"
       :direction="$q.platform.is.mobile ? 'left' : 'right'"
       :offset="[
-        $q.platform.is.mobile ? 12 : 18,
-        $q.platform.is.mobile ? 20 : 24,
+        $q.platform.is.mobile ? 14 : 14,
+        $q.platform.is.mobile ? 20 : 14,
       ]"
     />
     <WdOverlaySwitch
       position="top-left"
       direction="down"
       :offset="[
-        $q.platform.is.mobile ? 12 : 18,
-        $q.platform.is.mobile ? 12 : 80,
+        $q.platform.is.mobile ? 14 : 14,
+        $q.platform.is.mobile ? 14 : 68,
       ]"
     />
     <!-- </MglCustomControl> -->
     <MglGeolocateControl />
-    <MglNavigationControl v-if="$q.platform.is.desktop" />
+    <MglNavigationControl :show-zoom="$q.platform.is.desktop" />
     <MglScaleControl />
     <MglAttributionControl position="bottom-right" />
     <!-- <MglGeoJsonSource
