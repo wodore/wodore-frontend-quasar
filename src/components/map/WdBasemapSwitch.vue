@@ -1,7 +1,7 @@
 <script setup lang="ts">
 //import { Map } from 'maplibre-gl';
 import { QPageStickyProps, QFabProps, useQuasar } from 'quasar';
-import { BasemapSwitchItem } from '../../stores/map/styles';
+import { BasemapSwitchItem } from '@stores/map/utils/interfaces';
 import { useBasemapStore } from '@stores/map/basemap-store';
 //import { useMap } from '@indoorequal/vue-maplibre-gl';
 import { ref } from 'vue';
@@ -16,10 +16,12 @@ const switcherLocked = ref<boolean>(false);
 interface Props {
   position?: QPageStickyProps['position'];
   direction?: QFabProps['direction'];
+  offset?: QPageStickyProps['offset'];
 }
 withDefaults(defineProps<Props>(), {
   position: 'top-left',
   direction: 'right',
+  offset: undefined,
 });
 //const mapRef = useMap();
 //function setStyleByMap() {
@@ -76,13 +78,13 @@ function toggleSwitcherLocked() {
 const switchIcon =
   'img:' +
   new URL(
-    '/src/assets/wodore-design/icons/export/style-switch.svg',
+    '/src/assets/wodore-design/icons/export/basemap-switch.svg',
     import.meta.url,
   ).href;
 </script>
 
 <template>
-  <q-page-sticky :position="position" :offset="[18, 24]" style="z-index: 5">
+  <q-page-sticky :position="position" :offset="offset" style="z-index: 5">
     <q-fab
       ref="fabStyleRef"
       push
@@ -97,7 +99,7 @@ const switchIcon =
       <WdBasemapSwitchItem
         v-for="(style, index) in basemapStore.basemaps"
         :tabindex="index"
-        @click="setBasemap(style as BasemapSwitchItem)"
+        @click="setBasemap(<BasemapSwitchItem>(style as unknown))"
         v-show="style.show"
         :key="style.name"
         :label="style.label"

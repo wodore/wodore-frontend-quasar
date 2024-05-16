@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { reactive } from 'vue';
-import { getRasterStyle, BasemapSwitchItem } from '@stores/map/styles';
+import { BasemapSwitchItem } from '@stores/map/utils/interfaces';
+import { getRasterStyle } from '@stores/map/utils/raster';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
 //import type { Emitter } from 'mitt';
 import { LocalStorage } from 'quasar';
@@ -21,6 +22,7 @@ const swissTopoRasterStyle = getRasterStyle({
   ],
   attribution:
     '<a href="https://www.swisstopo.admin.ch/" target="_blank">&copy; swisstop</a>',
+  suffix: '',
 });
 const oeLayer: 'geolandbasemap' | 'bmaphidpi' = 'bmaphidpi';
 const oeExt: 'png' | 'jpeg' = 'jpeg';
@@ -58,9 +60,9 @@ export const useBasemapStore = defineStore('basemap', () => {
   //}
 
   function getBasemap(): BasemapSwitchItem | undefined {
-    for (const style of basemaps) {
-      if (style.active) {
-        return style as BasemapSwitchItem;
+    for (const basemapItem of basemaps) {
+      if (basemapItem.active) {
+        return <BasemapSwitchItem>(basemapItem as unknown);
       }
     }
     return undefined;
@@ -79,34 +81,36 @@ export const useBasemapStore = defineStore('basemap', () => {
     //mapRef.map?.setStyle(s.style, { diff: false });
     mapRef.map?.setStyle(s.style, {
       diff: true,
-      transformStyle: (previousStyle, nextStyle) => {
-        //console.debug('setStyle (prev, next)', previousStyle, nextStyle);
-        const custom_layers =
-          previousStyle !== undefined
-            ? previousStyle.layers.filter((layer) => {
-                return layer.id.startsWith('wd-');
-              })
-            : [];
-        const layers = nextStyle.layers.concat(custom_layers);
-        //console.debug('updated layers', custom_layers, layers);
+      // TODO: transformStyle does not work properly
+      // Keep all sources and layers with wd- prefix
+      // transformStyle: (previousStyle, nextStyle) => {
+      //   //console.debug('setStyle (prev, next)', previousStyle, nextStyle);
+      //   const custom_layers =
+      //     previousStyle !== undefined
+      //       ? previousStyle.layers.filter((layer) => {
+      //           return layer.id.startsWith('wd-');
+      //         })
+      //       : [];
+      //   const layers = nextStyle.layers.concat(custom_layers);
+      //   //console.debug('updated layers', custom_layers, layers);
 
-        const sources = nextStyle.sources;
-        if (previousStyle !== undefined) {
-          for (const [key, value] of Object.entries(previousStyle.sources)) {
-            if (key.startsWith('wd-')) {
-              sources[key] = value;
-            }
-          }
-        }
-        //console.debug('updated sources', sources);
-        const newStyle = {
-          ...nextStyle,
-          sources: sources,
-          layers: layers,
-        };
-        console.debug('new style', newStyle);
-        return newStyle;
-      },
+      //   const sources = nextStyle.sources;
+      //   if (previousStyle !== undefined) {
+      //     for (const [key, value] of Object.entries(previousStyle.sources)) {
+      //       if (key.startsWith('wd-')) {
+      //         sources[key] = value;
+      //       }
+      //     }
+      //   }
+      //   //console.debug('updated sources', sources);
+      //   const newStyle = {
+      //     ...nextStyle,
+      //     sources: sources,
+      //     layers: layers,
+      //   };
+      //   console.debug('new style', newStyle);
+      //   return newStyle;
+      // },
     });
     //const emitter = inject(emitterSymbol)!;
     for (const style of basemaps) {
@@ -201,7 +205,7 @@ export const useBasemapStore = defineStore('basemap', () => {
   // get current base layer from local storage
   const savedBasemap: BasemapSwitchItem = LocalStorage.hasItem('basemapStyle')
     ? (LocalStorage.getItem('basemapStyle') as BasemapSwitchItem)
-    : (basemaps[0] as BasemapSwitchItem);
+    : <BasemapSwitchItem>(basemaps[0] as unknown);
   setBasemap(savedBasemap);
 
   return {

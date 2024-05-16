@@ -1,4 +1,4 @@
-import { SymbolLayerSpecification, StyleSpecification } from 'maplibre-gl';
+import { SymbolLayerSpecification } from 'maplibre-gl';
 
 const imageSwitchZoom = 11;
 export const hutsLayerLayout = {
@@ -58,58 +58,3 @@ export const hutsLayerPaint = {
     ['literal', [0, -40]],
   ],
 } as SymbolLayerSpecification['paint'];
-
-interface getRasterArgs {
-  name: string;
-  tiles: string[];
-  attribution?: string;
-  tileSize?: number;
-}
-export function getRasterStyle({
-  name,
-  tiles,
-  attribution,
-  tileSize = 256,
-}: getRasterArgs): StyleSpecification {
-  const style: StyleSpecification = {
-    version: 8,
-    name: name,
-    sources: {},
-    glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
-    //sprite: { id: 'default', url: 'http://localhost:9000/huts/sprite' },
-    layers: [
-      {
-        id: `${name}-raster-layer`,
-        type: 'raster',
-        source: `${name}-raster-tiles`,
-        minzoom: 0,
-        maxzoom: 22,
-      },
-    ],
-  };
-  style.sources[`${name}-raster-tiles`] = {
-    type: 'raster',
-    tiles: tiles,
-    tileSize: tileSize,
-    attribution: attribution,
-  };
-  return style;
-}
-
-type LayerOptions = {
-  before: string | undefined;
-};
-type Layers = {
-  ways: LayerOptions;
-  background: LayerOptions;
-};
-
-export interface BasemapSwitchItem {
-  name: string;
-  label: string;
-  img: string;
-  active?: boolean;
-  show?: boolean;
-  style: StyleSpecification | string;
-  layers: Layers;
-}

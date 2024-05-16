@@ -5,7 +5,11 @@ import { hutsLayerLayout, hutsLayerPaint } from '../../stores/map/styles';
 import { useQuasar } from 'quasar';
 import { useBasemapStore } from '@stores/map/basemap-store';
 //import { Todo, Meta } from './models';
-import { LngLatLike, MapLayerEventType } from 'maplibre-gl';
+import {
+  LngLatLike,
+  MapLayerEventType,
+  GeoJSONSourceSpecification,
+} from 'maplibre-gl';
 // https://indoorequal.github.io/vue-maplibre-gl/
 import {
   MglMap,
@@ -115,22 +119,26 @@ function onMapStyledata(e: MglEvent) {
   console.debug('Style data changed', e);
   console.debug('Huts layer:', e.map.getLayer('wd-huts'));
   if (e.map.getSource('wd-huts') === undefined) {
-    e.map.addSource('wd-huts', {
+    const hutSource: GeoJSONSourceSpecification = {
       data: hutjson.value,
       buffer: 512,
       tolerance: 0.7,
       promoteId: 'slug',
       type: 'geojson',
-    });
+    };
+    e.map.addSource('wd-huts', hutSource);
   }
   if (e.map.getLayer('wd-huts') === undefined) {
-    e.map.addLayer({
-      layout: hutsLayerLayout,
-      paint: hutsLayerPaint,
-      id: 'wd-huts',
-      type: 'symbol',
-      source: 'wd-huts',
-    });
+    e.map.addLayer(
+      {
+        layout: hutsLayerLayout,
+        paint: hutsLayerPaint,
+        id: 'wd-huts',
+        type: 'symbol',
+        source: 'wd-huts',
+      },
+      basemapStore.getBasemap()?.layers.ways.before,
+    );
     e.map.on('mouseenter', 'wd-huts', onLayerEnter);
     e.map.on('mouseleave', 'wd-huts', onLayerLeave);
     e.map.on('click', 'wd-huts', onHutLayerClick);
@@ -185,8 +193,8 @@ const mapZoom: number = 7.5;
 </style>
 <template>
   <MglMap
-    @map:styledata="onMapStyledata"
     @map:load="onMapLoad"
+    @map:styledata="onMapStyledata"
     hash="p"
     :map-style="basemapStore.getBasemap()?.style"
     :zoom="mapZoom"
@@ -195,7 +203,22 @@ const mapZoom: number = 7.5;
   >
     <!-- <MglStyleSwitchControl :map-styles="basemapStore.basemaps" /> -->
     <!-- <MglCustomControl position="top-right" class=""> -->
-    <WdBasemapSwitch position="bottom-right" direction="left" />
+    <WdBasemapSwitch
+      :position="$q.platform.is.mobile ? 'bottom-right' : 'top-left'"
+      :direction="$q.platform.is.mobile ? 'left' : 'right'"
+      :offset="[
+        $q.platform.is.mobile ? 12 : 18,
+        $q.platform.is.mobile ? 20 : 24,
+      ]"
+    />
+    <WdOverlaySwitch
+      position="top-left"
+      direction="down"
+      :offset="[
+        $q.platform.is.mobile ? 12 : 18,
+        $q.platform.is.mobile ? 12 : 80,
+      ]"
+    />
     <!-- </MglCustomControl> -->
     <MglGeolocateControl />
     <MglNavigationControl v-if="$q.platform.is.desktop" />
