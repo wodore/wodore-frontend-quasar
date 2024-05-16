@@ -198,7 +198,7 @@ const mapZoom: number = 7.5;
     hash="p"
     :map-style="basemapStore.getBasemap()?.style"
     :zoom="mapZoom"
-    :drag-rotate="false"
+    :bearing-snap="30"
     :center="mapCenter"
     :attribution-control="false"
   >
