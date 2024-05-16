@@ -190,7 +190,7 @@ const mapZoom: number = 7.5;
     hash="p"
     :map-style="basemapStore.getBasemap()?.style"
     :zoom="mapZoom"
-    :bearing-snap="30"
+    :bearing-snap="15"
     :center="mapCenter"
     :attribution-control="false"
     :min-zoom="7"
@@ -219,8 +219,10 @@ const mapZoom: number = 7.5;
     <MglGeolocateControl />
     <!-- <MglNavigationControl :show-zoom="$q.platform.is.desktop" /> -->
     <MglNavigationControl :show-zoom="false" />
+    <MglAttributionControl
+      :position="$q.platform.is.mobile ? 'bottom-left' : 'bottom-right'"
+    />
     <MglScaleControl />
-    <MglAttributionControl position="bottom-right" />
     <!-- <MglGeoJsonSource
       source-id="wd-huts"
       :data="hutjson"

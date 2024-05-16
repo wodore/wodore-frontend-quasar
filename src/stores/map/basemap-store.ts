@@ -21,7 +21,7 @@ const swissTopoRasterStyle = getRasterStyle({
     'https://wmts9.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
   ],
   attribution:
-    '<a href="https://www.swisstopo.admin.ch/" target="_blank">&copy; swisstop</a>',
+    '<a href="https://www.swisstopo.admin.ch/" target="_blank">&copy; swisstopo</a>',
   suffix: '',
 });
 const oeLayer: 'geolandbasemap' | 'bmaphidpi' = 'bmaphidpi';
@@ -42,8 +42,7 @@ const oeTopoRasterStyle = getRasterStyle({
       '/normal/google3857/{z}/{y}/{x}.' +
       oeExt,
   ],
-  attribution:
-    '<a href="https://www.swisstopo.admin.ch/" target="_blank">&copy; swisstop</a>',
+  attribution: 'basemap.at',
   tileSize: 512,
 });
 function getImageUrl(name: string): string {
