@@ -58,7 +58,7 @@ function setOverlayVisibility(overlay: OverlaySwitchItem): boolean {
   }
   for (const layer of overlay.style.layers) {
     const currentLayer = mapRef.map.getLayer(layer.id);
-    console.log('Current layer', currentLayer);
+    //console.debug('Current layer', currentLayer);
     if (currentLayer) {
       if (!layer.layout) {
         layer['layout'] = { visibility: 'none' };
@@ -69,7 +69,7 @@ function setOverlayVisibility(overlay: OverlaySwitchItem): boolean {
         } else {
           layer.layout.visibility = 'none';
         }
-        console.log('Set visibility to ', layer.layout?.visibility);
+        //console.debug('Set visibility to ', layer.layout?.visibility);
         mapRef.map.setLayoutProperty(
           layer.id,
           'visibility',
@@ -122,17 +122,20 @@ function addOverlayLayer({
     if (onLayer) {
       _beforeId = basemap?.layers[onLayer]?.before;
     }
-    if (_beforeId === undefined) {
-      // vector
-      opacity = ['interpolate', ['linear'], ['zoom'], 7, 0.8, 12, 0.4, 22, 0.3];
-    }
+    //if (_beforeId === undefined) {
+    //  // vector
+    //  opacity = ['interpolate', ['linear'], ['zoom'], 7, 0.8, 12, 0.4, 22, 0.3];
+    //}
     if (basemapOpacity !== undefined) {
       opacity = basemapOpacity;
     }
     const _source = 'source' in layer ? layer.source : undefined;
     if ((_source && mapRef.map?.getSource(_source)) || _source === undefined) {
-      console.debug(`Add layer ${layer.id} before layer ${_beforeId}.`);
+      console.debug(`Add layer '${layer.id}' (before layer '${_beforeId}')`);
       mapRef.map?.addLayer(layer, _beforeId);
+      if (layer.paint !== undefined && `${layer.type}-opacity` in layer.paint) {
+        defaultOpacity = false;
+      }
       if (defaultOpacity == false) {
         opacity = undefined;
       } else if (autoOpacity == false) {
@@ -140,9 +143,7 @@ function addOverlayLayer({
       }
       if (opacity !== undefined) {
         console.debug(
-          `Set paint '${layer.type}-opacity' property for layer '${layer.id}' to ${opacity}`,
-          opacity,
-          mapRef.map?.getLayer(layer.id),
+          `  Set paint '${layer.type}-opacity' property for layer '${layer.id}' to ${opacity}`,
         );
         mapRef.map?.setPaintProperty(
           layer.id,
@@ -152,7 +153,7 @@ function addOverlayLayer({
       }
     } else {
       console.error(
-        `Source '${_source}' not added,  tried to add layer '${layer.id}'.`,
+        `Source '${_source}' not added, tried to add layer '${layer.id}'.`,
       );
     }
   }
@@ -163,17 +164,15 @@ function addOverlays() {
     for (const label in overlay.style.sources) {
       if (mapRef.map?.getSource(label) === undefined) {
         const sourceSpec = overlay.style.sources[label];
-        console.debug('Add source', label, sourceSpec);
+        console.debug(`Add ${sourceSpec.type} source '${label}'`);
         mapRef.map?.addSource(label, sourceSpec);
       }
     }
     setOverlayVisibility(<OverlaySwitchItem>(overlay as unknown));
-    console.debug('Add layers', overlay.style.layers);
     for (const layer of overlay.style.layers) {
       //console.debug('Add layer', layer);
       addOverlayLayer({
         layer: <LayerSpecification>(layer as unknown),
-        // @ts-expect-error: extensive
         defaultOpacity: <OpacitySpecification>(overlay.opacity as unknown),
         onLayer: overlay.onLayer,
       });
@@ -228,7 +227,7 @@ function overlayIcon(name: string) {
       padding="sm"
       :direction="direction"
       persistent
-      :color="switcherOpen ? 'negative-400' : 'primary-100'"
+      :color="switcherOpen ? 'negative-400' : 'icon'"
       v-model="switcherOpen"
     >
       <div class="overlay-scroll">

@@ -1,7 +1,7 @@
 @font-face {
     font-family: "icons";
-    src: url("./icons.woff?277e5c4cb55d5faedbc8a7c9eeaf394b") format("woff"),
-url("./icons.woff2?277e5c4cb55d5faedbc8a7c9eeaf394b") format("woff2");
+    src: url("./icons.woff?075699231cac73d82179c3e4a73360c7") format("woff"),
+url("./icons.woff2?075699231cac73d82179c3e4a73360c7") format("woff2");
 }
 
 i[class^="wd-"]:before, i[class*=" wd-"]:before {
@@ -54,21 +54,24 @@ i[class^="wd-"]:before, i[class*=" wd-"]:before {
 .wd-checkmark:before {
     content: "\f10d";
 }
-.wd-at:before {
+.wd-calendar:before {
     content: "\f10e";
 }
-.wd-arrowhead-up:before {
+.wd-at:before {
     content: "\f10f";
 }
-.wd-arrowhead-down:before {
+.wd-arrowhead-up:before {
     content: "\f110";
 }
-.wd-arrow-up-down:before {
+.wd-arrowhead-down:before {
     content: "\f111";
 }
-.wd-add:before {
+.wd-arrow-up-down:before {
     content: "\f112";
 }
-.wd-add-outline:before {
+.wd-add:before {
     content: "\f113";
+}
+.wd-add-outline:before {
+    content: "\f114";
 }

@@ -2,6 +2,7 @@ import { PropertyValueSpecification } from 'maplibre-gl';
 import { getRasterStyle, getSwisstopoOverlay } from './raster';
 import { OverlaySwitchItem } from './interfaces';
 import { transportStyle } from './overlay-transport';
+import { hutsStyle } from './overlay-huts';
 
 interface opacityLevelsArgs {
   zoomOut?: number;
@@ -105,18 +106,14 @@ export const mtb: OverlaySwitchItem = {
   }),
 };
 
-// const huts: OverlayItem = {
-//   name: 'huts-symbol-layer',
-//   label: 'Huts', //$t('transport.travel_time'),
-//   onLayer: 'ways',
-//   show: true,
-//   active: true,
-//   icon: 'fa-solid fa-house',
-//   opacity: false,
-//   style: hutsStyle,
-//   registerMapFn: hutsRegisterMap,
-//   layerUpdateFn: hutsLayerUpdate,
-// };
+export const huts: OverlaySwitchItem = {
+  name: 'huts',
+  label: 'Huts', //$t('transport.travel_time'),
+  show: true,
+  active: true,
+  icon: 'huts',
+  style: hutsStyle,
+};
 
 export const public_transport_stops: OverlaySwitchItem = {
   name: 'transport-stops',

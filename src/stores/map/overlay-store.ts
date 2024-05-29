@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { reactive } from 'vue';
 import { OverlaySwitchItem } from '@stores/map/utils/interfaces';
 import {
+  huts,
   skislopes,
   skitouren,
   hillslope,
@@ -21,6 +22,7 @@ export const useOverlayStore = defineStore('overlay', () => {
     return s.active;
   }
   const overlays = reactive<Array<OverlaySwitchItem>>([
+    huts,
     public_transport_stops,
     skitouren,
     snowshoes,

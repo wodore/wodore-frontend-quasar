@@ -12,6 +12,7 @@ export type IconsId =
   | 'eye-outline'
   | 'close'
   | 'checkmark'
+  | 'calendar'
   | 'at'
   | 'arrowhead-up'
   | 'arrowhead-down'
@@ -33,6 +34,7 @@ export type IconsKey =
   | 'EyeOutline'
   | 'Close'
   | 'Checkmark'
+  | 'Calendar'
   | 'At'
   | 'ArrowheadUp'
   | 'ArrowheadDown'
@@ -54,6 +56,7 @@ export enum Icons {
   EyeOutline = 'eye-outline',
   Close = 'close',
   Checkmark = 'checkmark',
+  Calendar = 'calendar',
   At = 'at',
   ArrowheadUp = 'arrowhead-up',
   ArrowheadDown = 'arrowhead-down',
@@ -76,10 +79,11 @@ export const ICONS_CODEPOINTS: { [key in Icons]: string } = {
   [Icons.EyeOutline]: '61707',
   [Icons.Close]: '61708',
   [Icons.Checkmark]: '61709',
-  [Icons.At]: '61710',
-  [Icons.ArrowheadUp]: '61711',
-  [Icons.ArrowheadDown]: '61712',
-  [Icons.ArrowUpDown]: '61713',
-  [Icons.Add]: '61714',
-  [Icons.AddOutline]: '61715',
+  [Icons.Calendar]: '61710',
+  [Icons.At]: '61711',
+  [Icons.ArrowheadUp]: '61712',
+  [Icons.ArrowheadDown]: '61713',
+  [Icons.ArrowUpDown]: '61714',
+  [Icons.Add]: '61715',
+  [Icons.AddOutline]: '61716',
 };

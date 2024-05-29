@@ -5,6 +5,9 @@ import { copyToClipboard } from 'quasar';
 import { IntersectionValue, useQuasar } from 'quasar';
 import getImageUrl from '@services/imageService';
 import { clientWodore, schemasWodore } from '@clients/index';
+import { useHutsStore } from '@stores/huts-store';
+import { storeToRefs } from 'pinia';
+const { selectedMonth } = storeToRefs(useHutsStore());
 
 const $q = useQuasar();
 //const router = useRouter();
@@ -18,6 +21,30 @@ const props = defineProps<Props>();
 
 const hut = ref<schemasWodore['HutSchemaDetails'] | null>(null);
 
+const isHutOpen = computed<schemasWodore['AnswerEnum']>(() => {
+  const currentMonth = selectedMonth.value; //(new Date().getMonth() + 1).toString().padStart(2, '0');
+  if (
+    hut.value?.open_monthly === undefined ||
+    hut.value?.open_monthly == null
+  ) {
+    return 'unknown';
+  }
+  const o = hut.value?.open_monthly[`month_${currentMonth}`];
+  if (o === undefined) {
+    return 'unknown';
+  }
+  return o as schemasWodore['AnswerEnum'];
+});
+
+const isHutClosed = computed<'yes' | 'no' | 'maybe' | 'unknown'>(() => {
+  switch (isHutOpen.value) {
+    case 'yes':
+      return 'no';
+    case 'no':
+      return 'yes';
+  }
+  return isHutOpen.value;
+});
 const headerShadow = ref(false);
 //const { data, error } = await
 watchEffect(() => {
@@ -145,6 +172,24 @@ const addHeaderShadow: IntersectionValue = (entry) => {
 .img-link {
   color: rgb(171, 171, 171) !important;
 }
+.attr_link :deep(a:active),
+.attr_link :deep(a:visited),
+.attr_link :deep(a:hover),
+.attr_link :deep(a:link),
+.attr_link :deep(a) {
+  color: rgb(171, 171, 171);
+  text-decoration: underline dotted;
+  text-decoration-color: rgb(132, 132, 132);
+}
+.attr_link :deep(a:hover) {
+  color: rgb(81, 81, 81);
+}
+.attr_link {
+  color: rgb(171, 171, 171);
+  // position: relative;
+  // top: -40px;
+  // right: 25px;
+}
 </style>
 
 <template>
@@ -217,7 +262,7 @@ const addHeaderShadow: IntersectionValue = (entry) => {
                   class="shadow-0 col-md-6 col-sm-12 col-12"
                   :type="hut.type_open"
                   :capacity="hut.capacity_open"
-                  :open="undefined"
+                  :open="isHutOpen"
                   color="green-4"
                   color2="green-2"
                 />
@@ -225,7 +270,7 @@ const addHeaderShadow: IntersectionValue = (entry) => {
                   class="shadow-0 col-md-6 col-sm-12 col-12"
                   :type="hut.type_closed"
                   :capacity="hut.capacity_closed"
-                  :open="true"
+                  :open="isHutClosed"
                   color="brown-3"
                   color2="brown-2"
                 />
@@ -233,7 +278,17 @@ const addHeaderShadow: IntersectionValue = (entry) => {
             </div>
           </div>
           <body class="text-body2 q-my-lg">
-            {{ hut.description }}
+            <!-- {{ hut.description }} -->
+            <div
+              class="attribution attr_link text-right"
+              style="padding: 0"
+              v-html="hut.description_attribution"
+            ></div>
+            <WdTextClamp
+              :max-lines="5"
+              :text="hut.description"
+              style="padding-bottom: 0"
+            />
           </body>
 
           <WdHutOpenMonthly

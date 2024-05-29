@@ -19,7 +19,15 @@
 .bg-black {
   background: $black !important;
 }
-// generate color classes
+// generate main color classes
+@each $name, $schema in $colors {
+  .text-#{$name} {
+    color: color($name) !important;
+  }
+  .bg-#{$name} {
+    background: color($name) !important;
+  }
+}
 @each $name, $schema in $colors {
   @each $shade, $color in $schema {
     .text-#{$name}-#{$shade} {

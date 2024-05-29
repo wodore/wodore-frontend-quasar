@@ -93,7 +93,7 @@ const switchIcon =
       padding="sm"
       :direction="direction"
       persistent
-      :color="switcherOpen ? 'negative-400' : 'primary-100'"
+      :color="switcherOpen ? 'negative-400' : 'icon'"
       v-model="switcherOpen"
     >
       <WdBasemapSwitchItem

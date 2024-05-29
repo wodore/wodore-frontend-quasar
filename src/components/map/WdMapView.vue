@@ -1,14 +1,20 @@
 <script setup lang="ts">
 import { ref, inject, watchEffect } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { hutsLayerLayout, hutsLayerPaint } from '../../stores/map/styles';
+//import {
+//  hutsLayerLayout,
+//  hutsLayerPaint,
+//  hutsOccupationLayerPaint,
+//} from '../../stores/map/styles.ts.old';
 import { useQuasar } from 'quasar';
 import { useBasemapStore } from '@stores/map/basemap-store';
+//import { useHutsStore } from '@stores/huts-store';
 //import { Todo, Meta } from './models';
 import {
   LngLatLike,
+  MapGeoJSONFeature,
   MapLayerEventType,
-  GeoJSONSourceSpecification,
+  //GeoJSONSourceSpecification,
 } from 'maplibre-gl';
 // https://indoorequal.github.io/vue-maplibre-gl/
 import {
@@ -18,6 +24,7 @@ import {
   MglNavigationControl,
   MglScaleControl,
   //MglSymbolLayer,
+  //MglCircleLayer,
   MglEvent,
   //MglStyleSwitchControl,
   MglGeolocateControl,
@@ -29,6 +36,7 @@ const $q = useQuasar();
 const router = useRouter();
 const route = useRoute();
 const basemapStore = useBasemapStore();
+//const hutStore = useHutsStore();
 
 type layoutType = {
   header: { size: number; offset: number; space: boolean };
@@ -65,15 +73,20 @@ if ($layout === undefined) {
   });
 }
 
-const hutjson = ref(
-  `${process.env.API_HOST}/${process.env.API_VERSION}/huts/huts.geojson?lang=de&limit=5000&embed_all=false&embed_type=true&embed_owner=false&embed_capacity=false&embed_sources=false&include_elevation=false&include_name=true&flat=true`,
-);
+//const hutjson = ref(
+//  `${process.env.API_HOST}/${process.env.API_VERSION}/huts/huts.geojson?lang=de&limit=5000&embed_all=false&embed_type=true&embed_owner=false&embed_capacity=false&embed_sources=false&include_elevation=false&include_name=true&flat=true`,
+//);
 
-function onMapLoad(e: MglEvent) {
+function onMapLoad(e: MglEvent<'load'>) {
   console.debug(`Maplibre version ${e.map.version} loaded`);
   e.map.scrollZoom.setWheelZoomRate(0.003);
-  onMapStyledata(e);
+  onMapStyledata(e as unknown as MglEvent<'data'>);
+  e.map.on('mouseenter', 'wd-huts', onLayerEnter);
+  e.map.on('mouseleave', 'wd-huts', onLayerLeave);
+  e.map.on('click', 'wd-huts', onHutLayerClick);
 }
+
+const selectedHutFeature = ref<undefined | MapGeoJSONFeature>(undefined);
 
 function onHutLayerClick(e: MapLayerEventType['click']) {
   console.debug('Hut layer clicked.');
@@ -84,6 +97,24 @@ function onHutLayerClick(e: MapLayerEventType['click']) {
       e.features?.map((v) => v.properties.slug),
     );
     if (feature) {
+      if (selectedHutFeature.value !== undefined) {
+        e.target.setFeatureState(
+          { source: 'wd-huts', id: selectedHutFeature.value.id },
+          { selected: false },
+        );
+      }
+      // TODO: add to route watch
+      if (selectedHutFeature.value?.id != feature.id) {
+        e.target.setFeatureState(
+          { source: 'wd-huts', id: feature.id },
+          { selected: true },
+        );
+        // @ts-expect-error unexpected deep
+        selectedHutFeature.value = <MapGeoJSONFeature>(feature as unknown);
+      } else {
+        selectedHutFeature.value = undefined;
+      }
+
       const slug = feature.properties.slug;
       if (route.params.slug == slug) {
         router.push({ name: 'map', hash: route.hash, query: route.query });
@@ -115,34 +146,8 @@ function onLayerLeave(e: MapLayerEventType['mouseleave']) {
 }
 const SPRITE_BASE_URL = process.env.API_HOST;
 const _spriteUrl = SPRITE_BASE_URL + '/static/huts/sprite';
-function onMapStyledata(e: MglEvent) {
-  console.debug('Style data changed', e);
-  console.debug('Huts layer:', e.map.getLayer('wd-huts'));
-  if (e.map.getSource('wd-huts') === undefined) {
-    const hutSource: GeoJSONSourceSpecification = {
-      data: hutjson.value,
-      buffer: 512,
-      tolerance: 0.7,
-      promoteId: 'slug',
-      type: 'geojson',
-    };
-    e.map.addSource('wd-huts', hutSource);
-  }
-  if (e.map.getLayer('wd-huts') === undefined) {
-    e.map.addLayer(
-      {
-        layout: hutsLayerLayout,
-        paint: hutsLayerPaint,
-        id: 'wd-huts',
-        type: 'symbol',
-        source: 'wd-huts',
-      },
-      basemapStore.getBasemap()?.layers.ways.before,
-    );
-    e.map.on('mouseenter', 'wd-huts', onLayerEnter);
-    e.map.on('mouseleave', 'wd-huts', onLayerLeave);
-    e.map.on('click', 'wd-huts', onHutLayerClick);
-  }
+function onMapStyledata(e: MglEvent<'data'>) {
+  console.debug('Style data changed event', e);
   const _wodoreSprite = e.map.getSprite();
   //console.debug("Check sprite 'wodore' in ", _wodoreSprite);
   let _spriteAdded = false;
@@ -223,6 +228,19 @@ const mapZoom: number = 7.5;
       :position="$q.platform.is.mobile ? 'bottom-left' : 'bottom-right'"
     />
     <MglScaleControl />
+    <!-- <MglGeoJsonSource
+      source-id="wd-bookings"
+      :data="hutStore.bookingsGeojson"
+      :buffer="512"
+      :tolerance="0.7"
+      promote-id="slug"
+    > -->
+    <!-- <MglCircleLayer
+        layer-id="wd-bookings-huts"
+        :paint="hutsOccupationLayerPaint"
+        before="wd-huts"
+      ></MglCircleLayer> -->
+    <!-- </MglGeoJsonSource> -->
     <!-- <MglGeoJsonSource
       source-id="wd-huts"
       :data="hutjson"

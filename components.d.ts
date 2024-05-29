@@ -34,7 +34,9 @@ declare module 'vue' {
     WdMonthly: typeof import('./src/components/huts/monthly/WdMonthly.vue')['default']
     WdOverlaySwitch: typeof import('./src/components/map/WdOverlaySwitch.vue')['default']
     WdOverlaySwitchItem: typeof import('./src/components/map/WdOverlaySwitchItem.vue')['default']
+    WdSelectDate: typeof import('./src/components/WdSelectDate.vue')['default']
     WdSourceButtons: typeof import('./src/components/huts/WdSourceButtons.vue')['default']
+    WdTextClamp: typeof import('./src/components/utils/WdTextClamp.vue')['default']
     WdToolbarButton: typeof import('./src/components/toolbar/WdToolbarButton.vue')['default']
     WodoreLogo: typeof import('./src/components/wodore/WodoreLogo.vue')['default']
   }

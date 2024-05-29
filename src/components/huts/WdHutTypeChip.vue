@@ -5,6 +5,7 @@ import { schemasWodore } from '@clients/index';
 import IconCheckmarkFill from '~icons/eva/checkmark-fill';
 import IconQuestionMarkFill from '~icons/eva/question-mark-fill';
 import IconCloseFill from '~icons/eva/close-fill';
+//import IconMinusOutline from '~icons/eva/minus-outline';
 
 interface Props {
   type?:
@@ -15,7 +16,7 @@ interface Props {
     | schemasWodore['HutSchemaDetails']['capacity_closed'];
   color?: string;
   color2?: string;
-  open?: boolean | undefined | null;
+  open?: schemasWodore['AnswerEnum'];
 }
 const props = withDefaults(defineProps<Props>(), {
   color: 'white',
@@ -23,17 +24,30 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const openIcon = computed(() => {
-  return props.open
-    ? IconCheckmarkFill
-    : props.open == false
-      ? IconCloseFill
-      : IconQuestionMarkFill;
+  switch (props.open) {
+    case 'yes':
+      return IconCheckmarkFill;
+    case 'no':
+      return IconCloseFill;
+    case 'maybe':
+      //return IconMinusOutline;
+      return IconQuestionMarkFill;
+  }
+  return IconQuestionMarkFill;
 });
 
 const color_bg = computed(() => (props.color2 ? props.color2 : 'white'));
 
 const openColor = computed(() => {
-  return props.open ? 'green-6' : props.open == false ? 'red-4' : 'grey-6';
+  switch (props.open) {
+    case 'yes':
+      return 'green-6';
+    case 'no':
+      return 'red-4';
+    case 'maybe':
+      return 'green-6';
+  }
+  return 'grey-6';
 });
 </script>
 <style scoped>

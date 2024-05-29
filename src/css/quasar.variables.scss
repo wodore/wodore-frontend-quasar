@@ -38,6 +38,7 @@ $breakpoint-lg: 1919px;
 // https://www.tints.dev/?primary=346751&accent=BFAB25&secondary=9DD9D2&positive=25BF5E&&negative=BF211E&info=2673BF&warning=FF3C38&dark=112119&black=000000&white=FFFFFF
 
 // settings:
+$icon: #a9f0d2;
 // hue=0 / saturation=2 / lightness max=80 / lightness min=10 / Lightness
 $primary: #346751;
 // hue=-2 / saturation=1 / lightness max=70 / lightness min=20 / Lightness
@@ -64,6 +65,10 @@ $black: #171717;
 $white: #ffffff;
 
 $colors: (
+  'icon': (
+    500: $icon,
+    700: $icon,
+  ),
   'primary': (
     100: #8fd6b7,
     200: #6dc59f,

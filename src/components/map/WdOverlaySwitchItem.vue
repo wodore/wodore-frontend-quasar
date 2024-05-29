@@ -24,7 +24,7 @@ defineProps<Props>();
     round
     style="padding: 0"
     :ripple="false"
-    :color="active ? 'accent-200' : 'primary-100'"
+    :color="active ? 'accent-200' : 'icon'"
   >
     <q-icon
       :name="icon"

@@ -1,5 +1,10 @@
-import { SymbolLayerSpecification } from 'maplibre-gl';
+import {
+  CircleLayerSpecification,
+  SymbolLayerSpecification,
+} from 'maplibre-gl';
 
+// HUTS
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 const imageSwitchZoom = 11;
 export const hutsLayerLayout = {
   'text-field': ['get', 'name'],
@@ -58,3 +63,39 @@ export const hutsLayerPaint = {
     ['literal', [0, -40]],
   ],
 } as SymbolLayerSpecification['paint'];
+
+// BOOKINGS
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+function getAvailColors(day: number) {
+  return [
+    'match',
+    ['get', 'occupancy_status', ['at', day, ['get', 'bookings']]],
+    'empty',
+    '#f7fd25',
+    'low',
+    '#82cf06',
+    'medium',
+    '#eab138',
+    'high',
+    '#e16f07',
+    'full',
+    '#d32226',
+    '#d4d4d4',
+  ];
+}
+export const hutsOccupationLayerPaint = {
+  'circle-color': getAvailColors(0),
+  //  //'circle-opacity': 0.6,
+  'circle-radius': ['interpolate', ['linear'], ['zoom'], 7, 4, 9, 10, 20, 60],
+  'circle-opacity': [
+    'interpolate',
+    ['linear'],
+    ['zoom'],
+    6,
+    0.8,
+    10,
+    0.6,
+    11,
+    0,
+  ],
+} as CircleLayerSpecification['paint'];
