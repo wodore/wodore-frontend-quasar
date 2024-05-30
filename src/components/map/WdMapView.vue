@@ -80,7 +80,7 @@ if ($layout === undefined) {
 function onMapLoad(e: MglEvent<'load'>) {
   console.debug(`Maplibre version ${e.map.version} loaded`);
   e.map.scrollZoom.setWheelZoomRate(0.003);
-  onMapStyledata(e as unknown as MglEvent<'data'>);
+  onMapStyledata(e as unknown as MglEvent<'styledata'>);
   e.map.on('mouseenter', 'wd-huts', onLayerEnter);
   e.map.on('mouseleave', 'wd-huts', onLayerLeave);
   e.map.on('click', 'wd-huts', onHutLayerClick);
@@ -146,7 +146,8 @@ function onLayerLeave(e: MapLayerEventType['mouseleave']) {
 }
 const SPRITE_BASE_URL = process.env.API_HOST;
 const _spriteUrl = SPRITE_BASE_URL + '/static/huts/sprite';
-function onMapStyledata(e: MglEvent<'data'>) {
+function onMapStyledata(e: MglEvent<'styledata'>) {
+  //$q.loadingBar.start();
   console.debug('Style data changed event', e);
   const _wodoreSprite = e.map.getSprite();
   //console.debug("Check sprite 'wodore' in ", _wodoreSprite);
@@ -161,6 +162,10 @@ function onMapStyledata(e: MglEvent<'data'>) {
     e.map.addSprite('wodore', _spriteUrl);
   }
 }
+//function onMapRender(e: MglEvent<'render'>) {
+//  $q.loadingBar.stop();
+//}
+
 const mapCenter: LngLatLike = [8.22, 46.7];
 const mapZoom: number = 7.5;
 </script>
@@ -189,6 +194,7 @@ const mapZoom: number = 7.5;
 //}
 </style>
 <template>
+  <!-- @map:render="onMapRender" -->
   <MglMap
     @map:load="onMapLoad"
     @map:styledata="onMapStyledata"

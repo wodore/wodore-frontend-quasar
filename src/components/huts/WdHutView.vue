@@ -19,7 +19,7 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const hut = ref<schemasWodore['HutSchemaDetails'] | null>(null);
+const hut = ref<schemasWodore['HutSchemaDetails'] | undefined>(undefined);
 
 const isHutOpen = computed<schemasWodore['AnswerEnum']>(() => {
   const currentMonth = selectedMonth.value; //(new Date().getMonth() + 1).toString().padStart(2, '0');
@@ -48,7 +48,7 @@ const isHutClosed = computed<'yes' | 'no' | 'maybe' | 'unknown'>(() => {
 const headerShadow = ref(false);
 //const { data, error } = await
 watchEffect(() => {
-  hut.value = null;
+  hut.value = undefined;
   headerShadow.value = false;
   if (props.slug) {
     clientWodore
@@ -229,8 +229,8 @@ const addHeaderShadow: IntersectionValue = (entry) => {
             {{ hut.owner?.name }}
           </h2>
 
-          <div class="row items-start row q-gutter-sm">
-            <div class="col-md-12 col-sm-7 col-7">
+          <div class="row items-start q-gutter-sm">
+            <div v-if="headerImg" class="col-md-12 col-sm-7 col-7">
               <div
                 :class="{
                   'q-ma-sm': $q.screen.gt.sm,
@@ -238,7 +238,6 @@ const addHeaderShadow: IntersectionValue = (entry) => {
                 }"
               >
                 <q-img
-                  v-if="headerImg"
                   :src="headerImg"
                   class="hut-image"
                   :class="{ 'shadow-8': $q.screen.gt.sm }"
@@ -250,7 +249,14 @@ const addHeaderShadow: IntersectionValue = (entry) => {
                 </q-img>
               </div>
             </div>
-            <div class="col-md-12 col-sm-4 col-4">
+            <div
+              class="col-md-12"
+              :class="{
+                'col-sm-4': headerImg,
+                'col-4': headerImg,
+                'col-12': !headerImg,
+              }"
+            >
               <div
                 class="row items-start justify-start q-gutter-sm"
                 :class="{
@@ -274,6 +280,23 @@ const addHeaderShadow: IntersectionValue = (entry) => {
                   color="brown-3"
                   color2="brown-2"
                 />
+                <!-- Location -->
+                <q-chip
+                  size="md"
+                  class="bg-grey-4 q-mr-none shadow-0 col-md-6 col-sm-12 col-12"
+                  style="min-width: 90px; max-width: 90px; max-height: 30px"
+                >
+                  <q-avatar class="bg-grey-5" text-color="primary-500">
+                    <q-icon size="20px">
+                      <IconMingcuteMountain2Fill />
+                    </q-icon>
+                  </q-avatar>
+                  <span
+                    class="text-primary-400"
+                    style="font-weight: 500; width: 28px"
+                    >{{ hut.elevation }} m</span
+                  >
+                </q-chip>
               </div>
             </div>
           </div>

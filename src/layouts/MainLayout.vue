@@ -5,11 +5,6 @@ import { useRoute, useRouter } from 'vue-router';
 import WodoreLogo from 'components/wodore/WodoreLogo.vue';
 
 const $q = useQuasar();
-$q.loadingBar.setDefaults({
-  hijackFilter(url) {
-    return !/^.*timetable.search.ch.*/.test(url);
-  },
-});
 
 const isMobile = computed(() => {
   return $q.screen.xs;

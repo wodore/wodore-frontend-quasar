@@ -135,7 +135,24 @@ export default configure((ctx) => {
 
       // Quasar plugins
       plugins: ['Notify', 'Dialog', 'LocalStorage', 'LoadingBar'],
-      config: { loadingBar: { color: 'accent-700', size: '2px' } },
+      config: {
+        loadingBar: {
+          color: 'accent-700',
+          size: '2px',
+          //TODO does not work?? https://quasar.dev/quasar-plugins/loading-bar#using-an-ajax-filter
+          hijackFilter: (url: string) => {
+            //return !/^.*(timetable.search.ch|m\/hut\/).*/.test(url);
+            console.debug('Test url pattern ', url);
+            if (
+              /^.*timetable.search.ch.*/.test(url) ||
+              /^.*m\/hut\/*/.test(url)
+            ) {
+              return false;
+            }
+            return true;
+          },
+        },
+      },
     },
 
     // animations: 'all', // --- includes all animations

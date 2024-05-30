@@ -7,6 +7,7 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
+    copy: typeof import('./src/components/toolbar/WdToolbarButton copy.vue')['default']
     IconEvaExternalLinkFill: typeof import('~icons/eva/external-link-fill')['default']
     IconEvaLockFill: typeof import('~icons/eva/lock-fill')['default']
     IconEvaUnlockOutline: typeof import('~icons/eva/unlock-outline')['default']
@@ -38,6 +39,7 @@ declare module 'vue' {
     WdSourceButtons: typeof import('./src/components/huts/WdSourceButtons.vue')['default']
     WdTextClamp: typeof import('./src/components/utils/WdTextClamp.vue')['default']
     WdToolbarButton: typeof import('./src/components/toolbar/WdToolbarButton.vue')['default']
+    WdToolbarExtraButton: typeof import('./src/components/toolbar/WdToolbarExtraButton.vue')['default']
     WodoreLogo: typeof import('./src/components/wodore/WodoreLogo.vue')['default']
   }
 }

@@ -1,7 +1,7 @@
 @font-face {
     font-family: "icons";
-    src: url("./icons.woff?075699231cac73d82179c3e4a73360c7") format("woff"),
-url("./icons.woff2?075699231cac73d82179c3e4a73360c7") format("woff2");
+    src: url("./icons.woff?de20abf677fbd64b7739b4cced12ad75") format("woff"),
+url("./icons.woff2?de20abf677fbd64b7739b4cced12ad75") format("woff2");
 }
 
 i[class^="wd-"]:before, i[class*=" wd-"]:before {
@@ -33,45 +33,54 @@ i[class^="wd-"]:before, i[class*=" wd-"]:before {
 .wd-menu-arrow:before {
     content: "\f106";
 }
-.wd-link:before {
+.wd-location-question:before {
     content: "\f107";
 }
-.wd-favorite:before {
+.wd-link:before {
     content: "\f108";
 }
-.wd-favorite-outline:before {
+.wd-favorite:before {
     content: "\f109";
 }
-.wd-eye:before {
+.wd-favorite-outline:before {
     content: "\f10a";
 }
-.wd-eye-outline:before {
+.wd-eye:before {
     content: "\f10b";
 }
-.wd-close:before {
+.wd-eye-outline:before {
     content: "\f10c";
 }
-.wd-checkmark:before {
+.wd-edit:before {
     content: "\f10d";
 }
-.wd-calendar:before {
+.wd-edit-outline:before {
     content: "\f10e";
 }
-.wd-at:before {
+.wd-close:before {
     content: "\f10f";
 }
-.wd-arrowhead-up:before {
+.wd-checkmark:before {
     content: "\f110";
 }
-.wd-arrowhead-down:before {
+.wd-calendar:before {
     content: "\f111";
 }
-.wd-arrow-up-down:before {
+.wd-at:before {
     content: "\f112";
 }
-.wd-add:before {
+.wd-arrowhead-up:before {
     content: "\f113";
 }
-.wd-add-outline:before {
+.wd-arrowhead-down:before {
     content: "\f114";
+}
+.wd-arrow-up-down:before {
+    content: "\f115";
+}
+.wd-add:before {
+    content: "\f116";
+}
+.wd-add-outline:before {
+    content: "\f117";
 }

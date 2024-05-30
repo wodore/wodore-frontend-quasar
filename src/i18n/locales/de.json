@@ -5,6 +5,9 @@
   "more": "mehr",
   "map_style": "Karte",
   "overlay_style": "Themen",
+  "edit": "Bearbeiten",
+  "favorite": "Favorit",
+  "show_map": "Karte",
   "hut": {
     "serviced": "bewartet",
     "not_serviced": "unbewartet",

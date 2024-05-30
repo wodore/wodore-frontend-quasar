@@ -5,11 +5,14 @@ export type IconsId =
   | 'message'
   | 'menu'
   | 'menu-arrow'
+  | 'location-question'
   | 'link'
   | 'favorite'
   | 'favorite-outline'
   | 'eye'
   | 'eye-outline'
+  | 'edit'
+  | 'edit-outline'
   | 'close'
   | 'checkmark'
   | 'calendar'
@@ -27,11 +30,14 @@ export type IconsKey =
   | 'Message'
   | 'Menu'
   | 'MenuArrow'
+  | 'LocationQuestion'
   | 'Link'
   | 'Favorite'
   | 'FavoriteOutline'
   | 'Eye'
   | 'EyeOutline'
+  | 'Edit'
+  | 'EditOutline'
   | 'Close'
   | 'Checkmark'
   | 'Calendar'
@@ -49,11 +55,14 @@ export enum Icons {
   Message = 'message',
   Menu = 'menu',
   MenuArrow = 'menu-arrow',
+  LocationQuestion = 'location-question',
   Link = 'link',
   Favorite = 'favorite',
   FavoriteOutline = 'favorite-outline',
   Eye = 'eye',
   EyeOutline = 'eye-outline',
+  Edit = 'edit',
+  EditOutline = 'edit-outline',
   Close = 'close',
   Checkmark = 'checkmark',
   Calendar = 'calendar',
@@ -72,18 +81,21 @@ export const ICONS_CODEPOINTS: { [key in Icons]: string } = {
   [Icons.Message]: '61700',
   [Icons.Menu]: '61701',
   [Icons.MenuArrow]: '61702',
-  [Icons.Link]: '61703',
-  [Icons.Favorite]: '61704',
-  [Icons.FavoriteOutline]: '61705',
-  [Icons.Eye]: '61706',
-  [Icons.EyeOutline]: '61707',
-  [Icons.Close]: '61708',
-  [Icons.Checkmark]: '61709',
-  [Icons.Calendar]: '61710',
-  [Icons.At]: '61711',
-  [Icons.ArrowheadUp]: '61712',
-  [Icons.ArrowheadDown]: '61713',
-  [Icons.ArrowUpDown]: '61714',
-  [Icons.Add]: '61715',
-  [Icons.AddOutline]: '61716',
+  [Icons.LocationQuestion]: '61703',
+  [Icons.Link]: '61704',
+  [Icons.Favorite]: '61705',
+  [Icons.FavoriteOutline]: '61706',
+  [Icons.Eye]: '61707',
+  [Icons.EyeOutline]: '61708',
+  [Icons.Edit]: '61709',
+  [Icons.EditOutline]: '61710',
+  [Icons.Close]: '61711',
+  [Icons.Checkmark]: '61712',
+  [Icons.Calendar]: '61713',
+  [Icons.At]: '61714',
+  [Icons.ArrowheadUp]: '61715',
+  [Icons.ArrowheadDown]: '61716',
+  [Icons.ArrowUpDown]: '61717',
+  [Icons.Add]: '61718',
+  [Icons.AddOutline]: '61719',
 };
