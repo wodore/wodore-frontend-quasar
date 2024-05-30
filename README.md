@@ -36,7 +36,8 @@ yarn build
 
 ## Links
 
-- [**Wodore API**](https://api.wodore.com/v1/docs)
-- [**Quasar**](https://quasar.dev/docs)
-- [**vue-maplibre-gl**](https://github.com/indoorequal/vue-maplibre-gl): [docu](https://indoorequal.github.io/vue-maplibre-gl/)
-- [**maplibre**](https://maplibre.org/): [docu](https://maplibre.org/maplibre-gl-js/docs/), [spec](https://maplibre.org/maplibre-style-spec/)
+- [_Wodore API_](https://api.wodore.com/v1/docs)
+- [_Backend_](https://github.com/wodore/wodore-backend)
+- [_Quasar_](https://quasar.dev/docs)
+- [_vue-maplibre-gl_](https://github.com/indoorequal/vue-maplibre-gl): [docu](https://indoorequal.github.io/vue-maplibre-gl/)
+- [_maplibre_](https://maplibre.org/): [docu](https://maplibre.org/maplibre-gl-js/docs/), [spec](https://maplibre.org/maplibre-style-spec/)
