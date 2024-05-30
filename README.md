@@ -1,4 +1,4 @@
-# wodore (wodore-frontend-quasar)
+# `wodore-frontend-quasar`
 
 Find the next best location in the mountains.
 
@@ -8,28 +8,23 @@ Find the next best location in the mountains.
 yarn
 ```
 
-## Update OpenAPI interfaces
+## Generate assets
 
 ```bash
-yarn run gen:wodore
+yarn run gen:<asset>
 ```
 
-### Start the app in development mode (hot-code reloading, error reporting, etc.)
+The following assets are used:
+
+- `api`: Open API client ([`openapi-ts`](https://openapi-ts.pages.dev/)) (see `src/clients/`, [api docu](https://api.wodore.com/v1/docs))
+- `icons`: Custom `wd` icons ([`fantasticon`](https://github.com/tancredi/fantasticon)) (stored in `src/extras/icons/svg`)
+- `favs`: Favicons ([`icongenie`](https://quasar.dev/icongenie/introduction/)) (defined in `src/assets/icongenie/`)
+
+### Start the app in development mode
 
 ```bash
 quasar dev
-```
-
-### Lint the files
-
-```bash
-yarn lint
-```
-
-### Format the files
-
-```bash
-yarn format
+# quasar dev:<mode>
 ```
 
 ### Build the app for production
@@ -39,12 +34,9 @@ yarn build
 # yarn serve # for testing
 ```
 
-### Customize the configuration
-
-See [Configuring quasar.config.js](https://v2.quasar.dev/quasar-cli-vite/quasar-config-js).
-
 ## Links
 
+- [**Wodore API**](https://api.wodore.com/v1/docs)
 - [**Quasar**](https://quasar.dev/docs)
-- [**vue-maplibre-gl**](https://github.com/indoorequal/vue-maplibre-gl) [docu](https://indoorequal.github.io/vue-maplibre-gl/)
-- [**maplibre**](https://maplibre.org/) [docu](https://maplibre.org/maplibre-gl-js/docs/) | [spec](https://maplibre.org/maplibre-style-spec/)
+- [**vue-maplibre-gl**](https://github.com/indoorequal/vue-maplibre-gl): [docu](https://indoorequal.github.io/vue-maplibre-gl/)
+- [**maplibre**](https://maplibre.org/): [docu](https://maplibre.org/maplibre-gl-js/docs/), [spec](https://maplibre.org/maplibre-style-spec/)
