@@ -7,7 +7,6 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
-    copy: typeof import('./src/components/toolbar/WdToolbarButton copy.vue')['default']
     IconEvaExternalLinkFill: typeof import('~icons/eva/external-link-fill')['default']
     IconEvaLockFill: typeof import('~icons/eva/lock-fill')['default']
     IconEvaUnlockOutline: typeof import('~icons/eva/unlock-outline')['default']

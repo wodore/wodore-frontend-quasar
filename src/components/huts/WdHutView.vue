@@ -292,7 +292,7 @@ const addHeaderShadow: IntersectionValue = (entry) => {
                     </q-icon>
                   </q-avatar>
                   <span
-                    class="text-primary-400"
+                    class="text-primary-500"
                     style="font-weight: 500; width: 28px"
                     >{{ hut.elevation }} m</span
                   >
