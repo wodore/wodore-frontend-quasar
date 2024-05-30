@@ -35,10 +35,16 @@ yarn format
 ### Build the app for production
 
 ```bash
-quasar build
-# ./serve-local.sh # for testing
+yarn build
+# yarn serve # for testing
 ```
 
 ### Customize the configuration
 
 See [Configuring quasar.config.js](https://v2.quasar.dev/quasar-cli-vite/quasar-config-js).
+
+## Links
+
+- [**Quasar**](https://quasar.dev/docs)
+- [**vue-maplibre-gl**](https://github.com/indoorequal/vue-maplibre-gl) [docu](https://indoorequal.github.io/vue-maplibre-gl/)
+- [**maplibre**](https://maplibre.org/) [docu](https://maplibre.org/maplibre-gl-js/docs/) | [spec](https://maplibre.org/maplibre-style-spec/)

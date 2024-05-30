@@ -5,10 +5,11 @@ import { useRoute, useRouter } from 'vue-router';
 import WodoreLogo from 'components/wodore/WodoreLogo.vue';
 
 const $q = useQuasar();
-function ajaxFilter(url: string) {
-  //return !/^.*transport\/stations\/by_name/.test(url);
-  return !/^.*timetable.search.ch.*/.test(url);
-}
+$q.loadingBar.setDefaults({
+  hijackFilter(url) {
+    return !/^.*timetable.search.ch.*/.test(url);
+  },
+});
 
 const isMobile = computed(() => {
   return $q.screen.xs;
@@ -52,7 +53,6 @@ function closeContent(mode: string) {
 </style>
 <template>
   <q-layout view="hHh LpR lFf" class="overflow-hidden">
-    <q-ajax-bar color="accent" :hijack-filter="ajaxFilter" />
     <q-header class="text-white shadow-6 app-header">
       <!-- TOOLBAR -->
       <q-toolbar>
