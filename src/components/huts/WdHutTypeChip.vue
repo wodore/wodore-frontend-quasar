@@ -72,7 +72,7 @@ const openColor = computed(() => {
     </q-avatar>
     <!-- style="filter: invert(1)" -->
     <span class="text-accent-900" style="font-weight: 500; width: 28px">{{
-      capacity
+      capacity === undefined || capacity == null ? '?' : capacity
     }}</span>
     <q-iconify
       :class="'bg-' + openColor + ' badge'"

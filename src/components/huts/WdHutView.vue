@@ -280,11 +280,12 @@ const addHeaderShadow: IntersectionValue = (entry) => {
                   color="brown-3"
                   color2="brown-2"
                 />
-                <!-- Location -->
+                <!-- Location Chip -->
                 <q-chip
                   size="md"
                   class="bg-grey-4 q-mr-none shadow-0 col-md-6 col-sm-12 col-12"
                   style="min-width: 90px; max-width: 90px; max-height: 30px"
+                  v-if="hut.elevation"
                 >
                   <q-avatar class="bg-grey-5" text-color="primary-500">
                     <q-icon size="20px">

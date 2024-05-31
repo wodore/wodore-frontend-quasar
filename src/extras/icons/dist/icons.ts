@@ -8,6 +8,8 @@ export type IconsId =
   | 'menu-arrow'
   | 'location-question'
   | 'link'
+  | 'info'
+  | 'info-outline'
   | 'favorite'
   | 'favorite-outline'
   | 'eye'
@@ -34,6 +36,8 @@ export type IconsKey =
   | 'MenuArrow'
   | 'LocationQuestion'
   | 'Link'
+  | 'Info'
+  | 'InfoOutline'
   | 'Favorite'
   | 'FavoriteOutline'
   | 'Eye'
@@ -60,6 +64,8 @@ export enum Icons {
   MenuArrow = 'menu-arrow',
   LocationQuestion = 'location-question',
   Link = 'link',
+  Info = 'info',
+  InfoOutline = 'info-outline',
   Favorite = 'favorite',
   FavoriteOutline = 'favorite-outline',
   Eye = 'eye',
@@ -87,19 +93,21 @@ export const ICONS_CODEPOINTS: { [key in Icons]: string } = {
   [Icons.MenuArrow]: '61703',
   [Icons.LocationQuestion]: '61704',
   [Icons.Link]: '61705',
-  [Icons.Favorite]: '61706',
-  [Icons.FavoriteOutline]: '61707',
-  [Icons.Eye]: '61708',
-  [Icons.EyeOutline]: '61709',
-  [Icons.Edit]: '61710',
-  [Icons.EditOutline]: '61711',
-  [Icons.Close]: '61712',
-  [Icons.Checkmark]: '61713',
-  [Icons.Calendar]: '61714',
-  [Icons.At]: '61715',
-  [Icons.ArrowheadUp]: '61716',
-  [Icons.ArrowheadDown]: '61717',
-  [Icons.ArrowUpDown]: '61718',
-  [Icons.Add]: '61719',
-  [Icons.AddOutline]: '61720',
+  [Icons.Info]: '61706',
+  [Icons.InfoOutline]: '61707',
+  [Icons.Favorite]: '61708',
+  [Icons.FavoriteOutline]: '61709',
+  [Icons.Eye]: '61710',
+  [Icons.EyeOutline]: '61711',
+  [Icons.Edit]: '61712',
+  [Icons.EditOutline]: '61713',
+  [Icons.Close]: '61714',
+  [Icons.Checkmark]: '61715',
+  [Icons.Calendar]: '61716',
+  [Icons.At]: '61717',
+  [Icons.ArrowheadUp]: '61718',
+  [Icons.ArrowheadDown]: '61719',
+  [Icons.ArrowUpDown]: '61720',
+  [Icons.Add]: '61721',
+  [Icons.AddOutline]: '61722',
 };

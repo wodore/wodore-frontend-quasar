@@ -48,10 +48,10 @@ const props = withDefaults(defineProps<Props>(), {
           :src="ref.logo"
         />
         <q-tooltip :hide-delay="150" :delay="150">
-          <span>{{ ref.fullname }}</span
-          ><br />
+          <span>{{ ref.fullname }}</span>
+          <!-- <br /> -->
           <!-- TODO: send id -->
-          <span class="text-bold text-subtitle1">{{ ref.slug }}</span>
+          <!-- <span class="text-bold text-subtitle1">{{ ref.slug }}</span> -->
         </q-tooltip>
       </q-btn>
     </div>

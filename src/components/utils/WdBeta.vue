@@ -14,6 +14,7 @@ function toFeedback() {
     color('negative', 800) 10px,
     color('negative', 800) 20px
   );
+  //opacity: 0.96;
   padding-top: 3px;
   padding-bottom: 4px;
 }
@@ -39,15 +40,17 @@ a:hover {
       name="img:/logos/logo_beta.svg"
       style="
         padding-left: 10px;
-        transform: scale(3) translateY(-2.5px) translateX(-5.1px);
+        transform: scale(3) translateY(-2.5px) translateX(-6px);
       "
     />
-    Die Seite ist noch im Aufbau,
-    <a class="link" @click="toFeedback">Feedback</a> ist willkommen!
+    <span :style="$q.platform.is.mobile ? 'font-size: x-small' : ''">
+      Die Seite ist noch im Aufbau,
+      <a class="link" @click="toFeedback">Feedback</a> ist willkommen!
+    </span>
     <IconNotoHandshake
       style="
         padding-right: 10px;
-        transform: scale(6) translateY(-0.7px) translateX(5.6px) rotate(-10deg);
+        transform: scale(6) translateY(-0.7px) translateX(6.5px) rotate(-10deg);
       "
     />
   </div>

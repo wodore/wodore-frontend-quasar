@@ -8,9 +8,46 @@ interface Props {
   hut?: schemasWodore['HutSchemaDetails'] | undefined;
 }
 
+const props = defineProps<Props>();
+// TODO: get this info from the API
+const reviewInfos: Record<string, Array<string>> = {
+  new: ['warning-200', 'ungeprüft'],
+  done: ['positive-800', 'ok'],
+  review: ['warning-500', 'validieren'],
+  work: ['secondary-800', 'überarbeiten'],
+  reject: ['negative-300', 'ungültig'],
+};
+
+function getReviewInfo(
+  status: string | null | undefined,
+  index: number,
+  _default = 'work',
+): string {
+  if (props !== undefined) {
+    if (
+      props.hut?.type_open?.slug == 'unknown' ||
+      props.hut?.capacity_open == undefined ||
+      props.hut?.open_monthly?.month_01 == undefined ||
+      props.hut?.elevation == undefined
+    ) {
+      status = 'work';
+    }
+  }
+  if (status !== undefined && status != null && status in reviewInfos) {
+    return reviewInfos[status][index];
+  } else {
+    return reviewInfos[_default][index];
+  }
+}
+
+function getReviewColor(status: string | null | undefined): string {
+  return getReviewInfo(status, 0);
+}
+function getReviewText(status: string | null | undefined): string {
+  return getReviewInfo(status, 1);
+}
 const $q = useQuasar();
 const mapRef = useMap();
-const props = defineProps<Props>();
 
 const watchHut = ref(false);
 //function toggleHutWatch() {
@@ -84,6 +121,14 @@ watch(menuOpen, () => {
   <q-toolbar>
     <slot></slot>
     <q-space />
+
+    <q-badge
+      outline
+      v-if="hut"
+      class="q-mr-xs"
+      :color="getReviewColor(hut.review_status)"
+      >{{ getReviewText(hut.review_status) }}
+    </q-badge>
 
     <!-- @click="toggleHutWatch" -->
     <WdToolbarButton
