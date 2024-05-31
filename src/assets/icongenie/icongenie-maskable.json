@@ -3,10 +3,7 @@
     "skipTrim": true,
     "themeColor": "8fd6b7",
     "icon": "src/assets/wodore-design/logo/exports/favicon_maskable.png",
-    "padding": [
-      0,
-      0
-    ]
+    "padding": [0, 0]
   },
   "assets": [
     {
@@ -14,10 +11,7 @@
       "name": "icon-maskable-{size}x{size}.png",
       "folder": "public/icons",
       "background": true,
-      "sizes": [
-        192,
-        512
-      ]
+      "sizes": [192, 512]
     }
   ]
 }

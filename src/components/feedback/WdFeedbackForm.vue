@@ -1,29 +1,59 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import getImageUrl from 'src/services/imageService';
+import { clientWodore } from '@clients/index';
 
 const $q = useQuasar();
 const router = useRouter();
 
-const email = ref<string>('');
+const message = reactive<{
+  email: string;
+  subject: string;
+  message: string;
+  urls: Array<string>;
+}>({
+  email: '',
+  subject: '',
+  message: '',
+  urls: [],
+});
+//const email = ref<string>('');
+//const subject = ref<string>('');
 const urls = ref<Array<{ value: string; id: number; placeholder: string }>>([]);
-const feedback = ref<string>('');
+//const message = ref<string>('');
 function onSubmit() {
-  console.debug(`Submitted form for '${email.value}'`, feedback);
-  router.go(-1);
-  $q.notify({
-    color: 'positive',
-    textColor: 'black',
-    icon: 'eva-checkmark-circle',
-    message: 'Submitted',
-  });
-  onReset();
+  console.debug(`Submitted form for '${message.email}'`, message.message);
+  message.urls = urls.value.map((url) => url.value);
+  clientWodore
+    .POST('/v1/feedback/', {
+      body: message,
+    })
+    .then(() => {
+      $q.notify({
+        color: 'positive',
+        textColor: 'black',
+        icon: 'wd-checkmark',
+        message: 'Nachricht gesendet',
+      });
+      router.go(-1);
+      setTimeout(() => {
+        onReset();
+      }, 200);
+    })
+    .catch(() => {
+      $q.notify({
+        color: 'negative',
+        textColor: 'black',
+        icon: 'wd-close',
+        message: 'Nachricht konnte nicht gesendet werden',
+      });
+    });
 }
 
 function onClose() {
-  if (email.value || feedback.value) {
+  if (message.email || message.message) {
     $q.dialog({
       dark: true,
       title: 'Confirm',
@@ -38,8 +68,8 @@ function onClose() {
   }
 }
 function onReset() {
-  email.value = '';
-  feedback.value = '';
+  message.email = '';
+  message.message = '';
 }
 
 function addUrl() {
@@ -101,61 +131,91 @@ console.log(headerImg);
           Feedback
         </div>
       </q-img>
-      <q-card-section
-        style="min-height: 200px; height: 500px; max-height: 600px"
-        class="scroll"
-      >
-        <div class="col no-wrap items-center">
-          <!-- <div class="text-h4 text-accent-700">Feedback</div> -->
-          <div class="q-gutter-md q-pt-md">
-            <q-input
-              v-model="email"
-              outlined
-              placeholder="name@domain.com"
-              type="email"
-            >
-              <template v-slot:prepend> <q-icon name="wd-at" /> </template
-            ></q-input>
+      <q-card-section style="padding: 0">
+        <!-- TODO: add scroll area -->
+        <q-scroll-area
+          style="
+            min-height: 200px;
+            height: 450px;
+            max-height: 600px;
+            padding: 0 20px 0 20px;
+          "
+        >
+          <div class="col no-wrap items-center q-py-md">
+            <!-- <div class="text-h4 text-accent-700">Feedback</div> -->
+            <div class="q-gutter-md q-pt-md">
+              <q-input
+                v-model="message.subject"
+                dense
+                aria-label="Betreff"
+                outlined
+                counter
+                placeholder="Betreff"
+                maxlength="60"
+              >
+                <template v-slot:prepend>
+                  <q-icon name="wd-subject" /> </template
+              ></q-input>
+              <q-input
+                dense
+                v-model="message.email"
+                outlined
+                aria-label="E-Mail"
+                placeholder="name@domain.com"
+                type="email"
+                maxlength="100"
+                :rules="[(val) => !!val || 'E-Mail fehlt']"
+              >
+                <template v-slot:prepend> <q-icon name="wd-at" /> </template
+              ></q-input>
 
-            <q-input
-              v-model="feedback"
-              placeholder="Feedback Text"
-              outlined
-              type="textarea"
-            >
-              <template v-slot:prepend>
-                <q-icon name="wd-text-outline" /> </template
-            ></q-input>
-            <q-input
-              v-for="(url, idx) in urls"
-              :key="url.id"
-              v-model="url.value"
-              dense
-              outlined
-              :placeholder="url.placeholder"
-              type="url"
-            >
-              <template v-slot:prepend> <q-icon name="wd-link" /> </template>
-              <template v-slot:append>
-                <q-icon
-                  name="wd-close"
-                  @click="removeUrl(idx)"
-                  class="cursor-pointer"
-                />
-              </template>
-            </q-input>
-            <q-btn
-              v-if="urls.length < 4"
-              @click="addUrl()"
-              color="black"
-              label="URL"
-              flat
-              icon="wd-add-outline"
-            />
+              <q-input
+                v-model="message.message"
+                autogrow
+                counter
+                aria-label="Nachricht"
+                placeholder="Nachricht"
+                dense
+                outlined
+                type="textarea"
+                maxlength="10000"
+                :rules="[(val) => !!val || 'Nachricht fehlt']"
+              >
+                <template v-slot:prepend>
+                  <q-icon name="wd-text-outline" /> </template
+              ></q-input>
+              <q-input
+                v-for="(url, idx) in urls"
+                :key="url.id"
+                v-model="url.value"
+                dense
+                outlined
+                maxlength="300"
+                :placeholder="url.placeholder"
+                :rules="[(val) => !!val || 'URL fehlt']"
+              >
+                <template v-slot:prepend> <q-icon name="wd-link" /> </template>
+                <template v-slot:append>
+                  <q-icon
+                    name="wd-close"
+                    @click="removeUrl(idx)"
+                    class="cursor-pointer"
+                  />
+                </template>
+              </q-input>
+              <q-btn
+                v-if="urls.length < 4"
+                @click="addUrl()"
+                class="text-grey-8"
+                label="URL"
+                flat
+                icon="wd-add-outline"
+              />
+            </div>
           </div>
-        </div>
+        </q-scroll-area>
       </q-card-section>
-      <!-- <q-separator /> -->
+      <q-separator />
       <q-card-actions>
         <q-btn
           label="Close"

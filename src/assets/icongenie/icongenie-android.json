@@ -3,20 +3,14 @@
     "skipTrim": true,
     "themeColor": "315e47",
     "icon": "src/assets/wodore-design/logo/exports/favicon_shape.png",
-    "padding": [
-      0,
-      0
-    ]
+    "padding": [0, 0]
   },
   "assets": [
     {
       "generator": "png",
       "name": "icon-{size}x{size}.png",
       "folder": "public/icons",
-      "sizes": [
-        192,
-        512
-      ]
+      "sizes": [192, 512]
     }
   ]
 }

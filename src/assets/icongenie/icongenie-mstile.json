@@ -3,19 +3,14 @@
     "skipTrim": true,
     "themeColor": "315e47",
     "icon": "src/assets/wodore-design/logo/exports/favicon_mstile.png",
-    "padding": [
-      0,
-      0
-    ]
+    "padding": [0, 0]
   },
   "assets": [
     {
       "generator": "png",
       "name": "mstile-150x150.png",
       "folder": "public",
-      "sizes": [
-        270
-      ],
+      "sizes": [270],
       "tag": "<meta name=\"msapplication-TileColor\" content=\"#315e47\" />"
     }
   ]

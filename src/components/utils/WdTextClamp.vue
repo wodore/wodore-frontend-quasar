@@ -10,14 +10,16 @@ import TextClamp from 'vue3-text-clamp';
         style="text-decoration: underline dotted"
         class="text-grey-6 cursor-pointer"
         v-show="clamped"
-        @click="toggle">
+        @click="toggle"
+      >
         {{ $t('more') }}
       </p>
       <p
         style="text-decoration: underline dotted"
         class="text-grey-6 cursor-pointer"
         v-show="expanded"
-        @click="toggle">
+        @click="toggle"
+      >
         {{ $t('less') }}
       </p>
     </template>

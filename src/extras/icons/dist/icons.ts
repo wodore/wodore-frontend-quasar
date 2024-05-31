@@ -1,5 +1,6 @@
 export type IconsId =
   | 'text-outline'
+  | 'subject'
   | 'question-mark'
   | 'more-vertical'
   | 'message'
@@ -25,6 +26,7 @@ export type IconsId =
 
 export type IconsKey =
   | 'TextOutline'
+  | 'Subject'
   | 'QuestionMark'
   | 'MoreVertical'
   | 'Message'
@@ -50,6 +52,7 @@ export type IconsKey =
 
 export enum Icons {
   TextOutline = 'text-outline',
+  Subject = 'subject',
   QuestionMark = 'question-mark',
   MoreVertical = 'more-vertical',
   Message = 'message',
@@ -76,26 +79,27 @@ export enum Icons {
 
 export const ICONS_CODEPOINTS: { [key in Icons]: string } = {
   [Icons.TextOutline]: '61697',
-  [Icons.QuestionMark]: '61698',
-  [Icons.MoreVertical]: '61699',
-  [Icons.Message]: '61700',
-  [Icons.Menu]: '61701',
-  [Icons.MenuArrow]: '61702',
-  [Icons.LocationQuestion]: '61703',
-  [Icons.Link]: '61704',
-  [Icons.Favorite]: '61705',
-  [Icons.FavoriteOutline]: '61706',
-  [Icons.Eye]: '61707',
-  [Icons.EyeOutline]: '61708',
-  [Icons.Edit]: '61709',
-  [Icons.EditOutline]: '61710',
-  [Icons.Close]: '61711',
-  [Icons.Checkmark]: '61712',
-  [Icons.Calendar]: '61713',
-  [Icons.At]: '61714',
-  [Icons.ArrowheadUp]: '61715',
-  [Icons.ArrowheadDown]: '61716',
-  [Icons.ArrowUpDown]: '61717',
-  [Icons.Add]: '61718',
-  [Icons.AddOutline]: '61719',
+  [Icons.Subject]: '61698',
+  [Icons.QuestionMark]: '61699',
+  [Icons.MoreVertical]: '61700',
+  [Icons.Message]: '61701',
+  [Icons.Menu]: '61702',
+  [Icons.MenuArrow]: '61703',
+  [Icons.LocationQuestion]: '61704',
+  [Icons.Link]: '61705',
+  [Icons.Favorite]: '61706',
+  [Icons.FavoriteOutline]: '61707',
+  [Icons.Eye]: '61708',
+  [Icons.EyeOutline]: '61709',
+  [Icons.Edit]: '61710',
+  [Icons.EditOutline]: '61711',
+  [Icons.Close]: '61712',
+  [Icons.Checkmark]: '61713',
+  [Icons.Calendar]: '61714',
+  [Icons.At]: '61715',
+  [Icons.ArrowheadUp]: '61716',
+  [Icons.ArrowheadDown]: '61717',
+  [Icons.ArrowUpDown]: '61718',
+  [Icons.Add]: '61719',
+  [Icons.AddOutline]: '61720',
 };

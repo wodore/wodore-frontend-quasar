@@ -22,9 +22,6 @@ const $q = useQuasar();
 const isMobile = computed(() => {
   return $q.screen.xs;
 });
-const menuBtnColor = computed(() => {
-  return model.value ? 'primary-300' : 'primary-100';
-});
 const menuArialLabel = computed(() => {
   return model.value ? 'close menu' : 'open menu';
 });
@@ -56,7 +53,7 @@ const showMenu = computed(() => {
 <template>
   <WdToolbarButton
     v-if="showMenu"
-    :color="menuBtnColor"
+    color="icon"
     :icon="menuBtnIcon"
     :class="{ 'rotate-180': props.side == 'right' }"
     :aria-label="menuArialLabel"

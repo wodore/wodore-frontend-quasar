@@ -49,6 +49,10 @@ export interface paths {
     /** Get Organization */
     get: operations['get_organization'];
   };
+  '/v1/feedback/': {
+    /** Create Feedback */
+    post: operations['server_apps_feedbacks_api_create_feedback'];
+  };
 }
 
 export type webhooks = Record<string, never>;
@@ -235,8 +239,12 @@ export interface components {
        */
       type: 'Point';
       /** Coordinates */
-      coordinates: [number, number] | [number, number, number];
+      coordinates:
+        | components['schemas']['Position2D']
+        | components['schemas']['Position3D'];
     };
+    Position2D: [number, number];
+    Position3D: [number, number, number];
     /**
      * TristateEnum
      * @description Tristate enum with `true`, `false` and `unset`.
@@ -482,7 +490,10 @@ export interface components {
        */
       type: 'LineString';
       /** Coordinates */
-      coordinates: ([number, number] | [number, number, number])[];
+      coordinates: (
+        | components['schemas']['Position2D']
+        | components['schemas']['Position3D']
+      )[];
     };
     /**
      * MultiLineString
@@ -501,7 +512,10 @@ export interface components {
        */
       type: 'MultiLineString';
       /** Coordinates */
-      coordinates: ([number, number] | [number, number, number])[][];
+      coordinates: (
+        | components['schemas']['Position2D']
+        | components['schemas']['Position3D']
+      )[][];
     };
     /**
      * MultiPoint
@@ -520,7 +534,10 @@ export interface components {
        */
       type: 'MultiPoint';
       /** Coordinates */
-      coordinates: ([number, number] | [number, number, number])[];
+      coordinates: (
+        | components['schemas']['Position2D']
+        | components['schemas']['Position3D']
+      )[];
     };
     /**
      * MultiPolygon
@@ -539,7 +556,10 @@ export interface components {
        */
       type: 'MultiPolygon';
       /** Coordinates */
-      coordinates: ([number, number] | [number, number, number])[][][];
+      coordinates: (
+        | components['schemas']['Position2D']
+        | components['schemas']['Position3D']
+      )[][][];
     };
     /**
      * Polygon
@@ -558,7 +578,10 @@ export interface components {
        */
       type: 'Polygon';
       /** Coordinates */
-      coordinates: ([number, number] | [number, number, number])[][];
+      coordinates: (
+        | components['schemas']['Position2D']
+        | components['schemas']['Position3D']
+      )[][];
     };
     /** FieldsParam[HutSchemaDetails] */
     FieldsParam_HutSchemaDetails_: {
@@ -675,6 +698,24 @@ export interface components {
        * @description dark theme color as hex number with #
        */
       color_dark?: string | null;
+    };
+    /** ResponseSchema */
+    ResponseSchema: {
+      /** Message */
+      message: string;
+      /** Id */
+      id: number;
+    };
+    /** FeedbackCreate */
+    FeedbackCreate: {
+      /** Urls */
+      urls?: string[] | null;
+      /** Email */
+      email: string;
+      /** Subject */
+      subject: string;
+      /** Message */
+      message: string;
     };
   };
   responses: never;
@@ -903,6 +944,27 @@ export interface operations {
       200: {
         content: {
           'application/json': components['schemas']['OrganizationOptional'];
+        };
+      };
+    };
+  };
+  /** Create Feedback */
+  server_apps_feedbacks_api_create_feedback: {
+    parameters: {
+      query?: {
+        send_email?: boolean;
+      };
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FeedbackCreate'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          'application/json': components['schemas']['ResponseSchema'];
         };
       };
     };

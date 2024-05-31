@@ -4,10 +4,7 @@
     "themeColor": "8fd6b7",
     "svgColor": "000",
     "icon": "src/assets/wodore-design/logo/exports/icongenie/favicon_mono.png",
-    "padding": [
-      20,
-      20
-    ]
+    "padding": [20, 20]
   },
   "assets": [
     {

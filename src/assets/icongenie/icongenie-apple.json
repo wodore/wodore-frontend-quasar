@@ -4,10 +4,7 @@
     "themeColor": "6dc59f",
     "icon": "src/assets/wodore-design/logo/exports/favicon_apple.png",
     "quality": 10,
-    "padding": [
-      0,
-      0
-    ]
+    "padding": [0, 0]
   },
   "assets": [
     {
@@ -15,9 +12,7 @@
       "name": "apple-touch-icon.png",
       "folder": "public",
       "background": true,
-      "sizes": [
-        180
-      ],
+      "sizes": [180],
       "tag": "<link rel=\"apple-touch-icon\" sizes=\"{size}x{size}\" href=\"{name}\">"
     },
     {
@@ -25,21 +20,14 @@
       "name": "apple-touch-icon-precomposed.png",
       "folder": "public",
       "background": true,
-      "sizes": [
-        180
-      ]
+      "sizes": [180]
     },
     {
       "generator": "png",
       "name": "apple-icon-{size}x{size}.png",
       "folder": "public/icons",
       "background": true,
-      "sizes": [
-        120,
-        152,
-        167,
-        180
-      ]
+      "sizes": [120, 152, 167, 180]
     }
   ]
 }
