@@ -143,7 +143,7 @@ console.log(headerImg);
         <div
           class="absolute-bottom text-accent-400 text-h4 text-center card-header__text"
         >
-          Feedback
+          Mitteilung
         </div>
       </q-img>
       <q-card-section style="padding: 0; height: calc(100% - 196px)">
@@ -160,6 +160,10 @@ console.log(headerImg);
           }"
         >
           <div class="col no-wrap items-center q-py-md">
+            <p class="text-body1 q-pt-md">
+              Sag uns, was du denkst! Jede Rückmeldung, egal ob positiv oder
+              negativ, hilft uns weiter.
+            </p>
             <!-- <div class="text-h4 text-accent-700">Feedback</div> -->
             <div class="q-gutter-md q-pt-md">
               <q-input
@@ -236,21 +240,21 @@ console.log(headerImg);
       <q-separator />
       <q-card-actions>
         <q-btn
-          label="Close"
+          label="Schliessen"
           color="secondary-700"
           flat
           @click="onClose()"
           class="q-ml-sm"
         />
         <q-btn
-          label="Reset"
+          label="Zurücksetzen"
           type="reset"
           color="secondary-700"
           flat
           class="q-ml-sm"
         />
         <q-space />
-        <q-btn label="Submit" flat type="submit" color="accent" />
+        <q-btn label="Senden" flat type="submit" color="accent" />
       </q-card-actions>
     </q-form>
   </q-card>

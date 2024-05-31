@@ -163,5 +163,6 @@ const moveFab: TouchPanValue = (ev) => {
       </div>
     </div>
     <!-- </div> -->
+    <WdBeta />
   </q-footer>
 </template>

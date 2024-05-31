@@ -23,6 +23,7 @@ const swissTopoRasterStyle = getRasterStyle({
   attribution:
     '<a href="https://www.swisstopo.admin.ch/" target="_blank">&copy; swisstopo</a>',
   suffix: '',
+  tileSize: 128,
 });
 const oeLayer: 'geolandbasemap' | 'bmaphidpi' = 'bmaphidpi';
 const oeExt: 'png' | 'jpeg' = 'jpeg';

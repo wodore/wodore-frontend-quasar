@@ -18,6 +18,7 @@ declare module 'vue' {
     RouterView: typeof import('vue-router')['RouterView']
     WdBasemapSwitch: typeof import('./src/components/map/WdBasemapSwitch.vue')['default']
     WdBasemapSwitchItem: typeof import('./src/components/map/WdBasemapSwitchItem.vue')['default']
+    WdBeta: typeof import('./src/components/utils/WdBeta.vue')['default']
     WdFeedbackButton: typeof import('./src/components/feedback/WdFeedbackButton.vue')['default']
     WdFeedbackForm: typeof import('./src/components/feedback/WdFeedbackForm.vue')['default']
     WdHutHeader: typeof import('./src/components/huts/WdHutHeader.vue')['default']
