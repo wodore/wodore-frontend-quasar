@@ -110,9 +110,21 @@ console.log(headerImg);
   text-shadow: 0px 0px 8px $black;
 }
 
-.card {
+.card--mobile {
+  min-height: 100%;
+  height: 100%;
+  width: 100%;
+  min-width: 100%;
+}
+.card--desktop {
+  border-radius: 10px !important;
   border: 2px solid rgba($black, 0.607);
-  border-radius: 0 !important;
+  min-height: 300px;
+  height: 700px;
+  max-height: 800px;
+  min-width: 300px;
+  width: 480px;
+  max-width: 600px;
 }
 </style>
 
@@ -121,9 +133,12 @@ console.log(headerImg);
                 :rules="[
                   (val) => (val && val.length > 0) || 'Please type something',
                 ]" -->
-  <q-card class="card" style="min-width: 400px; width: 500px; max-width: 700px">
+  <q-card
+    :class="{ 'card--desktop': $q.screen.gt.xs, 'card--mobile': $q.screen.xs }"
+  >
+    <!-- style="min-width: 400px; width: 500px; max-width: 700px" -->
     <q-form @submit="onSubmit" @reset="onReset" class="fit">
-      <q-img :src="headerImg">
+      <q-img :src="headerImg" style="height: 140px">
         <div class="card-header absolute-bottom text-white text-h5"></div>
         <div
           class="absolute-bottom text-accent-400 text-h4 text-center card-header__text"
@@ -131,15 +146,18 @@ console.log(headerImg);
           Feedback
         </div>
       </q-img>
-      <q-card-section style="padding: 0">
+      <q-card-section style="padding: 0; height: calc(100% - 196px)">
         <!-- TODO: add scroll area -->
-        <q-scroll-area
-          style="
-            min-height: 200px;
+        <!-- min-height: 200px;
             height: 450px;
-            max-height: 600px;
-            padding: 0 20px 0 20px;
-          "
+            max-height: 600px; -->
+        <q-scroll-area
+          class="fit"
+          style="padding: 0 16px 0 16px"
+          :thumb-style="{
+            width: '6px',
+            borderRadius: '8px 0 0 8px',
+          }"
         >
           <div class="col no-wrap items-center q-py-md">
             <!-- <div class="text-h4 text-accent-700">Feedback</div> -->
