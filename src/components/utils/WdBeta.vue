@@ -40,18 +40,18 @@ a:hover {
       name="img:/logos/logo_beta.svg"
       style="
         padding-left: 10px;
-        transform: scale(3) translateY(-2.5px) translateX(-6px);
+        transform: scale(3) translateY(-2.5px) translateX(-10px);
       "
     />
     <span :style="$q.platform.is.mobile ? 'font-size: x-small' : ''">
       Die Seite ist noch im Aufbau,
       <a class="link" @click="toFeedback">Feedback</a> ist willkommen!
     </span>
-    <IconNotoHandshake
+    <!-- <IconNotoHandshake
       style="
         padding-right: 10px;
         transform: scale(6) translateY(-0.7px) translateX(6.5px) rotate(-10deg);
       "
-    />
+    /> -->
   </div>
 </template>
