@@ -44,5 +44,11 @@ a:hover {
     />
     Die Seite ist noch im Aufbau,
     <a class="link" @click="toFeedback">Feedback</a> ist willkommen!
+    <IconNotoHandshake
+      style="
+        padding-right: 10px;
+        transform: scale(6) translateY(-0.7px) translateX(7px) rotate(-10deg);
+      "
+    />
   </div>
 </template>

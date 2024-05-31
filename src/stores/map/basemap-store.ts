@@ -3,6 +3,7 @@ import { reactive } from 'vue';
 import { BasemapSwitchItem } from '@stores/map/utils/interfaces';
 import { getRasterStyle } from '@stores/map/utils/raster';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
+import { Platform } from 'quasar';
 //import type { Emitter } from 'mitt';
 import { LocalStorage } from 'quasar';
 
@@ -23,7 +24,7 @@ const swissTopoRasterStyle = getRasterStyle({
   attribution:
     '<a href="https://www.swisstopo.admin.ch/" target="_blank">&copy; swisstopo</a>',
   suffix: '',
-  tileSize: 128,
+  tileSize: Platform.is.mobile ? 128 : 256,
 });
 const oeLayer: 'geolandbasemap' | 'bmaphidpi' = 'bmaphidpi';
 const oeExt: 'png' | 'jpeg' = 'jpeg';
@@ -127,9 +128,20 @@ export const useBasemapStore = defineStore('basemap', () => {
 
   const basemaps = reactive<Array<BasemapSwitchItem>>([
     {
+      name: 'ch-swisstopo-raster',
+      label: 'Schweiz Topo Raster',
+      show: true,
+      active: true,
+      img: getImageUrl('swiss-raster.png'),
+      style: swissTopoRasterStyle,
+      layers: {
+        ways: { before: undefined },
+        background: { before: undefined },
+      },
+    },
+    {
       name: 'CH swisstopo LBM Vivid',
       label: 'Schweiz Topo Vector',
-      active: true,
       show: true,
       img: getImageUrl('swiss-vector.png'),
       style:
@@ -137,17 +149,6 @@ export const useBasemapStore = defineStore('basemap', () => {
       layers: {
         ways: { before: 'Other place labels' },
         background: { before: 'Building line' },
-      },
-    },
-    {
-      name: 'ch-swisstopo-raster',
-      label: 'Schweiz Topo Raster',
-      show: true,
-      img: getImageUrl('swiss-raster.png'),
-      style: swissTopoRasterStyle,
-      layers: {
-        ways: { before: undefined },
-        background: { before: undefined },
       },
     },
     {

@@ -13,9 +13,9 @@ const mapRef = useMap();
 const props = defineProps<Props>();
 
 const watchHut = ref(false);
-function toggleHutWatch() {
-  watchHut.value = !watchHut.value;
-}
+//function toggleHutWatch() {
+//  watchHut.value = !watchHut.value;
+//}
 const starHut = ref(false);
 function toggleHutStar() {
   starHut.value = !starHut.value;
@@ -84,11 +84,13 @@ watch(menuOpen, () => {
   <q-toolbar>
     <slot></slot>
     <q-space />
+
+    <!-- @click="toggleHutWatch" -->
     <WdToolbarButton
       size="md"
       :color="watchHut ? 'accent' : 'primary-900'"
       :icon="watchHut ? 'wd-eye' : 'wd-eye-outline'"
-      @click="toggleHutWatch"
+      style="opacity: 0.5; cursor: not-allowed"
     />
 
     <WdToolbarButton size="md" class="text-primary-900" icon="wd-more-vertical">
@@ -98,6 +100,7 @@ watch(menuOpen, () => {
             @click="toggleHutStar"
             :icon="starHut ? 'wd-favorite' : 'wd-favorite-outline'"
             :icon-color="starHut ? 'accent' : 'primary-800'"
+            :disabled="true"
           >
             {{ $t('favorite') }}
           </WdToolbarExtraButton>
