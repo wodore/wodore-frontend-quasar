@@ -39,7 +39,7 @@ a:hover {
       name="img:/logos/logo_beta.svg"
       style="
         padding-left: 10px;
-        transform: scale(3) translateY(-2.5px) translateX(-6px);
+        transform: scale(3) translateY(-2.5px) translateX(-5.1px);
       "
     />
     Die Seite ist noch im Aufbau,
@@ -47,7 +47,7 @@ a:hover {
     <IconNotoHandshake
       style="
         padding-right: 10px;
-        transform: scale(6) translateY(-0.7px) translateX(7px) rotate(-10deg);
+        transform: scale(6) translateY(-0.7px) translateX(5.6px) rotate(-10deg);
       "
     />
   </div>
