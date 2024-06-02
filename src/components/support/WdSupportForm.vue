@@ -108,7 +108,7 @@ function toFeedback() {
                 class="link"
                   @click="onClose"
               />
-              oder einem Monatlichem:
+              oder einem monatlichem:
             </p>
             <div class="q-pt-lg row justify-center">
               <q-btn-group style="border-radius: 40px; max-width: 400px">
