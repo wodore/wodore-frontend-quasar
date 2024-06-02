@@ -81,7 +81,11 @@ function resetDate() {
 </style>
 <template>
   <div
-    :class="{ 'q-ml-md': !isMobile, 'q-mr-md': !isMobile }"
+    :class="{
+      'q-ml-md': !isMobile,
+      'q-ml-xs': isMobile,
+    }"
+    class="q-mr-md"
     style="max-width: 130px; max-height: 40px"
   >
     <!-- CALENDAR -->

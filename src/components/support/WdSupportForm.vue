@@ -76,7 +76,8 @@ function toFeedback() {
   <q-card
     :class="{ 'card--desktop': $q.screen.gt.xs, 'card--mobile': $q.screen.xs }"
   >
-      <q-img :src="headerImg" style="height: 140px">
+  <div >
+      <q-img :src="headerImg" style="height: 140px" class="shadow-4">
         <div class="card-header absolute-bottom text-white text-h5"></div>
         <div
           class="absolute-bottom text-accent-400 text-h4 text-center card-header__text"
@@ -84,6 +85,7 @@ function toFeedback() {
           Support
         </div>
       </q-img>
+  </div>
       <q-card-section style="padding: 0; height: calc(100% - 196px)">
         <!-- TODO: add scroll area -->
         <!-- min-height: 200px;

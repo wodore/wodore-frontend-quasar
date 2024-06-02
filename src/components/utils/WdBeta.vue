@@ -48,12 +48,14 @@ a:hover {
       Die Seite ist noch im Aufbau,
       <a class="link" @click="toFeedback">Feedback</a> ist willkommen!
     </span>
-    <WdSupportButton
-      :size="$q.platform.is.mobile ? '6px' : '10px'"
-      class="text-accent-200"
-      style="padding: 0"
-    />
 
+    <WdSupportButton
+      :size="$q.platform.is.mobile ? '8px' : '10px'"
+      class="text-accent-200"
+      style="
+        transform: scale(2) translateY(-0.7px) translateX(6.5px) rotate(-5deg);
+      "
+    />
     <!-- <IconNotoHandshake
       style="
         padding-right: 10px;

@@ -32,7 +32,7 @@ export interface OverlaySwitchItem {
   label: string;
   show?: boolean;
   active?: boolean;
-  onLayer?: LayerNames;
+  onLayer: LayerNames;
   icon: string;
   style: StyleSpecification; //| string;
   opacity?: OpacitySpecification;

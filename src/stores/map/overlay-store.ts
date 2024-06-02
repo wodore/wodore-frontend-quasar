@@ -14,24 +14,46 @@ import {
 } from '@stores/map/utils/overlays';
 //import { useMap } from '@indoorequal/vue-maplibre-gl';
 //import type { Emitter } from 'mitt';
-//import { LocalStorage } from 'quasar';
+import { LocalStorage } from 'quasar';
 
 export const useOverlayStore = defineStore('overlay', () => {
   function toggleOverlay(s: OverlaySwitchItem): boolean {
     s.active = s.active ? false : true;
+    LocalStorage.set('overlays', overlays);
     return s.active;
   }
   const overlays = reactive<Array<OverlaySwitchItem>>([
     huts,
     public_transport_stops,
-    skitouren,
-    snowshoes,
-    hillslope,
-    skislopes,
     hiking,
     mtb,
     cycling,
+    hillslope,
+    skitouren,
+    snowshoes,
+    skislopes,
   ]);
+
+  const savedOverlays: Array<OverlaySwitchItem> = LocalStorage.hasItem(
+    'overlays',
+  )
+    ? (LocalStorage.getItem('overlays') as Array<OverlaySwitchItem>)
+    : [];
+  const savedOverlaysRecord = savedOverlays.reduce(
+    (acc: Record<string, OverlaySwitchItem>, obj: OverlaySwitchItem) => {
+      acc[obj.name] = obj;
+      return acc;
+    },
+    {},
+  );
+
+  for (const o of overlays) {
+    const name = o.name;
+    if (name in savedOverlaysRecord) {
+      o.active = savedOverlaysRecord[name].active;
+      o.show = savedOverlaysRecord[name].show;
+    }
+  }
 
   return {
     overlays,

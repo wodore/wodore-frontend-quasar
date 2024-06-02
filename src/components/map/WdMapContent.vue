@@ -15,7 +15,7 @@ defineEmits<{ close: [mode: string] }>();
 //    query: route.query,
 //  });
 //}
-const topOffset = 50;
+const topOffset = 76.5;
 const bottomOffset = 100;
 const portraitHeight = ref(process.env.CLIENT ? window.innerHeight * 0.4 : 400);
 const portraitHeightMax = ref(
@@ -80,6 +80,19 @@ const moveFab: TouchPanValue = (ev) => {
   //fabPos.value = [fabPos.value[0] - ev.delta.x, fabPos.value[1] - ev.delta.y];
 };
 </script>
+<style>
+.fade-enter-active,
+.fade-leave-active {
+  transition-duration: 2.3s;
+  transition-property: opacity;
+  transition-timing-function: ease;
+}
+
+.fade-enter,
+.fade-leave-active {
+  opacity: 0;
+}
+</style>
 <template>
   <!-- we use a drawer and footer in order to work correct with the QLayout component -->
   <!-- LANDSCAPE CONTENT (usually desktop) -->
@@ -159,7 +172,15 @@ const moveFab: TouchPanValue = (ev) => {
         style="padding-top: 0px"
         class="background--blur scroll shadow-2 fit"
       >
-        <router-view name="content" />
+        <!-- <transition name="fade" mode="out-in">
+          <router-view name="content" />
+        </transition> -->
+        <router-view v-slot="{ Component, route }" name="content">
+          <!--  does not work -->
+          <transition name="fade" mode="out-in">
+            <component :is="Component" :key="route.path" />
+          </transition>
+        </router-view>
       </div>
     </div>
     <!-- </div> -->

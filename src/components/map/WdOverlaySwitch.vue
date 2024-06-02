@@ -1,6 +1,6 @@
 <script setup lang="ts">
 //import { Map } from 'maplibre-gl';
-import { QPageStickyProps, QFabProps, useQuasar } from 'quasar';
+import { QPageStickyProps, QFabProps, useQuasar, LocalStorage } from 'quasar';
 import {
   OpacitySpecification,
   OverlaySwitchItem,
@@ -8,7 +8,7 @@ import {
 import { useOverlayStore } from '@stores/map/overlay-store';
 import { useBasemapStore } from '@stores/map/basemap-store';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { LayerNames } from '@stores/map/utils/interfaces';
 import {
   LayerSpecification,
@@ -23,8 +23,16 @@ const basemapStore = useBasemapStore();
 //basemapStore.setEmitter(emitter);
 const mapRef = useMap();
 const $q = useQuasar();
-const switcherOpen = ref<boolean>(false);
+const switcherOpen = ref<boolean>(
+  LocalStorage.hasItem('switcherOpen')
+    ? (LocalStorage.getItem('switcherOpen') as boolean)
+    : false,
+);
 //const switcherLocked = ref<boolean>(true);
+
+watch(switcherOpen, (v) => {
+  LocalStorage.set('switcherOpen', v);
+});
 
 interface Props {
   position?: QPageStickyProps['position'];
@@ -160,7 +168,16 @@ function addOverlayLayer({
 }
 
 function addOverlays() {
-  for (const overlay of overlayStore.overlays) {
+  const backOverlays = overlayStore.overlays
+    .slice()
+    .filter(
+      (v) => v.onLayer == 'background',
+    ) as unknown as Array<OverlaySwitchItem>;
+  const frontOverlays = overlayStore.overlays
+    .slice()
+    .filter((v) => v.onLayer == 'ways');
+  const overlaysRevert = frontOverlays.concat(backOverlays).reverse();
+  for (const overlay of overlaysRevert) {
     for (const label in overlay.style.sources) {
       if (mapRef.map?.getSource(label) === undefined) {
         const sourceSpec = overlay.style.sources[label];

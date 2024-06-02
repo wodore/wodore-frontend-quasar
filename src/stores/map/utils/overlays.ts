@@ -28,6 +28,29 @@ export function opacityLevels({
     zoomIn,
   ];
 }
+export const huts: OverlaySwitchItem = {
+  name: 'huts',
+  label: 'Huts', //$t('transport.travel_time'),
+  show: true,
+  active: true,
+  onLayer: 'ways',
+  icon: 'huts',
+  style: hutsStyle,
+};
+
+export const public_transport_stops: OverlaySwitchItem = {
+  name: 'transport-stops',
+  label: 'Haltestellen', //$t('transport.station'),
+  onLayer: 'ways',
+  show: true,
+  active: false,
+  icon: 'transport',
+  opacity: false,
+  style: transportStyle,
+  //registerMapFn: transportStopsRegisterMap,
+  //registerMapFn: hutsRegisterMap,
+  //layerUpdateFn: hutsLayerUpdate,
+};
 
 export const skitouren = getSwisstopoOverlay({
   name: 'ch.swisstopo-karto.skitouren',
@@ -61,6 +84,7 @@ export const skislopes: OverlaySwitchItem = {
   label: 'Skipisten',
   opacity: opacityLevels({ zoomMain: 0.6 }),
   icon: 'skislopes',
+  onLayer: 'ways',
   show: true,
   style: getRasterStyle({
     name: 'slopes',
@@ -86,6 +110,7 @@ export const cycling: OverlaySwitchItem = {
   label: 'Fahrrad',
   opacity: opacityLevels({ zoomOut: 0.6, zoomMain: 0.9, zoomIn: 0.7 }),
   icon: 'cycling',
+  onLayer: 'ways',
   show: true,
   style: getRasterStyle({
     name: 'cycling',
@@ -98,33 +123,11 @@ export const mtb: OverlaySwitchItem = {
   label: 'Mountainbike',
   opacity: opacityLevels({ zoomOut: 0.6, zoomMain: 0.9, zoomIn: 0.7 }),
   icon: 'mtb',
+  onLayer: 'ways',
   show: true,
   style: getRasterStyle({
     name: 'mtb',
     tiles: ['https://tile.waymarkedtrails.org/mtb/{z}/{x}/{y}.png'],
     minZoom: 10,
   }),
-};
-
-export const huts: OverlaySwitchItem = {
-  name: 'huts',
-  label: 'Huts', //$t('transport.travel_time'),
-  show: true,
-  active: true,
-  icon: 'huts',
-  style: hutsStyle,
-};
-
-export const public_transport_stops: OverlaySwitchItem = {
-  name: 'transport-stops',
-  label: 'Haltestellen', //$t('transport.station'),
-  onLayer: 'ways',
-  show: true,
-  active: false,
-  icon: 'transport',
-  opacity: false,
-  style: transportStyle,
-  //registerMapFn: transportStopsRegisterMap,
-  //registerMapFn: hutsRegisterMap,
-  //layerUpdateFn: hutsLayerUpdate,
 };
