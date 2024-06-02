@@ -13,10 +13,12 @@ function onClose() {
 }
 
 const imgPath =
-  'https://cdn.pixabay.com/photo/2014/05/11/11/12/mailbox-341744_1280.jpg';
- //'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Image_created_with_a_mobile_phone.png/220px-Image_created_with_a_mobile_phone.png';
+ // 'https://cdn.pixabay.com/photo/2014/05/11/11/12/mailbox-341744_1280.jpg';
+ //'https://cdn.pixabay.com/photo/2016/03/19/23/36/hut-1267670_960_720.jpg';
+ 'https://cdn.pixabay.com/photo/2017/05/13/17/05/hut-2310075_960_720.jpg'
 
 const headerImg = getImageUrl(imgPath, {
+  //focal: '0.5,0.55',
   focal: '0.5,0.45',
   size: '800x300',
   quality: 50,

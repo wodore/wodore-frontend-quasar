@@ -86,6 +86,9 @@ function addUrl() {
 function removeUrl(idx: number) {
   urls.value.splice(idx, 1);
 }
+function toSupport() {
+  router.replace({ name: 'support' });
+}
 
 const imgPath =
   'https://cdn.pixabay.com/photo/2014/05/11/11/12/mailbox-341744_1280.jpg';
@@ -120,11 +123,25 @@ console.log(headerImg);
   border-radius: 10px !important;
   border: 2px solid rgba($black, 0.607);
   min-height: 300px;
-  height: 700px;
-  max-height: 800px;
+  height: 800px;
+  max-height: 900px;
   min-width: 300px;
-  width: 480px;
+  width: 550px;
   max-width: 600px;
+}
+.link:active,
+.link:visited,
+.link:hover,
+.link:link,
+.link {
+  color: color('accent', 800);
+  text-decoration: underline dotted;
+  text-decoration-color: color('accent', 600);
+  cursor: pointer;
+  font-weight: 500;
+}
+.link:hover {
+  color: color('accent', 600);
 }
 </style>
 
@@ -143,7 +160,7 @@ console.log(headerImg);
         <div
           class="absolute-bottom text-accent-400 text-h4 text-center card-header__text"
         >
-          Mitteilung
+          Rückmeldung
         </div>
       </q-img>
       <q-card-section style="padding: 0; height: calc(100% - 196px)">
@@ -163,6 +180,11 @@ console.log(headerImg);
             <p class="text-body1 q-pt-md">
               Sag uns, was du denkst! Jede Rückmeldung, egal ob positiv oder
               negativ, hilft uns weiter.
+            </p>
+            <p class="text-body2">
+              Jegliche
+              <a class="link" @click="toSupport">Unterstützung</a>
+              für das Projekt ist willkommen.
             </p>
             <!-- <div class="text-h4 text-accent-700">Feedback</div> -->
             <div class="q-gutter-md q-pt-md">
