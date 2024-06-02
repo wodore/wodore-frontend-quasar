@@ -35,6 +35,7 @@ a:hover {
 </style>
 <template>
   <div class="content text-primary-100 shadow-8 text-caption text-center">
+    <!-- <WdDonationForm /> -->
     <q-icon
       size="15px"
       name="img:/logos/logo_beta.svg"
@@ -47,6 +48,12 @@ a:hover {
       Die Seite ist noch im Aufbau,
       <a class="link" @click="toFeedback">Feedback</a> ist willkommen!
     </span>
+    <WdSupportButton
+      :size="$q.platform.is.mobile ? '6px' : '10px'"
+      class="text-accent-200"
+      style="padding: 0"
+    />
+
     <!-- <IconNotoHandshake
       style="
         padding-right: 10px;

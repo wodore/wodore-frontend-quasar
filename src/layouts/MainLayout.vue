@@ -56,6 +56,7 @@ function closeContent(mode: string) {
           <WodoreLogo class="text-h4" :text="!isMobile" icon />
         </q-toolbar-title>
         <WdSelectDate />
+        <WdSupportButton class="text-secondary-700" />
         <WdFeedbackButton v-if="!isMobile" />
         <!-- MAIN DIALOG -->
         <q-dialog

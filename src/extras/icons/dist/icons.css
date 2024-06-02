@@ -1,7 +1,7 @@
 @font-face {
     font-family: "icons";
-    src: url("./icons.woff?c14c78b0425f38f1b8d00c889416cf50") format("woff"),
-url("./icons.woff2?c14c78b0425f38f1b8d00c889416cf50") format("woff2");
+    src: url("./icons.woff?78ff19f5256894a8475119ca32c43908") format("woff"),
+url("./icons.woff2?78ff19f5256894a8475119ca32c43908") format("woff2");
 }
 
 i[class^="wd-"]:before, i[class*=" wd-"]:before {
@@ -48,48 +48,51 @@ i[class^="wd-"]:before, i[class*=" wd-"]:before {
 .wd-info-outline:before {
     content: "\f10b";
 }
-.wd-favorite:before {
+.wd-gift:before {
     content: "\f10c";
 }
-.wd-favorite-outline:before {
+.wd-favorite:before {
     content: "\f10d";
 }
-.wd-eye:before {
+.wd-favorite-outline:before {
     content: "\f10e";
 }
-.wd-eye-outline:before {
+.wd-eye:before {
     content: "\f10f";
 }
-.wd-edit:before {
+.wd-eye-outline:before {
     content: "\f110";
 }
-.wd-edit-outline:before {
+.wd-edit:before {
     content: "\f111";
 }
-.wd-close:before {
+.wd-edit-outline:before {
     content: "\f112";
 }
-.wd-checkmark:before {
+.wd-close:before {
     content: "\f113";
 }
-.wd-calendar:before {
+.wd-checkmark:before {
     content: "\f114";
 }
-.wd-at:before {
+.wd-calendar:before {
     content: "\f115";
 }
-.wd-arrowhead-up:before {
+.wd-at:before {
     content: "\f116";
 }
-.wd-arrowhead-down:before {
+.wd-arrowhead-up:before {
     content: "\f117";
 }
-.wd-arrow-up-down:before {
+.wd-arrowhead-down:before {
     content: "\f118";
 }
-.wd-add:before {
+.wd-arrow-up-down:before {
     content: "\f119";
 }
-.wd-add-outline:before {
+.wd-add:before {
     content: "\f11a";
+}
+.wd-add-outline:before {
+    content: "\f11b";
 }

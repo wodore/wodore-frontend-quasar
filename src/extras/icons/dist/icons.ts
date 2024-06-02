@@ -10,6 +10,7 @@ export type IconsId =
   | 'link'
   | 'info'
   | 'info-outline'
+  | 'gift'
   | 'favorite'
   | 'favorite-outline'
   | 'eye'
@@ -38,6 +39,7 @@ export type IconsKey =
   | 'Link'
   | 'Info'
   | 'InfoOutline'
+  | 'Gift'
   | 'Favorite'
   | 'FavoriteOutline'
   | 'Eye'
@@ -66,6 +68,7 @@ export enum Icons {
   Link = 'link',
   Info = 'info',
   InfoOutline = 'info-outline',
+  Gift = 'gift',
   Favorite = 'favorite',
   FavoriteOutline = 'favorite-outline',
   Eye = 'eye',
@@ -95,19 +98,20 @@ export const ICONS_CODEPOINTS: { [key in Icons]: string } = {
   [Icons.Link]: '61705',
   [Icons.Info]: '61706',
   [Icons.InfoOutline]: '61707',
-  [Icons.Favorite]: '61708',
-  [Icons.FavoriteOutline]: '61709',
-  [Icons.Eye]: '61710',
-  [Icons.EyeOutline]: '61711',
-  [Icons.Edit]: '61712',
-  [Icons.EditOutline]: '61713',
-  [Icons.Close]: '61714',
-  [Icons.Checkmark]: '61715',
-  [Icons.Calendar]: '61716',
-  [Icons.At]: '61717',
-  [Icons.ArrowheadUp]: '61718',
-  [Icons.ArrowheadDown]: '61719',
-  [Icons.ArrowUpDown]: '61720',
-  [Icons.Add]: '61721',
-  [Icons.AddOutline]: '61722',
+  [Icons.Gift]: '61708',
+  [Icons.Favorite]: '61709',
+  [Icons.FavoriteOutline]: '61710',
+  [Icons.Eye]: '61711',
+  [Icons.EyeOutline]: '61712',
+  [Icons.Edit]: '61713',
+  [Icons.EditOutline]: '61714',
+  [Icons.Close]: '61715',
+  [Icons.Checkmark]: '61716',
+  [Icons.Calendar]: '61717',
+  [Icons.At]: '61718',
+  [Icons.ArrowheadUp]: '61719',
+  [Icons.ArrowheadDown]: '61720',
+  [Icons.ArrowUpDown]: '61721',
+  [Icons.Add]: '61722',
+  [Icons.AddOutline]: '61723',
 };
