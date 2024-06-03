@@ -66,8 +66,10 @@ function closeContent(mode: string) {
           :maximized="isMobile"
           backdrop-filter="blur(3px) saturate(180%) grayscale(60%)"
         >
-          <router-view name="dialog" v-slot="{ Component }">
-            <component :is="Component" />
+          <router-view name="dialog" v-slot="{ Component, route }">
+            <!-- <transition name="fade" mode="out-in"> -->
+            <component :is="Component" :key="route.path" />
+            <!-- </transition> -->
           </router-view>
         </q-dialog>
 

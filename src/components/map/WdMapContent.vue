@@ -80,10 +80,10 @@ const moveFab: TouchPanValue = (ev) => {
   //fabPos.value = [fabPos.value[0] - ev.delta.x, fabPos.value[1] - ev.delta.y];
 };
 </script>
-<style>
+<style scoped>
 .fade-enter-active,
 .fade-leave-active {
-  transition-duration: 2.3s;
+  transition-duration: 0.2s;
   transition-property: opacity;
   transition-timing-function: ease;
 }
@@ -119,7 +119,11 @@ const moveFab: TouchPanValue = (ev) => {
         @click="$emit('close', 'landscape')"
       />
     </div>
-    <router-view name="content" />
+    <router-view v-slot="{ Component, route }" name="content">
+      <transition name="fade" mode="out-in">
+        <component :is="Component" :key="route.path" />
+      </transition>
+    </router-view>
   </q-drawer>
   <!-- PORTRAIT CONTENT (usually mobile) -->
   <q-footer class="text-black fixed-bottom">
@@ -176,7 +180,6 @@ const moveFab: TouchPanValue = (ev) => {
           <router-view name="content" />
         </transition> -->
         <router-view v-slot="{ Component, route }" name="content">
-          <!--  does not work -->
           <transition name="fade" mode="out-in">
             <component :is="Component" :key="route.path" />
           </transition>
