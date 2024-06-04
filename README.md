@@ -1,6 +1,6 @@
 # `wodore-frontend-quasar`
 
-Find the next best location in the mountains.
+Where to find your peak mountain base.
 
 ## Install the dependencies
 

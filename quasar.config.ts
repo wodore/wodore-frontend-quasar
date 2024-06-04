@@ -40,7 +40,10 @@ export default configure((ctx) => {
     ],
 
     // FAVICON version, change manually in src-pwa/manifest.json as well!
-    htmlVariables: { faviconVersion: 3 },
+    htmlVariables: {
+      faviconVersion: 3,
+      productDescriptionDe: 'Wohin gipfelt deine nächste Tour?',
+    },
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#build
     build: {
       target: {
