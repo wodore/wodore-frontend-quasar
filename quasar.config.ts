@@ -71,7 +71,14 @@ export default configure((ctx) => {
       //},
       // rawDefine: {}
       // ignorePublicFolder: true,
-      minify: false,
+      minify: true,
+      htmlMinifyOptions: {
+        removeComments: true,
+        collapseWhitespace: false,
+        removeAttributeQuotes: false,
+        collapseBooleanAttributes: false,
+        removeScriptTypeAttributes: false,
+      },
       // polyfillModulePreload: true,
       // distDir
 
