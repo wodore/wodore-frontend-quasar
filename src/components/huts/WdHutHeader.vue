@@ -35,7 +35,7 @@ defineProps<Props>();
             $q.screen.xs || $q.platform.is.mobile ? 'text-h6' : 'text-h5',
           ]"
         >
-          <a v-if="hut.url" :href="hut.url" targe="_blank"
+          <a v-if="hut.url" :href="hut.url" target="_blank"
             >{{ hut.name }}
             <q-icon size="11pt" style="transform: translateY(-6px)"
               ><IconEvaExternalLinkFill
