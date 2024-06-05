@@ -1,0 +1,39 @@
+.card-header[data-v-69cabe63] {
+  filter: blur(15px);
+  height: 60px;
+}
+.card-header__text[data-v-69cabe63] {
+  background: none !important;
+  text-shadow: 0px 0px 8px #171717;
+}
+.card--mobile[data-v-69cabe63] {
+  min-height: 100%;
+  height: 100%;
+  width: 100%;
+  min-width: 100%;
+}
+.card--desktop[data-v-69cabe63] {
+  border-radius: 10px !important;
+  border: 2px solid rgba(23, 23, 23, 0.607);
+  min-height: 300px;
+  height: 800px;
+  max-height: 900px;
+  min-width: 300px;
+  width: 550px;
+  max-width: 600px;
+}
+.link[data-v-69cabe63]:active,
+.link[data-v-69cabe63]:visited,
+.link[data-v-69cabe63]:hover,
+.link[data-v-69cabe63]:link,
+.link[data-v-69cabe63] {
+  color: #846a15;
+  -webkit-text-decoration: underline dotted;
+          text-decoration: underline dotted;
+  text-decoration-color: #ad951f;
+  cursor: pointer;
+  font-weight: 500;
+}
+.link[data-v-69cabe63]:hover {
+  color: #ad951f;
+}

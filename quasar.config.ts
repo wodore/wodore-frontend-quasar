@@ -71,7 +71,7 @@ export default configure((ctx) => {
       //},
       // rawDefine: {}
       // ignorePublicFolder: true,
-      // minify: false,
+      minify: false,
       // polyfillModulePreload: true,
       // distDir
 
