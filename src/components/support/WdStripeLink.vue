@@ -22,7 +22,11 @@ const link = computed(() => {
 <template>
   <a :href="link" target="_blank"
     >{{ name }}
-    <q-icon v-if="icon" :name="'img:products/' + icon + '.png'" />
+    <q-icon
+      v-if="icon"
+      :name="'img:products/' + icon + '.png'"
+      style="opacity: 0.6"
+    />
   </a>
 
   <!-- <q-btn :href="link" target="_blank" no-caps style="text-transform: unset">

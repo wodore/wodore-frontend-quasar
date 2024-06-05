@@ -8,15 +8,18 @@ import { clientWodore } from '@clients/index';
 const $q = useQuasar();
 const router = useRouter();
 
+const anoymDefaultEmail = `anonym@${process.env.DOMAIN}`;
 const message = reactive<{
   email: string;
   subject: string;
   message: string;
+  get_updates: boolean;
   urls: Array<string>;
 }>({
   email: '',
   subject: '',
   message: '',
+  get_updates: false,
   urls: [],
 });
 //const email = ref<string>('');
@@ -26,6 +29,9 @@ const urls = ref<Array<{ value: string; id: number; placeholder: string }>>([]);
 function onSubmit() {
   console.debug(`Submitted form for '${message.email}'`, message.message);
   message.urls = urls.value.map((url) => url.value);
+  if (message.email == anoymDefaultEmail) {
+    message.get_updates = false;
+  }
   clientWodore
     .POST('/v1/feedback/', {
       body: message,
@@ -52,14 +58,22 @@ function onSubmit() {
     });
 }
 
+const anonymous = ref(false);
 function onClose() {
   if (message.email || message.message) {
     $q.dialog({
       dark: true,
-      title: 'Confirm',
-      message: 'Do you want to close it and dismiss the data?',
-      cancel: true,
+      title: 'Bist du sicher?',
+      message: 'Deine Eingaben gehen verloren! Schliessen?',
       persistent: true,
+      ok: {
+        label: 'Ja',
+        flat: true,
+      },
+      cancel: {
+        label: 'Nein',
+        flat: true,
+      },
     }).onOk(() => {
       router.go(-1);
     });
@@ -100,6 +114,17 @@ const headerImg = getImageUrl(imgPath, {
   //filters: ['grayscale()'],
 });
 console.log(headerImg);
+let origEmail = '';
+function setAnonym(value: boolean) {
+  if (value) {
+    origEmail = message.email;
+    message.email = anoymDefaultEmail;
+    anonymous.value = true;
+  } else {
+    message.email = origEmail;
+    anonymous.value = false;
+  }
+}
 //onBeforeUnmount(() => onClose());
 </script>
 
@@ -142,6 +167,10 @@ console.log(headerImg);
 }
 .link:hover {
   color: color('accent', 600);
+}
+.anonym_icon {
+  cursor: pointer;
+  pointer-events: all;
 }
 </style>
 
@@ -200,8 +229,9 @@ console.log(headerImg);
                 maxlength="60"
               >
                 <template v-slot:prepend>
-                  <q-icon name="wd-subject" /> </template
-              ></q-input>
+                  <q-icon name="wd-subject" />
+                </template>
+              </q-input>
               <q-input
                 dense
                 v-model="message.email"
@@ -211,9 +241,28 @@ console.log(headerImg);
                 type="email"
                 maxlength="100"
                 :rules="[(val) => !!val || 'E-Mail fehlt']"
+                :disable="anonymous"
               >
-                <template v-slot:prepend> <q-icon name="wd-at" /> </template
-              ></q-input>
+                <template v-slot:prepend> <q-icon name="wd-at" /> </template>
+
+                <template v-slot:append>
+                  <IconMdiAnonymousCircleOff
+                    v-if="anonymous"
+                    @click="setAnonym(false)"
+                    class="anonym_icon"
+                  />
+                  <IconMdiAnonymousCircle
+                    v-else
+                    @click="setAnonym(true)"
+                    class="anonym_icon"
+                  />
+                  <!-- <q-icon
+                  :name="isPwd ? 'visibility_off' : 'visibility'"
+                  class="cursor-pointer"
+                  @click="isPwd = !isPwd"
+                /> -->
+                </template>
+              </q-input>
 
               <q-input
                 v-model="message.message"
@@ -238,10 +287,10 @@ console.log(headerImg);
                 outlined
                 maxlength="300"
                 :placeholder="url.placeholder"
-                :rules="[(val) => !!val || 'URL fehlt']"
               >
+                <!-- :rules="[(val) => !!val || 'URL fehlt']" -->
                 <template v-slot:prepend> <q-icon name="wd-link" /> </template>
-                <template v-slot:append>
+                <template v-slot:after>
                   <q-icon
                     name="wd-close"
                     @click="removeUrl(idx)"
@@ -249,14 +298,31 @@ console.log(headerImg);
                   />
                 </template>
               </q-input>
-              <q-btn
-                v-if="urls.length < 4"
-                @click="addUrl()"
-                class="text-grey-8"
-                label="URL"
-                flat
-                icon="wd-add-outline"
-              />
+              <div class="">
+                <q-btn
+                  v-if="urls.length < 4"
+                  @click="addUrl()"
+                  class="text-grey-8 float-right"
+                  label="URL"
+                  flat
+                  icon="wd-add-outline"
+                />
+              </div>
+              <div>
+                <q-checkbox
+                  v-if="!anonymous"
+                  v-model="message.get_updates"
+                  checked-icon="wd-bell"
+                  unchecked-icon="wd-bell-outline"
+                  color="accent"
+                  size="lg"
+                >
+                  Halte mich auf dem Laufenden.<br />
+                  <span class="text-caption"
+                    >Wir senden dir bei wichtigen Updates eine E-Mail.
+                  </span>
+                </q-checkbox>
+              </div>
             </div>
           </div>
         </q-scroll-area>

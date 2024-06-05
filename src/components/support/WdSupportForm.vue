@@ -129,7 +129,7 @@ function toFeedback() {
                   amount="4"
                   color="primary-900"
                   icon="beer"
-                  :size-factor="1.5"
+                  :size-factor="1.3"
                   style="
                     overflow: hidden;
                     z-index: 5;
@@ -162,7 +162,7 @@ function toFeedback() {
               </div>
             </div>
             <div class="text-body2 q-pt-md q-pb-md">
-              Das Geld wird für die Infrastruktur, Lizenzen und potentielle neue Features benötigt.
+              Im Moment ist es ein <i>Ein-Mann-Projekt</i> und das Geld wird für eine bessere Infrastruktur, Lizenzen und potenzielle neue Features benötigt.
             </div>
             <q-card class="text-body2 bg-secondary-900 text-white q-my-lg">
             <q-card-section>
@@ -176,7 +176,7 @@ function toFeedback() {
                   <li>...</li>
                 </ul>
               </p>
-              Bitte trete mit uns in <a @click="toFeedback">Kontakt</a>!
+              Bitte trete mit mir in <a style="cursor: pointer;" @click="toFeedback">Kontakt</a>!
             </q-card-section>
             </q-card>
           </div>

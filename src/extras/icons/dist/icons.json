@@ -20,10 +20,12 @@
     "close": 61715,
     "checkmark": 61716,
     "calendar": 61717,
-    "at": 61718,
-    "arrowhead-up": 61719,
-    "arrowhead-down": 61720,
-    "arrow-up-down": 61721,
-    "add": 61722,
-    "add-outline": 61723
+    "bell": 61718,
+    "bell-outline": 61719,
+    "at": 61720,
+    "arrowhead-up": 61721,
+    "arrowhead-down": 61722,
+    "arrow-up-down": 61723,
+    "add": 61724,
+    "add-outline": 61725
 }
