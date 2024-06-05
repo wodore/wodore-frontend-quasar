@@ -76,8 +76,8 @@ export default configure((ctx) => {
         removeComments: true,
         collapseWhitespace: false,
         removeAttributeQuotes: false,
-        collapseBooleanAttributes: false,
-        removeScriptTypeAttributes: false,
+        collapseBooleanAttributes: true,
+        removeScriptTypeAttributes: true,
       },
       // polyfillModulePreload: true,
       // distDir
