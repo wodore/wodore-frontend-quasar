@@ -209,8 +209,8 @@ function setAnonym(value: boolean) {
         >
           <div class="col no-wrap items-center q-py-md">
             <p class="text-body1 q-pt-md">
-              Sag uns, was du denkst! Jede Rückmeldung, egal ob positiv oder
-              negativ, hilft uns weiter.
+              <b>Sag, was du denkst!</b> Jede Rückmeldung, egal ob positiv oder
+              negativ, hilft weiter.
             </p>
             <p class="text-body2">
               Jegliche
@@ -319,7 +319,7 @@ function setAnonym(value: boolean) {
                 >
                   Halte mich auf dem Laufenden.<br />
                   <span class="text-caption"
-                    >Wir senden dir bei wichtigen Updates eine E-Mail.
+                    >Bei wichtigen Updates erhältst du eine E-Mail.
                   </span>
                 </q-checkbox>
               </div>
