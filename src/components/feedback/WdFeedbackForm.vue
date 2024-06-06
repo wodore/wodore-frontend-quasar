@@ -80,12 +80,15 @@ function onClose() {
         label: 'Nein',
         flat: true,
       },
-    }).onOk(() => {
-      router.go(-1);
-      track('feedback-cancel');
-    });
+    })
+      .onOk(() => {
+        track('feedback-cancel');
+        router.go(-1);
+      })
+      .onCancel(() => {
+        track('feedback-continue');
+      });
   } else {
-    track('feedback-continue');
     router.go(-1);
   }
 }
