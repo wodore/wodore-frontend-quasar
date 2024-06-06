@@ -4,11 +4,16 @@ import { useQuasar } from 'quasar';
 import getImageUrl from 'src/services/imageService';
 //import { clientWodore } from '@clients/index';
 
+import track from '@services/analytics';
+
 const $q = useQuasar();
 const router = useRouter();
 
 
-function onClose() {
+function onClose(do_track=false) {
+    if (do_track) {
+      track('support-no-action')
+    }
     router.go(-1);
 }
 
@@ -108,7 +113,7 @@ function toFeedback() {
                 name="Trinkgeld"
                 icon="tip"
                 class="link"
-                  @click="onClose"
+                @click="onClose(false)"
               />
               oder einem monatlichem:
             </p>
@@ -121,7 +126,7 @@ function toFeedback() {
                   color="primary-800"
                   icon="snickers"
                   class="col"
-                  @click="onClose"
+                  @click="onClose(false)"
                 />
                 <WdStripeBadge
                   stripe-id="bIY6rcc5X8mj2M87sz"
@@ -138,7 +143,7 @@ function toFeedback() {
                     max-width: 160px;
                   "
                   class="shadow-6 col-auto"
-                  @click="onClose"
+                  @click="onClose(false)"
                 />
                 <WdStripeBadge
                   stripe-id="8wM2aW0nf0TRgCY6or"
@@ -147,7 +152,7 @@ function toFeedback() {
                   color="primary-800"
                   icon="lunch"
                   class="col"
-                  @click="onClose"
+                  @click="onClose(false)"
                 />
               </q-btn-group>
               <div class="text-center">
@@ -189,7 +194,7 @@ function toFeedback() {
           label="Schliessen"
           color="secondary-700"
           flat
-          @click="onClose()"
+          @click="onClose(true)"
           class="q-ml-sm"
         />
         <!-- <q-btn

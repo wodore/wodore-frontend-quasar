@@ -2,9 +2,10 @@
 import { reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
-import getImageUrl from 'src/services/imageService';
+import getImageUrl from '@services/imageService';
 import { clientWodore } from '@clients/index';
 
+import track from '@services/analytics';
 const $q = useQuasar();
 const router = useRouter();
 
@@ -32,6 +33,10 @@ function onSubmit() {
   if (message.email == anoymDefaultEmail) {
     message.get_updates = false;
   }
+  track('feedback-sent', {
+    updates: message.get_updates,
+    anonym: message.email == anoymDefaultEmail,
+  });
   clientWodore
     .POST('/v1/feedback/', {
       body: message,
@@ -49,6 +54,7 @@ function onSubmit() {
       }, 200);
     })
     .catch(() => {
+      track('feedback-fail', { message: JSON.stringify(message) });
       $q.notify({
         color: 'negative',
         textColor: 'black',
@@ -60,7 +66,7 @@ function onSubmit() {
 
 const anonymous = ref(false);
 function onClose() {
-  if (message.email || message.message) {
+  if (message.email || message.message || message.subject) {
     $q.dialog({
       dark: true,
       title: 'Bist du sicher?',
@@ -76,8 +82,10 @@ function onClose() {
       },
     }).onOk(() => {
       router.go(-1);
+      track('feedback-cancel');
     });
   } else {
+    track('feedback-continue');
     router.go(-1);
   }
 }

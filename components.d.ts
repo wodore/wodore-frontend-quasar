@@ -19,6 +19,7 @@ declare module 'vue' {
     QIconify: typeof import('./src/components/quasar/QIconify.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    WdAnalytics: typeof import('./src/components/utils/WdAnalytics.vue')['default']
     WdBasemapSwitch: typeof import('./src/components/map/WdBasemapSwitch.vue')['default']
     WdBasemapSwitchItem: typeof import('./src/components/map/WdBasemapSwitchItem.vue')['default']
     WdBeta: typeof import('./src/components/utils/WdBeta.vue')['default']

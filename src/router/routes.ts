@@ -3,11 +3,11 @@ import { RouteRecordRaw } from 'vue-router';
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    redirect: 'm',
+    redirect: '',
     component: () => import('layouts/MainLayout.vue'),
     children: [
       {
-        path: 'm/hut/:slug',
+        path: 'hut/:slug',
         name: 'map-hut',
         meta: { content: true },
         components: {
@@ -18,7 +18,7 @@ const routes: RouteRecordRaw[] = [
         props: { content: true },
       },
       {
-        path: 'm',
+        path: '',
         name: 'map',
         components: {
           default: () => import('pages/MapPage.vue'),

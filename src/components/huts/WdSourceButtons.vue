@@ -2,6 +2,7 @@
 import { withDefaults } from 'vue';
 
 import { schemasWodore } from '@clients/index';
+import track from '@services/analytics';
 
 interface Props {
   hut?: schemasWodore['HutSchemaDetails'] | null;
@@ -19,6 +20,9 @@ const props = withDefaults(defineProps<Props>(), {
   padding: 'xs',
   target: '_blank',
 });
+function trackSource(slug: string) {
+  track('hut-source-' + props.hut?.slug, { slug: slug });
+}
 </script>
 <style lang="scss" scoped>
 .content {
@@ -36,6 +40,8 @@ const props = withDefaults(defineProps<Props>(), {
     <div :key="ref.name" v-for="ref in props.hut?.sources" class="col">
       <q-btn
         :href="ref.link"
+        @click="trackSource(ref.slug)"
+        @click.middle="trackSource(ref.slug)"
         :target="props.target"
         :flat="props.flat"
         :padding="props.padding"

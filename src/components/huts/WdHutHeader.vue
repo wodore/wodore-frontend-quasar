@@ -1,6 +1,7 @@
 <script setup lang="ts">
 //import { ref } from 'vue';
 import { schemasWodore } from '@clients/index';
+import track from '@services/analytics';
 
 interface Props {
   hut?: schemasWodore['HutSchemaDetails'] | null;
@@ -35,7 +36,11 @@ defineProps<Props>();
             $q.screen.xs || $q.platform.is.mobile ? 'text-h6' : 'text-h5',
           ]"
         >
-          <a v-if="hut.url" :href="hut.url" target="_blank"
+          <a
+            v-if="hut.url"
+            :href="hut.url"
+            target="_blank"
+            @click="track('hut link click')"
             >{{ hut.name }}
             <q-icon size="11pt" style="transform: translateY(-6px)"
               ><IconEvaExternalLinkFill

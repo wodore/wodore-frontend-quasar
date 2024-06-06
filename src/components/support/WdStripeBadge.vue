@@ -1,27 +1,41 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
+import track from '@services/analytics';
 //import { computed } from 'vue';
 //import { useQuasar } from 'quasar';
 //const model = defineModel();
 
 interface Props {
-  stripeId: string;
+  //stripeId: string;
   name: string;
   amount?: string;
   icon?: string;
   sizeFactor?: number;
 }
 
-const props = withDefaults(defineProps<Props>(), { sizeFactor: 1 });
+withDefaults(defineProps<Props>(), { sizeFactor: 1 });
+
+function trackClick(product: string) {
+  track('support-stripe', { product: product });
+}
+
+const stripeId = process.env['STRIPE_ID'];
 
 const link = computed(() => {
-  return 'https://donate.stripe.com/' + props.stripeId + '?locale=de';
+  return 'https://donate.stripe.com/' + stripeId + '?locale=de';
 });
 </script>
 
 <template>
-  <q-btn :href="link" target="_blank" no-caps style="text-transform: unset">
+  <q-btn
+    :href="link"
+    @click="trackClick(name.toLocaleLowerCase())"
+    @click.middle="trackClick(name.toLocaleLowerCase())"
+    target="_blank"
+    no-caps
+    style="text-transform: unset"
+  >
     <div class="q-py-md row justify-center">
       <q-icon
         :style="

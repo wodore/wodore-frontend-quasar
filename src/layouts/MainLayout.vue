@@ -47,6 +47,7 @@ function closeContent(mode: string) {
 }
 </style>
 <template>
+  <WdAnalytics />
   <q-layout view="hHh LpR fFf" class="overflow-hidden">
     <q-header class="text-white shadow-6 app-header">
       <!-- TOOLBAR -->

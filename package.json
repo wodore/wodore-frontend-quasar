@@ -38,6 +38,7 @@
     "@indoorequal/vue-maplibre-gl": "^7",
     "@quasar/extras": "^1.16",
     "@stripe/stripe-js": "^3.4.1",
+    "@types/umami": "^2.10.0",
     "@vue-stripe/vue-stripe": "^4.5.0",
     "axios": "^1.2",
     "crypto-js": "^4.2.0",

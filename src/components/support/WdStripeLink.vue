@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import track from '@services/analytics';
 
 //import { computed } from 'vue';
 //import { useQuasar } from 'quasar';
@@ -12,6 +13,9 @@ interface Props {
   icon?: string;
 }
 
+function trackClick(product: string) {
+  track('support-stripe', { product: product });
+}
 const props = withDefaults(defineProps<Props>(), {});
 
 const link = computed(() => {
@@ -20,7 +24,11 @@ const link = computed(() => {
 </script>
 
 <template>
-  <a :href="link" target="_blank"
+  <a
+    :href="link"
+    target="_blank"
+    @click="trackClick(name.toLocaleLowerCase())"
+    @click.middle="trackClick(name.toLocaleLowerCase())"
     >{{ name }}
     <q-icon
       v-if="icon"
