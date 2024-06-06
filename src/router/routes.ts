@@ -1,9 +1,18 @@
 import { RouteRecordRaw } from 'vue-router';
 
 const routes: RouteRecordRaw[] = [
+  // it used to be '/m', but now we use '/' directly
+  {
+    path: '/m/:catchAll(.*)*',
+    redirect: (to) => {
+      return {
+        path: to.path.replace('/m/', '/'),
+        params: { q: to.query, h: to.hash },
+      };
+    },
+  },
   {
     path: '/',
-    redirect: '',
     component: () => import('layouts/MainLayout.vue'),
     children: [
       {
@@ -46,7 +55,6 @@ const routes: RouteRecordRaw[] = [
       },
     ],
   },
-
   // Always leave this as last one,
   // but you can also remove it
   {

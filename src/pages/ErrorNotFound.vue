@@ -13,7 +13,7 @@ defineOptions({
         <q-icon size="13vh" name="img:/errors/logo_404.svg" />
       </a>
       <div style="font-size: 12vh" class="text-white">404</div>
-      <div class="text-h4" style="opacity: 0.4">Oops. Wrong way...</div>
+      <div class="text-h4" style="opacity: 0.4">Oops. Verlaufen ...</div>
 
       <q-btn
         class="q-mt-xl"
@@ -21,7 +21,7 @@ defineOptions({
         text-color="accent"
         to="/"
         size="lg"
-        label="back on track"
+        label="bring mich zurück"
         flat
         no-caps
       />

@@ -8,8 +8,8 @@ onMounted(() => {
     script.defer = true;
     script.dataset.websiteId = process.env.UMAMI_WEBSITE_ID;
     let url: string;
-    if (process.env.PROD && process.env.DOMAIN) {
-      url = `https://${process.env.DOMAIN}`;
+    if (process.env.PROD && process.env.UMAMI_WEBSITE_URL) {
+      url = `${process.env.UMAMI_WEBSITE_URL}`;
     } else {
       url = 'http://localhost:3009';
     }
