@@ -9,6 +9,7 @@ const { selectedDate } = storeToRefs(useHutsStore());
 const { removeBookings, fetchHutBookingsGeojson } = useHutsStore();
 import { useRouter, useRoute, RouteLocationRaw } from 'vue-router';
 import { storeToRefs } from 'pinia';
+import track from '@services/analytics';
 
 const $router = useRouter();
 const $route = useRoute();
@@ -55,6 +56,7 @@ watch(
   (newDate, oldDate) => {
     if (newDate !== undefined && newDate != oldDate) {
       console.log(`Booking start date changed to '${newDate}'`);
+      track('select-date', { date: newDate });
       setNewDate(newDate);
     }
   },
