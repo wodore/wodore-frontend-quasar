@@ -1,15 +1,25 @@
-import { RouteRecordRaw } from 'vue-router';
+import { RouteLocation, RouteLocationRaw, RouteRecordRaw } from 'vue-router';
 
+function redirectFix(
+  to: RouteLocation,
+  newRouteName: string,
+): RouteLocationRaw {
+  return {
+    //path: to.path.replace(oldPath, newPath),
+    name: newRouteName,
+    query: to.query,
+    hash: to.hash,
+  };
+}
 const routes: RouteRecordRaw[] = [
   // it used to be '/m', but now we use '/' directly
   {
-    path: '/m/:catchAll(.*)*',
-    redirect: (to) => {
-      return {
-        path: to.path.replace('/m/', '/'),
-        params: { q: to.query, h: to.hash },
-      };
-    },
+    path: '/m/hut/:slug',
+    redirect: (to) => redirectFix(to, 'map-hut'),
+  },
+  {
+    path: '/m',
+    redirect: (to) => redirectFix(to, 'map'),
   },
   {
     path: '/',
