@@ -26,7 +26,7 @@ const $q = useQuasar();
 const switcherOpen = ref<boolean>(
   LocalStorage.hasItem('switcherOpen')
     ? (LocalStorage.getItem('switcherOpen') as boolean)
-    : false,
+    : true,
 );
 //const switcherLocked = ref<boolean>(true);
 
