@@ -4,6 +4,9 @@ import { useQuasar } from 'quasar';
 import { useRoute, useRouter } from 'vue-router';
 import WodoreLogo from 'components/wodore/WodoreLogo.vue';
 
+//import { useRouter } from 'vue-router';
+
+//const router = useRouter();
 const $q = useQuasar();
 
 const isMobile = computed(() => {

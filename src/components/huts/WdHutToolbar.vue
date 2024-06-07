@@ -3,6 +3,8 @@ import { ref, watch } from 'vue';
 import { useQuasar } from 'quasar';
 import { schemasWodore } from '@clients/index';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
+import { useAuthStore } from '@stores/auth-store';
+const authStore = useAuthStore();
 
 interface Props {
   hut?: schemasWodore['HutSchemaDetails'] | undefined;
@@ -162,6 +164,8 @@ watch(menuOpen, () => {
             icon="wd-edit-outline"
             :href="hut?.edit_link"
             target="_blank"
+            v-close-popup
+            v-if="authStore.hasRole('editor')"
           >
             {{ $t('edit') }}
           </WdToolbarExtraButton>

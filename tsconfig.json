@@ -10,6 +10,7 @@
       "@app/*": ["*"],
       "components/*": ["src/components/*"],
       "@components/*": ["src/components/*"],
+      "@composables/*": ["src/composables/*"],
       "layouts/*": ["src/layouts/*"],
       "@layouts/*": ["src/layouts/*"],
       "pages/*": ["src/pages/*"],

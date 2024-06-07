@@ -29,7 +29,13 @@ export default configure((ctx) => {
     // --> boot files are part of "main.js"
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
     /// axios
-    boot: ['i18n', 'icons', { server: false, path: 'maplibre' }, 'vue-stripe'],
+    boot: [
+      'i18n',
+      'icons',
+      { server: false, path: 'auth' },
+      { server: false, path: 'maplibre' },
+      'vue-stripe',
+    ],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#css
     css: ['app.scss'],

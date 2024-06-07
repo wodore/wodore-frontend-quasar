@@ -14,6 +14,24 @@ function redirectFix(
 const routes: RouteRecordRaw[] = [
   // it used to be '/m', but now we use '/' directly
   {
+    path: '/auth',
+    //redirect: '/oidc',
+    name: 'auth',
+    //component: () => import('layouts/MapLayout.vue'),
+    children: [
+      {
+        path: 'signin-callback',
+        name: 'auth.signin-callback',
+        component: () => import('pages/auth/SigninCallbackPage.vue'),
+      },
+      {
+        path: 'silent-refresh',
+        name: 'auth.silent-refresh',
+        component: () => import('pages/auth/SilentRefresh.vue'),
+      },
+    ],
+  },
+  {
     path: '/m/hut/:slug',
     redirect: (to) => redirectFix(to, 'map-hut'),
   },
@@ -25,6 +43,13 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     component: () => import('layouts/MainLayout.vue'),
     children: [
+      {
+        path: 'login',
+        name: 'login',
+        components: {
+          default: () => import('pages/auth/LoginPage.vue'),
+        },
+      },
       {
         path: 'hut/:slug',
         name: 'map-hut',

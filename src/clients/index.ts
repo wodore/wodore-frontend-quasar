@@ -3,6 +3,9 @@ import type { paths as pathsWodore } from './wodore_v1';
 import type { components as compWodore } from './wodore_v1';
 import { LoadingBar } from 'quasar';
 
+import { useAuthStore } from '@stores/auth-store';
+const authStore = useAuthStore();
+
 export type schemasWodore = compWodore['schemas'];
 
 export const loading: Record<string, 'start' | 'loading' | 'stopped'> = {};
@@ -38,8 +41,32 @@ const loadingMiddleware: Middleware = {
   },
 };
 
+const authMiddleware: Middleware = {
+  async onRequest(req) {
+    // fetch token, if it doesn’t exist
+    const accessToken = authStore.access_token;
+    if (accessToken) {
+      req.headers.set('Authorization', `Bearer ${accessToken}`);
+    }
+    //if (!accessToken) {
+    //  const authRes = await someAuthFunc();
+    //  if (authRes.accessToken) {
+    //    accessToken = authRes.accessToken;
+    //  } else {
+    //    // handle auth error
+    //  }
+    //}
+
+    // (optional) add logic here to refresh token when it expires
+
+    // add Authorization header to every request
+    return req;
+  },
+};
+
 export const clientWodore = createClient<pathsWodore>({
   baseUrl: process.env.API_HOST,
 });
 
 clientWodore.use(loadingMiddleware);
+clientWodore.use(authMiddleware);
