@@ -46,14 +46,13 @@ function toFeedback() {
 }
 
 .card--mobile {
+  border-radius: unset;
   min-height: 100%;
   height: 100%;
   width: 100%;
   min-width: 100%;
 }
 .card--desktop {
-  border-radius: 10px !important;
-  border: 2px solid rgba($black, 0.607);
   min-height: 300px;
   height: 800px;
   max-height: 900px;

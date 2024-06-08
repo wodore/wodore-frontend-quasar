@@ -2,8 +2,10 @@
 import { ref, computed, watchEffect } from 'vue';
 import { useQuasar } from 'quasar';
 import { useRoute, useRouter } from 'vue-router';
+import { useAuthStore } from '@stores/auth-store';
 import WodoreLogo from 'components/wodore/WodoreLogo.vue';
 
+const authStore = useAuthStore();
 //import { useRouter } from 'vue-router';
 
 //const router = useRouter();
@@ -60,8 +62,14 @@ function closeContent(mode: string) {
           <WodoreLogo class="text-h4" :text="!isMobile" icon />
         </q-toolbar-title>
         <WdSelectDate />
-        <WdSupportButton class="text-secondary-700" />
+        <WdSupportButton
+          v-if="!authStore.isLoggedIn"
+          class="text-secondary-700"
+        />
         <WdFeedbackButton v-if="!isMobile" />
+
+        <WdUser v-if="authStore.isLoggedIn" />
+
         <!-- MAIN DIALOG -->
         <q-dialog
           v-model="showDialog"
@@ -69,6 +77,7 @@ function closeContent(mode: string) {
           persistent
           :maximized="isMobile"
           backdrop-filter="blur(3px) saturate(180%) grayscale(60%)"
+          class="dialog-radius"
         >
           <router-view name="dialog" v-slot="{ Component, route }">
             <!-- <transition name="fade" mode="out-in"> -->

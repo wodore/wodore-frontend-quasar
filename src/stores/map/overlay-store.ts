@@ -5,6 +5,7 @@ import {
   huts,
   skislopes,
   skitouren,
+  sheepdogs,
   hillslope,
   protected_nature,
   hiking,
@@ -29,11 +30,12 @@ export const useOverlayStore = defineStore('overlay', () => {
     hiking,
     mtb,
     cycling,
-    protected_nature,
     hillslope,
     skitouren,
     snowshoes,
     skislopes,
+    protected_nature,
+    sheepdogs,
   ]);
 
   const savedOverlays: Array<OverlaySwitchItem> = LocalStorage.hasItem(

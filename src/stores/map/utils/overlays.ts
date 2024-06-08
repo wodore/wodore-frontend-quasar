@@ -84,6 +84,15 @@ export const protected_nature = getSwisstopoOverlay({
   //minZoom: 10,
 });
 
+export const sheepdogs = getSwisstopoOverlay({
+  name: 'ch.bafu.alpweiden-herdenschutzhunde',
+  label: 'Hedenschutzhunde',
+  icon: 'dog',
+  onLayer: 'background',
+  //opacity: ['interpolate', ['linear'], ['zoom'], 10, 0, 12, 0.2, 20, 0.4],
+  opacity: opacityLevels({ zoomOut: 0.7, zoomMain: 0.5, zoomIn: 0.3 }),
+});
+
 export const hillslope = getSwisstopoOverlay({
   name: 'ch.swisstopo.hangneigung-ueber_30',
   label: 'Hangneigung',

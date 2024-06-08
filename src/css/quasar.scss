@@ -63,6 +63,44 @@
 }
 // --
 
+// unset everthing, was not usefull together with proxy
+.q-menu {
+  position: fixed !important;
+  box-shadow: unset;
+  background: unset;
+  border-radius: unset;
+  display: inline-block;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+  outline: 0;
+  max-height: 65vh;
+  z-index: $z-menu;
+
+  &--quasar {
+    box-shadow: $menu-box-shadow;
+    background: $menu-background;
+    border-radius: $generic-border-radius;
+    max-width: $menu-max-width;
+  }
+  &--square {
+    border-radius: 0;
+  }
+
+  &--dark {
+    box-shadow: $menu-box-shadow-dark;
+  }
+}
+
+// https://github.com/quasarframework/quasar/blob/dev/ui/src/components/dialog/QDialog.sass
+.q-dialog__inner > div {
+  pointer-events: all;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
+  border-radius: $dialog-border-radius;
+  border: 2px solid rgba($black, 0.607);
+}
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Typography https://github.com/quasarframework/quasar/blob/dev/ui/src/css/core/typography.sass
 @each $heading, $value in $h-tags {

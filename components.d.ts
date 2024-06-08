@@ -9,6 +9,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     IconEvaExternalLinkFill: typeof import('~icons/eva/external-link-fill')['default']
     IconEvaLockFill: typeof import('~icons/eva/lock-fill')['default']
+    IconEvaSettingsOutline: typeof import('~icons/eva/settings-outline')['default']
     IconEvaUnlockOutline: typeof import('~icons/eva/unlock-outline')['default']
     IconFa6SolidCopy: typeof import('~icons/fa6-solid/copy')['default']
     IconFa6SolidLocationCrosshairs: typeof import('~icons/fa6-solid/location-crosshairs')['default']
@@ -48,6 +49,7 @@ declare module 'vue' {
     WdTextClamp: typeof import('./src/components/utils/WdTextClamp.vue')['default']
     WdToolbarButton: typeof import('./src/components/toolbar/WdToolbarButton.vue')['default']
     WdToolbarExtraButton: typeof import('./src/components/toolbar/WdToolbarExtraButton.vue')['default']
+    WdUser: typeof import('./src/components/toolbar/WdUser.vue')['default']
     WodoreLogo: typeof import('./src/components/wodore/WodoreLogo.vue')['default']
   }
 }

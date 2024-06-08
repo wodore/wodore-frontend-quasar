@@ -26,8 +26,9 @@ watchEffect(() => {
 
 <template>
   <div class="bg-transparent absolute-bottom">
-    <div class="q-pa-md column q-gutter-sm" v-if="!authStore.isLoggedIn">
+    <div class="q-pa-md column q-gutter-sm">
       <q-btn
+        v-if="!authStore.isLoggedIn"
         color="secondary-700"
         unelevated
         flat
@@ -35,29 +36,15 @@ watchEffect(() => {
         label="Login"
         style="opacity: 0.8"
       />
-    </div>
-    <div class="q-pa-md column q-gutter-sm" v-if="authStore.isLoggedIn">
       <q-btn
+        v-else
         color="accent-700"
         unelevated
+        flat
         @click="$auth.logout()"
         label="Logout"
         style="opacity: 0.8"
       />
-    </div>
-    <div v-if="authStore.isLoggedIn">
-      <div class="row inline">
-        <q-avatar size="56px" class="q-mb-sm q-mr-md">
-          <img :src="authStore.avatar" />
-        </q-avatar>
-        <div class="text-weight-bold text-accent text-subtitle1 self-center">
-          {{ authStore.profile?.name }}
-        </div>
-        <!-- <div class="text-secondary text-caption">{{  authStore.profile?.email }}</div> -->
-      </div>
-      <div v-if="authStore.hasRole('admin', true)">
-        <q-toggle v-model="tracking" label="Tracking" />
-      </div>
     </div>
   </div>
   <div class="text-center q-pa-xl">

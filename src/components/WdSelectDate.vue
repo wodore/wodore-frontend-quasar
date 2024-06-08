@@ -99,7 +99,7 @@ function resetDate() {
     <!-- CALENDAR -->
     <q-popup-proxy
       no-parent-event
-      :offset="[0, 4]"
+      :offset="[20, 0]"
       anchor="bottom start"
       target="#select-date-huts-location"
       v-model="showMenu"
@@ -109,23 +109,30 @@ function resetDate() {
     >
       <div>
         <!-- @update:model-value="setNewDate" -->
-        <q-date
-          v-model="selectedDate"
-          minimal
-          :dark="!isMobile"
-          :options="dateRangeOptions"
-          first-day-of-week="1"
-          :navigation-min-year-month="formatDate(Date.now(), 'YYYY/MM')"
-          :navigation-max-year-month="
-            formatDate(addToDate(Date.now(), { years: 2 }), 'YYYY/MM')
-          "
-          mask="DD.MM.YY"
-        >
-          <div class="row items-center justify-end">
-            <q-btn label="Reset" color="secondary" flat @click="resetDate()" />
-            <q-btn v-close-popup label="Close" color="primary" flat />
-          </div>
-        </q-date>
+        <q-card class="dialog-radius">
+          <q-date
+            v-model="selectedDate"
+            minimal
+            :dark="true"
+            :options="dateRangeOptions"
+            first-day-of-week="1"
+            :navigation-min-year-month="formatDate(Date.now(), 'YYYY/MM')"
+            :navigation-max-year-month="
+              formatDate(addToDate(Date.now(), { years: 2 }), 'YYYY/MM')
+            "
+            mask="DD.MM.YY"
+          >
+            <div class="row items-center justify-end">
+              <q-btn
+                label="Zurücksetzen"
+                color="secondary"
+                flat
+                @click="resetDate()"
+              />
+              <q-btn v-close-popup label="Schliessen" color="primary" flat />
+            </div>
+          </q-date>
+        </q-card>
       </div>
     </q-popup-proxy>
     <!-- MOBILE - button -->

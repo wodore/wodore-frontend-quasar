@@ -48,6 +48,11 @@
   }
 }
 
+.dialog-radius {
+  border-radius: $dialog-border-radius;
+  overflow: hidden;
+}
+
 // months colors
 @import './months.scss';
 

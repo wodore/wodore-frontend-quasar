@@ -39,6 +39,8 @@ export const useAuthStore = defineStore('auth', () => {
   });
 
   const isLoggedIn = computed(() => !!authUser.value);
+  const email = computed(() => authUser.value?.profile.email);
+  const name = computed(() => authUser.value?.profile.name);
 
   const setUpUserCredentials = (user: User) => {
     authUser.value = user;
@@ -48,6 +50,34 @@ export const useAuthStore = defineStore('auth', () => {
     //  OpenAPI.HEADERS = { Authorization: `Bearer ${access_token.value}` };
     //}
   };
+  const roles = computed<Array<string>>(() => {
+    if (
+      authUser.value &&
+      'urn:zitadel:iam:org:project:roles' in authUser.value?.profile
+    ) {
+      const keys = Object.keys(
+        (
+          authUser.value?.profile as unknown as {
+            'urn:zitadel:iam:org:project:roles': { string: unknown };
+          }
+        )['urn:zitadel:iam:org:project:roles'],
+      );
+      return keys;
+    }
+    return [];
+  });
+
+  const rolesFilter = function (prefix: string, delimiter: string = ':') {
+    return roles.value
+      .filter((v: string) => v.startsWith(`${prefix}${delimiter}`))
+      .map((v: string) => v.replace(`${prefix}${delimiter}`, ''));
+  };
+  const groups = computed<Array<string>>(() => {
+    return rolesFilter('group');
+  });
+  const permissions = computed<Array<string>>(() => {
+    return rolesFilter('perm');
+  });
 
   const clearUserSession = () => {
     authUser.value = undefined;
@@ -58,29 +88,14 @@ export const useAuthStore = defineStore('auth', () => {
 
   function hasRole(role: string, needs_root?: boolean | undefined) {
     //const roles = authUser.value?.profile[`urn:zitadel:iam:org:project:${zitadelConfig.project_resource_id}:roles`] as Array<any>
-    let roles: Array<string>;
     if (
-      authUser.value &&
-      'urn:zitadel:iam:org:project:roles' in authUser.value?.profile
-    ) {
-      roles = Object.keys(
-        (
-          authUser.value?.profile as unknown as {
-            'urn:zitadel:iam:org:project:roles': { string: unknown };
-          }
-        )['urn:zitadel:iam:org:project:roles'],
-      );
-    } else {
-      return false;
-    }
-    if (
-      (roles.includes('group:admin') && needs_root == undefined) ||
-      roles.includes('group:root')
+      (roles.value.includes('group:admin') && needs_root == undefined) ||
+      roles.value.includes('group:root')
     ) {
       return true;
     }
     //console.log('Roles:', roles);
-    return roles.includes(role);
+    return roles.value.includes(role);
   }
 
   function isAdmin(needs_root?: boolean) {
@@ -95,6 +110,11 @@ export const useAuthStore = defineStore('auth', () => {
     hasRole,
     isAdmin,
     isEditor,
+    email,
+    name,
+    roles,
+    groups,
+    permissions,
     avatar,
     profile,
     authUser,
