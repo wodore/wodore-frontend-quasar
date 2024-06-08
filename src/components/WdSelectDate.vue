@@ -59,7 +59,6 @@ watch(
       const dateObj = extractDate(newDate, 'DD.MM.YY');
       track('select-date', {
         date: formatDate(newDate, 'DD.MM.YY'),
-        year: formatDate(dateObj, 'YYYY'),
         month: formatDate(dateObj, 'MMMM'),
         day: formatDate(dateObj, 'dddd'),
         monthDay: formatDate(dateObj, 'MMMM: dddd'),
