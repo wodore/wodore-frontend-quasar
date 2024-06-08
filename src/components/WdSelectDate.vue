@@ -57,7 +57,7 @@ watch(
     if (newDate !== undefined && newDate != oldDate) {
       console.log(`Booking start date changed to '${newDate}'`);
       const dateObj = extractDate(newDate, 'DD.MM.YY');
-      track('select-date', {
+      track('booking-date', {
         date: formatDate(newDate, 'DD.MM.YYYY'),
         month: formatDate(dateObj, 'MMMM'),
         day: formatDate(dateObj, 'dddd'),
