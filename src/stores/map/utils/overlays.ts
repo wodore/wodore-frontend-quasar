@@ -68,6 +68,22 @@ export const snowshoes = getSwisstopoOverlay({
   minZoom: 8,
 });
 
+// ch.swisstopo.pixelkarte-farbe&layers=ch.swisstopo-karto.hangneigung,ch.bazl.gebirgslandeplaetze,ch.meteoschweiz.messwerte-neuschnee-3d,ch.meteoschweiz.messwerte-neuschnee-2d,ch.meteoschweiz.messwerte-neuschnee-1d,ch.meteoschweiz.messwerte-gesamtschnee-1d,ch.swisstopo.schneeschuhwandern,ch.swisstopo-karto.schneeschuhrouten,ch.bafu.wrz-jagdbanngebiete_select,ch.bafu.wrz-wildruhezonen_portal,ch.swisstopo.hangneigung-ueber_30,
+export const protected_nature = getSwisstopoOverlay({
+  name: 'wildruhe_und_jagdbann',
+  layers: [
+    'ch.bafu.wrz-wildruhezonen_portal',
+    'ch.bafu.wrz-jagdbanngebiete_select',
+  ],
+  label: 'Naturschutz',
+  icon: 'deer2',
+  onLayer: 'background',
+  //opacity: ['interpolate', ['linear'], ['zoom'], 10, 0, 12, 0.2, 20, 0.4],
+  opacity: opacityLevels({ zoomOut: 0.7, zoomMain: 0.5, zoomIn: 0.3 }),
+
+  //minZoom: 10,
+});
+
 export const hillslope = getSwisstopoOverlay({
   name: 'ch.swisstopo.hangneigung-ueber_30',
   label: 'Hangneigung',

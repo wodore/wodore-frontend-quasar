@@ -8,6 +8,7 @@ import {
 
 interface getRasterStyleArgs {
   name: string;
+  layers?: string | Array<string>;
   tiles: string[];
   attribution?: string;
   tileSize?: number;
@@ -17,6 +18,7 @@ interface getRasterStyleArgs {
 }
 export function getRasterStyle({
   name,
+  layers,
   tiles,
   attribution = '',
   tileSize = 256,
@@ -24,33 +26,43 @@ export function getRasterStyle({
   maxZoom = 22,
   suffix = 'wd-',
 }: getRasterStyleArgs): StyleSpecification {
+  layers =
+    layers === undefined
+      ? [name]
+      : typeof layers === 'string'
+        ? [layers]
+        : layers;
   const style: StyleSpecification = {
     version: 8,
     name: name,
     sources: {},
     glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
     //sprite: { id: 'default', url: 'http://localhost:9000/huts/sprite' },
-    layers: [
-      {
-        id: `${suffix}${name}`,
-        type: 'raster',
-        source: `${suffix}${name}`,
-        minzoom: minZoom,
-        maxzoom: maxZoom,
-      },
-    ],
+    layers: [],
   };
-  style.sources[`${suffix}${name}`] = {
-    type: 'raster',
-    tiles: tiles,
-    tileSize: tileSize,
-    attribution: attribution,
-  };
+  for (const layerName of layers) {
+    style.layers.push({
+      id: `${suffix}${layerName}`,
+      type: 'raster',
+      source: `${suffix}${layerName}`,
+      minzoom: minZoom,
+      maxzoom: maxZoom,
+    });
+    style.sources[`${suffix}${layerName}`] = {
+      type: 'raster',
+      tiles: tiles.map((v) => v.replace('<NAME>', layerName)),
+      tileSize: tileSize,
+      attribution: attribution,
+    };
+  }
+
+  console.debug(`Add style spec ${name}`, layers, style);
   return style;
 }
 
 interface getSwisstopoOverlayArgs {
   name: string;
+  layers?: string | Array<string>;
   label: string;
   icon?: string;
   onLayer?: LayerNames;
@@ -68,6 +80,7 @@ interface getSwisstopoOverlayArgs {
 
 export function getSwisstopoOverlay({
   name,
+  layers,
   label,
   icon = 'fa-solid fa-notdef',
   format = 'png',
@@ -82,33 +95,35 @@ export function getSwisstopoOverlay({
   maxZoom = 22,
   tileSize = 256,
 }: getSwisstopoOverlayArgs): OverlaySwitchItem {
-  return {
+  const style = getRasterStyle({
     name: name,
+    layers: layers,
+    attribution: attribution,
+    tiles: [
+      `https://wmts0.geo.admin.ch/1.0.0/<NAME>/default/current/${tileMatrixSet}/{z}/{x}/{y}.${format}`,
+      `https://wmts1.geo.admin.ch/1.0.0/<NAME>/default/current/${tileMatrixSet}/{z}/{x}/{y}.${format}`,
+      `https://wmts2.geo.admin.ch/1.0.0/<NAME>/default/current/${tileMatrixSet}/{z}/{x}/{y}.${format}`,
+      `https://wmts3.geo.admin.ch/1.0.0/<NAME>/default/current/${tileMatrixSet}/{z}/{x}/{y}.${format}`,
+      `https://wmts4.geo.admin.ch/1.0.0/<NAME>/default/current/${tileMatrixSet}/{z}/{x}/{y}.${format}`,
+      `https://wmts5.geo.admin.ch/1.0.0/<NAME>/default/current/${tileMatrixSet}/{z}/{x}/{y}.${format}`,
+      `https://wmts6.geo.admin.ch/1.0.0/<NAME>/default/current/${tileMatrixSet}/{z}/{x}/{y}.${format}`,
+      `https://wmts7.geo.admin.ch/1.0.0/<NAME>/default/current/${tileMatrixSet}/{z}/{x}/{y}.${format}`,
+      `https://wmts8.geo.admin.ch/1.0.0/<NAME>/default/current/${tileMatrixSet}/{z}/{x}/{y}.${format}`,
+      `https://wmts9.geo.admin.ch/1.0.0/<NAME>/default/current/${tileMatrixSet}/{z}/{x}/{y}.${format}`,
+    ],
+    minZoom: minZoom,
+    maxZoom: maxZoom,
+    tileSize: tileSize,
+  });
+  return {
+    name: style.name as string,
     label: label,
     show: show,
     active: active,
     onLayer: onLayer,
     icon: icon,
     opacity: opacity,
-    style: getRasterStyle({
-      name: name,
-      attribution: attribution,
-      tiles: [
-        `https://wmts0.geo.admin.ch/1.0.0/${name}/default/current/${tileMatrixSet}/{z}/{x}/{y}.${format}`,
-        `https://wmts1.geo.admin.ch/1.0.0/${name}/default/current/${tileMatrixSet}/{z}/{x}/{y}.${format}`,
-        `https://wmts2.geo.admin.ch/1.0.0/${name}/default/current/${tileMatrixSet}/{z}/{x}/{y}.${format}`,
-        `https://wmts3.geo.admin.ch/1.0.0/${name}/default/current/${tileMatrixSet}/{z}/{x}/{y}.${format}`,
-        `https://wmts4.geo.admin.ch/1.0.0/${name}/default/current/${tileMatrixSet}/{z}/{x}/{y}.${format}`,
-        `https://wmts5.geo.admin.ch/1.0.0/${name}/default/current/${tileMatrixSet}/{z}/{x}/{y}.${format}`,
-        `https://wmts6.geo.admin.ch/1.0.0/${name}/default/current/${tileMatrixSet}/{z}/{x}/{y}.${format}`,
-        `https://wmts7.geo.admin.ch/1.0.0/${name}/default/current/${tileMatrixSet}/{z}/{x}/{y}.${format}`,
-        `https://wmts8.geo.admin.ch/1.0.0/${name}/default/current/${tileMatrixSet}/{z}/{x}/{y}.${format}`,
-        `https://wmts9.geo.admin.ch/1.0.0/${name}/default/current/${tileMatrixSet}/{z}/{x}/{y}.${format}`,
-      ],
-      minZoom: minZoom,
-      maxZoom: maxZoom,
-      tileSize: tileSize,
-    }),
+    style: style,
   };
 }
 

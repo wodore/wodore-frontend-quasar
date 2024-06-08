@@ -187,7 +187,7 @@ function addOverlays() {
     }
     setOverlayVisibility(<OverlaySwitchItem>(overlay as unknown));
     for (const layer of overlay.style.layers) {
-      //console.debug('Add layer', layer);
+      console.debug('Add layer', layer);
       addOverlayLayer({
         layer: <LayerSpecification>(layer as unknown),
         defaultOpacity: <OpacitySpecification>(overlay.opacity as unknown),
