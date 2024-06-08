@@ -16,7 +16,11 @@ const tracking = ref<boolean>(
 );
 
 watchEffect(() => {
-  LocalStorage.set('umami.disabled', !tracking.value);
+  if (!tracking.value) {
+    LocalStorage.set('umami.disabled', !tracking.value);
+  } else {
+    LocalStorage.removeItem('umami.disabled');
+  }
 });
 </script>
 

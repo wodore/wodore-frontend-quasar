@@ -4,7 +4,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useQuasar } from 'quasar';
 import { useHutsStore } from '@stores/huts-store';
 import { date } from 'quasar';
-const { formatDate, addToDate } = date;
+const { formatDate, addToDate, extractDate } = date;
 const { selectedDate } = storeToRefs(useHutsStore());
 const { removeBookings, fetchHutBookingsGeojson } = useHutsStore();
 import { useRouter, useRoute, RouteLocationRaw } from 'vue-router';
@@ -56,7 +56,14 @@ watch(
   (newDate, oldDate) => {
     if (newDate !== undefined && newDate != oldDate) {
       console.log(`Booking start date changed to '${newDate}'`);
-      track('select-date', { date: newDate });
+      const dateObj = extractDate(newDate, 'DD.MM.YY');
+      track('select-date', {
+        date: formatDate(newDate, 'DD.MM.YY'),
+        year: formatDate(dateObj, 'YYYY'),
+        month: formatDate(dateObj, 'MMMM'),
+        day: formatDate(dateObj, 'dddd'),
+        monthDay: formatDate(dateObj, 'MMMM: dddd'),
+      });
       setNewDate(newDate);
     }
   },
