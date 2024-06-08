@@ -58,7 +58,7 @@ watch(
       console.log(`Booking start date changed to '${newDate}'`);
       const dateObj = extractDate(newDate, 'DD.MM.YY');
       track('booking-date', {
-        date: formatDate(newDate, 'DD.MM.YYYY'),
+        date: formatDate(dateObj, 'DD.MM.YYYY'),
         month: formatDate(dateObj, 'MMMM'),
         day: formatDate(dateObj, 'dddd'),
         monthDay: formatDate(dateObj, 'MMMM: dddd'),
