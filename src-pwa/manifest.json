@@ -5,12 +5,7 @@
   "background_color": "#315e47",
   "theme_color": "#1a4231",
   "display": "standalone",
-  "display_override": [
-    "standalone",
-    "fullscreen",
-    "minimal-ui",
-    "browser"
-  ],
+  "display_override": ["standalone", "fullscreen", "minimal-ui", "browser"],
   "icons": [
     {
       "src": "/favicon_shape.svg?v=3",

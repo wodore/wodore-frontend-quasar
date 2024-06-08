@@ -376,6 +376,12 @@ export interface components {
       link: string;
       /** Logo */
       logo: string;
+      /** Public */
+      public: boolean;
+      /** Active */
+      active: boolean;
+      /** Source Id */
+      source_id: string;
     };
     /** OwnerSchema */
     OwnerSchema: {
@@ -716,6 +722,8 @@ export interface components {
       subject: string;
       /** Message */
       message: string;
+      /** Get Updates */
+      get_updates: boolean;
     };
   };
   responses: never;

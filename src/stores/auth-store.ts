@@ -79,12 +79,22 @@ export const useAuthStore = defineStore('auth', () => {
     ) {
       return true;
     }
-    console.log('Roles:', roles);
+    //console.log('Roles:', roles);
     return roles.includes(role);
+  }
+
+  function isAdmin(needs_root?: boolean) {
+    return hasRole('admin', needs_root);
+  }
+
+  function isEditor() {
+    return hasRole('editor');
   }
 
   return {
     hasRole,
+    isAdmin,
+    isEditor,
     avatar,
     profile,
     authUser,

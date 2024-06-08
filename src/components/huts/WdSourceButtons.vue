@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { withDefaults } from 'vue';
 
+import { useAuthStore } from '@stores/auth-store';
+const authStore = useAuthStore();
+
 import { schemasWodore } from '@clients/index';
 import track from '@services/analytics';
 
@@ -47,6 +50,8 @@ function trackSource(slug: string) {
         :padding="props.padding"
         :round="props.round"
         :color="props.color"
+        v-if="ref.public || authStore.isAdmin()"
+        style="min-width: 44px"
       >
         <!--{{ ref.slug }}-->
         <img
@@ -54,7 +59,9 @@ function trackSource(slug: string) {
           :src="ref.logo"
         />
         <q-tooltip :hide-delay="150" :delay="150">
-          <span>{{ ref.fullname }}</span>
+          <span>{{ ref.fullname }}</span
+          ><br />
+          <b>{{ ref.source_id }}</b>
           <!-- <br /> -->
           <!-- TODO: send id -->
           <!-- <span class="text-bold text-subtitle1">{{ ref.slug }}</span> -->

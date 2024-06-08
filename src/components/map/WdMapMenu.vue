@@ -25,11 +25,12 @@ watchEffect(() => {
 </script>
 
 <template>
-  <div class="bg-transparent">
+  <div class="bg-transparent absolute-bottom">
     <div class="q-pa-md column q-gutter-sm" v-if="!authStore.isLoggedIn">
       <q-btn
-        color="accent-700"
+        color="secondary-700"
         unelevated
+        flat
         @click="$auth.signinRedirect()"
         label="Login"
         style="opacity: 0.8"
