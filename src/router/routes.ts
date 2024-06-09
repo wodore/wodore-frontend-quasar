@@ -90,6 +90,12 @@ const routes: RouteRecordRaw[] = [
       },
     ],
   },
+
+  {
+    name: 'data-policy',
+    path: '/data-policy',
+    component: () => import('pages/DataPolicy.vue'),
+  },
   // Always leave this as last one,
   // but you can also remove it
   {

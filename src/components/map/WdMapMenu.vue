@@ -25,7 +25,7 @@ watchEffect(() => {
 </script>
 
 <template>
-  <div class="bg-transparent absolute-bottom">
+  <div class="bg-transparent absolute-bottom" style="bottom: 10px">
     <div class="q-pa-md column q-gutter-sm">
       <q-btn
         v-if="!authStore.isLoggedIn"
@@ -51,6 +51,16 @@ watchEffect(() => {
     <q-icon size="80px">
       <IconNotoV1Construction />
     </q-icon>
+  </div>
+  <div
+    class="text-secondary-800 bg-transparent absolute-bottom"
+    v-if="authStore.isEditor()"
+  >
+    <div class="text-caption q-ma-xs q-ml-md">
+      <router-link :to="{ name: 'data-policy' }" target="_blank"
+        >Datenschutz</router-link
+      >
+    </div>
   </div>
   <!-- <q-list bordered padding class="rounded-borders text-primary">
     <q-item

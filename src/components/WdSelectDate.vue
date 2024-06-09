@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 
-import { useQuasar, QDate } from 'quasar';
+import { useQuasar, QDate, TouchPanValue } from 'quasar';
 import { useHutsStore } from '@stores/huts-store';
 import { date } from 'quasar';
 const { formatDate, addToDate, extractDate } = date;
@@ -45,19 +45,44 @@ function dateRangeOptions(date: string) {
   const today = formatDate(Date.now(), 'YYYY/MM/DD');
   return date >= today;
 }
-watch(showMenu, () => {
-  let usedDate: number | Date;
-  if (selectedDateObj.value === undefined) {
-    usedDate = Date.now();
-  } else {
-    usedDate = selectedDateObj.value;
+
+// hack, because the date always make a transition when i goes to the correct date
+// since we use it to set it to the last position we dont want this transition the first time
+const noTrans = ref(true);
+watch(showMenu, (val) => {
+  if (val == false) {
+    noTrans.value = true; // do not use transition the next time
+    return;
   }
-  const year = parseInt(formatDate(usedDate, 'YYYY'));
-  const month = parseInt(formatDate(usedDate, 'M'));
+  let usedDate: number | Date;
+  let sel: MonthYear;
+  if (leftValue.value !== undefined) {
+    sel = leftValue.value;
+  } else {
+    if (selectedDateObj.value === undefined) {
+      usedDate = Date.now();
+    } else {
+      usedDate = selectedDateObj.value;
+    }
+    sel = {
+      year: parseInt(formatDate(usedDate, 'YYYY')),
+      month: parseInt(formatDate(usedDate, 'M')),
+    };
+  }
+  // disable the saved values, we set them again next
   rigthValue.value = undefined;
-  setTimeout(() => {
-    updateLeft({ year: year, month: month });
-  }, 10);
+  leftValue.value = undefined;
+  noTrans.value = true;
+  nextTick(() => {
+    // wait until everyhing is mounted
+    if (calLeft.value !== null) {
+      calLeft.value.setCalendarTo(sel.year, sel.month);
+      updateLeft(sel); // this updates the right calendar
+      setTimeout(() => {
+        noTrans.value = false; // allow transitions again
+      }, 500);
+    }
+  });
 });
 
 function setNewDate(value: string) {
@@ -114,6 +139,7 @@ function resetDate() {
   $router.push(_new_route);
 }
 
+// sync the two calendars, the right needs to have a offset of 1 month
 const calLeft = ref<InstanceType<typeof QDate> | null>(null);
 const calRigth = ref<InstanceType<typeof QDate> | null>(null);
 type MonthYear = { year: number; month: number };
@@ -159,13 +185,17 @@ const updateRigth = function (e: MonthYear) {
   }
 };
 
+// do the TODAY button disable
 const todayDisabled = computed(() => {
   if (leftValue.value !== undefined) {
-    return parseInt(formatDate(Date.now(), 'M')) == leftValue.value.month;
+    return (
+      parseInt(formatDate(Date.now(), 'M')) == leftValue.value.month &&
+      parseInt(formatDate(Date.now(), 'YYYY')) == leftValue.value.year
+    );
   }
   return true;
 });
-const setToday = function () {
+const gotoToday = function () {
   if (calLeft.value !== undefined) {
     const year = parseInt(formatDate(Date.now(), 'YYYY'));
     const month = parseInt(formatDate(Date.now(), 'M'));
@@ -174,11 +204,35 @@ const setToday = function () {
     }
   }
 };
+
+const handleDateSwipe: TouchPanValue = (e) => {
+  if ($q.platform.has.touch && calRigth.value !== null) {
+    if (e.direction == 'right') {
+      calRigth.value?.offsetCalendar('month');
+    }
+    if (e.direction == 'left') {
+      calRigth.value?.offsetCalendar('month', true);
+    }
+  }
+};
 </script>
 
 <style scoped>
 .toolbar-font {
   font-size: medium;
+}
+</style>
+<style lang="scss">
+.no-trans .q-transition {
+  &--slide-right,
+  &--slide-left,
+  &--jump-right,
+  &--jump-left {
+    &-enter-active,
+    &-leave-active {
+      --q-transition-duration: 0s;
+    }
+  }
 }
 </style>
 <template>
@@ -203,7 +257,7 @@ const setToday = function () {
     >
       <div>
         <!-- @update:model-value="setNewDate" -->
-        <q-card class="dialog-radius text-white bg-dark-500">
+        <q-card class="dialog-radius bg-dark-500">
           <div
             class="q-ma-xs z-top text-icon"
             style="position: absolute; width: 32px; top: 6px; right: 6px"
@@ -235,9 +289,13 @@ const setToday = function () {
               </q-item-section>
             </q-item>
           </q-list>
-          <div style="max-height: 315px; height: 315px; overflow: hidden">
+          <div
+            style="max-height: 315px; height: 315px; overflow: hidden"
+            v-touch-swipe.mouse.right.left="handleDateSwipe"
+          >
             <!-- <div> -->
             <q-date
+              :class="{ 'no-trans': noTrans }"
               v-model="selectedDate"
               minimal
               flat
@@ -255,6 +313,7 @@ const setToday = function () {
             >
             </q-date>
             <q-date
+              :class="{ 'no-trans': noTrans }"
               v-model="selectedDate"
               v-if="$q.screen.gt.xs"
               minimal
@@ -282,7 +341,7 @@ const setToday = function () {
             <q-btn
               flat
               :disable="todayDisabled"
-              @click="setToday"
+              @click="gotoToday"
               class="q-mr-md text-accent"
               :class="{ 'text-dark-200': todayDisabled }"
               >heute</q-btn
