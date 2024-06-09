@@ -206,14 +206,14 @@ const gotoToday = function () {
 };
 
 const handleDateSwipe: TouchPanValue = (e) => {
-  if ($q.platform.has.touch && calRigth.value !== null) {
-    if (e.direction == 'right') {
-      calRigth.value?.offsetCalendar('month');
-    }
-    if (e.direction == 'left') {
-      calRigth.value?.offsetCalendar('month', true);
-    }
+  // if ($q.platform.is.mobile && calRigth.value !== null) {
+  if (e.direction == 'right') {
+    calRigth.value?.offsetCalendar('month');
   }
+  if (e.direction == 'left') {
+    calRigth.value?.offsetCalendar('month', true);
+  }
+  // }
 };
 </script>
 
