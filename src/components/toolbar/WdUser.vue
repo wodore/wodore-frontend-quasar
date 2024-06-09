@@ -102,7 +102,7 @@ const showMenu = ref(false);
       transition-hide="jump-up"
     >
       <q-card class="bg-dark-500 text-white dialog-radius">
-        <!-- SETTINGS -->
+        <!--  Close and Settings -->
         <div
           class="q-ma-xs z-top text-icon"
           style="position: absolute; width: 32px; top: 6px; right: 6px"
@@ -227,6 +227,7 @@ const showMenu = ref(false);
             </q-list>
           </q-scroll-area>
         </div>
+        <!-- FOOTER logout -->
         <div
           class="q-pa-md column q-gutter-sm bg-dark-700"
           v-if="authStore.isLoggedIn"
