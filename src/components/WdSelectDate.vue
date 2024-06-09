@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 
-import { useQuasar, QDate, TouchPanValue } from 'quasar';
+import { useQuasar, QDate, TouchSwipeValue } from 'quasar';
 import { useHutsStore } from '@stores/huts-store';
 import { date } from 'quasar';
 const { formatDate, addToDate, extractDate } = date;
@@ -205,13 +205,14 @@ const gotoToday = function () {
   }
 };
 
-const handleDateSwipe: TouchPanValue = (e) => {
+const handleDateSwipe: TouchSwipeValue = (e) => {
+  e.evt?.preventDefault();
   // if ($q.platform.is.mobile && calRigth.value !== null) {
   if (e.direction == 'right') {
-    calRigth.value?.offsetCalendar('month');
+    calRigth.value?.offsetCalendar('month', true);
   }
   if (e.direction == 'left') {
-    calRigth.value?.offsetCalendar('month', true);
+    calRigth.value?.offsetCalendar('month', false);
   }
   // }
 };
@@ -246,8 +247,8 @@ const handleDateSwipe: TouchPanValue = (e) => {
   >
     <!-- CALENDAR -->
     <q-popup-proxy
-      no-parent-event
       :offset="[10, 1]"
+      no-parent-event
       anchor="top start"
       target="#select-date-huts-location"
       v-model="showMenu"
@@ -291,7 +292,7 @@ const handleDateSwipe: TouchPanValue = (e) => {
           </q-list>
           <div
             style="max-height: 315px; height: 315px; overflow: hidden"
-            v-touch-swipe.mouse.right.left="handleDateSwipe"
+            v-touch-swipe.mouse.horizontal="handleDateSwipe"
           >
             <!-- <div> -->
             <q-date
