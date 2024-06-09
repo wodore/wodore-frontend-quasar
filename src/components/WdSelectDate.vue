@@ -10,6 +10,7 @@ const { removeBookings, fetchHutBookingsGeojson } = useHutsStore();
 import { useRouter, useRoute, RouteLocationRaw } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import track from '@services/analytics';
+import enUS from 'quasar/lang/en-US.js'; // Adjust the path if necessary
 
 const $router = useRouter();
 const $route = useRoute();
@@ -116,10 +117,10 @@ watch(
       console.log(`Booking start date changed to '${newDate}'`);
       const dateObj = extractDate(newDate, 'DD.MM.YY');
       track('booking-date', {
-        date: formatDate(dateObj, 'DD.MM.YYYY'),
-        month: formatDate(dateObj, 'MMMM'),
-        day: formatDate(dateObj, 'dddd'),
-        monthDay: formatDate(dateObj, 'MMMM: dddd'),
+        date: formatDate(dateObj, 'DD.MM.YYYY', enUS.date),
+        month: formatDate(dateObj, 'MMMM', enUS.date),
+        day: formatDate(dateObj, 'dddd', enUS.date),
+        monthDay: formatDate(dateObj, 'MMMM: dddd', enUS.date),
       });
       setNewDate(newDate);
     }
