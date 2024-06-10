@@ -6,6 +6,9 @@
 import { configure } from 'quasar/wrappers';
 import { fileURLToPath } from 'node:url';
 
+import { date } from 'quasar';
+const { formatDate } = date;
+
 import IconsResolver from 'unplugin-icons/resolver';
 
 // export default defineConfig({
@@ -34,7 +37,7 @@ export default configure((ctx) => {
       'icons',
       { server: false, path: 'auth' },
       { server: false, path: 'maplibre' },
-      'vue-stripe',
+      { server: false, path: 'vue-stripe' },
     ],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#css
@@ -72,9 +75,12 @@ export default configure((ctx) => {
 
       // publicPath: '/',
       // analyze: true,
-      //env: {
-      //  IMAGOR_KEY: process.env.IMAGOR_KEY ? process.env.IMAGOR_KEY : 'my_key',
-      //},
+      env: {
+        TIMESTAMP:
+          parseInt(formatDate(Date.now(), 'YYMMDD')).toString(16) +
+          '-' +
+          parseInt(formatDate(Date.now(), 'HHmm')).toString(16),
+      },
       // rawDefine: {}
       // ignorePublicFolder: true,
       minify: true,

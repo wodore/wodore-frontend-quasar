@@ -15,6 +15,7 @@ interface getRasterStyleArgs {
   minZoom?: number;
   maxZoom?: number;
   suffix?: string;
+  cdn?: boolean;
 }
 export function getRasterStyle({
   name,
@@ -25,6 +26,7 @@ export function getRasterStyle({
   minZoom = 0,
   maxZoom = 22,
   suffix = 'wd-',
+  cdn = true,
 }: getRasterStyleArgs): StyleSpecification {
   layers =
     layers === undefined
@@ -50,7 +52,14 @@ export function getRasterStyle({
     });
     style.sources[`${suffix}${layerName}`] = {
       type: 'raster',
-      tiles: tiles.map((v) => v.replace('<NAME>', layerName)),
+      tiles: tiles.map(
+        (v) =>
+          (cdn
+            ? 'https://res.cloudinary.com/' +
+              process.env.CLOUDINARY_ENV +
+              '/image/fetch/f_auto/q_auto/'
+            : '') + v.replace('<NAME>', layerName),
+      ),
       tileSize: tileSize,
       attribution: attribution,
     };

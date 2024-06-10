@@ -22,6 +22,7 @@ watchEffect(() => {
     LocalStorage.removeItem('umami.disabled');
   }
 });
+const TIMESTAMP = process.env.TIMESTAMP;
 </script>
 
 <template>
@@ -52,14 +53,15 @@ watchEffect(() => {
       <IconNotoV1Construction />
     </q-icon>
   </div>
-  <div
-    class="text-secondary-800 bg-transparent absolute-bottom"
-    v-if="authStore.isEditor()"
-  >
+  <div class="text-secondary-800 bg-transparent absolute-bottom">
     <div class="text-caption q-ma-xs q-ml-md">
-      <router-link :to="{ name: 'data-policy' }" target="_blank"
-        >Datenschutz</router-link
-      >
+      <span v-if="authStore.isEditor()">
+        <router-link :to="{ name: 'data-policy' }" target="_blank"
+          >Datenschutz</router-link
+        >
+        |
+      </span>
+      t{{ TIMESTAMP }}
     </div>
   </div>
   <!-- <q-list bordered padding class="rounded-borders text-primary">
