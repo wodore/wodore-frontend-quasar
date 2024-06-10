@@ -107,7 +107,7 @@ export const hillslope = getSwisstopoOverlay({
 export const skislopes: OverlaySwitchItem = {
   name: 'slopes',
   label: 'Skipisten',
-  opacity: opacityLevels({ zoomMain: 0.6 }),
+  opacity: opacityLevels({ zoomOut: 0.3, zoomMain: 0.6 }),
   icon: 'skislopes',
   onLayer: 'ways',
   show: true,
@@ -140,7 +140,6 @@ export const cycling: OverlaySwitchItem = {
   style: getRasterStyle({
     name: 'cycling',
     tiles: ['https://tile.waymarkedtrails.org/cycling/{z}/{x}/{y}.png'],
-    minZoom: 10,
   }),
 };
 export const mtb: OverlaySwitchItem = {
@@ -153,6 +152,5 @@ export const mtb: OverlaySwitchItem = {
   style: getRasterStyle({
     name: 'mtb',
     tiles: ['https://tile.waymarkedtrails.org/mtb/{z}/{x}/{y}.png'],
-    minZoom: 10,
   }),
 };
