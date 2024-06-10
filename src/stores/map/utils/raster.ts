@@ -26,7 +26,7 @@ export function getRasterStyle({
   minZoom = 0,
   maxZoom = 22,
   suffix = 'wd-',
-  cdn = true,
+  cdn = false,
 }: getRasterStyleArgs): StyleSpecification {
   layers =
     layers === undefined
