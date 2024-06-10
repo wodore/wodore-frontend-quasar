@@ -22,7 +22,7 @@ watchEffect(() => {
     LocalStorage.removeItem('umami.disabled');
   }
 });
-const TIMESTAMP = process.env.TIMESTAMP;
+const TIMESTAMP = process.env.TIMESTAMP_VERSION_HEX;
 </script>
 
 <template>
@@ -61,7 +61,7 @@ const TIMESTAMP = process.env.TIMESTAMP;
         >
         |
       </span>
-      t{{ TIMESTAMP }}
+      {{ TIMESTAMP }}
     </div>
   </div>
   <!-- <q-list bordered padding class="rounded-borders text-primary">

@@ -76,10 +76,15 @@ export default configure((ctx) => {
       // publicPath: '/',
       // analyze: true,
       env: {
-        TIMESTAMP:
-          parseInt(formatDate(Date.now(), 'YYMMDD')).toString(16) +
+        TIMESTAMP_VERSION_HEX:
+          't' +
+          parseInt(formatDate(Date.now(), 'YYMMDD'))
+            .toString(16)
+            .padStart(5, '0') +
           '-' +
-          parseInt(formatDate(Date.now(), 'HHmm')).toString(16),
+          parseInt(formatDate(Date.now(), 'HHmm'))
+            .toString(16)
+            .padStart(3, '0'),
       },
       // rawDefine: {}
       // ignorePublicFolder: true,
