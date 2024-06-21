@@ -105,7 +105,7 @@ const moveFab: TouchPanValue = (ev) => {
     class="shadow-2"
   >
     <div
-      class="text-primary-100 absolute-top z-max q-pa-xs"
+      class="text-primary-100 absolute-top z-max q-pa-xs q-ma-xs"
       style="width: 50px"
     >
       <q-btn
@@ -114,9 +114,8 @@ const moveFab: TouchPanValue = (ev) => {
         unelevated
         color="accent-100"
         icon="wd-close"
-        class="text-primary-900 q-ma-sm"
-        size="md"
         @click="$emit('close', 'landscape')"
+        class="text-primary-900"
       />
     </div>
     <router-view v-slot="{ Component, route }" name="content">

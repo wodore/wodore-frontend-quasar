@@ -40,8 +40,9 @@ function trackSource(slug: string) {
 }
 </style>
 <template>
-  <div v-if="hut" class="justify-start row" :class="{ content: background }">
-    <div :key="ref.name" v-for="ref in props.hut?.sources" class="col">
+  <!-- <div v-if="hut" class="justify-start row" :class="{ content: background }"> -->
+  <div v-if="hut" class="" :class="{ content: background }">
+    <span :key="ref.name" v-for="ref in props.hut?.sources" class="col">
       <q-btn
         :href="ref.link"
         @click="trackSource(ref.slug)"
@@ -52,7 +53,6 @@ function trackSource(slug: string) {
         :round="props.round"
         :color="props.color"
         v-if="ref.public || authStore.isAdmin()"
-        style="min-width: 44px"
       >
         <!--{{ ref.slug }}-->
         <img
@@ -70,6 +70,6 @@ function trackSource(slug: string) {
           <!-- <span class="text-bold text-subtitle1">{{ ref.slug }}</span> -->
         </q-tooltip>
       </q-btn>
-    </div>
+    </span>
   </div>
 </template>

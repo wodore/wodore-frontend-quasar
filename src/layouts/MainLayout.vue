@@ -3,6 +3,7 @@ import { ref, computed, watchEffect } from 'vue';
 import { useQuasar } from 'quasar';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@stores/auth-store';
+import { useMeta } from 'quasar';
 import WodoreLogo from 'components/wodore/WodoreLogo.vue';
 
 const authStore = useAuthStore();
@@ -28,7 +29,20 @@ watchEffect(() => {
 watchEffect(() => {
   contentDrawerOpen.value = route.meta?.content as boolean;
 });
-
+const metaData = {
+  title: 'Wodore',
+  meta: {
+    description: {
+      name: 'description',
+      content: 'Wohin gipfelt deine nächste Tour?',
+    },
+  },
+};
+watchEffect(() => {
+  if (route.name == 'map') {
+    useMeta(metaData);
+  }
+});
 function closeContent(mode: string) {
   //contentDrawerOpen.value = false;
   console.debug(`Closed content in ${mode} mode.`);

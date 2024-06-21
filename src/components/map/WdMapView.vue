@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, inject, watchEffect } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { useResizeObserver, useDebounceFn } from '@vueuse/core';
 //import {
 //  hutsLayerLayout,
 //  hutsLayerPaint,
@@ -29,6 +30,7 @@ import {
   //MglStyleSwitchControl,
   MglGeolocateControl,
   MglAttributionControl,
+  useMap,
 } from '@indoorequal/vue-maplibre-gl';
 
 // import MglStyleSwitchControl from './styleSwitch.control';
@@ -36,6 +38,7 @@ const $q = useQuasar();
 const router = useRouter();
 const route = useRoute();
 const basemapStore = useBasemapStore();
+const mapRef = useMap();
 //const hutStore = useHutsStore();
 
 type layoutType = {
@@ -73,6 +76,14 @@ if ($layout === undefined) {
   });
 }
 
+const mapDiv = ref(null);
+const mapResize = useDebounceFn(() => {
+  mapRef.map?.resize();
+}, 50);
+
+useResizeObserver(mapDiv, () => {
+  mapResize();
+});
 //const hutjson = ref(
 //  `${process.env.API_HOST}/${process.env.API_VERSION}/huts/huts.geojson?lang=de&limit=5000&embed_all=false&embed_type=true&embed_owner=false&embed_capacity=false&embed_sources=false&include_elevation=false&include_name=true&flat=true`,
 //);
@@ -196,66 +207,67 @@ const mapZoom: number = 7.5;
 <template>
   <!-- @map:render="onMapRender" -->
   <q-no-ssr>
-    <MglMap
-      @map:load="onMapLoad"
-      @map:styledata="onMapStyledata"
-      hash="p"
-      :map-style="basemapStore.getBasemap()?.style"
-      :zoom="mapZoom"
-      :bearing-snap="15"
-      :center="mapCenter"
-      :attribution-control="false"
-      :min-zoom="7"
-      :max-zoom="20"
-      :max-bounds="[3.6, 43, 18.7, 49.7]"
-    >
-      <!-- <MglStyleSwitchControl :map-styles="basemapStore.basemaps" /> -->
-      <!-- <MglCustomControl position="top-right" class=""> -->
-      <WdBasemapSwitch
-        :position="$q.platform.is.mobile ? 'bottom-right' : 'top-left'"
-        :direction="$q.platform.is.mobile ? 'left' : 'right'"
-        :offset="[
-          $q.platform.is.mobile ? 14 : 14,
-          $q.platform.is.mobile ? 20 : 14,
-        ]"
-      />
-      <WdOverlaySwitch
-        position="top-left"
-        direction="down"
-        :offset="[
-          $q.platform.is.mobile ? 14 : 14,
-          $q.platform.is.mobile ? 14 : 68,
-        ]"
-      />
-      <!-- </MglCustomControl> -->
-      <MglGeolocateControl />
-      <!-- <MglNavigationControl :show-zoom="$q.platform.is.desktop" /> -->
-      <MglNavigationControl :show-zoom="false" />
-      <MglAttributionControl
-        :position="$q.platform.is.mobile ? 'bottom-left' : 'bottom-right'"
-      />
-      <MglScaleControl />
-      <!-- <MglGeoJsonSource
+    <div ref="mapDiv">
+      <MglMap
+        @map:load="onMapLoad"
+        @map:styledata="onMapStyledata"
+        hash="p"
+        :map-style="basemapStore.getBasemap()?.style"
+        :zoom="mapZoom"
+        :bearing-snap="15"
+        :center="mapCenter"
+        :attribution-control="false"
+        :min-zoom="7"
+        :max-zoom="20"
+        :max-bounds="[3.6, 43, 18.7, 49.7]"
+      >
+        <!-- <MglStyleSwitchControl :map-styles="basemapStore.basemaps" /> -->
+        <!-- <MglCustomControl position="top-right" class=""> -->
+        <WdBasemapSwitch
+          :position="$q.platform.is.mobile ? 'bottom-right' : 'top-left'"
+          :direction="$q.platform.is.mobile ? 'left' : 'right'"
+          :offset="[
+            $q.platform.is.mobile ? 14 : 14,
+            $q.platform.is.mobile ? 20 : 14,
+          ]"
+        />
+        <WdOverlaySwitch
+          position="top-left"
+          direction="down"
+          :offset="[
+            $q.platform.is.mobile ? 14 : 14,
+            $q.platform.is.mobile ? 14 : 68,
+          ]"
+        />
+        <!-- </MglCustomControl> -->
+        <MglGeolocateControl />
+        <!-- <MglNavigationControl :show-zoom="$q.platform.is.desktop" /> -->
+        <MglNavigationControl :show-zoom="false" />
+        <MglAttributionControl
+          :position="$q.platform.is.mobile ? 'bottom-left' : 'bottom-right'"
+        />
+        <MglScaleControl />
+        <!-- <MglGeoJsonSource
       source-id="wd-bookings"
       :data="hutStore.bookingsGeojson"
       :buffer="512"
       :tolerance="0.7"
       promote-id="slug"
     > -->
-      <!-- <MglCircleLayer
+        <!-- <MglCircleLayer
         layer-id="wd-bookings-huts"
         :paint="hutsOccupationLayerPaint"
         before="wd-huts"
       ></MglCircleLayer> -->
-      <!-- </MglGeoJsonSource> -->
-      <!-- <MglGeoJsonSource
+        <!-- </MglGeoJsonSource> -->
+        <!-- <MglGeoJsonSource
       source-id="wd-huts"
       :data="hutjson"
       :buffer="512"
       :tolerance="0.7"
       promote-id="slug"
     > -->
-      <!-- <MglSymbolLayer
+        <!-- <MglSymbolLayer
         @click.prevent="onHutLayerClick"
         @mouseenter="onLayerEnter"
         @mouseleave="onLayerLeave"
@@ -264,7 +276,8 @@ const mapZoom: number = 7.5;
         layer-id="wd-huts"
         :before="basemapStore.getBasemap()?.layers.ways.before"
       ></MglSymbolLayer> -->
-      <!-- </MglGeoJsonSource> -->
-    </MglMap>
+        <!-- </MglGeoJsonSource> -->
+      </MglMap>
+    </div>
   </q-no-ssr>
 </template>

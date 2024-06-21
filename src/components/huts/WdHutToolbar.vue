@@ -151,7 +151,7 @@ watch(menuOpen, () => {
     />
 
     <WdToolbarButton size="md" class="text-primary-900" icon="wd-more-vertical">
-      <q-menu class="bg-primary-100" v-model="menuOpen">
+      <q-menu class="bg-primary-100 q-menu--quasar" v-model="menuOpen">
         <q-list style="min-width: 100px">
           <WdToolbarExtraButton
             @click="toggleHutStar"
