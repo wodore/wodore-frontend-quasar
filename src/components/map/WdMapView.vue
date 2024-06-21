@@ -207,7 +207,7 @@ const mapZoom: number = 7.5;
 <template>
   <!-- @map:render="onMapRender" -->
   <q-no-ssr>
-    <div ref="mapDiv">
+    <div ref="mapDiv" style="height: 100vh">
       <MglMap
         @map:load="onMapLoad"
         @map:styledata="onMapStyledata"
