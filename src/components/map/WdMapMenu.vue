@@ -3,9 +3,13 @@ import { useAuthService } from 'src/composables/useAuthService';
 import { useAuthStore } from '@stores/auth-store';
 import { LocalStorage } from 'quasar';
 import { ref, watchEffect } from 'vue';
+import AuthService from 'src/services/auth';
 
 const authStore = useAuthStore();
-const $auth = useAuthService();
+let $auth: AuthService | undefined = undefined;
+if (process.env.CLIENT) {
+  $auth = useAuthService();
+}
 //import { ref } from 'vue';
 //const link = ref('outbox');
 //const active_classes = 'bg-accent text-white';
@@ -33,7 +37,7 @@ const TIMESTAMP = process.env.TIMESTAMP_VERSION_HEX;
         color="secondary-700"
         unelevated
         flat
-        @click="$auth.signinRedirect()"
+        @click="$auth?.signinRedirect()"
         label="Login"
         style="opacity: 0.8"
       />
@@ -42,7 +46,7 @@ const TIMESTAMP = process.env.TIMESTAMP_VERSION_HEX;
         color="accent-700"
         unelevated
         flat
-        @click="$auth.logout()"
+        @click="$auth?.logout()"
         label="Logout"
         style="opacity: 0.8"
       />

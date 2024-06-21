@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import TextClamp from 'vue3-text-clamp';
 //const { t } = i18n.useI18n();
+// const expanded = true;
+// const toggle = () => {};
+// const clamped = false;
 </script>
 <style scoped></style>
 <template>

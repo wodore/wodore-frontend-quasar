@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { schemasWodore } from '@clients/index';
+import getImageUrl from '@services/imageService';
 
 interface Props {
   type:
@@ -28,7 +29,13 @@ const color_bg = computed(() => (props.color2 ? props.color2 : 'white'));
       <q-icon
         size="24px"
         :name="
-          'img:' + ($q.platform.is.mobile ? type.symbol : type.symbol_simple)
+          'img:' +
+          getImageUrl(
+            ($q.platform.is.mobile
+              ? type.symbol
+              : type.symbol_simple) as string,
+            { fit: true, size: '48x48' },
+          )
         "
       />
     </q-avatar>

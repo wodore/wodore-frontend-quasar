@@ -7,6 +7,7 @@ import getImageUrl from '@services/imageService';
 import { clientWodore, schemasWodore } from '@clients/index';
 import { useHutsStore } from '@stores/huts-store';
 import { storeToRefs } from 'pinia';
+import { useMeta } from 'quasar';
 const { selectedMonth } = storeToRefs(useHutsStore());
 
 const $q = useQuasar();
@@ -58,6 +59,48 @@ watchEffect(() => {
       .then(({ data }) => {
         if (data) {
           hut.value = data;
+          let desc = hut.value.name + ' - ';
+          let cap = '';
+          if (
+            hut.value.type_open?.name &&
+            hut.value.type_open.slug != 'unknown'
+          ) {
+            desc +=
+              hut.value.type_open.name?.charAt(0).toUpperCase() +
+              hut.value.type_open.name?.slice(1);
+            if (hut.value.capacity_open && hut.value.capacity_open > 0) {
+              cap = ` mit ${hut.value.capacity_open}`;
+            }
+          }
+          if (
+            hut.value.type_closed &&
+            hut.value.type_closed.slug != 'unknown'
+          ) {
+            desc += '/' + hut.value.type_closed.name;
+            if (
+              hut.value.capacity_closed &&
+              hut.value.capacity_closed > 0 &&
+              hut.value.capacity_closed != hut.value.capacity_open
+            ) {
+              cap += `, resp. ${hut.value.capacity_closed},`;
+            }
+          }
+          if (hut.value.elevation) {
+            desc += ` auf ${hut.value.elevation}m`;
+          }
+          if (cap) {
+            cap += ' Plätzen.';
+          }
+          const metaData = {
+            title: hut.value.name ? hut.value.name : 'Wodore',
+            meta: {
+              description: {
+                name: 'description',
+                content: desc + cap,
+              },
+            },
+          };
+          useMeta(metaData);
         }
       });
   }

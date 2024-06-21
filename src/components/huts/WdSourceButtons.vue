@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { withDefaults } from 'vue';
 
+import getImageUrl from '@services/imageService';
 import { useAuthStore } from '@stores/auth-store';
 const authStore = useAuthStore();
 
@@ -56,7 +57,9 @@ function trackSource(slug: string) {
         <!--{{ ref.slug }}-->
         <img
           :style="{ height: $q.platform.is.mobile ? '24px' : '24px' }"
-          :src="ref.logo"
+          :src="
+            getImageUrl(ref.logo, { fit: true, size: '48x48', quality: 90 })
+          "
         />
         <q-tooltip :hide-delay="150" :delay="150">
           <span>{{ ref.fullname }}</span

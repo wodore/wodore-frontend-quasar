@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { schemasWodore } from '@clients/index';
+import getImageUrl from '@services/imageService';
 
 import IconCheckmarkFill from '~icons/eva/checkmark-fill';
 import IconQuestionMarkFill from '~icons/eva/question-mark-fill';
@@ -66,7 +67,13 @@ const openColor = computed(() => {
       <q-icon
         size="24px"
         :name="
-          'img:' + ($q.platform.is.mobile ? type.symbol : type.symbol_simple)
+          'img:' +
+          getImageUrl(
+            ($q.platform.is.mobile
+              ? type.symbol
+              : type.symbol_simple) as string,
+            { fit: true, size: '48x48' },
+          )
         "
       />
     </q-avatar>

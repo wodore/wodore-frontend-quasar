@@ -162,7 +162,7 @@ export default configure((ctx) => {
       // directives: [],
 
       // Quasar plugins
-      plugins: ['Notify', 'Dialog', 'LocalStorage', 'LoadingBar'],
+      plugins: ['Notify', 'Dialog', 'LocalStorage', 'LoadingBar', 'Meta'],
       config: {
         loadingBar: {
           color: 'accent-700',

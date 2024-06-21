@@ -2,8 +2,19 @@
 import { ref, watch } from 'vue';
 import { useQuasar } from 'quasar';
 import { schemasWodore } from '@clients/index';
-import { useMap } from '@indoorequal/vue-maplibre-gl';
+//import { useMap } from '@indoorequal/vue-maplibre-gl';
+let mapRef: MapInstance | undefined;
+if (process.env.CLIENT) {
+  import('@indoorequal/vue-maplibre-gl').then((pkg) => {
+    mapRef = pkg.useMap();
+  });
+} else {
+  mapRef = undefined;
+}
+// if (process.env.CLIENT) {
+// }
 import { useAuthStore } from '@stores/auth-store';
+import { MapInstance } from '@indoorequal/vue-maplibre-gl/dist/lib/lib/mapRegistry';
 const authStore = useAuthStore();
 
 interface Props {
@@ -49,7 +60,6 @@ function getReviewText(status: string | null | undefined): string {
   return getReviewInfo(status, 1);
 }
 const $q = useQuasar();
-const mapRef = useMap();
 
 const watchHut = ref(false);
 //function toggleHutWatch() {
@@ -60,11 +70,11 @@ function toggleHutStar() {
   starHut.value = !starHut.value;
 }
 function flyTo() {
-  if (mapRef.map !== undefined && props.hut !== undefined) {
+  if (mapRef?.map !== undefined && props.hut !== undefined) {
     const loc = props.hut.location;
     if (loc !== undefined && loc !== null) {
-      const zoom = mapRef.map.getZoom();
-      mapRef.map.flyTo({
+      const zoom = mapRef?.map.getZoom();
+      mapRef?.map.flyTo({
         center: [loc.lon, loc.lat],
         zoom: zoom > 12 ? zoom : 12,
         padding: {
@@ -100,11 +110,11 @@ const menuOpen = ref(false);
 const flyToDisabled = ref(true);
 watch(menuOpen, () => {
   flyToDisabled.value = true;
-  if (mapRef.map !== undefined && props.hut !== undefined) {
+  if (mapRef?.map !== undefined && props.hut !== undefined) {
     const loc = props.hut.location;
     if (loc !== undefined && loc !== null) {
-      const center = mapRef.map.getCenter();
-      const zoom = mapRef.map.getZoom();
+      const center = mapRef?.map.getCenter();
+      const zoom = mapRef?.map.getZoom();
       flyToDisabled.value = sameLatLng(
         loc.lat,
         center.lat,
@@ -152,7 +162,7 @@ watch(menuOpen, () => {
             {{ $t('favorite') }}
           </WdToolbarExtraButton>
           <WdToolbarExtraButton
-            v-if="mapRef.map && hut?.location"
+            v-if="mapRef?.map && hut?.location"
             icon="wd-location-question"
             @click="flyTo"
             v-close-popup

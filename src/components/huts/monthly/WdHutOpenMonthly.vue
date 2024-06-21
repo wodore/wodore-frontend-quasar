@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, withDefaults } from 'vue';
 import { useQuasar } from 'quasar';
+import getImageUrl from '@services/imageService';
 const $q = useQuasar();
 //import { HutTypeSchema, OpenMonthlySchema } from '@/clients/wodore_v1';
 //import { storeToRefs } from 'pinia';
@@ -75,43 +76,48 @@ function getMonthIcons(month: TypeMonths): TypeMonthIconsPath {
   };
 }
 
-function getIconAnswer(answer: TypeIconText): string | undefined {
+function getIconAnswer(
+  answer: TypeIconText,
+  size: string = '48x48',
+): string | undefined {
+  let img: string;
   if (answer == 'open') {
-    return getOpenIcon();
+    img = getOpenIcon();
   } else if (answer == 'closed') {
-    return getClosedIcon();
+    img = getClosedIcon();
   } else if (answer == 'unknown') {
-    return getUnknownIcon();
+    img = getUnknownIcon();
   } else {
     return undefined;
   }
+  return 'img:' + getImageUrl(img, { fit: true, size: size });
 }
 
 function getClosedIcon(): string {
   if (isMobile.value) {
     return props.type_closed
-      ? 'img:' + props.type_closed.symbol
+      ? (props.type_closed.symbol as string)
       : getUnknownIcon();
   } else {
     return props.type_closed
-      ? 'img:' + props.type_closed.symbol_simple
+      ? (props.type_closed.symbol_simple as string)
       : getUnknownIcon();
   }
 }
 
 function getOpenIcon(): string {
   if (isMobile.value) {
-    return 'img:' + props.type_open?.symbol;
+    return props.type_open?.symbol as string;
   } else {
-    return 'img:' + props.type_open?.symbol_simple;
+    return props.type_open?.symbol_simple as string;
   }
 }
 
 function getUnknownIcon(): string {
   if (isMobile.value) {
-    return 'img:https://api.wodore.com/media/huts/types/symbols/detailed/unknown.png';
+    return 'https://api.wodore.com/media/huts/types/symbols/detailed/unknown.png';
   } else {
-    return 'img:https://api.wodore.com/media/huts/types/symbols/simple/unknown.png';
+    return 'https://api.wodore.com/media/huts/types/symbols/simple/unknown.png';
   }
 }
 </script>
