@@ -28,47 +28,69 @@ watchEffect(() => {
 });
 const TIMESTAMP = process.env.TIMESTAMP_VERSION_HEX;
 </script>
+<style scoped>
+.drawer-desktop {
+  position: absolute;
+  bottom: 80px;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+.drawer-mobile {
+  position: absolute;
+  bottom: 80px;
+  top: 50px;
+  left: 0;
+  right: 0;
+}
+</style>
 
 <template>
-  <div class="bg-transparent absolute-bottom" style="bottom: 10px">
-    <div class="q-pa-md column q-gutter-sm">
-      <q-btn
-        v-if="!authStore.isLoggedIn"
-        color="secondary-700"
-        unelevated
-        flat
-        @click="$auth?.signinRedirect()"
-        label="Login"
-        style="opacity: 0.8"
-      />
-      <q-btn
-        v-else
-        color="accent-700"
-        unelevated
-        flat
-        @click="$auth?.logout()"
-        label="Logout"
-        style="opacity: 0.8"
-      />
+  <div
+    :class="{
+      'drawer-desktop': $q.screen.gt.xs,
+      'drawer-mobile': $q.screen.xs,
+    }"
+  >
+    <div class="text-center q-pa-xl">
+      <q-icon size="80px">
+        <IconNotoV1Construction />
+      </q-icon>
     </div>
-  </div>
-  <div class="text-center q-pa-xl">
-    <q-icon size="80px">
-      <IconNotoV1Construction />
-    </q-icon>
-  </div>
-  <div class="text-secondary-800 bg-transparent absolute-bottom">
-    <div class="text-caption q-ma-xs q-ml-md">
-      <span v-if="authStore.isEditor()">
-        <router-link :to="{ name: 'data-policy' }" target="_blank"
-          >Datenschutz</router-link
-        >
-        |
-      </span>
-      {{ TIMESTAMP }}
+    <!-- <div class="bg-transparent fixed-bottom"> -->
+    <div class="bg-transparent absolute-bottom">
+      <div class="q-pa-xs column q-gutter-sm">
+        <q-btn
+          v-if="!authStore.isLoggedIn"
+          color="secondary-700"
+          unelevated
+          flat
+          @click="$auth?.signinRedirect()"
+          label="Login"
+          style="opacity: 0.8"
+        />
+        <q-btn
+          v-else
+          color="accent-700"
+          unelevated
+          flat
+          @click="$auth?.logout()"
+          label="Logout"
+          style="opacity: 0.8"
+        />
+      </div>
+      <!-- </div> -->
+      <div class="text-secondary-600 text-caption q-ma-xs q-ml-md">
+        <span v-if="authStore.isEditor()">
+          <router-link :to="{ name: 'data-policy' }" target="_blank"
+            >Datenschutz</router-link
+          >
+          |
+        </span>
+        {{ TIMESTAMP }}
+      </div>
     </div>
-  </div>
-  <!-- <q-list bordered padding class="rounded-borders text-primary">
+    <!-- <q-list bordered padding class="rounded-borders text-primary">
     <q-item
       clickable
       v-ripple
@@ -84,4 +106,5 @@ const TIMESTAMP = process.env.TIMESTAMP_VERSION_HEX;
     </q-item>
 
   </q-list> -->
+  </div>
 </template>
