@@ -33,6 +33,8 @@ import {
   useMap,
 } from '@indoorequal/vue-maplibre-gl';
 
+import mapDraw from '@services/draw';
+
 // import MglStyleSwitchControl from './styleSwitch.control';
 const $q = useQuasar();
 const router = useRouter();
@@ -95,6 +97,11 @@ function onMapLoad(e: MglEvent<'load'>) {
   e.map.on('mouseenter', 'wd-huts', onLayerEnter);
   e.map.on('mouseleave', 'wd-huts', onLayerLeave);
   e.map.on('click', 'wd-huts', onHutLayerClick);
+
+  console.debug('Map controls added.', route.query.draw);
+  if ('draw' in route.query) {
+    e.map.addControl(mapDraw);
+  }
 }
 
 const selectedHutFeature = ref<undefined | MapGeoJSONFeature>(undefined);
