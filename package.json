@@ -37,6 +37,7 @@
     "@fontsource/roboto-condensed": "^5.0",
     "@indoorequal/vue-maplibre-gl": "^7",
     "@mapbox/mapbox-gl-draw": "^1.4.3",
+    "@mapbox/polyline": "^1.2.1",
     "@quasar/extras": "^1.16",
     "@stripe/stripe-js": "^3.4.1",
     "@types/mapbox__mapbox-gl-draw": "^1.4.7",

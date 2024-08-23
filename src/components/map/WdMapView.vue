@@ -101,6 +101,9 @@ function onMapLoad(e: MglEvent<'load'>) {
   console.debug('Map controls added.', route.query.draw);
   if ('draw' in route.query) {
     e.map.addControl(mapDraw);
+    // TODO: Add button for routing mode
+    // mapDraw.changeMode('custom_route');
+    // TODO: improve styling of routing, points, drag, delete, etc.
   }
 }
 

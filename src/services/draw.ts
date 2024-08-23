@@ -6,11 +6,13 @@ import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
 // @ts-expect-error missing types
 import * as MapboxDrawWaypoint from 'mapbox-gl-draw-waypoint';
 import { IControl } from 'maplibre-gl';
+import CustomRouteMode from './customRouteMode';
 
 // drawing -- mapbox-gl-draw: https://github.com/mapbox/mapbox-gl-draw
 // patch mode as waypoint -- https://github.com/zakjan/mapbox-gl-draw-waypoint
 let modes = MapboxDraw.modes;
 modes = MapboxDrawWaypoint.enable(modes);
+modes.custom_route = CustomRouteMode;
 
 // set correct maplibre styles
 (MapboxDraw.constants.classes.CONTROL_BASE as unknown) = 'maplibregl-ctrl';
@@ -31,6 +33,7 @@ const mapDraw = new MapboxDraw({
     trash: true,
     line_string: true,
     point: true,
+    custom_route: true,
   },
 
   styles: [
