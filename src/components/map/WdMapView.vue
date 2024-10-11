@@ -102,7 +102,10 @@ function onMapLoad(e: MglEvent<'load'>) {
   if ('draw' in route.query) {
     e.map.addControl(mapDraw);
     // TODO: Add button for routing mode
-    // mapDraw.changeMode('custom_route');
+    if (route.query.draw == 'route') {
+      // @ts-expect-error missing custom mode TODO
+      mapDraw.changeMode('custom_route');
+    }
     // TODO: improve styling of routing, points, drag, delete, etc.
   }
 }

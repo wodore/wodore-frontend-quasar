@@ -3,6 +3,7 @@
  * Do not make direct changes to the file.
  */
 
+
 export interface paths {
   '/v1/huts/bookings': {
     /** Get Hut Bookings */
@@ -148,30 +149,17 @@ export interface components {
      * @description Enum with with occuptation status.
      * @enum {string}
      */
-    OccupancyStatusEnum:
-      | 'unknown'
-      | 'empty'
-      | 'low'
-      | 'medium'
-      | 'high'
-      | 'full';
+    OccupancyStatusEnum: 'unknown' | 'empty' | 'low' | 'medium' | 'high' | 'full';
     /**
      * ReservationStatusEnum
      * @description Enum with reservation status.
      * @enum {string}
      */
-    ReservationStatusEnum:
-      | 'unknown'
-      | 'possible'
-      | 'not_possible'
-      | 'not_online';
+    ReservationStatusEnum: 'unknown' | 'possible' | 'not_possible' | 'not_online';
     /** Feature[Point, HutBookingsProps] */
     Feature_Point_HutBookingsProps_: {
       /** Bbox */
-      bbox?:
-        | [number, number, number, number]
-        | [number, number, number, number, number, number]
-        | null;
+      bbox?: [number, number, number, number] | [number, number, number, number, number, number] | null;
       /**
        * Type
        * @constant
@@ -186,10 +174,7 @@ export interface components {
     /** HutBookingsFeatureCollection */
     HutBookingsFeatureCollection: {
       /** Bbox */
-      bbox?:
-        | [number, number, number, number]
-        | [number, number, number, number, number, number]
-        | null;
+      bbox?: [number, number, number, number] | [number, number, number, number, number, number] | null;
       /**
        * Type
        * @constant
@@ -228,10 +213,7 @@ export interface components {
      */
     Point: {
       /** Bbox */
-      bbox?:
-        | [number, number, number, number]
-        | [number, number, number, number, number, number]
-        | null;
+      bbox?: [number, number, number, number] | [number, number, number, number, number, number] | null;
       /**
        * Type
        * @constant
@@ -239,9 +221,7 @@ export interface components {
        */
       type: 'Point';
       /** Coordinates */
-      coordinates:
-        | components['schemas']['Position2D']
-        | components['schemas']['Position3D'];
+      coordinates: components['schemas']['Position2D'] | components['schemas']['Position3D'];
     };
     Position2D: [number, number];
     Position3D: [number, number, number];
@@ -253,10 +233,13 @@ export interface components {
     TristateEnum: 'true' | 'false' | 'unset';
     /**
      * AnswerEnum
-     * @description Enum with open values.
+     * @description Anser enum.
+     *
+     * 'yesish' and 'noish' means it is likely to be 'yes' or 'no'.
+     * 'maybe' means is is either 'yes' or 'no'.
      * @enum {string}
      */
-    AnswerEnum: 'yes' | 'maybe' | 'no' | 'unknown';
+    AnswerEnum: 'yes' | 'yesish' | 'maybe' | 'noish' | 'no' | 'unknown';
     CountryTuple: [string, string];
     /** HutSchemaDetails */
     HutSchemaDetails: {
@@ -290,7 +273,7 @@ export interface components {
       /** Capacity Closed */
       capacity_closed?: number | null;
       /** Sources */
-      sources: components['schemas']['OrganizationDetailSchema'][] | null;
+      sources: components['schemas']['OrganizationBaseSchema'][] | null;
       /**
        * Photos
        * @default
@@ -301,6 +284,8 @@ export interface components {
        * @default
        */
       photos_attribution?: string;
+      /** Images */
+      images: components['schemas']['ImageInfoSchema'][] | null;
       open_monthly?: components['schemas']['OpenMonthlySchema'] | null;
       /** Edit Link */
       edit_link?: string | null;
@@ -321,6 +306,60 @@ export interface components {
       symbol_simple: string | null;
       /** Icon */
       icon: string | null;
+    };
+    /** ImageInfoSchema */
+    ImageInfoSchema: {
+      /** Image */
+      image: string;
+      image_meta: components['schemas']['ImageMetaSchema'];
+      license: components['schemas']['LicenseInfoSchema'];
+      /** Author */
+      author?: string | null;
+      /** Caption */
+      caption?: string | null;
+      /** Author Url */
+      author_url?: string | null;
+      /** Source Url */
+      source_url?: string | null;
+      organization?: components['schemas']['OrganizationImageSchema'] | null;
+      /** Attribution */
+      attribution?: string | null;
+    };
+    /** ImageMetaAreaSchema */
+    ImageMetaAreaSchema: {
+      /** X1 */
+      x1: number;
+      /** X2 */
+      x2: number;
+      /** Y1 */
+      y1: number;
+      /** Y2 */
+      y2: number;
+    };
+    /** ImageMetaSchema */
+    ImageMetaSchema: {
+      crop?: components['schemas']['ImageMetaAreaSchema'] | null;
+      focal?: components['schemas']['ImageMetaAreaSchema'] | null;
+      /** Width */
+      width?: number | null;
+      /** Height */
+      height?: number | null;
+    };
+    /**
+     * LicenseInfoSchema
+     * @description Important information, for example for an image
+     */
+    LicenseInfoSchema: {
+      /** Slug */
+      slug: string;
+      /** Name */
+      name: string;
+      /** Fullname */
+      fullname: string;
+      /** Description */
+      description?: string | null;
+      /** Link */
+      link?: string | null;
     };
     /**
      * OpenMonthlySchema
@@ -364,8 +403,8 @@ export interface components {
       month_12?: components['schemas']['AnswerEnum'];
       [key: string]: unknown;
     };
-    /** OrganizationDetailSchema */
-    OrganizationDetailSchema: {
+    /** OrganizationBaseSchema */
+    OrganizationBaseSchema: {
       /** Slug */
       slug: string;
       /** Name */
@@ -378,10 +417,21 @@ export interface components {
       logo: string;
       /** Public */
       public: boolean;
-      /** Active */
-      active: boolean;
       /** Source Id */
       source_id: string;
+    };
+    /** OrganizationImageSchema */
+    OrganizationImageSchema: {
+      /** Slug */
+      slug: string | null;
+      /** Name */
+      name: string | null;
+      /** Fullname */
+      fullname: string | null;
+      /** Link */
+      link: string | null;
+      /** Logo */
+      logo: string | null;
     };
     /** OwnerSchema */
     OwnerSchema: {
@@ -393,7 +443,7 @@ export interface components {
        * Adresse (URL)
        * @default
        */
-      url?: string;
+      url?: string | null;
     };
     /** BaseModel */
     BaseModel: Record<string, never>;
@@ -403,10 +453,7 @@ export interface components {
      */
     Feature: {
       /** Bbox */
-      bbox?:
-        | [number, number, number, number]
-        | [number, number, number, number, number, number]
-        | null;
+      bbox?: [number, number, number, number] | [number, number, number, number, number, number] | null;
       /**
        * Type
        * @constant
@@ -414,22 +461,9 @@ export interface components {
        */
       type: 'Feature';
       /** Geometry */
-      geometry:
-        | (
-            | components['schemas']['Point']
-            | components['schemas']['MultiPoint']
-            | components['schemas']['LineString']
-            | components['schemas']['MultiLineString']
-            | components['schemas']['Polygon']
-            | components['schemas']['MultiPolygon']
-            | components['schemas']['GeometryCollection']
-          )
-        | null;
+      geometry: (components['schemas']['Point'] | components['schemas']['MultiPoint'] | components['schemas']['LineString'] | components['schemas']['MultiLineString'] | components['schemas']['Polygon'] | components['schemas']['MultiPolygon'] | components['schemas']['GeometryCollection']) | null;
       /** Properties */
-      properties:
-        | Record<string, never>
-        | components['schemas']['BaseModel']
-        | null;
+      properties: Record<string, never> | components['schemas']['BaseModel'] | null;
       /** Id */
       id?: number | string | null;
     };
@@ -439,10 +473,7 @@ export interface components {
      */
     FeatureCollection: {
       /** Bbox */
-      bbox?:
-        | [number, number, number, number]
-        | [number, number, number, number, number, number]
-        | null;
+      bbox?: [number, number, number, number] | [number, number, number, number, number, number] | null;
       /**
        * Type
        * @constant
@@ -458,10 +489,7 @@ export interface components {
      */
     GeometryCollection: {
       /** Bbox */
-      bbox?:
-        | [number, number, number, number]
-        | [number, number, number, number, number, number]
-        | null;
+      bbox?: [number, number, number, number] | [number, number, number, number, number, number] | null;
       /**
        * Type
        * @constant
@@ -469,15 +497,7 @@ export interface components {
        */
       type: 'GeometryCollection';
       /** Geometries */
-      geometries: (
-        | components['schemas']['Point']
-        | components['schemas']['MultiPoint']
-        | components['schemas']['LineString']
-        | components['schemas']['MultiLineString']
-        | components['schemas']['Polygon']
-        | components['schemas']['MultiPolygon']
-        | components['schemas']['GeometryCollection']
-      )[];
+      geometries: (components['schemas']['Point'] | components['schemas']['MultiPoint'] | components['schemas']['LineString'] | components['schemas']['MultiLineString'] | components['schemas']['Polygon'] | components['schemas']['MultiPolygon'] | components['schemas']['GeometryCollection'])[];
     };
     /**
      * LineString
@@ -485,10 +505,7 @@ export interface components {
      */
     LineString: {
       /** Bbox */
-      bbox?:
-        | [number, number, number, number]
-        | [number, number, number, number, number, number]
-        | null;
+      bbox?: [number, number, number, number] | [number, number, number, number, number, number] | null;
       /**
        * Type
        * @constant
@@ -496,10 +513,7 @@ export interface components {
        */
       type: 'LineString';
       /** Coordinates */
-      coordinates: (
-        | components['schemas']['Position2D']
-        | components['schemas']['Position3D']
-      )[];
+      coordinates: (components['schemas']['Position2D'] | components['schemas']['Position3D'])[];
     };
     /**
      * MultiLineString
@@ -507,10 +521,7 @@ export interface components {
      */
     MultiLineString: {
       /** Bbox */
-      bbox?:
-        | [number, number, number, number]
-        | [number, number, number, number, number, number]
-        | null;
+      bbox?: [number, number, number, number] | [number, number, number, number, number, number] | null;
       /**
        * Type
        * @constant
@@ -518,10 +529,7 @@ export interface components {
        */
       type: 'MultiLineString';
       /** Coordinates */
-      coordinates: (
-        | components['schemas']['Position2D']
-        | components['schemas']['Position3D']
-      )[][];
+      coordinates: ((components['schemas']['Position2D'] | components['schemas']['Position3D'])[])[];
     };
     /**
      * MultiPoint
@@ -529,10 +537,7 @@ export interface components {
      */
     MultiPoint: {
       /** Bbox */
-      bbox?:
-        | [number, number, number, number]
-        | [number, number, number, number, number, number]
-        | null;
+      bbox?: [number, number, number, number] | [number, number, number, number, number, number] | null;
       /**
        * Type
        * @constant
@@ -540,10 +545,7 @@ export interface components {
        */
       type: 'MultiPoint';
       /** Coordinates */
-      coordinates: (
-        | components['schemas']['Position2D']
-        | components['schemas']['Position3D']
-      )[];
+      coordinates: (components['schemas']['Position2D'] | components['schemas']['Position3D'])[];
     };
     /**
      * MultiPolygon
@@ -551,10 +553,7 @@ export interface components {
      */
     MultiPolygon: {
       /** Bbox */
-      bbox?:
-        | [number, number, number, number]
-        | [number, number, number, number, number, number]
-        | null;
+      bbox?: [number, number, number, number] | [number, number, number, number, number, number] | null;
       /**
        * Type
        * @constant
@@ -562,10 +561,7 @@ export interface components {
        */
       type: 'MultiPolygon';
       /** Coordinates */
-      coordinates: (
-        | components['schemas']['Position2D']
-        | components['schemas']['Position3D']
-      )[][][];
+      coordinates: (((components['schemas']['Position2D'] | components['schemas']['Position3D'])[])[])[];
     };
     /**
      * Polygon
@@ -573,10 +569,7 @@ export interface components {
      */
     Polygon: {
       /** Bbox */
-      bbox?:
-        | [number, number, number, number]
-        | [number, number, number, number, number, number]
-        | null;
+      bbox?: [number, number, number, number] | [number, number, number, number, number, number] | null;
       /**
        * Type
        * @constant
@@ -584,10 +577,7 @@ export interface components {
        */
       type: 'Polygon';
       /** Coordinates */
-      coordinates: (
-        | components['schemas']['Position2D']
-        | components['schemas']['Position3D']
-      )[][];
+      coordinates: ((components['schemas']['Position2D'] | components['schemas']['Position3D'])[])[];
     };
     /** FieldsParam[HutSchemaDetails] */
     FieldsParam_HutSchemaDetails_: {
@@ -629,21 +619,25 @@ export interface components {
       /**
        * Symbol
        * @description Normal icon
+       * @default huts/types/symbols/detailed/unknown.png
        */
       symbol?: string | null;
       /**
        * Level
        * @description Comfort level, higher is more comfort
+       * @default 0
        */
       level?: number | null;
       /**
        * Symbol Simple
        * @description Simple icon
+       * @default huts/types/symbols/simple/unknown.png
        */
       symbol_simple?: string | null;
       /**
        * Icon
        * @description Black icon
+       * @default huts/types/icons/unknown.png
        */
       icon?: string | null;
     };
@@ -688,20 +682,29 @@ export interface components {
       /**
        * Logo
        * @description Organiztion logo as image
+       * @default organizations/logos/missing.png
        */
       logo?: string | null;
-      /** Aktiv */
+      /**
+       * Aktiv
+       * @default true
+       */
       is_active?: boolean | null;
-      /** Public */
+      /**
+       * Public
+       * @default false
+       */
       is_public?: boolean | null;
       /**
        * Light Color
        * @description light theme color as hex number with #
+       * @default #4B8E43
        */
       color_light?: string | null;
       /**
        * Dark Color
        * @description dark theme color as hex number with #
+       * @default #61B958
        */
       color_dark?: string | null;
     };
@@ -738,6 +741,7 @@ export type $defs = Record<string, never>;
 export type external = Record<string, never>;
 
 export interface operations {
+
   /** Get Hut Bookings */
   get_hut_bookings: {
     parameters: {

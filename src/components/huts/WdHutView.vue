@@ -37,12 +37,18 @@ const isHutOpen = computed<schemasWodore['AnswerEnum']>(() => {
   return o as schemasWodore['AnswerEnum'];
 });
 
-const isHutClosed = computed<'yes' | 'no' | 'maybe' | 'unknown'>(() => {
+const isHutClosed = computed<
+  'yes' | 'yesish' | 'no' | 'noish' | 'maybe' | 'unknown'
+>(() => {
   switch (isHutOpen.value) {
     case 'yes':
       return 'no';
+    case 'yesish':
+      return 'noish';
     case 'no':
       return 'yes';
+    case 'noish':
+      return 'yesish';
   }
   return isHutOpen.value;
 });
@@ -273,23 +279,32 @@ const addHeaderShadow: IntersectionValue = (entry) => {
           </h2>
 
           <div class="row items-start q-gutter-sm">
-            <div v-if="headerImg" class="col-md-12 col-sm-7 col-7">
+            <div v-if="hut.images" class="col-md-12 col-sm-7 col-7">
               <div
                 :class="{
                   'q-ma-sm': $q.screen.gt.sm,
                   'q-ma-lg': $q.screen.gt.md,
                 }"
               >
-                <q-img
-                  :src="headerImg"
-                  class="hut-image"
-                  :class="{ 'shadow-8': $q.screen.gt.sm }"
+                <a
+                  :href="(hut.images[0] as any).urls['medium']"
+                  target="_blank"
                 >
-                  <div class="absolute-bottom-right row attribution">
-                    <q-icon class="q-mr-sm" name="eva-camera-outline" />
-                    <div class="img-link" v-html="hut.photos_attribution" />
-                  </div>
-                </q-img>
+                  <q-img
+                    :src="(hut.images[0] as any).urls['preview']"
+                    :placeholder-src="
+                      (hut.images[0] as any).urls['preview-placeholder']
+                    "
+                    class="hut-image"
+                    :class="{ 'shadow-8': $q.screen.gt.sm }"
+                  >
+                    <div class="absolute-bottom-right row attribution">
+                      <q-icon class="q-mr-sm" name="eva-camera-outline" />
+                      <div class="img-link" v-html="hut.photos_attribution" />
+                    </div>
+                  </q-img>
+                </a>
+                <!-- <a :href="(hut.images[0] as any).urls['600x400']">open</a> -->
               </div>
             </div>
             <div

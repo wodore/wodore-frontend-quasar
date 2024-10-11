@@ -12,6 +12,7 @@ import CustomRouteMode from './customRouteMode';
 // patch mode as waypoint -- https://github.com/zakjan/mapbox-gl-draw-waypoint
 let modes = MapboxDraw.modes;
 modes = MapboxDrawWaypoint.enable(modes);
+// @ts-expect-error missing custom route mode
 modes.custom_route = CustomRouteMode;
 
 // set correct maplibre styles
@@ -33,6 +34,7 @@ const mapDraw = new MapboxDraw({
     trash: true,
     line_string: true,
     point: true,
+    // @ts-expect-error missing custom route mode
     custom_route: true,
   },
 

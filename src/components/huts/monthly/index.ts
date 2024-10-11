@@ -71,8 +71,10 @@ export type TypeIconSwitch = Record<
 >;
 export const iconSwitch: Record<schemasWodore['AnswerEnum'], TypeMonthIcons> = {
   yes: { main0: 'open' },
-  no: { main0: 'closed' },
+  yesish: { main0: 'open', minor: 'closed' },
   maybe: { main0: 'open', main1: 'closed' },
+  noish: { main0: 'closed', minor: 'open' },
+  no: { main0: 'closed' },
   unknown: { main0: 'unknown' },
 };
 // prev: {current : {next: {values}}}
@@ -80,15 +82,39 @@ export const iconMaybeSwitch: TypeIconSwitch = {
   yes: {
     maybe: {
       yes: { main0: 'open', minor: 'closed' },
+      yesish: { main0: 'open', minor: 'closed' },
       no: { main0: 'open', main1: 'closed' },
+      noish: { main0: 'open', main1: 'closed' },
       maybe: { main0: 'open', minor: 'closed' },
       unknown: { main0: 'open', minor: 'closed' },
+    },
+  },
+  yesish: {
+    maybe: {
+      yes: { main0: 'open', minor: 'closed' },
+      yesish: { main0: 'open', minor: 'closed' },
+      no: { main0: 'open', main1: 'closed' },
+      noish: { main0: 'open', main1: 'closed' },
+      maybe: { main0: 'open', minor: 'closed' },
+      unknown: { main0: 'open', minor: 'closed' },
+    },
+  },
+  noish: {
+    maybe: {
+      yes: { main0: 'closed', main1: 'open' },
+      yesish: { main0: 'closed', main1: 'open' },
+      no: { main0: 'closed', minor: 'open' },
+      noish: { main0: 'closed', minor: 'open' },
+      maybe: { main0: 'closed', minor: 'open' },
+      unknown: { main0: 'closed', minor: 'open' },
     },
   },
   no: {
     maybe: {
       yes: { main0: 'closed', main1: 'open' },
+      yesish: { main0: 'closed', main1: 'open' },
       no: { main0: 'closed', minor: 'open' },
+      noish: { main0: 'closed', minor: 'open' },
       maybe: { main0: 'closed', minor: 'open' },
       unknown: { main0: 'closed', minor: 'open' },
     },
@@ -96,7 +122,9 @@ export const iconMaybeSwitch: TypeIconSwitch = {
   maybe: {
     maybe: {
       yes: { main0: 'open', minor: 'closed' },
+      yesish: { main0: 'open', minor: 'closed' },
       no: { main0: 'closed', minor: 'open' },
+      noish: { main0: 'closed', minor: 'open' },
       maybe: { main0: 'open', minor: 'closed' },
       unknown: { main0: 'open', minor: 'closed' },
     },
@@ -104,7 +132,9 @@ export const iconMaybeSwitch: TypeIconSwitch = {
   unknown: {
     maybe: {
       yes: { main0: 'open', minor: 'closed' },
+      yesish: { main0: 'open', minor: 'closed' },
       no: { main0: 'closed', minor: 'open' },
+      noish: { main0: 'closed', minor: 'open' },
       maybe: { main0: 'open', minor: 'closed' },
       unknown: { main0: 'open', minor: 'closed' },
     },
