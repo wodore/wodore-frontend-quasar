@@ -279,7 +279,10 @@ const addHeaderShadow: IntersectionValue = (entry) => {
           </h2>
 
           <div class="row items-start q-gutter-sm">
-            <div v-if="hut.images" class="col-md-12 col-sm-7 col-7">
+            <div
+              v-if="hut.images && hut.images[0] && 'urls' in hut.images[0]"
+              class="col-md-12 col-sm-7 col-7"
+            >
               <div
                 :class="{
                   'q-ma-sm': $q.screen.gt.sm,

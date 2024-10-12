@@ -133,7 +133,6 @@ function onHutLayerClick(e: MapLayerEventType['click']) {
           { source: 'wd-huts', id: feature.id },
           { selected: true },
         );
-        // @ts-expect-error unexpected deep
         selectedHutFeature.value = <MapGeoJSONFeature>(feature as unknown);
       } else {
         selectedHutFeature.value = undefined;

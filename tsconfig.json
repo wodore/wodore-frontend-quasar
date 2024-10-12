@@ -1,8 +1,16 @@
 {
   "extends": "@quasar/app-vite/tsconfig-preset",
   "compilerOptions": {
+    "moduleResolution": "node",
     "baseUrl": ".",
-    "types": ["unplugin-icons/types/vue", "./components"],
+    //"typeRoots": [
+    //  "node_modules/@types",
+    //  "node_modules/quasar/dist/types",
+    //  ".",
+    //  "node_modules/unplugin-icons/types"
+    //],
+    //"types": ["./components.d.ts", "node"],
+    "types": ["unplugin-icons/types/vue", "./components.d.ts", "node"],
     "paths": {
       "src/*": ["src/*"],
       "@/*": ["src/*"],

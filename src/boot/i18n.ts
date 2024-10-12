@@ -31,4 +31,5 @@ export default boot(({ app }) => {
 
   // Set i18n instance on app
   app.use(i18n);
+  app.config.globalProperties.$t = i18n.global.t;
 });

@@ -1,3 +1,4 @@
+@use 'sass:color';
 /* https://chat.openai.com/share/8d3a31df-c32f-4c6e-bbdd-7d6f54758350 */
 
 $winter-color: #bfefff; // Light blue representing the cold winter skies
@@ -29,7 +30,7 @@ $months-bg: (
   month_11: mix($autumn-color, $winter-color, 10%),
   // November: Smooth transition from autumn to winter
   month_12: mix($autumn-color, $winter-color, 20%)
-    // December: Smooth transition from autumn to winter,,,,,,,,,,,,,,,,,,,,,,,
+    // December: Smooth transition from autumn to winter,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 );
 
 $months-fg: (
@@ -82,10 +83,17 @@ $opacity-light: 0.7;
   .#{$month}--gradient-dark {
     background: linear-gradient(
       to right,
-      rgba(darken($start-color, $darken-amount), $opacity-dark) 0%,
-      rgba(darken($color, $darken-amount), $opacity-dark) $grad-start,
-      rgba(darken($color, $darken-amount), $opacity-dark) $grad-end,
-      rgba(darken($end-color, $darken-amount), $opacity-dark) 100%
+      rgba(
+          color.adjust($start-color, $lightness: -$darken-amount),
+          $opacity-dark
+        )
+        0%,
+      rgba(color.adjust($color, $lightness: -$darken-amount), $opacity-dark)
+        $grad-start,
+      rgba(color.adjust($color, $lightness: -$darken-amount), $opacity-dark)
+        $grad-end,
+      rgba(color.adjust($end-color, $lightness: -$darken-amount), $opacity-dark)
+        100%
     );
     color: map-get($months-fg, $month); /* Text color */
   }
@@ -93,10 +101,20 @@ $opacity-light: 0.7;
   .#{$month}--gradient-light {
     background: linear-gradient(
       to right,
-      rgba(lighten($start-color, $lighten-amount), $opacity-light) 0%,
-      rgba(lighten($color, $lighten-amount), $opacity-light) $grad-start,
-      rgba(lighten($color, $lighten-amount), $opacity-light) $grad-end,
-      rgba(lighten($end-color, $lighten-amount), $opacity-light) 100%
+      rgba(
+          color.adjust($start-color, $lightness: $lighten-amount),
+          $opacity-light
+        )
+        0%,
+      rgba(color.adjust($color, $lightness: $lighten-amount), $opacity-light)
+        $grad-start,
+      rgba(color.adjust($color, $lightness: $lighten-amount), $opacity-light)
+        $grad-end,
+      rgba(
+          color.adjust($end-color, $lightness: $lighten-amount),
+          $opacity-light
+        )
+        100%
     );
     color: map-get($months-fg, $month); /* Text color */
   }

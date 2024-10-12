@@ -60,7 +60,7 @@ export default configure((ctx) => {
         node: 'node20',
       },
 
-      //alias: {
+      //alias: , "node"{
       //  // TODO: does not work
       //  services: path.join(__dirname, './src/services'),
       //  extras: path.join(__dirname, './src/extras'),

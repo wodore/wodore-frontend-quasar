@@ -53,8 +53,10 @@ export const create = ssrCreate((/* { ... } */) => {
  * For production, you can instead export your
  * handler for serverless use or whatever else fits your needs.
  */
-export const listen = ssrListen(async ({ app, devHttpsApp, port, isReady }) => {
-  await isReady();
+// notice: devHttpsApp param which will be a Node httpsServer (on DEV only) and if https is enabled
+// notice: no "isReady" param (starting with 2.0.0-beta.16+)
+// notice: ssrListen() param can still be async (below it isn't)
+export const listen = ssrListen(({ app, devHttpsApp, port }) => {
   const server = devHttpsApp || app;
   return server.listen(port, () => {
     if (process.env.PROD) {
@@ -80,14 +82,22 @@ export const close = ssrClose(({ listenResult }) => {
 const maxAge = process.env.DEV ? 0 : 1000 * 60 * 60 * 24 * 30;
 
 /**
- * Should return middleware that serves the indicated path
- * with static content.
+ * Should return a function that will be used to configure the webserver
+ * to serve static content at "urlPath" from "pathToServe" folder/file.
+ *
+ * Notice resolve.urlPath(urlPath) and resolve.public(pathToServe) usages.
+ *
+ * Can be async: ssrServeStaticContent(async ({ app, resolve }) => {
+ * Can return an async function: return async ({ urlPath = '/', pathToServe = '.', opts = {} }) => {
  */
-export const serveStaticContent = ssrServeStaticContent((path, opts) => {
-  return express.static(path, {
-    maxAge,
-    ...opts,
-  });
+export const serveStaticContent = ssrServeStaticContent(({ app, resolve }) => {
+  return ({ urlPath = '/', pathToServe = '.', opts = {} }) => {
+    const serveFn = express.static(resolve.public(pathToServe), {
+      maxAge,
+      ...opts,
+    });
+    app.use(resolve.urlPath(urlPath), serveFn);
+  };
 });
 
 const jsRE = /\.js$/;
