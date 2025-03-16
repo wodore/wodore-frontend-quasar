@@ -15,12 +15,9 @@ interface Props {
   capacity?:
     | schemasWodore['HutSchemaDetails']['capacity_open']
     | schemasWodore['HutSchemaDetails']['capacity_closed'];
-  color?: string;
-  color2?: string;
   open?: schemasWodore['AnswerEnum'];
 }
 const props = withDefaults(defineProps<Props>(), {
-  color: 'white',
   open: undefined,
 });
 
@@ -37,18 +34,40 @@ const openIcon = computed(() => {
   return IconQuestionMarkFill;
 });
 
-const color_bg = computed(() => (props.color2 ? props.color2 : 'white'));
+const color_bg = computed(() => {
+  switch (props.open) {
+    case 'yes':
+      return 'positive-200';
+    case 'no':
+      return 'negative-100';
+    case 'maybe':
+      return 'primary-100';
+  }
+  return 'primary-100';
+});
 
+const color_bg_avantar = computed(() => {
+  switch (props.open) {
+    case 'yes':
+      return 'positive-400';
+    case 'no':
+      return 'negative-200';
+    case 'maybe':
+      return 'primary-200';
+  }
+  return 'primary-200';
+  //return 'grey-4';
+});
 const openColor = computed(() => {
   switch (props.open) {
     case 'yes':
-      return 'green-6';
+      return 'positive-600';
     case 'no':
-      return 'red-4';
+      return 'negative-300';
     case 'maybe':
-      return 'green-6';
+      return 'primary-400';
   }
-  return 'grey-6';
+  return 'primary-400';
 });
 </script>
 <style scoped>
@@ -63,7 +82,7 @@ const openColor = computed(() => {
     :class="'bg-' + color_bg + ' q-mr-none'"
     style="min-width: 90px; max-width: 90px; max-height: 30px"
   >
-    <q-avatar :class="'bg-' + color" text-color="white">
+    <q-avatar :class="'bg-' + color_bg_avantar" text-color="white">
       <q-icon
         size="24px"
         :name="

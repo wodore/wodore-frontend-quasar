@@ -156,16 +156,16 @@ function getUnknownIcon(): string {
         :type="type_open"
         v-if="type_open"
         :name="type_open.name as string"
-        color="green-4"
-        color2="green-2"
+        color="grey-5"
+        color2="grey-4"
       />
       <WdHutTypeNameChip
         v-if="type_closed"
         class="col-shrink"
         :type="type_closed"
         :name="type_closed.name as string"
-        color="brown-3"
-        color2="brown-2"
+        color="grey-5"
+        color2="grey-4"
       />
     </div>
   </div>

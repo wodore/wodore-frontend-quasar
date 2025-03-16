@@ -330,16 +330,12 @@ const addHeaderShadow: IntersectionValue = (entry) => {
                   :type="hut.type_open"
                   :capacity="hut.capacity_open"
                   :open="isHutOpen"
-                  color="green-4"
-                  color2="green-2"
                 />
                 <WdHutTypeChip
                   class="shadow-0 col-md-6 col-sm-12 col-12"
                   :type="hut.type_closed"
                   :capacity="hut.capacity_closed"
                   :open="isHutClosed"
-                  color="brown-3"
-                  color2="brown-2"
                 />
                 <!-- Location Chip -->
                 <q-chip

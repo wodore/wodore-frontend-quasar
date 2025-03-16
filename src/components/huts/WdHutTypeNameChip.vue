@@ -25,7 +25,7 @@ const color_bg = computed(() => (props.color2 ? props.color2 : 'white'));
     :class="'bg-' + color_bg + ' q-mr-none'"
     style="min-width: 40px; max-width: 200px; max-height: 30px"
   >
-    <q-avatar :class="'bg-' + color" text-color="white">
+    <q-avatar :class="'bg-' + color" text-color="primary-500">
       <q-icon
         size="24px"
         :name="
@@ -39,7 +39,7 @@ const color_bg = computed(() => (props.color2 ? props.color2 : 'white'));
         "
       />
     </q-avatar>
-    <span class="text-primary-900">{{ name }}</span>
+    <span class="text-primary-500">{{ name }}</span>
     <slot></slot>
   </q-chip>
 </template>

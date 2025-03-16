@@ -75,6 +75,7 @@ function flyTo() {
     if (loc !== undefined && loc !== null) {
       const zoom = mapRef?.map.getZoom();
       mapRef?.map.flyTo({
+        //p e ?
         center: [loc.lon, loc.lat],
         zoom: zoom > 12 ? zoom : 12,
         padding: {
