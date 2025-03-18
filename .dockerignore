@@ -1,0 +1,7 @@
+.env
+.env.*
+dist/
+.vscode/
+.pytest_cache/
+.quasar/
+node_modules/

@@ -85,12 +85,16 @@ export default configure((ctx) => {
           parseInt(formatDate(Date.now(), 'HHmm'))
             .toString(16)
             .padStart(3, '0'),
+        URL: process.env.URL,
+        DOMAIN: process.env.DOMAIN,
         API_HOST: process.env.API_HOST,
         API_VERSION: process.env.API_VERSION,
-        DOMAIN: process.env.DOMAIN,
-        URL: process.env.URL,
+        IMAGOR_KEY: process.env.IMAGOR_KEY,
         UMAMI_WEBSITE_ID: process.env.UMAMI_WEBSITE_ID,
+        UMAMI_WEBSITE_URL: process.env.UMAMI_WEBSITE_URL,
         OICD_ISSUER_URL: process.env.OICD_ISSUER_URL,
+        OICD_CLIENT_ID: process.env.OICD_CLIENT_ID,
+        OICD_RESOURCE_ID: process.env.OICD_RESOURCE_ID,
       },
       // rawDefine: {}
       // ignorePublicFolder: true,

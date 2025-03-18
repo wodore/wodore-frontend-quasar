@@ -30,8 +30,14 @@ quasar dev
 ### Build the app for production
 
 ```bash
+# local dist
 yarn build
 # yarn serve # for testing
+
+# docker
+docker build  -t quasar-pwa .
+docker run -e DOMAIN=wodore.com -e API_HOST=https://api.wodore.com -e IMAGOR_KEY=my_secret -p 8080:8080 quasar-pwa
+# see .env.template
 ```
 
 ## Links
