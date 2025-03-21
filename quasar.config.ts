@@ -90,6 +90,7 @@ export default configure((ctx) => {
         API_HOST: process.env.API_HOST,
         API_VERSION: process.env.API_VERSION,
         IMAGOR_KEY: process.env.IMAGOR_KEY,
+        IMAGOR_URL: process.env.IMAGOR_URL,
         UMAMI_WEBSITE_ID: process.env.UMAMI_WEBSITE_ID,
         UMAMI_WEBSITE_URL: process.env.UMAMI_WEBSITE_URL,
         OICD_ISSUER_URL: process.env.OICD_ISSUER_URL,

@@ -22,7 +22,7 @@
     "docker:build": "yarn docker:pwa",
     "docker:pwa": "docker build  -t wodore-frontend .",
     "docker:ls": "docker image ls wodore-frontend",
-    "docker:run": "docker run -p 8080:8080 wodore-frontend",
+    "docker:run": "docker run -p 8080:8080  --env-file .env wodore-frontend",
     "serve:spa": "quasar serve --history --port 9000 -H localhost --cors dist/spa/",
     "serve:ssr": "quasar serve --history --port 9000 -H localhost --cors dist/ssr/",
     "serve:pwa": "quasar serve --history --port 9000 -H localhost --cors dist/pwa/",

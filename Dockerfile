@@ -67,7 +67,6 @@ COPY ./.env.template /dot_env_defaults
 
 # Copy built PWA files from Quasar stage
 COPY --from=build-quasar /app/dist/pwa /usr/share/nginx/html
-#COPY --from=build-quasar /app/dist/pwa /static
 
 # Copy compiled Go binary from build stage
 COPY --from=build-replace-vars /replace_vars /usr/local/bin/replace_vars
@@ -76,8 +75,6 @@ COPY --from=build-replace-vars /replace_vars /usr/local/bin/replace_vars
 ENV REPLACE_VARS_LOG_LEVEL=info
 
 # Set up the entrypoint to replace variables before starting nginx
-#ENTRYPOINT ["/usr/local/bin/replace_vars", "--template", "/dot_env_defaults", "--dir", "/usr/share/nginx/html", "--log-level", ${REPLACE_VARS_LOG_LEVEL}, "--"]
-#CMD ["nginx", "-g", "daemon off;"]
 # Use a shell to expand the variable at runtime
-ENTRYPOINT ["/bin/sh", "-c", "/usr/local/bin/replace_vars --template /dot_env_defaults --dir /static --log-level ${REPLACE_VARS_LOG_LEVEL} -- \"$@\"", "--"]
+ENTRYPOINT ["/bin/sh", "-c", "/usr/local/bin/replace_vars --template /dot_env_defaults --dir /usr/share/nginx/html --log-level ${REPLACE_VARS_LOG_LEVEL} -- \"$@\"", "--"]
 CMD ["nginx", "-g", "daemon off;"]

@@ -67,7 +67,9 @@ export default function getImageUrl(
   const valign = options.valign ? '/' + options.valign : '';
   const filters =
     options.filters.length > 0 ? '/filters:' + options.filters.join(':') : '';
-  const url = 'https://img.wodore.com';
+  const url = process.env.IMAGOR_URL
+    ? process.env.IMAGOR_URL
+    : 'https://img.MISSING';
   const trimString = (str: string, chars: string) =>
     str.split(chars).filter(Boolean).join(chars);
   const rawPath = trimString(
