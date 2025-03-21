@@ -1,5 +1,6 @@
 .env
 .env.*
+!.env.template
 dist/
 .vscode/
 .pytest_cache/
