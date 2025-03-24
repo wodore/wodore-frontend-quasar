@@ -63,7 +63,7 @@ RUN apk --no-cache upgrade \
 # Remove default config and use a custom secure one
 RUN rm -rf /etc/nginx/conf.d/default.conf
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
-COPY ./.env.template /dot_env_defaults
+COPY ./.env /dot_env_defaults
 
 # Copy built PWA files from Quasar stage
 COPY --from=build-quasar /app/dist/pwa /usr/share/nginx/html
@@ -73,6 +73,8 @@ COPY --from=build-replace-vars /replace_vars /usr/local/bin/replace_vars
 #RUN chmod +x /usr/local/bin/replace_vars
 
 ENV REPLACE_VARS_LOG_LEVEL=info
+
+EXPOSE 8080
 
 # Set up the entrypoint to replace variables before starting nginx
 # Use a shell to expand the variable at runtime
