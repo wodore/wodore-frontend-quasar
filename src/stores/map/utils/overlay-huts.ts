@@ -115,16 +115,16 @@ function getAvailColors(day: number): ExpressionSpecification {
     'match',
     ['get', 'occupancy_status', ['at', day, ['get', 'bookings']]],
     'empty',
-    '#f7fd25',
+    '#33FF33', // Neon Green - Empty state
     'low',
-    '#82cf06',
+    '#99CC33', // Yellow Green - Low occupancy
     'medium',
-    '#eab138',
+    '#FFA726', // Orange - Medium occupancy
     'high',
-    '#e16f07',
+    '#EF6C00', // Dark Orange - High occupancy
     'full',
-    '#d32226',
-    '#d4d4d4',
+    '#D32F2F', // Red - Full occupancy
+    '#D4D4D4', // Gray - Default state
   ];
 }
 const hutsOccupationLayerPaint = {

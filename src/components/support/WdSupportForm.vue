@@ -9,18 +9,17 @@ import track from '@services/analytics';
 const $q = useQuasar();
 const router = useRouter();
 
-
-function onClose(do_track=false) {
-    if (do_track) {
-      track('support-no-action')
-    }
-    router.go(-1);
+function onClose(do_track = false) {
+  if (do_track) {
+    track('support-no-action');
+  }
+  router.go(-1);
 }
 
 const imgPath =
- // 'https://cdn.pixabay.com/photo/2014/05/11/11/12/mailbox-341744_1280.jpg';
- //'https://cdn.pixabay.com/photo/2016/03/19/23/36/hut-1267670_960_720.jpg';
- 'https://cdn.pixabay.com/photo/2017/05/13/17/05/hut-2310075_960_720.jpg'
+  // 'https://cdn.pixabay.com/photo/2014/05/11/11/12/mailbox-341744_1280.jpg';
+  //'https://cdn.pixabay.com/photo/2016/03/19/23/36/hut-1267670_960_720.jpg';
+  'https://cdn.pixabay.com/photo/2017/05/13/17/05/hut-2310075_960_720.jpg';
 
 const headerImg = getImageUrl(imgPath, {
   //focal: '0.5,0.55',
@@ -29,7 +28,7 @@ const headerImg = getImageUrl(imgPath, {
   quality: 50,
   //filters: ['grayscale()'],
 });
- console.log(headerImg)
+console.log(headerImg);
 function toFeedback() {
   router.replace({ name: 'feedback' });
 }
@@ -80,7 +79,7 @@ function toFeedback() {
   <q-card
     :class="{ 'card--desktop': $q.screen.gt.xs, 'card--mobile': $q.screen.xs }"
   >
-  <div >
+    <div>
       <q-img :src="headerImg" style="height: 140px" class="shadow-4">
         <div class="card-header absolute-bottom text-white text-h5"></div>
         <div
@@ -89,114 +88,130 @@ function toFeedback() {
           Support
         </div>
       </q-img>
-  </div>
-      <q-card-section style="padding: 0; height: calc(100% - 196px)">
-        <!-- TODO: add scroll area -->
-        <!-- min-height: 200px;
+    </div>
+    <q-card-section style="padding: 0; height: calc(100% - 196px)">
+      <!-- TODO: add scroll area -->
+      <!-- min-height: 200px;
             height: 450px;
             max-height: 600px; -->
-        <q-scroll-area
-          class="fit"
-          style="padding: 0 16px 0 16px"
-          :thumb-style="{
-            width: '6px',
-            borderRadius: '8px 0 0 8px',
-          }"
-        >
-          <div class="col no-wrap items-center q-py-md">
-            <p class="text-body1 q-pt-md">
-              Unterstütze das Projekt mit
-              <a class="link" @click="toFeedback">Feedback</a>, einem
-              <WdStripeLink
-                stripe-id="28o02Oda19qnbiE28a"
-                name="Trinkgeld"
-                icon="tip"
-                class="link"
+      <q-scroll-area
+        class="fit"
+        style="padding: 0 16px 0 16px"
+        :thumb-style="{
+          width: '6px',
+          borderRadius: '8px 0 0 8px',
+        }"
+      >
+        <div class="col no-wrap items-center q-py-md">
+          <p class="text-body1 q-pt-md">
+            Unterstütze das Projekt mit
+            <a class="link" @click="toFeedback">Feedback</a>, einem
+            <WdStripeLink
+              stripe-id="28o02Oda19qnbiE28a"
+              name="Trinkgeld"
+              icon="tip"
+              class="link"
+              @click="onClose(false)"
+            />
+            oder einem monatlichem:
+          </p>
+          <div class="q-pt-lg row justify-center">
+            <q-btn-group style="border-radius: 40px; max-width: 400px">
+              <WdStripeBadge
+                stripe-id="9AQ16S2vn1XV3QcbIO"
+                name="Snickers"
+                amount="1.50"
+                color="primary-800"
+                icon="snickers"
+                class="col"
                 @click="onClose(false)"
               />
-              oder einem monatlichem:
-            </p>
-            <div class="q-pt-lg row justify-center">
-              <q-btn-group style="border-radius: 40px; max-width: 400px">
-                <WdStripeBadge
-                  stripe-id="9AQ16S2vn1XV3QcbIO"
-                  name="Snickers"
-                  amount="1.50"
-                  color="primary-800"
-                  icon="snickers"
-                  class="col"
-                  @click="onClose(false)"
-                />
-                <WdStripeBadge
-                  stripe-id="bIY6rcc5X8mj2M87sz"
-                  name="Bier"
-                  amount="4"
-                  color="primary-900"
-                  icon="beer"
-                  :size-factor="1.3"
-                  style="
-                    overflow: hidden;
-                    z-index: 5;
-                    min-width: 140px;
-                    width: 150px;
-                    max-width: 160px;
-                  "
-                  class="shadow-6 col-auto"
-                  @click="onClose(false)"
-                />
-                <WdStripeBadge
-                  stripe-id="8wM2aW0nf0TRgCY6or"
-                  name="Essen"
-                  amount="15"
-                  color="primary-800"
-                  icon="lunch"
-                  class="col"
-                  @click="onClose(false)"
-                />
-              </q-btn-group>
-              <div class="text-center">
-                <p class="text-body2 q-pt-xs text-secondary-800">
-                  <a
-                    href="https://billing.stripe.com/p/login/aEU9AA29o9vv7JucMM"
-                    target="_blank"
-                    >Monatliche Zahlungen verwalten.</a
-                  >
-                  <span class="text-grey-7"> *Jederzeit kündbar. </span>
-                </p>
-              </div>
+              <WdStripeBadge
+                stripe-id="bIY6rcc5X8mj2M87sz"
+                name="Bier"
+                amount="4"
+                color="primary-900"
+                icon="beer"
+                :size-factor="1.3"
+                style="
+                  overflow: hidden;
+                  z-index: 5;
+                  min-width: 140px;
+                  width: 150px;
+                  max-width: 160px;
+                "
+                class="shadow-6 col-auto"
+                @click="onClose(false)"
+              />
+              <WdStripeBadge
+                stripe-id="8wM2aW0nf0TRgCY6or"
+                name="Essen"
+                amount="15"
+                color="primary-800"
+                icon="lunch"
+                class="col"
+                @click="onClose(false)"
+              />
+            </q-btn-group>
+            <div class="text-center">
+              <p class="text-body2 q-pt-xs text-secondary-800">
+                <a
+                  href="https://billing.stripe.com/p/login/aEU9AA29o9vv7JucMM"
+                  target="_blank"
+                  >Monatliche Zahlungen verwalten.</a
+                >
+                <span class="text-grey-7"> *Jederzeit kündbar. </span>
+              </p>
             </div>
-            <div class="text-body2 q-pt-md q-pb-md">
-              Im Moment ist es ein <i>Ein-Mann-Projekt</i> und das Geld wird für eine bessere Infrastruktur, Lizenzen und potenzielle neue Features benötigt.
-            </div>
-            <q-card class="text-body2 bg-secondary-900 text-white q-my-lg">
+          </div>
+          <div class="text-body2 q-pt-md q-pb-md">
+            Im Moment ist es ein <i>Ein-Mann-Projekt</i> und das Geld wird für
+            eine bessere Infrastruktur, Lizenzen und potenzielle neue Features
+            benötigt.
+          </div>
+          <q-card class="text-body2 bg-secondary-900 text-white q-my-lg">
             <q-card-section>
-              <h5 class="q-mb-md q-mt-none">Ich haue gerne selber in die Tasten!</h5>
-              <p><b>Super</b>, aktive Unterstützung ist sehr willkommen, zum Beispiel:
+              <h5 class="q-mb-md q-mt-none">
+                Ich haue gerne selber in die Tasten!
+              </h5>
+              <div>
+                <b>Super</b>, aktive Unterstützung ist sehr willkommen, zum
+                Beispiel:
                 <ul>
                   <li>Hütteninfos reviewen und anpassen (als Editor)</li>
-                  <li>Entwicklung von Frontend (<a href="https://quasar.dev/" target="_blank">Quasar</a>)
-                    oder Backend (<a href="https://www.djangoproject.com/" target="_blank">Django</a>)</li>
+                  <li>
+                    Entwicklung von Frontend (<a
+                      href="https://quasar.dev/"
+                      target="_blank"
+                      >Quasar</a
+                    >) oder Backend (<a
+                      href="https://www.djangoproject.com/"
+                      target="_blank"
+                      >Django</a
+                    >)
+                  </li>
                   <li>Unterstützung bei Design-Aufgaben</li>
                   <li>...</li>
                 </ul>
-              </p>
-              Bitte trete mit mir in <a style="cursor: pointer;" @click="toFeedback">Kontakt</a>!
+              </div>
+              Bitte trete mit mir in
+              <a style="cursor: pointer" @click="toFeedback">Kontakt</a>!
             </q-card-section>
-            </q-card>
-          </div>
-        </q-scroll-area>
-      </q-card-section>
-      <q-separator />
-      <q-card-actions>
-        <q-space />
-        <q-btn
-          label="Schliessen"
-          color="secondary-700"
-          flat
-          @click="onClose(true)"
-          class="q-ml-sm"
-        />
-        <!-- <q-btn
+          </q-card>
+        </div>
+      </q-scroll-area>
+    </q-card-section>
+    <q-separator />
+    <q-card-actions>
+      <q-space />
+      <q-btn
+        label="Schliessen"
+        color="secondary-700"
+        flat
+        @click="onClose(true)"
+        class="q-ml-sm"
+      />
+      <!-- <q-btn
           label="Zurücksetzen"
           type="reset"
           color="secondary-700"
@@ -205,6 +220,6 @@ function toFeedback() {
         />
         <q-space />
         <q-btn label="Senden" flat type="submit" color="accent" /> -->
-      </q-card-actions>
+    </q-card-actions>
   </q-card>
 </template>
