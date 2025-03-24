@@ -65,17 +65,17 @@ RUN rm -rf /etc/nginx/conf.d/default.conf
 COPY --from=build-quasar /app/dist/pwa /usr/share/nginx/html
 
 # Set proper ownership and permissions for nginx
-RUN chown -R nginx:nginx /usr/share/nginx/html \
-    && chmod -R 755 /usr/share/nginx/html \
-    && find /usr/share/nginx/html -type f -exec chmod 644 {} \;
+#RUN chown -R nginx:nginx /usr/share/nginx/html \
+#    && chmod -R 755 /usr/share/nginx/html \
+#    && find /usr/share/nginx/html -type f -exec chmod 644 {} \;
 
 # Copy compiled Go binary from build stage
 COPY --from=build-replace-vars /replace_vars /usr/local/bin/replace_vars
 
 # Copy nginx configurations
-COPY docker/nginx-default.conf /etc/nginx/conf.d/default.conf
-COPY docker/nginx-proxy.conf /etc/nginx/conf.d/nginx-proxy.conf.not_used
-COPY docker/nginx-local.conf /etc/nginx/conf.d/nginx-local.conf.not_used
+COPY docker/nginx-default.conf /etc/nginx/conf.d/00_default.conf
+COPY docker/nginx-proxy.conf /etc/nginx/conf.d/10_proxy.conf.not_used
+COPY docker/nginx-local.conf /etc/nginx/conf.d/10_local.conf.not_used
 COPY ./.env /dot_env_defaults
 
 # Copy entrypoint script
