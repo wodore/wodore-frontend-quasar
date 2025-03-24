@@ -67,8 +67,8 @@ export default function getImageUrl(
   const valign = options.valign ? '/' + options.valign : '';
   const filters =
     options.filters.length > 0 ? '/filters:' + options.filters.join(':') : '';
-  const url = process.env.IMAGOR_URL
-    ? process.env.IMAGOR_URL
+  const url = process.env.WODORE_IMAGOR_URL
+    ? process.env.WODORE_IMAGOR_URL
     : 'https://img.MISSING';
   const trimString = (str: string, chars: string) =>
     str.split(chars).filter(Boolean).join(chars);
@@ -91,7 +91,7 @@ export default function getImageUrl(
   if (!options.unsafe) {
     hash = signPath(
       rawPath,
-      process.env.IMAGOR_KEY ? process.env.IMAGOR_KEY : 'my_key',
+      process.env.WODORE_IMAGOR_KEY ? process.env.WODORE_IMAGOR_KEY : 'my_key',
     );
   }
   return url + '/' + hash + '/' + rawPath;

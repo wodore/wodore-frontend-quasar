@@ -20,7 +20,7 @@ function trackClick(product: string) {
   track('support-stripe', { product: product });
 }
 
-const stripeId = process.env['STRIPE_ID'];
+const stripeId = process.env['WODORE_STRIPE_ID'];
 
 const link = computed(() => {
   return 'https://donate.stripe.com/' + stripeId + '?locale=de';

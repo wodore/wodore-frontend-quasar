@@ -56,7 +56,7 @@ export function getRasterStyle({
         (v) =>
           (cdn
             ? 'https://res.cloudinary.com/' +
-              process.env.CLOUDINARY_ENV +
+              process.env.WODORE_CLOUDINARY_ENV +
               '/image/fetch/f_auto/q_auto/'
             : '') + v.replace('<NAME>', layerName),
       ),

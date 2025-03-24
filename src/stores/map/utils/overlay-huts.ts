@@ -259,7 +259,7 @@ export const hutsStyle: StyleSpecification = {
     'wd-huts': {
       type: 'geojson',
       //data: hutsGeojson.value,
-      data: `${process.env.API_HOST}/${process.env.API_VERSION}/huts/huts.geojson?lang=de&limit=5000&embed_all=false&embed_type=true&embed_owner=false&embed_capacity=false&embed_sources=false&include_elevation=false&include_name=true&flat=true`,
+      data: `${process.env.WODORE_API_HOST}/${process.env.WODORE_API_VERSION}/huts/huts.geojson?lang=de&limit=5000&embed_all=false&embed_type=true&embed_owner=false&embed_capacity=false&embed_sources=false&include_elevation=false&include_name=true&flat=true`,
       promoteId: 'slug',
     },
     'wd-bookings': {

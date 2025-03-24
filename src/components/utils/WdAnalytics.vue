@@ -2,14 +2,14 @@
 import { onMounted } from 'vue';
 
 onMounted(() => {
-  if (process.env.UMAMI_WEBSITE_ID) {
+  if (process.env.WODORE_UMAMI_WEBSITE_ID) {
     const script = document.createElement('script');
     script.async = true;
     script.defer = true;
-    script.dataset.websiteId = process.env.UMAMI_WEBSITE_ID;
+    script.dataset.websiteId = process.env.WODORE_UMAMI_WEBSITE_ID;
     let url: string;
-    if (process.env.PROD && process.env.UMAMI_WEBSITE_URL) {
-      url = `${process.env.UMAMI_WEBSITE_URL}`;
+    if (process.env.PROD && process.env.WODORE_UMAMI_WEBSITE_URL) {
+      url = `${process.env.WODORE_UMAMI_WEBSITE_URL}`;
     } else {
       url = 'http://localhost:3009';
     }

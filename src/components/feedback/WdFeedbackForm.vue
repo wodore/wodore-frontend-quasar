@@ -9,7 +9,7 @@ import track from '@services/analytics';
 const $q = useQuasar();
 const router = useRouter();
 
-const anoymDefaultEmail = `anonym@${process.env.DOMAIN}`;
+const anoymDefaultEmail = `anonym@${process.env.WODORE_DOMAIN}`;
 const message = reactive<{
   email: string;
   subject: string;

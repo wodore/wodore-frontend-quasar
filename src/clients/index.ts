@@ -65,7 +65,7 @@ const authMiddleware: Middleware = {
 };
 
 export const clientWodore = createClient<pathsWodore>({
-  baseUrl: process.env.API_HOST,
+  baseUrl: process.env.WODORE_API_HOST,
 });
 
 clientWodore.use(loadingMiddleware);

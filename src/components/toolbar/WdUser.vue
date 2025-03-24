@@ -26,14 +26,14 @@ watchEffect(() => {
 
 const adminLinks = [
   {
-    url: `${process.env.API_HOST}/admin/`,
+    url: `${process.env.WODORE_API_HOST}/admin/`,
     name: 'Admin',
     caption: 'Wodore backend admin',
     group: 'admin',
-    avatar: `https://${process.env.DOMAIN}/apple-touch-icon.png`,
+    avatar: `https://${process.env.WODORE_DOMAIN}/apple-touch-icon.png`,
   },
   {
-    url: `${process.env.API_HOST}/v1/docs`,
+    url: `${process.env.WODORE_API_HOST}/v1/docs`,
     name: 'API',
     caption: 'Wodore API docs',
     group: 'root',
@@ -41,25 +41,25 @@ const adminLinks = [
       'https://www.openapis.org/wp-content/uploads/sites/3/2019/06/favicon-140x140.png',
   },
   {
-    url: `https://stats.${process.env.DOMAIN}/websites/${process.env.UMAMI_WEBSITE_ID}`,
+    url: `https://stats.${process.env.WODORE_DOMAIN}/websites/${process.env.WODORE_UMAMI_WEBSITE_ID}`,
     name: 'Analytics',
     caption: 'Umami analytics',
     group: 'admin',
-    avatar: `https://stats.${process.env.DOMAIN}/apple-touch-icon.png`,
+    avatar: `https://stats.${process.env.WODORE_DOMAIN}/apple-touch-icon.png`,
   },
   {
-    url: `${process.env.OICD_ISSUER_URL}/ui/console/`,
+    url: `${process.env.WODORE_OICD_ISSUER_URL}/ui/console/`,
     name: 'Zitadel',
     caption: 'Identity access management',
     group: 'root',
-    avatar: `${process.env.OICD_ISSUER_URL}/ui/console/favicon.ico`,
+    avatar: `${process.env.WODORE_OICD_ISSUER_URL}/ui/console/favicon.ico`,
   },
   {
-    url: `https://traefik.${process.env.DOMAIN}`,
+    url: `https://traefik.${process.env.WODORE_DOMAIN}`,
     name: 'Traefik',
     caption: 'Traefik dashboard (reverse proxy)',
     group: 'root',
-    avatar: `https://traefik.${process.env.DOMAIN}/dashboard/statics/icons/favicon-96x96.png`,
+    avatar: `https://traefik.${process.env.WODORE_DOMAIN}/dashboard/statics/icons/favicon-96x96.png`,
   },
 ];
 
