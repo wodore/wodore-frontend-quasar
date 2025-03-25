@@ -13,7 +13,9 @@ const { formatDate } = date;
 import IconsResolver from 'unplugin-icons/resolver';
 
 import { execSync } from 'child_process';
-const gitHash = execSync('git rev-parse --short HEAD').toString().trim();
+const gitHash =
+  process.env.GIT_HASH ||
+  execSync('git rev-parse --short HEAD').toString().trim();
 
 // export default defineConfig({
 //   plugins: [
@@ -90,7 +92,8 @@ export default configure((ctx) => {
             .toString(16)
             .padStart(3, '0'),
         WODORE_GIT_HASH: gitHash,
-        WODORE_APP_VERSION: process.env.npm_package_version,
+        WODORE_APP_VERSION:
+          process.env.PACKAGE_VERSION || process.env.npm_package_version,
         WODORE_URL: process.env.WODORE_URL,
         WODORE_DOMAIN: process.env.WODORE_DOMAIN,
         WODORE_API_HOST: process.env.WODORE_API_HOST,

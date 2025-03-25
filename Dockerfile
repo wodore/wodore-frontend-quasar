@@ -24,12 +24,24 @@ LABEL org.opencontainers.image.licenses=MIT
 
 WORKDIR /app
 
+# Set build arguments
+ARG GIT_HASH
+ENV GIT_HASH=${GIT_HASH}
+
+# Check if GIT_HASH is set
+RUN if [ -z "$GIT_HASH" ]; then \
+    echo "Error: GIT_HASH build argument is required. Please provide it using --build-arg GIT_HASH=<hash>" && \
+    exit 1; \
+fi
+
 # Install Quasar CLI globally
 RUN yarn global add @quasar/cli
 
 # Install dependencies efficiently
 COPY package.json yarn.lock ./
-RUN yarn install --frozen-lockfile # --production
+#RUN yarn install --frozen-lockfile # --production
+RUN --mount=type=cache,target=/app/.yarn --mount=type=cache,target=/app/node_modules/.cache \
+  YARN_CACHE_FOLDER=/app/.yarn yarn --frozen-lockfile
 
 # Just copy the directories/files which are needed
 COPY .env index.html package.json yarn.lock quasar.config.ts tsconfig.json tsconfig.vue-tsc.json .eslintignore .eslintrc.cjs ./
@@ -38,7 +50,6 @@ COPY src/ ./src/
 COPY src-pwa/ ./src-pwa/
 COPY src-ssr/ ./src-ssr/
 COPY public/ ./public/
-RUN ls -al
 
 # generate placeholders: VAR=@@VAR@@
 # they are later replace by the replace_vars program
@@ -48,7 +59,10 @@ RUN cp .env .env.template \
 # Build the Quasar PWA
 # Load environment variables placeholder (they are replace during runtime)
 # Somehow it does not work with only the .env file, that's why we export it first
-RUN export $(grep -v '^#' .env | xargs) && quasar build -m pwa
+RUN --mount=type=cache,target=/app/.quasar --mount=type=cache,target=/app/node_modules/.cache \
+  export PACKAGE_VERSION=$(cat package.json | grep version | head -1 | awk -F: '{ print $2 }' | sed 's/[",]//g' | tr -d '[:space:]') && \
+  echo "Package version: $PACKAGE_VERSION" && \
+  export $(grep -v '^#' .env | xargs) && quasar build -m pwa
 ################################################################################
 ## Stage 2: Serve with optimized Nginx                                        ##
 ################################################################################

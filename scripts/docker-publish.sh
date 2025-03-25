@@ -66,8 +66,16 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+# Set GIT_HASH environment variable before Docker build
+export GIT_HASH=$GIT_HASH
+
 # Build the Docker image
+echo "Building Docker image..."
 yarn docker:build
+if [ $? -ne 0 ]; then
+  echo "Error: Docker build failed. Aborting publish."
+  exit 1
+fi
 
 # Tag the image with edge and git hash
 docker image tag $IMAGE_NAME ${REGISTRY_URL}:edge${TAG_SUFFIX}
