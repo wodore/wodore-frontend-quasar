@@ -50,6 +50,7 @@ docker run -e WODORE_DOMAIN=wodore.com -e WODORE_API_HOST=https://api.wodore.com
 ```bash
 export DOCKER_GITHUB_TOKEN=...
 echo $DOCKER_GITHUB_TOKEN | docker login ghcr.io -u GITHUB_USERNAME --password-stdin
+yarn docker:publish [-v] # -v: with version tags
 ```
 
 ## Links
