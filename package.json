@@ -89,6 +89,7 @@
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-vue": "^9.0.0",
     "fantasticon": "^3.0.0",
+    "git-rev-sync": "^3.0.2",
     "oslllo-svg-fixer": "^4.0.1",
     "prettier": "^3.0.3",
     "typescript": "~5.5.3",

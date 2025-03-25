@@ -26,7 +26,9 @@ watchEffect(() => {
     LocalStorage.removeItem('umami.disabled');
   }
 });
+const VERSION = process.env.WODORE_APP_VERSION;
 const TIMESTAMP = process.env.TIMESTAMP_VERSION_HEX;
+//const GIT_HASH = process.env.WODORE_GIT_HASH;
 </script>
 <style scoped>
 .drawer-desktop {
@@ -87,7 +89,7 @@ const TIMESTAMP = process.env.TIMESTAMP_VERSION_HEX;
           >
           |
         </span>
-        {{ TIMESTAMP }}
+        v{{ VERSION }} ({{ TIMESTAMP }})
       </div>
     </div>
     <!-- <q-list bordered padding class="rounded-borders text-primary">

@@ -5,6 +5,7 @@
 
 import { configure } from 'quasar/wrappers';
 import { fileURLToPath } from 'node:url';
+// import git from 'git-rev-sync';
 
 import { date } from 'quasar';
 const { formatDate } = date;
@@ -75,6 +76,7 @@ export default configure((ctx) => {
 
       // publicPath: '/',
       // analyze: true,
+      //WODORE_GIT_HASH: git.short(process.cwd()),
       env: {
         TIMESTAMP_VERSION_HEX:
           't' +
@@ -85,6 +87,7 @@ export default configure((ctx) => {
           parseInt(formatDate(Date.now(), 'HHmm'))
             .toString(16)
             .padStart(3, '0'),
+        WODORE_APP_VERSION: process.env.npm_package_version,
         WODORE_URL: process.env.WODORE_URL,
         WODORE_DOMAIN: process.env.WODORE_DOMAIN,
         WODORE_API_HOST: process.env.WODORE_API_HOST,
