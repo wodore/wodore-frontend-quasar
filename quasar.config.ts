@@ -12,6 +12,9 @@ const { formatDate } = date;
 
 import IconsResolver from 'unplugin-icons/resolver';
 
+import { execSync } from 'child_process';
+const gitHash = execSync('git rev-parse --short HEAD').toString().trim();
+
 // export default defineConfig({
 //   plugins: [
 //     Icons({ /* options */ }),
@@ -76,7 +79,6 @@ export default configure((ctx) => {
 
       // publicPath: '/',
       // analyze: true,
-      //WODORE_GIT_HASH: git.short(process.cwd()),
       env: {
         TIMESTAMP_VERSION_HEX:
           't' +
@@ -87,6 +89,7 @@ export default configure((ctx) => {
           parseInt(formatDate(Date.now(), 'HHmm'))
             .toString(16)
             .padStart(3, '0'),
+        WODORE_GIT_HASH: gitHash,
         WODORE_APP_VERSION: process.env.npm_package_version,
         WODORE_URL: process.env.WODORE_URL,
         WODORE_DOMAIN: process.env.WODORE_DOMAIN,

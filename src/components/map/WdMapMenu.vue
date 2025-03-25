@@ -27,8 +27,7 @@ watchEffect(() => {
   }
 });
 const VERSION = process.env.WODORE_APP_VERSION;
-const TIMESTAMP = process.env.TIMESTAMP_VERSION_HEX;
-//const GIT_HASH = process.env.WODORE_GIT_HASH;
+const GIT_HASH = process.env.WODORE_GIT_HASH;
 </script>
 <style scoped>
 .drawer-desktop {
@@ -82,14 +81,15 @@ const TIMESTAMP = process.env.TIMESTAMP_VERSION_HEX;
         />
       </div>
       <!-- </div> -->
-      <div class="text-secondary-600 text-caption q-ma-xs q-ml-md">
+      <div class="text-secondary-600 text-caption q-ma-xs q-ml-md text-center">
         <span v-if="authStore.isEditor()">
           <router-link :to="{ name: 'data-policy' }" target="_blank"
             >Datenschutz</router-link
           >
           |
         </span>
-        v{{ VERSION }} ({{ TIMESTAMP }})
+        <b>v{{ VERSION }}</b
+        >-{{ GIT_HASH }}
       </div>
     </div>
     <!-- <q-list bordered padding class="rounded-borders text-primary">
