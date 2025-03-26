@@ -70,6 +70,8 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: |
+            suffix=-pwa,onlatest=true
           tags: |
             # Add 'edge' tag for main and develop branches
             type=edge,pattern=main
@@ -82,6 +84,7 @@ jobs:
             type=raw,value=${{ env.VERSION_MINOR }}
             type=raw,value=${{ env.VERSION_MAJOR }}
             type=raw,value=${{ env.LATEST }}
+            type=sha
             ## Semantic version tags
             #type=semver,pattern={{version}}
             #type=semver,pattern={{major}}.{{minor}}
