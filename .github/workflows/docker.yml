@@ -45,12 +45,15 @@ jobs:
           if [ "${{ github.event_name }}" == "repository_dispatch" ]; then
             VERSION=${{ github.event.client_payload.version }}
             LATEST="latest"
+            VERSION_TAG=true
           elif [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             VERSION=${{ github.ref_name }}
             LATEST="latest"
+            VERSION_TAG=true
           else
             VERSION=""
             LATEST=""
+            VERSION_TAG=false
           fi
 
           MAJOR=$(echo $VERSION | cut -d. -f1)
@@ -60,6 +63,7 @@ jobs:
           echo "VERSION_MAJOR=$MAJOR" >> $GITHUB_ENV
           echo "LATEST=$LATEST" >> $GITHUB_ENV
           echo "GIT_HASH=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "VERSION_TAG=$VERSION_TAG" >> $GITHUB_ENV
 
       # This step uses [docker/metadata-action](https://github.com/docker/metadata-action#about)
       # to extract tags and labels that will be applied to the specified image.
@@ -80,10 +84,10 @@ jobs:
             type=raw,value=${{ github.event.inputs.custom_tag || '' }}
 
             # Use the semantic version if provided explicitly
-            type=raw,value=${{ env.VERSION }}
-            type=raw,value=${{ env.VERSION_MINOR }}
-            type=raw,value=${{ env.VERSION_MAJOR }}
-            type=raw,value=${{ env.LATEST }}
+            type=raw,value=${{ env.VERSION }},enable=${{ env.VERSION_TAG }}
+            type=raw,value=${{ env.VERSION_MINOR }},enable=${{ env.VERSION_TAG }}
+            type=raw,value=${{ env.VERSION_MAJOR }},enable=${{ env.VERSION_TAG }}
+            type=raw,value=${{ env.LATEST }},enable=${{ env.LATEST_TAG }}
             type=sha
             ## Semantic version tags
             #type=semver,pattern={{version}}
