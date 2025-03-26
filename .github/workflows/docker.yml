@@ -98,6 +98,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build_args: |
+            GIT_HASH=${{ env.GIT_HASH }}
 
       ## not included at the moment
       ## # This step generates an artifact attestation for the image, which is an unforgeable statement about where and how it was built.
