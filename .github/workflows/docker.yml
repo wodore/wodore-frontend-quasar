@@ -81,13 +81,13 @@ jobs:
             type=edge,pattern=main
             type=edge,pattern=develop
             # Use a custom tag if manually dispatched
-            type=raw,value=${{ github.event.inputs.custom_tag || '' }}
+            type=raw,value=${{ github.event.inputs.custom_tag || '' }},suffix=
 
             # Use the semantic version if provided explicitly
             type=raw,value=${{ env.VERSION }},enable=${{ env.VERSION_TAG }}
             type=raw,value=${{ env.VERSION_MINOR }},enable=${{ env.VERSION_TAG }}
             type=raw,value=${{ env.VERSION_MAJOR }},enable=${{ env.VERSION_TAG }}
-            type=raw,value=${{ env.LATEST }},enable=${{ env.LATEST_TAG }}
+            type=raw,value=${{ env.LATEST }},enable=${{ env.VERSION_TAG }}
             type=sha
             ## Semantic version tags
             #type=semver,pattern={{version}}
