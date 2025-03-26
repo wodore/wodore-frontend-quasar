@@ -6,13 +6,13 @@ on:
     branches:
       - main
     tags:
-      - "v*.*.*"
+      - 'v*.*.*'
   workflow_dispatch:
     inputs:
       custom_tag:
-        description: "Tag name"
+        description: 'Tag name'
         required: true
-        default: "feature"
+        default: 'feature'
   repository_dispatch:
     types: [new-tag-created]
 
@@ -98,7 +98,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build_args: |
+          build-args: |
             GIT_HASH=${{ env.GIT_HASH }}
 
       ## not included at the moment
