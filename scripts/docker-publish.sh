@@ -79,7 +79,7 @@ fi
 
 # Tag the image with edge and git hash
 docker image tag $IMAGE_NAME ${REGISTRY_URL}:edge${TAG_SUFFIX}
-docker image tag $IMAGE_NAME ${REGISTRY_URL}:${GIT_HASH}${TAG_SUFFIX}
+docker image tag $IMAGE_NAME ${REGISTRY_URL}:sha-${GIT_HASH}${TAG_SUFFIX}
 
 # Tag with version tags if requested
 if [ "$VERSION_TAGS" = true ]; then
