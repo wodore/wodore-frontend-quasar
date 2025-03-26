@@ -59,6 +59,7 @@ jobs:
           echo "VERSION_MINOR=$MINOR" >> $GITHUB_ENV
           echo "VERSION_MAJOR=$MAJOR" >> $GITHUB_ENV
           echo "LATEST=$LATEST" >> $GITHUB_ENV
+          echo "GIT_HASH=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
       # This step uses [docker/metadata-action](https://github.com/docker/metadata-action#about)
       # to extract tags and labels that will be applied to the specified image.
