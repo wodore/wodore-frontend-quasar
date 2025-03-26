@@ -1,5 +1,5 @@
 {
-  "name": "wodore-frontend",
+  "name": "wodore",
   "version": "0.0.1",
   "description": "Where does your next tour peak?",
   "productName": "Wodore",
@@ -19,14 +19,16 @@
     "build:spa": "quasar build -m spa",
     "build:ssr": "quasar build -m ssr",
     "build:pwa": "quasar build -m pwa",
-    "docker:build": "docker build --build-arg GIT_HASH=$(git rev-parse --short HEAD) -t wodore-frontend .",
-    "docker:build-plain": "docker build --build-arg GIT_HASH=$(git rev-parse --short HEAD) --progress plain -t wodore-frontend .",
+    "docker:build": "yarn docker:pwa",
+    "docker:build-plain": "docker build --progress plain -t wodore-frontend .",
+    "docker:pwa": "docker build  -t wodore-frontend .",
     "docker:ls": "docker image ls wodore-frontend",
+    "docker:login": "echo \"Run in a terminal:\n\necho \\$DOCKER_GITHUB_TOKEN | docker login ghcr.io -u wodore -p --password-stdin\"",
     "docker:run-env": "docker run -p 9000:8080  --env-file .env wodore-frontend",
     "docker:run-dev": "sh -c 'cat .env .env.local .env.dev .env.local.dev 2>/dev/null > /tmp/merged-local.env || true && docker run -p 9000:8080 --env-file /tmp/merged-local.env wodore-frontend'",
     "docker:run-prod": "sh -c 'cat .env .env.local .env.prod .env.local.prod 2>/dev/null > /tmp/merged-prod.env || true && docker run -p 9000:8080 --env-file /tmp/merged-prod.env wodore-frontend'",
-    "docker:login": "echo \"Run in a terminal:\necho \\$DOCKER_GITHUB_TOKEN | docker login ghcr.io -u wodore -p --password-stdin\"",
-    "docker:publish": "scripts/docker-publish.sh",
+    "docker:publish": "scripts/check-git-status.sh && yarn docker:build && docker image tag wodore-frontend ghcr.io/wodore/wodore-frontend-quasar:edge-pwa && docker push ghcr.io/wodore/wodore-frontend-quasar:edge-pwa",
+    "release": "scripts/release.sh",
     "serve:spa": "quasar serve --history --port 9000 -H localhost --cors dist/spa/",
     "serve:ssr": "quasar serve --history --port 9000 -H localhost --cors dist/ssr/",
     "serve:pwa": "quasar serve --history --port 9000 -H localhost --cors dist/pwa/",
@@ -41,10 +43,6 @@
     "postgen:icons": "yarn run eslint --fix src/extras/icons/dist/icons.ts",
     "gen:favs": "icongenie generate -p src/assets/icongenie/",
     "gen:realfavs": "real-favicon generate src/assets/realfavgen.json src/assets/realfavgen_result.json public/realfavgen"
-  },
-  "docker": {
-    "registry": "ghcr.io/wodore",
-    "tagSuffix": "-pwa"
   },
   "dependencies": {
     "@fontsource/roboto-condensed": "^5.0",
@@ -92,6 +90,8 @@
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-vue": "^9.0.0",
     "fantasticon": "^3.0.0",
+    "git-cliff": "^2.8.0",
+    "git-rev-sync": "^3.0.2",
     "oslllo-svg-fixer": "^4.0.1",
     "prettier": "^3.0.3",
     "typescript": "~5.5.3",
