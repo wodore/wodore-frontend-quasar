@@ -38,7 +38,10 @@ export function getRasterStyle({
     version: 8,
     name: name,
     sources: {},
-    glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
+    //glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
+    glyphs:
+      'https://api.maptiler.com/fonts/{fontstack}/{range}.pbf?key=' +
+      process.env.WODORE_MAPTILER_API_KEY,
     //sprite: { id: 'default', url: 'http://localhost:9000/huts/sprite' },
     layers: [],
   };

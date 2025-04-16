@@ -145,7 +145,8 @@ export const useBasemapStore = defineStore('basemap', () => {
       show: true,
       img: getImageUrl('swiss-vector.png'),
       style:
-        'https://api.maptiler.com/maps/ch-swisstopo-lbm-vivid/style.json?key=yYYuZy3hwmMjY087FDvY',
+        'https://api.maptiler.com/maps/ch-swisstopo-lbm-vivid/style.json?key=' +
+        process.env.WODORE_MAPTILER_API_KEY,
       layers: {
         ways: { before: 'Other place labels' },
         background: { before: 'Building line' },
@@ -157,7 +158,8 @@ export const useBasemapStore = defineStore('basemap', () => {
       show: true,
       img: getImageUrl('satellite.png'),
       style:
-        'https://api.maptiler.com/maps/hybrid/style.json?key=cQX2iET1gmOW38bedbUh',
+        'https://api.maptiler.com/maps/hybrid/style.json?key=' +
+        process.env.WODORE_MAPTILER_API_KEY,
       layers: {
         ways: { before: 'Tunnel' },
         background: { before: 'State labels' },
@@ -169,7 +171,8 @@ export const useBasemapStore = defineStore('basemap', () => {
       show: false,
       img: getImageUrl('outdoor-v2.png'),
       style:
-        'https://api.maptiler.com/maps/outdoor-v2/style.json?key=yYYuZy3hwmMjY087FDvY',
+        'https://api.maptiler.com/maps/outdoor-v2/style.json?key=' +
+        process.env.WODORE_MAPTILER_API_KEY,
       layers: {
         background: { before: 'Contour index' },
         ways: { before: 'Park' },
