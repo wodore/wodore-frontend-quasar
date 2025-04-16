@@ -41,7 +41,7 @@ yarn docker:run-local # uses .env.local file
 yarn docker:run-prod # uses .env.local.prod file
 # or docker commands
 docker build  -t wodore-frontend .
-docker run -e WODORE_DOMAIN=wodore.com -e WODORE_API_HOST=https://api.wodore.com -e WODORE_IMAGOR_KEY=my_secret -p 9000:8080 wodore-frontend
+docker run -e WODORE_DOMAIN=wodore.com -e WODORE_API_HOST=https://api.wodore.com -e WODORE_IMAGOR_KEY=my_secret -e WODORE_MAPTILER_API_KEY=get_maptiler_key -p 9000:8080 wodore-frontend
 # see .env for env variables
 ```
 
