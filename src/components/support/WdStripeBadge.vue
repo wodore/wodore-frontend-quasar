@@ -14,8 +14,8 @@ interface Props {
   sizeFactor?: number;
 }
 
-withDefaults(defineProps<Props>(), { sizeFactor: 1 });
-
+const props = withDefaults(defineProps<Props>(), { sizeFactor: 1 });
+  
 function trackClick(product: string) {
   track('support-stripe', { product: product });
 }
@@ -23,7 +23,7 @@ function trackClick(product: string) {
 //const stripeId = process.env['WODORE_STRIPE_ID'];
 
 const link = computed(() => {
-  return 'https://donate.stripe.com/' + stripeId + '?locale=de';
+  return 'https://donate.stripe.com/' + props.stripeId + '?locale=de';
 });
 </script>
 
