@@ -7,7 +7,7 @@ import track from '@services/analytics';
 //const model = defineModel();
 
 interface Props {
-  //stripeId: string;
+  stripeId: string;
   name: string;
   amount?: string;
   icon?: string;
@@ -19,8 +19,8 @@ withDefaults(defineProps<Props>(), { sizeFactor: 1 });
 function trackClick(product: string) {
   track('support-stripe', { product: product });
 }
-
-const stripeId = process.env['WODORE_STRIPE_ID'];
+// TODO get all support links from .env
+//const stripeId = process.env['WODORE_STRIPE_ID'];
 
 const link = computed(() => {
   return 'https://donate.stripe.com/' + stripeId + '?locale=de';
