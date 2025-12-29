@@ -286,10 +286,10 @@ const showCalendarError = computed(() => {
               <q-item-section v-if="!showCalendarError">
                 <q-item-label class="text-h6 text-accent">{{
                   selectedDateDay
-                  }}</q-item-label>
+                }}</q-item-label>
                 <q-item-label class="text-body2 text-primary-100">{{
                   selectedDateLongName
-                  }}</q-item-label>
+                }}</q-item-label>
               </q-item-section>
               <!-- ERROR MESSAGE HEADER -->
               <q-item-section v-else>
@@ -309,11 +309,11 @@ const showCalendarError = computed(() => {
               <div class="q-pa-lg text-center"
                 style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;">
                 <p class="text-h6 text-primary-100">
-                  Ah Blöd, das funktioniert nicht mehr!
+                  Ah Blöd, da geht nichts mehr!
                 </p>
                 <p class="text-body2 text-primary-200 q-mt-md">
-                  Der SAC hat den API-Zugriff eingeschrenkt 😢<br />
-                  Gerne <a href="https://www.sac-cas.ch/de/kontakt/" target="_blank" class="text-accent">direkt beim SAC
+                  Der SAC hat den Zugriff eingeschrenkt!<br />
+                  Gerne <a href="https://www.sac-cas.ch/de/kontakt/" target="_blank" class="text-accent">direkt
                     nachhaken</a>.
                 </p>
                 <div class="q-mt-md q-pa-sm bg-dark-700 rounded-borders text-center"
@@ -324,8 +324,8 @@ const showCalendarError = computed(() => {
                 </div>
                 <p class="text-caption text-primary-400 q-mt-md" style="font-size: 0.75rem;">
                   Alternativ: <a href="https://www.deine-berge.de/av_reservierung.php" target="_blank"
-                    class="text-accent">deine-berge.de</a> oder
-                  <a href="https://www.hut-reservation.org" target="_blank" class="text-accent">hut-reservation.org</a>
+                    class="text-accent">deine-berge</a> oder
+                  <a href="https://www.hut-reservation.org" target="_blank" class="text-accent">hut-reservation</a>
                 </p>
               </div>
             </div>
