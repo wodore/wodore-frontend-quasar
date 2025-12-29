@@ -41,24 +41,31 @@ function onSubmit() {
     .POST('/v1/feedback/', {
       body: message,
     })
-    .then(() => {
-      $q.notify({
-        color: 'positive',
-        textColor: 'black',
-        icon: 'wd-checkmark',
-        message: 'Nachricht gesendet',
-      });
-      router.go(-1);
-      setTimeout(() => {
-        onReset();
-      }, 200);
+    .then(({ data, error }) => {
+      if (data) {
+        $q.notify({
+          type: 'positive',
+          //#color: 'positive',
+          //#textColor: 'black',
+          //#icon: 'wd-checkmark',
+          message: 'Nachricht gesendet',
+        });
+        router.go(-1);
+        setTimeout(() => {
+          onReset();
+        }, 200);
+      } else {
+        track('feedback-fail', { message: JSON.stringify(message), error: JSON.stringify(error) });
+        $q.notify({
+          type: 'negative',
+          message: 'Nachricht konnte nicht gesendet werden',
+        });
+      }
     })
     .catch(() => {
       track('feedback-fail', { message: JSON.stringify(message) });
       $q.notify({
-        color: 'negative',
-        textColor: 'black',
-        icon: 'wd-close',
+        type: 'negative',
         message: 'Nachricht konnte nicht gesendet werden',
       });
     });
@@ -144,6 +151,7 @@ function setAnonym(value: boolean) {
   filter: blur(15px);
   height: 60px;
 }
+
 .card-header__text {
   background: none !important;
   text-shadow: 0px 0px 8px $black;
@@ -156,6 +164,7 @@ function setAnonym(value: boolean) {
   width: 100%;
   min-width: 100%;
 }
+
 .card--desktop {
   min-height: 300px;
   height: 800px;
@@ -164,6 +173,7 @@ function setAnonym(value: boolean) {
   width: 550px;
   max-width: 600px;
 }
+
 .link:active,
 .link:visited,
 .link:hover,
@@ -175,9 +185,11 @@ function setAnonym(value: boolean) {
   cursor: pointer;
   font-weight: 500;
 }
+
 .link:hover {
   color: color('accent', 600);
 }
+
 .anonym_icon {
   cursor: pointer;
   pointer-events: all;
@@ -189,17 +201,13 @@ function setAnonym(value: boolean) {
                 :rules="[
                   (val) => (val && val.length > 0) || 'Please type something',
                 ]" -->
-  <q-card
-    :class="{ 'card--desktop': $q.screen.gt.xs, 'card--mobile': $q.screen.xs }"
-  >
+  <q-card :class="{ 'card--desktop': $q.screen.gt.xs, 'card--mobile': $q.screen.xs }">
     <!-- style="min-width: 400px; width: 500px; max-width: 700px" -->
     <q-form @submit="onSubmit" @reset="onReset" class="fit">
       <div>
         <q-img :src="headerImg" style="height: 140px" class="shadow-4">
           <div class="card-header absolute-bottom text-white text-h5"></div>
-          <div
-            class="absolute-bottom text-accent-400 text-h4 text-center card-header__text"
-          >
+          <div class="absolute-bottom text-accent-400 text-h4 text-center card-header__text">
             Rückmeldung
           </div>
         </q-img>
@@ -209,14 +217,10 @@ function setAnonym(value: boolean) {
         <!-- min-height: 200px;
             height: 450px;
             max-height: 600px; -->
-        <q-scroll-area
-          class="fit"
-          style="padding: 0 16px 0 16px"
-          :thumb-style="{
-            width: '6px',
-            borderRadius: '8px 0 0 8px',
-          }"
-        >
+        <q-scroll-area class="fit" style="padding: 0 16px 0 16px" :thumb-style="{
+          width: '6px',
+          borderRadius: '8px 0 0 8px',
+        }">
           <div class="col no-wrap items-center q-py-md">
             <p class="text-body1 q-pt-md">
               <b>Sag, was du denkst!</b> Jede Rückmeldung, egal ob positiv oder
@@ -229,43 +233,19 @@ function setAnonym(value: boolean) {
             </p>
             <!-- <div class="text-h4 text-accent-700">Feedback</div> -->
             <div class="q-gutter-md q-pt-md">
-              <q-input
-                v-model="message.subject"
-                dense
-                aria-label="Betreff"
-                outlined
-                counter
-                placeholder="Betreff"
-                maxlength="60"
-              >
+              <q-input v-model="message.subject" dense aria-label="Betreff" outlined counter placeholder="Betreff"
+                maxlength="60">
                 <template v-slot:prepend>
                   <q-icon name="wd-subject" />
                 </template>
               </q-input>
-              <q-input
-                dense
-                v-model="message.email"
-                outlined
-                aria-label="E-Mail"
-                placeholder="name@domain.com"
-                type="email"
-                maxlength="100"
-                :rules="[(val) => !!val || 'E-Mail fehlt']"
-                :disable="anonymous"
-              >
+              <q-input dense v-model="message.email" outlined aria-label="E-Mail" placeholder="name@domain.com"
+                type="email" maxlength="100" :rules="[(val) => !!val || 'E-Mail fehlt']" :disable="anonymous">
                 <template v-slot:prepend> <q-icon name="wd-at" /> </template>
 
                 <template v-slot:append>
-                  <IconMdiAnonymousCircleOff
-                    v-if="anonymous"
-                    @click="setAnonym(false)"
-                    class="anonym_icon"
-                  />
-                  <IconMdiAnonymousCircle
-                    v-else
-                    @click="setAnonym(true)"
-                    class="anonym_icon"
-                  />
+                  <IconMdiAnonymousCircleOff v-if="anonymous" @click="setAnonym(false)" class="anonym_icon" />
+                  <IconMdiAnonymousCircle v-else @click="setAnonym(true)" class="anonym_icon" />
                   <!-- <q-icon
                   :name="isPwd ? 'visibility_off' : 'visibility'"
                   class="cursor-pointer"
@@ -274,62 +254,27 @@ function setAnonym(value: boolean) {
                 </template>
               </q-input>
 
-              <q-input
-                v-model="message.message"
-                autogrow
-                counter
-                aria-label="Nachricht"
-                placeholder="Nachricht"
-                dense
-                outlined
-                type="textarea"
-                maxlength="10000"
-                :rules="[(val) => !!val || 'Nachricht fehlt']"
-              >
+              <q-input v-model="message.message" autogrow counter aria-label="Nachricht" placeholder="Nachricht" dense
+                outlined type="textarea" maxlength="10000" :rules="[(val) => !!val || 'Nachricht fehlt']">
                 <template v-slot:prepend>
-                  <q-icon name="wd-text-outline" /> </template
-              ></q-input>
-              <q-input
-                v-for="(url, idx) in urls"
-                :key="url.id"
-                v-model="url.value"
-                dense
-                outlined
-                maxlength="300"
-                :placeholder="url.placeholder"
-              >
+                  <q-icon name="wd-text-outline" /> </template></q-input>
+              <q-input v-for="(url, idx) in urls" :key="url.id" v-model="url.value" dense outlined maxlength="300"
+                :placeholder="url.placeholder">
                 <!-- :rules="[(val) => !!val || 'URL fehlt']" -->
                 <template v-slot:prepend> <q-icon name="wd-link" /> </template>
                 <template v-slot:after>
-                  <q-icon
-                    name="wd-close"
-                    @click="removeUrl(idx)"
-                    class="cursor-pointer"
-                  />
+                  <q-icon name="wd-close" @click="removeUrl(idx)" class="cursor-pointer" />
                 </template>
               </q-input>
               <div class="">
-                <q-btn
-                  v-if="urls.length < 4"
-                  @click="addUrl()"
-                  class="text-grey-8 float-right"
-                  label="URL"
-                  flat
-                  icon="wd-add-outline"
-                />
+                <q-btn v-if="urls.length < 4" @click="addUrl()" class="text-grey-8 float-right" label="URL" flat
+                  icon="wd-add-outline" />
               </div>
               <div>
-                <q-checkbox
-                  v-if="!anonymous"
-                  v-model="message.get_updates"
-                  checked-icon="wd-bell"
-                  unchecked-icon="wd-bell-outline"
-                  color="accent"
-                  size="lg"
-                >
+                <q-checkbox v-if="!anonymous" v-model="message.get_updates" checked-icon="wd-bell"
+                  unchecked-icon="wd-bell-outline" color="accent" size="lg">
                   Halte mich auf dem Laufenden.<br />
-                  <span class="text-caption"
-                    >Bei wichtigen Updates erhältst du eine E-Mail.
+                  <span class="text-caption">Bei wichtigen Updates erhältst du eine E-Mail.
                   </span>
                 </q-checkbox>
               </div>
@@ -339,20 +284,8 @@ function setAnonym(value: boolean) {
       </q-card-section>
       <q-separator />
       <q-card-actions>
-        <q-btn
-          label="Schliessen"
-          color="secondary-700"
-          flat
-          @click="onClose()"
-          class="q-ml-sm"
-        />
-        <q-btn
-          label="Zurücksetzen"
-          type="reset"
-          color="secondary-700"
-          flat
-          class="q-ml-sm"
-        />
+        <q-btn label="Schliessen" color="secondary-700" flat @click="onClose()" class="q-ml-sm" />
+        <q-btn label="Zurücksetzen" type="reset" color="secondary-700" flat class="q-ml-sm" />
         <q-space />
         <q-btn label="Senden" flat type="submit" color="accent" />
       </q-card-actions>
