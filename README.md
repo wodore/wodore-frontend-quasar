@@ -16,7 +16,7 @@ yarn run gen:<asset>
 
 The following assets are used:
 
-- `api`: Open API client ([`openapi-ts`](https://openapi-ts.pages.dev/)) (see `src/clients/`, [api docu](https://api.wodore.com/v1/docs))
+- `api`: Open API client ([`openapi-ts`](https://openapi-ts.pages.dev/)) (see `src/clients/`, [api docu](https://hub.wodore.com/v1/docs))
 - `icons`: Custom `wd` icons ([`fantasticon`](https://github.com/tancredi/fantasticon)) (stored in `src/extras/icons/svg`)
 - `favs`: Favicons ([`icongenie`](https://quasar.dev/icongenie/introduction/)) (defined in `src/assets/icongenie/`)
 
@@ -41,7 +41,7 @@ yarn docker:run-local # uses .env.local file
 yarn docker:run-prod # uses .env.local.prod file
 # or docker commands
 docker build  -t wodore-frontend .
-docker run -e WODORE_DOMAIN=wodore.com -e WODORE_API_HOST=https://api.wodore.com -e WODORE_IMAGOR_KEY=my_secret -e WODORE_MAPTILER_API_KEY=get_maptiler_key -p 9000:8080 wodore-frontend
+docker run -e WODORE_DOMAIN=wodore.com -e WODORE_API_HOST=https://hub.wodore.com -e WODORE_IMAGOR_KEY=my_secret -e WODORE_MAPTILER_API_KEY=get_maptiler_key -p 9000:8080 wodore-frontend
 # see .env for env variables
 ```
 
@@ -55,7 +55,7 @@ yarn docker:publish [-v] # -v: with version tags
 
 ## Links
 
-- [_Wodore API_](https://api.wodore.com/v1/docs)
+- [_Wodore API_](https://hub.wodore.com/v1/docs)
 - [_Backend_](https://github.com/wodore/wodore-backend)
 - [_Quasar_](https://quasar.dev/docs)
 - [_vue-maplibre-gl_](https://github.com/indoorequal/vue-maplibre-gl): [docu](https://indoorequal.github.io/vue-maplibre-gl/)

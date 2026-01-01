@@ -35,6 +35,20 @@ export default function getImageUrl(
     size: '600x400',
   },
 ): string {
+  // Replace API host + /media URLs with configured value if enabled
+  const replaceWith = process.env.WODORE_IMAGOR_REPLACE_API_HOST_MEDIA;
+  const apiHost = process.env.WODORE_API_HOST;
+
+  if (replaceWith !== 'disabled' && apiHost) {
+    const apiHostWithMedia = apiHost + '/media/';
+
+    if (path.startsWith(apiHostWithMedia)) {
+      // Strip API host + /media/ prefix and replace with configured value
+      const pathWithoutPrefix = path.substring(apiHostWithMedia.length);
+      path = replaceWith ? replaceWith + '/' + pathWithoutPrefix : pathWithoutPrefix;
+    }
+  }
+
   if (!options.filters) {
     options.filters = [];
   }
@@ -74,16 +88,16 @@ export default function getImageUrl(
     str.split(chars).filter(Boolean).join(chars);
   const rawPath = trimString(
     trim +
-      crop +
-      fit +
-      stretch +
-      size +
-      halign +
-      valign +
-      smart +
-      filters +
-      '/' +
-      encodeURIComponent(path),
+    crop +
+    fit +
+    stretch +
+    size +
+    halign +
+    valign +
+    smart +
+    filters +
+    '/' +
+    encodeURIComponent(path),
     '/',
   );
   let hash = 'unsafe';
@@ -111,3 +125,6 @@ export default function getImageUrl(
 //    { size: '500x500', valign: 'top' },
 //  ),
 //);
+
+
+

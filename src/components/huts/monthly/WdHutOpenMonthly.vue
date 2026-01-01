@@ -115,9 +115,9 @@ function getOpenIcon(): string {
 
 function getUnknownIcon(): string {
   if (isMobile.value) {
-    return 'https://api.wodore.com/media/huts/types/symbols/detailed/unknown.png';
+    return 'https://hub.wodore.com/media/huts/types/symbols/detailed/unknown.png';
   } else {
-    return 'https://api.wodore.com/media/huts/types/symbols/simple/unknown.png';
+    return 'https://hub.wodore.com/media/huts/types/symbols/simple/unknown.png';
   }
 }
 </script>
@@ -136,12 +136,8 @@ function getUnknownIcon(): string {
         <WdMonthly :icons="getMonthIcons(m)" :month="m" />
       </div>
     </div>
-    <q-scroll-area
-      style="height: 55px"
-      class="monthly overflow-hidden"
-      v-if="$q.platform.is.mobile"
-      :horizontal-thumb-style="{ height: '3px' }"
-    >
+    <q-scroll-area style="height: 55px" class="monthly overflow-hidden" v-if="$q.platform.is.mobile"
+      :horizontal-thumb-style="{ height: '3px' }">
       <div style="height: 50px; width: 700px">
         <div class="row monthly overflow-hidden">
           <div v-for="m in monthList" :key="m" class="col-1">
@@ -151,22 +147,10 @@ function getUnknownIcon(): string {
       </div>
     </q-scroll-area>
     <div class="justify-center row q-my-sm">
-      <WdHutTypeNameChip
-        class="col-shrink"
-        :type="type_open"
-        v-if="type_open"
-        :name="type_open.name as string"
-        color="grey-5"
-        color2="grey-4"
-      />
-      <WdHutTypeNameChip
-        v-if="type_closed"
-        class="col-shrink"
-        :type="type_closed"
-        :name="type_closed.name as string"
-        color="grey-5"
-        color2="grey-4"
-      />
+      <WdHutTypeNameChip class="col-shrink" :type="type_open" v-if="type_open" :name="type_open.name as string"
+        color="grey-5" color2="grey-4" />
+      <WdHutTypeNameChip v-if="type_closed" class="col-shrink" :type="type_closed" :name="type_closed.name as string"
+        color="grey-5" color2="grey-4" />
     </div>
   </div>
 </template>
