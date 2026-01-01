@@ -3,7 +3,7 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue';
 
 import { useQuasar, QDate, TouchSwipeValue } from 'quasar';
 import { useHutsStore } from '@stores/huts-store';
-import { useAuthStore } from '@stores/auth-store';
+// import { useAuthStore } from '@stores/auth-store';
 import { date } from 'quasar';
 const { formatDate, addToDate, extractDate } = date;
 const { selectedDate } = storeToRefs(useHutsStore());
@@ -16,7 +16,7 @@ import enUS from 'quasar/lang/en-US.js'; // Adjust the path if necessary
 const $router = useRouter();
 const $route = useRoute();
 const $q = useQuasar();
-const authStore = useAuthStore();
+//const authStore = useAuthStore();
 //const selectedDate = ref<string | undefined>(
 //  $route.query.date ? ($route.query.date as string) : undefined,
 //);
@@ -222,17 +222,19 @@ const handleDateSwipe: TouchSwipeValue = (e) => {
 
 // Check if calendar should show error message
 const showCalendarError = computed(() => {
-  // Show calendar (no error) if bookings=1 parameter exists
-  if ($route.query.bookings === '1') {
-    return false;
-  }
-  // Show calendar (no error) if user is logged in
-  if (authStore.isLoggedIn) {
-    return false;
-  }
+  return false
+  // currently not used anymore
+  //// Show calendar (no error) if bookings=1 parameter exists
+  //if ($route.query.bookings === '1') {
+  //  return false;
+  //}
+  //// Show calendar (no error) if user is logged in
+  //if (authStore.isLoggedIn) {
+  //  return false;
+  //}
 
-  // Default: show error
-  return true;
+  //// Default: show error
+  //return true;
 });
 </script>
 
@@ -286,10 +288,10 @@ const showCalendarError = computed(() => {
               <q-item-section v-if="!showCalendarError">
                 <q-item-label class="text-h6 text-accent">{{
                   selectedDateDay
-                }}</q-item-label>
+                  }}</q-item-label>
                 <q-item-label class="text-body2 text-primary-100">{{
                   selectedDateLongName
-                }}</q-item-label>
+                  }}</q-item-label>
               </q-item-section>
               <!-- ERROR MESSAGE HEADER -->
               <q-item-section v-else>

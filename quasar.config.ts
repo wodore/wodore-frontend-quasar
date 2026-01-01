@@ -23,9 +23,20 @@ const gitHash =
 //   ],
 // })
 
-//import path from 'node:path';
-// import { dotenv } from 'dotenv';
-// dotenv.config();
+// Manually load .env files for use in quasar.config.ts
+// This is required because Quasar loads .env files AFTER processing the config
+import dotenv from 'dotenv';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+// Load .env files in the correct order (later files override earlier ones)
+const envFiles = ['.env', '.env.local'];
+for (const file of envFiles) {
+  const filePath = resolve(process.cwd(), file);
+  if (existsSync(filePath)) {
+    dotenv.config({ path: filePath, override: true });
+  }
+}
 
 // add any new variable to the 'env' section
 
@@ -100,6 +111,7 @@ export default configure((ctx) => {
         WODORE_API_VERSION: process.env.WODORE_API_VERSION,
         WODORE_IMAGOR_KEY: process.env.WODORE_IMAGOR_KEY,
         WODORE_IMAGOR_URL: process.env.WODORE_IMAGOR_URL,
+        WODORE_IMAGOR_REPLACE_API_HOST_MEDIA: process.env.WODORE_IMAGOR_REPLACE_API_HOST_MEDIA,
         WODORE_UMAMI_WEBSITE_ID: process.env.WODORE_UMAMI_WEBSITE_ID,
         WODORE_UMAMI_WEBSITE_URL: process.env.WODORE_UMAMI_WEBSITE_URL,
         WODORE_OICD_ISSUER_URL: process.env.WODORE_OICD_ISSUER_URL,
@@ -313,3 +325,4 @@ export default configure((ctx) => {
     },
   };
 });
+
