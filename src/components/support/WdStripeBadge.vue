@@ -15,7 +15,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), { sizeFactor: 1 });
-  
+
 function trackClick(product: string) {
   track('support-stripe', { product: product });
 }

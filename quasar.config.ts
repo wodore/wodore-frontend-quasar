@@ -111,7 +111,8 @@ export default configure((ctx) => {
         WODORE_API_VERSION: process.env.WODORE_API_VERSION,
         WODORE_IMAGOR_KEY: process.env.WODORE_IMAGOR_KEY,
         WODORE_IMAGOR_URL: process.env.WODORE_IMAGOR_URL,
-        WODORE_IMAGOR_REPLACE_API_HOST_MEDIA: process.env.WODORE_IMAGOR_REPLACE_API_HOST_MEDIA,
+        WODORE_IMAGOR_REPLACE_API_HOST_MEDIA:
+          process.env.WODORE_IMAGOR_REPLACE_API_HOST_MEDIA,
         WODORE_UMAMI_WEBSITE_ID: process.env.WODORE_UMAMI_WEBSITE_ID,
         WODORE_UMAMI_WEBSITE_URL: process.env.WODORE_UMAMI_WEBSITE_URL,
         WODORE_OICD_ISSUER_URL: process.env.WODORE_OICD_ISSUER_URL,
@@ -325,4 +326,3 @@ export default configure((ctx) => {
     },
   };
 });
-

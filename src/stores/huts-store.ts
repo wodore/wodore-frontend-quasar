@@ -36,15 +36,17 @@ export const useHutsStore = defineStore('huts', () => {
   //   type: 'FeatureCollection',
   //   features: [],
   // };
-  const emptyHutBookingsGeojson: schemasWodore['HutBookingsFeatureCollection'] =
+  //const emptyHutBookingsGeojson: schemasWodore['HutBookingsFeatureCollection'] =
+  const emptyHutBookingsGeojson: schemasWodore['HutAvailabilityFeatureCollection'] =
     {
       type: 'FeatureCollection',
       features: [],
     };
   //const hutsGeojson = ref<FeatureCollection>(emptyHutsGeojson);
-  const bookingsGeojson = ref<schemasWodore['HutBookingsFeatureCollection']>(
-    emptyHutBookingsGeojson,
-  );
+  //const bookingsGeojson = ref<schemasWodore['HutBookingsFeatureCollection']>(
+  const bookingsGeojson = ref<
+    schemasWodore['HutAvailabilityFeatureCollection']
+  >(emptyHutBookingsGeojson);
   //const _hutsOccupationList = ref<Record<string, Array<BookingOccupation>>>({});
   //let _hutsGeojsonOrig: HutFeatureCollection = emptyHutsGeojson;
   //const _pendingOccupationUpdate = false;
@@ -104,10 +106,13 @@ export const useHutsStore = defineStore('huts', () => {
     days = 8,
   }: fetchHutBookingsGeojsonArgs) {
     clientWodore
-      .GET('/v1/huts/bookings.geojson', {
+      //.GET('/v1/huts/bookings.geojson', {
+      .GET('/v1/huts/availability/{date}.geojson', {
         params: {
-          query: {
+          path: {
             date: date,
+          },
+          query: {
             days: days,
           },
         },

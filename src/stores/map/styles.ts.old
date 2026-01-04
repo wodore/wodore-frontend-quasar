@@ -64,12 +64,12 @@ export const hutsLayerPaint = {
   ],
 } as SymbolLayerSpecification['paint'];
 
-// BOOKINGS
+// AVAILABILITY
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 function getAvailColors(day: number) {
   return [
     'match',
-    ['get', 'occupancy_status', ['at', day, ['get', 'bookings']]],
+    ['get', 'occupancy_status', ['at', day, ['get', 'data']]],
     'empty',
     '#f7fd25',
     'low',
