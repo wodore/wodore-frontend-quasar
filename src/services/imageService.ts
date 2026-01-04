@@ -45,7 +45,9 @@ export default function getImageUrl(
     if (path.startsWith(apiHostWithMedia)) {
       // Strip API host + /media/ prefix and replace with configured value
       const pathWithoutPrefix = path.substring(apiHostWithMedia.length);
-      path = replaceWith ? replaceWith + '/' + pathWithoutPrefix : pathWithoutPrefix;
+      path = replaceWith
+        ? replaceWith + '/' + pathWithoutPrefix
+        : pathWithoutPrefix;
     }
   }
 
@@ -88,16 +90,16 @@ export default function getImageUrl(
     str.split(chars).filter(Boolean).join(chars);
   const rawPath = trimString(
     trim +
-    crop +
-    fit +
-    stretch +
-    size +
-    halign +
-    valign +
-    smart +
-    filters +
-    '/' +
-    encodeURIComponent(path),
+      crop +
+      fit +
+      stretch +
+      size +
+      halign +
+      valign +
+      smart +
+      filters +
+      '/' +
+      encodeURIComponent(path),
     '/',
   );
   let hash = 'unsafe';
@@ -125,6 +127,3 @@ export default function getImageUrl(
 //    { size: '500x500', valign: 'top' },
 //  ),
 //);
-
-
-

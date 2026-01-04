@@ -113,7 +113,7 @@ const hutsLayerSelectedPaint: CircleLayerSpecification['paint'] = {
 function getAvailColors(day: number): ExpressionSpecification {
   return [
     'match',
-    ['get', 'occupancy_status', ['at', day, ['get', 'bookings']]],
+    ['get', 'occupancy_status', ['at', day, ['get', 'data']]],
     'empty',
     '#33FF33', // Neon Green - Empty state
     'low',
@@ -150,12 +150,12 @@ function getHutsOccupationDayLayout(day: number) {
     visibility: 'visible',
     'text-field': [
       'case',
-      ['<', day, ['length', ['get', 'bookings']]],
+      ['<', day, ['length', ['get', 'data']]],
       [
         'concat',
-        ['get', 'free', ['at', day, ['get', 'bookings']]],
+        ['get', 'free', ['at', day, ['get', 'data']]],
         '\n',
-        ['get', 'total', ['at', day, ['get', 'bookings']]],
+        ['get', 'total', ['at', day, ['get', 'data']]],
       ],
       '',
     ],
@@ -173,8 +173,8 @@ function getHutsOccupationDayLayout(day: number) {
           'wodore:occupation_',
           [
             'case',
-            ['<', day, ['length', ['get', 'bookings']]],
-            ['get', 'occupancy_status', ['at', day, ['get', 'bookings']]],
+            ['<', day, ['length', ['get', 'data']]],
+            ['get', 'occupancy_status', ['at', day, ['get', 'data']]],
             'unknown',
           ],
         ],

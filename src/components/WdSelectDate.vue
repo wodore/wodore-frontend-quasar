@@ -222,7 +222,7 @@ const handleDateSwipe: TouchSwipeValue = (e) => {
 
 // Check if calendar should show error message
 const showCalendarError = computed(() => {
-  return false
+  return false;
   // currently not used anymore
   //// Show calendar (no error) if bookings=1 parameter exists
   //if ($route.query.bookings === '1') {
@@ -249,12 +249,10 @@ const showCalendarError = computed(() => {
 </style>
 <style lang="scss">
 .no-trans .q-transition {
-
   &--slide-right,
   &--slide-left,
   &--jump-right,
   &--jump-left {
-
     &-enter-active,
     &-leave-active {
       --q-transition-duration: 0s;
@@ -263,18 +261,39 @@ const showCalendarError = computed(() => {
 }
 </style>
 <template>
-  <div :class="{
-    'q-ml-md': !isMobile,
-    'q-ml-xs': isMobile,
-  }" class="q-mr-md" style="max-width: 130px; max-height: 40px">
+  <div
+    :class="{
+      'q-ml-md': !isMobile,
+      'q-ml-xs': isMobile,
+    }"
+    class="q-mr-md"
+    style="max-width: 130px; max-height: 40px"
+  >
     <!-- CALENDAR -->
-    <q-popup-proxy :offset="[10, 1]" no-parent-event anchor="top start" target="#select-date-huts-location"
-      v-model="showMenu" breakpoint="600" transition-show="jump-down" transition-hide="jump-up">
+    <q-popup-proxy
+      :offset="[10, 1]"
+      no-parent-event
+      anchor="top start"
+      target="#select-date-huts-location"
+      v-model="showMenu"
+      breakpoint="600"
+      transition-show="jump-down"
+      transition-hide="jump-up"
+    >
       <div>
         <!-- @update:model-value="setNewDate" -->
         <q-card class="dialog-radius bg-dark-500">
-          <div class="q-ma-xs z-top text-icon" style="position: absolute; width: 32px; top: 6px; right: 6px">
-            <q-btn dense round v-close-popup color="accent-700" icon="wd-close"></q-btn>
+          <div
+            class="q-ma-xs z-top text-icon"
+            style="position: absolute; width: 32px; top: 6px; right: 6px"
+          >
+            <q-btn
+              dense
+              round
+              v-close-popup
+              color="accent-700"
+              icon="wd-close"
+            ></q-btn>
           </div>
           <!-- HEADER -->
           <q-list padding class="bg-dark-700">
@@ -288,10 +307,10 @@ const showCalendarError = computed(() => {
               <q-item-section v-if="!showCalendarError">
                 <q-item-label class="text-h6 text-accent">{{
                   selectedDateDay
-                  }}</q-item-label>
+                }}</q-item-label>
                 <q-item-label class="text-body2 text-primary-100">{{
                   selectedDateLongName
-                  }}</q-item-label>
+                }}</q-item-label>
               </q-item-section>
               <!-- ERROR MESSAGE HEADER -->
               <q-item-section v-else>
@@ -302,63 +321,152 @@ const showCalendarError = computed(() => {
             </q-item>
           </q-list>
           <div
-            :style="showCalendarError ? 'max-height: 430px; height: 430px; overflow: hidden' : 'max-height: 315px; height: 315px; overflow: hidden'"
-            v-touch-swipe.mouse.horizontal="handleDateSwipe">
+            :style="
+              showCalendarError
+                ? 'max-height: 430px; height: 430px; overflow: hidden'
+                : 'max-height: 315px; height: 315px; overflow: hidden'
+            "
+            v-touch-swipe.mouse.horizontal="handleDateSwipe"
+          >
             <!-- ERROR MESSAGE CONTENT -->
-            <div v-if="showCalendarError" style="height: 100%; display: flex; flex-direction: column;">
-              <img src="/images/no_bookings.jpg" alt="Sad mood"
-                style="width: 370px; height: 180px; object-fit: cover;" />
-              <div class="q-pa-lg text-center"
-                style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <div
+              v-if="showCalendarError"
+              style="height: 100%; display: flex; flex-direction: column"
+            >
+              <img
+                src="/images/no_bookings.jpg"
+                alt="Sad mood"
+                style="width: 370px; height: 180px; object-fit: cover"
+              />
+              <div
+                class="q-pa-lg text-center"
+                style="
+                  flex: 1;
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                  justify-content: center;
+                "
+              >
                 <p class="text-h6 text-primary-100">
                   Ah Blöd, da geht nichts mehr!
                 </p>
                 <p class="text-body2 text-primary-200 q-mt-md">
                   Der SAC hat den Zugriff eingeschrenkt!<br />
-                  Gerne <a href="https://www.sac-cas.ch/de/kontakt/" target="_blank" class="text-accent">direkt
-                    nachhaken</a>.
+                  Gerne
+                  <a
+                    href="https://www.sac-cas.ch/de/kontakt/"
+                    target="_blank"
+                    class="text-accent"
+                    >direkt nachhaken</a
+                  >.
                 </p>
-                <div class="q-mt-md q-pa-sm bg-dark-700 rounded-borders text-center"
-                  style="border: 1px solid rgba(255, 193, 7, 0.3);">
-                  <p class="text-body2 text-accent q-mb-none" style="font-weight: 500;">
+                <div
+                  class="q-mt-md q-pa-sm bg-dark-700 rounded-borders text-center"
+                  style="border: 1px solid rgba(255, 193, 7, 0.3)"
+                >
+                  <p
+                    class="text-body2 text-accent q-mb-none"
+                    style="font-weight: 500"
+                  >
                     🔧 Eine neue Lösung ist in Arbeit...
                   </p>
                 </div>
-                <p class="text-caption text-primary-400 q-mt-md" style="font-size: 0.75rem;">
-                  Alternativ: <a href="https://www.deine-berge.de/av_reservierung.php" target="_blank"
-                    class="text-accent">deine-berge</a> oder
-                  <a href="https://www.hut-reservation.org" target="_blank" class="text-accent">hut-reservation</a>
+                <p
+                  class="text-caption text-primary-400 q-mt-md"
+                  style="font-size: 0.75rem"
+                >
+                  Alternativ:
+                  <a
+                    href="https://www.deine-berge.de/av_reservierung.php"
+                    target="_blank"
+                    class="text-accent"
+                    >deine-berge</a
+                  >
+                  oder
+                  <a
+                    href="https://www.hut-reservation.org"
+                    target="_blank"
+                    class="text-accent"
+                    >hut-reservation</a
+                  >
                 </p>
               </div>
             </div>
             <!-- CALENDAR -->
             <div v-else>
-              <q-date :class="{ 'no-trans': noTrans }" v-model="selectedDate" minimal flat :dark="true"
-                :options="dateRangeOptions" first-day-of-week="1"
-                :navigation-min-year-month="formatDate(Date.now(), 'YYYY/MM')" :navigation-max-year-month="formatDate(addToDate(Date.now(), { years: 2 }), 'YYYY/MM')
-                  " mask="DD.MM.YY" color="accent" ref="calLeft" @navigation="updateLeft">
+              <q-date
+                :class="{ 'no-trans': noTrans }"
+                v-model="selectedDate"
+                minimal
+                flat
+                :dark="true"
+                :options="dateRangeOptions"
+                first-day-of-week="1"
+                :navigation-min-year-month="formatDate(Date.now(), 'YYYY/MM')"
+                :navigation-max-year-month="
+                  formatDate(addToDate(Date.now(), { years: 2 }), 'YYYY/MM')
+                "
+                mask="DD.MM.YY"
+                color="accent"
+                ref="calLeft"
+                @navigation="updateLeft"
+              >
               </q-date>
-              <q-date :class="{ 'no-trans': noTrans }" v-model="selectedDate" v-if="$q.screen.gt.xs" minimal flat
-                :dark="true" :options="dateRangeOptions" ref="calRigth" color="accent" first-day-of-week="1"
-                :navigation-min-year-month="formatDate(addToDate(Date.now(), { month: 1 }), 'YYYY/MM')
-                  " :navigation-max-year-month="formatDate(
+              <q-date
+                :class="{ 'no-trans': noTrans }"
+                v-model="selectedDate"
+                v-if="$q.screen.gt.xs"
+                minimal
+                flat
+                :dark="true"
+                :options="dateRangeOptions"
+                ref="calRigth"
+                color="accent"
+                first-day-of-week="1"
+                :navigation-min-year-month="
+                  formatDate(addToDate(Date.now(), { month: 1 }), 'YYYY/MM')
+                "
+                :navigation-max-year-month="
+                  formatDate(
                     addToDate(Date.now(), { years: 2, month: 1 }),
                     'YYYY/MM',
                   )
-                    " mask="DD.MM.YY" @navigation="updateRigth">
+                "
+                mask="DD.MM.YY"
+                @navigation="updateRigth"
+              >
               </q-date>
             </div>
           </div>
           <div class="q-pa-xs row items-center justify-center bg-dark-700">
             <!-- ERROR FOOTER -->
-            <q-btn v-if="showCalendarError" v-close-popup label="Schade, dann halt nicht..." color="secondary" flat
-              no-caps class="no-text-transform" />
+            <q-btn
+              v-if="showCalendarError"
+              v-close-popup
+              label="Schade, dann halt nicht..."
+              color="secondary"
+              flat
+              no-caps
+              class="no-text-transform"
+            />
             <!-- NORMAL FOOTER -->
             <template v-else>
-              <q-btn flat :disable="todayDisabled" @click="gotoToday" class="q-mr-md text-accent"
-                :class="{ 'text-dark-200': todayDisabled }">heute</q-btn>
-              <q-btn label="Zurücksetzen" color="secondary" :disable="selectedDate === undefined" flat
-                @click="resetDate()" />
+              <q-btn
+                flat
+                :disable="todayDisabled"
+                @click="gotoToday"
+                class="q-mr-md text-accent"
+                :class="{ 'text-dark-200': todayDisabled }"
+                >heute</q-btn
+              >
+              <q-btn
+                label="Zurücksetzen"
+                color="secondary"
+                :disable="selectedDate === undefined"
+                flat
+                @click="resetDate()"
+              />
             </template>
           </div>
         </q-card>
@@ -384,14 +492,27 @@ const showCalendarError = computed(() => {
     <!-- DESKTOP - textfiled -->
     <div id="select-date-huts-location">
       <!-- class="gt-xs" -->
-      <q-input id="menu" readonly v-model="selectedDate" dense dark standout class="toolbar-font"
-        @click="showMenu = true">
+      <q-input
+        id="menu"
+        readonly
+        v-model="selectedDate"
+        dense
+        dark
+        standout
+        class="toolbar-font"
+        @click="showMenu = true"
+      >
         <!-- </q-input>:rules="[
           (v) => /^[0-3]\d\.[0-1]\d\.\d\d$/.test(v) || 'Format: dd.mm.yy',
         ]"
         -->
         <template v-slot:append>
-          <q-icon @click="showMenu = true" name="wd-calendar" class="text-icon cursor-pointer" size="sm">
+          <q-icon
+            @click="showMenu = true"
+            name="wd-calendar"
+            class="text-icon cursor-pointer"
+            size="sm"
+          >
           </q-icon>
         </template>
       </q-input>

@@ -3,15 +3,51 @@
  * Do not make direct changes to the file.
  */
 
-
 export interface paths {
   '/v1/huts/bookings': {
-    /** Get Hut Bookings */
+    /**
+     * Get hut bookings (deprecated)
+     * @deprecated
+     * @description **DEPRECATED**: Use `/huts/availability.geojson` instead. This endpoint will be removed in a future version.
+     */
     get: operations['get_hut_bookings'];
   };
   '/v1/huts/bookings.geojson': {
-    /** Get Hut Bookings Geojson */
+    /**
+     * Get hut bookings as GeoJSON (deprecated)
+     * @deprecated
+     * @description **DEPRECATED**: Use `/huts/availability.geojson` instead. This endpoint will be removed in a future version.
+     */
     get: operations['get_hut_bookings_geojson'];
+  };
+  '/v1/huts/types/list': {
+    /** Get Hut Types */
+    get: operations['get_hut_types'];
+  };
+  '/v1/huts/types/records': {
+    /** Get Hut Type Records */
+    get: operations['get_hut_type_records'];
+  };
+  '/v1/huts/availability/{date}.geojson': {
+    /**
+     * Get Hut Availability Geojson
+     * @description Get availability data as GeoJSON FeatureCollection for map visualization.
+     */
+    get: operations['get_hut_availability_geojson'];
+  };
+  '/v1/huts/{slug}/availability/{date}': {
+    /**
+     * Get Hut Availability Current
+     * @description Get current availability data for a specific hut with detailed metadata and booking links.
+     */
+    get: operations['get_hut_availability_current'];
+  };
+  '/v1/huts/{slug}/availability/{date}/trend': {
+    /**
+     * Get Hut Availability Trend
+     * @description Get historical availability trend data showing how availability changed over time for a specific date.
+     */
+    get: operations['get_hut_availability_trend'];
   };
   '/v1/huts/huts': {
     /**
@@ -30,14 +66,6 @@ export interface paths {
      * @description Get a hut by its slug.
      */
     get: operations['get_hut'];
-  };
-  '/v1/huts/types/list': {
-    /** Get Hut Types */
-    get: operations['get_hut_types'];
-  };
-  '/v1/huts/types/records': {
-    /** Get Hut Type Records */
-    get: operations['get_hut_type_records'];
   };
   '/v1/organizations/': {
     /**
@@ -75,10 +103,15 @@ export interface components {
       days?: number;
       /**
        * Date
-       * @description Date to start with booking (yyyy-mm-dd or now).
+       * @description Date to start with bookings (yyyy-mm-dd, 'now' or 'weekend').
        * @default now
        */
-      date?: string | 'now';
+      date?: string | ('now' | 'weekend');
+      /**
+       * Request interval
+       * @description Time in seconds to wait between requests to the booking service for each hut. If not set uses recommanded default value.
+       */
+      request_interval?: number | null;
     };
     /** HutBookingSchema */
     HutBookingSchema: {
@@ -111,6 +144,11 @@ export interface components {
       slug: string;
       /** Hut Id */
       hut_id: number;
+      /**
+       * Source Id
+       * @description External source organization's ID for this hut
+       */
+      source_id: string;
       /**
        * Source
        * @description Source slug, e.g. hrs
@@ -149,21 +187,33 @@ export interface components {
      * @description Enum with with occuptation status.
      * @enum {string}
      */
-    OccupancyStatusEnum: 'unknown' | 'empty' | 'low' | 'medium' | 'high' | 'full';
+    OccupancyStatusEnum:
+      | 'unknown'
+      | 'empty'
+      | 'low'
+      | 'medium'
+      | 'high'
+      | 'full';
     /**
      * ReservationStatusEnum
      * @description Enum with reservation status.
      * @enum {string}
      */
-    ReservationStatusEnum: 'unknown' | 'possible' | 'not_possible' | 'not_online';
+    ReservationStatusEnum:
+      | 'unknown'
+      | 'possible'
+      | 'not_possible'
+      | 'not_online';
     /** Feature[Point, HutBookingsProps] */
     Feature_Point_HutBookingsProps_: {
       /** Bbox */
-      bbox?: [number, number, number, number] | [number, number, number, number, number, number] | null;
+      bbox?:
+        | [number, number, number, number]
+        | [number, number, number, number, number, number]
+        | null;
       /**
        * Type
        * @constant
-       * @enum {string}
        */
       type: 'Feature';
       geometry: components['schemas']['Point'] | null;
@@ -174,11 +224,13 @@ export interface components {
     /** HutBookingsFeatureCollection */
     HutBookingsFeatureCollection: {
       /** Bbox */
-      bbox?: [number, number, number, number] | [number, number, number, number, number, number] | null;
+      bbox?:
+        | [number, number, number, number]
+        | [number, number, number, number, number, number]
+        | null;
       /**
        * Type
        * @constant
-       * @enum {string}
        */
       type: 'FeatureCollection';
       /** Features */
@@ -190,6 +242,11 @@ export interface components {
       slug: string;
       /** Hut Id */
       hut_id: number;
+      /**
+       * Source Id
+       * @description External source organization's ID for this hut
+       */
+      source_id: string;
       /**
        * Source
        * @description Source slug, e.g. hrs
@@ -213,18 +270,465 @@ export interface components {
      */
     Point: {
       /** Bbox */
-      bbox?: [number, number, number, number] | [number, number, number, number, number, number] | null;
+      bbox?:
+        | [number, number, number, number]
+        | [number, number, number, number, number, number]
+        | null;
       /**
        * Type
        * @constant
-       * @enum {string}
        */
       type: 'Point';
       /** Coordinates */
-      coordinates: components['schemas']['Position2D'] | components['schemas']['Position3D'];
+      coordinates:
+        | components['schemas']['Position2D']
+        | components['schemas']['Position3D'];
     };
     Position2D: [number, number];
     Position3D: [number, number, number];
+    /** FieldsParam[HutTypeDetailSchema] */
+    FieldsParam_HutTypeDetailSchema_: {
+      /**
+       * Include
+       * @description Comma separated list with field names, use `__all__` in order to include every field.
+       */
+      include?: unknown;
+      /**
+       * Exclude
+       * @description Comma separated list with field names, if set it uses all fields except the excluded ones.
+       */
+      exclude?: unknown;
+    };
+    /** HutTypeDetailSchema */
+    HutTypeDetailSchema: {
+      /** Slug */
+      slug: string;
+      /** Name */
+      name: string;
+      /**
+       * Description
+       * @default
+       */
+      description?: string;
+      /**
+       * Symbol
+       * @description Normal icon
+       * @default huts/types/symbols/detailed/unknown.png
+       */
+      symbol?: string | null;
+      /**
+       * Level
+       * @description Comfort level, higher is more comfort
+       * @default 0
+       */
+      level?: number | null;
+      /**
+       * Symbol Simple
+       * @description Simple icon
+       * @default huts/types/symbols/simple/unknown.png
+       */
+      symbol_simple?: string | null;
+      /**
+       * Icon
+       * @description Black icon
+       * @default huts/types/icons/unknown.png
+       */
+      icon?: string | null;
+    };
+    /**
+     * DatePathParam
+     * @description Path parameter for date.
+     */
+    DatePathParam: {
+      /**
+       * Date
+       * @description Start date. Accepts ISO dates (2026-01-15, 26-01-15), European format (15.01.2026), or keywords: 'now', 'today', 'weekend'.
+       */
+      date: string;
+    };
+    /**
+     * AvailabilityGeoJSONQuery
+     * @description Query parameters for GeoJSON availability endpoint.
+     */
+    AvailabilityGeoJSONQuery: {
+      /**
+       * Hut Slugs
+       * @description Comma-separated list of hut slugs to filter (e.g., 'aarbiwak,almageller'). If not set, returns all huts.
+       */
+      slugs?: string | null;
+      /**
+       * Days
+       * @description Number of days to fetch from start date.
+       * @default 1
+       */
+      days?: number;
+      /**
+       * Offset
+       * @description Pagination offset for results.
+       * @default 0
+       */
+      offset?: number;
+      /**
+       * Limit
+       * @description Maximum number of huts to return. If not set, returns all matching huts.
+       */
+      limit?: number | null;
+    };
+    /**
+     * AvailabilityDaySchema
+     * @description Single day's availability data for a hut.
+     */
+    AvailabilityDaySchema: {
+      /**
+       * Date
+       * Format: date
+       * @description Availability date
+       */
+      date: string;
+      /** @description Reservation status (unknown, possible, not_possible, not_online) */
+      reservation_status: components['schemas']['ReservationStatusEnum'];
+      /**
+       * Free
+       * @description Number of free places
+       */
+      free: number;
+      /**
+       * Total
+       * @description Total number of places
+       */
+      total: number;
+      /**
+       * Occupancy Percent
+       * @description Occupancy percentage (0-100)
+       */
+      occupancy_percent: number;
+      /**
+       * Occupancy Steps
+       * @description Occupancy in discrete steps (0-100, increments of 10)
+       */
+      occupancy_steps: number;
+      /** @description Occupancy status (empty, low, medium, high, full, unknown) */
+      occupancy_status: components['schemas']['OccupancyStatusEnum'];
+      /**
+       * Hut Type
+       * @description Hut type on this date (e.g., 'hut', 'bivouac')
+       * @default unknown
+       */
+      hut_type?: string;
+    };
+    /** Feature[Point, HutAvailabilityPropertiesSchema] */
+    Feature_Point_HutAvailabilityPropertiesSchema_: {
+      /** Bbox */
+      bbox?:
+        | [number, number, number, number]
+        | [number, number, number, number, number, number]
+        | null;
+      /**
+       * Type
+       * @constant
+       */
+      type: 'Feature';
+      geometry: components['schemas']['Point'] | null;
+      properties:
+        | components['schemas']['HutAvailabilityPropertiesSchema']
+        | null;
+      /** Id */
+      id?: number | string | null;
+    };
+    /**
+     * HutAvailabilityFeatureCollection
+     * @description GeoJSON FeatureCollection of hut availability data.
+     */
+    HutAvailabilityFeatureCollection: {
+      /** Bbox */
+      bbox?:
+        | [number, number, number, number]
+        | [number, number, number, number, number, number]
+        | null;
+      /**
+       * Type
+       * @constant
+       */
+      type: 'FeatureCollection';
+      /** Features */
+      features: components['schemas']['Feature_Point_HutAvailabilityPropertiesSchema_'][];
+    };
+    /**
+     * HutAvailabilityPropertiesSchema
+     * @description Properties for a hut availability GeoJSON feature.
+     */
+    HutAvailabilityPropertiesSchema: {
+      /**
+       * Slug
+       * @description Hut slug identifier
+       */
+      slug: string;
+      /**
+       * Id
+       * @description Hut database ID
+       */
+      id: number;
+      /**
+       * Source Id
+       * @description External source organization's ID for this hut
+       */
+      source_id: string;
+      /**
+       * Source
+       * @description Source organization slug (e.g., 'hrs', 'sac')
+       */
+      source: string;
+      /**
+       * Source Link
+       * @description External link to the hut page on the source website
+       */
+      source_link: string;
+      /**
+       * Days
+       * @description Number of days of availability data
+       */
+      days: number;
+      /**
+       * Start Date
+       * Format: date
+       * @description Start date of availability period
+       */
+      start_date: string;
+      /**
+       * Data
+       * @description List of availability data for each day
+       */
+      data: components['schemas']['AvailabilityDaySchema'][];
+    };
+    /**
+     * CurrentAvailabilityQuery
+     * @description Query parameters for current availability endpoint.
+     */
+    CurrentAvailabilityQuery: {
+      /**
+       * Days
+       * @description Number of days to fetch from start date.
+       * @default 1
+       */
+      days?: number;
+    };
+    /**
+     * CurrentAvailabilityDaySchema
+     * @description Single day's current availability data with metadata.
+     */
+    CurrentAvailabilityDaySchema: {
+      /**
+       * Date
+       * Format: date
+       * @description Availability date
+       */
+      date: string;
+      /** @description Reservation status (unknown, possible, not_possible, not_online) */
+      reservation_status: components['schemas']['ReservationStatusEnum'];
+      /**
+       * Free
+       * @description Number of free places
+       */
+      free: number;
+      /**
+       * Total
+       * @description Total number of places
+       */
+      total: number;
+      /**
+       * Occupancy Percent
+       * @description Occupancy percentage (0-100)
+       */
+      occupancy_percent: number;
+      /**
+       * Occupancy Steps
+       * @description Occupancy in discrete steps (0-100, increments of 10)
+       */
+      occupancy_steps: number;
+      /** @description Occupancy status (empty, low, medium, high, full, unknown) */
+      occupancy_status: components['schemas']['OccupancyStatusEnum'];
+      /**
+       * Hut Type
+       * @description Hut type on this date (e.g., 'hut', 'bivouac')
+       * @default unknown
+       */
+      hut_type?: string;
+      /**
+       * Link
+       * @description Booking link for this date
+       */
+      link: string;
+      /**
+       * First Checked
+       * Format: date-time
+       * @description When this availability was first recorded
+       */
+      first_checked: string;
+      /**
+       * Last Checked
+       * Format: date-time
+       * @description When this availability was last checked
+       */
+      last_checked: string;
+    };
+    /**
+     * CurrentAvailabilitySchema
+     * @description Current availability data for a specific hut.
+     */
+    CurrentAvailabilitySchema: {
+      /**
+       * Slug
+       * @description Hut slug identifier
+       */
+      slug: string;
+      /**
+       * Id
+       * @description Hut database ID
+       */
+      id: number;
+      /**
+       * Source Id
+       * @description External source organization's ID for this hut
+       */
+      source_id: string;
+      /**
+       * Source Link
+       * @description External source organization's link for this hut
+       */
+      source_link: string;
+      /**
+       * Source
+       * @description Source organization slug (e.g., 'hrs', 'sac')
+       */
+      source: string;
+      /**
+       * Days
+       * @description Number of days of availability data
+       */
+      days: number;
+      /**
+       * Start Date
+       * Format: date
+       * @description Start date of availability period
+       */
+      start_date: string;
+      /**
+       * Data
+       * @description List of current availability data for each day
+       */
+      data: components['schemas']['CurrentAvailabilityDaySchema'][];
+    };
+    /**
+     * DatePathParamTrend
+     * @description Path parameter for trend endpoint.
+     */
+    DatePathParamTrend: {
+      /**
+       * Date
+       * @description Target date to analyze. Accepts ISO dates (2026-01-15, 26-01-15), European format (15.01.2026), or keywords: 'now', 'today', 'weekend'.
+       */
+      date: string;
+    };
+    /**
+     * AvailabilityTrendQuery
+     * @description Query parameters for availability trend endpoint.
+     */
+    AvailabilityTrendQuery: {
+      /**
+       * Limit
+       * @description How many days back to show history from the target date.
+       * @default 7
+       */
+      limit?: number;
+    };
+    /**
+     * AvailabilityTrendDaySchema
+     * @description Single historical availability data point.
+     */
+    AvailabilityTrendDaySchema: {
+      /**
+       * Date
+       * Format: date
+       * @description Availability date this data applies to
+       */
+      date: string;
+      /**
+       * Free
+       * @description Number of free places
+       */
+      free: number;
+      /**
+       * Total
+       * @description Total number of places
+       */
+      total: number;
+      /**
+       * Occupancy Percent
+       * @description Occupancy percentage (0-100)
+       */
+      occupancy_percent: number;
+      /** @description Occupancy status (empty, low, medium, high, full, unknown) */
+      occupancy_status: components['schemas']['OccupancyStatusEnum'];
+      /** @description Reservation status (unknown, possible, not_possible, not_online) */
+      reservation_status: components['schemas']['ReservationStatusEnum'];
+      /**
+       * Hut Type
+       * @description Hut type on this date (e.g., 'hut', 'bivouac')
+       * @default unknown
+       */
+      hut_type?: string;
+      /**
+       * First Checked
+       * Format: date-time
+       * @description When this state was first observed
+       */
+      first_checked: string;
+      /**
+       * Last Checked
+       * Format: date-time
+       * @description When this state was last confirmed
+       */
+      last_checked: string;
+    };
+    /**
+     * AvailabilityTrendSchema
+     * @description Historical availability trend data for a specific hut and date.
+     */
+    AvailabilityTrendSchema: {
+      /**
+       * Slug
+       * @description Hut slug identifier
+       */
+      slug: string;
+      /**
+       * Id
+       * @description Hut database ID
+       */
+      id: number;
+      /**
+       * Target Date
+       * Format: date
+       * @description The date for which trend data is shown
+       */
+      target_date: string;
+      /**
+       * Period Start
+       * Format: date
+       * @description Start of the trend period (target_date - limit days)
+       */
+      period_start: string;
+      /**
+       * Period End
+       * Format: date
+       * @description End of the trend period (target_date)
+       */
+      period_end: string;
+      /**
+       * Data
+       * @description Historical availability changes, ordered by first_checked (newest first)
+       */
+      data: components['schemas']['AvailabilityTrendDaySchema'][];
+    };
     /**
      * TristateEnum
      * @description Tristate enum with `true`, `false` and `unset`.
@@ -324,6 +828,13 @@ export interface components {
       organization?: components['schemas']['OrganizationImageSchema'] | null;
       /** Attribution */
       attribution?: string | null;
+      /**
+       * Urls
+       * @description Return the image URL with the transformations applied.
+       */
+      urls: {
+        [key: string]: string;
+      };
     };
     /** ImageMetaAreaSchema */
     ImageMetaAreaSchema: {
@@ -353,9 +864,9 @@ export interface components {
       /** Slug */
       slug: string;
       /** Name */
-      name: string;
+      name: string | null;
       /** Fullname */
-      fullname: string;
+      fullname: string | null;
       /** Description */
       description?: string | null;
       /** Link */
@@ -453,17 +964,34 @@ export interface components {
      */
     Feature: {
       /** Bbox */
-      bbox?: [number, number, number, number] | [number, number, number, number, number, number] | null;
+      bbox?:
+        | [number, number, number, number]
+        | [number, number, number, number, number, number]
+        | null;
       /**
        * Type
        * @constant
-       * @enum {string}
        */
       type: 'Feature';
       /** Geometry */
-      geometry: (components['schemas']['Point'] | components['schemas']['MultiPoint'] | components['schemas']['LineString'] | components['schemas']['MultiLineString'] | components['schemas']['Polygon'] | components['schemas']['MultiPolygon'] | components['schemas']['GeometryCollection']) | null;
+      geometry:
+        | (
+            | components['schemas']['Point']
+            | components['schemas']['MultiPoint']
+            | components['schemas']['LineString']
+            | components['schemas']['MultiLineString']
+            | components['schemas']['Polygon']
+            | components['schemas']['MultiPolygon']
+            | components['schemas']['GeometryCollection']
+          )
+        | null;
       /** Properties */
-      properties: Record<string, never> | components['schemas']['BaseModel'] | null;
+      properties:
+        | {
+            [key: string]: unknown;
+          }
+        | components['schemas']['BaseModel']
+        | null;
       /** Id */
       id?: number | string | null;
     };
@@ -473,11 +1001,13 @@ export interface components {
      */
     FeatureCollection: {
       /** Bbox */
-      bbox?: [number, number, number, number] | [number, number, number, number, number, number] | null;
+      bbox?:
+        | [number, number, number, number]
+        | [number, number, number, number, number, number]
+        | null;
       /**
        * Type
        * @constant
-       * @enum {string}
        */
       type: 'FeatureCollection';
       /** Features */
@@ -489,15 +1019,25 @@ export interface components {
      */
     GeometryCollection: {
       /** Bbox */
-      bbox?: [number, number, number, number] | [number, number, number, number, number, number] | null;
+      bbox?:
+        | [number, number, number, number]
+        | [number, number, number, number, number, number]
+        | null;
       /**
        * Type
        * @constant
-       * @enum {string}
        */
       type: 'GeometryCollection';
       /** Geometries */
-      geometries: (components['schemas']['Point'] | components['schemas']['MultiPoint'] | components['schemas']['LineString'] | components['schemas']['MultiLineString'] | components['schemas']['Polygon'] | components['schemas']['MultiPolygon'] | components['schemas']['GeometryCollection'])[];
+      geometries: (
+        | components['schemas']['Point']
+        | components['schemas']['MultiPoint']
+        | components['schemas']['LineString']
+        | components['schemas']['MultiLineString']
+        | components['schemas']['Polygon']
+        | components['schemas']['MultiPolygon']
+        | components['schemas']['GeometryCollection']
+      )[];
     };
     /**
      * LineString
@@ -505,15 +1045,20 @@ export interface components {
      */
     LineString: {
       /** Bbox */
-      bbox?: [number, number, number, number] | [number, number, number, number, number, number] | null;
+      bbox?:
+        | [number, number, number, number]
+        | [number, number, number, number, number, number]
+        | null;
       /**
        * Type
        * @constant
-       * @enum {string}
        */
       type: 'LineString';
       /** Coordinates */
-      coordinates: (components['schemas']['Position2D'] | components['schemas']['Position3D'])[];
+      coordinates: (
+        | components['schemas']['Position2D']
+        | components['schemas']['Position3D']
+      )[];
     };
     /**
      * MultiLineString
@@ -521,15 +1066,20 @@ export interface components {
      */
     MultiLineString: {
       /** Bbox */
-      bbox?: [number, number, number, number] | [number, number, number, number, number, number] | null;
+      bbox?:
+        | [number, number, number, number]
+        | [number, number, number, number, number, number]
+        | null;
       /**
        * Type
        * @constant
-       * @enum {string}
        */
       type: 'MultiLineString';
       /** Coordinates */
-      coordinates: ((components['schemas']['Position2D'] | components['schemas']['Position3D'])[])[];
+      coordinates: (
+        | components['schemas']['Position2D']
+        | components['schemas']['Position3D']
+      )[][];
     };
     /**
      * MultiPoint
@@ -537,15 +1087,20 @@ export interface components {
      */
     MultiPoint: {
       /** Bbox */
-      bbox?: [number, number, number, number] | [number, number, number, number, number, number] | null;
+      bbox?:
+        | [number, number, number, number]
+        | [number, number, number, number, number, number]
+        | null;
       /**
        * Type
        * @constant
-       * @enum {string}
        */
       type: 'MultiPoint';
       /** Coordinates */
-      coordinates: (components['schemas']['Position2D'] | components['schemas']['Position3D'])[];
+      coordinates: (
+        | components['schemas']['Position2D']
+        | components['schemas']['Position3D']
+      )[];
     };
     /**
      * MultiPolygon
@@ -553,15 +1108,20 @@ export interface components {
      */
     MultiPolygon: {
       /** Bbox */
-      bbox?: [number, number, number, number] | [number, number, number, number, number, number] | null;
+      bbox?:
+        | [number, number, number, number]
+        | [number, number, number, number, number, number]
+        | null;
       /**
        * Type
        * @constant
-       * @enum {string}
        */
       type: 'MultiPolygon';
       /** Coordinates */
-      coordinates: (((components['schemas']['Position2D'] | components['schemas']['Position3D'])[])[])[];
+      coordinates: (
+        | components['schemas']['Position2D']
+        | components['schemas']['Position3D']
+      )[][][];
     };
     /**
      * Polygon
@@ -569,15 +1129,20 @@ export interface components {
      */
     Polygon: {
       /** Bbox */
-      bbox?: [number, number, number, number] | [number, number, number, number, number, number] | null;
+      bbox?:
+        | [number, number, number, number]
+        | [number, number, number, number, number, number]
+        | null;
       /**
        * Type
        * @constant
-       * @enum {string}
        */
       type: 'Polygon';
       /** Coordinates */
-      coordinates: ((components['schemas']['Position2D'] | components['schemas']['Position3D'])[])[];
+      coordinates: (
+        | components['schemas']['Position2D']
+        | components['schemas']['Position3D']
+      )[][];
     };
     /** FieldsParam[HutSchemaDetails] */
     FieldsParam_HutSchemaDetails_: {
@@ -591,55 +1156,6 @@ export interface components {
        * @description Comma separated list with field names, if set it uses all fields except the excluded ones.
        */
       exclude?: unknown;
-    };
-    /** FieldsParam[HutTypeDetailSchema] */
-    FieldsParam_HutTypeDetailSchema_: {
-      /**
-       * Include
-       * @description Comma separated list with field names, use `__all__` in order to include every field.
-       */
-      include?: unknown;
-      /**
-       * Exclude
-       * @description Comma separated list with field names, if set it uses all fields except the excluded ones.
-       */
-      exclude?: unknown;
-    };
-    /** HutTypeDetailSchema */
-    HutTypeDetailSchema: {
-      /** Slug */
-      slug: string;
-      /** Name */
-      name: string;
-      /**
-       * Description
-       * @default
-       */
-      description?: string;
-      /**
-       * Symbol
-       * @description Normal icon
-       * @default huts/types/symbols/detailed/unknown.png
-       */
-      symbol?: string | null;
-      /**
-       * Level
-       * @description Comfort level, higher is more comfort
-       * @default 0
-       */
-      level?: number | null;
-      /**
-       * Symbol Simple
-       * @description Simple icon
-       * @default huts/types/symbols/simple/unknown.png
-       */
-      symbol_simple?: string | null;
-      /**
-       * Icon
-       * @description Black icon
-       * @default huts/types/icons/unknown.png
-       */
-      icon?: string | null;
     };
     /** FieldsParam[OrganizationOptional] */
     FieldsParam_OrganizationOptional_: {
@@ -667,9 +1183,13 @@ export interface components {
       /** Url */
       url?: string | null;
       /** Config */
-      config?: Record<string, never> | null;
+      config?: {
+        [key: string]: unknown;
+      } | null;
       /** Props Schema */
-      props_schema?: Record<string, never> | null;
+      props_schema?: {
+        [key: string]: unknown;
+      } | null;
       /** Order */
       order?: number | null;
       /** Slug */
@@ -741,8 +1261,11 @@ export type $defs = Record<string, never>;
 export type external = Record<string, never>;
 
 export interface operations {
-
-  /** Get Hut Bookings */
+  /**
+   * Get hut bookings (deprecated)
+   * @deprecated
+   * @description **DEPRECATED**: Use `/huts/availability.geojson` instead. This endpoint will be removed in a future version.
+   */
   get_hut_bookings: {
     parameters: {
       query?: {
@@ -752,8 +1275,10 @@ export interface operations {
         slugs?: string | null;
         /** @description Show bookings for this many days. */
         days?: number;
-        /** @description Date to start with booking (yyyy-mm-dd or now). */
-        date?: string | 'now';
+        /** @description Date to start with bookings (yyyy-mm-dd, 'now' or 'weekend'). */
+        date?: string | ('now' | 'weekend');
+        /** @description Time in seconds to wait between requests to the booking service for each hut. If not set uses recommanded default value. */
+        request_interval?: number | null;
       };
     };
     responses: {
@@ -765,7 +1290,11 @@ export interface operations {
       };
     };
   };
-  /** Get Hut Bookings Geojson */
+  /**
+   * Get hut bookings as GeoJSON (deprecated)
+   * @deprecated
+   * @description **DEPRECATED**: Use `/huts/availability.geojson` instead. This endpoint will be removed in a future version.
+   */
   get_hut_bookings_geojson: {
     parameters: {
       query?: {
@@ -775,8 +1304,10 @@ export interface operations {
         slugs?: string | null;
         /** @description Show bookings for this many days. */
         days?: number;
-        /** @description Date to start with booking (yyyy-mm-dd or now). */
-        date?: string | 'now';
+        /** @description Date to start with bookings (yyyy-mm-dd, 'now' or 'weekend'). */
+        date?: string | ('now' | 'weekend');
+        /** @description Time in seconds to wait between requests to the booking service for each hut. If not set uses recommanded default value. */
+        request_interval?: number | null;
       };
     };
     responses: {
@@ -784,6 +1315,136 @@ export interface operations {
       200: {
         content: {
           'application/json': components['schemas']['HutBookingsFeatureCollection'];
+        };
+      };
+    };
+  };
+  /** Get Hut Types */
+  get_hut_types: {
+    parameters: {
+      query?: {
+        /** @description Select language code: de, en, fr, it. */
+        lang?: string;
+        /** @description Comma separated list with field names, use `__all__` in order to include every field. */
+        include?: unknown;
+        /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
+        exclude?: unknown;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          'application/json': components['schemas']['HutTypeDetailSchema'][];
+        };
+      };
+    };
+  };
+  /** Get Hut Type Records */
+  get_hut_type_records: {
+    parameters: {
+      query?: {
+        /** @description Select language code: de, en, fr, it. */
+        lang?: string;
+        /** @description Comma separated list with field names, use `__all__` in order to include every field. */
+        include?: unknown;
+        /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
+        exclude?: unknown;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          'application/json': {
+            [key: string]: components['schemas']['HutTypeDetailSchema'];
+          };
+        };
+      };
+    };
+  };
+  /**
+   * Get Hut Availability Geojson
+   * @description Get availability data as GeoJSON FeatureCollection for map visualization.
+   */
+  get_hut_availability_geojson: {
+    parameters: {
+      query?: {
+        /** @description Select language code: de, en, fr, it. */
+        lang?: string;
+        /** @description Comma-separated list of hut slugs to filter (e.g., 'aarbiwak,almageller'). If not set, returns all huts. */
+        slugs?: string | null;
+        /** @description Number of days to fetch from start date. */
+        days?: number;
+        /** @description Pagination offset for results. */
+        offset?: number;
+        /** @description Maximum number of huts to return. If not set, returns all matching huts. */
+        limit?: number | null;
+      };
+      path: {
+        /** @description Start date. Accepts ISO dates (2026-01-15, 26-01-15), European format (15.01.2026), or keywords: 'now', 'today', 'weekend'. */
+        date: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          'application/json': components['schemas']['HutAvailabilityFeatureCollection'];
+        };
+      };
+    };
+  };
+  /**
+   * Get Hut Availability Current
+   * @description Get current availability data for a specific hut with detailed metadata and booking links.
+   */
+  get_hut_availability_current: {
+    parameters: {
+      query?: {
+        /** @description Select language code: de, en, fr, it. */
+        lang?: string;
+        /** @description Number of days to fetch from start date. */
+        days?: number;
+      };
+      path: {
+        slug: string;
+        /** @description Start date. Accepts ISO dates (2026-01-15, 26-01-15), European format (15.01.2026), or keywords: 'now', 'today', 'weekend'. */
+        date: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          'application/json': components['schemas']['CurrentAvailabilitySchema'];
+        };
+      };
+    };
+  };
+  /**
+   * Get Hut Availability Trend
+   * @description Get historical availability trend data showing how availability changed over time for a specific date.
+   */
+  get_hut_availability_trend: {
+    parameters: {
+      query?: {
+        /** @description Select language code: de, en, fr, it. */
+        lang?: string;
+        /** @description How many days back to show history from the target date. */
+        limit?: number;
+      };
+      path: {
+        slug: string;
+        /** @description Target date to analyze. Accepts ISO dates (2026-01-15, 26-01-15), European format (15.01.2026), or keywords: 'now', 'today', 'weekend'. */
+        date: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          'application/json': components['schemas']['AvailabilityTrendSchema'];
         };
       };
     };
@@ -863,50 +1524,6 @@ export interface operations {
       200: {
         content: {
           'application/json': components['schemas']['HutSchemaDetails'];
-        };
-      };
-    };
-  };
-  /** Get Hut Types */
-  get_hut_types: {
-    parameters: {
-      query?: {
-        /** @description Select language code: de, en, fr, it. */
-        lang?: string;
-        /** @description Comma separated list with field names, use `__all__` in order to include every field. */
-        include?: unknown;
-        /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
-        exclude?: unknown;
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          'application/json': components['schemas']['HutTypeDetailSchema'][];
-        };
-      };
-    };
-  };
-  /** Get Hut Type Records */
-  get_hut_type_records: {
-    parameters: {
-      query?: {
-        /** @description Select language code: de, en, fr, it. */
-        lang?: string;
-        /** @description Comma separated list with field names, use `__all__` in order to include every field. */
-        include?: unknown;
-        /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
-        exclude?: unknown;
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          'application/json': {
-            [key: string]: components['schemas']['HutTypeDetailSchema'];
-          };
         };
       };
     };
