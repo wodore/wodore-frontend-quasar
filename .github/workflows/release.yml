@@ -1,0 +1,52 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  repository_dispatch:
+    types: [new-tag-created]
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for git-cliff
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Get latest changelog
+        id: changelog
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "Current version: $VERSION"
+          echo "version=${VERSION}" >> $GITHUB_ENV
+          echo "body<<EOF" >> $GITHUB_ENV
+          BODY=$(yarn run git-cliff --strip all -l --latest)
+          echo "Changelog body:"
+          echo "$BODY"
+          echo "${BODY}" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.version }}
+          name: ${{ env.version }}
+          body: ${{ env.body }}
+          draft: false
+          prerelease: false
+          make_latest: true
