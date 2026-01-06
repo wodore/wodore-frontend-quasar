@@ -20,11 +20,13 @@ The project uses [git-cliff](https://git-cliff.org/) for changelog generation an
 Before creating a release, ensure you have:
 
 1. **GitHub Personal Access Token** with `repo` access
+
    ```bash
    export GITHUB_TOKEN=your_github_token_here
    ```
 
 2. **Clean working directory** (all changes committed)
+
    ```bash
    git status  # Should show "nothing to commit, working tree clean"
    ```
@@ -50,6 +52,7 @@ yarn release --dry --length 50
 ```
 
 This is useful to verify that:
+
 - All merged PRs have appropriate labels
 - The changelog format looks correct
 - The version bump will be correct
@@ -63,6 +66,7 @@ yarn release
 ```
 
 The script will:
+
 1. Generate the new version number based on commit history
 2. Update `CHANGELOG.md` with new entries
 3. Open the changelog in your editor for review (uses `$EDITOR` or `vi`)
@@ -72,6 +76,7 @@ The script will:
 **Important**: Review the changelog carefully! Make any necessary edits before saving and exiting the editor.
 
 When prompted, confirm the commit:
+
 ```
 Do you want to commit these changes? (y/n) y
 ```
@@ -100,6 +105,7 @@ yarn release --add-tag
 #### 4. Automated Build and Publish
 
 Once the release tag is pushed to GitHub, the CI/CD pipeline automatically:
+
 - Builds the Docker image
 - Tags it with the version number (e.g., `vX.Y.Z`) and `latest`
 - Publishes to GitHub Container Registry
@@ -132,6 +138,7 @@ yarn release --help
 The version is automatically determined by git-cliff based on:
 
 1. **PR Labels**: Configure in `cliff.toml`
+
    - `BREAKING` - Major version bump (1.0.0 → 2.0.0)
    - `type:feature` - Minor version bump (1.0.0 → 1.1.0)
    - `type:bug`, `type:refactor`, etc. - Patch version bump (1.0.0 → 1.0.1)
@@ -160,6 +167,7 @@ The changelog groups changes by PR labels (from highest to lowest priority):
 To ensure changes appear in the changelog:
 
 1. Add appropriate labels to PRs before merging:
+
    - `type:feature` - New features
    - `type:bug` - Bug fixes
    - `type:refactor` - Code refactoring
@@ -224,6 +232,7 @@ Create a token at: https://github.com/settings/tokens (needs `repo` scope)
 #### Issue: No version bump detected
 
 This happens when:
+
 - No PRs have been merged since last release
 - All PRs are labeled `INTERNAL`
 - No commit messages follow conventional commit format
@@ -241,23 +250,27 @@ Solution: Manually bump version in `package.json` or add appropriate PR labels.
 ### Feature Development
 
 1. **Create feature branch**
+
    ```bash
    git checkout -b feature/my-feature
    ```
 
 2. **Develop and test**
+
    ```bash
    yarn dev
    # Make changes, test locally
    ```
 
 3. **Ensure code quality**
+
    ```bash
    yarn lint:fix
    yarn format
    ```
 
 4. **Commit changes**
+
    ```bash
    git add .
    git commit -m "Add new feature"
@@ -456,6 +469,7 @@ docker run wodore-frontend env
 #### Authentication Not Working
 
 1. Verify OIDC environment variables:
+
    - `WODORE_OICD_ISSUER_URL`
    - `WODORE_OICD_CLIENT_ID`
    - `WODORE_OICD_RESOURCE_ID`
