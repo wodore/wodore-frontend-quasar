@@ -6,9 +6,6 @@
     <em><b><a href="https://wodo.re" style="color: inherit; text-decoration: none;">wodo.re</a></b> frontend application</em>
 </p>
 <p align="center">
-    <em>Where to find your peak mountain base</em>
-</p>
-<p align="center">
     <b><a href="https://wodo.re">wodo.re</a></b>
     &#9679; <b><a href="https://hub.wodore.com/">hub.wodore.com</a></b> </br>
     <small><a href="https://github.com/wodore/wodore-frontend-quasar/pkgs/container/wodore-frontend-quasar">docker images</a>
