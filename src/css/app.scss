@@ -59,7 +59,9 @@
 // Input button - compact button styled like a field for icon-only interactions
 .wd-input-button {
   padding: 0;
-  transition: background-color 0.2s ease, opacity 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    opacity 0.2s ease;
 
   .q-field__inner,
   .q-field__control {
@@ -90,5 +92,3 @@
 @import './fonts.scss';
 // Maplibre overwrites
 @import './maplibre-gl.scss';
-
-
