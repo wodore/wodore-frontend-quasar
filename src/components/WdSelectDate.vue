@@ -236,6 +236,33 @@ const showCalendarError = computed(() => {
   //// Default: show error
   //return true;
 });
+
+// Arrow navigation functions
+function incrementDate() {
+  if (selectedDateObj.value === undefined) {
+    // If no date selected, set to today
+    selectedDate.value = formatDate(Date.now(), 'DD.MM.YY');
+  } else {
+    const newDate = addToDate(selectedDateObj.value, { days: 1 });
+    selectedDate.value = formatDate(newDate, 'DD.MM.YY');
+  }
+}
+
+function decrementDate() {
+  if (selectedDateObj.value === undefined) {
+    // If no date selected, set to today
+    selectedDate.value = formatDate(Date.now(), 'DD.MM.YY');
+  } else {
+    const newDate = addToDate(selectedDateObj.value, { days: -1 });
+    const today = formatDate(Date.now(), 'YYYY/MM/DD');
+    const newDateFormatted = formatDate(newDate, 'YYYY/MM/DD');
+
+    // Don't allow going before today
+    if (newDateFormatted >= today) {
+      selectedDate.value = formatDate(newDate, 'DD.MM.YY');
+    }
+  }
+}
 </script>
 
 <style scoped>
@@ -267,7 +294,11 @@ const showCalendarError = computed(() => {
       'q-ml-xs': isMobile,
     }"
     class="q-mr-md"
-    style="max-width: 130px; max-height: 40px"
+    :style="
+      isMobile
+        ? 'max-width: 130px; max-height: 40px'
+        : 'max-width: 210px; max-height: 40px'
+    "
   >
     <!-- CALENDAR -->
     <q-popup-proxy
@@ -490,32 +521,66 @@ const showCalendarError = computed(() => {
       >
     </q-btn> -->
     <!-- DESKTOP - textfiled -->
-    <div id="select-date-huts-location">
-      <!-- class="gt-xs" -->
-      <q-input
-        id="menu"
-        readonly
-        v-model="selectedDate"
-        dense
-        dark
-        standout
-        class="toolbar-font"
-        @click="showMenu = true"
+    <div class="row no-wrap items-start" style="gap: 6px">
+      <div
+        v-if="!isMobile"
+        @click="decrementDate"
+        class="q-field row no-wrap items-start q-field--standout q-field--dense q-field--dark q-field--readonly cursor-pointer"
+        style="max-width: 22px"
       >
-        <!-- </q-input>:rules="[
-          (v) => /^[0-3]\d\.[0-1]\d\.\d\d$/.test(v) || 'Format: dd.mm.yy',
-        ]"
-        -->
-        <template v-slot:append>
-          <q-icon
-            @click="showMenu = true"
-            name="wd-calendar"
-            class="text-icon cursor-pointer"
-            size="sm"
-          >
-          </q-icon>
-        </template>
-      </q-input>
+        <div class="q-field__inner relative-position col self-stretch">
+          <div class="q-field__control relative-position row no-wrap">
+            <div
+              class="q-field__control-container col relative-position row items-center justify-center no-wrap q-anchor--skip"
+            >
+              <q-icon name="wd-arrowhead-left" size="sm" color="white" />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="select-date-huts-location" style="flex: 1">
+        <!-- class="gt-xs" -->
+        <q-input
+          id="menu"
+          readonly
+          v-model="selectedDate"
+          dense
+          dark
+          standout
+          class="toolbar-font"
+          @click="showMenu = true"
+        >
+          <!-- </q-input>:rules="[
+            (v) => /^[0-3]\d\.[0-1]\d\.\d\d$/.test(v) || 'Format: dd.mm.yy',
+          ]"
+          -->
+          <template v-slot:append>
+            <q-icon
+              @click="showMenu = true"
+              name="wd-calendar"
+              class="text-icon cursor-pointer"
+              size="sm"
+            >
+            </q-icon>
+          </template>
+        </q-input>
+      </div>
+      <div
+        v-if="!isMobile"
+        @click="incrementDate"
+        class="q-field row no-wrap items-start q-field--standout q-field--dense q-field--dark q-field--readonly cursor-pointer"
+        style="max-width: 22px"
+      >
+        <div class="q-field__inner relative-position col self-stretch">
+          <div class="q-field__control relative-position row no-wrap">
+            <div
+              class="q-field__control-container col relative-position row items-center justify-center no-wrap q-anchor--skip"
+            >
+              <q-icon name="wd-arrowhead-right" size="sm" color="white" />
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>

@@ -24,8 +24,10 @@
     "bell-outline": 61719,
     "at": 61720,
     "arrowhead-up": 61721,
-    "arrowhead-down": 61722,
-    "arrow-up-down": 61723,
-    "add": 61724,
-    "add-outline": 61725
+    "arrowhead-right": 61722,
+    "arrowhead-left": 61723,
+    "arrowhead-down": 61724,
+    "arrow-up-down": 61725,
+    "add": 61726,
+    "add-outline": 61727
 }
