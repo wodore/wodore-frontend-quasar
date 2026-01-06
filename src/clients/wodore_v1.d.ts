@@ -49,6 +49,13 @@ export interface paths {
      */
     get: operations['get_hut_availability_trend'];
   };
+  '/v1/huts/search': {
+    /**
+     * Search Huts
+     * @description Search for huts using fuzzy text search across all language fields.
+     */
+    get: operations['search_huts'];
+  };
   '/v1/huts/huts': {
     /**
      * Get Huts
@@ -81,6 +88,13 @@ export interface paths {
   '/v1/feedback/': {
     /** Create Feedback */
     post: operations['server_apps_feedbacks_api_create_feedback'];
+  };
+  '/v1/version': {
+    /**
+     * Get Version
+     * @description Get version information including git hash, package version, build timestamp, and environment.
+     */
+    get: operations['server_apps_utils_api_get_version'];
   };
 }
 
@@ -730,6 +744,44 @@ export interface components {
       data: components['schemas']['AvailabilityTrendDaySchema'][];
     };
     /**
+     * IncludeModeEnum
+     * @description Include mode enum for search endpoint - controls level of detail.
+     * @enum {string}
+     */
+    IncludeModeEnum: 'no' | 'slug' | 'all';
+    /**
+     * CapacitySimpleSchema
+     * @description Simplified capacity schema for search results.
+     */
+    CapacitySimpleSchema: {
+      /** Open */
+      open?: number | null;
+      /** Closed */
+      closed?: number | null;
+    };
+    /**
+     * HutSearchResultSchema
+     * @description Simplified schema for hut search results - optimized for fast autocomplete.
+     */
+    HutSearchResultSchema: {
+      /** Name */
+      name: string;
+      /** Slug */
+      slug: string;
+      /** Hut Type */
+      hut_type?: unknown;
+      capacity: components['schemas']['CapacitySimpleSchema'];
+      location: components['schemas']['LocationSchema'];
+      /** Elevation */
+      elevation?: number | null;
+      /** Avatar */
+      avatar?: string | null;
+      /** Score */
+      score: number;
+      /** Sources */
+      sources?: unknown;
+    };
+    /**
      * TristateEnum
      * @description Tristate enum with `true`, `false` and `unset`.
      * @enum {string}
@@ -745,8 +797,11 @@ export interface components {
      */
     AnswerEnum: 'yes' | 'yesish' | 'maybe' | 'noish' | 'no' | 'unknown';
     CountryTuple: [string, string];
-    /** HutSchemaDetails */
-    HutSchemaDetails: {
+    /**
+     * HutSchemaList
+     * @description Schema for hut list endpoints (without created/modified timestamps).
+     */
+    HutSchemaList: {
       /** Slug */
       slug: string;
       /** Name */
@@ -791,10 +846,10 @@ export interface components {
       /** Images */
       images: components['schemas']['ImageInfoSchema'][] | null;
       open_monthly?: components['schemas']['OpenMonthlySchema'] | null;
-      /** Edit Link */
-      edit_link?: string | null;
-      /** Translations */
-      translations?: unknown;
+      /** Has Availability */
+      has_availability?: boolean | null;
+      /** Availability Source */
+      availability_source?: string | null;
     };
     /** HutTypeSchema */
     HutTypeSchema: {
@@ -1157,6 +1212,68 @@ export interface components {
        */
       exclude?: unknown;
     };
+    /**
+     * HutSchemaDetails
+     * @description Schema for single hut detail endpoint (with all details including timestamps).
+     */
+    HutSchemaDetails: {
+      /** Slug */
+      slug: string;
+      /** Name */
+      name: string | null;
+      /** Description */
+      description: string | null;
+      /** Description Attribution */
+      description_attribution: string;
+      owner: components['schemas']['OwnerSchema'] | null;
+      /** Review Status */
+      review_status?: string | null;
+      /** Is Public */
+      is_public?: boolean | null;
+      /** Is Active */
+      is_active?: boolean | null;
+      /** Is Modified */
+      is_modified?: boolean | null;
+      type_open?: components['schemas']['HutTypeSchema'] | null;
+      type_closed?: components['schemas']['HutTypeSchema'] | null;
+      /** Elevation */
+      elevation?: number | null;
+      location?: components['schemas']['LocationSchema'] | null;
+      /** Url */
+      url?: string | null;
+      country?: components['schemas']['CountryTuple'] | null;
+      /** Capacity Open */
+      capacity_open?: number | null;
+      /** Capacity Closed */
+      capacity_closed?: number | null;
+      /** Sources */
+      sources: components['schemas']['OrganizationBaseSchema'][] | null;
+      /**
+       * Photos
+       * @default
+       */
+      photos?: string;
+      /**
+       * Photos Attribution
+       * @default
+       */
+      photos_attribution?: string;
+      /** Images */
+      images: components['schemas']['ImageInfoSchema'][] | null;
+      open_monthly?: components['schemas']['OpenMonthlySchema'] | null;
+      /** Has Availability */
+      has_availability?: boolean | null;
+      /** Availability Source */
+      availability_source?: string | null;
+      /** Edit Link */
+      edit_link?: string | null;
+      /** Translations */
+      translations?: unknown;
+      /** Created */
+      created?: string | null;
+      /** Modified */
+      modified?: string | null;
+    };
     /** FieldsParam[OrganizationOptional] */
     FieldsParam_OrganizationOptional_: {
       /**
@@ -1247,6 +1364,33 @@ export interface components {
       message: string;
       /** Get Updates */
       get_updates: boolean;
+    };
+    /** VersionSchema */
+    VersionSchema: {
+      /**
+       * Hash
+       * @description Git commit hash
+       * @example abc123e
+       */
+      hash: string;
+      /**
+       * Version
+       * @description Sematic version
+       * @example 1.2.0
+       */
+      version: string;
+      /**
+       * Timestamp
+       * Format: date-time
+       * @description Build timestamp
+       */
+      timestamp: string;
+      /**
+       * Environment
+       * @description Current environment (development, production)
+       * @example production
+       */
+      environment: string;
     };
   };
   responses: never;
@@ -1450,6 +1594,43 @@ export interface operations {
     };
   };
   /**
+   * Search Huts
+   * @description Search for huts using fuzzy text search across all language fields.
+   */
+  search_huts: {
+    parameters: {
+      query: {
+        /** @description Select language code: de, en, fr, it. */
+        lang?: string;
+        /**
+         * @description Search query string to match against hut names in all languages
+         * @example rotond
+         */
+        q: string;
+        /** @description Number of results to skip for pagination */
+        offset?: number;
+        /** @description Maximum number of results to return */
+        limit?: number | null;
+        /** @description Minimum similarity score (0.0-1.0). Lower values return more results but with lower relevance. Recommended: 0.1 for fuzzy matching, 0.3 for stricter matching. */
+        threshold?: number;
+        /** @description Include hut type information: 'no' excludes field, 'slug' returns type slugs only, 'all' returns full type details with icons */
+        include_hut_type?: 'no' | 'slug' | 'all';
+        /** @description Include data sources: 'no' excludes field, 'slug' returns source slugs only, 'all' returns full source details with logos */
+        include_sources?: 'no' | 'slug' | 'all';
+        /** @description Include avatar/primary photo URL in results */
+        include_avatar?: boolean;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          'application/json': components['schemas']['HutSearchResultSchema'][];
+        };
+      };
+    };
+  };
+  /**
    * Get Huts
    * @description Get a list with huts.
    */
@@ -1463,13 +1644,14 @@ export interface operations {
         is_modified?: 'true' | 'false' | 'unset';
         is_public?: 'true' | 'false' | 'unset';
         is_active?: 'true' | 'false' | 'unset';
+        has_availability?: 'true' | 'false' | 'unset';
       };
     };
     responses: {
       /** @description OK */
       200: {
         content: {
-          'application/json': components['schemas']['HutSchemaDetails'][];
+          'application/json': components['schemas']['HutSchemaList'][];
         };
       };
     };
@@ -1482,6 +1664,7 @@ export interface operations {
         lang?: string;
         offset?: number;
         limit?: number | null;
+        has_availability?: 'true' | 'false' | 'unset';
         embed_all?: boolean;
         embed_type?: boolean;
         embed_owner?: boolean;
@@ -1489,6 +1672,7 @@ export interface operations {
         embed_sources?: boolean;
         include_elevation?: boolean;
         include_name?: boolean;
+        include_has_availability?: boolean;
         flat?: boolean;
       };
     };
@@ -1594,6 +1778,20 @@ export interface operations {
       200: {
         content: {
           'application/json': components['schemas']['ResponseSchema'];
+        };
+      };
+    };
+  };
+  /**
+   * Get Version
+   * @description Get version information including git hash, package version, build timestamp, and environment.
+   */
+  server_apps_utils_api_get_version: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          'application/json': components['schemas']['VersionSchema'];
         };
       };
     };
