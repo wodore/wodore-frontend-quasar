@@ -308,18 +308,6 @@ const handleDateInputSwipe: TouchSwipeValue = (e) => {
 .no-text-transform {
   text-transform: none !important;
 }
-
-.arrow-button {
-  transition: background-color 0.2s ease, opacity 0.2s ease;
-}
-
-.arrow-button:not(.cursor-not-allowed):hover {
-  background-color: rgba(255, 255, 255, 0.1) !important;
-}
-
-.arrow-button:not(.cursor-not-allowed):active {
-  opacity: 0.7;
-}
 </style>
 <style lang="scss">
 .no-trans .q-transition {
@@ -365,10 +353,10 @@ const handleDateInputSwipe: TouchSwipeValue = (e) => {
               <q-item-section v-if="!showCalendarError">
                 <q-item-label class="text-h6 text-accent">{{
                   selectedDateDay
-                }}</q-item-label>
+                  }}</q-item-label>
                 <q-item-label class="text-body2 text-primary-100">{{
                   selectedDateLongName
-                }}</q-item-label>
+                  }}</q-item-label>
               </q-item-section>
               <!-- ERROR MESSAGE HEADER -->
               <q-item-section v-else>
@@ -469,14 +457,13 @@ const handleDateInputSwipe: TouchSwipeValue = (e) => {
     <!-- DESKTOP - textfiled -->
     <div class="row no-wrap items-start" style="gap: 4px">
       <div v-if="!isMobile" @click="decrementDate"
-        class="q-field row no-wrap items-start q-field--standout q-field--dense q-field--dark q-field--readonly arrow-button"
-        :class="{ 'cursor-pointer': !decrementDisabled, 'cursor-not-allowed': decrementDisabled }"
-        style="width: 22px; min-width: 22px; max-width: 22px" :style="{ opacity: decrementDisabled ? 0.4 : 1 }">
-        <div class="q-field__inner relative-position col self-stretch" style="padding: 0">
-          <div class="q-field__control relative-position row no-wrap" style="padding: 0">
+        class="q-field row no-wrap items-start q-field--standout q-field--dense q-field--dark q-field--readonly wd-input-button"
+        :class="{ 'wd-input-button--disabled': decrementDisabled, 'cursor-pointer': !decrementDisabled }"
+        style="width: 22px; min-width: 22px; max-width: 22px">
+        <div class="q-field__inner relative-position col self-stretch">
+          <div class="q-field__control relative-position row no-wrap">
             <div
-              class="q-field__control-container col relative-position row items-center justify-center no-wrap q-anchor--skip"
-              style="padding: 0">
+              class="q-field__control-container col relative-position row items-center justify-center no-wrap q-anchor--skip">
               <q-icon size="sm" class="text-icon">
                 <IconEvaArrowIosBackOutline />
               </q-icon>
@@ -504,13 +491,12 @@ const handleDateInputSwipe: TouchSwipeValue = (e) => {
         </div>
       </div>
       <div v-if="!isMobile" @click="incrementDate"
-        class="q-field row no-wrap items-start q-field--standout q-field--dense q-field--dark q-field--readonly cursor-pointer arrow-button"
+        class="q-field row no-wrap items-start q-field--standout q-field--dense q-field--dark q-field--readonly cursor-pointer wd-input-button"
         style="width: 22px; min-width: 22px; max-width: 22px">
-        <div class="q-field__inner relative-position col self-stretch" style="padding: 0">
-          <div class="q-field__control relative-position row no-wrap" style="padding: 0">
+        <div class="q-field__inner relative-position col self-stretch">
+          <div class="q-field__control relative-position row no-wrap">
             <div
-              class="q-field__control-container col relative-position row items-center justify-center no-wrap q-anchor--skip"
-              style="padding: 0">
+              class="q-field__control-container col relative-position row items-center justify-center no-wrap q-anchor--skip">
               <q-icon size="sm" class="text-icon">
                 <IconEvaArrowIosForwardOutline />
               </q-icon>

@@ -53,6 +53,33 @@
   overflow: hidden;
 }
 
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// COMPONENTS
+
+// Input button - compact button styled like a field for icon-only interactions
+.wd-input-button {
+  padding: 0;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+
+  .q-field__inner,
+  .q-field__control {
+    padding: 0;
+  }
+
+  &:not(.wd-input-button--disabled):hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+  }
+
+  &:not(.wd-input-button--disabled):active {
+    opacity: 0.7;
+  }
+
+  &.wd-input-button--disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
 // months colors
 @import './months.scss';
 
@@ -63,3 +90,5 @@
 @import './fonts.scss';
 // Maplibre overwrites
 @import './maplibre-gl.scss';
+
+
