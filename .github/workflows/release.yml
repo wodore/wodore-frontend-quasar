@@ -34,10 +34,10 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           echo "Current version: $VERSION"
           echo "version=${VERSION}" >> $GITHUB_ENV
-          echo "body<<EOF" >> $GITHUB_ENV
-          BODY=$(yarn run git-cliff --strip all -l --latest)
+          BODY=$(./node_modules/.bin/git-cliff --strip all --latest)
           echo "Changelog body:"
           echo "$BODY"
+          echo "body<<EOF" >> $GITHUB_ENV
           echo "${BODY}" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
