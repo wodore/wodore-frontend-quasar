@@ -40,13 +40,28 @@ const selectedDateDay = computed<string>(() => {
   }
   return 'Datum auswählen';
 });
+const selectedDateDisplay = computed(() => {
+  if (selectedDateObj.value !== undefined && selectedDate.value) {
+    if (!isMobile.value) {
+      const dayShort = formatDate(selectedDateObj.value, 'dd');
+      return `${selectedDate.value} • ${dayShort}`;
+    }
+    return selectedDate.value;
+  }
+  return selectedDate.value || '';
+});
 const isMobile = computed(() => {
   return $q.screen.xs;
 });
 const showMenu = ref(false);
+
+// Allow selecting dates from 2 days before today
+const minSelectableDate = computed(() => {
+  return formatDate(addToDate(Date.now(), { days: -2 }), 'YYYY/MM/DD');
+});
+
 function dateRangeOptions(date: string) {
-  const today = formatDate(Date.now(), 'YYYY/MM/DD');
-  return date >= today;
+  return date >= minSelectableDate.value;
 }
 
 // hack, because the date always make a transition when i goes to the correct date
@@ -254,15 +269,35 @@ function decrementDate() {
     selectedDate.value = formatDate(Date.now(), 'DD.MM.YY');
   } else {
     const newDate = addToDate(selectedDateObj.value, { days: -1 });
-    const today = formatDate(Date.now(), 'YYYY/MM/DD');
     const newDateFormatted = formatDate(newDate, 'YYYY/MM/DD');
 
-    // Don't allow going before today
-    if (newDateFormatted >= today) {
+    // Don't allow going before minSelectableDate (2 days before today)
+    if (newDateFormatted >= minSelectableDate.value) {
       selectedDate.value = formatDate(newDate, 'DD.MM.YY');
     }
   }
 }
+
+// Check if decrement is disabled (can't go before 2 days ago)
+const decrementDisabled = computed(() => {
+  if (selectedDateObj.value === undefined) {
+    return false; // Allow setting to today
+  }
+  const currentDateFormatted = formatDate(selectedDateObj.value, 'YYYY/MM/DD');
+  return currentDateFormatted <= minSelectableDate.value;
+});
+
+// Handle swipe gestures on date input
+const handleDateInputSwipe: TouchSwipeValue = (e) => {
+  e.evt?.preventDefault();
+  e.evt?.stopPropagation();
+  if (e.direction == 'right' && !decrementDisabled.value) {
+    decrementDate();
+  }
+  if (e.direction == 'left') {
+    incrementDate();
+  }
+};
 </script>
 
 <style scoped>
@@ -521,29 +556,35 @@ function decrementDate() {
       >
     </q-btn> -->
     <!-- DESKTOP - textfiled -->
-    <div class="row no-wrap items-start" style="gap: 6px">
+    <div class="row no-wrap items-start" style="gap: 4px">
       <div
         v-if="!isMobile"
         @click="decrementDate"
-        class="q-field row no-wrap items-start q-field--standout q-field--dense q-field--dark q-field--readonly cursor-pointer"
-        style="max-width: 22px"
+        class="q-field row no-wrap items-start q-field--standout q-field--dense q-field--dark q-field--readonly wd-input-button"
+        :class="{
+          'wd-input-button--disabled': decrementDisabled,
+          'cursor-pointer': !decrementDisabled,
+        }"
+        style="width: 22px; min-width: 22px; max-width: 22px"
       >
         <div class="q-field__inner relative-position col self-stretch">
           <div class="q-field__control relative-position row no-wrap">
             <div
               class="q-field__control-container col relative-position row items-center justify-center no-wrap q-anchor--skip"
             >
-              <q-icon name="wd-arrowhead-left" size="sm" color="white" />
+              <q-icon size="sm" class="text-icon">
+                <IconEvaArrowIosBackOutline />
+              </q-icon>
             </div>
           </div>
         </div>
       </div>
-      <div id="select-date-huts-location" style="flex: 1">
+      <div id="select-date-huts-location" style="flex: 1; position: relative">
         <!-- class="gt-xs" -->
         <q-input
           id="menu"
           readonly
-          v-model="selectedDate"
+          :model-value="selectedDateDisplay"
           dense
           dark
           standout
@@ -564,19 +605,35 @@ function decrementDate() {
             </q-icon>
           </template>
         </q-input>
+        <!-- Swipe overlay -->
+        <div
+          v-touch-swipe.mouse.horizontal="handleDateInputSwipe"
+          style="
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1;
+            pointer-events: auto;
+          "
+          @click="showMenu = true"
+        ></div>
       </div>
       <div
         v-if="!isMobile"
         @click="incrementDate"
-        class="q-field row no-wrap items-start q-field--standout q-field--dense q-field--dark q-field--readonly cursor-pointer"
-        style="max-width: 22px"
+        class="q-field row no-wrap items-start q-field--standout q-field--dense q-field--dark q-field--readonly cursor-pointer wd-input-button"
+        style="width: 22px; min-width: 22px; max-width: 22px"
       >
         <div class="q-field__inner relative-position col self-stretch">
           <div class="q-field__control relative-position row no-wrap">
             <div
               class="q-field__control-container col relative-position row items-center justify-center no-wrap q-anchor--skip"
             >
-              <q-icon name="wd-arrowhead-right" size="sm" color="white" />
+              <q-icon size="sm" class="text-icon">
+                <IconEvaArrowIosForwardOutline />
+              </q-icon>
             </div>
           </div>
         </div>
