@@ -21,13 +21,22 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          # Don't cache yarn - we'll cache ESLint instead
           cache: 'yarn'
+
+      - name: Cache ESLint
+        uses: actions/cache@v4
+        with:
+          path: .eslintcache
+          key: eslint-${{ runner.os }}-${{ hashFiles('**/*.ts', '**/*.vue', '**/*.js', '.eslintrc.*') }}
+          restore-keys: |
+            eslint-${{ runner.os }}-
 
       - name: Install dependencies
         run: yarn install --immutable
 
       - name: Run linter
-        run: yarn run lint
+        run: yarn run lint --cache --cache-location .eslintcache
 
       - name: Check formatting
         run: yarn run format --check
