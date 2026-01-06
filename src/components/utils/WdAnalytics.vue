@@ -7,6 +7,7 @@ onMounted(() => {
     script.async = true;
     script.defer = true;
     script.dataset.websiteId = process.env.WODORE_UMAMI_WEBSITE_ID;
+    script.dataset.excludeHash = "true";
     let url: string;
     if (process.env.PROD && process.env.WODORE_UMAMI_WEBSITE_URL) {
       url = `${process.env.WODORE_UMAMI_WEBSITE_URL}`;
