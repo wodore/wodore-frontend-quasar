@@ -60,8 +60,8 @@ if [ -z "$GITHUB_TOKEN" ]; then
     exit 1
 fi
 
-# Get new tag
-NEW_TAG=$(yarn run git-cliff --bumped-version)
+# Get new tag using git-cliff directly from node_modules to avoid yarn output
+NEW_TAG=$(./node_modules/.bin/git-cliff --bumped-version)
 NEW_VERSION=${NEW_TAG//v/}
 
 if [ "$DRY" = true ]; then
@@ -73,15 +73,15 @@ if [ "$DRY" = true ]; then
     
     echo "=== Changelog start ==="
     if [ "$UNRELEASED" = true ]; then
-        yarn run git-cliff --bump --unreleased
+        ./node_modules/.bin/git-cliff --bump --unreleased
     else
-        yarn run git-cliff --bump | head -n $LENGTH
+        ./node_modules/.bin/git-cliff --bump | head -n $LENGTH
         echo "..."
     fi
     echo "=== Changelog end ==="
 else
     # Update changelog and version
-    yarn run git-cliff --bump -u --prepend CHANGELOG.md
+    ./node_modules/.bin/git-cliff --bump -u --prepend CHANGELOG.md
     
     # Open changelog in editor for review
     echo "Opening CHANGELOG.md in your editor for review..."
