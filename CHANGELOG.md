@@ -7,6 +7,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.3] - 2026-01-06
+
+#### 🚀 Features
+
+- Exclude hash while tracking with umami ([#27]) - [6922443]
+- Add previous and forward button for date selection ([#26]) - [d369088]
+
+#### 📘 Documentation
+
+- Update README and add CLAUDE.md ([#28]) - [debb469]
+
+#### 💻 Tooling
+
+- Fix release script ([#30]) - [8d7d7f7]
+- Improve quality workflow ([#29]) - [9b1956b]
+
+[#27]: https://github.com/wodore/wodore-frontend-quasar/pull/27
+[6922443]: https://github.com/wodore/wodore-frontend-quasar/commit/6922443739186d4f8afdc635a98b12c7a02a670f
+[#26]: https://github.com/wodore/wodore-frontend-quasar/pull/26
+[d369088]: https://github.com/wodore/wodore-frontend-quasar/commit/d36908826a249c9ff22f87c3715ac4bfd0a20c9b
+[#28]: https://github.com/wodore/wodore-frontend-quasar/pull/28
+[debb469]: https://github.com/wodore/wodore-frontend-quasar/commit/debb4697a3576d8edac4cc33ce176a325b8de5bc
+[#30]: https://github.com/wodore/wodore-frontend-quasar/pull/30
+[8d7d7f7]: https://github.com/wodore/wodore-frontend-quasar/commit/8d7d7f7f362ad62c2475fe2ad123216c6ffaac27
+[#29]: https://github.com/wodore/wodore-frontend-quasar/pull/29
+[9b1956b]: https://github.com/wodore/wodore-frontend-quasar/commit/9b1956bc640757c7c0385267f295aa2112ab416f
+[0.0.3]: https://github.com/wodore/wodore-frontend-quasar/compare/v0.0.2..v0.0.3
+
 ## [0.0.2] - 2026-01-01
 
 #### 🚀 Features
