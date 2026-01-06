@@ -1,7 +1,7 @@
 @font-face {
     font-family: "icons";
-    src: url("./icons.woff?7cb32074ff760e76b7273c218954e96e") format("woff"),
-url("./icons.woff2?7cb32074ff760e76b7273c218954e96e") format("woff2");
+    src: url("./icons.woff?625e9eac8569cc65ede0529f36a72d4c") format("woff"),
+url("./icons.woff2?625e9eac8569cc65ede0529f36a72d4c") format("woff2");
 }
 
 i[class^="wd-"]:before, i[class*=" wd-"]:before {
@@ -90,15 +90,21 @@ i[class^="wd-"]:before, i[class*=" wd-"]:before {
 .wd-arrowhead-up:before {
     content: "\f119";
 }
-.wd-arrowhead-down:before {
+.wd-arrowhead-right:before {
     content: "\f11a";
 }
-.wd-arrow-up-down:before {
+.wd-arrowhead-left:before {
     content: "\f11b";
 }
-.wd-add:before {
+.wd-arrowhead-down:before {
     content: "\f11c";
 }
-.wd-add-outline:before {
+.wd-arrow-up-down:before {
     content: "\f11d";
+}
+.wd-add:before {
+    content: "\f11e";
+}
+.wd-add-outline:before {
+    content: "\f11f";
 }

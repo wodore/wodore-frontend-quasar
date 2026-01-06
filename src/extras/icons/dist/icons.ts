@@ -24,6 +24,8 @@ export type IconsId =
   | 'bell-outline'
   | 'at'
   | 'arrowhead-up'
+  | 'arrowhead-right'
+  | 'arrowhead-left'
   | 'arrowhead-down'
   | 'arrow-up-down'
   | 'add'
@@ -55,6 +57,8 @@ export type IconsKey =
   | 'BellOutline'
   | 'At'
   | 'ArrowheadUp'
+  | 'ArrowheadRight'
+  | 'ArrowheadLeft'
   | 'ArrowheadDown'
   | 'ArrowUpDown'
   | 'Add'
@@ -86,6 +90,8 @@ export enum Icons {
   BellOutline = 'bell-outline',
   At = 'at',
   ArrowheadUp = 'arrowhead-up',
+  ArrowheadRight = 'arrowhead-right',
+  ArrowheadLeft = 'arrowhead-left',
   ArrowheadDown = 'arrowhead-down',
   ArrowUpDown = 'arrow-up-down',
   Add = 'add',
@@ -118,8 +124,10 @@ export const ICONS_CODEPOINTS: { [key in Icons]: string } = {
   [Icons.BellOutline]: '61719',
   [Icons.At]: '61720',
   [Icons.ArrowheadUp]: '61721',
-  [Icons.ArrowheadDown]: '61722',
-  [Icons.ArrowUpDown]: '61723',
-  [Icons.Add]: '61724',
-  [Icons.AddOutline]: '61725',
+  [Icons.ArrowheadRight]: '61722',
+  [Icons.ArrowheadLeft]: '61723',
+  [Icons.ArrowheadDown]: '61724',
+  [Icons.ArrowUpDown]: '61725',
+  [Icons.Add]: '61726',
+  [Icons.AddOutline]: '61727',
 };
