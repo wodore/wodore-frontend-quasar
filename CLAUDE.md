@@ -15,6 +15,13 @@ The Wodore ecosystem consists of multiple repositories:
 
 All paths are relative to the repository root (`wodore-frontend-quasar/`).
 
+## Specifications
+
+Feature specifications and design guidelines are located in `docs/specs/`:
+- `wd_design.md` - Design system, colors, typography, components
+- `wd_hut_search.md` - Hut search feature specification
+- Other feature specs as they are added
+
 ## Essential Commands
 
 Use `yarn run` command. Check `package.json` for details.
@@ -52,6 +59,8 @@ yarn lint:fix         # Fix linting issues
 yarn format           # Format with Prettier
 ```
 
+**IMPORTANT**: Always run `yarn lint` after making code changes to verify there are no errors or warnings before committing.
+
 ### Docker
 
 ```bash
@@ -72,6 +81,8 @@ yarn release          # Create versioned release (see scripts/release.sh)
 
 ```
 wodore-frontend-quasar/
+├── docs/
+│   └── specs/               # Feature specifications and design docs
 ├── src/
 │   ├── assets/              # Static assets (images, icons, etc.)
 │   │   ├── icongenie/       # Favicon source files

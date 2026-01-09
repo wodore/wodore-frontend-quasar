@@ -5,6 +5,8 @@ import { clientWodore, schemasWodore } from '@clients/index';
 import { useI18n } from 'vue-i18n';
 import { MapInstance } from '@indoorequal/vue-maplibre-gl/dist/lib/lib/mapRegistry';
 import { useRouter, useRoute } from 'vue-router';
+import WdHutSearchInput from './WdHutSearchInput.vue';
+import WdHutSearchMobile from './WdHutSearchMobile.vue';
 
 const { locale } = useI18n();
 const $q = useQuasar();
@@ -23,40 +25,47 @@ if (process.env.CLIENT) {
   });
 }
 
-// Search state
-const searchText = ref('');
-const searchResults = ref<schemasWodore['HutSearchResultSchema'][]>([]);
-const loading = ref(false);
-const selectedHut = ref<schemasWodore['HutSearchResultSchema'] | null>(null);
+// Component refs
+const desktopSearchRef = ref<InstanceType<typeof WdHutSearchInput> | null>(null);
+const mobileSearchRef = ref<InstanceType<typeof WdHutSearchMobile> | null>(null);
+
+// State
 const mobileSearchExpanded = ref(false);
+const loading = ref(false);
 
 // Debounce timer
 let searchTimer: NodeJS.Timeout | null = null;
 
-// Filter function for lazy loading
-async function filterFn(val: string, update: (callback: () => void) => void) {
+// Search function
+async function performSearch(searchText: string) {
   // Clear previous timer
   if (searchTimer) {
     clearTimeout(searchTimer);
   }
 
-  if (val.length < 2) {
-    update(() => {
-      searchResults.value = [];
-    });
+  if (searchText.length < 2) {
+    if (isMobile.value) {
+      mobileSearchRef.value?.setResults([], false);
+    } else {
+      desktopSearchRef.value?.setResults([], false);
+    }
     return;
   }
 
-  // Set loading state
-  loading.value = true;
-
   // Debounce search
   searchTimer = setTimeout(async () => {
+    // Set loading state just before API call
+    loading.value = true;
+    if (isMobile.value) {
+      mobileSearchRef.value?.setResults([], true);
+    } else {
+      desktopSearchRef.value?.setResults([], true);
+    }
     try {
       const { data, error } = await clientWodore.GET('/v1/huts/search', {
         params: {
           query: {
-            q: val,
+            q: searchText,
             lang: locale.value || 'de',
             offset: 0,
             limit: 8,
@@ -70,19 +79,25 @@ async function filterFn(val: string, update: (callback: () => void) => void) {
 
       if (error) {
         console.error('Search error:', error);
-        update(() => {
-          searchResults.value = [];
-        });
+        if (isMobile.value) {
+          mobileSearchRef.value?.setResults([], false);
+        } else {
+          desktopSearchRef.value?.setResults([], false);
+        }
       } else {
-        update(() => {
-          searchResults.value = data || [];
-        });
+        if (isMobile.value) {
+          mobileSearchRef.value?.setResults(data || [], false);
+        } else {
+          desktopSearchRef.value?.setResults(data || [], false);
+        }
       }
     } catch (err) {
       console.error('Search failed:', err);
-      update(() => {
-        searchResults.value = [];
-      });
+      if (isMobile.value) {
+        mobileSearchRef.value?.setResults([], false);
+      } else {
+        desktopSearchRef.value?.setResults([], false);
+      }
     } finally {
       loading.value = false;
     }
@@ -90,18 +105,9 @@ async function filterFn(val: string, update: (callback: () => void) => void) {
 }
 
 // Handle hut selection
-function onHutSelect(hut: schemasWodore['HutSearchResultSchema'] | null) {
+function onHutSelect(hut: schemasWodore['HutSearchResultSchema']) {
   if (!hut || !hut.location) {
     return;
-  }
-
-  // Clear input immediately to prevent hut from showing in field
-  selectedHut.value = null;
-  searchText.value = '';
-
-  // Close mobile search
-  if (isMobile.value) {
-    mobileSearchExpanded.value = false;
   }
 
   // Fly to location on map
@@ -116,7 +122,7 @@ function onHutSelect(hut: schemasWodore['HutSearchResultSchema'] | null) {
     });
   }
 
-  // Navigate to hut details (same route name as map click)
+  // Navigate to hut details
   router.push({
     name: 'map-hut',
     params: { slug: hut.slug },
@@ -124,176 +130,23 @@ function onHutSelect(hut: schemasWodore['HutSearchResultSchema'] | null) {
     hash: route.hash,
   });
 }
-
-// Toggle mobile search
-function toggleMobileSearch() {
-  mobileSearchExpanded.value = !mobileSearchExpanded.value;
-  if (!mobileSearchExpanded.value) {
-    searchText.value = '';
-    searchResults.value = [];
-  }
-}
-
-// Handle keyboard events
-function onKeyDown(event: KeyboardEvent) {
-  // Select first result on Enter when there are results
-  if (event.key === 'Enter' && searchResults.value.length > 0) {
-    event.preventDefault();
-    selectedHut.value = searchResults.value[0];
-    onHutSelect(searchResults.value[0]);
-  }
-  // Let Tab key work naturally for navigation through results
-}
-
-// Get hut type icon URL
-function getHutTypeIcon(hut: schemasWodore['HutSearchResultSchema']): string | undefined {
-  if (!hut.hut_type || typeof hut.hut_type !== 'object') {
-    return undefined;
-  }
-
-  const hutType = hut.hut_type as Record<string, unknown>;
-
-  // Check for open.symbol (nested structure)
-  if (hutType.open && typeof hutType.open === 'object') {
-    const open = hutType.open as Record<string, unknown>;
-    if (typeof open.symbol === 'string') {
-      return open.symbol;
-    }
-  }
-
-  // Fallback to direct symbol field
-  if (typeof hutType.symbol === 'string') {
-    return hutType.symbol;
-  }
-
-  return undefined;
-}
 </script>
 
 <style scoped>
-.toolbar-font {
-  font-size: medium;
-}
-</style>
-
-<style lang="scss">
-.hut-search-mobile-overlay {
-  .q-menu {
-    top: 56px !important;
-    /* Position below the overlay bar */
-    left: 8px !important;
-    max-width: calc(100vw - 16px) !important;
-  }
+.desktop-search-wrapper {
+  max-width: 250px;
+  max-height: 40px;
 }
 </style>
 
 <template>
-  <!-- MOBILE: Search icon button or full-width overlay -->
-  <div v-if="isMobile">
-    <!-- Collapsed: Just the search icon -->
-    <q-btn v-if="!mobileSearchExpanded" flat round dense class="text-icon" @click="toggleMobileSearch">
-      <q-icon>
-        <IconEvaSearchOutline />
-      </q-icon>
-    </q-btn>
-
-    <!-- Expanded: Full-width search overlay -->
-    <div v-else style="
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        z-index: 6000;
-        background-color: rgb(var(--q-primary-8));
-        backdrop-filter: blur(10px);
-        padding: 8px;
-        display: flex;
-        gap: 8px;
-        align-items: center;
-      ">
-      <q-select v-model="selectedHut" use-input input-debounce="0" :options="searchResults" option-label="name" dense
-        dark standout autofocus class="toolbar-font hut-search-menu hut-search-mobile-overlay" style="flex: 1"
-        placeholder="Hütte suchen..." :loading="loading" @filter="filterFn" @update:model-value="onHutSelect"
-        @keydown="onKeyDown" clearable popup-content-class="bg-dark-500" behavior="menu">
-        <template v-slot:prepend>
-          <q-icon class="text-icon" size="sm">
-            <IconEvaSearchOutline />
-          </q-icon>
-        </template>
-
-        <template v-slot:no-option>
-          <q-item v-if="searchText.length >= 2">
-            <q-item-section class="text-grey">
-              Keine Hütten gefunden
-            </q-item-section>
-          </q-item>
-        </template>
-
-        <template v-slot:option="scope">
-          <q-item v-bind="scope.itemProps" class="hut-search-item">
-            <q-item-section avatar>
-              <q-avatar v-if="getHutTypeIcon(scope.opt)" size="32px">
-                <img :src="getHutTypeIcon(scope.opt)" />
-              </q-avatar>
-              <q-avatar v-else color="primary" text-color="white" size="32px">
-                <q-icon name="home" />
-              </q-avatar>
-            </q-item-section>
-            <q-item-section>
-              <q-item-label>{{ scope.opt.name }}</q-item-label>
-              <q-item-label caption v-if="scope.opt.elevation">
-                {{ scope.opt.elevation }}m
-              </q-item-label>
-            </q-item-section>
-          </q-item>
-        </template>
-      </q-select>
-
-      <q-btn flat round dense class="text-icon" @click="toggleMobileSearch">
-        <q-icon>
-          <IconEvaCloseOutline />
-        </q-icon>
-      </q-btn>
-    </div>
-  </div>
+  <!-- MOBILE: Search overlay component -->
+  <WdHutSearchMobile v-if="isMobile" ref="mobileSearchRef" v-model="mobileSearchExpanded" @search="performSearch"
+    @select="onHutSelect" />
 
   <!-- DESKTOP: Inline search -->
-  <div v-else class="q-ml-md q-mr-md" style="max-width: 250px; max-height: 40px">
-    <q-select v-model="selectedHut" use-input input-debounce="0" :options="searchResults" option-label="name" dense dark
-      standout class="toolbar-font hut-search-menu" placeholder="Hütte suchen..." :loading="loading" @filter="filterFn"
-      @update:model-value="onHutSelect" @keydown="onKeyDown" clearable popup-content-class="bg-dark-500">
-      <template v-slot:prepend>
-        <q-icon class="text-icon" size="sm">
-          <IconEvaSearchOutline />
-        </q-icon>
-      </template>
-
-      <template v-slot:no-option>
-        <q-item v-if="searchText.length >= 2">
-          <q-item-section class="text-grey">
-            Keine Hütten gefunden
-          </q-item-section>
-        </q-item>
-      </template>
-
-      <template v-slot:option="scope">
-        <q-item v-bind="scope.itemProps" class="hut-search-item">
-          <q-item-section avatar>
-            <q-avatar v-if="getHutTypeIcon(scope.opt)" size="32px">
-              <img :src="getHutTypeIcon(scope.opt)" />
-            </q-avatar>
-            <q-avatar v-else color="primary" text-color="white" size="32px">
-              <q-icon name="home" />
-            </q-avatar>
-          </q-item-section>
-          <q-item-section>
-            <q-item-label>{{ scope.opt.name }}</q-item-label>
-            <q-item-label caption v-if="scope.opt.elevation">
-              {{ scope.opt.elevation }}m
-            </q-item-label>
-          </q-item-section>
-        </q-item>
-      </template>
-    </q-select>
+  <div v-else class="q-ml-md q-mr-md desktop-search-wrapper">
+    <WdHutSearchInput ref="desktopSearchRef" dark placeholder="Hütte suchen..." @search="performSearch"
+      @select="onHutSelect" />
   </div>
 </template>
