@@ -154,10 +154,12 @@ const addHeaderShadow: IntersectionValue = (entry) => {
 .no-background {
   background: none !important;
 }
+
 .card-header {
   filter: blur(15px);
   height: 60px;
 }
+
 .card-header__text {
   background: none !important;
   text-shadow: 0px 0px 8px $black;
@@ -167,19 +169,21 @@ const addHeaderShadow: IntersectionValue = (entry) => {
   border: 2px solid rgba($black, 0.607);
   border-radius: 0 !important;
 }
+
 .hut-image {
   border-radius: 25px !important;
   max-width: 300px;
   min-width: 200px;
 }
-@media (width <= $breakpoint-xs-max) {
+
+@media (width <=$breakpoint-xs-max) {
   .hut-image {
     max-width: 300px;
     min-width: 100px;
   }
 }
 
-@media (width >= $breakpoint-sm-max) {
+@media (width >=$breakpoint-sm-max) {
   .hut-image {
     max-width: 100%;
   }
@@ -191,6 +195,7 @@ const addHeaderShadow: IntersectionValue = (entry) => {
   max-height: 100%;
   height: 100%;
 }
+
 .q-layout-container .q-layout {
   min-height: 100%;
   height: 100%;
@@ -200,12 +205,14 @@ const addHeaderShadow: IntersectionValue = (entry) => {
 .footer-toolbar {
   border-top: 1px solid black;
 }
+
 .attribution {
   font-size: x-small;
   color: rgb(171, 171, 171);
   padding: 6px 20px 6px 10px;
   border-radius: 10px 0 0 0;
 }
+
 .img-link :deep(a:active),
 .img-link :deep(a:visited),
 .img-link :deep(a:hover),
@@ -215,12 +222,15 @@ const addHeaderShadow: IntersectionValue = (entry) => {
   text-decoration: underline dotted;
   text-decoration-color: rgb(132, 132, 132);
 }
+
 .img-link :deep(a:hover) {
   color: rgb(242, 242, 242) !important;
 }
+
 .img-link {
   color: rgb(171, 171, 171) !important;
 }
+
 .attr_link :deep(a:active),
 .attr_link :deep(a:visited),
 .attr_link :deep(a:hover),
@@ -230,9 +240,11 @@ const addHeaderShadow: IntersectionValue = (entry) => {
   text-decoration: underline dotted;
   text-decoration-color: rgb(132, 132, 132);
 }
+
 .attr_link :deep(a:hover) {
   color: rgb(81, 81, 81);
 }
+
 .attr_link {
   color: rgb(171, 171, 171);
   // position: relative;
@@ -358,6 +370,7 @@ const addHeaderShadow: IntersectionValue = (entry) => {
               </div>
             </div>
           </div>
+
           <body class="text-body2 q-my-lg">
             <!-- {{ hut.description }} -->
             <div

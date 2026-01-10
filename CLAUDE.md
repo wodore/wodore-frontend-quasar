@@ -4,6 +4,10 @@ Quick reference for Claude when working on `wodore-frontend-quasar` (short `wodo
 
 **Note**: This file should be updated whenever important development information, patterns, or infrastructure details are discovered during work on the project.
 
+## Important Development Rules
+
+**DO NOT revert changes made by the user**: When the user has explicitly configured values (constants, icons, styling, etc.), do NOT change them back to what you think they should be. If something was set to `0`, or uses a specific icon, assume it was done on purpose. Ask first if unclear.
+
 ## Related Projects
 
 The Wodore ecosystem consists of multiple repositories:
@@ -14,6 +18,14 @@ The Wodore ecosystem consists of multiple repositories:
 - **Hut Services (Private)**: `../hut-services-private/` - Private implementations for external booking services (HRS, SAC, etc.)
 
 All paths are relative to the repository root (`wodore-frontend-quasar/`).
+
+## Specifications
+
+Feature specifications and design guidelines are located in `docs/specs/`:
+
+- `wd_design.md` - Design system, colors, typography, components
+- `wd_hut_search.md` - Hut search feature specification
+- Other feature specs as they are added
 
 ## Essential Commands
 
@@ -52,6 +64,8 @@ yarn lint:fix         # Fix linting issues
 yarn format           # Format with Prettier
 ```
 
+**IMPORTANT**: Always run `yarn lint` after making code changes to verify there are no errors or warnings before committing.
+
 ### Docker
 
 ```bash
@@ -72,6 +86,8 @@ yarn release          # Create versioned release (see scripts/release.sh)
 
 ```
 wodore-frontend-quasar/
+├── docs/
+│   └── specs/               # Feature specifications and design docs
 ├── src/
 │   ├── assets/              # Static assets (images, icons, etc.)
 │   │   ├── icongenie/       # Favicon source files
@@ -281,6 +297,23 @@ docker build --build-arg GIT_HASH=$(git rev-parse --short HEAD) -t wodore-fronte
 ```
 
 ## Common Patterns
+
+### Best Practices
+
+**IMPORTANT Development Guidelines:**
+
+1. **Use VueUse composables whenever possible**: The project uses `@vueuse/core` extensively. Before implementing manual solutions (timers, watchers, event listeners, etc.), check if VueUse provides a composable for that use case.
+   - Examples: `useDebounceFn`, `useThrottleFn`, `useLocalStorage`, `useIntersectionObserver`, `useEventListener`, etc.
+   - See: https://vueuse.org/
+
+2. **Prefer Quasar components without manual modifications**: Use Quasar's built-in components and props as much as possible. Avoid adding custom styles or HTML unless absolutely necessary for specific custom functionality.
+   - Quasar provides extensive theming and styling options through props and CSS variables
+   - Only add custom styles when implementing truly unique designs not covered by Quasar
+
+3. **Minimize custom styling**: Keep custom CSS/SCSS to a minimum. Only add styles when:
+   - Implementing custom brand-specific designs
+   - Working with unique layouts not provided by Quasar
+   - Fine-tuning specific edge cases
 
 ### Icons
 

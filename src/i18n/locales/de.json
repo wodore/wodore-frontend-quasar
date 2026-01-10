@@ -36,7 +36,12 @@
   "menu": {
     "select_language": "Sprache auswählen"
   },
+  "search": "Suchen",
+  "close": "Schliessen",
   "missing": "Fehlende",
+  "pin_something": "Anheften",
+  "unpin_something": "Loslösen",
+  "drag_to_move": "Ziehen um zu verschieben",
   "transport": {
     "no_results": "Keine Resultate",
     "max_time": "Maximum Zeit",
@@ -59,7 +64,7 @@
   "oct": "Okt",
   "nov": "Nov",
   "dec": "Dez",
-  "hut_type": "Hüttetyp",
+  "hut_type": "Hüttenart",
   "jan": "Jan",
   "location": "Lage",
   "map": "Karte",
