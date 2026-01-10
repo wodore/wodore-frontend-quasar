@@ -4,6 +4,10 @@ Quick reference for Claude when working on `wodore-frontend-quasar` (short `wodo
 
 **Note**: This file should be updated whenever important development information, patterns, or infrastructure details are discovered during work on the project.
 
+## Important Development Rules
+
+**DO NOT revert changes made by the user**: When the user has explicitly configured values (constants, icons, styling, etc.), do NOT change them back to what you think they should be. If something was set to `0`, or uses a specific icon, assume it was done on purpose. Ask first if unclear.
+
 ## Related Projects
 
 The Wodore ecosystem consists of multiple repositories:
