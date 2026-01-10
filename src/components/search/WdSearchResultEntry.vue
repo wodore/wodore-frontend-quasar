@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useQuasar } from 'quasar';
 import { schemasWodore } from '@clients/index';
 import getImageUrl from '@services/imageService';
+
+const $q = useQuasar();
+const isMobile = computed(() => $q.screen.xs);
 
 interface Props {
   hut: schemasWodore['HutSearchResultSchema'];
@@ -118,7 +122,8 @@ const hutTypeName = computed<string>(() => {
       </q-item-label>
     </q-item-section>
     
-    <q-item-section side class="q-pr-md">
+    <!-- Preview button (desktop only) -->
+    <q-item-section v-if="!isMobile" side class="q-pr-md">
       <q-btn
         flat
         round

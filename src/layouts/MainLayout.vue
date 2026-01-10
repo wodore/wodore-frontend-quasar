@@ -5,7 +5,8 @@ import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@stores/auth-store';
 import { useMeta } from 'quasar';
 import WodoreLogo from 'components/wodore/WodoreLogo.vue';
-import WdPlaceSearch from 'components/search/WdPlaceSearch.vue';
+import WdPlaceSearchMenu from 'components/search/WdPlaceSearchMenu.vue';
+import WdPlaceSearchDialog from 'components/search/WdPlaceSearchDialog.vue';
 
 const authStore = useAuthStore();
 //import { useRouter } from 'vue-router';
@@ -76,7 +77,8 @@ function closeContent(mode: string) {
         <q-toolbar-title>
           <WodoreLogo class="text-h4" :text="!isMobile" icon />
         </q-toolbar-title>
-        <WdPlaceSearch />
+        <WdPlaceSearchMenu v-if="!isMobile" />
+        <WdPlaceSearchDialog v-if="isMobile" />
         <WdSelectDate />
         <WdSupportButton
           v-if="!authStore.isLoggedIn"

@@ -55,6 +55,8 @@ declare module 'vue' {
     WdOverlaySwitch: typeof import('./src/components/map/WdOverlaySwitch.vue')['default']
     WdOverlaySwitchItem: typeof import('./src/components/map/WdOverlaySwitchItem.vue')['default']
     WdPlaceSearch: typeof import('./src/components/search/WdPlaceSearch.vue')['default']
+    WdPlaceSearchDialog: typeof import('./src/components/search/WdPlaceSearchDialog.vue')['default']
+    WdPlaceSearchMenu: typeof import('./src/components/search/WdPlaceSearchMenu.vue')['default']
     WdSearchResultEntry: typeof import('./src/components/search/WdSearchResultEntry.vue')['default']
     WdSelectDate: typeof import('./src/components/WdSelectDate.vue')['default']
     WdSelectDate_BACKUP_3633282: (typeof import('./src/components/WdSelectDate_BACKUP_3633282.vue'))['default']
