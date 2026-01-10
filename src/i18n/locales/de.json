@@ -40,6 +40,7 @@
   "close": "Schliessen",
   "missing": "Fehlende",
   "pin_something": "Anheften",
+  "unpin_something": "Loslösen",
   "drag_to_move": "Ziehen um zu verschieben",
   "transport": {
     "no_results": "Keine Resultate",

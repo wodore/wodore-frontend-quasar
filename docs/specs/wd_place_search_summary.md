@@ -30,14 +30,16 @@ This architecture **eliminates code duplication** while allowing platform-specif
 ### ✅ Desktop Wrapper (WdPlaceSearchMenu)
 
 - Readonly input field trigger (matches WdSelectDate style)
-- q-popup-proxy with jump-down/jump-up transitions
-- Sticky mode toggle (lock/unlock icons)
-- Drag icon (shown when sticky)
-- Close button (shown when sticky)
-- Persistent prop bound to sticky state
+- **Dual-mode rendering**:
+  - Non-sticky: q-menu with jump-down/jump-up transitions
+  - Sticky: Teleport to body with fixed positioning + useDraggable
+- Sticky mode toggle (unlock icon in non-sticky mode)
+- Drag handle (lock icon in sticky mode)
+- Separate unlock button in sticky mode
+- Close button (always visible)
 - Auto-focus on open, reset on close
-- Tooltip delays (2s for controls)
-- Positioned absolutely over WdPlaceSearch card
+- Tooltip delays (1s for pin/unpin, 2s for drag)
+- Initial position calculated from trigger element
 
 ### ✅ Mobile Wrapper (WdPlaceSearchDialog)
 
@@ -81,24 +83,26 @@ This architecture **eliminates code duplication** while allowing platform-specif
 
 ## Known Issues
 
-### ❌ Draggable Not Working
+### ✅ Draggable Fixed
 
-**Problem**: Desktop dialog cannot be dragged despite using VueUse `useDraggable`. Dragging works a bit, but it is only "inside" the menu div, and the reference to the drag handle is not correct (it jumps when I sttart).
+**Problem**: Desktop dialog could not be dragged because `q-menu` positioning conflicted with `useDraggable`.
 
-**Attempted Solutions**:
+**Solution**: Implemented dual-mode rendering:
+- **Non-sticky mode**: Uses `q-menu` with normal Quasar positioning (no drag)
+- **Sticky mode**: Uses `Teleport to="body"` with fixed positioning (fully draggable)
 
-- Applied dragHandleRef to move icon button
-- Applied draggableStyle to wrapper div
-- Reset position on dialog close
+**Implementation Details**:
+- Separate `q-menu` (`v-if="!isSticky"`) for normal popup behavior
+- Separate fixed container (`v-if="showMenu && isSticky"`) for draggable behavior
+- `initialPosition` computed property positions sticky mode near trigger
+- Drag handle properly connected to `useDraggable` in sticky mode
+- Changed sticky button: Lock icon for drag handle, separate unlock button
 
-**Possible Solutions**:
-
-1. Switch from `q-popup-proxy` to `q-dialog` with manual positioning
-2. Apply CSS transform manually without useDraggable
-3. Use different drag library
-4. Accept as limitation and remove drag feature (simplest)
-
-**Status**: Low priority - sticky mode works, dragging is nice-to-have
+**Benefits**:
+- No conflict between Quasar and VueUse positioning
+- Clean separation of concerns
+- Smooth transition between modes
+- Dragging works perfectly when sticky
 
 ## Remaining Tasks
 
@@ -106,6 +110,7 @@ This architecture **eliminates code duplication** while allowing platform-specif
 
 - [x] Test desktop popup positioning
 - [x] Test sticky mode in various scenarios
+- [x] Test dragging in sticky mode
 - [x] Test mobile full-screen dialog
 - [ ] Test keyboard navigation on both platforms
 - [x] Test preview mode (desktop only)
@@ -125,9 +130,8 @@ This architecture **eliminates code duplication** while allowing platform-specif
 
 #### Priority 1: User Experience
 
-1. **Fix or Remove Draggable** - Decide on approach
-2. **Resizable Dialog** - Bottom drag bar for height adjustment
-3. **Icon Backgrounds** - Better contrast for result icons
+1. **Resizable Dialog** - Bottom drag bar for height adjustment
+2. **Icon Backgrounds** - Better contrast for result icons
 
 #### Priority 2: Features
 
