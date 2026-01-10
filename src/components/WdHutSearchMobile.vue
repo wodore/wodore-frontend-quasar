@@ -27,17 +27,20 @@ const showDialog = computed({
 });
 
 // Watch for overlay open/close
-watch(() => props.modelValue, (newVal) => {
-  if (newVal) {
-    // Focus input when overlay opens
-    setTimeout(() => {
-      searchInputRef.value?.focus();
-    }, 150);
-  } else {
-    // Clear search when overlay closes
-    searchInputRef.value?.clear();
-  }
-});
+watch(
+  () => props.modelValue,
+  (newVal) => {
+    if (newVal) {
+      // Focus input when overlay opens
+      setTimeout(() => {
+        searchInputRef.value?.focus();
+      }, 150);
+    } else {
+      // Clear search when overlay closes
+      searchInputRef.value?.clear();
+    }
+  },
+);
 
 // Toggle overlay
 function toggleOverlay() {
@@ -61,7 +64,10 @@ function onSearch(text: string) {
 }
 
 // Handle results update
-function setResults(results: schemasWodore['HutSearchResultSchema'][], isLoading: boolean) {
+function setResults(
+  results: schemasWodore['HutSearchResultSchema'][],
+  isLoading: boolean,
+) {
   searchInputRef.value?.setResults(results, isLoading);
 }
 
@@ -74,16 +80,32 @@ defineExpose({
 <template>
   <div>
     <!-- Search icon button (collapsed state) -->
-    <q-btn v-if="!modelValue" flat round dense class="text-icon" @click="toggleOverlay">
+    <q-btn
+      v-if="!modelValue"
+      flat
+      round
+      dense
+      class="text-icon"
+      @click="toggleOverlay"
+    >
       <q-icon>
         <IconEvaSearchOutline />
       </q-icon>
     </q-btn>
 
     <!-- Mobile search dialog -->
-    <q-dialog v-model="showDialog" position="top" seamless @click="closeOverlay">
+    <q-dialog
+      v-model="showDialog"
+      position="top"
+      seamless
+      @click="closeOverlay"
+    >
       <!-- Full-width search toolbar -->
-      <q-toolbar class="bg-white" @click.stop style="box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2)">
+      <q-toolbar
+        class="bg-white"
+        @click.stop
+        style="box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2)"
+      >
         <!-- Search icon (left side) -->
         <q-icon class="text-primary" size="sm">
           <IconEvaSearchOutline />
@@ -91,8 +113,15 @@ defineExpose({
 
         <!-- Search input -->
         <div style="flex: 1" class="q-ml-sm">
-          <WdHutSearchInput ref="searchInputRef" :dark="false" autofocus placeholder="Hütte suchen..."
-            @select="onHutSelect" @search="onSearch" @close="closeOverlay" />
+          <WdHutSearchInput
+            ref="searchInputRef"
+            :dark="false"
+            autofocus
+            placeholder="Hütte suchen..."
+            @select="onHutSelect"
+            @search="onSearch"
+            @close="closeOverlay"
+          />
         </div>
 
         <!-- Close button -->

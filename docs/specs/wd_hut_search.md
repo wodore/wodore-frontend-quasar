@@ -2,7 +2,7 @@
 
 Feature to search huts and other places.
 
-Backend endpoint docu: http://localhost:8000/v1/docs#/hut/search_huts
+Backend endpoint docu: <http://localhost:8000/v1/docs#/hut/search_huts>
 
 ## Behavior
 
@@ -21,23 +21,60 @@ Backend endpoint docu: http://localhost:8000/v1/docs#/hut/search_huts
 
 ## Components
 
-### WdHutSearch
+### WdPlaceSearch (NEW DESIGN - Desktop)
 
-Parent component used in toolbar. Handles:
+**Location:** `src/components/search/WdPlaceSearch.vue`
+
+Main search component following the `WdSelectDate` pattern.
+
+**Desktop Behavior:**
+
+- Read-only input field in toolbar (same styling as date picker)
+- Search icon in prepend slot
+- On click, opens dialog with search functionality
+- Dialog uses `q-popup-proxy` with same positioning as calendar
+
+**Dialog Layout:**
+
+- Dark theme (`bg-dark-500`, `bg-dark-700`)
+- Close button (top right, orange)
+- Search icon (top left, orange)
+- Full-width search input in header section
+- Results container below (min-height: 300px)
+- Uses `WdSearchResultEntry` for each result
+
+**Features:**
+
+- Minimum 2 characters to trigger search
+- 300ms debounce delay before API call
+- Search results persist when input cleared
+- Keyboard navigation (arrow keys, enter, escape)
+- Loading spinner during search
+- Map navigation on selection
+- Routing to hut detail pages
+
+**Mobile:** Currently only desktop version implemented. Mobile version TBD.
+
+### WdHutSearch (OLD - Still Available)
+
+**Location:** `src/components/WdHutSearch.vue`
+
+Legacy search component. Handles:
 
 - Screen size detection (mobile vs desktop)
 - API calls with debouncing
 - Map navigation on selection
 - Routing to hut detail pages
 
-### WdHutSearchInput
+### WdHutSearchInput (OLD)
 
-Desktop search input field.
+**Location:** `src/components/WdHutSearchInput.vue`
+
+Desktop search input field with inline dropdown.
 
 **Styling:**
 
 - Use `q-input` with `dense`, `dark`, `standout` props
-- Same style as calendar input (`WdSelectDate`)
 - Search icon in prepend slot (dark mode only)
 - Loading spinner or clear button in append slot
 
@@ -48,47 +85,29 @@ Desktop search input field.
 - Uses `WdSearchResultEntry` components for each result
 - Max height with scroll
 
-**Keyboard navigation:**
+### WdHutSearchMobile (OLD)
 
-- Arrow keys: move selection up/down
-- Enter: select highlighted result
-- Escape: close dropdown
+**Location:** `src/components/WdHutSearchMobile.vue`
 
-### WdHutSearchMobile
-
-Mobile search component.
-
-**Behavior:**
-
-- Shows only search icon button when collapsed
-- Opens full-width toolbar overlay when clicked
-- Uses Quasar `q-dialog` with `position="top"` and `seamless`
-- Slides in from right (use `transition-show="slide-left"`)
-- Same toolbar height as main menu toolbar
-- Click outside (backdrop) to close
-
-**Layout:**
-
-- `q-toolbar` with white background
-- Search icon (left) + input (flex: 1) + close button (right)
-- Uses `WdHutSearchInput` component in light mode
+Mobile search component with overlay.
 
 ### WdSearchResultEntry
 
-Single search result item.
+**Location:** `src/components/search/WdSearchResultEntry.vue`
+
+Single search result item (shared by all search components).
 
 **Layout:**
 
-- Hut type icon (40px circle, left)
+- Hut type icon (left)
 - Hut name (bold)
 - Elevation and location (small text, if available)
-- Optional thumbnail image (48x48, right)
 
 **Styling:**
 
-- Use Quasar spacing classes
-- Hover: light gray background
-- Selected state for keyboard navigation
+- Dark mode support (`text-accent-300`, `text-primary-100`)
+- Hover: light background change
+- Selected state for keyboard navigation (`bg-dark-600`)
 
 ## Future Improvements
 
@@ -106,7 +125,7 @@ Show grayed out when inactive, highlighted when active.
 
 ### Search History
 
-Show last 5 searches when input focused with no text.
+Show last 5 searches when input focused with no text. This could use browser localStorage to persist history across sessions.
 
 ### Location-based Suggestions
 

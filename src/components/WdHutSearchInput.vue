@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue';
 import { schemasWodore } from '@clients/index';
-import WdSearchResultEntry from './WdSearchResultEntry.vue';
+import WdSearchResultEntry from './search/WdSearchResultEntry.vue';
 
 // Props
 interface Props {
@@ -47,14 +47,21 @@ defineExpose({
     showResults.value = false;
     selectedIndex.value = -1;
   },
-  setResults: (results: schemasWodore['HutSearchResultSchema'][], isLoading: boolean) => {
+  setResults: (
+    results: schemasWodore['HutSearchResultSchema'][],
+    isLoading: boolean,
+  ) => {
     loading.value = isLoading;
     // Update results when loading completes
     if (!isLoading) {
       searchResults.value = results;
     }
     // Keep results visible if we have results or if search text is present
-    if (searchResults.value.length > 0 || searchText.value.length >= 2 || lastSearchText.value.length >= 2) {
+    if (
+      searchResults.value.length > 0 ||
+      searchText.value.length >= 2 ||
+      lastSearchText.value.length >= 2
+    ) {
       showResults.value = true;
     }
   },
@@ -80,7 +87,11 @@ watch(searchText, (newVal) => {
 function onFocus() {
   if (searchText.value.length >= 2) {
     showResults.value = true;
-  } else if (searchText.value.length === 0 && lastSearchText.value.length >= 2 && searchResults.value.length > 0) {
+  } else if (
+    searchText.value.length === 0 &&
+    lastSearchText.value.length >= 2 &&
+    searchResults.value.length > 0
+  ) {
     // Show last results if input is empty but we have previous results
     showResults.value = true;
   }
@@ -122,7 +133,10 @@ function onKeyDown(event: KeyboardEvent) {
   switch (event.key) {
     case 'ArrowDown':
       event.preventDefault();
-      selectedIndex.value = Math.min(selectedIndex.value + 1, searchResults.value.length - 1);
+      selectedIndex.value = Math.min(
+        selectedIndex.value + 1,
+        searchResults.value.length - 1,
+      );
       scrollToSelected();
       break;
     case 'ArrowUp':
@@ -132,7 +146,10 @@ function onKeyDown(event: KeyboardEvent) {
       break;
     case 'Enter':
       event.preventDefault();
-      if (selectedIndex.value >= 0 && selectedIndex.value < searchResults.value.length) {
+      if (
+        selectedIndex.value >= 0 &&
+        selectedIndex.value < searchResults.value.length
+      ) {
         selectHut(searchResults.value[selectedIndex.value]);
       }
       break;
@@ -165,8 +182,6 @@ function clearSearch() {
   selectedIndex.value = -1;
   inputRef.value?.focus();
 }
-
-
 </script>
 
 <style scoped lang="scss">

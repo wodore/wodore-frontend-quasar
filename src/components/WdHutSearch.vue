@@ -26,8 +26,12 @@ if (process.env.CLIENT) {
 }
 
 // Component refs
-const desktopSearchRef = ref<InstanceType<typeof WdHutSearchInput> | null>(null);
-const mobileSearchRef = ref<InstanceType<typeof WdHutSearchMobile> | null>(null);
+const desktopSearchRef = ref<InstanceType<typeof WdHutSearchInput> | null>(
+  null,
+);
+const mobileSearchRef = ref<InstanceType<typeof WdHutSearchMobile> | null>(
+  null,
+);
 
 // State
 const mobileSearchExpanded = ref(false);
