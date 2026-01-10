@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, computed } from 'vue';
+import { ref, watch, nextTick } from 'vue';
 import { useDraggable } from '@vueuse/core';
 import WdPlaceSearch from './WdPlaceSearch.vue';
 
 // State
 const showMenu = ref(false);
 const isSticky = ref(false);
+const isDragging = ref(false);
 
 // Refs
 const placeSearchRef = ref<InstanceType<typeof WdPlaceSearch> | null>(null);
@@ -13,20 +14,31 @@ const dialogCardRef = ref<HTMLElement | null>(null);
 const dragHandleRef = ref<HTMLElement | null>(null);
 const inputTriggerRef = ref<HTMLElement | null>(null);
 
-// Draggable functionality
-const { x, y, style: draggableStyle } = useDraggable(dialogCardRef, {
+// Border constraints (in pixels from viewport edge)
+const BORDER_MARGIN = 0;
+const CARD_WIDTH = 440;
+const CARD_HEIGHT = 400;
+
+// Draggable functionality with constraints
+const { x, y, style: draggableStyle, isDragging: vueuseDragging } = useDraggable(dialogCardRef, {
   handle: dragHandleRef,
   initialValue: { x: 0, y: 0 },
+  onMove: (position) => {
+    // Get viewport dimensions
+    const maxX = window.innerWidth - CARD_WIDTH - BORDER_MARGIN;
+    const maxY = window.innerHeight - CARD_HEIGHT - BORDER_MARGIN;
+
+    // Constrain position
+    position.x = Math.max(BORDER_MARGIN, Math.min(position.x, maxX));
+    position.y = Math.max(BORDER_MARGIN, Math.min(position.y, maxY));
+
+    return position;
+  },
 });
 
-// Calculate initial position based on input trigger
-const initialPosition = computed(() => {
-  if (!inputTriggerRef.value) return { top: 100, left: 100 };
-  const rect = inputTriggerRef.value.getBoundingClientRect();
-  return {
-    top: rect.bottom + 10,
-    left: rect.left + 10,
-  };
+// Track dragging state
+watch(vueuseDragging, (newVal) => {
+  isDragging.value = newVal;
 });
 
 // When menu opens, focus the search input
@@ -36,10 +48,25 @@ watch(showMenu, (newVal) => {
       placeSearchRef.value?.focus();
     });
   } else {
-    // Reset sticky and position when menu closes
+    // Reset sticky when menu closes
     isSticky.value = false;
-    x.value = 0;
-    y.value = 0;
+  }
+});
+
+// When entering sticky mode, position near the trigger
+watch(isSticky, (newVal) => {
+  if (newVal && inputTriggerRef.value) {
+    const rect = inputTriggerRef.value.getBoundingClientRect();
+
+    // Calculate position with constraints
+    const proposedX = rect.left + 10;
+    const proposedY = rect.bottom + 10;
+
+    const maxX = window.innerWidth - CARD_WIDTH - BORDER_MARGIN;
+    const maxY = window.innerHeight - CARD_HEIGHT - BORDER_MARGIN;
+
+    x.value = Math.max(BORDER_MARGIN, Math.min(proposedX, maxX));
+    y.value = Math.max(BORDER_MARGIN, Math.min(proposedY, maxY));
   }
 });
 
@@ -53,6 +80,14 @@ function onSearchClose() {
 // Toggle sticky mode
 function toggleSticky() {
   isSticky.value = !isSticky.value;
+}
+
+// Handle drag handle click (only if not dragging)
+function handleDragHandleClick() {
+  // Only toggle if we didn't just finish dragging
+  if (!isDragging.value) {
+    toggleSticky();
+  }
 }
 
 // Close menu
@@ -111,29 +146,16 @@ function closeMenu() {
 
     <!-- Sticky draggable container (fixed positioning) -->
     <Teleport to="body">
-      <div v-if="showMenu && isSticky" ref="dialogCardRef" class="draggable-search-container" :style="[
-        draggableStyle,
-        {
-          top: `${initialPosition.top}px`,
-          left: `${initialPosition.left}px`,
-        }
-      ]">
+      <div v-if="showMenu && isSticky" ref="dialogCardRef" class="draggable-search-container" :style="draggableStyle">
         <!-- Sticky/Close toggle buttons -->
         <div class="q-ma-xs z-top text-icon row q-gutter-xs" style="position: absolute; top: 6px; right: 6px">
-          <!-- Drag handle (locked icon) -->
-          <q-btn v-if="isSticky" dense round flat color="primary-400" ref="dragHandleRef" class="cursor-move"
-            @click="toggleSticky">
-            <q-icon size="sm" color="accent">
+          <!-- Drag handle (locked icon) - click to unpin if not dragging -->
+          <q-btn dense round flat color="primary-400" ref="dragHandleRef" class="cursor-move"
+            @click="handleDragHandleClick">
+            <q-icon size="sm">
               <IconEvaMoveOutline />
             </q-icon>
             <q-tooltip :delay="2000">{{ $t('drag_to_move') }}</q-tooltip>
-          </q-btn>
-          <!-- Unlock button -->
-          <q-btn v-else dense round flat color="primary-400" @click="toggleSticky">
-            <q-icon size="sm">
-              <IconEvaUnlockOutline />
-            </q-icon>
-            <q-tooltip :delay="1000">{{ $t('unpin_something') }}</q-tooltip>
           </q-btn>
           <q-btn dense round @click="closeMenu" color="accent-700" icon="wd-close">
           </q-btn>
