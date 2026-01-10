@@ -19,47 +19,130 @@ Backend endpoint docu: <http://localhost:8000/v1/docs#/hut/search_huts>
 - When input is re-focused with empty text, previous results are shown
 - This allows quick re-selection without re-searching
 
+## Architecture
+
+The search feature uses a three-component architecture:
+
+1. **WdPlaceSearch** - Core component with search UI and logic (complete card)
+2. **WdPlaceSearchMenu** - Desktop wrapper (q-popup-proxy with sticky/drag controls)
+3. **WdPlaceSearchDialog** - Mobile wrapper (full-screen q-dialog)
+
+This ensures no code duplication while allowing platform-specific behavior.
+
 ## Components
 
-### WdPlaceSearch (CURRENT - Desktop Only)
+### WdPlaceSearch (Core Component)
 
 **Location:** `src/components/search/WdPlaceSearch.vue`
 
-Main search component following the `WdSelectDate` pattern.
+Complete search component rendered as a card. Contains all search logic and UI.
 
-**Desktop Behavior:**
+**Props:**
 
-- Read-only input field in toolbar (same styling as date picker)
-- Search icon in prepend slot
-- On click, opens dialog with search functionality
-- Dialog uses `q-popup-proxy` with `persistent` prop
+- `mobile` (boolean) - Adjusts styling for mobile full-screen view
 
-**Dialog Layout:**
+**Emits:**
 
+- `close` - Emitted when user selects a result (parent decides whether to actually close)
+
+**Exposes:**
+
+- `focus()` - Method to focus the search input
+
+**Card Layout:**
+
+```
+┌─────────────────────────────────────┐
+│ Header (bg-dark-700, q-pa-md)       │
+│ ┌─────────────────────────────────┐ │
+│ │ Search Input (outlined, dense)  │ │
+│ └─────────────────────────────────┘ │
+├─────────────────────────────────────┤
+│ Results (q-scroll-area, bg-dark-500)│
+│ - 400px height (desktop)            │
+│ - calc(100vh - 88px) (mobile)       │
+│ - WdSearchResultEntry items         │
+└─────────────────────────────────────┘
+```
+
+**Styling:**
+
+- Card width: 440px (desktop), 100vw (mobile)
+- Card height: auto (desktop), 100vh (mobile)
 - Dark theme (`bg-dark-500`, `bg-dark-700`)
-- Top-right controls (desktop only):
-  - **Not sticky**: Unlock icon (`IconEvaUnlockOutline`) - click to enable sticky mode
-  - **Sticky mode**: Move/drag icon (`IconEvaMoveOutline`) + close icon (`wd-close`)
-- Full-width search input in header section (outlined style)
-- Results container with `q-scroll-area` (height: 400px, max: 600px)
-  - Scroll bar: 6px width, accent color (#998019), 0.5 opacity
-- Uses `WdSearchResultEntry` for each result (dense mode)
+- Header padding-right: 84px (space for control buttons)
+- Scroll bar: 6px width, accent color (#998019), 0.5 opacity
 
 **Features:**
 
-- **Sticky mode** (desktop only): Dialog stays open when selecting results
-- **Preview mode**: Eye icon on each result - flies to location without closing dialog or navigating
-- **Full selection**: Click result - flies to location, navigates to detail page, closes dialog (unless sticky)
-- Minimum 2 characters to trigger search
-- 300ms debounce delay before API call
-- Search results persist when input cleared
+- Search input with clear button and loading spinner
 - Keyboard navigation (arrow keys, enter, escape)
-- Loading spinner during search
-- Map navigation on selection
-- Routing to hut detail pages
-- Tooltips with delays: 2s for dialog controls, 3s for preview icon
+- Preview mode (desktop only - eye icon on results)
+- Full selection - flies to location and navigates to detail page
+- Empty state with search icon and helper text
+- "No results" state
 
-**Mobile:** Not yet implemented - should use full-screen dialog like calendar.
+### WdPlaceSearchMenu (Desktop Wrapper)
+
+**Location:** `src/components/search/WdPlaceSearchMenu.vue`
+
+Desktop wrapper that shows readonly input trigger and opens WdPlaceSearch in a popup.
+
+**Trigger:**
+
+- Readonly input field (standout style, matches WdSelectDate)
+- Search icon in prepend slot
+- Placeholder: "Orte suchen..."
+
+**Popup:**
+
+- Uses `q-popup-proxy` for positioning near input
+- Transitions: jump-down/jump-up
+- Persistent based on sticky state
+
+**Controls (positioned absolutely top-right):**
+
+- **Not sticky**: Unlock icon (`IconEvaUnlockOutline`) - click to enable sticky mode
+- **Sticky**: Move icon (`IconEvaMoveOutline`) + Close icon (`wd-close`)
+- All with tooltips (2s delay)
+
+**Behavior:**
+
+- Auto-focuses search input when opened
+- Resets sticky state and position when closed
+- Closes on result selection (unless sticky mode enabled)
+
+**Known Issue:**
+
+- Draggable functionality not working (VueUse `useDraggable` conflicts with q-popup-proxy positioning)
+
+### WdPlaceSearchDialog (Mobile Wrapper)
+
+**Location:** `src/components/search/WdPlaceSearchDialog.vue`
+
+Mobile wrapper that shows search icon button and opens WdPlaceSearch full-screen.
+
+**Trigger:**
+
+- Round flat button with search icon
+- Small size, minimal styling
+
+**Dialog:**
+
+- Uses `q-dialog` with `maximized` prop
+- Transitions: slide-up/slide-down
+- Full screen (100vw x 100vh)
+
+**Controls:**
+
+- Close button only (top-right, absolutely positioned)
+- No sticky mode on mobile
+- No preview mode on mobile (handled by WdPlaceSearch via screen detection)
+
+**Behavior:**
+
+- Auto-focuses search input when opened
+- Always closes on result selection (no sticky mode)
 
 ### WdSearchResultEntry
 
@@ -75,7 +158,7 @@ Single search result item (shared by all search components).
   - Overline: Hut type name (`text-primary-400`)
   - Label: Hut name (`text-primary-100`, bold)
   - Caption: Elevation with mountain icon (`text-primary-300`)
-- Preview button (right side section):
+- Preview button (right side section, desktop only):
   - Eye icon (`IconEvaEyeOutline`)
   - Color: `primary-300`
   - Tooltip: "Vorschau auf Karte" (3s delay)
@@ -83,8 +166,8 @@ Single search result item (shared by all search components).
 
 **Events:**
 
-- `@select`: Full click - emits hut and event
-- `@preview`: Eye icon click - emits hut only
+- `@select` - Full click, emits hut and event
+- `@preview` - Eye icon click, emits hut only
 
 **Styling:**
 
@@ -93,64 +176,60 @@ Single search result item (shared by all search components).
 - Selected state: `bg-dark-600` background
 - Dark separator between items
 
-## Legacy Components (To Be Deprecated)
+### MainLayout Integration
 
-### WdHutSearch
+**Location:** `src/layouts/MainLayout.vue`
 
-**Location:** `src/components/WdHutSearch.vue`
+The toolbar conditionally renders the appropriate wrapper:
 
-Legacy parent component. Should be removed once WdPlaceSearch mobile version is complete.
+```vue
+<WdPlaceSearchMenu v-if="!isMobile" />
+<WdPlaceSearchDialog v-if="isMobile" />
+```
 
-### WdHutSearchInput
+## Legacy Components (Deprecated)
 
-**Location:** `src/components/WdHutSearchInput.vue`
+These components are marked with `.legacy` suffix and should be removed once testing is complete:
 
-Desktop search with inline dropdown. Should be removed once WdPlaceSearch is complete.
-
-### WdHutSearchMobile
-
-**Location:** `src/components/WdHutSearchMobile.vue`
-
-Mobile search component. Should be removed once WdPlaceSearch mobile is implemented.
+- `src/components/search/WdHutSearch.vue.legacy`
+- `src/components/search/WdHutSearchInput.vue.legacy`
+- `src/components/search/WdHutSearchMobile.vue.legacy`
 
 ## Open Tasks / Future Improvements
 
 ### High Priority
 
 1. **Fix Draggable Functionality**
-   - Currently not working properly
-   - Should use VueUse `useDraggable`
-   - Drag handle: Move icon button (only visible in sticky mode)
-   - Issue: May be conflict with `q-popup-proxy` positioning
 
-2. **Mobile View**
-   - Should work same as calendar (WdSelectDate)
-   - Open as full-screen dialog in center
-   - Probably larger than calendar
-   - No preview mode on mobile
-   - No sticky mode on mobile
-   - Simple close button only
+   - Currently not working in WdPlaceSearchMenu
+   - VueUse `useDraggable` conflicts with `q-popup-proxy` positioning
+   - Possible solutions:
+     - Use `q-dialog` instead of `q-popup-proxy` with manual positioning
+     - Apply transform manually
+     - Use different drag library
+     - Accept as limitation and remove drag feature
 
-3. **Resizable Dialog**
+2. **Resizable Dialog**
+
    - Add small bar on bottom (2-5px height)
    - Same color as header (`bg-dark-700`)
    - Allow user to resize dialog height by dragging bottom bar
    - Consider min/max constraints
 
-4. **Icon Background Styling**
-   - Icons might need brighter/contrasting background
-   - Not sure how to implement this aesthetically
+3. **Icon Background Styling**
+   - Result icons might need brighter/contrasting background
    - Needs design review
 
 ### Medium Priority
 
-5. **General Code Review**
-   - Simplify component logic
-   - Remove unnecessary complexity
+4. **General Code Review**
+
    - Optimize performance
    - Review VueUse usage
+   - Simplify logic where possible
 
-6. **Search Filters**
+5. **Search Filters**
+
    - Icons/chips above results to filter by type:
      - Accommodation (huts, lodges)
      - Transport (cable cars, lifts)
@@ -159,38 +238,64 @@ Mobile search component. Should be removed once WdPlaceSearch mobile is implemen
      - Other places
    - Show grayed out when inactive, highlighted when active
 
-7. **Search History**
+6. **Search History**
    - Show last 5 searches when input focused with no text
    - Use browser localStorage to persist history across sessions
    - Clear history option
 
 ### Low Priority
 
-8. **Location-based Suggestions**
+7. **Location-based Suggestions**
+
    - Show nearby huts based on current map view
    - "Near me" option using geolocation
 
-9. **Keyboard Shortcuts**
-   - Quick search activation (e.g., Ctrl+K or /)
+8. **Keyboard Shortcuts**
+
+   - Quick search activation (e.g., `/`)
    - Focus trap in dialog
 
-10. **Accessibility**
-    - ARIA labels
-    - Screen reader support
-    - Keyboard-only navigation
+9. **Accessibility**
+   - ARIA labels
+   - Screen reader support
+   - Keyboard-only navigation
 
 ## Cleanup Tasks
 
-- [ ] Remove old WdHutSearch components once mobile is implemented
-- [ ] Move all search-related files to `src/components/search/`
-- [ ] Update imports across codebase
-- [ ] Remove unused dependencies
-- [ ] Update CLAUDE.md with final patterns
+- [x] Create WdPlaceSearch core component
+- [x] Create WdPlaceSearchMenu desktop wrapper
+- [x] Create WdPlaceSearchDialog mobile wrapper
+- [x] Update MainLayout to use new components
+- [x] Move legacy components to .legacy suffix
+- [ ] Test both desktop and mobile thoroughly
+- [ ] Remove legacy components after confirmation
+
+## File Structure
+
+```
+src/components/search/
+├── WdPlaceSearch.vue              # Core component (card with search UI)
+├── WdPlaceSearchMenu.vue          # Desktop wrapper (popup)
+├── WdPlaceSearchDialog.vue        # Mobile wrapper (full-screen)
+├── WdSearchResultEntry.vue        # Result item component
+├── WdHutSearch.vue.legacy         # Old parent (to be removed)
+├── WdHutSearchInput.vue.legacy    # Old desktop (to be removed)
+└── WdHutSearchMobile.vue.legacy   # Old mobile (to be removed)
+
+src/layouts/
+└── MainLayout.vue                 # Uses Menu/Dialog based on screen size
+
+docs/specs/
+├── wd_place_search.md             # Complete specification (this file)
+└── wd_place_search_summary.md     # Implementation summary
+```
 
 ## Notes
 
+- Architecture eliminates code duplication between mobile and desktop
+- WdPlaceSearch is a complete, self-contained card component
+- Wrappers only handle opening/closing and platform-specific controls
 - Following WdSelectDate pattern for consistency
 - Using VueUse composables (useDebounceFn, useDraggable)
-- Prefer Quasar components without modifications
-- Minimize custom styling
 - Dark theme throughout
+- All search-related code in `src/components/search/`

@@ -15,7 +15,7 @@ const dragHandleRef = ref<HTMLElement | null>(null);
 // Draggable functionality
 const { x, y, style: draggableStyle } = useDraggable(dialogCardRef, {
   handle: dragHandleRef,
-  initialValue: { x: 0, y: 0 },
+  // initialValue: { x: 0, y: 0 },
 });
 
 // When menu opens, focus the search input
@@ -57,19 +57,11 @@ function closeMenu() {
 </style>
 
 <template>
-  <div class="q-ml-md q-mr-md" style="max-width: 280px; max-height: 40px">
+  <div class="q-ml-md q-mr-md" style="max-width: 140px; max-height: 40px">
     <!-- Readonly input field trigger -->
     <div id="select-place-search-location" style="flex: 1; position: relative">
-      <q-input
-        readonly
-        model-value=""
-        dense
-        dark
-        standout
-        placeholder="Orte suchen..."
-        class="toolbar-font"
-        @click="showMenu = true"
-      >
+      <q-input readonly model-value="" dense dark standout :placeholder="$t('search') + ' ...'" class="toolbar-font"
+        @click="showMenu = true">
         <template v-slot:prepend>
           <q-icon @click="showMenu = true" class="text-icon cursor-pointer" size="sm">
             <IconEvaSearchOutline />
@@ -79,41 +71,34 @@ function closeMenu() {
     </div>
 
     <!-- Desktop Popup Menu -->
-    <q-popup-proxy
-      :offset="[10, 1]"
-      no-parent-event
-      anchor="top start"
-      target="#select-place-search-location"
-      v-model="showMenu"
-      transition-show="jump-down"
-      transition-hide="jump-up"
-      :persistent="isSticky"
-    >
+    <q-menu :offset="[10, 1]" no-parent-event anchor="top start" target="#select-place-search-location"
+      v-model="showMenu" transition-show="jump-down" transition-hide="jump-up" :persistent="isSticky">
       <div ref="dialogCardRef" :style="draggableStyle" style="position: relative">
         <!-- Sticky/Close toggle buttons -->
         <div class="q-ma-xs z-top text-icon row q-gutter-xs" style="position: absolute; top: 6px; right: 6px">
-          <!-- Drag icon (shown when sticky) -->
-          <q-btn v-if="isSticky" dense round flat color="primary-400" ref="dragHandleRef" class="cursor-move">
-            <q-icon size="sm">
-              <IconEvaMoveOutline />
-            </q-icon>
-            <q-tooltip :delay="2000">Ziehen um zu verschieben</q-tooltip>
-          </q-btn>
           <!-- Lock/Unlock toggle -->
-          <q-btn v-if="!isSticky" dense round @click="toggleSticky" color="primary-400">
+          <q-btn v-if="!isSticky" dense round flat color="primary-400" @click="toggleSticky">
             <q-icon size="sm">
               <IconEvaUnlockOutline />
             </q-icon>
-            <q-tooltip :delay="2000">Dialog anheften</q-tooltip>
+            <q-tooltip :delay="1000">{{ $t('pin_something') }}</q-tooltip>
           </q-btn>
-          <q-btn v-else dense round @click="closeMenu" color="accent-700" icon="wd-close">
-            <q-tooltip :delay="2000">Schließen</q-tooltip>
+          <!-- Drag icon (shown when sticky) -->
+          <q-btn v-else dense round flat color="primary-400" ref="dragHandleRef" class="cursor-move"
+            @click="toggleSticky">
+            <q-icon size="sm" color="accent">
+              <IconEvaLockFill />
+              <!--<IconEvaMoveOutline />-->
+            </q-icon>
+            <q-tooltip :delay="2000">{{ $t('drag_to_move') }}</q-tooltip>
+          </q-btn>
+          <q-btn dense round @click="closeMenu" color="accent-700" icon="wd-close">
           </q-btn>
         </div>
 
         <!-- Search component (complete card) -->
         <WdPlaceSearch ref="placeSearchRef" @close="onSearchClose" />
       </div>
-    </q-popup-proxy>
+    </q-menu>
   </div>
 </template>
