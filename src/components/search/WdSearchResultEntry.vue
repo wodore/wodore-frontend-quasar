@@ -8,7 +8,7 @@ const $q = useQuasar();
 const isMobile = computed(() => $q.screen.xs);
 
 interface Props {
-  hut: schemasWodore['HutSearchResultSchema'];
+  hut: schemasWodore['GeoPlaceSearchSchema'];
   selected?: boolean;
 }
 
@@ -19,38 +19,47 @@ const props = withDefaults(defineProps<Props>(), {
 console.debug(props.hut);
 // Emits
 const emit = defineEmits<{
-  select: [hut: schemasWodore['HutSearchResultSchema'], event: Event];
-  preview: [hut: schemasWodore['HutSearchResultSchema']];
+  select: [place: schemasWodore['GeoPlaceSearchSchema'], event: Event];
+  preview: [place: schemasWodore['GeoPlaceSearchSchema']];
 }>();
 
-// Get hut type icon URL
-const hutTypeIcon = computed<string | undefined>(() => {
+// Get place type icon URL
+const placeTypeIcon = computed<string | undefined>(() => {
   if (!props.hut.place_type || typeof props.hut.place_type !== 'object') {
     return undefined;
   }
 
-  const hutType = props.hut.place_type as Record<string, unknown>;
+  const placeType = props.hut.place_type as schemasWodore['CategoryPlaceTypeSchema'];
 
-  // Check for open.symbol (nested structure)
-  if (typeof hutType.symbol === 'string') {
-    return getImageUrl(hutType.symbol, { fit: true, size: '36x36' });
+  // Check for symbol.detailed (nested structure for GeoPlaces)
+  if (placeType.symbol && typeof placeType.symbol === 'object') {
+    const symbol = placeType.symbol as {
+      mono?: string;
+      detailed?: string;
+      simple?: string;
+    };
+    if (symbol.detailed) {
+      return getImageUrl(symbol.detailed, { fit: true, size: '36x36' });
+    }
   }
 
   return undefined;
 });
 
-// Get hut avatar image
-// const hutAvatar = computed<string | undefined>(() => {
-//   if (!props.hut.avatar) {
-//     return undefined;
-//   }
+// Get place type name
+const placeTypeName = computed<string>(() => {
+  if (!props.hut.place_type || typeof props.hut.place_type !== 'object') {
+    return '';
+  }
 
-//   // If avatar is provided, use it as thumbnail
-//   return getImageUrl(props.hut.avatar as string, {
-//     fit: true,
-//     size: '64x64',
-//   });
-// });
+  const placeType = props.hut.place_type as schemasWodore['CategoryPlaceTypeSchema'];
+
+  if (placeType.name) {
+    return placeType.name;
+  }
+
+  return '';
+});
 
 // Handle click
 function onClick(event: Event) {
@@ -62,36 +71,25 @@ function onPreviewClick(event: Event) {
   event.stopPropagation();
   emit('preview', props.hut);
 }
-
-// Safe access to hut_type.open.name
-const hutTypeName = computed<string>(() => {
-  if (!props.hut.hut_type || typeof props.hut.hut_type !== 'object') {
-    return '';
-  }
-
-  const hutType = props.hut.hut_type as Record<string, unknown>;
-
-  if (hutType.open && typeof hutType.open === 'object') {
-    const open = hutType.open as Record<string, unknown>;
-    if (typeof open.name === 'string') {
-      return open.name;
-    }
-  }
-
-  return '';
-});
 </script>
 
 <style scoped lang="scss"></style>
 
 <template>
-  <q-item clickable v-ripple @click="onClick" :class="{ 'bg-dark-600': selected }" dark dense>
+  <q-item
+    clickable
+    v-ripple
+    @click="onClick"
+    :class="{ 'bg-dark-600': selected }"
+    dark
+    dense
+  >
     <q-item-section avatar>
-      <img v-if="hutTypeIcon" :src="hutTypeIcon" :alt="hut.name" />
+      <img v-if="placeTypeIcon" :src="placeTypeIcon" :alt="hut.name" />
     </q-item-section>
     <q-item-section>
       <q-item-label overline class="text-primary-400" lines="1">{{
-        hutTypeName
+        placeTypeName
       }}</q-item-label>
       <q-item-label class="text-primary-100 text-body1" lines="2">{{
         hut.name
@@ -109,7 +107,14 @@ const hutTypeName = computed<string>(() => {
 
     <!-- Preview button (desktop only) -->
     <q-item-section v-if="!isMobile" side class="q-pr-md">
-      <q-btn flat round dense color="primary-300" @click="onPreviewClick" size="sm">
+      <q-btn
+        flat
+        round
+        dense
+        color="primary-300"
+        @click="onPreviewClick"
+        size="sm"
+      >
         <q-icon size="sm">
           <IconEvaEyeOutline />
         </q-icon>

@@ -55,7 +55,7 @@ const isHutClosed = computed<
 const headerShadow = ref(false);
 //const { data, error } = await
 watchEffect(() => {
-  hut.value = undefined;
+  // Don't reset hut.value to undefined - keep showing previous hut until new data loads
   headerShadow.value = false;
   if (props.slug) {
     clientWodore

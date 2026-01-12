@@ -4,6 +4,58 @@
  */
 
 export interface paths {
+  '/v1/geo/places/search': {
+    /**
+     * Search Geoplaces
+     * @description Search for geographic places using fuzzy text search across all language fields.
+     */
+    get: operations['search_geoplaces'];
+  };
+  '/v1/geo/places/nearby': {
+    /**
+     * Nearby Geoplaces
+     * @description Find places near coordinates within a radius, ordered by distance.
+     */
+    get: operations['nearby_geoplaces'];
+  };
+  '/v1/categories/tree/{parent_slug}': {
+    /**
+     * Get Category Tree
+     * @description Get category hierarchy as a tree structure.
+     *
+     * Supports dot or slash-notation slugs with max one parent (e.g., `map/transport`).
+     * The parent is optional but if slug is ambiguous, returns 400 error with available paths.
+     * Use `root` to return all root categories.
+     * Always excludes the root from results (returns children).
+     */
+    get: operations['get_category_tree'];
+  };
+  '/v1/categories/list/{parent_slug}': {
+    /**
+     * Get Category List
+     * @description Get flat list of categories.
+     *
+     * Supports dot-notation slugs with max one parent (e.g., 'accommodation.hut').
+     * If slug is ambiguous, returns 400 error with available paths.
+     * If slug is omitted, returns all categories.
+     * Always excludes the root from results (returns children).
+     */
+    get: operations['get_category_list_all'];
+  };
+  '/v1/categories/map/{parent_slug}': {
+    /**
+     * Get Category Map
+     * @description Get category hierarchy as a nested dictionary mapping.
+     *
+     * Keys are category slugs, values contain category data with nested 'children' dict.
+     *
+     * Supports dot-notation slugs with max one parent (e.g., 'accommodation.hut').
+     * If slug is ambiguous, returns 400 error with available paths.
+     * If slug is omitted, returns all root categories as a map.
+     * Always excludes the root from results (returns children).
+     */
+    get: operations['get_category_map_all'];
+  };
   '/v1/huts/bookings': {
     /**
      * Get hut bookings (deprecated)
@@ -19,14 +71,6 @@ export interface paths {
      * @description **DEPRECATED**: Use `/huts/availability.geojson` instead. This endpoint will be removed in a future version.
      */
     get: operations['get_hut_bookings_geojson'];
-  };
-  '/v1/huts/types/list': {
-    /** Get Hut Types */
-    get: operations['get_hut_types'];
-  };
-  '/v1/huts/types/records': {
-    /** Get Hut Type Records */
-    get: operations['get_hut_type_records'];
   };
   '/v1/huts/availability/{date}.geojson': {
     /**
@@ -85,6 +129,34 @@ export interface paths {
     /** Get Organization */
     get: operations['get_organization'];
   };
+  '/v1/symbols/': {
+    /**
+     * Get Symbols
+     * @description Get a list of all symbols. By default only returns active symbols.
+     */
+    get: operations['get_symbols'];
+  };
+  '/v1/symbols/by-id/{id}': {
+    /**
+     * Get Symbol By Id
+     * @description Get a single symbol by UUID.
+     */
+    get: operations['get_symbol_by_id'];
+  };
+  '/v1/symbols/slug/{slug}': {
+    /**
+     * Get Symbols By Slug
+     * @description Get all style variants for a symbol by slug. By default only returns active symbols.
+     */
+    get: operations['get_symbols_by_slug'];
+  };
+  '/v1/symbols/{style_slug}/{slug}': {
+    /**
+     * Get Symbol By Style And Slug
+     * @description Get a single symbol by style and slug. Returns the same schema as by-id endpoint.
+     */
+    get: operations['get_symbol_by_style_and_slug'];
+  };
   '/v1/feedback/': {
     /** Create Feedback */
     post: operations['server_apps_feedbacks_api_create_feedback'];
@@ -102,6 +174,244 @@ export type webhooks = Record<string, never>;
 
 export interface components {
   schemas: {
+    /**
+     * IncludeModeEnum
+     * @description Include mode enum for search endpoint - controls level of detail.
+     * @enum {string}
+     */
+    IncludeModeEnum: 'no' | 'slug' | 'all';
+    /**
+     * CategoryPlaceTypeSchema
+     * @description Schema for category place type with symbols (used in GeoPlace).
+     */
+    CategoryPlaceTypeSchema: {
+      /** Slug */
+      slug: string;
+      /** Name */
+      name: string;
+      /**
+       * Description
+       * @default
+       */
+      description?: string;
+      /** Symbol */
+      symbol?: {
+        [key: string]: string;
+      } | null;
+    };
+    /**
+     * GeoPlaceSearchSchema
+     * @description Schema for search results with location coordinates.
+     */
+    GeoPlaceSearchSchema: {
+      /** Id */
+      id: number;
+      /** Name */
+      name: string;
+      /** Country Code */
+      country_code: string | null;
+      /** Elevation */
+      elevation: number | null;
+      /** Importance */
+      importance: number;
+      location: components['schemas']['LocationSchema'];
+      /** Place Type */
+      place_type?:
+        | string
+        | components['schemas']['CategoryPlaceTypeSchema']
+        | null;
+      /** Sources */
+      sources?:
+        | components['schemas']['OrganizationSourceIdSlugSchema'][]
+        | components['schemas']['OrganizationSourceIdDetailSchema'][]
+        | null;
+      /** Score */
+      score?: number | null;
+    };
+    /**
+     * LocationSchema
+     * @description Location with longitude, latitude and optional elevation in WSG84.
+     *
+     * Attributes:
+     *     lon: Longitude (x).
+     *     lat: Latitude (y).
+     *     ele: Elevation in meter.
+     */
+    LocationSchema: {
+      /** Latitude (y) in WGS84 */
+      lat: number;
+      /** Longitude (x) in WGS84 */
+      lon: number;
+    };
+    /**
+     * OrganizationSearchSchema
+     * @description Schema for organization in search results.
+     */
+    OrganizationSearchSchema: {
+      /** Slug */
+      slug: string;
+      /** Name */
+      name?: string | null;
+      /** Logo */
+      logo?: string | null;
+    };
+    /**
+     * OrganizationSourceIdDetailSchema
+     * @description Schema for organization with source ID - full details version.
+     */
+    OrganizationSourceIdDetailSchema: {
+      source: components['schemas']['OrganizationSearchSchema'];
+      /** Source Id */
+      source_id?: string | null;
+    };
+    /**
+     * OrganizationSourceIdSlugSchema
+     * @description Schema for organization with source ID - slug only version.
+     */
+    OrganizationSourceIdSlugSchema: {
+      /** Source */
+      source: string;
+      /** Source Id */
+      source_id?: string | null;
+    };
+    /**
+     * GeoPlaceNearbySchema
+     * @description Schema for nearby places with distance information.
+     */
+    GeoPlaceNearbySchema: {
+      /** Id */
+      id: number;
+      /** Name */
+      name: string;
+      /** Country Code */
+      country_code: string | null;
+      /** Elevation */
+      elevation: number | null;
+      /** Importance */
+      importance: number;
+      location: components['schemas']['LocationSchema'];
+      /** Place Type */
+      place_type?:
+        | string
+        | components['schemas']['CategoryPlaceTypeSchema']
+        | null;
+      /** Sources */
+      sources?:
+        | components['schemas']['OrganizationSourceIdSlugSchema'][]
+        | components['schemas']['OrganizationSourceIdDetailSchema'][]
+        | null;
+      /** Distance */
+      distance?: number | null;
+    };
+    /**
+     * MediaUrlModeEnum
+     * @description Media URL mode for image fields.
+     * @enum {string}
+     */
+    MediaUrlModeEnum: 'no' | 'relative' | 'absolute';
+    /**
+     * CategoryTreeSchema
+     * @description Hierarchical tree representation of categories.
+     */
+    CategoryTreeSchema: {
+      /** Slug */
+      slug: string;
+      /** Name */
+      name: string;
+      /**
+       * Description
+       * @default
+       */
+      description?: string;
+      /** Order */
+      order: number;
+      /** Level */
+      level: number;
+      /** Parent */
+      parent?: string | null;
+      /** Identifier */
+      identifier: string;
+      /** Symbol Detailed */
+      symbol_detailed?: string | null;
+      /** Symbol Simple */
+      symbol_simple?: string | null;
+      /** Symbol Mono */
+      symbol_mono?: string | null;
+      /**
+       * Children
+       * @default false
+       */
+      children?: components['schemas']['CategoryTreeSchema'][] | boolean;
+    };
+    /**
+     * CategoryListItemSchema
+     * @description Simple category item for list view.
+     */
+    CategoryListItemSchema: {
+      /** Slug */
+      slug: string;
+      /** Name */
+      name: string;
+      /**
+       * Description
+       * @default
+       */
+      description?: string;
+      /** Order */
+      order: number;
+      /** Level */
+      level: number;
+      /** Parent */
+      parent?: string | null;
+      /** Identifier */
+      identifier: string;
+      /** Children */
+      children: boolean;
+      /** Symbol Detailed */
+      symbol_detailed?: string | null;
+      /** Symbol Simple */
+      symbol_simple?: string | null;
+      /** Symbol Mono */
+      symbol_mono?: string | null;
+    };
+    /**
+     * CategoryMapSchema
+     * @description Category with children for map view.
+     */
+    CategoryMapSchema: {
+      /** Slug */
+      slug: string;
+      /** Name */
+      name: string;
+      /**
+       * Description
+       * @default
+       */
+      description?: string;
+      /** Order */
+      order: number;
+      /** Level */
+      level: number;
+      /** Parent */
+      parent?: string | null;
+      /** Identifier */
+      identifier: string;
+      /** Children Count */
+      children_count: number;
+      /** Symbol Detailed */
+      symbol_detailed?: string | null;
+      /** Symbol Simple */
+      symbol_simple?: string | null;
+      /** Symbol Mono */
+      symbol_mono?: string | null;
+      /**
+       * Children
+       * @default {}
+       */
+      children?: {
+        [key: string]: components['schemas']['CategoryMapSchema'];
+      };
+    };
     /** HutBookingsQuery */
     HutBookingsQuery: {
       /**
@@ -180,21 +490,6 @@ export interface components {
       /** Bookings */
       bookings: components['schemas']['HutBookingSchema'][];
       location: components['schemas']['LocationSchema'];
-    };
-    /**
-     * LocationSchema
-     * @description Location with longitude, latitude and optional elevation in WSG84.
-     *
-     * Attributes:
-     *     lon: Longitude (x).
-     *     lat: Latitude (y).
-     *     ele: Elevation in meter.
-     */
-    LocationSchema: {
-      /** Latitude (y) in WGS84 */
-      lat: number;
-      /** Longitude (x) in WGS84 */
-      lon: number;
     };
     /**
      * OccupancyStatusEnum
@@ -300,55 +595,6 @@ export interface components {
     };
     Position2D: [number, number];
     Position3D: [number, number, number];
-    /** FieldsParam[HutTypeDetailSchema] */
-    FieldsParam_HutTypeDetailSchema_: {
-      /**
-       * Include
-       * @description Comma separated list with field names, use `__all__` in order to include every field.
-       */
-      include?: unknown;
-      /**
-       * Exclude
-       * @description Comma separated list with field names, if set it uses all fields except the excluded ones.
-       */
-      exclude?: unknown;
-    };
-    /** HutTypeDetailSchema */
-    HutTypeDetailSchema: {
-      /** Slug */
-      slug: string;
-      /** Name */
-      name: string;
-      /**
-       * Description
-       * @default
-       */
-      description?: string;
-      /**
-       * Symbol
-       * @description Normal icon
-       * @default huts/types/symbols/detailed/unknown.png
-       */
-      symbol?: string | null;
-      /**
-       * Level
-       * @description Comfort level, higher is more comfort
-       * @default 0
-       */
-      level?: number | null;
-      /**
-       * Symbol Simple
-       * @description Simple icon
-       * @default huts/types/symbols/simple/unknown.png
-       */
-      symbol_simple?: string | null;
-      /**
-       * Icon
-       * @description Black icon
-       * @default huts/types/icons/unknown.png
-       */
-      icon?: string | null;
-    };
     /**
      * DatePathParam
      * @description Path parameter for date.
@@ -744,12 +990,6 @@ export interface components {
       data: components['schemas']['AvailabilityTrendDaySchema'][];
     };
     /**
-     * IncludeModeEnum
-     * @description Include mode enum for search endpoint - controls level of detail.
-     * @enum {string}
-     */
-    IncludeModeEnum: 'no' | 'slug' | 'all';
-    /**
      * CapacitySimpleSchema
      * @description Simplified capacity schema for search results.
      */
@@ -853,18 +1093,16 @@ export interface components {
     };
     /** HutTypeSchema */
     HutTypeSchema: {
-      /** Level */
-      level?: number | null;
+      /** Order */
+      order?: number | null;
       /** Slug */
       slug: string;
       /** Name */
       name: string | null;
       /** Symbol */
-      symbol: string | null;
-      /** Symbol Simple */
-      symbol_simple: string | null;
-      /** Icon */
-      icon: string | null;
+      symbol?: {
+        [key: string]: string | null;
+      } | null;
     };
     /** ImageInfoSchema */
     ImageInfoSchema: {
@@ -1345,6 +1583,73 @@ export interface components {
        */
       color_dark?: string | null;
     };
+    /** FieldsParam[SymbolOptional] */
+    FieldsParam_SymbolOptional_: {
+      /**
+       * Include
+       * @description Comma separated list with field names, use `__all__` in order to include every field.
+       */
+      include?: unknown;
+      /**
+       * Exclude
+       * @description Comma separated list with field names, if set it uses all fields except the excluded ones.
+       */
+      exclude?: unknown;
+    };
+    /**
+     * SymbolOptional
+     * @description Schema for Symbol model with all fields optional.
+     */
+    SymbolOptional: {
+      /** Id */
+      id?: string | null;
+      /**
+       * Slug
+       * @description Symbol identifier (e.g., 'water', 'mountain')
+       */
+      slug?: string | null;
+      /**
+       * Style
+       * @description Symbol style variant
+       * @default detailed
+       */
+      style?: string | null;
+      /**
+       * SVG File
+       * @description SVG file for this symbol
+       */
+      svg_file?: string | null;
+      /**
+       * Search Text
+       * @description Keywords for admin search (e.g., 'water, river, lake, blue')
+       */
+      search_text?: string | null;
+      /** License */
+      license?: number | null;
+      /**
+       * Author
+       * @default
+       */
+      author?: string | null;
+      /**
+       * Author URL
+       * @default
+       */
+      author_url?: string | null;
+      /**
+       * Source URL
+       * @default
+       */
+      source_url?: string | null;
+      /** Source Organization */
+      source_org?: number | null;
+      /**
+       * Aktiv
+       * @description Only shown to admin if not active
+       * @default true
+       */
+      is_active?: boolean | null;
+    };
     /** ResponseSchema */
     ResponseSchema: {
       /** Message */
@@ -1406,6 +1711,203 @@ export type external = Record<string, never>;
 
 export interface operations {
   /**
+   * Search Geoplaces
+   * @description Search for geographic places using fuzzy text search across all language fields.
+   */
+  search_geoplaces: {
+    parameters: {
+      query: {
+        /** @description Select language code: de, en, fr, it. */
+        lang?: string;
+        /**
+         * @description Search query string to match against place names in all languages
+         * @example Matterhorn
+         */
+        q: string;
+        /** @description Maximum number of results to return */
+        limit?: number;
+        /** @description Number of results to skip for pagination */
+        offset?: number;
+        /** @description Filter by place type slugs (e.g., 'peak', 'pass', 'lake'). Use 'parent.child' format for child categories. */
+        types?: string[] | null;
+        /** @description Filter by parent category slugs (e.g., 'terrain', 'transport') */
+        categories?: string[] | null;
+        /** @description Filter by country codes (e.g., 'CH', 'FR', 'IT') */
+        countries?: string[] | null;
+        /** @description Minimum similarity score (0.0-1.0). Lower values return more results but with lower relevance. Recommended: 0.1 for fuzzy matching, 0.3 for stricter matching. */
+        threshold?: number;
+        /** @description Minimum importance score (0-100). Higher values filter for more prominent places. */
+        min_importance?: number;
+        /** @description Remove near-identical places that share a name and a very close location before pagination. */
+        deduplicate?: boolean;
+        /** @description Include place type information: 'no' excludes field, 'slug' returns type slug only, 'all' returns full type details with name and description */
+        include_place_type?: 'no' | 'slug' | 'all';
+        /** @description Include data sources: 'no' excludes field, 'slug' returns source slugs only, 'all' returns full source details with name and logo */
+        include_sources?: 'no' | 'slug' | 'all';
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          'application/json': components['schemas']['GeoPlaceSearchSchema'][];
+        };
+      };
+    };
+  };
+  /**
+   * Nearby Geoplaces
+   * @description Find places near coordinates within a radius, ordered by distance.
+   */
+  nearby_geoplaces: {
+    parameters: {
+      query: {
+        /** @description Select language code: de, en, fr, it. */
+        lang?: string;
+        /**
+         * @description Latitude coordinate
+         * @example 46.0342
+         */
+        lat: number;
+        /**
+         * @description Longitude coordinate
+         * @example 7.6488
+         */
+        lon: number;
+        /** @description Search radius in meters (default: 10000 = 10km) */
+        radius?: number;
+        /** @description Maximum number of results */
+        limit?: number;
+        /** @description Number of results to skip for pagination */
+        offset?: number;
+        /** @description Filter by place type slugs (e.g., 'peak', 'pass'). Use 'parent.child' format for child categories. */
+        types?: string[] | null;
+        /** @description Filter by parent category slugs */
+        categories?: string[] | null;
+        /** @description Minimum importance score (0-100) */
+        min_importance?: number;
+        /** @description Include place type information: 'no' excludes field, 'slug' returns type slug only, 'all' returns full type details with name and description */
+        include_place_type?: 'no' | 'slug' | 'all';
+        /** @description Include data sources: 'no' excludes field, 'slug' returns source slugs only, 'all' returns full source details with name and logo */
+        include_sources?: 'no' | 'slug' | 'all';
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          'application/json': components['schemas']['GeoPlaceNearbySchema'][];
+        };
+      };
+    };
+  };
+  /**
+   * Get Category Tree
+   * @description Get category hierarchy as a tree structure.
+   *
+   * Supports dot or slash-notation slugs with max one parent (e.g., `map/transport`).
+   * The parent is optional but if slug is ambiguous, returns 400 error with available paths.
+   * Use `root` to return all root categories.
+   * Always excludes the root from results (returns children).
+   */
+  get_category_tree: {
+    parameters: {
+      query?: {
+        /** @description Select language code: de, en, fr, it. */
+        lang?: string;
+        /** @description Maximum depth level relative to request slug, for the last level children are set to a boolean */
+        level?: number | null;
+        /** @description Only include active categories */
+        is_active?: boolean;
+        /** @description How to return media URLs: 'no' (exclude), 'relative' (relative paths), 'absolute' (full URLs) */
+        media_mode?: 'no' | 'relative' | 'absolute';
+      };
+      path: {
+        parent_slug: string | 'root';
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          'application/json': components['schemas']['CategoryTreeSchema'][];
+        };
+      };
+    };
+  };
+  /**
+   * Get Category List
+   * @description Get flat list of categories.
+   *
+   * Supports dot-notation slugs with max one parent (e.g., 'accommodation.hut').
+   * If slug is ambiguous, returns 400 error with available paths.
+   * If slug is omitted, returns all categories.
+   * Always excludes the root from results (returns children).
+   */
+  get_category_list_all: {
+    parameters: {
+      query?: {
+        /** @description Select language code: de, en, fr, it. */
+        lang?: string;
+        /** @description Maximum depth level relative to request slug */
+        level?: number | null;
+        /** @description Only include active categories */
+        is_active?: boolean;
+        /** @description How to return media URLs: 'no' (exclude), 'relative' (relative paths), 'absolute' (full URLs) */
+        media_mode?: 'no' | 'relative' | 'absolute';
+      };
+      path: {
+        parent_slug: string | 'root';
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          'application/json': components['schemas']['CategoryListItemSchema'][];
+        };
+      };
+    };
+  };
+  /**
+   * Get Category Map
+   * @description Get category hierarchy as a nested dictionary mapping.
+   *
+   * Keys are category slugs, values contain category data with nested 'children' dict.
+   *
+   * Supports dot-notation slugs with max one parent (e.g., 'accommodation.hut').
+   * If slug is ambiguous, returns 400 error with available paths.
+   * If slug is omitted, returns all root categories as a map.
+   * Always excludes the root from results (returns children).
+   */
+  get_category_map_all: {
+    parameters: {
+      query?: {
+        /** @description Select language code: de, en, fr, it. */
+        lang?: string;
+        /** @description Maximum depth level relative to request slug */
+        level?: number | null;
+        /** @description Only include active categories */
+        is_active?: boolean;
+        /** @description How to return media URLs: 'no' (exclude), 'relative' (relative paths), 'absolute' (full URLs) */
+        media_mode?: 'no' | 'relative' | 'absolute';
+      };
+      path: {
+        parent_slug: string | 'root';
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          'application/json': {
+            [key: string]: components['schemas']['CategoryMapSchema'];
+          };
+        };
+      };
+    };
+  };
+  /**
    * Get hut bookings (deprecated)
    * @deprecated
    * @description **DEPRECATED**: Use `/huts/availability.geojson` instead. This endpoint will be removed in a future version.
@@ -1459,50 +1961,6 @@ export interface operations {
       200: {
         content: {
           'application/json': components['schemas']['HutBookingsFeatureCollection'];
-        };
-      };
-    };
-  };
-  /** Get Hut Types */
-  get_hut_types: {
-    parameters: {
-      query?: {
-        /** @description Select language code: de, en, fr, it. */
-        lang?: string;
-        /** @description Comma separated list with field names, use `__all__` in order to include every field. */
-        include?: unknown;
-        /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
-        exclude?: unknown;
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          'application/json': components['schemas']['HutTypeDetailSchema'][];
-        };
-      };
-    };
-  };
-  /** Get Hut Type Records */
-  get_hut_type_records: {
-    parameters: {
-      query?: {
-        /** @description Select language code: de, en, fr, it. */
-        lang?: string;
-        /** @description Comma separated list with field names, use `__all__` in order to include every field. */
-        include?: unknown;
-        /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
-        exclude?: unknown;
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          'application/json': {
-            [key: string]: components['schemas']['HutTypeDetailSchema'];
-          };
         };
       };
     };
@@ -1757,6 +2215,122 @@ export interface operations {
       200: {
         content: {
           'application/json': components['schemas']['OrganizationOptional'];
+        };
+      };
+    };
+  };
+  /**
+   * Get Symbols
+   * @description Get a list of all symbols. By default only returns active symbols.
+   */
+  get_symbols: {
+    parameters: {
+      query?: {
+        /** @description Select language code: de, en, fr, it. */
+        lang?: string;
+        /** @description Comma separated list with field names, use `__all__` in order to include every field. */
+        include?: unknown;
+        /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
+        exclude?: unknown;
+        /** @description Filter by active status (default: True) */
+        is_active?: boolean;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          'application/json': components['schemas']['SymbolOptional'][];
+        };
+      };
+    };
+  };
+  /**
+   * Get Symbol By Id
+   * @description Get a single symbol by UUID.
+   */
+  get_symbol_by_id: {
+    parameters: {
+      query?: {
+        /** @description Select language code: de, en, fr, it. */
+        lang?: string;
+        /** @description Comma separated list with field names, use `__all__` in order to include every field. */
+        include?: unknown;
+        /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
+        exclude?: unknown;
+        /** @description Filter by active status (default: True) */
+        is_active?: boolean;
+      };
+      path: {
+        id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          'application/json': components['schemas']['SymbolOptional'];
+        };
+      };
+    };
+  };
+  /**
+   * Get Symbols By Slug
+   * @description Get all style variants for a symbol by slug. By default only returns active symbols.
+   */
+  get_symbols_by_slug: {
+    parameters: {
+      query?: {
+        /** @description Select language code: de, en, fr, it. */
+        lang?: string;
+        /** @description Comma separated list with field names, use `__all__` in order to include every field. */
+        include?: unknown;
+        /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
+        exclude?: unknown;
+        /** @description Filter by style (detailed, simple, mono) */
+        style?: string | null;
+        /** @description Filter by active status (default: True) */
+        is_active?: boolean;
+      };
+      path: {
+        slug: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          'application/json': components['schemas']['SymbolOptional'][];
+        };
+      };
+    };
+  };
+  /**
+   * Get Symbol By Style And Slug
+   * @description Get a single symbol by style and slug. Returns the same schema as by-id endpoint.
+   */
+  get_symbol_by_style_and_slug: {
+    parameters: {
+      query?: {
+        /** @description Select language code: de, en, fr, it. */
+        lang?: string;
+        /** @description Comma separated list with field names, use `__all__` in order to include every field. */
+        include?: unknown;
+        /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
+        exclude?: unknown;
+        /** @description Filter by active status (default: True) */
+        is_active?: boolean;
+      };
+      path: {
+        style_slug: string;
+        slug: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          'application/json': components['schemas']['SymbolOptional'];
         };
       };
     };

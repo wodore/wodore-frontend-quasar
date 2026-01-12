@@ -20,7 +20,12 @@ const CARD_WIDTH = 440;
 const CARD_HEIGHT = 400;
 
 // Draggable functionality with constraints
-const { x, y, style: draggableStyle, isDragging: vueuseDragging } = useDraggable(menuContentRef, {
+const {
+  x,
+  y,
+  style: draggableStyle,
+  isDragging: vueuseDragging,
+} = useDraggable(menuContentRef, {
   handle: dragHandleRef,
   initialValue: { x: 0, y: 0 },
   onMove: (position) => {
@@ -132,10 +137,22 @@ function closeMenu() {
   <div class="q-ml-md q-mr-md" style="max-width: 140px; max-height: 40px">
     <!-- Readonly input field trigger -->
     <div id="select-place-search-location" style="flex: 1; position: relative">
-      <q-input readonly model-value="" dense dark standout :placeholder="$t('search') + ' ...'" class="toolbar-font"
-        @click="showMenu = true">
+      <q-input
+        readonly
+        model-value=""
+        dense
+        dark
+        standout
+        :placeholder="$t('search') + ' ...'"
+        class="toolbar-font"
+        @click="showMenu = true"
+      >
         <template v-slot:prepend>
-          <q-icon @click="showMenu = true" class="text-icon cursor-pointer" size="sm">
+          <q-icon
+            @click="showMenu = true"
+            class="text-icon cursor-pointer"
+            size="sm"
+          >
             <IconEvaSearchOutline />
           </q-icon>
         </template>
@@ -143,21 +160,51 @@ function closeMenu() {
     </div>
 
     <!-- Q-menu with draggable content -->
-    <q-menu :offset="[10, 1]" no-parent-event anchor="top start" target="#select-place-search-location"
-      v-model="showMenu" transition-show="jump-down" transition-hide="jump-up" :persistent="isSticky">
-      <div ref="menuContentRef" :class="{ 'menu-content-sticky': isSticky }"
-        :style="isSticky ? draggableStyle : undefined" style="position: relative">
+    <q-menu
+      :offset="[10, 1]"
+      no-parent-event
+      anchor="top start"
+      target="#select-place-search-location"
+      v-model="showMenu"
+      transition-show="jump-down"
+      transition-hide="jump-up"
+      :persistent="isSticky"
+    >
+      <div
+        ref="menuContentRef"
+        :class="{ 'menu-content-sticky': isSticky }"
+        :style="isSticky ? draggableStyle : undefined"
+        style="position: relative"
+      >
         <!-- Control buttons -->
-        <div class="q-ma-xs z-top text-icon row q-gutter-xs" style="position: absolute; top: 6px; right: 6px">
+        <div
+          class="q-ma-xs z-top text-icon row q-gutter-xs"
+          style="position: absolute; top: 6px; right: 6px"
+        >
           <!-- Pin/Drag handle -->
-          <q-btn v-if="!isSticky" dense round flat color="primary-400" @click="toggleSticky">
+          <q-btn
+            v-if="!isSticky"
+            dense
+            round
+            flat
+            color="primary-400"
+            @click="toggleSticky"
+          >
             <q-icon size="sm">
               <IconEvaUnlockOutline />
             </q-icon>
             <q-tooltip :delay="1000">{{ $t('pin_something') }}</q-tooltip>
           </q-btn>
-          <q-btn v-else dense round flat color="primary-400" ref="dragHandleRef" class="cursor-move"
-            @click="handleDragHandleClick">
+          <q-btn
+            v-else
+            dense
+            round
+            flat
+            color="primary-400"
+            ref="dragHandleRef"
+            class="cursor-move"
+            @click="handleDragHandleClick"
+          >
             <q-icon size="sm">
               <IconEvaMoveOutline />
             </q-icon>
@@ -165,7 +212,13 @@ function closeMenu() {
           </q-btn>
 
           <!-- Close button -->
-          <q-btn dense round @click="closeMenu" color="accent-700" icon="wd-close">
+          <q-btn
+            dense
+            round
+            @click="closeMenu"
+            color="accent-700"
+            icon="wd-close"
+          >
           </q-btn>
         </div>
 
