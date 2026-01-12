@@ -35,6 +35,7 @@ function onSearchClose() {
   <q-dialog
     v-model="showDialog"
     maximized
+    square
     transition-show="slide-up"
     transition-hide="slide-down"
   >
