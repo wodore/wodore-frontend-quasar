@@ -54,17 +54,19 @@ async function performSearchInternal(newSearchText: string) {
   loading.value = true;
 
   try {
-    const { data, error } = await clientWodore.GET('/v1/huts/search', {
+    //const { data, error } = await clientWodore.GET('/v1/huts/search', {
+    const { data, error } = await clientWodore.GET('/v1/geoplaces/search', {
       params: {
         query: {
           q: newSearchText,
           lang: locale.value || 'de',
           offset: 0,
-          limit: 8,
-          threshold: 0.13,
-          include_hut_type: 'all',
-          include_sources: 'no',
-          include_avatar: true,
+          limit: 14,
+          threshold: 0.25,
+          //include_hut_type: 'all',
+          include_place_type: 'all',
+          include_sources: 'slug',
+          //include_avatar: true,
         },
       },
     });

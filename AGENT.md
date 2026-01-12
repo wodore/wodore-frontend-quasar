@@ -1,23 +1,12 @@
-# Claude Development Guide
+# Agent Guide
 
-Quick reference for Claude when working on `wodore-frontend-quasar` (short `wodore-frontend` or `wd-frontend`).
+Quick reference when working on `wodore-frontend-quasar` (short `wodore-frontend` or `wd-frontend`).
 
 **Note**: This file should be updated whenever important development information, patterns, or infrastructure details are discovered during work on the project.
 
 ## Important Development Rules
 
-**DO NOT revert changes made by the user**: When the user has explicitly configured values (constants, icons, styling, etc.), do NOT change them back to what you think they should be. If something was set to `0`, or uses a specific icon, assume it was done on purpose. Ask first if unclear.
-
-## Related Projects
-
-The Wodore ecosystem consists of multiple repositories:
-
-- **Frontend** (this repository): `wodore-frontend-quasar/` - Quasar/Vue.js frontend application
-- **Backend**: `../wodore-backend/` - Django/Django-Ninja backend
-- **Hut Services (Public)**: `../hut-services/` - Public library for hut information schemas and base services
-- **Hut Services (Private)**: `../hut-services-private/` - Private implementations for external booking services (HRS, SAC, etc.)
-
-All paths are relative to the repository root (`wodore-frontend-quasar/`).
+**DO NOT revert changes made by the user**: When the user has explicitly configured values (constants, icons, styling, etc.), do NOT change them back to what you think they should be.
 
 ## Specifications
 
@@ -66,21 +55,16 @@ yarn format           # Format with Prettier
 
 **IMPORTANT**: Always run `yarn lint` after making code changes to verify there are no errors or warnings before committing.
 
-### Docker
+## Related Projects
 
-```bash
-# Build Docker image (includes git hash)
-yarn docker:build
+The Wodore ecosystem consists of multiple repositories:
 
-# Run with different env configurations
-yarn docker:run-dev   # Uses .env + .env.local + .env.dev + .env.local.dev
-yarn docker:run-prod  # Uses .env + .env.local + .env.prod + .env.local.prod
-yarn docker:run-env   # Uses .env only
+- **Frontend** (this repository): `wodore-frontend-quasar/` - Quasar/Vue.js frontend application
+- **Backend**: `../wodore-backend/` - Django/Django-Ninja backend
+- **Hut Services (Public)**: `../hut-services/` - Public library for hut information schemas and base services
+- **Hut Services (Private)**: `../hut-services-private/` - Private implementations for external booking services (HRS, SAC, etc.)
 
-# Publish to GitHub Container Registry
-yarn docker:publish   # Publish edge tag
-yarn release          # Create versioned release (see scripts/release.sh)
-```
+All paths are relative to the repository root (`wodore-frontend-quasar/`).
 
 ## Project Structure
 
@@ -90,59 +74,25 @@ wodore-frontend-quasar/
 │   └── specs/               # Feature specifications and design docs
 ├── src/
 │   ├── assets/              # Static assets (images, icons, etc.)
-│   │   ├── icongenie/       # Favicon source files
-│   │   ├── stock_images/    # Stock images
-│   │   └── wodore-design/   # Design assets
 │   ├── boot/                # Quasar boot files (loaded before app starts)
-│   │   ├── auth.ts          # Authentication setup
-│   │   ├── axios.ts         # Axios configuration
-│   │   ├── i18n.ts          # Internationalization
-│   │   ├── icons.ts         # Icon configuration
-│   │   ├── maplibre.ts      # MapLibre GL setup
-│   │   └── vue-stripe.ts    # Stripe integration
 │   ├── clients/             # Generated API clients (openapi-ts)
-│   │   └── wodore_v1.d.ts   # Auto-generated from backend OpenAPI
 │   ├── components/          # Vue components
-│   │   ├── feedback/        # User feedback components
-│   │   ├── huts/            # Hut-related components
-│   │   ├── map/             # Map components
-│   │   ├── quasar/          # Quasar component extensions
-│   │   ├── support/         # Support components
-│   │   ├── toolbar/         # Toolbar components
-│   │   ├── utils/           # Utility components
-│   │   └── wodore/          # Wodore-specific components
 │   ├── composables/         # Vue composition functions
-│   │   └── useAuthService.ts
 │   ├── css/                 # Global styles
-│   │   └── app.scss         # Main SCSS file with custom utilities
 │   ├── extras/              # Extra resources
 │   │   └── icons/           # Custom icon generation
-│   │       ├── svg/source/  # Source SVG files (add-outline.svg, etc.)
-│   │       ├── svg/build/   # Fixed SVG files (auto-generated)
-│   │       └── dist/        # Generated icon font (fantasticon)
 │   ├── i18n/                # Internationalization
-│   │   └── locales/         # Translation files
 │   ├── layouts/             # Page layouts
 │   ├── pages/               # Route pages
-│   │   └── auth/            # Authentication pages
 │   ├── router/              # Vue Router configuration
 │   ├── services/            # Business logic and services
 │   ├── stores/              # Pinia stores (state management)
-│   │   ├── auth-store.ts    # Authentication state
-│   │   ├── huts-store.ts    # Huts data state
-│   │   └── map/             # Map-related stores
 │   ├── types/               # TypeScript type definitions
 │   ├── App.vue              # Root component
 │   └── env.d.ts             # Environment type definitions
 ├── src-pwa/                 # PWA-specific files
-│   ├── manifest.json        # PWA manifest
-│   └── tsconfig.json        # PWA TypeScript config
 ├── scripts/                 # Build and deployment scripts
-│   ├── check-git-status.sh
-│   ├── docker-publish.sh
-│   └── release.sh
 ├── docker/                  # Docker-related files
-│   └── replace_vars.go      # Environment variable replacement
 ├── .env                     # Environment variables (committed)
 ├── .env.local               # Local overrides (gitignored)
 ├── .env.[dev|prod]          # Environment-specific vars
@@ -202,48 +152,7 @@ yarn gen:api-local  # Local development API
 
 Services are defined in `../wodore-backend/docker-compose.yml`:
 
-#### Imagor (Image Processing)
-
-```bash
-# Service name: imagor
-# Container: django-local-imagor
-# Image: shumc/imagor:latest
-# Port: 8079 (host network mode)
-
-# Configuration
-- Base URL: http://localhost:8079
-- Unsafe mode enabled (for testing)
-- Auto WebP/AVIF conversion enabled
-- Secret key: IMAGOR_KEY from env (default: my_key)
-
-# Volumes
-- ./media → /mnt/data/source/media (source images)
-- ./media/imagor_data/storage → /mnt/data/storage (cached images)
-- ./media/imagor_data/result → /mnt/data/result (processed results)
-
-# URL format: /unsafe/{params}/{path}
-# Example: /unsafe/300x200/media/huts/image.jpg
-```
-
-**Note**: Use `docker compose` (not `docker-compose`) for all commands.
-
-### Backend Services
-
-The frontend requires the following backend services to be running:
-
-1. **Django Backend** (port 8000): API server
-2. **PostgreSQL with PostGIS**: Database (via docker compose in backend)
-3. **Imagor** (port 8079): Image processing (via docker compose in backend)
-
-Start backend services:
-
-```bash
-cd ../wodore-backend
-source .venv/bin/activate
-inv docker-compose -c "up -d"  # Start PostgreSQL and Imagor
-app migrate                     # Apply database migrations
-app run -p 8000                # Start Django server
-```
+- Imagor (Image Processing)
 
 ## Environment Variables
 
@@ -256,45 +165,7 @@ Environment files are loaded in this order (later files override earlier ones):
 
 ### Key Variables
 
-See `.env` file for all available variables. Important ones:
-
-```bash
-# Domain and URL
-WODORE_DOMAIN=localhost:9000
-WODORE_URL=http://localhost:9000
-
-# Backend API
-WODORE_API_HOST=http://127.0.0.1:8000
-WODORE_API_VERSION=v1
-
-# Image Processing (Imagor)
-WODORE_IMAGOR_KEY=my_key
-WODORE_IMAGOR_URL=http://127.0.0.1:8079
-WODORE_IMAGOR_REPLACE_API_HOST_MEDIA=disabled
-
-# Authentication (Zitadel OIDC)
-WODORE_OICD_ISSUER_URL=
-WODORE_OICD_CLIENT_ID=
-WODORE_OICD_RESOURCE_ID=
-
-# Maps
-WODORE_MAPTILER_API_KEY=get_maptiler_key
-
-# Analytics (Umami)
-WODORE_UMAMI_WEBSITE_ID=
-WODORE_UMAMI_WEBSITE_URL=
-
-# Payments
-WODORE_STRIPE_ID=StripeID
-```
-
-### Production/Docker Deployment
-
-- **GIT_HASH**: Set this build argument when building Docker images to include git version info.
-
-```bash
-docker build --build-arg GIT_HASH=$(git rev-parse --short HEAD) -t wodore-frontend .
-```
+See `.env` file for all available variables
 
 ## Common Patterns
 
@@ -303,10 +174,12 @@ docker build --build-arg GIT_HASH=$(git rev-parse --short HEAD) -t wodore-fronte
 **IMPORTANT Development Guidelines:**
 
 1. **Use VueUse composables whenever possible**: The project uses `@vueuse/core` extensively. Before implementing manual solutions (timers, watchers, event listeners, etc.), check if VueUse provides a composable for that use case.
+
    - Examples: `useDebounceFn`, `useThrottleFn`, `useLocalStorage`, `useIntersectionObserver`, `useEventListener`, etc.
-   - See: https://vueuse.org/
+   - See: <https://vueuse.org/>
 
 2. **Prefer Quasar components without manual modifications**: Use Quasar's built-in components and props as much as possible. Avoid adding custom styles or HTML unless absolutely necessary for specific custom functionality.
+
    - Quasar provides extensive theming and styling options through props and CSS variables
    - Only add custom styles when implementing truly unique designs not covered by Quasar
 
@@ -370,37 +243,14 @@ Quasar provides a comprehensive color system. The project extends it in `src/css
 <div class="text-primary--halo">Text with halo effect</div>
 ```
 
-#### SCSS Variables
-
-Access Quasar's SCSS variables and functions:
-
-```scss
-// In .vue files or .scss files
-.my-component {
-  color: color('primary');
-  background: color('accent', 500);
-}
-```
-
 ### Components
 
-#### Component Organization
-
-- `components/huts/` - Hut display, cards, details
-- `components/map/` - Map components, controls, layers
-- `components/feedback/` - User feedback, notifications
-- `components/toolbar/` - Toolbar and navigation
-- `components/utils/` - Reusable utilities
-- `components/wodore/` - Brand-specific components
-
-#### Component Naming
+#### Naming
 
 Use PascalCase for component files and registration:
 
 ```
 WdHutCard.vue
-WdMapControl.vue
-WdUserAvatar.vue
 ```
 
 ### State Management (Pinia)
@@ -432,26 +282,6 @@ const { data, error } = await client.GET('/v1/huts/{id}', {
 });
 ```
 
-### Authentication
-
-Uses OIDC (Zitadel) via `oidc-client-ts`:
-
-```typescript
-import { useAuthStore } from 'stores/auth-store';
-
-const auth = useAuthStore();
-
-// Check if authenticated
-if (auth.isAuthenticated) {
-  // Access user info
-  console.log(auth.user);
-}
-
-// Login/logout
-await auth.login();
-await auth.logout();
-```
-
 ### Routing
 
 Router configuration in `src/router/`:
@@ -464,50 +294,6 @@ const router = useRouter();
 router.push({ name: 'hut-detail', params: { id: '123' } });
 ```
 
-## Development Workflow
-
-### Adding a New Feature
-
-1. Create components in appropriate `src/components/` subdirectory
-2. Add types to `src/types/` if needed
-3. Create/update store in `src/stores/` for state management
-4. Add services to `src/services/` for business logic
-5. Update router in `src/router/` if new pages are needed
-6. Add translations to `src/i18n/locales/`
-
-### Updating API Types
-
-When backend API changes:
-
-```bash
-# Make sure backend is running locally
-cd ../wodore-backend
-app run -p 8000
-
-# In frontend project
-yarn gen:api-local
-```
-
-### Adding Custom Icons
-
-1. Add SVG file to `src/extras/icons/svg/source/`
-2. Run `yarn gen:icons` to generate icon font
-3. Use in components: `<q-icon name="wd-your-icon" />`
-
-### Building for Production
-
-```bash
-# Build
-yarn build
-
-# Test locally
-yarn serve
-
-# Build and publish Docker image
-yarn docker:build
-yarn docker:publish
-```
-
 ## Troubleshooting
 
 ### Common Issues
@@ -517,14 +303,6 @@ yarn docker:publish
 3. **Environment Variables Not Working**: Check `quasar.config.ts` env section and restart dev server
 4. **Docker Build Fails**: Ensure `GIT_HASH` build arg is provided
 5. **Authentication Issues**: Check OIDC configuration in `.env.local`
-
-### Development Tips
-
-- Use `console.log()` sparingly; prefer Vue DevTools for debugging
-- Use TypeScript strictly - avoid `any` types
-- Follow Vue 3 Composition API patterns
-- Use Quasar components when possible before creating custom ones
-- Keep components small and focused (Single Responsibility Principle)
 
 ## Additional Resources
 

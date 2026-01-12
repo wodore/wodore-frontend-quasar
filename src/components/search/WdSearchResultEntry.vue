@@ -25,21 +25,13 @@ const emit = defineEmits<{
 
 // Get hut type icon URL
 const hutTypeIcon = computed<string | undefined>(() => {
-  if (!props.hut.hut_type || typeof props.hut.hut_type !== 'object') {
+  if (!props.hut.place_type || typeof props.hut.place_type !== 'object') {
     return undefined;
   }
 
-  const hutType = props.hut.hut_type as Record<string, unknown>;
+  const hutType = props.hut.place_type as Record<string, unknown>;
 
   // Check for open.symbol (nested structure)
-  if (hutType.open && typeof hutType.open === 'object') {
-    const open = hutType.open as Record<string, unknown>;
-    if (typeof open.symbol === 'string') {
-      return getImageUrl(open.symbol, { fit: true, size: '36x36' });
-    }
-  }
-
-  // Fallback to direct symbol field
   if (typeof hutType.symbol === 'string') {
     return getImageUrl(hutType.symbol, { fit: true, size: '36x36' });
   }
@@ -93,14 +85,7 @@ const hutTypeName = computed<string>(() => {
 <style scoped lang="scss"></style>
 
 <template>
-  <q-item
-    clickable
-    v-ripple
-    @click="onClick"
-    :class="{ 'bg-dark-600': selected }"
-    dark
-    dense
-  >
+  <q-item clickable v-ripple @click="onClick" :class="{ 'bg-dark-600': selected }" dark dense>
     <q-item-section avatar>
       <img v-if="hutTypeIcon" :src="hutTypeIcon" :alt="hut.name" />
     </q-item-section>
@@ -121,17 +106,10 @@ const hutTypeName = computed<string>(() => {
         <!-- TODO: add region -->
       </q-item-label>
     </q-item-section>
-    
+
     <!-- Preview button (desktop only) -->
     <q-item-section v-if="!isMobile" side class="q-pr-md">
-      <q-btn
-        flat
-        round
-        dense
-        color="primary-300"
-        @click="onPreviewClick"
-        size="sm"
-      >
+      <q-btn flat round dense color="primary-300" @click="onPreviewClick" size="sm">
         <q-icon size="sm">
           <IconEvaEyeOutline />
         </q-icon>
