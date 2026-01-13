@@ -67,5 +67,11 @@
   "filter": "Filter",
   "booking_service_unavailable": "Booking service not available",
   "service_unavailable": "Service Error",
-  "error_caption": "Error"
+  "error_caption": "Error",
+  "pwa": {
+    "update_available": "A new version of the app is available.",
+    "update_caption": "Refresh to update",
+    "update_button": "Update now",
+    "later_button": "Later"
+  }
 }

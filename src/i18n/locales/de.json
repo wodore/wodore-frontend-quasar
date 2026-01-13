@@ -74,5 +74,11 @@
   "filter": "Filter",
   "booking_service_unavailable": "Reservationsservice nicht verfügbar",
   "service_unavailable": "",
-  "error_caption": "Fehler"
+  "error_caption": "Fehler",
+  "pwa": {
+    "update_available": "Eine neue Version der App ist verfügbar.",
+    "update_caption": "Aktualisieren",
+    "update_button": "Jetzt aktualisieren",
+    "later_button": "Später"
+  }
 }

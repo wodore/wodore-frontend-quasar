@@ -29,7 +29,8 @@ const placeTypeIcon = computed<string | undefined>(() => {
     return undefined;
   }
 
-  const placeType = props.hut.place_type as schemasWodore['CategoryPlaceTypeSchema'];
+  const placeType = props.hut
+    .place_type as schemasWodore['CategoryPlaceTypeSchema'];
 
   // Check for symbol.detailed (nested structure for GeoPlaces)
   if (placeType.symbol && typeof placeType.symbol === 'object') {
@@ -52,7 +53,8 @@ const placeTypeName = computed<string>(() => {
     return '';
   }
 
-  const placeType = props.hut.place_type as schemasWodore['CategoryPlaceTypeSchema'];
+  const placeType = props.hut
+    .place_type as schemasWodore['CategoryPlaceTypeSchema'];
 
   if (placeType.name) {
     return placeType.name;
