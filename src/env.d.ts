@@ -7,6 +7,8 @@ declare namespace NodeJS {
     VUE_ROUTER_BASE: string | undefined;
     WODORE_GIT_HASH: string;
     WODORE_APP_VERSION: string;
+    WODORE_APP_NAME: string;
+    WODORE_ENV: string;
     WODORE_URL: string;
     WODORE_DOMAIN: string;
     WODORE_API_HOST: string;

@@ -97,8 +97,9 @@ watchEffect(() => {
           if (cap) {
             cap += ' Plätzen.';
           }
+          const appTitle = process.env.WODORE_APP_NAME || 'Wodore';
           const metaData = {
-            title: hut.value.name ? hut.value.name : 'Wodore',
+            title: hut.value.name ? hut.value.name : appTitle,
             meta: {
               description: {
                 name: 'description',
