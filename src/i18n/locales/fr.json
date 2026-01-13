@@ -48,5 +48,11 @@
   "layers": "Couches",
   "maps": "Cartes",
   "booking_service_unavailable": "Réservations non disponibles",
-  "error_caption": "Erreur"
+  "error_caption": "Erreur",
+  "pwa": {
+    "update_available": "Une nouvelle version de l'application est disponible.",
+    "update_caption": "Actualiser pour mettre à jour",
+    "update_button": "Mettre à jour maintenant",
+    "later_button": "Plus tard"
+  }
 }

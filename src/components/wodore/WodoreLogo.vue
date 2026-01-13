@@ -24,6 +24,9 @@ const showIcon = computed(() => {
 const showText = computed(() => {
   return !props.icon && !props.text ? true : props.text;
 });
+const rightText = computed(() => {
+  return process.env.DEV ? 'deev' : 'dore';
+});
 </script>
 
 <template>
@@ -38,7 +41,7 @@ const showText = computed(() => {
       :style="{ 'margin-left': props.icon ? 0 : '3pt' }"
       v-if="showText"
       class="text-accent text-weight-regular"
-      >dore</span
+      >{{ rightText }}</span
     >
   </span>
 </template>

@@ -48,5 +48,11 @@
   "layers": "Strati",
   "maps": "Carte",
   "booking_service_unavailable": "Prenotazioni non disponibili",
-  "error_caption": "Errore"
+  "error_caption": "Errore",
+  "pwa": {
+    "update_available": "Una nuova versione dell'app è disponibile.",
+    "update_caption": "Aggiorna per aggiornare",
+    "update_button": "Aggiorna ora",
+    "later_button": "Più tardi"
+  }
 }

@@ -31,8 +31,9 @@ watchEffect(() => {
 watchEffect(() => {
   contentDrawerOpen.value = route.meta?.content as boolean;
 });
+const appTitle = process.env.WODORE_APP_NAME || 'Wodore';
 const metaData = {
-  title: 'Wodore',
+  title: appTitle,
   meta: {
     description: {
       name: 'description',

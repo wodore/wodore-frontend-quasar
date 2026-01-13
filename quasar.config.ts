@@ -41,6 +41,15 @@ for (const file of envFiles) {
 // add any new variable to the 'env' section
 
 export default configure((ctx) => {
+  const appNameBase = process.env.WODORE_APP_NAME || 'Wodore';
+  const appNameDev = () => {
+    if (appNameBase.toLowerCase().includes('dore')) {
+      return appNameBase.replace(/dore/i, 'dev');
+    }
+    return `${appNameBase} [dev]`;
+  };
+  const appName = ctx.dev ? appNameDev() : appNameBase;
+
   return {
     // https://v2.quasar.dev/quasar-cli-vite/prefetch-feature
     // preFetch: true,
@@ -55,6 +64,7 @@ export default configure((ctx) => {
       { server: false, path: 'auth' },
       { server: false, path: 'maplibre' },
       { server: false, path: 'vue-stripe' },
+      { server: false, path: 'pwa-update' },
     ],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#css
@@ -68,6 +78,7 @@ export default configure((ctx) => {
     // FAVICON version, change manually in src-pwa/manifest.json as well!
     htmlVariables: {
       faviconVersion: 3,
+      productName: appName,
       productDescriptionDe: 'Wohin gipfelt deine nächste Tour?',
     },
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#build
@@ -105,6 +116,7 @@ export default configure((ctx) => {
         WODORE_GIT_HASH: gitHash,
         WODORE_APP_VERSION:
           process.env.PACKAGE_VERSION || process.env.npm_package_version,
+        WODORE_APP_NAME: appName,
         WODORE_URL: process.env.WODORE_URL,
         WODORE_DOMAIN: process.env.WODORE_DOMAIN,
         WODORE_API_HOST: process.env.WODORE_API_HOST,
@@ -262,8 +274,13 @@ export default configure((ctx) => {
 
     // https://v2.quasar.dev/quasar-cli-vite/developing-pwa/configuring-pwa
     pwa: {
-      workboxMode: 'GenerateSW', // 'GenerateSW' or 'InjectManifest'
+      workboxMode: 'InjectManifest', // 'GenerateSW' or 'InjectManifest'
       injectPwaMetaTags: false,
+      extendManifestJson(json) {
+        json.name = appName;
+        json.short_name = appName;
+        return json;
+      },
       // swFilename: 'sw.js',
       // manifestFilename: 'manifest.json'
       // extendManifestJson (json) {},
@@ -271,7 +288,6 @@ export default configure((ctx) => {
       // injectPwaMetaTags: false,
       // extendPWACustomSWConf (esbuildConf) {},
       // extendGenerateSWOptions (cfg) {},
-      // extendInjectManifestOptions (cfg) {}
     },
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/developing-cordova-apps/configuring-cordova
