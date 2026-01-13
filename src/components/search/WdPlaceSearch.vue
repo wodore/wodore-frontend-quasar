@@ -40,7 +40,7 @@ if (process.env.CLIENT) {
 // State
 const searchText = ref('');
 const lastSearchText = ref('');
-const searchResults = ref<schemasWodore['HutSearchResultSchema'][]>([]);
+const searchResults = ref<schemasWodore['GeoPlaceSearchSchema'][]>([]);
 const loading = ref(false);
 const selectedIndex = ref(-1);
 
@@ -54,17 +54,19 @@ async function performSearchInternal(newSearchText: string) {
   loading.value = true;
 
   try {
-    const { data, error } = await clientWodore.GET('/v1/huts/search', {
+    //const { data, error } = await clientWodore.GET('/v1/huts/search', {
+    const { data, error } = await clientWodore.GET('/v1/geo/places/search', {
       params: {
         query: {
           q: newSearchText,
           lang: locale.value || 'de',
           offset: 0,
-          limit: 8,
-          threshold: 0.13,
-          include_hut_type: 'all',
-          include_sources: 'no',
-          include_avatar: true,
+          limit: 14,
+          threshold: 0.25,
+          //include_hut_type: 'all',
+          include_place_type: 'all',
+          include_sources: 'slug',
+          //include_avatar: true,
         },
       },
     });
@@ -103,8 +105,11 @@ function onSearchInput(value: string | number | null) {
 }
 
 // Handle place selection
-function onPlaceSelect(hut: schemasWodore['HutSearchResultSchema'], event?: Event) {
-  if (!hut || !hut.location) {
+function onPlaceSelect(
+  place: schemasWodore['GeoPlaceSearchSchema'],
+  event?: Event,
+) {
+  if (!place || !place.location) {
     return;
   }
 
@@ -114,11 +119,25 @@ function onPlaceSelect(hut: schemasWodore['HutSearchResultSchema'], event?: Even
     event.stopPropagation();
   }
 
+  // Check if any source is 'wodore' and get source_id
+  const wodoreSource = place.sources?.find(
+    (
+      source:
+        | schemasWodore['OrganizationSourceIdSlugSchema']
+        | schemasWodore['OrganizationSourceIdDetailSchema'],
+    ) => {
+      // Handle both string and object types for source
+      const sourceValue =
+        typeof source.source === 'string' ? source.source : source.source.slug;
+      return sourceValue === 'wodore';
+    },
+  );
+
   // Fly to location on map
   if (mapRef?.map) {
     const zoom = mapRef.map.getZoom();
     mapRef.map.flyTo({
-      center: [hut.location.lon, hut.location.lat],
+      center: [place.location.lon, place.location.lat],
       zoom: zoom > 12 ? zoom : 12,
       padding: {
         right: $q.screen.xs ? 0 : 400,
@@ -126,13 +145,17 @@ function onPlaceSelect(hut: schemasWodore['HutSearchResultSchema'], event?: Even
     });
   }
 
-  // Navigate to hut details
-  router.push({
-    name: 'map-hut',
-    params: { slug: hut.slug },
-    query: route.query,
-    hash: route.hash,
-  });
+  // If wodore source exists, navigate to hut details with source_id
+  if (wodoreSource && wodoreSource.source_id) {
+    router.push({
+      name: 'map-hut',
+      params: { slug: wodoreSource.source_id },
+      query: route.query,
+      hash: route.hash,
+    });
+  } else {
+    // No wodore source, just fly to location (already done above)
+  }
 
   // Clear search but keep results for next time
   searchText.value = '';
@@ -143,8 +166,8 @@ function onPlaceSelect(hut: schemasWodore['HutSearchResultSchema'], event?: Even
 }
 
 // Handle preview (eye icon click - keeps dialog open)
-function onPlacePreview(hut: schemasWodore['HutSearchResultSchema']) {
-  if (!hut || !hut.location) {
+function onPlacePreview(place: schemasWodore['GeoPlaceSearchSchema']) {
+  if (!place || !place.location) {
     return;
   }
 
@@ -152,7 +175,7 @@ function onPlacePreview(hut: schemasWodore['HutSearchResultSchema']) {
   if (mapRef?.map) {
     const zoom = mapRef.map.getZoom();
     mapRef.map.flyTo({
-      center: [hut.location.lon, hut.location.lat],
+      center: [place.location.lon, place.location.lat],
       zoom: zoom > 12 ? zoom : 12,
       padding: {
         right: $q.screen.xs ? 0 : 400,
@@ -184,7 +207,10 @@ function onKeyDown(event: KeyboardEvent) {
   switch (event.key) {
     case 'ArrowDown':
       event.preventDefault();
-      selectedIndex.value = Math.min(selectedIndex.value + 1, searchResults.value.length - 1);
+      selectedIndex.value = Math.min(
+        selectedIndex.value + 1,
+        searchResults.value.length - 1,
+      );
       break;
     case 'ArrowUp':
       event.preventDefault();
@@ -192,7 +218,10 @@ function onKeyDown(event: KeyboardEvent) {
       break;
     case 'Enter':
       event.preventDefault();
-      if (selectedIndex.value >= 0 && selectedIndex.value < searchResults.value.length) {
+      if (
+        selectedIndex.value >= 0 &&
+        selectedIndex.value < searchResults.value.length
+      ) {
         onPlaceSelect(searchResults.value[selectedIndex.value]);
       }
       break;
@@ -227,18 +256,81 @@ defineExpose({
   text-align: center;
   color: rgba(255, 255, 255, 0.6);
 }
+
+/* Remove border-radius on mobile */
+.q-card[style*='100vw'] {
+  border-radius: 0 !important;
+}
+
+/* Search result animations */
+.search-result-enter-active {
+  animation: slide-in 3s ease;
+}
+
+.search-result-leave-active {
+  animation: slide-out 3s ease;
+}
+
+.search-result-move {
+  transition: transform 3s ease;
+}
+
+@keyframes slide-in {
+  0% {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-out {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+}
 </style>
 
 <template>
-  <q-card class="dialog-radius bg-dark-500"
-    :style="isMobile ? 'width: 100vw; max-width: 100vw; height: 100vh' : 'width: 440px; max-width: 90vw'">
+  <q-card
+    :class="isMobile ? 'bg-dark-500' : 'dialog-radius bg-dark-500'"
+    :style="
+      isMobile
+        ? 'width: 100vw; max-width: 100vw; height: 100vh'
+        : 'width: 440px; max-width: 90vw'
+    "
+  >
     <!-- HEADER with search input -->
     <div class="bg-dark-700 q-pa-md" style="padding-right: 84px !important">
-      <q-input ref="searchInputRef" :model-value="searchText" @update:model-value="onSearchInput" dense dark outlined
-        placeholder="Orte suchen..." autofocus @keydown="onKeyDown" class="toolbar-font">
+      <q-input
+        ref="searchInputRef"
+        :model-value="searchText"
+        @update:model-value="onSearchInput"
+        dense
+        dark
+        outlined
+        placeholder="Orte suchen..."
+        autofocus
+        @keydown="onKeyDown"
+        class="toolbar-font"
+      >
         <template v-slot:append>
           <q-spinner v-if="loading" color="white" size="16px" />
-          <q-icon v-else-if="searchText.length > 0" class="text-icon cursor-pointer" size="sm" @click="clearSearch">
+          <q-icon
+            v-else-if="searchText.length > 0"
+            class="text-icon cursor-pointer"
+            size="sm"
+            @click="clearSearch"
+          >
             <IconEvaCloseOutline />
           </q-icon>
         </template>
@@ -246,26 +338,59 @@ defineExpose({
     </div>
 
     <!-- Search Results -->
-    <q-scroll-area visible :thumb-style="{
-      width: '6px',
-      backgroundColor: '#998019',
-      opacity: '0.5',
-      borderRadius: '8px 0 0 8px',
-    }" :style="isMobile ? 'height: calc(100vh - 88px)' : 'height: 400px; max-height: 600px'">
+    <q-scroll-area
+      visible
+      :thumb-style="{
+        width: '6px',
+        backgroundColor: '#998019',
+        opacity: '0.5',
+        borderRadius: '8px 0 0 8px',
+      }"
+      :style="
+        isMobile
+          ? 'height: calc(100vh - 88px)'
+          : 'height: 400px; max-height: 600px'
+      "
+    >
       <q-list v-if="searchResults.length > 0" class="bg-dark-500">
-        <WdSearchResultEntry v-for="(hut, index) in searchResults" :key="hut.slug" :hut="hut"
-          :selected="index === selectedIndex" @select="onPlaceSelect" @preview="onPlacePreview" />
+        <transition-group
+          appear
+          enter-active-class="animated fadeInLeft"
+          leave-active-class="animated fadeOutRight"
+        >
+          <WdSearchResultEntry
+            v-for="(place, index) in searchResults"
+            :key="place.id"
+            :hut="place"
+            :selected="index === selectedIndex"
+            @select="onPlaceSelect"
+            @preview="onPlacePreview"
+          />
+        </transition-group>
       </q-list>
-      <div v-else-if="searchText.length >= 2 || lastSearchText.length >= 2" class="no-results bg-dark-500">
+      <div
+        v-else-if="searchText.length >= 2 || lastSearchText.length >= 2"
+        class="no-results bg-dark-500"
+      >
         Keine Orte gefunden
       </div>
-      <div v-else class="no-results bg-dark-500"
-        style="display: flex; align-items: center; justify-content: center; min-height: 300px">
+      <div
+        v-else
+        class="no-results bg-dark-500"
+        style="
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 300px;
+        "
+      >
         <div class="text-center">
           <q-icon size="xl" color="primary-300">
             <IconEvaSearchOutline />
           </q-icon>
-          <div class="text-primary-300 q-mt-md">Suche nach Hütten, Gipfeln und mehr...</div>
+          <div class="text-primary-300 q-mt-md">
+            Suche nach Hütten, Gipfeln und mehr...
+          </div>
         </div>
       </div>
     </q-scroll-area>

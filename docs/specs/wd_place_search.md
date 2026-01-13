@@ -7,6 +7,7 @@ Backend endpoint: <http://localhost:8000/v1/docs#/hut/search_huts>
 ## Overview
 
 Three-component architecture for place search:
+
 - **WdPlaceSearch** - Core search card (UI + logic)
 - **WdPlaceSearchMenu** - Desktop popup wrapper
 - **WdPlaceSearchDialog** - Mobile full-screen wrapper
@@ -29,11 +30,13 @@ Benefits: No code duplication, platform-specific behavior, follows WdSelectDate 
 Self-contained q-card component (440px × auto desktop, 100vw × 100vh mobile).
 
 **Interface:**
+
 - Props: `mobile` (boolean)
 - Emits: `close` (on result selection)
 - Exposes: `focus()` method
 
 **Features:**
+
 - Search input with clear/loading states
 - Results area (q-scroll-area, 400px desktop / calc(100vh - 88px) mobile)
 - Preview mode (desktop only - eye icon)
@@ -51,11 +54,13 @@ Desktop popup wrapper with sticky/drag functionality.
 **Popup:** q-menu with jump-down/up transitions, persistent when sticky
 
 **Controls:**
+
 - Unlock icon (non-sticky) → pin to enable sticky mode
 - Move icon (sticky) → drag handle (click to unpin if not dragging)
 - Close button
 
 **Sticky Mode:**
+
 - Content becomes `position: fixed` with draggable via VueUse `useDraggable`
 - Captures position when entering sticky mode (prevents jump to 0,0)
 - Resets position on close or when leaving sticky
@@ -63,6 +68,7 @@ Desktop popup wrapper with sticky/drag functionality.
 - Drag detection: 200ms timeout to distinguish clicks from drags
 
 **Behavior:**
+
 - Auto-focus on open
 - Closes on selection (unless sticky)
 - Position resets when menu closes
@@ -96,6 +102,7 @@ Single result item (q-item, dense mode).
 ## Integration
 
 MainLayout conditionally renders based on screen size:
+
 ```vue
 <WdPlaceSearchMenu v-if="!isMobile" />
 <WdPlaceSearchDialog v-if="isMobile" />
@@ -104,14 +111,17 @@ MainLayout conditionally renders based on screen size:
 ## Future Enhancements
 
 **High Priority:**
+
 - Resizable dialog (drag bottom bar to adjust height)
 - Icon background contrast improvements
 
 **Medium Priority:**
+
 - Search filters (chips to filter by type: huts, peaks, lifts, etc.)
 - Search history (localStorage, last 5 searches)
 
 **Low Priority:**
+
 - Location-based suggestions (nearby huts based on map view)
 - Keyboard shortcuts (quick activation)
 - Enhanced accessibility (ARIA, screen readers)

@@ -95,22 +95,28 @@ function getIconAnswer(
 
 function getClosedIcon(): string {
   if (isMobile.value) {
-    return props.type_closed
-      ? (props.type_closed.symbol as string)
-      : getUnknownIcon();
+    if (props.type_closed?.symbol?.detailed) {
+      return props.type_closed.symbol.detailed as string;
+    }
   } else {
-    return props.type_closed
-      ? (props.type_closed.symbol_simple as string)
-      : getUnknownIcon();
+    if (props.type_closed?.symbol?.simple) {
+      return props.type_closed.symbol.simple as string;
+    }
   }
+  return getUnknownIcon();
 }
 
 function getOpenIcon(): string {
   if (isMobile.value) {
-    return props.type_open?.symbol as string;
+    if (props.type_open?.symbol?.detailed) {
+      return props.type_open.symbol.detailed;
+    }
   } else {
-    return props.type_open?.symbol_simple as string;
+    if (props.type_open?.symbol?.simple) {
+      return props.type_open.symbol.simple;
+    }
   }
+  return getUnknownIcon();
 }
 
 function getUnknownIcon(): string {

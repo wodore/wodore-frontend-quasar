@@ -44,7 +44,7 @@ const shouldPromptUpdate = (currentVersion: string, nextVersion: string) => {
 
 const getWaitingSwVersion = async (
   waitingWorker: ServiceWorker,
-  timeoutMs = 1000
+  timeoutMs = 1000,
 ): Promise<string | null> => {
   return new Promise((resolve) => {
     const channel = new MessageChannel();
@@ -75,9 +75,12 @@ register(process.env.SERVICE_WORKER_FILE, {
 
     // Periodically check for updates (every hour)
     // This helps detect updates even if the user doesn't navigate
-    setInterval(() => {
-      registration?.update();
-    }, 60 * 60 * 1000);
+    setInterval(
+      () => {
+        registration?.update();
+      },
+      60 * 60 * 1000,
+    );
   },
 
   cached(/* registration */) {
@@ -92,14 +95,18 @@ register(process.env.SERVICE_WORKER_FILE, {
     if (!newWorker) return;
 
     newWorker.addEventListener('statechange', async () => {
-      if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+      if (
+        newWorker.state === 'installed' &&
+        navigator.serviceWorker.controller
+      ) {
         // A new service worker is available and waiting
         // This means we have a newer version than what's currently running
         // console.log('New service worker is waiting to activate')
 
         const waitingWorker = registration?.waiting;
-        const nextVersion =
-          waitingWorker ? await getWaitingSwVersion(waitingWorker) : null;
+        const nextVersion = waitingWorker
+          ? await getWaitingSwVersion(waitingWorker)
+          : null;
 
         if (!nextVersion || shouldPromptUpdate(APP_VERSION, nextVersion)) {
           // Wait a bit for the user to settle, then show notification

@@ -89,8 +89,8 @@ const openColor = computed(() => {
           'img:' +
           getImageUrl(
             ($q.platform.is.mobile
-              ? type.symbol
-              : type.symbol_simple) as string,
+              ? type.symbol?.detailed
+              : type.symbol?.simple) as string,
             { fit: true, size: '48x48' },
           )
         "
