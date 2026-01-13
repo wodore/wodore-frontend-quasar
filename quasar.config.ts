@@ -49,6 +49,7 @@ export default configure((ctx) => {
     return `${appNameBase} [dev]`;
   };
   const appName = ctx.dev ? appNameDev() : appNameBase;
+  const appEnv = process.env.WODORE_ENV || 'production';
 
   return {
     // https://v2.quasar.dev/quasar-cli-vite/prefetch-feature
@@ -117,6 +118,7 @@ export default configure((ctx) => {
         WODORE_APP_VERSION:
           process.env.PACKAGE_VERSION || process.env.npm_package_version,
         WODORE_APP_NAME: appName,
+        WODORE_ENV: appEnv,
         WODORE_URL: process.env.WODORE_URL,
         WODORE_DOMAIN: process.env.WODORE_DOMAIN,
         WODORE_API_HOST: process.env.WODORE_API_HOST,
