@@ -4,9 +4,9 @@
 
 ## Status
 
-- Status: ✅ **Implemented & Tested**
+- Status: ⚠️ **Partially Implemented - Update Notification Not Working**
 - Last updated: 2026-01-14
-- Version: 0.4.4
+- Version: 0.0.4
 
 ## Objective
 
@@ -19,53 +19,51 @@ This task assumes the implementer is familiar with Quasar, Workbox, and Service 
 
 ## Scope of Work
 
-### 1. Initial Load Freshness (Post-Deploy)
+### 1. Initial Load Freshness (Post-Deploy) ✅ COMPLETE
 
 **Goal:**
 The first visit after a new deployment should immediately use the latest app version.
 
-**Conceptual requirements:**
+**Status:** ✅ **WORKING**
 
-- Treat **navigation requests (`index.html`) as network-first**
-  - Online: fetch from network (ETag/304 revalidation is sufficient)
-  - Offline: fall back to cached app shell
-- Avoid cache-first or precache-only handling for navigations
-- Static assets can remain aggressively cached
+- Navigation requests (`index.html`) use `NetworkFirst` strategy
+- `index.html` is excluded from precache via `quasar.config.ts` → `extendInjectManifestOptions`
+- Nginx sets `Cache-Control: no-store, no-cache` for `index.html`, `manifest.json`, and `sw.js`
+- **Result**: Every page load fetches fresh `index.html` from network ✅
 
-**Expected result:**
-
-- No need to open the PWA twice to see updates
-- Old Service Worker presence is acceptable; reloads are allowed
-
-### 2. Mid-Session Update Handling
+### 2. Mid-Session Update Handling ⚠️ INCOMPLETE
 
 **Goal:**
-Do not disrupt the user while interacting with the app.
+Do not disrupt the user while interacting with the app. Notify user of updates and reload only on user action.
 
-**Conceptual requirements:**
+**Status:** ⚠️ **NOTIFICATION NOT SHOWING**
 
-- Detect when a **new Service Worker is installed and waiting**
-- Display a non-intrusive UI notification:
-  - Example text:
-    > "A new version of this app is available."
-- Provide a **Reload / Update** button
-- On user action:
-  1. Activate the waiting Service Worker
-  2. Reload the page exactly once
+**Implemented:**
 
-**Constraints:**
+- Service worker detects version changes
+- Version comparison logic (major/minor changes trigger notification)
+- Update notification UI with "Update Now" and "Later" buttons
+- Debug logging added for troubleshooting
 
-- No automatic reloads
-- No background reloads
-- Reload must be user-initiated
+**Issue:**
 
-### 3. Implementation Guidelines
+- Update notification does not appear when new version is deployed
+- `registration.update()` call does not trigger `updatefound` event
+- Service worker may not be detecting file changes correctly
 
-- Prefer **Quasar PWA configuration + Workbox options** (`GenerateSW`) where possible
-- Use `register-service-worker.js` for lifecycle handling and UI integration
-- Introduce a **custom Service Worker (`InjectManifest`) only if**:
-  - Network-first navigation behavior cannot be reliably achieved via config
-  - More explicit control over navigation routing is required
+**Testing:**
+
+- Browser refresh works correctly - loads new version immediately ✅
+- Manual `window.pwaDebug.checkUpdate()` added for testing
+- Debug functions available: `window.pwaDebug.getInfo()`, `window.pwaDebug.checkUpdate()`
+
+**Next Steps to Fix:**
+
+1. Verify service worker file actually changes between deployments (byte-level)
+2. Check if browser is caching the service worker file itself
+3. Test with different versions to ensure version comparison works
+4. May need to add cache-busting query parameter to service worker script tag
+5. Consider using `workbox-window` for more reliable update detection
 
 ## Current Implementation
 
@@ -75,8 +73,15 @@ Do not disrupt the user while interacting with the app.
 
 - Uses `pwa.workboxMode: 'InjectManifest'`
 - **Critical**: `extendInjectManifestOptions` excludes `index.html` from precache
-  - This ensures `index.html` is handled by `NetworkFirst` navigation route instead
-  - Without this, precached `index.html` would always be served from cache
+
+  ```typescript
+  extendInjectManifestOptions(options) {
+    if (!options.globIgnores) {
+      options.globIgnores = [];
+    }
+    options.globIgnores.push('index.html');
+  }
+  ```
 
 **`src-pwa/custom-service-worker.ts`:**
 
@@ -86,6 +91,7 @@ Do not disrupt the user while interacting with the app.
   - `cacheName: 'navigations'`
   - `networkTimeoutSeconds: 2` - falls back to cache after 2 seconds
 - `skipWaiting()` is only triggered via `SKIP_WAITING` message (user action)
+- **Debug logging added** for all message events
 
 ### Update Detection & Notifications
 
@@ -99,6 +105,8 @@ Do not disrupt the user while interacting with the app.
   - Patch version change (0.4.4 → 0.4.5) → No notification
   - Failed version parsing → Notify (safe default)
 - Waits 2 seconds before showing notification (lets user settle)
+- **Debug logging added** for all lifecycle events
+- **Debug functions exposed**: `window.pwaDebug.checkUpdate()`, `window.pwaDebug.getInfo()`
 
 **`src/boot/pwa-update.ts` + `src/composables/usePwaUpdate.ts`:**
 
@@ -126,7 +134,7 @@ Do not disrupt the user while interacting with the app.
 
 **`docker/entrypoint.sh`:**
 
-- Fixed nginx config file mapping (nginx-local.conf → local)
+- Fixed nginx config file mapping (nginx-local.conf → local, nginx-proxy.conf → proxy)
 - Added `*.json` to file patterns for variable replacement
 - This ensures `manifest.json` placeholders are replaced at runtime
 
@@ -149,17 +157,21 @@ Do not disrupt the user while interacting with the app.
   <https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API/Using_Service_Workers>
   <https://developer.chrome.com/docs/workbox/service-worker-lifecycle/>
 
+- **Service Worker Update Detection Issues**
+  <https://stackoverflow.com/questions/55179693/service-worker-update-does-not-work>
+  <https://redfin.engineering/how-to-fix-the-refresh-button-on-progressive-web-apps-1b402a24f26c>
+
 ## Acceptance Criteria
 
 - ✅ First online visit after deploy loads the new version immediately
-- ✅ Mid-session update shows a clear reload prompt (for major/minor version changes)
+- ❌ Mid-session update shows a clear reload prompt (NOT WORKING - browser refresh required)
 - ✅ Reload only happens after explicit user action
 - ✅ Behavior is consistent across desktop browser, mobile browser, and installed PWA
 - ✅ Offline functionality maintained (NetworkFirst falls back to cache after 2s)
 
 ## Implementation Notes
 
-### Why `index.html` Must Be Excluded from Precache
+### Why `index.html` Must Be Excluded from Precache ✅
 
 The **precache takes precedence over navigation routes** in Workbox. If `index.html` is in the precache:
 
@@ -169,6 +181,8 @@ The **precache takes precedence over navigation routes** in Workbox. If `index.h
 4. User always sees stale `index.html` until service worker updates
 
 **Solution**: Exclude `index.html` from precache via `quasar.config.ts` → `extendInjectManifestOptions` → add to `globIgnores`.
+
+**Verification**: `grep -o '"url":"index.html"' dist/pwa/sw.js` should return nothing.
 
 ### Version Testing
 
@@ -182,43 +196,120 @@ yarn build:pwa && yarn docker:build
 
 Patch version changes (0.4.4 → 0.4.5) will **not** show notifications by design.
 
-### Update Detection Mechanisms
+### Debug Functions
 
-1. **Automatic**: Browser checks `sw.js` for byte changes on:
+Available in browser console:
 
-   - Page navigation
-   - Focus events (browser-dependent)
-   - Periodic checks (browser-dependent, typically ~24h)
+```javascript
+// Check service worker state
+window.pwaDebug.getInfo();
 
-2. **Manual**: `setInterval` every hour calls `registration.update()`
+// Manually trigger update check
+window.pwaDebug.checkUpdate();
 
-3. **User-triggered**: Developer can call `navigator.serviceWorker.ready.then(reg => reg.update())`
+// Or directly
+navigator.serviceWorker.getRegistration().then((reg) => reg.update());
+```
 
 ## Troubleshooting
 
-### No Update Notification Appearing
+### Update Notification Not Appearing ❌
 
-- Check if version actually changed: `grep WODORE_APP_VERSION .env`
-- Patch version changes don't trigger notifications (by design)
-- Clear browser devtools: Application → Service Workers → Unregister
-- Check browser console for errors
+**Current Issue**: The `updatefound` event is not firing when a new service worker is deployed.
 
-### Stale Content Still Showing
+**Possible Causes:**
 
-- Verify `index.html` not in precache: `grep -o '"url":"index.html"' dist/pwa/sw.js`
-- Check nginx headers: `curl -I http://localhost:9000/index.html`
-- Verify service worker active: DevTools → Application → Service Workers
+1. **Service worker file hasn't changed** - Browser compares byte-by-byte. If content is identical (even with same version number), no update is detected.
+2. **Browser is caching service worker file** - Despite nginx headers, browser may cache the SW file itself
+3. **Service worker scope issues** - SW may not be controlling the page correctly
+4. **Update timing** - Update check may happen before new SW is deployed to server
 
-### Offline Not Working
+**Diagnostic Steps:**
+
+1. Check browser console for debug messages (look for `[PWA]` prefix)
+2. Run `window.pwaDebug.getInfo()` to see SW states
+3. Run `window.pwaDebug.checkUpdate()` to manually trigger update check
+4. Check DevTools → Application → Service Workers:
+   - Is there a waiting service worker?
+   - What's the status of the active service worker?
+5. Compare service worker file hashes between deployments:
+
+   ```bash
+   sha256sum dist/pwa/sw.js
+   ```
+
+**Workaround**: User can refresh the page to get updates (working correctly ✅)
+
+### Stale Content Still Showing ✅ FIXED
+
+**Solution**: Verify `index.html` not in precache:
+
+```bash
+grep -o '"url":"index.html"' dist/pwa/sw.js
+# Should return nothing
+```
+
+Check nginx headers:
+
+```bash
+curl -I http://localhost:9000/index.html
+# Should include: Cache-Control: no-store, no-cache, ...
+```
+
+### Offline Not Working ✅ WORKING
+
+**Verification**:
 
 - Check `NetworkFirst` is registered: DevTools → Application → Service Workers → Inspect
 - Verify cache has entries: DevTools → Application → Cache Storage
 - Check `networkTimeoutSeconds` is set (2s)
 
-## Future Improvements (Optional)
+## Future Improvements
+
+### Critical (to fix update notification)
+
+1. **Investigate why `updatefound` doesn't fire**:
+
+   - Add logging to confirm SW file actually changes between deployments
+   - Consider adding cache-busting to SW script tag: `sw.js?v=${hash}`
+   - Test with `workbox-window` library for more reliable update detection
+   - Check if service worker registration scope is correct
+
+2. **Alternative update detection**:
+
+   - Poll server for version endpoint periodically
+   - Use ETag/Last-Modified headers on index.html
+   - Consider using `navigator.serviceWorker.addEventListener('controllerchange')`
+
+3. **Simplify version comparison**:
+   - Show notification for ANY version change (not just major/minor)
+   - Add option to configure update notification behavior
+
+### Optional
 
 - Consider notifying on patch versions for critical security updates
 - Add "What's new" changelog in update notification
 - Implement "Reload after X minutes of inactivity" option
 - Add analytics to track update acceptance rates
 - Consider using `workbox-window` for more fine-grained control
+- Add skip-waiting logic for critical updates only
+
+## Files Modified
+
+1. `quasar.config.ts` - Added `extendInjectManifestOptions` to exclude `index.html` from precache
+2. `src-pwa/custom-service-worker.ts` - Added debug logging for message events
+3. `src-pwa/register-service-worker.ts` - Added debug logging and debug functions
+4. `docker/entrypoint.sh` - Fixed nginx config mapping and added `*.json` to patterns
+5. `_work/260113_pwa_caching.md` - This documentation file
+
+## Known Issues
+
+1. **Update notification not appearing** - Users must refresh browser to see updates (mitigated by fact that refresh works correctly)
+2. **Service worker update detection unreliable** - Browser may not detect SW file changes
+3. **Version comparison logic may be too strict** - Only shows notification for major/minor changes
+
+## Related Issues
+
+- Docker build fixed (nginx config mapping, JSON variable replacement)
+- Service worker excludes `index.html` from precache
+- Debug logging added throughout PWA lifecycle
