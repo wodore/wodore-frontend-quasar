@@ -283,6 +283,15 @@ export default configure((ctx) => {
         json.short_name = appName;
         return json;
       },
+      // Exclude index.html from precache to ensure fresh version via NetworkFirst
+      extendInjectManifestOptions(options) {
+        // Ignore index.html so it's not added to the precache manifest
+        // This allows the NavigationRoute with NetworkFirst to handle it
+        if (!options.globIgnores) {
+          options.globIgnores = [];
+        }
+        options.globIgnores.push('index.html');
+      },
       // swFilename: 'sw.js',
       // manifestFilename: 'manifest.json'
       // extendManifestJson (json) {},
@@ -344,3 +353,6 @@ export default configure((ctx) => {
     },
   };
 });
+
+
+
