@@ -19,6 +19,7 @@ const SW_APP_VERSION = process.env.WODORE_APP_VERSION || '';
 clientsClaim();
 
 // Use with precache injection
+// Note: index.html is excluded from precache via quasar.config.ts > extendInjectManifestOptions
 precacheAndRoute(self.__WB_MANIFEST);
 
 cleanupOutdatedCaches();
@@ -46,13 +47,17 @@ if (process.env.MODE !== 'ssr' || process.env.PROD) {
 
 // Listen for messages from clients
 self.addEventListener('message', (event) => {
+  console.log('[SW] Received message:', event.data);
+
   if (event.data && event.data.type === 'SKIP_WAITING') {
+    console.log('[SW] User clicked "Update now" - skipping waiting and activating');
     // User has clicked "Update now" - skip waiting and activate
     self.skipWaiting();
     return;
   }
 
   if (event.data && event.data.type === 'GET_VERSION') {
+    console.log('[SW] Version requested, sending:', SW_APP_VERSION);
     event.ports?.[0]?.postMessage({ version: SW_APP_VERSION });
   }
 });
