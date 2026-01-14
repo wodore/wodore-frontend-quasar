@@ -54,9 +54,9 @@ func shouldLog(level string) bool {
 
 // Variable represents a variable to be replaced
 type Variable struct {
-	Key      string
-	Value    string
-	Pattern  *regexp.Regexp
+	Key     string
+	Value   string
+	Pattern *regexp.Regexp
 }
 
 // printUsage prints the usage text and examples
@@ -74,7 +74,7 @@ func printUsage() {
   replace_vars --template=/path/to/template --directory=/path/to/html
 
   # Process specific files
-  replace_vars --patterns=*.js,*.html --symbol=%%
+  replace_vars --patterns=*.js,*.html,*.json --symbol=%%
 
   # Debug mode
   replace_vars --log-level=debug`
