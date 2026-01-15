@@ -46,7 +46,7 @@ watchEffect(() => {
 
 .map-menu__versions {
   background: rgba(255, 255, 255, 0.92);
-  border-radius: 14px;
+  border-radius: 0px;
 }
 </style>
 

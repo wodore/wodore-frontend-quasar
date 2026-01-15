@@ -38,13 +38,9 @@ onMounted(fetchBackendVersion);
 </script>
 
 <template>
-  <div class="column q-gutter-xs bg-grey-1 rounded-borders q-pa-sm shadow-1">
+  <div class="column q-gutter-xs bg-grey-1 shadow-1 q-pb-sm">
     <WdVersionTag type="frontend" :version="frontendVersion" :hash="frontendHash" />
     <WdVersionTag type="backend" :version="backendVersion" :hash="backendHash" :loading="backendLoading"
       :error="backendError" />
-    <div class="row justify-end">
-      <q-btn dense flat round icon="eva-refresh-outline" color="grey-7" size="sm" :loading="backendLoading"
-        @click.stop="fetchBackendVersion" />
-    </div>
   </div>
 </template>

@@ -1,6 +1,7 @@
 export type IconsId =
   | 'text-outline'
   | 'subject'
+  | 'server'
   | 'question-mark'
   | 'more-vertical'
   | 'message'
@@ -20,6 +21,7 @@ export type IconsId =
   | 'close'
   | 'checkmark'
   | 'calendar'
+  | 'browser'
   | 'bell'
   | 'bell-outline'
   | 'at'
@@ -34,6 +36,7 @@ export type IconsId =
 export type IconsKey =
   | 'TextOutline'
   | 'Subject'
+  | 'Server'
   | 'QuestionMark'
   | 'MoreVertical'
   | 'Message'
@@ -53,6 +56,7 @@ export type IconsKey =
   | 'Close'
   | 'Checkmark'
   | 'Calendar'
+  | 'Browser'
   | 'Bell'
   | 'BellOutline'
   | 'At'
@@ -67,6 +71,7 @@ export type IconsKey =
 export enum Icons {
   TextOutline = 'text-outline',
   Subject = 'subject',
+  Server = 'server',
   QuestionMark = 'question-mark',
   MoreVertical = 'more-vertical',
   Message = 'message',
@@ -86,6 +91,7 @@ export enum Icons {
   Close = 'close',
   Checkmark = 'checkmark',
   Calendar = 'calendar',
+  Browser = 'browser',
   Bell = 'bell',
   BellOutline = 'bell-outline',
   At = 'at',
@@ -101,33 +107,35 @@ export enum Icons {
 export const ICONS_CODEPOINTS: { [key in Icons]: string } = {
   [Icons.TextOutline]: '61697',
   [Icons.Subject]: '61698',
-  [Icons.QuestionMark]: '61699',
-  [Icons.MoreVertical]: '61700',
-  [Icons.Message]: '61701',
-  [Icons.Menu]: '61702',
-  [Icons.MenuArrow]: '61703',
-  [Icons.LocationQuestion]: '61704',
-  [Icons.Link]: '61705',
-  [Icons.Info]: '61706',
-  [Icons.InfoOutline]: '61707',
-  [Icons.Gift]: '61708',
-  [Icons.Favorite]: '61709',
-  [Icons.FavoriteOutline]: '61710',
-  [Icons.Eye]: '61711',
-  [Icons.EyeOutline]: '61712',
-  [Icons.Edit]: '61713',
-  [Icons.EditOutline]: '61714',
-  [Icons.Close]: '61715',
-  [Icons.Checkmark]: '61716',
-  [Icons.Calendar]: '61717',
-  [Icons.Bell]: '61718',
-  [Icons.BellOutline]: '61719',
-  [Icons.At]: '61720',
-  [Icons.ArrowheadUp]: '61721',
-  [Icons.ArrowheadRight]: '61722',
-  [Icons.ArrowheadLeft]: '61723',
-  [Icons.ArrowheadDown]: '61724',
-  [Icons.ArrowUpDown]: '61725',
-  [Icons.Add]: '61726',
-  [Icons.AddOutline]: '61727',
+  [Icons.Server]: '61699',
+  [Icons.QuestionMark]: '61700',
+  [Icons.MoreVertical]: '61701',
+  [Icons.Message]: '61702',
+  [Icons.Menu]: '61703',
+  [Icons.MenuArrow]: '61704',
+  [Icons.LocationQuestion]: '61705',
+  [Icons.Link]: '61706',
+  [Icons.Info]: '61707',
+  [Icons.InfoOutline]: '61708',
+  [Icons.Gift]: '61709',
+  [Icons.Favorite]: '61710',
+  [Icons.FavoriteOutline]: '61711',
+  [Icons.Eye]: '61712',
+  [Icons.EyeOutline]: '61713',
+  [Icons.Edit]: '61714',
+  [Icons.EditOutline]: '61715',
+  [Icons.Close]: '61716',
+  [Icons.Checkmark]: '61717',
+  [Icons.Calendar]: '61718',
+  [Icons.Browser]: '61719',
+  [Icons.Bell]: '61720',
+  [Icons.BellOutline]: '61721',
+  [Icons.At]: '61722',
+  [Icons.ArrowheadUp]: '61723',
+  [Icons.ArrowheadRight]: '61724',
+  [Icons.ArrowheadLeft]: '61725',
+  [Icons.ArrowheadDown]: '61726',
+  [Icons.ArrowUpDown]: '61727',
+  [Icons.Add]: '61728',
+  [Icons.AddOutline]: '61729',
 };

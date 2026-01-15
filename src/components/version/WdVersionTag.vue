@@ -18,19 +18,19 @@ const props = withDefaults(defineProps<Props>(), {
 
 const color = computed(() => {
   if (props.error) return 'negative';
-  return props.type === 'frontend' ? 'primary' : 'secondary';
+  return props.type === 'frontend' ? 'grey-7' : 'grey-7';
 });
 
 const shortHash = computed(() => (!props.hash ? '—' : props.hash.slice(0, 7)));
 const iconName = computed(() => {
   if (props.error) return 'eva-alert-circle-outline';
-  return props.type === 'frontend' ? 'eva-monitor-outline' : 'eva-cloud-outline';
+  return props.type === 'frontend' ? 'wd-browser' : 'wd-server';
 });
 </script>
 
 <template>
   <div class="row items-center no-wrap q-gutter-xs">
-    <q-icon :name="iconName" size="18px" :color="color" class="version-tag__icon" />
+    <q-icon :name="iconName" size="18px" :color="color" />
     <q-spinner v-if="loading" size="14px" color="grey-6" />
     <q-badge v-else-if="error" color="negative" text-color="white" dense rounded>Issue</q-badge>
     <span v-else class="text-caption text-grey-7">
@@ -39,8 +39,4 @@ const iconName = computed(() => {
   </div>
 </template>
 
-<style scoped>
-.version-tag__icon {
-  line-height: 1;
-}
-</style>
+<style scoped></style>
