@@ -4,15 +4,14 @@ import { useAuthStore } from '@stores/auth-store';
 import { LocalStorage } from 'quasar';
 import { ref, watchEffect } from 'vue';
 import AuthService from 'src/services/auth';
+import WdVersionsPanel from 'src/components/version/WdVersionsPanel.vue';
 
 const authStore = useAuthStore();
 let $auth: AuthService | undefined = undefined;
 if (process.env.CLIENT) {
   $auth = useAuthService();
 }
-//import { ref } from 'vue';
-//const link = ref('outbox');
-//const active_classes = 'bg-accent text-white';
+
 const tracking = ref<boolean>(
   LocalStorage.hasItem('umami.disabled')
     ? !(LocalStorage.getItem('umami.disabled') as boolean)
@@ -26,8 +25,7 @@ watchEffect(() => {
     LocalStorage.removeItem('umami.disabled');
   }
 });
-const VERSION = process.env.WODORE_APP_VERSION;
-const GIT_HASH = process.env.WODORE_GIT_HASH;
+
 </script>
 <style scoped>
 .drawer-desktop {
@@ -37,6 +35,7 @@ const GIT_HASH = process.env.WODORE_GIT_HASH;
   left: 0;
   right: 0;
 }
+
 .drawer-mobile {
   position: absolute;
   bottom: 80px;
@@ -44,15 +43,18 @@ const GIT_HASH = process.env.WODORE_GIT_HASH;
   left: 0;
   right: 0;
 }
+
+.map-menu__versions {
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 14px;
+}
 </style>
 
 <template>
-  <div
-    :class="{
-      'drawer-desktop': $q.screen.gt.xs,
-      'drawer-mobile': $q.screen.xs,
-    }"
-  >
+  <div :class="{
+    'drawer-desktop': $q.screen.gt.xs,
+    'drawer-mobile': $q.screen.xs,
+  }">
     <div class="text-center q-pa-xl">
       <q-icon size="80px">
         <IconNotoV1Construction />
@@ -61,35 +63,21 @@ const GIT_HASH = process.env.WODORE_GIT_HASH;
     <!-- <div class="bg-transparent fixed-bottom"> -->
     <div class="bg-transparent absolute-bottom">
       <div class="q-pa-xs column q-gutter-sm">
-        <q-btn
-          v-if="!authStore.isLoggedIn"
-          color="secondary-700"
-          unelevated
-          flat
-          @click="$auth?.signinRedirect()"
-          label="Login"
-          style="opacity: 0.8"
-        />
-        <q-btn
-          v-else
-          color="accent-700"
-          unelevated
-          flat
-          @click="$auth?.logout()"
-          label="Logout"
-          style="opacity: 0.8"
-        />
+        <q-btn v-if="!authStore.isLoggedIn" color="secondary-700" unelevated flat @click="$auth?.signinRedirect()"
+          label="Login" style="opacity: 0.8" />
+        <q-btn v-else color="accent-700" unelevated flat @click="$auth?.logout()" label="Logout" style="opacity: 0.8" />
       </div>
       <!-- </div> -->
-      <div class="text-secondary-600 text-caption q-ma-xs q-ml-md text-center">
-        <span v-if="authStore.isEditor()">
-          <router-link :to="{ name: 'data-policy' }" target="_blank"
-            >Datenschutz</router-link
-          >
-          |
-        </span>
-        <b>v{{ VERSION }}</b
-        >-{{ GIT_HASH }}
+      <div class="q-pa-sm">
+        <!-- Privacy Policy Link -->
+        <div v-if="authStore.isEditor()" class="text-center q-mb-xs">
+          <router-link :to="{ name: 'data-policy' }" target="_blank" class="text-secondary">
+            Datenschutz
+          </router-link>
+        </div>
+
+        <!-- Version Information -->
+        <WdVersionsPanel class="map-menu__versions" />
       </div>
     </div>
     <!-- <q-list bordered padding class="rounded-borders text-primary">

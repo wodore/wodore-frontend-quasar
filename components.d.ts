@@ -7,6 +7,25 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
+    IconEvaAlertCircle: typeof import('~icons/eva/alert-circle')['default']
+    IconEvaAlertCircleOutline: typeof import('~icons/eva/alert-circle-outline')['default']
+    IconEvaArrowIosBackOutline: typeof import('~icons/eva/arrow-ios-back-outline')['default']
+    IconEvaArrowIosForwardOutline: typeof import('~icons/eva/arrow-ios-forward-outline')['default']
+    IconEvaCloseOutline: typeof import('~icons/eva/close-outline')['default']
+    IconEvaExternalLinkFill: typeof import('~icons/eva/external-link-fill')['default']
+    IconEvaEyeOutline: typeof import('~icons/eva/eye-outline')['default']
+    IconEvaHardDriveOutline: typeof import('~icons/eva/hard-drive-outline')['default']
+    IconEvaLockFill: typeof import('~icons/eva/lock-fill')['default']
+    IconEvaMonitorOutline: typeof import('~icons/eva/monitor-outline')['default']
+    IconEvaMoveOutline: typeof import('~icons/eva/move-outline')['default']
+    IconEvaSearchOutline: typeof import('~icons/eva/search-outline')['default']
+    IconEvaServerOutline: typeof import('~icons/eva/server-outline')['default']
+    IconEvaSettingsOutline: typeof import('~icons/eva/settings-outline')['default']
+    IconEvaUnlockOutline: typeof import('~icons/eva/unlock-outline')['default']
+    IconFa6SolidCopy: typeof import('~icons/fa6-solid/copy')['default']
+    IconFa6SolidLocationCrosshairs: typeof import('~icons/fa6-solid/location-crosshairs')['default']
+    IconMingcuteMountain2Fill: typeof import('~icons/mingcute/mountain2-fill')['default']
+    IconNotoV1Construction: typeof import('~icons/noto-v1/construction')['default']
     QIconify: typeof import('./src/components/quasar/QIconify.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
@@ -44,6 +63,9 @@ declare module 'vue' {
     WdToolbarButton: typeof import('./src/components/toolbar/WdToolbarButton.vue')['default']
     WdToolbarExtraButton: typeof import('./src/components/toolbar/WdToolbarExtraButton.vue')['default']
     WdUser: typeof import('./src/components/toolbar/WdUser.vue')['default']
+    WdVersionInfo: typeof import('./src/components/version/WdVersionInfo.vue')['default']
+    WdVersionsPanel: typeof import('./src/components/version/WdVersionsPanel.vue')['default']
+    WdVersionTag: typeof import('./src/components/version/WdVersionTag.vue')['default']
     WodoreLogo: typeof import('./src/components/wodore/WodoreLogo.vue')['default']
   }
 }
