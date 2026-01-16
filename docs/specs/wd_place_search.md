@@ -103,8 +103,17 @@ Single result item (q-item, dense mode).
 
 MainLayout conditionally renders based on screen size:
 
+**Desktop:** Search input appears before calendar selection
+
 ```vue
 <WdPlaceSearchMenu v-if="!isMobile" />
+<WdSelectDate />
+```
+
+**Mobile:** Search icon appears after calendar selection
+
+```vue
+<WdSelectDate />
 <WdPlaceSearchDialog v-if="isMobile" />
 ```
 
