@@ -272,58 +272,65 @@ function handleSwipeDown() {
 }
 
 /* Search result animations */
-.search-result-enter-active {
-  animation: slide-in 3s ease;
-}
-
+.search-result-enter-active,
 .search-result-leave-active {
-  animation: slide-out 3s ease;
+  transition: all 0.3s ease;
 }
 
+.search-result-enter-from {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.search-result-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+/* Ensure smooth layout changes */
 .search-result-move {
-  transition: transform 3s ease;
-}
-
-@keyframes slide-in {
-  0% {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-
-  100% {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes slide-out {
-  0% {
-    opacity: 1;
-    transform: translateX(0);
-  }
-
-  100% {
-    opacity: 0;
-    transform: translateX(20px);
-  }
+  transition: transform 0.3s ease;
 }
 </style>
 
 <template>
-  <q-card :class="isMobile ? 'bg-dark-500' : 'dialog-radius bg-dark-500'" :style="isMobile
-    ? 'width: 100vw; max-width: 100vw; height: 100dvh; height: 100vh;'
-    : 'width: 440px; max-width: 90vw'
-    ">
+  <q-card
+    :class="isMobile ? 'bg-dark-500' : 'dialog-radius bg-dark-500'"
+    :style="
+      isMobile
+        ? 'width: 100vw; max-width: 100vw; height: 100dvh; height: 100vh;'
+        : 'width: 440px; max-width: 90vw'
+    "
+  >
     <!-- HEADER with search input (fixed position on mobile) -->
-    <div class="bg-dark-700 q-pa-md" :style="isMobile
-      ? 'position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding-right: 84px !important'
-      : 'padding-right: 84px !important'
-      ">
-      <q-input ref="searchInputRef" :model-value="searchText" @update:model-value="onSearchInput" dense dark outlined
-        placeholder="Orte suchen..." autofocus @keydown="onKeyDown" class="toolbar-font">
+    <div
+      class="bg-dark-700 q-pa-md"
+      :style="
+        isMobile
+          ? 'position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding-right: 84px !important'
+          : 'padding-right: 84px !important'
+      "
+    >
+      <q-input
+        ref="searchInputRef"
+        :model-value="searchText"
+        @update:model-value="onSearchInput"
+        dense
+        dark
+        outlined
+        placeholder="Orte suchen..."
+        autofocus
+        @keydown="onKeyDown"
+        class="toolbar-font"
+      >
         <template v-slot:append>
           <q-spinner v-if="loading" color="white" size="16px" />
-          <q-icon v-else-if="searchText.length > 0" class="text-icon cursor-pointer" size="sm" @click="clearSearch">
+          <q-icon
+            v-else-if="searchText.length > 0"
+            class="text-icon cursor-pointer"
+            size="sm"
+            @click="clearSearch"
+          >
             <IconEvaCloseOutline />
           </q-icon>
         </template>
@@ -331,30 +338,55 @@ function handleSwipeDown() {
     </div>
 
     <!-- Search Results -->
-    <q-scroll-area visible :thumb-style="{
-      width: '6px',
-      backgroundColor: '#998019',
-      opacity: '0.5',
-      borderRadius: '8px 0 0 8px',
-    }" :style="isMobile
-      ? 'position: fixed; top: 88px; left: 0; right: 0; bottom: 0; height: auto;'
-      : 'height: 400px; max-height: 600px'
-      ">
-      <q-list v-if="searchResults.length > 0" class="bg-dark-500" :class="{ 'q-mt-sm': !isMobile }">
-        <transition-group appear enter-active-class="animated fadeInLeft" leave-active-class="animated fadeOutRight">
-          <WdSearchResultEntry v-for="(place, index) in searchResults" :key="place.id" :hut="place"
-            :selected="index === selectedIndex" @select="onPlaceSelect" @preview="onPlacePreview" />
+    <q-scroll-area
+      visible
+      :thumb-style="{
+        width: '6px',
+        backgroundColor: '#998019',
+        opacity: '0.5',
+        borderRadius: '8px 0 0 8px',
+      }"
+      :style="
+        isMobile
+          ? 'position: fixed; top: 88px; left: 0; right: 0; bottom: 0; height: auto;'
+          : 'height: 400px; max-height: 600px'
+      "
+    >
+      <q-list
+        v-if="searchResults.length > 0"
+        class="bg-dark-500"
+        :class="{ 'q-mt-sm': !isMobile }"
+      >
+        <transition-group name="search-result" tag="div">
+          <WdSearchResultEntry
+            v-for="(place, index) in searchResults"
+            :key="place.id"
+            :hut="place"
+            :selected="index === selectedIndex"
+            @select="onPlaceSelect"
+            @preview="onPlacePreview"
+          />
         </transition-group>
       </q-list>
-      <div v-else-if="searchText.length >= 2 || lastSearchText.length >= 2" class="no-results bg-dark-500">
+      <div
+        v-else-if="searchText.length >= 2 || lastSearchText.length >= 2"
+        class="no-results bg-dark-500"
+      >
         Keine Orte gefunden
       </div>
-      <div v-else class="no-results bg-dark-500" style="
+      <div
+        v-else
+        class="no-results bg-dark-500"
+        style="
           display: flex;
           align-items: center;
           justify-content: center;
           min-height: 300px;
-        " v-touch-swipe.down="isMobile && props.swipeToClose ? handleSwipeDown : undefined">
+        "
+        v-touch-swipe.down="
+          isMobile && props.swipeToClose ? handleSwipeDown : undefined
+        "
+      >
         <div class="text-center">
           <q-icon size="xl" color="primary-300">
             <IconEvaSearchOutline />

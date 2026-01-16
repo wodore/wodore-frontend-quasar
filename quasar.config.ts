@@ -66,7 +66,6 @@ export default configure((ctx) => {
       { server: false, path: 'maplibre' },
       { server: false, path: 'vue-stripe' },
       { server: false, path: 'pwa-update' },
-      { server: false, path: 'loadingbar' },
     ],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#css
@@ -342,7 +341,3 @@ export default configure((ctx) => {
     },
   };
 });
-
-
-
-
