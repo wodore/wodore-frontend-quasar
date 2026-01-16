@@ -24,7 +24,7 @@ const fetchBackendVersion = async () => {
 
     if (data) {
       backendVersion.value = data.version || '';
-      backendHash.value = data.hash || '';
+      backendHash.value = data.hash_long || '';
     }
   } catch (err) {
     backendError.value =
@@ -46,12 +46,7 @@ onMounted(fetchBackendVersion);
       :hash="frontendHash"
     >
     </WdVersionTag>
-    <WdVersionTag
-      type="backend"
-      :version="backendVersion"
-      :hash="backendHash"
-      :loading="backendLoading"
-      :error="backendError"
-    />
+    <WdVersionTag type="backend" :version="backendVersion" :hash="backendHash" :loading="backendLoading"
+      :error="backendError" />
   </div>
 </template>

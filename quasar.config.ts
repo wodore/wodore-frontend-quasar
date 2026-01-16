@@ -14,8 +14,7 @@ import IconsResolver from 'unplugin-icons/resolver';
 
 import { execSync } from 'child_process';
 const gitHash =
-  process.env.GIT_HASH ||
-  execSync('git rev-parse --short HEAD').toString().trim();
+  process.env.GIT_HASH || execSync('git rev-parse HEAD').toString().trim();
 
 // export default defineConfig({
 //   plugins: [
