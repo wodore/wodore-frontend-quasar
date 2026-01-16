@@ -42,8 +42,8 @@ if [ -z "$TAG_SUFFIX" ]; then
   TAG_SUFFIX="$DEFAULT_TAG_SUFFIX"
 fi
 
-# Get the short git hash
-GIT_HASH=$(git rev-parse --short HEAD)
+# Get the full git hash
+GIT_HASH=$(git rev-parse HEAD)
 
 # Get repository URL from git
 REPO_URL=$(git config --get remote.origin.url)
