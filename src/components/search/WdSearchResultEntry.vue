@@ -16,7 +16,6 @@ const props = withDefaults(defineProps<Props>(), {
   selected: false,
 });
 
-console.debug(props.hut);
 // Emits
 const emit = defineEmits<{
   select: [place: schemasWodore['GeoPlaceSearchSchema'], event: Event];
@@ -78,55 +77,53 @@ function onPreviewClick(event: Event) {
 <style scoped lang="scss"></style>
 
 <template>
-  <q-item
-    clickable
-    v-ripple
-    @click="onClick"
-    :class="{ 'bg-dark-600': selected }"
-    dark
-    dense
-  >
-    <q-item-section avatar>
-      <img v-if="placeTypeIcon" :src="placeTypeIcon" :alt="hut.name" />
-    </q-item-section>
-    <q-item-section>
-      <q-item-label overline class="text-primary-400" lines="1">{{
-        placeTypeName
-      }}</q-item-label>
-      <q-item-label class="text-primary-100 text-body1" lines="2">{{
-        hut.name
-      }}</q-item-label>
-      <q-item-label caption class="text-primary-300">
-        <div v-if="hut.elevation">
-          <q-icon size="xs">
-            <IconMingcuteMountain2Fill />
-          </q-icon>
-          <span class="q-pr-xl">{{ hut.elevation }}m</span>
-        </div>
-        <!-- TODO: add region -->
-      </q-item-label>
-    </q-item-section>
+  <div>
+    <q-item
+      clickable
+      v-ripple
+      @click="onClick"
+      :class="{ 'bg-dark-600': selected }"
+      dark
+      dense
+    >
+      <q-item-section avatar>
+        <img v-if="placeTypeIcon" :src="placeTypeIcon" :alt="hut.name" />
+      </q-item-section>
+      <q-item-section>
+        <q-item-label overline class="text-primary-400" lines="1">{{
+          placeTypeName
+        }}</q-item-label>
+        <q-item-label class="text-primary-100 text-body1" lines="2">{{
+          hut.name
+        }}</q-item-label>
+        <q-item-label caption class="text-primary-300">
+          <div v-if="hut.elevation">
+            <q-icon size="xs">
+              <IconMingcuteMountain2Fill />
+            </q-icon>
+            <span class="q-pr-xl">{{ hut.elevation }}m</span>
+          </div>
+          <!-- TODO: add region -->
+        </q-item-label>
+      </q-item-section>
 
-    <!-- Preview button (desktop only) -->
-    <q-item-section v-if="!isMobile" side class="q-pr-md">
-      <q-btn
-        flat
-        round
-        dense
-        color="primary-300"
-        @click="onPreviewClick"
-        size="sm"
-      >
-        <q-icon size="sm">
-          <IconEvaEyeOutline />
-        </q-icon>
-        <q-tooltip :delay="3000">Vorschau auf Karte</q-tooltip>
-      </q-btn>
-    </q-item-section>
-  </q-item>
-  <q-separator spaced inset="item" dark />
-  <!-- Thumbnail Image (if available)
-    <div v-if="hutAvatar" class="hut-thumbnail">
-      <img :src="hutAvatar" :alt="hut.name" />
-    </div>
---></template>
+      <!-- Preview button (desktop only) -->
+      <q-item-section v-if="!isMobile" side class="q-pr-md">
+        <q-btn
+          flat
+          round
+          dense
+          color="primary-300"
+          @click="onPreviewClick"
+          size="sm"
+        >
+          <q-icon size="sm">
+            <IconEvaEyeOutline />
+          </q-icon>
+          <q-tooltip :delay="3000">Vorschau auf Karte</q-tooltip>
+        </q-btn>
+      </q-item-section>
+    </q-item>
+    <q-separator spaced inset="item" dark />
+  </div>
+</template>

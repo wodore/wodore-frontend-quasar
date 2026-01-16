@@ -16,10 +16,12 @@ const route = useRoute();
 // Props
 interface Props {
   mobile?: boolean;
+  swipeToClose?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   mobile: false,
+  swipeToClose: false,
 });
 
 // Emits
@@ -244,6 +246,13 @@ defineExpose({
     });
   },
 });
+
+// Handle swipe-down to close (only when enabled)
+function handleSwipeDown() {
+  if (props.swipeToClose) {
+    emit('close');
+  }
+}
 </script>
 
 <style scoped>
@@ -263,40 +272,24 @@ defineExpose({
 }
 
 /* Search result animations */
-.search-result-enter-active {
-  animation: slide-in 3s ease;
-}
-
+.search-result-enter-active,
 .search-result-leave-active {
-  animation: slide-out 3s ease;
+  transition: all 0.3s ease;
 }
 
+.search-result-enter-from {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.search-result-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+/* Ensure smooth layout changes */
 .search-result-move {
-  transition: transform 3s ease;
-}
-
-@keyframes slide-in {
-  0% {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-
-  100% {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes slide-out {
-  0% {
-    opacity: 1;
-    transform: translateX(0);
-  }
-
-  100% {
-    opacity: 0;
-    transform: translateX(20px);
-  }
+  transition: transform 0.3s ease;
 }
 </style>
 
@@ -305,12 +298,19 @@ defineExpose({
     :class="isMobile ? 'bg-dark-500' : 'dialog-radius bg-dark-500'"
     :style="
       isMobile
-        ? 'width: 100vw; max-width: 100vw; height: 100vh'
+        ? 'width: 100vw; max-width: 100vw; height: 100dvh; height: 100vh;'
         : 'width: 440px; max-width: 90vw'
     "
   >
-    <!-- HEADER with search input -->
-    <div class="bg-dark-700 q-pa-md" style="padding-right: 84px !important">
+    <!-- HEADER with search input (fixed position on mobile) -->
+    <div
+      class="bg-dark-700 q-pa-md"
+      :style="
+        isMobile
+          ? 'position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding-right: 84px !important'
+          : 'padding-right: 84px !important'
+      "
+    >
       <q-input
         ref="searchInputRef"
         :model-value="searchText"
@@ -348,16 +348,16 @@ defineExpose({
       }"
       :style="
         isMobile
-          ? 'height: calc(100vh - 88px)'
+          ? 'position: fixed; top: 88px; left: 0; right: 0; bottom: 0; height: auto;'
           : 'height: 400px; max-height: 600px'
       "
     >
-      <q-list v-if="searchResults.length > 0" class="bg-dark-500">
-        <transition-group
-          appear
-          enter-active-class="animated fadeInLeft"
-          leave-active-class="animated fadeOutRight"
-        >
+      <q-list
+        v-if="searchResults.length > 0"
+        class="bg-dark-500"
+        :class="{ 'q-mt-sm': !isMobile }"
+      >
+        <transition-group name="search-result" tag="div">
           <WdSearchResultEntry
             v-for="(place, index) in searchResults"
             :key="place.id"
@@ -382,6 +382,9 @@ defineExpose({
           align-items: center;
           justify-content: center;
           min-height: 300px;
+        "
+        v-touch-swipe.down="
+          isMobile && props.swipeToClose ? handleSwipeDown : undefined
         "
       >
         <div class="text-center">

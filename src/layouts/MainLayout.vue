@@ -87,7 +87,7 @@ function closeContent(mode: string) {
   position: fixed;
   top: 1px;
   left: -26px;
-  z-index: 10000;
+  z-index: 6000;
   font-size: 11px;
   line-height: 10px;
   letter-spacing: 0.04em;
@@ -118,10 +118,10 @@ function closeContent(mode: string) {
           <WodoreLogo class="text-h4" :text="!isMobile" icon />
         </q-toolbar-title>
         <WdPlaceSearchMenu v-if="!isMobile" />
-        <WdPlaceSearchDialog v-if="isMobile" />
         <WdSelectDate />
+        <WdPlaceSearchDialog v-if="isMobile" />
         <WdSupportButton
-          v-if="!authStore.isLoggedIn"
+          v-if="!authStore.isLoggedIn && !isMobile"
           class="text-secondary-700"
         />
         <WdFeedbackButton v-if="!isMobile" />
