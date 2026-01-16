@@ -305,12 +305,19 @@ defineExpose({
     :class="isMobile ? 'bg-dark-500' : 'dialog-radius bg-dark-500'"
     :style="
       isMobile
-        ? 'width: 100vw; max-width: 100vw; height: 100vh'
+        ? 'width: 100vw; max-width: 100vw; height: 100dvh; height: 100vh;'
         : 'width: 440px; max-width: 90vw'
     "
   >
-    <!-- HEADER with search input -->
-    <div class="bg-dark-700 q-pa-md" style="padding-right: 84px !important">
+    <!-- HEADER with search input (fixed position on mobile) -->
+    <div
+      class="bg-dark-700 q-pa-md"
+      :style="
+        isMobile
+          ? 'position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding-right: 84px !important'
+          : 'padding-right: 84px !important'
+      "
+    >
       <q-input
         ref="searchInputRef"
         :model-value="searchText"
@@ -348,7 +355,7 @@ defineExpose({
       }"
       :style="
         isMobile
-          ? 'height: calc(100vh - 88px)'
+          ? 'position: fixed; top: 88px; left: 0; right: 0; bottom: 0; height: auto;'
           : 'height: 400px; max-height: 600px'
       "
     >
