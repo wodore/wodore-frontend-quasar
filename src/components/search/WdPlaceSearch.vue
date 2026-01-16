@@ -340,7 +340,7 @@ function handleSwipeDown() {
       ? 'position: fixed; top: 88px; left: 0; right: 0; bottom: 0; height: auto;'
       : 'height: 400px; max-height: 600px'
       ">
-      <q-list v-if="searchResults.length > 0" class="bg-dark-500">
+      <q-list v-if="searchResults.length > 0" class="bg-dark-500" :class="{ 'q-mt-sm': !isMobile }">
         <transition-group appear enter-active-class="animated fadeInLeft" leave-active-class="animated fadeOutRight">
           <WdSearchResultEntry v-for="(place, index) in searchResults" :key="place.id" :hut="place"
             :selected="index === selectedIndex" @select="onPlaceSelect" @preview="onPlacePreview" />

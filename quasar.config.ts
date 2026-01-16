@@ -66,6 +66,7 @@ export default configure((ctx) => {
       { server: false, path: 'maplibre' },
       { server: false, path: 'vue-stripe' },
       { server: false, path: 'pwa-update' },
+      { server: false, path: 'loadingbar' },
     ],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#css
@@ -215,18 +216,6 @@ export default configure((ctx) => {
         loadingBar: {
           color: 'accent-700',
           size: '2px',
-          //TODO does not work?? https://quasar.dev/quasar-plugins/loading-bar#using-an-ajax-filter
-          hijackFilter: (url: string) => {
-            //return !/^.*(timetable.search.ch|m\/hut\/).*/.test(url);
-            console.debug('Test url pattern ', url);
-            if (
-              /^.*timetable.search.ch.*/.test(url) ||
-              /^.*m\/hut\/*/.test(url)
-            ) {
-              return false;
-            }
-            return true;
-          },
         },
       },
     },
@@ -353,3 +342,7 @@ export default configure((ctx) => {
     },
   };
 });
+
+
+
+

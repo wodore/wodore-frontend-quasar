@@ -87,19 +87,17 @@ function closeContent(mode: string) {
   position: fixed;
   top: 1px;
   left: -26px;
-  z-index: 10000;
+  z-index: 6000;
   font-size: 11px;
   line-height: 10px;
   letter-spacing: 0.04em;
   text-transform: none;
   padding: 2px 32px 2px 26px;
-  background-image: repeating-linear-gradient(
-    -45deg,
-    color('accent', 700),
-    color('accent', 700) 6px,
-    color('accent', 600) 6px,
-    color('accent', 600) 12px
-  );
+  background-image: repeating-linear-gradient(-45deg,
+      color('accent', 700),
+      color('accent', 700) 6px,
+      color('accent', 600) 6px,
+      color('accent', 600) 12px);
   color: white;
   transform: rotate(-20deg);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
@@ -120,23 +118,14 @@ function closeContent(mode: string) {
         <WdPlaceSearchMenu v-if="!isMobile" />
         <WdSelectDate />
         <WdPlaceSearchDialog v-if="isMobile" />
-        <WdSupportButton
-          v-if="!authStore.isLoggedIn && !isMobile"
-          class="text-secondary-700"
-        />
+        <WdSupportButton v-if="!authStore.isLoggedIn && !isMobile" class="text-secondary-700" />
         <WdFeedbackButton v-if="!isMobile" />
 
         <WdUser v-if="authStore.isLoggedIn" />
 
         <!-- MAIN DIALOG -->
-        <q-dialog
-          v-model="showDialog"
-          no-backdrop-dismiss
-          persistent
-          :maximized="isMobile"
-          backdrop-filter="blur(3px) saturate(180%) grayscale(60%)"
-          class="dialog-radius"
-        >
+        <q-dialog v-model="showDialog" no-backdrop-dismiss persistent :maximized="isMobile"
+          backdrop-filter="blur(3px) saturate(180%) grayscale(60%)" class="dialog-radius">
           <router-view name="dialog" v-slot="{ Component, route }">
             <!-- <transition name="fade" mode="out-in"> -->
             <component :is="Component" :key="route.path" />
@@ -145,23 +134,13 @@ function closeContent(mode: string) {
         </q-dialog>
 
         <!-- MENU BUTTON mobile open -->
-        <WdMenuButton
-          mobile
-          function="open"
-          side="right"
-          v-model="menuDrawerOpen"
-        />
+        <WdMenuButton mobile function="open" side="right" v-model="menuDrawerOpen" />
       </q-toolbar>
     </q-header>
 
     <!-- MENU -->
-    <q-drawer
-      v-model="menuDrawerOpen"
-      :side="isMobile ? 'right' : 'left'"
-      :width="200"
-      :breakpoint="610"
-      class="shadow-2"
-    >
+    <q-drawer v-model="menuDrawerOpen" :side="isMobile ? 'right' : 'left'" :width="200" :breakpoint="610"
+      class="shadow-2">
       <!-- TOOLBAR mobile -->
       <q-toolbar v-if="isMobile" class="bg-primary-600">
         <q-toolbar-title>
