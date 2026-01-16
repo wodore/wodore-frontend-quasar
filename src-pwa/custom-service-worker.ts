@@ -50,7 +50,9 @@ self.addEventListener('message', (event) => {
   console.log('[SW] Received message:', event.data);
 
   if (event.data && event.data.type === 'SKIP_WAITING') {
-    console.log('[SW] User clicked "Update now" - skipping waiting and activating');
+    console.log(
+      '[SW] User clicked "Update now" - skipping waiting and activating',
+    );
     // User has clicked "Update now" - skip waiting and activate
     self.skipWaiting();
     return;
