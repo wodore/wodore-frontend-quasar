@@ -45,8 +45,8 @@ watchEffect(() => {
 }
 
 .map-menu__versions {
-  background: rgba(255, 255, 255, 0.92);
-  border-radius: 0px;
+  background: rgba(255, 255, 255, 0.2);
+  /* border-radius: 0px; */
 }
 </style>
 
@@ -68,7 +68,8 @@ watchEffect(() => {
         <q-btn v-else color="accent-700" unelevated flat @click="$auth?.logout()" label="Logout" style="opacity: 0.8" />
       </div>
       <!-- </div> -->
-      <div class="q-pa-sm">
+      <!-- <div class="q-pa-sm"> -->
+      <div class="">
         <!-- Privacy Policy Link -->
         <div v-if="authStore.isEditor()" class="text-center q-mb-xs">
           <router-link :to="{ name: 'data-policy' }" target="_blank" class="text-secondary">
