@@ -164,7 +164,7 @@ export interface paths {
   '/v1/version': {
     /**
      * Get Version
-     * @description Get version information including git hash, package version, build timestamp, and environment.
+     * @description Get version information including git short hash, full hash, package version, build timestamp, and environment.
      */
     get: operations['server_apps_utils_api_get_version'];
   };
@@ -1674,10 +1674,16 @@ export interface components {
     VersionSchema: {
       /**
        * Hash
-       * @description Git commit hash
+       * @description Git commit short hash
        * @example abc123e
        */
       hash: string;
+      /**
+       * Hash Long
+       * @description Git commit full hash
+       * @example abc123ef4567890abcdef1234567890abcdef12
+       */
+      hash_long: string;
       /**
        * Version
        * @description Sematic version
@@ -2358,7 +2364,7 @@ export interface operations {
   };
   /**
    * Get Version
-   * @description Get version information including git hash, package version, build timestamp, and environment.
+   * @description Get version information including git short hash, full hash, package version, build timestamp, and environment.
    */
   server_apps_utils_api_get_version: {
     responses: {

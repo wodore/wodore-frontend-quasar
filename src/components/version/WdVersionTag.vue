@@ -42,35 +42,20 @@ const isStaging = computed(() => appEnv === 'staging');
 
 <template>
   <div class="row items-center no-wrap q-gutter-xs">
-    <q-tooltip
-      self="center right"
-      anchor="center right"
-      :delay="1000"
-      :offset="[-5, 0]"
-    >
+    <q-tooltip self="center right" anchor="center right" :delay="1000" :offset="[-5, 0]">
       {{ tooltip }}
     </q-tooltip>
     <q-icon :name="iconName" size="14px" color="grey-6" />
     <q-spinner v-if="loading" size="14px" color="grey-6" />
-    <q-badge v-else-if="error" color="negative" text-color="white" dense rounded
-      >Issue</q-badge
-    >
+    <q-badge v-else-if="error" color="negative" text-color="white" dense rounded>Issue</q-badge>
     <span v-else class="text-caption text-grey-6">
       <span class="text-weight-medium">
-        <a v-if="url" target="_blank" :href="`${url}/releases/tag/v${version}`"
-          >v{{ version || '—' }}</a
-        >
+        <a v-if="url" target="_blank" :href="`${url}/releases/tag/v${version}`">v{{ version || '—' }}</a>
         <span v-else>v{{ version || '—' }}</span>
       </span>
       <span class="text-weight-light">
-        (<a
-          v-if="isStaging"
-          target="_blank"
-          :href="`${url}/commits/${shortHash}`"
-          >{{ shortHash }}</a
-        >
-        <span v-else>{{ shortHash }}</span
-        >)
+        (<a v-if="isStaging" target="_blank" :href="`${url}/commit/${props.hash}`">{{ shortHash }}</a>
+        <span v-else>{{ shortHash }}</span>)
       </span>
     </span>
   </div>
