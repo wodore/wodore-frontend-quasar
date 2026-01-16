@@ -49,12 +49,14 @@ const isStaging = computed(() => appEnv === 'staging');
     <q-spinner v-if="loading" size="14px" color="grey-6" />
     <q-badge v-else-if="error" color="negative" text-color="white" dense rounded>Issue</q-badge>
     <span v-else class="text-caption text-grey-6">
-      <b>
+      <span class="text-weight-medium">
         <a v-if="url" target="_blank" :href="`${url}/releases/tag/v${version}`">v{{ version || '—' }}</a>
         <span v-else>v{{ version || '—' }}</span>
-      </b >
+      </span >
+      <span class="text-weight-light">
         (<a v-if="isStaging" target="_blank" :href="`${url}/commits/${shortHash}`">{{ shortHash }}</a>
         <span v-else>{{ shortHash }}</span>)
+      </span>
     </span>
   </div>
 </template>

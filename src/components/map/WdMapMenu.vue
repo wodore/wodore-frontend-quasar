@@ -60,7 +60,6 @@ watchEffect(() => {
         <IconNotoV1Construction />
       </q-icon>
     </div>
-    <!-- <div class="bg-transparent fixed-bottom"> -->
     <div class="bg-transparent absolute-bottom">
       <div class="q-pa-xs column q-gutter-sm">
         <q-btn v-if="!authStore.isLoggedIn" color="secondary-700" unelevated flat @click="$auth?.signinRedirect()"
@@ -71,8 +70,8 @@ watchEffect(() => {
       <!-- <div class="q-pa-sm"> -->
       <div class="">
         <!-- Privacy Policy Link -->
-        <div v-if="authStore.isEditor()" class="text-center q-mb-xs">
-          <router-link :to="{ name: 'data-policy' }" target="_blank" class="text-secondary">
+        <div v-if="authStore.isEditor()" class="text-center q-mb-sm">
+          <router-link :to="{ name: 'data-policy' }" target="_blank" class="text-secondary-700">
             Datenschutz
           </router-link>
         </div>

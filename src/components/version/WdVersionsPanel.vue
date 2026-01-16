@@ -38,7 +38,7 @@ onMounted(fetchBackendVersion);
 </script>
 
 <template>
-  <div class="column q-gutter-xs shadow-1 q-pb-sm">
+  <div class="column q-gutter-xs shadow-1 q-pb-sm q-pl-xs">
     <WdVersionTag type="frontend" :version="frontendVersion" :hash="frontendHash">
     </WdVersionTag>
     <WdVersionTag type="backend" :version="backendVersion" :hash="backendHash" :loading="backendLoading"
