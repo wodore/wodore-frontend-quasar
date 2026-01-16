@@ -16,10 +16,12 @@ const route = useRoute();
 // Props
 interface Props {
   mobile?: boolean;
+  swipeToClose?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   mobile: false,
+  swipeToClose: false,
 });
 
 // Emits
@@ -311,6 +313,7 @@ defineExpose({
   >
     <!-- HEADER with search input (fixed position on mobile) -->
     <div
+      v-touch-swipe.down="props.swipeToClose ? () => emit('close') : null"
       class="bg-dark-700 q-pa-md"
       :style="
         isMobile
