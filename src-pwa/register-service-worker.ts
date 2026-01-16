@@ -71,7 +71,7 @@ register(process.env.SERVICE_WORKER_FILE, {
   },
 
   registered(registration) {
-    console.log('[PWA] Service worker registered:', registration?.scope)
+    console.log('[PWA] Service worker registered:', registration?.scope);
 
     // Periodically check for updates (every hour)
     // This helps detect updates even if the user doesn't navigate
@@ -85,7 +85,7 @@ register(process.env.SERVICE_WORKER_FILE, {
   },
 
   cached(/* registration */) {
-    console.log('[PWA] Content has been cached for offline use.')
+    console.log('[PWA] Content has been cached for offline use.');
   },
 
   updatefound(registration) {
@@ -93,12 +93,12 @@ register(process.env.SERVICE_WORKER_FILE, {
       installing: registration?.installing?.state,
       waiting: registration?.waiting?.state,
       active: registration?.active?.scriptURL,
-    })
+    });
 
     // Track the installing service worker
     const newWorker = registration?.installing;
     if (!newWorker) {
-      console.log('[PWA] No installing worker found')
+      console.log('[PWA] No installing worker found');
       return;
     }
 
@@ -106,7 +106,7 @@ register(process.env.SERVICE_WORKER_FILE, {
       console.log('[PWA] Worker state changed:', {
         state: newWorker.state,
         hasController: !!navigator.serviceWorker.controller,
-      })
+      });
 
       if (
         newWorker.state === 'installed' &&
@@ -114,7 +114,7 @@ register(process.env.SERVICE_WORKER_FILE, {
       ) {
         // A new service worker is available and waiting
         // This means we have a newer version than what's currently running
-        console.log('[PWA] New service worker is waiting to activate')
+        console.log('[PWA] New service worker is waiting to activate');
 
         const waitingWorker = registration?.waiting;
         const nextVersion = waitingWorker
@@ -124,17 +124,20 @@ register(process.env.SERVICE_WORKER_FILE, {
         console.log('[PWA] Version comparison:', {
           current: APP_VERSION,
           next: nextVersion,
-          shouldNotify: !nextVersion || shouldPromptUpdate(APP_VERSION, nextVersion),
-        })
+          shouldNotify:
+            !nextVersion || shouldPromptUpdate(APP_VERSION, nextVersion),
+        });
 
         if (!nextVersion || shouldPromptUpdate(APP_VERSION, nextVersion)) {
           // Wait a bit for the user to settle, then show notification
           setTimeout(() => {
-            console.log('[PWA] Showing update notification to user')
+            console.log('[PWA] Showing update notification to user');
             if (showUpdateCallback) {
               showUpdateCallback();
             } else {
-              console.warn('[PWA] No update callback set yet - will notify when app is ready')
+              console.warn(
+                '[PWA] No update callback set yet - will notify when app is ready',
+              );
             }
           }, 2000);
         }
@@ -180,11 +183,14 @@ export function checkForPwaUpdate() {
           waiting: reg.waiting?.state,
           active: reg.active?.scriptURL,
         });
-        reg.update().then(() => {
-          console.log('[PWA] Update check completed');
-        }).catch((err) => {
-          console.error('[PWA] Update check failed:', err);
-        });
+        reg
+          .update()
+          .then(() => {
+            console.log('[PWA] Update check completed');
+          })
+          .catch((err) => {
+            console.error('[PWA] Update check failed:', err);
+          });
       } else {
         console.log('[PWA] No service worker registration found');
       }
@@ -211,9 +217,15 @@ export function getPwaDebugInfo() {
 
 // Make debug functions available globally for console access
 if (typeof window !== 'undefined') {
-  (window as unknown as { pwaDebug: { checkUpdate: () => void; getInfo: () => void } }).pwaDebug = {
+  (
+    window as unknown as {
+      pwaDebug: { checkUpdate: () => void; getInfo: () => void };
+    }
+  ).pwaDebug = {
     checkUpdate: checkForPwaUpdate,
     getInfo: getPwaDebugInfo,
   };
-  console.log('[PWA] Debug functions available: window.pwaDebug.checkUpdate(), window.pwaDebug.getInfo()');
+  console.log(
+    '[PWA] Debug functions available: window.pwaDebug.checkUpdate(), window.pwaDebug.getInfo()',
+  );
 }
