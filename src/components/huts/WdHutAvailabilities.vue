@@ -456,7 +456,7 @@ const upcomingMonthClass = computed(() => {
         :horizontal-thumb-style="{ opacity: '0.5' }" @scroll="onScroll" @wheel.prevent="onWheel">
         <q-virtual-scroll ref="virtualScrollRef" scroll-target="#availability-scroll-area > .scroll"
           :items="availabilityItems" :virtual-scroll-item-size="itemWidth" virtual-scroll-horizontal
-          @virtual-scroll="onVirtualScroll">
+          virtual-scroll-slice-ratio-before="7" virtual-scroll-slice-ratio-after="14" @virtual-scroll="onVirtualScroll">
           <template v-slot="{ item, index }">
             <div :key="index" class="day-item">
               <WdHutAvailability :day="item" :is-selected="item.date === startDate" :is-today="isToday(item.date)"

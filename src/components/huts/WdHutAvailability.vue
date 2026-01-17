@@ -139,6 +139,9 @@ const barColor = computed(() => {
 
 // Lighter version for background (30% opacity)
 const barColorLight = computed(() => {
+  if (isLoadingState.value) {
+    return 'rgba(128, 128, 128, 0.2)'; // gray with 30% opacity
+  }
   if (isUnknown.value) {
     return 'rgba(128, 128, 128, 0.3)'; // gray with 30% opacity
   }
@@ -321,58 +324,57 @@ const barColorLight = computed(() => {
   <a :href="day.link" target="_blank" rel="noopener noreferrer"
     class="card column items-center overflow-hidden no-underline">
     <!-- Loading/Skeleton State -->
-    <template v-if="isLoadingState">
-      <div class="text-center column justify-center items-center" style="min-height: 36px"></div>
-      <div class="bar-wrapper">
-        <!-- Just the background with skeleton animation, no occupied bar -->
-        <div class="bar-bg">
-          <q-skeleton type="rect" width="100%" height="100%" />
-        </div>
-      </div>
-      <div class="text-center column justify-center items-center" style="min-height: 28px"></div>
-    </template>
+    <!-- <template v-if="isLoadingState"> -->
+    <!--   <div class="text-center column justify-center items-center" style="min-height: 36px"></div> -->
+    <!--   <div class="bar-wrapper"> -->
+    <!--     <div class="bar-bg"> -->
+    <!--       <q-skeleton type="rect" width="100%" height="100%" /> -->
+    <!--     </div> -->
+    <!--   </div> -->
+    <!--   <div class="text-center column justify-center items-center" style="min-height: 28px"></div> -->
+    <!-- </template> -->
 
     <!-- Normal/Unknown State -->
-    <template v-else>
-      <div class="bar-wrapper">
-        <div class="bar-frame row no-wrap items-start justify-between" :class="[
-          isSelected ? `month_${monthKey}--gradient-dark` : `month_${monthKey}--gradient-light`,
-          { selected: isSelected, today: isToday, weekend: isWeekend },
-        ]">
-          <div class="day-column">
-            <div class="day-week" :class="{ 'day-week--bold': isWeekend }">
-              <span>{{ dayNumber }}</span>
-              <span class="day-dot">•</span>
-              <span>{{ formattedDate }}</span>
-            </div>
-            <div class="symbol-row">
-              <q-icon v-if="typeIcon" :name="typeIcon" size="20px" />
-            </div>
+    <div class="bar-wrapper">
+      <div class="bar-frame row no-wrap items-start justify-between" :class="[
+        isSelected ? `month_${monthKey}--gradient-dark` : `month_${monthKey}--gradient-light`,
+        { selected: isSelected, today: isToday, weekend: isWeekend },
+      ]" :style="{ backgroundColor: isLoadingState ? '#ccc' : undefined }">
+        <div class="day-column">
+          <div class="day-week" :class="{ 'day-week--bold': isWeekend }">
+            <span>{{ dayNumber }}</span>
+            <span class="day-dot">•</span>
+            <span>{{ formattedDate }}</span>
           </div>
-          <!-- Free beds (background, light color) -->
-          <div class="bar-bg"
-            :style="{ backgroundColor: barColorLight, borderRadius: barRadius, border: `2px solid ${barColor}` }">
-            <!-- Occupied beds (overlay, dark color) -->
-            <div class="bar-occupied"
-              :style="{ backgroundColor: barColor, height: occupiedHeight, borderRadius: barRadius }">
-            </div>
-            <div class="bar-content">
-              <template v-if="isUnknown">
-                <div class="free-label">?</div>
-              </template>
-              <template v-else>
-                <div class="free-label">{{ day.free }}</div>
-              </template>
-            </div>
+          <div class="symbol-row">
+            <q-icon v-if="typeIcon && !isLoadingState" :name="typeIcon" size="20px" />
+            <q-skeleton v-else type="circle" width="20px" height="20px" />
           </div>
         </div>
-        <q-tooltip>
-          <div>{{ fullWeekday }}, {{ fullDateWithYear }}</div>
-          <div v-if="isUnknown">{{ t('availability.no_data') }}</div>
-          <div v-else>{{ t('availability.tooltip', { free: day.free, total: day.total }) }}</div>
-        </q-tooltip>
+        <!-- Free beds (background, light color) -->
+        <div class="bar-bg" v-if="!isLoadingState"
+          :style="{ backgroundColor: barColorLight, borderRadius: barRadius, border: `2px solid ${barColor}` }">
+          <!-- Occupied beds (overlay, dark color) -->
+          <div class="bar-occupied"
+            :style="{ backgroundColor: barColor, height: occupiedHeight, borderRadius: barRadius }">
+          </div>
+          <div class="bar-content">
+            <template v-if="isUnknown">
+              <div class="free-label">?</div>
+            </template>
+            <template v-else>
+              <div class="free-label">{{ day.free }}</div>
+            </template>
+          </div>
+        </div>
+        <q-skeleton v-else class="bar-bg" :style="{ borderRadius: barRadius }" />
       </div>
-      <div class="text-center column justify-center items-center" style="min-height: 6px"></div>
-    </template>
+      <q-tooltip>
+        <div>{{ fullWeekday }}, {{ fullDateWithYear }}</div>
+        <div v-if="isUnknown">{{ t('availability.no_data') }}</div>
+        <div v-else>{{ t('availability.tooltip', { free: day.free, total: day.total }) }}</div>
+      </q-tooltip>
+    </div>
+    <div class="text-center column justify-center items-center" style="min-height: 6px"></div>
   </a>
 </template>
