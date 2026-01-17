@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watchEffect, watch, nextTick } from 'vue';
 import { date, QVirtualScroll, QScrollArea, useQuasar } from 'quasar';
+import { useCssVar } from '@vueuse/core';
 import { clientWodore } from '@clients/index';
 import { useHutsStore } from '@stores/huts-store';
 import { storeToRefs } from 'pinia';
@@ -8,12 +9,17 @@ import WdHutAvailability from './WdHutAvailability.vue';
 
 const { formatDate, addToDate, subtractFromDate } = date;
 const { selectedDate } = storeToRefs(useHutsStore());
+const containerRef = ref<HTMLElement | null>(null);
 const virtualScrollRef = ref<InstanceType<typeof QVirtualScroll> | null>(null);
 const scrollAreaRef = ref<InstanceType<typeof QScrollArea> | null>(null);
 const $q = useQuasar();
 const scrollLeft = ref(0);
 const scrollViewportWidth = ref(0);
-const itemWidth = 100;
+const itemWidthVar = useCssVar('--availability-item-width', containerRef);
+const itemWidth = computed(() => {
+  const value = Number.parseFloat(itemWidthVar.value || '');
+  return Number.isFinite(value) && value > 0 ? value : 100;
+});
 
 interface Props {
   slug: string;
@@ -225,7 +231,7 @@ const scrollToSelectedDate = (animate: boolean) => {
 
     if (index >= 0) {
       console.log('Scrolling to selected date:', startDate.value, 'at index:', index);
-      const targetLeft = Math.max(0, index * itemWidth);
+      const targetLeft = Math.max(0, index * itemWidth.value);
       scrollAreaRef.value.setScrollPosition('horizontal', targetLeft, animate ? 300 : 0);
     } else {
       console.log('Selected date not found in availabilityItems:', startDate.value);
@@ -315,7 +321,7 @@ const currentMonthIndex = computed(() => {
   const current = starts
     .slice()
     .reverse()
-    .find(start => start.index * itemWidth <= scrollLeft.value);
+    .find(start => start.index * itemWidth.value <= scrollLeft.value);
   return current ?? starts[0];
 });
 
@@ -334,9 +340,9 @@ const monthLabelOffset = computed(() => {
   }
   const upcoming = monthStarts.value.find(start => start.index > current.index);
   if (upcoming) {
-    const upcomingDistance = upcoming.index * itemWidth - scrollLeft.value;
-    if (upcomingDistance <= itemWidth * 2) {
-      return Math.min(0, upcomingDistance - itemWidth * 2);
+    const upcomingDistance = upcoming.index * itemWidth.value - scrollLeft.value;
+    if (upcomingDistance <= itemWidth.value) {
+      return Math.min(0, upcomingDistance - itemWidth.value);
     }
   }
   return 0;
@@ -359,7 +365,7 @@ const upcomingMonthOffset = computed(() => {
   if (!upcoming) {
     return null;
   }
-  const offset = upcoming.index * itemWidth - scrollLeft.value;
+  const offset = upcoming.index * itemWidth.value - scrollLeft.value;
   return offset >= 0 && offset <= scrollViewportWidth.value ? offset : null;
 });
 
@@ -374,7 +380,7 @@ const upcomingMonthClass = computed(() => {
 <template>
   <div v-if="hasAvailability !== false">
     <div class="text-subtitle1 text-accent q-mb-xs q-mt-sm">Verfügbarkeit</div>
-    <div class="availability-container">
+    <div ref="containerRef" class="availability-container">
       <div v-if="currentMonthLabel" class="month-label-overlay" :class="currentMonthClass"
         :style="{ transform: `translateX(${monthLabelOffset}px)` }">
         {{ currentMonthLabel }}
@@ -389,7 +395,7 @@ const upcomingMonthClass = computed(() => {
       <q-scroll-area v-else ref="scrollAreaRef" id="availability-scroll-area" class="availability-scroll-area"
         :horizontal-thumb-style="{ opacity: '0.5' }" @scroll="onScroll" @wheel.prevent="onWheel">
         <q-virtual-scroll ref="virtualScrollRef" scroll-target="#availability-scroll-area > .scroll"
-          :items="availabilityItems" :virtual-scroll-item-size="76" virtual-scroll-horizontal
+          :items="availabilityItems" :virtual-scroll-item-size="itemWidth" virtual-scroll-horizontal
           @virtual-scroll="onVirtualScroll">
           <template v-slot="{ item, index }">
             <div :key="index" class="day-item">
@@ -406,6 +412,7 @@ const upcomingMonthClass = computed(() => {
 <style scoped>
 .availability-container {
   position: relative;
+  --availability-item-width: 76px;
   min-height: 100%;
   height: 100%;
 }
@@ -441,7 +448,7 @@ const upcomingMonthClass = computed(() => {
 }
 
 .day-item {
-  width: 76px;
+  width: var(--availability-item-width);
   height: 70px;
   display: inline-block;
   padding-top: 23px;
