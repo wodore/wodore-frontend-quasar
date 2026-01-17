@@ -84,9 +84,17 @@ const formatMonthLabel = (dateObj: Date) => {
 };
 
 const nextMonths = computed(() => {
-  const months: { label: string; date: string; key: string; monthKey: string }[] = [];
+  const months: {
+    label: string;
+    date: string;
+    key: string;
+    monthKey: string;
+  }[] = [];
   const base = todayDate.value;
-  const monthsAheadInit = Math.max(0, Math.floor((windowWidth.value - 100) / 40));
+  const monthsAheadInit = Math.max(
+    0,
+    Math.floor((windowWidth.value - 100) / 40),
+  );
   const monthsAhead = Math.min(8, monthsAheadInit);
   for (let i = 0; i <= monthsAhead; i += 1) {
     const monthDate = addToDate(base, { months: i });
@@ -108,7 +116,9 @@ const isToday = (dateStr: string): boolean => {
 // Initialize the full date range (3 days before today to 8 months after today)
 const initializeDateRange = () => {
   const items: AvailabilityDay[] = [];
-  const threeDaysBeforeToday = subtractFromDate(new Date(today.value), { days: 3 });
+  const threeDaysBeforeToday = subtractFromDate(new Date(today.value), {
+    days: 3,
+  });
   const oneYearFromToday = addToDate(new Date(today.value), { days: 365 });
 
   let currentDate = new Date(threeDaysBeforeToday);
@@ -131,12 +141,22 @@ const initializeDateRange = () => {
     currentDate = addToDate(currentDate, { days: 1 });
   }
 
-  console.log('Initialized date range:', items.length, 'days from', items[0].date, 'to', items[items.length - 1].date);
+  console.log(
+    'Initialized date range:',
+    items.length,
+    'days from',
+    items[0].date,
+    'to',
+    items[items.length - 1].date,
+  );
   return items;
 };
 
 // Load availability data for a date range and update items in-place
-const loadAvailabilityDataForRange = async (startDateStr: string, days: number) => {
+const loadAvailabilityDataForRange = async (
+  startDateStr: string,
+  days: number,
+) => {
   if (!props.slug || props.hasAvailability === false) {
     return;
   }
@@ -152,28 +172,38 @@ const loadAvailabilityDataForRange = async (startDateStr: string, days: number) 
   loadingRequests.value.add(requestKey);
 
   try {
-    const { data, error: err } = await clientWodore.GET('/v1/huts/{slug}/availability/{date}', {
-      params: {
-        path: {
-          slug: props.slug,
-          date: startDateStr,
-        },
-        query: {
-          lang: 'de',
-          days: days,
+    const { data, error: err } = await clientWodore.GET(
+      '/v1/huts/{slug}/availability/{date}',
+      {
+        params: {
+          path: {
+            slug: props.slug,
+            date: startDateStr,
+          },
+          query: {
+            lang: 'de',
+            days: days,
+          },
         },
       },
-    });
+    );
 
     if (err) {
       console.error('Availability fetch error:', err);
       error.value = 'Failed to load availability';
     } else if (data && 'data' in data && Array.isArray(data.data)) {
-      console.log('Successfully fetched data for range:', requestKey, 'items:', data.data.length);
+      console.log(
+        'Successfully fetched data for range:',
+        requestKey,
+        'items:',
+        data.data.length,
+      );
 
       // Update items in-place in the array
       data.data.forEach((day) => {
-        const index = availabilityItems.value.findIndex(item => item.date === day.date);
+        const index = availabilityItems.value.findIndex(
+          (item) => item.date === day.date,
+        );
         if (index >= 0) {
           availabilityItems.value[index] = { ...day, loading: false };
         }
@@ -237,7 +267,11 @@ const updateScrollMetrics = () => {
   }
 };
 
-const onVirtualScroll = (details: { index: number; from: number; to: number }) => {
+const onVirtualScroll = (details: {
+  index: number;
+  from: number;
+  to: number;
+}) => {
   console.log('Virtual scroll:', details);
   ensureRangeLoaded(details.from, details.to);
   updateScrollMetrics();
@@ -246,34 +280,67 @@ const onVirtualScroll = (details: { index: number; from: number; to: number }) =
 // Scroll to selected date
 const scrollToSelectedDate = (animate: boolean) => {
   nextTick(() => {
-    if (!virtualScrollRef.value || !scrollAreaRef.value || availabilityItems.value.length === 0) {
+    if (
+      !virtualScrollRef.value ||
+      !scrollAreaRef.value ||
+      availabilityItems.value.length === 0
+    ) {
       console.log('Cannot scroll - refs or availabilityItems not ready');
       return;
     }
 
-    const index = availabilityItems.value.findIndex(item => item.date === startDate.value);
+    const index = availabilityItems.value.findIndex(
+      (item) => item.date === startDate.value,
+    );
 
     if (index >= 0) {
-      console.log('Scrolling to selected date:', startDate.value, 'at index:', index);
+      console.log(
+        'Scrolling to selected date:',
+        startDate.value,
+        'at index:',
+        index,
+      );
       const targetLeft = Math.max(0, index * itemWidth.value);
-      scrollAreaRef.value.setScrollPosition('horizontal', targetLeft, animate ? 300 : 0);
+      scrollAreaRef.value.setScrollPosition(
+        'horizontal',
+        targetLeft,
+        animate ? 300 : 0,
+      );
     } else {
-      console.log('Selected date not found in availabilityItems:', startDate.value);
+      console.log(
+        'Selected date not found in availabilityItems:',
+        startDate.value,
+      );
     }
   });
 };
 
 const scrollToDate = (dateStr: string) => {
   nextTick(() => {
-    if (!virtualScrollRef.value || !scrollAreaRef.value || availabilityItems.value.length === 0) {
+    if (
+      !virtualScrollRef.value ||
+      !scrollAreaRef.value ||
+      availabilityItems.value.length === 0
+    ) {
       return;
     }
-    const index = availabilityItems.value.findIndex(item => item.date === dateStr);
+    const index = availabilityItems.value.findIndex(
+      (item) => item.date === dateStr,
+    );
     if (index >= 0) {
       const targetLeft = Math.max(0, index * itemWidth.value);
       scrollAreaRef.value.setScrollPosition('horizontal', targetLeft, 300);
     }
   });
+};
+
+const scrollByMonths = (delta: number) => {
+  if (!scrollAreaRef.value) {
+    return;
+  }
+  const scrollInfo = scrollAreaRef.value.getScrollPosition();
+  const targetLeft = Math.max(0, scrollInfo.left + delta * itemWidth.value);
+  scrollAreaRef.value.setScrollPosition('horizontal', targetLeft, 300);
 };
 
 // Handle horizontal scroll with vertical mouse wheel (increased speed)
@@ -282,7 +349,11 @@ const onWheel = (evt: WheelEvent) => {
     evt.preventDefault();
     const scrollInfo = scrollAreaRef.value.getScrollPosition();
     // Multiply deltaY by 2 for faster scrolling
-    scrollAreaRef.value.setScrollPosition('horizontal', scrollInfo.left + (evt.deltaY * 1.6), 150);
+    scrollAreaRef.value.setScrollPosition(
+      'horizontal',
+      scrollInfo.left + evt.deltaY * 1.6,
+      150,
+    );
   }
 };
 
@@ -308,7 +379,9 @@ watchEffect(() => {
   scrollToSelectedDate(false);
 
   // Load initial data around selected date
-  const selectedIndex = availabilityItems.value.findIndex(item => item.date === startDate.value);
+  const selectedIndex = availabilityItems.value.findIndex(
+    (item) => item.date === startDate.value,
+  );
   if (selectedIndex >= 0) {
     ensureRangeLoaded(selectedIndex, selectedIndex);
   }
@@ -328,7 +401,10 @@ const monthStarts = computed(() => {
       const date = new Date(item.date);
       starts.push({
         index,
-        label: date.toLocaleDateString('de-CH', { month: 'long', year: 'numeric' }),
+        label: date.toLocaleDateString('de-CH', {
+          month: 'long',
+          year: 'numeric',
+        }),
         monthKey: String(date.getMonth() + 1).padStart(2, '0'),
       });
       return;
@@ -342,7 +418,10 @@ const monthStarts = computed(() => {
     ) {
       starts.push({
         index,
-        label: currDate.toLocaleDateString('de-CH', { month: 'long', year: 'numeric' }),
+        label: currDate.toLocaleDateString('de-CH', {
+          month: 'long',
+          year: 'numeric',
+        }),
         monthKey: String(currDate.getMonth() + 1).padStart(2, '0'),
       });
     }
@@ -358,7 +437,7 @@ const currentMonthIndex = computed(() => {
   const current = starts
     .slice()
     .reverse()
-    .find(start => start.index * itemWidth.value <= scrollLeft.value);
+    .find((start) => start.index * itemWidth.value <= scrollLeft.value);
   return current ?? starts[0];
 });
 
@@ -369,7 +448,10 @@ const activeMonthKey = computed(() => {
   }
   const index = Math.min(
     availabilityItems.value.length - 1,
-    Math.max(0, Math.floor((scrollLeft.value + itemWidth.value / 2) / itemWidth.value)),
+    Math.max(
+      0,
+      Math.floor((scrollLeft.value + itemWidth.value / 2) / itemWidth.value),
+    ),
   );
   const dateStr = availabilityItems.value[index]?.date;
   return dateStr ? dateStr.slice(0, 7) : '';
@@ -386,9 +468,12 @@ const monthLabelOffset = computed(() => {
   if (!current) {
     return 0;
   }
-  const upcoming = monthStarts.value.find(start => start.index > current.index);
+  const upcoming = monthStarts.value.find(
+    (start) => start.index > current.index,
+  );
   if (upcoming) {
-    const upcomingDistance = upcoming.index * itemWidth.value - scrollLeft.value;
+    const upcomingDistance =
+      upcoming.index * itemWidth.value - scrollLeft.value;
     if (upcomingDistance <= itemWidth.value) {
       return Math.min(0, upcomingDistance - itemWidth.value);
     }
@@ -405,7 +490,7 @@ const upcomingMonthLabel = computed(() => {
   if (!current) {
     return null;
   }
-  return monthStarts.value.find(start => start.index > current.index) ?? null;
+  return monthStarts.value.find((start) => start.index > current.index) ?? null;
 });
 
 const upcomingMonthOffset = computed(() => {
@@ -429,38 +514,111 @@ const upcomingMonthClass = computed(() => {
   <div v-if="hasAvailability !== false">
     <div class="row items-center no-wrap q-mb-xs q-mt-sm">
       <div class="text-subtitle1 text-accent">Verfügbarkeit</div>
-      <div ref="monthSelectorRef" class="month-selector row items-center no-wrap">
-        <div v-for="month in nextMonths" :key="month.date" class="month-chip-wrap" :class="month.key === activeMonthKey
-          ? `month_${month.monthKey}--gradient-dark`
-          : `month_${month.monthKey}--gradient`">
-          <q-btn dense unelevated class="month-chip" :style="{ fontSize: isMobile ? '9px' : '11px' }"
-            @click="scrollToDate(month.key === today.slice(0, 7) ? today : month.date)">
+      <!-- Month Selection -->
+      <q-btn
+        v-if="!isMobile"
+        dense
+        flat
+        class="month-nav row"
+        @click="scrollByMonths(-5)"
+      >
+        <q-icon size="sm">
+          <IconEvaArrowIosBackOutline />
+        </q-icon>
+      </q-btn>
+      <div
+        ref="monthSelectorRef"
+        class="month-selector row items-center no-wrap"
+      >
+        <div
+          v-for="(month, idx) in nextMonths"
+          :key="month.date"
+          class="month-chip-wrap"
+          :class="[
+            month.key === activeMonthKey
+              ? `month_${month.monthKey}--gradient-dark`
+              : `month_${month.monthKey}--gradient`,
+            {
+              'month-chip-wrap--first': idx === 0,
+              'month-chip-wrap--last': idx === nextMonths.length - 1,
+            },
+          ]"
+        >
+          <q-btn
+            dense
+            unelevated
+            class="month-chip"
+            :style="{ fontSize: isMobile ? '9px' : '11px' }"
+            @click="
+              scrollToDate(month.key === today.slice(0, 7) ? today : month.date)
+            "
+          >
             {{ month.label }}
           </q-btn>
         </div>
       </div>
+      <q-btn
+        v-if="!isMobile"
+        dense
+        flat
+        class="month-nav"
+        @click="scrollByMonths(5)"
+      >
+        <q-icon size="sm">
+          <IconEvaArrowIosForwardOutline />
+        </q-icon>
+      </q-btn>
     </div>
     <div ref="containerRef" class="availability-container">
-      <div v-if="currentMonthLabel" class="month-label-overlay" :class="currentMonthClass"
-        :style="{ transform: `translateX(${monthLabelOffset}px)` }">
+      <div
+        v-if="currentMonthLabel"
+        class="month-label-overlay"
+        :class="currentMonthClass"
+        :style="{ transform: `translateX(${monthLabelOffset}px)` }"
+      >
         {{ currentMonthLabel }}
       </div>
-      <div v-if="upcomingMonthLabel && upcomingMonthOffset !== null" class="month-label-overlay"
-        :class="upcomingMonthClass" :style="{ transform: `translateX(${upcomingMonthOffset}px)` }">
+      <div
+        v-if="upcomingMonthLabel && upcomingMonthOffset !== null"
+        class="month-label-overlay"
+        :class="upcomingMonthClass"
+        :style="{ transform: `translateX(${upcomingMonthOffset}px)` }"
+      >
         {{ upcomingMonthLabel.label }}
       </div>
-      <div v-if="error && availabilityItems.length === 0" class="availability-content error-content">
+      <div
+        v-if="error && availabilityItems.length === 0"
+        class="availability-content error-content"
+      >
         <div class="text-caption text-negative">{{ error }}</div>
       </div>
-      <q-scroll-area v-else ref="scrollAreaRef" id="availability-scroll-area" class="availability-scroll-area"
-        :horizontal-thumb-style="{ opacity: '0.5' }" @scroll="onScroll" @wheel.prevent="onWheel">
-        <q-virtual-scroll ref="virtualScrollRef" scroll-target="#availability-scroll-area > .scroll"
-          :items="availabilityItems" :virtual-scroll-item-size="itemWidth" virtual-scroll-horizontal
-          virtual-scroll-slice-ratio-before="7" virtual-scroll-slice-ratio-after="14" @virtual-scroll="onVirtualScroll">
+      <q-scroll-area
+        v-else
+        ref="scrollAreaRef"
+        id="availability-scroll-area"
+        class="availability-scroll-area"
+        :horizontal-thumb-style="{ height: isMobile ? '0px' : '5px' }"
+        @scroll="onScroll"
+        @wheel.prevent="onWheel"
+      >
+        <q-virtual-scroll
+          ref="virtualScrollRef"
+          scroll-target="#availability-scroll-area > .scroll"
+          :items="availabilityItems"
+          :virtual-scroll-item-size="itemWidth"
+          virtual-scroll-horizontal
+          virtual-scroll-slice-ratio-before="7"
+          virtual-scroll-slice-ratio-after="14"
+          @virtual-scroll="onVirtualScroll"
+        >
           <template v-slot="{ item, index }">
             <div :key="index" class="day-item">
-              <WdHutAvailability :day="item" :is-selected="item.date === startDate" :is-today="isToday(item.date)"
-                :type-icon="getSymbolForDay(item.hut_type)" />
+              <WdHutAvailability
+                :day="item"
+                :is-selected="item.date === startDate"
+                :is-today="isToday(item.date)"
+                :type-icon="getSymbolForDay(item.hut_type)"
+              />
             </div>
           </template>
         </q-virtual-scroll>
@@ -481,6 +639,7 @@ const upcomingMonthClass = computed(() => {
   margin-left: auto;
   overflow: hidden;
   border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
 }
 
 .month-chip-wrap {
@@ -489,12 +648,29 @@ const upcomingMonthClass = computed(() => {
   display: inline-flex;
 }
 
+.month-chip-wrap--first {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+
+.month-chip-wrap--last {
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
 .month-chip {
   border-radius: 0;
   font-size: 10px;
   line-height: 1;
   padding: 1px 4px;
   min-height: 16px;
+}
+
+.month-nav {
+  margin-left: auto;
+  min-height: 16px;
+  padding: 0 4px;
+  color: rgba(0, 0, 0, 0.6);
 }
 
 .month-label-overlay {

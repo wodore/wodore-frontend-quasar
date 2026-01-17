@@ -112,8 +112,10 @@ const barRadius = computed(() => {
 
 // Check if data is unknown
 const isUnknown = computed(() => {
-  return props.day.reservation_status === 'unknown' ||
-    (props.day.free === 0 && props.day.total === 0);
+  return (
+    props.day.reservation_status === 'unknown' ||
+    (props.day.free === 0 && props.day.total === 0)
+  );
 });
 
 // Determine bar color based on occupancy_status
@@ -160,9 +162,6 @@ const barColorLight = computed(() => {
       return 'rgba(128, 128, 128, 0.3)'; // gray with 30% opacity
   }
 });
-
-
-
 </script>
 
 <style scoped lang="scss">
@@ -196,27 +195,27 @@ const barColorLight = computed(() => {
   height: 100%;
   padding: 4px;
   border-radius: 10px;
-  border: 1px solid rgba(0, 0, 0, 0.16);
+  border: 2px solid rgba(0, 0, 0, 0.16);
   box-sizing: border-box;
   display: flex;
 }
 
 .bar-frame.weekend {
-  border-width: 3px;
+  border-width: 2px;
 }
 
 .bar-frame.selected {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-  border: 4px solid rgba($accent, 0.6);
+  border: 2px solid rgba($accent, 0.6);
 }
 
 .bar-frame.today {
-  border-width: 3px;
-  border-color: rgba($primary, 0.5);
+  border-width: 2px;
+  border-color: rgba($primary, 0.8);
 }
 
 .bar-frame.selected.today {
-  border: 3px solid rgba($primary, 0.6);
+  border: 2px solid rgba($primary, 0.6);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
@@ -287,7 +286,6 @@ const barColorLight = computed(() => {
   height: 20px;
 }
 
-
 .cross-overlay {
   width: 24px;
   height: 100%;
@@ -321,8 +319,12 @@ const barColorLight = computed(() => {
 </style>
 
 <template>
-  <a :href="day.link" target="_blank" rel="noopener noreferrer"
-    class="card column items-center overflow-hidden no-underline">
+  <a
+    :href="day.link"
+    target="_blank"
+    rel="noopener noreferrer"
+    class="card column items-center overflow-hidden no-underline"
+  >
     <!-- Loading/Skeleton State -->
     <!-- <template v-if="isLoadingState"> -->
     <!--   <div class="text-center column justify-center items-center" style="min-height: 36px"></div> -->
@@ -336,10 +338,16 @@ const barColorLight = computed(() => {
 
     <!-- Normal/Unknown State -->
     <div class="bar-wrapper">
-      <div class="bar-frame row no-wrap items-start justify-between" :class="[
-        isSelected ? `month_${monthKey}--gradient-dark` : `month_${monthKey}--gradient-light`,
-        { selected: isSelected, today: isToday, weekend: isWeekend },
-      ]" :style="{ backgroundColor: isLoadingState ? '#ccc' : undefined }">
+      <div
+        class="bar-frame row no-wrap items-start justify-between"
+        :class="[
+          isSelected
+            ? `month_${monthKey}--gradient-dark`
+            : `month_${monthKey}--gradient-light`,
+          { selected: isSelected, today: isToday, weekend: isWeekend },
+        ]"
+        :style="{ backgroundColor: isLoadingState ? '#ccc' : undefined }"
+      >
         <div class="day-column">
           <div class="day-week" :class="{ 'day-week--bold': isWeekend }">
             <span>{{ dayNumber }}</span>
@@ -347,17 +355,33 @@ const barColorLight = computed(() => {
             <span>{{ formattedDate }}</span>
           </div>
           <div class="symbol-row">
-            <q-icon v-if="typeIcon && !isLoadingState" :name="typeIcon" size="20px" />
+            <q-icon
+              v-if="typeIcon && !isLoadingState"
+              :name="typeIcon"
+              size="20px"
+            />
             <q-skeleton v-else type="circle" width="20px" height="20px" />
           </div>
         </div>
         <!-- Free beds (background, light color) -->
-        <div class="bar-bg" v-if="!isLoadingState"
-          :style="{ backgroundColor: barColorLight, borderRadius: barRadius, border: `2px solid ${barColor}` }">
+        <div
+          class="bar-bg"
+          v-if="!isLoadingState"
+          :style="{
+            backgroundColor: barColorLight,
+            borderRadius: barRadius,
+            border: `2px solid ${barColor}`,
+          }"
+        >
           <!-- Occupied beds (overlay, dark color) -->
-          <div class="bar-occupied"
-            :style="{ backgroundColor: barColor, height: occupiedHeight, borderRadius: barRadius }">
-          </div>
+          <div
+            class="bar-occupied"
+            :style="{
+              backgroundColor: barColor,
+              height: occupiedHeight,
+              borderRadius: barRadius,
+            }"
+          ></div>
           <div class="bar-content">
             <template v-if="isUnknown">
               <div class="free-label">?</div>
@@ -367,14 +391,23 @@ const barColorLight = computed(() => {
             </template>
           </div>
         </div>
-        <q-skeleton v-else class="bar-bg" :style="{ borderRadius: barRadius }" />
+        <q-skeleton
+          v-else
+          class="bar-bg"
+          :style="{ borderRadius: barRadius }"
+        />
       </div>
-      <q-tooltip>
+      <q-tooltip :delay="700">
         <div>{{ fullWeekday }}, {{ fullDateWithYear }}</div>
         <div v-if="isUnknown">{{ t('availability.no_data') }}</div>
-        <div v-else>{{ t('availability.tooltip', { free: day.free, total: day.total }) }}</div>
+        <div v-else>
+          {{ t('availability.tooltip', { free: day.free, total: day.total }) }}
+        </div>
       </q-tooltip>
     </div>
-    <div class="text-center column justify-center items-center" style="min-height: 6px"></div>
+    <div
+      class="text-center column justify-center items-center"
+      style="min-height: 6px"
+    ></div>
   </a>
 </template>

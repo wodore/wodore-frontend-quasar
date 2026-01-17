@@ -91,8 +91,10 @@ const barRadius = computed(() => {
 
 // Check if data is unknown
 const isUnknown = computed(() => {
-  return props.day.reservation_status === 'unknown' ||
-    (props.day.free === 0 && props.day.total === 0);
+  return (
+    props.day.reservation_status === 'unknown' ||
+    (props.day.free === 0 && props.day.total === 0)
+  );
 });
 
 // Determine bar color based on occupancy_status
@@ -186,7 +188,10 @@ const tooltipText = computed(() => {
   if (isUnknown.value) {
     return t('availability.no_data');
   }
-  return t('availability.tooltip', { free: props.day.free, total: props.day.total });
+  return t('availability.tooltip', {
+    free: props.day.free,
+    total: props.day.total,
+  });
 });
 </script>
 
@@ -292,11 +297,19 @@ const tooltipText = computed(() => {
 </style>
 
 <template>
-  <a :href="day.link" target="_blank" rel="noopener noreferrer"
-    class="card column items-center overflow-hidden no-underline" :class="{ selected: isSelected, today: isToday }">
+  <a
+    :href="day.link"
+    target="_blank"
+    rel="noopener noreferrer"
+    class="card column items-center overflow-hidden no-underline"
+    :class="{ selected: isSelected, today: isToday }"
+  >
     <!-- Loading/Skeleton State -->
     <template v-if="isLoadingState">
-      <div class="header text-center column justify-center" style="background-color: rgba(128, 128, 128, 0.2)">
+      <div
+        class="header text-center column justify-center"
+        style="background-color: rgba(128, 128, 128, 0.2)"
+      >
         <div class="text-caption">{{ formattedDate }}</div>
         <div style="font-size: 9px; line-height: 1">{{ formattedDay }}</div>
       </div>
@@ -306,14 +319,20 @@ const tooltipText = computed(() => {
           <q-skeleton type="rect" width="100%" height="100%" />
         </div>
       </div>
-      <div class="footer text-center column justify-center items-center" style="min-height: 28px">
+      <div
+        class="footer text-center column justify-center items-center"
+        style="min-height: 28px"
+      >
         <q-skeleton type="rect" width="100%" height="28px" />
       </div>
     </template>
 
     <!-- Normal/Unknown State -->
     <template v-else>
-      <div class="header text-center column justify-center" :style="{ backgroundColor: headerColor, color: textColor }">
+      <div
+        class="header text-center column justify-center"
+        :style="{ backgroundColor: headerColor, color: textColor }"
+      >
         <div class="text-caption">{{ formattedDate }}</div>
         <div style="font-size: 9px; line-height: 1">{{ formattedDay }}</div>
       </div>
@@ -321,23 +340,47 @@ const tooltipText = computed(() => {
         <!-- Free beds (background, light color) -->
         <div class="bar-bg" :style="{ backgroundColor: barColorLight }"></div>
         <!-- Occupied beds (overlay, dark color) -->
-        <div class="bar-occupied"
-          :style="{ backgroundColor: barColor, height: occupiedHeight, borderRadius: barRadius }">
-        </div>
+        <div
+          class="bar-occupied"
+          :style="{
+            backgroundColor: barColor,
+            height: occupiedHeight,
+            borderRadius: barRadius,
+          }"
+        ></div>
         <!-- Diagonal cross for unknown data -->
-        <div v-if="isUnknown" class="cross-overlay" :style="{ color: textColor }">
+        <div
+          v-if="isUnknown"
+          class="cross-overlay"
+          :style="{ color: textColor }"
+        >
           <div class="cross-line"></div>
           <div class="cross-line"></div>
         </div>
       </div>
-      <div class="footer text-center column justify-center items-center"
-        :style="{ backgroundColor: headerColor, color: textColor, minHeight: '28px' }">
+      <div
+        class="footer text-center column justify-center items-center"
+        :style="{
+          backgroundColor: headerColor,
+          color: textColor,
+          minHeight: '28px',
+        }"
+      >
         <template v-if="isUnknown">
-          <div style="font-size: 10px; line-height: 1.2">{{ t('availability.unknown') }}</div>
+          <div style="font-size: 10px; line-height: 1.2">
+            {{ t('availability.unknown') }}
+          </div>
         </template>
         <template v-else>
           <div style="font-size: 10px; line-height: 1.2">{{ day.free }}</div>
-          <div style="height: 1px; width: 60%; background-color: currentColor; opacity: 0.5"></div>
+          <div
+            style="
+              height: 1px;
+              width: 60%;
+              background-color: currentColor;
+              opacity: 0.5;
+            "
+          ></div>
           <div style="font-size: 10px; line-height: 1.2">{{ day.total }}</div>
         </template>
         <q-tooltip>{{ tooltipText }}</q-tooltip>

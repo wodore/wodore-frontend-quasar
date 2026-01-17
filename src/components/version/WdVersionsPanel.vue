@@ -46,7 +46,12 @@ onMounted(fetchBackendVersion);
       :hash="frontendHash"
     >
     </WdVersionTag>
-    <WdVersionTag type="backend" :version="backendVersion" :hash="backendHash" :loading="backendLoading"
-      :error="backendError" />
+    <WdVersionTag
+      type="backend"
+      :version="backendVersion"
+      :hash="backendHash"
+      :loading="backendLoading"
+      :error="backendError"
+    />
   </div>
 </template>
