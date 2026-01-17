@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watchEffect, watch, nextTick } from 'vue';
 import { date, QVirtualScroll, QScrollArea, useQuasar } from 'quasar';
-import { useCssVar } from '@vueuse/core';
+import { useCssVar, useWindowSize } from '@vueuse/core';
 import { clientWodore } from '@clients/index';
 import { useHutsStore } from '@stores/huts-store';
 import { storeToRefs } from 'pinia';
@@ -10,6 +10,8 @@ import WdHutAvailability from './WdHutAvailability.vue';
 const { formatDate, addToDate, subtractFromDate } = date;
 const { selectedDate } = storeToRefs(useHutsStore());
 const containerRef = ref<HTMLElement | null>(null);
+const monthSelectorRef = ref<HTMLElement | null>(null);
+const { width: windowWidth } = useWindowSize();
 const virtualScrollRef = ref<InstanceType<typeof QVirtualScroll> | null>(null);
 const scrollAreaRef = ref<InstanceType<typeof QScrollArea> | null>(null);
 const $q = useQuasar();
@@ -84,7 +86,9 @@ const formatMonthLabel = (dateObj: Date) => {
 const nextMonths = computed(() => {
   const months: { label: string; date: string; key: string; monthKey: string }[] = [];
   const base = todayDate.value;
-  for (let i = 0; i <= 8; i += 1) {
+  const monthsAheadInit = Math.max(0, Math.floor((windowWidth.value - 100) / 40));
+  const monthsAhead = Math.min(8, monthsAheadInit);
+  for (let i = 0; i <= monthsAhead; i += 1) {
     const monthDate = addToDate(base, { months: i });
     months.push({
       label: formatMonthLabel(monthDate),
@@ -360,15 +364,15 @@ const currentMonthIndex = computed(() => {
 
 const currentMonthLabel = computed(() => currentMonthIndex.value?.label ?? '');
 const activeMonthKey = computed(() => {
-  const current = currentMonthIndex.value;
-  if (!current) {
+  if (availabilityItems.value.length === 0) {
     return '';
   }
-  const dateStr = availabilityItems.value[current.index]?.date;
-  if (!dateStr) {
-    return '';
-  }
-  return dateStr.slice(0, 7);
+  const index = Math.min(
+    availabilityItems.value.length - 1,
+    Math.max(0, Math.floor((scrollLeft.value + itemWidth.value / 2) / itemWidth.value)),
+  );
+  const dateStr = availabilityItems.value[index]?.date;
+  return dateStr ? dateStr.slice(0, 7) : '';
 });
 const currentMonthClass = computed(() => {
   if (!currentMonthIndex.value) {
@@ -425,7 +429,7 @@ const upcomingMonthClass = computed(() => {
   <div v-if="hasAvailability !== false">
     <div class="row items-center no-wrap q-mb-xs q-mt-sm">
       <div class="text-subtitle1 text-accent">Verfügbarkeit</div>
-      <div class="month-selector row items-center no-wrap">
+      <div ref="monthSelectorRef" class="month-selector row items-center no-wrap">
         <div v-for="month in nextMonths" :key="month.date" class="month-chip-wrap" :class="month.key === activeMonthKey
           ? `month_${month.monthKey}--gradient-dark`
           : `month_${month.monthKey}--gradient`">
