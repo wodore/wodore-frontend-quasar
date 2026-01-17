@@ -35,12 +35,26 @@ const formattedDate = computed(() => {
   return dayNames[date.getDay()];
 });
 
-// Format date as dd.mm
-const formattedDay = computed(() => {
+// Format day number (no leading zero)
+const dayNumber = computed(() => {
   const date = new Date(props.day.date);
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  return `${day}.${month}`;
+  return String(date.getDate());
+});
+
+// Full weekday name (e.g., "Montag")
+const fullWeekday = computed(() => {
+  const date = new Date(props.day.date);
+  return date.toLocaleDateString('de-CH', { weekday: 'long' });
+});
+
+// Full date with year (e.g., "12.03.2024")
+const fullDateWithYear = computed(() => {
+  const date = new Date(props.day.date);
+  return date.toLocaleDateString('de-CH', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
 });
 
 // Calculate the height of the occupied portion based on occupancy_percent
@@ -156,13 +170,6 @@ const barTextColor = computed(() => {
 });
 
 
-// Tooltip text with translated labels and numbers
-const tooltipText = computed(() => {
-  if (isUnknown.value) {
-    return t('availability.no_data');
-  }
-  return t('availability.tooltip', { free: props.day.free, total: props.day.total });
-});
 </script>
 
 <style scoped lang="scss">
@@ -216,6 +223,7 @@ const tooltipText = computed(() => {
   transform: translateX(-50%);
   border: 1px solid rgba(0, 0, 0, 0.12);
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .bar-occupied {
@@ -240,6 +248,12 @@ const tooltipText = computed(() => {
   text-align: center;
   pointer-events: none;
 }
+
+.day-label {
+  font-size: 12px;
+  line-height: 1.1;
+}
+
 
 .cross-overlay {
   width: 24px;
@@ -278,26 +292,30 @@ const tooltipText = computed(() => {
     class="card column items-center overflow-hidden no-underline" :class="{ selected: isSelected, today: isToday }">
     <!-- Loading/Skeleton State -->
     <template v-if="isLoadingState">
+      <div class="text-center column justify-center items-center" style="min-height: 36px">
+        <div class="day-label">{{ dayNumber }}. {{ formattedDate }}</div>
+      </div>
       <div class="bar-wrapper">
         <!-- Just the background with skeleton animation, no occupied bar -->
         <div class="bar-bg">
           <q-skeleton type="rect" width="100%" height="100%" />
         </div>
       </div>
-      <div class="text-center column justify-center items-center" style="min-height: 28px">
-        <div class="text-caption">{{ formattedDate }}</div>
-        <div style="font-size: 9px; line-height: 1">{{ formattedDay }}</div>
-      </div>
+      <div class="text-center column justify-center items-center" style="min-height: 28px"></div>
     </template>
 
     <!-- Normal/Unknown State -->
     <template v-else>
+      <div class="text-center column justify-center items-center" style="min-height: 36px">
+        <div class="day-label">{{ dayNumber }}. {{ formattedDate }}</div>
+      </div>
       <div class="bar-wrapper">
         <!-- Free beds (background, light color) -->
-        <div class="bar-bg" :style="{ backgroundColor: barColorLight, borderRadius: barRadius }"></div>
-        <!-- Occupied beds (overlay, dark color) -->
-        <div class="bar-occupied"
-          :style="{ backgroundColor: barColor, height: occupiedHeight, borderRadius: barRadius }">
+        <div class="bar-bg" :style="{ backgroundColor: barColorLight, borderRadius: barRadius }">
+          <!-- Occupied beds (overlay, dark color) -->
+          <div class="bar-occupied"
+            :style="{ backgroundColor: barColor, height: occupiedHeight, borderRadius: barRadius }">
+          </div>
         </div>
         <div class="bar-label" :style="{ color: barTextColor }">
           <template v-if="isUnknown">
@@ -312,12 +330,13 @@ const tooltipText = computed(() => {
           <div class="cross-line"></div>
           <div class="cross-line"></div>
         </div>
-        <q-tooltip>{{ tooltipText }}</q-tooltip>
+        <q-tooltip>
+          <div>{{ fullWeekday }}, {{ fullDateWithYear }}</div>
+          <div v-if="isUnknown">{{ t('availability.no_data') }}</div>
+          <div v-else>{{ t('availability.tooltip', { free: day.free, total: day.total }) }}</div>
+        </q-tooltip>
       </div>
-      <div class="text-center column justify-center items-center" style="min-height: 28px">
-        <div class="text-caption">{{ formattedDate }}</div>
-        <div style="font-size: 9px; line-height: 1">{{ formattedDay }}</div>
-      </div>
+      <div class="text-center column justify-center items-center" style="min-height: 28px"></div>
     </template>
   </a>
 </template>

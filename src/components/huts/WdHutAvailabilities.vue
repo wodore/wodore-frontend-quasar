@@ -10,6 +10,9 @@ const { formatDate, addToDate, subtractFromDate } = date;
 const { selectedDate } = storeToRefs(useHutsStore());
 const virtualScrollRef = ref<InstanceType<typeof QVirtualScroll> | null>(null);
 const scrollAreaRef = ref<InstanceType<typeof QScrollArea> | null>(null);
+const scrollLeft = ref(0);
+const scrollViewportWidth = ref(0);
+const itemWidth = 45;
 
 interface Props {
   slug: string;
@@ -179,9 +182,21 @@ const ensureRangeLoaded = (startIndex: number, endIndex: number) => {
 };
 
 // Handle virtual scroll events
+const updateScrollMetrics = () => {
+  if (!scrollAreaRef.value) {
+    return;
+  }
+  scrollLeft.value = scrollAreaRef.value.getScrollPosition().left;
+  const viewport = scrollAreaRef.value.$el?.querySelector('.scroll');
+  if (viewport instanceof HTMLElement) {
+    scrollViewportWidth.value = viewport.clientWidth;
+  }
+};
+
 const onVirtualScroll = (details: { index: number; from: number; to: number }) => {
   console.log('Virtual scroll:', details);
   ensureRangeLoaded(details.from, details.to);
+  updateScrollMetrics();
 };
 
 // Scroll to selected date
@@ -248,17 +263,102 @@ watch(selectedDate, () => {
   // Scroll to the newly selected date
   scrollToSelectedDate();
 });
+
+const monthStarts = computed(() => {
+  const starts: { index: number; label: string }[] = [];
+  availabilityItems.value.forEach((item, index) => {
+    if (index === 0) {
+      starts.push({
+        index,
+        label: new Date(item.date).toLocaleDateString('de-CH', { month: 'long', year: 'numeric' }),
+      });
+      return;
+    }
+    const prev = availabilityItems.value[index - 1];
+    const prevDate = new Date(prev.date);
+    const currDate = new Date(item.date);
+    if (
+      prevDate.getMonth() !== currDate.getMonth() ||
+      prevDate.getFullYear() !== currDate.getFullYear()
+    ) {
+      starts.push({
+        index,
+        label: currDate.toLocaleDateString('de-CH', { month: 'long', year: 'numeric' }),
+      });
+    }
+  });
+  return starts;
+});
+
+const currentMonthIndex = computed(() => {
+  const starts = monthStarts.value;
+  if (starts.length === 0) {
+    return null;
+  }
+  const current = starts
+    .slice()
+    .reverse()
+    .find(start => start.index * itemWidth <= scrollLeft.value);
+  return current ?? starts[0];
+});
+
+const currentMonthLabel = computed(() => currentMonthIndex.value?.label ?? '');
+
+const monthLabelOffset = computed(() => {
+  const current = currentMonthIndex.value;
+  if (!current) {
+    return 0;
+  }
+  const upcoming = monthStarts.value.find(start => start.index > current.index);
+  if (upcoming) {
+    const upcomingDistance = upcoming.index * itemWidth - scrollLeft.value;
+    if (upcomingDistance <= itemWidth * 2) {
+      return Math.min(0, upcomingDistance - itemWidth * 2);
+    }
+  }
+  return 0;
+});
+
+const onScroll = () => {
+  updateScrollMetrics();
+};
+
+const upcomingMonthLabel = computed(() => {
+  const current = currentMonthIndex.value;
+  if (!current) {
+    return null;
+  }
+  return monthStarts.value.find(start => start.index > current.index) ?? null;
+});
+
+const upcomingMonthOffset = computed(() => {
+  const upcoming = upcomingMonthLabel.value;
+  if (!upcoming) {
+    return null;
+  }
+  const offset = upcoming.index * itemWidth - scrollLeft.value;
+  return offset >= 0 && offset <= scrollViewportWidth.value ? offset : null;
+});
 </script>
 
 <template>
   <div v-if="hasAvailability !== false">
     <div class="text-subtitle1 text-accent q-mb-sm q-mt-md">Verfügbarkeit</div>
     <div class="availability-container">
+      <div v-if="currentMonthLabel" class="month-label-overlay"
+        :style="{ transform: `translateX(${monthLabelOffset}px)` }">
+        {{ currentMonthLabel }}
+      </div>
+      <div v-if="upcomingMonthLabel && upcomingMonthOffset !== null" class="month-label-overlay"
+        :style="{ transform: `translateX(${upcomingMonthOffset}px)` }">
+        {{ upcomingMonthLabel.label }}
+      </div>
       <div v-if="error && availabilityItems.length === 0" class="availability-content error-content">
         <div class="text-caption text-negative">{{ error }}</div>
       </div>
       <q-scroll-area v-else ref="scrollAreaRef" id="availability-scroll-area" class="availability-scroll-area"
-        :horizontal-thumb-style="{ opacity: '0.5' }" @wheel.prevent="onWheel">
+        :horizontal-thumb-style="{ opacity: '0.5' }" :content-style="{ paddingTop: '18px' }" @scroll="onScroll"
+        @wheel.prevent="onWheel">
         <q-virtual-scroll ref="virtualScrollRef" scroll-target="#availability-scroll-area > .scroll"
           :items="availabilityItems" :virtual-scroll-item-size="45" virtual-scroll-horizontal
           @virtual-scroll="onVirtualScroll">
@@ -275,16 +375,31 @@ watch(selectedDate, () => {
 
 <style scoped>
 .availability-container {
-  min-height: 110px;
-  height: 110px;
+  min-height: 166px;
+  height: 166px;
+  position: relative;
 }
 
 .availability-scroll-area {
-  height: 110px;
+  height: 166px;
+}
+
+.month-label-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: 11px;
+  line-height: 1;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background-color: rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  text-transform: capitalize;
+  pointer-events: none;
 }
 
 .availability-content {
-  height: 110px;
+  height: 166px;
   display: flex;
   flex-direction: column;
   align-items: center;
