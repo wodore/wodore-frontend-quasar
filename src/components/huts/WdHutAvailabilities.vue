@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watchEffect, watch, nextTick } from 'vue';
-import { date, QVirtualScroll, QScrollArea } from 'quasar';
+import { date, QVirtualScroll, QScrollArea, useQuasar } from 'quasar';
 import { clientWodore } from '@clients/index';
 import { useHutsStore } from '@stores/huts-store';
 import { storeToRefs } from 'pinia';
@@ -10,6 +10,7 @@ const { formatDate, addToDate, subtractFromDate } = date;
 const { selectedDate } = storeToRefs(useHutsStore());
 const virtualScrollRef = ref<InstanceType<typeof QVirtualScroll> | null>(null);
 const scrollAreaRef = ref<InstanceType<typeof QScrollArea> | null>(null);
+const $q = useQuasar();
 const scrollLeft = ref(0);
 const scrollViewportWidth = ref(0);
 const itemWidth = 100;
