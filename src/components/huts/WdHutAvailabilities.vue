@@ -426,11 +426,10 @@ const upcomingMonthClass = computed(() => {
     <div class="row items-center no-wrap q-mb-xs q-mt-sm">
       <div class="text-subtitle1 text-accent">Verfügbarkeit</div>
       <div class="month-selector row items-center no-wrap">
-        <div v-for="month in nextMonths" :key="month.date" class="month-chip-wrap"
-          :class="`month_${month.monthKey}--gradient-dark`">
-          <q-btn dense unelevated class="month-chip" :style="{ fontSize: isMobile ? '9px' : '10px' }" :class="month.key === activeMonthKey
-            ? `month_${month.monthKey}--gradient-dark`
-            : `month_${month.monthKey}--gradient-light`"
+        <div v-for="month in nextMonths" :key="month.date" class="month-chip-wrap" :class="month.key === activeMonthKey
+          ? `month_${month.monthKey}--gradient-dark`
+          : `month_${month.monthKey}--gradient`">
+          <q-btn dense unelevated class="month-chip" :style="{ fontSize: isMobile ? '9px' : '11px' }"
             @click="scrollToDate(month.key === today.slice(0, 7) ? today : month.date)">
             {{ month.label }}
           </q-btn>
