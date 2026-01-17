@@ -372,7 +372,7 @@ const addHeaderShadow: IntersectionValue = (entry) => {
             </div>
           </div>
 
-          <body class="text-body2 q-my-lg">
+          <body class="text-body2 q-my-sm">
             <!-- {{ hut.description }} -->
             <div
               class="attribution attr_link text-right"
@@ -385,6 +385,36 @@ const addHeaderShadow: IntersectionValue = (entry) => {
               style="padding-bottom: 0"
             />
           </body>
+
+          <WdHutAvailabilities
+            v-if="slug"
+            :slug="slug"
+            :has-availability="hut.has_availability ?? undefined"
+            :symbol-map="{
+              ...(hut.type_open?.slug
+                ? {
+                    [hut.type_open.slug]: {
+                      detailed: `https://hub.wodore.com/media/huts/types/symbols/detailed/${hut.type_open.slug}.png`,
+                      simple: `https://hub.wodore.com/media/huts/types/symbols/simple/${hut.type_open.slug}.png`,
+                    },
+                  }
+                : {}),
+              ...(hut.type_closed?.slug
+                ? {
+                    [hut.type_closed.slug]: {
+                      detailed: `https://hub.wodore.com/media/huts/types/symbols/detailed/${hut.type_closed.slug}.png`,
+                      simple: `https://hub.wodore.com/media/huts/types/symbols/simple/${hut.type_closed.slug}.png`,
+                    },
+                  }
+                : {}),
+              unknown: {
+                detailed:
+                  'https://hub.wodore.com/media/huts/types/symbols/detailed/unknown.png',
+                simple:
+                  'https://hub.wodore.com/media/huts/types/symbols/simple/unknown.png',
+              },
+            }"
+          />
 
           <WdHutOpenMonthly
             :open_monthly="hut.open_monthly"

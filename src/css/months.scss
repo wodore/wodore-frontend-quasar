@@ -30,7 +30,7 @@ $months-bg: (
   month_11: mix($autumn-color, $winter-color, 10%),
   // November: Smooth transition from autumn to winter
   month_12: mix($autumn-color, $winter-color, 20%)
-    // December: Smooth transition from autumn to winter,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+    // December: Smooth transition from autumn to winter,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 );
 
 $months-fg: (
@@ -53,7 +53,7 @@ $grad-end: 70%;
 $darken-amount: 20%;
 $lighten-amount: 5%;
 $opacity-default: 0.95;
-$opacity-dark: 0.2;
+$opacity-dark: 0.7;
 $opacity-light: 0.7;
 
 @each $month, $color in $months-bg {
