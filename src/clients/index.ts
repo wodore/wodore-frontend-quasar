@@ -13,8 +13,8 @@ export const loading: Record<string, 'start' | 'loading' | 'stopped'> = {};
 const loadingMiddleware: Middleware = {
   async onRequest(req) {
     //}, options) {
-    // Skip loading bar for search requests
-    if (req.url.includes('/geo/places/search')) {
+    // Skip loading bar for search requests and availability requests
+    if (req.url.includes('/geo/places/search') || req.url.includes('/availability/')) {
       return req;
     }
 
@@ -33,8 +33,8 @@ const loadingMiddleware: Middleware = {
   },
   async onResponse(res) {
     // }, options) {
-    // Skip loading bar for search requests
-    if (res.url.includes('/geo/places/search')) {
+    // Skip loading bar for search requests and availability requests
+    if (res.url.includes('/geo/places/search') || res.url.includes('/availability/')) {
       return res;
     }
 

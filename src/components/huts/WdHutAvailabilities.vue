@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watchEffect } from 'vue';
+import { ref, computed, watchEffect, watch } from 'vue';
 import { date, QScrollArea } from 'quasar';
 import { clientWodore } from '@clients/index';
 import { useHutsStore } from '@stores/huts-store';
@@ -35,7 +35,6 @@ interface AvailabilityDay {
 const availabilityMap = ref<Map<string, AvailabilityDay>>(new Map());
 const error = ref<string | undefined>(undefined);
 const loadingRequests = ref<Set<string>>(new Set()); // Track ongoing requests
-const skeletonTimeout = ref<number | null>(null);
 const loadedRanges = ref<Set<string>>(new Set()); // Track which date ranges have been loaded
 
 // Get start date (selected date or today)
@@ -57,6 +56,11 @@ const startDate = computed<string>(() => {
 // Today's date for min boundary check
 const today = computed<string>(() => formatDate(new Date(), 'YYYY-MM-DD'));
 
+// Check if a date is today
+const isToday = (dateStr: string): boolean => {
+  return dateStr === today.value;
+};
+
 // Computed sorted array of all dates
 const sortedDates = computed(() => {
   const dates = Array.from(availabilityMap.value.keys()).sort();
@@ -77,11 +81,11 @@ const generateSkeletonDays = (startDateStr: string, days: number): AvailabilityD
       reservation_status: 'loading',
       free: 0,
       total: 0,
-      occupancy_percent: 0,
+      occupancy_percent: 0, // 0% for skeleton (no bar)
       occupancy_steps: 0,
       occupancy_status: 'empty',
       hut_type: '',
-      link: '',
+      link: '#',
       loading: true,
     });
     currentDate = addToDate(currentDate, { days: 1 });
@@ -90,22 +94,17 @@ const generateSkeletonDays = (startDateStr: string, days: number): AvailabilityD
   return skeletons;
 };
 
-// Add skeleton days after delay
-const addSkeletonsAfterDelay = (startDateStr: string, days: number) => {
-  if (skeletonTimeout.value) {
-    clearTimeout(skeletonTimeout.value);
-  }
-
-  skeletonTimeout.value = window.setTimeout(() => {
-    const skeletons = generateSkeletonDays(startDateStr, days);
-    const newMap = new Map(availabilityMap.value);
-    skeletons.forEach(skeleton => {
-      if (!newMap.has(skeleton.date)) {
-        newMap.set(skeleton.date, skeleton);
-      }
-    });
-    availabilityMap.value = newMap;
-  }, 200);
+// Add skeleton days immediately
+const addSkeletonsImmediately = (startDateStr: string, days: number) => {
+  const skeletons = generateSkeletonDays(startDateStr, days);
+  const newMap = new Map(availabilityMap.value);
+  skeletons.forEach(skeleton => {
+    if (!newMap.has(skeleton.date)) {
+      newMap.set(skeleton.date, skeleton);
+    }
+  });
+  availabilityMap.value = newMap;
+  console.log('Added skeleton days:', startDateStr, 'count:', days);
 };
 
 // Load availability data for a specific date range
@@ -163,8 +162,20 @@ const loadAvailabilityData = async (startDateStr: string, days: number) => {
   loadingRequests.value.add(requestKey);
   error.value = undefined;
 
-  // Schedule skeleton days if request takes > 200ms
-  addSkeletonsAfterDelay(startDateStr, days);
+  // Add skeleton days immediately to show loading state
+  addSkeletonsImmediately(startDateStr, days);
+  
+  // Scroll to selected date immediately after skeleton is added (for initial load only)
+  if (loadedRanges.value.size === 0) {
+    setTimeout(() => {
+      scrollToSelectedDate(true);
+      // Allow scroll events after a short delay to prevent immediate preloading
+      setTimeout(() => {
+        isInitialLoad.value = false;
+        console.log('Initial load complete, scroll events now enabled');
+      }, 500);
+    }, 50);
+  }
 
   try {
     const { data, error: err } = await clientWodore.GET('/v1/huts/{slug}/availability/{date}', {
@@ -180,12 +191,6 @@ const loadAvailabilityData = async (startDateStr: string, days: number) => {
       },
     });
 
-    // Clear skeleton timeout if request completed quickly
-    if (skeletonTimeout.value) {
-      clearTimeout(skeletonTimeout.value);
-      skeletonTimeout.value = null;
-    }
-
     if (err) {
       console.error('Availability fetch error:', err);
       error.value = 'Failed to load availability';
@@ -194,7 +199,7 @@ const loadAvailabilityData = async (startDateStr: string, days: number) => {
       // Replace skeleton/loading data with real data
       // Create a new Map to trigger reactivity
       const newMap = new Map(availabilityMap.value);
-      data.data.forEach((day: any) => {
+      data.data.forEach((day) => {
         newMap.set(day.date, { ...day, loading: false });
       });
       availabilityMap.value = newMap;
@@ -225,7 +230,7 @@ const loadNext = () => {
 };
 
 // Load previous 14 days (backward, but not earlier than 2 days before today)
-const loadPrevious = () => {
+const loadPrevious = async () => {
   const dates = Array.from(availabilityMap.value.keys()).sort();
   if (dates.length === 0) return;
 
@@ -243,9 +248,25 @@ const loadPrevious = () => {
   const daysToLoad = Math.ceil((new Date(firstDate).getTime() - new Date(actualStartDate).getTime()) / (1000 * 60 * 60 * 24));
 
   if (daysToLoad > 0) {
-    loadAvailabilityData(actualStartDate, daysToLoad);
+    // Save current scroll position before loading
+    const currentScrollPos = scrollAreaRef.value?.getScrollPosition().left || 0;
+    console.log('Before loading previous - scroll position:', currentScrollPos, 'days to prepend:', daysToLoad);
+    
+    // Load the data
+    await loadAvailabilityData(actualStartDate, daysToLoad);
+    
+    // Adjust scroll position after new data is prepended
+    // Each day is 45px wide, so we need to shift by (daysToLoad * 45)
+    setTimeout(() => {
+      const newScrollPos = currentScrollPos + (daysToLoad * 45);
+      console.log('After loading previous - adjusting scroll from', currentScrollPos, 'to', newScrollPos);
+      scrollAreaRef.value?.setScrollPosition('horizontal', newScrollPos, 0);
+    }, 50);
   }
 };
+
+// Track if we're in initial load to prevent premature scroll loading
+const isInitialLoad = ref(true);
 
 // Handle scroll and check if we need to load more
 const onScroll = useDebounceFn((info: {
@@ -254,6 +275,12 @@ const onScroll = useDebounceFn((info: {
   horizontalContainerSize: number;
 }) => {
   if (!scrollAreaRef.value) return;
+  
+  // Don't trigger loading during initial setup
+  if (isInitialLoad.value) {
+    console.log('Skipping scroll event during initial load');
+    return;
+  }
 
   const currentScroll = info.horizontalPosition;
   const scrollWidth = info.horizontalSize;
@@ -261,7 +288,7 @@ const onScroll = useDebounceFn((info: {
 
   console.log('Scroll event:', { currentScroll, scrollWidth, containerWidth, itemCount: sortedDates.value.length });
 
-  // Width of 7 days (7 * 45px)
+  // Width of 7 days (7 * 45px) - reduced trigger distance
   const sevenDaysWidth = 7 * 45;
 
   // Check if we're within 7 days of the end
@@ -278,7 +305,7 @@ const onScroll = useDebounceFn((info: {
     console.log('Loading previous...');
     loadPrevious();
   }
-}, 300); // Increased debounce time to reduce frequent firing
+}, 300); // Increased debounce to reduce triggers
 
 // Handle horizontal scroll with vertical mouse wheel
 const onWheel = (evt: WheelEvent) => {
@@ -286,6 +313,35 @@ const onWheel = (evt: WheelEvent) => {
     evt.preventDefault();
     const scrollInfo = scrollAreaRef.value.getScrollPosition();
     scrollAreaRef.value.setScrollPosition('horizontal', scrollInfo.left + evt.deltaY, 150);
+  }
+};
+
+// Scroll to selected date
+const scrollToSelectedDate = (immediate = false) => {
+  if (!scrollAreaRef.value) return;
+
+  const dates = Array.from(availabilityMap.value.keys()).sort();
+  const selectedIndex = dates.findIndex(d => d === startDate.value);
+  
+  if (selectedIndex >= 0) {
+    // Each day is 45px wide
+    // Position selected date at the beginning (left edge) of viewport
+    const scrollPosition = selectedIndex * 45;
+    
+    console.log('Scrolling to selected date:', {
+      date: startDate.value,
+      index: selectedIndex,
+      position: scrollPosition,
+      immediate
+    });
+    
+    // For initial load, scroll immediately without animation
+    // For date changes, use smooth animation
+    const duration = immediate ? 0 : 300;
+    
+    setTimeout(() => {
+      scrollAreaRef.value?.setScrollPosition('horizontal', scrollPosition, duration);
+    }, immediate ? 0 : 100);
   }
 };
 
@@ -310,15 +366,35 @@ watchEffect(() => {
   availabilityMap.value.clear();
   loadingRequests.value.clear();
   loadedRanges.value.clear();
+  isInitialLoad.value = true; // Reset initial load flag
 
-  // Load initial 14 days from start date
-  loadAvailabilityData(startDate.value, 14);
+  // Calculate start date: load 3 days before selected date for context
+  const twoDaysBeforeToday = formatDate(subtractFromDate(new Date(today.value), { days: 2 }), 'YYYY-MM-DD');
+  const threeDaysBeforeSelected = formatDate(subtractFromDate(new Date(startDate.value), { days: 3 }), 'YYYY-MM-DD');
+  const actualStartDate = threeDaysBeforeSelected < twoDaysBeforeToday ? twoDaysBeforeToday : threeDaysBeforeSelected;
+  
+  // Load 30 days total (includes 3 before + selected + 26 after)
+  // This gives good buffer (30 days * 45px = 1350px, typical viewport is 300-400px)
+  const daysToLoad = 30;
+  
+  console.log('Initial load:', { actualStartDate, daysToLoad, startDate: startDate.value, today: today.value });
+  
+  // Load initial range: 30 days starting from 3 days before selected date
+  loadAvailabilityData(actualStartDate, daysToLoad);
+});
+
+// Watch for selected date changes and scroll to it
+watch(selectedDate, (newDate, oldDate) => {
+  if (newDate && newDate !== oldDate && availabilityMap.value.size > 0) {
+    console.log('Selected date changed from', oldDate, 'to', newDate);
+    scrollToSelectedDate();
+  }
 });
 </script>
 
 <template>
   <div v-if="hasAvailability !== false">
-    <div class="text-subtitle1 text-accent q-mb-sm q-mt-md">Verfügbarkeit (8 Monate)</div>
+    <div class="text-subtitle1 text-accent q-mb-sm q-mt-md">Verfügbarkeit</div>
     <div class="availability-container">
       <div v-if="error && sortedDates.length === 0" class="availability-content error-content">
         <div class="text-caption text-negative">{{ error }}</div>
@@ -327,7 +403,7 @@ watchEffect(() => {
         @wheel.prevent="onWheel" @scroll="onScroll">
         <div class="row items-start q-pa-xs no-wrap">
           <div v-for="day in sortedDates" :key="day.date" class="day-width">
-            <WdHutAvailability :day="day" :is-selected="day.date === startDate" />
+            <WdHutAvailability :day="day" :is-selected="day.date === startDate" :is-today="isToday(day.date)" />
           </div>
         </div>
       </q-scroll-area>
