@@ -14,13 +14,18 @@ interface AvailabilityDay {
   occupancy_status: 'empty' | 'low' | 'medium' | 'high' | 'full';
   hut_type: string;
   link: string;
+  loading?: boolean;
 }
 
 interface Props {
   day: AvailabilityDay;
+  isSelected?: boolean;
 }
 
 const props = defineProps<Props>();
+
+// Check if in loading state
+const isLoadingState = computed(() => props.day.loading === true);
 
 // Format date for display (e.g., "Mo")
 const formattedDate = computed(() => {
@@ -176,9 +181,16 @@ const tooltipText = computed(() => {
   color: inherit;
   cursor: pointer;
   transition: opacity 0.2s;
+  border: 2px solid transparent;
+  border-radius: 4px;
 
   &:hover {
     opacity: 0.85;
+  }
+
+  &.selected {
+    border-color: $primary;
+    box-shadow: 0 0 8px rgba($primary, 0.4);
   }
 }
 
@@ -253,34 +265,55 @@ const tooltipText = computed(() => {
 
 <template>
   <a :href="day.link" target="_blank" rel="noopener noreferrer"
-    class="card column items-center overflow-hidden no-underline">
-    <div class="header text-center column justify-center" :style="{ backgroundColor: headerColor, color: textColor }">
-      <div class="text-caption">{{ formattedDate }}</div>
-      <div style="font-size: 9px; line-height: 1">{{ formattedDay }}</div>
-    </div>
-    <div class="bar-wrapper">
-      <!-- Free beds (background, light color) -->
-      <div class="bar-bg" :style="{ backgroundColor: barColorLight }"></div>
-      <!-- Occupied beds (overlay, dark color) -->
-      <div class="bar-occupied" :style="{ backgroundColor: barColor, height: occupiedHeight, borderRadius: barRadius }">
+    class="card column items-center overflow-hidden no-underline" :class="{ selected: isSelected }">
+    <!-- Loading/Skeleton State -->
+    <template v-if="isLoadingState">
+      <div class="header text-center column justify-center" style="background-color: rgba(128, 128, 128, 0.2)">
+        <q-skeleton type="text" width="20px" height="12px" />
+        <q-skeleton type="text" width="25px" height="10px" class="q-mt-xs" />
       </div>
-      <!-- Diagonal cross for unknown data -->
-      <div v-if="isUnknown" class="cross-overlay" :style="{ color: textColor }">
-        <div class="cross-line"></div>
-        <div class="cross-line"></div>
+      <div class="bar-wrapper">
+        <q-skeleton type="rect" width="24px" height="48px" />
       </div>
-    </div>
-    <div class="footer text-center column justify-center items-center"
-      :style="{ backgroundColor: headerColor, color: textColor, minHeight: '34px' }">
-      <template v-if="isUnknown">
-        <div style="font-size: 10px; line-height: 1.2">{{ t('availability.unknown') }}</div>
-      </template>
-      <template v-else>
-        <div style="font-size: 10px; line-height: 1.2">{{ day.free }}</div>
-        <div style="height: 1px; width: 60%; background-color: currentColor; opacity: 0.5"></div>
-        <div style="font-size: 10px; line-height: 1.2">{{ day.total }}</div>
-      </template>
-      <q-tooltip>{{ tooltipText }}</q-tooltip>
-    </div>
+      <div class="footer text-center column justify-center items-center"
+        style="background-color: rgba(128, 128, 128, 0.2); min-height: 34px">
+        <q-skeleton type="text" width="30px" height="10px" />
+        <q-skeleton type="text" width="15px" height="1px" class="q-my-xs" />
+        <q-skeleton type="text" width="30px" height="10px" />
+      </div>
+    </template>
+
+    <!-- Normal/Unknown State -->
+    <template v-else>
+      <div class="header text-center column justify-center" :style="{ backgroundColor: headerColor, color: textColor }">
+        <div class="text-caption">{{ formattedDate }}</div>
+        <div style="font-size: 9px; line-height: 1">{{ formattedDay }}</div>
+      </div>
+      <div class="bar-wrapper">
+        <!-- Free beds (background, light color) -->
+        <div class="bar-bg" :style="{ backgroundColor: barColorLight }"></div>
+        <!-- Occupied beds (overlay, dark color) -->
+        <div class="bar-occupied"
+          :style="{ backgroundColor: barColor, height: occupiedHeight, borderRadius: barRadius }">
+        </div>
+        <!-- Diagonal cross for unknown data -->
+        <div v-if="isUnknown" class="cross-overlay" :style="{ color: textColor }">
+          <div class="cross-line"></div>
+          <div class="cross-line"></div>
+        </div>
+      </div>
+      <div class="footer text-center column justify-center items-center"
+        :style="{ backgroundColor: headerColor, color: textColor, minHeight: '34px' }">
+        <template v-if="isUnknown">
+          <div style="font-size: 10px; line-height: 1.2">{{ t('availability.unknown') }}</div>
+        </template>
+        <template v-else>
+          <div style="font-size: 10px; line-height: 1.2">{{ day.free }}</div>
+          <div style="height: 1px; width: 60%; background-color: currentColor; opacity: 0.5"></div>
+          <div style="font-size: 10px; line-height: 1.2">{{ day.total }}</div>
+        </template>
+        <q-tooltip>{{ tooltipText }}</q-tooltip>
+      </div>
+    </template>
   </a>
 </template>

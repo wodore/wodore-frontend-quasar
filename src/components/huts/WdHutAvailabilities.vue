@@ -4,9 +4,10 @@ import { date, QScrollArea } from 'quasar';
 import { clientWodore } from '@clients/index';
 import { useHutsStore } from '@stores/huts-store';
 import { storeToRefs } from 'pinia';
+import { useDebounceFn } from '@vueuse/core';
 import WdHutAvailability from './WdHutAvailability.vue';
 
-const { formatDate } = date;
+const { formatDate, addToDate, subtractFromDate } = date;
 const { selectedDate } = storeToRefs(useHutsStore());
 const scrollAreaRef = ref<QScrollArea | null>(null);
 
@@ -17,30 +18,25 @@ interface Props {
 
 const props = defineProps<Props>();
 
-interface AvailabilityResponse {
-  slug: string;
-  id: number;
-  source_id: string;
-  source_link: string;
-  source: string;
-  days: number;
-  start_date: string;
-  data: Array<{
-    date: string;
-    reservation_status: string;
-    free: number;
-    total: number;
-    occupancy_percent: number;
-    occupancy_steps: number;
-    occupancy_status: 'empty' | 'low' | 'medium' | 'high' | 'full';
-    hut_type: string;
-    link: string;
-  }>;
+interface AvailabilityDay {
+  date: string;
+  reservation_status: string;
+  free: number;
+  total: number;
+  occupancy_percent: number;
+  occupancy_steps: number;
+  occupancy_status: 'empty' | 'low' | 'medium' | 'high' | 'full' | 'unknown';
+  hut_type: string;
+  link: string;
+  loading?: boolean; // Added for skeleton state
 }
 
-const availabilityData = ref<AvailabilityResponse['data'] | undefined>(undefined);
-const loading = ref(false);
+// Map to store all availability data by date
+const availabilityMap = ref<Map<string, AvailabilityDay>>(new Map());
 const error = ref<string | undefined>(undefined);
+const loadingRequests = ref<Set<string>>(new Set()); // Track ongoing requests
+const skeletonTimeout = ref<number | null>(null);
+const loadedRanges = ref<Set<string>>(new Set()); // Track which date ranges have been loaded
 
 // Get start date (selected date or today)
 const startDate = computed<string>(() => {
@@ -58,6 +54,232 @@ const startDate = computed<string>(() => {
   return formatDate(new Date(), 'YYYY-MM-DD');
 });
 
+// Today's date for min boundary check
+const today = computed<string>(() => formatDate(new Date(), 'YYYY-MM-DD'));
+
+// Computed sorted array of all dates
+const sortedDates = computed(() => {
+  const dates = Array.from(availabilityMap.value.keys()).sort();
+  return dates.map(d => availabilityMap.value.get(d)!);
+});
+
+
+
+// Generate skeleton days for a date range
+const generateSkeletonDays = (startDateStr: string, days: number): AvailabilityDay[] => {
+  const skeletons: AvailabilityDay[] = [];
+  let currentDate = new Date(startDateStr);
+
+  for (let i = 0; i < days; i++) {
+    const dateStr = formatDate(currentDate, 'YYYY-MM-DD');
+    skeletons.push({
+      date: dateStr,
+      reservation_status: 'loading',
+      free: 0,
+      total: 0,
+      occupancy_percent: 0,
+      occupancy_steps: 0,
+      occupancy_status: 'empty',
+      hut_type: '',
+      link: '',
+      loading: true,
+    });
+    currentDate = addToDate(currentDate, { days: 1 });
+  }
+
+  return skeletons;
+};
+
+// Add skeleton days after delay
+const addSkeletonsAfterDelay = (startDateStr: string, days: number) => {
+  if (skeletonTimeout.value) {
+    clearTimeout(skeletonTimeout.value);
+  }
+
+  skeletonTimeout.value = window.setTimeout(() => {
+    const skeletons = generateSkeletonDays(startDateStr, days);
+    const newMap = new Map(availabilityMap.value);
+    skeletons.forEach(skeleton => {
+      if (!newMap.has(skeleton.date)) {
+        newMap.set(skeleton.date, skeleton);
+      }
+    });
+    availabilityMap.value = newMap;
+  }, 200);
+};
+
+// Load availability data for a specific date range
+const loadAvailabilityData = async (startDateStr: string, days: number) => {
+  if (!props.slug || props.hasAvailability === false) {
+    console.log('loadAvailabilityData: No slug or hasAvailability is false');
+    return;
+  }
+
+  // Check if already loading this range
+  const requestKey = `${startDateStr}-${days}`;
+  
+  console.log('loadAvailabilityData called:', { 
+    requestKey, 
+    alreadyLoading: loadingRequests.value.has(requestKey),
+    alreadyLoadedBefore: loadedRanges.value.has(requestKey),
+    loadingRequestsSize: loadingRequests.value.size,
+    loadedRangesSize: loadedRanges.value.size
+  });
+  
+  if (loadingRequests.value.has(requestKey)) {
+    console.log('Already loading this range, skipping');
+    return;
+  }
+
+  // Check if this range has already been loaded
+  if (loadedRanges.value.has(requestKey)) {
+    console.log('Range already loaded previously, skipping');
+    return;
+  }
+
+  // Check if all dates in this range already exist in the map (with real data, not skeletons)
+  const allDatesExist = (() => {
+    let currentDate = new Date(startDateStr);
+    for (let i = 0; i < days; i++) {
+      const dateStr = formatDate(currentDate, 'YYYY-MM-DD');
+      const existingDay = availabilityMap.value.get(dateStr);
+      // If date doesn't exist or is still loading, we need to load
+      if (!existingDay || existingDay.loading) {
+        console.log('Date missing or loading:', dateStr, existingDay);
+        return false;
+      }
+      currentDate = addToDate(currentDate, { days: 1 });
+    }
+    return true;
+  })();
+
+  if (allDatesExist) {
+    console.log('All dates in range already exist with real data, marking as loaded and skipping');
+    loadedRanges.value.add(requestKey);
+    return;
+  }
+
+  console.log('Starting to load data for range:', requestKey);
+  loadingRequests.value.add(requestKey);
+  error.value = undefined;
+
+  // Schedule skeleton days if request takes > 200ms
+  addSkeletonsAfterDelay(startDateStr, days);
+
+  try {
+    const { data, error: err } = await clientWodore.GET('/v1/huts/{slug}/availability/{date}', {
+      params: {
+        path: {
+          slug: props.slug,
+          date: startDateStr,
+        },
+        query: {
+          lang: 'de',
+          days: days,
+        },
+      },
+    });
+
+    // Clear skeleton timeout if request completed quickly
+    if (skeletonTimeout.value) {
+      clearTimeout(skeletonTimeout.value);
+      skeletonTimeout.value = null;
+    }
+
+    if (err) {
+      console.error('Availability fetch error:', err);
+      error.value = 'Failed to load availability';
+    } else if (data && 'data' in data && Array.isArray(data.data)) {
+      console.log('Successfully fetched data for range:', requestKey, 'items:', data.data.length);
+      // Replace skeleton/loading data with real data
+      // Create a new Map to trigger reactivity
+      const newMap = new Map(availabilityMap.value);
+      data.data.forEach((day: any) => {
+        newMap.set(day.date, { ...day, loading: false });
+      });
+      availabilityMap.value = newMap;
+      
+      // Mark this range as loaded
+      loadedRanges.value.add(requestKey);
+      console.log('Marked range as loaded:', requestKey, 'Total loaded ranges:', loadedRanges.value.size);
+    }
+  } finally {
+    loadingRequests.value.delete(requestKey);
+    console.log('Removed from loading requests:', requestKey);
+  }
+};
+
+// Load next 14 days (forward)
+const loadNext = () => {
+  const dates = Array.from(availabilityMap.value.keys()).sort();
+  console.log('loadNext called, current dates:', dates.length);
+  if (dates.length === 0) {
+    console.log('No dates yet, skipping loadNext');
+    return;
+  }
+
+  const lastDate = dates[dates.length - 1];
+  const nextDate = formatDate(addToDate(new Date(lastDate), { days: 1 }), 'YYYY-MM-DD');
+  console.log('Loading next from:', nextDate);
+  loadAvailabilityData(nextDate, 14);
+};
+
+// Load previous 14 days (backward, but not earlier than 2 days before today)
+const loadPrevious = () => {
+  const dates = Array.from(availabilityMap.value.keys()).sort();
+  if (dates.length === 0) return;
+
+  const firstDate = dates[0];
+  const twoDaysBeforeToday = formatDate(subtractFromDate(new Date(today.value), { days: 2 }), 'YYYY-MM-DD');
+
+  // Don't load if we're already at or before the minimum date
+  if (firstDate <= twoDaysBeforeToday) {
+    return;
+  }
+
+  // Calculate how many days we can load backward
+  const targetStartDate = formatDate(subtractFromDate(new Date(firstDate), { days: 14 }), 'YYYY-MM-DD');
+  const actualStartDate = targetStartDate < twoDaysBeforeToday ? twoDaysBeforeToday : targetStartDate;
+  const daysToLoad = Math.ceil((new Date(firstDate).getTime() - new Date(actualStartDate).getTime()) / (1000 * 60 * 60 * 24));
+
+  if (daysToLoad > 0) {
+    loadAvailabilityData(actualStartDate, daysToLoad);
+  }
+};
+
+// Handle scroll and check if we need to load more
+const onScroll = useDebounceFn((info: {
+  horizontalPosition: number;
+  horizontalSize: number;
+  horizontalContainerSize: number;
+}) => {
+  if (!scrollAreaRef.value) return;
+
+  const currentScroll = info.horizontalPosition;
+  const scrollWidth = info.horizontalSize;
+  const containerWidth = info.horizontalContainerSize;
+
+  console.log('Scroll event:', { currentScroll, scrollWidth, containerWidth, itemCount: sortedDates.value.length });
+
+  // Width of 7 days (7 * 45px)
+  const sevenDaysWidth = 7 * 45;
+
+  // Check if we're within 7 days of the end
+  const distanceFromEnd = scrollWidth - currentScroll - containerWidth;
+  console.log('Distance from end:', distanceFromEnd);
+  if (distanceFromEnd < sevenDaysWidth) {
+    console.log('Loading next...');
+    loadNext();
+  }
+
+  // Check if we're within 7 days of the beginning
+  console.log('Distance from start:', currentScroll);
+  if (currentScroll < sevenDaysWidth) {
+    console.log('Loading previous...');
+    loadPrevious();
+  }
+}, 300); // Increased debounce time to reduce frequent firing
+
 // Handle horizontal scroll with vertical mouse wheel
 const onWheel = (evt: WheelEvent) => {
   if (scrollAreaRef.value) {
@@ -67,59 +289,45 @@ const onWheel = (evt: WheelEvent) => {
   }
 };
 
-// Fetch availability data
+// Initial load - only trigger when slug changes, not on every reactive update
+const lastLoadedSlug = ref<string | undefined>(undefined);
+
 watchEffect(() => {
   if (!props.slug || props.hasAvailability === false) {
     return;
   }
 
-  loading.value = true;
-  error.value = undefined;
+  // Only reload if the slug actually changed
+  if (lastLoadedSlug.value === props.slug) {
+    console.log('Slug unchanged, skipping reload');
+    return;
+  }
 
-  clientWodore
-    .GET('/v1/huts/{slug}/availability/{date}', {
-      params: {
-        path: {
-          slug: props.slug,
-          date: startDate.value,
-        },
-        query: {
-          lang: 'de',
-          days: 240,
-        },
-      },
-    })
-    .then(({ data, error: err }) => {
-      if (err) {
-        console.error('Availability fetch error:', err);
-        error.value = 'Failed to load availability';
-        availabilityData.value = undefined;
-      } else if (data) {
-        availabilityData.value = (data as AvailabilityResponse).data;
-      }
-    })
-    .finally(() => {
-      loading.value = false;
-    });
+  console.log('Slug changed from', lastLoadedSlug.value, 'to', props.slug, '- clearing and reloading');
+  lastLoadedSlug.value = props.slug;
+
+  // Clear existing data
+  availabilityMap.value.clear();
+  loadingRequests.value.clear();
+  loadedRanges.value.clear();
+
+  // Load initial 14 days from start date
+  loadAvailabilityData(startDate.value, 14);
 });
 </script>
 
 <template>
   <div v-if="hasAvailability !== false">
-    <div class="text-subtitle1 text-accent q-mb-sm q-mt-md">Verfügbarkeit</div>
+    <div class="text-subtitle1 text-accent q-mb-sm q-mt-md">Verfügbarkeit (8 Monate)</div>
     <div class="availability-container">
-      <div v-if="loading" class="availability-content loading-content">
-        <q-spinner color="primary-300" size="24px" />
-        <div class="text-caption q-mt-sm text-grey-7">Lade Verfügbarkeit...</div>
-      </div>
-      <div v-else-if="error" class="availability-content error-content">
+      <div v-if="error && sortedDates.length === 0" class="availability-content error-content">
         <div class="text-caption text-negative">{{ error }}</div>
       </div>
-      <q-scroll-area v-else-if="availabilityData && availabilityData.length > 0" ref="scrollAreaRef"
-        class="monthly overflow-hidden availability-scroll" horizontal @wheel.prevent="onWheel">
+      <q-scroll-area v-else ref="scrollAreaRef" class="monthly overflow-hidden availability-scroll" horizontal
+        @wheel.prevent="onWheel" @scroll="onScroll">
         <div class="row items-start q-pa-xs no-wrap">
-          <div v-for="day in availabilityData" :key="day.date" class="day-width">
-            <WdHutAvailability :day="day" />
+          <div v-for="day in sortedDates" :key="day.date" class="day-width">
+            <WdHutAvailability :day="day" :is-selected="day.date === startDate" />
           </div>
         </div>
       </q-scroll-area>
