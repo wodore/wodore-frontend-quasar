@@ -80,5 +80,12 @@
     "update_caption": "Aktualisieren",
     "update_button": "Jetzt aktualisieren",
     "later_button": "Später"
+  },
+  "availability": {
+    "free": "Frei",
+    "total": "Total",
+    "tooltip": "{free} Frei / {total} Total",
+    "unknown": "Unbekannt",
+    "no_data": "Keine Angaben"
   }
 }

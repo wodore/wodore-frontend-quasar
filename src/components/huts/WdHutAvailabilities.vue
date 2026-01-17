@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watchEffect } from 'vue';
-import { date } from 'quasar';
+import { date, QScrollArea } from 'quasar';
 import { clientWodore } from '@clients/index';
 import { useHutsStore } from '@stores/huts-store';
 import { storeToRefs } from 'pinia';
@@ -8,9 +8,11 @@ import WdHutAvailability from './WdHutAvailability.vue';
 
 const { formatDate } = date;
 const { selectedDate } = storeToRefs(useHutsStore());
+const scrollAreaRef = ref<QScrollArea | null>(null);
 
 interface Props {
   slug: string;
+  hasAvailability?: boolean;
 }
 
 const props = defineProps<Props>();
@@ -56,9 +58,18 @@ const startDate = computed<string>(() => {
   return formatDate(new Date(), 'YYYY-MM-DD');
 });
 
+// Handle horizontal scroll with vertical mouse wheel
+const onWheel = (evt: WheelEvent) => {
+  if (scrollAreaRef.value) {
+    evt.preventDefault();
+    const scrollInfo = scrollAreaRef.value.getScrollPosition();
+    scrollAreaRef.value.setScrollPosition('horizontal', scrollInfo.left + evt.deltaY, 150);
+  }
+};
+
 // Fetch availability data
 watchEffect(() => {
-  if (!props.slug) {
+  if (!props.slug || props.hasAvailability === false) {
     return;
   }
 
@@ -74,7 +85,7 @@ watchEffect(() => {
         },
         query: {
           lang: 'de',
-          days: 14,
+          days: 240,
         },
       },
     })
@@ -94,22 +105,25 @@ watchEffect(() => {
 </script>
 
 <template>
-  <div v-if="loading" class="q-pa-md text-center text-grey-7">
-    <q-spinner color="primary-300" size="24px" />
-    <div class="text-caption q-mt-sm">Lade Verfügbarkeit...</div>
-  </div>
-  <div v-else-if="error" class="q-pa-md text-center text-negative">
-    <div class="text-caption">{{ error }}</div>
-  </div>
-  <div v-else-if="availabilityData && availabilityData.length > 0">
-    <div class="text-subtitle1 text-accent q-mb-sm q-mt-md">Verfügbarkeit (14 Tage)</div>
-    <q-scroll-area class="monthly overflow-hidden availability-scroll">
-      <div class="row items-start q-pa-xs">
-        <div v-for="day in availabilityData" :key="day.date" class="day-width">
-          <WdHutAvailability :day="day" />
-        </div>
+  <div v-if="hasAvailability !== false">
+    <div class="text-subtitle1 text-accent q-mb-sm q-mt-md">Verfügbarkeit</div>
+    <div class="availability-container">
+      <div v-if="loading" class="availability-content loading-content">
+        <q-spinner color="primary-300" size="24px" />
+        <div class="text-caption q-mt-sm text-grey-7">Lade Verfügbarkeit...</div>
       </div>
-    </q-scroll-area>
+      <div v-else-if="error" class="availability-content error-content">
+        <div class="text-caption text-negative">{{ error }}</div>
+      </div>
+      <q-scroll-area v-else-if="availabilityData && availabilityData.length > 0" ref="scrollAreaRef"
+        class="monthly overflow-hidden availability-scroll" horizontal @wheel.prevent="onWheel">
+        <div class="row items-start q-pa-xs no-wrap">
+          <div v-for="day in availabilityData" :key="day.date" class="day-width">
+            <WdHutAvailability :day="day" />
+          </div>
+        </div>
+      </q-scroll-area>
+    </div>
   </div>
 </template>
 
@@ -118,8 +132,29 @@ watchEffect(() => {
   border-radius: 5px;
 }
 
+.availability-container {
+  min-height: 140px;
+  height: 140px;
+}
+
 .availability-scroll {
   height: 140px;
+}
+
+.availability-content {
+  height: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-content {
+  text-align: center;
+}
+
+.error-content {
+  text-align: center;
 }
 
 .day-width {

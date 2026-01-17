@@ -322,13 +322,13 @@ const addHeaderShadow: IntersectionValue = (entry) => {
             </div>
           </div>
 
-          <WdHutAvailabilities v-if="slug" :slug="slug" />
-
           <body class="text-body2 q-my-lg">
             <!-- {{ hut.description }} -->
             <div class="attribution attr_link text-right" style="padding: 0" v-html="hut.description_attribution"></div>
             <WdTextClamp :max-lines="5" :text="hut.description" style="padding-bottom: 0" />
           </body>
+
+          <WdHutAvailabilities v-if="slug" :slug="slug" :has-availability="hut.has_availability ?? undefined" />
 
           <WdHutOpenMonthly :open_monthly="hut.open_monthly" :type_open="hut.type_open"
             :type_closed="hut.type_closed" />
