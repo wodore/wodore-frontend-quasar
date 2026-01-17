@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watchEffect } from 'vue';
+import { ref, computed, watchEffect, watch, nextTick } from 'vue';
 import { date, QVirtualScroll, QScrollArea } from 'quasar';
 import { clientWodore } from '@clients/index';
 import { useHutsStore } from '@stores/huts-store';
@@ -186,15 +186,22 @@ const onVirtualScroll = (details: { index: number; from: number; to: number }) =
 
 // Scroll to selected date
 const scrollToSelectedDate = () => {
-  if (!virtualScrollRef.value || availabilityItems.value.length === 0) return;
+  nextTick(() => {
+    if (!virtualScrollRef.value || availabilityItems.value.length === 0) {
+      console.log('Cannot scroll - virtualScrollRef or availabilityItems not ready');
+      return;
+    }
 
-  const index = availabilityItems.value.findIndex(item => item.date === startDate.value);
+    const index = availabilityItems.value.findIndex(item => item.date === startDate.value);
 
-  if (index >= 0) {
-    console.log('Scrolling to selected date:', startDate.value, 'at index:', index);
-    // Direct call like in Quasar example - scrollTo handles timing internally
-    virtualScrollRef.value.scrollTo(index, 'start-force');
-  }
+    if (index >= 0) {
+      console.log('Scrolling to selected date:', startDate.value, 'at index:', index);
+      // Direct call like in Quasar example - scrollTo handles timing internally
+      virtualScrollRef.value.scrollTo(index, 'start-force');
+    } else {
+      console.log('Selected date not found in availabilityItems:', startDate.value);
+    }
+  });
 };
 
 // Handle horizontal scroll with vertical mouse wheel (increased speed)
@@ -203,7 +210,7 @@ const onWheel = (evt: WheelEvent) => {
     evt.preventDefault();
     const scrollInfo = scrollAreaRef.value.getScrollPosition();
     // Multiply deltaY by 2 for faster scrolling
-    scrollAreaRef.value.setScrollPosition('horizontal', scrollInfo.left + (evt.deltaY * 1.6), 150);
+    scrollAreaRef.value.setScrollPosition('horizontal', scrollInfo.left + (evt.deltaY * -1.6), 150);
   }
 };
 
@@ -233,6 +240,13 @@ watchEffect(() => {
   if (selectedIndex >= 0) {
     ensureRangeLoaded(selectedIndex, selectedIndex);
   }
+});
+
+// Watch for selected date changes and scroll to the new date
+watch(selectedDate, () => {
+  console.log('Selected date changed to:', selectedDate.value);
+  // Scroll to the newly selected date
+  scrollToSelectedDate();
 });
 </script>
 
