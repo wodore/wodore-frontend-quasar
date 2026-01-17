@@ -13,7 +13,7 @@ const scrollAreaRef = ref<InstanceType<typeof QScrollArea> | null>(null);
 const $q = useQuasar();
 const scrollLeft = ref(0);
 const scrollViewportWidth = ref(0);
-const itemWidth = 45;
+const itemWidth = 40;
 
 interface Props {
   slug: string;
@@ -214,10 +214,10 @@ const onVirtualScroll = (details: { index: number; from: number; to: number }) =
 };
 
 // Scroll to selected date
-const scrollToSelectedDate = () => {
+const scrollToSelectedDate = (animate: boolean) => {
   nextTick(() => {
-    if (!virtualScrollRef.value || availabilityItems.value.length === 0) {
-      console.log('Cannot scroll - virtualScrollRef or availabilityItems not ready');
+    if (!virtualScrollRef.value || !scrollAreaRef.value || availabilityItems.value.length === 0) {
+      console.log('Cannot scroll - refs or availabilityItems not ready');
       return;
     }
 
@@ -225,8 +225,8 @@ const scrollToSelectedDate = () => {
 
     if (index >= 0) {
       console.log('Scrolling to selected date:', startDate.value, 'at index:', index);
-      // Direct call like in Quasar example - scrollTo handles timing internally
-      virtualScrollRef.value.scrollTo(index, 'start-force');
+      const targetLeft = Math.max(0, index * itemWidth);
+      scrollAreaRef.value.setScrollPosition('horizontal', targetLeft, animate ? 300 : 0);
     } else {
       console.log('Selected date not found in availabilityItems:', startDate.value);
     }
@@ -262,7 +262,7 @@ watchEffect(() => {
   availabilityItems.value = initializeDateRange();
 
   // Scroll to selected date
-  scrollToSelectedDate();
+  scrollToSelectedDate(false);
 
   // Load initial data around selected date
   const selectedIndex = availabilityItems.value.findIndex(item => item.date === startDate.value);
@@ -275,7 +275,7 @@ watchEffect(() => {
 watch(selectedDate, () => {
   console.log('Selected date changed to:', selectedDate.value);
   // Scroll to the newly selected date
-  scrollToSelectedDate();
+  scrollToSelectedDate(true);
 });
 
 const monthStarts = computed(() => {
@@ -389,7 +389,7 @@ const upcomingMonthClass = computed(() => {
       <q-scroll-area v-else ref="scrollAreaRef" id="availability-scroll-area" class="availability-scroll-area"
         :horizontal-thumb-style="{ opacity: '0.5' }" @scroll="onScroll" @wheel.prevent="onWheel">
         <q-virtual-scroll ref="virtualScrollRef" scroll-target="#availability-scroll-area > .scroll"
-          :items="availabilityItems" :virtual-scroll-item-size="45" virtual-scroll-horizontal
+          :items="availabilityItems" :virtual-scroll-item-size="40" virtual-scroll-horizontal
           @virtual-scroll="onVirtualScroll">
           <template v-slot="{ item, index }">
             <div :key="index" class="day-item">

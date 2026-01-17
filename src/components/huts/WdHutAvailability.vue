@@ -192,8 +192,8 @@ const barColorLight = computed(() => {
   width: 30px;
   height: 80px;
   border-radius: 4px;
-  padding: 3px;
-  border: 2px solid rgba(0, 0, 0, 0.12);
+  padding: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.16);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -201,23 +201,28 @@ const barColorLight = computed(() => {
   justify-content: space-between;
 }
 
+.bar-frame.weekend {
+  border-width: 3px;
+}
+
 .bar-frame.selected {
-  border-color: $accent;
-  box-shadow: 0 0 8px rgba($accent, 0.4);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  border: 4px solid rgba($accent, 0.6);
 }
 
 .bar-frame.today {
-  border-color: rgba(128, 128, 128, 0.5);
+  border-width: 3px;
+  border-color: rgba($primary, 0.5);
 }
 
 .bar-frame.selected.today {
-  border-color: $accent;
-  box-shadow: 0 0 8px rgba($accent, 0.4);
+  border: 3px solid rgba($primary, 0.6);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .bar-bg {
   width: 100%;
-  height: 56px;
+  height: 52px;
   position: relative;
   box-sizing: border-box;
   overflow: hidden;
@@ -327,7 +332,10 @@ const barColorLight = computed(() => {
     <template v-else>
       <div class="text-center column justify-center items-center" style="min-height: 6px"></div>
       <div class="bar-wrapper">
-        <div class="bar-frame" :class="[`month_${monthKey}--gradient-light`, { selected: isSelected, today: isToday }]">
+        <div class="bar-frame" :class="[
+          isSelected ? `month_${monthKey}--gradient-dark` : `month_${monthKey}--gradient-light`,
+          { selected: isSelected, today: isToday, weekend: isWeekend },
+        ]">
           <div class="day-number">{{ dayNumber }}</div>
           <!-- Free beds (background, light color) -->
           <div class="bar-bg" :style="{ backgroundColor: barColorLight, borderRadius: barRadius }">
@@ -335,20 +343,20 @@ const barColorLight = computed(() => {
             <div class="bar-occupied"
               :style="{ backgroundColor: barColor, height: occupiedHeight, borderRadius: barRadius }">
             </div>
-          <div class="bar-content">
-            <template v-if="isUnknown">
-              <div class="free-label">?</div>
-            </template>
-            <template v-else>
-              <div class="free-label">{{ day.free }}</div>
-            </template>
+            <div class="bar-content">
+              <template v-if="isUnknown">
+                <div class="free-label">?</div>
+              </template>
+              <template v-else>
+                <div class="free-label">{{ day.free }}</div>
+              </template>
+            </div>
+          </div>
+          <div class="footer-stack">
+            <div class="day-week" :class="{ 'day-week--bold': isWeekend }">{{ formattedDate }}</div>
+            <q-icon v-if="typeIcon" :name="typeIcon" size="20px" />
           </div>
         </div>
-        <div class="footer-stack">
-          <div class="day-week" :class="{ 'day-week--bold': isWeekend }">{{ formattedDate }}</div>
-          <q-icon v-if="typeIcon" :name="typeIcon" size="20px" />
-        </div>
-      </div>
         <!-- No cross overlay for unknown data -->
         <q-tooltip>
           <div>{{ fullWeekday }}, {{ fullDateWithYear }}</div>
