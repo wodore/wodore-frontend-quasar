@@ -373,8 +373,7 @@ const upcomingMonthClass = computed(() => {
         <div class="text-caption text-negative">{{ error }}</div>
       </div>
       <q-scroll-area v-else ref="scrollAreaRef" id="availability-scroll-area" class="availability-scroll-area"
-        :horizontal-thumb-style="{ opacity: '0.5' }" :content-style="{ paddingTop: '18px' }" @scroll="onScroll"
-        @wheel.prevent="onWheel">
+        :horizontal-thumb-style="{ opacity: '0.5' }" @scroll="onScroll" @wheel.prevent="onWheel">
         <q-virtual-scroll ref="virtualScrollRef" scroll-target="#availability-scroll-area > .scroll"
           :items="availabilityItems" :virtual-scroll-item-size="45" virtual-scroll-horizontal
           @virtual-scroll="onVirtualScroll">
@@ -411,6 +410,7 @@ const upcomingMonthClass = computed(() => {
   color: rgba(0, 0, 0, 0.65);
   text-transform: capitalize;
   pointer-events: none;
+  z-index: 2;
 }
 
 .availability-content {
@@ -429,5 +429,7 @@ const upcomingMonthClass = computed(() => {
   width: 45px;
   height: 110px;
   display: inline-block;
+  padding-top: 26px;
+  box-sizing: border-box;
 }
 </style>
