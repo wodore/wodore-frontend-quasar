@@ -179,7 +179,7 @@ const barColorLight = computed(() => {
 
 .bar-wrapper {
   width: 100%;
-  height: 80px;
+  height: 100%;
   position: relative;
   overflow: visible;
   background-color: transparent;
@@ -189,16 +189,13 @@ const barColorLight = computed(() => {
 }
 
 .bar-frame {
-  width: 30px;
-  height: 80px;
-  border-radius: 4px;
+  width: 100%;
+  height: 100%;
   padding: 4px;
+  border-radius: 10px;
   border: 1px solid rgba(0, 0, 0, 0.16);
   box-sizing: border-box;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
 }
 
 .bar-frame.weekend {
@@ -221,15 +218,15 @@ const barColorLight = computed(() => {
 }
 
 .bar-bg {
-  width: 100%;
-  height: 52px;
+  width: 23px;
+  height: 100%;
   position: relative;
   box-sizing: border-box;
   overflow: hidden;
 }
 
 .bar-occupied {
-  width: 22px;
+  width: 23px;
   height: 0;
   position: absolute;
   bottom: 0;
@@ -245,23 +242,24 @@ const barColorLight = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  align-items: center;
   padding: 3px 2px;
   color: rgba(color('dark'), 0.6);
   pointer-events: none;
 }
 
-.day-number {
-  font-size: 12px;
-  line-height: 1;
-  color: rgba(color('dark'), 0.6);
-}
-
 .day-week {
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1;
   letter-spacing: 0.1px;
   color: rgba(color('dark'), 0.6);
+  white-space: nowrap;
+}
+
+.day-dot {
+  font-size: 12px;
+  line-height: 1;
+  margin: 0 2px;
+  vertical-align: middle;
 }
 
 .day-week--bold {
@@ -273,11 +271,17 @@ const barColorLight = computed(() => {
   line-height: 1;
 }
 
-.footer-stack {
+.day-column {
+  min-width: 0;
   display: flex;
   flex-direction: column;
+  gap: 4px;
+}
+
+.symbol-row {
+  display: flex;
   align-items: center;
-  gap: 2px;
+  height: 20px;
 }
 
 
@@ -330,15 +334,24 @@ const barColorLight = computed(() => {
 
     <!-- Normal/Unknown State -->
     <template v-else>
-      <div class="text-center column justify-center items-center" style="min-height: 6px"></div>
       <div class="bar-wrapper">
-        <div class="bar-frame" :class="[
+        <div class="bar-frame row no-wrap items-start justify-between" :class="[
           isSelected ? `month_${monthKey}--gradient-dark` : `month_${monthKey}--gradient-light`,
           { selected: isSelected, today: isToday, weekend: isWeekend },
         ]">
-          <div class="day-number">{{ dayNumber }}</div>
+          <div class="day-column">
+            <div class="day-week" :class="{ 'day-week--bold': isWeekend }">
+              <span>{{ dayNumber }}</span>
+              <span class="day-dot">•</span>
+              <span>{{ formattedDate }}</span>
+            </div>
+            <div class="symbol-row">
+              <q-icon v-if="typeIcon" :name="typeIcon" size="20px" />
+            </div>
+          </div>
           <!-- Free beds (background, light color) -->
-          <div class="bar-bg" :style="{ backgroundColor: barColorLight, borderRadius: barRadius }">
+          <div class="bar-bg"
+            :style="{ backgroundColor: barColorLight, borderRadius: barRadius, border: `2px solid ${barColor}` }">
             <!-- Occupied beds (overlay, dark color) -->
             <div class="bar-occupied"
               :style="{ backgroundColor: barColor, height: occupiedHeight, borderRadius: barRadius }">
@@ -352,12 +365,7 @@ const barColorLight = computed(() => {
               </template>
             </div>
           </div>
-          <div class="footer-stack">
-            <div class="day-week" :class="{ 'day-week--bold': isWeekend }">{{ formattedDate }}</div>
-            <q-icon v-if="typeIcon" :name="typeIcon" size="20px" />
-          </div>
         </div>
-        <!-- No cross overlay for unknown data -->
         <q-tooltip>
           <div>{{ fullWeekday }}, {{ fullDateWithYear }}</div>
           <div v-if="isUnknown">{{ t('availability.no_data') }}</div>

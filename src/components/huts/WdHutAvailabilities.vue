@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watchEffect, watch, nextTick } from 'vue';
-import { date, QVirtualScroll, QScrollArea, useQuasar } from 'quasar';
+import { date, QVirtualScroll, QScrollArea } from 'quasar';
 import { clientWodore } from '@clients/index';
 import { useHutsStore } from '@stores/huts-store';
 import { storeToRefs } from 'pinia';
@@ -10,10 +10,9 @@ const { formatDate, addToDate, subtractFromDate } = date;
 const { selectedDate } = storeToRefs(useHutsStore());
 const virtualScrollRef = ref<InstanceType<typeof QVirtualScroll> | null>(null);
 const scrollAreaRef = ref<InstanceType<typeof QScrollArea> | null>(null);
-const $q = useQuasar();
 const scrollLeft = ref(0);
 const scrollViewportWidth = ref(0);
-const itemWidth = 40;
+const itemWidth = 100;
 
 interface Props {
   slug: string;
@@ -389,7 +388,7 @@ const upcomingMonthClass = computed(() => {
       <q-scroll-area v-else ref="scrollAreaRef" id="availability-scroll-area" class="availability-scroll-area"
         :horizontal-thumb-style="{ opacity: '0.5' }" @scroll="onScroll" @wheel.prevent="onWheel">
         <q-virtual-scroll ref="virtualScrollRef" scroll-target="#availability-scroll-area > .scroll"
-          :items="availabilityItems" :virtual-scroll-item-size="40" virtual-scroll-horizontal
+          :items="availabilityItems" :virtual-scroll-item-size="76" virtual-scroll-horizontal
           @virtual-scroll="onVirtualScroll">
           <template v-slot="{ item, index }">
             <div :key="index" class="day-item">
@@ -406,8 +405,8 @@ const upcomingMonthClass = computed(() => {
 <style scoped>
 .availability-container {
   position: relative;
-  min-height: 130px;
-  height: 130px;
+  min-height: 100%;
+  height: 100%;
 }
 
 .month-label-overlay {
@@ -425,7 +424,7 @@ const upcomingMonthClass = computed(() => {
 }
 
 .availability-scroll-area {
-  height: 130px;
+  height: 80px;
 }
 
 .availability-content {
@@ -433,7 +432,7 @@ const upcomingMonthClass = computed(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 130px;
+  height: 90px;
 }
 
 .error-content {
@@ -441,10 +440,11 @@ const upcomingMonthClass = computed(() => {
 }
 
 .day-item {
-  width: 40px;
-  height: 130px;
+  width: 76px;
+  height: 70px;
   display: inline-block;
-  padding-top: 26px;
+  padding-top: 23px;
   box-sizing: border-box;
+  padding-right: 4px;
 }
 </style>
