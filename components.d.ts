@@ -39,6 +39,7 @@ declare module 'vue' {
     WdFeedbackForm: typeof import('./src/components/feedback/WdFeedbackForm.vue')['default']
     WdHutAvailabilities: typeof import('./src/components/huts/WdHutAvailabilities.vue')['default']
     WdHutAvailability: typeof import('./src/components/huts/WdHutAvailability.vue')['default']
+    WdHutAvailability2: typeof import('./src/components/huts/WdHutAvailability2.vue')['default']
     WdHutHeader: typeof import('./src/components/huts/WdHutHeader.vue')['default']
     WdHutOpenMonthly: typeof import('./src/components/huts/monthly/WdHutOpenMonthly.vue')['default']
     WdHutToolbar: typeof import('./src/components/huts/WdHutToolbar.vue')['default']

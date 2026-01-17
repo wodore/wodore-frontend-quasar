@@ -79,9 +79,14 @@ const occupiedHeight = computed(() => {
   return `${occupiedPercent}%`;
 });
 
+// Determine if bar is full (no radius needed)
+const isFull = computed(() => {
+  return props.day.occupancy_status === 'full';
+});
+
 // Bar radius style - should be half the bar width (24px / 2 = 12px)
 const barRadius = computed(() => {
-  return '12px';
+  return isFull.value ? '0' : '12px 12px 0 0';
 });
 
 // Check if data is unknown
@@ -132,8 +137,8 @@ const barColorLight = computed(() => {
   }
 });
 
-// Determine text color for the bar label
-const barTextColor = computed(() => {
+// Determine text color based on background darkness
+const textColor = computed(() => {
   if (isUnknown.value) {
     return '#ffffff'; // white for gray
   }
@@ -155,6 +160,26 @@ const barTextColor = computed(() => {
   }
 });
 
+// Mixed color for header (blend of light and dark)
+const headerColor = computed(() => {
+  if (isUnknown.value) {
+    return 'rgba(128, 128, 128, 0.65)'; // 65% gray
+  }
+  switch (props.day.occupancy_status) {
+    case 'full':
+      return 'rgba(211, 47, 47, 0.65)'; // 65% red
+    case 'high':
+      return 'rgba(255, 167, 38, 0.65)'; // 65% orange
+    case 'medium':
+      return 'rgba(153, 204, 51, 0.65)'; // 65% yellow-green
+    case 'low':
+      return 'rgba(51, 255, 51, 0.65)'; // 65% green
+    case 'empty':
+      return 'rgba(51, 255, 51, 0.65)'; // 65% green
+    default:
+      return 'rgba(128, 128, 128, 0.65)'; // 65% gray
+  }
+});
 
 // Tooltip text with translated labels and numbers
 const tooltipText = computed(() => {
@@ -196,49 +221,42 @@ const tooltipText = computed(() => {
   }
 }
 
+.header {
+  width: 100%;
+  padding: 2px 4px;
+}
+
+.footer {
+  width: 100%;
+  padding: 2px 4px;
+}
+
 .bar-wrapper {
   width: 100%;
-  height: 32px;
+  height: 36px;
   position: relative;
   overflow: visible;
   background-color: transparent;
   display: flex;
   justify-content: center;
-  align-items: center;
 }
 
 .bar-bg {
-  width: 24px;
-  height: 32px;
+  width: 100%;
+  height: 100%;
   position: absolute;
   top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  box-sizing: border-box;
+  left: 0;
 }
 
 .bar-occupied {
-  width: 22px;
-  height: 0;
+  width: 24px;
   position: absolute;
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
   filter: drop-shadow(0 -1px 3px rgba(0, 0, 0, 0.03));
   transition: background-color 0.3s ease;
-}
-
-.bar-label {
-  position: absolute;
-  bottom: 4px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 1;
-  text-align: center;
-  pointer-events: none;
 }
 
 .cross-overlay {
@@ -278,45 +296,51 @@ const tooltipText = computed(() => {
     class="card column items-center overflow-hidden no-underline" :class="{ selected: isSelected, today: isToday }">
     <!-- Loading/Skeleton State -->
     <template v-if="isLoadingState">
+      <div class="header text-center column justify-center" style="background-color: rgba(128, 128, 128, 0.2)">
+        <div class="text-caption">{{ formattedDate }}</div>
+        <div style="font-size: 9px; line-height: 1">{{ formattedDay }}</div>
+      </div>
       <div class="bar-wrapper">
         <!-- Just the background with skeleton animation, no occupied bar -->
         <div class="bar-bg">
           <q-skeleton type="rect" width="100%" height="100%" />
         </div>
       </div>
-      <div class="text-center column justify-center items-center" style="min-height: 28px">
-        <div class="text-caption">{{ formattedDate }}</div>
-        <div style="font-size: 9px; line-height: 1">{{ formattedDay }}</div>
+      <div class="footer text-center column justify-center items-center" style="min-height: 28px">
+        <q-skeleton type="rect" width="100%" height="28px" />
       </div>
     </template>
 
     <!-- Normal/Unknown State -->
     <template v-else>
+      <div class="header text-center column justify-center" :style="{ backgroundColor: headerColor, color: textColor }">
+        <div class="text-caption">{{ formattedDate }}</div>
+        <div style="font-size: 9px; line-height: 1">{{ formattedDay }}</div>
+      </div>
       <div class="bar-wrapper">
         <!-- Free beds (background, light color) -->
-        <div class="bar-bg" :style="{ backgroundColor: barColorLight, borderRadius: barRadius }"></div>
+        <div class="bar-bg" :style="{ backgroundColor: barColorLight }"></div>
         <!-- Occupied beds (overlay, dark color) -->
         <div class="bar-occupied"
           :style="{ backgroundColor: barColor, height: occupiedHeight, borderRadius: barRadius }">
         </div>
-        <div class="bar-label" :style="{ color: barTextColor }">
-          <template v-if="isUnknown">
-            {{ t('availability.unknown') }}
-          </template>
-          <template v-else>
-            {{ day.free }}
-          </template>
-        </div>
         <!-- Diagonal cross for unknown data -->
-        <div v-if="isUnknown" class="cross-overlay">
+        <div v-if="isUnknown" class="cross-overlay" :style="{ color: textColor }">
           <div class="cross-line"></div>
           <div class="cross-line"></div>
         </div>
-        <q-tooltip>{{ tooltipText }}</q-tooltip>
       </div>
-      <div class="text-center column justify-center items-center" style="min-height: 28px">
-        <div class="text-caption">{{ formattedDate }}</div>
-        <div style="font-size: 9px; line-height: 1">{{ formattedDay }}</div>
+      <div class="footer text-center column justify-center items-center"
+        :style="{ backgroundColor: headerColor, color: textColor, minHeight: '28px' }">
+        <template v-if="isUnknown">
+          <div style="font-size: 10px; line-height: 1.2">{{ t('availability.unknown') }}</div>
+        </template>
+        <template v-else>
+          <div style="font-size: 10px; line-height: 1.2">{{ day.free }}</div>
+          <div style="height: 1px; width: 60%; background-color: currentColor; opacity: 0.5"></div>
+          <div style="font-size: 10px; line-height: 1.2">{{ day.total }}</div>
+        </template>
+        <q-tooltip>{{ tooltipText }}</q-tooltip>
       </div>
     </template>
   </a>
