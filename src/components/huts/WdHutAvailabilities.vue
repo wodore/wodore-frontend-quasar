@@ -210,7 +210,7 @@ const onWheel = (evt: WheelEvent) => {
     evt.preventDefault();
     const scrollInfo = scrollAreaRef.value.getScrollPosition();
     // Multiply deltaY by 2 for faster scrolling
-    scrollAreaRef.value.setScrollPosition('horizontal', scrollInfo.left + (evt.deltaY * -1.6), 150);
+    scrollAreaRef.value.setScrollPosition('horizontal', scrollInfo.left + (evt.deltaY * 1.6), 150);
   }
 };
 
@@ -258,9 +258,9 @@ watch(selectedDate, () => {
         <div class="text-caption text-negative">{{ error }}</div>
       </div>
       <q-scroll-area v-else ref="scrollAreaRef" id="availability-scroll-area" class="availability-scroll-area"
-        :horizontal-thumb-style="{ opacity: 0.5 }" @wheel.prevent="onWheel">
+        :horizontal-thumb-style="{ opacity: '0.5' }" @wheel.prevent="onWheel">
         <q-virtual-scroll ref="virtualScrollRef" scroll-target="#availability-scroll-area > .scroll"
-          :items="availabilityItems" virtual-scroll-item-size="45" virtual-scroll-horizontal
+          :items="availabilityItems" :virtual-scroll-item-size="45" virtual-scroll-horizontal
           @virtual-scroll="onVirtualScroll">
           <template v-slot="{ item, index }">
             <div :key="index" class="day-item">
@@ -275,16 +275,16 @@ watch(selectedDate, () => {
 
 <style scoped>
 .availability-container {
-  min-height: 140px;
-  height: 140px;
+  min-height: 110px;
+  height: 110px;
 }
 
 .availability-scroll-area {
-  height: 140px;
+  height: 110px;
 }
 
 .availability-content {
-  height: 140px;
+  height: 110px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -297,7 +297,7 @@ watch(selectedDate, () => {
 
 .day-item {
   width: 45px;
-  height: 140px;
+  height: 110px;
   display: inline-block;
 }
 </style>

@@ -44,7 +44,7 @@ const formattedDay = computed(() => {
 });
 
 // Calculate the height of the occupied portion based on occupancy_percent
-// occupancy_percent might be 0-1 or 0-100, so we normalize it
+// Uses a formula that exaggerates low values and dampens high values for better visual representation
 const occupiedHeight = computed(() => {
   // If unknown, no bar should be shown
   if (isUnknown.value) {
@@ -58,7 +58,24 @@ const occupiedHeight = computed(() => {
     occupiedRatio = occupiedRatio / 100;
   }
 
-  const occupiedPercent = Math.max(0, Math.min(1, occupiedRatio)) * 100;
+  // Clamp to 0-1 range
+  occupiedRatio = Math.max(0, Math.min(1, occupiedRatio));
+
+  let adjustedRatio: number;
+
+  // Special cases: empty stays at 0, full stays at 100
+  if (props.day.occupancy_status === 'empty' || occupiedRatio === 0) {
+    adjustedRatio = 0;
+  } else if (props.day.occupancy_status === 'full' || occupiedRatio === 1) {
+    adjustedRatio = 1;
+  } else {
+    // Use power function with exponent < 1 to exaggerate low values and compress high values
+    // exponent of 0.5 makes low values appear higher and high values appear lower
+    // This ensures the function is continuous and monotonic
+    adjustedRatio = Math.pow(occupiedRatio, 0.6);
+  }
+
+  const occupiedPercent = adjustedRatio * 100;
   return `${occupiedPercent}%`;
 });
 
@@ -216,7 +233,7 @@ const tooltipText = computed(() => {
 
 .bar-wrapper {
   width: 100%;
-  height: 48px;
+  height: 36px;
   position: relative;
   overflow: visible;
   background-color: transparent;
@@ -239,6 +256,7 @@ const tooltipText = computed(() => {
   left: 50%;
   transform: translateX(-50%);
   filter: drop-shadow(0 -1px 3px rgba(0, 0, 0, 0.03));
+  transition: background-color 0.3s ease;
 }
 
 .cross-overlay {
@@ -288,8 +306,8 @@ const tooltipText = computed(() => {
           <q-skeleton type="rect" width="100%" height="100%" />
         </div>
       </div>
-      <div class="footer text-center column justify-center items-center" style="min-height: 34px">
-        <q-skeleton type="rect" width="100%" height="34px" />
+      <div class="footer text-center column justify-center items-center" style="min-height: 28px">
+        <q-skeleton type="rect" width="100%" height="28px" />
       </div>
     </template>
 
@@ -313,7 +331,7 @@ const tooltipText = computed(() => {
         </div>
       </div>
       <div class="footer text-center column justify-center items-center"
-        :style="{ backgroundColor: headerColor, color: textColor, minHeight: '34px' }">
+        :style="{ backgroundColor: headerColor, color: textColor, minHeight: '28px' }">
         <template v-if="isUnknown">
           <div style="font-size: 10px; line-height: 1.2">{{ t('availability.unknown') }}</div>
         </template>
