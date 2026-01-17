@@ -35,6 +35,12 @@ const formattedDate = computed(() => {
   return dayNames[date.getDay()];
 });
 
+const isWeekend = computed(() => {
+  const date = new Date(props.day.date);
+  const day = date.getDay();
+  return day === 0 || day === 6;
+});
+
 // Format day number (no leading zero)
 const dayNumber = computed(() => {
   const date = new Date(props.day.date);
@@ -252,6 +258,10 @@ const barColorLight = computed(() => {
   color: rgba(color('dark'), 0.6);
 }
 
+.day-week--bold {
+  font-weight: 700;
+}
+
 .free-label {
   font-size: 11px;
   line-height: 1;
@@ -317,17 +327,17 @@ const barColorLight = computed(() => {
             <div class="bar-occupied"
               :style="{ backgroundColor: barColor, height: occupiedHeight, borderRadius: barRadius }">
             </div>
-            <div class="bar-content">
-              <template v-if="isUnknown">
-                <div class="free-label">{{ t('availability.unknown') }}</div>
-              </template>
-              <template v-else>
-                <div class="free-label">{{ day.free }}</div>
-              </template>
-            </div>
+          <div class="bar-content">
+            <template v-if="isUnknown">
+              <div class="free-label">{{ t('availability.unknown') }}</div>
+            </template>
+            <template v-else>
+              <div class="free-label">{{ day.free }}</div>
+            </template>
           </div>
-          <div class="day-week">{{ formattedDate }}</div>
         </div>
+        <div class="day-week" :class="{ 'day-week--bold': isWeekend }">{{ formattedDate }}</div>
+      </div>
         <!-- Diagonal cross for unknown data -->
         <div v-if="isUnknown" class="cross-overlay">
           <div class="cross-line"></div>

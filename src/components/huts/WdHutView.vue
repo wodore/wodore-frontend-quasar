@@ -322,7 +322,7 @@ const addHeaderShadow: IntersectionValue = (entry) => {
             </div>
           </div>
 
-          <body class="text-body2 q-my-lg">
+          <body class="text-body2 q-my-sm">
             <!-- {{ hut.description }} -->
             <div class="attribution attr_link text-right" style="padding: 0" v-html="hut.description_attribution"></div>
             <WdTextClamp :max-lines="5" :text="hut.description" style="padding-bottom: 0" />

@@ -359,7 +359,7 @@ const upcomingMonthClass = computed(() => {
 
 <template>
   <div v-if="hasAvailability !== false">
-    <div class="text-subtitle1 text-accent q-mb-sm q-mt-md">Verfügbarkeit</div>
+    <div class="text-subtitle1 text-accent q-mb-xs q-mt-sm">Verfügbarkeit</div>
     <div class="availability-container">
       <div v-if="currentMonthLabel" class="month-label-overlay" :class="currentMonthClass"
         :style="{ transform: `translateX(${monthLabelOffset}px)` }">
@@ -390,13 +390,13 @@ const upcomingMonthClass = computed(() => {
 
 <style scoped>
 .availability-container {
-  min-height: 166px;
-  height: 166px;
   position: relative;
+  min-height: 107px;
+  height: 107px;
 }
 
 .availability-scroll-area {
-  height: 166px;
+  height: 107px;
 }
 
 .month-label-overlay {
@@ -414,11 +414,11 @@ const upcomingMonthClass = computed(() => {
 }
 
 .availability-content {
-  height: 166px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  height: 107px;
 }
 
 .error-content {
@@ -426,7 +426,7 @@ const upcomingMonthClass = computed(() => {
 }
 
 .day-item {
-  width: 45px;
+  width: 40px;
   height: 110px;
   display: inline-block;
   padding-top: 26px;
