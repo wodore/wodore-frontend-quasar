@@ -328,7 +328,29 @@ const addHeaderShadow: IntersectionValue = (entry) => {
             <WdTextClamp :max-lines="5" :text="hut.description" style="padding-bottom: 0" />
           </body>
 
-          <WdHutAvailabilities v-if="slug" :slug="slug" :has-availability="hut.has_availability ?? undefined" />
+          <WdHutAvailabilities v-if="slug" :slug="slug" :has-availability="hut.has_availability ?? undefined"
+            :symbol-map="{
+              ...(hut.type_open?.slug
+                ? {
+                  [hut.type_open.slug]: {
+                    detailed: `https://hub.wodore.com/media/huts/types/symbols/detailed/${hut.type_open.slug}.png`,
+                    simple: `https://hub.wodore.com/media/huts/types/symbols/simple/${hut.type_open.slug}.png`,
+                  },
+                }
+                : {}),
+              ...(hut.type_closed?.slug
+                ? {
+                  [hut.type_closed.slug]: {
+                    detailed: `https://hub.wodore.com/media/huts/types/symbols/detailed/${hut.type_closed.slug}.png`,
+                    simple: `https://hub.wodore.com/media/huts/types/symbols/simple/${hut.type_closed.slug}.png`,
+                  },
+                }
+                : {}),
+              unknown: {
+                detailed: 'https://hub.wodore.com/media/huts/types/symbols/detailed/unknown.png',
+                simple: 'https://hub.wodore.com/media/huts/types/symbols/simple/unknown.png',
+              },
+            }" />
 
           <WdHutOpenMonthly :open_monthly="hut.open_monthly" :type_open="hut.type_open"
             :type_closed="hut.type_closed" />

@@ -21,6 +21,7 @@ interface Props {
   day: AvailabilityDay;
   isSelected?: boolean;
   isToday?: boolean;
+  typeIcon?: string;
 }
 
 const props = defineProps<Props>();
@@ -178,7 +179,7 @@ const barColorLight = computed(() => {
 
 .bar-wrapper {
   width: 100%;
-  height: 56px;
+  height: 80px;
   position: relative;
   overflow: visible;
   background-color: transparent;
@@ -189,7 +190,7 @@ const barColorLight = computed(() => {
 
 .bar-frame {
   width: 30px;
-  height: 64px;
+  height: 80px;
   border-radius: 4px;
   padding: 3px;
   border: 2px solid rgba(0, 0, 0, 0.12);
@@ -216,7 +217,7 @@ const barColorLight = computed(() => {
 
 .bar-bg {
   width: 100%;
-  height: 40px;
+  height: 56px;
   position: relative;
   box-sizing: border-box;
   overflow: hidden;
@@ -265,6 +266,13 @@ const barColorLight = computed(() => {
 .free-label {
   font-size: 11px;
   line-height: 1;
+}
+
+.footer-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
 }
 
 
@@ -329,20 +337,19 @@ const barColorLight = computed(() => {
             </div>
           <div class="bar-content">
             <template v-if="isUnknown">
-              <div class="free-label">{{ t('availability.unknown') }}</div>
+              <div class="free-label">?</div>
             </template>
             <template v-else>
               <div class="free-label">{{ day.free }}</div>
             </template>
           </div>
         </div>
-        <div class="day-week" :class="{ 'day-week--bold': isWeekend }">{{ formattedDate }}</div>
-      </div>
-        <!-- Diagonal cross for unknown data -->
-        <div v-if="isUnknown" class="cross-overlay">
-          <div class="cross-line"></div>
-          <div class="cross-line"></div>
+        <div class="footer-stack">
+          <div class="day-week" :class="{ 'day-week--bold': isWeekend }">{{ formattedDate }}</div>
+          <q-icon v-if="typeIcon" :name="typeIcon" size="20px" />
         </div>
+      </div>
+        <!-- No cross overlay for unknown data -->
         <q-tooltip>
           <div>{{ fullWeekday }}, {{ fullDateWithYear }}</div>
           <div v-if="isUnknown">{{ t('availability.no_data') }}</div>

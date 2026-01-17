@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watchEffect, watch, nextTick } from 'vue';
-import { date, QVirtualScroll, QScrollArea } from 'quasar';
+import { date, QVirtualScroll, QScrollArea, useQuasar } from 'quasar';
 import { clientWodore } from '@clients/index';
 import { useHutsStore } from '@stores/huts-store';
 import { storeToRefs } from 'pinia';
@@ -10,6 +10,7 @@ const { formatDate, addToDate, subtractFromDate } = date;
 const { selectedDate } = storeToRefs(useHutsStore());
 const virtualScrollRef = ref<InstanceType<typeof QVirtualScroll> | null>(null);
 const scrollAreaRef = ref<InstanceType<typeof QScrollArea> | null>(null);
+const $q = useQuasar();
 const scrollLeft = ref(0);
 const scrollViewportWidth = ref(0);
 const itemWidth = 45;
@@ -17,9 +18,22 @@ const itemWidth = 45;
 interface Props {
   slug: string;
   hasAvailability?: boolean;
+  symbolMap?: Record<string, { simple: string; detailed: string }>;
 }
 
 const props = defineProps<Props>();
+const isMobile = computed(() => $q.platform.is.mobile);
+
+const getSymbolForDay = (hutType?: string) => {
+  const map = props.symbolMap ?? {};
+  const slug = hutType && map[hutType] ? hutType : 'unknown';
+  const symbol = map[slug];
+  if (!symbol) {
+    return undefined;
+  }
+  const url = isMobile.value ? symbol.detailed : symbol.simple;
+  return `img:${url}`;
+};
 
 interface AvailabilityDay {
   date: string;
@@ -379,7 +393,8 @@ const upcomingMonthClass = computed(() => {
           @virtual-scroll="onVirtualScroll">
           <template v-slot="{ item, index }">
             <div :key="index" class="day-item">
-              <WdHutAvailability :day="item" :is-selected="item.date === startDate" :is-today="isToday(item.date)" />
+              <WdHutAvailability :day="item" :is-selected="item.date === startDate" :is-today="isToday(item.date)"
+                :type-icon="getSymbolForDay(item.hut_type)" />
             </div>
           </template>
         </q-virtual-scroll>
@@ -391,12 +406,8 @@ const upcomingMonthClass = computed(() => {
 <style scoped>
 .availability-container {
   position: relative;
-  min-height: 107px;
-  height: 107px;
-}
-
-.availability-scroll-area {
-  height: 107px;
+  min-height: 130px;
+  height: 130px;
 }
 
 .month-label-overlay {
@@ -413,12 +424,16 @@ const upcomingMonthClass = computed(() => {
   z-index: 2;
 }
 
+.availability-scroll-area {
+  height: 130px;
+}
+
 .availability-content {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 107px;
+  height: 130px;
 }
 
 .error-content {
@@ -427,7 +442,7 @@ const upcomingMonthClass = computed(() => {
 
 .day-item {
   width: 40px;
-  height: 110px;
+  height: 130px;
   display: inline-block;
   padding-top: 26px;
   box-sizing: border-box;
