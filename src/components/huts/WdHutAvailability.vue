@@ -41,6 +41,11 @@ const dayNumber = computed(() => {
   return String(date.getDate());
 });
 
+const monthKey = computed(() => {
+  const date = new Date(props.day.date);
+  return String(date.getMonth() + 1).padStart(2, '0');
+});
+
 // Full weekday name (e.g., "Montag")
 const fullWeekday = computed(() => {
   const date = new Date(props.day.date);
@@ -146,28 +151,6 @@ const barColorLight = computed(() => {
   }
 });
 
-// Determine text color for the bar label
-const barTextColor = computed(() => {
-  if (isUnknown.value) {
-    return '#ffffff'; // white for gray
-  }
-  // For darker backgrounds (red, dark colors), use white text
-  // For lighter backgrounds (green, yellow), use dark text
-  switch (props.day.occupancy_status) {
-    case 'full':
-      return '#ffffff'; // white for dark red
-    case 'high':
-      return '#000000'; // black for orange
-    case 'medium':
-      return '#000000'; // black for yellow-green
-    case 'low':
-      return '#000000'; // black for bright green
-    case 'empty':
-      return '#000000'; // black for bright green
-    default:
-      return '#ffffff'; // white for gray
-  }
-});
 
 
 </script>
@@ -181,31 +164,15 @@ const barTextColor = computed(() => {
   color: inherit;
   cursor: pointer;
   transition: opacity 0.2s;
-  border: 2px solid transparent;
-  border-radius: 4px;
 
   &:hover {
     opacity: 0.85;
-  }
-
-  &.selected {
-    border-color: $accent;
-    box-shadow: 0 0 8px rgba($accent, 0.4);
-  }
-
-  &.today {
-    border-color: rgba(128, 128, 128, 0.5);
-  }
-
-  &.selected.today {
-    border-color: $accent;
-    box-shadow: 0 0 8px rgba($accent, 0.4);
   }
 }
 
 .bar-wrapper {
   width: 100%;
-  height: 32px;
+  height: 56px;
   position: relative;
   overflow: visible;
   background-color: transparent;
@@ -214,14 +181,37 @@ const barTextColor = computed(() => {
   align-items: center;
 }
 
+.bar-frame {
+  width: 30px;
+  height: 64px;
+  border-radius: 4px;
+  padding: 3px;
+  border: 2px solid rgba(0, 0, 0, 0.12);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bar-frame.selected {
+  border-color: $accent;
+  box-shadow: 0 0 8px rgba($accent, 0.4);
+}
+
+.bar-frame.today {
+  border-color: rgba(128, 128, 128, 0.5);
+}
+
+.bar-frame.selected.today {
+  border-color: $accent;
+  box-shadow: 0 0 8px rgba($accent, 0.4);
+}
+
 .bar-bg {
-  width: 24px;
-  height: 32px;
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  width: 100%;
+  height: 40px;
+  position: relative;
   box-sizing: border-box;
   overflow: hidden;
 }
@@ -237,21 +227,34 @@ const barTextColor = computed(() => {
   transition: background-color 0.3s ease;
 }
 
-.bar-label {
+.bar-content {
   position: absolute;
-  bottom: 4px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 1;
-  text-align: center;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-items: center;
+  padding: 3px 2px;
+  color: rgba(color('dark'), 0.6);
   pointer-events: none;
 }
 
-.day-label {
+.day-number {
   font-size: 12px;
-  line-height: 1.1;
+  line-height: 1;
+  color: rgba(color('dark'), 0.6);
+}
+
+.day-week {
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0.1px;
+  color: rgba(color('dark'), 0.6);
+}
+
+.free-label {
+  font-size: 11px;
+  line-height: 1;
 }
 
 
@@ -289,12 +292,10 @@ const barTextColor = computed(() => {
 
 <template>
   <a :href="day.link" target="_blank" rel="noopener noreferrer"
-    class="card column items-center overflow-hidden no-underline" :class="{ selected: isSelected, today: isToday }">
+    class="card column items-center overflow-hidden no-underline">
     <!-- Loading/Skeleton State -->
     <template v-if="isLoadingState">
-      <div class="text-center column justify-center items-center" style="min-height: 36px">
-        <div class="day-label">{{ dayNumber }}. {{ formattedDate }}</div>
-      </div>
+      <div class="text-center column justify-center items-center" style="min-height: 36px"></div>
       <div class="bar-wrapper">
         <!-- Just the background with skeleton animation, no occupied bar -->
         <div class="bar-bg">
@@ -306,24 +307,26 @@ const barTextColor = computed(() => {
 
     <!-- Normal/Unknown State -->
     <template v-else>
-      <div class="text-center column justify-center items-center" style="min-height: 36px">
-        <div class="day-label">{{ dayNumber }}. {{ formattedDate }}</div>
-      </div>
+      <div class="text-center column justify-center items-center" style="min-height: 6px"></div>
       <div class="bar-wrapper">
-        <!-- Free beds (background, light color) -->
-        <div class="bar-bg" :style="{ backgroundColor: barColorLight, borderRadius: barRadius }">
-          <!-- Occupied beds (overlay, dark color) -->
-          <div class="bar-occupied"
-            :style="{ backgroundColor: barColor, height: occupiedHeight, borderRadius: barRadius }">
+        <div class="bar-frame" :class="[`month_${monthKey}--gradient-light`, { selected: isSelected, today: isToday }]">
+          <div class="day-number">{{ dayNumber }}</div>
+          <!-- Free beds (background, light color) -->
+          <div class="bar-bg" :style="{ backgroundColor: barColorLight, borderRadius: barRadius }">
+            <!-- Occupied beds (overlay, dark color) -->
+            <div class="bar-occupied"
+              :style="{ backgroundColor: barColor, height: occupiedHeight, borderRadius: barRadius }">
+            </div>
+            <div class="bar-content">
+              <template v-if="isUnknown">
+                <div class="free-label">{{ t('availability.unknown') }}</div>
+              </template>
+              <template v-else>
+                <div class="free-label">{{ day.free }}</div>
+              </template>
+            </div>
           </div>
-        </div>
-        <div class="bar-label" :style="{ color: barTextColor }">
-          <template v-if="isUnknown">
-            {{ t('availability.unknown') }}
-          </template>
-          <template v-else>
-            {{ day.free }}
-          </template>
+          <div class="day-week">{{ formattedDate }}</div>
         </div>
         <!-- Diagonal cross for unknown data -->
         <div v-if="isUnknown" class="cross-overlay">
@@ -336,7 +339,7 @@ const barTextColor = computed(() => {
           <div v-else>{{ t('availability.tooltip', { free: day.free, total: day.total }) }}</div>
         </q-tooltip>
       </div>
-      <div class="text-center column justify-center items-center" style="min-height: 28px"></div>
+      <div class="text-center column justify-center items-center" style="min-height: 6px"></div>
     </template>
   </a>
 </template>

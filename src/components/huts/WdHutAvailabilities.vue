@@ -65,10 +65,10 @@ const isToday = (dateStr: string): boolean => {
 const initializeDateRange = () => {
   const items: AvailabilityDay[] = [];
   const threeDaysBeforeToday = subtractFromDate(new Date(today.value), { days: 3 });
-  const eightMonthsFromToday = addToDate(new Date(today.value), { months: 8 });
+  const oneYearFromToday = addToDate(new Date(today.value), { days: 365 });
 
   let currentDate = new Date(threeDaysBeforeToday);
-  const endDate = new Date(eightMonthsFromToday);
+  const endDate = new Date(oneYearFromToday);
 
   while (currentDate <= endDate) {
     const dateStr = formatDate(currentDate, 'YYYY-MM-DD');
@@ -265,12 +265,14 @@ watch(selectedDate, () => {
 });
 
 const monthStarts = computed(() => {
-  const starts: { index: number; label: string }[] = [];
+  const starts: { index: number; label: string; monthKey: string }[] = [];
   availabilityItems.value.forEach((item, index) => {
     if (index === 0) {
+      const date = new Date(item.date);
       starts.push({
         index,
-        label: new Date(item.date).toLocaleDateString('de-CH', { month: 'long', year: 'numeric' }),
+        label: date.toLocaleDateString('de-CH', { month: 'long', year: 'numeric' }),
+        monthKey: String(date.getMonth() + 1).padStart(2, '0'),
       });
       return;
     }
@@ -284,6 +286,7 @@ const monthStarts = computed(() => {
       starts.push({
         index,
         label: currDate.toLocaleDateString('de-CH', { month: 'long', year: 'numeric' }),
+        monthKey: String(currDate.getMonth() + 1).padStart(2, '0'),
       });
     }
   });
@@ -303,6 +306,12 @@ const currentMonthIndex = computed(() => {
 });
 
 const currentMonthLabel = computed(() => currentMonthIndex.value?.label ?? '');
+const currentMonthClass = computed(() => {
+  if (!currentMonthIndex.value) {
+    return '';
+  }
+  return `month_${currentMonthIndex.value.monthKey}--gradient`;
+});
 
 const monthLabelOffset = computed(() => {
   const current = currentMonthIndex.value;
@@ -339,18 +348,25 @@ const upcomingMonthOffset = computed(() => {
   const offset = upcoming.index * itemWidth - scrollLeft.value;
   return offset >= 0 && offset <= scrollViewportWidth.value ? offset : null;
 });
+
+const upcomingMonthClass = computed(() => {
+  if (!upcomingMonthLabel.value) {
+    return '';
+  }
+  return `month_${upcomingMonthLabel.value.monthKey}--gradient`;
+});
 </script>
 
 <template>
   <div v-if="hasAvailability !== false">
     <div class="text-subtitle1 text-accent q-mb-sm q-mt-md">Verfügbarkeit</div>
     <div class="availability-container">
-      <div v-if="currentMonthLabel" class="month-label-overlay"
+      <div v-if="currentMonthLabel" class="month-label-overlay" :class="currentMonthClass"
         :style="{ transform: `translateX(${monthLabelOffset}px)` }">
         {{ currentMonthLabel }}
       </div>
       <div v-if="upcomingMonthLabel && upcomingMonthOffset !== null" class="month-label-overlay"
-        :style="{ transform: `translateX(${upcomingMonthOffset}px)` }">
+        :class="upcomingMonthClass" :style="{ transform: `translateX(${upcomingMonthOffset}px)` }">
         {{ upcomingMonthLabel.label }}
       </div>
       <div v-if="error && availabilityItems.length === 0" class="availability-content error-content">
@@ -392,8 +408,7 @@ const upcomingMonthOffset = computed(() => {
   line-height: 1;
   padding: 4px 8px;
   border-radius: 999px;
-  background-color: rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  color: rgba(0, 0, 0, 0.65);
   text-transform: capitalize;
   pointer-events: none;
 }
