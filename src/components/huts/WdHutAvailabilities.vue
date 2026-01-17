@@ -61,6 +61,7 @@ const loadingRequests = ref<Set<string>>(new Set());
 
 // Today's date
 const today = computed<string>(() => formatDate(new Date(), 'YYYY-MM-DD'));
+const todayDate = computed(() => new Date());
 
 // Get start date (selected date or today)
 const startDate = computed<string>(() => {
@@ -74,6 +75,25 @@ const startDate = computed<string>(() => {
     }
   }
   return formatDate(new Date(), 'YYYY-MM-DD');
+});
+
+const formatMonthLabel = (dateObj: Date) => {
+  return dateObj.toLocaleDateString('de-CH', { month: 'short' }).toUpperCase();
+};
+
+const nextMonths = computed(() => {
+  const months: { label: string; date: string; key: string; monthKey: string }[] = [];
+  const base = todayDate.value;
+  for (let i = 0; i <= 8; i += 1) {
+    const monthDate = addToDate(base, { months: i });
+    months.push({
+      label: formatMonthLabel(monthDate),
+      date: formatDate(monthDate, 'YYYY-MM-01'),
+      key: formatDate(monthDate, 'YYYY-MM'),
+      monthKey: formatDate(monthDate, 'MM'),
+    });
+  }
+  return months;
 });
 
 // Check if a date is today
@@ -239,6 +259,19 @@ const scrollToSelectedDate = (animate: boolean) => {
   });
 };
 
+const scrollToDate = (dateStr: string) => {
+  nextTick(() => {
+    if (!virtualScrollRef.value || !scrollAreaRef.value || availabilityItems.value.length === 0) {
+      return;
+    }
+    const index = availabilityItems.value.findIndex(item => item.date === dateStr);
+    if (index >= 0) {
+      const targetLeft = Math.max(0, index * itemWidth.value);
+      scrollAreaRef.value.setScrollPosition('horizontal', targetLeft, 300);
+    }
+  });
+};
+
 // Handle horizontal scroll with vertical mouse wheel (increased speed)
 const onWheel = (evt: WheelEvent) => {
   if (scrollAreaRef.value) {
@@ -326,6 +359,17 @@ const currentMonthIndex = computed(() => {
 });
 
 const currentMonthLabel = computed(() => currentMonthIndex.value?.label ?? '');
+const activeMonthKey = computed(() => {
+  const current = currentMonthIndex.value;
+  if (!current) {
+    return '';
+  }
+  const dateStr = availabilityItems.value[current.index]?.date;
+  if (!dateStr) {
+    return '';
+  }
+  return dateStr.slice(0, 7);
+});
 const currentMonthClass = computed(() => {
   if (!currentMonthIndex.value) {
     return '';
@@ -379,7 +423,20 @@ const upcomingMonthClass = computed(() => {
 
 <template>
   <div v-if="hasAvailability !== false">
-    <div class="text-subtitle1 text-accent q-mb-xs q-mt-sm">Verfügbarkeit</div>
+    <div class="row items-center no-wrap q-mb-xs q-mt-sm">
+      <div class="text-subtitle1 text-accent">Verfügbarkeit</div>
+      <div class="month-selector row items-center no-wrap">
+        <div v-for="month in nextMonths" :key="month.date" class="month-chip-wrap"
+          :class="`month_${month.monthKey}--gradient-dark`">
+          <q-btn dense unelevated class="month-chip" :style="{ fontSize: isMobile ? '9px' : '10px' }" :class="month.key === activeMonthKey
+            ? `month_${month.monthKey}--gradient-dark`
+            : `month_${month.monthKey}--gradient-light`"
+            @click="scrollToDate(month.key === today.slice(0, 7) ? today : month.date)">
+            {{ month.label }}
+          </q-btn>
+        </div>
+      </div>
+    </div>
     <div ref="containerRef" class="availability-container">
       <div v-if="currentMonthLabel" class="month-label-overlay" :class="currentMonthClass"
         :style="{ transform: `translateX(${monthLabelOffset}px)` }">
@@ -412,9 +469,29 @@ const upcomingMonthClass = computed(() => {
 <style scoped>
 .availability-container {
   position: relative;
-  --availability-item-width: 76px;
+  --availability-item-width: 78px;
   min-height: 100%;
   height: 100%;
+}
+
+.month-selector {
+  margin-left: auto;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.month-chip-wrap {
+  padding: 0;
+  border-radius: 0;
+  display: inline-flex;
+}
+
+.month-chip {
+  border-radius: 0;
+  font-size: 10px;
+  line-height: 1;
+  padding: 1px 4px;
+  min-height: 16px;
 }
 
 .month-label-overlay {
