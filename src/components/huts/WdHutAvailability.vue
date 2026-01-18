@@ -401,7 +401,8 @@ const barColorLight = computed(() => {
         <div>{{ fullWeekday }}, {{ fullDateWithYear }}</div>
         <div v-if="isUnknown">{{ t('availability.no_data') }}</div>
         <div v-else>
-          {{ t('availability.tooltip', { free: day.free, total: day.total }) }}
+          {{ day.free }} {{ t('availability.free') }} / {{ day.total }}
+          {{ t('availability.total') }}
         </div>
       </q-tooltip>
     </div>
