@@ -11,7 +11,8 @@ const DEFAULT_MODELS: WeatherModel[] = [
   'best_match',
 ];
 //const DEFAULT_SYMBOL_COLLECTION = 'weather-icons-filled'
-const DEFAULT_SYMBOL_COLLECTION = 'meteoswiss-filled'
+//const DEFAULT_SYMBOL_COLLECTION = 'meteoswiss-filled'
+const DEFAULT_SYMBOL_COLLECTION = 'weather-icons-filled-animated'
 const FULL_PAST_DAYS = 7;
 const FULL_FORECAST_DAYS = 14;
 

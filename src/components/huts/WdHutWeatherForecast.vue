@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, watchEffect, nextTick } from 'vue';
-import { date, QScrollArea, QVirtualScroll, useQuasar } from 'quasar';
+import { computed, ref, watchEffect, nextTick, watch } from 'vue';
+import { date, QScrollArea, QTable, useQuasar } from 'quasar';
 import { useCssVar, useWindowSize } from '@vueuse/core';
 import { useI18n } from 'vue-i18n';
 import { useMeteoStore } from '@stores/meteo-store';
@@ -12,6 +12,7 @@ const { width: windowWidth } = useWindowSize();
 const { t } = useI18n();
 const $q = useQuasar();
 const meteoStore = useMeteoStore();
+const { weatherCodesCollection, weatherCodes } = storeToRefs(meteoStore);
 const { selectedDateOrToday } = storeToRefs(useHutsStore());
 
 interface WeatherDay {
@@ -36,12 +37,53 @@ const forecastDays = ref<WeatherDay[]>([]);
 const error = ref<string | null>(null);
 const containerRef = ref<HTMLElement | null>(null);
 const scrollAreaRef = ref<InstanceType<typeof QScrollArea> | null>(null);
-const virtualScrollRef = ref<InstanceType<typeof QVirtualScroll> | null>(null);
 const itemWidthVar = useCssVar('--weather-item-width', containerRef);
 const itemWidth = computed(() => {
   const value = Number.parseFloat(itemWidthVar.value || '');
   return Number.isFinite(value) && value > 0 ? value : 64;
 });
+const leftWidthVar = useCssVar('--weather-left-width', containerRef);
+const leftWidth = computed(() => {
+  const value = Number.parseFloat(leftWidthVar.value || '');
+  return Number.isFinite(value) && value > 0 ? value : 72;
+});
+const columns = computed(() => [
+  {
+    name: 'label',
+    label: '',
+    field: 'label',
+    align: 'left',
+  },
+  ...forecastDays.value.map((day) => ({
+    name: day.date,
+    label: formatDayLabel(day.date),
+    field: day.date,
+    align: 'center',
+  })),
+  {
+    name: 'unit',
+    label: '',
+    field: 'unit',
+    align: 'right',
+  },
+]);
+const rows = computed(() => [
+  {
+    row: 'day',
+    label: '',
+    unit: '',
+  },
+  {
+    row: 'icons',
+    label: '',
+    unit: '',
+  },
+  {
+    row: 'temp',
+    label: '',
+    unit: t('weather.unit'),
+  },
+]);
 
 const hasLocation = computed(
   () => Number.isFinite(props.latitude) && Number.isFinite(props.longitude),
@@ -61,14 +103,15 @@ const canShowForecast = computed(
 );
 
 const scrollAreaHeight = computed(() =>
-  windowWidth.value < 600 ? '96px' : '84px',
+  windowWidth.value < 600 ? '120px' : '110px',
 );
 const quasarLang = computed(() => {
   const isoName = $q.lang?.isoName ?? 'de';
   return isoName.split('-')[0];
 });
 const collection = computed(
-  () => props.collection ?? meteoStore.weatherCodesCollection ?? 'weather-icons-filled',
+  () =>
+    props.collection ?? weatherCodesCollection.value ?? 'weather-icons-filled',
 );
 
 const initializeDateRange = () => {
@@ -91,21 +134,67 @@ const initializeDateRange = () => {
   return items;
 };
 
+const formatDayLabel = (dateStr: string) => {
+  const dateObj = new Date(dateStr);
+  const today = new Date();
+  const tomorrow = addToDate(today, { days: 1 });
+  const yesterday = subtractFromDate(today, { days: 1 });
+  const key = formatDate(dateObj, 'YYYY-MM-DD');
+  if (key === formatDate(today, 'YYYY-MM-DD')) {
+    return t('weather.today');
+  }
+  if (key === formatDate(tomorrow, 'YYYY-MM-DD')) {
+    return t('weather.tomorrow');
+  }
+  if (key === formatDate(yesterday, 'YYYY-MM-DD')) {
+    return t('weather.yesterday');
+  }
+  return formatDate(dateObj, 'DD.MM.');
+};
+
+const getWeatherEntry = (code: number | null) => {
+  if (code === null || code === undefined) {
+    return undefined;
+  }
+  return weatherCodes.value?.[String(code)];
+};
+
+const getIconUrl = (day: WeatherDay) => {
+  const entry = getWeatherEntry(day.weather_code);
+  if (!entry) {
+    return null;
+  }
+  const isDay = day.is_day_majority ?? true;
+  return (isDay ? entry.symbol_day : entry.symbol_night) ?? null;
+};
+
+const getIconLabel = (day: WeatherDay) => {
+  const entry = getWeatherEntry(day.weather_code);
+  return entry?.description ?? '';
+};
+
+const formatTemp = (day: WeatherDay) => {
+  if (day.temp_min === null || day.temp_max === null) {
+    return null;
+  }
+  const min = Math.round(day.temp_min);
+  const max = Math.round(day.temp_max);
+  if (min === max) {
+    return `${min}`;
+  }
+  return `${min} | ${max}`;
+};
+
 const scrollToToday = (animate: boolean, targetDate: Date = new Date()) => {
   nextTick(() => {
     const targetKey = formatDate(targetDate, 'YYYY-MM-DD');
     const index = forecastDays.value.findIndex(
       (item) => item.date === targetKey,
     );
-    if (
-      index < 0 ||
-      !scrollAreaRef.value ||
-      !virtualScrollRef.value ||
-      forecastDays.value.length === 0
-    ) {
+    if (index < 0 || !scrollAreaRef.value || forecastDays.value.length === 0) {
       return;
     }
-    const targetLeft = Math.max(0, index * itemWidth.value);
+    const targetLeft = Math.max(0, leftWidth.value + index * itemWidth.value);
     scrollAreaRef.value.setScrollPosition(
       'horizontal',
       targetLeft,
@@ -122,12 +211,16 @@ watchEffect(() => {
     error.value = null;
     return;
   }
+  console.debug('[weather-forecast] fetch', {
+    lat: props.latitude,
+    lon: props.longitude,
+    collection: collection.value,
+  });
 
   const locationKey = `${props.latitude}:${props.longitude}`;
   if (lastLoadedKey.value !== locationKey) {
     lastLoadedKey.value = locationKey;
     forecastDays.value = initializeDateRange();
-    scrollToToday(false, selectedDateObj.value);
   }
 
   const latitude = props.latitude as number;
@@ -147,6 +240,10 @@ watchEffect(() => {
       },
     )
     .then((items) => {
+      console.debug('[weather-forecast] daily result', {
+        count: items.length,
+        first: items[0],
+      });
       if (!items.length) {
         error.value = t('weather.unavailable');
         return;
@@ -169,12 +266,22 @@ watchEffect(() => {
           loading: false,
         };
       });
-      scrollToToday(true, selectedDateObj.value);
     })
     .catch(() => {
       error.value = t('weather.unavailable');
     });
 });
+
+watch(
+  () => selectedDateObj.value,
+  (value) => {
+    if (!canShowForecast.value) {
+      return;
+    }
+    scrollToToday(true, value);
+  },
+  { immediate: true },
+);
 
 watchEffect(() => {
   meteoStore.setWeatherCodesContext(quasarLang.value, collection.value);
@@ -182,7 +289,7 @@ watchEffect(() => {
 </script>
 
 <template>
-  <div v-if="canShowForecast">
+  <div v-if="canShowForecast" id="weather-forecast-section">
     <div class="weather-forecast__header q-mt-sm q-mb-xs">
       <div class="text-subtitle1 text-accent">
         {{ t('weather.title') }}
@@ -199,16 +306,57 @@ watchEffect(() => {
     <q-scroll-area ref="scrollAreaRef" id="weather-forecast-scroll" class="weather-forecast"
       :style="{ height: scrollAreaHeight }" :horizontal-thumb-style="{ height: '3px' }"
       :vertical-thumb-style="{ width: '0px' }" :vertical-bar-style="{ width: '0px' }">
-      <div ref="containerRef" class="weather-forecast__row">
-        <q-virtual-scroll ref="virtualScrollRef" class="weather-forecast__row-inner"
-          scroll-target="#weather-forecast-scroll > .scroll" :items="forecastDays" :virtual-scroll-item-size="itemWidth"
-          virtual-scroll-horizontal virtual-scroll-slice-ratio-before="8" virtual-scroll-slice-ratio-after="12">
-          <template v-slot="{ item }">
-            <div class="weather-forecast__item">
-              <WdHutWeatherDay :day="item" />
-            </div>
+      <div ref="containerRef" class="weather-forecast__table-wrap">
+        <q-table dense flat :grid="false" hide-header hide-pagination :rows="rows" :columns="columns" row-key="row"
+          class="weather-forecast__table" table-class="weather-forecast__table-el"
+          card-class="weather-forecast__table-card">
+          <template v-slot:body="props">
+            <tr>
+              <td class="weather-forecast__cell weather-forecast__cell--left" :class="{
+                'weather-forecast__cell--day': props.row.row === 'day',
+                'weather-forecast__cell--temp-label': props.row.row === 'temp',
+              }">
+                <q-icon v-if="props.row.row === 'temp'" size="16px"
+                  class="weather-forecast__temp-icon weather-forecast__temp-icon--pill">
+                  <IconEvaThermometerFill />
+                </q-icon>
+              </td>
+              <td v-for="day in forecastDays" :key="`${props.row.row}-${day.date}`" class="weather-forecast__cell"
+                :class="{
+                  'weather-forecast__cell--day': props.row.row === 'day',
+                  'weather-forecast__cell--icon': props.row.row === 'icons',
+                  'weather-forecast__cell--temp': props.row.row === 'temp',
+                }">
+                <template v-if="props.row.row === 'day'">
+                  {{ formatDayLabel(day.date) }}
+                </template>
+                <template v-else-if="props.row.row === 'icons'">
+                  <q-skeleton v-if="day.loading" type="QAvatar" size="32px" />
+                  <q-img v-else-if="getIconUrl(day)" :src="getIconUrl(day) ?? ''" width="34px" height="34px" no-spinner
+                    class="weather-forecast__icon">
+                    <q-tooltip :delay="500">
+                      {{ getIconLabel(day) }}
+                    </q-tooltip>
+                  </q-img>
+                  <div v-else class="weather-forecast__icon--empty">-</div>
+                </template>
+                <template v-else>
+                  <q-skeleton v-if="day.loading" type="text" width="48px" />
+                  <span v-else class="weather-forecast__temp">
+                    <span class="weather-forecast__temp-text">
+                      {{ formatTemp(day) ?? '-' }}
+                    </span>
+                  </span>
+                </template>
+              </td>
+              <td class="weather-forecast__cell weather-forecast__cell--right">
+                <span v-if="props.row.unit" class="weather-forecast__unit-pill">
+                  {{ props.row.unit }}
+                </span>
+              </td>
+            </tr>
           </template>
-        </q-virtual-scroll>
+        </q-table>
       </div>
     </q-scroll-area>
   </div>
@@ -222,25 +370,149 @@ watchEffect(() => {
   gap: 12px;
 }
 
-.weather-forecast__row {
-  padding: 6px 8px;
-  background: #e2e2e2;
-  border-radius: 10px;
-  --weather-item-width: 64px;
-  height: 100%;
-  align-items: center;
+.weather-forecast__table-wrap {
+  min-width: max-content;
+  --weather-item-width: 56px;
+  --weather-left-width: 8px;
+  --weather-right-width: 20px;
+  --weather-pill-size: 20px;
 }
 
-.weather-forecast__row-inner {
-  height: 100%;
+.weather-forecast__table {
+  border-collapse: collapse;
+  border-spacing: 0;
+  min-width: max-content;
+  table-layout: fixed;
 }
 
-.weather-forecast__item {
+.weather-forecast__table-card,
+.weather-forecast__table-el,
+.weather-forecast__table :deep(.q-table__container),
+.weather-forecast__table :deep(.q-table__middle),
+.weather-forecast__table :deep(.q-table__middle .q-table),
+.weather-forecast__table :deep(.q-table__middle table),
+.weather-forecast__table :deep(.q-table__middle tbody),
+.weather-forecast__table :deep(.q-table__middle tr),
+.weather-forecast__table :deep(.q-table__middle td),
+.weather-forecast__table :deep(.q-table__middle th),
+.weather-forecast__table :deep(.q-table),
+.weather-forecast__table :deep(.q-table__card) {
+  background: transparent;
+}
+
+.weather-forecast__table :deep(.q-table__container),
+.weather-forecast__table :deep(.q-table__middle) {
+  overflow: visible;
+}
+
+.weather-forecast__table :deep(.q-table tbody td),
+.weather-forecast__table :deep(.q-table thead th) {
+  border: 0;
+}
+
+.weather-forecast__table :deep(.q-table tbody tr:hover > td) {
+  background: transparent;
+}
+
+.weather-forecast__cell {
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.72);
+  text-align: center;
+  white-space: nowrap;
   width: var(--weather-item-width);
-  padding: 0 2px;
-  height: 100%;
-  display: flex;
+  min-width: var(--weather-item-width);
+  padding: 2px 4px;
+  position: relative;
+}
+
+.weather-forecast__cell--left {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  text-align: center;
+  width: var(--weather-left-width);
+  min-width: var(--weather-left-width);
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  background: transparent;
+  overflow: hidden;
+}
+
+.weather-forecast__cell--right {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  text-align: center;
+  width: var(--weather-right-width);
+  min-width: var(--weather-right-width);
+  padding-right: 0 !important;
+  padding-left: 0 !important;
+  background: transparent;
+  overflow: hidden;
+}
+
+.weather-forecast__cell--day {
+  font-size: 11px;
+}
+
+.weather-forecast__cell--icon {
   align-items: center;
+  justify-content: center;
+}
+
+.weather-forecast__icon {
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.25));
+}
+
+.weather-forecast__icon--empty {
+  color: rgba(0, 0, 0, 0.35);
+}
+
+.weather-forecast__cell--temp {
+  font-size: 11px;
+}
+
+.weather-forecast__cell--temp-label {
+  display: flex;
+  align-items: right;
+  justify-content: center;
+}
+
+.weather-forecast__temp {
+  display: inline-flex;
+  align-items: center;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.weather-forecast__temp-icon {
+  color: rgba(0, 0, 0, 0.35);
+}
+
+.weather-forecast__temp-icon--pill {
+  width: var(--weather-pill-size);
+  height: var(--weather-pill-size);
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 999px;
+  padding: 0;
+}
+
+.weather-forecast__unit-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--weather-pill-size);
+  height: var(--weather-pill-size);
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 999px;
+  padding: 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: rgba(0, 0, 0, 0.5);
+  font-weight: 600;
+}
+
+.weather-forecast__temp-text {
+  font-weight: 500;
 }
 
 .weather-forecast__attribution {

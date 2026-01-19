@@ -16,6 +16,7 @@ declare module 'vue' {
     IconEvaMoveOutline: typeof import('~icons/eva/move-outline')['default']
     IconEvaSearchOutline: typeof import('~icons/eva/search-outline')['default']
     IconEvaSettingsOutline: typeof import('~icons/eva/settings-outline')['default']
+    IconEvaThermometerFill: typeof import('~icons/eva/thermometer-fill')['default']
     IconEvaUnlockOutline: typeof import('~icons/eva/unlock-outline')['default']
     IconFa6SolidCopy: typeof import('~icons/fa6-solid/copy')['default']
     IconFa6SolidLocationCrosshairs: typeof import('~icons/fa6-solid/location-crosshairs')['default']
@@ -64,6 +65,7 @@ declare module 'vue' {
     WdUser: typeof import('./src/components/toolbar/WdUser.vue')['default']
     WdVersionsPanel: typeof import('./src/components/version/WdVersionsPanel.vue')['default']
     WdVersionTag: typeof import('./src/components/version/WdVersionTag.vue')['default']
+    WdWeatherSelect: typeof import('./src/components/huts/WdWeatherSelect.vue')['default']
     WodoreLogo: typeof import('./src/components/wodore/WodoreLogo.vue')['default']
   }
 }

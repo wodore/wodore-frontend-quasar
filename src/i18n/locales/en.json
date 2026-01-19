@@ -79,6 +79,9 @@
     "today": "Today",
     "tomorrow": "Tomorrow",
     "yesterday": "Yesterday",
+    "day": "Day",
+    "icon": "Icon",
+    "temp": "Temp.",
     "range_separator": "...",
     "unit": "°C",
     "unavailable": "Weather data not available"

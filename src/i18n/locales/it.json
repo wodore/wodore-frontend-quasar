@@ -60,6 +60,9 @@
     "today": "Oggi",
     "tomorrow": "Domani",
     "yesterday": "Ieri",
+    "day": "Giorno",
+    "icon": "Icona",
+    "temp": "Temp.",
     "range_separator": "...",
     "unit": "°C",
     "unavailable": "Dati meteo non disponibili"

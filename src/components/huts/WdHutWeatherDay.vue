@@ -94,6 +94,15 @@ const isLoading = computed(() => props.day.loading === true);
 const hasTemps = computed(
   () => tempMin.value !== null && tempMax.value !== null,
 );
+const conditionLabel = computed(() => {
+  if (iconDescription.value) {
+    return iconDescription.value;
+  }
+  if (props.day.weather_code !== null) {
+    return `WMO ${props.day.weather_code}`;
+  }
+  return '';
+});
 </script>
 
 <template>
@@ -102,11 +111,11 @@ const hasTemps = computed(
       {{ dayLabel }}
     </div>
     <div class="weather-day__icon">
-      <q-img v-if="!isLoading && iconUrl" :src="iconUrl" width="32px" height="32px" fit="contain" />
-      <q-skeleton v-else-if="isLoading" type="circle" width="32px" height="32px" />
+      <q-img v-if="!isLoading && iconUrl" :src="iconUrl" width="36px" height="36px" fit="contain" no-spinner />
+      <q-skeleton v-else-if="isLoading" type="circle" width="36px" height="36px" />
       <div v-else class="weather-day__icon-empty"></div>
-      <q-tooltip v-if="iconDescription" :delay="500">
-        {{ iconDescription }}
+      <q-tooltip v-if="conditionLabel" :delay="500">
+        {{ conditionLabel }}
       </q-tooltip>
     </div>
     <div class="weather-day__temps">
@@ -114,21 +123,14 @@ const hasTemps = computed(
         <q-skeleton type="text" width="44px" height="12px" />
       </template>
       <template v-else-if="isRange">
-        <span class="weather-day__temp-min">
-          {{ tempMin }}
-          <span class="weather-day__temp-unit">{{ t('weather.unit') }}</span>
-        </span>
+        <IconEvaThermometerFill class="weather-day__temp-icon" />
+        <span class="weather-day__temp-min">{{ tempMin }}°</span>
         <span class="weather-day__temp-sep">|</span>
-        <span class="weather-day__temp-max">
-          {{ tempMax }}
-          <span class="weather-day__temp-unit">{{ t('weather.unit') }}</span>
-        </span>
+        <span class="weather-day__temp-max">{{ tempMax }}°C</span>
       </template>
       <template v-else-if="hasTemps">
-        <span class="weather-day__temp-max">
-          {{ tempMax }}
-          <span class="weather-day__temp-unit">{{ t('weather.unit') }}</span>
-        </span>
+        <IconEvaThermometerFill class="weather-day__temp-icon" />
+        <span class="weather-day__temp-max">{{ tempMax }}°C</span>
       </template>
       <template v-else>
         <span class="weather-day__temp-empty">--</span>
@@ -159,41 +161,47 @@ const hasTemps = computed(
 
 .weather-day__icon {
   margin-bottom: 4px;
-  height: 32px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
+.weather-day__icon :deep(img) {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
+}
+
 .weather-day__icon-empty {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
 }
 
 .weather-day__temps {
   font-size: 10px;
   line-height: 1;
-  color: rgba(color('dark'), 0.7);
+  color: rgba(color('dark'), 0.6);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
 }
 
 .weather-day__temp-min {
-  color: rgba(color('dark'), 0.55);
+  color: rgba(color('dark'), 0.5);
 }
 
 .weather-day__temp-max {
-  color: rgba(color('dark'), 0.85);
+  color: rgba(color('dark'), 0.7);
   font-weight: 600;
 }
 
 .weather-day__temp-sep {
+  color: rgba(color('dark'), 0.45);
   margin: 0 2px;
-  color: rgba(color('dark'), 0.6);
 }
 
-.weather-day__temp-unit {
-  font-size: 9px;
-  color: rgba(color('dark'), 0.6);
-  margin-left: 1px;
+.weather-day__temp-icon {
+  color: rgba(color('dark'), 0.5);
+  font-size: 12px;
 }
 
 .weather-day__temp-empty {

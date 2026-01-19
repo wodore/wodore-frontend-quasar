@@ -93,6 +93,9 @@
     "today": "Heute",
     "tomorrow": "Morgen",
     "yesterday": "Gestern",
+    "day": "Tag",
+    "icon": "Symbol",
+    "temp": "Temp.",
     "range_separator": "...",
     "unit": "°C",
     "unavailable": "Wetterdaten nicht verfügbar"
