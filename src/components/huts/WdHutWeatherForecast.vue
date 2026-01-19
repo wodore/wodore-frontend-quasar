@@ -54,7 +54,7 @@ const selectedDateObj = computed(() => {
   return new Date(year, month - 1, day);
 });
 const canShowForecast = computed(
-  () => hasLocation.value && meteoStore.forecast_possible(selectedDateObj.value),
+  () => hasLocation.value && meteoStore.forecastPossible(selectedDateObj.value),
 );
 
 const scrollAreaHeight = computed(() =>
@@ -125,16 +125,15 @@ watchEffect(() => {
 
   error.value = null;
 
-  meteoStore
-    .get_daily(
-      { latitude, longitude },
-      typeof elevation === 'number' ? elevation : undefined,
-      {
-        forecast_days: 14,
-        past_days: 7,
-        weather_models: 'default',
-      },
-    )
+  meteoStore.getDaily(
+    { latitude, longitude },
+    typeof elevation === 'number' ? elevation : undefined,
+    {
+      forecastDays: 14,
+      pastDays: 7,
+      weatherModels: ['meteoswiss_icon_seamless', 'best_match'],
+    },
+  )
     .then((items) => {
       if (!items.length) {
         error.value = t('weather.unavailable');

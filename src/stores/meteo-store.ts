@@ -76,7 +76,7 @@ const FULL_FORECAST_DAYS = 14;
 
 const getIconUrl = (weatherCode: number, isDay: boolean) => {
   const mode = isDay ? 'day' : 'night';
-  return `${process.env.WODORE_API_HOST}/v1/meteo/symbol/simple/${mode}/${weatherCode}.svg?org=weather-icons`;
+  return `${process.env.WODORE_API_HOST}/v1/meteo/symbol/weather-icons-mono/${mode}/${weatherCode}.svg`;
 };
 
 const summarizeWeatherCode = (codes: number[]) => {
@@ -213,7 +213,7 @@ const summarizeDaily = (
 export const useMeteoStore = defineStore('meteo', () => {
   const cache = ref<Record<string, CacheEntry>>({});
 
-  const forecast_possible = (value: Date | string) => {
+  const forecastPossible = (value: Date | string) => {
     const selected = new Date(value);
     if (Number.isNaN(selected.getTime())) {
       return false;
@@ -240,13 +240,8 @@ export const useMeteoStore = defineStore('meteo', () => {
     longitude: number;
     elevation?: number;
     timezone: string;
-    models?: 'default' | string[];
+    models: string[];
   }) => {
-    const weather_models =
-      models === undefined ||
-        models === 'default'
-        ? DEFAULT_MODELS
-        : models;
     const params: Record<string, unknown> = {
       latitude,
       longitude,
@@ -259,7 +254,7 @@ export const useMeteoStore = defineStore('meteo', () => {
         'is_day',
         'sunshine_duration',
       ],
-      models: weather_models,
+      models,
       timezone,
       past_days: FULL_PAST_DAYS,
       forecast_days: FULL_FORECAST_DAYS,
@@ -317,9 +312,10 @@ export const useMeteoStore = defineStore('meteo', () => {
       };
     }
     const orderedModels = models.filter((model) => model in result);
-    console.debug("[meteo-store] Ordrered models", models, orderedModels)
-    const primary = result[orderedModels[0]] ?? Object.values(result)[0];
-    console.debug("[meteo-store] primary", primary)
+    const fallbackModels =
+      orderedModels.length > 0 ? orderedModels : Object.keys(result);
+    const primary = result[fallbackModels[0]] ?? Object.values(result)[0];
+    console.debug('[meteo-store] primary', primary);
     if (!primary) {
       return null;
     }
@@ -334,8 +330,16 @@ export const useMeteoStore = defineStore('meteo', () => {
       sunshine_duration: [],
     };
     const length = primary.time.length;
-    const pickValue = (field: keyof HourlyData, idx: number) => {
-      for (const model of orderedModels) {
+    type NumericHourlyField =
+      | 'temperature_2m'
+      | 'weather_code'
+      | 'rain'
+      | 'wind_speed_10m'
+      | 'wind_gusts_10m'
+      | 'is_day'
+      | 'sunshine_duration';
+    const pickValue = (field: NumericHourlyField, idx: number) => {
+      for (const model of fallbackModels) {
         const series = result[model][field];
         const value = series[idx];
         if (value !== null && value !== undefined && !Number.isNaN(value)) {
@@ -344,7 +348,6 @@ export const useMeteoStore = defineStore('meteo', () => {
       }
       return null;
     };
-    console.debug("[meteo-store] Pick value", pickValue)
     for (let idx = 0; idx < length; idx += 1) {
       combined.temperature_2m.push(pickValue('temperature_2m', idx) ?? NaN);
       combined.weather_code.push(pickValue('weather_code', idx) ?? NaN);
@@ -356,6 +359,7 @@ export const useMeteoStore = defineStore('meteo', () => {
         pickValue('sunshine_duration', idx) ?? NaN,
       );
     }
+    console.debug('[meteo-store] Length, Combined data', length, combined);
     return combined;
   };
 
@@ -370,13 +374,8 @@ export const useMeteoStore = defineStore('meteo', () => {
     longitude: number;
     elevation?: number;
     timezone: string;
-    models?: 'default' | string[];
+    models: string[];
   }) => {
-    const weather_models =
-      models === undefined ||
-        models === 'default'
-        ? DEFAULT_MODELS
-        : models;
     const key = buildCacheKey(latitude, longitude, elevation);
     const now = Date.now();
     const cached = cache.value[key];
@@ -389,7 +388,7 @@ export const useMeteoStore = defineStore('meteo', () => {
         longitude,
         elevation,
         timezone,
-        models: weather_models,
+        models,
       });
       if (!hourly) {
         return null;
@@ -407,35 +406,36 @@ export const useMeteoStore = defineStore('meteo', () => {
     return cache.value[key]?.hourly ?? null;
   };
 
-  const get_daily = async (
+  const getDaily = async (
     location: LocationInput,
     elevation?: number,
     options?: {
-      start_date?: 'now' | string | Date;
-      start_time?: string;
-      end_time?: string;
-      forecast_days?: number;
-      past_days?: number;
-      weather_models?: 'default' | string[];
+      startDate?: 'now' | string | Date;
+      startTime?: string;
+      endTime?: string;
+      forecastDays?: number;
+      pastDays?: number;
+      weatherModels: string[];
       timezone?: string;
     },
   ): Promise<WeatherWindowSummary[]> => {
-    const startDateInput = options?.start_date ?? 'now';
-    const startTime = options?.start_time ?? '04:00';
-    const endTime = options?.end_time ?? '19:00';
-    const forecastDays = options?.forecast_days ?? 14;
-    const pastDays = options?.past_days ?? 7;
+    const startDateInput = options?.startDate ?? 'now';
+    const startTime = options?.startTime ?? '04:00';
+    const endTime = options?.endTime ?? '19:00';
+    const forecastDays = options?.forecastDays ?? 14;
+    const pastDays = options?.pastDays ?? 7;
     const timezone = options?.timezone ?? 'Europe/Berlin';
-    //const hourly = await fetchCachedHourly({
+    const models = options?.weatherModels ?? DEFAULT_MODELS;
+    // const hourly = await fetchCachedHourly({
     const hourly = await fetchHourly({
       latitude: location.latitude,
       longitude: location.longitude,
       elevation,
       timezone,
-      models: options?.weather_models,
+      models,
     });
 
-    console.log("[meteo-store] Cahced Fetched Hourly data", hourly)
+    console.log('[meteo-store] Cahced Fetched Hourly data', hourly);
 
     if (!hourly) {
       return [];
@@ -453,7 +453,7 @@ export const useMeteoStore = defineStore('meteo', () => {
     > = {
       combined: summarizeDaily(hourly, startMinutes, endMinutes),
     };
-    console.log("Sumarized by model", summariesByModel)
+    console.log('Sumarized by model', summariesByModel);
 
     const selectedDate =
       startDateInput === 'now' || startDateInput === undefined
@@ -541,8 +541,10 @@ export const useMeteoStore = defineStore('meteo', () => {
   };
 
   return {
-    forecast_possible,
-    get_daily,
+    forecastPossible,
+    fetchCachedHourly,
+    fetchHourly,
+    getDaily,
   };
 });
 
