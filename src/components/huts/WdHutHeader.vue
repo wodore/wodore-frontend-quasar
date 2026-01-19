@@ -27,8 +27,8 @@ defineProps<Props>();
 
 .hut-title-weather {
   position: absolute;
-  right: 0;
-  top: 50%;
+  right: -4px;
+  top: 30%;
   transform: translateY(-50%);
 }
 
@@ -69,9 +69,9 @@ defineProps<Props>();
               @click="track('hut link click')"
               class="hut-title-text"
               >{{ hut.name }}
-              <q-icon size="11pt" style="transform: translateY(-6px)"
-                ><IconEvaExternalLinkFill
-              /></q-icon>
+              <q-icon size="11pt" style="transform: translateY(-6px)">
+                <IconEvaExternalLinkFill />
+              </q-icon>
             </a>
             <span v-else class="hut-title-text">{{ hut.name }}</span>
             <WdWeatherSelect

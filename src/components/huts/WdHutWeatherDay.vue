@@ -107,12 +107,27 @@ const conditionLabel = computed(() => {
 
 <template>
   <div class="weather-day column items-center">
-    <div class="weather-day__label" :class="{ 'weather-day__label--today': isToday }">
+    <div
+      class="weather-day__label"
+      :class="{ 'weather-day__label--today': isToday }"
+    >
       {{ dayLabel }}
     </div>
     <div class="weather-day__icon">
-      <q-img v-if="!isLoading && iconUrl" :src="iconUrl" width="36px" height="36px" fit="contain" no-spinner />
-      <q-skeleton v-else-if="isLoading" type="circle" width="36px" height="36px" />
+      <q-img
+        v-if="!isLoading && iconUrl"
+        :src="iconUrl"
+        width="36px"
+        height="36px"
+        fit="contain"
+        no-spinner
+      />
+      <q-skeleton
+        v-else-if="isLoading"
+        type="circle"
+        width="36px"
+        height="36px"
+      />
       <div v-else class="weather-day__icon-empty"></div>
       <q-tooltip v-if="conditionLabel" :delay="500">
         {{ conditionLabel }}

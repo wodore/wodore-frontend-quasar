@@ -26,7 +26,8 @@ const quasarLang = computed(() => {
   return isoName.split('-')[0];
 });
 const collection = computed(
-  () => props.collection ?? weatherCodesCollection.value ?? 'weather-icons-filled',
+  () =>
+    props.collection ?? weatherCodesCollection.value ?? 'weather-icons-filled',
 );
 
 const selectedDateObj = computed(() => {
@@ -73,16 +74,42 @@ const iconDescription = computed(() => {
   if (!entry) {
     return '';
   }
+  const isDay = summary.value?.is_day_majority !== false;
   return (
+    ((isDay ? entry.description_day : entry.description_night) as
+      | string
+      | undefined) ??
     (entry.description as string | undefined) ??
-    (entry.name as string | undefined) ??
-    (entry.label as string | undefined) ??
-    (entry.title as string | undefined) ??
-    (entry.summary as string | undefined) ??
-    t('weather.title')
+    ''
   );
 });
-const conditionLabel = computed(() => iconDescription.value);
+const selectedDayLabel = computed(() => {
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  const key = selectedDateObj.value.toDateString();
+  if (key === today.toDateString()) {
+    return t('weather.today');
+  }
+  if (key === tomorrow.toDateString()) {
+    return t('weather.tomorrow');
+  }
+  if (key === yesterday.toDateString()) {
+    return t('weather.yesterday');
+  }
+  return selectedDateObj.value.toLocaleDateString('de-CH', {
+    day: '2-digit',
+    month: '2-digit',
+  });
+});
+const conditionLabel = computed(() => {
+  if (!iconDescription.value) {
+    return '';
+  }
+  return `${selectedDayLabel.value}:\n${iconDescription.value}`;
+});
 const targetId = computed(() => props.targetId ?? 'weather-forecast-section');
 
 const scrollToForecast = () => {
@@ -94,6 +121,7 @@ const scrollToForecast = () => {
 };
 
 watchEffect(() => {
+  // TODO -> should be in the store!
   meteoStore.setWeatherCodesContext(quasarLang.value, collection.value);
 });
 
@@ -125,9 +153,9 @@ watchEffect(() => {
       });
       summary.value = items[0]
         ? {
-          weather_code: items[0].weather_code,
-          is_day_majority: items[0].is_day_majority,
-        }
+            weather_code: items[0].weather_code,
+            is_day_majority: items[0].is_day_majority,
+          }
         : null;
     })
     .finally(() => {
@@ -137,9 +165,19 @@ watchEffect(() => {
 </script>
 
 <template>
-  <span v-if="canShow" class="weather-select" @click="isMobile && scrollToForecast()">
-    <q-skeleton v-if="loading" type="circle" width="48px" height="48px" />
-    <q-img v-else-if="iconUrl" :src="iconUrl" width="48px" height="48px" fit="contain" no-spinner />
+  <span
+    v-if="canShow"
+    class="weather-select"
+    @click="isMobile && scrollToForecast()"
+  >
+    <q-img
+      v-if="iconUrl"
+      :src="iconUrl"
+      width="48px"
+      height="48px"
+      fit="contain"
+      no-spinner
+    />
     <span v-else class="weather-select__empty"></span>
     <q-tooltip v-if="conditionLabel" :delay="500">
       {{ conditionLabel }}

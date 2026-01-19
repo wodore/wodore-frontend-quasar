@@ -12,10 +12,9 @@ const DEFAULT_MODELS: WeatherModel[] = [
 ];
 //const DEFAULT_SYMBOL_COLLECTION = 'weather-icons-filled'
 //const DEFAULT_SYMBOL_COLLECTION = 'meteoswiss-filled'
-const DEFAULT_SYMBOL_COLLECTION = 'weather-icons-filled-animated'
+const DEFAULT_SYMBOL_COLLECTION = 'weather-icons-filled-animated';
 const FULL_PAST_DAYS = 7;
 const FULL_FORECAST_DAYS = 14;
-
 
 type WeatherModel = 'meteoswiss_icon_seamless' | 'best_match';
 
@@ -82,7 +81,6 @@ const buildCacheKey = (
     typeof elevation === 'number' ? roundToStep(elevation, 50) : null;
   return `${latRounded}:${lonRounded}:${elevRounded ?? 'na'}`;
 };
-
 
 const summarizeWeatherCode = (codes: number[], minOccurrences: number) => {
   console.log('[meteo-store] summarizeWeatherCode', codes, minOccurrences);
@@ -216,9 +214,9 @@ export const useMeteoStore = defineStore('meteo', () => {
   const weatherCodes = ref<Record<string, WeatherCodeEntry>>({});
   const weatherCodesLang = ref('de');
   const weatherCodesCollection = ref(DEFAULT_SYMBOL_COLLECTION);
-  const weatherCodesCache = ref<Record<string, Record<string, WeatherCodeEntry>>>(
-    {},
-  );
+  const weatherCodesCache = ref<
+    Record<string, Record<string, WeatherCodeEntry>>
+  >({});
   const weatherCodesInFlight = ref<Set<string>>(new Set());
   const weatherCodesLastFetchKey = ref<string | null>(null);
 
@@ -313,7 +311,8 @@ export const useMeteoStore = defineStore('meteo', () => {
   watchEffect(() => {
     const key = `weather_codes:${weatherCodesLang.value}:${weatherCodesCollection.value}`;
     const cached =
-      weatherCodesCache.value[key] ?? (() => {
+      weatherCodesCache.value[key] ??
+      (() => {
         const stored = localStorage.getItem(key);
         if (!stored) {
           return null;
@@ -609,9 +608,9 @@ export const useMeteoStore = defineStore('meteo', () => {
       field: K,
     ):
       | Omit<
-        WeatherWindowSummary,
-        'date' | 'model' | 'start_time' | 'end_time'
-      >[K]
+          WeatherWindowSummary,
+          'date' | 'model' | 'start_time' | 'end_time'
+        >[K]
       | null => {
       const modelSummary = summariesByModel.combined?.[dateKey];
       if (modelSummary && modelSummary[field] !== null) {
@@ -671,4 +670,3 @@ export const useMeteoStore = defineStore('meteo', () => {
     weatherCodesLang,
   };
 });
-
