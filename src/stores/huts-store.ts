@@ -38,10 +38,10 @@ export const useHutsStore = defineStore('huts', () => {
   // };
   //const emptyHutBookingsGeojson: schemasWodore['HutBookingsFeatureCollection'] =
   const emptyHutBookingsGeojson: schemasWodore['HutAvailabilityFeatureCollection'] =
-  {
-    type: 'FeatureCollection',
-    features: [],
-  };
+    {
+      type: 'FeatureCollection',
+      features: [],
+    };
   //const hutsGeojson = ref<FeatureCollection>(emptyHutsGeojson);
   //const bookingsGeojson = ref<schemasWodore['HutBookingsFeatureCollection']>(
   const bookingsGeojson = ref<
@@ -173,4 +173,3 @@ export const useHutsStore = defineStore('huts', () => {
     selectedMonth,
   };
 });
-

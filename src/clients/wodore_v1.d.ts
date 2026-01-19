@@ -128,7 +128,8 @@ export interface paths {
      * Get Weather Codes
      * @description Get all weather codes as a dictionary with WMO code as key.
      *
-     * When multiple codes exist for the same WMO code, returns the one with highest priority.
+     * Returns weather codes with symbols from the specified collection.
+     * If a WMO code is missing from the collection, an error is raised.
      */
     get: operations['get_weather_codes'];
   };
@@ -139,15 +140,15 @@ export interface paths {
      */
     get: operations['get_weather_code'];
   };
-  '/v1/meteo/symbol/{style}/{time}/{code}.svg': {
+  '/v1/meteo/symbol/{collection}/{time}/{code}.svg': {
     /**
      * Get Weather Code Svg
-     * @description Redirect to the SVG icon for a weather code.
+     * @description Redirect to the SVG icon for a weather code from a specific collection.
      *
-     * Style options: detailed, simple, mono
+     * Collection examples: weather-icons-outlined-mono, weather-icons-filled, meteoswiss-filled
      * Time options: day, night
      *
-     * Fallback chain: requested style → simple → detailed → 404
+     * If the collection doesn't have a symbol for the WMO code, returns 404.
      */
     get: operations['get_weather_code_svg'];
   };
@@ -1551,12 +1552,6 @@ export interface components {
      * @enum {string}
      */
     DayTimeEnum: 'day' | 'night';
-    /**
-     * SymbolStyleEnum
-     * @description Symbol style variants.
-     * @enum {string}
-     */
-    SymbolStyleEnum: 'detailed' | 'simple' | 'mono';
     /** FieldsParam[OrganizationOptional] */
     FieldsParam_OrganizationOptional_: {
       /**
@@ -2230,23 +2225,24 @@ export interface operations {
    * Get Weather Codes
    * @description Get all weather codes as a dictionary with WMO code as key.
    *
-   * When multiple codes exist for the same WMO code, returns the one with highest priority.
+   * Returns weather codes with symbols from the specified collection.
+   * If a WMO code is missing from the collection, an error is raised.
    */
   get_weather_codes: {
     parameters: {
       query?: {
         /** @description Select language code: de, en, fr, it. */
         lang?: string;
-        /** @description Organization slug (default: weather-icons) */
-        org?: string;
-        /** @description Filter by category slug (supports dot notation like 'accommodation.hut') */
+        /** @description Symbol collection slug (default: weather-icons-outlined-mono) */
+        collection?: string;
+        /** @description Filter by category slug (supports dot notation like 'meteo.rain') */
         category?: string | null;
         /** @description Include symbols: 'no' excludes, 'slug' returns slugs only, 'all' returns full URLs */
         include_symbols?: 'no' | 'slug' | 'all';
         /** @description Include category: 'no' excludes, 'slug' returns slug, 'all' returns full details with symbols */
         include_category?: 'no' | 'slug' | 'all';
-        /** @description Include organization: 'no' excludes, 'slug' returns slug, 'all' returns full details */
-        include_organization?: 'no' | 'slug' | 'all';
+        /** @description Include collection: 'no' excludes, 'slug' returns slug, 'all' returns full details */
+        include_collection?: 'no' | 'slug' | 'all';
       };
     };
     responses: {
@@ -2271,14 +2267,14 @@ export interface operations {
       query?: {
         /** @description Select language code: de, en, fr, it. */
         lang?: string;
-        /** @description Organization slug (default: weather-icons) */
-        org?: string;
+        /** @description Symbol collection slug (default: weather-icons-outlined-mono) */
+        collection?: string;
         /** @description Include symbols: 'no' excludes, 'slug' returns slugs only, 'all' returns full URLs */
         include_symbols?: 'no' | 'slug' | 'all';
         /** @description Include category: 'no' excludes, 'slug' returns slug, 'all' returns full details with symbols */
         include_category?: 'no' | 'slug' | 'all';
-        /** @description Include organization: 'no' excludes, 'slug' returns slug, 'all' returns full details */
-        include_organization?: 'no' | 'slug' | 'all';
+        /** @description Include collection: 'no' excludes, 'slug' returns slug, 'all' returns full details */
+        include_collection?: 'no' | 'slug' | 'all';
       };
       path: {
         code: number;
@@ -2297,22 +2293,17 @@ export interface operations {
   };
   /**
    * Get Weather Code Svg
-   * @description Redirect to the SVG icon for a weather code.
+   * @description Redirect to the SVG icon for a weather code from a specific collection.
    *
-   * Style options: detailed, simple, mono
+   * Collection examples: weather-icons-outlined-mono, weather-icons-filled, meteoswiss-filled
    * Time options: day, night
    *
-   * Fallback chain: requested style → simple → detailed → 404
+   * If the collection doesn't have a symbol for the WMO code, returns 404.
    */
   get_weather_code_svg: {
     parameters: {
-      query?: {
-        /** @description Organization slug (default: weather-icons) */
-        org?: string;
-      };
       path: {
-        /** @description Symbol style variants. */
-        style: 'detailed' | 'simple' | 'mono';
+        collection: string;
         /** @description Day/night time options. */
         time: 'day' | 'night';
         code: number;

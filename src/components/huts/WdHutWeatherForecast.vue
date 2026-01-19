@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watchEffect, nextTick } from 'vue';
-import { date, QScrollArea, QVirtualScroll } from 'quasar';
+import { date, QScrollArea, QVirtualScroll, useQuasar } from 'quasar';
 import { useCssVar, useWindowSize } from '@vueuse/core';
 import { useI18n } from 'vue-i18n';
 import { useMeteoStore } from '@stores/meteo-store';
@@ -10,12 +10,14 @@ import { storeToRefs } from 'pinia';
 const { formatDate, subtractFromDate, addToDate } = date;
 const { width: windowWidth } = useWindowSize();
 const { t } = useI18n();
+const $q = useQuasar();
 const meteoStore = useMeteoStore();
 const { selectedDateOrToday } = storeToRefs(useHutsStore());
 
 interface WeatherDay {
   date: string;
-  icon_url: string | null;
+  weather_code: number | null;
+  is_day_majority: boolean | null;
   temp_min: number | null;
   temp_max: number | null;
   loading?: boolean;
@@ -25,6 +27,7 @@ interface Props {
   latitude?: number;
   longitude?: number;
   elevation?: number;
+  collection?: string;
 }
 
 const props = defineProps<Props>();
@@ -60,6 +63,13 @@ const canShowForecast = computed(
 const scrollAreaHeight = computed(() =>
   windowWidth.value < 600 ? '96px' : '84px',
 );
+const quasarLang = computed(() => {
+  const isoName = $q.lang?.isoName ?? 'de';
+  return isoName.split('-')[0];
+});
+const collection = computed(
+  () => props.collection ?? meteoStore.weatherCodesCollection ?? 'weather-icons-filled',
+);
 
 const initializeDateRange = () => {
   const items: WeatherDay[] = [];
@@ -70,7 +80,8 @@ const initializeDateRange = () => {
   while (current <= end) {
     items.push({
       date: formatDate(current, 'YYYY-MM-DD'),
-      icon_url: null,
+      weather_code: null,
+      is_day_majority: null,
       temp_min: null,
       temp_max: null,
       loading: true,
@@ -125,15 +136,16 @@ watchEffect(() => {
 
   error.value = null;
 
-  meteoStore.getDaily(
-    { latitude, longitude },
-    typeof elevation === 'number' ? elevation : undefined,
-    {
-      forecastDays: 14,
-      pastDays: 7,
-      weatherModels: ['meteoswiss_icon_seamless', 'best_match'],
-    },
-  )
+  meteoStore
+    .getDaily(
+      { latitude, longitude },
+      typeof elevation === 'number' ? elevation : undefined,
+      {
+        forecastDays: 14,
+        pastDays: 7,
+        weatherModels: ['meteoswiss_icon_seamless', 'best_match'],
+      },
+    )
     .then((items) => {
       if (!items.length) {
         error.value = t('weather.unavailable');
@@ -150,7 +162,8 @@ watchEffect(() => {
         }
         return {
           date: item.date,
-          icon_url: incoming.icon_url,
+          weather_code: incoming.weather_code,
+          is_day_majority: incoming.is_day_majority,
           temp_min: incoming.temp_min,
           temp_max: incoming.temp_max,
           loading: false,
@@ -160,7 +173,11 @@ watchEffect(() => {
     })
     .catch(() => {
       error.value = t('weather.unavailable');
-    })
+    });
+});
+
+watchEffect(() => {
+  meteoStore.setWeatherCodesContext(quasarLang.value, collection.value);
 });
 </script>
 

@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useMeteoStore } from '@stores/meteo-store';
+import { storeToRefs } from 'pinia';
 
 const { t } = useI18n();
+const { weatherCodes } = storeToRefs(useMeteoStore());
 
 interface WeatherDay {
   date: string;
-  icon_url: string | null;
+  weather_code: number | null;
+  is_day_majority: boolean | null;
   temp_min: number | null;
   temp_max: number | null;
   loading?: boolean;
@@ -43,7 +47,37 @@ const dayLabel = computed(() => {
   const d = dateObj.value;
   return `${d.getDate()} • ${dayNames[d.getDay()]}`;
 });
-const iconUrl = computed(() => props.day.icon_url);
+const iconEntry = computed(() => {
+  if (props.day.weather_code === null) {
+    return null;
+  }
+  return weatherCodes.value[String(props.day.weather_code)] ?? null;
+});
+const iconUrl = computed(() => {
+  if (!iconEntry.value) {
+    return null;
+  }
+  const isDay = props.day.is_day_majority !== false;
+  const symbolKey = isDay ? 'symbol_day' : 'symbol_night';
+  const url = (iconEntry.value as Record<string, unknown>)[symbolKey] as
+    | string
+    | undefined;
+  return url ?? null;
+});
+const iconDescription = computed(() => {
+  const entry = iconEntry.value as Record<string, unknown> | null;
+  if (!entry) {
+    return '';
+  }
+  return (
+    (entry.description as string | undefined) ??
+    (entry.name as string | undefined) ??
+    (entry.label as string | undefined) ??
+    (entry.title as string | undefined) ??
+    (entry.summary as string | undefined) ??
+    ''
+  );
+});
 const tempMax = computed(() =>
   props.day.temp_max !== null ? Math.round(props.day.temp_max) : null,
 );
@@ -57,7 +91,9 @@ const isRange = computed(
     tempMin.value !== tempMax.value,
 );
 const isLoading = computed(() => props.day.loading === true);
-const hasTemps = computed(() => tempMin.value !== null && tempMax.value !== null);
+const hasTemps = computed(
+  () => tempMin.value !== null && tempMax.value !== null,
+);
 </script>
 
 <template>
@@ -69,6 +105,9 @@ const hasTemps = computed(() => tempMin.value !== null && tempMax.value !== null
       <q-img v-if="!isLoading && iconUrl" :src="iconUrl" width="32px" height="32px" fit="contain" />
       <q-skeleton v-else-if="isLoading" type="circle" width="32px" height="32px" />
       <div v-else class="weather-day__icon-empty"></div>
+      <q-tooltip v-if="iconDescription" :delay="500">
+        {{ iconDescription }}
+      </q-tooltip>
     </div>
     <div class="weather-day__temps">
       <template v-if="isLoading">

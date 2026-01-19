@@ -1,9 +1,20 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { ref, watchEffect } from 'vue';
 import { fetchWeatherApi } from 'openmeteo';
 import { date } from 'quasar';
+import { clientWodore } from '@clients/index';
 
 const { formatDate, addToDate, subtractFromDate } = date;
+
+const DEFAULT_MODELS: WeatherModel[] = [
+  'meteoswiss_icon_seamless',
+  'best_match',
+];
+//const DEFAULT_SYMBOL_COLLECTION = 'weather-icons-filled'
+const DEFAULT_SYMBOL_COLLECTION = 'meteoswiss-filled'
+const FULL_PAST_DAYS = 7;
+const FULL_FORECAST_DAYS = 14;
+
 
 type WeatherModel = 'meteoswiss_icon_seamless' | 'best_match';
 
@@ -17,7 +28,7 @@ export interface WeatherWindowSummary {
   start_time: string;
   end_time: string;
   weather_code: number | null;
-  icon_url: string | null;
+  is_day_majority: boolean | null;
   temp_min: number | null;
   temp_max: number | null;
   wind_min: number | null;
@@ -44,11 +55,11 @@ interface CacheEntry {
   hourly: HourlyData;
 }
 
-const DEFAULT_MODELS: WeatherModel[] = [
-  'meteoswiss_icon_seamless',
-  'best_match',
-];
-
+interface WeatherCodeEntry {
+  symbol_day?: string;
+  symbol_night?: string;
+  [key: string]: unknown;
+}
 const roundToStep = (value: number, step: number) =>
   Math.round(value / step) * step;
 
@@ -71,15 +82,9 @@ const buildCacheKey = (
   return `${latRounded}:${lonRounded}:${elevRounded ?? 'na'}`;
 };
 
-const FULL_PAST_DAYS = 7;
-const FULL_FORECAST_DAYS = 14;
 
-const getIconUrl = (weatherCode: number, isDay: boolean) => {
-  const mode = isDay ? 'day' : 'night';
-  return `${process.env.WODORE_API_HOST}/v1/meteo/symbol/weather-icons-mono/${mode}/${weatherCode}.svg`;
-};
-
-const summarizeWeatherCode = (codes: number[]) => {
+const summarizeWeatherCode = (codes: number[], minOccurrences: number) => {
+  console.log('[meteo-store] summarizeWeatherCode', codes, minOccurrences);
   if (codes.length === 0) {
     return null;
   }
@@ -91,7 +96,7 @@ const summarizeWeatherCode = (codes: number[]) => {
     counts.set(code, (counts.get(code) ?? 0) + 1);
   });
   const frequent = Array.from(counts.entries())
-    .filter(([, count]) => count >= 3)
+    .filter(([, count]) => count >= minOccurrences)
     .map(([code]) => code);
   if (frequent.length > 0) {
     return Math.max(...frequent);
@@ -103,6 +108,7 @@ const summarizeDaily = (
   hourly: HourlyData,
   startMinutes: number,
   endMinutes: number,
+  minOccurrences: number,
 ) => {
   if (hourly.time.length === 0) {
     console.log('[meteo-store] hourly time empty');
@@ -172,16 +178,11 @@ const summarizeDaily = (
     Omit<WeatherWindowSummary, 'date' | 'model' | 'start_time' | 'end_time'>
   > = {};
   grouped.forEach((bucket, dateKey) => {
-    const tempMin =
-      bucket.temps.length > 0 ? Math.min(...bucket.temps) : null;
-    const tempMax =
-      bucket.temps.length > 0 ? Math.max(...bucket.temps) : null;
-    const windMin =
-      bucket.winds.length > 0 ? Math.min(...bucket.winds) : null;
-    const windMax =
-      bucket.winds.length > 0 ? Math.max(...bucket.winds) : null;
-    const gustMax =
-      bucket.gusts.length > 0 ? Math.max(...bucket.gusts) : null;
+    const tempMin = bucket.temps.length > 0 ? Math.min(...bucket.temps) : null;
+    const tempMax = bucket.temps.length > 0 ? Math.max(...bucket.temps) : null;
+    const windMin = bucket.winds.length > 0 ? Math.min(...bucket.winds) : null;
+    const windMax = bucket.winds.length > 0 ? Math.max(...bucket.winds) : null;
+    const gustMax = bucket.gusts.length > 0 ? Math.max(...bucket.gusts) : null;
     const rainSum =
       bucket.rains.length > 0
         ? bucket.rains.reduce((sum, value) => sum + value, 0)
@@ -190,14 +191,13 @@ const summarizeDaily = (
       bucket.sunshines.length > 0
         ? bucket.sunshines.reduce((sum, value) => sum + value, 0)
         : null;
-    const weatherCode = summarizeWeatherCode(bucket.codes);
+    const weatherCode = summarizeWeatherCode(bucket.codes, minOccurrences);
     const isDayRatio =
       bucket.totalCount > 0 ? bucket.isDayCount / bucket.totalCount : 0;
-    const iconUrl =
-      weatherCode !== null ? getIconUrl(weatherCode, isDayRatio >= 0.4) : null;
+    const isDayMajority = bucket.totalCount > 0 ? isDayRatio >= 0.5 : null;
     summaries[dateKey] = {
       weather_code: weatherCode,
-      icon_url: iconUrl,
+      is_day_majority: isDayMajority,
       temp_min: tempMin,
       temp_max: tempMax,
       wind_min: windMin,
@@ -212,6 +212,14 @@ const summarizeDaily = (
 
 export const useMeteoStore = defineStore('meteo', () => {
   const cache = ref<Record<string, CacheEntry>>({});
+  const weatherCodes = ref<Record<string, WeatherCodeEntry>>({});
+  const weatherCodesLang = ref('de');
+  const weatherCodesCollection = ref(DEFAULT_SYMBOL_COLLECTION);
+  const weatherCodesCache = ref<Record<string, Record<string, WeatherCodeEntry>>>(
+    {},
+  );
+  const weatherCodesInFlight = ref<Set<string>>(new Set());
+  const weatherCodesLastFetchKey = ref<string | null>(null);
 
   const forecastPossible = (value: Date | string) => {
     const selected = new Date(value);
@@ -228,6 +236,105 @@ export const useMeteoStore = defineStore('meteo', () => {
     );
     return selectedDate >= start && selectedDate <= end;
   };
+
+  const fetchWeatherCodes = async (lang: string, collection: string) => {
+    const { data, error } = await clientWodore.GET('/v1/meteo/weather_codes', {
+      params: {
+        query: {
+          lang,
+          collection,
+          include_symbols: 'all',
+          include_category: 'no',
+          include_collection: 'no',
+        },
+      },
+    });
+    if (error || !data) {
+      return null;
+    }
+    return data as Record<string, WeatherCodeEntry>;
+  };
+
+  const getWeatherCodes = async (
+    lang: string,
+    options: { collection: string },
+  ) => {
+    const collection = options.collection;
+    const key = `weather_codes:${lang}:${collection}`;
+
+    if (weatherCodesCache.value[key]) {
+      weatherCodes.value = weatherCodesCache.value[key];
+    } else {
+      const cached = localStorage.getItem(key);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached) as Record<string, WeatherCodeEntry>;
+          weatherCodesCache.value[key] = parsed;
+          weatherCodes.value = parsed;
+        } catch {
+          // ignore invalid cache
+        }
+      }
+    }
+
+    if (weatherCodesInFlight.value.has(key)) {
+      return weatherCodes;
+    }
+    weatherCodesInFlight.value.add(key);
+    fetchWeatherCodes(lang, collection)
+      .then((data) => {
+        if (!data) {
+          return;
+        }
+        weatherCodesCache.value[key] = data;
+        weatherCodes.value = data;
+        localStorage.setItem(key, JSON.stringify(data));
+      })
+      .catch(() => {
+        // ignore fetch errors for now
+      })
+      .finally(() => {
+        weatherCodesInFlight.value.delete(key);
+      });
+
+    return weatherCodes;
+  };
+
+  const setWeatherCodesContext = (lang: string, collection?: string) => {
+    if (weatherCodesLang.value !== lang) {
+      weatherCodesLang.value = lang;
+    }
+    if (collection && weatherCodesCollection.value !== collection) {
+      weatherCodesCollection.value = collection;
+    }
+  };
+
+  watchEffect(() => {
+    const key = `weather_codes:${weatherCodesLang.value}:${weatherCodesCollection.value}`;
+    const cached =
+      weatherCodesCache.value[key] ?? (() => {
+        const stored = localStorage.getItem(key);
+        if (!stored) {
+          return null;
+        }
+        try {
+          return JSON.parse(stored) as Record<string, WeatherCodeEntry>;
+        } catch {
+          return null;
+        }
+      })();
+    if (cached) {
+      weatherCodesCache.value[key] = cached;
+      weatherCodes.value = cached;
+    }
+    if (weatherCodesLastFetchKey.value === key) {
+      return;
+    }
+    weatherCodesLastFetchKey.value = key;
+    void getWeatherCodes(weatherCodesLang.value, {
+      collection: weatherCodesCollection.value,
+    });
+  });
 
   const fetchHourly = async ({
     latitude,
@@ -267,11 +374,11 @@ export const useMeteoStore = defineStore('meteo', () => {
       params,
     );
 
-    console.debug('open-meteo resposne:', responses)
+    console.debug('open-meteo resposne:', responses);
     const result: Record<string, HourlyData> = {};
     for (const response of responses) {
       const hourly = response.hourly();
-      console.debug('[meteo-store] open-meteo hourly:', hourly)
+      console.debug('[meteo-store] open-meteo hourly:', hourly);
       if (!hourly) {
         continue;
       }
@@ -379,8 +486,7 @@ export const useMeteoStore = defineStore('meteo', () => {
     const key = buildCacheKey(latitude, longitude, elevation);
     const now = Date.now();
     const cached = cache.value[key];
-    const needsRefresh =
-      !cached || now - cached.updatedAt > 30 * 60 * 1000;
+    const needsRefresh = !cached || now - cached.updatedAt > 30 * 60 * 1000;
 
     if (needsRefresh) {
       const hourly = await fetchHourly({
@@ -416,15 +522,17 @@ export const useMeteoStore = defineStore('meteo', () => {
       forecastDays?: number;
       pastDays?: number;
       weatherModels: string[];
+      weatherCodeMinOccurrences?: number;
       timezone?: string;
     },
   ): Promise<WeatherWindowSummary[]> => {
     const startDateInput = options?.startDate ?? 'now';
-    const startTime = options?.startTime ?? '04:00';
+    const startTime = options?.startTime ?? '05:00';
     const endTime = options?.endTime ?? '19:00';
     const forecastDays = options?.forecastDays ?? 14;
     const pastDays = options?.pastDays ?? 7;
     const timezone = options?.timezone ?? 'Europe/Berlin';
+    const weatherCodeMinOccurrences = options?.weatherCodeMinOccurrences ?? 3;
     const models = options?.weatherModels ?? DEFAULT_MODELS;
     // const hourly = await fetchCachedHourly({
     const hourly = await fetchHourly({
@@ -451,7 +559,12 @@ export const useMeteoStore = defineStore('meteo', () => {
         Omit<WeatherWindowSummary, 'date' | 'model' | 'start_time' | 'end_time'>
       >
     > = {
-      combined: summarizeDaily(hourly, startMinutes, endMinutes),
+      combined: summarizeDaily(
+        hourly,
+        startMinutes,
+        endMinutes,
+        weatherCodeMinOccurrences,
+      ),
     };
     console.log('Sumarized by model', summariesByModel);
 
@@ -493,10 +606,12 @@ export const useMeteoStore = defineStore('meteo', () => {
     >(
       dateKey: string,
       field: K,
-    ): Omit<
-      WeatherWindowSummary,
-      'date' | 'model' | 'start_time' | 'end_time'
-    >[K] | null => {
+    ):
+      | Omit<
+        WeatherWindowSummary,
+        'date' | 'model' | 'start_time' | 'end_time'
+      >[K]
+      | null => {
       const modelSummary = summariesByModel.combined?.[dateKey];
       if (modelSummary && modelSummary[field] !== null) {
         return modelSummary[field];
@@ -507,20 +622,23 @@ export const useMeteoStore = defineStore('meteo', () => {
     const pickIconModel = (dateKey: string) => {
       const modelSummary = summariesByModel.combined?.[dateKey];
       if (modelSummary && modelSummary.weather_code !== null) {
-        return { icon: modelSummary.icon_url, model: models[0] ?? null };
+        return {
+          isDayMajority: modelSummary.is_day_majority,
+          model: models[0] ?? null,
+        };
       }
-      return { icon: null, model: null };
+      return { isDayMajority: null, model: null };
     };
 
     while (current <= endDate) {
       const dateKey = formatDateKey(current);
-      const { icon, model } = pickIconModel(dateKey);
+      const { isDayMajority, model } = pickIconModel(dateKey);
       results.push({
         date: dateKey,
         start_time: startTime,
         end_time: endTime,
         weather_code: pickField(dateKey, 'weather_code'),
-        icon_url: icon,
+        is_day_majority: isDayMajority,
         temp_min: pickField(dateKey, 'temp_min'),
         temp_max: pickField(dateKey, 'temp_max'),
         wind_min: pickField(dateKey, 'wind_min'),
@@ -545,6 +663,11 @@ export const useMeteoStore = defineStore('meteo', () => {
     fetchCachedHourly,
     fetchHourly,
     getDaily,
+    getWeatherCodes,
+    setWeatherCodesContext,
+    weatherCodes,
+    weatherCodesCollection,
+    weatherCodesLang,
   };
 });
 
