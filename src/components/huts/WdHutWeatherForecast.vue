@@ -52,19 +52,19 @@ const columns = computed(() => [
     name: 'label',
     label: '',
     field: 'label',
-    align: 'left',
+    align: 'left' as const,
   },
   ...forecastDays.value.map((day) => ({
     name: day.date,
     label: formatDayLabel(day.date),
     field: day.date,
-    align: 'center',
+    align: 'center' as const,
   })),
   {
     name: 'unit',
     label: '',
     field: 'unit',
-    align: 'right',
+    align: 'right' as const,
   },
 ]);
 const rows = computed(() => [
@@ -103,7 +103,7 @@ const canShowForecast = computed(
 );
 
 const scrollAreaHeight = computed(() =>
-  windowWidth.value < 600 ? '120px' : '110px',
+  windowWidth.value < 600 ? '120px' : '108px',
 );
 const quasarLang = computed(() => {
   const isoName = $q.lang?.isoName ?? 'de';
@@ -331,8 +331,8 @@ watchEffect(() => {
                   {{ formatDayLabel(day.date) }}
                 </template>
                 <template v-else-if="props.row.row === 'icons'">
-                  <q-skeleton v-if="day.loading" type="QAvatar" size="32px" />
-                  <q-img v-else-if="getIconUrl(day)" :src="getIconUrl(day) ?? ''" width="34px" height="34px" no-spinner
+                  <q-skeleton v-if="day.loading" type="QAvatar" size="40px" />
+                  <q-img v-else-if="getIconUrl(day)" :src="getIconUrl(day) ?? ''" width="48px" height="48px" no-spinner
                     class="weather-forecast__icon">
                     <q-tooltip :delay="500">
                       {{ getIconLabel(day) }}
@@ -410,8 +410,32 @@ watchEffect(() => {
   border: 0;
 }
 
+.weather-forecast__table :deep(.q-table thead tr),
+.weather-forecast__table :deep(.q-table tbody tr),
+.weather-forecast__table :deep(.q-table tbody td) {
+  height: 16px;
+}
+
+.weather-forecast__table :deep(.q-table th),
+.weather-forecast__table :deep(.q-table td) {
+  padding: 0;
+}
+
 .weather-forecast__table :deep(.q-table tbody tr:hover > td) {
   background: transparent;
+}
+
+.weather-forecast__table :deep(.q-table tbody td:hover),
+.weather-forecast__table :deep(.q-table tbody td.q-hoverable:hover),
+.weather-forecast__table :deep(.q-table tbody td.q-hoverable:hover > *) {
+  background: transparent;
+}
+
+.weather-forecast__table :deep(.q-table tbody td:before),
+.weather-forecast__table :deep(.q-table tbody td:after),
+.weather-forecast__table :deep(.q-table > tbody > tr:not(.q-tr--no-hover):hover > td:not(.q-td--no-hover):before) {
+  content: none !important;
+  background: transparent !important;
 }
 
 .weather-forecast__cell {
@@ -421,7 +445,7 @@ watchEffect(() => {
   white-space: nowrap;
   width: var(--weather-item-width);
   min-width: var(--weather-item-width);
-  padding: 2px 4px;
+  padding: 0 4px;
   position: relative;
 }
 
@@ -489,11 +513,17 @@ watchEffect(() => {
 }
 
 .weather-forecast__temp-icon--pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: var(--weather-pill-size);
   height: var(--weather-pill-size);
+  min-width: var(--weather-pill-size);
+  min-height: var(--weather-pill-size);
   background: rgba(255, 255, 255, 0.9);
   border-radius: 999px;
   padding: 0;
+  line-height: 1;
 }
 
 .weather-forecast__unit-pill {
@@ -502,6 +532,8 @@ watchEffect(() => {
   justify-content: center;
   width: var(--weather-pill-size);
   height: var(--weather-pill-size);
+  min-width: var(--weather-pill-size);
+  min-height: var(--weather-pill-size);
   background: rgba(255, 255, 255, 0.9);
   border-radius: 999px;
   padding: 0;
