@@ -54,5 +54,17 @@
     "update_caption": "Actualiser pour mettre à jour",
     "update_button": "Mettre à jour maintenant",
     "later_button": "Plus tard"
+  },
+  "weather": {
+    "title": "Meteo",
+    "today": "Aujourd'hui",
+    "tomorrow": "Demain",
+    "yesterday": "Hier",
+    "day": "Jour",
+    "icon": "Icone",
+    "temp": "Temp.",
+    "range_separator": "...",
+    "unit": "°C",
+    "unavailable": "Donnees meteo indisponibles"
   }
 }

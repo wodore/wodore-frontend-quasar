@@ -8,6 +8,11 @@ export interface paths {
     /**
      * Search Geoplaces
      * @description Search for geographic places using fuzzy text search across all language fields.
+     *
+     * Performance optimizations:
+     * - Fast prefix matching using B-tree indexes (very fast)
+     * - Trigram similarity only when needed (slower)
+     * - Early exit if enough prefix matches found
      */
     get: operations['search_geoplaces'];
   };
@@ -118,6 +123,35 @@ export interface paths {
      */
     get: operations['get_hut'];
   };
+  '/v1/meteo/weather_codes': {
+    /**
+     * Get Weather Codes
+     * @description Get all weather codes as a dictionary with WMO code as key.
+     *
+     * Returns weather codes with symbols from the specified collection.
+     * If a WMO code is missing from the collection, an error is raised.
+     */
+    get: operations['get_weather_codes'];
+  };
+  '/v1/meteo/weather_codes/{code}': {
+    /**
+     * Get Weather Code
+     * @description Get a specific weather code by WMO code.
+     */
+    get: operations['get_weather_code'];
+  };
+  '/v1/meteo/symbol/{collection}/{time}/{code}.svg': {
+    /**
+     * Get Weather Code Svg
+     * @description Redirect to the SVG icon for a weather code from a specific collection.
+     *
+     * Collection examples: weather-icons-outlined-mono, weather-icons-filled, meteoswiss-filled
+     * Time options: day, night
+     *
+     * If the collection doesn't have a symbol for the WMO code, returns 404.
+     */
+    get: operations['get_weather_code_svg'];
+  };
   '/v1/organizations/': {
     /**
      * Get Organizations
@@ -176,7 +210,7 @@ export interface components {
   schemas: {
     /**
      * IncludeModeEnum
-     * @description Include mode enum for search endpoint - controls level of detail.
+     * @description Include mode for nested objects - controls level of detail.
      * @enum {string}
      */
     IncludeModeEnum: 'no' | 'slug' | 'all';
@@ -1512,6 +1546,12 @@ export interface components {
       /** Modified */
       modified?: string | null;
     };
+    /**
+     * DayTimeEnum
+     * @description Day/night time options.
+     * @enum {string}
+     */
+    DayTimeEnum: 'day' | 'night';
     /** FieldsParam[OrganizationOptional] */
     FieldsParam_OrganizationOptional_: {
       /**
@@ -1719,6 +1759,11 @@ export interface operations {
   /**
    * Search Geoplaces
    * @description Search for geographic places using fuzzy text search across all language fields.
+   *
+   * Performance optimizations:
+   * - Fast prefix matching using B-tree indexes (very fast)
+   * - Trigram similarity only when needed (slower)
+   * - Early exit if enough prefix matches found
    */
   search_geoplaces: {
     parameters: {
@@ -2173,6 +2218,101 @@ export interface operations {
         content: {
           'application/json': components['schemas']['HutSchemaDetails'];
         };
+      };
+    };
+  };
+  /**
+   * Get Weather Codes
+   * @description Get all weather codes as a dictionary with WMO code as key.
+   *
+   * Returns weather codes with symbols from the specified collection.
+   * If a WMO code is missing from the collection, an error is raised.
+   */
+  get_weather_codes: {
+    parameters: {
+      query?: {
+        /** @description Select language code: de, en, fr, it. */
+        lang?: string;
+        /** @description Symbol collection slug (default: weather-icons-outlined-mono) */
+        collection?: string;
+        /** @description Filter by category slug (supports dot notation like 'meteo.rain') */
+        category?: string | null;
+        /** @description Include symbols: 'no' excludes, 'slug' returns slugs only, 'all' returns full URLs */
+        include_symbols?: 'no' | 'slug' | 'all';
+        /** @description Include category: 'no' excludes, 'slug' returns slug, 'all' returns full details with symbols */
+        include_category?: 'no' | 'slug' | 'all';
+        /** @description Include collection: 'no' excludes, 'slug' returns slug, 'all' returns full details */
+        include_collection?: 'no' | 'slug' | 'all';
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          'application/json': {
+            [key: string]: {
+              [key: string]: unknown;
+            };
+          };
+        };
+      };
+    };
+  };
+  /**
+   * Get Weather Code
+   * @description Get a specific weather code by WMO code.
+   */
+  get_weather_code: {
+    parameters: {
+      query?: {
+        /** @description Select language code: de, en, fr, it. */
+        lang?: string;
+        /** @description Symbol collection slug (default: weather-icons-outlined-mono) */
+        collection?: string;
+        /** @description Include symbols: 'no' excludes, 'slug' returns slugs only, 'all' returns full URLs */
+        include_symbols?: 'no' | 'slug' | 'all';
+        /** @description Include category: 'no' excludes, 'slug' returns slug, 'all' returns full details with symbols */
+        include_category?: 'no' | 'slug' | 'all';
+        /** @description Include collection: 'no' excludes, 'slug' returns slug, 'all' returns full details */
+        include_collection?: 'no' | 'slug' | 'all';
+      };
+      path: {
+        code: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          'application/json': {
+            [key: string]: unknown;
+          };
+        };
+      };
+    };
+  };
+  /**
+   * Get Weather Code Svg
+   * @description Redirect to the SVG icon for a weather code from a specific collection.
+   *
+   * Collection examples: weather-icons-outlined-mono, weather-icons-filled, meteoswiss-filled
+   * Time options: day, night
+   *
+   * If the collection doesn't have a symbol for the WMO code, returns 404.
+   */
+  get_weather_code_svg: {
+    parameters: {
+      path: {
+        collection: string;
+        /** @description Day/night time options. */
+        time: 'day' | 'night';
+        code: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: never;
       };
     };
   };

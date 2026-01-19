@@ -16,6 +16,7 @@ declare module 'vue' {
     IconEvaMoveOutline: typeof import('~icons/eva/move-outline')['default']
     IconEvaSearchOutline: typeof import('~icons/eva/search-outline')['default']
     IconEvaSettingsOutline: typeof import('~icons/eva/settings-outline')['default']
+    IconEvaThermometerFill: typeof import('~icons/eva/thermometer-fill')['default']
     IconEvaUnlockOutline: typeof import('~icons/eva/unlock-outline')['default']
     IconFa6SolidCopy: typeof import('~icons/fa6-solid/copy')['default']
     IconFa6SolidLocationCrosshairs: typeof import('~icons/fa6-solid/location-crosshairs')['default']
@@ -39,6 +40,8 @@ declare module 'vue' {
     WdHutTypeChip: typeof import('./src/components/huts/WdHutTypeChip.vue')['default']
     WdHutTypeNameChip: typeof import('./src/components/huts/WdHutTypeNameChip.vue')['default']
     WdHutView: typeof import('./src/components/huts/WdHutView.vue')['default']
+    WdHutWeatherDay: typeof import('./src/components/huts/WdHutWeatherDay.vue')['default']
+    WdHutWeatherForecast: typeof import('./src/components/huts/WdHutWeatherForecast.vue')['default']
     WdMapContent: typeof import('./src/components/map/WdMapContent.vue')['default']
     WdMapMenu: typeof import('./src/components/map/WdMapMenu.vue')['default']
     WdMapView: typeof import('./src/components/map/WdMapView.vue')['default']
@@ -62,6 +65,7 @@ declare module 'vue' {
     WdUser: typeof import('./src/components/toolbar/WdUser.vue')['default']
     WdVersionsPanel: typeof import('./src/components/version/WdVersionsPanel.vue')['default']
     WdVersionTag: typeof import('./src/components/version/WdVersionTag.vue')['default']
+    WdWeatherSelect: typeof import('./src/components/huts/WdWeatherSelect.vue')['default']
     WodoreLogo: typeof import('./src/components/wodore/WodoreLogo.vue')['default']
   }
 }

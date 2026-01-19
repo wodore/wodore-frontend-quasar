@@ -421,6 +421,12 @@ const addHeaderShadow: IntersectionValue = (entry) => {
             :type_open="hut.type_open"
             :type_closed="hut.type_closed"
           />
+          <WdHutWeatherForecast
+            v-if="hut.location"
+            :latitude="hut.location.lat"
+            :longitude="hut.location.lon"
+            :elevation="hut.elevation ?? undefined"
+          />
           <!--LOCATION-->
           <div class="text-subtitle1 text-accent">{{ $t('location') }}</div>
           <q-list dense>
