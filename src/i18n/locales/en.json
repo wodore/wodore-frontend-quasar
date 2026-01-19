@@ -73,5 +73,14 @@
     "update_caption": "Refresh to update",
     "update_button": "Update now",
     "later_button": "Later"
+  },
+  "weather": {
+    "title": "Weather",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "yesterday": "Yesterday",
+    "range_separator": "...",
+    "unit": "°C",
+    "unavailable": "Weather data not available"
   }
 }
