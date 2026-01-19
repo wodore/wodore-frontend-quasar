@@ -1,39 +1,35 @@
 <script setup lang="ts">
-import { computed, ref, watchEffect, nextTick, watch } from 'vue';
+import { computed, ref, watchEffect, nextTick } from 'vue';
 import { date, QScrollArea, QVirtualScroll } from 'quasar';
 import { useCssVar, useWindowSize } from '@vueuse/core';
 import { useI18n } from 'vue-i18n';
+import { useMeteoStore } from '@stores/meteo-store';
+import { useHutsStore } from '@stores/huts-store';
+import { storeToRefs } from 'pinia';
 
 const { formatDate, subtractFromDate, addToDate } = date;
 const { width: windowWidth } = useWindowSize();
 const { t } = useI18n();
+const meteoStore = useMeteoStore();
+const { selectedDateOrToday } = storeToRefs(useHutsStore());
 
 interface WeatherDay {
   date: string;
-  weatherCode: number;
-  tempMax: number;
-  tempMin: number;
+  icon_url: string | null;
+  temp_min: number | null;
+  temp_max: number | null;
   loading?: boolean;
-}
-
-interface OpenMeteoDaily {
-  time: string[];
-  [key: string]: Array<number | null> | string[];
-}
-
-interface OpenMeteoResponse {
-  daily?: OpenMeteoDaily;
 }
 
 interface Props {
   latitude?: number;
   longitude?: number;
+  elevation?: number;
 }
 
 const props = defineProps<Props>();
 
 const forecastDays = ref<WeatherDay[]>([]);
-const loading = ref(false);
 const error = ref<string | null>(null);
 const containerRef = ref<HTMLElement | null>(null);
 const scrollAreaRef = ref<InstanceType<typeof QScrollArea> | null>(null);
@@ -47,27 +43,23 @@ const itemWidth = computed(() => {
 const hasLocation = computed(
   () => Number.isFinite(props.latitude) && Number.isFinite(props.longitude),
 );
+const selectedDateObj = computed(() => {
+  const parts = selectedDateOrToday.value.split('.');
+  if (parts.length !== 3) {
+    return new Date();
+  }
+  const day = Number(parts[0]);
+  const month = Number(parts[1]);
+  const year = 2000 + Number(parts[2]);
+  return new Date(year, month - 1, day);
+});
+const canShowForecast = computed(
+  () => hasLocation.value && meteoStore.forecast_possible(selectedDateObj.value),
+);
 
 const scrollAreaHeight = computed(() =>
   windowWidth.value < 600 ? '96px' : '84px',
 );
-const todayStr = computed(() => formatDate(new Date(), 'YYYY-MM-DD'));
-
-const weatherModels = ['meteoswiss_icon_seamless', 'best_match'] as const;
-
-const buildUrl = (latitude: number, longitude: number) => {
-  const base = 'https://api.open-meteo.com/v1/forecast';
-  const params = new URLSearchParams({
-    latitude: latitude.toString(),
-    longitude: longitude.toString(),
-    daily: 'weather_code,temperature_2m_max,temperature_2m_min',
-    models: weatherModels.join(','),
-    timezone: 'Europe/Berlin',
-    past_days: '7',
-    forecast_days: '14',
-  });
-  return `${base}?${params.toString()}`;
-};
 
 const initializeDateRange = () => {
   const items: WeatherDay[] = [];
@@ -78,9 +70,9 @@ const initializeDateRange = () => {
   while (current <= end) {
     items.push({
       date: formatDate(current, 'YYYY-MM-DD'),
-      weatherCode: 0,
-      tempMax: 0,
-      tempMin: 0,
+      icon_url: null,
+      temp_min: null,
+      temp_max: null,
       loading: true,
     });
     current = addToDate(current, { days: 1 });
@@ -88,55 +80,11 @@ const initializeDateRange = () => {
   return items;
 };
 
-const normalizeForecast = (payload: OpenMeteoResponse): WeatherDay[] => {
-  if (!payload?.daily?.time) {
-    return [];
-  }
-  const { time } = payload.daily;
-  if (!Array.isArray(time)) {
-    return [];
-  }
-  const daily = payload.daily;
-
-  const pickValue = (field: string, idx: number): number | null => {
-    for (const model of weatherModels) {
-      const key = `${field}_${model}`;
-      const series = daily[key];
-      if (Array.isArray(series)) {
-        const value = series[idx];
-        if (value !== null && value !== undefined) {
-          return Number(value);
-        }
-      }
-    }
-    return null;
-  };
-  const today = new Date();
-  const pastStartStr = formatDate(
-    subtractFromDate(today, { days: 7 }),
-    'YYYY-MM-DD',
-  );
-  const items = time.map((dateStr: string, idx: number) => {
-    const weatherCode = pickValue('weather_code', idx);
-    const tempMax = pickValue('temperature_2m_max', idx);
-    const tempMin = pickValue('temperature_2m_min', idx);
-    return {
-      date: dateStr,
-      weatherCode: weatherCode ?? 0,
-      tempMax: tempMax ?? 0,
-      tempMin: tempMin ?? 0,
-      loading: weatherCode === null || tempMax === null || tempMin === null,
-    };
-  });
-  return items
-    .filter((item) => item.date >= pastStartStr)
-    .slice(0, 21);
-};
-
-const scrollToToday = (animate: boolean) => {
+const scrollToToday = (animate: boolean, targetDate: Date = new Date()) => {
   nextTick(() => {
+    const targetKey = formatDate(targetDate, 'YYYY-MM-DD');
     const index = forecastDays.value.findIndex(
-      (item) => item.date === todayStr.value,
+      (item) => item.date === targetKey,
     );
     if (
       index < 0 ||
@@ -157,16 +105,8 @@ const scrollToToday = (animate: boolean) => {
 
 const lastLoadedKey = ref<string | null>(null);
 
-watch(
-  forecastDays,
-  () => {
-    scrollToToday(true);
-  },
-  { deep: true },
-);
-
-watchEffect((onInvalidate) => {
-  if (!hasLocation.value) {
+watchEffect(() => {
+  if (!canShowForecast.value) {
     forecastDays.value = [];
     error.value = null;
     return;
@@ -176,27 +116,26 @@ watchEffect((onInvalidate) => {
   if (lastLoadedKey.value !== locationKey) {
     lastLoadedKey.value = locationKey;
     forecastDays.value = initializeDateRange();
-    scrollToToday(false);
+    scrollToToday(false, selectedDateObj.value);
   }
-
-  const controller = new AbortController();
-  onInvalidate(() => controller.abort());
 
   const latitude = props.latitude as number;
   const longitude = props.longitude as number;
+  const elevation = props.elevation;
 
-  loading.value = true;
   error.value = null;
 
-  fetch(buildUrl(latitude, longitude), { signal: controller.signal })
-    .then((res) => {
-      if (!res.ok) {
-        throw new Error('Weather request failed');
-      }
-      return res.json();
-    })
-    .then((payload) => {
-      const items = normalizeForecast(payload);
+  meteoStore
+    .get_daily(
+      { latitude, longitude },
+      typeof elevation === 'number' ? elevation : undefined,
+      {
+        forecast_days: 14,
+        past_days: 7,
+        weather_models: 'default',
+      },
+    )
+    .then((items) => {
       if (!items.length) {
         error.value = t('weather.unavailable');
         return;
@@ -207,24 +146,27 @@ watchEffect((onInvalidate) => {
       const byDate = new Map(items.map((item) => [item.date, item]));
       forecastDays.value = existing.map((item) => {
         const incoming = byDate.get(item.date);
-        return incoming ? { ...item, ...incoming, loading: incoming.loading } : item;
+        if (!incoming) {
+          return item;
+        }
+        return {
+          date: item.date,
+          icon_url: incoming.icon_url,
+          temp_min: incoming.temp_min,
+          temp_max: incoming.temp_max,
+          loading: false,
+        };
       });
+      scrollToToday(true, selectedDateObj.value);
     })
-    .catch((err) => {
-      if (err?.name === 'AbortError') {
-        return;
-      }
+    .catch(() => {
       error.value = t('weather.unavailable');
-      forecastDays.value = [];
     })
-    .finally(() => {
-      loading.value = false;
-    });
 });
 </script>
 
 <template>
-  <div v-if="hasLocation">
+  <div v-if="canShowForecast">
     <div class="weather-forecast__header q-mt-sm q-mb-xs">
       <div class="text-subtitle1 text-accent">
         {{ t('weather.title') }}

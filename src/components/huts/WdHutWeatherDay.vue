@@ -6,9 +6,9 @@ const { t } = useI18n();
 
 interface WeatherDay {
   date: string;
-  weatherCode: number;
-  tempMax: number;
-  tempMin: number;
+  icon_url: string | null;
+  temp_min: number | null;
+  temp_max: number | null;
   loading?: boolean;
 }
 
@@ -43,14 +43,21 @@ const dayLabel = computed(() => {
   const d = dateObj.value;
   return `${d.getDate()} • ${dayNames[d.getDay()]}`;
 });
-const iconUrl = computed(
-  () =>
-    `${process.env.WODORE_API_HOST}/v1/meteo/symbol/simple/day/${props.day.weatherCode}.svg?org=weather-icons`,
+const iconUrl = computed(() => props.day.icon_url);
+const tempMax = computed(() =>
+  props.day.temp_max !== null ? Math.round(props.day.temp_max) : null,
 );
-const tempMax = computed(() => Math.round(props.day.tempMax));
-const tempMin = computed(() => Math.round(props.day.tempMin));
-const isRange = computed(() => tempMin.value !== tempMax.value);
+const tempMin = computed(() =>
+  props.day.temp_min !== null ? Math.round(props.day.temp_min) : null,
+);
+const isRange = computed(
+  () =>
+    tempMin.value !== null &&
+    tempMax.value !== null &&
+    tempMin.value !== tempMax.value,
+);
 const isLoading = computed(() => props.day.loading === true);
+const hasTemps = computed(() => tempMin.value !== null && tempMax.value !== null);
 </script>
 
 <template>
@@ -59,8 +66,9 @@ const isLoading = computed(() => props.day.loading === true);
       {{ dayLabel }}
     </div>
     <div class="weather-day__icon">
-      <q-img v-if="!isLoading" :src="iconUrl" width="32px" height="32px" fit="contain" />
-      <q-skeleton v-else type="circle" width="32px" height="32px" />
+      <q-img v-if="!isLoading && iconUrl" :src="iconUrl" width="32px" height="32px" fit="contain" />
+      <q-skeleton v-else-if="isLoading" type="circle" width="32px" height="32px" />
+      <div v-else class="weather-day__icon-empty"></div>
     </div>
     <div class="weather-day__temps">
       <template v-if="isLoading">
@@ -77,11 +85,14 @@ const isLoading = computed(() => props.day.loading === true);
           <span class="weather-day__temp-unit">{{ t('weather.unit') }}</span>
         </span>
       </template>
-      <template v-else>
+      <template v-else-if="hasTemps">
         <span class="weather-day__temp-max">
           {{ tempMax }}
           <span class="weather-day__temp-unit">{{ t('weather.unit') }}</span>
         </span>
+      </template>
+      <template v-else>
+        <span class="weather-day__temp-empty">--</span>
       </template>
     </div>
   </div>
@@ -115,6 +126,11 @@ const isLoading = computed(() => props.day.loading === true);
   justify-content: center;
 }
 
+.weather-day__icon-empty {
+  width: 32px;
+  height: 32px;
+}
+
 .weather-day__temps {
   font-size: 10px;
   line-height: 1;
@@ -139,5 +155,9 @@ const isLoading = computed(() => props.day.loading === true);
   font-size: 9px;
   color: rgba(color('dark'), 0.6);
   margin-left: 1px;
+}
+
+.weather-day__temp-empty {
+  color: rgba(color('dark'), 0.45);
 }
 </style>
