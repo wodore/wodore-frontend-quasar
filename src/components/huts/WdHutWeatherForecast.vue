@@ -194,7 +194,10 @@ const scrollToToday = (animate: boolean, targetDate: Date = new Date()) => {
     if (index < 0 || !scrollAreaRef.value || forecastDays.value.length === 0) {
       return;
     }
-    const targetLeft = Math.max(0, leftWidth.value + index * itemWidth.value);
+    const targetLeft = Math.max(
+      0,
+      leftWidth.value + index * itemWidth.value - 15,
+    );
     scrollAreaRef.value.setScrollPosition(
       'horizontal',
       targetLeft,
@@ -373,8 +376,8 @@ watchEffect(() => {
 .weather-forecast__table-wrap {
   min-width: max-content;
   --weather-item-width: 56px;
-  --weather-left-width: 8px;
-  --weather-right-width: 20px;
+  --weather-left-width: 6px;
+  --weather-right-width: 6px;
   --weather-pill-size: 20px;
 }
 
@@ -455,11 +458,11 @@ watchEffect(() => {
   z-index: 2;
   text-align: center;
   width: var(--weather-left-width);
-  min-width: var(--weather-left-width);
-  padding-left: 0 !important;
+  min-width: 0;
+  padding-left: 10px !important;
   padding-right: 0 !important;
   background: transparent;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .weather-forecast__cell--right {
@@ -468,11 +471,11 @@ watchEffect(() => {
   z-index: 2;
   text-align: center;
   width: var(--weather-right-width);
-  min-width: var(--weather-right-width);
+  min-width: 0;
   padding-right: 0 !important;
   padding-left: 0 !important;
   background: transparent;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .weather-forecast__cell--day {
