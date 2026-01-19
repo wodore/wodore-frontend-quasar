@@ -50,10 +50,11 @@ const summary = ref<{
 const loading = ref(false);
 
 const iconEntry = computed(() => {
-  if (!summary.value?.weather_code) {
+  const code = summary.value?.weather_code;
+  if (code === null || code === undefined) {
     return null;
   }
-  return weatherCodes.value[String(summary.value.weather_code)] ?? null;
+  return weatherCodes.value[String(code)] ?? null;
 });
 const iconUrl = computed(() => {
   if (!iconEntry.value) {
@@ -123,9 +124,9 @@ watchEffect(() => {
       });
       summary.value = items[0]
         ? {
-            weather_code: items[0].weather_code,
-            is_day_majority: items[0].is_day_majority,
-          }
+          weather_code: items[0].weather_code,
+          is_day_majority: items[0].is_day_majority,
+        }
         : null;
     })
     .finally(() => {
@@ -136,20 +137,8 @@ watchEffect(() => {
 
 <template>
   <span v-if="canShow" class="weather-select" @click="scrollToForecast">
-    <q-skeleton
-      v-if="loading"
-      type="circle"
-      width="48px"
-      height="48px"
-    />
-    <q-img
-      v-else-if="iconUrl"
-      :src="iconUrl"
-      width="48px"
-      height="48px"
-      fit="contain"
-      no-spinner
-    />
+    <q-skeleton v-if="loading" type="circle" width="48px" height="48px" />
+    <q-img v-else-if="iconUrl" :src="iconUrl" width="48px" height="48px" fit="contain" no-spinner />
     <span v-else class="weather-select__empty"></span>
     <q-tooltip v-if="conditionLabel" :delay="500">
       {{ conditionLabel }}

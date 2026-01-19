@@ -103,7 +103,7 @@ const canShowForecast = computed(
 );
 
 const scrollAreaHeight = computed(() =>
-  windowWidth.value < 600 ? '120px' : '108px',
+  windowWidth.value < 600 ? '104px' : '94px',
 );
 const quasarLang = computed(() => {
   const isoName = $q.lang?.isoName ?? 'de';
@@ -141,13 +141,13 @@ const formatDayLabel = (dateStr: string) => {
   const yesterday = subtractFromDate(today, { days: 1 });
   const key = formatDate(dateObj, 'YYYY-MM-DD');
   if (key === formatDate(today, 'YYYY-MM-DD')) {
-    return t('weather.today');
+    return `<strong>${t('weather.today')}</strong>`;
   }
   if (key === formatDate(tomorrow, 'YYYY-MM-DD')) {
-    return t('weather.tomorrow');
+    return `<strong>${t('weather.tomorrow')}</strong>`;
   }
   if (key === formatDate(yesterday, 'YYYY-MM-DD')) {
-    return t('weather.yesterday');
+    return `<strong>${t('weather.yesterday')}</strong>`;
   }
   return formatDate(dateObj, 'DD.MM.');
 };
@@ -331,7 +331,7 @@ watchEffect(() => {
                   'weather-forecast__cell--temp': props.row.row === 'temp',
                 }">
                 <template v-if="props.row.row === 'day'">
-                  {{ formatDayLabel(day.date) }}
+                  <span v-html="formatDayLabel(day.date)" />
                 </template>
                 <template v-else-if="props.row.row === 'icons'">
                   <q-skeleton v-if="day.loading" type="QAvatar" size="40px" />
@@ -375,7 +375,7 @@ watchEffect(() => {
 
 .weather-forecast__table-wrap {
   min-width: max-content;
-  --weather-item-width: 56px;
+  --weather-item-width: 48x;
   --weather-left-width: 6px;
   --weather-right-width: 6px;
   --weather-pill-size: 20px;
