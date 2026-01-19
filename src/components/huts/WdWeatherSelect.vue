@@ -19,6 +19,7 @@ const meteoStore = useMeteoStore();
 const { weatherCodes, weatherCodesCollection } = storeToRefs(meteoStore);
 const { t } = useI18n();
 const $q = useQuasar();
+const isMobile = computed(() => $q.platform.is.mobile);
 
 const quasarLang = computed(() => {
   const isoName = $q.lang?.isoName ?? 'de';
@@ -136,7 +137,7 @@ watchEffect(() => {
 </script>
 
 <template>
-  <span v-if="canShow" class="weather-select" @click="scrollToForecast">
+  <span v-if="canShow" class="weather-select" @click="isMobile && scrollToForecast()">
     <q-skeleton v-if="loading" type="circle" width="48px" height="48px" />
     <q-img v-else-if="iconUrl" :src="iconUrl" width="48px" height="48px" fit="contain" no-spinner />
     <span v-else class="weather-select__empty"></span>
