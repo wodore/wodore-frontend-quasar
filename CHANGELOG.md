@@ -7,6 +7,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.5] - 2026-01-22
+
+#### 🚧 Breaking changes
+
+- Update to backend changed api (symbols) ([#36]) - [d13e81a]
+
+#### 🚀 Features
+
+- Add weather forecast support ([#45]) - [2fddecd]
+- Add availabilty to hut details ([#42]) - [611e3fa]
+- Improve mobile search ([#41]) - [eae57b5]
+- Improve version information ([#39]) - [bfa4862]
+- Improve index caching (new version on first reload) ([#38]) - [939dcd8]
+- Improve pwa caching ([#37]) - [9771db5]
+- Improve search style ([#35]) - [7af9b2a]
+- Improve search ([#34]) - [86bc0ec]
+- Add search to toolbar ([#33]) - [9c76ce0]
+
+#### 🐛 Fixes
+
+- Fix scrolling issues for hut details and version information ([#46]) - [bee60fb]
+
+[#36]: https://github.com/wodore/wodore-frontend-quasar/pull/36
+[d13e81a]: https://github.com/wodore/wodore-frontend-quasar/commit/d13e81a8b7ad485c34f5f89c0a3430d2d5f52081
+[#45]: https://github.com/wodore/wodore-frontend-quasar/pull/45
+[2fddecd]: https://github.com/wodore/wodore-frontend-quasar/commit/2fddecd7212165bf9d56ac0e4548d7dd03ce104c
+[#42]: https://github.com/wodore/wodore-frontend-quasar/pull/42
+[611e3fa]: https://github.com/wodore/wodore-frontend-quasar/commit/611e3fabf38f0c4729609d068ee0fed590f4b860
+[#41]: https://github.com/wodore/wodore-frontend-quasar/pull/41
+[eae57b5]: https://github.com/wodore/wodore-frontend-quasar/commit/eae57b5428c5274bed9a54f479628d0ffaa28cdc
+[#39]: https://github.com/wodore/wodore-frontend-quasar/pull/39
+[bfa4862]: https://github.com/wodore/wodore-frontend-quasar/commit/bfa48629e6a62b014429e459fe3479861ab21e68
+[#38]: https://github.com/wodore/wodore-frontend-quasar/pull/38
+[939dcd8]: https://github.com/wodore/wodore-frontend-quasar/commit/939dcd8fdbbf2e487dbed9cb798090f0a3bcdef9
+[#37]: https://github.com/wodore/wodore-frontend-quasar/pull/37
+[9771db5]: https://github.com/wodore/wodore-frontend-quasar/commit/9771db5a9292e7e373daec152183968fbdb4c34b
+[#35]: https://github.com/wodore/wodore-frontend-quasar/pull/35
+[7af9b2a]: https://github.com/wodore/wodore-frontend-quasar/commit/7af9b2ae96be66ea476b9d19a2fa3ed44d15b591
+[#34]: https://github.com/wodore/wodore-frontend-quasar/pull/34
+[86bc0ec]: https://github.com/wodore/wodore-frontend-quasar/commit/86bc0ecc13ec9dea69e36bd6b07762c13032e591
+[#33]: https://github.com/wodore/wodore-frontend-quasar/pull/33
+[9c76ce0]: https://github.com/wodore/wodore-frontend-quasar/commit/9c76ce0400009690ae1f586cfbad05d6d7756ab8
+[#46]: https://github.com/wodore/wodore-frontend-quasar/pull/46
+[bee60fb]: https://github.com/wodore/wodore-frontend-quasar/commit/bee60fbae5385320cc1f2d3c94143989f704e3df
+[0.0.5]: https://github.com/wodore/wodore-frontend-quasar/compare/v0.0.4..v0.0.5
+
 ## [0.0.4] - 2026-01-06
 
 #### 🚀 Features
