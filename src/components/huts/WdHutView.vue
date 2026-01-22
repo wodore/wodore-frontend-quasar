@@ -201,7 +201,8 @@ const addHeaderShadow: IntersectionValue = (entry) => {
   min-height: 100%;
   height: 100%;
 }
-
+</style>
+<style scoped lang="scss">
 .footer-toolbar {
   border-top: 1px solid black;
 }
