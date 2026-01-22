@@ -98,6 +98,7 @@
     "temp": "Temp.",
     "range_separator": "...",
     "unit": "°C",
-    "unavailable": "Wetterdaten nicht verfügbar"
+    "unavailable": "Wetterdaten nicht verfügbar",
+    "no_guarantee": "ohne Gewähr"
   }
 }

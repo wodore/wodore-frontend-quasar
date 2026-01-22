@@ -172,7 +172,8 @@ watchEffect(() => {
   <span v-if="canShow" class="weather-select" @click="isMobile && scrollToForecast()">
     <q-img v-if="iconUrl" :src="iconUrl" width="48px" height="48px" fit="contain" no-spinner />
     <span v-else class="weather-select__empty"></span>
-    <q-tooltip v-if="conditionLabel" :delay="$q.platform.is.mobile ? 100 : 500">
+    <q-tooltip v-if="conditionLabel" :delay="$q.platform.is.mobile ? 100 : 500"
+      :hide-delay="$q.platform.is.mobile ? 800 : 200">
       <span v-html="conditionLabel"></span>
     </q-tooltip>
   </span>

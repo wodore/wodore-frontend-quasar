@@ -315,8 +315,9 @@ watchEffect(() => {
       </div>
       <div class="weather-forecast__attribution">
         <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">
-          Weather data by Open-Meteo.com
+          open-meteo.com
         </a>
+        <span class="weather-forecast__disclaimer">({{ t('weather.no_guarantee') }})</span>
       </div>
     </div>
     <div v-if="error" class="text-caption text-negative q-mb-sm">
@@ -355,7 +356,8 @@ watchEffect(() => {
                   <q-skeleton v-if="day.loading" type="QAvatar" size="40px" />
                   <q-img v-else-if="getIconUrl(day)" :src="getIconUrl(day) ?? ''" width="48px" height="48px" no-spinner
                     class="weather-forecast__icon">
-                    <q-tooltip :delay="$q.platform.is.mobile ? 80 : 500">
+                    <q-tooltip :delay="$q.platform.is.mobile ? 80 : 500"
+                      :hide-delay="$q.platform.is.mobile ? 800 : 200">
                       {{ getIconLabel(day) }}
                     </q-tooltip>
                   </q-img>
@@ -585,5 +587,9 @@ watchEffect(() => {
 
 .weather-forecast__attribution a:hover {
   text-decoration: underline;
+}
+
+.weather-forecast__disclaimer {
+  color: rgba(0, 0, 0, 0.35);
 }
 </style>
