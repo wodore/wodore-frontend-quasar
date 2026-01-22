@@ -79,6 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [8d7d7f7]: https://github.com/wodore/wodore-frontend-quasar/commit/8d7d7f7f362ad62c2475fe2ad123216c6ffaac27
 [#29]: https://github.com/wodore/wodore-frontend-quasar/pull/29
 [9b1956b]: https://github.com/wodore/wodore-frontend-quasar/commit/9b1956bc640757c7c0385267f295aa2112ab416f
+[0.0.4]: https://github.com/wodore/wodore-frontend-quasar/compare/v0.0.2..v0.0.4
 
 ## [0.0.2] - 2026-01-01
 
