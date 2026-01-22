@@ -191,7 +191,7 @@ const addHeaderShadow: IntersectionValue = (entry) => {
 }
 </style>
 <style lang="scss">
-.q-layout-container > div > div {
+.q-layout-container>div>div {
   min-height: 0;
   max-height: 100%;
   height: 100%;
@@ -201,8 +201,7 @@ const addHeaderShadow: IntersectionValue = (entry) => {
   min-height: 100%;
   height: 100%;
 }
-</style>
-<style scoped lang="scss">
+
 .footer-toolbar {
   border-top: 1px solid black;
 }
@@ -255,65 +254,37 @@ const addHeaderShadow: IntersectionValue = (entry) => {
 </style>
 
 <template>
-  <q-layout
-    view="lhh LpR lff"
-    container
-    class="no-background fit"
-    :class="$q.dark.isActive ? 'bg-grey-9' : 'bg-grey-3'"
-    style="height: 100%"
-  >
+  <q-layout view="lhh LpR lff" container class="no-background" :class="$q.dark.isActive ? 'bg-grey-9' : 'bg-grey-3'"
+    style="height: calc(100% - 80px)">
     <WdHutHeader :hut="hut" :ontop="headerShadow">
       <WdHutToolbar :hut="hut" v-if="hutToolbarTop">
         <WdSourceButtons :hut="hut" class="q-ml-xl" />
       </WdHutToolbar>
     </WdHutHeader>
     <q-page-container class="fit" style="height: 100%">
-      <q-scroll-area
-        visible
-        :thumb-style="{
-          width: '6px',
-          backgroundColor: '#998019',
-          opacity: '0.5',
-          borderRadius: '8px 0 0 8px',
-        }"
-        style="height: 100%"
-        class="fit"
-      >
+      <q-scroll-area visible :thumb-style="{
+        width: '6px',
+        backgroundColor: '#998019',
+        opacity: '0.5',
+        borderRadius: '8px 0 0 8px',
+      }" style="height: 100%" class="fit">
         <q-page style="height: 100%" class="q-px-md fit" v-if="hut">
           <!-- used to add shadow to header -->
-          <h2
-            :style="
-              ($q.screen.gt.sm ? 'margin-top: -3px; ' : '') + 'text-wrap: wrap;'
-            "
-            class="text-subtitle1 text-accent-900 q-ma-none q-mb-sm"
-          >
+          <h2 :style="($q.screen.gt.sm ? 'margin-top: -3px; ' : '') + 'text-wrap: wrap;'
+            " class="text-subtitle1 text-accent-900 q-ma-none q-mb-sm">
             <span v-intersection="addHeaderShadow" />
             {{ hut.owner?.name }}
           </h2>
 
           <div class="row items-start q-gutter-sm">
-            <div
-              v-if="hut.images && hut.images[0] && 'urls' in hut.images[0]"
-              class="col-md-12 col-sm-7 col-7"
-            >
-              <div
-                :class="{
-                  'q-ma-sm': $q.screen.gt.sm,
-                  'q-ma-lg': $q.screen.gt.md,
-                }"
-              >
-                <a
-                  :href="(hut.images[0] as any).urls['medium']"
-                  target="_blank"
-                >
-                  <q-img
-                    :src="(hut.images[0] as any).urls['preview']"
-                    :placeholder-src="
-                      (hut.images[0] as any).urls['preview-placeholder']
-                    "
-                    class="hut-image"
-                    :class="{ 'shadow-8': $q.screen.gt.sm }"
-                  >
+            <div v-if="hut.images && hut.images[0] && 'urls' in hut.images[0]" class="col-md-12 col-sm-7 col-7">
+              <div :class="{
+                'q-ma-sm': $q.screen.gt.sm,
+                'q-ma-lg': $q.screen.gt.md,
+              }">
+                <a :href="(hut.images[0] as any).urls['medium']" target="_blank">
+                  <q-img :src="(hut.images[0] as any).urls['preview']" :placeholder-src="(hut.images[0] as any).urls['preview-placeholder']
+                    " class="hut-image" :class="{ 'shadow-8': $q.screen.gt.sm }">
                     <div class="absolute-bottom-right row attribution">
                       <q-icon class="q-mr-sm" name="eva-camera-outline" />
                       <div class="img-link" v-html="hut.photos_attribution" />
@@ -323,50 +294,28 @@ const addHeaderShadow: IntersectionValue = (entry) => {
                 <!-- <a :href="(hut.images[0] as any).urls['600x400']">open</a> -->
               </div>
             </div>
-            <div
-              class="col-md-12"
-              :class="{
-                'col-sm-4': headerImg,
-                'col-4': headerImg,
-                'col-12': !headerImg,
-              }"
-            >
-              <div
-                class="row items-start justify-start q-gutter-sm"
-                :class="{
-                  'justify-center': $q.screen.gt.sm && headerImg,
-                  'q-gutter-lg': $q.screen.gt.sm,
-                }"
-              >
-                <WdHutTypeChip
-                  class="shadow-0 col-md-6 col-sm-12 col-12"
-                  :type="hut.type_open"
-                  :capacity="hut.capacity_open"
-                  :open="isHutOpen"
-                />
-                <WdHutTypeChip
-                  class="shadow-0 col-md-6 col-sm-12 col-12"
-                  :type="hut.type_closed"
-                  :capacity="hut.capacity_closed"
-                  :open="isHutClosed"
-                />
+            <div class="col-md-12" :class="{
+              'col-sm-4': headerImg,
+              'col-4': headerImg,
+              'col-12': !headerImg,
+            }">
+              <div class="row items-start justify-start q-gutter-sm" :class="{
+                'justify-center': $q.screen.gt.sm && headerImg,
+                'q-gutter-lg': $q.screen.gt.sm,
+              }">
+                <WdHutTypeChip class="shadow-0 col-md-6 col-sm-12 col-12" :type="hut.type_open"
+                  :capacity="hut.capacity_open" :open="isHutOpen" />
+                <WdHutTypeChip class="shadow-0 col-md-6 col-sm-12 col-12" :type="hut.type_closed"
+                  :capacity="hut.capacity_closed" :open="isHutClosed" />
                 <!-- Location Chip -->
-                <q-chip
-                  size="md"
-                  class="bg-grey-4 q-mr-none shadow-0 col-md-6 col-sm-12 col-12"
-                  style="min-width: 90px; max-width: 90px; max-height: 30px"
-                  v-if="hut.elevation"
-                >
+                <q-chip size="md" class="bg-grey-4 q-mr-none shadow-0 col-md-6 col-sm-12 col-12"
+                  style="min-width: 90px; max-width: 90px; max-height: 30px" v-if="hut.elevation">
                   <q-avatar class="bg-grey-5" text-color="primary-500">
                     <q-icon size="20px">
                       <IconMingcuteMountain2Fill />
                     </q-icon>
                   </q-avatar>
-                  <span
-                    class="text-primary-500"
-                    style="font-weight: 500; width: 28px"
-                    >{{ hut.elevation }} m</span
-                  >
+                  <span class="text-primary-500" style="font-weight: 500; width: 28px">{{ hut.elevation }} m</span>
                 </q-chip>
               </div>
             </div>
@@ -374,38 +323,27 @@ const addHeaderShadow: IntersectionValue = (entry) => {
 
           <body class="text-body2 q-my-sm">
             <!-- {{ hut.description }} -->
-            <div
-              class="attribution attr_link text-right"
-              style="padding: 0"
-              v-html="hut.description_attribution"
-            ></div>
-            <WdTextClamp
-              :max-lines="5"
-              :text="hut.description"
-              style="padding-bottom: 0"
-            />
+            <div class="attribution attr_link text-right" style="padding: 0" v-html="hut.description_attribution"></div>
+            <WdTextClamp :max-lines="5" :text="hut.description" style="padding-bottom: 0" />
           </body>
 
-          <WdHutAvailabilities
-            v-if="slug"
-            :slug="slug"
-            :has-availability="hut.has_availability ?? undefined"
+          <WdHutAvailabilities v-if="slug" :slug="slug" :has-availability="hut.has_availability ?? undefined"
             :symbol-map="{
               ...(hut.type_open?.slug
                 ? {
-                    [hut.type_open.slug]: {
-                      detailed: `https://hub.wodore.com/media/huts/types/symbols/detailed/${hut.type_open.slug}.png`,
-                      simple: `https://hub.wodore.com/media/huts/types/symbols/simple/${hut.type_open.slug}.png`,
-                    },
-                  }
+                  [hut.type_open.slug]: {
+                    detailed: `https://hub.wodore.com/media/huts/types/symbols/detailed/${hut.type_open.slug}.png`,
+                    simple: `https://hub.wodore.com/media/huts/types/symbols/simple/${hut.type_open.slug}.png`,
+                  },
+                }
                 : {}),
               ...(hut.type_closed?.slug
                 ? {
-                    [hut.type_closed.slug]: {
-                      detailed: `https://hub.wodore.com/media/huts/types/symbols/detailed/${hut.type_closed.slug}.png`,
-                      simple: `https://hub.wodore.com/media/huts/types/symbols/simple/${hut.type_closed.slug}.png`,
-                    },
-                  }
+                  [hut.type_closed.slug]: {
+                    detailed: `https://hub.wodore.com/media/huts/types/symbols/detailed/${hut.type_closed.slug}.png`,
+                    simple: `https://hub.wodore.com/media/huts/types/symbols/simple/${hut.type_closed.slug}.png`,
+                  },
+                }
                 : {}),
               unknown: {
                 detailed:
@@ -413,20 +351,12 @@ const addHeaderShadow: IntersectionValue = (entry) => {
                 simple:
                   'https://hub.wodore.com/media/huts/types/symbols/simple/unknown.png',
               },
-            }"
-          />
+            }" />
 
-          <WdHutOpenMonthly
-            :open_monthly="hut.open_monthly"
-            :type_open="hut.type_open"
-            :type_closed="hut.type_closed"
-          />
-          <WdHutWeatherForecast
-            v-if="hut.location"
-            :latitude="hut.location.lat"
-            :longitude="hut.location.lon"
-            :elevation="hut.elevation ?? undefined"
-          />
+          <WdHutOpenMonthly :open_monthly="hut.open_monthly" :type_open="hut.type_open"
+            :type_closed="hut.type_closed" />
+          <WdHutWeatherForecast v-if="hut.location" :latitude="hut.location.lat" :longitude="hut.location.lon"
+            :elevation="hut.elevation ?? undefined" />
           <!--LOCATION-->
           <div class="text-subtitle1 text-accent">{{ $t('location') }}</div>
           <q-list dense>
@@ -437,21 +367,16 @@ const addHeaderShadow: IntersectionValue = (entry) => {
                 </q-icon>
               </q-item-section>
               <q-item-section>
-                <q-item-label
-                  >{{ hut.location.lat.toPrecision(7) }},
-                  {{ hut.location.lon.toPrecision(6) }}</q-item-label
-                >
+                <q-item-label>{{ hut.location.lat.toPrecision(7) }},
+                  {{ hut.location.lon.toPrecision(6) }}</q-item-label>
               </q-item-section>
-              <q-item-section
-                side
-                @click="
-                  copyToClipboard(
-                    hut.location.lat.toPrecision(7).toString() +
-                      ', ' +
-                      hut.location.lon.toPrecision(6).toString(),
-                  )
-                "
-              >
+              <q-item-section side @click="
+                copyToClipboard(
+                  hut.location.lat.toPrecision(7).toString() +
+                  ', ' +
+                  hut.location.lon.toPrecision(6).toString(),
+                )
+                ">
                 <q-btn flat dense round size="10pt">
                   <q-icon size="10pt">
                     <IconFa6SolidCopy />

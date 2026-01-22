@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watchEffect, watch, nextTick } from 'vue';
 import { date, QVirtualScroll, QScrollArea, useQuasar } from 'quasar';
-import { useCssVar, useWindowSize } from '@vueuse/core';
+import { useCssVar, useElementSize } from '@vueuse/core';
 import { clientWodore } from '@clients/index';
 import { useHutsStore } from '@stores/huts-store';
 import { storeToRefs } from 'pinia';
@@ -10,8 +10,8 @@ import WdHutAvailability from './WdHutAvailability.vue';
 const { formatDate, addToDate, subtractFromDate } = date;
 const { selectedDate } = storeToRefs(useHutsStore());
 const containerRef = ref<HTMLElement | null>(null);
-const monthSelectorRef = ref<HTMLElement | null>(null);
-const { width: windowWidth } = useWindowSize();
+const dialogReg = ref<HTMLElement | null>(null);
+const { width: dialogWidth } = useElementSize(dialogReg);
 const virtualScrollRef = ref<InstanceType<typeof QVirtualScroll> | null>(null);
 const scrollAreaRef = ref<InstanceType<typeof QScrollArea> | null>(null);
 const $q = useQuasar();
@@ -91,11 +91,19 @@ const nextMonths = computed(() => {
     monthKey: string;
   }[] = [];
   const base = todayDate.value;
-  const monthsAheadInit = Math.max(
-    0,
-    Math.floor((windowWidth.value - 100) / 40),
-  );
-  const monthsAhead = Math.min(8, monthsAheadInit);
+  let monthsAhead: number;
+  console.log("DIALOG WIDTH:", dialogWidth.value)
+  if (dialogWidth.value > 400) {
+    monthsAhead = 8;
+  } else if (dialogWidth.value > 360) {
+    monthsAhead = 8;
+  } else {
+    const monthsAheadInit = Math.max(
+      0,
+      Math.floor((dialogWidth.value - 100) / 40),
+    );
+    monthsAhead = Math.min(8, monthsAheadInit);
+  }
   for (let i = 0; i <= monthsAhead; i += 1) {
     const monthDate = addToDate(base, { months: i });
     months.push({
@@ -511,114 +519,59 @@ const upcomingMonthClass = computed(() => {
 </script>
 
 <template>
-  <div v-if="hasAvailability !== false">
+  <div v-if="hasAvailability !== false" ref="dialogRef">
     <div class="row items-center no-wrap q-mb-xs q-mt-sm">
       <div class="text-subtitle1 text-accent">Verfügbarkeit</div>
       <!-- Month Selection -->
-      <q-btn
-        v-if="!isMobile"
-        dense
-        flat
-        class="month-nav row"
-        @click="scrollByMonths(-5)"
-      >
+      <q-btn v-if="!isMobile" dense flat class="month-nav row" @click="scrollByMonths(-5)">
         <q-icon size="sm">
           <IconEvaArrowIosBackOutline />
         </q-icon>
       </q-btn>
-      <div
-        ref="monthSelectorRef"
-        class="month-selector row items-center no-wrap"
-      >
-        <div
-          v-for="(month, idx) in nextMonths"
-          :key="month.date"
-          class="month-chip-wrap"
-          :class="[
-            month.key === activeMonthKey
-              ? `month_${month.monthKey}--gradient-dark`
-              : `month_${month.monthKey}--gradient`,
-            {
-              'month-chip-wrap--first': idx === 0,
-              'month-chip-wrap--last': idx === nextMonths.length - 1,
-            },
-          ]"
-        >
-          <q-btn
-            dense
-            unelevated
-            class="month-chip"
-            :style="{ fontSize: isMobile ? '9px' : '11px' }"
-            @click="
-              scrollToDate(month.key === today.slice(0, 7) ? today : month.date)
-            "
-          >
+      <div class="month-selector row items-center no-wrap">
+        <div v-for="(month, idx) in nextMonths" :key="month.date" class="month-chip-wrap" :class="[
+          month.key === activeMonthKey
+            ? `month_${month.monthKey}--gradient-dark`
+            : `month_${month.monthKey}--gradient`,
+          {
+            'month-chip-wrap--first': idx === 0,
+            'month-chip-wrap--last': idx === nextMonths.length - 1,
+          },
+        ]">
+          <q-btn dense unelevated class="month-chip" :style="{ fontSize: isMobile ? '9px' : '11px' }" @click="
+            scrollToDate(month.key === today.slice(0, 7) ? today : month.date)
+            ">
             {{ month.label }}
           </q-btn>
         </div>
       </div>
-      <q-btn
-        v-if="!isMobile"
-        dense
-        flat
-        class="month-nav"
-        @click="scrollByMonths(5)"
-      >
+      <q-btn v-if="!isMobile" dense flat class="month-nav" @click="scrollByMonths(5)">
         <q-icon size="sm">
           <IconEvaArrowIosForwardOutline />
         </q-icon>
       </q-btn>
     </div>
     <div ref="containerRef" class="availability-container">
-      <div
-        v-if="currentMonthLabel"
-        class="month-label-overlay"
-        :class="currentMonthClass"
-        :style="{ transform: `translateX(${monthLabelOffset}px)` }"
-      >
+      <div v-if="currentMonthLabel" class="month-label-overlay" :class="currentMonthClass"
+        :style="{ transform: `translateX(${monthLabelOffset}px)` }">
         {{ currentMonthLabel }}
       </div>
-      <div
-        v-if="upcomingMonthLabel && upcomingMonthOffset !== null"
-        class="month-label-overlay"
-        :class="upcomingMonthClass"
-        :style="{ transform: `translateX(${upcomingMonthOffset}px)` }"
-      >
+      <div v-if="upcomingMonthLabel && upcomingMonthOffset !== null" class="month-label-overlay"
+        :class="upcomingMonthClass" :style="{ transform: `translateX(${upcomingMonthOffset}px)` }">
         {{ upcomingMonthLabel.label }}
       </div>
-      <div
-        v-if="error && availabilityItems.length === 0"
-        class="availability-content error-content"
-      >
+      <div v-if="error && availabilityItems.length === 0" class="availability-content error-content">
         <div class="text-caption text-negative">{{ error }}</div>
       </div>
-      <q-scroll-area
-        v-else
-        ref="scrollAreaRef"
-        id="availability-scroll-area"
-        class="availability-scroll-area"
-        :horizontal-thumb-style="{ height: isMobile ? '0px' : '5px' }"
-        @scroll="onScroll"
-        @wheel.prevent="onWheel"
-      >
-        <q-virtual-scroll
-          ref="virtualScrollRef"
-          scroll-target="#availability-scroll-area > .scroll"
-          :items="availabilityItems"
-          :virtual-scroll-item-size="itemWidth"
-          virtual-scroll-horizontal
-          virtual-scroll-slice-ratio-before="7"
-          virtual-scroll-slice-ratio-after="14"
-          @virtual-scroll="onVirtualScroll"
-        >
+      <q-scroll-area v-else ref="scrollAreaRef" id="availability-scroll-area" class="availability-scroll-area"
+        :horizontal-thumb-style="{ height: isMobile ? '0px' : '5px' }" @scroll="onScroll" @wheel.prevent="onWheel">
+        <q-virtual-scroll ref="virtualScrollRef" scroll-target="#availability-scroll-area > .scroll"
+          :items="availabilityItems" :virtual-scroll-item-size="itemWidth" virtual-scroll-horizontal
+          virtual-scroll-slice-ratio-before="7" virtual-scroll-slice-ratio-after="14" @virtual-scroll="onVirtualScroll">
           <template v-slot="{ item, index }">
             <div :key="index" class="day-item">
-              <WdHutAvailability
-                :day="item"
-                :is-selected="item.date === startDate"
-                :is-today="isToday(item.date)"
-                :type-icon="getSymbolForDay(item.hut_type)"
-              />
+              <WdHutAvailability :day="item" :is-selected="item.date === startDate" :is-today="isToday(item.date)"
+                :type-icon="getSymbolForDay(item.hut_type)" />
             </div>
           </template>
         </q-virtual-scroll>
