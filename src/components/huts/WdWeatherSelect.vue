@@ -99,16 +99,20 @@ const selectedDayLabel = computed(() => {
   if (key === yesterday.toDateString()) {
     return t('weather.yesterday');
   }
-  return selectedDateObj.value.toLocaleDateString('de-CH', {
+  const dayName = selectedDateObj.value.toLocaleDateString('de-CH', {
+    weekday: 'long',
+  });
+  const dateStr = selectedDateObj.value.toLocaleDateString('de-CH', {
     day: '2-digit',
     month: '2-digit',
   });
+  return `${dayName}, ${dateStr}`;
 });
 const conditionLabel = computed(() => {
   if (!iconDescription.value) {
     return '';
   }
-  return `${selectedDayLabel.value}:\n${iconDescription.value}`;
+  return `${selectedDayLabel.value}<br><strong>${iconDescription.value}</strong>`;
 });
 const targetId = computed(() => props.targetId ?? 'weather-forecast-section');
 
@@ -179,8 +183,12 @@ watchEffect(() => {
       no-spinner
     />
     <span v-else class="weather-select__empty"></span>
-    <q-tooltip v-if="conditionLabel" :delay="500">
-      {{ conditionLabel }}
+    <q-tooltip
+      v-if="conditionLabel"
+      :delay="$q.platform.is.mobile ? 100 : 500"
+      :hide-delay="$q.platform.is.mobile ? 800 : 200"
+    >
+      <span v-html="conditionLabel"></span>
     </q-tooltip>
   </span>
 </template>

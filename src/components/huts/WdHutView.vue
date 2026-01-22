@@ -201,8 +201,7 @@ const addHeaderShadow: IntersectionValue = (entry) => {
   min-height: 100%;
   height: 100%;
 }
-</style>
-<style scoped lang="scss">
+
 .footer-toolbar {
   border-top: 1px solid black;
 }
@@ -258,9 +257,9 @@ const addHeaderShadow: IntersectionValue = (entry) => {
   <q-layout
     view="lhh LpR lff"
     container
-    class="no-background fit"
+    class="no-background"
     :class="$q.dark.isActive ? 'bg-grey-9' : 'bg-grey-3'"
-    style="height: 100%"
+    :style="`height: ${$q.screen.gt.sm ? 'calc(100% - 80px)' : '100%'}`"
   >
     <WdHutHeader :hut="hut" :ontop="headerShadow">
       <WdHutToolbar :hut="hut" v-if="hutToolbarTop">

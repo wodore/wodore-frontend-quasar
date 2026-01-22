@@ -65,6 +65,7 @@
     "temp": "Temp.",
     "range_separator": "...",
     "unit": "°C",
-    "unavailable": "Donnees meteo indisponibles"
+    "unavailable": "Donnees meteo indisponibles",
+    "no_guarantee": "sans garantie"
   }
 }

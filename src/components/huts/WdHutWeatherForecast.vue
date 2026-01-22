@@ -134,6 +134,14 @@ const initializeDateRange = () => {
   return items;
 };
 
+const isDateInPast = (dateStr: string): boolean => {
+  const dateObj = new Date(dateStr);
+  const today = new Date();
+  const todayKey = formatDate(today, 'YYYY-MM-DD');
+  const dateKey = formatDate(dateObj, 'YYYY-MM-DD');
+  return dateKey < todayKey;
+};
+
 const formatDayLabel = (dateStr: string) => {
   const dateObj = new Date(dateStr);
   const today = new Date();
@@ -311,8 +319,11 @@ watchEffect(() => {
           target="_blank"
           rel="noopener noreferrer"
         >
-          Weather data by Open-Meteo.com
+          open-meteo.com
         </a>
+        <span class="weather-forecast__disclaimer"
+          >({{ t('weather.no_guarantee') }})</span
+        >
       </div>
     </div>
     <div v-if="error" class="text-caption text-negative q-mb-sm">
@@ -367,6 +378,8 @@ watchEffect(() => {
                   'weather-forecast__cell--day': props.row.row === 'day',
                   'weather-forecast__cell--icon': props.row.row === 'icons',
                   'weather-forecast__cell--temp': props.row.row === 'temp',
+                  'weather-forecast__cell--past':
+                    props.row.row === 'day' && isDateInPast(day.date),
                 }"
               >
                 <template v-if="props.row.row === 'day'">
@@ -382,7 +395,10 @@ watchEffect(() => {
                     no-spinner
                     class="weather-forecast__icon"
                   >
-                    <q-tooltip :delay="500">
+                    <q-tooltip
+                      :delay="$q.platform.is.mobile ? 80 : 500"
+                      :hide-delay="$q.platform.is.mobile ? 800 : 200"
+                    >
                       {{ getIconLabel(day) }}
                     </q-tooltip>
                   </q-img>
@@ -533,6 +549,10 @@ watchEffect(() => {
   font-size: 11px;
 }
 
+.weather-forecast__cell--past {
+  color: rgba(0, 0, 0, 0.35);
+}
+
 .weather-forecast__cell--icon {
   align-items: center;
   justify-content: center;
@@ -614,5 +634,9 @@ watchEffect(() => {
 
 .weather-forecast__attribution a:hover {
   text-decoration: underline;
+}
+
+.weather-forecast__disclaimer {
+  color: rgba(0, 0, 0, 0.35);
 }
 </style>

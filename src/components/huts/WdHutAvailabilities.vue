@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watchEffect, watch, nextTick } from 'vue';
 import { date, QVirtualScroll, QScrollArea, useQuasar } from 'quasar';
-import { useCssVar, useWindowSize } from '@vueuse/core';
+import { useCssVar, useElementSize } from '@vueuse/core';
 import { clientWodore } from '@clients/index';
 import { useHutsStore } from '@stores/huts-store';
 import { storeToRefs } from 'pinia';
@@ -10,8 +10,8 @@ import WdHutAvailability from './WdHutAvailability.vue';
 const { formatDate, addToDate, subtractFromDate } = date;
 const { selectedDate } = storeToRefs(useHutsStore());
 const containerRef = ref<HTMLElement | null>(null);
-const monthSelectorRef = ref<HTMLElement | null>(null);
-const { width: windowWidth } = useWindowSize();
+const dialogRef = ref<HTMLElement | null>(null);
+const { width: dialogWidth } = useElementSize(dialogRef);
 const virtualScrollRef = ref<InstanceType<typeof QVirtualScroll> | null>(null);
 const scrollAreaRef = ref<InstanceType<typeof QScrollArea> | null>(null);
 const $q = useQuasar();
@@ -91,11 +91,23 @@ const nextMonths = computed(() => {
     monthKey: string;
   }[] = [];
   const base = todayDate.value;
-  const monthsAheadInit = Math.max(
-    0,
-    Math.floor((windowWidth.value - 100) / 40),
-  );
-  const monthsAhead = Math.min(8, monthsAheadInit);
+  let monthsAhead: number;
+
+  // Use container width if available, otherwise default to reasonable values
+  const width = dialogWidth.value || 0;
+
+  if (width > 500) {
+    monthsAhead = 10;
+  } else if (width > 400) {
+    monthsAhead = 8;
+  } else if (width > 340) {
+    monthsAhead = 6;
+  } else if (width > 320) {
+    monthsAhead = 4;
+  } else {
+    monthsAhead = 2;
+  }
+
   for (let i = 0; i <= monthsAhead; i += 1) {
     const monthDate = addToDate(base, { months: i });
     months.push({
@@ -511,7 +523,7 @@ const upcomingMonthClass = computed(() => {
 </script>
 
 <template>
-  <div v-if="hasAvailability !== false">
+  <div v-if="hasAvailability !== false" ref="dialogRef">
     <div class="row items-center no-wrap q-mb-xs q-mt-sm">
       <div class="text-subtitle1 text-accent">Verfügbarkeit</div>
       <!-- Month Selection -->
@@ -526,10 +538,7 @@ const upcomingMonthClass = computed(() => {
           <IconEvaArrowIosBackOutline />
         </q-icon>
       </q-btn>
-      <div
-        ref="monthSelectorRef"
-        class="month-selector row items-center no-wrap"
-      >
+      <div class="month-selector row items-center no-wrap">
         <div
           v-for="(month, idx) in nextMonths"
           :key="month.date"

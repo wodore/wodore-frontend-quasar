@@ -33,14 +33,15 @@ watchEffect(() => {
   top: 0;
   left: 0;
   right: 0;
+  height: calc(100vh - 40px);
 }
 
 .drawer-mobile {
   position: absolute;
-  bottom: 80px;
   top: 50px;
-  left: 0;
+  left: 4px;
   right: 0;
+  height: calc(100vh - 60px);
 }
 
 .map-menu__versions {
