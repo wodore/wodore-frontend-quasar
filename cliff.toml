@@ -6,7 +6,7 @@ initial_tag = "v0.0.1"
 [remote.github]
 owner = "wodore"
 repo = "wodore-frontend-quasar"
-token = "${GITHUB_TOKEN}"
+# token = "${GITHUB_TOKEN}" # public repo
 
 [git]
 tag_pattern = "^v[0-9]+\\.[0-9]+\\.[0-9]+"
