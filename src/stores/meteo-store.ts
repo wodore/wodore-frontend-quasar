@@ -608,9 +608,9 @@ export const useMeteoStore = defineStore('meteo', () => {
       field: K,
     ):
       | Omit<
-          WeatherWindowSummary,
-          'date' | 'model' | 'start_time' | 'end_time'
-        >[K]
+        WeatherWindowSummary,
+        'date' | 'model' | 'start_time' | 'end_time'
+      >[K]
       | null => {
       const modelSummary = summariesByModel.combined?.[dateKey];
       if (modelSummary && modelSummary[field] !== null) {

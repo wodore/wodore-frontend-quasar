@@ -10,8 +10,8 @@ import WdHutAvailability from './WdHutAvailability.vue';
 const { formatDate, addToDate, subtractFromDate } = date;
 const { selectedDate } = storeToRefs(useHutsStore());
 const containerRef = ref<HTMLElement | null>(null);
-const dialogReg = ref<HTMLElement | null>(null);
-const { width: dialogWidth } = useElementSize(dialogReg);
+const dialogRef = ref<HTMLElement | null>(null);
+const { width: dialogWidth } = useElementSize(dialogRef);
 const virtualScrollRef = ref<InstanceType<typeof QVirtualScroll> | null>(null);
 const scrollAreaRef = ref<InstanceType<typeof QScrollArea> | null>(null);
 const $q = useQuasar();
@@ -92,18 +92,22 @@ const nextMonths = computed(() => {
   }[] = [];
   const base = todayDate.value;
   let monthsAhead: number;
-  console.log("DIALOG WIDTH:", dialogWidth.value)
-  if (dialogWidth.value > 400) {
+
+  // Use container width if available, otherwise default to reasonable values
+  const width = dialogWidth.value || 0;
+
+  if (width > 500) {
+    monthsAhead = 10;
+  } else if (width > 400) {
     monthsAhead = 8;
-  } else if (dialogWidth.value > 360) {
-    monthsAhead = 8;
+  } else if (width > 340) {
+    monthsAhead = 6;
+  } else if (width > 320) {
+    monthsAhead = 4;
   } else {
-    const monthsAheadInit = Math.max(
-      0,
-      Math.floor((dialogWidth.value - 100) / 40),
-    );
-    monthsAhead = Math.min(8, monthsAheadInit);
+    monthsAhead = 2;
   }
+
   for (let i = 0; i <= monthsAhead; i += 1) {
     const monthDate = addToDate(base, { months: i });
     months.push({

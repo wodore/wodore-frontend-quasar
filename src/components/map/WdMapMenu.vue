@@ -33,14 +33,15 @@ watchEffect(() => {
   top: 0;
   left: 0;
   right: 0;
+  height: calc(100vh - 40px)
 }
 
 .drawer-mobile {
   position: absolute;
-  bottom: 80px;
   top: 50px;
-  left: 0;
+  left: 4px;
   right: 0;
+  height: calc(100vh - 60px)
 }
 
 .map-menu__versions {
@@ -50,12 +51,10 @@ watchEffect(() => {
 </style>
 
 <template>
-  <div
-    :class="{
-      'drawer-desktop': $q.screen.gt.xs,
-      'drawer-mobile': $q.screen.xs,
-    }"
-  >
+  <div :class="{
+    'drawer-desktop': $q.screen.gt.xs,
+    'drawer-mobile': $q.screen.xs,
+  }">
     <div class="text-center q-pa-xl">
       <q-icon size="80px">
         <IconNotoV1Construction />
@@ -63,35 +62,16 @@ watchEffect(() => {
     </div>
     <div class="bg-transparent absolute-bottom">
       <div class="q-pa-xs column q-gutter-sm">
-        <q-btn
-          v-if="!authStore.isLoggedIn"
-          color="secondary-700"
-          unelevated
-          flat
-          @click="$auth?.signinRedirect()"
-          label="Login"
-          style="opacity: 0.8"
-        />
-        <q-btn
-          v-else
-          color="accent-700"
-          unelevated
-          flat
-          @click="$auth?.logout()"
-          label="Logout"
-          style="opacity: 0.8"
-        />
+        <q-btn v-if="!authStore.isLoggedIn" color="secondary-700" unelevated flat @click="$auth?.signinRedirect()"
+          label="Login" style="opacity: 0.8" />
+        <q-btn v-else color="accent-700" unelevated flat @click="$auth?.logout()" label="Logout" style="opacity: 0.8" />
       </div>
       <!-- </div> -->
       <!-- <div class="q-pa-sm"> -->
       <div class="">
         <!-- Privacy Policy Link -->
         <div v-if="authStore.isEditor()" class="text-center q-mb-sm">
-          <router-link
-            :to="{ name: 'data-policy' }"
-            target="_blank"
-            class="text-secondary-700"
-          >
+          <router-link :to="{ name: 'data-policy' }" target="_blank" class="text-secondary-700">
             Datenschutz
           </router-link>
         </div>

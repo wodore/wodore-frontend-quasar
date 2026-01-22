@@ -255,7 +255,7 @@ const addHeaderShadow: IntersectionValue = (entry) => {
 
 <template>
   <q-layout view="lhh LpR lff" container class="no-background" :class="$q.dark.isActive ? 'bg-grey-9' : 'bg-grey-3'"
-    style="height: calc(100% - 80px)">
+    :style="`height: ${$q.screen.gt.sm ? 'calc(100% - 80px)' : '100%'}`">
     <WdHutHeader :hut="hut" :ontop="headerShadow">
       <WdHutToolbar :hut="hut" v-if="hutToolbarTop">
         <WdSourceButtons :hut="hut" class="q-ml-xl" />

@@ -306,11 +306,7 @@ watchEffect(() => {
         {{ t('weather.title') }}
       </div>
       <div class="weather-forecast__attribution">
-        <a
-          href="https://open-meteo.com/"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">
           Weather data by Open-Meteo.com
         </a>
       </div>
@@ -318,70 +314,38 @@ watchEffect(() => {
     <div v-if="error" class="text-caption text-negative q-mb-sm">
       {{ error }}
     </div>
-    <q-scroll-area
-      ref="scrollAreaRef"
-      id="weather-forecast-scroll"
-      class="weather-forecast"
-      :style="{ height: scrollAreaHeight }"
-      :horizontal-thumb-style="{ height: '3px' }"
-      :vertical-thumb-style="{ width: '0px' }"
-      :vertical-bar-style="{ width: '0px' }"
-    >
+    <q-scroll-area ref="scrollAreaRef" id="weather-forecast-scroll" class="weather-forecast"
+      :style="{ height: scrollAreaHeight }" :horizontal-thumb-style="{ height: '3px' }"
+      :vertical-thumb-style="{ width: '0px' }" :vertical-bar-style="{ width: '0px' }">
       <div ref="containerRef" class="weather-forecast__table-wrap">
-        <q-table
-          dense
-          flat
-          :grid="false"
-          hide-header
-          hide-pagination
-          :rows="rows"
-          :columns="columns"
-          row-key="row"
-          class="weather-forecast__table"
-          table-class="weather-forecast__table-el"
-          card-class="weather-forecast__table-card"
-        >
+        <q-table dense flat :grid="false" hide-header hide-pagination :rows="rows" :columns="columns" row-key="row"
+          class="weather-forecast__table" table-class="weather-forecast__table-el"
+          card-class="weather-forecast__table-card">
           <template v-slot:body="props">
             <tr>
-              <td
-                class="weather-forecast__cell weather-forecast__cell--left"
-                :class="{
-                  'weather-forecast__cell--day': props.row.row === 'day',
-                  'weather-forecast__cell--temp-label':
-                    props.row.row === 'temp',
-                }"
-              >
-                <q-icon
-                  v-if="props.row.row === 'temp'"
-                  size="16px"
-                  class="weather-forecast__temp-icon weather-forecast__temp-icon--pill"
-                >
+              <td class="weather-forecast__cell weather-forecast__cell--left" :class="{
+                'weather-forecast__cell--day': props.row.row === 'day',
+                'weather-forecast__cell--temp-label':
+                  props.row.row === 'temp',
+              }">
+                <q-icon v-if="props.row.row === 'temp'" size="16px"
+                  class="weather-forecast__temp-icon weather-forecast__temp-icon--pill">
                   <IconEvaThermometerFill />
                 </q-icon>
               </td>
-              <td
-                v-for="day in forecastDays"
-                :key="`${props.row.row}-${day.date}`"
-                class="weather-forecast__cell"
+              <td v-for="day in forecastDays" :key="`${props.row.row}-${day.date}`" class="weather-forecast__cell"
                 :class="{
                   'weather-forecast__cell--day': props.row.row === 'day',
                   'weather-forecast__cell--icon': props.row.row === 'icons',
                   'weather-forecast__cell--temp': props.row.row === 'temp',
-                }"
-              >
+                }">
                 <template v-if="props.row.row === 'day'">
                   <span v-html="formatDayLabel(day.date)" />
                 </template>
                 <template v-else-if="props.row.row === 'icons'">
                   <q-skeleton v-if="day.loading" type="QAvatar" size="40px" />
-                  <q-img
-                    v-else-if="getIconUrl(day)"
-                    :src="getIconUrl(day) ?? ''"
-                    width="48px"
-                    height="48px"
-                    no-spinner
-                    class="weather-forecast__icon"
-                  >
+                  <q-img v-else-if="getIconUrl(day)" :src="getIconUrl(day) ?? ''" width="48px" height="48px" no-spinner
+                    class="weather-forecast__icon">
                     <q-tooltip :delay="500">
                       {{ getIconLabel(day) }}
                     </q-tooltip>
@@ -481,13 +445,7 @@ watchEffect(() => {
 
 .weather-forecast__table :deep(.q-table tbody td:before),
 .weather-forecast__table :deep(.q-table tbody td:after),
-.weather-forecast__table
-  :deep(
-    .q-table
-      > tbody
-      > tr:not(.q-tr--no-hover):hover
-      > td:not(.q-td--no-hover):before
-  ) {
+.weather-forecast__table :deep(.q-table > tbody > tr:not(.q-tr--no-hover):hover > td:not(.q-td--no-hover):before) {
   content: none !important;
   background: transparent !important;
 }
