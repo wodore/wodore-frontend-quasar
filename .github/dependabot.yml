@@ -33,8 +33,6 @@ updates:
   #   schedule:
   #     interval: "weekly"
   #   labels:
-  #     - "dependencies"
-  #     - "github-actions"
   #     - "type:deps"
 
   # Docker dependencies (if you add Dockerfile updates)
@@ -43,42 +41,4 @@ updates:
   #   schedule:
   #     interval: "weekly"
   #   labels:
-  #     - "dependencies"
-  #     - "docker"
   #     - "type:deps"
-
-# Groups allow organizing multiple PRs into fewer, larger updates
-groups:
-  # Group all Quasar-related packages
-  quasar-framework:
-    patterns:
-      - "quasar"
-      - "@quasar/*"
-    exclude-patterns:
-      - "@quasar/icongenie"
-
-  # Group all Vue ecosystem packages
-  vue-ecosystem:
-    patterns:
-      - "vue"
-      - "vue-router"
-      - "pinia"
-      - "vue-i18n"
-
-  # Group TypeScript and ESLint
-  typescript-tooling:
-    patterns:
-      - "typescript"
-      - "@typescript-eslint/*"
-      - "typescript-eslint"
-      - "eslint"
-      - "eslint-*"
-      - "@eslint/*"
-
-  # Group testing tools (if you add tests later)
-  # testing-tools:
-  #   patterns:
-  #     - "vitest"
-  #     - "@vitest/*"
-  #     - "cypress"
-  #     - "@testing-library/*"
