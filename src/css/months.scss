@@ -58,8 +58,23 @@ $opacity-light: 0.7;
 @each $month, $color in $months-bg {
   $keys: map-keys($months-bg);
   $index: index($keys, $month);
-  $prev-index: if($index == 1, length($keys), $index - 1);
-  $next-index: if($index == length($keys), 1, $index + 1);
+
+  // Calculate previous index using @if
+  $prev-index: null;
+  @if $index == 1 {
+    $prev-index: length($keys);
+  } @else {
+    $prev-index: $index - 1;
+  }
+
+  // Calculate next index using @if
+  $next-index: null;
+  @if $index == length($keys) {
+    $next-index: 1;
+  } @else {
+    $next-index: $index + 1;
+  }
+
   $prev-month: nth($keys, $prev-index);
   $next-month: nth($keys, $next-index);
   $prev-color: map-get($months-bg, $prev-month);
