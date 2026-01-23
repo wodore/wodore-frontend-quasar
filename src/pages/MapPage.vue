@@ -9,7 +9,8 @@ const WdMapView = defineAsyncComponent(
 .background-map {
   background-color: #dddddd;
   opacity: 1;
-  background-image: linear-gradient(#d0d0d0 1.6px, transparent 1.6px),
+  background-image:
+    linear-gradient(#d0d0d0 1.6px, transparent 1.6px),
     linear-gradient(90deg, #d0d0d0 1.6px, transparent 1.6px),
     linear-gradient(#d0d0d0 0.8px, transparent 0.8px),
     linear-gradient(90deg, #d0d0d0 0.8px, #dddddd 0.8px);

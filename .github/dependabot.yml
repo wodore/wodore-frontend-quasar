@@ -1,0 +1,43 @@
+# Dependabot configuration for Wodore Frontend
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  # Node.js/npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "friday"
+      time: "17:00"
+    open-pull-requests-limit: 10
+    pull-request-branch-name:
+      separator: "-"
+    labels:
+      - "type:deps"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    # Allow production dependencies updates
+    allow:
+      - dependency-type: "production"
+    # Ignore major version updates for all packages to reduce noise
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # GitHub Actions (if you add workflows later)
+  # - package-ecosystem: "github-actions"
+  #   directory: "/"
+  #   schedule:
+  #     interval: "weekly"
+  #   labels:
+  #     - "type:deps"
+
+  # Docker dependencies (if you add Dockerfile updates)
+  # - package-ecosystem: "docker"
+  #   directory: "/"
+  #   schedule:
+  #     interval: "weekly"
+  #   labels:
+  #     - "type:deps"

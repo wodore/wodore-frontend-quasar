@@ -138,7 +138,6 @@ yarn release --help
 The version is automatically determined by git-cliff based on:
 
 1. **PR Labels**: Configure in `cliff.toml`
-
    - `BREAKING` - Major version bump (1.0.0 → 2.0.0)
    - `type:feature` - Minor version bump (1.0.0 → 1.1.0)
    - `type:bug`, `type:refactor`, etc. - Patch version bump (1.0.0 → 1.0.1)
@@ -167,7 +166,6 @@ The changelog groups changes by PR labels (from highest to lowest priority):
 To ensure changes appear in the changelog:
 
 1. Add appropriate labels to PRs before merging:
-
    - `type:feature` - New features
    - `type:bug` - Bug fixes
    - `type:refactor` - Code refactoring
@@ -469,7 +467,6 @@ docker run wodore-frontend env
 #### Authentication Not Working
 
 1. Verify OIDC environment variables:
-
    - `WODORE_OICD_ISSUER_URL`
    - `WODORE_OICD_CLIENT_ID`
    - `WODORE_OICD_RESOURCE_ID`

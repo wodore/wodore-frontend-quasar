@@ -1,10 +1,9 @@
-/* eslint-env node */
-
 // Configuration for your app
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js
 
 import { configure } from 'quasar/wrappers';
 import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 // import git from 'git-rev-sync';
 
 import { date } from 'quasar';
@@ -13,8 +12,7 @@ const { formatDate } = date;
 import IconsResolver from 'unplugin-icons/resolver';
 
 import { execSync } from 'child_process';
-const gitHash =
-  process.env.GIT_HASH || execSync('git rev-parse HEAD').toString().trim();
+const gitHash = process.env.GIT_HASH || execSync('git rev-parse HEAD').toString().trim();
 
 // export default defineConfig({
 //   plugins: [
@@ -24,7 +22,7 @@ const gitHash =
 
 // Manually load .env files for use in quasar.config.ts
 // This is required because Quasar loads .env files AFTER processing the config
-import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -39,7 +37,7 @@ for (const file of envFiles) {
 
 // add any new variable to the 'env' section
 
-export default configure((ctx) => {
+export default configure(ctx => {
   const appNameBase = process.env.WODORE_APP_NAME || 'Wodore';
   const appNameDev = () => {
     if (appNameBase.toLowerCase().includes('dore')) {
@@ -88,12 +86,19 @@ export default configure((ctx) => {
         node: 'node20',
       },
 
-      //alias: , "node"{
-      //  // TODO: does not work
-      //  services: path.join(__dirname, './src/services'),
-      //  extras: path.join(__dirname, './src/extras'),
-      //  '@clients': path.join(__dirname, './src/clients'),
-      //},
+      alias: {
+        '@': path.join(__dirname, './src'),
+        '@services': path.join(__dirname, './src/services'),
+        '@extras': path.join(__dirname, './src/extras'),
+        '@clients': path.join(__dirname, './src/clients'),
+        '@stores': path.join(__dirname, './src/stores'),
+        '@components': path.join(__dirname, './src/components'),
+        '@composables': path.join(__dirname, './src/composables'),
+        '@layouts': path.join(__dirname, './src/layouts'),
+        '@pages': path.join(__dirname, './src/pages'),
+        '@assets': path.join(__dirname, './src/assets'),
+        '@boot': path.join(__dirname, './src/boot'),
+      },
       vueRouterMode: 'history', // available values: 'hash', 'history'
       // vueRouterBase,
       // vueDevtools,
@@ -106,16 +111,11 @@ export default configure((ctx) => {
       env: {
         TIMESTAMP_VERSION_HEX:
           't' +
-          parseInt(formatDate(Date.now(), 'YYMMDD'))
-            .toString(16)
-            .padStart(5, '0') +
+          parseInt(formatDate(Date.now(), 'YYMMDD')).toString(16).padStart(5, '0') +
           '-' +
-          parseInt(formatDate(Date.now(), 'HHmm'))
-            .toString(16)
-            .padStart(3, '0'),
+          parseInt(formatDate(Date.now(), 'HHmm')).toString(16).padStart(3, '0'),
         WODORE_GIT_HASH: gitHash,
-        WODORE_APP_VERSION:
-          process.env.PACKAGE_VERSION || process.env.npm_package_version,
+        WODORE_APP_VERSION: process.env.PACKAGE_VERSION || process.env.npm_package_version,
         WODORE_APP_NAME: appName,
         WODORE_ENV: appEnv,
         WODORE_URL: process.env.WODORE_URL,
@@ -124,8 +124,7 @@ export default configure((ctx) => {
         WODORE_API_VERSION: process.env.WODORE_API_VERSION,
         WODORE_IMAGOR_KEY: process.env.WODORE_IMAGOR_KEY,
         WODORE_IMAGOR_URL: process.env.WODORE_IMAGOR_URL,
-        WODORE_IMAGOR_REPLACE_API_HOST_MEDIA:
-          process.env.WODORE_IMAGOR_REPLACE_API_HOST_MEDIA,
+        WODORE_IMAGOR_REPLACE_API_HOST_MEDIA: process.env.WODORE_IMAGOR_REPLACE_API_HOST_MEDIA,
         WODORE_UMAMI_WEBSITE_ID: process.env.WODORE_UMAMI_WEBSITE_ID,
         WODORE_UMAMI_WEBSITE_URL: process.env.WODORE_UMAMI_WEBSITE_URL,
         WODORE_OICD_ISSUER_URL: process.env.WODORE_OICD_ISSUER_URL,
@@ -164,6 +163,9 @@ export default configure((ctx) => {
 
             // you need to set i18n resource including paths !
             include: [fileURLToPath(new URL('./src/i18n', import.meta.url))],
+
+            // Explicitly set strictMessage to false to avoid transform issues
+            strictMessage: false,
           },
         ],
         [
@@ -174,6 +176,7 @@ export default configure((ctx) => {
             },
             eslint: {
               lintCommand: 'eslint "./**/*.{js,ts,mjs,cjs,vue}"',
+              useFlatConfig: true,
             },
           },
           { server: false },
@@ -332,11 +335,10 @@ export default configure((ctx) => {
     },
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/developing-browser-extensions/configuring-bex
-    bex: {
-      // extendBexScriptsConf (esbuildConf) {},
-      // extendBexManifestJson (json) {},
-
-      contentScripts: ['my-content-script'],
-    },
+    // bex: {
+    //   // extendBexScriptsConf (esbuildConf) {},
+    //   // extendBexManifestJson (json) {},
+    //   contentScripts: ['my-content-script'],
+    // },
   };
 });

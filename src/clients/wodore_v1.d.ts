@@ -5,207 +5,530 @@
 
 export interface paths {
   '/v1/geo/places/search': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /**
      * Search Geoplaces
      * @description Search for geographic places using fuzzy text search across all language fields.
      *
-     * Performance optimizations:
-     * - Fast prefix matching using B-tree indexes (very fast)
-     * - Trigram similarity only when needed (slower)
-     * - Early exit if enough prefix matches found
+     *     Performance optimizations:
+     *     - Fast prefix matching using B-tree indexes (very fast)
+     *     - Trigram similarity only when needed (slower)
+     *     - Early exit if enough prefix matches found
      */
     get: operations['search_geoplaces'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   '/v1/geo/places/nearby': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /**
      * Nearby Geoplaces
      * @description Find places near coordinates within a radius, ordered by distance.
      */
     get: operations['nearby_geoplaces'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   '/v1/categories/tree/{parent_slug}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /**
      * Get Category Tree
      * @description Get category hierarchy as a tree structure.
      *
-     * Supports dot or slash-notation slugs with max one parent (e.g., `map/transport`).
-     * The parent is optional but if slug is ambiguous, returns 400 error with available paths.
-     * Use `root` to return all root categories.
-     * Always excludes the root from results (returns children).
+     *     Supports dot or slash-notation slugs with max one parent (e.g., `map/transport`).
+     *     The parent is optional but if slug is ambiguous, returns 400 error with available paths.
+     *     Use `root` to return all root categories.
+     *     Always excludes the root from results (returns children).
      */
     get: operations['get_category_tree'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   '/v1/categories/list/{parent_slug}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /**
      * Get Category List
      * @description Get flat list of categories.
      *
-     * Supports dot-notation slugs with max one parent (e.g., 'accommodation.hut').
-     * If slug is ambiguous, returns 400 error with available paths.
-     * If slug is omitted, returns all categories.
-     * Always excludes the root from results (returns children).
+     *     Supports dot-notation slugs with max one parent (e.g., 'accommodation.hut').
+     *     If slug is ambiguous, returns 400 error with available paths.
+     *     If slug is omitted, returns all categories.
+     *     Always excludes the root from results (returns children).
      */
     get: operations['get_category_list_all'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   '/v1/categories/map/{parent_slug}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /**
      * Get Category Map
      * @description Get category hierarchy as a nested dictionary mapping.
      *
-     * Keys are category slugs, values contain category data with nested 'children' dict.
+     *     Keys are category slugs, values contain category data with nested 'children' dict.
      *
-     * Supports dot-notation slugs with max one parent (e.g., 'accommodation.hut').
-     * If slug is ambiguous, returns 400 error with available paths.
-     * If slug is omitted, returns all root categories as a map.
-     * Always excludes the root from results (returns children).
+     *     Supports dot-notation slugs with max one parent (e.g., 'accommodation.hut').
+     *     If slug is ambiguous, returns 400 error with available paths.
+     *     If slug is omitted, returns all root categories as a map.
+     *     Always excludes the root from results (returns children).
      */
     get: operations['get_category_map_all'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   '/v1/huts/bookings': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /**
      * Get hut bookings (deprecated)
      * @deprecated
      * @description **DEPRECATED**: Use `/huts/availability.geojson` instead. This endpoint will be removed in a future version.
      */
     get: operations['get_hut_bookings'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   '/v1/huts/bookings.geojson': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /**
      * Get hut bookings as GeoJSON (deprecated)
      * @deprecated
      * @description **DEPRECATED**: Use `/huts/availability.geojson` instead. This endpoint will be removed in a future version.
      */
     get: operations['get_hut_bookings_geojson'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   '/v1/huts/availability/{date}.geojson': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /**
      * Get Hut Availability Geojson
      * @description Get availability data as GeoJSON FeatureCollection for map visualization.
      */
     get: operations['get_hut_availability_geojson'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   '/v1/huts/{slug}/availability/{date}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /**
      * Get Hut Availability Current
      * @description Get current availability data for a specific hut with detailed metadata and booking links.
      */
     get: operations['get_hut_availability_current'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   '/v1/huts/{slug}/availability/{date}/trend': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /**
      * Get Hut Availability Trend
      * @description Get historical availability trend data showing how availability changed over time for a specific date.
      */
     get: operations['get_hut_availability_trend'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   '/v1/huts/search': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /**
      * Search Huts
      * @description Search for huts using fuzzy text search across all language fields.
      */
     get: operations['search_huts'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   '/v1/huts/huts': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /**
      * Get Huts
      * @description Get a list with huts.
      */
     get: operations['get_huts'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   '/v1/huts/huts.geojson': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /** Get Huts Geojson */
     get: operations['get_huts_geojson'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   '/v1/huts/{slug}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /**
      * Get Hut
      * @description Get a hut by its slug.
      */
     get: operations['get_hut'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   '/v1/meteo/weather_codes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /**
      * Get Weather Codes
      * @description Get all weather codes as a dictionary with WMO code as key.
      *
-     * Returns weather codes with symbols from the specified collection.
-     * If a WMO code is missing from the collection, an error is raised.
+     *     Returns weather codes with symbols from the specified collection.
+     *     If a WMO code is missing from the collection, an error is raised.
      */
     get: operations['get_weather_codes'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   '/v1/meteo/weather_codes/{code}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /**
      * Get Weather Code
      * @description Get a specific weather code by WMO code.
      */
     get: operations['get_weather_code'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   '/v1/meteo/symbol/{collection}/{time}/{code}.svg': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /**
      * Get Weather Code Svg
      * @description Redirect to the SVG icon for a weather code from a specific collection.
      *
-     * Collection examples: weather-icons-outlined-mono, weather-icons-filled, meteoswiss-filled
-     * Time options: day, night
+     *     Collection examples: weather-icons-outlined-mono, weather-icons-filled, meteoswiss-filled
+     *     Time options: day, night
      *
-     * If the collection doesn't have a symbol for the WMO code, returns 404.
+     *     If the collection doesn't have a symbol for the WMO code, returns 404.
      */
     get: operations['get_weather_code_svg'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   '/v1/organizations/': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /**
      * Get Organizations
      * @description Get a list of all organizations used for the huts.
      */
     get: operations['get_organizations'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   '/v1/organizations/{slug}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /** Get Organization */
     get: operations['get_organization'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   '/v1/symbols/': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /**
      * Get Symbols
      * @description Get a list of all symbols. By default only returns active symbols.
      */
     get: operations['get_symbols'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   '/v1/symbols/by-id/{id}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /**
      * Get Symbol By Id
      * @description Get a single symbol by UUID.
      */
     get: operations['get_symbol_by_id'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   '/v1/symbols/slug/{slug}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /**
      * Get Symbols By Slug
      * @description Get all style variants for a symbol by slug. By default only returns active symbols.
      */
     get: operations['get_symbols_by_slug'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   '/v1/symbols/{style_slug}/{slug}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /**
      * Get Symbol By Style And Slug
      * @description Get a single symbol by style and slug. Returns the same schema as by-id endpoint.
      */
     get: operations['get_symbol_by_style_and_slug'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   '/v1/feedback/': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
     /** Create Feedback */
     post: operations['server_apps_feedbacks_api_create_feedback'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
   '/v1/version': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
     /**
      * Get Version
      * @description Get version information including git short hash, full hash, package version, build timestamp, and environment.
      */
     get: operations['server_apps_utils_api_get_version'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
   };
 }
-
 export type webhooks = Record<string, never>;
-
 export interface components {
   schemas: {
     /**
@@ -227,7 +550,7 @@ export interface components {
        * Description
        * @default
        */
-      description?: string;
+      description: string;
       /** Symbol */
       symbol?: {
         [key: string]: string;
@@ -266,15 +589,21 @@ export interface components {
      * LocationSchema
      * @description Location with longitude, latitude and optional elevation in WSG84.
      *
-     * Attributes:
-     *     lon: Longitude (x).
-     *     lat: Latitude (y).
-     *     ele: Elevation in meter.
+     *     Attributes:
+     *         lon: Longitude (x).
+     *         lat: Latitude (y).
+     *         ele: Elevation in meter.
      */
     LocationSchema: {
-      /** Latitude (y) in WGS84 */
+      /**
+       * Latitude (y) in WGS84
+       * @example 45.9765729
+       */
       lat: number;
-      /** Longitude (x) in WGS84 */
+      /**
+       * Longitude (x) in WGS84
+       * @example 7.6496971
+       */
       lon: number;
     };
     /**
@@ -356,7 +685,7 @@ export interface components {
        * Description
        * @default
        */
-      description?: string;
+      description: string;
       /** Order */
       order: number;
       /** Level */
@@ -375,7 +704,7 @@ export interface components {
        * Children
        * @default false
        */
-      children?: components['schemas']['CategoryTreeSchema'][] | boolean;
+      children: components['schemas']['CategoryTreeSchema'][] | boolean;
     };
     /**
      * CategoryListItemSchema
@@ -390,7 +719,7 @@ export interface components {
        * Description
        * @default
        */
-      description?: string;
+      description: string;
       /** Order */
       order: number;
       /** Level */
@@ -421,7 +750,7 @@ export interface components {
        * Description
        * @default
        */
-      description?: string;
+      description: string;
       /** Order */
       order: number;
       /** Level */
@@ -442,7 +771,7 @@ export interface components {
        * Children
        * @default {}
        */
-      children?: {
+      children: {
         [key: string]: components['schemas']['CategoryMapSchema'];
       };
     };
@@ -458,13 +787,13 @@ export interface components {
        * @description Show bookings for this many days.
        * @default 1
        */
-      days?: number;
+      days: number;
       /**
        * Date
        * @description Date to start with bookings (yyyy-mm-dd, 'now' or 'weekend').
        * @default now
        */
-      date?: string | ('now' | 'weekend');
+      date: string | ('now' | 'weekend');
       /**
        * Request interval
        * @description Time in seconds to wait between requests to the booking service for each hut. If not set uses recommanded default value.
@@ -494,7 +823,7 @@ export interface components {
        * Hut Type
        * @default unknown
        */
-      hut_type?: string;
+      hut_type: string;
     };
     /** HutBookingsSchema */
     HutBookingsSchema: {
@@ -618,8 +947,8 @@ export interface components {
         | [number, number, number, number, number, number]
         | null;
       /**
-       * Type
-       * @constant
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
        */
       type: 'Point';
       /** Coordinates */
@@ -655,13 +984,13 @@ export interface components {
        * @description Number of days to fetch from start date.
        * @default 1
        */
-      days?: number;
+      days: number;
       /**
        * Offset
        * @description Pagination offset for results.
        * @default 0
        */
-      offset?: number;
+      offset: number;
       /**
        * Limit
        * @description Maximum number of huts to return. If not set, returns all matching huts.
@@ -708,7 +1037,7 @@ export interface components {
        * @description Hut type on this date (e.g., 'hut', 'bivouac')
        * @default unknown
        */
-      hut_type?: string;
+      hut_type: string;
     };
     /** Feature[Point, HutAvailabilityPropertiesSchema] */
     Feature_Point_HutAvailabilityPropertiesSchema_: {
@@ -804,7 +1133,7 @@ export interface components {
        * @description Number of days to fetch from start date.
        * @default 1
        */
-      days?: number;
+      days: number;
     };
     /**
      * CurrentAvailabilityDaySchema
@@ -846,7 +1175,7 @@ export interface components {
        * @description Hut type on this date (e.g., 'hut', 'bivouac')
        * @default unknown
        */
-      hut_type?: string;
+      hut_type: string;
       /**
        * Link
        * @description Booking link for this date
@@ -933,7 +1262,7 @@ export interface components {
        * @description How many days back to show history from the target date.
        * @default 7
        */
-      limit?: number;
+      limit: number;
     };
     /**
      * AvailabilityTrendDaySchema
@@ -970,7 +1299,7 @@ export interface components {
        * @description Hut type on this date (e.g., 'hut', 'bivouac')
        * @default unknown
        */
-      hut_type?: string;
+      hut_type: string;
       /**
        * First Checked
        * Format: date-time
@@ -1065,8 +1394,8 @@ export interface components {
      * AnswerEnum
      * @description Anser enum.
      *
-     * 'yesish' and 'noish' means it is likely to be 'yes' or 'no'.
-     * 'maybe' means is is either 'yes' or 'no'.
+     *     'yesish' and 'noish' means it is likely to be 'yes' or 'no'.
+     *     'maybe' means is is either 'yes' or 'no'.
      * @enum {string}
      */
     AnswerEnum: 'yes' | 'yesish' | 'maybe' | 'noish' | 'no' | 'unknown';
@@ -1111,12 +1440,12 @@ export interface components {
        * Photos
        * @default
        */
-      photos?: string;
+      photos: string;
       /**
        * Photos Attribution
        * @default
        */
-      photos_attribution?: string;
+      photos_attribution: string;
       /** Images */
       images: components['schemas']['ImageInfoSchema'][] | null;
       open_monthly?: components['schemas']['OpenMonthlySchema'] | null;
@@ -1159,7 +1488,7 @@ export interface components {
        * Urls
        * @description Return the image URL with the transformations applied.
        */
-      urls: {
+      readonly urls: {
         [key: string]: string;
       };
     };
@@ -1202,11 +1531,11 @@ export interface components {
     /**
      * OpenMonthlySchema
      * @description Shows for every month if it is usally, open, partially open or closed.
-     * Can be accessed as index, but it starts with 1 (month_01)!.
+     *     Can be accessed as index, but it starts with 1 (month_01)!.
      *
-     * Attributes:
-     *     url: URL which shows if it is open or not.
-     *     month_mm (OpenMonthly): Month (starting with 01).
+     *     Attributes:
+     *         url: URL which shows if it is open or not.
+     *         month_mm (OpenMonthly): Month (starting with 01).
      */
     OpenMonthlySchema: {
       /**
@@ -1214,31 +1543,32 @@ export interface components {
        * @description URL which shows if it is open or not.
        * @default
        */
-      url?: string;
+      url: string;
       /** @default unknown */
-      month_01?: components['schemas']['AnswerEnum'];
+      month_01: components['schemas']['AnswerEnum'];
       /** @default unknown */
-      month_02?: components['schemas']['AnswerEnum'];
+      month_02: components['schemas']['AnswerEnum'];
       /** @default unknown */
-      month_03?: components['schemas']['AnswerEnum'];
+      month_03: components['schemas']['AnswerEnum'];
       /** @default unknown */
-      month_04?: components['schemas']['AnswerEnum'];
+      month_04: components['schemas']['AnswerEnum'];
       /** @default unknown */
-      month_05?: components['schemas']['AnswerEnum'];
+      month_05: components['schemas']['AnswerEnum'];
       /** @default unknown */
-      month_06?: components['schemas']['AnswerEnum'];
+      month_06: components['schemas']['AnswerEnum'];
       /** @default unknown */
-      month_07?: components['schemas']['AnswerEnum'];
+      month_07: components['schemas']['AnswerEnum'];
       /** @default unknown */
-      month_08?: components['schemas']['AnswerEnum'];
+      month_08: components['schemas']['AnswerEnum'];
       /** @default unknown */
-      month_09?: components['schemas']['AnswerEnum'];
+      month_09: components['schemas']['AnswerEnum'];
       /** @default unknown */
-      month_10?: components['schemas']['AnswerEnum'];
+      month_10: components['schemas']['AnswerEnum'];
       /** @default unknown */
-      month_11?: components['schemas']['AnswerEnum'];
+      month_11: components['schemas']['AnswerEnum'];
       /** @default unknown */
-      month_12?: components['schemas']['AnswerEnum'];
+      month_12: components['schemas']['AnswerEnum'];
+    } & {
       [key: string]: unknown;
     };
     /** OrganizationBaseSchema */
@@ -1281,7 +1611,7 @@ export interface components {
        * Adresse (URL)
        * @default
        */
-      url?: string | null;
+      url: string | null;
     };
     /** BaseModel */
     BaseModel: Record<string, never>;
@@ -1351,8 +1681,8 @@ export interface components {
         | [number, number, number, number, number, number]
         | null;
       /**
-       * Type
-       * @constant
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
        */
       type: 'GeometryCollection';
       /** Geometries */
@@ -1377,8 +1707,8 @@ export interface components {
         | [number, number, number, number, number, number]
         | null;
       /**
-       * Type
-       * @constant
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
        */
       type: 'LineString';
       /** Coordinates */
@@ -1398,8 +1728,8 @@ export interface components {
         | [number, number, number, number, number, number]
         | null;
       /**
-       * Type
-       * @constant
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
        */
       type: 'MultiLineString';
       /** Coordinates */
@@ -1419,8 +1749,8 @@ export interface components {
         | [number, number, number, number, number, number]
         | null;
       /**
-       * Type
-       * @constant
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
        */
       type: 'MultiPoint';
       /** Coordinates */
@@ -1440,8 +1770,8 @@ export interface components {
         | [number, number, number, number, number, number]
         | null;
       /**
-       * Type
-       * @constant
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
        */
       type: 'MultiPolygon';
       /** Coordinates */
@@ -1461,8 +1791,8 @@ export interface components {
         | [number, number, number, number, number, number]
         | null;
       /**
-       * Type
-       * @constant
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
        */
       type: 'Polygon';
       /** Coordinates */
@@ -1524,12 +1854,12 @@ export interface components {
        * Photos
        * @default
        */
-      photos?: string;
+      photos: string;
       /**
        * Photos Attribution
        * @default
        */
-      photos_attribution?: string;
+      photos_attribution: string;
       /** Images */
       images: components['schemas']['ImageInfoSchema'][] | null;
       open_monthly?: components['schemas']['OpenMonthlySchema'] | null;
@@ -1540,7 +1870,7 @@ export interface components {
       /** Edit Link */
       edit_link?: string | null;
       /** Translations */
-      translations?: unknown;
+      translations?: unknown | null;
       /** Created */
       created?: string | null;
       /** Modified */
@@ -1599,29 +1929,29 @@ export interface components {
        * @description Organiztion logo as image
        * @default organizations/logos/missing.png
        */
-      logo?: string | null;
+      logo: string | null;
       /**
        * Aktiv
        * @default true
        */
-      is_active?: boolean | null;
+      is_active: boolean | null;
       /**
        * Public
        * @default false
        */
-      is_public?: boolean | null;
+      is_public: boolean | null;
       /**
        * Light Color
        * @description light theme color as hex number with #
        * @default #4B8E43
        */
-      color_light?: string | null;
+      color_light: string | null;
       /**
        * Dark Color
        * @description dark theme color as hex number with #
        * @default #61B958
        */
-      color_dark?: string | null;
+      color_dark: string | null;
     };
     /** FieldsParam[SymbolOptional] */
     FieldsParam_SymbolOptional_: {
@@ -1653,7 +1983,7 @@ export interface components {
        * @description Symbol style variant
        * @default detailed
        */
-      style?: string | null;
+      style: string | null;
       /**
        * SVG File
        * @description SVG file for this symbol
@@ -1670,17 +2000,17 @@ export interface components {
        * Author
        * @default
        */
-      author?: string | null;
+      author: string | null;
       /**
        * Author URL
        * @default
        */
-      author_url?: string | null;
+      author_url: string | null;
       /**
        * Source URL
        * @default
        */
-      source_url?: string | null;
+      source_url: string | null;
       /** Source Organization */
       source_org?: number | null;
       /**
@@ -1688,7 +2018,7 @@ export interface components {
        * @description Only shown to admin if not active
        * @default true
        */
-      is_active?: boolean | null;
+      is_active: boolean | null;
     };
     /** ResponseSchema */
     ResponseSchema: {
@@ -1750,21 +2080,8 @@ export interface components {
   headers: never;
   pathItems: never;
 }
-
 export type $defs = Record<string, never>;
-
-export type external = Record<string, never>;
-
 export interface operations {
-  /**
-   * Search Geoplaces
-   * @description Search for geographic places using fuzzy text search across all language fields.
-   *
-   * Performance optimizations:
-   * - Fast prefix matching using B-tree indexes (very fast)
-   * - Trigram similarity only when needed (slower)
-   * - Early exit if enough prefix matches found
-   */
   search_geoplaces: {
     parameters: {
       query: {
@@ -1796,20 +2113,23 @@ export interface operations {
         /** @description Include data sources: 'no' excludes field, 'slug' returns source slugs only, 'all' returns full source details with name and logo */
         include_sources?: 'no' | 'slug' | 'all';
       };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           'application/json': components['schemas']['GeoPlaceSearchSchema'][];
         };
       };
     };
   };
-  /**
-   * Nearby Geoplaces
-   * @description Find places near coordinates within a radius, ordered by distance.
-   */
   nearby_geoplaces: {
     parameters: {
       query: {
@@ -1842,25 +2162,23 @@ export interface operations {
         /** @description Include data sources: 'no' excludes field, 'slug' returns source slugs only, 'all' returns full source details with name and logo */
         include_sources?: 'no' | 'slug' | 'all';
       };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           'application/json': components['schemas']['GeoPlaceNearbySchema'][];
         };
       };
     };
   };
-  /**
-   * Get Category Tree
-   * @description Get category hierarchy as a tree structure.
-   *
-   * Supports dot or slash-notation slugs with max one parent (e.g., `map/transport`).
-   * The parent is optional but if slug is ambiguous, returns 400 error with available paths.
-   * Use `root` to return all root categories.
-   * Always excludes the root from results (returns children).
-   */
   get_category_tree: {
     parameters: {
       query?: {
@@ -1873,28 +2191,25 @@ export interface operations {
         /** @description How to return media URLs: 'no' (exclude), 'relative' (relative paths), 'absolute' (full URLs) */
         media_mode?: 'no' | 'relative' | 'absolute';
       };
+      header?: never;
       path: {
         parent_slug: string | 'root';
       };
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           'application/json': components['schemas']['CategoryTreeSchema'][];
         };
       };
     };
   };
-  /**
-   * Get Category List
-   * @description Get flat list of categories.
-   *
-   * Supports dot-notation slugs with max one parent (e.g., 'accommodation.hut').
-   * If slug is ambiguous, returns 400 error with available paths.
-   * If slug is omitted, returns all categories.
-   * Always excludes the root from results (returns children).
-   */
   get_category_list_all: {
     parameters: {
       query?: {
@@ -1907,30 +2222,25 @@ export interface operations {
         /** @description How to return media URLs: 'no' (exclude), 'relative' (relative paths), 'absolute' (full URLs) */
         media_mode?: 'no' | 'relative' | 'absolute';
       };
+      header?: never;
       path: {
         parent_slug: string | 'root';
       };
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           'application/json': components['schemas']['CategoryListItemSchema'][];
         };
       };
     };
   };
-  /**
-   * Get Category Map
-   * @description Get category hierarchy as a nested dictionary mapping.
-   *
-   * Keys are category slugs, values contain category data with nested 'children' dict.
-   *
-   * Supports dot-notation slugs with max one parent (e.g., 'accommodation.hut').
-   * If slug is ambiguous, returns 400 error with available paths.
-   * If slug is omitted, returns all root categories as a map.
-   * Always excludes the root from results (returns children).
-   */
   get_category_map_all: {
     parameters: {
       query?: {
@@ -1943,13 +2253,19 @@ export interface operations {
         /** @description How to return media URLs: 'no' (exclude), 'relative' (relative paths), 'absolute' (full URLs) */
         media_mode?: 'no' | 'relative' | 'absolute';
       };
+      header?: never;
       path: {
         parent_slug: string | 'root';
       };
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           'application/json': {
             [key: string]: components['schemas']['CategoryMapSchema'];
@@ -1958,11 +2274,6 @@ export interface operations {
       };
     };
   };
-  /**
-   * Get hut bookings (deprecated)
-   * @deprecated
-   * @description **DEPRECATED**: Use `/huts/availability.geojson` instead. This endpoint will be removed in a future version.
-   */
   get_hut_bookings: {
     parameters: {
       query?: {
@@ -1977,21 +2288,23 @@ export interface operations {
         /** @description Time in seconds to wait between requests to the booking service for each hut. If not set uses recommanded default value. */
         request_interval?: number | null;
       };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           'application/json': components['schemas']['HutBookingsSchema'][];
         };
       };
     };
   };
-  /**
-   * Get hut bookings as GeoJSON (deprecated)
-   * @deprecated
-   * @description **DEPRECATED**: Use `/huts/availability.geojson` instead. This endpoint will be removed in a future version.
-   */
   get_hut_bookings_geojson: {
     parameters: {
       query?: {
@@ -2006,20 +2319,23 @@ export interface operations {
         /** @description Time in seconds to wait between requests to the booking service for each hut. If not set uses recommanded default value. */
         request_interval?: number | null;
       };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           'application/json': components['schemas']['HutBookingsFeatureCollection'];
         };
       };
     };
   };
-  /**
-   * Get Hut Availability Geojson
-   * @description Get availability data as GeoJSON FeatureCollection for map visualization.
-   */
   get_hut_availability_geojson: {
     parameters: {
       query?: {
@@ -2034,24 +2350,26 @@ export interface operations {
         /** @description Maximum number of huts to return. If not set, returns all matching huts. */
         limit?: number | null;
       };
+      header?: never;
       path: {
         /** @description Start date. Accepts ISO dates (2026-01-15, 26-01-15), European format (15.01.2026), or keywords: 'now', 'today', 'weekend'. */
         date: string;
       };
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           'application/json': components['schemas']['HutAvailabilityFeatureCollection'];
         };
       };
     };
   };
-  /**
-   * Get Hut Availability Current
-   * @description Get current availability data for a specific hut with detailed metadata and booking links.
-   */
   get_hut_availability_current: {
     parameters: {
       query?: {
@@ -2060,25 +2378,27 @@ export interface operations {
         /** @description Number of days to fetch from start date. */
         days?: number;
       };
+      header?: never;
       path: {
         slug: string;
         /** @description Start date. Accepts ISO dates (2026-01-15, 26-01-15), European format (15.01.2026), or keywords: 'now', 'today', 'weekend'. */
         date: string;
       };
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           'application/json': components['schemas']['CurrentAvailabilitySchema'];
         };
       };
     };
   };
-  /**
-   * Get Hut Availability Trend
-   * @description Get historical availability trend data showing how availability changed over time for a specific date.
-   */
   get_hut_availability_trend: {
     parameters: {
       query?: {
@@ -2087,25 +2407,27 @@ export interface operations {
         /** @description How many days back to show history from the target date. */
         limit?: number;
       };
+      header?: never;
       path: {
         slug: string;
         /** @description Target date to analyze. Accepts ISO dates (2026-01-15, 26-01-15), European format (15.01.2026), or keywords: 'now', 'today', 'weekend'. */
         date: string;
       };
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           'application/json': components['schemas']['AvailabilityTrendSchema'];
         };
       };
     };
   };
-  /**
-   * Search Huts
-   * @description Search for huts using fuzzy text search across all language fields.
-   */
   search_huts: {
     parameters: {
       query: {
@@ -2129,20 +2451,23 @@ export interface operations {
         /** @description Include avatar/primary photo URL in results */
         include_avatar?: boolean;
       };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           'application/json': components['schemas']['HutSearchResultSchema'][];
         };
       };
     };
   };
-  /**
-   * Get Huts
-   * @description Get a list with huts.
-   */
   get_huts: {
     parameters: {
       query?: {
@@ -2155,17 +2480,23 @@ export interface operations {
         is_active?: 'true' | 'false' | 'unset';
         has_availability?: 'true' | 'false' | 'unset';
       };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           'application/json': components['schemas']['HutSchemaList'][];
         };
       };
     };
   };
-  /** Get Huts Geojson */
   get_huts_geojson: {
     parameters: {
       query?: {
@@ -2184,20 +2515,23 @@ export interface operations {
         include_has_availability?: boolean;
         flat?: boolean;
       };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           'application/json': components['schemas']['FeatureCollection'];
         };
       };
     };
   };
-  /**
-   * Get Hut
-   * @description Get a hut by its slug.
-   */
   get_hut: {
     parameters: {
       query?: {
@@ -2208,26 +2542,25 @@ export interface operations {
         /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
         exclude?: unknown;
       };
+      header?: never;
       path: {
         slug: string;
       };
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           'application/json': components['schemas']['HutSchemaDetails'];
         };
       };
     };
   };
-  /**
-   * Get Weather Codes
-   * @description Get all weather codes as a dictionary with WMO code as key.
-   *
-   * Returns weather codes with symbols from the specified collection.
-   * If a WMO code is missing from the collection, an error is raised.
-   */
   get_weather_codes: {
     parameters: {
       query?: {
@@ -2244,10 +2577,17 @@ export interface operations {
         /** @description Include collection: 'no' excludes, 'slug' returns slug, 'all' returns full details */
         include_collection?: 'no' | 'slug' | 'all';
       };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           'application/json': {
             [key: string]: {
@@ -2258,10 +2598,6 @@ export interface operations {
       };
     };
   };
-  /**
-   * Get Weather Code
-   * @description Get a specific weather code by WMO code.
-   */
   get_weather_code: {
     parameters: {
       query?: {
@@ -2276,13 +2612,19 @@ export interface operations {
         /** @description Include collection: 'no' excludes, 'slug' returns slug, 'all' returns full details */
         include_collection?: 'no' | 'slug' | 'all';
       };
+      header?: never;
       path: {
         code: number;
       };
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           'application/json': {
             [key: string]: unknown;
@@ -2291,35 +2633,29 @@ export interface operations {
       };
     };
   };
-  /**
-   * Get Weather Code Svg
-   * @description Redirect to the SVG icon for a weather code from a specific collection.
-   *
-   * Collection examples: weather-icons-outlined-mono, weather-icons-filled, meteoswiss-filled
-   * Time options: day, night
-   *
-   * If the collection doesn't have a symbol for the WMO code, returns 404.
-   */
   get_weather_code_svg: {
     parameters: {
+      query?: never;
+      header?: never;
       path: {
         collection: string;
         /** @description Day/night time options. */
         time: 'day' | 'night';
         code: number;
       };
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
-        content: never;
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
     };
   };
-  /**
-   * Get Organizations
-   * @description Get a list of all organizations used for the huts.
-   */
   get_organizations: {
     parameters: {
       query?: {
@@ -2331,17 +2667,23 @@ export interface operations {
         exclude?: unknown;
         is_public?: boolean | null;
       };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           'application/json': components['schemas']['OrganizationOptional'][];
         };
       };
     };
   };
-  /** Get Organization */
   get_organization: {
     parameters: {
       query?: {
@@ -2352,23 +2694,25 @@ export interface operations {
         /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
         exclude?: unknown;
       };
+      header?: never;
       path: {
         slug: string;
       };
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           'application/json': components['schemas']['OrganizationOptional'];
         };
       };
     };
   };
-  /**
-   * Get Symbols
-   * @description Get a list of all symbols. By default only returns active symbols.
-   */
   get_symbols: {
     parameters: {
       query?: {
@@ -2381,20 +2725,23 @@ export interface operations {
         /** @description Filter by active status (default: True) */
         is_active?: boolean;
       };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           'application/json': components['schemas']['SymbolOptional'][];
         };
       };
     };
   };
-  /**
-   * Get Symbol By Id
-   * @description Get a single symbol by UUID.
-   */
   get_symbol_by_id: {
     parameters: {
       query?: {
@@ -2407,23 +2754,25 @@ export interface operations {
         /** @description Filter by active status (default: True) */
         is_active?: boolean;
       };
+      header?: never;
       path: {
         id: string;
       };
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           'application/json': components['schemas']['SymbolOptional'];
         };
       };
     };
   };
-  /**
-   * Get Symbols By Slug
-   * @description Get all style variants for a symbol by slug. By default only returns active symbols.
-   */
   get_symbols_by_slug: {
     parameters: {
       query?: {
@@ -2438,23 +2787,25 @@ export interface operations {
         /** @description Filter by active status (default: True) */
         is_active?: boolean;
       };
+      header?: never;
       path: {
         slug: string;
       };
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           'application/json': components['schemas']['SymbolOptional'][];
         };
       };
     };
   };
-  /**
-   * Get Symbol By Style And Slug
-   * @description Get a single symbol by style and slug. Returns the same schema as by-id endpoint.
-   */
   get_symbol_by_style_and_slug: {
     parameters: {
       query?: {
@@ -2467,26 +2818,34 @@ export interface operations {
         /** @description Filter by active status (default: True) */
         is_active?: boolean;
       };
+      header?: never;
       path: {
         style_slug: string;
         slug: string;
       };
+      cookie?: never;
     };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           'application/json': components['schemas']['SymbolOptional'];
         };
       };
     };
   };
-  /** Create Feedback */
   server_apps_feedbacks_api_create_feedback: {
     parameters: {
       query?: {
         send_email?: boolean;
       };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
     requestBody: {
       content: {
@@ -2496,20 +2855,29 @@ export interface operations {
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           'application/json': components['schemas']['ResponseSchema'];
         };
       };
     };
   };
-  /**
-   * Get Version
-   * @description Get version information including git short hash, full hash, package version, build timestamp, and environment.
-   */
   server_apps_utils_api_get_version: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
     responses: {
       /** @description OK */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
         content: {
           'application/json': components['schemas']['VersionSchema'];
         };

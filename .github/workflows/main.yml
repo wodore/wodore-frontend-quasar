@@ -17,12 +17,16 @@ jobs:
       - name: Enable Corepack
         run: corepack enable
 
+      - name: Read Node.js version from .nvmrc
+        id: nvmrc
+        run: echo "NODE_VERSION=$(cat .nvmrc)" >> $GITHUB_OUTPUT
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ steps.nvmrc.outputs.NODE_VERSION }}
           # Don't cache yarn - we'll cache ESLint instead
-          cache: 'yarn'
+          cache: "yarn"
 
       - name: Cache ESLint
         uses: actions/cache@v4

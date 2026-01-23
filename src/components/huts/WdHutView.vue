@@ -144,7 +144,6 @@ watchEffect(() => {
 //}
 //onBeforeUnmount(() => onClose());
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const addHeaderShadow: IntersectionValue = (entry) => {
   headerShadow.value = !entry.isIntersecting;
   return true;

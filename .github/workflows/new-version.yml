@@ -17,13 +17,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch all history for git-cliff
+          fetch-depth: 0 # Fetch all history for git-cliff
+
+      - name: Read Node.js version from .nvmrc
+        id: nvmrc
+        run: echo "NODE_VERSION=$(cat .nvmrc)" >> $GITHUB_OUTPUT
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'yarn'
+          node-version: ${{ steps.nvmrc.outputs.NODE_VERSION }}
+          cache: "yarn"
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile

@@ -1,1 +1,47 @@
-dist/
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Production builds
+dist
+dist-pwa
+dist-ssr
+.build
+
+# Cache
+.cache
+.parcel-cache
+.next
+.nuxt
+.vuepress/dist
+.serverless
+.fusebox
+.dynamodb
+.tern-port
+
+# Quasar
+.quasar
+/src-cordova
+/src-capacitor
+
+# Generated files
+*.min.js
+*.min.css
+src/clients/wodore_v1.d.ts
+src/extras/icons/dist
+
+# Logs
+logs
+*.log
+
+# Lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Misc
+.DS_Store
+Thumbs.db
+*.local
+.env.local
