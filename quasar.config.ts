@@ -12,8 +12,7 @@ const { formatDate } = date;
 import IconsResolver from 'unplugin-icons/resolver';
 
 import { execSync } from 'child_process';
-const gitHash =
-  process.env.GIT_HASH || execSync('git rev-parse HEAD').toString().trim();
+const gitHash = process.env.GIT_HASH || execSync('git rev-parse HEAD').toString().trim();
 
 // export default defineConfig({
 //   plugins: [
@@ -38,7 +37,7 @@ for (const file of envFiles) {
 
 // add any new variable to the 'env' section
 
-export default configure((ctx) => {
+export default configure(ctx => {
   const appNameBase = process.env.WODORE_APP_NAME || 'Wodore';
   const appNameDev = () => {
     if (appNameBase.toLowerCase().includes('dore')) {
@@ -112,16 +111,11 @@ export default configure((ctx) => {
       env: {
         TIMESTAMP_VERSION_HEX:
           't' +
-          parseInt(formatDate(Date.now(), 'YYMMDD'))
-            .toString(16)
-            .padStart(5, '0') +
+          parseInt(formatDate(Date.now(), 'YYMMDD')).toString(16).padStart(5, '0') +
           '-' +
-          parseInt(formatDate(Date.now(), 'HHmm'))
-            .toString(16)
-            .padStart(3, '0'),
+          parseInt(formatDate(Date.now(), 'HHmm')).toString(16).padStart(3, '0'),
         WODORE_GIT_HASH: gitHash,
-        WODORE_APP_VERSION:
-          process.env.PACKAGE_VERSION || process.env.npm_package_version,
+        WODORE_APP_VERSION: process.env.PACKAGE_VERSION || process.env.npm_package_version,
         WODORE_APP_NAME: appName,
         WODORE_ENV: appEnv,
         WODORE_URL: process.env.WODORE_URL,
@@ -130,8 +124,7 @@ export default configure((ctx) => {
         WODORE_API_VERSION: process.env.WODORE_API_VERSION,
         WODORE_IMAGOR_KEY: process.env.WODORE_IMAGOR_KEY,
         WODORE_IMAGOR_URL: process.env.WODORE_IMAGOR_URL,
-        WODORE_IMAGOR_REPLACE_API_HOST_MEDIA:
-          process.env.WODORE_IMAGOR_REPLACE_API_HOST_MEDIA,
+        WODORE_IMAGOR_REPLACE_API_HOST_MEDIA: process.env.WODORE_IMAGOR_REPLACE_API_HOST_MEDIA,
         WODORE_UMAMI_WEBSITE_ID: process.env.WODORE_UMAMI_WEBSITE_ID,
         WODORE_UMAMI_WEBSITE_URL: process.env.WODORE_UMAMI_WEBSITE_URL,
         WODORE_OICD_ISSUER_URL: process.env.WODORE_OICD_ISSUER_URL,

@@ -278,14 +278,7 @@ Auto-imported from any [Iconify](https://icon-sets.iconify.design/) collection:
 Standard input field pattern (dark mode):
 
 ```vue
-<q-input
-  v-model="value"
-  dense
-  dark
-  standout
-  readonly
-  placeholder="Placeholder text"
->
+<q-input v-model="value" dense dark standout readonly placeholder="Placeholder text">
   <template v-slot:append>
     <q-icon name="icon-name" class="text-icon cursor-pointer" size="sm" />
   </template>
@@ -551,11 +544,7 @@ const isMobile = computed(() => $q.screen.xs);
     'q-ml-md': !isMobile,
     'q-ml-xs': isMobile,
   }"
-  :style="
-    isMobile
-      ? 'max-width: 130px; max-height: 40px'
-      : 'max-width: 210px; max-height: 40px'
-  "
+  :style="isMobile ? 'max-width: 130px; max-height: 40px' : 'max-width: 210px; max-height: 40px'"
 ></div>
 ```
 

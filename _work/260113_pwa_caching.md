@@ -208,7 +208,7 @@ window.pwaDebug.getInfo();
 window.pwaDebug.checkUpdate();
 
 // Or directly
-navigator.serviceWorker.getRegistration().then((reg) => reg.update());
+navigator.serviceWorker.getRegistration().then(reg => reg.update());
 ```
 
 ## Troubleshooting

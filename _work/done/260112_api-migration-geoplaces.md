@@ -167,9 +167,7 @@ If you have any composables or services that work with place data, update the sy
 // Example in a composable
 export function usePlaceSymbol(place: Ref<GeoPlaceSearch | null>) {
   const symbolMono = computed(() => place.value?.place_type?.symbol?.mono);
-  const symbolDetailed = computed(
-    () => place.value?.place_type?.symbol?.detailed,
-  );
+  const symbolDetailed = computed(() => place.value?.place_type?.symbol?.detailed);
   const symbolSimple = computed(() => place.value?.place_type?.symbol?.simple);
 
   return { symbolMono, symbolDetailed, symbolSimple };
