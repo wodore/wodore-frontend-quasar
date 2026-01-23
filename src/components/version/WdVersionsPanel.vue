@@ -16,7 +16,7 @@ const fetchBackendVersion = async () => {
   backendError.value = null;
 
   try {
-    const { data, error } = await clientWodore.GET('/v1/version');
+    const { data, error } = await clientWodore.GET('/v1/version', {});
 
     if (error) {
       throw new Error(JSON.stringify(error));

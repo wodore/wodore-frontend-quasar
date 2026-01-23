@@ -3,7 +3,7 @@ import { DrawCustomMode } from '@mapbox/mapbox-gl-draw';
 
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
 
-// @ts-expect-error missing types
+// @ts-expect-error - no types available
 import * as MapboxDrawWaypoint from 'mapbox-gl-draw-waypoint';
 import { IControl } from 'maplibre-gl';
 import CustomRouteMode from './customRouteMode';
@@ -12,8 +12,8 @@ import CustomRouteMode from './customRouteMode';
 // patch mode as waypoint -- https://github.com/zakjan/mapbox-gl-draw-waypoint
 let modes = MapboxDraw.modes;
 modes = MapboxDrawWaypoint.enable(modes);
-// @ts-expect-error missing custom route mode
-modes.custom_route = CustomRouteMode;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(modes as any).custom_route = CustomRouteMode;
 
 // set correct maplibre styles
 (MapboxDraw.constants.classes.CONTROL_BASE as unknown) = 'maplibregl-ctrl';
@@ -34,9 +34,9 @@ const mapDraw = new MapboxDraw({
     trash: true,
     line_string: true,
     point: true,
-    // @ts-expect-error missing custom route mode
     custom_route: true,
-  },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any,
 
   styles: [
     // LINES (and polygon)

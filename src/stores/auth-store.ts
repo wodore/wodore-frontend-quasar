@@ -53,11 +53,12 @@ export const useAuthStore = defineStore('auth', () => {
   const roles = computed<Array<string>>(() => {
     if (
       authUser.value &&
-      'urn:zitadel:iam:org:project:roles' in authUser.value?.profile
+      authUser.value.profile &&
+      'urn:zitadel:iam:org:project:roles' in authUser.value.profile
     ) {
       const keys = Object.keys(
         (
-          authUser.value?.profile as unknown as {
+          authUser.value.profile as unknown as {
             'urn:zitadel:iam:org:project:roles': { string: unknown };
           }
         )['urn:zitadel:iam:org:project:roles'],

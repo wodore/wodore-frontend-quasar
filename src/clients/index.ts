@@ -11,60 +11,51 @@ export type schemasWodore = compWodore['schemas'];
 export const loading: Record<string, 'start' | 'loading' | 'stopped'> = {};
 
 const loadingMiddleware: Middleware = {
-  async onRequest(req) {
-    //}, options) {
+  async onRequest({ request }) {
     // Skip loading bar for search requests and availability requests
     if (
-      req.url.includes('/geo/places/search') ||
-      req.url.includes('/availability/')
+      request.url.includes('/geo/places/search') ||
+      request.url.includes('/availability/')
     ) {
-      return req;
+      return;
     }
 
-    // set "foo" header
-    //req.headers.set("foo", "bar");
-    // console.debug('Fetch: Request data from', req, options);
-    loading[req.url] = 'start';
+    // console.debug('Fetch: Request data from', request.url);
+    loading[request.url] = 'start';
     setTimeout(() => {
-      if (loading[req.url] == 'start') {
-        loading[req.url] = 'loading';
+      if (loading[request.url] == 'start') {
+        loading[request.url] = 'loading';
         LoadingBar.start();
         console.debug('  start loading bar');
       }
     }, 300);
-    return req;
   },
-  async onResponse(res) {
-    // }, options) {
+  async onResponse({ request }) {
     // Skip loading bar for search requests and availability requests
     if (
-      res.url.includes('/geo/places/search') ||
-      res.url.includes('/availability/')
+      request.url.includes('/geo/places/search') ||
+      request.url.includes('/availability/')
     ) {
-      return res;
+      return;
     }
 
-    //const { body, ...resOptions } = res;
-    // change status of response
-    // console.debug('Fetch: Received data from', res, options);
-    if (res.url in loading) {
-      if (loading[res.url] == 'loading') {
+    // console.debug('Fetch: Received data from', request.url);
+    if (request.url in loading) {
+      if (loading[request.url] == 'loading') {
         LoadingBar.stop();
         console.debug('  stop loading bar');
       }
     }
-    loading[res.url] = 'stopped';
-    return res;
-    //return new Response(body, { ...resOptions, status: 200 });
+    loading[request.url] = 'stopped';
   },
 };
 
 const authMiddleware: Middleware = {
-  async onRequest(req) {
+  async onRequest({ request }) {
     // fetch token, if it doesn’t exist
     const accessToken = authStore.access_token;
     if (accessToken) {
-      req.headers.set('Authorization', `Bearer ${accessToken}`);
+      request.headers.set('Authorization', `Bearer ${accessToken}`);
     }
     //if (!accessToken) {
     //  const authRes = await someAuthFunc();
@@ -78,7 +69,6 @@ const authMiddleware: Middleware = {
     // (optional) add logic here to refresh token when it expires
 
     // add Authorization header to every request
-    return req;
   },
 };
 

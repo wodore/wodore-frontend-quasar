@@ -174,12 +174,10 @@ See `.env` file for all available variables
 **IMPORTANT Development Guidelines:**
 
 1. **Use VueUse composables whenever possible**: The project uses `@vueuse/core` extensively. Before implementing manual solutions (timers, watchers, event listeners, etc.), check if VueUse provides a composable for that use case.
-
    - Examples: `useDebounceFn`, `useThrottleFn`, `useLocalStorage`, `useIntersectionObserver`, `useEventListener`, etc.
    - See: <https://vueuse.org/>
 
 2. **Prefer Quasar components without manual modifications**: Use Quasar's built-in components and props as much as possible. Avoid adding custom styles or HTML unless absolutely necessary for specific custom functionality.
-
    - Quasar provides extensive theming and styling options through props and CSS variables
    - Only add custom styles when implementing truly unique designs not covered by Quasar
 

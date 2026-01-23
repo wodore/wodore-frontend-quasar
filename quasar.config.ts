@@ -5,6 +5,7 @@
 
 import { configure } from 'quasar/wrappers';
 import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 // import git from 'git-rev-sync';
 
 import { date } from 'quasar';
@@ -24,7 +25,7 @@ const gitHash =
 
 // Manually load .env files for use in quasar.config.ts
 // This is required because Quasar loads .env files AFTER processing the config
-import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -88,12 +89,19 @@ export default configure((ctx) => {
         node: 'node20',
       },
 
-      //alias: , "node"{
-      //  // TODO: does not work
-      //  services: path.join(__dirname, './src/services'),
-      //  extras: path.join(__dirname, './src/extras'),
-      //  '@clients': path.join(__dirname, './src/clients'),
-      //},
+      alias: {
+        '@': path.join(__dirname, './src'),
+        '@services': path.join(__dirname, './src/services'),
+        '@extras': path.join(__dirname, './src/extras'),
+        '@clients': path.join(__dirname, './src/clients'),
+        '@stores': path.join(__dirname, './src/stores'),
+        '@components': path.join(__dirname, './src/components'),
+        '@composables': path.join(__dirname, './src/composables'),
+        '@layouts': path.join(__dirname, './src/layouts'),
+        '@pages': path.join(__dirname, './src/pages'),
+        '@assets': path.join(__dirname, './src/assets'),
+        '@boot': path.join(__dirname, './src/boot'),
+      },
       vueRouterMode: 'history', // available values: 'hash', 'history'
       // vueRouterBase,
       // vueDevtools,
@@ -164,6 +172,9 @@ export default configure((ctx) => {
 
             // you need to set i18n resource including paths !
             include: [fileURLToPath(new URL('./src/i18n', import.meta.url))],
+
+            // Explicitly set strictMessage to false to avoid transform issues
+            strictMessage: false,
           },
         ],
         [
@@ -174,6 +185,7 @@ export default configure((ctx) => {
             },
             eslint: {
               lintCommand: 'eslint "./**/*.{js,ts,mjs,cjs,vue}"',
+              useFlatConfig: true,
             },
           },
           { server: false },
@@ -332,11 +344,10 @@ export default configure((ctx) => {
     },
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/developing-browser-extensions/configuring-bex
-    bex: {
-      // extendBexScriptsConf (esbuildConf) {},
-      // extendBexManifestJson (json) {},
-
-      contentScripts: ['my-content-script'],
-    },
+    // bex: {
+    //   // extendBexScriptsConf (esbuildConf) {},
+    //   // extendBexManifestJson (json) {},
+    //   contentScripts: ['my-content-script'],
+    // },
   };
 });

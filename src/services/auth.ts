@@ -32,39 +32,32 @@ export default class AuthService {
     this.userManager = new UserManager(settings);
     // handle events
     this.userManager.events.addAccessTokenExpiring(function () {
-      // eslint-disable-next-line no-console
       console.log('auth: access token expiring');
     });
 
     this.userManager.events.addAccessTokenExpired(function () {
-      // eslint-disable-next-line no-console
       console.log('auth: access token expired');
     });
 
     this.userManager.events.addSilentRenewError(function (err: Error) {
-      // eslint-disable-next-line no-console
       console.error('auth: silent renew error', err);
     });
 
     this.userManager.events.addUserLoaded(function (user: User) {
-      // eslint-disable-next-line no-console
       console.log('auth: user loaded', user);
       authStore.setUpUserCredentials(user);
     });
 
     this.userManager.events.addUserUnloaded(function () {
-      // eslint-disable-next-line no-console
       console.log('auth: user unloaded');
       authStore.clearUserSession();
     });
 
     this.userManager.events.addUserSignedOut(function () {
-      // eslint-disable-next-line no-console
       console.log('auth: user signed out');
     });
 
     this.userManager.events.addUserSessionChanged(function () {
-      // eslint-disable-next-line no-console
       console.log('auth: user session changed');
     });
   }

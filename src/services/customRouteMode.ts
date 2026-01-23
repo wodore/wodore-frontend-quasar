@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/ban-ts-comment */
+
 import { DrawCustomMode } from '@mapbox/mapbox-gl-draw';
 import axios from 'axios';
 import {

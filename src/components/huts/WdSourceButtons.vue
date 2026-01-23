@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { withDefaults } from 'vue';
-
 import getImageUrl from '@services/imageService';
 import { useAuthStore } from '@stores/auth-store';
 const authStore = useAuthStore();

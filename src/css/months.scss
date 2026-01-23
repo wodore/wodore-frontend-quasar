@@ -29,8 +29,7 @@ $months-bg: (
   // October: Soft pink indicating the transition to autumn
   month_11: mix($autumn-color, $winter-color, 10%),
   // November: Smooth transition from autumn to winter
-  month_12: mix($autumn-color, $winter-color, 20%)
-    // December: Smooth transition from autumn to winter,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+  month_12: mix($autumn-color, $winter-color, 20%), // December: Smooth transition from autumn to winter,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 );
 
 $months-fg: (

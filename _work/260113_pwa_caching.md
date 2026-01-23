@@ -269,14 +269,12 @@ curl -I http://localhost:9000/index.html
 ### Critical (to fix update notification)
 
 1. **Investigate why `updatefound` doesn't fire**:
-
    - Add logging to confirm SW file actually changes between deployments
    - Consider adding cache-busting to SW script tag: `sw.js?v=${hash}`
    - Test with `workbox-window` library for more reliable update detection
    - Check if service worker registration scope is correct
 
 2. **Alternative update detection**:
-
    - Poll server for version endpoint periodically
    - Use ETag/Last-Modified headers on index.html
    - Consider using `navigator.serviceWorker.addEventListener('controllerchange')`
