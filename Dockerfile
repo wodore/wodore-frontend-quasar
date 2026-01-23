@@ -13,7 +13,7 @@ RUN chmod +x /replace_vars
 ################################################################################
 ## Stage 1: Build Quasar PWA                                                  ##
 ################################################################################
-FROM node:20-alpine AS build-quasar
+FROM node:24-alpine AS build-quasar
 
 LABEL org.opencontainers.image.name="Wodore Frontend"
 LABEL org.opencontainers.image.authors="tb@wodore.com"
@@ -30,9 +30,9 @@ ENV GIT_HASH=${GIT_HASH}
 
 # Check if GIT_HASH is set
 RUN if [ -z "$GIT_HASH" ]; then \
-    echo "Error: GIT_HASH build argument is required. Please provide it using --build-arg GIT_HASH=<hash>" && \
-    exit 1; \
-fi
+  echo "Error: GIT_HASH build argument is required. Please provide it using --build-arg GIT_HASH=<hash>" && \
+  exit 1; \
+  fi
 
 # Install Quasar CLI globally
 RUN yarn global add @quasar/cli
@@ -44,7 +44,7 @@ RUN --mount=type=cache,target=/app/.yarn --mount=type=cache,target=/app/node_mod
   YARN_CACHE_FOLDER=/app/.yarn yarn --frozen-lockfile
 
 # Just copy the directories/files which are needed
-COPY .env index.html package.json yarn.lock quasar.config.ts tsconfig.json tsconfig.vue-tsc.json .eslintignore .eslintrc.cjs ./
+COPY .env index.html package.json yarn.lock quasar.config.ts tsconfig.json tsconfig.vue-tsc.json eslint.config.js ./
 # keep direcory structure
 COPY src/ ./src/
 COPY src-pwa/ ./src-pwa/
@@ -104,3 +104,5 @@ EXPOSE 8080
 # Use a shell to expand the variable at runtime
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]
+
+
