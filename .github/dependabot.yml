@@ -21,11 +21,10 @@ updates:
     # Allow production dependencies updates
     allow:
       - dependency-type: "production"
-    # Ignore development dependencies for major updates (reduce noise)
+    # Ignore major version updates for all packages to reduce noise
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
-        dependency-type: "development"
 
   # GitHub Actions (if you add workflows later)
   # - package-ecosystem: "github-actions"
