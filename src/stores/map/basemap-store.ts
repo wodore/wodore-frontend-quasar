@@ -165,7 +165,7 @@ export const useBasemapStore = defineStore('basemap', () => {
         },
       },
       {
-        name: 'ch-swisstopo-raster',
+        name: 'ch-swisstopo-full',
         label: 'Schweiz Topo Raster',
         show: true,
         active: false,
