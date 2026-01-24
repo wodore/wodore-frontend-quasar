@@ -65,17 +65,7 @@ const hutsLayerLayout: SymbolLayerSpecification['layout'] = {
 };
 
 const hutsLayerPaint: SymbolLayerSpecification['paint'] = {
-  'icon-opacity': [
-    'interpolate',
-    ['linear'],
-    ['zoom'],
-    7,
-    0.7,
-    12,
-    0.8,
-    22,
-    0.85,
-  ],
+  'icon-opacity': ['interpolate', ['linear'], ['zoom'], 7, 0.7, 12, 0.8, 22, 0.85],
   'text-opacity': ['step', ['zoom'], 0, 9, 1],
   'text-halo-width': 2,
   'text-halo-color': '#ffffff',
@@ -98,12 +88,7 @@ const hutsLayerSelectedPaint: CircleLayerSpecification['paint'] = {
     ['feature-state', 'color'],
     '#3366ff',
   ],
-  'circle-opacity': [
-    'case',
-    ['boolean', ['feature-state', 'selected'], false],
-    0.7,
-    0,
-  ],
+  'circle-opacity': ['case', ['boolean', ['feature-state', 'selected'], false], 0.7, 0],
   'circle-radius': ['interpolate', ['linear'], ['zoom'], 7, 10, 15, 40],
 };
 
@@ -130,19 +115,7 @@ function getAvailColors(day: number): ExpressionSpecification {
 const hutsOccupationLayerPaint = {
   'circle-color': getAvailColors(0),
   'circle-radius': ['interpolate', ['linear'], ['zoom'], 7, 4, 9, 10, 20, 60],
-  'circle-opacity': [
-    'interpolate',
-    ['linear'],
-    ['zoom'],
-    6,
-    0.8,
-    10,
-    0.6,
-    11,
-    0.5,
-    13,
-    0,
-  ],
+  'circle-opacity': ['interpolate', ['linear'], ['zoom'], 6, 0.8, 10, 0.6, 11, 0.5, 13, 0],
 } as CircleLayerSpecification['paint'];
 
 function getHutsOccupationDayLayout(day: number) {
@@ -181,17 +154,7 @@ function getHutsOccupationDayLayout(day: number) {
       ],
       ['image', 'wodore:occupation_unknown'],
     ],
-    'icon-size': [
-      'interpolate',
-      ['linear'],
-      ['zoom'],
-      7,
-      0.1,
-      12,
-      0.3,
-      15,
-      0.6,
-    ],
+    'icon-size': ['interpolate', ['linear'], ['zoom'], 7, 0.1, 12, 0.3, 15, 0.6],
   };
 }
 function occTranslate(day: number) {
@@ -212,32 +175,8 @@ function getHutsOccupationDayPaint(day: number) {
     'icon-translate': occTranslate(day),
     'text-translate': occTranslate(day),
     //'text-opacity': ['step', ['zoom'], 0, 12, 0.6],
-    'text-opacity': [
-      'interpolate',
-      ['linear'],
-      ['zoom'],
-      11,
-      0,
-      12,
-      0.4,
-      14,
-      0.6,
-    ],
-    'icon-opacity': [
-      'interpolate',
-      ['linear'],
-      ['zoom'],
-      8,
-      0,
-      10,
-      0.8,
-      11,
-      1,
-      13,
-      1,
-      15,
-      0.7,
-    ],
+    'text-opacity': ['interpolate', ['linear'], ['zoom'], 11, 0, 12, 0.4, 14, 0.6],
+    'icon-opacity': ['interpolate', ['linear'], ['zoom'], 8, 0, 10, 0.8, 11, 1, 13, 1, 15, 0.7],
     //'icon-opacity': ['step', ['zoom'], 0, 8, 1],
   };
 }
@@ -304,11 +243,10 @@ watchEffect(() => {
   console.debug('Booking geojson updated');
   const source = hutsStyle.sources['wd-bookings'] as GeoJSONSourceSpecification;
   source.data = bookingsGeojson.value as GeoJSON.GeoJSON;
-  const mapSource = mapRef.map?.getSource('wd-bookings') as GeoJSONSource;
-  if (mapSource) {
-    if (bookingsGeojson.value !== undefined) {
-      mapSource.setData(bookingsGeojson.value as GeoJSON.GeoJSON);
-    }
+  const mapSource = mapRef.map?.getSource('wd-bookings') as GeoJSONSource | undefined;
+  // Source may not exist if basemap was just changed
+  if (mapSource && bookingsGeojson.value !== undefined) {
+    mapSource.setData(bookingsGeojson.value as GeoJSON.GeoJSON);
   }
 });
 //console.log('Hut type keys: ', Object.keys(hutTypesRecords.value));

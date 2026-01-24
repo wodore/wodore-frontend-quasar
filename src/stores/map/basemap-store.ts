@@ -6,6 +6,7 @@ import { useMap } from '@indoorequal/vue-maplibre-gl';
 import { Platform } from 'quasar';
 //import type { Emitter } from 'mitt';
 import { LocalStorage } from 'quasar';
+import { getGPUTier } from 'detect-gpu';
 
 const swissTopoRasterStyle = getRasterStyle({
   name: 'ch-swisstopo-raster',
@@ -128,109 +129,145 @@ export const useBasemapStore = defineStore('basemap', () => {
     return true;
   }
 
-  const basemaps = reactive<Array<BasemapSwitchItem>>([
-    {
-      name: 'ch-swisstopo-raster',
-      label: 'Schweiz Topo Raster',
-      show: true,
-      active: true,
-      img: getImageUrl('swiss-raster.png'),
-      style: swissTopoRasterStyle,
-      layers: {
-        ways: { before: undefined },
-        background: { before: undefined },
-      },
-    },
-    {
-      name: 'ch-swisstopo-lbm',
-      label: 'Schweiz Topo LBM',
-      show: true,
-      active: true,
-      img: getImageUrl('swiss-vector.png'),
-      style: swissTopoLbmRasterStyle,
-      layers: {
-        ways: { before: undefined },
-        background: { before: undefined },
-      },
-    },
+  // Initialize as empty reactive array
+  const basemaps = reactive<Array<BasemapSwitchItem>>([]);
 
-    {
-      name: 'CH swisstopo LBM Vivid',
-      label: 'Schweiz Topo Vector',
-      show: true,
-      img: getImageUrl('swiss-vector.png'),
-      style:
-        'https://api.maptiler.com/maps/ch-swisstopo-lbm/style.json?key=' +
-        process.env.WODORE_MAPTILER_API_KEY,
-      layers: {
-        ways: { before: 'Other place labels' },
-        background: { before: 'Building line' },
+  // Flag to track if basemaps have been initialized
+  let basemapsInitialized = false;
+
+  // Async function to initialize basemaps based on GPU tier
+  async function initializeBasemaps() {
+    if (basemapsInitialized) {
+      return; // Already initialized
+    }
+
+    // Detect GPU tier to determine if raster maps should be used
+    const gpuTier = await getGPUTier();
+    const useRaster = gpuTier.tier < 2;
+
+    console.debug('GPU Tier detected:', gpuTier.tier, 'Using raster:', useRaster);
+
+    // Populate basemaps array
+    const basemapItems: BasemapSwitchItem[] = [
+      {
+        name: 'ch-swisstopo-light',
+        label: 'Schweiz Topo Light',
+        show: true,
+        active: false,
+        img: getImageUrl('swiss-vector.png'),
+        style: useRaster
+          ? swissTopoLbmRasterStyle
+          : 'https://api.maptiler.com/maps/ch-swisstopo-lbm/style.json?key=' +
+            process.env.WODORE_MAPTILER_API_KEY,
+        layers: {
+          ways: { before: useRaster ? undefined : 'Other place labels' },
+          background: { before: useRaster ? undefined : 'Building line' },
+        },
       },
-    },
-    {
-      name: 'Satellite Hybrid',
-      label: 'Satellite',
-      show: true,
-      img: getImageUrl('satellite.png'),
-      style:
-        'https://api.maptiler.com/maps/hybrid/style.json?key=' +
-        process.env.WODORE_MAPTILER_API_KEY,
-      layers: {
-        ways: { before: 'Tunnel' },
-        background: { before: 'State labels' },
+      {
+        name: 'ch-swisstopo-raster',
+        label: 'Schweiz Topo Raster',
+        show: true,
+        active: false,
+        img: getImageUrl('swiss-raster.png'),
+        style: swissTopoRasterStyle,
+        layers: {
+          ways: { before: undefined },
+          background: { before: undefined },
+        },
       },
-    },
-    {
-      name: 'outdoor-osm',
-      label: 'Outdoor OSM',
-      show: false,
-      img: getImageUrl('outdoor-v2.png'),
-      style:
-        'https://api.maptiler.com/maps/outdoor-v2/style.json?key=' +
-        process.env.WODORE_MAPTILER_API_KEY,
-      layers: {
-        background: { before: 'Contour index' },
-        ways: { before: 'Park' },
+      // {
+      //   name: 'CH swisstopo LBM Vivid',
+      //   label: 'Schweiz Topo Vector',
+      //   show: true,
+      //   img: getImageUrl('swiss-vector.png'),
+      //   style:
+      //     'https://api.maptiler.com/maps/ch-swisstopo-lbm/style.json?key=' +
+      //     process.env.WODORE_MAPTILER_API_KEY,
+      //   layers: {
+      //     ways: { before: 'Other place labels' },
+      //     background: { before: 'Building line' },
+      //   },
+      // },
+      {
+        name: 'Satellite Hybrid',
+        label: 'Satellite',
+        show: true,
+        active: false,
+        img: getImageUrl('satellite.png'),
+        style:
+          'https://api.maptiler.com/maps/hybrid/style.json?key=' +
+          process.env.WODORE_MAPTILER_API_KEY,
+        layers: {
+          ways: { before: 'Tunnel' },
+          background: { before: 'State labels' },
+        },
       },
-    },
-    // Original does not work due to relativ paths
-    // json from https://github.com/trafficon/basemap-at-maplibre/tree/main copied to public folder
-    // original: https://www.data.gv.at/katalog/dataset/a73befc7-575f-48cb-8eb9-b05172a8c9e3#additional-info
-    // TODO: somehow the huts are not shown anymore, try to update json files
-    {
-      name: 'oe-vector',
-      label: 'Östereich Topo Vector',
-      active: true,
-      show: false,
-      img: getImageUrl('swiss-vector.png'),
-      style: 'styles/basemapv-bmapv-3857-resources-styles-root.json',
-      layers: {
-        ways: { before: undefined },
-        background: { before: undefined },
+      {
+        name: 'outdoor-osm',
+        label: 'Outdoor OSM',
+        show: false,
+        active: false,
+        img: getImageUrl('outdoor-v2.png'),
+        style:
+          'https://api.maptiler.com/maps/outdoor-v2/style.json?key=' +
+          process.env.WODORE_MAPTILER_API_KEY,
+        layers: {
+          background: { before: 'Contour index' },
+          ways: { before: 'Park' },
+        },
       },
-    },
-    {
-      name: 'oe-raster',
-      label: 'Östereich Topo Raster',
-      show: false,
-      img: getImageUrl('oe-raster.png'),
-      style: oeTopoRasterStyle,
-      layers: {
-        ways: { before: undefined },
-        background: { before: undefined },
+      // Original does not work due to relativ paths
+      // json from https://github.com/trafficon/basemap-at-maplibre/tree/main copied to public folder
+      // original: https://www.data.gv.at/katalog/dataset/a73befc7-575f-48cb-8eb9-b05172a8c9e3#additional-info
+      // TODO: somehow the huts are not shown anymore, try to update json files
+      {
+        name: 'oe-vector',
+        label: 'Östereich Topo Vector',
+        active: false,
+        show: false,
+        img: getImageUrl('swiss-vector.png'),
+        style: 'styles/basemapv-bmapv-3857-resources-styles-root.json',
+        layers: {
+          ways: { before: undefined },
+          background: { before: undefined },
+        },
       },
-    },
-  ]);
-  // get current base layer from local storage
-  const savedBasemap: BasemapSwitchItem = LocalStorage.hasItem('basemapStyle')
-    ? (LocalStorage.getItem('basemapStyle') as BasemapSwitchItem)
-    : <BasemapSwitchItem>(basemaps[0] as unknown);
-  setBasemap(savedBasemap);
+      {
+        name: 'oe-raster',
+        label: 'Östereich Topo Raster',
+        show: false,
+        active: false,
+        img: getImageUrl('oe-raster.png'),
+        style: oeTopoRasterStyle,
+        layers: {
+          ways: { before: undefined },
+          background: { before: undefined },
+        },
+      },
+    ];
+
+    // Add all items to the reactive array
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (basemaps as any).push(...basemapItems);
+
+    // Get current base layer from local storage
+    const savedBasemap: BasemapSwitchItem = LocalStorage.hasItem('basemapStyle')
+      ? (LocalStorage.getItem('basemapStyle') as BasemapSwitchItem)
+      : <BasemapSwitchItem>(basemaps[0] as unknown);
+
+    setBasemap(savedBasemap);
+    basemapsInitialized = true;
+  }
+
+  // Call initialization immediately
+  initializeBasemaps();
 
   return {
     basemaps,
     setBasemap,
     getBasemap,
+    initializeBasemaps,
     //setEmitter,
   };
 });
