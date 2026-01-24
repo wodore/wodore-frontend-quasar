@@ -22,36 +22,38 @@ const swissTopoRasterStyle = getRasterStyle({
     'https://wmts9.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
   ],
   attribution:
-    '<a href="https://www.swisstopo.admin.ch/" target="_blank">&copy; swisstopo</a>',
+    '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> &#124; <a href="https://www.openstreetmap.org/copyright" target="_blank"> &copy; OpenStreetMap contributors</a> &#124; <a href="https://www.swisstopo.admin.ch/en/home.html" target="_blank">&copy; swisstopo</a>',
   suffix: '',
   tileSize: Platform.is.mobile ? 128 : 156,
 });
+
+const swissTopoLbmRasterStyle = getRasterStyle({
+  name: 'ch-swisstopo-lbm',
+  tiles: [
+    'https://api.maptiler.com/maps/ch-swisstopo-lbm/{z}/{x}/{y}.png?key=' +
+      process.env.WODORE_MAPTILER_API_KEY,
+  ],
+  attribution:
+    '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank"> &copy; OpenStreetMap contributors</a> &#124; <a href="https://www.swisstopo.admin.ch/en/home.html" target="_blank">&copy; swisstopo</a>',
+  suffix: '',
+  //tileSize: Platform.is.mobile ? 128 : 156,
+  tileSize: 512,
+});
+
 const oeLayer: 'geolandbasemap' | 'bmaphidpi' = 'bmaphidpi';
 const oeExt: 'png' | 'jpeg' = 'jpeg';
 const oeTopoRasterStyle = getRasterStyle({
   name: 'oe-raster',
   tiles: [
-    'https://maps1.wien.gv.at/basemap/' +
-      oeLayer +
-      '/normal/google3857/{z}/{y}/{x}.' +
-      oeExt,
-    'https://maps2.wien.gv.at/basemap/' +
-      oeLayer +
-      '/normal/google3857/{z}/{y}/{x}.' +
-      oeExt,
-    'https://maps3.wien.gv.at/basemap/' +
-      oeLayer +
-      '/normal/google3857/{z}/{y}/{x}.' +
-      oeExt,
+    'https://maps1.wien.gv.at/basemap/' + oeLayer + '/normal/google3857/{z}/{y}/{x}.' + oeExt,
+    'https://maps2.wien.gv.at/basemap/' + oeLayer + '/normal/google3857/{z}/{y}/{x}.' + oeExt,
+    'https://maps3.wien.gv.at/basemap/' + oeLayer + '/normal/google3857/{z}/{y}/{x}.' + oeExt,
   ],
   attribution: 'basemap.at',
   tileSize: 512,
 });
 function getImageUrl(name: string): string {
-  return new URL(
-    `/src/assets/wodore-design/map/switch/${name}`,
-    import.meta.url,
-  ).href;
+  return new URL(`/src/assets/wodore-design/map/switch/${name}`, import.meta.url).href;
 }
 export const useBasemapStore = defineStore('basemap', () => {
   const mapRef = useMap();
@@ -140,12 +142,25 @@ export const useBasemapStore = defineStore('basemap', () => {
       },
     },
     {
+      name: 'ch-swisstopo-lbm',
+      label: 'Schweiz Topo LBM',
+      show: true,
+      active: true,
+      img: getImageUrl('swiss-vector.png'),
+      style: swissTopoLbmRasterStyle,
+      layers: {
+        ways: { before: undefined },
+        background: { before: undefined },
+      },
+    },
+
+    {
       name: 'CH swisstopo LBM Vivid',
       label: 'Schweiz Topo Vector',
       show: true,
       img: getImageUrl('swiss-vector.png'),
       style:
-        'https://api.maptiler.com/maps/ch-swisstopo-lbm-vivid/style.json?key=' +
+        'https://api.maptiler.com/maps/ch-swisstopo-lbm/style.json?key=' +
         process.env.WODORE_MAPTILER_API_KEY,
       layers: {
         ways: { before: 'Other place labels' },
