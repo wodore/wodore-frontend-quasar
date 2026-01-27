@@ -49,14 +49,14 @@ const hutsLayerLayout: SymbolLayerSpecification['layout'] = {
     ['zoom'],
     [
       'coalesce',
-      ['image', ['concat', 'wodore:simple/', ['get', 'type_open_slug']]],
-      ['image', 'wodore:simple/unknown'],
+      ['image', ['concat', 'accommodation:simple/', ['get', 'type_open_slug']]],
+      ['image', 'accommodation:simple/unknown'],
     ],
     imageSwitchZoom,
     [
       'coalesce',
-      ['image', ['concat', 'wodore:detailed/', ['get', 'type_open_slug']]],
-      ['image', 'wodore:detailed/unknown'],
+      ['image', ['concat', 'accommodation:detailed/', ['get', 'type_open_slug']]],
+      ['image', 'accommodation:detailed/unknown'],
     ],
   ],
   //'icon-size': ['interpolate', ['linear'], ['zoom'], 7, 0.05, 9, 0.1, 20, 1],

@@ -166,20 +166,37 @@ function onLayerLeave(e: MapLayerEventType['mouseleave']) {
 }
 const SPRITE_BASE_URL = process.env.WODORE_API_HOST;
 const _spriteUrl = SPRITE_BASE_URL + '/static/huts/sprite';
+const _tileServerUrl = process.env.WODORE_TILE_SERVER_URL || 'http://localhost:8075';
+const _accommodationSpriteUrl = `${_tileServerUrl}/sprite/accommodation`;
+
 function onMapStyledata(e: MglEvent<'styledata'>) {
   //$q.loadingBar.start();
   console.debug('Style data changed event', e);
   const _wodoreSprite = e.map.getSprite();
   //console.debug("Check sprite 'wodore' in ", _wodoreSprite);
-  let _spriteAdded = false;
+
+  // Add wodore sprite for occupation icons if not already added
+  let _wodoreSpriteAdded = false;
   for (const sprite of _wodoreSprite) {
     if (sprite.id == 'wodore') {
-      _spriteAdded = true;
+      _wodoreSpriteAdded = true;
     }
   }
-  if (!_spriteAdded) {
+  if (!_wodoreSpriteAdded) {
     console.debug(`Add sprite 'wodore' from '${_spriteUrl}'`);
     e.map.addSprite('wodore', _spriteUrl);
+  }
+
+  // Add accommodation sprite from tile server if not already added
+  let _accommodationSpriteAdded = false;
+  for (const sprite of _wodoreSprite) {
+    if (sprite.id == 'accommodation') {
+      _accommodationSpriteAdded = true;
+    }
+  }
+  if (!_accommodationSpriteAdded) {
+    console.debug(`Add sprite 'accommodation' from '${_accommodationSpriteUrl}'`);
+    e.map.addSprite('accommodation', _accommodationSpriteUrl);
   }
 }
 //function onMapRender(e: MglEvent<'render'>) {
