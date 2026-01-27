@@ -61,10 +61,7 @@ if ($layout === undefined) {
   watchEffect(() => {
     top.value = `${$layout.header.offset}px`;
     right.value = `${$layout.right.offset}px`;
-    if (
-      process.env.CLIENT &&
-      $layout.footer.offset < window.innerHeight - 250
-    ) {
+    if (process.env.CLIENT && $layout.footer.offset < window.innerHeight - 250) {
       bottom.value = `${$layout.footer.offset}px`;
     }
     left.value = `${$layout.left.offset}px`;
@@ -73,7 +70,7 @@ if ($layout === undefined) {
       top.value,
       right.value,
       bottom.value,
-      left.value,
+      left.value
     );
   });
 }
@@ -118,20 +115,20 @@ function onHutLayerClick(e: MapLayerEventType['click']) {
     let feature = e.features?.[0];
     console.debug(
       '  Selected huts:',
-      e.features?.map((v) => v.properties.slug),
+      e.features?.map(v => v.properties.slug)
     );
     if (feature) {
       if (selectedHutFeature.value !== undefined) {
         e.target.setFeatureState(
-          { source: 'wd-huts', id: selectedHutFeature.value.id },
-          { selected: false },
+          { source: 'wd-huts', sourceLayer: 'huts', id: selectedHutFeature.value.id },
+          { selected: false }
         );
       }
       // TODO: add to route watch
       if (selectedHutFeature.value?.id != feature.id) {
         e.target.setFeatureState(
-          { source: 'wd-huts', id: feature.id },
-          { selected: true },
+          { source: 'wd-huts', sourceLayer: 'huts', id: feature.id },
+          { selected: true }
         );
         selectedHutFeature.value = <MapGeoJSONFeature>(feature as unknown);
       } else {
@@ -238,26 +235,18 @@ const mapZoom: number = 7.5;
         <WdBasemapSwitch
           :position="$q.platform.is.mobile ? 'bottom-right' : 'top-left'"
           :direction="$q.platform.is.mobile ? 'left' : 'right'"
-          :offset="[
-            $q.platform.is.mobile ? 14 : 14,
-            $q.platform.is.mobile ? 20 : 14,
-          ]"
+          :offset="[$q.platform.is.mobile ? 14 : 14, $q.platform.is.mobile ? 20 : 14]"
         />
         <WdOverlaySwitch
           position="top-left"
           direction="down"
-          :offset="[
-            $q.platform.is.mobile ? 14 : 14,
-            $q.platform.is.mobile ? 14 : 68,
-          ]"
+          :offset="[$q.platform.is.mobile ? 14 : 14, $q.platform.is.mobile ? 14 : 68]"
         />
         <!-- </MglCustomControl> -->
         <MglGeolocateControl />
         <!-- <MglNavigationControl :show-zoom="$q.platform.is.desktop" /> -->
         <MglNavigationControl :show-zoom="false" />
-        <MglAttributionControl
-          :position="$q.platform.is.mobile ? 'bottom-left' : 'bottom-right'"
-        />
+        <MglAttributionControl :position="$q.platform.is.mobile ? 'bottom-left' : 'bottom-right'" />
         <MglScaleControl />
         <!-- <MglGeoJsonSource
       source-id="wd-bookings"
