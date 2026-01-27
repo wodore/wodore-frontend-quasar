@@ -6,7 +6,7 @@ import { useMap } from '@indoorequal/vue-maplibre-gl';
 import { Platform } from 'quasar';
 //import type { Emitter } from 'mitt';
 import { LocalStorage } from 'quasar';
-import { getGPUTier } from 'detect-gpu';
+import { getGPUTier } from '@pmndrs/detect-gpu';
 
 const swissTopoRasterStyle = getRasterStyle({
   name: 'ch-swisstopo-raster',
@@ -149,6 +149,30 @@ export const useBasemapStore = defineStore('basemap', () => {
     return undefined;
   }
 
+  // Helper to determine if we should use raster basemaps based on GPU capabilities
+  function shouldUseRaster(gpuTier: Awaited<ReturnType<typeof getGPUTier>>): boolean {
+    if (!gpuTier.gpu) {
+      // No GPU info → assume low capability
+      return true;
+    }
+
+    const gpuName = gpuTier.gpu.toLowerCase();
+
+    // Software / VM renderers → raster
+    if (
+      gpuName.includes('swiftshader') ||
+      gpuName.includes('llvmpipe') ||
+      gpuName.includes('software') ||
+      gpuName.includes('mesa offscreen') ||
+      gpuName.includes('softpipe')
+    ) {
+      return true;
+    }
+
+    // Use raster if tier is less than 1 (tier 0)
+    return gpuTier.tier < 1;
+  }
+
   // Async function to initialize basemaps based on GPU tier
   async function initializeBasemaps() {
     if (basemapsInitialized) {
@@ -176,9 +200,16 @@ export const useBasemapStore = defineStore('basemap', () => {
       console.debug('Detected and cached GPU tier:', gpuTier.tier);
     }
 
-    const useRaster = gpuTier.tier < 1;
+    const useRaster = shouldUseRaster(gpuTier);
 
-    console.debug('GPU Tier detected:', gpuTier.tier, 'Using raster:', useRaster);
+    console.debug(
+      'GPU Tier detected:',
+      gpuTier.tier,
+      'GPU:',
+      gpuTier.gpu,
+      'Using raster:',
+      useRaster
+    );
 
     // Populate basemaps array
     const basemapItems: BasemapSwitchItem[] = [
