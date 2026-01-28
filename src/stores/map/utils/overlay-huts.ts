@@ -49,14 +49,14 @@ const hutsLayerLayout: SymbolLayerSpecification['layout'] = {
     ['zoom'],
     [
       'coalesce',
-      ['image', ['concat', 'wodore:simple/', ['get', 'type_open_slug']]],
-      ['image', 'wodore:simple/unknown'],
+      ['image', ['concat', 'accommodation:simple/', ['get', 'type_open_slug']]],
+      ['image', 'accommodation:simple/unknown'],
     ],
     imageSwitchZoom,
     [
       'coalesce',
-      ['image', ['concat', 'wodore:detailed/', ['get', 'type_open_slug']]],
-      ['image', 'wodore:detailed/unknown'],
+      ['image', ['concat', 'accommodation:detailed/', ['get', 'type_open_slug']]],
+      ['image', 'accommodation:detailed/unknown'],
     ],
   ],
   //'icon-size': ['interpolate', ['linear'], ['zoom'], 7, 0.05, 9, 0.1, 20, 1],
@@ -143,7 +143,7 @@ function getHutsOccupationDayLayout(day: number) {
         'image',
         [
           'concat',
-          'wodore:occupation_',
+          'availability:detailed/',
           [
             'case',
             ['<', day, ['length', ['get', 'data']]],
@@ -152,7 +152,7 @@ function getHutsOccupationDayLayout(day: number) {
           ],
         ],
       ],
-      ['image', 'wodore:occupation_unknown'],
+      ['image', 'availability:detailed/unknown'],
     ],
     'icon-size': ['interpolate', ['linear'], ['zoom'], 7, 0.1, 12, 0.3, 15, 0.6],
   };
@@ -196,9 +196,8 @@ export const hutsStyle: StyleSpecification = {
   version: 8,
   sources: {
     'wd-huts': {
-      type: 'geojson',
-      //data: hutsGeojson.value,
-      data: `${process.env.WODORE_API_HOST}/${process.env.WODORE_API_VERSION}/huts/huts.geojson?lang=de&limit=5000&embed_all=false&embed_type=true&embed_owner=false&embed_capacity=false&embed_sources=false&include_elevation=false&include_name=true&flat=true`,
+      type: 'vector',
+      url: `${process.env.WODORE_TILE_SERVER_URL || 'http://localhost:8075'}/huts`,
       promoteId: 'slug',
     },
     'wd-bookings': {
@@ -227,6 +226,7 @@ export const hutsStyle: StyleSpecification = {
       id: 'wd-huts-selected',
       type: 'circle',
       source: 'wd-huts',
+      'source-layer': 'huts',
       layout: { visibility: 'visible' },
       paint: hutsLayerSelectedPaint,
     },
@@ -234,6 +234,7 @@ export const hutsStyle: StyleSpecification = {
       id: 'wd-huts',
       type: 'symbol',
       source: 'wd-huts',
+      'source-layer': 'huts',
       layout: hutsLayerLayout,
       paint: hutsLayerPaint,
     },
