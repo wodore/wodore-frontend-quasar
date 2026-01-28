@@ -143,7 +143,7 @@ function getHutsOccupationDayLayout(day: number) {
         'image',
         [
           'concat',
-          'wodore:occupation_',
+          'availability:detailed/',
           [
             'case',
             ['<', day, ['length', ['get', 'data']]],
@@ -152,7 +152,7 @@ function getHutsOccupationDayLayout(day: number) {
           ],
         ],
       ],
-      ['image', 'wodore:occupation_unknown'],
+      ['image', 'availability:detailed/unknown'],
     ],
     'icon-size': ['interpolate', ['linear'], ['zoom'], 7, 0.1, 12, 0.3, 15, 0.6],
   };
