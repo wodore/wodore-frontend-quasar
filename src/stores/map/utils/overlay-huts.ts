@@ -40,7 +40,7 @@ const hutsLayerLayout: SymbolLayerSpecification['layout'] = {
   'text-anchor': 'bottom',
   'icon-allow-overlap': true,
   'text-allow-overlap': false,
-  'symbol-sort-key': ['get', 'type_id'],
+  'symbol-sort-key': ['get', 'type_standard_order'],
   'icon-overlap': 'always',
   'text-overlap': 'never',
   'text-optional': true,

@@ -219,6 +219,8 @@ const mapZoom: number = 7.5;
         :min-zoom="7"
         :max-zoom="20"
         :max-bounds="[3.6, 43, 18.7, 49.7]"
+        :max-tile-cache-size="400"
+        :render-world-copies="false"
       >
         <!-- <MglStyleSwitchControl :map-styles="basemapStore.basemaps" /> -->
         <!-- <MglCustomControl position="top-right" class=""> -->
