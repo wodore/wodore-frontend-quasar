@@ -151,10 +151,13 @@ function addOverlays() {
     console.debug('[addOverlays] already initialzed');
     return;
   }
-  const backOverlays = overlayStore.overlays
-    .slice()
-    .filter(v => v.onLayer == 'background') as unknown as Array<OverlaySwitchItem>;
-  const frontOverlays = overlayStore.overlays.slice().filter(v => v.onLayer == 'ways');
+  // Break type inference chain to avoid "excessively deep" TypeScript error
+  // Access store as any first, then cast to avoid TypeScript deep type recursion
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  const allOverlays = (overlayStore as any).overlays as Array<OverlaySwitchItem>;
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+  const backOverlays = allOverlays.slice().filter(v => v.onLayer == 'background');
+  const frontOverlays = allOverlays.slice().filter(v => v.onLayer == 'ways');
   const overlaysRevert = frontOverlays.concat(backOverlays).reverse();
   for (const overlay of overlaysRevert) {
     for (const label in overlay.style.sources) {
