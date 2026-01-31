@@ -1,10 +1,7 @@
 <script setup lang="ts">
 //import { Map } from 'maplibre-gl';
 import { QPageStickyProps, QFabProps, useQuasar, LocalStorage } from 'quasar';
-import {
-  OpacitySpecification,
-  OverlaySwitchItem,
-} from '@stores/map/utils/interfaces';
+import { OpacitySpecification, OverlaySwitchItem } from '@stores/map/utils/interfaces';
 import { useOverlayStore } from '@stores/map/overlay-store';
 import { useBasemapStore } from '@stores/map/basemap-store';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
@@ -24,13 +21,11 @@ const basemapStore = useBasemapStore();
 const mapRef = useMap();
 const $q = useQuasar();
 const switcherOpen = ref<boolean>(
-  LocalStorage.hasItem('switcherOpen')
-    ? (LocalStorage.getItem('switcherOpen') as boolean)
-    : true,
+  LocalStorage.hasItem('switcherOpen') ? (LocalStorage.getItem('switcherOpen') as boolean) : true
 );
 //const switcherLocked = ref<boolean>(true);
 
-watch(switcherOpen, (v) => {
+watch(switcherOpen, v => {
   LocalStorage.set('switcherOpen', v);
 });
 
@@ -78,11 +73,7 @@ function setOverlayVisibility(overlay: OverlaySwitchItem): boolean {
           layer.layout.visibility = 'none';
         }
         //console.debug('Set visibility to ', layer.layout?.visibility);
-        mapRef.map.setLayoutProperty(
-          layer.id,
-          'visibility',
-          layer.layout?.visibility,
-        );
+        mapRef.map.setLayoutProperty(layer.id, 'visibility', layer.layout?.visibility);
       }
     }
   }
@@ -106,22 +97,11 @@ function addOverlayLayer({
 }: addOverlayLayerArgs) {
   //const styleId = mapRef.map?.style.stylesheet.id;
   const basemap = basemapStore.getBasemap();
-  const basemapOpacity =
-    onLayer !== undefined ? basemap?.layers[onLayer]?.opacity : undefined;
+  const basemapOpacity = onLayer !== undefined ? basemap?.layers[onLayer]?.opacity : undefined;
   let autoOpacity = false;
   if (defaultOpacity === undefined || defaultOpacity == true) {
     autoOpacity = true;
-    defaultOpacity = [
-      'interpolate',
-      ['linear'],
-      ['zoom'],
-      8,
-      0.9,
-      14,
-      0.6,
-      22,
-      0.5,
-    ];
+    defaultOpacity = ['interpolate', ['linear'], ['zoom'], 8, 0.9, 14, 0.6, 22, 0.5];
   }
   if (mapRef.map?.getLayer(layer.id) === undefined) {
     let opacity: PropertyValueSpecification<number> | undefined =
@@ -151,18 +131,12 @@ function addOverlayLayer({
       }
       if (opacity !== undefined) {
         console.debug(
-          `  Set paint '${layer.type}-opacity' property for layer '${layer.id}' to ${opacity}`,
+          `  Set paint '${layer.type}-opacity' property for layer '${layer.id}' to ${opacity}`
         );
-        mapRef.map?.setPaintProperty(
-          layer.id,
-          `${layer.type}-opacity`,
-          opacity,
-        );
+        mapRef.map?.setPaintProperty(layer.id, `${layer.type}-opacity`, opacity);
       }
     } else {
-      console.error(
-        `Source '${_source}' not added, tried to add layer '${layer.id}'.`,
-      );
+      console.error(`Source '${_source}' not added, tried to add layer '${layer.id}'.`);
     }
   }
 }
@@ -170,12 +144,8 @@ function addOverlayLayer({
 function addOverlays() {
   const backOverlays = overlayStore.overlays
     .slice()
-    .filter(
-      (v) => v.onLayer == 'background',
-    ) as unknown as Array<OverlaySwitchItem>;
-  const frontOverlays = overlayStore.overlays
-    .slice()
-    .filter((v) => v.onLayer == 'ways');
+    .filter(v => v.onLayer == 'background') as unknown as Array<OverlaySwitchItem>;
+  const frontOverlays = overlayStore.overlays.slice().filter(v => v.onLayer == 'ways');
   const overlaysRevert = frontOverlays.concat(backOverlays).reverse();
   for (const overlay of overlaysRevert) {
     for (const label in overlay.style.sources) {
@@ -183,6 +153,39 @@ function addOverlays() {
         const sourceSpec = overlay.style.sources[label];
         console.debug(`Add ${sourceSpec.type} source '${label}'`);
         mapRef.map?.addSource(label, sourceSpec);
+      }
+    }
+    // Add sprites if defined
+    const spriteData = overlay.style.sprite;
+    if (spriteData) {
+      // Get existing sprites to avoid duplicates
+      const existingSprites = mapRef.map?.getSprite() || [];
+
+      // Handle array format: [{ id: string, url: string }, ...]
+      if (Array.isArray(spriteData)) {
+        for (const sprite of spriteData) {
+          const spriteId = sprite.id;
+          const spriteUrl = sprite.url;
+
+          // Check if sprite already exists
+          const alreadyAdded = existingSprites.some(existing => existing.id === spriteId);
+
+          if (!alreadyAdded) {
+            console.debug(`Add sprite '${spriteId}' from '${spriteUrl}'`);
+            mapRef.map?.addSprite(spriteId, spriteUrl);
+          }
+        }
+      } else if (typeof spriteData === 'object') {
+        // Handle object format: { id: url, ... }
+        for (const [spriteId, spriteUrl] of Object.entries(spriteData)) {
+          // Check if sprite already exists
+          const alreadyAdded = existingSprites.some(existing => existing.id === spriteId);
+
+          if (!alreadyAdded) {
+            console.debug(`Add sprite '${spriteId}' from '${spriteUrl}'`);
+            mapRef.map?.addSprite(spriteId, spriteUrl as string);
+          }
+        }
       }
     }
     setOverlayVisibility(<OverlaySwitchItem>(overlay as unknown));
@@ -202,18 +205,11 @@ mapRef.map?.on('load', addOverlays);
 
 const switchIcon =
   'img:' +
-  new URL(
-    '/src/assets/wodore-design/icons/export/overlay-switch.svg',
-    import.meta.url,
-  ).href;
+  new URL('/src/assets/wodore-design/icons/export/overlay-switch.svg', import.meta.url).href;
 
 function overlayIcon(name: string) {
   return (
-    'img:' +
-    new URL(
-      `/src/assets/wodore-design/overlays/exports/${name}.svg`,
-      import.meta.url,
-    ).href
+    'img:' + new URL(`/src/assets/wodore-design/overlays/exports/${name}.svg`, import.meta.url).href
   );
 }
 </script>
@@ -230,6 +226,7 @@ function overlayIcon(name: string) {
   // justify-content: start;
   // align-items: flex-start;
 }
+
 .styleFab {
   pointer-events: auto;
 }

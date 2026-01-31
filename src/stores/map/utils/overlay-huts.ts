@@ -49,14 +49,14 @@ const hutsLayerLayout: SymbolLayerSpecification['layout'] = {
     ['zoom'],
     [
       'coalesce',
-      ['image', ['concat', 'accommodation:simple/', ['get', 'type_open_slug']]],
-      ['image', 'accommodation:simple/unknown'],
+      ['image', ['concat', 'wd:simple/', ['get', 'type_standard_identifier']]],
+      ['image', 'wd:simple/accommodation.unknown'],
     ],
     imageSwitchZoom,
     [
       'coalesce',
-      ['image', ['concat', 'accommodation:detailed/', ['get', 'type_open_slug']]],
-      ['image', 'accommodation:detailed/unknown'],
+      ['image', ['concat', 'wd:detailed/', ['get', 'type_standard_identifier']]],
+      ['image', 'wd:detailed/accommodation.unknown'],
     ],
   ],
   //'icon-size': ['interpolate', ['linear'], ['zoom'], 7, 0.05, 9, 0.1, 20, 1],
@@ -143,7 +143,7 @@ function getHutsOccupationDayLayout(day: number) {
         'image',
         [
           'concat',
-          'availability:detailed/',
+          'wd:detailed/availability.',
           [
             'case',
             ['<', day, ['length', ['get', 'data']]],
@@ -152,7 +152,7 @@ function getHutsOccupationDayLayout(day: number) {
           ],
         ],
       ],
-      ['image', 'availability:detailed/unknown'],
+      ['image', 'wd:detailed/availability.unknown'],
     ],
     'icon-size': ['interpolate', ['linear'], ['zoom'], 7, 0.1, 12, 0.3, 15, 0.6],
   };
@@ -206,6 +206,9 @@ export const hutsStyle: StyleSpecification = {
       promoteId: 'hut_id',
     },
   },
+  sprite: [
+    { id: 'wd', url: `${process.env.WODORE_TILE_SERVER_URL}/sprite/accommodation,availability` },
+  ],
   layers: [
     hutsOccpationDetailLayer(0),
     hutsOccpationDetailLayer(1),
