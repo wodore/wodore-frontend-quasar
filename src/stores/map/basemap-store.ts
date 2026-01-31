@@ -8,6 +8,7 @@ import { Platform } from 'quasar';
 import { LocalStorage } from 'quasar';
 import { getGPUTier } from '@pmndrs/detect-gpu';
 import { useOverlayStore } from './overlay-store';
+import { StyleSpecification } from 'maplibre-gl';
 
 const swissTopoRasterStyle = getRasterStyle({
   name: 'ch-swisstopo-raster',
@@ -308,15 +309,21 @@ export const useBasemapStore = defineStore('basemap', () => {
             : undefined;
 
         console.debug(
-          `[transformStyle] Style transformation complete: ${orderedLayers.length} layers total, ${customSources.length} custom sources, ${customSprites.length} custom sprites`
+          `[transformStyle] Style transformation complete: ${orderedLayers.length} layers total, ${Object.keys(customSources).length} custom sources, ${customSprites.length} custom sprites`
         );
 
-        return {
-          ...nextStyle,
-          sources: { ...nextStyle.sources, ...customSources },
-          layers: orderedLayers,
-          sprite: finalSprite,
+        const style = <StyleSpecification>{
+          //...nextStyle,
+          //sources: { ...nextStyle.sources, ...customSources },
+          //layers: orderedLayers,
+          //sprite: finalSprite,
         };
+        console.debug(
+          `[transformStyle] Next style '{nextStyle.name}' updated with overlays:`,
+          style
+        );
+
+        return style;
       },
     });
     //const emitter = inject(emitterSymbol)!;
