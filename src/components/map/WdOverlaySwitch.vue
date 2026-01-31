@@ -203,6 +203,7 @@ function addOverlays() {
         `[addOverlays] Try to add layer '${layer.id}' (call to 'addOverlayLayer')`,
         layer
       );
+
       addOverlayLayer({
         layer: <LayerSpecification>(layer as unknown),
         defaultOpacity: <OpacitySpecification>(overlay.opacity as unknown),

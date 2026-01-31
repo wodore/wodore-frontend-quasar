@@ -118,34 +118,53 @@ export const useBasemapStore = defineStore('basemap', () => {
         );
 
         // ========================================
-        // STEP 1: Preserve custom sources (wd- prefix)
+        // STEP 1: Preserve custom sources from overlays
         // ========================================
+        // Build lookup sets from overlay store to identify overlay layers and sources
+        const overlayLayerIds = new Set<string>();
+        const overlaySourceIds = new Set<string>();
+
+        for (const overlay of overlayStore.overlays) {
+          // Collect layer IDs
+          for (const layer of overlay.style.layers) {
+            overlayLayerIds.add(layer.id);
+            // Also collect sources referenced by layers
+            if ('source' in layer && layer.source) {
+              overlaySourceIds.add(layer.source as string);
+            }
+          }
+          // Collect source IDs from overlay sources
+          for (const sourceId in overlay.style.sources) {
+            overlaySourceIds.add(sourceId);
+          }
+        }
+
         const customSources = Object.fromEntries(
           Object.entries(previousStyle.sources || {}).filter(([key]) => {
-            const isCustom = key.startsWith('wd-');
-            if (isCustom) {
-              console.debug(`[transformStyle] Preserving custom source: ${key}`);
+            const isOverlaySource = overlaySourceIds.has(key);
+            if (isOverlaySource) {
+              console.debug(`[transformStyle] Preserving overlay source: ${key}`);
             }
-            return isCustom;
+            return isOverlaySource;
           })
         );
         console.debug(
-          `[transformStyle] Preserved ${Object.keys(customSources).length} custom sources`
+          `[transformStyle] Preserved ${Object.keys(customSources).length} overlay sources`
         );
 
         // ========================================
-        // STEP 2: Preserve custom layers (wd- prefix) with visibility
+        // STEP 2: Preserve overlay layers (identified from overlay store)
         // ========================================
         // Handle case where layers might not be an array
         const previousLayers = Array.isArray(previousStyle.layers) ? previousStyle.layers : [];
         const customLayers = previousLayers.filter(layer => {
-          const isCustom = layer.id.startsWith('wd-');
-          if (isCustom) {
+          const isOverlay = overlayLayerIds.has(layer.id);
+          if (isOverlay) {
             console.debug(
-              `[transformStyle] Preserving custom layer: ${layer.id} (type: ${layer.type})`
+              `[transformStyle] Preserving overlay layer: ${layer.id} (type: ${layer.type})`
             );
           }
-          return isCustom;
+          return isOverlay;
         });
 
         // Build a simple layer-to-overlay lookup map to avoid type recursion issues
@@ -361,16 +380,33 @@ export const useBasemapStore = defineStore('basemap', () => {
         return;
       }
       const style = mapRef.map.getStyle();
-      const currentLayers = style?.layers?.filter(l => l.id.startsWith('wd-')) || [];
-      const currentSources = Object.keys(style?.sources || {}).filter(s => s.startsWith('wd-'));
+
+      // Build lookup set from overlay store for debugging
+      const expectedOverlayLayerIds = new Set<string>();
+      for (const overlay of overlayStore.overlays) {
+        for (const layer of overlay.style.layers) {
+          expectedOverlayLayerIds.add(layer.id);
+        }
+      }
+
+      const overlayLayers = style?.layers?.filter(l => expectedOverlayLayerIds.has(l.id)) || [];
+
+      // Get sources used by overlay layers
+      const overlaySourceIds = new Set<string>();
+      for (const layer of overlayLayers) {
+        if ('source' in layer && layer.source) {
+          overlaySourceIds.add(layer.source as string);
+        }
+      }
+
       console.debug(
-        `[setBasemap] After setStyle completed: ${currentLayers.length} custom layers, ${currentSources.length} custom sources`
+        `[setBasemap] After setStyle completed: ${overlayLayers.length} overlay layers, ${overlaySourceIds.size} overlay sources`
       );
       console.debug(
-        `[setBasemap] Custom layer IDs:`,
-        currentLayers.map(l => l.id)
+        `[setBasemap] Overlay layer IDs:`,
+        overlayLayers.map(l => l.id)
       );
-      console.debug(`[setBasemap] Custom source IDs:`, currentSources);
+      console.debug(`[setBasemap] Overlay source IDs:`, Array.from(overlaySourceIds));
     }, 100);
 
     //const emitter = inject(emitterSymbol)!;

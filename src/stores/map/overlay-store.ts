@@ -27,15 +27,15 @@ export const useOverlayStore = defineStore('overlay', () => {
   const overlays = reactive<Array<OverlaySwitchItem>>([
     huts,
     public_transport_stops,
-    //hiking,
-    //mtb,
-    //cycling,
-    //hillslope,
-    //skitouren,
-    //snowshoes,
-    //skislopes,
-    //protected_nature,
-    //sheepdogs,
+    hiking,
+    mtb,
+    cycling,
+    hillslope,
+    skitouren,
+    snowshoes,
+    skislopes,
+    protected_nature,
+    sheepdogs,
   ]);
 
   const savedOverlays: Array<OverlaySwitchItem> = LocalStorage.hasItem('overlays')
