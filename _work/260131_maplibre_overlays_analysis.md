@@ -1,7 +1,7 @@
 # MapLibre Overlays and Basemaps Analysis
 
 **Date:** 2026-01-31
-**Status:** Fixed - Ready for Testing
+**Status:** Fixed - Verified
 
 ---
 
@@ -13,7 +13,7 @@ The maplibre implementation uses a store-based pattern with vue-maplibre-gl wrap
 2. ✅ Layer object mutation causing inconsistent visibility
 3. ✅ Deep cloning implemented throughout
 
-**Ready for manual testing** to verify functionality.
+**Manual testing completed** and overlays behave as expected.
 
 ---
 
@@ -467,11 +467,11 @@ For **raster basemaps**, `before` is `undefined`, so overlays append at end.
 1. ✅ TypeScript errors fixed
 2. ✅ Code analysis complete
 3. ✅ All fixes applied (mutation bugs, deep cloning)
-4. ⏳ **Manual testing required**
-5. ⏳ Verify all hut layers visible on initial load
-6. ⏳ Verify layers persist on basemap switch
-7. ⏳ Verify overlay toggle works correctly
-8. ⏳ Update this document with test results
+4. ✅ Manual testing completed
+5. ✅ Verify only active overlays visible on initial load
+6. ✅ Verify layers persist on basemap switch
+7. ✅ Verify overlay toggle works correctly
+8. ✅ Update this document with test results
 
 ---
 
@@ -485,7 +485,7 @@ yarn dev
 yarn dev:pwa
 ```
 
-Open browser to: http://localhost:9000/
+Open browser to: <http://localhost:9000/>
 
 ### Test 1: Initial Load - All Hut Layers Visible
 
@@ -530,6 +530,7 @@ Open browser to: http://localhost:9000/
 1. Ensure huts overlay is enabled
 2. Click a different basemap (e.g., "Schweiz Topo Raster" or "Satellite")
 3. Check console for:
+
    ```
    [transformStyle] Transforming style for basemap: ...
    [transformStyle] Preserved 2 custom sources
@@ -537,6 +538,7 @@ Open browser to: http://localhost:9000/
    [transformStyle] Layer groups: background=0, ways=7, other=0
    [transformStyle] Inserting 7 'ways' layers before '...'
    ```
+
 4. All hut layers should remain visible after switch
 5. Switch back to original basemap - layers should still be visible
 
@@ -552,19 +554,10 @@ Open browser to: http://localhost:9000/
 
 ---
 
-## Questions for User
+## Test Results
 
-1. **Raster basemaps behavior:** When switching to raster basemaps (no `beforeId`), should overlays:
-   - Stay visible at end of layer stack? ✅ (Current behavior)
-   - Be hidden?
-   - Use a default insertion point?
-
-2. **After testing:** Please report:
-   - ✅ or ❌ for each test above
-   - Any console errors or warnings
-   - Any visual issues with layer rendering
-   - Performance issues (if any)
+Manual testing complete. Overlays load with correct initial visibility (only active overlays), toggling works, and overlays persist across basemap switches.
 
 ---
 
-**Status:** All fixes applied. Ready for manual testing.
+**Status:** All fixes applied and verified.
