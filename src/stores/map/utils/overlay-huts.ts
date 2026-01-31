@@ -247,7 +247,14 @@ watchEffect(() => {
   console.debug('Booking geojson updated');
   const source = hutsStyle.sources['wd-bookings'] as GeoJSONSourceSpecification;
   source.data = bookingsGeojson.value as GeoJSON.GeoJSON;
-  const mapSource = mapRef.map?.getSource('wd-bookings') as GeoJSONSource | undefined;
+
+  // Check if map is available and style is loaded before trying to access sources
+  if (!mapRef.map || !mapRef.map.isStyleLoaded()) {
+    console.debug('Map or style not yet loaded, skipping booking data update');
+    return;
+  }
+
+  const mapSource = mapRef.map.getSource('wd-bookings') as GeoJSONSource | undefined;
   // Source may not exist if basemap was just changed
   if (mapSource && bookingsGeojson.value !== undefined) {
     mapSource.setData(bookingsGeojson.value as GeoJSON.GeoJSON);

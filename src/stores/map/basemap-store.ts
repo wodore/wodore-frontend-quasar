@@ -82,16 +82,39 @@ export const useBasemapStore = defineStore('basemap', () => {
      * @see https://github.com/maplibre/maplibre-gl-js/issues/2587
      * Solution from: https://github.com/maplibre/maplibre-gl-js/issues/2587#issuecomment-1996106037
      */
+    //mapRef.map?.style.setState(s.style, {
     mapRef.map?.setStyle(s.style, {
       diff: true,
       transformStyle: (previousStyle, nextStyle) => {
+        // Debug input types
+        console.debug('[transformStyle] Called with:', {
+          previousStyleType: typeof previousStyle,
+          nextStyleType: typeof nextStyle,
+          previousStyleName: previousStyle?.name,
+          nextStyleName: nextStyle?.name,
+          nextStyleLayersType: typeof nextStyle?.layers,
+          nextStyleLayersIsArray: Array.isArray(nextStyle?.layers),
+          nextStyleLayers: Array.isArray(nextStyle?.layers) ? nextStyle.layers.length : 'not-array',
+          nextStyleSources: Object.keys(nextStyle?.sources || {}).length,
+        });
+
         // If no previous style, return as-is (first load)
         if (!previousStyle) {
           console.debug('[transformStyle] No previous style, returning nextStyle as-is');
           return nextStyle;
         }
+
+        // If nextStyle is a string (URL), we can't transform it - MapLibre should fetch it first
+        // This shouldn't happen, but handle it gracefully
+        if (typeof nextStyle === 'string') {
+          console.error(
+            '[transformStyle] nextStyle is a string URL, cannot transform. Returning as-is.'
+          );
+          return nextStyle;
+        }
+
         console.debug(
-          `[transformStyle] Transforming style for basemap from '${previousStyle?.name}' to '${nextStyle.name}'`
+          `[transformStyle] Transforming style for basemap from '${previousStyle?.name}' to '${nextStyle?.name}'`
         );
 
         // ========================================
@@ -113,7 +136,9 @@ export const useBasemapStore = defineStore('basemap', () => {
         // ========================================
         // STEP 2: Preserve custom layers (wd- prefix) with visibility
         // ========================================
-        const customLayers = previousStyle.layers.filter(layer => {
+        // Handle case where layers might not be an array
+        const previousLayers = Array.isArray(previousStyle.layers) ? previousStyle.layers : [];
+        const customLayers = previousLayers.filter(layer => {
           const isCustom = layer.id.startsWith('wd-');
           if (isCustom) {
             console.debug(
@@ -198,7 +223,9 @@ export const useBasemapStore = defineStore('basemap', () => {
         // STEP 4: Insert custom layers at correct positions
         // ========================================
         // Build ordered layer array based on basemap's layer configuration
-        const orderedLayers = [...nextStyle.layers];
+        // Handle case where nextStyle.layers might not be iterable
+        const nextLayers = Array.isArray(nextStyle.layers) ? nextStyle.layers : [];
+        const orderedLayers = [...nextLayers];
 
         // Helper to insert layers before a specific layer ID
         function insertLayersBefore(
@@ -312,20 +339,40 @@ export const useBasemapStore = defineStore('basemap', () => {
           `[transformStyle] Style transformation complete: ${orderedLayers.length} layers total, ${Object.keys(customSources).length} custom sources, ${customSprites.length} custom sprites`
         );
 
-        const style = <StyleSpecification>{
-          //...nextStyle,
-          //sources: { ...nextStyle.sources, ...customSources },
-          //layers: orderedLayers,
-          //sprite: finalSprite,
+        const transformedStyle = <StyleSpecification>{
+          ...nextStyle,
+          sources: { ...nextStyle.sources, ...customSources },
+          layers: orderedLayers,
+          sprite: finalSprite,
         };
         console.debug(
-          `[transformStyle] Next style '{nextStyle.name}' updated with overlays:`,
-          style
+          `[transformStyle] Returning transformed style with ${Object.keys(transformedStyle.sources).length} sources, ${transformedStyle.layers.length} layers`,
+          transformedStyle
         );
 
-        return style;
+        return transformedStyle;
       },
     });
+
+    // Debug: After setStyle completes, verify the layers/sources are present
+    setTimeout(() => {
+      if (!mapRef.map) {
+        console.warn('[setBasemap] Map not available for debugging');
+        return;
+      }
+      const style = mapRef.map.getStyle();
+      const currentLayers = style?.layers?.filter(l => l.id.startsWith('wd-')) || [];
+      const currentSources = Object.keys(style?.sources || {}).filter(s => s.startsWith('wd-'));
+      console.debug(
+        `[setBasemap] After setStyle completed: ${currentLayers.length} custom layers, ${currentSources.length} custom sources`
+      );
+      console.debug(
+        `[setBasemap] Custom layer IDs:`,
+        currentLayers.map(l => l.id)
+      );
+      console.debug(`[setBasemap] Custom source IDs:`, currentSources);
+    }, 100);
+
     //const emitter = inject(emitterSymbol)!;
     for (const style of basemaps) {
       if (style.name == s.name) {
@@ -335,7 +382,7 @@ export const useBasemapStore = defineStore('basemap', () => {
       }
     }
     LocalStorage.set('basemapName', s.name);
-    console.debug('Map layer is set to ', s.label);
+    console.debug('[setBasemap] Map layer is set to ', s.label);
     return true;
   }
 

@@ -43,6 +43,11 @@ const basemapStore = useBasemapStore();
 const mapRef = useMap();
 //const hutStore = useHutsStore();
 
+// Use a static ref for initial map style to prevent vue-maplibre-gl's reactive watcher
+// from overriding our transformStyle callback when basemap changes
+// After initial load, style switching is handled by basemapStore.setBasemap()
+const initialMapStyle = ref(basemapStore.getBasemap()?.style);
+
 type layoutType = {
   header: { size: number; offset: number; space: boolean };
   right: { size: number; offset: number; space: boolean };
@@ -88,7 +93,8 @@ useResizeObserver(mapDiv, () => {
 //);
 
 function onMapLoad(e: MglEvent<'load'>) {
-  console.debug(`Maplibre version ${e.map.version} loaded`);
+  console.debug(`[onMapLoad] Maplibre version ${e.map.version} loaded`);
+
   e.map.scrollZoom.setWheelZoomRate(0.003);
   onMapStyledata(e as unknown as MglEvent<'styledata'>);
   e.map.on('mouseenter', 'wd-huts', onLayerEnter);
@@ -205,7 +211,7 @@ const mapZoom: number = 7.5;
         @map:load="onMapLoad"
         @map:styledata="onMapStyledata"
         hash="p"
-        :map-style="basemapStore.getBasemap()?.style"
+        :map-style="initialMapStyle"
         :zoom="mapZoom"
         :bearing-snap="15"
         :center="mapCenter"
