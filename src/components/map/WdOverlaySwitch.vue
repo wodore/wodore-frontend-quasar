@@ -97,7 +97,8 @@ function addOverlayLayer({
 }: addOverlayLayerArgs) {
   //const styleId = mapRef.map?.style.stylesheet.id;
   const basemap = basemapStore.getBasemap();
-  const basemapOpacity = onLayer !== undefined ? basemap?.layers[onLayer]?.opacity : undefined;
+  const basemapOpacity =
+    basemap && onLayer !== undefined ? basemap.layers[onLayer]?.opacity : undefined;
   let autoOpacity = false;
   if (defaultOpacity === undefined || defaultOpacity == true) {
     autoOpacity = true;
