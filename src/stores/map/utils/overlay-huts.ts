@@ -33,7 +33,7 @@ const mapRef = useMap();
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 const imageSwitchZoom = 11;
 const hutsLayerLayout: SymbolLayerSpecification['layout'] = {
-  'text-field': ['get', 'name'],
+  'text-field': ['case', ['>', ['get', 'type_standard_order'], 25], ['get', 'name'], ''],
   'text-size': ['interpolate', ['linear'], ['zoom'], 7, 7, 9, 10, 22, 16],
   //'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
   'text-font': ['Open Sans Semibold'],
