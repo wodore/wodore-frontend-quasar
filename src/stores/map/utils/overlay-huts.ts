@@ -33,14 +33,14 @@ const mapRef = useMap();
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 const imageSwitchZoom = 11;
 const hutsLayerLayout: SymbolLayerSpecification['layout'] = {
-  'text-field': ['get', 'name'],
+  'text-field': ['case', ['>', ['get', 'type_standard_order'], 25], ['get', 'name'], ''],
   'text-size': ['interpolate', ['linear'], ['zoom'], 7, 7, 9, 10, 22, 16],
   //'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
   'text-font': ['Open Sans Semibold'],
   'text-anchor': 'bottom',
   'icon-allow-overlap': true,
   'text-allow-overlap': false,
-  'symbol-sort-key': ['get', 'type_id'],
+  'symbol-sort-key': ['get', 'type_standard_order'],
   'icon-overlap': 'always',
   'text-overlap': 'never',
   'text-optional': true,
@@ -247,7 +247,14 @@ watchEffect(() => {
   console.debug('Booking geojson updated');
   const source = hutsStyle.sources['wd-bookings'] as GeoJSONSourceSpecification;
   source.data = bookingsGeojson.value as GeoJSON.GeoJSON;
-  const mapSource = mapRef.map?.getSource('wd-bookings') as GeoJSONSource | undefined;
+
+  // Check if map is available and style is loaded before trying to access sources
+  if (!mapRef.map || !mapRef.map.isStyleLoaded()) {
+    console.debug('Map or style not yet loaded, skipping booking data update');
+    return;
+  }
+
+  const mapSource = mapRef.map.getSource('wd-bookings') as GeoJSONSource | undefined;
   // Source may not exist if basemap was just changed
   if (mapSource && bookingsGeojson.value !== undefined) {
     mapSource.setData(bookingsGeojson.value as GeoJSON.GeoJSON);

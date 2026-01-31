@@ -38,9 +38,7 @@ export const useOverlayStore = defineStore('overlay', () => {
     sheepdogs,
   ]);
 
-  const savedOverlays: Array<OverlaySwitchItem> = LocalStorage.hasItem(
-    'overlays',
-  )
+  const savedOverlays: Array<OverlaySwitchItem> = LocalStorage.hasItem('overlays')
     ? (LocalStorage.getItem('overlays') as Array<OverlaySwitchItem>)
     : [];
   const savedOverlaysRecord = savedOverlays.reduce(
@@ -48,7 +46,7 @@ export const useOverlayStore = defineStore('overlay', () => {
       acc[obj.name] = obj;
       return acc;
     },
-    {},
+    {}
   );
 
   for (const o of overlays) {

@@ -43,6 +43,11 @@ const basemapStore = useBasemapStore();
 const mapRef = useMap();
 //const hutStore = useHutsStore();
 
+// Use a static ref for initial map style to prevent vue-maplibre-gl's reactive watcher
+// from overriding our transformStyle callback when basemap changes
+// After initial load, style switching is handled by basemapStore.setBasemap()
+const initialMapStyle = ref(basemapStore.getBasemap()?.style);
+
 type layoutType = {
   header: { size: number; offset: number; space: boolean };
   right: { size: number; offset: number; space: boolean };
@@ -56,7 +61,7 @@ const right = ref('0');
 const bottom = ref('0');
 const left = ref('0');
 if ($layout === undefined) {
-  console.error('MapView needs to be child of QLayout');
+  console.error('[WdMapView] MapView needs to be child of QLayout');
 } else {
   watchEffect(() => {
     top.value = `${$layout.header.offset}px`;
@@ -66,7 +71,7 @@ if ($layout === undefined) {
     }
     left.value = `${$layout.left.offset}px`;
     console.debug(
-      'Layout offsets changed: (top, right, bottom, left): ',
+      '[WdMapView:watch] Layout offsets changed: (top, right, bottom, left): ',
       top.value,
       right.value,
       bottom.value,
@@ -88,7 +93,8 @@ useResizeObserver(mapDiv, () => {
 //);
 
 function onMapLoad(e: MglEvent<'load'>) {
-  console.debug(`Maplibre version ${e.map.version} loaded`);
+  console.debug(`[onMapLoad] Maplibre version ${e.map.version} loaded`);
+
   e.map.scrollZoom.setWheelZoomRate(0.003);
   onMapStyledata(e as unknown as MglEvent<'styledata'>);
   e.map.on('mouseenter', 'wd-huts', onLayerEnter);
@@ -167,7 +173,7 @@ function onLayerLeave(e: MapLayerEventType['mouseleave']) {
 
 function onMapStyledata(e: MglEvent<'styledata'>) {
   //$q.loadingBar.start();
-  console.debug('Style data changed event', e);
+  console.debug('[onMapStyledata] Style data changed event', e);
 }
 
 const mapCenter: LngLatLike = [8.22, 46.7];
@@ -205,7 +211,7 @@ const mapZoom: number = 7.5;
         @map:load="onMapLoad"
         @map:styledata="onMapStyledata"
         hash="p"
-        :map-style="basemapStore.getBasemap()?.style"
+        :map-style="initialMapStyle"
         :zoom="mapZoom"
         :bearing-snap="15"
         :center="mapCenter"
@@ -213,6 +219,8 @@ const mapZoom: number = 7.5;
         :min-zoom="7"
         :max-zoom="20"
         :max-bounds="[3.6, 43, 18.7, 49.7]"
+        :max-tile-cache-size="400"
+        :render-world-copies="false"
       >
         <!-- <MglStyleSwitchControl :map-styles="basemapStore.basemaps" /> -->
         <!-- <MglCustomControl position="top-right" class=""> -->
