@@ -63,18 +63,9 @@ function setOverlayVisibility(overlay: OverlaySwitchItem): boolean {
     const currentLayer = mapRef.map.getLayer(layer.id);
     //console.debug('Current layer', currentLayer);
     if (currentLayer) {
-      if (!layer.layout) {
-        layer['layout'] = { visibility: 'none' };
-      }
-      if (layer.layout) {
-        if (overlay.active) {
-          layer.layout.visibility = 'visible';
-        } else {
-          layer.layout.visibility = 'none';
-        }
-        //console.debug('Set visibility to ', layer.layout?.visibility);
-        mapRef.map.setLayoutProperty(layer.id, 'visibility', layer.layout?.visibility);
-      }
+      const visibility = overlay.active ? 'visible' : 'none';
+      //console.debug('Set visibility to ', visibility);
+      mapRef.map.setLayoutProperty(layer.id, 'visibility', visibility);
     }
   }
   return true;
@@ -122,7 +113,22 @@ function addOverlayLayer({
     if ((_source && mapRef.map?.getSource(_source)) || _source === undefined) {
       console.debug(`[addOverlayLayer] Add layer '${layer.id}' (before layer '${_beforeId}')`);
       mapRef.map?.addLayer(layer, _beforeId);
-      if (layer.paint !== undefined && `${layer.type}-opacity` in layer.paint) {
+      const opacityPropertiesByType: Record<string, string[]> = {
+        background: ['background-opacity'],
+        fill: ['fill-opacity'],
+        'fill-extrusion': ['fill-extrusion-opacity'],
+        line: ['line-opacity'],
+        circle: ['circle-opacity'],
+        raster: ['raster-opacity'],
+        heatmap: ['heatmap-opacity'],
+        hillshade: ['hillshade-opacity'],
+        symbol: ['icon-opacity', 'text-opacity'],
+      };
+      const opacityProperties = opacityPropertiesByType[layer.type] ?? [];
+      if (
+        layer.paint !== undefined &&
+        opacityProperties.some(property => property in layer.paint!)
+      ) {
         defaultOpacity = false;
       }
       if (defaultOpacity == false) {
@@ -130,11 +136,11 @@ function addOverlayLayer({
       } else if (autoOpacity == false) {
         opacity = defaultOpacity;
       }
-      if (opacity !== undefined) {
-        console.debug(
-          `  Set paint '${layer.type}-opacity' property for layer '${layer.id}' to ${opacity}`
-        );
-        mapRef.map?.setPaintProperty(layer.id, `${layer.type}-opacity`, opacity);
+      if (opacity !== undefined && opacityProperties.length > 0) {
+        for (const property of opacityProperties) {
+          console.debug(`  Set paint '${property}' property for layer '${layer.id}' to ${opacity}`);
+          mapRef.map?.setPaintProperty(layer.id, property, opacity);
+        }
       }
     } else {
       console.error(
@@ -201,19 +207,26 @@ function addOverlays() {
         }
       }
     }
-    setOverlayVisibility(<OverlaySwitchItem>(overlay as unknown));
     for (const layer of overlay.style.layers) {
+      const layerWithVisibility = {
+        ...layer,
+        layout: {
+          ...(layer.layout || {}),
+          visibility: overlay.active ? 'visible' : 'none',
+        },
+      };
       console.debug(
         `[addOverlays] Try to add layer '${layer.id}' (call to 'addOverlayLayer')`,
-        layer
+        layerWithVisibility
       );
 
       addOverlayLayer({
-        layer: <LayerSpecification>(layer as unknown),
+        layer: <LayerSpecification>(layerWithVisibility as unknown),
         defaultOpacity: <OpacitySpecification>(overlay.opacity as unknown),
         onLayer: overlay.onLayer,
       });
     }
+    setOverlayVisibility(<OverlaySwitchItem>(overlay as unknown));
   }
   overlaysInitialzed = true;
 }
