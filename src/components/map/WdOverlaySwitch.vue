@@ -44,6 +44,10 @@ function toggleOverlay(s: OverlaySwitchItem): boolean {
   console.debug('[toggleOverlay] toogle', s);
   overlayStore.toggleOverlay(s);
 
+  if (s.active) {
+    const overlaysOrder = getOverlaysInRenderOrder();
+    addOverlay(s, overlaysOrder);
+  }
   setOverlayVisibility(s);
   ////emitter.emit('styleSwitched', s);
   //const switched = overlayStore.setBasemap(s);
@@ -79,12 +83,14 @@ interface addOverlayLayerArgs {
   layer: LayerSpecification;
   onLayer?: LayerNames | undefined;
   defaultOpacity?: OpacitySpecification;
+  beforeId?: string | undefined;
 }
 
 function addOverlayLayer({
   layer,
   onLayer = undefined,
   defaultOpacity = undefined,
+  beforeId = undefined,
 }: addOverlayLayerArgs) {
   //const styleId = mapRef.map?.style.stylesheet.id;
   const basemap = basemapStore.getBasemap();
@@ -98,8 +104,8 @@ function addOverlayLayer({
   if (mapRef.map?.getLayer(layer.id) === undefined) {
     let opacity: PropertyValueSpecification<number> | undefined =
       defaultOpacity != false ? defaultOpacity : undefined;
-    let _beforeId = undefined;
-    if (onLayer) {
+    let _beforeId = beforeId;
+    if (_beforeId === undefined && onLayer) {
       _beforeId = basemap?.layers[onLayer]?.before;
     }
     //if (_beforeId === undefined) {
@@ -150,14 +156,9 @@ function addOverlayLayer({
   }
 }
 
-let overlaysInitialzed = false;
+const addedOverlays = new Set<string>();
 
-function addOverlays() {
-  console.debug('[addOverlays] called');
-  if (overlaysInitialzed) {
-    console.debug('[addOverlays] already initialzed');
-    return;
-  }
+function getOverlaysInRenderOrder(): Array<OverlaySwitchItem> {
   // Break type inference chain to avoid "excessively deep" TypeScript error
   // Access store as any first, then cast to avoid TypeScript deep type recursion
   /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -165,74 +166,112 @@ function addOverlays() {
   /* eslint-enable @typescript-eslint/no-explicit-any */
   const backOverlays = allOverlays.slice().filter(v => v.onLayer == 'background');
   const frontOverlays = allOverlays.slice().filter(v => v.onLayer == 'ways');
-  const overlaysRevert = frontOverlays.concat(backOverlays).reverse();
-  for (const overlay of overlaysRevert) {
-    for (const label in overlay.style.sources) {
-      if (mapRef.map?.getSource(label) === undefined) {
-        const sourceSpec = overlay.style.sources[label];
-        console.debug(`[addOverlays] Add ${sourceSpec.type} source '${label}'`);
-        mapRef.map?.addSource(label, sourceSpec);
-      }
-    }
-    // Add sprites if defined
-    const spriteData = overlay.style.sprite;
-    if (spriteData) {
-      // Get existing sprites to avoid duplicates
-      const existingSprites = mapRef.map?.getSprite() || [];
-
-      // Handle array format: [{ id: string, url: string }, ...]
-      if (Array.isArray(spriteData)) {
-        for (const sprite of spriteData) {
-          const spriteId = sprite.id;
-          const spriteUrl = sprite.url;
-
-          // Check if sprite already exists
-          const alreadyAdded = existingSprites.some(existing => existing.id === spriteId);
-
-          if (!alreadyAdded) {
-            console.debug(`[addOverlays] Add sprite '${spriteId}' from '${spriteUrl}'`);
-            mapRef.map?.addSprite(spriteId, spriteUrl);
-          }
-        }
-      } else if (typeof spriteData === 'object') {
-        // Handle object format: { id: url, ... }
-        for (const [spriteId, spriteUrl] of Object.entries(spriteData)) {
-          // Check if sprite already exists
-          const alreadyAdded = existingSprites.some(existing => existing.id === spriteId);
-
-          if (!alreadyAdded) {
-            console.debug(`[addOverlays] Add sprite '${spriteId}' from '${spriteUrl}'`);
-            mapRef.map?.addSprite(spriteId, spriteUrl as string);
-          }
-        }
-      }
-    }
-    for (const layer of overlay.style.layers) {
-      const layerWithVisibility = {
-        ...layer,
-        layout: {
-          ...(layer.layout || {}),
-          visibility: overlay.active ? 'visible' : 'none',
-        },
-      };
-      console.debug(
-        `[addOverlays] Try to add layer '${layer.id}' (call to 'addOverlayLayer')`,
-        layerWithVisibility
-      );
-
-      addOverlayLayer({
-        layer: <LayerSpecification>(layerWithVisibility as unknown),
-        defaultOpacity: <OpacitySpecification>(overlay.opacity as unknown),
-        onLayer: overlay.onLayer,
-      });
-    }
-    setOverlayVisibility(<OverlaySwitchItem>(overlay as unknown));
-  }
-  overlaysInitialzed = true;
+  return frontOverlays.concat(backOverlays).reverse();
 }
 
-mapRef.map?.on('styledata', addOverlays);
-//mapRef.map?.on('load', addOverlays);
+function findBeforeLayerId(
+  overlay: OverlaySwitchItem,
+  overlaysOrder: Array<OverlaySwitchItem>
+): string | undefined {
+  const overlayIndex = overlaysOrder.findIndex(item => item.name === overlay.name);
+  if (overlayIndex === -1) {
+    return undefined;
+  }
+  for (let i = overlayIndex + 1; i < overlaysOrder.length; i += 1) {
+    const candidate = overlaysOrder[i];
+    if (candidate.onLayer !== overlay.onLayer) {
+      continue;
+    }
+    for (const layer of candidate.style.layers) {
+      if (mapRef.map?.getLayer(layer.id)) {
+        return layer.id;
+      }
+    }
+  }
+  return undefined;
+}
+
+function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwitchItem>) {
+  if (addedOverlays.has(overlay.name)) {
+    return;
+  }
+  for (const label in overlay.style.sources) {
+    if (mapRef.map?.getSource(label) === undefined) {
+      const sourceSpec = overlay.style.sources[label];
+      console.debug(`[addOverlays] Add ${sourceSpec.type} source '${label}'`);
+      mapRef.map?.addSource(label, sourceSpec);
+    }
+  }
+  // Add sprites if defined
+  const spriteData = overlay.style.sprite;
+  if (spriteData) {
+    // Get existing sprites to avoid duplicates
+    const existingSprites = mapRef.map?.getSprite() || [];
+
+    // Handle array format: [{ id: string, url: string }, ...]
+    if (Array.isArray(spriteData)) {
+      for (const sprite of spriteData) {
+        const spriteId = sprite.id;
+        const spriteUrl = sprite.url;
+
+        // Check if sprite already exists
+        const alreadyAdded = existingSprites.some(existing => existing.id === spriteId);
+
+        if (!alreadyAdded) {
+          console.debug(`[addOverlays] Add sprite '${spriteId}' from '${spriteUrl}'`);
+          mapRef.map?.addSprite(spriteId, spriteUrl);
+        }
+      }
+    } else if (typeof spriteData === 'object') {
+      // Handle object format: { id: url, ... }
+      for (const [spriteId, spriteUrl] of Object.entries(spriteData)) {
+        // Check if sprite already exists
+        const alreadyAdded = existingSprites.some(existing => existing.id === spriteId);
+
+        if (!alreadyAdded) {
+          console.debug(`[addOverlays] Add sprite '${spriteId}' from '${spriteUrl}'`);
+          mapRef.map?.addSprite(spriteId, spriteUrl as string);
+        }
+      }
+    }
+  }
+  const beforeId = findBeforeLayerId(overlay, overlaysOrder);
+  for (const layer of overlay.style.layers) {
+    const layerWithVisibility = {
+      ...layer,
+      layout: {
+        ...(layer.layout || {}),
+        visibility: overlay.active ? 'visible' : 'none',
+      },
+    };
+    console.debug(
+      `[addOverlays] Try to add layer '${layer.id}' (call to 'addOverlayLayer')`,
+      layerWithVisibility
+    );
+
+    addOverlayLayer({
+      layer: <LayerSpecification>(layerWithVisibility as unknown),
+      defaultOpacity: <OpacitySpecification>(overlay.opacity as unknown),
+      onLayer: overlay.onLayer,
+      beforeId: beforeId,
+    });
+  }
+  setOverlayVisibility(<OverlaySwitchItem>(overlay as unknown));
+  addedOverlays.add(overlay.name);
+}
+
+function addOverlays() {
+  console.debug('[addOverlays] called');
+  addedOverlays.clear();
+  const overlaysOrder = getOverlaysInRenderOrder();
+  for (const overlay of overlaysOrder) {
+    if (overlay.active) {
+      addOverlay(overlay, overlaysOrder);
+    }
+  }
+}
+
+mapRef.map?.on('load', addOverlays);
 
 const switchIcon =
   'img:' +

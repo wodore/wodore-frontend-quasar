@@ -59,7 +59,6 @@ export function getRasterStyle({
     };
   }
 
-  console.debug(`[getRasterStyle] Add style spec ${name}`, layers, style);
   return style;
 }
 
