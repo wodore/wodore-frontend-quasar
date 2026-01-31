@@ -1,10 +1,6 @@
 import { StyleSpecification } from 'maplibre-gl';
 
-import {
-  OverlaySwitchItem,
-  LayerNames,
-  OpacitySpecification,
-} from './interfaces';
+import { OverlaySwitchItem, LayerNames, OpacitySpecification } from './interfaces';
 
 interface getRasterStyleArgs {
   name: string;
@@ -28,12 +24,7 @@ export function getRasterStyle({
   suffix = 'wd-',
   cdn = false,
 }: getRasterStyleArgs): StyleSpecification {
-  layers =
-    layers === undefined
-      ? [name]
-      : typeof layers === 'string'
-        ? [layers]
-        : layers;
+  layers = layers === undefined ? [name] : typeof layers === 'string' ? [layers] : layers;
   const style: StyleSpecification = {
     version: 8,
     name: name,
@@ -56,19 +47,19 @@ export function getRasterStyle({
     style.sources[`${suffix}${layerName}`] = {
       type: 'raster',
       tiles: tiles.map(
-        (v) =>
+        v =>
           (cdn
             ? 'https://res.cloudinary.com/' +
               process.env.WODORE_CLOUDINARY_ENV +
               '/image/fetch/f_auto/q_auto/'
-            : '') + v.replace('<NAME>', layerName),
+            : '') + v.replace('<NAME>', layerName)
       ),
       tileSize: tileSize,
       attribution: attribution,
     };
   }
 
-  console.debug(`Add style spec ${name}`, layers, style);
+  console.debug(`[getRasterStyle] Add style spec ${name}`, layers, style);
   return style;
 }
 

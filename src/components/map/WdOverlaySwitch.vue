@@ -41,7 +41,7 @@ withDefaults(defineProps<Props>(), {
 });
 
 function toggleOverlay(s: OverlaySwitchItem): boolean {
-  console.debug('toogle', s);
+  console.debug('[toggleOverlay] toogle', s);
   overlayStore.toggleOverlay(s);
 
   setOverlayVisibility(s);
@@ -119,7 +119,7 @@ function addOverlayLayer({
     }
     const _source = 'source' in layer ? layer.source : undefined;
     if ((_source && mapRef.map?.getSource(_source)) || _source === undefined) {
-      console.debug(`Add layer '${layer.id}' (before layer '${_beforeId}')`);
+      console.debug(`[addOverlayLayer] Add layer '${layer.id}' (before layer '${_beforeId}')`);
       mapRef.map?.addLayer(layer, _beforeId);
       if (layer.paint !== undefined && `${layer.type}-opacity` in layer.paint) {
         defaultOpacity = false;
@@ -136,12 +136,21 @@ function addOverlayLayer({
         mapRef.map?.setPaintProperty(layer.id, `${layer.type}-opacity`, opacity);
       }
     } else {
-      console.error(`Source '${_source}' not added, tried to add layer '${layer.id}'.`);
+      console.error(
+        `[addOverlayLayer] Source '${_source}' not added, tried to add layer '${layer.id}'.`
+      );
     }
   }
 }
 
+let overlaysInitialzed = false;
+
 function addOverlays() {
+  console.debug('[addOverlays] called');
+  if (overlaysInitialzed) {
+    console.debug('[addOverlays] already initialzed');
+    return;
+  }
   const backOverlays = overlayStore.overlays
     .slice()
     .filter(v => v.onLayer == 'background') as unknown as Array<OverlaySwitchItem>;
@@ -151,7 +160,7 @@ function addOverlays() {
     for (const label in overlay.style.sources) {
       if (mapRef.map?.getSource(label) === undefined) {
         const sourceSpec = overlay.style.sources[label];
-        console.debug(`Add ${sourceSpec.type} source '${label}'`);
+        console.debug(`[addOverlays] Add ${sourceSpec.type} source '${label}'`);
         mapRef.map?.addSource(label, sourceSpec);
       }
     }
@@ -171,7 +180,7 @@ function addOverlays() {
           const alreadyAdded = existingSprites.some(existing => existing.id === spriteId);
 
           if (!alreadyAdded) {
-            console.debug(`Add sprite '${spriteId}' from '${spriteUrl}'`);
+            console.debug(`[addOverlays] Add sprite '${spriteId}' from '${spriteUrl}'`);
             mapRef.map?.addSprite(spriteId, spriteUrl);
           }
         }
@@ -182,7 +191,7 @@ function addOverlays() {
           const alreadyAdded = existingSprites.some(existing => existing.id === spriteId);
 
           if (!alreadyAdded) {
-            console.debug(`Add sprite '${spriteId}' from '${spriteUrl}'`);
+            console.debug(`[addOverlays] Add sprite '${spriteId}' from '${spriteUrl}'`);
             mapRef.map?.addSprite(spriteId, spriteUrl as string);
           }
         }
@@ -190,7 +199,10 @@ function addOverlays() {
     }
     setOverlayVisibility(<OverlaySwitchItem>(overlay as unknown));
     for (const layer of overlay.style.layers) {
-      console.debug('Add layer', layer);
+      console.debug(
+        `[addOverlays] Try to add layer '${layer.id}' (call to 'addOverlayLayer')`,
+        layer
+      );
       addOverlayLayer({
         layer: <LayerSpecification>(layer as unknown),
         defaultOpacity: <OpacitySpecification>(overlay.opacity as unknown),
@@ -198,10 +210,11 @@ function addOverlays() {
       });
     }
   }
+  overlaysInitialzed = true;
 }
 
 mapRef.map?.on('styledata', addOverlays);
-mapRef.map?.on('load', addOverlays);
+//mapRef.map?.on('load', addOverlays);
 
 const switchIcon =
   'img:' +

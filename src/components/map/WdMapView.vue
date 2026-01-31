@@ -56,7 +56,7 @@ const right = ref('0');
 const bottom = ref('0');
 const left = ref('0');
 if ($layout === undefined) {
-  console.error('MapView needs to be child of QLayout');
+  console.error('[WdMapView] MapView needs to be child of QLayout');
 } else {
   watchEffect(() => {
     top.value = `${$layout.header.offset}px`;
@@ -66,7 +66,7 @@ if ($layout === undefined) {
     }
     left.value = `${$layout.left.offset}px`;
     console.debug(
-      'Layout offsets changed: (top, right, bottom, left): ',
+      '[WdMapView:watch] Layout offsets changed: (top, right, bottom, left): ',
       top.value,
       right.value,
       bottom.value,
@@ -167,7 +167,7 @@ function onLayerLeave(e: MapLayerEventType['mouseleave']) {
 
 function onMapStyledata(e: MglEvent<'styledata'>) {
   //$q.loadingBar.start();
-  console.debug('Style data changed event', e);
+  console.debug('[onMapStyledata] Style data changed event', e);
 }
 
 const mapCenter: LngLatLike = [8.22, 46.7];

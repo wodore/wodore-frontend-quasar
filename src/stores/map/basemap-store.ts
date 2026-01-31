@@ -7,6 +7,7 @@ import { Platform } from 'quasar';
 //import type { Emitter } from 'mitt';
 import { LocalStorage } from 'quasar';
 import { getGPUTier } from '@pmndrs/detect-gpu';
+import { useOverlayStore } from './overlay-store';
 
 const swissTopoRasterStyle = getRasterStyle({
   name: 'ch-swisstopo-raster',
@@ -58,10 +59,7 @@ function getImageUrl(name: string): string {
 }
 export const useBasemapStore = defineStore('basemap', () => {
   const mapRef = useMap();
-  //let emitter: Emitter<MglEvents> | undefined = undefined;
-  //function setEmitter(em: Emitter<MglEvents>) {
-  //  emitter = em;
-  //}
+  const overlayStore = useOverlayStore(); // Import overlay store to get layer metadata
 
   function getBasemap(): BasemapSwitchItem | undefined {
     for (const basemapItem of basemaps) {
@@ -79,42 +77,247 @@ export const useBasemapStore = defineStore('basemap', () => {
       return false;
     }
     /*
-     * Skip diff as long as Maplibre-GL doesn't fie `style.load` correctly
+     * Use transformStyle to preserve custom layers/sources when switching basemaps
      * @see https://github.com/maplibre/maplibre-gl-js/issues/2587
+     * Solution from: https://github.com/maplibre/maplibre-gl-js/issues/2587#issuecomment-1996106037
      */
-    //mapRef.map?.setStyle(s.style, { diff: false });
     mapRef.map?.setStyle(s.style, {
       diff: true,
-      // TODO: transformStyle does not work properly
-      // Keep all sources and layers with wd- prefix
-      // transformStyle: (previousStyle, nextStyle) => {
-      //   //console.debug('setStyle (prev, next)', previousStyle, nextStyle);
-      //   const custom_layers =
-      //     previousStyle !== undefined
-      //       ? previousStyle.layers.filter((layer) => {
-      //           return layer.id.startsWith('wd-');
-      //         })
-      //       : [];
-      //   const layers = nextStyle.layers.concat(custom_layers);
-      //   //console.debug('updated layers', custom_layers, layers);
+      transformStyle: (previousStyle, nextStyle) => {
+        // If no previous style, return as-is (first load)
+        if (!previousStyle) {
+          console.debug('[transformStyle] No previous style, returning nextStyle as-is');
+          return nextStyle;
+        }
+        console.debug(
+          `[transformStyle] Transforming style for basemap from '${previousStyle?.name}' to '${nextStyle.name}'`
+        );
 
-      //   const sources = nextStyle.sources;
-      //   if (previousStyle !== undefined) {
-      //     for (const [key, value] of Object.entries(previousStyle.sources)) {
-      //       if (key.startsWith('wd-')) {
-      //         sources[key] = value;
-      //       }
-      //     }
-      //   }
-      //   //console.debug('updated sources', sources);
-      //   const newStyle = {
-      //     ...nextStyle,
-      //     sources: sources,
-      //     layers: layers,
-      //   };
-      //   console.debug('new style', newStyle);
-      //   return newStyle;
-      // },
+        // ========================================
+        // STEP 1: Preserve custom sources (wd- prefix)
+        // ========================================
+        const customSources = Object.fromEntries(
+          Object.entries(previousStyle.sources || {}).filter(([key]) => {
+            const isCustom = key.startsWith('wd-');
+            if (isCustom) {
+              console.debug(`[transformStyle] Preserving custom source: ${key}`);
+            }
+            return isCustom;
+          })
+        );
+        console.debug(
+          `[transformStyle] Preserved ${Object.keys(customSources).length} custom sources`
+        );
+
+        // ========================================
+        // STEP 2: Preserve custom layers (wd- prefix) with visibility
+        // ========================================
+        const customLayers = previousStyle.layers.filter(layer => {
+          const isCustom = layer.id.startsWith('wd-');
+          if (isCustom) {
+            console.debug(
+              `[transformStyle] Preserving custom layer: ${layer.id} (type: ${layer.type})`
+            );
+          }
+          return isCustom;
+        });
+
+        // Build a simple layer-to-overlay lookup map to avoid type recursion issues
+        const layerVisibilityMap: Record<string, 'visible' | 'none'> = {};
+        for (const o of overlayStore.overlays) {
+          const visibility = o.active ? 'visible' : 'none';
+          for (const l of o.style.layers) {
+            layerVisibilityMap[l.id] = visibility;
+          }
+        }
+
+        // Set initial visibility based on overlay store state (deep clone to avoid mutations)
+        const customLayersWithVisibility = customLayers.map(layer => {
+          const visibility = layerVisibilityMap[layer.id];
+
+          if (visibility !== undefined) {
+            console.debug(`[transformStyle] Layer '${layer.id}' visibility set to '${visibility}'`);
+            return {
+              ...layer,
+              layout: {
+                ...(layer.layout || {}),
+                visibility: visibility as 'visible' | 'none',
+              },
+            } as import('maplibre-gl').LayerSpecification;
+          } else {
+            console.warn(
+              `[transformStyle] Layer '${layer.id}' not found in any overlay, defaulting to visible`
+            );
+            return {
+              ...layer,
+              layout: {
+                ...(layer.layout || {}),
+                visibility: 'visible' as const,
+              },
+            } as import('maplibre-gl').LayerSpecification;
+          }
+        });
+
+        console.debug(
+          `[transformStyle] Preserved ${customLayersWithVisibility.length} custom layers`
+        );
+
+        // ========================================
+        // STEP 3: Preserve sprites
+        // ========================================
+        // Normalize sprite format to array for easier handling
+        type SpriteArrayItem = { id: string; url: string };
+        const normalizeSprites = (
+          style: import('maplibre-gl').StyleSpecification
+        ): SpriteArrayItem[] => {
+          if (!style.sprite) return [];
+          if (Array.isArray(style.sprite)) {
+            return style.sprite;
+          }
+          // Single string URL becomes default sprite
+          return [{ id: 'default', url: style.sprite }];
+        };
+
+        const nextSprites = normalizeSprites(nextStyle);
+        const previousSprites = normalizeSprites(previousStyle);
+
+        // Filter out sprites that exist in next style (avoid duplicates)
+        const customSprites = previousSprites.filter(prevSprite => {
+          const isNew = !nextSprites.some(nextSprite => nextSprite.id === prevSprite.id);
+          if (isNew) {
+            console.debug(
+              `[transformStyle] Preserving custom sprite: ${prevSprite.id} from ${prevSprite.url}`
+            );
+          }
+          return isNew;
+        });
+        console.debug(`[transformStyle] Preserved ${customSprites.length} custom sprites`);
+
+        // ========================================
+        // STEP 4: Insert custom layers at correct positions
+        // ========================================
+        // Build ordered layer array based on basemap's layer configuration
+        const orderedLayers = [...nextStyle.layers];
+
+        // Helper to insert layers before a specific layer ID
+        function insertLayersBefore(
+          layersToInsert: import('maplibre-gl').LayerSpecification[],
+          beforeId: string | undefined,
+          positionName: string
+        ) {
+          if (!beforeId) {
+            // No insertion point → append at end
+            console.debug(
+              `[transformStyle] Inserting ${layersToInsert.length} '${positionName}' layers at end (no beforeId)`
+            );
+            orderedLayers.push(...layersToInsert);
+            return;
+          }
+
+          const insertIndex = orderedLayers.findIndex(l => l.id === beforeId);
+          if (insertIndex === -1) {
+            // Layer not found → append at end with warning
+            console.warn(
+              `[transformStyle] WARNING: Layer '${beforeId}' not found in new style for '${positionName}', appending ${layersToInsert.length} layers at end`
+            );
+            orderedLayers.push(...layersToInsert);
+          } else {
+            // Insert at correct position
+            console.debug(
+              `[transformStyle] Inserting ${layersToInsert.length} '${positionName}' layers before '${beforeId}' (index ${insertIndex})`
+            );
+            orderedLayers.splice(insertIndex, 0, ...layersToInsert);
+          }
+        }
+
+        // Get current basemap to find insertion points
+        const currentBasemap = getBasemap();
+        if (!currentBasemap) {
+          console.warn(
+            '[transformStyle] No current basemap found, appending all custom layers at end'
+          );
+          return {
+            ...nextStyle,
+            sources: { ...nextStyle.sources, ...customSources },
+            layers: [...nextStyle.layers, ...customLayers],
+            sprite: nextStyle.sprite
+              ? [
+                  ...(Array.isArray(nextStyle.sprite)
+                    ? nextStyle.sprite
+                    : [{ id: 'default', url: nextStyle.sprite }]),
+                  ...customSprites,
+                ]
+              : customSprites.length > 0
+                ? customSprites
+                : undefined,
+          };
+        }
+
+        // Group custom layers by their onLayer property using overlay store
+        // This is generic - reads from overlay definitions instead of hard-coded patterns
+        const backgroundLayers: import('maplibre-gl').LayerSpecification[] = [];
+        const waysLayers: import('maplibre-gl').LayerSpecification[] = [];
+        const otherLayers: import('maplibre-gl').LayerSpecification[] = [];
+
+        // Build a simple layer-to-onLayer lookup map to avoid type recursion issues
+        const layerOnLayerMap: Record<string, string> = {};
+        for (const o of overlayStore.overlays) {
+          for (const l of o.style.layers) {
+            layerOnLayerMap[l.id] = o.onLayer || 'other';
+          }
+        }
+
+        // Use customLayersWithVisibility (already deep-cloned) for layer grouping
+        customLayersWithVisibility.forEach(layer => {
+          const onLayer = layerOnLayerMap[layer.id];
+
+          if (onLayer === 'background') {
+            backgroundLayers.push(layer);
+          } else if (onLayer === 'ways') {
+            waysLayers.push(layer);
+          } else if (onLayer) {
+            console.warn(
+              `[transformStyle] Unknown onLayer '${onLayer}' for layer '${layer.id}', adding to 'other' group`
+            );
+            otherLayers.push(layer);
+          } else {
+            console.warn(
+              `[transformStyle] Layer '${layer.id}' not found in any overlay, adding to 'other' group`
+            );
+            otherLayers.push(layer);
+          }
+        });
+
+        console.debug(
+          `[transformStyle] Layer groups: background=${backgroundLayers.length}, ways=${waysLayers.length}, other=${otherLayers.length}`
+        );
+
+        // Insert layers in correct order based on basemap configuration
+        // Order: background layers → basemap layers → ways layers → other layers
+        insertLayersBefore(backgroundLayers, currentBasemap.layers.background.before, 'background');
+        insertLayersBefore(waysLayers, currentBasemap.layers.ways.before, 'ways');
+        insertLayersBefore(otherLayers, undefined, 'other');
+
+        // Combine sprites
+        const combinedSprites = [...nextSprites, ...customSprites];
+        const finalSprite =
+          combinedSprites.length > 0
+            ? combinedSprites.length === 1 && combinedSprites[0].id === 'default'
+              ? combinedSprites[0].url // Single default sprite as string
+              : combinedSprites // Multiple sprites as array
+            : undefined;
+
+        console.debug(
+          `[transformStyle] Style transformation complete: ${orderedLayers.length} layers total, ${customSources.length} custom sources, ${customSprites.length} custom sprites`
+        );
+
+        return {
+          ...nextStyle,
+          sources: { ...nextStyle.sources, ...customSources },
+          layers: orderedLayers,
+          sprite: finalSprite,
+        };
+      },
     });
     //const emitter = inject(emitterSymbol)!;
     for (const style of basemaps) {
