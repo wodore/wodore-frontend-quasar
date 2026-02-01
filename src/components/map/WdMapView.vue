@@ -474,28 +474,72 @@ watch(
       if (isInitialLoad) {
         console.debug(`[route watch] Initial load, fetching hut location before map loads`);
 
-        // Fetch from API synchronously (don't await, just fire the request)
+        // Fetch from API (non-blocking)
         clientWodore
           .GET('/v1/huts/{slug}', {
             params: { path: { slug: newSlug } },
           })
           .then(({ data }) => {
-            if (data?.location && mapRef.map) {
+            if (!data?.location) return;
+
+            const lngLat: LngLatLike = [data.location.lon, data.location.lat];
+
+            if (mapRef.map) {
               // Map is already loaded, jump to position
-              const lngLat: LngLatLike = [data.location.lon, data.location.lat];
               mapRef.map.jumpTo({ center: lngLat, zoom: 12 });
               console.debug(`[route watch] Map loaded, jumped to`, lngLat);
-            } else if (data?.location) {
+            } else {
               // Map not loaded yet, set reactive values
-              const lngLat: LngLatLike = [data.location.lon, data.location.lat];
               mapCenter.value = lngLat;
               mapZoom.value = 12;
               console.debug(`[route watch] Map not loaded, set center/zoom to`, lngLat);
             }
+
+            // Start polling for the hut feature to select it
+            let attempts = 0;
+            const maxAttempts = 20; // 10 seconds (20 * 500ms)
+
+            const checkInterval = setInterval(() => {
+              attempts++;
+
+              const features = mapRef.map?.querySourceFeatures('wd-huts', {
+                sourceLayer: 'huts',
+                filter: ['==', ['get', 'slug'], newSlug],
+              });
+
+              if (features && features.length > 0) {
+                clearInterval(checkInterval);
+                const feature = features[0];
+
+                // Deselect previous hut
+                if (selectedHutFeature.value) {
+                  mapRef.map?.setFeatureState(
+                    { source: 'wd-huts', sourceLayer: 'huts', id: selectedHutFeature.value.id },
+                    { selected: false }
+                  );
+                }
+
+                // Select new hut
+                mapRef.map?.setFeatureState(
+                  { source: 'wd-huts', sourceLayer: 'huts', id: feature.id },
+                  { selected: true }
+                );
+                selectedHutFeature.value = feature as MapGeoJSONFeature;
+                console.debug(`[route watch] Hut selected after initial load`);
+              } else if (attempts >= maxAttempts) {
+                clearInterval(checkInterval);
+                console.warn(
+                  `[route watch] Hut "${newSlug}" not found after ${maxAttempts} attempts`
+                );
+              }
+            }, 500);
           })
           .catch(error => {
             console.error(`[route watch] Error fetching hut:`, error);
           });
+
+        // Don't call selectHutBySlug for initial load, we handle it above
+        return;
       }
 
       selectHutBySlug(newSlug, isInitialLoad);
