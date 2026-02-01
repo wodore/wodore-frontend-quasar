@@ -51,6 +51,10 @@ const mapRef = useMap();
 // After initial load, style switching is handled by basemapStore.setBasemap()
 const initialMapStyle = ref(basemapStore.getBasemap()?.style);
 
+// Reactive map center and zoom (set from defaults or API)
+const mapCenter = ref<LngLatLike>([8.22, 46.7]);
+const mapZoom = ref<number>(7.5);
+
 type layoutType = {
   header: { size: number; offset: number; space: boolean };
   right: { size: number; offset: number; space: boolean };
@@ -194,8 +198,8 @@ function isPointVisibleWithPadding(map: Map, lngLat: LngLatLike): boolean {
   // Platform-specific padding in pixels
   const isMobile = $q.platform.is.mobile;
   const padding = isMobile
-    ? { top: 200, bottom: 400, left: 200, right: 200 }
-    : { top: 200, bottom: 200, left: 200, right: 600 };
+    ? { top: 100, bottom: 400, left: 50, right: 50 }
+    : { top: 100, bottom: 100, left: 100, right: 800 };
 
   // Check if point is outside padded area
   return (
@@ -224,8 +228,8 @@ function calculateSafePosition(
   // Platform-specific padding in pixels
   const isMobile = $q.platform.is.mobile;
   const padding = isMobile
-    ? { top: 200, bottom: 400, left: 200, right: 200 }
-    : { top: 200, bottom: 200, left: 200, right: 600 };
+    ? { top: 100, bottom: 400, left: 50, right: 50 }
+    : { top: 100, bottom: 100, left: 100, right: 800 };
 
   if (isInitialLoad) {
     // On initial load from URL: center the hut in the safe area
@@ -329,9 +333,10 @@ async function selectHutBySlug(slug: string, isInitialLoad: boolean = false): Pr
     );
   }
 
-  // On initial load, always fetch from API to get accurate location and ignore hash
+  // On initial load, always fetch from API to get accurate location
+  // Set initial map center/zoom so map loads at correct position
   if (isInitialLoad) {
-    console.debug(`[selectHutBySlug] Initial load, fetching from API to center on hut`);
+    console.debug(`[selectHutBySlug] Initial load, fetching from API to set initial map position`);
 
     try {
       const { data } = await clientWodore.GET('/v1/huts/{slug}', {
@@ -343,29 +348,43 @@ async function selectHutBySlug(slug: string, isInitialLoad: boolean = false): Pr
       if (data?.location) {
         const lngLat: LngLatLike = [data.location.lon, data.location.lat];
 
-        // Fly to location and center on it
-        smartFlyToHut(mapRef.map, lngLat, true);
+        // Set reactive map center and zoom (for initial map render)
+        mapCenter.value = lngLat;
+        mapZoom.value = 12; // Good zoom level to see hut and surrounding area
 
-        // Wait for tiles to load, then select the feature
-        setTimeout(async () => {
-          const retryFeatures = mapRef.map?.querySourceFeatures('wd-huts', {
+        console.debug(`[selectHutBySlug] Set map center/zoom to`, lngLat, mapZoom.value);
+
+        // If map is already loaded, jump to the position
+        if (mapRef.map) {
+          mapRef.map.jumpTo({
+            center: lngLat,
+            zoom: 12,
+          });
+          console.debug(`[selectHutBySlug] Jumped to map position`);
+        }
+
+        // Wait for source data to be loaded, then select the hut
+        const checkInterval = setInterval(() => {
+          const features = mapRef.map?.querySourceFeatures('wd-huts', {
             sourceLayer: 'huts',
             filter: ['==', ['get', 'slug'], slug],
           });
 
-          if (retryFeatures && retryFeatures.length > 0) {
-            const feature = retryFeatures[0];
+          if (features && features.length > 0) {
+            clearInterval(checkInterval);
+            const feature = features[0];
+
             mapRef.map?.setFeatureState(
               { source: 'wd-huts', sourceLayer: 'huts', id: feature.id },
               { selected: true }
             );
             selectedHutFeature.value = feature as MapGeoJSONFeature;
             console.debug(`[selectHutBySlug] Hut selected after initial load`);
-          } else {
-            console.warn(`[selectHutBySlug] Hut "${slug}" not found after initial load`);
-            selectedHutFeature.value = undefined;
           }
-        }, 1500);
+        }, 500); // Check every 500ms
+
+        // Stop checking after 10 seconds
+        setTimeout(() => clearInterval(checkInterval), 10000);
         return;
       }
     } catch (error) {
@@ -390,10 +409,10 @@ async function selectHutBySlug(slug: string, isInitialLoad: boolean = false): Pr
     );
     selectedHutFeature.value = feature as MapGeoJSONFeature;
 
-    // Smart fly to hut location
-    if (feature.geometry.type === 'Point') {
+    // Smart fly to hut location (only for user interactions, not initial load)
+    if (!isInitialLoad && feature.geometry.type === 'Point') {
       const coordinates = feature.geometry.coordinates as [number, number];
-      smartFlyToHut(mapRef.map, coordinates, isInitialLoad);
+      smartFlyToHut(mapRef.map, coordinates, false);
     }
 
     console.debug(`[selectHutBySlug] Hut found in features, selected`);
@@ -412,7 +431,7 @@ async function selectHutBySlug(slug: string, isInitialLoad: boolean = false): Pr
         const lngLat: LngLatLike = [data.location.lon, data.location.lat];
 
         // Fly to location (which will load tiles and feature)
-        smartFlyToHut(mapRef.map, lngLat, isInitialLoad);
+        smartFlyToHut(mapRef.map, lngLat, false);
 
         // Wait for tiles to load, then select the feature
         // We'll retry after a short delay
@@ -450,6 +469,35 @@ watch(
     if (newSlug) {
       // Determine if this is initial page load (no previous selection)
       const isInitialLoad = !oldSlug && !selectedHutFeature.value;
+
+      // On initial load, fetch from API BEFORE map loads
+      if (isInitialLoad) {
+        console.debug(`[route watch] Initial load, fetching hut location before map loads`);
+
+        // Fetch from API synchronously (don't await, just fire the request)
+        clientWodore
+          .GET('/v1/huts/{slug}', {
+            params: { path: { slug: newSlug } },
+          })
+          .then(({ data }) => {
+            if (data?.location && mapRef.map) {
+              // Map is already loaded, jump to position
+              const lngLat: LngLatLike = [data.location.lon, data.location.lat];
+              mapRef.map.jumpTo({ center: lngLat, zoom: 12 });
+              console.debug(`[route watch] Map loaded, jumped to`, lngLat);
+            } else if (data?.location) {
+              // Map not loaded yet, set reactive values
+              const lngLat: LngLatLike = [data.location.lon, data.location.lat];
+              mapCenter.value = lngLat;
+              mapZoom.value = 12;
+              console.debug(`[route watch] Map not loaded, set center/zoom to`, lngLat);
+            }
+          })
+          .catch(error => {
+            console.error(`[route watch] Error fetching hut:`, error);
+          });
+      }
+
       selectHutBySlug(newSlug, isInitialLoad);
     } else if (oldSlug && selectedHutFeature.value) {
       // Slug was removed, deselect hut
@@ -483,9 +531,6 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
   //$q.loadingBar.start();
   console.debug('[onMapStyledata] Style data changed event', e);
 }
-
-const mapCenter: LngLatLike = [8.22, 46.7];
-const mapZoom: number = 7.5;
 </script>
 <style lang="scss">
 //@import 'vue-maplibre-gl/dist/vue-maplibre-gl.css';
