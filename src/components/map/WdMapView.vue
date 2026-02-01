@@ -231,6 +231,9 @@ function calculateSafePosition(
     ? { top: 100, bottom: 400, left: 50, right: 50 }
     : { top: 100, bottom: 100, left: 100, right: 800 };
 
+  // Comfortable margin from edges (in addition to padding)
+  const margin = 150; // pixels
+
   if (isInitialLoad) {
     // On initial load from URL: center the hut in the safe area
     const safeWidth = bounds.width - padding.left - padding.right;
@@ -241,24 +244,39 @@ function calculateSafePosition(
     return map.unproject(newPoint);
   }
 
-  // For user interactions: check if hut overlaps with menu area
+  // For user interactions: move hut to comfortable position if near edges
+  let adjustedPoint = point;
+
   if (isMobile) {
-    // Mobile: menu is at bottom, move up if needed
-    if (point.y > bounds.height - padding.bottom) {
-      const targetY = bounds.height - padding.bottom - 100; // 100px above bottom edge
-      const newPoint = new Point(point.x, targetY);
-      return map.unproject(newPoint);
+    // Mobile: menu is at bottom
+    const bottomThreshold = bounds.height - padding.bottom;
+    if (point.y > bottomThreshold - margin) {
+      // Hut is near bottom edge, move it up (keep X the same)
+      adjustedPoint = new Point(point.x, bottomThreshold - margin);
+      console.debug(
+        `[calculateSafePosition] Mobile: hut at y=${point.y}, moved to y=${adjustedPoint.y}`
+      );
     }
   } else {
-    // Desktop: menu is on right, move left if needed
-    if (point.x > bounds.width - padding.right) {
-      const targetX = bounds.width - padding.right - 100; // 100px left of right edge
-      const newPoint = new Point(targetX, point.y);
-      return map.unproject(newPoint);
+    // Desktop: menu is on right
+    const rightThreshold = bounds.width - padding.right;
+    if (point.x > rightThreshold - margin) {
+      // Hut is near right edge, move it LEFT (keep Y the same!)
+      adjustedPoint = new Point(rightThreshold - margin, point.y);
+      console.debug(
+        `[calculateSafePosition] Desktop: hut at x=${point.x}, moved to x=${adjustedPoint.x}, y unchanged=${point.y}`
+      );
     }
   }
 
-  return lngLat;
+  // Return adjusted position (or original if no adjustment needed)
+  if (adjustedPoint === point) {
+    return lngLat;
+  }
+
+  const result = map.unproject(adjustedPoint);
+  console.debug(`[calculateSafePosition] Projected to lng/lat:`, result);
+  return result;
 }
 
 /**
