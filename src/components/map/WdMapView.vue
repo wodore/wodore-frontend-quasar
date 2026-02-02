@@ -188,8 +188,14 @@ const minHutClickZoom = 8;
 /**
  * Get platform-specific padding for map viewport
  * Returns padding object with safe zone distances from edges
+ * @param assumeDrawerOpen - For desktop, assume right drawer will be open (380px)
  */
-function getMapPadding(): { top: number; bottom: number; left: number; right: number } {
+function getMapPadding(assumeDrawerOpen: boolean = false): {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+} {
   const isMobile = !$q.screen.gt.sm; // Same detection as hut dialog
 
   if (isMobile) {
@@ -200,11 +206,25 @@ function getMapPadding(): { top: number; bottom: number; left: number; right: nu
       right: parseInt(right.value) || 0,
     };
   } else {
+    // Desktop: when selecting a hut, drawer will be open
+    // Drawer width depends on screen size (same logic as WdMapContent.vue:103)
+    // - 460px when screen > medium ($q.screen.gt.md)
+    // - 380px otherwise
+    const currentRight = parseInt(right.value) || 0;
+    const expectedDrawerWidth = $q.screen.gt.md ? 460 : 380;
+    const rightPadding = assumeDrawerOpen
+      ? Math.max(currentRight, expectedDrawerWidth)
+      : currentRight;
+
+    console.debug(
+      `[getMapPadding] Desktop - assumeDrawerOpen: ${assumeDrawerOpen}, currentRight: ${currentRight}, expectedDrawerWidth: ${expectedDrawerWidth}, using: ${rightPadding}`
+    );
+
     return {
       top: parseInt(top.value) || 50,
       bottom: parseInt(bottom.value) || 31,
       left: parseInt(left.value) || 0,
-      right: parseInt(right.value) || 380, // Hut details panel on right
+      right: rightPadding, // Use expected drawer width or current value
     };
   }
 }
@@ -214,15 +234,20 @@ function getMapPadding(): { top: number; bottom: number; left: number; right: nu
  * Checks all 4 edges for danger zones
  * @param map - MapLibre GL map instance
  * @param lngLat - Longitude and latitude to check
+ * @param assumeDrawerOpen - If true, check against expected drawer width (for clicks)
  * @returns true if point is in safe zone (not in any danger zone)
  */
-function isPointVisibleWithPadding(map: Map, lngLat: LngLatLike): boolean {
+function isPointVisibleWithPadding(
+  map: Map,
+  lngLat: LngLatLike,
+  assumeDrawerOpen: boolean = false
+): boolean {
   const point = map.project(lngLat);
   const bounds = map.getCanvas().getBoundingClientRect();
-  const padding = getMapPadding();
+  const padding = getMapPadding(assumeDrawerOpen);
 
-  // Danger zone: 200px from any edge
-  const dangerMargin = 200;
+  // Danger zone: 150px from any edge
+  const dangerMargin = 150;
 
   // Check if point is in safe zone (not too close to any edge)
   return (
@@ -247,10 +272,13 @@ function isPointVisibleWithPadding(map: Map, lngLat: LngLatLike): boolean {
 function smartFlyToHut(map: Map, lngLat: LngLatLike, isInitialLoad: boolean = false): void {
   const currentZoom = map.getZoom();
   const minZoom = 9; // Only zoom if below this
-  const padding = getMapPadding();
 
-  // Check if hut is currently visible with padding
-  const isVisible = isPointVisibleWithPadding(map, lngLat);
+  // For user clicks, assume drawer will be open (prevents double adjustment)
+  const assumeDrawerOpen = !isInitialLoad;
+  const padding = getMapPadding(assumeDrawerOpen);
+
+  // Check if hut is currently visible with padding (using expected drawer width)
+  const isVisible = isPointVisibleWithPadding(map, lngLat, assumeDrawerOpen);
 
   // Determine target zoom
   const targetZoom = currentZoom < minZoom ? 12 : currentZoom;
@@ -276,8 +304,8 @@ function smartFlyToHut(map: Map, lngLat: LngLatLike, isInitialLoad: boolean = fa
     const bounds = map.getCanvas().getBoundingClientRect();
     const point = map.project(lngLat);
 
-    // Danger zone: 200px from any edge
-    const dangerMargin = 200;
+    // Danger zone: 150px from any edge
+    const dangerMargin = 150;
 
     // Calculate target position (check all 4 edges)
     let targetX = point.x;
