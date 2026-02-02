@@ -54,7 +54,7 @@ const columns = computed(() => [
     field: 'label',
     align: 'left' as const,
   },
-  ...forecastDays.value.map((day) => ({
+  ...forecastDays.value.map(day => ({
     name: day.date,
     label: formatDayLabel(day.date),
     field: day.date,
@@ -86,7 +86,7 @@ const rows = computed(() => [
 ]);
 
 const hasLocation = computed(
-  () => Number.isFinite(props.latitude) && Number.isFinite(props.longitude),
+  () => Number.isFinite(props.latitude) && Number.isFinite(props.longitude)
 );
 const selectedDateObj = computed(() => {
   const parts = selectedDateOrToday.value.split('.');
@@ -99,19 +99,16 @@ const selectedDateObj = computed(() => {
   return new Date(year, month - 1, day);
 });
 const canShowForecast = computed(
-  () => hasLocation.value && meteoStore.forecastPossible(selectedDateObj.value),
+  () => hasLocation.value && meteoStore.forecastPossible(selectedDateObj.value)
 );
 
-const scrollAreaHeight = computed(() =>
-  windowWidth.value < 600 ? '104px' : '94px',
-);
+const scrollAreaHeight = computed(() => (windowWidth.value < 600 ? '104px' : '94px'));
 const quasarLang = computed(() => {
   const isoName = $q.lang?.isoName ?? 'de';
   return isoName.split('-')[0];
 });
 const collection = computed(
-  () =>
-    props.collection ?? weatherCodesCollection.value ?? 'weather-icons-filled',
+  () => props.collection ?? weatherCodesCollection.value ?? 'weather-icons-filled'
 );
 
 const initializeDateRange = () => {
@@ -182,11 +179,7 @@ const getIconLabel = (day: WeatherDay) => {
     return '';
   }
   const isDay = day.is_day_majority ?? true;
-  return (
-    (isDay ? entry.description_day : entry.description_night) ??
-    entry.description ??
-    ''
-  );
+  return (isDay ? entry.description_day : entry.description_night) ?? entry.description ?? '';
 };
 
 const formatTemp = (day: WeatherDay) => {
@@ -204,21 +197,12 @@ const formatTemp = (day: WeatherDay) => {
 const scrollToToday = (animate: boolean, targetDate: Date = new Date()) => {
   nextTick(() => {
     const targetKey = formatDate(targetDate, 'YYYY-MM-DD');
-    const index = forecastDays.value.findIndex(
-      (item) => item.date === targetKey,
-    );
+    const index = forecastDays.value.findIndex(item => item.date === targetKey);
     if (index < 0 || !scrollAreaRef.value || forecastDays.value.length === 0) {
       return;
     }
-    const targetLeft = Math.max(
-      0,
-      leftWidth.value + index * itemWidth.value - 15,
-    );
-    scrollAreaRef.value.setScrollPosition(
-      'horizontal',
-      targetLeft,
-      animate ? 300 : 0,
-    );
+    const targetLeft = Math.max(0, leftWidth.value + index * itemWidth.value - 15);
+    scrollAreaRef.value.setScrollPosition('horizontal', targetLeft, animate ? 300 : 0);
   });
 };
 
@@ -230,11 +214,11 @@ watchEffect(() => {
     error.value = null;
     return;
   }
-  console.debug('[weather-forecast] fetch', {
-    lat: props.latitude,
-    lon: props.longitude,
-    collection: collection.value,
-  });
+  // console.debug('[weather-forecast] fetch', {
+  //   lat: props.latitude,
+  //   lon: props.longitude,
+  //   collection: collection.value,
+  // });
 
   const locationKey = `${props.latitude}:${props.longitude}`;
   if (lastLoadedKey.value !== locationKey) {
@@ -249,29 +233,23 @@ watchEffect(() => {
   error.value = null;
 
   meteoStore
-    .getDaily(
-      { latitude, longitude },
-      typeof elevation === 'number' ? elevation : undefined,
-      {
-        forecastDays: 14,
-        pastDays: 7,
-        weatherModels: ['meteoswiss_icon_seamless', 'best_match'],
-      },
-    )
-    .then((items) => {
-      console.debug('[weather-forecast] daily result', {
-        count: items.length,
-        first: items[0],
-      });
+    .getDaily({ latitude, longitude }, typeof elevation === 'number' ? elevation : undefined, {
+      forecastDays: 14,
+      pastDays: 7,
+      weatherModels: ['meteoswiss_icon_seamless', 'best_match'],
+    })
+    .then(items => {
+      //console.debug('[weather-forecast] daily result', {
+      //  count: items.length,
+      //  first: items[0],
+      //});
       if (!items.length) {
         error.value = t('weather.unavailable');
         return;
       }
-      const existing = forecastDays.value.length
-        ? forecastDays.value
-        : initializeDateRange();
-      const byDate = new Map(items.map((item) => [item.date, item]));
-      forecastDays.value = existing.map((item) => {
+      const existing = forecastDays.value.length ? forecastDays.value : initializeDateRange();
+      const byDate = new Map(items.map(item => [item.date, item]));
+      forecastDays.value = existing.map(item => {
         const incoming = byDate.get(item.date);
         if (!incoming) {
           return item;
@@ -293,13 +271,13 @@ watchEffect(() => {
 
 watch(
   () => selectedDateObj.value,
-  (value) => {
+  value => {
     if (!canShowForecast.value) {
       return;
     }
     scrollToToday(true, value);
   },
-  { immediate: true },
+  { immediate: true }
 );
 
 watchEffect(() => {
@@ -314,16 +292,10 @@ watchEffect(() => {
         {{ t('weather.title') }}
       </div>
       <div class="weather-forecast__attribution">
-        <a
-          href="https://open-meteo.com/"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">
           open-meteo.com
         </a>
-        <span class="weather-forecast__disclaimer"
-          >({{ t('weather.no_guarantee') }})</span
-        >
+        <span class="weather-forecast__disclaimer">({{ t('weather.no_guarantee') }})</span>
       </div>
     </div>
     <div v-if="error" class="text-caption text-negative q-mb-sm">
@@ -358,8 +330,7 @@ watchEffect(() => {
                 class="weather-forecast__cell weather-forecast__cell--left"
                 :class="{
                   'weather-forecast__cell--day': props.row.row === 'day',
-                  'weather-forecast__cell--temp-label':
-                    props.row.row === 'temp',
+                  'weather-forecast__cell--temp-label': props.row.row === 'temp',
                 }"
               >
                 <q-icon
@@ -378,8 +349,7 @@ watchEffect(() => {
                   'weather-forecast__cell--day': props.row.row === 'day',
                   'weather-forecast__cell--icon': props.row.row === 'icons',
                   'weather-forecast__cell--temp': props.row.row === 'temp',
-                  'weather-forecast__cell--past':
-                    props.row.row === 'day' && isDateInPast(day.date),
+                  'weather-forecast__cell--past': props.row.row === 'day' && isDateInPast(day.date),
                 }"
               >
                 <template v-if="props.row.row === 'day'">
@@ -498,12 +468,7 @@ watchEffect(() => {
 .weather-forecast__table :deep(.q-table tbody td:before),
 .weather-forecast__table :deep(.q-table tbody td:after),
 .weather-forecast__table
-  :deep(
-    .q-table
-      > tbody
-      > tr:not(.q-tr--no-hover):hover
-      > td:not(.q-td--no-hover):before
-  ) {
+  :deep(.q-table > tbody > tr:not(.q-tr--no-hover):hover > td:not(.q-td--no-hover):before) {
   content: none !important;
   background: transparent !important;
 }
