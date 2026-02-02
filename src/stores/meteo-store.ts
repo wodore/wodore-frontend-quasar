@@ -6,10 +6,7 @@ import { clientWodore } from '@clients/index';
 
 const { formatDate, addToDate, subtractFromDate } = date;
 
-const DEFAULT_MODELS: WeatherModel[] = [
-  'meteoswiss_icon_seamless',
-  'best_match',
-];
+const DEFAULT_MODELS: WeatherModel[] = ['meteoswiss_icon_seamless', 'best_match'];
 //const DEFAULT_SYMBOL_COLLECTION = 'weather-icons-filled'
 //const DEFAULT_SYMBOL_COLLECTION = 'meteoswiss-filled'
 const DEFAULT_SYMBOL_COLLECTION = 'weather-icons-filled-animated';
@@ -60,30 +57,24 @@ interface WeatherCodeEntry {
   symbol_night?: string;
   [key: string]: unknown;
 }
-const roundToStep = (value: number, step: number) =>
-  Math.round(value / step) * step;
+const roundToStep = (value: number, step: number) => Math.round(value / step) * step;
 
 const formatDateKey = (value: Date) => formatDate(value, 'YYYY-MM-DD');
 
 const parseTimeToMinutes = (time: string) => {
-  const [hours, minutes] = time.split(':').map((part) => Number(part));
+  const [hours, minutes] = time.split(':').map(part => Number(part));
   return hours * 60 + minutes;
 };
 
-const buildCacheKey = (
-  latitude: number,
-  longitude: number,
-  elevation: number | undefined,
-) => {
+const buildCacheKey = (latitude: number, longitude: number, elevation: number | undefined) => {
   const latRounded = roundToStep(latitude, 0.005);
   const lonRounded = roundToStep(longitude, 0.005);
-  const elevRounded =
-    typeof elevation === 'number' ? roundToStep(elevation, 50) : null;
+  const elevRounded = typeof elevation === 'number' ? roundToStep(elevation, 50) : null;
   return `${latRounded}:${lonRounded}:${elevRounded ?? 'na'}`;
 };
 
 const summarizeWeatherCode = (codes: number[], minOccurrences: number) => {
-  console.log('[meteo-store] summarizeWeatherCode', codes, minOccurrences);
+  //console.debug('[meteo-store] summarizeWeatherCode', codes, minOccurrences);
   if (codes.length === 0) {
     return null;
   }
@@ -91,7 +82,7 @@ const summarizeWeatherCode = (codes: number[], minOccurrences: number) => {
     return Math.max(...codes);
   }
   const counts = new Map<number, number>();
-  codes.forEach((code) => {
+  codes.forEach(code => {
     counts.set(code, (counts.get(code) ?? 0) + 1);
   });
   const frequent = Array.from(counts.entries())
@@ -107,10 +98,10 @@ const summarizeDaily = (
   hourly: HourlyData,
   startMinutes: number,
   endMinutes: number,
-  minOccurrences: number,
+  minOccurrences: number
 ) => {
   if (hourly.time.length === 0) {
-    console.log('[meteo-store] hourly time empty');
+    console.debug('[meteo-store] hourly time empty');
   }
   const grouped = new Map<
     string,
@@ -163,14 +154,14 @@ const summarizeDaily = (
     bucket.totalCount += 1;
   });
 
-  if (grouped.size === 0 && hourly.time.length > 0) {
-    const sample = hourly.time.slice(0, 3).map((t) => t.toISOString());
-    console.log('[meteo-store] no samples in time window', {
-      startMinutes,
-      endMinutes,
-      firstTimes: sample,
-    });
-  }
+  // if (grouped.size === 0 && hourly.time.length > 0) {
+  //   const sample = hourly.time.slice(0, 3).map((t) => t.toISOString());
+  //   // console.debug('[meteo-store] no samples in time window', {
+  //   //   startMinutes,
+  //   //   endMinutes,
+  //   //   firstTimes: sample,
+  //   // });
+  // }
 
   const summaries: Record<
     string,
@@ -183,16 +174,11 @@ const summarizeDaily = (
     const windMax = bucket.winds.length > 0 ? Math.max(...bucket.winds) : null;
     const gustMax = bucket.gusts.length > 0 ? Math.max(...bucket.gusts) : null;
     const rainSum =
-      bucket.rains.length > 0
-        ? bucket.rains.reduce((sum, value) => sum + value, 0)
-        : null;
+      bucket.rains.length > 0 ? bucket.rains.reduce((sum, value) => sum + value, 0) : null;
     const sunshineSum =
-      bucket.sunshines.length > 0
-        ? bucket.sunshines.reduce((sum, value) => sum + value, 0)
-        : null;
+      bucket.sunshines.length > 0 ? bucket.sunshines.reduce((sum, value) => sum + value, 0) : null;
     const weatherCode = summarizeWeatherCode(bucket.codes, minOccurrences);
-    const isDayRatio =
-      bucket.totalCount > 0 ? bucket.isDayCount / bucket.totalCount : 0;
+    const isDayRatio = bucket.totalCount > 0 ? bucket.isDayCount / bucket.totalCount : 0;
     const isDayMajority = bucket.totalCount > 0 ? isDayRatio >= 0.5 : null;
     summaries[dateKey] = {
       weather_code: weatherCode,
@@ -214,9 +200,7 @@ export const useMeteoStore = defineStore('meteo', () => {
   const weatherCodes = ref<Record<string, WeatherCodeEntry>>({});
   const weatherCodesLang = ref('de');
   const weatherCodesCollection = ref(DEFAULT_SYMBOL_COLLECTION);
-  const weatherCodesCache = ref<
-    Record<string, Record<string, WeatherCodeEntry>>
-  >({});
+  const weatherCodesCache = ref<Record<string, Record<string, WeatherCodeEntry>>>({});
   const weatherCodesInFlight = ref<Set<string>>(new Set());
   const weatherCodesLastFetchKey = ref<string | null>(null);
 
@@ -228,11 +212,7 @@ export const useMeteoStore = defineStore('meteo', () => {
     const today = new Date();
     const start = subtractFromDate(today, { days: FULL_PAST_DAYS });
     const end = addToDate(today, { days: FULL_FORECAST_DAYS });
-    const selectedDate = new Date(
-      selected.getFullYear(),
-      selected.getMonth(),
-      selected.getDate(),
-    );
+    const selectedDate = new Date(selected.getFullYear(), selected.getMonth(), selected.getDate());
     return selectedDate >= start && selectedDate <= end;
   };
 
@@ -254,10 +234,7 @@ export const useMeteoStore = defineStore('meteo', () => {
     return data as Record<string, WeatherCodeEntry>;
   };
 
-  const getWeatherCodes = async (
-    lang: string,
-    options: { collection: string },
-  ) => {
+  const getWeatherCodes = async (lang: string, options: { collection: string }) => {
     const collection = options.collection;
     const key = `weather_codes:${lang}:${collection}`;
 
@@ -281,7 +258,7 @@ export const useMeteoStore = defineStore('meteo', () => {
     }
     weatherCodesInFlight.value.add(key);
     fetchWeatherCodes(lang, collection)
-      .then((data) => {
+      .then(data => {
         if (!data) {
           return;
         }
@@ -369,16 +346,13 @@ export const useMeteoStore = defineStore('meteo', () => {
     if (typeof elevation === 'number' && elevation != 0) {
       params.elevation = elevation;
     }
-    const responses = await fetchWeatherApi(
-      'https://api.open-meteo.com/v1/forecast',
-      params,
-    );
+    const responses = await fetchWeatherApi('https://api.open-meteo.com/v1/forecast', params);
 
-    console.debug('open-meteo resposne:', responses);
+    //console.debug('[meteo-store] open-meteo response:', responses);
     const result: Record<string, HourlyData> = {};
     for (const response of responses) {
       const hourly = response.hourly();
-      console.debug('[meteo-store] open-meteo hourly:', hourly);
+      // console.debug('[meteo-store] open-meteo hourly:', hourly);
       if (!hourly) {
         continue;
       }
@@ -399,13 +373,13 @@ export const useMeteoStore = defineStore('meteo', () => {
       const isDay = hourly.variables(5)?.valuesArray() ?? [];
       const sunshine = hourly.variables(6)?.valuesArray() ?? [];
 
-      console.log('[meteo-store] hourly model stats', {
-        model: response.model(),
-        timeCount: time.length,
-        tempSample: Array.from(temperature).slice(0, 3),
-        codeSample: Array.from(weatherCode).slice(0, 3),
-        rainSample: Array.from(rain).slice(0, 3),
-      });
+      // console.debug('[meteo-store] hourly model stats', {
+      //   model: response.model(),
+      //   timeCount: time.length,
+      //   tempSample: Array.from(temperature).slice(0, 3),
+      //   codeSample: Array.from(weatherCode).slice(0, 3),
+      //   rainSample: Array.from(rain).slice(0, 3),
+      // });
 
       result[response.model()] = {
         time,
@@ -418,11 +392,10 @@ export const useMeteoStore = defineStore('meteo', () => {
         sunshine_duration: Array.from(sunshine),
       };
     }
-    const orderedModels = models.filter((model) => model in result);
-    const fallbackModels =
-      orderedModels.length > 0 ? orderedModels : Object.keys(result);
+    const orderedModels = models.filter(model => model in result);
+    const fallbackModels = orderedModels.length > 0 ? orderedModels : Object.keys(result);
     const primary = result[fallbackModels[0]] ?? Object.values(result)[0];
-    console.debug('[meteo-store] primary', primary);
+    // console.debug('[meteo-store] primary', primary);
     if (!primary) {
       return null;
     }
@@ -462,11 +435,9 @@ export const useMeteoStore = defineStore('meteo', () => {
       combined.wind_speed_10m.push(pickValue('wind_speed_10m', idx) ?? NaN);
       combined.wind_gusts_10m.push(pickValue('wind_gusts_10m', idx) ?? NaN);
       combined.is_day.push(pickValue('is_day', idx) ?? NaN);
-      combined.sunshine_duration.push(
-        pickValue('sunshine_duration', idx) ?? NaN,
-      );
+      combined.sunshine_duration.push(pickValue('sunshine_duration', idx) ?? NaN);
     }
-    console.debug('[meteo-store] Length, Combined data', length, combined);
+    // console.debug('[meteo-store] Length, Combined data', length, combined);
     return combined;
   };
 
@@ -499,10 +470,10 @@ export const useMeteoStore = defineStore('meteo', () => {
       if (!hourly) {
         return null;
       }
-      console.log('[meteo-store] fetched hourly summary', {
-        key,
-        timeCount: hourly.time.length,
-      });
+      // console.log('[meteo-store] fetched hourly summary', {
+      //   key,
+      //   timeCount: hourly.time.length,
+      // });
       cache.value[key] = {
         updatedAt: now,
         hourly,
@@ -524,7 +495,7 @@ export const useMeteoStore = defineStore('meteo', () => {
       weatherModels: string[];
       weatherCodeMinOccurrences?: number;
       timezone?: string;
-    },
+    }
   ): Promise<WeatherWindowSummary[]> => {
     const startDateInput = options?.startDate ?? 'now';
     const startTime = options?.startTime ?? '05:00';
@@ -543,7 +514,7 @@ export const useMeteoStore = defineStore('meteo', () => {
       models,
     });
 
-    console.log('[meteo-store] Cahced Fetched Hourly data', hourly);
+    // console.log('[meteo-store] Cached Fetched Hourly data', hourly);
 
     if (!hourly) {
       return [];
@@ -554,19 +525,11 @@ export const useMeteoStore = defineStore('meteo', () => {
 
     const summariesByModel: Record<
       string,
-      Record<
-        string,
-        Omit<WeatherWindowSummary, 'date' | 'model' | 'start_time' | 'end_time'>
-      >
+      Record<string, Omit<WeatherWindowSummary, 'date' | 'model' | 'start_time' | 'end_time'>>
     > = {
-      combined: summarizeDaily(
-        hourly,
-        startMinutes,
-        endMinutes,
-        weatherCodeMinOccurrences,
-      ),
+      combined: summarizeDaily(hourly, startMinutes, endMinutes, weatherCodeMinOccurrences),
     };
-    console.log('Sumarized by model', summariesByModel);
+    // console.log('Sumarized by model', summariesByModel);
 
     const selectedDate =
       startDateInput === 'now' || startDateInput === undefined
@@ -578,14 +541,10 @@ export const useMeteoStore = defineStore('meteo', () => {
       const minDate = new Date(
         hourly.time[0].getFullYear(),
         hourly.time[0].getMonth(),
-        hourly.time[0].getDate(),
+        hourly.time[0].getDate()
       );
       const last = hourly.time[hourly.time.length - 1];
-      const maxDate = new Date(
-        last.getFullYear(),
-        last.getMonth(),
-        last.getDate(),
-      );
+      const maxDate = new Date(last.getFullYear(), last.getMonth(), last.getDate());
       if (startDate < minDate) {
         startDate = minDate;
       }
@@ -599,19 +558,11 @@ export const useMeteoStore = defineStore('meteo', () => {
     const results: WeatherWindowSummary[] = [];
     let current = new Date(startDate);
     const pickField = <
-      K extends keyof Omit<
-        WeatherWindowSummary,
-        'date' | 'model' | 'start_time' | 'end_time'
-      >,
+      K extends keyof Omit<WeatherWindowSummary, 'date' | 'model' | 'start_time' | 'end_time'>,
     >(
       dateKey: string,
-      field: K,
-    ):
-      | Omit<
-          WeatherWindowSummary,
-          'date' | 'model' | 'start_time' | 'end_time'
-        >[K]
-      | null => {
+      field: K
+    ): Omit<WeatherWindowSummary, 'date' | 'model' | 'start_time' | 'end_time'>[K] | null => {
       const modelSummary = summariesByModel.combined?.[dateKey];
       if (modelSummary && modelSummary[field] !== null) {
         return modelSummary[field];
@@ -650,11 +601,11 @@ export const useMeteoStore = defineStore('meteo', () => {
       });
       current = addToDate(current, { days: 1 });
     }
-    console.log('[meteo-store] summary sample:', {
-      first: results[0],
-      last: results[results.length - 1],
-      count: results.length,
-    });
+    // console.log('[meteo-store] summary sample:', {
+    //   first: results[0],
+    //   last: results[results.length - 1],
+    //   count: results.length,
+    // });
     return results;
   };
 

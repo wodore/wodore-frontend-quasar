@@ -17,7 +17,6 @@ import {
   MapGeoJSONFeature,
   MapLayerEventType,
   //GeoJSONSourceSpecification,
-  Point,
 } from 'maplibre-gl';
 // https://indoorequal.github.io/vue-maplibre-gl/
 import {
@@ -186,6 +185,30 @@ function onHutLayerClick(e: MapLayerEventType['click']) {
 const minHutClickZoom = 8;
 
 /**
+ * Get platform-specific padding for map viewport
+ * Returns padding object with safe zone distances from edges
+ */
+function getMapPadding(): { top: number; bottom: number; left: number; right: number } {
+  const isMobile = $q.platform.is.mobile;
+
+  if (isMobile) {
+    return {
+      top: 50, // Use layout offset values
+      bottom: parseInt(bottom.value) || 31, // Menu at bottom
+      left: 0,
+      right: parseInt(right.value) || 0,
+    };
+  } else {
+    return {
+      top: parseInt(top.value) || 50,
+      bottom: parseInt(bottom.value) || 31,
+      left: parseInt(left.value) || 0,
+      right: parseInt(right.value) || 380, // Hut details panel on right
+    };
+  }
+}
+
+/**
  * Check if a point is visible in the map viewport with padding
  * @param map - MapLibre GL map instance
  * @param lngLat - Longitude and latitude to check
@@ -194,97 +217,25 @@ const minHutClickZoom = 8;
 function isPointVisibleWithPadding(map: Map, lngLat: LngLatLike): boolean {
   const point = map.project(lngLat);
   const bounds = map.getCanvas().getBoundingClientRect();
+  const padding = getMapPadding();
 
-  // Platform-specific padding in pixels
-  const isMobile = $q.platform.is.mobile;
-  const padding = isMobile
-    ? { top: 100, bottom: 400, left: 50, right: 50 }
-    : { top: 100, bottom: 100, left: 100, right: 800 };
+  // Add comfortable margin (50px on each side within the safe zone)
+  const margin = 50;
 
-  // Check if point is outside padded area
+  // Check if point is outside padded area with margin
   return (
-    point.x >= padding.left &&
-    point.x <= bounds.width - padding.right &&
-    point.y >= padding.top &&
-    point.y <= bounds.height - padding.bottom
+    point.x >= padding.left + margin &&
+    point.x <= bounds.width - padding.right - margin &&
+    point.y >= padding.top + margin &&
+    point.y <= bounds.height - padding.bottom - margin
   );
 }
 
 /**
- * Calculate safe position for hut to avoid being overlapped by menu
- * @param map - MapLibre GL map instance
- * @param lngLat - Target longitude and latitude
- * @param isInitialLoad - Whether this is the initial page load from URL
- * @returns Safe LngLat position
- */
-function calculateSafePosition(
-  map: Map,
-  lngLat: LngLatLike,
-  isInitialLoad: boolean = false
-): LngLatLike {
-  const bounds = map.getCanvas().getBoundingClientRect();
-  const point = map.project(lngLat);
-
-  // Platform-specific padding in pixels
-  const isMobile = $q.platform.is.mobile;
-  const padding = isMobile
-    ? { top: 100, bottom: 400, left: 50, right: 50 }
-    : { top: 100, bottom: 100, left: 100, right: 800 };
-
-  // Comfortable margin from edges (in addition to padding)
-  const margin = 150; // pixels
-
-  if (isInitialLoad) {
-    // On initial load from URL: center the hut in the safe area
-    const safeWidth = bounds.width - padding.left - padding.right;
-    const safeHeight = bounds.height - padding.top - padding.bottom;
-    const centerX = padding.left + safeWidth / 2;
-    const centerY = padding.top + safeHeight / 2;
-    const newPoint = new Point(centerX, centerY);
-    return map.unproject(newPoint);
-  }
-
-  // For user interactions: move hut to comfortable position if near edges
-  let adjustedPoint = point;
-
-  if (isMobile) {
-    // Mobile: menu is at bottom
-    const bottomThreshold = bounds.height - padding.bottom;
-    if (point.y > bottomThreshold - margin) {
-      // Hut is near bottom edge, move it up (keep X the same)
-      adjustedPoint = new Point(point.x, bottomThreshold - margin);
-      console.debug(
-        `[calculateSafePosition] Mobile: hut at y=${point.y}, moved to y=${adjustedPoint.y}`
-      );
-    }
-  } else {
-    // Desktop: menu is on right
-    const rightThreshold = bounds.width - padding.right;
-    if (point.x > rightThreshold - margin) {
-      // Hut is near right edge, move it LEFT (keep Y the same!)
-      adjustedPoint = new Point(rightThreshold - margin, point.y);
-      console.debug(
-        `[calculateSafePosition] Desktop: hut at x=${point.x}, moved to x=${adjustedPoint.x}, y unchanged=${point.y}`
-      );
-    }
-  }
-
-  // Return adjusted position (or original if no adjustment needed)
-  if (adjustedPoint === point) {
-    return lngLat;
-  }
-
-  const result = map.unproject(adjustedPoint);
-  console.debug(`[calculateSafePosition] Projected to lng/lat:`, result);
-  return result;
-}
-
-/**
- * Smart fly to hut location
- * - Only flies if hut is not visible or outside safe area
- * - Only zooms if zoomed out very far (< 9)
+ * Smart fly to hut location using MapLibre's padding system
+ * - Uses padding to keep hut visible while avoiding UI overlays
+ * - Only flies if hut is not visible or zoom is too low
  * - Considers menu overlap for mobile/desktop
- * - On initial load: always center on hut location
  *
  * @param map - MapLibre GL map instance
  * @param lngLat - Target longitude and latitude
@@ -293,43 +244,32 @@ function calculateSafePosition(
 function smartFlyToHut(map: Map, lngLat: LngLatLike, isInitialLoad: boolean = false): void {
   const currentZoom = map.getZoom();
   const minZoom = 9; // Only zoom if below this
+  const padding = getMapPadding();
 
-  // Calculate safe position (centered on initial load, adjusted for interactions)
-  const safePosition = calculateSafePosition(map, lngLat, isInitialLoad);
-
-  // Convert to arrays for comparison (LngLatLike can be array, {lng, lat}, or {lon, lat})
-  const lngLatArray = Array.isArray(lngLat)
-    ? lngLat
-    : 'lng' in lngLat
-      ? [lngLat.lng, lngLat.lat]
-      : [lngLat.lon, lngLat.lat];
-  const safePositionArray = Array.isArray(safePosition)
-    ? safePosition
-    : 'lng' in safePosition
-      ? [safePosition.lng, safePosition.lat]
-      : [safePosition.lon, safePosition.lat];
-
-  // On initial load, always move to center the hut
-  // For interactions, only move if not visible or position changed
-  let needsMove = isInitialLoad;
-  if (!isInitialLoad) {
-    const isVisible = isPointVisibleWithPadding(map, lngLat);
-    needsMove =
-      !isVisible ||
-      safePositionArray[0] !== lngLatArray[0] ||
-      safePositionArray[1] !== lngLatArray[1];
-  }
+  // Check if hut is currently visible with padding
+  const isVisible = isPointVisibleWithPadding(map, lngLat);
 
   // Determine target zoom
-  const targetZoom = currentZoom < minZoom ? Math.max(currentZoom, minZoom) : currentZoom;
+  const targetZoom = currentZoom < minZoom ? 12 : currentZoom;
+  const needsZoom = currentZoom < minZoom;
 
-  if (needsMove || currentZoom < minZoom) {
+  // On initial load, always fly to hut
+  // For interactions, only fly if not visible or needs zoom
+  if (isInitialLoad || !isVisible || needsZoom) {
+    console.debug(
+      `[smartFlyToHut] Flying to hut (initial: ${isInitialLoad}, visible: ${isVisible}, needsZoom: ${needsZoom})`
+    );
+    console.debug(`[smartFlyToHut] Using padding:`, padding);
+
     map.flyTo({
-      center: safePosition,
+      center: lngLat, // Fly to the hut's actual position
+      padding: padding, // Let MapLibre handle the safe positioning
       zoom: targetZoom,
       duration: 1000,
-      essential: true, // Ensure this animation cannot be filtered out
+      essential: true,
     });
+  } else {
+    console.debug(`[smartFlyToHut] No movement needed (hut is visible with padding)`);
   }
 }
 
@@ -503,9 +443,9 @@ watch(
             const lngLat: LngLatLike = [data.location.lon, data.location.lat];
 
             if (mapRef.map) {
-              // Map is already loaded, jump to position
-              mapRef.map.jumpTo({ center: lngLat, zoom: 12 });
-              console.debug(`[route watch] Map loaded, jumped to`, lngLat);
+              // Map is already loaded, use smartFlyToHut with padding
+              smartFlyToHut(mapRef.map, lngLat, true);
+              console.debug(`[route watch] Map loaded, flying to hut with padding`);
             } else {
               // Map not loaded yet, set reactive values
               mapCenter.value = lngLat;

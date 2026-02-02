@@ -26,8 +26,7 @@ const quasarLang = computed(() => {
   return isoName.split('-')[0];
 });
 const collection = computed(
-  () =>
-    props.collection ?? weatherCodesCollection.value ?? 'weather-icons-filled',
+  () => props.collection ?? weatherCodesCollection.value ?? 'weather-icons-filled'
 );
 
 const selectedDateObj = computed(() => {
@@ -41,9 +40,7 @@ const selectedDateObj = computed(() => {
   return new Date(year, month - 1, day);
 });
 
-const canShow = computed(() =>
-  meteoStore.forecastPossible(selectedDateObj.value),
-);
+const canShow = computed(() => meteoStore.forecastPossible(selectedDateObj.value));
 
 const summary = ref<{
   weather_code: number | null;
@@ -64,9 +61,7 @@ const iconUrl = computed(() => {
   }
   const isDay = summary.value?.is_day_majority !== false;
   const symbolKey = isDay ? 'symbol_day' : 'symbol_night';
-  const url = (iconEntry.value as Record<string, unknown>)[symbolKey] as
-    | string
-    | undefined;
+  const url = (iconEntry.value as Record<string, unknown>)[symbolKey] as string | undefined;
   return url ?? null;
 });
 const iconDescription = computed(() => {
@@ -76,9 +71,7 @@ const iconDescription = computed(() => {
   }
   const isDay = summary.value?.is_day_majority !== false;
   return (
-    ((isDay ? entry.description_day : entry.description_night) as
-      | string
-      | undefined) ??
+    ((isDay ? entry.description_day : entry.description_night) as string | undefined) ??
     (entry.description as string | undefined) ??
     ''
   );
@@ -135,26 +128,22 @@ watchEffect(() => {
     return;
   }
   loading.value = true;
-  console.debug('[weather-select] fetch', {
-    date: selectedDateObj.value,
-    collection: collection.value,
-  });
+  // console.debug('[weather-select] fetch', {
+  //   date: selectedDateObj.value,
+  //   collection: collection.value,
+  // });
   meteoStore
-    .getDaily(
-      { latitude: props.latitude, longitude: props.longitude },
-      props.elevation,
-      {
-        startDate: selectedDateObj.value,
-        forecastDays: 1,
-        pastDays: 0,
-        weatherModels: ['meteoswiss_icon_seamless', 'best_match'],
-      },
-    )
-    .then((items) => {
-      console.debug('[weather-select] daily result', {
-        count: items.length,
-        first: items[0],
-      });
+    .getDaily({ latitude: props.latitude, longitude: props.longitude }, props.elevation, {
+      startDate: selectedDateObj.value,
+      forecastDays: 1,
+      pastDays: 0,
+      weatherModels: ['meteoswiss_icon_seamless', 'best_match'],
+    })
+    .then(items => {
+      // console.debug('[weather-select] daily result', {
+      //   count: items.length,
+      //   first: items[0],
+      // });
       summary.value = items[0]
         ? {
             weather_code: items[0].weather_code,
@@ -169,19 +158,8 @@ watchEffect(() => {
 </script>
 
 <template>
-  <span
-    v-if="canShow"
-    class="weather-select"
-    @click="isMobile && scrollToForecast()"
-  >
-    <q-img
-      v-if="iconUrl"
-      :src="iconUrl"
-      width="48px"
-      height="48px"
-      fit="contain"
-      no-spinner
-    />
+  <span v-if="canShow" class="weather-select" @click="isMobile && scrollToForecast()">
+    <q-img v-if="iconUrl" :src="iconUrl" width="48px" height="48px" fit="contain" no-spinner />
     <span v-else class="weather-select__empty"></span>
     <q-tooltip
       v-if="conditionLabel"
