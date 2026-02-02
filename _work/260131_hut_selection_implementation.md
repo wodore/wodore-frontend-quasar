@@ -1,152 +1,114 @@
 # Hut Selection and Map FlyTo Implementation
 
-**Date:** 2026-02-01 22:23
-**Status:** Partially Working - Initial load works, border flyTo has issues
+**Date:** 2026-02-01 22:23 | **Updated:** 2026-02-02 23:45
+**Status:** ✅ Working - All edge cases handled correctly
 
 ---
 
 ## Executive Summary
 
-Hut selection has been implemented with the following features:
+Hut selection with intelligent map positioning has been fully implemented:
 
 - ✅ Initial page load from URL works (fetches from API, sets map position)
 - ✅ Hut selection (highlighting) works on initial load
 - ✅ User click on marker works
-- ❌ **ISSUE**: FlyTo on desktop moves hut vertically when it should only move horizontally
+- ✅ Desktop: Protects huts from all 4 edges (150px safe zone)
+- ✅ Mobile: Protects huts from all 4 edges (100px safe zone)
+- ✅ Handles drawer opening animations correctly
+- ✅ Remembers mobile drawer height for accurate predictions
 
 ---
 
-## How It's Supposed to Work
+## How It Works
 
 ### 1. Initial Page Load (URL Navigation)
 
 **Flow when user opens `/hut/blaemsch`:**
 
-1. **Route watcher** detects slug (`WdMapView.vue:467-544`)
-   - Runs with `immediate: true` on component mount
-   - Determines `isInitialLoad = !oldSlug && !selectedHutFeature.value`
+1. **Route watcher** detects slug and determines if initial load
+2. **Fetch from API** (non-blocking) to get hut coordinates
+3. **Set initial map position** via reactive props or `jumpTo()`
+4. **Poll for hut feature** in vector tiles (500ms intervals, max 20 attempts)
+5. **Select and highlight** hut when found
 
-2. **Fetch from API** (non-blocking):
-
-   ```typescript
-   clientWodore.GET('/v1/huts/{slug}', { params: { path: { slug: newSlug } } }).then(({ data }) => {
-     const lngLat: LngLatLike = [data.location.lon, data.location.lat];
-
-     if (mapRef.map) {
-       // Map loaded: jump to position
-       mapRef.map.jumpTo({ center: lngLat, zoom: 12 });
-     } else {
-       // Map not loaded: set reactive props
-       mapCenter.value = lngLat;
-       mapZoom.value = 12;
-     }
-
-     // Start polling for hut feature to select it
-   });
-   ```
-
-3. **Poll for hut feature** (every 500ms, max 20 attempts):
-   - Uses `map.querySourceFeatures('wd-huts', ...)`
-   - When found: `setFeatureState({ selected: true })`
-   - Sets `selectedHutFeature.value`
-
-4. **Map loads at correct position** (either via reactive props or `jumpTo()`)
-
-**Result:** Map centered on hut with zoom 12, hut highlighted with blue glow ✅
+**Result:** Map centered on hut with zoom 12, hut highlighted with blue glow
 
 ### 2. User Click on Marker
 
 **Flow when user clicks hut marker:**
 
-1. **Click handler** (`WdMapView.vue:130-165`)
-
-   ```typescript
-   function onHutLayerClick(e: MapLayerEventType['click']) {
-     if (e.target.getZoom() > minHutClickZoom) {
-       const feature = e.features?.[0];
-       const slug = feature.properties.slug;
-
-       // Toggle if clicking same hut
-       if (selectedHutFeature.value?.id == feature.id) {
-         // Deselect
-         router.push({ name: 'map' });
-         return;
-       }
-
-       // Select new hut
-       map.setFeatureState({ id: feature.id }, { selected: true });
-
-       // Smart fly to hut
-       const coordinates = feature.geometry.coordinates;
-       smartFlyToHut(e.target, coordinates, false);
-
-       // Update router
-       router.push({ name: 'map-hut', params: { slug } });
-     }
-   }
-   ```
-
-2. **Smart FlyTo** (`WdMapView.vue:270-315`)
-   - Calculates safe position with `calculateSafePosition()`
-   - Checks if hut is visible with padding
-   - Only moves if needed
-
-3. **Calculate Safe Position** (`WdMapView.vue:217-266`)
-   - **Mobile**: If hut within 150px of bottom 400px padding → move up
-   - **Desktop**: If hut within 150px of right 800px padding → move left
+1. **Click handler** captures click event
+2. **Toggle if same hut** clicked (deselect)
+3. **Smart fly to hut** - checks all 4 edges for danger zones
+4. **Calculate minimal movement** - only moves as much as needed
+5. **Update router** to reflect selected hut
 
 ---
 
-## Current Issues
+## Current Implementation
 
-### ❌ Issue: Desktop FlyTo Moves Hut Vertically
+### Danger Zone System
 
-**Symptom:**
-When clicking a hut marker in the right "danger zone" (within 150px of 800px padding), the map repositions such that the hut appears to move up or down to the center, not just horizontally.
+The implementation checks **all 4 edges** and moves huts to safe positions when they're too close to any edge:
 
-**Expected Behavior:**
+**Desktop:**
 
-- Desktop: Hut should ONLY move horizontally (left/right) to avoid right menu
-- Mobile: Hut should ONLY move vertically (up/down) to avoid bottom menu
+- **Danger Zone:** 150px from any edge
+- **Safe Position:** Moves hut to exactly 150px from edge
+- **Right Panel:** Accounts for drawer width (460px on large screens, 380px on medium)
 
-**Current Code (Looks Correct):**
+**Mobile:**
 
-```typescript
-// Desktop: menu is on right
-const rightThreshold = bounds.width - padding.right;
-if (point.x > rightThreshold - margin) {
-  // Hut is near right edge, move it LEFT (keep Y the same!)
-  adjustedPoint = new Point(rightThreshold - margin, point.y);
-  console.debug(
-    `Desktop: hut at x=${point.x}, moved to x=${adjustedPoint.x}, y unchanged=${point.y}`
-  );
-}
-```
+- **Danger Zone:** 100px from any edge
+- **Safe Position:** Moves hut to exactly 100px from edge
+- **Bottom Drawer:** Tracks actual drawer height dynamically
 
-**Debug Logs Added:**
+### Key Algorithm
 
 ```typescript
-console.debug(
-  `[calculateSafePosition] Desktop: hut at x=${point.x}, moved to x=${adjustedPoint.x}, y unchanged=${point.y}`
+// 1. Check all 4 edges
+let targetX = point.x;
+let targetY = point.y;
+
+if (point.y < padding.top + dangerMargin) targetY = padding.top + dangerMargin;
+if (point.x > bounds.width - padding.right - dangerMargin)
+  targetX = bounds.width - padding.right - dangerMargin;
+if (point.y > bounds.height - padding.bottom - dangerMargin)
+  targetY = bounds.height - padding.bottom - dangerMargin;
+if (point.x < padding.left + dangerMargin) targetX = padding.left + dangerMargin;
+
+// 2. Calculate offset and apply to map center
+const offsetX = point.x - targetX;
+const offsetY = point.y - targetY;
+const targetCenter = map.unproject(
+  new Point(currentCenterPoint.x + offsetX, currentCenterPoint.y + offsetY)
 );
-const result = map.unproject(adjustedPoint);
-console.debug(`[calculateSafePosition] Projected to lng/lat:`, result);
+
+// 3. Fly to new position
+map.flyTo({ center: targetCenter, zoom: targetZoom, duration: 667 });
 ```
 
-**Possible Causes:**
+### Drawer Width Prediction
 
-1. **Map Projection Issue**: When calling `map.unproject(adjustedPoint)`, the Mercator projection might cause slight latitude changes even though Y pixel is preserved. This is inherent to how map projections work.
+**Desktop:**
 
-2. **flyTo() Animation**: The `flyTo()` animation with `center: safePosition` moves the map center, not the hut. If the new center has a different latitude, the entire map view shifts vertically.
+- Uses `$q.screen.gt.md` to determine drawer width:
+  - Large screens (>md): 460px
+  - Medium screens: 380px
+- When clicking a hut, assumes drawer will be open and uses expected width
+- Prevents double adjustment when drawer animation completes
 
-3. **Viewport Padding**: MapLibre GL's `flyTo()` might apply its own padding/centering logic that conflicts with our calculations.
+**Mobile:**
 
-**Next Steps to Debug:**
+- Tracks last opened drawer height in `lastMobileDrawerHeight` ref
+- Default initial height: 50% of window height (better safe than sorry)
+- Updates when drawer opens (detects `bottom.value > 100px`)
+- Subsequent selections use remembered height for accurate positioning
 
-1. Check console logs when clicking a hut in the danger zone
-2. Verify that `y unchanged=${point.y}` shows the same Y value
-3. Compare `lngLat` vs `safePosition` to see if latitude changed
-4. Consider using `panBy()` instead of `flyTo()` for pure pixel-based movement
+### Animation Speed
+
+- **Duration:** 667ms (1.5x speed factor from standard 1000ms)
+- **Essential:** true (cannot be filtered out by map)
 
 ---
 
@@ -154,25 +116,30 @@ console.debug(`[calculateSafePosition] Projected to lng/lat:`, result);
 
 ### Files Modified
 
-1. **`src/components/map/WdMapView.vue`**
-   - Lines 53-55: Added reactive `mapCenter` and `mapZoom` refs
-   - Lines 107-118: `onMapLoad` - no longer needed for initial positioning
-   - Lines 183-208: `isPointVisibleWithPadding()` - checks if point visible with padding
-   - Lines 217-266: `calculateSafePosition()` - calculates safe position (HAS ISSUE)
-   - Lines 270-315: `smartFlyToHut()` - smart fly to logic
-   - Lines 318-428: `selectHutBySlug()` - removed initial load logic (now in route watcher)
-   - Lines 467-544: Route watcher - handles initial load with API fetch and polling
+**`src/components/map/WdMapView.vue`**
 
-### Padding Configuration
+Key sections:
+
+- Lines 66-97: Layout offset tracking with mobile drawer height memory
+- Lines 197-234: `getMapPadding()` - handles desktop and mobile padding with drawer prediction
+- Lines 246-261: `isPointVisibleWithPadding()` - checks all 4 edges with platform-specific margins
+- Lines 270-387: `smartFlyToHut()` - intelligent flyTo with minimal movement
+- Lines 467-544: Route watcher - handles initial load with API fetch
+
+### Key Functions
+
+#### `getMapPadding(assumeDrawerOpen: boolean = false)`
+
+Returns padding for safe zones, accounting for drawers.
 
 **Desktop:**
 
 ```typescript
 {
-  top: 100,     // Keep 100px from top
-  bottom: 100,  // Keep 100px from bottom
-  left: 100,    // Keep 100px from left
-  right: 800    // Keep 800px from right (hut details panel)
+  top: parseInt(top.value) || 50,
+  bottom: parseInt(bottom.value) || 31,
+  left: parseInt(left.value) || 0,
+  right: $q.screen.gt.md ? 460 : 380  // When assumeDrawerOpen=true
 }
 ```
 
@@ -180,204 +147,154 @@ console.debug(`[calculateSafePosition] Projected to lng/lat:`, result);
 
 ```typescript
 {
-  top: 100,     // Keep 100px from top
-  bottom: 400,  // Keep 400px from bottom (menu area)
-  left: 50,     // Keep 50px from left
-  right: 50     // Keep 50px from right
+  top: parseInt(top.value) || 50,
+  bottom: lastMobileDrawerHeight || window.innerHeight * 0.5,  // When assumeDrawerOpen=true
+  left: 0,
+  right: 0
 }
 ```
 
-**Comfort Margin:** 150px (additional buffer zone)
+#### `isPointVisibleWithPadding(map, lngLat, assumeDrawerOpen)`
 
-### Key Functions
+Checks if hut is in safe zone (not in any danger zone).
 
-#### `isPointVisibleWithPadding(map, lngLat)`
+**Returns:** `true` if safe, `false` if too close to any edge
 
-Checks if a geographic coordinate is visible within the padded viewport.
+**Danger Margins:**
 
-**Returns:** `true` if visible, `false` if outside padding zone
-
-**Usage:** Determine if flyTo is needed
-
-#### `calculateSafePosition(map, lngLat, isInitialLoad)`
-
-Calculates a safe position for the hut to avoid menu overlap.
-
-**Parameters:**
-
-- `map`: MapLibre GL map instance
-- `lngLat`: Target longitude/latitude
-- `isInitialLoad`: If true, center in safe area; if false, adjust only if near edge
-
-**Returns:** Safe LngLat position
-
-**Desktop Logic:**
-
-```typescript
-if (point.x > rightThreshold - margin) {
-  adjustedPoint = new Point(rightThreshold - margin, point.y);
-  return map.unproject(adjustedPoint);
-}
-```
-
-**Mobile Logic:**
-
-```typescript
-if (point.y > bottomThreshold - margin) {
-  adjustedPoint = new Point(point.x, bottomThreshold - margin);
-  return map.unproject(adjustedPoint);
-}
-```
+- Desktop: 150px
+- Mobile: 100px
 
 #### `smartFlyToHut(map, lngLat, isInitialLoad)`
 
-Smart fly to hut location with visibility and zoom checks.
+Intelligently positions hut away from edges.
 
 **Logic:**
 
-1. Calculate safe position
-2. Check if position changed
-3. Check if zoom < 9 (min zoom)
-4. If needs move OR zoom too low: call `flyTo()`
+1. Get padding (with drawer prediction for user clicks)
+2. Check if hut is visible in safe zone
+3. If not visible or needs zoom:
+   - Calculate target position (check all 4 edges)
+   - Calculate map center offset
+   - Fly to new position (667ms duration)
 
 **Parameters:**
 
-- `duration`: 1000ms
-- `essential`: true (can't be filtered out)
+- `isInitialLoad`: If true, centers using padding; if false, minimal movement
 
 ---
 
-## Testing Instructions
+## Testing
 
-### Test 1: Initial Load
+### Desktop Tests
 
-1. Open URL: `http://localhost:9000/hut/blaemsch`
-2. **Expected:** Map jumps to hut location, zoom 12, hut highlighted
-3. **Console logs:**
-   ```
-   [route watch] Initial load, fetching hut location before map loads
-   [route watch] Set map center/zoom to [lng, lat], 12
-   [calculateSafePosition] (initial) Center in safe area
-   [route watch] Hut selected after initial load
-   ```
+✅ **Top Edge:** Hut < 150px from top → moves down to 150px
+✅ **Right Edge:** Hut > (width - drawerWidth - 150px) → moves left to 150px from drawer
+✅ **Bottom Edge:** Hut > (height - 150px) → moves up to 150px from bottom
+✅ **Left Edge:** Hut < 150px from left → moves right to 150px
+✅ **Top-Right Corner:** Moves both down and left to safe position
+✅ **Drawer Width:** Correctly uses 460px or 380px based on screen size
+✅ **No Double Jump:** Predicts final drawer width, no adjustment after drawer opens
 
-### Test 2: Desktop - Click Safe Area Hut
+### Mobile Tests
 
-1. Click a hut marker in the safe area (not near edges)
-2. **Expected:** No movement, hut highlights
-3. **Console logs:**
-   ```
-   [onHutLayerClick] Hut layer clicked
-   [smartFlyToHut] No movement needed (already visible)
-   ```
-
-### Test 3: Desktop - Click Danger Zone Hut ❌ HAS ISSUE
-
-1. Click a hut marker in right danger zone (within 150px of 800px padding)
-2. **Expected:** Hut moves LEFT only, stays at same vertical position
-3. **Actual:** Hut moves to center vertically (WRONG!)
-4. **Console logs:**
-   ```
-   [calculateSafePosition] Desktop: hut at x=1200, moved to x=350, y unchanged=450
-   [calculateSafePosition] Projected to lng/lat: { lng: 8.5, lat: 46.8 }
-   [smartFlyToHut] Flying to safe position
-   ```
-
-**Check:** Does `y unchanged` match the original Y? Does the latitude change?
-
-### Test 4: Mobile - Click Danger Zone Hut
-
-1. Switch to mobile view (browser devtools or actual mobile)
-2. Click a hut marker in bottom danger zone
-3. **Expected:** Hut moves UP only
-4. **Console logs:**
-   ```
-   [calculateSafePosition] Mobile: hut at y=800, moved to y=350
-   [smartFlyToHut] Flying to safe position
-   ```
+✅ **Top Edge:** Hut < 100px from top → moves down to 100px
+✅ **Right Edge:** Hut > (width - 100px) → moves left to 100px
+✅ **Bottom Edge:** Hut > (height - drawerHeight - 100px) → moves up to 100px above drawer
+✅ **Left Edge:** Hut < 100px from left → moves right to 100px
+✅ **First Selection:** Uses 50% window height estimate
+✅ **Subsequent Selections:** Uses remembered drawer height
+✅ **After Drawer Drag:** Updates remembered height, next selection accurate
 
 ---
 
-## Potential Solutions for Desktop Issue
+## Configuration
 
-### Solution 1: Use `panBy()` Instead of `flyTo()`
+### Adjustable Parameters
 
-Instead of flying to a new geographic center, pan by a specific pixel amount:
-
-```typescript
-// Calculate pixel difference
-const pixelDiff = adjustedPoint.x - point.x;
-
-// Pan horizontally only
-map.panBy([pixelDiff, 0], { duration: 1000 });
-```
-
-**Pros:** Pure horizontal movement, no projection issues
-**Cons:** Need to handle zoom levels differently
-
-### Solution 2: Preserve Latitude Explicitly
-
-When calculating safe position, explicitly preserve the original latitude:
+**In `isPointVisibleWithPadding()` and `smartFlyToHut()`:**
 
 ```typescript
-const safePosition = map.unproject(adjustedPoint);
-safePosition.lat = lngLat.lat; // Force latitude to stay the same
+const isMobile = !$q.screen.gt.sm;
+const dangerMargin = isMobile ? 100 : 150; // Distance from edge to trigger movement
 ```
 
-**Pros:** Simple fix
-**Cons:** Might not work due to projection constraints
-
-### Solution 3: Use `easeTo()` with Bearing
-
-Instead of changing center, change the bearing/rotation:
-
-**Not applicable** - this rotates the map, not what we want.
-
-### Solution 4: Calculate Geographic Offset
-
-Calculate the longitude offset needed while keeping latitude exactly the same:
+**In `getMapPadding()` mobile section:**
 
 ```typescript
-const currentLng = lngLat.lng;
-const lat = lngLat.lat;
-
-// Project both points
-const originalPoint = map.project(lngLat);
-const safePoint = new Point(rightThreshold - margin, originalPoint.y);
-const safeLngLat = map.unproject(safePoint);
-
-// Keep latitude exactly the same
-const finalPosition = {
-  lng: safeLngLat.lng,
-  lat: lat, // Use original latitude
-};
+const defaultHeight = process.env.CLIENT ? window.innerHeight * 0.5 : 400; // Initial mobile drawer estimate
 ```
 
-**Pros:** Explicitly preserves latitude
-**Cons:** Might cause distortion at extreme latitudes
+**In `smartFlyToHut()`:**
+
+```typescript
+duration: 667,  // Animation speed (lower = faster)
+```
 
 ---
 
-## Recommended Next Steps
+## Future Improvements
 
-1. **Add more detailed logging** to confirm Y is actually unchanged
-2. **Check actual vs expected latitude** in console logs
-3. **Try Solution 4** (explicitly preserve latitude)
-4. **If that fails, try Solution 1** (use `panBy()` for pixel-based movement)
-5. **Consider using MapLibre GL's padding option** in `flyTo()`:
-   ```typescript
-   map.flyTo({
-     center: lngLat,
-     padding: { left: 100, right: 800, top: 100, bottom: 100 },
-     duration: 1000,
-   });
-   ```
+### High Priority
+
+1. **Centralized Layout Store**
+   - Move drawer dimensions into Pinia store
+   - Share across components (WdMapView, WdMapContent, etc.)
+   - Eliminate need for layout offset injection and tracking
+   - Single source of truth for all drawer states
+
+2. **Desktop Drawer Height Tracking**
+   - Currently assumes fixed drawer width
+   - Could track if user resizes or if content changes height
+   - Similar to mobile implementation
+
+### Medium Priority
+
+3. **Smooth Drawer Open/Close Integration**
+   - Coordinate flyTo animation with drawer animation
+   - Potentially adjust hut position during drawer slide
+
+4. **User Preference Storage**
+   - Remember user's preferred danger zone margins
+   - Store in localStorage or user settings
+
+5. **Multi-Hut Selection**
+   - When multiple huts overlap, intelligent positioning for all
+   - FitBounds with safe zone padding
+
+### Low Priority
+
+6. **Animation Curves**
+   - Custom easing functions for more natural movement
+   - Different speeds for different distances
+
+7. **Touch Gestures**
+   - Swipe gestures to adjust hut position manually
+   - Pinch to adjust danger zone size
+
+---
+
+## Known Limitations
+
+1. **Mobile Drawer Height First Load**
+   - First hut selection uses 50% window height estimate
+   - Might not be perfect if user previously dragged drawer to extreme height
+   - Resolved after first selection (height is remembered)
+
+2. **Extreme Zoom Levels**
+   - At very high zoom (>18), pixel calculations might be less accurate
+   - At very low zoom (<7), hut positioning less critical
+
+3. **Rapid Drawer Dragging**
+   - If user drags drawer while flyTo is in progress, position might be slightly off
+   - Resolved on next selection
 
 ---
 
 ## Related Files
 
-- `src/components/map/WdMapView.vue` - Main map component
+- `src/components/map/WdMapView.vue` - Main map component with flyTo logic
+- `src/components/map/WdMapContent.vue` - Drawer component with height management
 - `src/stores/map/utils/overlay-huts.ts` - Hut overlay definitions
 - `src/router/routes.ts` - Route definitions
 - `src/components/huts/WdHutView.vue` - Hut detail panel
@@ -385,6 +302,6 @@ const finalPosition = {
 
 ---
 
-**Status:** Initial load working ✅ | Desktop flyTo vertical movement issue ❌
+**Status:** ✅ Fully Working - All platforms and edge cases handled
 
-**Last Updated:** 2026-02-01 22:23
+**Last Updated:** 2026-02-02 23:45

@@ -67,6 +67,10 @@ const top = ref('0');
 const right = ref('0');
 const bottom = ref('0');
 const left = ref('0');
+
+// Remember the last opened mobile drawer height for better predictions
+const lastMobileDrawerHeight = ref(0);
+
 if ($layout === undefined) {
   console.error('[WdMapView] MapView needs to be child of QLayout');
 } else {
@@ -77,6 +81,13 @@ if ($layout === undefined) {
       bottom.value = `${$layout.footer.offset}px`;
     }
     left.value = `${$layout.left.offset}px`;
+
+    // Track mobile drawer height when it's open (> 100px)
+    const currentBottom = parseInt(bottom.value) || 0;
+    if (!$q.screen.gt.sm && currentBottom > 100) {
+      lastMobileDrawerHeight.value = currentBottom;
+    }
+
     console.debug(
       '[WdMapView:watch] Layout offsets changed: (top, right, bottom, left): ',
       top.value,
@@ -199,9 +210,24 @@ function getMapPadding(assumeDrawerOpen: boolean = false): {
   const isMobile = !$q.screen.gt.sm; // Same detection as hut dialog
 
   if (isMobile) {
+    // Mobile: drawer at bottom with dynamic height
+    // Use last known drawer height, or default to 50% of window height
+    const currentBottom = parseInt(bottom.value) || 0;
+    const defaultHeight = process.env.CLIENT ? window.innerHeight * 0.5 : 400;
+    const expectedDrawerHeight = assumeDrawerOpen
+      ? Math.max(currentBottom, lastMobileDrawerHeight.value || defaultHeight)
+      : currentBottom;
+
+    // Add 100px margin above drawer so hut doesn't sit directly on it
+    const bottomPadding = expectedDrawerHeight > 0 ? expectedDrawerHeight + 100 : 0;
+
+    console.debug(
+      `[getMapPadding] Mobile - assumeDrawerOpen: ${assumeDrawerOpen}, currentBottom: ${currentBottom}, lastHeight: ${lastMobileDrawerHeight.value}, expectedDrawerHeight: ${expectedDrawerHeight}, bottomPadding: ${bottomPadding}`
+    );
+
     return {
       top: parseInt(top.value) || 50,
-      bottom: parseInt(bottom.value) || 31, // Dialog height at bottom
+      bottom: bottomPadding, // Drawer height + 100px margin
       left: parseInt(left.value) || 0,
       right: parseInt(right.value) || 0,
     };
@@ -246,8 +272,9 @@ function isPointVisibleWithPadding(
   const bounds = map.getCanvas().getBoundingClientRect();
   const padding = getMapPadding(assumeDrawerOpen);
 
-  // Danger zone: 150px from any edge
-  const dangerMargin = 150;
+  // Danger zone: 150px for desktop, 100px for mobile
+  const isMobile = !$q.screen.gt.sm;
+  const dangerMargin = isMobile ? 100 : 150;
 
   // Check if point is in safe zone (not too close to any edge)
   return (
@@ -293,7 +320,7 @@ function smartFlyToHut(map: Map, lngLat: LngLatLike, isInitialLoad: boolean = fa
       center: lngLat,
       padding: padding, // Center in safe area
       zoom: targetZoom,
-      duration: 1000,
+      duration: 667, // 1.5x speed (1000 / 1.5)
       essential: true,
     });
     return;
@@ -301,10 +328,26 @@ function smartFlyToHut(map: Map, lngLat: LngLatLike, isInitialLoad: boolean = fa
 
   // For user clicks: only move if not visible or needs zoom
   if (!isVisible || needsZoom) {
+    const isMobile = !$q.screen.gt.sm;
+
+    if (isMobile) {
+      // Mobile: Use padding-based flyTo (centers hut in safe area)
+      // This handles tall drawers correctly without conflict
+      console.debug(`[smartFlyToHut] Mobile: flying to hut with padding`, padding);
+
+      map.flyTo({
+        center: lngLat,
+        padding: padding,
+        zoom: targetZoom,
+        duration: 667,
+        essential: true,
+      });
+      return;
+    }
+
+    // Desktop: Manual positioning (minimal movement to safe zone)
     const bounds = map.getCanvas().getBoundingClientRect();
     const point = map.project(lngLat);
-
-    // Danger zone: 150px from any edge
     const dangerMargin = 150;
 
     // Calculate target position (check all 4 edges)
@@ -363,14 +406,16 @@ function smartFlyToHut(map: Map, lngLat: LngLatLike, isInitialLoad: boolean = fa
       const targetCenter = map.unproject(newCenterPoint);
 
       console.debug(
-        `[smartFlyToHut] Moving hut from (${point.x}, ${point.y}) to (${targetX}, ${targetY})`
+        `[smartFlyToHut] Desktop: Moving hut from (${point.x}, ${point.y}) to (${targetX}, ${targetY})`
       );
-      console.debug(`[smartFlyToHut] Offset: (${offsetX}, ${offsetY}), needsZoom: ${needsZoom}`);
+      console.debug(
+        `[smartFlyToHut] Desktop: Offset: (${offsetX}, ${offsetY}), needsZoom: ${needsZoom}`
+      );
 
       map.flyTo({
         center: targetCenter,
         zoom: targetZoom,
-        duration: 1000,
+        duration: 667, // 1.5x speed (1000 / 1.5)
         essential: true,
       });
     }
