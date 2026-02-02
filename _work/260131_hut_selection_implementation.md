@@ -1,7 +1,7 @@
 # Hut Selection and Map FlyTo Implementation
 
-**Date:** 2026-02-01 22:23 | **Updated:** 2026-02-02 23:45
-**Status:** ✅ Working - All edge cases handled correctly
+**Date:** 2026-02-01 22:23 | **Updated:** 2026-02-02 23:50
+**Status:** ✅ Working - All edge cases handled correctly + Code refactored
 
 ---
 
@@ -105,11 +105,6 @@ map.flyTo({ center: targetCenter, zoom: targetZoom, duration: 667 });
 - Updates when drawer opens (detects `bottom.value > 100px`)
 - Subsequent selections use remembered height for accurate positioning
 
-### Animation Speed
-
-- **Duration:** 667ms (1.5x speed factor from standard 1000ms)
-- **Essential:** true (cannot be filtered out by map)
-
 ---
 
 ## Implementation Details
@@ -184,27 +179,121 @@ Intelligently positions hut away from edges.
 
 ---
 
-## Testing
+## Code Quality Improvements (2026-02-02)
 
-### Desktop Tests
+### Refactoring Summary
 
-✅ **Top Edge:** Hut < 150px from top → moves down to 150px
-✅ **Right Edge:** Hut > (width - drawerWidth - 150px) → moves left to 150px from drawer
-✅ **Bottom Edge:** Hut > (height - 150px) → moves up to 150px from bottom
-✅ **Left Edge:** Hut < 150px from left → moves right to 150px
-✅ **Top-Right Corner:** Moves both down and left to safe position
-✅ **Drawer Width:** Correctly uses 460px or 380px based on screen size
-✅ **No Double Jump:** Predicts final drawer width, no adjustment after drawer opens
+The code has been refactored for better maintainability, readability, and type safety:
 
-### Mobile Tests
+#### 1. Constants Extracted
 
-✅ **Top Edge:** Hut < 100px from top → moves down to 100px
-✅ **Right Edge:** Hut > (width - 100px) → moves left to 100px
-✅ **Bottom Edge:** Hut > (height - drawerHeight - 100px) → moves up to 100px above drawer
-✅ **Left Edge:** Hut < 100px from left → moves right to 100px
-✅ **First Selection:** Uses 50% window height estimate
-✅ **Subsequent Selections:** Uses remembered drawer height
-✅ **After Drawer Drag:** Updates remembered height, next selection accurate
+All magic numbers and repeated values moved to a constants section at the top of the file:
+
+```typescript
+// Margins and safe zones
+const MOBILE_DANGER_MARGIN = 100;
+const DESKTOP_DANGER_MARGIN = 150;
+const MOBILE_DRAWER_MARGIN = 100;
+const MOBILE_DRAWER_TRACK_THRESHOLD = 100;
+
+// Zoom levels
+const MIN_HUT_CLICK_ZOOM = 8;
+const MIN_FLY_ZOOM = 9;
+const INITIAL_ZOOM = 12;
+
+// Animation
+const FLY_DURATION = 667; // 1.5x speed (1000ms / 1.5)
+
+// Desktop drawer widths (matches WdMapContent.vue:103)
+const DESKTOP_DRAWER_WIDTH_LARGE = 460;
+const DESKTOP_DRAWER_WIDTH_MEDIUM = 380;
+
+// Mobile drawer
+const MOBILE_DRAWER_DEFAULT_RATIO = 0.5; // 50% of screen height
+
+// Map layer IDs
+const HUT_LAYER_ID = 'wd-huts';
+const HUT_SOURCE_ID = 'wd-huts';
+const HUT_SOURCE_LAYER = 'huts';
+
+// Debug flag
+const DEBUG_MAP_POSITIONING = false;
+```
+
+#### 2. Helper Functions Created
+
+Five utility functions eliminate code duplication:
+
+```typescript
+// Platform detection
+function isMobileView(): boolean {
+  return !$q.screen.gt.sm;
+}
+
+// Get expected desktop drawer width based on screen size
+function getExpectedDesktopDrawerWidth(): number {
+  return $q.screen.gt.md ? DESKTOP_DRAWER_WIDTH_LARGE : DESKTOP_DRAWER_WIDTH_MEDIUM;
+}
+
+// Get expected mobile drawer height
+function getExpectedMobileDrawerHeight(): number {
+  const defaultHeight = process.env.CLIENT ? window.innerHeight * MOBILE_DRAWER_DEFAULT_RATIO : 400;
+  return lastMobileDrawerHeight.value || defaultHeight;
+}
+
+// Conditional debug logging
+function debugLog(message: string, ...args: unknown[]) {
+  if (DEBUG_MAP_POSITIONING) {
+    console.debug(message, ...args);
+  }
+}
+
+// Get danger margin for current platform
+function getDangerMargin(): number {
+  return isMobileView() ? MOBILE_DANGER_MARGIN : DESKTOP_DANGER_MARGIN;
+}
+```
+
+#### 3. Functions Refactored
+
+**`getMapPadding()`:**
+
+- Now returns MapLibre's `PaddingOptions` type (proper type safety)
+- Uses helper functions to eliminate duplication
+- Cleaner separation of mobile/desktop logic
+
+**`isPointVisibleWithPadding()`:**
+
+- Uses `getDangerMargin()` helper
+- Handles undefined padding properties with nullish coalescing
+
+**`smartFlyToHut()`:**
+
+- Extracted desktop-specific logic into `flyToDesktopMinimal()`
+- Simplified conditional logic
+- All magic numbers replaced with constants
+
+**`flyToDesktopMinimal()` (new):**
+
+- Extracted from `smartFlyToHut()` for better separation of concerns
+- Handles desktop minimal movement positioning
+- Properly handles optional padding properties
+
+#### 4. Type Safety Improvements
+
+- Used MapLibre's official `PaddingOptions` type instead of inline object type
+- Added nullish coalescing operators (`??`) for optional padding properties
+- Fixed TypeScript/ESLint errors (changed `any[]` to `unknown[]` in debugLog)
+- All code passes strict TypeScript compilation
+
+#### 5. Benefits
+
+✅ **Maintainability:** All configuration values in one place, easy to adjust
+✅ **Readability:** Helper functions make code intent clearer
+✅ **Performance:** No degradation, debug logging is toggleable
+✅ **Type Safety:** Better TypeScript types using MapLibre's official types
+✅ **DRY Principle:** Eliminated code duplication across functions
+✅ **Consistency:** All similar operations use the same helper functions
 
 ---
 
@@ -212,23 +301,43 @@ Intelligently positions hut away from edges.
 
 ### Adjustable Parameters
 
-**In `isPointVisibleWithPadding()` and `smartFlyToHut()`:**
+All parameters are now defined as constants at the top of `WdMapView.vue` (lines 42-64):
+
+**Danger Margins:**
 
 ```typescript
-const isMobile = !$q.screen.gt.sm;
-const dangerMargin = isMobile ? 100 : 150; // Distance from edge to trigger movement
+const MOBILE_DANGER_MARGIN = 100; // Distance from edge to trigger movement on mobile
+const DESKTOP_DANGER_MARGIN = 150; // Distance from edge to trigger movement on desktop
 ```
 
-**In `getMapPadding()` mobile section:**
+**Drawer Settings:**
 
 ```typescript
-const defaultHeight = process.env.CLIENT ? window.innerHeight * 0.5 : 400; // Initial mobile drawer estimate
+const MOBILE_DRAWER_MARGIN = 100; // Extra margin above mobile drawer
+const MOBILE_DRAWER_DEFAULT_RATIO = 0.5; // Initial mobile drawer estimate (50% of screen)
+const MOBILE_DRAWER_TRACK_THRESHOLD = 100; // Min height to track mobile drawer
+const DESKTOP_DRAWER_WIDTH_LARGE = 460; // Drawer width on large screens
+const DESKTOP_DRAWER_WIDTH_MEDIUM = 380; // Drawer width on medium screens
 ```
 
-**In `smartFlyToHut()`:**
+**Animation:**
 
 ```typescript
-duration: 667,  // Animation speed (lower = faster)
+const FLY_DURATION = 667; // Animation speed in ms (lower = faster)
+```
+
+**Zoom Levels:**
+
+```typescript
+const MIN_HUT_CLICK_ZOOM = 8; // Minimum zoom to enable hut clicks
+const MIN_FLY_ZOOM = 9; // Minimum zoom before auto-zooming to hut
+const INITIAL_ZOOM = 12; // Target zoom when flying to hut
+```
+
+**Debug:**
+
+```typescript
+const DEBUG_MAP_POSITIONING = false; // Set to true to enable debug logging
 ```
 
 ---
@@ -304,4 +413,4 @@ duration: 667,  // Animation speed (lower = faster)
 
 **Status:** ✅ Fully Working - All platforms and edge cases handled
 
-**Last Updated:** 2026-02-02 23:45
+**Last Updated:** 2026-02-02 23:50
