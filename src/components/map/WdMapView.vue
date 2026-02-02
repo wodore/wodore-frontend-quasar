@@ -16,6 +16,7 @@ import {
   LngLatLike,
   MapGeoJSONFeature,
   MapLayerEventType,
+  Point,
   //GeoJSONSourceSpecification,
 } from 'maplibre-gl';
 // https://indoorequal.github.io/vue-maplibre-gl/
@@ -189,13 +190,13 @@ const minHutClickZoom = 8;
  * Returns padding object with safe zone distances from edges
  */
 function getMapPadding(): { top: number; bottom: number; left: number; right: number } {
-  const isMobile = $q.platform.is.mobile;
+  const isMobile = !$q.screen.gt.sm; // Same detection as hut dialog
 
   if (isMobile) {
     return {
-      top: 50, // Use layout offset values
-      bottom: parseInt(bottom.value) || 31, // Menu at bottom
-      left: 0,
+      top: parseInt(top.value) || 50,
+      bottom: parseInt(bottom.value) || 31, // Dialog height at bottom
+      left: parseInt(left.value) || 0,
       right: parseInt(right.value) || 0,
     };
   } else {
@@ -210,32 +211,34 @@ function getMapPadding(): { top: number; bottom: number; left: number; right: nu
 
 /**
  * Check if a point is visible in the map viewport with padding
+ * Checks all 4 edges for danger zones
  * @param map - MapLibre GL map instance
  * @param lngLat - Longitude and latitude to check
- * @returns true if point is visible, false otherwise
+ * @returns true if point is in safe zone (not in any danger zone)
  */
 function isPointVisibleWithPadding(map: Map, lngLat: LngLatLike): boolean {
   const point = map.project(lngLat);
   const bounds = map.getCanvas().getBoundingClientRect();
   const padding = getMapPadding();
 
-  // Add comfortable margin (50px on each side within the safe zone)
-  const margin = 50;
+  // Danger zone: 200px from any edge
+  const dangerMargin = 200;
 
-  // Check if point is outside padded area with margin
+  // Check if point is in safe zone (not too close to any edge)
   return (
-    point.x >= padding.left + margin &&
-    point.x <= bounds.width - padding.right - margin &&
-    point.y >= padding.top + margin &&
-    point.y <= bounds.height - padding.bottom - margin
+    point.x >= padding.left + dangerMargin && // Not too close to left
+    point.x <= bounds.width - padding.right - dangerMargin && // Not too close to right
+    point.y >= padding.top + dangerMargin && // Not too close to top
+    point.y <= bounds.height - padding.bottom - dangerMargin // Not too close to bottom
   );
 }
 
 /**
- * Smart fly to hut location using MapLibre's padding system
- * - Uses padding to keep hut visible while avoiding UI overlays
- * - Only flies if hut is not visible or zoom is too low
- * - Considers menu overlap for mobile/desktop
+ * Smart fly to hut location
+ * - Only moves as much as necessary to get hut into safe zone plus margin
+ * - On initial load: centers hut in safe area using padding
+ * - On click: moves hut just inside safe zone (minimal movement)
+ * - Only zooms if zoomed out very far (< 9)
  *
  * @param map - MapLibre GL map instance
  * @param lngLat - Target longitude and latitude
@@ -253,23 +256,98 @@ function smartFlyToHut(map: Map, lngLat: LngLatLike, isInitialLoad: boolean = fa
   const targetZoom = currentZoom < minZoom ? 12 : currentZoom;
   const needsZoom = currentZoom < minZoom;
 
-  // On initial load, always fly to hut
-  // For interactions, only fly if not visible or needs zoom
-  if (isInitialLoad || !isVisible || needsZoom) {
-    console.debug(
-      `[smartFlyToHut] Flying to hut (initial: ${isInitialLoad}, visible: ${isVisible}, needsZoom: ${needsZoom})`
-    );
+  // On initial load, center in safe area using padding
+  if (isInitialLoad) {
+    console.debug(`[smartFlyToHut] Initial load, centering in safe area`);
     console.debug(`[smartFlyToHut] Using padding:`, padding);
 
     map.flyTo({
-      center: lngLat, // Fly to the hut's actual position
-      padding: padding, // Let MapLibre handle the safe positioning
+      center: lngLat,
+      padding: padding, // Center in safe area
       zoom: targetZoom,
       duration: 1000,
       essential: true,
     });
+    return;
+  }
+
+  // For user clicks: only move if not visible or needs zoom
+  if (!isVisible || needsZoom) {
+    const bounds = map.getCanvas().getBoundingClientRect();
+    const point = map.project(lngLat);
+
+    // Danger zone: 200px from any edge
+    const dangerMargin = 200;
+
+    // Calculate target position (check all 4 edges)
+    let targetX = point.x;
+    let targetY = point.y;
+    let needsMove = false;
+
+    // Check top edge
+    if (point.y < padding.top + dangerMargin) {
+      targetY = padding.top + dangerMargin;
+      needsMove = true;
+      console.debug(
+        `[smartFlyToHut] Top danger zone: moving hut from y=${point.y} to y=${targetY}`
+      );
+    }
+
+    // Check right edge
+    if (point.x > bounds.width - padding.right - dangerMargin) {
+      targetX = bounds.width - padding.right - dangerMargin;
+      needsMove = true;
+      console.debug(
+        `[smartFlyToHut] Right danger zone: moving hut from x=${point.x} to x=${targetX}`
+      );
+    }
+
+    // Check bottom edge
+    if (point.y > bounds.height - padding.bottom - dangerMargin) {
+      targetY = bounds.height - padding.bottom - dangerMargin;
+      needsMove = true;
+      console.debug(
+        `[smartFlyToHut] Bottom danger zone: moving hut from y=${point.y} to y=${targetY}`
+      );
+    }
+
+    // Check left edge
+    if (point.x < padding.left + dangerMargin) {
+      targetX = padding.left + dangerMargin;
+      needsMove = true;
+      console.debug(
+        `[smartFlyToHut] Left danger zone: moving hut from x=${point.x} to x=${targetX}`
+      );
+    }
+
+    if (needsMove || needsZoom) {
+      // Calculate offset from current position to target position
+      const offsetX = point.x - targetX;
+      const offsetY = point.y - targetY;
+
+      // Get current map center and apply offset
+      const currentCenter = map.getCenter();
+      const currentCenterPoint = map.project(currentCenter);
+      const newCenterPoint = new Point(
+        currentCenterPoint.x + offsetX,
+        currentCenterPoint.y + offsetY
+      );
+      const targetCenter = map.unproject(newCenterPoint);
+
+      console.debug(
+        `[smartFlyToHut] Moving hut from (${point.x}, ${point.y}) to (${targetX}, ${targetY})`
+      );
+      console.debug(`[smartFlyToHut] Offset: (${offsetX}, ${offsetY}), needsZoom: ${needsZoom}`);
+
+      map.flyTo({
+        center: targetCenter,
+        zoom: targetZoom,
+        duration: 1000,
+        essential: true,
+      });
+    }
   } else {
-    console.debug(`[smartFlyToHut] No movement needed (hut is visible with padding)`);
+    console.debug(`[smartFlyToHut] No movement needed (hut is in safe zone)`);
   }
 }
 
