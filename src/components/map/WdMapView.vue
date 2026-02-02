@@ -11,7 +11,7 @@ import { useQuasar } from 'quasar';
 import { useBasemapStore } from '@stores/map/basemap-store';
 //import { useHutsStore } from '@stores/huts-store';
 //import { Todo, Meta } from './models';
-import type { Map } from 'maplibre-gl';
+import type { Map, PaddingOptions } from 'maplibre-gl';
 import {
   LngLatLike,
   MapGeoJSONFeature,
@@ -37,6 +37,85 @@ import {
 
 import mapDraw from '@services/draw';
 import { clientWodore } from '@clients/index';
+
+// ============================================================================
+// Constants
+// ============================================================================
+
+const MOBILE_DANGER_MARGIN = 100;
+const DESKTOP_DANGER_MARGIN = 150;
+const MOBILE_DRAWER_MARGIN = 100;
+const MIN_HUT_CLICK_ZOOM = 8;
+const MIN_FLY_ZOOM = 9;
+const FLY_DURATION = 600; // ms
+const INITIAL_ZOOM = 12;
+const MOBILE_DRAWER_DEFAULT_RATIO = 0.5; // 50% of screen height
+const MOBILE_DRAWER_TRACK_THRESHOLD = 100;
+
+// Desktop drawer widths (matches WdMapContent.vue:103)
+const DESKTOP_DRAWER_WIDTH_LARGE = 460;
+const DESKTOP_DRAWER_WIDTH_MEDIUM = 380;
+
+// Map layer IDs
+const HUT_LAYER_ID = 'wd-huts';
+const HUT_SOURCE_ID = 'wd-huts';
+const HUT_SOURCE_LAYER = 'huts';
+
+// Debug flag
+const DEBUG_MAP_POSITIONING = false;
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Helper: Platform detection
+ * @returns true if on mobile platform (screen width <= small)
+ */
+function isMobileView(): boolean {
+  return !$q.screen.gt.sm;
+}
+
+/**
+ * Helper: Get expected desktop drawer width based on screen size
+ * Matches logic from WdMapContent.vue:103
+ * @returns 460px for large screens, 380px for medium
+ */
+function getExpectedDesktopDrawerWidth(): number {
+  return $q.screen.gt.md ? DESKTOP_DRAWER_WIDTH_LARGE : DESKTOP_DRAWER_WIDTH_MEDIUM;
+}
+
+/**
+ * Helper: Get expected mobile drawer height
+ * Uses last remembered height, or defaults to 50% of window height
+ * @returns Expected drawer height in pixels
+ */
+function getExpectedMobileDrawerHeight(): number {
+  const defaultHeight = process.env.CLIENT ? window.innerHeight * MOBILE_DRAWER_DEFAULT_RATIO : 400;
+  return lastMobileDrawerHeight.value || defaultHeight;
+}
+
+/**
+ * Helper: Debug logging wrapper
+ * Only logs if DEBUG_MAP_POSITIONING is enabled
+ */
+function debugLog(message: string, ...args: unknown[]) {
+  if (DEBUG_MAP_POSITIONING) {
+    console.debug(message, ...args);
+  }
+}
+
+/**
+ * Helper: Get danger margin for current platform
+ * @returns 100px for mobile, 150px for desktop
+ */
+function getDangerMargin(): number {
+  return isMobileView() ? MOBILE_DANGER_MARGIN : DESKTOP_DANGER_MARGIN;
+}
+
+// ============================================================================
+// Setup
+// ============================================================================
 
 // import MglStyleSwitchControl from './styleSwitch.control';
 const $q = useQuasar();
@@ -82,9 +161,9 @@ if ($layout === undefined) {
     }
     left.value = `${$layout.left.offset}px`;
 
-    // Track mobile drawer height when it's open (> 100px)
+    // Track mobile drawer height when it's open (> threshold)
     const currentBottom = parseInt(bottom.value) || 0;
-    if (!$q.screen.gt.sm && currentBottom > 100) {
+    if (isMobileView() && currentBottom > MOBILE_DRAWER_TRACK_THRESHOLD) {
       lastMobileDrawerHeight.value = currentBottom;
     }
 
@@ -115,9 +194,9 @@ function onMapLoad(e: MglEvent<'load'>) {
 
   e.map.scrollZoom.setWheelZoomRate(0.003);
   onMapStyledata(e as unknown as MglEvent<'styledata'>);
-  e.map.on('mouseenter', 'wd-huts', onLayerEnter);
-  e.map.on('mouseleave', 'wd-huts', onLayerLeave);
-  e.map.on('click', 'wd-huts', onHutLayerClick);
+  e.map.on('mouseenter', HUT_LAYER_ID, onLayerEnter);
+  e.map.on('mouseleave', HUT_LAYER_ID, onLayerLeave);
+  e.map.on('click', HUT_LAYER_ID, onHutLayerClick);
 
   console.debug('Map controls added.', route.query.draw);
   if ('draw' in route.query) {
@@ -135,7 +214,7 @@ const selectedHutFeature = ref<undefined | MapGeoJSONFeature>(undefined);
 
 function onHutLayerClick(e: MapLayerEventType['click']) {
   console.debug('Hut layer clicked.');
-  if (e.target.getZoom() > minHutClickZoom) {
+  if (e.target.getZoom() > MIN_HUT_CLICK_ZOOM) {
     let feature = e.features?.[0];
     console.debug(
       '  Selected huts:',
@@ -148,7 +227,7 @@ function onHutLayerClick(e: MapLayerEventType['click']) {
       if (selectedHutFeature.value?.id == feature.id) {
         // Deselect
         e.target.setFeatureState(
-          { source: 'wd-huts', sourceLayer: 'huts', id: feature.id },
+          { source: HUT_SOURCE_ID, sourceLayer: HUT_SOURCE_LAYER, id: feature.id },
           { selected: false }
         );
         selectedHutFeature.value = undefined;
@@ -161,14 +240,14 @@ function onHutLayerClick(e: MapLayerEventType['click']) {
       // Deselect previous hut
       if (selectedHutFeature.value !== undefined) {
         e.target.setFeatureState(
-          { source: 'wd-huts', sourceLayer: 'huts', id: selectedHutFeature.value.id },
+          { source: HUT_SOURCE_ID, sourceLayer: HUT_SOURCE_LAYER, id: selectedHutFeature.value.id },
           { selected: false }
         );
       }
 
       // Select new hut
       e.target.setFeatureState(
-        { source: 'wd-huts', sourceLayer: 'huts', id: feature.id },
+        { source: HUT_SOURCE_ID, sourceLayer: HUT_SOURCE_LAYER, id: feature.id },
         { selected: true }
       );
       selectedHutFeature.value = <MapGeoJSONFeature>(feature as unknown);
@@ -194,63 +273,53 @@ function onHutLayerClick(e: MapLayerEventType['click']) {
   }
 }
 
-const minHutClickZoom = 8;
-
 /**
  * Get platform-specific padding for map viewport
  * Returns padding object with safe zone distances from edges
- * @param assumeDrawerOpen - For desktop, assume right drawer will be open (380px)
+ * @param assumeDrawerOpen - Predict drawer will be open (for user clicks)
  */
-function getMapPadding(assumeDrawerOpen: boolean = false): {
-  top: number;
-  bottom: number;
-  left: number;
-  right: number;
-} {
-  const isMobile = !$q.screen.gt.sm; // Same detection as hut dialog
+function getMapPadding(assumeDrawerOpen: boolean = false): PaddingOptions {
+  const currentTop = parseInt(top.value) || 50;
+  const currentLeft = parseInt(left.value) || 0;
 
-  if (isMobile) {
+  if (isMobileView()) {
     // Mobile: drawer at bottom with dynamic height
-    // Use last known drawer height, or default to 50% of window height
     const currentBottom = parseInt(bottom.value) || 0;
-    const defaultHeight = process.env.CLIENT ? window.innerHeight * 0.5 : 400;
     const expectedDrawerHeight = assumeDrawerOpen
-      ? Math.max(currentBottom, lastMobileDrawerHeight.value || defaultHeight)
+      ? Math.max(currentBottom, getExpectedMobileDrawerHeight())
       : currentBottom;
 
-    // Add 100px margin above drawer so hut doesn't sit directly on it
-    const bottomPadding = expectedDrawerHeight > 0 ? expectedDrawerHeight + 100 : 0;
+    // Add margin above drawer so hut doesn't sit directly on it
+    const bottomPadding =
+      expectedDrawerHeight > 0 ? expectedDrawerHeight + MOBILE_DRAWER_MARGIN : 0;
 
-    console.debug(
+    debugLog(
       `[getMapPadding] Mobile - assumeDrawerOpen: ${assumeDrawerOpen}, currentBottom: ${currentBottom}, lastHeight: ${lastMobileDrawerHeight.value}, expectedDrawerHeight: ${expectedDrawerHeight}, bottomPadding: ${bottomPadding}`
     );
 
     return {
-      top: parseInt(top.value) || 50,
-      bottom: bottomPadding, // Drawer height + 100px margin
-      left: parseInt(left.value) || 0,
+      top: currentTop,
+      bottom: bottomPadding,
+      left: currentLeft,
       right: parseInt(right.value) || 0,
     };
   } else {
-    // Desktop: when selecting a hut, drawer will be open
-    // Drawer width depends on screen size (same logic as WdMapContent.vue:103)
-    // - 460px when screen > medium ($q.screen.gt.md)
-    // - 380px otherwise
+    // Desktop: drawer opens on right side
     const currentRight = parseInt(right.value) || 0;
-    const expectedDrawerWidth = $q.screen.gt.md ? 460 : 380;
+    const expectedDrawerWidth = getExpectedDesktopDrawerWidth();
     const rightPadding = assumeDrawerOpen
       ? Math.max(currentRight, expectedDrawerWidth)
       : currentRight;
 
-    console.debug(
+    debugLog(
       `[getMapPadding] Desktop - assumeDrawerOpen: ${assumeDrawerOpen}, currentRight: ${currentRight}, expectedDrawerWidth: ${expectedDrawerWidth}, using: ${rightPadding}`
     );
 
     return {
-      top: parseInt(top.value) || 50,
+      top: currentTop,
       bottom: parseInt(bottom.value) || 31,
-      left: parseInt(left.value) || 0,
-      right: rightPadding, // Use expected drawer width or current value
+      left: currentLeft,
+      right: rightPadding,
     };
   }
 }
@@ -260,7 +329,7 @@ function getMapPadding(assumeDrawerOpen: boolean = false): {
  * Checks all 4 edges for danger zones
  * @param map - MapLibre GL map instance
  * @param lngLat - Longitude and latitude to check
- * @param assumeDrawerOpen - If true, check against expected drawer width (for clicks)
+ * @param assumeDrawerOpen - If true, check against expected drawer size (for clicks)
  * @returns true if point is in safe zone (not in any danger zone)
  */
 function isPointVisibleWithPadding(
@@ -271,17 +340,14 @@ function isPointVisibleWithPadding(
   const point = map.project(lngLat);
   const bounds = map.getCanvas().getBoundingClientRect();
   const padding = getMapPadding(assumeDrawerOpen);
-
-  // Danger zone: 150px for desktop, 100px for mobile
-  const isMobile = !$q.screen.gt.sm;
-  const dangerMargin = isMobile ? 100 : 150;
+  const dangerMargin = getDangerMargin();
 
   // Check if point is in safe zone (not too close to any edge)
   return (
-    point.x >= padding.left + dangerMargin && // Not too close to left
-    point.x <= bounds.width - padding.right - dangerMargin && // Not too close to right
-    point.y >= padding.top + dangerMargin && // Not too close to top
-    point.y <= bounds.height - padding.bottom - dangerMargin // Not too close to bottom
+    point.x >= (padding.left ?? 0) + dangerMargin && // Not too close to left
+    point.x <= bounds.width - (padding.right ?? 0) - dangerMargin && // Not too close to right
+    point.y >= (padding.top ?? 0) + dangerMargin && // Not too close to top
+    point.y <= bounds.height - (padding.bottom ?? 0) - dangerMargin // Not too close to bottom
   );
 }
 
@@ -290,7 +356,7 @@ function isPointVisibleWithPadding(
  * - Only moves as much as necessary to get hut into safe zone plus margin
  * - On initial load: centers hut in safe area using padding
  * - On click: moves hut just inside safe zone (minimal movement)
- * - Only zooms if zoomed out very far (< 9)
+ * - Only zooms if zoomed out very far (< MIN_FLY_ZOOM)
  *
  * @param map - MapLibre GL map instance
  * @param lngLat - Target longitude and latitude
@@ -298,29 +364,22 @@ function isPointVisibleWithPadding(
  */
 function smartFlyToHut(map: Map, lngLat: LngLatLike, isInitialLoad: boolean = false): void {
   const currentZoom = map.getZoom();
-  const minZoom = 9; // Only zoom if below this
-
-  // For user clicks, assume drawer will be open (prevents double adjustment)
   const assumeDrawerOpen = !isInitialLoad;
   const padding = getMapPadding(assumeDrawerOpen);
-
-  // Check if hut is currently visible with padding (using expected drawer width)
   const isVisible = isPointVisibleWithPadding(map, lngLat, assumeDrawerOpen);
-
-  // Determine target zoom
-  const targetZoom = currentZoom < minZoom ? 12 : currentZoom;
-  const needsZoom = currentZoom < minZoom;
+  const targetZoom = currentZoom < MIN_FLY_ZOOM ? INITIAL_ZOOM : currentZoom;
+  const needsZoom = currentZoom < MIN_FLY_ZOOM;
 
   // On initial load, center in safe area using padding
   if (isInitialLoad) {
-    console.debug(`[smartFlyToHut] Initial load, centering in safe area`);
-    console.debug(`[smartFlyToHut] Using padding:`, padding);
+    debugLog(`[smartFlyToHut] Initial load, centering in safe area`);
+    debugLog(`[smartFlyToHut] Using padding:`, padding);
 
     map.flyTo({
       center: lngLat,
-      padding: padding, // Center in safe area
+      padding: padding,
       zoom: targetZoom,
-      duration: 667, // 1.5x speed (1000 / 1.5)
+      duration: FLY_DURATION,
       essential: true,
     });
     return;
@@ -328,99 +387,112 @@ function smartFlyToHut(map: Map, lngLat: LngLatLike, isInitialLoad: boolean = fa
 
   // For user clicks: only move if not visible or needs zoom
   if (!isVisible || needsZoom) {
-    const isMobile = !$q.screen.gt.sm;
-
-    if (isMobile) {
+    if (isMobileView()) {
       // Mobile: Use padding-based flyTo (centers hut in safe area)
       // This handles tall drawers correctly without conflict
-      console.debug(`[smartFlyToHut] Mobile: flying to hut with padding`, padding);
+      debugLog(`[smartFlyToHut] Mobile: flying to hut with padding`, padding);
 
       map.flyTo({
         center: lngLat,
         padding: padding,
         zoom: targetZoom,
-        duration: 667,
+        duration: FLY_DURATION,
         essential: true,
       });
       return;
     }
 
     // Desktop: Manual positioning (minimal movement to safe zone)
-    const bounds = map.getCanvas().getBoundingClientRect();
-    const point = map.project(lngLat);
-    const dangerMargin = 150;
-
-    // Calculate target position (check all 4 edges)
-    let targetX = point.x;
-    let targetY = point.y;
-    let needsMove = false;
-
-    // Check top edge
-    if (point.y < padding.top + dangerMargin) {
-      targetY = padding.top + dangerMargin;
-      needsMove = true;
-      console.debug(
-        `[smartFlyToHut] Top danger zone: moving hut from y=${point.y} to y=${targetY}`
-      );
-    }
-
-    // Check right edge
-    if (point.x > bounds.width - padding.right - dangerMargin) {
-      targetX = bounds.width - padding.right - dangerMargin;
-      needsMove = true;
-      console.debug(
-        `[smartFlyToHut] Right danger zone: moving hut from x=${point.x} to x=${targetX}`
-      );
-    }
-
-    // Check bottom edge
-    if (point.y > bounds.height - padding.bottom - dangerMargin) {
-      targetY = bounds.height - padding.bottom - dangerMargin;
-      needsMove = true;
-      console.debug(
-        `[smartFlyToHut] Bottom danger zone: moving hut from y=${point.y} to y=${targetY}`
-      );
-    }
-
-    // Check left edge
-    if (point.x < padding.left + dangerMargin) {
-      targetX = padding.left + dangerMargin;
-      needsMove = true;
-      console.debug(
-        `[smartFlyToHut] Left danger zone: moving hut from x=${point.x} to x=${targetX}`
-      );
-    }
-
-    if (needsMove || needsZoom) {
-      // Calculate offset from current position to target position
-      const offsetX = point.x - targetX;
-      const offsetY = point.y - targetY;
-
-      // Get current map center and apply offset
-      const currentCenter = map.getCenter();
-      const currentCenterPoint = map.project(currentCenter);
-      const newCenterPoint = new Point(
-        currentCenterPoint.x + offsetX,
-        currentCenterPoint.y + offsetY
-      );
-      const targetCenter = map.unproject(newCenterPoint);
-
-      console.debug(
-        `[smartFlyToHut] Desktop: Moving hut from (${point.x}, ${point.y}) to (${targetX}, ${targetY})`
-      );
-      console.debug(
-        `[smartFlyToHut] Desktop: Offset: (${offsetX}, ${offsetY}), needsZoom: ${needsZoom}`
-      );
-
-      map.flyTo({
-        center: targetCenter,
-        zoom: targetZoom,
-        duration: 667, // 1.5x speed (1000 / 1.5)
-        essential: true,
-      });
-    }
+    flyToDesktopMinimal(map, lngLat, padding, targetZoom, needsZoom);
   } else {
-    console.debug(`[smartFlyToHut] No movement needed (hut is in safe zone)`);
+    debugLog(`[smartFlyToHut] No movement needed (hut is in safe zone)`);
+  }
+}
+
+/**
+ * Desktop-specific flyTo with minimal movement
+ * Moves hut just inside safe zone with 150px margin from edges
+ * @param map - MapLibre GL map instance
+ * @param lngLat - Target longitude and latitude
+ * @param padding - Current map padding
+ * @param targetZoom - Target zoom level
+ * @param needsZoom - Whether zoom adjustment is needed
+ */
+function flyToDesktopMinimal(
+  map: Map,
+  lngLat: LngLatLike,
+  padding: PaddingOptions,
+  targetZoom: number,
+  needsZoom: boolean
+): void {
+  const bounds = map.getCanvas().getBoundingClientRect();
+  const point = map.project(lngLat);
+  const dangerMargin = DESKTOP_DANGER_MARGIN;
+
+  // Get padding values with defaults
+  const paddingTop = padding.top ?? 0;
+  const paddingRight = padding.right ?? 0;
+  const paddingBottom = padding.bottom ?? 0;
+  const paddingLeft = padding.left ?? 0;
+
+  // Calculate target position (check all 4 edges)
+  let targetX = point.x;
+  let targetY = point.y;
+  let needsMove = false;
+
+  // Check top edge
+  if (point.y < paddingTop + dangerMargin) {
+    targetY = paddingTop + dangerMargin;
+    needsMove = true;
+    debugLog(`[smartFlyToHut] Top danger zone: moving hut from y=${point.y} to y=${targetY}`);
+  }
+
+  // Check right edge
+  if (point.x > bounds.width - paddingRight - dangerMargin) {
+    targetX = bounds.width - paddingRight - dangerMargin;
+    needsMove = true;
+    debugLog(`[smartFlyToHut] Right danger zone: moving hut from x=${point.x} to x=${targetX}`);
+  }
+
+  // Check bottom edge
+  if (point.y > bounds.height - paddingBottom - dangerMargin) {
+    targetY = bounds.height - paddingBottom - dangerMargin;
+    needsMove = true;
+    debugLog(`[smartFlyToHut] Bottom danger zone: moving hut from y=${point.y} to y=${targetY}`);
+  }
+
+  // Check left edge
+  if (point.x < paddingLeft + dangerMargin) {
+    targetX = paddingLeft + dangerMargin;
+    needsMove = true;
+    debugLog(`[smartFlyToHut] Left danger zone: moving hut from x=${point.x} to x=${targetX}`);
+  }
+
+  if (needsMove || needsZoom) {
+    // Calculate offset from current position to target position
+    const offsetX = point.x - targetX;
+    const offsetY = point.y - targetY;
+
+    // Get current map center and apply offset
+    const currentCenter = map.getCenter();
+    const currentCenterPoint = map.project(currentCenter);
+    const newCenterPoint = new Point(
+      currentCenterPoint.x + offsetX,
+      currentCenterPoint.y + offsetY
+    );
+    const targetCenter = map.unproject(newCenterPoint);
+
+    debugLog(
+      `[smartFlyToHut] Desktop: Moving hut from (${point.x}, ${point.y}) to (${targetX}, ${targetY})`
+    );
+    debugLog(`[smartFlyToHut] Desktop: Offset: (${offsetX}, ${offsetY}), needsZoom: ${needsZoom}`);
+
+    map.flyTo({
+      center: targetCenter,
+      zoom: targetZoom,
+      duration: FLY_DURATION,
+      essential: true,
+    });
   }
 }
 
@@ -437,7 +509,7 @@ async function selectHutBySlug(slug: string, isInitialLoad: boolean = false): Pr
   // Deselect previous hut
   if (selectedHutFeature.value) {
     mapRef.map.setFeatureState(
-      { source: 'wd-huts', sourceLayer: 'huts', id: selectedHutFeature.value.id },
+      { source: HUT_SOURCE_ID, sourceLayer: HUT_SOURCE_LAYER, id: selectedHutFeature.value.id },
       { selected: false }
     );
   }
@@ -459,7 +531,7 @@ async function selectHutBySlug(slug: string, isInitialLoad: boolean = false): Pr
 
         // Set reactive map center and zoom (for initial map render)
         mapCenter.value = lngLat;
-        mapZoom.value = 12; // Good zoom level to see hut and surrounding area
+        mapZoom.value = INITIAL_ZOOM;
 
         console.debug(`[selectHutBySlug] Set map center/zoom to`, lngLat, mapZoom.value);
 
@@ -467,15 +539,15 @@ async function selectHutBySlug(slug: string, isInitialLoad: boolean = false): Pr
         if (mapRef.map) {
           mapRef.map.jumpTo({
             center: lngLat,
-            zoom: 12,
+            zoom: INITIAL_ZOOM,
           });
           console.debug(`[selectHutBySlug] Jumped to map position`);
         }
 
         // Wait for source data to be loaded, then select the hut
         const checkInterval = setInterval(() => {
-          const features = mapRef.map?.querySourceFeatures('wd-huts', {
-            sourceLayer: 'huts',
+          const features = mapRef.map?.querySourceFeatures(HUT_SOURCE_ID, {
+            sourceLayer: HUT_SOURCE_LAYER,
             filter: ['==', ['get', 'slug'], slug],
           });
 
@@ -484,7 +556,7 @@ async function selectHutBySlug(slug: string, isInitialLoad: boolean = false): Pr
             const feature = features[0];
 
             mapRef.map?.setFeatureState(
-              { source: 'wd-huts', sourceLayer: 'huts', id: feature.id },
+              { source: HUT_SOURCE_ID, sourceLayer: HUT_SOURCE_LAYER, id: feature.id },
               { selected: true }
             );
             selectedHutFeature.value = feature as MapGeoJSONFeature;
@@ -502,8 +574,8 @@ async function selectHutBySlug(slug: string, isInitialLoad: boolean = false): Pr
   }
 
   // Try to find hut in map features (vector tiles)
-  const features = mapRef.map.querySourceFeatures('wd-huts', {
-    sourceLayer: 'huts',
+  const features = mapRef.map.querySourceFeatures(HUT_SOURCE_ID, {
+    sourceLayer: HUT_SOURCE_LAYER,
     filter: ['==', ['get', 'slug'], slug],
   });
 
@@ -513,7 +585,7 @@ async function selectHutBySlug(slug: string, isInitialLoad: boolean = false): Pr
 
     // Select the hut
     mapRef.map.setFeatureState(
-      { source: 'wd-huts', sourceLayer: 'huts', id: feature.id },
+      { source: HUT_SOURCE_ID, sourceLayer: HUT_SOURCE_LAYER, id: feature.id },
       { selected: true }
     );
     selectedHutFeature.value = feature as MapGeoJSONFeature;
@@ -545,15 +617,15 @@ async function selectHutBySlug(slug: string, isInitialLoad: boolean = false): Pr
         // Wait for tiles to load, then select the feature
         // We'll retry after a short delay
         setTimeout(async () => {
-          const retryFeatures = mapRef.map?.querySourceFeatures('wd-huts', {
-            sourceLayer: 'huts',
+          const retryFeatures = mapRef.map?.querySourceFeatures(HUT_SOURCE_ID, {
+            sourceLayer: HUT_SOURCE_LAYER,
             filter: ['==', ['get', 'slug'], slug],
           });
 
           if (retryFeatures && retryFeatures.length > 0) {
             const feature = retryFeatures[0];
             mapRef.map?.setFeatureState(
-              { source: 'wd-huts', sourceLayer: 'huts', id: feature.id },
+              { source: HUT_SOURCE_ID, sourceLayer: HUT_SOURCE_LAYER, id: feature.id },
               { selected: true }
             );
             selectedHutFeature.value = feature as MapGeoJSONFeature;
@@ -600,7 +672,7 @@ watch(
             } else {
               // Map not loaded yet, set reactive values
               mapCenter.value = lngLat;
-              mapZoom.value = 12;
+              mapZoom.value = INITIAL_ZOOM;
               console.debug(`[route watch] Map not loaded, set center/zoom to`, lngLat);
             }
 
@@ -611,8 +683,8 @@ watch(
             const checkInterval = setInterval(() => {
               attempts++;
 
-              const features = mapRef.map?.querySourceFeatures('wd-huts', {
-                sourceLayer: 'huts',
+              const features = mapRef.map?.querySourceFeatures(HUT_SOURCE_ID, {
+                sourceLayer: HUT_SOURCE_LAYER,
                 filter: ['==', ['get', 'slug'], newSlug],
               });
 
@@ -623,14 +695,18 @@ watch(
                 // Deselect previous hut
                 if (selectedHutFeature.value) {
                   mapRef.map?.setFeatureState(
-                    { source: 'wd-huts', sourceLayer: 'huts', id: selectedHutFeature.value.id },
+                    {
+                      source: HUT_SOURCE_ID,
+                      sourceLayer: HUT_SOURCE_LAYER,
+                      id: selectedHutFeature.value.id,
+                    },
                     { selected: false }
                   );
                 }
 
                 // Select new hut
                 mapRef.map?.setFeatureState(
-                  { source: 'wd-huts', sourceLayer: 'huts', id: feature.id },
+                  { source: HUT_SOURCE_ID, sourceLayer: HUT_SOURCE_LAYER, id: feature.id },
                   { selected: true }
                 );
                 selectedHutFeature.value = feature as MapGeoJSONFeature;
@@ -656,7 +732,7 @@ watch(
       // Slug was removed, deselect hut
       if (mapRef.map) {
         mapRef.map.setFeatureState(
-          { source: 'wd-huts', sourceLayer: 'huts', id: selectedHutFeature.value.id },
+          { source: HUT_SOURCE_ID, sourceLayer: HUT_SOURCE_LAYER, id: selectedHutFeature.value.id },
           { selected: false }
         );
       }
@@ -668,14 +744,14 @@ watch(
 
 // Change the cursor to a pointer
 function onLayerEnter(e: MapLayerEventType['mouseenter']) {
-  if (e.target.getZoom() > minHutClickZoom) {
+  if (e.target.getZoom() > MIN_HUT_CLICK_ZOOM) {
     e.target.getCanvas().style.cursor = 'pointer';
   }
 }
 
 // Change it back to a pointer when it leaves.
 function onLayerLeave(e: MapLayerEventType['mouseleave']) {
-  if (e.target.getZoom() > minHutClickZoom) {
+  if (e.target.getZoom() > MIN_HUT_CLICK_ZOOM) {
     e.target.getCanvas().style.cursor = '';
   }
 }
