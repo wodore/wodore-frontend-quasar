@@ -78,16 +78,19 @@
   "error": {
     "code": "Error Code",
     "close": "Close",
-    "webgl": {
+    "WEBGL_NOT_SUPPORTED": {
       "title": "Map Loading Error",
-      "code": "WEBGL_NOT_SUPPORTED",
       "description": "Unable to initialize map due to graphics limitations. Please try using a different device or browser with WebGL support.",
       "hint": "This happens when your device or browser doesn't support WebGL."
     },
-    "generic": {
+    "UNKNOWN_ERROR": {
       "title": "Error",
-      "code": "UNKNOWN_ERROR",
       "description": "An unexpected error occurred. Please try again."
+    },
+    "MAP_ERROR": {
+      "title": "Map Error",
+      "description": "An error occurred while loading the map.",
+      "hint": "Please try refreshing the page."
     }
   },
   "pwa": {

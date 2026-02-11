@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useDialogPluginComponent } from 'quasar';
+import { ErrorCode } from './showErrorDialog';
 
 defineEmits(useDialogPluginComponent.emitsObject);
 
@@ -9,7 +10,7 @@ const { dialogRef, onDialogHide, onDialogOK } = useDialogPluginComponent();
 const { t } = useI18n();
 
 interface Props {
-  errorCode: string;
+  errorCode: ErrorCode;
   persistent?: boolean;
 }
 
@@ -21,15 +22,7 @@ const title = computed(() => {
   try {
     return t(`error.${props.errorCode}.title`);
   } catch {
-    return t('error.generic.title');
-  }
-});
-
-const code = computed(() => {
-  try {
-    return t(`error.${props.errorCode}.code`);
-  } catch {
-    return 'UNKNOWN_ERROR';
+    return t(`error.${ErrorCode.UNKNOWN_ERROR}.title`);
   }
 });
 
@@ -37,7 +30,7 @@ const description = computed(() => {
   try {
     return t(`error.${props.errorCode}.description`);
   } catch {
-    return t('error.generic.description');
+    return t(`error.${ErrorCode.UNKNOWN_ERROR}.description`);
   }
 });
 
@@ -69,7 +62,7 @@ const hint = computed(() => {
         <div class="text-caption text-grey-7 q-mb-sm">
           {{ $t('error.code') }}:
           <b
-            ><code>{{ code }}</code></b
+            ><code>{{ errorCode }}</code></b
           >
         </div>
         <p>{{ description }}</p>

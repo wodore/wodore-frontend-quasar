@@ -61,16 +61,19 @@
   "error": {
     "code": "Codice di errore",
     "close": "Chiudi",
-    "webgl": {
+    "WEBGL_NOT_SUPPORTED": {
       "title": "Errore di caricamento della mappa",
-      "code": "WEBGL_NOT_SUPPORTED",
       "description": "Impossibile inizializzare la mappa a causa di limitazioni grafiche. Prova a utilizzare un altro dispositivo o un browser con supporto WebGL.",
       "hint": "Ciò accade quando il dispositivo o il browser non supporta WebGL."
     },
-    "generic": {
+    "UNKNOWN_ERROR": {
       "title": "Errore",
-      "code": "UNKNOWN_ERROR",
       "description": "Si è verificato un errore imprevisto. Riprova."
+    },
+    "MAP_ERROR": {
+      "title": "Errore della mappa",
+      "description": "Si è verificato un errore durante il caricamento della mappa.",
+      "hint": "Prova ad aggiornare la pagina."
     }
   },
   "pwa": {

@@ -61,16 +61,19 @@
   "error": {
     "code": "Code d'erreur",
     "close": "Fermer",
-    "webgl": {
+    "WEBGL_NOT_SUPPORTED": {
       "title": "Erreur de chargement de la carte",
-      "code": "WEBGL_NOT_SUPPORTED",
       "description": "Impossible d'initialiser la carte en raison de limitations graphiques. Veuillez essayer un autre appareil ou un navigateur prenant en charge WebGL.",
       "hint": "Cela se produit lorsque votre appareil ou navigateur ne prend pas en charge WebGL."
     },
-    "generic": {
+    "UNKNOWN_ERROR": {
       "title": "Erreur",
-      "code": "UNKNOWN_ERROR",
       "description": "Une erreur inattendue s'est produite. Veuillez réessayer."
+    },
+    "MAP_ERROR": {
+      "title": "Erreur de carte",
+      "description": "Une erreur s'est produite lors du chargement de la carte.",
+      "hint": "Veuillez essayer de rafraîchir la page."
     }
   },
   "pwa": {

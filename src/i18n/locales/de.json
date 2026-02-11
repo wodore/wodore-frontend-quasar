@@ -86,16 +86,19 @@
   "error": {
     "code": "Fehlercode",
     "close": "Schliessen",
-    "webgl": {
+    "WEBGL_NOT_SUPPORTED": {
       "title": "Karte Ladefehler",
-      "code": "WEBGL_NOT_SUPPORTED",
       "description": "Die Karte konnte aufgrund von Grafikbeschränkungen nicht initialisiert werden. Bitte verwenden Sie ein anderes Gerät oder einen Browser mit WebGL-Unterstützung.",
       "hint": "Dies tritt auf, wenn Ihr Gerät oder Browser WebGL nicht unterstützt."
     },
-    "generic": {
+    "UNKNOWN_ERROR": {
       "title": "Fehler",
-      "code": "UNKNOWN_ERROR",
       "description": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut."
+    },
+    "MAP_ERROR": {
+      "title": "Kartenfehler",
+      "description": "Beim Laden der Karte ist ein Fehler aufgetreten.",
+      "hint": "Bitte versuchen Sie, die Seite neu zu laden."
     }
   },
   "pwa": {

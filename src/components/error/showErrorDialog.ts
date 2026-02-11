@@ -2,8 +2,18 @@ import { useQuasar } from 'quasar';
 import WdErrorDialog from './WdErrorDialog.vue';
 import track from '@services/analytics';
 
+/**
+ * Error codes used as translation keys in i18n/locales/*.json
+ * Each error code maps to: error.${ErrorCode}.title, error.${ErrorCode}.description, etc.
+ */
+export enum ErrorCode {
+  WEBGL_NOT_SUPPORTED = 'WEBGL_NOT_SUPPORTED',
+  UNKNOWN_ERROR = 'UNKNOWN_ERROR',
+  MAP_ERROR = 'MAP_ERROR',
+}
+
 export interface ErrorDialogOptions {
-  errorCode: string;
+  errorCode: ErrorCode;
   // Additional data to pass to the error dialog
   data?: Record<string, unknown>;
   // Whether the dialog should be persistent (cannot be closed by clicking outside or ESC)
@@ -41,7 +51,13 @@ export function showErrorDialog(options: ErrorDialogOptions) {
 }
 
 /**
- * Convenience function to show specific error types
+ * Show a persistent error dialog (cannot be closed by clicking outside or pressing ESC)
+ * Use this for critical errors that must be acknowledged
+ *
+ * @param errorCode - Error code to display
+ * @param data - Additional data to pass to the error dialog
+ * @returns Dialog reference
  */
-export const showWebGLError = () => showErrorDialog({ errorCode: 'webgl', persistent: true });
-export const showGenericError = () => showErrorDialog({ errorCode: 'generic' });
+export function showErrorDialogPersistent(errorCode: ErrorCode, data?: Record<string, unknown>) {
+  return showErrorDialog({ errorCode, data, persistent: true });
+}
