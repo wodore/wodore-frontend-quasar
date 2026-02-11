@@ -67,7 +67,15 @@
   "hut_type": "Hüttenart",
   "jan": "Jan",
   "location": "Lage",
-  "map": "Karte",
+  "map": {
+    "error": {
+      "title": "Karte Ladefehler",
+      "webgl_message": "Die Karte konnte aufgrund von Grafikbeschränkungen nicht initialisiert werden. Bitte verwenden Sie ein anderes Gerät oder einen Browser mit WebGL-Unterstützung.",
+      "webgl_hint": "Dies tritt auf, wenn Ihr Gerät oder Browser WebGL nicht unterstützt.",
+      "generic_message": "Beim Laden der Karte ist ein Fehler aufgetreten",
+      "reload": "Seite neu laden"
+    }
+  },
   "favorites": "Favoriten",
   "layers": "Layers",
   "maps": "Karten",
@@ -75,6 +83,21 @@
   "booking_service_unavailable": "Reservationsservice nicht verfügbar",
   "service_unavailable": "",
   "error_caption": "Fehler",
+  "error": {
+    "code": "Fehlercode",
+    "close": "Schliessen",
+    "webgl": {
+      "title": "Karte Ladefehler",
+      "code": "WEBGL_NOT_SUPPORTED",
+      "description": "Die Karte konnte aufgrund von Grafikbeschränkungen nicht initialisiert werden. Bitte verwenden Sie ein anderes Gerät oder einen Browser mit WebGL-Unterstützung.",
+      "hint": "Dies tritt auf, wenn Ihr Gerät oder Browser WebGL nicht unterstützt."
+    },
+    "generic": {
+      "title": "Fehler",
+      "code": "UNKNOWN_ERROR",
+      "description": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut."
+    }
+  },
   "pwa": {
     "update_available": "Eine neue Version der App ist verfügbar.",
     "update_caption": "Aktualisieren",

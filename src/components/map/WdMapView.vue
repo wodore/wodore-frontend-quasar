@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, inject, watchEffect, watch } from 'vue';
+import { ref, inject, watchEffect, watch, onErrorCaptured } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useResizeObserver, useDebounceFn } from '@vueuse/core';
 //import {
@@ -9,6 +9,7 @@ import { useResizeObserver, useDebounceFn } from '@vueuse/core';
 //} from '../../stores/map/styles.ts.old';
 import { useQuasar } from 'quasar';
 import { useBasemapStore } from '@stores/map/basemap-store';
+import { showWebGLError } from '@components/error';
 //import { useHutsStore } from '@stores/huts-store';
 //import { Todo, Meta } from './models';
 import type { Map, PaddingOptions } from 'maplibre-gl';
@@ -209,6 +210,49 @@ function onMapLoad(e: MglEvent<'load'>) {
     // TODO: improve styling of routing, points, drag, delete, etc.
   }
 }
+
+function onMapError(e: unknown) {
+  console.error('[onMapError] Map error occurred:', e);
+
+  // Check if it's a WebGL error
+  const event = e as { error?: unknown; type?: string };
+  if (event.error && typeof event.error === 'object') {
+    const errorObj = event.error as Record<string, unknown>;
+
+    if (
+      errorObj.type === 'webglcontextcreationerror' ||
+      errorObj.message?.toString().includes('WebGL')
+    ) {
+      console.error('[onMapError] WebGL context creation failed:', errorObj);
+      showWebGLError();
+      return;
+    }
+  }
+
+  // For other errors, you could add more specific handling here
+  console.error('[onMapError] Generic map error:', event.error);
+}
+
+// Capture errors from child components (like MglMap)
+onErrorCaptured((err, instance, info) => {
+  console.error('[onErrorCaptured] Error caught from child component:', err, info);
+
+  // Check if it's a WebGL error
+  const errorMessage = err instanceof Error ? err.message : String(err);
+
+  if (
+    errorMessage.includes('WebGL') ||
+    errorMessage.includes('disabled by enterprise policy') ||
+    errorMessage.includes('webglcontextcreationerror')
+  ) {
+    console.error('[onErrorCaptured] WebGL error detected, showing error dialog');
+    showWebGLError();
+    return false; // Prevent error from propagating further
+  }
+
+  // For other errors, let them propagate
+  return false;
+});
 
 const selectedHutFeature = ref<undefined | MapGeoJSONFeature>(undefined);
 
@@ -791,6 +835,7 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
     <div ref="mapDiv" style="height: 100vh">
       <MglMap
         @map:load="onMapLoad"
+        @map:error="onMapError"
         @map:styledata="onMapStyledata"
         hash="p"
         :map-style="initialMapStyle"

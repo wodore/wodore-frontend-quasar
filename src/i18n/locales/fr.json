@@ -43,12 +43,36 @@
     "add_station": "Ajouter une gare",
     "no_connection": "Pas de connection"
   },
+  "map": {
+    "error": {
+      "title": "Erreur de chargement de la carte",
+      "webgl_message": "Impossible d'initialiser la carte en raison de limitations graphiques. Veuillez essayer un autre appareil ou un navigateur prenant en charge WebGL.",
+      "webgl_hint": "Cela se produit lorsque votre appareil ou navigateur ne prend pas en charge WebGL.",
+      "generic_message": "Une erreur s'est produite lors du chargement de la carte",
+      "reload": "Recharger la page"
+    }
+  },
   "map_style": "Carte",
   "location": "Lieu",
   "layers": "Couches",
   "maps": "Cartes",
   "booking_service_unavailable": "Réservations non disponibles",
   "error_caption": "Erreur",
+  "error": {
+    "code": "Code d'erreur",
+    "close": "Fermer",
+    "webgl": {
+      "title": "Erreur de chargement de la carte",
+      "code": "WEBGL_NOT_SUPPORTED",
+      "description": "Impossible d'initialiser la carte en raison de limitations graphiques. Veuillez essayer un autre appareil ou un navigateur prenant en charge WebGL.",
+      "hint": "Cela se produit lorsque votre appareil ou navigateur ne prend pas en charge WebGL."
+    },
+    "generic": {
+      "title": "Erreur",
+      "code": "UNKNOWN_ERROR",
+      "description": "Une erreur inattendue s'est produite. Veuillez réessayer."
+    }
+  },
   "pwa": {
     "update_available": "Une nouvelle version de l'application est disponible.",
     "update_caption": "Actualiser pour mettre à jour",

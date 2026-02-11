@@ -43,12 +43,36 @@
     "add_station": "Aggiungi stazione",
     "no_connection": "Nessuna connessione"
   },
+  "map": {
+    "error": {
+      "title": "Errore di caricamento della mappa",
+      "webgl_message": "Impossibile inizializzare la mappa a causa di limitazioni grafiche. Prova a utilizzare un altro dispositivo o un browser con supporto WebGL.",
+      "webgl_hint": "Ciò accade quando il dispositivo o il browser non supporta WebGL.",
+      "generic_message": "Si è verificato un errore durante il caricamento della mappa",
+      "reload": "Ricarica la pagina"
+    }
+  },
   "map_style": "Carta geografica",
   "location": "Posizione",
   "layers": "Strati",
   "maps": "Carte",
   "booking_service_unavailable": "Prenotazioni non disponibili",
   "error_caption": "Errore",
+  "error": {
+    "code": "Codice di errore",
+    "close": "Chiudi",
+    "webgl": {
+      "title": "Errore di caricamento della mappa",
+      "code": "WEBGL_NOT_SUPPORTED",
+      "description": "Impossibile inizializzare la mappa a causa di limitazioni grafiche. Prova a utilizzare un altro dispositivo o un browser con supporto WebGL.",
+      "hint": "Ciò accade quando il dispositivo o il browser non supporta WebGL."
+    },
+    "generic": {
+      "title": "Errore",
+      "code": "UNKNOWN_ERROR",
+      "description": "Si è verificato un errore imprevisto. Riprova."
+    }
+  },
   "pwa": {
     "update_available": "Una nuova versione dell'app è disponibile.",
     "update_caption": "Aggiorna per aggiornare",
