@@ -45,7 +45,7 @@ import { clientWodore } from '@clients/index';
 
 const MOBILE_DANGER_MARGIN = 100;
 const DESKTOP_DANGER_MARGIN = 150;
-const MOBILE_DRAWER_MARGIN = 100;
+const MOBILE_DRAWER_MARGIN = -75;
 const MIN_HUT_CLICK_ZOOM = 8;
 const MIN_FLY_ZOOM = 9;
 const FLY_DURATION = 600; // ms
