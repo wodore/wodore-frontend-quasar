@@ -35,6 +35,7 @@ declare module 'vue' {
     WdBasemapSwitch: typeof import('./src/components/map/WdBasemapSwitch.vue')['default']
     WdBasemapSwitchItem: typeof import('./src/components/map/WdBasemapSwitchItem.vue')['default']
     WdBeta: typeof import('./src/components/utils/WdBeta.vue')['default']
+    WdErrorDialog: typeof import('./src/components/error/WdErrorDialog.vue')['default']
     WdFeedbackButton: typeof import('./src/components/feedback/WdFeedbackButton.vue')['default']
     WdFeedbackForm: typeof import('./src/components/feedback/WdFeedbackForm.vue')['default']
     WdHutAvailabilities: typeof import('./src/components/huts/WdHutAvailabilities.vue')['default']

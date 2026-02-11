@@ -60,7 +60,14 @@
   "jan": "Jan",
   "location": "Location",
   "map": {
-    "layers": "Layers"
+    "layers": "Layers",
+    "error": {
+      "title": "Map Loading Error",
+      "webgl_message": "Unable to initialize map due to graphics limitations. Please try using a different device or browser with WebGL support.",
+      "webgl_hint": "This happens when your device or browser doesn't support WebGL.",
+      "generic_message": "An error occurred while loading the map",
+      "reload": "Reload Page"
+    }
   },
   "layers": "Layers",
   "maps": "Maps",
@@ -68,6 +75,24 @@
   "booking_service_unavailable": "Booking service not available",
   "service_unavailable": "Service Error",
   "error_caption": "Error",
+  "error": {
+    "code": "Error Code",
+    "close": "Close",
+    "WEBGL_NOT_SUPPORTED": {
+      "title": "Map Loading Error",
+      "description": "Unable to initialize map due to graphics limitations. Please try using a different device or browser with WebGL support.",
+      "hint": "This happens when your device or browser doesn't support WebGL."
+    },
+    "UNKNOWN_ERROR": {
+      "title": "Error",
+      "description": "An unexpected error occurred. Please try again."
+    },
+    "MAP_ERROR": {
+      "title": "Map Error",
+      "description": "An error occurred while loading the map.",
+      "hint": "Please try refreshing the page."
+    }
+  },
   "pwa": {
     "update_available": "A new version of the app is available.",
     "update_caption": "Refresh to update",
