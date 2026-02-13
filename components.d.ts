@@ -54,6 +54,7 @@ declare module 'vue' {
     WdMapView: typeof import('./src/components/map/WdMapView.vue')['default']
     WdMenuButton: typeof import('./src/components/toolbar/WdMenuButton.vue')['default']
     WdMonthly: typeof import('./src/components/huts/monthly/WdMonthly.vue')['default']
+    WdOverlayConfig: typeof import('./src/components/map/overlay-config/WdOverlayConfig.vue')['default']
     WdOverlaySwitch: typeof import('./src/components/map/WdOverlaySwitch.vue')['default']
     WdOverlaySwitchItem: typeof import('./src/components/map/WdOverlaySwitchItem.vue')['default']
     WdPlaceSearch: typeof import('./src/components/search/WdPlaceSearch.vue')['default']

@@ -13,6 +13,8 @@ import {
   //Source,
   //SourceSpecification,
 } from 'maplibre-gl';
+import WdOverlayConfig from './overlay-config/WdOverlayConfig.vue';
+import { overlayConfigs } from '@stores/map/overlay-configs';
 
 //const emitter = inject(emitterSymbol)!;
 const overlayStore = useOverlayStore();
@@ -24,6 +26,10 @@ const switcherOpen = ref<boolean>(
   LocalStorage.hasItem('switcherOpen') ? (LocalStorage.getItem('switcherOpen') as boolean) : true
 );
 //const switcherLocked = ref<boolean>(true);
+
+const configDialogOpen = ref(false);
+const configOverlayName = ref('');
+const configInitialTab = ref<string | undefined>(undefined);
 
 watch(switcherOpen, v => {
   LocalStorage.set('switcherOpen', v);
@@ -73,6 +79,33 @@ function setOverlayVisibility(overlay: OverlaySwitchItem): boolean {
     }
   }
   return true;
+}
+
+function hasOverlayConfig(overlayName: string): boolean {
+  const config = overlayConfigs[overlayName];
+  return !!(config?.filters || config?.settings || config?.legend);
+}
+
+function overlayHasFilters(overlayName: string): boolean {
+  const config = overlayConfigs[overlayName];
+  return (config?.filters?.length ?? 0) > 0;
+}
+
+function overlayHasLegend(overlayName: string): boolean {
+  const config = overlayConfigs[overlayName];
+  return config?.legend !== undefined;
+}
+
+function overlayHasSettings(overlayName: string): boolean {
+  const config = overlayConfigs[overlayName];
+  return (config?.settings?.length ?? 0) > 0;
+}
+
+function openConfig(overlayName: string, initialTab?: string) {
+  console.debug('[WdOverlaySwitch] Opening config for overlay:', overlayName, 'tab:', initialTab);
+  configOverlayName.value = overlayName;
+  configInitialTab.value = initialTab;
+  configDialogOpen.value = true;
 }
 
 //function toggleSwitcherLocked() {
@@ -286,7 +319,8 @@ function overlayIcon(name: string) {
 <style lang="scss">
 .overlay-scroll {
   max-height: calc(100vh - 210px);
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden; /* Prevent horizontal scroll from config icons */
 }
 
 .styleFabGroup {
@@ -299,6 +333,44 @@ function overlayIcon(name: string) {
 
 .styleFab {
   pointer-events: auto;
+}
+
+.overlay-item-container {
+  position: relative;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.overlay-item-row {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.config-icons-group {
+  position: absolute;
+  left: 100%;
+  margin-left: 4px;
+  display: flex;
+  flex-direction: row;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.2s ease 0.3s; /* 300ms delay before fade in */
+  pointer-events: none; /* Disable clicks when hidden */
+  white-space: nowrap;
+}
+
+.overlay-item-container:hover .config-icons-group {
+  opacity: 1;
+  transition-delay: 0.3s; /* 300ms delay */
+  pointer-events: auto; /* Enable clicks when visible */
+}
+
+.config-icon-btn {
+  min-width: 24px;
+  min-height: 24px;
 }
 </style>
 <template>
@@ -315,17 +387,68 @@ function overlayIcon(name: string) {
       v-model="switcherOpen"
     >
       <div class="overlay-scroll">
-        <WdOverlaySwitchItem
+        <div
           v-for="(item, index) in overlayStore.overlays"
-          :tabindex="index"
-          @click="toggleOverlay(<OverlaySwitchItem>(item as unknown))"
-          v-show="item.show"
           :key="item.name"
-          :label="item.label"
-          :icon="overlayIcon(item.icon)"
-          :active="item.active"
-          :tooltip="$q.platform.is.desktop"
-        />
+          v-show="item.show"
+          class="overlay-item-container"
+        >
+          <div class="overlay-item-row">
+            <WdOverlaySwitchItem
+              :tabindex="index"
+              @click="toggleOverlay(<OverlaySwitchItem>(item as unknown))"
+              @configure="openConfig(item.name)"
+              :label="item.label"
+              :icon="overlayIcon(item.icon)"
+              :active="item.active"
+              :tooltip="$q.platform.is.desktop"
+              :overlay-name="item.name"
+            />
+
+            <!-- Config icons (right of overlay button, shown on hover) -->
+            <div v-if="hasOverlayConfig(item.name)" class="config-icons-group">
+              <q-btn
+                v-if="overlayHasFilters(item.name)"
+                round
+                flat
+                dense
+                size="xs"
+                icon="wd-edit-outline"
+                color="primary"
+                @click.stop="openConfig(item.name, 'filter')"
+                class="config-icon-btn"
+              >
+                <q-tooltip>Filter</q-tooltip>
+              </q-btn>
+              <q-btn
+                v-if="overlayHasLegend(item.name)"
+                round
+                flat
+                dense
+                size="xs"
+                icon="wd-info-outline"
+                color="primary"
+                @click.stop="openConfig(item.name, 'legend')"
+                class="config-icon-btn"
+              >
+                <q-tooltip>Info</q-tooltip>
+              </q-btn>
+              <q-btn
+                v-if="overlayHasSettings(item.name)"
+                round
+                flat
+                dense
+                size="xs"
+                icon="wd-edit"
+                color="primary"
+                @click.stop="openConfig(item.name, 'settings')"
+                class="config-icon-btn"
+              >
+                <q-tooltip>Einstellungen</q-tooltip>
+              </q-btn>
+            </div>
+          </div>
+        </div>
         <!-- class="bg-primary" -->
         <!-- <q-btn
           v-if="$q.screen.gt.xs"
@@ -345,4 +468,11 @@ function overlayIcon(name: string) {
       </div>
     </q-fab>
   </q-page-sticky>
+
+  <!-- Config Dialog -->
+  <WdOverlayConfig
+    v-model="configDialogOpen"
+    :overlay-name="configOverlayName"
+    :initial-tab="configInitialTab"
+  />
 </template>
