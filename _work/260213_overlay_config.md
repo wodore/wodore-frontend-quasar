@@ -17,6 +17,7 @@ The overlay configuration system has been successfully implemented with full hut
 
 - **Multi-select filter** with clickable items (no checkboxes)
 - **Visual feedback**: Inactive items shown at 50% opacity with grayscale
+- **Bold text for selected items**: Selected items appear with bold font weight
 - **Icon size**: 32px avatars for each hut type
 - **Zoom-adaptive icons**:
   - Zoom < 11: Simple icons
@@ -30,13 +31,21 @@ The overlay configuration system has been successfully implemented with full hut
 - **Overlay button badge**: Small dot in top-right corner when filters active
 - **Filter icon state**: Changes from `wd-filter-outline` (inactive) to `wd-filter` (filled) when active
 - **Tab icon state**: Filter tab icon also switches based on active state
+- **Config icon buttons**: Vertically stacked next to overlay button (Filter and Info)
+  - Appear on hover with 300ms delay
+  - Filter button positioned lower than Info button
 
 ### 3. Info/Legend Tab
 
+- **Sub-tabs**: Hüttentypen and Verfügbarkeit (sticky headers)
 - **Automatic population** from API category data
-- **Dual symbols**: Shows both detailed (38px) and simple (28px) icons side-by-side
-- **Full descriptions**: Name and description for each hut type
-- **Scrollable list**: Full-height layout with proper flexbox
+- **Hut Types section**:
+  - Dual symbols: Shows both detailed (38px) and simple (28px) icons side-by-side
+  - Full descriptions: Name and description for each hut type
+- **Availability section**:
+  - Shows availability categories with icons and color swatches
+  - Populated from `/v1/categories/list/availability` API
+- **Scrollable content**: Full-height layout with sticky sub-tabs
 
 ### 4. Tooltips
 
@@ -276,7 +285,7 @@ GET /v1/categories/list/accommodation?lang=de&is_active=true&media_mode=absolute
 └──────────────────────────────────┘
 ```
 
-### Info Tab
+### Info Tab (with Sub-tabs)
 
 ```
 ┌──────────────────────────────────┐
@@ -284,7 +293,9 @@ GET /v1/categories/list/accommodation?lang=de&is_active=true&media_mode=absolute
 ├──────────────────────────────────┤
 │ [🔍] [ℹ️] [⚙️]                    │
 ├──────────────────────────────────┤
-│ Hüttentypen                      │
+│ Hüttentypen | Verfügbarkeit      │ ← Sticky sub-tabs
+│━━━━━━━━━━━                       │
+│                                  │
 │ Verschiedene Unterkunftsarten    │
 │                                  │
 │ [📷 38px] [📷 28px] Hütte        │
@@ -296,19 +307,48 @@ GET /v1/categories/list/accommodation?lang=de&is_active=true&media_mode=absolute
 │                                  │
 │ ...                              │
 └──────────────────────────────────┘
+
+Switch to Verfügbarkeit tab:
+
+┌──────────────────────────────────┐
+│ Hütten                       [×] │
+├──────────────────────────────────┤
+│ [🔍] [ℹ️] [⚙️]                    │
+├──────────────────────────────────┤
+│ Hüttentypen | Verfügbarkeit      │ ← Sticky sub-tabs
+│               ━━━━━━━━━━━━━━     │
+│                                  │
+│ Belegungsstatus                  │
+│                                  │
+│ [📷 38px] [●] Verfügbar          │
+│  icon    color                   │
+│ Freie Plätze verfügbar           │
+│                                  │
+│ [📷 38px] [●] Ausgebucht         │
+│ Keine freien Plätze              │
+│                                  │
+│ ...                              │
+└──────────────────────────────────┘
 ```
 
-### Overlay Button with Badge
+### Overlay Button with Badge and Vertical Config Icons
 
 ```
 ┌─────────┐
 │  🏔️  ● │ ← Badge (top-right)
 └─────────┘
-   ↓ hover
-┌─────────┐  🔍 ℹ️ ⚙️
-│  🏔️    │ ← Config icons (right)
+   ↓ hover (300ms delay)
+┌─────────┐  ℹ️
+│  🏔️    │  🔍 ← Config icons (vertically stacked, right)
 └─────────┘
 ```
+
+**Config Icon Layout:**
+
+- Filter icon positioned lower than Info icon
+- Tight vertical spacing (negative margins)
+- Appears on hover with fade-in transition
+- Click to open respective tab in dialog
 
 ---
 
@@ -436,15 +476,32 @@ GET /v1/categories/list/accommodation?lang=de&is_active=true&media_mode=absolute
 
 ---
 
-## Known Issues
+## Known Issues & Future Improvements
 
-### Overlay Button Alignment (Deferred)
+### 1. Overlay Button Alignment
 
-**Status:** Low priority, deferred
+**Status:** To be fixed in future
 
 - Config icons cause slight left shift of overlay buttons
 - Impact: Minimal - functional but not perfectly centered
-- Will be addressed in future polish phase
+- Needs better CSS alignment strategy
+
+### 2. Vertical Spacing Between Config Icons
+
+**Status:** To be fixed in future
+
+- Current vertical spacing between Filter and Info buttons still too large
+- Need tighter stacking with proper touch targets maintained
+- May require custom button styling or different layout approach
+
+### 3. Mobile Tooltip Interaction
+
+**Status:** To be implemented in future
+
+- Desktop: Tooltips appear on hover (500ms delay)
+- Mobile: Should show tooltip on clicking the info button
+- Currently no mobile-specific tooltip trigger implemented
+- Requires touch event handling and different UX pattern
 
 ---
 
@@ -482,13 +539,21 @@ src/components/map/
    - `symbol_detailed?: string | null`
    - `symbol_simple?: string | null`
 
-2. **API endpoint**: Fixed from `/v1/categories/list/{category}` to `/v1/categories/list/{parent_slug}`
+2. **AvailabilityCategory interface**: Added for availability data
+   - `color?: string | null`
+   - `color_text?: string | null`
+   - `symbol_detailed?: string | null`
+   - `symbol_simple?: string | null`
 
-3. **FilterOption**: Added `iconDetailed` and `iconSimple` fields
+3. **API endpoints**:
+   - Fixed from `/v1/categories/list/{category}` to `/v1/categories/list/{parent_slug}`
+   - Added `/v1/categories/list/availability` for availability categories
 
-4. **LegendItem**: Added `metadata` field for storing both symbols
+4. **FilterOption**: Added `iconDetailed` and `iconSimple` fields
 
-5. **GeoJSON types**: Added type casts for bbox/coordinates tuple mismatches
+5. **LegendItem**: Added `metadata` field for storing both symbols, and `color` field for color swatches
+
+6. **GeoJSON types**: Added type casts for bbox/coordinates tuple mismatches
 
 ---
 

@@ -151,7 +151,10 @@ function getIconUrl(iconUrl: string | undefined): string | undefined {
         </q-item-section>
 
         <q-item-section>
-          <q-item-label>{{ option.label }}</q-item-label>
+          <q-item-label
+            :class="{ 'text-weight-bold': selectedValues.includes(option.value as string) }"
+            >{{ option.label }}</q-item-label
+          >
         </q-item-section>
 
         <q-item-section side>

@@ -335,6 +335,10 @@ function addOverlays() {
       addOverlay(overlay, overlaysOrder);
     }
   }
+
+  // Reapply any saved filters after overlays are loaded
+  console.debug('[addOverlays] Reapplying saved filters');
+  configStore.reapplyAllFilters();
 }
 
 mapRef.map?.on('load', addOverlays);
@@ -380,8 +384,9 @@ function overlayIcon(name: string) {
 
 .config-icons-group {
   display: flex;
-  flex-direction: row;
-  gap: 1px;
+  flex-direction: column;
+  gap: 0;
+  margin-top: -4px;
   opacity: 0;
   transition: opacity 0.2s ease 0.3s; /* 300ms delay before fade in */
   pointer-events: none; /* Disable clicks when hidden */
@@ -396,6 +401,14 @@ function overlayIcon(name: string) {
 .config-icon-btn {
   min-width: 32px;
   min-height: 32px;
+}
+
+.config-icon-info {
+  margin-top: 0;
+}
+
+.config-icon-filter {
+  margin-top: -12px;
 }
 </style>
 <template>
@@ -442,7 +455,7 @@ function overlayIcon(name: string) {
                 :icon="hasActiveFilters(item.name) ? 'wd-filter' : 'wd-filter-outline'"
                 color="primary"
                 @click.stop="openConfig(item.name, 'filter')"
-                class="config-icon-btn"
+                class="config-icon-btn config-icon-filter"
               >
                 <q-tooltip>Filter</q-tooltip>
               </q-btn>
@@ -455,7 +468,7 @@ function overlayIcon(name: string) {
                 icon="wd-info-outline"
                 color="primary"
                 @click.stop="openConfig(item.name, 'legend')"
-                class="config-icon-btn"
+                class="config-icon-btn config-icon-info"
               >
                 <q-tooltip>Info</q-tooltip>
               </q-btn>

@@ -149,8 +149,6 @@ function resetDefaults() {
           <q-tab name="legend" label="Info" v-if="hasLegend" icon="wd-info-outline" />
           <q-tab name="settings" label="Einstellungen" v-if="hasSettings" icon="wd-edit" />
         </q-tabs>
-
-        <q-separator class="q-my-md" />
       </div>
 
       <div class="col q-px-md" style="overflow: hidden">
