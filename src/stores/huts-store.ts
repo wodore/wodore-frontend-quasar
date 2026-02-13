@@ -37,16 +37,14 @@ export const useHutsStore = defineStore('huts', () => {
   //   features: [],
   // };
   //const emptyHutBookingsGeojson: schemasWodore['HutBookingsFeatureCollection'] =
-  const emptyHutBookingsGeojson: schemasWodore['HutAvailabilityFeatureCollection'] =
-    {
-      type: 'FeatureCollection',
-      features: [],
-    };
+  const emptyHutBookingsGeojson: schemasWodore['HutAvailabilityFeatureCollection'] = {
+    type: 'FeatureCollection',
+    features: [],
+  };
   //const hutsGeojson = ref<FeatureCollection>(emptyHutsGeojson);
   //const bookingsGeojson = ref<schemasWodore['HutBookingsFeatureCollection']>(
-  const bookingsGeojson = ref<
-    schemasWodore['HutAvailabilityFeatureCollection']
-  >(emptyHutBookingsGeojson);
+  const bookingsGeojson =
+    ref<schemasWodore['HutAvailabilityFeatureCollection']>(emptyHutBookingsGeojson);
   //const _hutsOccupationList = ref<Record<string, Array<BookingOccupation>>>({});
   //let _hutsGeojsonOrig: HutFeatureCollection = emptyHutsGeojson;
   //const _pendingOccupationUpdate = false;
@@ -101,10 +99,7 @@ export const useHutsStore = defineStore('huts', () => {
     date: string;
     days?: number;
   }
-  async function fetchHutBookingsGeojson({
-    date = 'now',
-    days = 8,
-  }: fetchHutBookingsGeojsonArgs) {
+  async function fetchHutBookingsGeojson({ date = 'now', days = 8 }: fetchHutBookingsGeojsonArgs) {
     clientWodore
       //.GET('/v1/huts/bookings.geojson', {
       .GET('/v1/huts/availability/{date}.geojson', {
@@ -119,7 +114,8 @@ export const useHutsStore = defineStore('huts', () => {
       })
       .then(({ data }) => {
         if (data) {
-          bookingsGeojson.value = data;
+          // Type assertion needed due to OpenAPI schema mismatch (backend returns number[] for bbox, schema expects specific tuple lengths)
+          bookingsGeojson.value = data as schemasWodore['HutAvailabilityFeatureCollection'];
         }
       })
       .catch(() => {
