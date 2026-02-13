@@ -12,6 +12,8 @@ export type IconsId =
   | "info"
   | "info-outline"
   | "gift"
+  | "filter"
+  | "filter-outline"
   | "favorite"
   | "favorite-outline"
   | "eye"
@@ -48,6 +50,8 @@ export type IconsKey =
   | "Info"
   | "InfoOutline"
   | "Gift"
+  | "Filter"
+  | "FilterOutline"
   | "Favorite"
   | "FavoriteOutline"
   | "Eye"
@@ -84,6 +88,8 @@ export enum Icons {
   Info = "info",
   InfoOutline = "info-outline",
   Gift = "gift",
+  Filter = "filter",
+  FilterOutline = "filter-outline",
   Favorite = "favorite",
   FavoriteOutline = "favorite-outline",
   Eye = "eye",
@@ -121,25 +127,27 @@ export const ICONS_CODEPOINTS: { [key in Icons]: string } = {
   [Icons.Info]: "61707",
   [Icons.InfoOutline]: "61708",
   [Icons.Gift]: "61709",
-  [Icons.Favorite]: "61710",
-  [Icons.FavoriteOutline]: "61711",
-  [Icons.Eye]: "61712",
-  [Icons.EyeOutline]: "61713",
-  [Icons.Edit]: "61714",
-  [Icons.EditOutline]: "61715",
-  [Icons.Close]: "61716",
-  [Icons.Checkmark]: "61717",
-  [Icons.Calendar]: "61718",
-  [Icons.Browser]: "61719",
-  [Icons.Bell]: "61720",
-  [Icons.BellOutline]: "61721",
-  [Icons.At]: "61722",
-  [Icons.ArrowheadUp]: "61723",
-  [Icons.ArrowheadRight]: "61724",
-  [Icons.ArrowheadLeft]: "61725",
-  [Icons.ArrowheadDown]: "61726",
-  [Icons.ArrowUpDown]: "61727",
-  [Icons.AlertTriangleOutline]: "61728",
-  [Icons.Add]: "61729",
-  [Icons.AddOutline]: "61730",
+  [Icons.Filter]: "61710",
+  [Icons.FilterOutline]: "61711",
+  [Icons.Favorite]: "61712",
+  [Icons.FavoriteOutline]: "61713",
+  [Icons.Eye]: "61714",
+  [Icons.EyeOutline]: "61715",
+  [Icons.Edit]: "61716",
+  [Icons.EditOutline]: "61717",
+  [Icons.Close]: "61718",
+  [Icons.Checkmark]: "61719",
+  [Icons.Calendar]: "61720",
+  [Icons.Browser]: "61721",
+  [Icons.Bell]: "61722",
+  [Icons.BellOutline]: "61723",
+  [Icons.At]: "61724",
+  [Icons.ArrowheadUp]: "61725",
+  [Icons.ArrowheadRight]: "61726",
+  [Icons.ArrowheadLeft]: "61727",
+  [Icons.ArrowheadDown]: "61728",
+  [Icons.ArrowUpDown]: "61729",
+  [Icons.AlertTriangleOutline]: "61730",
+  [Icons.Add]: "61731",
+  [Icons.AddOutline]: "61732",
 };
