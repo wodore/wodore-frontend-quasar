@@ -9,7 +9,8 @@ import { useResizeObserver, useDebounceFn } from '@vueuse/core';
 //} from '../../stores/map/styles.ts.old';
 import { useQuasar } from 'quasar';
 import { useBasemapStore } from '@stores/map/basemap-store';
-import { showErrorDialog, showErrorDialogPersistent, ErrorCode } from '@components/error';
+// showErrorDialog
+import { showErrorDialogPersistent, ErrorCode } from '@components/error';
 //import { useHutsStore } from '@stores/huts-store';
 //import { Todo, Meta } from './models';
 import type { Map, PaddingOptions } from 'maplibre-gl';
@@ -230,8 +231,8 @@ function onMapError(e: unknown) {
   }
 
   // For other errors, show generic map error
-  console.error('[onMapError] Generic map error:', event.error);
-  showErrorDialog({ errorCode: ErrorCode.MAP_ERROR });
+  //console.error('[onMapError] Generic map error:', event.error);
+  //showErrorDialog({ errorCode: ErrorCode.MAP_ERROR });
 }
 
 // Capture errors from child components (like MglMap)
@@ -252,8 +253,8 @@ onErrorCaptured((err, instance, info) => {
   }
 
   // For other map errors, show general map error
-  console.error('[onErrorCaptured] Non-WebGL map error detected, showing error dialog');
-  showErrorDialog({ errorCode: ErrorCode.MAP_ERROR });
+  //console.error('[onErrorCaptured] Non-WebGL map error detected, showing error dialog');
+  //showErrorDialog({ errorCode: ErrorCode.MAP_ERROR });
   return false; // Prevent error from propagating
 });
 
