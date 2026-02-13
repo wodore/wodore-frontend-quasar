@@ -118,3 +118,18 @@ export interface HutCategory {
   symbol_simple?: string | null;
   symbol_mono?: string | null;
 }
+
+export interface AvailabilityCategory {
+  slug: string;
+  name: string;
+  description: string;
+  order: number;
+  level: number;
+  parent?: string | null;
+  identifier: string;
+  children: boolean;
+  color?: string | null;
+  color_text?: string | null;
+  symbol_detailed?: string | null;
+  symbol_simple?: string | null;
+}

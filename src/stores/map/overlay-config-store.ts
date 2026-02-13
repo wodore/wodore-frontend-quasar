@@ -16,6 +16,7 @@ import { overlayConfigs, hutsConfig } from '@stores/map/overlay-configs';
 import type {
   OverlayPreferences,
   HutCategory,
+  AvailabilityCategory,
   FilterDefinition,
   FilterOption,
 } from '@stores/map/overlay-configs/types';
@@ -30,6 +31,7 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
   const preferences = ref<OverlayPreferences>(LocalStorage.getItem(PREFERENCES_KEY) || {});
 
   const hutCategories = ref<HutCategory[]>([]);
+  const availabilityCategories = ref<AvailabilityCategory[]>([]);
   const categoriesLoading = ref(false);
   const categoriesError = ref<string | null>(null);
 
@@ -75,7 +77,9 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
 
         // Populate hut type filter options and legend
         populateHutTypeFilterOptions();
-        populateHutLegend();
+
+        // Fetch availability categories
+        fetchAvailabilityCategories();
       }
     } catch (err) {
       console.error('[OverlayConfigStore] Exception fetching hut categories:', err);
@@ -110,30 +114,77 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
     console.debug('[OverlayConfigStore] First filter option:', hutTypesFilter.options[0]);
   }
 
+  async function fetchAvailabilityCategories() {
+    try {
+      const { data, error } = await clientWodore.GET('/v1/categories/list/{parent_slug}', {
+        params: {
+          path: { parent_slug: 'availability' },
+          query: {
+            lang: 'de',
+            is_active: true,
+            media_mode: 'absolute',
+          },
+        },
+      });
+
+      if (error) {
+        console.error('[OverlayConfigStore] Error fetching availability categories:', error);
+        return;
+      }
+
+      if (data) {
+        availabilityCategories.value = data as AvailabilityCategory[];
+        console.debug(
+          `[OverlayConfigStore] Fetched ${availabilityCategories.value.length} availability categories`
+        );
+
+        // Populate legend with both sections
+        populateHutLegend();
+      }
+    } catch (err) {
+      console.error('[OverlayConfigStore] Exception fetching availability categories:', err);
+    }
+  }
+
   function populateHutLegend() {
     if (!hutsConfig.legend) {
       hutsConfig.legend = { sections: [] };
     }
 
-    // Create legend section with all hut types
-    hutsConfig.legend.sections = [
-      {
-        title: 'Hüttentypen',
-        description: 'Verschiedene Unterkunftsarten',
-        items: hutCategories.value.map(category => ({
+    const sections = [];
+
+    // Hut types section
+    sections.push({
+      title: 'Hüttentypen',
+      description: 'Verschiedene Unterkunftsarten',
+      items: hutCategories.value.map(category => ({
+        label: category.name || category.slug,
+        description: category.description || undefined,
+        icon: category.symbol_detailed || category.symbol_simple || undefined,
+        metadata: {
+          iconDetailed: category.symbol_detailed,
+          iconSimple: category.symbol_simple,
+        },
+      })),
+    });
+
+    // Availability section (if loaded)
+    if (availabilityCategories.value.length > 0) {
+      sections.push({
+        title: 'Verfügbarkeit',
+        description: 'Belegungsstatus',
+        items: availabilityCategories.value.map(category => ({
           label: category.name || category.slug,
           description: category.description || undefined,
           icon: category.symbol_detailed || category.symbol_simple || undefined,
-          // Store both symbols in a custom property for detailed display
-          metadata: {
-            iconDetailed: category.symbol_detailed,
-            iconSimple: category.symbol_simple,
-          },
+          color: category.color || undefined,
         })),
-      },
-    ];
+      });
+    }
 
-    console.debug(`[OverlayConfigStore] Populated legend with ${hutCategories.value.length} items`);
+    hutsConfig.legend.sections = sections;
+
+    console.debug(`[OverlayConfigStore] Populated legend with ${sections.length} sections`);
   }
 
   // Filter Management
