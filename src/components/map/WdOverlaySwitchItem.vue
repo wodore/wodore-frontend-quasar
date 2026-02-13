@@ -8,6 +8,7 @@ interface Props {
   active?: boolean | undefined;
   tooltip?: boolean | undefined;
   overlayName: string;
+  showBadge?: boolean;
 }
 
 const props = defineProps<Props>();
@@ -59,7 +60,7 @@ function onLongPress() {
   >
     <q-icon :name="icon" :class="{ 'icon-active': active, 'icon-inactive': !active }" />
 
-    <!-- Config icons removed - will be added outside button in parent component -->
+    <q-badge v-if="showBadge" floating color="primary" rounded style="top: -2px; right: -2px" />
 
     <!-- <q-tooltip v-if="tooltip"> {{ label }} </q-tooltip> -->
   </q-btn>

@@ -1,7 +1,7 @@
 @font-face {
     font-family: "icons";
-    src: url("./icons.woff?b2892b808f54dc1b618540a6f984b344") format("woff"),
-url("./icons.woff2?b2892b808f54dc1b618540a6f984b344") format("woff2");
+    src: url("./icons.woff?48876a19df09bf51f41175c7fb833791") format("woff"),
+url("./icons.woff2?48876a19df09bf51f41175c7fb833791") format("woff2");
 }
 
 i[class^="wd-"]:before, i[class*=" wd-"]:before {
@@ -54,66 +54,72 @@ i[class^="wd-"]:before, i[class*=" wd-"]:before {
 .wd-gift:before {
     content: "\f10d";
 }
-.wd-favorite:before {
+.wd-filter:before {
     content: "\f10e";
 }
-.wd-favorite-outline:before {
+.wd-filter-outline:before {
     content: "\f10f";
 }
-.wd-eye:before {
+.wd-favorite:before {
     content: "\f110";
 }
-.wd-eye-outline:before {
+.wd-favorite-outline:before {
     content: "\f111";
 }
-.wd-edit:before {
+.wd-eye:before {
     content: "\f112";
 }
-.wd-edit-outline:before {
+.wd-eye-outline:before {
     content: "\f113";
 }
-.wd-close:before {
+.wd-edit:before {
     content: "\f114";
 }
-.wd-checkmark:before {
+.wd-edit-outline:before {
     content: "\f115";
 }
-.wd-calendar:before {
+.wd-close:before {
     content: "\f116";
 }
-.wd-browser:before {
+.wd-checkmark:before {
     content: "\f117";
 }
-.wd-bell:before {
+.wd-calendar:before {
     content: "\f118";
 }
-.wd-bell-outline:before {
+.wd-browser:before {
     content: "\f119";
 }
-.wd-at:before {
+.wd-bell:before {
     content: "\f11a";
 }
-.wd-arrowhead-up:before {
+.wd-bell-outline:before {
     content: "\f11b";
 }
-.wd-arrowhead-right:before {
+.wd-at:before {
     content: "\f11c";
 }
-.wd-arrowhead-left:before {
+.wd-arrowhead-up:before {
     content: "\f11d";
 }
-.wd-arrowhead-down:before {
+.wd-arrowhead-right:before {
     content: "\f11e";
 }
-.wd-arrow-up-down:before {
+.wd-arrowhead-left:before {
     content: "\f11f";
 }
-.wd-alert-triangle-outline:before {
+.wd-arrowhead-down:before {
     content: "\f120";
 }
-.wd-add:before {
+.wd-arrow-up-down:before {
     content: "\f121";
 }
-.wd-add-outline:before {
+.wd-alert-triangle-outline:before {
     content: "\f122";
+}
+.wd-add:before {
+    content: "\f123";
+}
+.wd-add-outline:before {
+    content: "\f124";
 }

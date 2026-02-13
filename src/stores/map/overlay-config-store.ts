@@ -12,11 +12,12 @@ import { useDebounceFn } from '@vueuse/core';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
 import type { ExpressionSpecification } from 'maplibre-gl';
 
-import { overlayConfigs } from '@stores/map/overlay-configs';
+import { overlayConfigs, hutsConfig } from '@stores/map/overlay-configs';
 import type {
   OverlayPreferences,
   HutCategory,
   FilterDefinition,
+  FilterOption,
 } from '@stores/map/overlay-configs/types';
 import { clientWodore } from '@clients/index';
 
@@ -50,9 +51,9 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
     categoriesError.value = null;
 
     try {
-      const { data, error } = await clientWodore.GET('/v1/categories/list/{category}', {
+      const { data, error } = await clientWodore.GET('/v1/categories/list/{parent_slug}', {
         params: {
-          path: { category: 'accommodation' },
+          path: { parent_slug: 'accommodation' },
           query: {
             lang: 'de',
             is_active: true,
@@ -70,6 +71,11 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
       if (data) {
         hutCategories.value = data as HutCategory[];
         console.debug(`[OverlayConfigStore] Fetched ${hutCategories.value.length} hut categories`);
+        console.debug('[OverlayConfigStore] First category:', hutCategories.value[0]);
+
+        // Populate hut type filter options and legend
+        populateHutTypeFilterOptions();
+        populateHutLegend();
       }
     } catch (err) {
       console.error('[OverlayConfigStore] Exception fetching hut categories:', err);
@@ -77,6 +83,57 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
     } finally {
       categoriesLoading.value = false;
     }
+  }
+
+  function populateHutTypeFilterOptions() {
+    const hutTypesFilter = hutsConfig.filters?.find((f: FilterDefinition) => f.id === 'hutTypes');
+    if (!hutTypesFilter) {
+      console.warn('[OverlayConfigStore] hutTypes filter not found in hutsConfig');
+      return;
+    }
+
+    // Map categories to filter options
+    hutTypesFilter.options = hutCategories.value.map(
+      (category): FilterOption => ({
+        value: category.identifier,
+        label: category.name || category.slug,
+        icon: category.symbol_detailed || category.symbol_simple || undefined,
+        description: category.description || undefined,
+        iconDetailed: category.symbol_detailed || undefined,
+        iconSimple: category.symbol_simple || undefined,
+      })
+    );
+
+    console.debug(
+      `[OverlayConfigStore] Populated ${hutTypesFilter.options.length} options for hutTypes filter`
+    );
+    console.debug('[OverlayConfigStore] First filter option:', hutTypesFilter.options[0]);
+  }
+
+  function populateHutLegend() {
+    if (!hutsConfig.legend) {
+      hutsConfig.legend = { sections: [] };
+    }
+
+    // Create legend section with all hut types
+    hutsConfig.legend.sections = [
+      {
+        title: 'Hüttentypen',
+        description: 'Verschiedene Unterkunftsarten',
+        items: hutCategories.value.map(category => ({
+          label: category.name || category.slug,
+          description: category.description || undefined,
+          icon: category.symbol_detailed || category.symbol_simple || undefined,
+          // Store both symbols in a custom property for detailed display
+          metadata: {
+            iconDetailed: category.symbol_detailed,
+            iconSimple: category.symbol_simple,
+          },
+        })),
+      },
+    ];
+
+    console.debug(`[OverlayConfigStore] Populated legend with ${hutCategories.value.length} items`);
   }
 
   // Filter Management
@@ -128,9 +185,7 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
       value
     );
 
-    // Phase 2: Implement actual filter application
-    // For now, just log
-    if (overlayName === 'huts' && filterId === 'hut-types') {
+    if (overlayName === 'huts' && filterId === 'hutTypes') {
       applyHutTypeFilter(value as string[]);
     }
   }
@@ -153,14 +208,14 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
       'wd-huts-occupation-day3',
     ];
 
+    // If empty or undefined, default to showing all huts (no filter)
     if (!selectedIdentifiers || selectedIdentifiers.length === 0) {
-      // Hide all huts (empty filter)
-      const filter: ExpressionSpecification = ['==', ['get', 'type_standard_identifier'], ''];
+      // Remove filter to show all huts
       for (const layerId of hutLayers) {
         const layer = mapRef.map.getLayer(layerId);
         if (layer) {
-          mapRef.map.setFilter(layerId, filter);
-          console.debug(`[OverlayConfigStore] Applied empty filter to layer '${layerId}'`);
+          mapRef.map.setFilter(layerId, null);
+          console.debug(`[OverlayConfigStore] Removed filter from layer '${layerId}' (show all)`);
         }
       }
     } else {

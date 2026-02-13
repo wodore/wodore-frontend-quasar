@@ -2,30 +2,28 @@
  * Huts Overlay Configuration
  *
  * Defines filters, settings, and legend for the huts overlay.
- * This is a minimal configuration to enable the dialog in Phase 1.
- * Will be fully populated in Phase 2 with actual filter definitions.
  */
 
 import type { OverlayConfig } from './types';
 
 export const hutsConfig: OverlayConfig = {
-  // Filters will be populated in Phase 2 after fetching categories from backend
-  filters: [],
+  filters: [
+    {
+      id: 'hutTypes',
+      label: 'Hüttentypen',
+      type: 'multi-select',
+      // Options will be populated dynamically from backend categories
+      // in the overlay-config-store
+      options: [],
+      defaultValue: [], // Empty array = all selected by default
+    },
+  ],
 
   // Settings will be implemented in Phase 4+
   settings: [],
 
-  // Legend will be populated in Phase 3
+  // Legend populated dynamically from categories
   legend: {
-    sections: [
-      {
-        title: 'Coming Soon',
-        items: [
-          {
-            label: 'Legend information will be available soon',
-          },
-        ],
-      },
-    ],
+    sections: [],
   },
 };

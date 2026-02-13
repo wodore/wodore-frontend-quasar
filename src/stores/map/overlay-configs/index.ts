@@ -8,6 +8,7 @@ import type { OverlayConfigs } from './types';
 import { hutsConfig } from './huts';
 
 export * from './types';
+export { hutsConfig };
 
 export const overlayConfigs: OverlayConfigs = {
   huts: hutsConfig,

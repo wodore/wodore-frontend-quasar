@@ -24,10 +24,7 @@ const hut = ref<schemasWodore['HutSchemaDetails'] | undefined>(undefined);
 
 const isHutOpen = computed<schemasWodore['AnswerEnum']>(() => {
   const currentMonth = selectedMonth.value; //(new Date().getMonth() + 1).toString().padStart(2, '0');
-  if (
-    hut.value?.open_monthly === undefined ||
-    hut.value?.open_monthly == null
-  ) {
+  if (hut.value?.open_monthly === undefined || hut.value?.open_monthly == null) {
     return 'unknown';
   }
   const o = hut.value?.open_monthly[`month_${currentMonth}`];
@@ -37,9 +34,7 @@ const isHutOpen = computed<schemasWodore['AnswerEnum']>(() => {
   return o as schemasWodore['AnswerEnum'];
 });
 
-const isHutClosed = computed<
-  'yes' | 'yesish' | 'no' | 'noish' | 'maybe' | 'unknown'
->(() => {
+const isHutClosed = computed<'yes' | 'yesish' | 'no' | 'noish' | 'maybe' | 'unknown'>(() => {
   switch (isHutOpen.value) {
     case 'yes':
       return 'no';
@@ -64,13 +59,10 @@ watchEffect(() => {
       })
       .then(({ data }) => {
         if (data) {
-          hut.value = data;
+          hut.value = data as schemasWodore['HutSchemaDetails'];
           let desc = hut.value.name + ' - ';
           let cap = '';
-          if (
-            hut.value.type_open?.name &&
-            hut.value.type_open.slug != 'unknown'
-          ) {
+          if (hut.value.type_open?.name && hut.value.type_open.slug != 'unknown') {
             desc +=
               hut.value.type_open.name?.charAt(0).toUpperCase() +
               hut.value.type_open.name?.slice(1);
@@ -78,10 +70,7 @@ watchEffect(() => {
               cap = ` mit ${hut.value.capacity_open}`;
             }
           }
-          if (
-            hut.value.type_closed &&
-            hut.value.type_closed.slug != 'unknown'
-          ) {
+          if (hut.value.type_closed && hut.value.type_closed.slug != 'unknown') {
             desc += '/' + hut.value.type_closed.name;
             if (
               hut.value.capacity_closed &&
@@ -144,7 +133,7 @@ watchEffect(() => {
 //}
 //onBeforeUnmount(() => onClose());
 
-const addHeaderShadow: IntersectionValue = (entry) => {
+const addHeaderShadow: IntersectionValue = entry => {
   headerShadow.value = !entry.isIntersecting;
   return true;
 };
@@ -281,9 +270,7 @@ const addHeaderShadow: IntersectionValue = (entry) => {
         <q-page style="height: 100%" class="q-px-md fit" v-if="hut">
           <!-- used to add shadow to header -->
           <h2
-            :style="
-              ($q.screen.gt.sm ? 'margin-top: -3px; ' : '') + 'text-wrap: wrap;'
-            "
+            :style="($q.screen.gt.sm ? 'margin-top: -3px; ' : '') + 'text-wrap: wrap;'"
             class="text-subtitle1 text-accent-900 q-ma-none q-mb-sm"
           >
             <span v-intersection="addHeaderShadow" />
@@ -301,15 +288,10 @@ const addHeaderShadow: IntersectionValue = (entry) => {
                   'q-ma-lg': $q.screen.gt.md,
                 }"
               >
-                <a
-                  :href="(hut.images[0] as any).urls['medium']"
-                  target="_blank"
-                >
+                <a :href="(hut.images[0] as any).urls['medium']" target="_blank">
                   <q-img
                     :src="(hut.images[0] as any).urls['preview']"
-                    :placeholder-src="
-                      (hut.images[0] as any).urls['preview-placeholder']
-                    "
+                    :placeholder-src="(hut.images[0] as any).urls['preview-placeholder']"
                     class="hut-image"
                     :class="{ 'shadow-8': $q.screen.gt.sm }"
                   >
@@ -361,9 +343,7 @@ const addHeaderShadow: IntersectionValue = (entry) => {
                       <IconMingcuteMountain2Fill />
                     </q-icon>
                   </q-avatar>
-                  <span
-                    class="text-primary-500"
-                    style="font-weight: 500; width: 28px"
+                  <span class="text-primary-500" style="font-weight: 500; width: 28px"
                     >{{ hut.elevation }} m</span
                   >
                 </q-chip>
@@ -378,11 +358,7 @@ const addHeaderShadow: IntersectionValue = (entry) => {
               style="padding: 0"
               v-html="hut.description_attribution"
             ></div>
-            <WdTextClamp
-              :max-lines="5"
-              :text="hut.description"
-              style="padding-bottom: 0"
-            />
+            <WdTextClamp :max-lines="5" :text="hut.description" style="padding-bottom: 0" />
           </body>
 
           <WdHutAvailabilities
@@ -407,10 +383,8 @@ const addHeaderShadow: IntersectionValue = (entry) => {
                   }
                 : {}),
               unknown: {
-                detailed:
-                  'https://hub.wodore.com/media/huts/types/symbols/detailed/unknown.png',
-                simple:
-                  'https://hub.wodore.com/media/huts/types/symbols/simple/unknown.png',
+                detailed: 'https://hub.wodore.com/media/huts/types/symbols/detailed/unknown.png',
+                simple: 'https://hub.wodore.com/media/huts/types/symbols/simple/unknown.png',
               },
             }"
           />
@@ -447,7 +421,7 @@ const addHeaderShadow: IntersectionValue = (entry) => {
                   copyToClipboard(
                     hut.location.lat.toPrecision(7).toString() +
                       ', ' +
-                      hut.location.lon.toPrecision(6).toString(),
+                      hut.location.lon.toPrecision(6).toString()
                   )
                 "
               >

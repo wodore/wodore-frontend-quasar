@@ -15,6 +15,8 @@ export interface FilterOption {
   icon?: string;
   description?: string;
   color?: string;
+  iconDetailed?: string;
+  iconSimple?: string;
 }
 
 export interface FilterDefinition {
@@ -60,6 +62,11 @@ export interface LegendItem {
   color?: string;
   label: string;
   description?: string;
+  metadata?: {
+    iconDetailed?: string | null;
+    iconSimple?: string | null;
+    [key: string]: unknown;
+  };
 }
 
 export interface LegendSection {
@@ -104,10 +111,10 @@ export interface HutCategory {
   description: string;
   order: number;
   level: number;
-  parent: string;
+  parent?: string | null;
   identifier: string;
   children: boolean;
-  symbol_detailed?: string;
-  symbol_simple?: string;
-  symbol_mono?: string;
+  symbol_detailed?: string | null;
+  symbol_simple?: string | null;
+  symbol_mono?: string | null;
 }

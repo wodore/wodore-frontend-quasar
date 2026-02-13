@@ -15,6 +15,7 @@ import {
 } from 'maplibre-gl';
 import WdOverlayConfig from './overlay-config/WdOverlayConfig.vue';
 import { overlayConfigs } from '@stores/map/overlay-configs';
+import { useOverlayConfigStore } from '@stores/map/overlay-config-store';
 
 //const emitter = inject(emitterSymbol)!;
 const overlayStore = useOverlayStore();
@@ -30,6 +31,8 @@ const switcherOpen = ref<boolean>(
 const configDialogOpen = ref(false);
 const configOverlayName = ref('');
 const configInitialTab = ref<string | undefined>(undefined);
+
+const configStore = useOverlayConfigStore();
 
 watch(switcherOpen, v => {
   LocalStorage.set('switcherOpen', v);
@@ -106,6 +109,36 @@ function openConfig(overlayName: string, initialTab?: string) {
   configOverlayName.value = overlayName;
   configInitialTab.value = initialTab;
   configDialogOpen.value = true;
+}
+
+function hasActiveFilters(overlayName: string): boolean {
+  const config = overlayConfigs[overlayName];
+  if (!config?.filters || config.filters.length === 0) {
+    return false;
+  }
+
+  // Check if any filter has a non-default value
+  for (const filter of config.filters) {
+    const value = configStore.getFilterValue(overlayName, filter.id);
+    const defaultValue = filter.defaultValue;
+
+    // For arrays (like multi-select), check if value is different from "all selected"
+    if (Array.isArray(value)) {
+      const allOptions = filter.options?.map(opt => opt.value) || [];
+      // If value is empty or has all options, it's not filtered
+      if (value.length === 0 || value.length === allOptions.length) {
+        continue;
+      }
+      return true; // Partial selection = active filter
+    }
+
+    // For other types, compare with default
+    if (value !== defaultValue) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 //function toggleSwitcherLocked() {
@@ -320,15 +353,12 @@ function overlayIcon(name: string) {
 .overlay-scroll {
   max-height: calc(100vh - 210px);
   overflow-y: auto;
-  overflow-x: hidden; /* Prevent horizontal scroll from config icons */
+  overflow-x: hidden;
 }
 
 .styleFabGroup {
   pointer-events: none;
-  // display: flex;
   min-width: 74vw;
-  // justify-content: start;
-  // align-items: flex-start;
 }
 
 .styleFab {
@@ -336,30 +366,25 @@ function overlayIcon(name: string) {
 }
 
 .overlay-item-container {
-  position: relative;
   margin-bottom: 8px;
   display: flex;
-  justify-content: center;
+  justify-content: center; /* Center the buttons */
   align-items: center;
 }
 
 .overlay-item-row {
-  position: relative;
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  gap: 2px; /* Gap between button and icons */
 }
 
 .config-icons-group {
-  position: absolute;
-  left: 100%;
-  margin-left: 4px;
   display: flex;
   flex-direction: row;
-  gap: 2px;
+  gap: 1px;
   opacity: 0;
   transition: opacity 0.2s ease 0.3s; /* 300ms delay before fade in */
   pointer-events: none; /* Disable clicks when hidden */
-  white-space: nowrap;
 }
 
 .overlay-item-container:hover .config-icons-group {
@@ -369,8 +394,8 @@ function overlayIcon(name: string) {
 }
 
 .config-icon-btn {
-  min-width: 24px;
-  min-height: 24px;
+  min-width: 32px;
+  min-height: 32px;
 }
 </style>
 <template>
@@ -403,6 +428,7 @@ function overlayIcon(name: string) {
               :active="item.active"
               :tooltip="$q.platform.is.desktop"
               :overlay-name="item.name"
+              :show-badge="hasActiveFilters(item.name)"
             />
 
             <!-- Config icons (right of overlay button, shown on hover) -->
@@ -412,8 +438,8 @@ function overlayIcon(name: string) {
                 round
                 flat
                 dense
-                size="xs"
-                icon="wd-edit-outline"
+                size="sm"
+                :icon="hasActiveFilters(item.name) ? 'wd-filter' : 'wd-filter-outline'"
                 color="primary"
                 @click.stop="openConfig(item.name, 'filter')"
                 class="config-icon-btn"
@@ -425,7 +451,7 @@ function overlayIcon(name: string) {
                 round
                 flat
                 dense
-                size="xs"
+                size="sm"
                 icon="wd-info-outline"
                 color="primary"
                 @click.stop="openConfig(item.name, 'legend')"
@@ -438,7 +464,7 @@ function overlayIcon(name: string) {
                 round
                 flat
                 dense
-                size="xs"
+                size="sm"
                 icon="wd-edit"
                 color="primary"
                 @click.stop="openConfig(item.name, 'settings')"
