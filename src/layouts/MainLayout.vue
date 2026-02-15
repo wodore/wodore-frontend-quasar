@@ -3,21 +3,33 @@ import { ref, computed, watchEffect } from 'vue';
 import { useQuasar } from 'quasar';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@stores/auth-store';
+import { useMapMenuStore } from '@stores/map/map-menu-store';
 import { useMeta } from 'quasar';
 import WodoreLogo from 'components/wodore/WodoreLogo.vue';
 import WdPlaceSearchMenu from 'components/search/WdPlaceSearchMenu.vue';
 import WdPlaceSearchDialog from 'components/search/WdPlaceSearchDialog.vue';
 
 const authStore = useAuthStore();
-//import { useRouter } from 'vue-router';
+const menuStore = useMapMenuStore();
 
-//const router = useRouter();
 const $q = useQuasar();
 
 const isMobile = computed(() => {
   return $q.screen.xs;
 });
-const menuDrawerOpen = ref(false);
+
+// Use store for menu drawer state
+const menuDrawerOpen = computed({
+  get: () => menuStore.menuOpen,
+  set: val => {
+    if (val) {
+      menuStore.openMenu();
+    } else {
+      menuStore.closeMenu();
+    }
+  },
+});
+
 const contentDrawerOpen = ref(true);
 
 const showDialog = ref(false);
@@ -120,10 +132,7 @@ function closeContent(mode: string) {
         <WdPlaceSearchMenu v-if="!isMobile" />
         <WdSelectDate />
         <WdPlaceSearchDialog v-if="isMobile" />
-        <WdSupportButton
-          v-if="!authStore.isLoggedIn && !isMobile"
-          class="text-secondary-700"
-        />
+        <WdSupportButton v-if="!authStore.isLoggedIn && !isMobile" class="text-secondary-700" />
         <WdFeedbackButton v-if="!isMobile" />
 
         <WdUser v-if="authStore.isLoggedIn" />
@@ -145,12 +154,7 @@ function closeContent(mode: string) {
         </q-dialog>
 
         <!-- MENU BUTTON mobile open -->
-        <WdMenuButton
-          mobile
-          function="open"
-          side="right"
-          v-model="menuDrawerOpen"
-        />
+        <WdMenuButton mobile function="open" side="right" v-model="menuDrawerOpen" />
       </q-toolbar>
     </q-header>
 
@@ -158,9 +162,10 @@ function closeContent(mode: string) {
     <q-drawer
       v-model="menuDrawerOpen"
       :side="isMobile ? 'right' : 'left'"
-      :width="200"
+      :width="330"
       :breakpoint="610"
       class="shadow-2"
+      style="max-width: 80vw"
     >
       <!-- TOOLBAR mobile -->
       <q-toolbar v-if="isMobile" class="bg-primary-600">

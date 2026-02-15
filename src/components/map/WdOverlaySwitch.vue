@@ -16,6 +16,7 @@ import {
 import WdOverlayConfig from './overlay-config/WdOverlayConfig.vue';
 import { overlayConfigs } from '@stores/map/overlay-configs';
 import { useOverlayConfigStore } from '@stores/map/overlay-config-store';
+import { useMapMenuStore } from '@stores/map/map-menu-store';
 
 //const emitter = inject(emitterSymbol)!;
 const overlayStore = useOverlayStore();
@@ -33,6 +34,7 @@ const configOverlayName = ref('');
 const configInitialTab = ref<string | undefined>(undefined);
 
 const configStore = useOverlayConfigStore();
+const menuStore = useMapMenuStore();
 
 watch(switcherOpen, v => {
   LocalStorage.set('switcherOpen', v);
@@ -106,9 +108,24 @@ function overlayHasSettings(overlayName: string): boolean {
 
 function openConfig(overlayName: string, initialTab?: string) {
   console.debug('[WdOverlaySwitch] Opening config for overlay:', overlayName, 'tab:', initialTab);
+
+  // Use menu store to open config in drawer
+  const overlayLabel =
+    {
+      huts: 'Hütten',
+      'transport-stops': 'Haltestellen',
+      hiking: 'Wanderwege',
+      mtb: 'Mountainbike',
+      cycling: 'Fahrrad',
+    }[overlayName] || overlayName;
+
+  menuStore.openOverlayConfig(overlayName, initialTab);
+  menuStore.menuData.title = overlayLabel;
+
+  // Also keep dialog option for backwards compatibility
   configOverlayName.value = overlayName;
   configInitialTab.value = initialTab;
-  configDialogOpen.value = true;
+  // configDialogOpen.value = true; // Disabled - now using drawer
 }
 
 function hasActiveFilters(overlayName: string): boolean {
