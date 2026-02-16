@@ -162,7 +162,7 @@ function closeContent(mode: string) {
     <q-drawer
       v-model="menuDrawerOpen"
       :side="isMobile ? 'right' : 'left'"
-      :width="330"
+      :width="300"
       :breakpoint="610"
       class="shadow-2"
       style="max-width: 80vw"
