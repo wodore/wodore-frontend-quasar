@@ -344,6 +344,10 @@ const switchIcon =
   'img:' +
   new URL('/src/assets/wodore-design/icons/export/overlay-switch.svg', import.meta.url).href;
 
+const switchCloseIcon =
+  'img:' +
+  new URL('/src/assets/wodore-design/icons/export/overlay-switch-close.svg', import.meta.url).href;
+
 function overlayIcon(name: string) {
   return (
     'img:' + new URL(`/src/assets/wodore-design/overlays/exports/${name}.svg`, import.meta.url).href
@@ -367,9 +371,9 @@ function overlayIcon(name: string) {
 }
 
 .overlay-item-container {
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
 }
 </style>
@@ -380,10 +384,11 @@ function overlayIcon(name: string) {
       push
       vertical-actions-align="center"
       :icon="switchIcon"
+      :active-icon="switchCloseIcon"
       padding="sm"
       :direction="direction"
       persistent
-      :color="switcherOpen ? 'negative-400' : 'icon'"
+      :color="switcherOpen ? 'negative-300' : 'icon'"
       v-model="switcherOpen"
     >
       <div class="overlay-scroll">

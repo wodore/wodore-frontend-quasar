@@ -858,12 +858,12 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
         <WdBasemapSwitch
           :position="$q.platform.is.mobile ? 'bottom-right' : 'top-left'"
           :direction="$q.platform.is.mobile ? 'left' : 'right'"
-          :offset="[$q.platform.is.mobile ? 14 : 14, $q.platform.is.mobile ? 20 : 14]"
+          :offset="[$q.platform.is.mobile ? 12 : 12, $q.platform.is.mobile ? 20 : 14]"
         />
         <WdOverlaySwitch
           position="top-left"
           direction="down"
-          :offset="[$q.platform.is.mobile ? 14 : 14, $q.platform.is.mobile ? 14 : 68]"
+          :offset="[$q.platform.is.mobile ? 12 : 12, $q.platform.is.mobile ? 12 : 68]"
         />
         <!-- </MglCustomControl> -->
         <MglGeolocateControl />

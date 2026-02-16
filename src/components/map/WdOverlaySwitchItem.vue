@@ -55,12 +55,26 @@ function onMainClick() {
 
 function onInfoClick(event: Event) {
   event.stopPropagation();
-  emit('configure', 'legend');
+
+  // If info is already open for this overlay, close it
+  if (isInfoActive.value) {
+    menuStore.closeMenu();
+  } else {
+    // Otherwise open info (will close filter if open)
+    emit('configure', 'legend');
+  }
 }
 
 function onFilterClick(event: Event) {
   event.stopPropagation();
-  emit('configure', 'filter');
+
+  // If filter is already open for this overlay, close it
+  if (isFilterActive.value) {
+    menuStore.closeMenu();
+  } else {
+    // Otherwise open filter (will close info if open)
+    emit('configure', 'filter');
+  }
 }
 </script>
 
@@ -68,7 +82,7 @@ function onFilterClick(event: Event) {
 .overlay-switch-item {
   display: flex;
   align-items: stretch;
-  border-radius: 10px;
+  border-radius: 0 12px 12px 0;
   overflow: hidden;
   background: color('icon');
   box-shadow: $button-shadow;
@@ -97,6 +111,10 @@ function onFilterClick(event: Event) {
     .q-icon {
       opacity: 1;
       color: white;
+    }
+
+    &:hover {
+      background-color: color('accent', 400);
     }
   }
 
