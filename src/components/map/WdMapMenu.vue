@@ -35,10 +35,6 @@ const overlayName = computed(() => menuStore.menuData.overlayName as string | un
 const initialTab = computed(() => menuStore.menuData.initialTab as string | undefined);
 const menuTitle = computed(() => menuStore.menuData.title as string | undefined);
 
-function handleBack() {
-  menuStore.goBack();
-}
-
 function handleOverlayConfigClose() {
   menuStore.reset();
 }
@@ -74,11 +70,6 @@ function handleOverlayConfigClose() {
       'drawer-mobile': $q.screen.xs,
     }"
   >
-    <!-- Close button (top left) -->
-    <div class="absolute-top-right q-pa-sm" style="z-index: 1000">
-      <q-btn flat dense round icon="wd-close" @click="menuStore.closeMenu()" />
-    </div>
-
     <!-- DEFAULT MENU -->
     <div v-if="menuStore.menuType === 'default'">
       <div class="text-center q-pa-xl">
@@ -123,19 +114,14 @@ function handleOverlayConfigClose() {
     </div>
 
     <!-- OVERLAY CONFIG MENU -->
-    <div v-else-if="menuStore.menuType === 'overlay-config'" class="overlay-config-container">
-      <!-- Header with back button -->
-      <div class="q-pa-md bg-primary-700 row items-center">
-        <q-btn flat dense round icon="wd-arrow-left" @click="handleBack" />
-        <div class="text-h6 q-ml-sm">{{ menuTitle || 'Overlay' }}</div>
-      </div>
-
+    <div v-else-if="menuStore.menuType === 'overlay-config'" class="overlay-config-container fit">
       <!-- Overlay Config Component (without dialog wrapper) -->
       <WdOverlayConfig
         v-if="overlayName"
         :overlay-name="overlayName"
         :initial-tab="initialTab"
         :show-as-page="true"
+        :title="menuTitle || 'Overlay'"
         @close="handleOverlayConfigClose"
       />
     </div>

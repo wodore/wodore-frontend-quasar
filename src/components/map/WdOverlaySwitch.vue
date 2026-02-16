@@ -92,7 +92,7 @@ function openConfig(overlayName: string, initialTab?: string) {
   // Use menu store to open config in drawer
   const overlayLabel =
     {
-      huts: 'Hütten',
+      huts: 'Unterkünfte',
       'transport-stops': 'Haltestellen',
       hiking: 'Wanderwege',
       mtb: 'Mountainbike',

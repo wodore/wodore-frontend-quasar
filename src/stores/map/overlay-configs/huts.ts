@@ -10,7 +10,7 @@ export const hutsConfig: OverlayConfig = {
   filters: [
     {
       id: 'hutTypes',
-      label: 'Hüttentypen',
+      label: 'Unterkünfte',
       type: 'multi-select',
       // Options will be populated dynamically from backend categories
       // in the overlay-config-store
