@@ -128,7 +128,7 @@ function getIconUrl(iconUrl: string | undefined): string | undefined {
     </div>
 
     <!-- Options list -->
-    <q-list dense class="options-list">
+    <q-list dense class="options-list bg-transparent">
       <q-item
         v-for="option in allOptions"
         :key="option.value"

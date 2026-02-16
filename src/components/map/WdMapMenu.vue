@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { useAuthService } from 'src/composables/useAuthService';
 import { useAuthStore } from '@stores/auth-store';
+import { useMapMenuStore } from '@stores/map/map-menu-store';
 import { LocalStorage } from 'quasar';
-import { ref, watchEffect } from 'vue';
+import { ref, computed, watchEffect } from 'vue';
 import AuthService from 'src/services/auth';
 import WdVersionsPanel from 'src/components/version/WdVersionsPanel.vue';
+import WdOverlayConfig from './overlay-config/WdOverlayConfig.vue';
 
 const authStore = useAuthStore();
+const menuStore = useMapMenuStore();
+
 let $auth: AuthService | undefined = undefined;
 if (process.env.CLIENT) {
   $auth = useAuthService();
@@ -15,7 +19,7 @@ if (process.env.CLIENT) {
 const tracking = ref<boolean>(
   LocalStorage.hasItem('umami.disabled')
     ? !(LocalStorage.getItem('umami.disabled') as boolean)
-    : true,
+    : true
 );
 
 watchEffect(() => {
@@ -25,6 +29,15 @@ watchEffect(() => {
     LocalStorage.removeItem('umami.disabled');
   }
 });
+
+// Computed properties for type-safe access to menuData
+const overlayName = computed(() => menuStore.menuData.overlayName as string | undefined);
+const initialTab = computed(() => menuStore.menuData.initialTab as string | undefined);
+const menuTitle = computed(() => menuStore.menuData.title as string | undefined);
+
+function handleOverlayConfigClose() {
+  menuStore.reset();
+}
 </script>
 <style scoped>
 .drawer-desktop {
@@ -57,65 +70,60 @@ watchEffect(() => {
       'drawer-mobile': $q.screen.xs,
     }"
   >
-    <div class="text-center q-pa-xl">
-      <q-icon size="80px">
-        <IconNotoV1Construction />
-      </q-icon>
-    </div>
-    <div class="bg-transparent absolute-bottom">
-      <div class="q-pa-xs column q-gutter-sm">
-        <q-btn
-          v-if="!authStore.isLoggedIn"
-          color="secondary-700"
-          unelevated
-          flat
-          @click="$auth?.signinRedirect()"
-          label="Login"
-          style="opacity: 0.8"
-        />
-        <q-btn
-          v-else
-          color="accent-700"
-          unelevated
-          flat
-          @click="$auth?.logout()"
-          label="Logout"
-          style="opacity: 0.8"
-        />
+    <!-- DEFAULT MENU -->
+    <div v-if="menuStore.menuType === 'default'">
+      <div class="text-center q-pa-xl">
+        <q-icon size="80px">
+          <IconNotoV1Construction />
+        </q-icon>
       </div>
-      <!-- </div> -->
-      <!-- <div class="q-pa-sm"> -->
-      <div class="">
-        <!-- Privacy Policy Link -->
-        <div v-if="authStore.isEditor()" class="text-center q-mb-sm">
-          <router-link
-            :to="{ name: 'data-policy' }"
-            target="_blank"
-            class="text-secondary-700"
-          >
-            Datenschutz
-          </router-link>
+      <div class="bg-transparent absolute-bottom">
+        <div class="q-pa-xs column q-gutter-sm">
+          <q-btn
+            v-if="!authStore.isLoggedIn"
+            color="secondary-700"
+            unelevated
+            flat
+            @click="$auth?.signinRedirect()"
+            label="Login"
+            style="opacity: 0.8"
+          />
+          <q-btn
+            v-else
+            color="accent-700"
+            unelevated
+            flat
+            @click="$auth?.logout()"
+            label="Logout"
+            style="opacity: 0.8"
+          />
         </div>
 
-        <!-- Version Information -->
-        <WdVersionsPanel class="map-menu__versions" />
+        <div class="">
+          <!-- Privacy Policy Link -->
+          <div v-if="authStore.isEditor()" class="text-center q-mb-sm">
+            <router-link :to="{ name: 'data-policy' }" target="_blank" class="text-secondary-700">
+              Datenschutz
+            </router-link>
+          </div>
+
+          <!-- Version Information -->
+          <WdVersionsPanel class="map-menu__versions" />
+        </div>
       </div>
     </div>
-    <!-- <q-list bordered padding class="rounded-borders text-primary">
-    <q-item
-      clickable
-      v-ripple
-      :active="link === 'inbox'"
-      @click="link = 'inbox'"
-      :active-class="active_classes"
-    >
-      <q-item-section avatar>
-        <q-icon name="eva-inbox" />
-      </q-item-section>
 
-      <q-item-section>Inbox</q-item-section>
-    </q-item>
-
-  </q-list> -->
+    <!-- OVERLAY CONFIG MENU -->
+    <div v-else-if="menuStore.menuType === 'overlay-config'" class="overlay-config-container fit">
+      <!-- Overlay Config Component (without dialog wrapper) -->
+      <WdOverlayConfig
+        v-if="overlayName"
+        :overlay-name="overlayName"
+        :initial-tab="initialTab"
+        :show-as-page="true"
+        :title="menuTitle || 'Overlay'"
+        @close="handleOverlayConfigClose"
+      />
+    </div>
   </div>
 </template>

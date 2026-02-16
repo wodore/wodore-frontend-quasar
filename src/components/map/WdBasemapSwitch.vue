@@ -77,10 +77,11 @@ function toggleSwitcherLocked() {
 
 const switchIcon =
   'img:' +
-  new URL(
-    '/src/assets/wodore-design/icons/export/basemap-switch.svg',
-    import.meta.url,
-  ).href;
+  new URL('/src/assets/wodore-design/icons/export/basemap-switch.svg', import.meta.url).href;
+
+const switchCloseIcon =
+  'img:' +
+  new URL('/src/assets/wodore-design/icons/export/basemap-switch-close.svg', import.meta.url).href;
 </script>
 
 <template>
@@ -90,10 +91,11 @@ const switchIcon =
       push
       vertical-actions-align="left"
       :icon="switchIcon"
+      :active-icon="switchCloseIcon"
       padding="sm"
       :direction="direction"
       persistent
-      :color="switcherOpen ? 'negative-400' : 'icon'"
+      :color="switcherOpen ? 'negative-300' : 'icon'"
       v-model="switcherOpen"
     >
       <WdBasemapSwitchItem

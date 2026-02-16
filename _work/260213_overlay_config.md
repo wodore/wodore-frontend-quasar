@@ -1,6 +1,7 @@
 # Overlay Configuration System - Implementation Complete
 
 **Date:** Thu, 13 Feb 2026  
+**Last Updated:** Sun, 16 Feb 2026  
 **Status:** ✅ Phase 1 & 2 Complete - Fully Functional Hut Filter System
 
 ---
@@ -475,6 +476,102 @@ Switch to Verfügbarkeit tab:
 6. **Transition Optimization** - Crossfade uses absolute positioning
 
 ---
+
+## Recent Updates (Feb 16, 2026)
+
+### Drawer-Based Menu System
+
+**Status:** ✅ Complete
+
+The overlay configuration system has been refactored from dialog-based to drawer-based using the global `WdMapMenu` component.
+
+**Changes:**
+
+1. **Store-Based Menu Control**
+   - Created `src/stores/map/map-menu-store.ts` for global menu state
+   - Menu types: `'default'` and `'overlay-config'`
+   - Functions: `openOverlayConfig()`, `closeMenu()`, `goBack()`, history support
+
+2. **Dual-Mode Component**
+   - Modified `WdOverlayConfig.vue` to support both dialog and page modes
+   - Added `showAsPage` prop for drawer rendering
+   - Same component reused in both contexts
+
+3. **Global Menu Integration**
+   - Modified `WdMapMenu.vue` to show different content based on menu type
+   - Added close button (top-right corner)
+   - Back button returns to default menu
+   - Connected to `MainLayout.vue` drawer via store
+
+4. **Overlay Switch Updates**
+   - Config icons now open drawer instead of dialog
+   - Calls `menuStore.openOverlayConfig(overlayName, initialTab)`
+   - Sets menu title dynamically (e.g., "Hütten")
+
+5. **UI Refinements**
+   - Drawer width: `min(330px, 80vw)` - responsive to screen size
+   - Close button: Top-right corner for easy access
+   - Transparent backgrounds: All lists, tab panels, and sub-tabs
+   - Fixed sticky sub-tabs background (was white, now transparent)
+
+**Files Created:**
+
+```
+src/stores/map/
+└── map-menu-store.ts                # Global menu state management
+```
+
+**Files Modified:**
+
+```
+src/components/map/
+├── WdMapMenu.vue                    # Conditional content rendering
+├── overlay-config/
+│   └── WdOverlayConfig.vue          # Dual-mode support
+└── WdOverlaySwitch.vue              # Opens configs in drawer
+
+src/layouts/
+└── MainLayout.vue                   # Drawer connected to store, responsive width
+```
+
+**Benefits:**
+
+- Consistent navigation pattern (global drawer)
+- Better mobile experience (native drawer behavior)
+- Menu history support (back navigation)
+- Reusable architecture for future menu types
+- No route changes needed for map configs
+
+### Bug Fixes
+
+**Filter Reapplication on Page Reload**
+
+**Status:** ✅ Fixed
+
+**Issue:** When page was reloaded, filters were saved in localStorage and UI showed correct state, but map showed all huts (filters not applied).
+
+**Root Cause:** `reapplyAllFilters()` was only called on manual reset, not on initial page load after layers were added.
+
+**Fix:** Added `configStore.reapplyAllFilters()` call in `WdOverlaySwitch.vue`'s `addOverlays()` function after all layers are loaded.
+
+**Location:** `src/components/map/WdOverlaySwitch.vue:207`
+
+```typescript
+function addOverlays() {
+  console.debug('[addOverlays] called');
+  addedOverlays.clear();
+  const overlaysOrder = getOverlaysInRenderOrder();
+  for (const overlay of overlaysOrder) {
+    if (overlay.active) {
+      addOverlay(overlay, overlaysOrder);
+    }
+  }
+
+  // Reapply any saved filters after overlays are loaded
+  console.debug('[addOverlays] Reappling saved filters');
+  configStore.reapplyAllFilters();
+}
+```
 
 ## Known Issues & Future Improvements
 

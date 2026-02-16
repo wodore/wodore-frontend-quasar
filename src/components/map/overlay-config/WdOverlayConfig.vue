@@ -7,13 +7,21 @@ import WdOverlayConfigFilter from './WdOverlayConfigFilter.vue';
 
 interface Props {
   overlayName: string;
-  modelValue: boolean;
+  modelValue?: boolean;
   initialTab?: string;
+  showAsPage?: boolean; // New prop: render as page instead of dialog
+  title?: string; // Title for page mode (passed from WdMapMenu)
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  modelValue: false,
+  showAsPage: false,
+  title: undefined,
+});
+
 const emit = defineEmits<{
   'update:modelValue': [value: boolean];
+  close: [];
 }>();
 
 const $q = useQuasar();
@@ -31,7 +39,7 @@ const hasLegend = computed(() => overlayConfig.value?.legend !== undefined);
 
 // Check for specific legend sections
 const hutTypesSection = computed(() =>
-  overlayConfig.value?.legend?.sections?.find(s => s.title === 'Hüttentypen')
+  overlayConfig.value?.legend?.sections?.find(s => s.title === 'Unterkünfte')
 );
 const availabilitySection = computed(() =>
   overlayConfig.value?.legend?.sections?.find(s => s.title === 'Verfügbarkeit')
@@ -103,7 +111,7 @@ watch(
 // Get display name for overlay
 const overlayLabel = computed(() => {
   const labelMap: Record<string, string> = {
-    huts: 'Hütten',
+    huts: 'Unterkünfte',
     'transport-stops': 'Haltestellen',
     hiking: 'Wanderwege',
     mtb: 'Mountainbike',
@@ -111,6 +119,15 @@ const overlayLabel = computed(() => {
   };
   return labelMap[props.overlayName] || props.overlayName;
 });
+
+function getTabLabel(tab: string): string {
+  const tabLabels: Record<string, string> = {
+    filter: 'Filter',
+    legend: 'Info',
+    settings: 'Einstellungen',
+  };
+  return tabLabels[tab] || tab;
+}
 
 function resetDefaults() {
   configStore.resetOverlayPreferences(props.overlayName);
@@ -124,36 +141,51 @@ function resetDefaults() {
 </script>
 
 <template>
+  <!-- DIALOG MODE (default) -->
   <q-dialog
+    v-if="!showAsPage"
     v-model="isOpen"
     position="left"
     seamless
     transition-show="slide-right"
     transition-hide="slide-left"
   >
-    <q-card style="width: 400px; max-width: 90vw; height: 100vh" class="flex-column">
-      <div class="q-pa-md">
-        <div class="row items-center q-mb-md">
-          <div class="text-h6">{{ overlayLabel }}</div>
-          <q-space />
-          <q-btn icon="wd-close" flat round dense v-close-popup />
-        </div>
-
-        <q-tabs v-model="activeTab" class="text-primary" dense inline-label>
+    <q-card class="overlay-config-dialog column">
+      <!-- Header toolbar with tabs and close button -->
+      <q-toolbar class="bg-grey-3 flex-shrink-0">
+        <q-tabs v-model="activeTab" dense compact class="no-padding">
+          <q-tab name="legend" v-if="hasLegend" icon="wd-info-outline" />
           <q-tab
             name="filter"
-            label="Filter"
             v-if="hasFilters"
             :icon="hasActiveFilters ? 'wd-filter' : 'wd-filter-outline'"
           />
-          <q-tab name="legend" label="Info" v-if="hasLegend" icon="wd-info-outline" />
-          <q-tab name="settings" label="Einstellungen" v-if="hasSettings" icon="wd-edit" />
+          <q-tab name="settings" v-if="hasSettings" icon="wd-edit" />
         </q-tabs>
+        <q-space />
+        <q-btn icon="wd-close" flat round dense v-close-popup />
+      </q-toolbar>
+
+      <!-- Title and subtitle section -->
+      <div class="q-px-md q-py-xs bg-primary text-white flex-shrink-0">
+        <div class="text-overline text-caption text-grey-3">{{ getTabLabel(activeTab) }}</div>
+        <div class="text-h6">{{ overlayLabel }}</div>
       </div>
 
-      <div class="col q-px-md" style="overflow: hidden">
-        <q-tab-panels v-model="activeTab" animated class="fit-height">
-          <q-tab-panel name="filter" v-if="hasFilters">
+      <q-separator />
+
+      <!-- Scrollable content area -->
+      <q-scroll-area
+        class="col q-px-md"
+        :thumb-style="{
+          width: '6px',
+          backgroundColor: '#998019',
+          opacity: '0.5',
+          borderRadius: '8px 0 0 8px',
+        }"
+      >
+        <q-tab-panels v-model="activeTab" animated class="transparent-panels">
+          <q-tab-panel name="filter" v-if="hasFilters" class="bg-transparent">
             <WdOverlayConfigFilter
               v-for="filter in overlayConfig.filters"
               :key="filter.id"
@@ -167,22 +199,22 @@ function resetDefaults() {
           <q-tab-panel name="legend" v-if="hasLegend" class="q-pa-none legend-panel">
             <!-- Sub-tabs for Info section (sticky) -->
             <div class="sticky-subtabs">
-              <q-tabs
+              Unterkünfte<q-tabs
                 v-model="infoSubTab"
                 dense
                 no-caps
                 class="text-grey-8"
                 indicator-color="primary"
               >
-                <q-tab name="hut-types" label="Hüttentypen" v-if="hasHutTypes" />
+                <q-tab name="hut-types" label="Arten" v-if="hasHutTypes" />
                 <q-tab name="availability" label="Verfügbarkeit" v-if="hasAvailability" />
               </q-tabs>
               <q-separator />
             </div>
 
-            <div class="subtab-content">
-              <q-tab-panels v-model="infoSubTab" animated class="subtab-panels">
-                <q-tab-panel name="hut-types" v-if="hasHutTypes" class="q-pa-none">
+            <div class="subtab-content bg-transparent">
+              <q-tab-panels v-model="infoSubTab" animated class="subtab-panels bg-transparent">
+                <q-tab-panel name="hut-types" v-if="hasHutTypes" class="q-pa-none bg-transparent">
                   <div v-if="hutTypesSection">
                     <div
                       v-if="hutTypesSection.description"
@@ -191,7 +223,7 @@ function resetDefaults() {
                       {{ hutTypesSection.description }}
                     </div>
 
-                    <q-list>
+                    <q-list class="bg-transparent">
                       <q-item
                         v-for="(item, idx) in hutTypesSection.items"
                         :key="idx"
@@ -228,7 +260,11 @@ function resetDefaults() {
                   </div>
                 </q-tab-panel>
 
-                <q-tab-panel name="availability" v-if="hasAvailability" class="q-pa-none">
+                <q-tab-panel
+                  name="availability"
+                  v-if="hasAvailability"
+                  class="q-pa-none bg-transparent"
+                >
                   <div v-if="availabilitySection">
                     <div
                       v-if="availabilitySection.description"
@@ -237,7 +273,7 @@ function resetDefaults() {
                       {{ availabilitySection.description }}
                     </div>
 
-                    <q-list>
+                    <q-list class="bg-transparent">
                       <q-item
                         v-for="(item, idx) in availabilitySection.items"
                         :key="idx"
@@ -280,14 +316,14 @@ function resetDefaults() {
             </div>
           </q-tab-panel>
 
-          <q-tab-panel name="settings" v-if="hasSettings">
+          <q-tab-panel name="settings" v-if="hasSettings" class="bg-transparent">
             <div class="text-body2 text-grey-7">
               Einstellungen werden in Phase 4+ implementiert.
             </div>
             <!-- Phase 4+: <WdOverlayConfigSettings :overlay-name="overlayName" /> -->
           </q-tab-panel>
         </q-tab-panels>
-      </div>
+      </q-scroll-area>
 
       <div class="q-pa-md">
         <q-separator class="q-mb-md" />
@@ -297,23 +333,197 @@ function resetDefaults() {
       </div>
     </q-card>
   </q-dialog>
+
+  <!-- PAGE MODE (for use in drawer) -->
+  <div v-else class="overlay-config-page column">
+    <!-- Header toolbar with tabs and back button -->
+    <q-toolbar class="bg-grey-3 flex-shrink-0">
+      <q-tabs v-model="activeTab" dense compact class="no-padding">
+        <q-tab name="legend" v-if="hasLegend" icon="wd-info-outline" />
+        <q-tab
+          name="filter"
+          v-if="hasFilters"
+          :icon="hasActiveFilters ? 'wd-filter' : 'wd-filter-outline'"
+        />
+        <q-tab name="settings" v-if="hasSettings" icon="wd-edit" />
+      </q-tabs>
+      <q-space />
+      <q-btn flat dense round icon="wd-close" @click="emit('close')" />
+    </q-toolbar>
+
+    <!-- Title and subtitle section -->
+    <div class="q-px-md q-py-xs bg-grey-3 flex-shrink-0">
+      <div class="text-overline text-caption text-grey-7">{{ getTabLabel(activeTab) }}</div>
+      <div class="text-h6">{{ title || overlayLabel }}</div>
+    </div>
+
+    <q-separator />
+
+    <!-- Scrollable content area -->
+    <q-scroll-area
+      class="col q-px-md"
+      :thumb-style="{
+        width: '6px',
+        backgroundColor: '#998019',
+        opacity: '0.5',
+        borderRadius: '8px 0 0 8px',
+      }"
+    >
+      <q-tab-panels v-model="activeTab" animated class="transparent-panels">
+        <q-tab-panel name="legend" v-if="hasLegend" class="q-pa-none legend-panel">
+          <!-- Sub-tabs for Info section (sticky) -->
+          <div class="sticky-subtabs">
+            <q-tabs
+              v-model="infoSubTab"
+              dense
+              no-caps
+              class="text-grey-8"
+              indicator-color="primary"
+            >
+              <q-tab name="hut-types" label="Arten" v-if="hasHutTypes" />
+              <q-tab name="availability" label="Verfügbarkeit" v-if="hasAvailability" />
+            </q-tabs>
+            <q-separator />
+          </div>
+
+          <div class="subtab-content bg-transparent">
+            <q-tab-panels v-model="infoSubTab" animated class="subtab-panels bg-transparent">
+              <q-tab-panel name="hut-types" v-if="hasHutTypes" class="q-pa-none bg-transparent">
+                <div v-if="hutTypesSection">
+                  <div
+                    v-if="hutTypesSection.description"
+                    class="text-caption text-grey-7 q-pa-md q-pb-sm"
+                  >
+                    {{ hutTypesSection.description }}
+                  </div>
+
+                  <q-list class="bg-transparent">
+                    <q-item
+                      v-for="(item, idx) in hutTypesSection.items"
+                      :key="idx"
+                      class="legend-item"
+                    >
+                      <q-item-section avatar v-if="item.metadata?.iconDetailed">
+                        <q-avatar size="38px" square>
+                          <img
+                            :src="item.metadata.iconDetailed"
+                            :alt="item.label + ' (detailliert)'"
+                          />
+                        </q-avatar>
+                      </q-item-section>
+
+                      <q-item-section avatar v-if="item.metadata?.iconSimple">
+                        <q-avatar size="28px" square>
+                          <img :src="item.metadata.iconSimple" :alt="item.label + ' (einfach)'" />
+                        </q-avatar>
+                      </q-item-section>
+
+                      <q-item-section>
+                        <q-item-label class="text-weight-medium">{{ item.label }}</q-item-label>
+                        <q-item-label caption v-if="item.description" class="text-caption q-mt-xs">
+                          {{ item.description }}
+                        </q-item-label>
+                      </q-item-section>
+                    </q-item>
+                  </q-list>
+                </div>
+              </q-tab-panel>
+
+              <q-tab-panel
+                name="availability"
+                v-if="hasAvailability"
+                class="q-pa-none bg-transparent"
+              >
+                <div v-if="availabilitySection">
+                  <div
+                    v-if="availabilitySection.description"
+                    class="text-caption text-grey-7 q-pa-md q-pb-sm"
+                  >
+                    {{ availabilitySection.description }}
+                  </div>
+
+                  <q-list class="bg-transparent">
+                    <q-item
+                      v-for="(item, idx) in availabilitySection.items"
+                      :key="idx"
+                      class="legend-item"
+                    >
+                      <q-item-section avatar v-if="item.icon">
+                        <q-avatar size="38px" square>
+                          <img :src="item.icon" :alt="item.label" />
+                        </q-avatar>
+                      </q-item-section>
+
+                      <q-item-section avatar v-if="item.color">
+                        <div
+                          :style="{
+                            width: '32px',
+                            height: '32px',
+                            backgroundColor: item.color,
+                            borderRadius: '50%',
+                          }"
+                        />
+                      </q-item-section>
+
+                      <q-item-section>
+                        <q-item-label class="text-weight-medium">{{ item.label }}</q-item-label>
+                        <q-item-label caption v-if="item.description" class="text-caption q-mt-xs">
+                          {{ item.description }}
+                        </q-item-label>
+                      </q-item-section>
+                    </q-item>
+                  </q-list>
+                </div>
+              </q-tab-panel>
+            </q-tab-panels>
+          </div>
+        </q-tab-panel>
+
+        <q-tab-panel name="filter" v-if="hasFilters" class="bg-transparent">
+          <WdOverlayConfigFilter
+            v-for="filter in overlayConfig.filters"
+            :key="filter.id"
+            :overlay-name="overlayName"
+            :filter="filter"
+            :model-value="configStore.getFilterValue(overlayName, filter.id)"
+            @update:model-value="configStore.setFilterValue(overlayName, filter.id, $event)"
+          />
+          <q-separator class="q-mb-md" />
+          <div class="row justify-end">
+            <q-btn flat label="Zurücksetzen" @click="resetDefaults" size="sm" />
+          </div>
+        </q-tab-panel>
+
+        <q-tab-panel name="settings" v-if="hasSettings">
+          <div class="text-body2 text-grey-7">Einstellungen werden in Phase 4+ implementiert.</div>
+        </q-tab-panel>
+      </q-tab-panels>
+    </q-scroll-area>
+
+    <div class="q-pa-md">
+      <q-separator class="q-mb-md" />
+    </div>
+  </div>
 </template>
 
 <style lang="scss" scoped>
-.flex-column {
-  display: flex;
-  flex-direction: column;
+// Main containers - Quasar's column class handles flex
+.overlay-config-dialog {
+  width: 400px;
+  max-width: 90vw;
+  height: 100vh;
 }
 
-.fit-height {
+.overlay-config-page {
   height: 100%;
 }
 
-.q-tab-panel {
-  height: 100%;
-  padding: 0;
+// Ensure non-scrollable elements don't grow/shrink
+.flex-shrink-0 {
+  flex-shrink: 0;
 }
 
+// Legend panel styles
 .legend-panel {
   display: flex;
   flex-direction: column;
@@ -323,7 +533,7 @@ function resetDefaults() {
 .sticky-subtabs {
   position: sticky;
   top: 0;
-  background: white;
+  background: transparent;
   z-index: 1;
 }
 
@@ -336,6 +546,7 @@ function resetDefaults() {
   height: 100%;
 }
 
+// List item styles
 .legend-item {
   padding: 12px 8px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
@@ -343,5 +554,29 @@ function resetDefaults() {
 
 .legend-item:last-child {
   border-bottom: none;
+}
+
+// Tab padding adjustments
+.no-padding {
+  padding: 0;
+  margin: 0;
+
+  :deep(.q-tab) {
+    padding: 0 8px;
+    margin: 0;
+  }
+}
+
+// Make tab panels transparent and not interfere with height
+.transparent-panels {
+  background: transparent;
+
+  :deep(.q-tab-panels__content) {
+    background: transparent;
+  }
+
+  :deep(.q-panel) {
+    background: transparent;
+  }
 }
 </style>

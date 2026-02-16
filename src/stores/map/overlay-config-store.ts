@@ -155,7 +155,7 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
 
     // Hut types section
     sections.push({
-      title: 'Hüttentypen',
+      title: 'Unterkünfte',
       description: 'Verschiedene Unterkunftsarten',
       items: hutCategories.value.map(category => ({
         label: category.name || category.slug,
