@@ -14,7 +14,6 @@ import {
   //SourceSpecification,
 } from 'maplibre-gl';
 import WdOverlayConfig from './overlay-config/WdOverlayConfig.vue';
-import { overlayConfigs } from '@stores/map/overlay-configs';
 import { useOverlayConfigStore } from '@stores/map/overlay-config-store';
 import { useMapMenuStore } from '@stores/map/map-menu-store';
 
@@ -109,7 +108,9 @@ function openConfig(overlayName: string, initialTab?: string) {
 }
 
 function hasActiveFilters(overlayName: string): boolean {
-  const config = overlayConfigs[overlayName];
+  const overlay = overlayStore.overlays.find(o => o.name === overlayName);
+  const config = overlay?.config;
+
   if (!config?.filters || config.filters.length === 0) {
     return false;
   }

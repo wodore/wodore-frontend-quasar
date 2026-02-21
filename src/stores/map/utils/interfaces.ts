@@ -1,5 +1,6 @@
 import { StyleSpecification } from 'maplibre-gl';
 import { PropertyValueSpecification } from 'maplibre-gl';
+import type { OverlayConfig } from '@stores/map/overlay-configs/types';
 
 type LayerOptions = {
   before: string | undefined;
@@ -12,10 +13,7 @@ type Layers = {
 
 export type LayerNames = 'ways' | 'background';
 
-export type OpacitySpecification =
-  | PropertyValueSpecification<number>
-  | undefined
-  | boolean;
+export type OpacitySpecification = PropertyValueSpecification<number> | undefined | boolean;
 
 export interface BasemapSwitchItem {
   name: string;
@@ -28,6 +26,7 @@ export interface BasemapSwitchItem {
 }
 
 export interface OverlaySwitchItem {
+  // Map rendering
   name: string;
   label: string;
   show?: boolean;
@@ -36,6 +35,10 @@ export interface OverlaySwitchItem {
   icon: string;
   style: StyleSpecification; //| string;
   opacity?: OpacitySpecification;
+
+  // Overlay configuration (filters, settings, legend)
+  config?: OverlayConfig;
+
   //registerMapFn?: CallableFunction | undefined;
   //deregisterMapFn?: CallableFunction | undefined;
   //layerUpdateFn?: CallableFunction | undefined;

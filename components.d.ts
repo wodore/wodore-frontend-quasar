@@ -49,6 +49,7 @@ declare module 'vue' {
     WdHutView: typeof import('./src/components/huts/WdHutView.vue')['default']
     WdHutWeatherDay: typeof import('./src/components/huts/WdHutWeatherDay.vue')['default']
     WdHutWeatherForecast: typeof import('./src/components/huts/WdHutWeatherForecast.vue')['default']
+    WdLegendSection: typeof import('./src/components/map/overlay-config/WdLegendSection.vue')['default']
     WdMapContent: typeof import('./src/components/map/WdMapContent.vue')['default']
     WdMapMenu: typeof import('./src/components/map/WdMapMenu.vue')['default']
     WdMapView: typeof import('./src/components/map/WdMapView.vue')['default']

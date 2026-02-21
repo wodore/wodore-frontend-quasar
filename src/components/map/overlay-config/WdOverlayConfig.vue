@@ -2,8 +2,9 @@
 import { ref, computed, watch } from 'vue';
 import { useQuasar } from 'quasar';
 import { useOverlayConfigStore } from '@stores/map/overlay-config-store';
-import { overlayConfigs } from '@stores/map/overlay-configs';
+import { useOverlayStore } from '@stores/map/overlay-store';
 import WdOverlayConfigFilter from './WdOverlayConfigFilter.vue';
+import WdLegendSection from './WdLegendSection.vue';
 
 interface Props {
   overlayName: string;
@@ -26,29 +27,35 @@ const emit = defineEmits<{
 
 const $q = useQuasar();
 const configStore = useOverlayConfigStore();
+const overlayStore = useOverlayStore();
 
 const isOpen = computed({
   get: () => props.modelValue,
   set: val => emit('update:modelValue', val),
 });
 
-const overlayConfig = computed(() => overlayConfigs[props.overlayName]);
+const overlay = computed(() => {
+  return overlayStore.overlays.find(o => o.name === props.overlayName);
+});
+
+const overlayConfig = computed(() => overlay.value?.config);
 const hasFilters = computed(() => (overlayConfig.value?.filters?.length ?? 0) > 0);
 const hasSettings = computed(() => (overlayConfig.value?.settings?.length ?? 0) > 0);
 const hasLegend = computed(() => overlayConfig.value?.legend !== undefined);
 
-// Check for specific legend sections
-const hutTypesSection = computed(() =>
-  overlayConfig.value?.legend?.sections?.find(s => s.title === 'Unterkünfte')
-);
-const availabilitySection = computed(() =>
-  overlayConfig.value?.legend?.sections?.find(s => s.title === 'Verfügbarkeit')
-);
-const hasHutTypes = computed(() => hutTypesSection.value !== undefined);
-const hasAvailability = computed(() => availabilitySection.value !== undefined);
+// Generic legend sections (replaces hardcoded hut-specific sections)
+const legendSections = computed(() => overlayConfig.value?.legend?.sections || []);
+const hasMultipleLegendSections = computed(() => legendSections.value.length > 1);
 
-// Sub-tab for Info section
-const infoSubTab = ref('hut-types');
+// Sub-tab for Info section (auto-select first section)
+const infoSubTab = ref(legendSections.value[0]?.title || '');
+
+// Update infoSubTab when legend sections change
+watch(legendSections, newSections => {
+  if (newSections.length > 0 && !infoSubTab.value) {
+    infoSubTab.value = newSections[0].title;
+  }
+});
 
 const hasActiveFilters = computed(() => {
   if (!overlayConfig.value?.filters || overlayConfig.value.filters.length === 0) {
@@ -110,14 +117,7 @@ watch(
 
 // Get display name for overlay
 const overlayLabel = computed(() => {
-  const labelMap: Record<string, string> = {
-    huts: 'Unterkünfte',
-    'transport-stops': 'Haltestellen',
-    hiking: 'Wanderwege',
-    mtb: 'Mountainbike',
-    cycling: 'Fahrrad',
-  };
-  return labelMap[props.overlayName] || props.overlayName;
+  return overlay.value?.label || props.overlayName;
 });
 
 function getTabLabel(tab: string): string {
@@ -187,7 +187,7 @@ function resetDefaults() {
         <q-tab-panels v-model="activeTab" animated class="transparent-panels">
           <q-tab-panel name="filter" v-if="hasFilters" class="bg-transparent">
             <WdOverlayConfigFilter
-              v-for="filter in overlayConfig.filters"
+              v-for="filter in overlayConfig?.filters"
               :key="filter.id"
               :overlay-name="overlayName"
               :filter="filter"
@@ -197,122 +197,47 @@ function resetDefaults() {
           </q-tab-panel>
 
           <q-tab-panel name="legend" v-if="hasLegend" class="q-pa-none legend-panel">
-            <!-- Sub-tabs for Info section (sticky) -->
-            <div class="sticky-subtabs">
-              Unterkünfte<q-tabs
+            <!-- Sub-tabs for Info section (sticky) - only show if multiple sections -->
+            <div v-if="hasMultipleLegendSections" class="sticky-subtabs">
+              <q-tabs
                 v-model="infoSubTab"
                 dense
                 no-caps
                 class="text-grey-8"
                 indicator-color="primary"
               >
-                <q-tab name="hut-types" label="Arten" v-if="hasHutTypes" />
-                <q-tab name="availability" label="Verfügbarkeit" v-if="hasAvailability" />
+                <q-tab
+                  v-for="section in legendSections"
+                  :key="section.title"
+                  :name="section.title"
+                  :label="section.title"
+                />
               </q-tabs>
               <q-separator />
             </div>
 
             <div class="subtab-content bg-transparent">
-              <q-tab-panels v-model="infoSubTab" animated class="subtab-panels bg-transparent">
-                <q-tab-panel name="hut-types" v-if="hasHutTypes" class="q-pa-none bg-transparent">
-                  <div v-if="hutTypesSection">
-                    <div
-                      v-if="hutTypesSection.description"
-                      class="text-caption text-grey-7 q-pa-md q-pb-sm"
-                    >
-                      {{ hutTypesSection.description }}
-                    </div>
-
-                    <q-list class="bg-transparent">
-                      <q-item
-                        v-for="(item, idx) in hutTypesSection.items"
-                        :key="idx"
-                        class="legend-item"
-                      >
-                        <!-- Show both symbols as avatars (for hut types) -->
-                        <q-item-section avatar v-if="item.metadata?.iconDetailed">
-                          <q-avatar size="38px" square>
-                            <img
-                              :src="item.metadata.iconDetailed"
-                              :alt="item.label + ' (detailliert)'"
-                            />
-                          </q-avatar>
-                        </q-item-section>
-
-                        <q-item-section avatar v-if="item.metadata?.iconSimple">
-                          <q-avatar size="28px" square>
-                            <img :src="item.metadata.iconSimple" :alt="item.label + ' (einfach)'" />
-                          </q-avatar>
-                        </q-item-section>
-
-                        <q-item-section>
-                          <q-item-label class="text-weight-medium">{{ item.label }}</q-item-label>
-                          <q-item-label
-                            caption
-                            v-if="item.description"
-                            class="text-caption q-mt-xs"
-                          >
-                            {{ item.description }}
-                          </q-item-label>
-                        </q-item-section>
-                      </q-item>
-                    </q-list>
-                  </div>
-                </q-tab-panel>
-
+              <!-- Multiple sections: use tab panels -->
+              <q-tab-panels
+                v-if="hasMultipleLegendSections"
+                v-model="infoSubTab"
+                animated
+                class="subtab-panels bg-transparent"
+              >
                 <q-tab-panel
-                  name="availability"
-                  v-if="hasAvailability"
-                  class="q-pa-none bg-transparent"
+                  v-for="section in legendSections"
+                  :key="section.title"
+                  :name="section.title"
+                  class="q-pa-md bg-transparent"
                 >
-                  <div v-if="availabilitySection">
-                    <div
-                      v-if="availabilitySection.description"
-                      class="text-caption text-grey-7 q-pa-md q-pb-sm"
-                    >
-                      {{ availabilitySection.description }}
-                    </div>
-
-                    <q-list class="bg-transparent">
-                      <q-item
-                        v-for="(item, idx) in availabilitySection.items"
-                        :key="idx"
-                        class="legend-item"
-                      >
-                        <!-- Show single icon (for availability) -->
-                        <q-item-section avatar v-if="item.icon">
-                          <q-avatar size="38px" square>
-                            <img :src="item.icon" :alt="item.label" />
-                          </q-avatar>
-                        </q-item-section>
-
-                        <!-- Show color swatch (for availability) -->
-                        <q-item-section avatar v-if="item.color">
-                          <div
-                            :style="{
-                              width: '32px',
-                              height: '32px',
-                              backgroundColor: item.color,
-                              borderRadius: '50%',
-                            }"
-                          />
-                        </q-item-section>
-
-                        <q-item-section>
-                          <q-item-label class="text-weight-medium">{{ item.label }}</q-item-label>
-                          <q-item-label
-                            caption
-                            v-if="item.description"
-                            class="text-caption q-mt-xs"
-                          >
-                            {{ item.description }}
-                          </q-item-label>
-                        </q-item-section>
-                      </q-item>
-                    </q-list>
-                  </div>
+                  <WdLegendSection :section="section" />
                 </q-tab-panel>
               </q-tab-panels>
+
+              <!-- Single section: render directly -->
+              <div v-else class="q-pa-md">
+                <WdLegendSection v-if="legendSections[0]" :section="legendSections[0]" />
+              </div>
             </div>
           </q-tab-panel>
 
@@ -320,7 +245,14 @@ function resetDefaults() {
             <div class="text-body2 text-grey-7">
               Einstellungen werden in Phase 4+ implementiert.
             </div>
-            <!-- Phase 4+: <WdOverlayConfigSettings :overlay-name="overlayName" /> -->
+            <!-- Phase 4+: Support custom setting components -->
+            <!-- <component
+              v-for="setting in overlayConfig.settings"
+              :key="setting.id"
+              :is="setting.component || 'WdOverlayConfigSetting'"
+              :overlay-name="overlayName"
+              :setting="setting"
+            /> -->
           </q-tab-panel>
         </q-tab-panels>
       </q-scroll-area>
@@ -371,8 +303,8 @@ function resetDefaults() {
     >
       <q-tab-panels v-model="activeTab" animated class="transparent-panels">
         <q-tab-panel name="legend" v-if="hasLegend" class="q-pa-none legend-panel">
-          <!-- Sub-tabs for Info section (sticky) -->
-          <div class="sticky-subtabs">
+          <!-- Sub-tabs for Info section (sticky) - only show if multiple sections -->
+          <div v-if="hasMultipleLegendSections" class="sticky-subtabs">
             <q-tabs
               v-model="infoSubTab"
               dense
@@ -380,108 +312,44 @@ function resetDefaults() {
               class="text-grey-8"
               indicator-color="primary"
             >
-              <q-tab name="hut-types" label="Arten" v-if="hasHutTypes" />
-              <q-tab name="availability" label="Verfügbarkeit" v-if="hasAvailability" />
+              <q-tab
+                v-for="section in legendSections"
+                :key="section.title"
+                :name="section.title"
+                :label="section.title"
+              />
             </q-tabs>
             <q-separator />
           </div>
 
           <div class="subtab-content bg-transparent">
-            <q-tab-panels v-model="infoSubTab" animated class="subtab-panels bg-transparent">
-              <q-tab-panel name="hut-types" v-if="hasHutTypes" class="q-pa-none bg-transparent">
-                <div v-if="hutTypesSection">
-                  <div
-                    v-if="hutTypesSection.description"
-                    class="text-caption text-grey-7 q-pa-md q-pb-sm"
-                  >
-                    {{ hutTypesSection.description }}
-                  </div>
-
-                  <q-list class="bg-transparent">
-                    <q-item
-                      v-for="(item, idx) in hutTypesSection.items"
-                      :key="idx"
-                      class="legend-item"
-                    >
-                      <q-item-section avatar v-if="item.metadata?.iconDetailed">
-                        <q-avatar size="38px" square>
-                          <img
-                            :src="item.metadata.iconDetailed"
-                            :alt="item.label + ' (detailliert)'"
-                          />
-                        </q-avatar>
-                      </q-item-section>
-
-                      <q-item-section avatar v-if="item.metadata?.iconSimple">
-                        <q-avatar size="28px" square>
-                          <img :src="item.metadata.iconSimple" :alt="item.label + ' (einfach)'" />
-                        </q-avatar>
-                      </q-item-section>
-
-                      <q-item-section>
-                        <q-item-label class="text-weight-medium">{{ item.label }}</q-item-label>
-                        <q-item-label caption v-if="item.description" class="text-caption q-mt-xs">
-                          {{ item.description }}
-                        </q-item-label>
-                      </q-item-section>
-                    </q-item>
-                  </q-list>
-                </div>
-              </q-tab-panel>
-
+            <!-- Multiple sections: use tab panels -->
+            <q-tab-panels
+              v-if="hasMultipleLegendSections"
+              v-model="infoSubTab"
+              animated
+              class="subtab-panels bg-transparent"
+            >
               <q-tab-panel
-                name="availability"
-                v-if="hasAvailability"
-                class="q-pa-none bg-transparent"
+                v-for="section in legendSections"
+                :key="section.title"
+                :name="section.title"
+                class="q-pa-md bg-transparent"
               >
-                <div v-if="availabilitySection">
-                  <div
-                    v-if="availabilitySection.description"
-                    class="text-caption text-grey-7 q-pa-md q-pb-sm"
-                  >
-                    {{ availabilitySection.description }}
-                  </div>
-
-                  <q-list class="bg-transparent">
-                    <q-item
-                      v-for="(item, idx) in availabilitySection.items"
-                      :key="idx"
-                      class="legend-item"
-                    >
-                      <q-item-section avatar v-if="item.icon">
-                        <q-avatar size="38px" square>
-                          <img :src="item.icon" :alt="item.label" />
-                        </q-avatar>
-                      </q-item-section>
-
-                      <q-item-section avatar v-if="item.color">
-                        <div
-                          :style="{
-                            width: '32px',
-                            height: '32px',
-                            backgroundColor: item.color,
-                            borderRadius: '50%',
-                          }"
-                        />
-                      </q-item-section>
-
-                      <q-item-section>
-                        <q-item-label class="text-weight-medium">{{ item.label }}</q-item-label>
-                        <q-item-label caption v-if="item.description" class="text-caption q-mt-xs">
-                          {{ item.description }}
-                        </q-item-label>
-                      </q-item-section>
-                    </q-item>
-                  </q-list>
-                </div>
+                <WdLegendSection :section="section" />
               </q-tab-panel>
             </q-tab-panels>
+
+            <!-- Single section: render directly -->
+            <div v-else class="q-pa-md">
+              <WdLegendSection v-if="legendSections[0]" :section="legendSections[0]" />
+            </div>
           </div>
         </q-tab-panel>
 
         <q-tab-panel name="filter" v-if="hasFilters" class="bg-transparent">
           <WdOverlayConfigFilter
-            v-for="filter in overlayConfig.filters"
+            v-for="filter in overlayConfig?.filters"
             :key="filter.id"
             :overlay-name="overlayName"
             :filter="filter"
@@ -544,16 +412,6 @@ function resetDefaults() {
 
 .subtab-panels {
   height: 100%;
-}
-
-// List item styles
-.legend-item {
-  padding: 12px 8px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.legend-item:last-child {
-  border-bottom: none;
 }
 
 // Tab padding adjustments

@@ -1,19 +1,9 @@
 /**
- * Overlay Configurations
+ * Overlay Configurations - Type Definitions
  *
- * Central export for all overlay configurations.
+ * This module only exports type definitions.
+ * Overlay configurations are now defined inline in src/stores/map/utils/overlays.ts
+ * as part of the OverlaySwitchItem definitions.
  */
 
-import type { OverlayConfigs } from './types';
-import { hutsConfig } from './huts';
-
 export * from './types';
-export { hutsConfig };
-
-export const overlayConfigs: OverlayConfigs = {
-  huts: hutsConfig,
-  // Future overlays:
-  // 'transport-stops': transportConfig,
-  // hiking: hikingConfig,
-  // etc.
-};
