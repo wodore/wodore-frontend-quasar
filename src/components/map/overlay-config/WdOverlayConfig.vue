@@ -34,10 +34,11 @@ const isOpen = computed({
   set: val => emit('update:modelValue', val),
 });
 
-const overlayConfig = computed(() => {
-  const overlay = overlayStore.overlays.find(o => o.name === props.overlayName);
-  return overlay?.config;
+const overlay = computed(() => {
+  return overlayStore.overlays.find(o => o.name === props.overlayName);
 });
+
+const overlayConfig = computed(() => overlay.value?.config);
 const hasFilters = computed(() => (overlayConfig.value?.filters?.length ?? 0) > 0);
 const hasSettings = computed(() => (overlayConfig.value?.settings?.length ?? 0) > 0);
 const hasLegend = computed(() => overlayConfig.value?.legend !== undefined);
@@ -116,14 +117,7 @@ watch(
 
 // Get display name for overlay
 const overlayLabel = computed(() => {
-  const labelMap: Record<string, string> = {
-    huts: 'Unterkünfte',
-    'transport-stops': 'Haltestellen',
-    hiking: 'Wanderwege',
-    mtb: 'Mountainbike',
-    cycling: 'Fahrrad',
-  };
-  return labelMap[props.overlayName] || props.overlayName;
+  return overlay.value?.label || props.overlayName;
 });
 
 function getTabLabel(tab: string): string {
