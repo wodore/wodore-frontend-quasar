@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { overlayConfigs } from '@stores/map/overlay-configs';
+import { useOverlayStore } from '@stores/map/overlay-store';
 import { useMapMenuStore } from '@stores/map/map-menu-store';
 
 interface Props {
@@ -19,16 +19,20 @@ const emit = defineEmits<{
   toggleOverlay: [];
 }>();
 
+const overlayStore = useOverlayStore();
 const menuStore = useMapMenuStore();
 
+const overlayConfig = computed(() => {
+  const overlay = overlayStore.overlays.find(o => o.name === props.overlayName);
+  return overlay?.config;
+});
+
 const hasFilters = computed(() => {
-  const config = overlayConfigs[props.overlayName];
-  return (config?.filters?.length ?? 0) > 0;
+  return (overlayConfig.value?.filters?.length ?? 0) > 0;
 });
 
 const hasInfo = computed(() => {
-  const config = overlayConfigs[props.overlayName];
-  return config?.legend !== undefined;
+  return overlayConfig.value?.legend !== undefined;
 });
 
 const isInfoActive = computed(() => {
