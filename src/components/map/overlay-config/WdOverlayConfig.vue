@@ -46,6 +46,8 @@ const hasLegend = computed(() => overlayConfig.value?.legend !== undefined);
 // Generic legend sections (replaces hardcoded hut-specific sections)
 const legendSections = computed(() => overlayConfig.value?.legend?.sections || []);
 const hasMultipleLegendSections = computed(() => legendSections.value.length > 1);
+const legendLinks = computed(() => overlayConfig.value?.legend?.links || []);
+const legendAttribution = computed(() => overlayConfig.value?.legend?.attribution || []);
 
 // Sub-tab for Info section (auto-select first section)
 const infoSubTab = ref(legendSections.value[0]?.title || '');
@@ -239,6 +241,57 @@ function resetDefaults() {
                 <WdLegendSection v-if="legendSections[0]" :section="legendSections[0]" />
               </div>
             </div>
+
+            <!-- Links section (below description) -->
+            <div v-if="legendLinks.length > 0" class="q-px-md q-pb-md">
+              <div class="text-caption text-grey-7 q-mb-xs">Weiterführende Links</div>
+              <q-list dense class="transparent">
+                <q-item
+                  v-for="(link, index) in legendLinks"
+                  :key="index"
+                  clickable
+                  tag="a"
+                  :href="link.url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="q-px-none"
+                >
+                  <q-item-section side>
+                    <q-icon name="wd-link" size="xs" color="primary" />
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label class="text-primary">{{ link.name }}</q-item-label>
+                  </q-item-section>
+                  <!-- <q-item-section side> -->
+                  <!--   <q-icon name="open_in_new" size="xs" color="grey-6" /> -->
+                  <!-- </q-item-section> -->
+                </q-item>
+              </q-list>
+            </div>
+
+            <!-- Attribution section (at bottom) -->
+            <div v-if="legendAttribution.length > 0" class="q-px-md q-pb-md">
+              <!-- <q-separator class="q-mb-sm" /> -->
+              <!-- <div class="text-caption text-grey-7 q-mb-xs">Datenquellen</div> -->
+              <div class="row q-gutter-xs">
+                <q-chip
+                  v-for="(attr, index) in legendAttribution"
+                  :key="index"
+                  size="sm"
+                  clickable
+                  tag="a"
+                  :href="attr.url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  color="grey-3"
+                  text-color="grey-8"
+                  class="attribution-chip"
+                >
+                  {{ attr.name }}
+                  <!-- <q-icon name="open_in_new" size="xs" class="q-ml-xs" /> -->
+                </q-chip>
+              </div>
+            </div>
           </q-tab-panel>
 
           <q-tab-panel name="settings" v-if="hasSettings" class="bg-transparent">
@@ -345,6 +398,57 @@ function resetDefaults() {
               <WdLegendSection v-if="legendSections[0]" :section="legendSections[0]" />
             </div>
           </div>
+
+          <!-- Links section (below description) -->
+          <div v-if="legendLinks.length > 0" class="q-px-md q-pb-md">
+            <div class="text-caption text-grey-7 q-mb-xs">Weiterführende Links</div>
+            <q-list dense class="transparent">
+              <q-item
+                v-for="(link, index) in legendLinks"
+                :key="index"
+                clickable
+                tag="a"
+                :href="link.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="q-px-none"
+              >
+                <q-item-section side>
+                  <q-icon name="wd-link" size="xs" color="primary" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label class="text-primary">{{ link.name }}</q-item-label>
+                </q-item-section>
+                <!-- <q-item-section side> -->
+                <!--   <q-icon name="open_in_new" size="xs" color="grey-6" /> -->
+                <!-- </q-item-section> -->
+              </q-item>
+            </q-list>
+          </div>
+
+          <!-- Attribution section (at bottom) -->
+          <div v-if="legendAttribution.length > 0" class="q-px-md q-pb-md">
+            <!-- <q-separator class="q-mb-sm" /> -->
+            <!-- <div class="text-caption text-grey-7 q-mb-xs">Datenquellen</div> -->
+            <div class="row q-gutter-xs">
+              <q-chip
+                v-for="(attr, index) in legendAttribution"
+                :key="index"
+                size="sm"
+                clickable
+                tag="a"
+                :href="attr.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                color="grey-3"
+                text-color="grey-8"
+                class="attribution-chip"
+              >
+                {{ attr.name }}
+                <!-- <q-icon name="open_in_new" size="xs" class="q-ml-xs" /> -->
+              </q-chip>
+            </div>
+          </div>
         </q-tab-panel>
 
         <q-tab-panel name="filter" v-if="hasFilters" class="bg-transparent">
@@ -435,6 +539,15 @@ function resetDefaults() {
 
   :deep(.q-panel) {
     background: transparent;
+  }
+}
+
+// Attribution chip styling
+.attribution-chip {
+  text-decoration: none;
+
+  &:hover {
+    opacity: 0.8;
   }
 }
 </style>
