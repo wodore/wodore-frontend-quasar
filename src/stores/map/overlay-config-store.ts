@@ -20,7 +20,6 @@ import type {
   CategoryConfigObject,
   FilterDefinition,
   FilterOption,
-  OverlayConfig,
 } from '@stores/map/overlay-configs/types';
 import { clientWodore } from '@clients/index';
 
@@ -48,7 +47,7 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
   /**
    * Get overlay config by overlay name from the unified overlay store
    */
-  function getOverlayConfig(overlayName: string): OverlayConfig | undefined {
+  function getOverlayConfig(overlayName: string) {
     const overlay = overlayStore.overlays.find(o => o.name === overlayName);
     return overlay?.config;
   }
@@ -187,8 +186,10 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
 
     filter.options = categories.map(
       (category): FilterOption => ({
-        value: (category[valueField] as string) || category.slug,
-        label: (category[labelField] as string) || category.slug,
+        value:
+          ((category as unknown as Record<string, unknown>)[valueField] as string) || category.slug,
+        label:
+          ((category as unknown as Record<string, unknown>)[labelField] as string) || category.slug,
         icon: category.symbol_detailed || category.symbol_simple || undefined,
         description: category.description || undefined,
         iconDetailed: category.symbol_detailed || undefined,
@@ -244,7 +245,8 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
         : 'name';
 
     section.items = categories.map(category => ({
-      label: (category[labelField] as string) || category.slug,
+      label:
+        ((category as unknown as Record<string, unknown>)[labelField] as string) || category.slug,
       description: category.description || undefined,
       icon: category.symbol_detailed || category.symbol_simple || category.symbol_mono || undefined,
       color: category.color || undefined,

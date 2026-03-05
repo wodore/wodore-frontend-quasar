@@ -179,7 +179,6 @@ export interface CategoryItem {
   symbol_mono?: string | null;
   color?: string | null;
   color_text?: string | null;
-  [key: string]: unknown; // Allow additional fields
 }
 
 // Legacy type aliases for backward compatibility
