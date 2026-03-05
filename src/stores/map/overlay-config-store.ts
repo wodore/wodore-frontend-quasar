@@ -20,6 +20,7 @@ import type {
   CategoryConfigObject,
   FilterDefinition,
   FilterOption,
+  OverlayConfig,
 } from '@stores/map/overlay-configs/types';
 import { clientWodore } from '@clients/index';
 
@@ -47,7 +48,7 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
   /**
    * Get overlay config by overlay name from the unified overlay store
    */
-  function getOverlayConfig(overlayName: string) {
+  function getOverlayConfig(overlayName: string): OverlayConfig | undefined {
     const overlay = overlayStore.overlays.find(o => o.name === overlayName);
     return overlay?.config;
   }
