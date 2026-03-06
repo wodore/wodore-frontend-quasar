@@ -28,21 +28,21 @@ defineProps<Props>();
         <q-item-section side>
           <!-- Symbol: Detailed Icon Only -->
           <template v-if="section.type === 'symbol_detailed'">
-            <q-avatar v-if="item.metadata?.iconDetailed || item.icon" size="38px">
+            <q-avatar v-if="item.metadata?.iconDetailed || item.icon" size="38px" square>
               <img :src="item.metadata?.iconDetailed || item.icon" :alt="item.label" />
             </q-avatar>
           </template>
 
           <!-- Symbol: Simple Icon Only -->
           <template v-else-if="section.type === 'symbol_simple'">
-            <q-avatar v-if="item.metadata?.iconSimple || item.icon" size="28px">
+            <q-avatar v-if="item.metadata?.iconSimple || item.icon" size="28px" square>
               <img :src="item.metadata?.iconSimple || item.icon" :alt="item.label" />
             </q-avatar>
           </template>
 
           <!-- Symbol: Monochrome Icon Only -->
           <template v-else-if="section.type === 'symbol_mono'">
-            <q-avatar v-if="item.metadata?.iconMono || item.icon" size="32px">
+            <q-avatar v-if="item.metadata?.iconMono || item.icon" size="32px" square>
               <img :src="item.metadata?.iconMono || item.icon" :alt="item.label" />
             </q-avatar>
           </template>
@@ -50,11 +50,11 @@ defineProps<Props>();
           <!-- Symbol: Dual Icons (detailed + simple side-by-side) -->
           <template v-else-if="section.type === 'symbol_dual'">
             <div class="row items-center q-gutter-sm">
-              <q-avatar v-if="item.metadata?.iconDetailed" size="38px">
+              <q-avatar v-if="item.metadata?.iconDetailed" size="38px" square>
                 <img :src="item.metadata.iconDetailed" :alt="`${item.label} (detailed)`" />
               </q-avatar>
 
-              <q-avatar v-if="item.metadata?.iconSimple" size="28px">
+              <q-avatar v-if="item.metadata?.iconSimple" size="28px" square>
                 <img :src="item.metadata.iconSimple" :alt="`${item.label} (simple)`" />
               </q-avatar>
 
@@ -88,6 +88,7 @@ defineProps<Props>();
             <q-avatar
               v-if="item.icon || item.metadata?.iconDetailed || item.metadata?.iconSimple"
               size="32px"
+              square
             >
               <img
                 :src="(item.icon || item.metadata?.iconDetailed || item.metadata?.iconSimple) ?? ''"

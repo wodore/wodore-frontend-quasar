@@ -187,8 +187,10 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
 
     filter.options = categories.map(
       (category): FilterOption => ({
-        value: (category[valueField] as string) || category.slug,
-        label: (category[labelField] as string) || category.slug,
+        value:
+          ((category as unknown as Record<string, unknown>)[valueField] as string) || category.slug,
+        label:
+          ((category as unknown as Record<string, unknown>)[labelField] as string) || category.slug,
         icon: category.symbol_detailed || category.symbol_simple || undefined,
         description: category.description || undefined,
         iconDetailed: category.symbol_detailed || undefined,
@@ -244,7 +246,8 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
         : 'name';
 
     section.items = categories.map(category => ({
-      label: (category[labelField] as string) || category.slug,
+      label:
+        ((category as unknown as Record<string, unknown>)[labelField] as string) || category.slug,
       description: category.description || undefined,
       icon: category.symbol_detailed || category.symbol_simple || category.symbol_mono || undefined,
       color: category.color || undefined,

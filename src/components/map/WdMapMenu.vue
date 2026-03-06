@@ -36,7 +36,7 @@ const initialTab = computed(() => menuStore.menuData.initialTab as string | unde
 const menuTitle = computed(() => menuStore.menuData.title as string | undefined);
 
 function handleOverlayConfigClose() {
-  menuStore.reset();
+  menuStore.closeMenu();
 }
 </script>
 <style scoped>
@@ -52,7 +52,7 @@ function handleOverlayConfigClose() {
 .drawer-mobile {
   position: absolute;
   top: 50px;
-  left: 4px;
+  left: 0;
   right: 0;
   height: calc(100vh - 60px);
 }
