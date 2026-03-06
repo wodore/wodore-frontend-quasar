@@ -128,7 +128,7 @@ function onFilterClick(event: Event) {
   }
 
   &:hover {
-    background-color: rgba(color('white', 500), 0.1);
+    background: color('icon');
   }
 }
 
