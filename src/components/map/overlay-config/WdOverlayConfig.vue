@@ -47,25 +47,6 @@ const hasFilters = computed(() => (overlayConfig.value?.filters?.length ?? 0) > 
 const hasSettings = computed(() => (overlayConfig.value?.settings?.length ?? 0) > 0);
 const hasLegend = computed(() => overlayConfig.value?.legend !== undefined);
 
-<<<<<<< HEAD
-=======
-// Generic legend sections (replaces hardcoded hut-specific sections)
-const legendSections = computed(() => overlayConfig.value?.legend?.sections || []);
-const hasMultipleLegendSections = computed(() => legendSections.value.length > 1);
-const legendLinks = computed(() => overlayConfig.value?.legend?.links || []);
-const legendAttribution = computed(() => overlayConfig.value?.legend?.attribution || []);
-
-// Sub-tab for Info section (auto-select first section)
-const infoSubTab = ref(legendSections.value[0]?.title || '');
-
-// Update infoSubTab when legend sections change
-watch(legendSections, newSections => {
-  if (newSections.length > 0 && !infoSubTab.value) {
-    infoSubTab.value = newSections[0].title;
-  }
-});
-
->>>>>>> a8859f5 (Add legen info)
 const hasActiveFilters = computed(() => {
   if (!overlayConfig.value?.filters || overlayConfig.value.filters.length === 0) {
     return false;
@@ -212,123 +193,8 @@ function resetDefaults() {
               :model-value="configStore.getFilterValue(overlayName, filter.id)"
               @update:model-value="configStore.setFilterValue(overlayName, filter.id, $event)"
             />
-<<<<<<< HEAD
           </template>
         </WdOverlayConfigPanels>
-=======
-          </q-tab-panel>
-
-          <q-tab-panel name="legend" v-if="hasLegend" class="q-pa-none legend-panel">
-            <!-- Sub-tabs for Info section (sticky) - only show if multiple sections -->
-            <div v-if="hasMultipleLegendSections" class="sticky-subtabs">
-              <q-tabs
-                v-model="infoSubTab"
-                dense
-                no-caps
-                class="text-grey-8"
-                indicator-color="primary"
-              >
-                <q-tab
-                  v-for="section in legendSections"
-                  :key="section.title"
-                  :name="section.title"
-                  :label="section.title"
-                />
-              </q-tabs>
-              <q-separator />
-            </div>
-
-            <div class="subtab-content bg-transparent">
-              <!-- Multiple sections: use tab panels -->
-              <q-tab-panels
-                v-if="hasMultipleLegendSections"
-                v-model="infoSubTab"
-                animated
-                class="subtab-panels bg-transparent"
-              >
-                <q-tab-panel
-                  v-for="section in legendSections"
-                  :key="section.title"
-                  :name="section.title"
-                  class="q-pa-md bg-transparent"
-                >
-                  <WdLegendSection :section="section" />
-                </q-tab-panel>
-              </q-tab-panels>
-
-              <!-- Single section: render directly -->
-              <div v-else class="q-pa-md">
-                <WdLegendSection v-if="legendSections[0]" :section="legendSections[0]" />
-              </div>
-            </div>
-
-            <!-- Links section (below description) -->
-            <div v-if="legendLinks.length > 0" class="q-px-md q-pb-md">
-              <div class="text-caption text-grey-7 q-mb-xs">Weiterführende Links</div>
-              <q-list dense class="transparent">
-                <q-item
-                  v-for="(link, index) in legendLinks"
-                  :key="index"
-                  clickable
-                  tag="a"
-                  :href="link.url"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="q-px-none"
-                >
-                  <q-item-section side>
-                    <q-icon name="wd-link" size="xs" color="primary" />
-                  </q-item-section>
-                  <q-item-section>
-                    <q-item-label class="text-primary">{{ link.name }}</q-item-label>
-                  </q-item-section>
-                  <!-- <q-item-section side> -->
-                  <!--   <q-icon name="open_in_new" size="xs" color="grey-6" /> -->
-                  <!-- </q-item-section> -->
-                </q-item>
-              </q-list>
-            </div>
-
-            <!-- Attribution section (at bottom) -->
-            <div v-if="legendAttribution.length > 0" class="q-px-md q-pb-md">
-              <!-- <q-separator class="q-mb-sm" /> -->
-              <!-- <div class="text-caption text-grey-7 q-mb-xs">Datenquellen</div> -->
-              <div class="row q-gutter-xs">
-                <q-chip
-                  v-for="(attr, index) in legendAttribution"
-                  :key="index"
-                  size="sm"
-                  clickable
-                  tag="a"
-                  :href="attr.url"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  color="grey-3"
-                  text-color="grey-8"
-                  class="attribution-chip"
-                >
-                  {{ attr.name }}
-                  <!-- <q-icon name="open_in_new" size="xs" class="q-ml-xs" /> -->
-                </q-chip>
-              </div>
-            </div>
-          </q-tab-panel>
-
-          <q-tab-panel name="settings" v-if="hasSettings" class="bg-transparent">
-            <div class="text-body2 text-grey-7">
-              Einstellungen werden in Phase 4+ implementiert.
-            </div>
-            <!-- Phase 4+: Support custom setting components -->
-            <!-- <component
-              v-for="setting in overlayConfig.settings"
-              :key="setting.id"
-              :is="setting.component || 'WdOverlayConfigSetting'"
-              :overlay-name="overlayName"
-              :setting="setting"
-            /> -->
-          </q-tab-panel>
-        </q-tab-panels>
->>>>>>> a8859f5 (Add legen info)
       </q-scroll-area>
 
       <div class="q-pa-md">
@@ -382,7 +248,6 @@ function resetDefaults() {
         borderRadius: '8px 0 0 8px',
       }"
     >
-<<<<<<< HEAD
       <WdOverlayConfigPanels
         :active-tab="activeTab"
         :overlay-name="overlayName"
@@ -394,106 +259,6 @@ function resetDefaults() {
         @reset="resetDefaults"
       >
         <template #filter-content>
-=======
-      <q-tab-panels v-model="activeTab" animated class="transparent-panels">
-        <q-tab-panel name="legend" v-if="hasLegend" class="q-pa-none legend-panel">
-          <!-- Sub-tabs for Info section (sticky) - only show if multiple sections -->
-          <div v-if="hasMultipleLegendSections" class="sticky-subtabs">
-            <q-tabs
-              v-model="infoSubTab"
-              dense
-              no-caps
-              class="text-grey-8"
-              indicator-color="primary"
-            >
-              <q-tab
-                v-for="section in legendSections"
-                :key="section.title"
-                :name="section.title"
-                :label="section.title"
-              />
-            </q-tabs>
-            <q-separator />
-          </div>
-
-          <div class="subtab-content bg-transparent">
-            <!-- Multiple sections: use tab panels -->
-            <q-tab-panels
-              v-if="hasMultipleLegendSections"
-              v-model="infoSubTab"
-              animated
-              class="subtab-panels bg-transparent"
-            >
-              <q-tab-panel
-                v-for="section in legendSections"
-                :key="section.title"
-                :name="section.title"
-                class="q-pa-md bg-transparent"
-              >
-                <WdLegendSection :section="section" />
-              </q-tab-panel>
-            </q-tab-panels>
-
-            <!-- Single section: render directly -->
-            <div v-else class="q-pa-md">
-              <WdLegendSection v-if="legendSections[0]" :section="legendSections[0]" />
-            </div>
-          </div>
-
-          <!-- Links section (below description) -->
-          <div v-if="legendLinks.length > 0" class="q-px-md q-pb-md">
-            <div class="text-caption text-grey-7 q-mb-xs">Weiterführende Links</div>
-            <q-list dense class="transparent">
-              <q-item
-                v-for="(link, index) in legendLinks"
-                :key="index"
-                clickable
-                tag="a"
-                :href="link.url"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="q-px-none"
-              >
-                <q-item-section side>
-                  <q-icon name="wd-link" size="xs" color="primary" />
-                </q-item-section>
-                <q-item-section>
-                  <q-item-label class="text-primary">{{ link.name }}</q-item-label>
-                </q-item-section>
-                <!-- <q-item-section side> -->
-                <!--   <q-icon name="open_in_new" size="xs" color="grey-6" /> -->
-                <!-- </q-item-section> -->
-              </q-item>
-            </q-list>
-          </div>
-
-          <!-- Attribution section (at bottom) -->
-          <div v-if="legendAttribution.length > 0" class="q-px-md q-pb-md">
-            <!-- <q-separator class="q-mb-sm" /> -->
-            <!-- <div class="text-caption text-grey-7 q-mb-xs">Datenquellen</div> -->
-            <div class="row q-gutter-xs">
-              <q-chip
-                v-for="(attr, index) in legendAttribution"
-                :key="index"
-                size="sm"
-                clickable
-                tag="a"
-                :href="attr.url"
-                target="_blank"
-                rel="noopener noreferrer"
-                color="grey-3"
-                text-color="grey-8"
-                class="attribution-chip"
-              >
-                {{ attr.name }}
-                <!-- <q-icon name="open_in_new" size="xs" class="q-ml-xs" /> -->
-              </q-chip>
-            </div>
-          </div>
-        </q-tab-panel>
-
-        <q-tab-panel name="filter" v-if="hasFilters" class="bg-transparent">
->>>>>>> a8859f5 (Add legen info)
           <WdOverlayConfigFilter
             v-for="filter in overlayConfig?.filters"
             :key="filter.id"
@@ -539,29 +304,4 @@ function resetDefaults() {
     margin: 0;
   }
 }
-<<<<<<< HEAD
-=======
-
-// Make tab panels transparent and not interfere with height
-.transparent-panels {
-  background: transparent;
-
-  :deep(.q-tab-panels__content) {
-    background: transparent;
-  }
-
-  :deep(.q-panel) {
-    background: transparent;
-  }
-}
-
-// Attribution chip styling
-.attribution-chip {
-  text-decoration: none;
-
-  &:hover {
-    opacity: 0.8;
-  }
-}
->>>>>>> a8859f5 (Add legen info)
 </style>
