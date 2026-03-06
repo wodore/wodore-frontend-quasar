@@ -86,8 +86,9 @@ function onFilterClick(event: Event) {
 .overlay-switch-item {
   display: flex;
   align-items: stretch;
-  border-radius: 0 12px 12px 0;
-  overflow: hidden;
+  overflow: visible;
+  /*
+  border-radius: 100px;
   background: color('icon');
   box-shadow: $button-shadow;
   transition: background-color 0.2s;
@@ -95,6 +96,7 @@ function onFilterClick(event: Event) {
   &:last-child {
     border-bottom: 3px solid rgba(0, 0, 0, 0.15);
   }
+  */
 }
 
 .overlay-main-btn {
@@ -102,8 +104,11 @@ function onFilterClick(event: Event) {
   width: 30px;
   padding: 0;
   margin: 0;
-  border-radius: 0;
+  border-radius: 100;
+  background: color('icon');
+  box-shadow: $button-shadow;
   transition: background-color 0.2s;
+  border-bottom: 3px solid rgba(0, 0, 0, 0.15);
 
   .q-icon {
     opacity: 0.6;
@@ -123,14 +128,15 @@ function onFilterClick(event: Event) {
   }
 
   &:hover {
-    background-color: rgba(color('white', 500), 0.1);
+    background: color('icon');
   }
 }
 
 .overlay-side-icons {
   display: flex;
   flex-direction: column;
-  border-left: 2px solid rgba(color('primary', 200), 0.4);
+  min-width: 22px;
+  /* border-left: 2px solid rgba(color('primary', 200), 0.4); */
 }
 
 .overlay-icon-btn {
@@ -138,16 +144,21 @@ function onFilterClick(event: Event) {
   width: 22px;
   padding: 0;
   margin: 0;
-  border-radius: 0;
+  transform: translateX(-2px);
+  border-radius: 100px;
   background-color: transparent;
-  transition: background-color 0.2s;
+  transition:
+    color 0.2s,
+    background-color 0.2s;
+  color: var(--q-primary);
 
   &:hover {
-    background-color: rgba(color('white', 500), 0.1);
+    color: var(--q-accent);
+    background-color: rgba(var(--q-accent-rgb), 0.1);
   }
 
   &.active {
-    background-color: rgba(color('primary', 500), 0.1);
+    color: var(--q-accent);
   }
 }
 
@@ -180,11 +191,10 @@ function onFilterClick(event: Event) {
     <!-- Side icons (info and filter) -->
     <div v-if="hasInfo || hasFilters" class="overlay-side-icons">
       <q-btn
-        v-if="hasInfo"
+        v-if="hasInfo && active"
         flat
         dense
         icon="wd-info-outline"
-        color="primary"
         class="overlay-icon-btn"
         size="xs"
         :class="{ active: isInfoActive }"
@@ -193,7 +203,7 @@ function onFilterClick(event: Event) {
       </q-btn>
 
       <q-btn
-        v-if="hasFilters"
+        v-if="hasFilters && active"
         flat
         dense
         :icon="showBadge ? 'wd-filter' : 'wd-filter-outline'"

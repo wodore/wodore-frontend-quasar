@@ -106,6 +106,14 @@ export type InfoItemType =
   | 'area'
   | 'point';
 
+/**
+ * Link item for overlay information
+ */
+export interface LinkItem {
+  name: string;
+  url: string;
+}
+
 export interface LegendItem {
   icon?: string;
   color?: string;
@@ -130,6 +138,8 @@ export interface LegendSection {
 
 export interface LegendDefinition {
   sections: LegendSection[];
+  links?: LinkItem[]; // List of related links (displayed below description)
+  attribution?: LinkItem[]; // List of data sources/attributions (displayed at bottom)
 }
 
 // Overlay Configuration
@@ -179,7 +189,6 @@ export interface CategoryItem {
   symbol_mono?: string | null;
   color?: string | null;
   color_text?: string | null;
-  [key: string]: unknown; // Allow additional fields
 }
 
 // Legacy type aliases for backward compatibility

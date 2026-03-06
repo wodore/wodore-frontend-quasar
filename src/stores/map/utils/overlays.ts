@@ -172,6 +172,22 @@ export const skitouren: OverlaySwitchItem = {
           items: [],
         },
       ],
+      links: [
+        {
+          name: 'Swisstopo Skitourenkarte',
+          url: 'https://www.swisstopo.admin.ch/de/karten-daten-online/karten-geodaten/freizeitkarten/skitourenkarte.html',
+        },
+        {
+          name: 'Lawinenwarnung SLF',
+          url: 'https://www.slf.ch/de/lawinenbulletin-und-schneesituation.html',
+        },
+      ],
+      attribution: [
+        {
+          name: 'swisstopo',
+          url: 'https://www.swisstopo.admin.ch',
+        },
+      ],
     },
   },
 };
@@ -192,6 +208,18 @@ export const snowshoes: OverlaySwitchItem = {
           title: 'Information',
           description: 'Schneeschuhwanderrouten von Swisstopo. Winterausrüstung erforderlich.',
           items: [],
+        },
+      ],
+      links: [
+        {
+          name: 'Swisstopo Schneeschuhwandern',
+          url: 'https://www.swisstopo.admin.ch/de/karten-daten-online/karten-geodaten/freizeitkarten/schneeschuhwandern.html',
+        },
+      ],
+      attribution: [
+        {
+          name: 'swisstopo',
+          url: 'https://www.swisstopo.admin.ch',
         },
       ],
     },
@@ -234,6 +262,22 @@ export const protected_nature: OverlaySwitchItem = {
           items: [],
         },
       ],
+      links: [
+        {
+          name: 'Wildruhegebiete Info',
+          url: 'https://www.bafu.admin.ch/bafu/de/home/themen/biodiversitaet/fachinformationen/massnahmen-zur-erhaltung-und-foerderung-der-biodiversitaet/oekologische-infrastruktur/wildruhegebiete.html',
+        },
+      ],
+      attribution: [
+        {
+          name: 'BAFU',
+          url: 'https://www.bafu.admin.ch',
+        },
+        {
+          name: 'swisstopo',
+          url: 'https://www.swisstopo.admin.ch',
+        },
+      ],
     },
   },
 };
@@ -265,6 +309,22 @@ export const sheepdogs: OverlaySwitchItem = {
           ],
           type: 'area',
           items: [],
+        },
+      ],
+      links: [
+        {
+          name: 'Verhaltensregeln Herdenschutzhunde',
+          url: 'https://www.protectiondestroupeaux.ch/de/herdenschutzhunde/begegnung-mit-herdenschutzhunden/',
+        },
+      ],
+      attribution: [
+        {
+          name: 'BAFU',
+          url: 'https://www.bafu.admin.ch',
+        },
+        {
+          name: 'swisstopo',
+          url: 'https://www.swisstopo.admin.ch',
         },
       ],
     },
@@ -319,6 +379,22 @@ export const hillslope: OverlaySwitchItem = {
           ],
           type: 'area',
           items: [],
+        },
+      ],
+      links: [
+        {
+          name: 'Lawinenwarnung SLF',
+          url: 'https://www.slf.ch/de/lawinenbulletin-und-schneesituation.html',
+        },
+        {
+          name: 'Hangneigungskarte Info',
+          url: 'https://www.swisstopo.admin.ch/de/karten-daten-online/karten-geodaten/freizeitkarten/hangneigungskarte.html',
+        },
+      ],
+      attribution: [
+        {
+          name: 'swisstopo',
+          url: 'https://www.swisstopo.admin.ch',
         },
       ],
     },
@@ -423,6 +499,22 @@ export const hiking: OverlaySwitchItem = {
           items: [],
         },
       ],
+      links: [
+        {
+          name: 'Wanderland Schweiz',
+          url: 'https://www.schweizmobil.ch/de/wanderland.html',
+        },
+        {
+          name: 'SAC Wanderskala',
+          url: 'https://www.sac-cas.ch/de/huetten-und-touren/sac-tourenportal/schwierigkeitsskala/',
+        },
+      ],
+      attribution: [
+        {
+          name: 'swisstopo',
+          url: 'https://www.swisstopo.admin.ch',
+        },
+      ],
     },
   },
 };
@@ -454,6 +546,22 @@ export const cycling: OverlaySwitchItem = {
           items: [],
         },
       ],
+      links: [
+        {
+          name: 'Veloland Schweiz',
+          url: 'https://www.schweizmobil.ch/de/veloland.html',
+        },
+      ],
+      attribution: [
+        {
+          name: 'OpenStreetMap',
+          url: 'https://www.openstreetmap.org/copyright',
+        },
+        {
+          name: 'Waymarked Trails',
+          url: 'https://cycling.waymarkedtrails.org/',
+        },
+      ],
     },
   },
 };
@@ -475,53 +583,69 @@ export const mtb: OverlaySwitchItem = {
       sections: [
         {
           title: 'Schwierigkeitsgrad',
-          description: 'Mountainbike-Routen nach Schwierigkeit',
-          category: [
-            {
-              slug: 's0',
-              name: 'S0 - Leicht',
-              description: 'Geschotterte Wege, keine besonderen Fahrtechniken erforderlich',
-              identifier: 'mtb.s0',
-              color: '#4CAF50',
-            },
-            {
-              slug: 's1',
-              name: 'S1 - Mittel',
-              description: 'Kleine Hindernisse, grundlegende Fahrtechnik erforderlich',
-              identifier: 'mtb.s1',
-              color: '#8BC34A',
-            },
-            {
-              slug: 's2',
-              name: 'S2 - Schwierig',
-              description: 'Größere Hindernisse, fortgeschrittene Fahrtechnik erforderlich',
-              identifier: 'mtb.s2',
-              color: '#FFC107',
-            },
-            {
-              slug: 's3',
-              name: 'S3 - Sehr schwierig',
-              description: 'Viele Hindernisse, hohe Fahrtechnik erforderlich',
-              identifier: 'mtb.s3',
-              color: '#FF9800',
-            },
-            {
-              slug: 's4',
-              name: 'S4 - Extrem',
-              description: 'Sehr anspruchsvoll, Expertenfahrtechnik erforderlich',
-              identifier: 'mtb.s4',
-              color: '#FF5722',
-            },
-            {
-              slug: 's5',
-              name: 'S5 - Maximum',
-              description: 'Höchste Schwierigkeit, nur für Profis',
-              identifier: 'mtb.s5',
-              color: '#F44336',
-            },
-          ],
-          type: 'line',
+          description: 'Mountainbike-Routen aus OpenStreetMap, angezeigt über Waymarked Trails',
+          //category: [
+          //  {
+          //    slug: 's0',
+          //    name: 'S0 - Leicht',
+          //    description: 'Geschotterte Wege, keine besonderen Fahrtechniken erforderlich',
+          //    identifier: 'mtb.s0',
+          //    color: '#4CAF50',
+          //  },
+          //  {
+          //    slug: 's1',
+          //    name: 'S1 - Mittel',
+          //    description: 'Kleine Hindernisse, grundlegende Fahrtechnik erforderlich',
+          //    identifier: 'mtb.s1',
+          //    color: '#8BC34A',
+          //  },
+          //  {
+          //    slug: 's2',
+          //    name: 'S2 - Schwierig',
+          //    description: 'Größere Hindernisse, fortgeschrittene Fahrtechnik erforderlich',
+          //    identifier: 'mtb.s2',
+          //    color: '#FFC107',
+          //  },
+          //  {
+          //    slug: 's3',
+          //    name: 'S3 - Sehr schwierig',
+          //    description: 'Viele Hindernisse, hohe Fahrtechnik erforderlich',
+          //    identifier: 'mtb.s3',
+          //    color: '#FF9800',
+          //  },
+          //  {
+          //    slug: 's4',
+          //    name: 'S4 - Extrem',
+          //    description: 'Sehr anspruchsvoll, Expertenfahrtechnik erforderlich',
+          //    identifier: 'mtb.s4',
+          //    color: '#FF5722',
+          //  },
+          //  {
+          //    slug: 's5',
+          //    name: 'S5 - Maximum',
+          //    description: 'Höchste Schwierigkeit, nur für Profis',
+          //    identifier: 'mtb.s5',
+          //    color: '#F44336',
+          //  },
+          //],
+          //type: 'line',
           items: [],
+        },
+      ],
+      links: [
+        {
+          name: 'Mountainbikeland Schweiz',
+          url: 'https://www.schweizmobil.ch/de/mountainbikeland.html',
+        },
+      ],
+      attribution: [
+        {
+          name: 'OpenStreetMap',
+          url: 'https://www.openstreetmap.org/copyright',
+        },
+        {
+          name: 'Waymarked Trails',
+          url: 'https://mtb.waymarkedtrails.org/',
         },
       ],
     },
