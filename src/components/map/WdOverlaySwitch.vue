@@ -405,6 +405,7 @@ function overlayIcon(name: string) {
             @configure="openConfig(item.name, $event)"
             :label="item.label"
             :icon="overlayIcon(item.icon)"
+            :style="{ transform: `translateX(${offset?.[0] || 0}px)` }"
             :active="item.active"
             :tooltip="$q.platform.is.desktop"
             :overlay-name="item.name"
