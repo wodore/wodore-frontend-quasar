@@ -86,7 +86,7 @@ function onFilterClick(event: Event) {
 .overlay-switch-item {
   display: flex;
   align-items: stretch;
-  overflow: hidden;
+  overflow: visible;
   /*
   border-radius: 100px;
   background: color('icon');
@@ -143,7 +143,7 @@ function onFilterClick(event: Event) {
   width: 22px;
   padding: 0;
   margin: 0;
-  transform: translateX(-6px);
+  transform: translateX(-2px);
   border-radius: 100px;
   background-color: transparent;
   transition:
