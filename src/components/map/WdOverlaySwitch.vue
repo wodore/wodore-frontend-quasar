@@ -405,7 +405,7 @@ function overlayIcon(name: string) {
             @configure="openConfig(item.name, $event)"
             :label="item.label"
             :icon="overlayIcon(item.icon)"
-            :style="{ 'padding-left': `${offset?.[0] + 8 || 0}px` }"
+            :style="{ 'padding-left': `${offset?.[0] + 9 || 0}px` }"
             :active="item.active"
             :tooltip="$q.platform.is.desktop"
             :overlay-name="item.name"

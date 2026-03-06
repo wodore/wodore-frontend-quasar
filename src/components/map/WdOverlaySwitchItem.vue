@@ -135,6 +135,7 @@ function onFilterClick(event: Event) {
 .overlay-side-icons {
   display: flex;
   flex-direction: column;
+  min-width: 22px;
   /* border-left: 2px solid rgba(color('primary', 200), 0.4); */
 }
 
@@ -190,7 +191,7 @@ function onFilterClick(event: Event) {
     <!-- Side icons (info and filter) -->
     <div v-if="hasInfo || hasFilters" class="overlay-side-icons">
       <q-btn
-        v-if="hasInfo"
+        v-if="hasInfo && active"
         flat
         dense
         icon="wd-info-outline"
@@ -202,7 +203,7 @@ function onFilterClick(event: Event) {
       </q-btn>
 
       <q-btn
-        v-if="hasFilters"
+        v-if="hasFilters && active"
         flat
         dense
         :icon="showBadge ? 'wd-filter' : 'wd-filter-outline'"
