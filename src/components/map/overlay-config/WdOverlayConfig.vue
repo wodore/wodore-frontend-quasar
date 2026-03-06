@@ -209,8 +209,15 @@ function resetDefaults() {
   <!-- PAGE MODE (for use in drawer) -->
   <div v-else class="overlay-config-page column">
     <!-- Header toolbar with tabs and close button -->
-    <q-toolbar class="bg-grey-3 flex-shrink-0">
-      <q-tabs v-model="activeTab" dense compact class="no-padding">
+    <q-toolbar class="bg-primary-900 text-white flex-shrink-0 q-px-none">
+      <q-tabs
+        v-model="activeTab"
+        dense
+        compact
+        class="no-padding"
+        text-color="white"
+        active-color="accent"
+      >
         <q-tab name="legend" v-if="hasLegend" icon="wd-info-outline" />
         <q-tab
           name="filter"
@@ -220,12 +227,12 @@ function resetDefaults() {
         <q-tab name="settings" v-if="hasSettings" icon="wd-edit" />
       </q-tabs>
       <q-space />
-      <q-btn flat dense round icon="wd-close" @click="emit('close')" />
+      <q-btn flat dense round icon="wd-close" text-color="white" @click="emit('close')" />
     </q-toolbar>
 
     <!-- Title and subtitle section -->
-    <div class="q-px-md q-py-xs bg-grey-3 flex-shrink-0">
-      <div class="text-overline text-caption text-grey-7">{{ getTabLabel(activeTab) }}</div>
+    <div class="q-px-md q-py-xs bg-primary-900 text-white flex-shrink-0">
+      <div class="text-overline text-caption text-grey-3">{{ getTabLabel(activeTab) }}</div>
       <div class="text-h6">{{ title || overlayLabel }}</div>
     </div>
 

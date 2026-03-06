@@ -168,7 +168,7 @@ function closeContent(mode: string) {
       style="max-width: 80vw"
     >
       <!-- TOOLBAR mobile -->
-      <q-toolbar v-if="isMobile" class="bg-primary-600">
+      <q-toolbar v-if="isMobile" class="bg-primary-600 shadow-6">
         <q-toolbar-title>
           <WodoreLogo text class="text-h5" />
         </q-toolbar-title>

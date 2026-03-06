@@ -52,7 +52,7 @@ function handleOverlayConfigClose() {
 .drawer-mobile {
   position: absolute;
   top: 50px;
-  left: 4px;
+  left: 0;
   right: 0;
   height: calc(100vh - 60px);
 }
