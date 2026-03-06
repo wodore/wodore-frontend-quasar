@@ -36,7 +36,7 @@ const initialTab = computed(() => menuStore.menuData.initialTab as string | unde
 const menuTitle = computed(() => menuStore.menuData.title as string | undefined);
 
 function handleOverlayConfigClose() {
-  menuStore.reset();
+  menuStore.closeMenu();
 }
 </script>
 <style scoped>
