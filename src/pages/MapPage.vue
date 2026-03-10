@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { defineAsyncComponent } from 'vue';
-const WdMapView = defineAsyncComponent(
-  () => import('components/map/WdMapView.vue'),
-);
+const WdMapView = defineAsyncComponent(() => import('components/map/WdMapView.vue'));
 </script>
 
 <style lang="scss" scoped>

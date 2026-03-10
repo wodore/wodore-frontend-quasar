@@ -5,7 +5,7 @@ import { schemasWodore } from '@clients/index';
 //import { useMap } from '@indoorequal/vue-maplibre-gl';
 let mapRef: MapInstance | undefined;
 if (process.env.CLIENT) {
-  import('@indoorequal/vue-maplibre-gl').then((pkg) => {
+  import('@indoorequal/vue-maplibre-gl').then(pkg => {
     mapRef = pkg.useMap();
   });
 } else {
@@ -34,7 +34,7 @@ const reviewInfos: Record<string, Array<string>> = {
 function getReviewInfo(
   status: string | null | undefined,
   index: number,
-  _default = 'work',
+  _default = 'work'
 ): string {
   if (props !== undefined) {
     if (
@@ -89,13 +89,7 @@ function flyTo() {
   }
 }
 
-function sameLatLng(
-  lat1: number,
-  lat2: number,
-  lon1: number,
-  lon2: number,
-  precision = 0.004,
-) {
+function sameLatLng(lat1: number, lat2: number, lon1: number, lon2: number, precision = 0.004) {
   const same =
     lat1 + precision >= lat2 &&
     lat1 - precision <= lat2 &&
@@ -121,7 +115,7 @@ watch(menuOpen, () => {
         center.lat,
         loc.lon,
         center.lng,
-        0.005 / Math.sqrt(zoom),
+        0.005 / Math.sqrt(zoom)
       );
     }
   }
@@ -135,11 +129,7 @@ watch(menuOpen, () => {
     <slot></slot>
     <q-space />
 
-    <q-badge
-      outline
-      v-if="hut"
-      class="q-mr-xs"
-      :color="getReviewColor(hut.review_status)"
+    <q-badge outline v-if="hut" class="q-mr-xs" :color="getReviewColor(hut.review_status)"
       >{{ getReviewText(hut.review_status) }}
     </q-badge>
 

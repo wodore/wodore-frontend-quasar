@@ -10,12 +10,12 @@ const $auth = useAuthService();
 const silentRefreshOidc = () => {
   $auth
     .renewToken()
-    .then((user) => {
+    .then(user => {
       //authStore.setUpUserCredentials(user)
       console.log('Silent refresh', user);
       //router.push('/map')
     })
-    .catch((error) => {
+    .catch(error => {
       console.log(error);
     });
 };

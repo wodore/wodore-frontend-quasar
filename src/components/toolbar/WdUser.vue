@@ -13,7 +13,7 @@ const $auth = useAuthService();
 const tracking = ref<boolean>(
   LocalStorage.hasItem('umami.disabled')
     ? !(LocalStorage.getItem('umami.disabled') as boolean)
-    : true,
+    : true
 );
 
 watchEffect(() => {
@@ -37,8 +37,7 @@ const adminLinks = [
     name: 'API',
     caption: 'Wodore API docs',
     group: 'root',
-    avatar:
-      'https://www.openapis.org/wp-content/uploads/sites/3/2019/06/favicon-140x140.png',
+    avatar: 'https://www.openapis.org/wp-content/uploads/sites/3/2019/06/favicon-140x140.png',
   },
   {
     url: `https://stats.${process.env.WODORE_DOMAIN}/websites/${process.env.WODORE_UMAMI_WEBSITE_ID}`,
@@ -63,9 +62,7 @@ const adminLinks = [
   },
 ];
 
-const filteredAdminLinks = adminLinks.filter((v) =>
-  authStore.hasRole('group:' + v.group, true),
-);
+const filteredAdminLinks = adminLinks.filter(v => authStore.hasRole('group:' + v.group, true));
 
 //const $router = useRouter();
 //const $route = useRoute();
@@ -107,13 +104,7 @@ const showMenu = ref(false);
           class="q-ma-xs z-top text-icon"
           style="position: absolute; width: 32px; top: 6px; right: 6px"
         >
-          <q-btn
-            dense
-            round
-            v-close-popup
-            color="accent-700"
-            icon="wd-close"
-          ></q-btn>
+          <q-btn dense round v-close-popup color="accent-700" icon="wd-close"></q-btn>
           <q-btn
             flat
             dense
@@ -135,9 +126,7 @@ const showMenu = ref(false);
             </q-item-section>
             <!-- NAME - EMAIL -->
             <q-item-section>
-              <q-item-label class="text-h5 text-accent">{{
-                authStore.name
-              }}</q-item-label>
+              <q-item-label class="text-h5 text-accent">{{ authStore.name }}</q-item-label>
               <q-item-label class="text-caption text-primary-200">{{
                 authStore.email
               }}</q-item-label>
@@ -145,10 +134,7 @@ const showMenu = ref(false);
           </q-item>
         </q-list>
         <div>
-          <div
-            class="row justify-center z-top"
-            style="position: relative; top: -10px; height: 0"
-          >
+          <div class="row justify-center z-top" style="position: relative; top: -10px; height: 0">
             <!-- ROLES -->
             <div class="q-gutter-xs">
               <q-badge
@@ -193,10 +179,7 @@ const showMenu = ref(false);
                 </q-item-section>
               </q-item>
               <!-- LINKS -->
-              <q-item-label
-                header
-                v-if="filteredAdminLinks"
-                class="text-primary-100"
+              <q-item-label header v-if="filteredAdminLinks" class="text-primary-100"
                 >Externe Links</q-item-label
               >
               <q-item
@@ -217,21 +200,16 @@ const showMenu = ref(false);
                 </q-item-section>
                 <q-item-section>
                   <q-item-label>{{ link.name }}</q-item-label>
-                  <q-item-label
-                    class="text-caption text-primary-200"
-                    lines="1"
-                    >{{ link.caption }}</q-item-label
-                  >
+                  <q-item-label class="text-caption text-primary-200" lines="1">{{
+                    link.caption
+                  }}</q-item-label>
                 </q-item-section>
               </q-item>
             </q-list>
           </q-scroll-area>
         </div>
         <!-- FOOTER logout -->
-        <div
-          class="q-pa-md column q-gutter-sm bg-dark-700"
-          v-if="authStore.isLoggedIn"
-        >
+        <div class="q-pa-md column q-gutter-sm bg-dark-700" v-if="authStore.isLoggedIn">
           <q-btn
             color="accent-700"
             unelevated

@@ -34,7 +34,7 @@ const isMobile = computed(() => props.mobile);
 // Map reference for flying to location
 let mapRef: MapInstance | undefined;
 if (process.env.CLIENT) {
-  import('@indoorequal/vue-maplibre-gl').then((pkg) => {
+  import('@indoorequal/vue-maplibre-gl').then(pkg => {
     mapRef = pkg.useMap();
   });
 }
@@ -107,10 +107,7 @@ function onSearchInput(value: string | number | null) {
 }
 
 // Handle place selection
-function onPlaceSelect(
-  place: schemasWodore['GeoPlaceSearchSchema'],
-  event?: Event,
-) {
+function onPlaceSelect(place: schemasWodore['GeoPlaceSearchSchema'], event?: Event) {
   if (!place || !place.location) {
     return;
   }
@@ -126,13 +123,12 @@ function onPlaceSelect(
     (
       source:
         | schemasWodore['OrganizationSourceIdSlugSchema']
-        | schemasWodore['OrganizationSourceIdDetailSchema'],
+        | schemasWodore['OrganizationSourceIdDetailSchema']
     ) => {
       // Handle both string and object types for source
-      const sourceValue =
-        typeof source.source === 'string' ? source.source : source.source.slug;
+      const sourceValue = typeof source.source === 'string' ? source.source : source.source.slug;
       return sourceValue === 'wodore';
-    },
+    }
   );
 
   // Fly to location on map
@@ -209,10 +205,7 @@ function onKeyDown(event: KeyboardEvent) {
   switch (event.key) {
     case 'ArrowDown':
       event.preventDefault();
-      selectedIndex.value = Math.min(
-        selectedIndex.value + 1,
-        searchResults.value.length - 1,
-      );
+      selectedIndex.value = Math.min(selectedIndex.value + 1, searchResults.value.length - 1);
       break;
     case 'ArrowUp':
       event.preventDefault();
@@ -220,10 +213,7 @@ function onKeyDown(event: KeyboardEvent) {
       break;
     case 'Enter':
       event.preventDefault();
-      if (
-        selectedIndex.value >= 0 &&
-        selectedIndex.value < searchResults.value.length
-      ) {
+      if (selectedIndex.value >= 0 && selectedIndex.value < searchResults.value.length) {
         onPlaceSelect(searchResults.value[selectedIndex.value]);
       }
       break;
@@ -352,11 +342,7 @@ function handleSwipeDown() {
           : 'height: 400px; max-height: 600px'
       "
     >
-      <q-list
-        v-if="searchResults.length > 0"
-        class="bg-dark-500"
-        :class="{ 'q-mt-sm': !isMobile }"
-      >
+      <q-list v-if="searchResults.length > 0" class="bg-dark-500" :class="{ 'q-mt-sm': !isMobile }">
         <transition-group name="search-result" tag="div">
           <WdSearchResultEntry
             v-for="(place, index) in searchResults"
@@ -377,23 +363,14 @@ function handleSwipeDown() {
       <div
         v-else
         class="no-results bg-dark-500"
-        style="
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          min-height: 300px;
-        "
-        v-touch-swipe.down="
-          isMobile && props.swipeToClose ? handleSwipeDown : undefined
-        "
+        style="display: flex; align-items: center; justify-content: center; min-height: 300px"
+        v-touch-swipe.down="isMobile && props.swipeToClose ? handleSwipeDown : undefined"
       >
         <div class="text-center">
           <q-icon size="xl" color="primary-300">
             <IconEvaSearchOutline />
           </q-icon>
-          <div class="text-primary-300 q-mt-md">
-            Suche nach Hütten, Gipfeln und mehr...
-          </div>
+          <div class="text-primary-300 q-mt-md">Suche nach Hütten, Gipfeln und mehr...</div>
         </div>
       </div>
     </q-scroll-area>

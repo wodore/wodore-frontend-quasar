@@ -4,8 +4,7 @@
  * quasar.config file > pwa > workboxMode is set to "InjectManifest"
  */
 
-declare const self: ServiceWorkerGlobalScope &
-  typeof globalThis & { skipWaiting: () => void };
+declare const self: ServiceWorkerGlobalScope & typeof globalThis & { skipWaiting: () => void };
 
 import { clientsClaim } from 'workbox-core';
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
@@ -36,23 +35,18 @@ if (process.env.MODE !== 'ssr' || process.env.PROD) {
   });
 
   const navigationRoute = new NavigationRoute(networkFirstHandler, {
-    denylist: [
-      new RegExp(process.env.PWA_SERVICE_WORKER_REGEX),
-      /workbox-(.)*\.js$/,
-    ],
+    denylist: [new RegExp(process.env.PWA_SERVICE_WORKER_REGEX), /workbox-(.)*\.js$/],
   });
 
   registerRoute(navigationRoute);
 }
 
 // Listen for messages from clients
-self.addEventListener('message', (event) => {
+self.addEventListener('message', event => {
   console.log('[SW] Received message:', event.data);
 
   if (event.data && event.data.type === 'SKIP_WAITING') {
-    console.log(
-      '[SW] User clicked "Update now" - skipping waiting and activating',
-    );
+    console.log('[SW] User clicked "Update now" - skipping waiting and activating');
     // User has clicked "Update now" - skip waiting and activate
     self.skipWaiting();
     return;

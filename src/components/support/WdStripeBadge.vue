@@ -38,9 +38,7 @@ const link = computed(() => {
   >
     <div class="q-py-md row justify-center">
       <q-icon
-        :style="
-          'height: ' + 40 * sizeFactor + 'px; width: ' + 40 * sizeFactor + 'px'
-        "
+        :style="'height: ' + 40 * sizeFactor + 'px; width: ' + 40 * sizeFactor + 'px'"
         style="filter: invert()"
         :name="'img:products/' + icon + '.png'"
         class="col-12"
@@ -52,9 +50,7 @@ const link = computed(() => {
           'text-accent-200': sizeFactor > 1,
         }"
         :style="
-          'font-size: ' +
-          15 * (sizeFactor > 1 ? sizeFactor + (sizeFactor - 1) / 8 : 1) +
-          'pt;'
+          'font-size: ' + 15 * (sizeFactor > 1 ? sizeFactor + (sizeFactor - 1) / 8 : 1) + 'pt;'
         "
       >
         {{ name }}

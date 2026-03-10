@@ -30,11 +30,7 @@ const link = computed(() => {
     @click="trackClick(name.toLocaleLowerCase())"
     @click.middle="trackClick(name.toLocaleLowerCase())"
     >{{ name }}
-    <q-icon
-      v-if="icon"
-      :name="'img:products/' + icon + '.png'"
-      style="opacity: 0.6"
-    />
+    <q-icon v-if="icon" :name="'img:products/' + icon + '.png'" style="opacity: 0.6" />
   </a>
 
   <!-- <q-btn :href="link" target="_blank" no-caps style="text-transform: unset">

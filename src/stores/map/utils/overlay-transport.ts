@@ -1,8 +1,4 @@
-import {
-  CircleLayerSpecification,
-  ExpressionSpecification,
-  StyleSpecification,
-} from 'maplibre-gl';
+import { CircleLayerSpecification, ExpressionSpecification, StyleSpecification } from 'maplibre-gl';
 //import { storeToRefs } from 'pinia';
 //import { useStopsStore } from '../../transport/stops-store';
 //import { watch } from 'vue';
@@ -17,7 +13,7 @@ import {
 function matchType(
   train: number | string,
   bus: number | string,
-  other: number | string,
+  other: number | string
 ): ExpressionSpecification {
   return [
     'case',
@@ -44,32 +40,10 @@ function getRadius(): ExpressionSpecification {
 const transportStopsLayerPaint: CircleLayerSpecification['paint'] = {
   'circle-color': matchType('#C60018', '#2d327d', '#0079C7'), //getAvailColors(0),
   'circle-stroke-color': '#F6F6F6',
-  'circle-stroke-width': [
-    'interpolate',
-    ['linear'],
-    ['zoom'],
-    10,
-    0,
-    12,
-    1,
-    16,
-    2,
-  ],
+  'circle-stroke-width': ['interpolate', ['linear'], ['zoom'], 10, 0, 12, 1, 16, 2],
   //'circle-opacity': 0.6,
   'circle-radius': getRadius(),
-  'circle-opacity': [
-    'interpolate',
-    ['linear'],
-    ['zoom'],
-    6,
-    0,
-    7,
-    0.3,
-    10,
-    0.6,
-    14,
-    1,
-  ],
+  'circle-opacity': ['interpolate', ['linear'], ['zoom'], 6, 0, 7, 0.3, 10, 0.6, 14, 1],
 };
 
 export const transportStyle: StyleSpecification = {

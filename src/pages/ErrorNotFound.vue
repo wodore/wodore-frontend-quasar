@@ -5,9 +5,7 @@ defineOptions({
 </script>
 
 <template>
-  <div
-    class="fullscreen bg-primary text-white text-center q-pa-md flex flex-center"
-  >
+  <div class="fullscreen bg-primary text-white text-center q-pa-md flex flex-center">
     <div>
       <a href="/">
         <q-icon size="13vh" name="img:/errors/logo_404.svg" />

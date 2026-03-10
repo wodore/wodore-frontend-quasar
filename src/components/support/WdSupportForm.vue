@@ -76,15 +76,11 @@ function toFeedback() {
 </style>
 
 <template>
-  <q-card
-    :class="{ 'card--desktop': $q.screen.gt.xs, 'card--mobile': $q.screen.xs }"
-  >
+  <q-card :class="{ 'card--desktop': $q.screen.gt.xs, 'card--mobile': $q.screen.xs }">
     <div>
       <q-img :src="headerImg" style="height: 140px" class="shadow-4">
         <div class="card-header absolute-bottom text-white text-h5"></div>
-        <div
-          class="absolute-bottom text-accent-400 text-h4 text-center card-header__text"
-        >
+        <div class="absolute-bottom text-accent-400 text-h4 text-center card-header__text">
           Support
         </div>
       </q-img>
@@ -155,9 +151,7 @@ function toFeedback() {
             </q-btn-group>
             <div class="text-center">
               <p class="text-body2 q-pt-xs text-secondary-800">
-                <a
-                  href="https://billing.stripe.com/p/login/aEU9AA29o9vv7JucMM"
-                  target="_blank"
+                <a href="https://billing.stripe.com/p/login/aEU9AA29o9vv7JucMM" target="_blank"
                   >Monatliche Zahlungen verwalten.</a
                 >
                 <span class="text-grey-7"> *Jederzeit kündbar. </span>
@@ -165,28 +159,20 @@ function toFeedback() {
             </div>
           </div>
           <div class="text-body2 q-pt-md q-pb-md">
-            Im Moment ist es ein <i>Ein-Mann-Projekt</i> und das Geld wird für
-            eine bessere Infrastruktur, Lizenzen und potenzielle neue Features
-            benötigt.
+            Im Moment ist es ein <i>Ein-Mann-Projekt</i> und das Geld wird für eine bessere
+            Infrastruktur, Lizenzen und potenzielle neue Features benötigt.
           </div>
           <q-card class="text-body2 bg-secondary-900 text-white q-my-lg">
             <q-card-section>
-              <h5 class="q-mb-md q-mt-none">
-                Ich haue gerne selber in die Tasten!
-              </h5>
+              <h5 class="q-mb-md q-mt-none">Ich haue gerne selber in die Tasten!</h5>
               <div>
-                <b>Super</b>, aktive Unterstützung ist sehr willkommen, zum
-                Beispiel:
+                <b>Super</b>, aktive Unterstützung ist sehr willkommen, zum Beispiel:
                 <ul>
                   <li>Hütteninfos reviewen und anpassen (als Editor)</li>
                   <li>
-                    Entwicklung von Frontend (<a
-                      href="https://quasar.dev/"
-                      target="_blank"
+                    Entwicklung von Frontend (<a href="https://quasar.dev/" target="_blank"
                       >Quasar</a
-                    >) oder Backend (<a
-                      href="https://www.djangoproject.com/"
-                      target="_blank"
+                    >) oder Backend (<a href="https://www.djangoproject.com/" target="_blank"
                       >Django</a
                     >)
                   </li>
@@ -204,13 +190,7 @@ function toFeedback() {
     <q-separator />
     <q-card-actions>
       <q-space />
-      <q-btn
-        label="Schliessen"
-        color="secondary-700"
-        flat
-        @click="onClose(true)"
-        class="q-ml-sm"
-      />
+      <q-btn label="Schliessen" color="secondary-700" flat @click="onClose(true)" class="q-ml-sm" />
       <!-- <q-btn
           label="Zurücksetzen"
           type="reset"

@@ -9,5 +9,5 @@ export default boot(async (/* { app, router, ... } */) => {
   $auth
     .signinSilent()
     .then()
-    .catch((error) => console.warn('Could not silent login', error));
+    .catch(error => console.warn('Could not silent login', error));
 });

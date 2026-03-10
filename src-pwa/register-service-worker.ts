@@ -44,13 +44,13 @@ const shouldPromptUpdate = (currentVersion: string, nextVersion: string) => {
 
 const getWaitingSwVersion = async (
   waitingWorker: ServiceWorker,
-  timeoutMs = 1000,
+  timeoutMs = 1000
 ): Promise<string | null> => {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     const channel = new MessageChannel();
     const timeoutId = setTimeout(() => resolve(null), timeoutMs);
 
-    channel.port1.onmessage = (event) => {
+    channel.port1.onmessage = event => {
       clearTimeout(timeoutId);
       resolve(event.data?.version ?? null);
     };
@@ -80,7 +80,7 @@ register(process.env.SERVICE_WORKER_FILE, {
         console.log('[PWA] Checking for updates...');
         registration?.update();
       },
-      60 * 60 * 1000,
+      60 * 60 * 1000
     );
   },
 
@@ -108,24 +108,18 @@ register(process.env.SERVICE_WORKER_FILE, {
         hasController: !!navigator.serviceWorker.controller,
       });
 
-      if (
-        newWorker.state === 'installed' &&
-        navigator.serviceWorker.controller
-      ) {
+      if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
         // A new service worker is available and waiting
         // This means we have a newer version than what's currently running
         console.log('[PWA] New service worker is waiting to activate');
 
         const waitingWorker = registration?.waiting;
-        const nextVersion = waitingWorker
-          ? await getWaitingSwVersion(waitingWorker)
-          : null;
+        const nextVersion = waitingWorker ? await getWaitingSwVersion(waitingWorker) : null;
 
         console.log('[PWA] Version comparison:', {
           current: APP_VERSION,
           next: nextVersion,
-          shouldNotify:
-            !nextVersion || shouldPromptUpdate(APP_VERSION, nextVersion),
+          shouldNotify: !nextVersion || shouldPromptUpdate(APP_VERSION, nextVersion),
         });
 
         if (!nextVersion || shouldPromptUpdate(APP_VERSION, nextVersion)) {
@@ -135,9 +129,7 @@ register(process.env.SERVICE_WORKER_FILE, {
             if (showUpdateCallback) {
               showUpdateCallback();
             } else {
-              console.warn(
-                '[PWA] No update callback set yet - will notify when app is ready',
-              );
+              console.warn('[PWA] No update callback set yet - will notify when app is ready');
             }
           }, 2000);
         }
@@ -175,7 +167,7 @@ export function setPwaUpdateCallback(callback: () => void) {
 export function checkForPwaUpdate() {
   console.log('[PWA] Manual update check requested');
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistration().then((reg) => {
+    navigator.serviceWorker.getRegistration().then(reg => {
       if (reg) {
         console.log('[PWA] Current registration:', {
           scope: reg.scope,
@@ -188,7 +180,7 @@ export function checkForPwaUpdate() {
           .then(() => {
             console.log('[PWA] Update check completed');
           })
-          .catch((err) => {
+          .catch(err => {
             console.error('[PWA] Update check failed:', err);
           });
       } else {
@@ -203,7 +195,7 @@ export function checkForPwaUpdate() {
  */
 export function getPwaDebugInfo() {
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistration().then((reg) => {
+    navigator.serviceWorker.getRegistration().then(reg => {
       console.log('[PWA] Debug Info:', {
         scope: reg?.scope,
         installing: reg?.installing?.state,
@@ -226,6 +218,6 @@ if (typeof window !== 'undefined') {
     getInfo: getPwaDebugInfo,
   };
   console.log(
-    '[PWA] Debug functions available: window.pwaDebug.checkUpdate(), window.pwaDebug.getInfo()',
+    '[PWA] Debug functions available: window.pwaDebug.checkUpdate(), window.pwaDebug.getInfo()'
   );
 }

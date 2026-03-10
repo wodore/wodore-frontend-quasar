@@ -2,10 +2,7 @@ import hmacSHA256 from 'crypto-js/hmac-sha256';
 import Base64 from 'crypto-js/enc-base64';
 
 function signPath(path: string, secret: string) {
-  return hmacSHA256(path, secret)
-    .toString(Base64)
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_');
+  return hmacSHA256(path, secret).toString(Base64).replace(/\+/g, '-').replace(/\//g, '_');
 }
 
 function dimensionToArray(size: string) {
@@ -33,7 +30,7 @@ export default function getImageUrl(
   path: string,
   options: ImagorOptions = {
     size: '600x400',
-  },
+  }
 ): string {
   // Replace API host + /media URLs with configured value if enabled
   const replaceWith = process.env.WODORE_IMAGOR_REPLACE_API_HOST_MEDIA;
@@ -45,9 +42,7 @@ export default function getImageUrl(
     if (path.startsWith(apiHostWithMedia)) {
       // Strip API host + /media/ prefix and replace with configured value
       const pathWithoutPrefix = path.substring(apiHostWithMedia.length);
-      path = replaceWith
-        ? replaceWith + '/' + pathWithoutPrefix
-        : pathWithoutPrefix;
+      path = replaceWith ? replaceWith + '/' + pathWithoutPrefix : pathWithoutPrefix;
     }
   }
 
@@ -81,13 +76,9 @@ export default function getImageUrl(
   const smart = options.smart ? '/smart' : '';
   const halign = options.halign ? '/' + options.halign : '';
   const valign = options.valign ? '/' + options.valign : '';
-  const filters =
-    options.filters.length > 0 ? '/filters:' + options.filters.join(':') : '';
-  const url = process.env.WODORE_IMAGOR_URL
-    ? process.env.WODORE_IMAGOR_URL
-    : 'https://img.MISSING';
-  const trimString = (str: string, chars: string) =>
-    str.split(chars).filter(Boolean).join(chars);
+  const filters = options.filters.length > 0 ? '/filters:' + options.filters.join(':') : '';
+  const url = process.env.WODORE_IMAGOR_URL ? process.env.WODORE_IMAGOR_URL : 'https://img.MISSING';
+  const trimString = (str: string, chars: string) => str.split(chars).filter(Boolean).join(chars);
   const rawPath = trimString(
     trim +
       crop +
@@ -100,14 +91,14 @@ export default function getImageUrl(
       filters +
       '/' +
       encodeURIComponent(path),
-    '/',
+    '/'
   );
   let hash = 'unsafe';
 
   if (!options.unsafe) {
     hash = signPath(
       rawPath,
-      process.env.WODORE_IMAGOR_KEY ? process.env.WODORE_IMAGOR_KEY : 'my_key',
+      process.env.WODORE_IMAGOR_KEY ? process.env.WODORE_IMAGOR_KEY : 'my_key'
     );
   }
   return url + '/' + hash + '/' + rawPath;

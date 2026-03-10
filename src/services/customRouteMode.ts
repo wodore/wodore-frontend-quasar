@@ -2,41 +2,32 @@
 
 import { DrawCustomMode } from '@mapbox/mapbox-gl-draw';
 import axios from 'axios';
-import {
-  Feature,
-  LineString,
-  Point,
-  FeatureCollection,
-  GeoJSON,
-} from 'geojson';
+import { Feature, LineString, Point, FeatureCollection, GeoJSON } from 'geojson';
 import polyline from '@mapbox/polyline';
 import { Map } from 'maplibre-gl'; // or 'mapbox-gl' if using Mapbox
 
 async function getRouteValhalla(coordinates: [number, number][]) {
   try {
-    const response = await axios.post(
-      'https://valhalla1.openstreetmap.de/route',
-      {
-        locations: coordinates.map((coord) => ({
-          lat: coord[1],
-          lon: coord[0],
-          type: 'through',
-        })),
-        costing: 'pedestrian',
-        costing_options: {
-          pedestrian: {
-            walking_speed: 5.1, // walking speed in km/h
-            use_hills: 0.9,
-            use_ferry: 0, // avoid ferry routes
-            max_hiking_difficulty: 6, // hiking difficulty level
-          },
+    const response = await axios.post('https://valhalla1.openstreetmap.de/route', {
+      locations: coordinates.map(coord => ({
+        lat: coord[1],
+        lon: coord[0],
+        type: 'through',
+      })),
+      costing: 'pedestrian',
+      costing_options: {
+        pedestrian: {
+          walking_speed: 5.1, // walking speed in km/h
+          use_hills: 0.9,
+          use_ferry: 0, // avoid ferry routes
+          max_hiking_difficulty: 6, // hiking difficulty level
         },
-        elevation_interval: 30,
-        units: 'kilometers',
-        shape_format: 'polyline6', // request polyline6 format
-        directions_type: 'none',
       },
-    );
+      elevation_interval: 30,
+      units: 'kilometers',
+      shape_format: 'polyline6', // request polyline6 format
+      directions_type: 'none',
+    });
     const route = response.data;
     return route;
   } catch (error) {
@@ -204,7 +195,7 @@ const CustomRouteMode: DrawCustomMode<CustomRouteState> = {
         updatePointFeatures(state, this.map as unknown as Map);
 
         if (state.coordinates.length > 1) {
-          getRouteValhalla(state.coordinates).then((route) => {
+          getRouteValhalla(state.coordinates).then(route => {
             displayRoute(route, this.map as unknown as Map);
           });
           //this.getRoute(state.coordinates);
@@ -214,7 +205,7 @@ const CustomRouteMode: DrawCustomMode<CustomRouteState> = {
   },
   toDisplayFeatures(
     state: CustomRouteState,
-    geojson: GeoJSON,
+    geojson: GeoJSON
     //display: (geojson: GeoJSON),
   ) {
     console.log('Add geo json: ' + geojson);

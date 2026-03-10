@@ -88,10 +88,8 @@ const openColor = computed(() => {
         :name="
           'img:' +
           getImageUrl(
-            ($q.platform.is.mobile
-              ? type.symbol?.detailed
-              : type.symbol?.simple) as string,
-            { fit: true, size: '48x48' },
+            ($q.platform.is.mobile ? type.symbol?.detailed : type.symbol?.simple) as string,
+            { fit: true, size: '48x48' }
           )
         "
       />
@@ -100,12 +98,7 @@ const openColor = computed(() => {
     <span class="text-accent-900" style="font-weight: 500; width: 28px">{{
       capacity === undefined || capacity == null ? '?' : capacity
     }}</span>
-    <q-iconify
-      :class="'bg-' + openColor + ' badge'"
-      color="white"
-      size="14px"
-      :is="openIcon"
-    >
+    <q-iconify :class="'bg-' + openColor + ' badge'" color="white" size="14px" :is="openIcon">
     </q-iconify>
     <!-- <q-badge :color="openColor" floating rounded>
       <q-iconify size="10px" :is="openIcon" />
