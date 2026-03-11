@@ -4,6 +4,90 @@
  */
 
 export interface paths {
+    "/v1/geo/images/nearby": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Nearby Images
+         * @description Get images near a location from multiple sources as a GeoJSON FeatureCollection.
+         *
+         *     Aggregates internal Wodore database images with external sources (Wikidata, Flickr, etc.).
+         *     Returns GeoJSON Point features with full image metadata.
+         *
+         *     Algorithm:
+         *     1. Find GeoPlaces within 10m of the coordinate
+         *     2. If found, use those places for provider queries
+         *     3. If not found within 10m, expand radius incrementally
+         *     4. Query all enabled providers in parallel
+         *     5. Merge and deduplicate results
+         *     6. Return GeoJSON FeatureCollection sorted by distance
+         *
+         *     Providers are queried with GeoPlace objects, so they can extract
+         *     required information (e.g., QID from osm_tags for Wikidata).
+         */
+        get: operations["nearby_images"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/geo/images/place/{place_slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Images For Place
+         * @description Get images for a specific GeoPlace from multiple sources.
+         *
+         *     Wodore provider uses the place directly (very fast).
+         *     External providers use the place's coordinates with the given radius.
+         *
+         *     Returns GeoJSON Point features with full image metadata.
+         */
+        get: operations["images_for_place"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/geo/images/hut/{hut_slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Images For Hut
+         * @description Get images for a specific Hut from multiple sources.
+         *
+         *     Wodore provider uses the hut directly (very fast).
+         *     External providers use the hut's coordinates with the given radius.
+         *
+         *     Returns GeoJSON Point features with full image metadata.
+         */
+        get: operations["images_for_hut"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/geo/places/search": {
         parameters: {
             query?: never;
@@ -64,40 +148,6 @@ export interface paths {
          *     operating status, opening hours, websites, and phone numbers.
          */
         get: operations["get_amenity"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/geo/images/nearby": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Nearby Images
-         * @description Get images near a location from multiple sources as a GeoJSON FeatureCollection.
-         *
-         *     Aggregates internal Wodore database images with external sources (Wikidata, Flickr, etc.).
-         *     Returns GeoJSON Point features with full image metadata.
-         *
-         *     Algorithm:
-         *     1. Find GeoPlaces within 10m of the coordinate
-         *     2. If found, use those places for provider queries
-         *     3. If not found within 10m, expand radius incrementally
-         *     4. Query all enabled providers in parallel
-         *     5. Merge and deduplicate results
-         *     6. Return GeoJSON FeatureCollection sorted by distance
-         *
-         *     Providers are queried with GeoPlace objects, so they can extract
-         *     required information (e.g., QID from osm_tags for Wikidata).
-         */
-        get: operations["nearby_images"];
         put?: never;
         post?: never;
         delete?: never;
@@ -663,6 +713,401 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** Feature[Point, ImagePropertiesSchema] */
+        Feature_Point_ImagePropertiesSchema_: {
+            /** Bbox */
+            bbox?: [
+                number,
+                number,
+                number,
+                number
+            ] | [
+                number,
+                number,
+                number,
+                number,
+                number,
+                number
+            ] | null;
+            /**
+             * Type
+             * @constant
+             */
+            type: "Feature";
+            geometry: components["schemas"]["Point"] | null;
+            properties: components["schemas"]["ImagePropertiesSchema"] | null;
+            /** Id */
+            id?: number | string | null;
+        };
+        /**
+         * ImageAttributionSchema
+         * @description Comprehensive attribution information for an image.
+         */
+        ImageAttributionSchema: {
+            /**
+             * Short
+             * @description Short HTML attribution with license icon, license link, and provider link
+             */
+            short: string;
+            /**
+             * Full
+             * @description Full attribution string (e.g., 'CC BY-SA 4.0, Author Name on Wodore')
+             */
+            full: string;
+            /**
+             * License Icon
+             * @description URL to license icon image
+             */
+            license_icon?: string | null;
+            /**
+             * License Short
+             * @description Short license name with link
+             */
+            license_short: string;
+            /**
+             * License Full
+             * @description Full license name with link
+             */
+            license_full: string;
+            /**
+             * Author
+             * @description Author name with provider link (e.g., 'Name on Wodore')
+             */
+            author: string;
+        };
+        /**
+         * ImageAuthorSchema
+         * @description Author information for an image.
+         */
+        ImageAuthorSchema: {
+            /**
+             * Name
+             * @description Author name
+             */
+            name: string;
+            /**
+             * Url
+             * @description Author profile URL
+             */
+            url?: string | null;
+        };
+        /**
+         * ImageCollectionResponse
+         * @description Complete response for nearby_images endpoint including metadata.
+         */
+        ImageCollectionResponse: {
+            /**
+             * Type
+             * @description GeoJSON type
+             * @default FeatureCollection
+             */
+            type: string;
+            /**
+             * Features
+             * @description List of image features as GeoJSON
+             */
+            features: components["schemas"]["Feature_Point_ImagePropertiesSchema_"][];
+            /** @description Metadata about the image collection */
+            metadata: components["schemas"]["ImageMetadataSchema"];
+        };
+        /**
+         * ImageLicenseSchema
+         * @description License information for an image.
+         */
+        ImageLicenseSchema: {
+            /**
+             * Slug
+             * @description License slug (e.g., 'cc-by-sa-4.0', 'cc0')
+             */
+            slug: string;
+            /**
+             * Name
+             * @description Human-readable license name
+             */
+            name: string;
+            /**
+             * Url
+             * @description Link to license text
+             */
+            url?: string | null;
+            /**
+             * Icon
+             * @description URL to license icon image
+             */
+            icon?: string | null;
+        };
+        /**
+         * ImageMetadataSchema
+         * @description Metadata for the image collection response.
+         */
+        ImageMetadataSchema: {
+            /**
+             * Total
+             * @description Total number of images returned in the collection
+             */
+            total: number;
+            /**
+             * Sources Queried
+             * @description List of provider sources that were queried
+             */
+            sources_queried: string[];
+            /**
+             * Query Radius M
+             * @description Search radius used for the query in meters
+             */
+            query_radius_m: number;
+            /**
+             * Center
+             * @description Center point of the query as {lat, lon}
+             */
+            center: {
+                [key: string]: number;
+            };
+            /**
+             * Geoplaces Found
+             * @description Number of GeoPlaces found within search radius
+             */
+            geoplaces_found: number;
+            /**
+             * Huts Found
+             * @description Number of Huts found within search radius
+             */
+            huts_found: number;
+        };
+        /**
+         * ImagePlaceReferenceSchema
+         * @description Brief reference to a GeoPlace or Hut associated with an image.
+         */
+        ImagePlaceReferenceSchema: {
+            /**
+             * Id
+             * @description Place database ID
+             */
+            id: number;
+            /**
+             * Slug
+             * @description Place slug identifier
+             */
+            slug: string;
+            /**
+             * Name
+             * @description Place name
+             */
+            name: string;
+            /** @description Place coordinates */
+            location: components["schemas"]["LocationSchema"];
+        };
+        /**
+         * ImagePropertiesSchema
+         * @description Properties for an image GeoJSON feature.
+         *     Follows the pattern from HutAvailabilityPropertiesSchema.
+         */
+        ImagePropertiesSchema: {
+            /** @description Provider/organization information */
+            provider: components["schemas"]["ImageProviderSchema"];
+            /**
+             * Source Id
+             * @description Original ID in the source system
+             */
+            source_id: string;
+            /**
+             * Source Url
+             * @description Deep link back to the source
+             */
+            source_url?: string | null;
+            /**
+             * Image Type
+             * @description Image type: 'flat' or '360'
+             */
+            image_type: string;
+            /**
+             * Captured At
+             * @description When the photo was taken
+             */
+            captured_at?: string | null;
+            /**
+             * Distance M
+             * @description Distance from query coordinate in meters
+             */
+            distance_m: number;
+            /** @description Comprehensive attribution information */
+            attribution: components["schemas"]["ImageAttributionSchema"];
+            /** @description Image author details */
+            author?: components["schemas"]["ImageAuthorSchema"] | null;
+            /** @description Image license information */
+            license: components["schemas"]["ImageLicenseSchema"];
+            /** @description Image URLs for different sizes */
+            urls: components["schemas"]["ImageUrlsSchema"];
+            /**
+             * Score
+             * @description Metadata quality score (0-100)
+             * @default 0
+             */
+            score: number;
+            /**
+             * Width
+             * @description Image width in pixels
+             */
+            width?: number | null;
+            /**
+             * Height
+             * @description Image height in pixels
+             */
+            height?: number | null;
+            /**
+             * Is Portrait
+             * @description True if image is portrait-oriented (height > width)
+             */
+            is_portrait?: boolean | null;
+            /**
+             * Focal
+             * @description Focal point area coordinates (x1, y1, x2, y2) for smart cropping
+             */
+            focal?: {
+                [key: string]: number;
+            } | null;
+            /**
+             * Crop
+             * @description Crop area coordinates (x1, y1, x2, y2) for specific region extraction
+             */
+            crop?: {
+                [key: string]: number;
+            } | null;
+            /**
+             * Source Found
+             * @description Sources where this image was found (e.g., ['osm', 'wikidata'])
+             */
+            source_found?: string[] | null;
+            /** @description Associated GeoPlace or Hut reference */
+            place?: components["schemas"]["ImagePlaceReferenceSchema"] | null;
+        };
+        /**
+         * ImageProviderSchema
+         * @description Provider/organization information for an image.
+         */
+        ImageProviderSchema: {
+            /**
+             * Slug
+             * @description Provider/organization slug
+             */
+            slug: string;
+            /**
+             * Name
+             * @description Provider/organization name
+             */
+            name: string;
+            /**
+             * Url
+             * @description Provider/organization website URL
+             */
+            url?: string | null;
+            /**
+             * Icon
+             * @description Provider/organization icon/logo URL
+             */
+            icon?: string | null;
+            /**
+             * Description
+             * @description Provider/organization description
+             */
+            description?: string | null;
+        };
+        /**
+         * ImageUrlsSchema
+         * @description Image URLs for different sizes and orientations.
+         */
+        ImageUrlsSchema: {
+            /**
+             * Original
+             * @description Original image URLs (raw, proxy)
+             */
+            original: {
+                [key: string]: string;
+            };
+            /**
+             * Square
+             * @description Square-cropped image URLs (avatar, thumb, preview, placeholder, medium, large with @2x variants)
+             */
+            square?: {
+                [key: string]: string;
+            } | null;
+            /**
+             * Portrait
+             * @description Portrait-oriented image URLs (thumb, preview, placeholder, medium, large with @2x variants)
+             */
+            portrait?: {
+                [key: string]: string;
+            } | null;
+            /**
+             * Landscape
+             * @description Landscape-oriented image URLs (thumb, preview, placeholder, medium, large with @2x variants)
+             */
+            landscape?: {
+                [key: string]: string;
+            } | null;
+            /**
+             * Preferred
+             * @description Preferred orientation URL based on image dimensions
+             */
+            preferred?: string | null;
+        };
+        /**
+         * LocationSchema
+         * @description Location with longitude, latitude and optional elevation in WSG84.
+         *
+         *     Attributes:
+         *         lon: Longitude (x).
+         *         lat: Latitude (y).
+         *         ele: Elevation in meter.
+         */
+        LocationSchema: {
+            /**
+             * Latitude (y) in WGS84
+             * @example 45.9765729
+             */
+            lat: number;
+            /**
+             * Longitude (x) in WGS84
+             * @example 7.6496971
+             */
+            lon: number;
+        };
+        /**
+         * Point
+         * @description Point Model
+         */
+        Point: {
+            /** Bbox */
+            bbox?: [
+                number,
+                number,
+                number,
+                number
+            ] | [
+                number,
+                number,
+                number,
+                number,
+                number,
+                number
+            ] | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "Point";
+            /** Coordinates */
+            coordinates: components["schemas"]["Position2D"] | components["schemas"]["Position3D"];
+        };
+        Position2D: [
+            number,
+            number
+        ];
+        Position3D: [
+            number,
+            number,
+            number
+        ];
         /**
          * IncludeModeEnum
          * @description Include mode for nested objects - controls level of detail.
@@ -710,27 +1155,6 @@ export interface components {
             sources?: components["schemas"]["OrganizationSourceIdSlugSchema"][] | components["schemas"]["OrganizationSourceIdDetailSchema"][] | null;
             /** Score */
             score?: number | null;
-        };
-        /**
-         * LocationSchema
-         * @description Location with longitude, latitude and optional elevation in WSG84.
-         *
-         *     Attributes:
-         *         lon: Longitude (x).
-         *         lat: Latitude (y).
-         *         ele: Elevation in meter.
-         */
-        LocationSchema: {
-            /**
-             * Latitude (y) in WGS84
-             * @example 45.9765729
-             */
-            lat: number;
-            /**
-             * Longitude (x) in WGS84
-             * @example 7.6496971
-             */
-            lon: number;
         };
         /**
          * OrganizationSearchSchema
@@ -1154,42 +1578,6 @@ export interface components {
             /** Bookings */
             bookings: components["schemas"]["HutBookingSchema"][];
         };
-        /**
-         * Point
-         * @description Point Model
-         */
-        Point: {
-            /** Bbox */
-            bbox?: [
-                number,
-                number,
-                number,
-                number
-            ] | [
-                number,
-                number,
-                number,
-                number,
-                number,
-                number
-            ] | null;
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            type: "Point";
-            /** Coordinates */
-            coordinates: components["schemas"]["Position2D"] | components["schemas"]["Position3D"];
-        };
-        Position2D: [
-            number,
-            number
-        ];
-        Position3D: [
-            number,
-            number,
-            number
-        ];
         /**
          * DatePathParam
          * @description Path parameter for date.
@@ -2489,6 +2877,118 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    nearby_images: {
+        parameters: {
+            query: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /**
+                 * @description Latitude in WGS84
+                 * @example 46.570088
+                 */
+                lat: number;
+                /**
+                 * @description Longitude in WGS84
+                 * @example 8.2221
+                 */
+                lon: number;
+                /**
+                 * @description Search radius in meters
+                 * @example 5000.0
+                 */
+                radius?: number;
+                /** @description Comma-separated provider list (e.g., 'wodore,wikidata,flickr') */
+                sources?: string | null;
+                /** @description Coordinate precision: 'broad' (3), 'normal' (4), 'precise' (6) */
+                precision?: string;
+                /** @description Maximum number of images to return */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImageCollectionResponse"];
+                };
+            };
+        };
+    };
+    images_for_place: {
+        parameters: {
+            query?: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /**
+                 * @description Search radius in meters for external providers
+                 * @example 5000.0
+                 */
+                radius?: number;
+                /** @description Comma-separated provider list (e.g., 'wodore,wikidata,flickr'). If provided without wodore, wodore images are not shown but place is still used for location. */
+                sources?: string | null;
+                /** @description Maximum number of images to return */
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                place_slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImageCollectionResponse"];
+                };
+            };
+        };
+    };
+    images_for_hut: {
+        parameters: {
+            query?: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /**
+                 * @description Search radius in meters for external providers
+                 * @example 5000.0
+                 */
+                radius?: number;
+                /** @description Comma-separated provider list (e.g., 'wodore,wikidata,flickr'). If provided without wodore, wodore images are not shown but hut is still used for location. */
+                sources?: string | null;
+                /** @description Maximum number of images to return */
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                hut_slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImageCollectionResponse"];
+                };
+            };
+        };
+    };
     search_geoplaces: {
         parameters: {
             query: {
@@ -2609,52 +3109,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AmenitySchema"];
-                };
-            };
-        };
-    };
-    nearby_images: {
-        parameters: {
-            query: {
-                /** @description Select language code: de, en, fr, it. */
-                lang?: string;
-                /**
-                 * @description Latitude in WGS84
-                 * @example 46.570088
-                 */
-                lat: number;
-                /**
-                 * @description Longitude in WGS84
-                 * @example 8.2221
-                 */
-                lon: number;
-                /**
-                 * @description Search radius in meters
-                 * @example 5000.0
-                 */
-                radius?: number;
-                /** @description Comma-separated provider list (e.g., 'wodore,wikidata,flickr') */
-                sources?: string | null;
-                /** @description Coordinate precision: 'broad' (3), 'normal' (4), 'precise' (6) */
-                precision?: string;
-                /** @description Maximum number of images to return */
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
                 };
             };
         };

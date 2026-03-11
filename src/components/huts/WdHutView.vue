@@ -8,6 +8,8 @@ import { clientWodore, schemasWodore } from '@clients/index';
 import { useHutsStore } from '@stores/huts-store';
 import { storeToRefs } from 'pinia';
 import { useMeta } from 'quasar';
+import { useHutImages } from '@composables/useHutImages';
+import WdHutImageGallery from './WdHutImageGallery.vue';
 const { selectedMonth } = storeToRefs(useHutsStore());
 
 const $q = useQuasar();
@@ -137,6 +139,9 @@ const addHeaderShadow: IntersectionValue = entry => {
   headerShadow.value = !entry.isIntersecting;
   return true;
 };
+
+// Fetch hut images using the specialized endpoint (faster than nearby)
+const { images: nearbyImages, loading: imagesLoading } = useHutImages(computed(() => props.slug));
 </script>
 
 <style lang="scss" scoped>
@@ -278,38 +283,16 @@ const addHeaderShadow: IntersectionValue = entry => {
           </h2>
 
           <div class="row items-start q-gutter-sm">
-            <div
-              v-if="hut.images && hut.images[0] && 'urls' in hut.images[0]"
-              class="col-md-12 col-sm-7 col-7"
-            >
-              <div
-                :class="{
-                  'q-ma-sm': $q.screen.gt.sm,
-                  'q-ma-lg': $q.screen.gt.md,
-                }"
-              >
-                <a :href="(hut.images[0] as any).urls['medium']" target="_blank">
-                  <q-img
-                    :src="(hut.images[0] as any).urls['preview']"
-                    :placeholder-src="(hut.images[0] as any).urls['preview-placeholder']"
-                    class="hut-image"
-                    :class="{ 'shadow-8': $q.screen.gt.sm }"
-                  >
-                    <div class="absolute-bottom-right row attribution">
-                      <q-icon class="q-mr-sm" name="eva-camera-outline" />
-                      <div class="img-link" v-html="hut.photos_attribution" />
-                    </div>
-                  </q-img>
-                </a>
-                <!-- <a :href="(hut.images[0] as any).urls['600x400']">open</a> -->
-              </div>
+            <!-- New image gallery using hut images API -->
+            <div class="col-md-12 col-sm-7 col-7">
+              <WdHutImageGallery :images="nearbyImages" :loading="imagesLoading" />
             </div>
             <div
               class="col-md-12"
               :class="{
-                'col-sm-4': headerImg,
-                'col-4': headerImg,
-                'col-12': !headerImg,
+                'col-sm-4': nearbyImages.length > 0,
+                'col-4': nearbyImages.length > 0,
+                'col-12': nearbyImages.length === 0,
               }"
             >
               <div
