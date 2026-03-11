@@ -41,26 +41,56 @@ const openCarousel = (index: number) => {
   carouselOpen.value = true;
 };
 
-// Main image (first one or placeholder)
-const mainImage = computed(() => {
-  return props.images.length > 0 ? props.images[0] : null;
+// Show thumbnail in preview instead of opening gallery
+const showInPreview = (image: HutImage) => {
+  const index = props.images.findIndex(img => img.id === image.id);
+  if (index !== -1) {
+    previewImageIndex.value = index;
+  }
+};
+
+// Current preview image index (for displaying clicked thumbnail)
+const previewImageIndex = ref(0);
+
+// Get current preview image
+const currentPreviewImage = computed(() => {
+  return props.images[previewImageIndex.value] || null;
 });
 
 // Thumbnail images (skip the first one, limit to 3)
 const thumbnailImages = computed(() => {
-  return props.images.slice(1, 4);
+  // Show up to 3 thumbnails after the current preview image
+  const thumbs = [];
+  for (let i = 1; i <= 3; i++) {
+    const index = (previewImageIndex.value + i) % props.images.length;
+    if (index !== previewImageIndex.value) {
+      thumbs.push(props.images[index]);
+    }
+  }
+  return thumbs;
+});
+
+// Count of remaining images not shown in thumbnails
+const remainingImagesCount = computed(() => {
+  return Math.max(0, props.images.length - 1 - 3);
 });
 
 // Get image URL for display
 const getMainImageUrl = () => {
-  if (!mainImage.value?.urls?.landscape) return null;
+  if (!currentPreviewImage.value?.urls?.landscape) return null;
   // Use landscape medium for main image
-  return mainImage.value.urls.landscape.medium || mainImage.value.urls.landscape.preview;
+  return (
+    currentPreviewImage.value.urls.landscape.medium ||
+    currentPreviewImage.value.urls.landscape.preview
+  );
 };
 
 const getMainImagePlaceholder = () => {
-  if (!mainImage.value?.urls?.landscape) return null;
-  return mainImage.value.urls.landscape.placeholder || mainImage.value.urls.landscape.thumb;
+  if (!currentPreviewImage.value?.urls?.landscape) return null;
+  return (
+    currentPreviewImage.value.urls.landscape.placeholder ||
+    currentPreviewImage.value.urls.landscape.thumb
+  );
 };
 
 const getThumbnailUrl = (image: HutImage) => {
@@ -73,16 +103,28 @@ const getThumbnailPlaceholder = (image: HutImage) => {
   return image.urls.square.placeholder || image.urls.square.thumb || '';
 };
 
-// Get license for main image (short form)
-const getMainImageLicense = () => {
-  if (!mainImage.value?.license) return '';
-  // Use license name from new API structure
-  return mainImage.value.license.name || mainImage.value.license.slug || '';
+// Get provider icon for any image
+const getProviderIcon = (image: HutImage) => {
+  return image?.provider?.icon || undefined;
 };
 
 // Check if we have images
 const hasImages = computed(() => props.images.length > 0);
 const hasThumbnails = computed(() => thumbnailImages.value.length > 0);
+
+// Get short attribution for main image
+const getMainImageAttribution = () => {
+  if (!currentPreviewImage.value?.attribution) return '';
+  // Prefer short attribution, fall back to full
+  return (
+    currentPreviewImage.value.attribution.short || currentPreviewImage.value.attribution.full || ''
+  );
+};
+
+// Get provider icon for main image
+const getMainImageProviderIcon = () => {
+  return currentPreviewImage.value?.provider?.icon || undefined;
+};
 </script>
 
 <template>
@@ -102,70 +144,92 @@ const hasThumbnails = computed(() => thumbnailImages.value.length > 0);
     }"
   >
     <!-- Main image with thumbnails overlay -->
-    <div class="relative-position" style="border-radius: 25px; overflow: hidden">
+    <div class="relative-position" style="border-radius: 16px; overflow: hidden">
       <!-- Main image -->
-      <a class="cursor-pointer" @click="openCarousel(0)">
+      <div>
         <q-img
           :src="getMainImageUrl()!"
           :placeholder-src="getMainImagePlaceholder()!"
           class="hut-image"
           :class="{ 'shadow-8': $q.screen.gt.sm }"
-          style="border-radius: 25px"
+          style="border-radius: 16px"
+          @click="openCarousel(previewImageIndex)"
         >
-          <!-- License badge (top-left) -->
-          <div v-if="getMainImageLicense()" class="absolute-top-left license-badge">
-            {{ getMainImageLicense() }}
+          <!-- Attribution badge (top-right) with provider icon -->
+          <div v-if="getMainImageAttribution()" class="license-badge-custom">
+            <img
+              v-if="getMainImageProviderIcon()"
+              :src="getMainImageProviderIcon()"
+              class="provider-icon"
+              alt="Provider icon"
+            />
+            <span v-html="getMainImageAttribution()" />
           </div>
 
           <!-- Thumbnail overlays -->
           <div
-            v-if="hasThumbnails"
+            v-if="hasThumbnails || images.length > 1"
             class="absolute-bottom-right row q-gutter-xs"
-            style="bottom: 8px; right: 8px"
+            style="bottom: 6px; right: 6px"
           >
             <div
-              v-for="(thumb, index) in thumbnailImages"
+              v-for="thumb in thumbnailImages"
               :key="thumb.id"
               class="cursor-pointer thumbnail-container"
-              @click.stop="openCarousel(index + 1)"
+              @click.stop="showInPreview(thumb)"
             >
               <q-img
                 :src="getThumbnailUrl(thumb)"
                 :placeholder-src="getThumbnailPlaceholder(thumb)"
                 class="thumbnail"
                 :style="{
-                  width: '60px',
-                  height: '60px',
-                  borderRadius: '8px',
-                  border: '2px solid rgba(255, 255, 255, 0.8)',
-                  boxShadow: 'none',
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '6px',
+                  border: '1px solid rgba(255, 255, 255, 0.4)',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
                 }"
               >
                 <div class="thumbnail-overlay">
-                  <q-icon name="fullscreen" size="sm" color="white" />
+                  <img
+                    v-if="getProviderIcon(thumb)"
+                    :src="getProviderIcon(thumb)"
+                    class="thumbnail-provider-icon"
+                    alt="Provider icon"
+                  />
+                  <q-icon v-else name="fullscreen" size="sm" color="white" />
                 </div>
               </q-img>
             </div>
-            <!-- Show more indicator -->
+            <!-- Show more indicator - overlays 4th position -->
             <div
-              v-if="images.length > 4"
-              class="thumbnail-more flex flex-center"
-              style="
-                width: 60px;
-                height: 60px;
-                border-radius: 8px;
-                background: rgba(0, 0, 0, 0.6);
-                color: white;
-                font-size: 0.8rem;
-                border: 2px solid rgba(255, 255, 255, 0.8);
-              "
+              v-if="remainingImagesCount > 0"
+              class="cursor-pointer thumbnail-container"
               @click.stop="openCarousel(0)"
             >
-              +{{ images.length - 4 }}
+              <div
+                class="thumbnail-more flex flex-center"
+                style="
+                  width: 56px;
+                  height: 56px;
+                  border-radius: 6px;
+                  background: rgba(0, 0, 0, 0.25);
+                  backdrop-filter: blur(4px);
+                  -webkit-backdrop-filter: blur(4px);
+                  color: white;
+                  font-size: 0.8125rem;
+                  font-weight: 600;
+                  border: 1px solid rgba(255, 255, 255, 0.4);
+                  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+                "
+              >
+                +{{ remainingImagesCount }}
+              </div>
             </div>
           </div>
         </q-img>
-      </a>
+      </div>
     </div>
 
     <!-- Image Carousel Dialog -->
@@ -197,9 +261,25 @@ const hasThumbnails = computed(() => thumbnailImages.value.length > 0);
 
 <style lang="scss" scoped>
 .hut-image {
-  border-radius: 25px !important;
+  border-radius: 16px !important;
   max-width: 300px;
   min-width: 200px;
+}
+
+.hut-image :deep(.q-img__content) {
+  background: transparent !important;
+}
+
+.hut-image :deep(.q-img__container) {
+  background: transparent !important;
+}
+
+.hut-image :deep(.q-img__image) {
+  background: transparent !important;
+}
+
+.hut-image :deep(.q-img) {
+  background: transparent !important;
 }
 
 @media (width <=$breakpoint-xs-max) {
@@ -212,6 +292,15 @@ const hasThumbnails = computed(() => thumbnailImages.value.length > 0);
 @media (width >=$breakpoint-sm-max) {
   .hut-image {
     max-width: 100%;
+  }
+}
+
+.thumbnail-container {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    transform: scale(1.05);
+    z-index: 10;
   }
 }
 
@@ -228,10 +317,18 @@ const hasThumbnails = computed(() => thumbnailImages.value.length > 0);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.3);
+  background: transparent;
   border-radius: 6px;
   opacity: 0;
-  transition: opacity 0.2s ease-in-out;
+  transition: all 0.2s ease-in-out;
+}
+
+.thumbnail-provider-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  flex-shrink: 0;
+  border-radius: 3px;
 }
 
 .thumbnail :deep(.q-img) {
@@ -251,13 +348,59 @@ const hasThumbnails = computed(() => thumbnailImages.value.length > 0);
   background: transparent !important;
 }
 
-.license-badge {
-  background: rgba(0, 0, 0, 0.6);
+.thumbnail :deep(.q-img__loading) {
+  background: transparent !important;
+}
+
+.thumbnail :deep(.q-img__fill) {
+  background: transparent !important;
+}
+
+.license-badge-custom {
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
   color: white;
   font-size: 0.75rem;
-  padding: 4px 8px;
-  border-radius: 4px;
-  margin: 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
   pointer-events: none;
+  font-weight: 500;
+  letter-spacing: 0.25px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 10;
+
+  :deep(a) {
+    color: rgba(255, 255, 255, 0.95);
+    text-decoration: underline dotted;
+    text-decoration-color: rgba(255, 255, 255, 0.5);
+    transition: all 0.2s;
+  }
+
+  :deep(a:hover) {
+    color: #64b5f6;
+    text-decoration-color: #64b5f6;
+    text-decoration: underline dotted;
+  }
+}
+
+.provider-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  flex-shrink: 0;
+  border-radius: 2px;
+}
+
+.thumbnail-more {
+  &:hover {
+    background: rgba(0, 0, 0, 0.5) !important;
+    transform: scale(1.05);
+  }
 }
 </style>

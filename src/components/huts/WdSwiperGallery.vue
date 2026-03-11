@@ -140,7 +140,7 @@ const shouldAddMargin = computed(() => {
 const attributionParts = computed(() => {
   if (!currentImage.value?.attribution) return [];
 
-  // Attribution is always an object with full and short properties from the API
+  // Use full attribution for detailed display
   const attr = currentImage.value.attribution;
   if (attr.full) {
     return [attr.full];
@@ -249,10 +249,18 @@ const attributionParts = computed(() => {
   right: 16px;
   z-index: 1000;
   color: white;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   &:hover {
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.6);
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.95);
   }
 }
 
@@ -262,10 +270,18 @@ const attributionParts = computed(() => {
   right: 70px;
   z-index: 1000;
   color: white;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   &:hover {
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.6);
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.95);
   }
 }
 
@@ -277,21 +293,26 @@ const attributionParts = computed(() => {
   max-width: calc(100% - 160px);
 
   .attribution-text {
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 0.875rem;
-    line-height: 1.3;
-    background: rgba(0, 0, 0, 0.5);
-    padding: 6px 12px;
-    border-radius: 4px;
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 8px 14px;
+    border-radius: 6px;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
 
     :deep(a) {
-      color: white;
-      text-decoration: underline;
+      color: rgba(255, 255, 255, 0.95);
+      text-decoration: underline dotted;
+      text-decoration-color: rgba(255, 255, 255, 0.5);
+      transition: all 0.2s;
     }
 
     :deep(a:hover) {
-      color: #1976d2;
-      text-decoration: none;
+      color: #64b5f6;
+      text-decoration-color: #64b5f6;
+      text-decoration: underline dotted;
     }
   }
 }
@@ -306,29 +327,44 @@ const attributionParts = computed(() => {
   :deep(.swiper-button-next),
   :deep(.swiper-button-prev) {
     color: white;
-    opacity: 0.7;
-    transition: opacity 0.3s;
-    background: rgba(0, 0, 0, 0.3);
-    width: 44px;
-    height: 44px;
+    opacity: 0.8;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
 
     &:hover {
       opacity: 1;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.6);
+      transform: scale(1.05);
+    }
+
+    &:active {
+      transform: scale(0.95);
     }
 
     &::after {
-      font-size: 20px;
+      font-size: 22px;
+      font-weight: 600;
     }
   }
 
   :deep(.swiper-button-next) {
-    right: 20px;
+    right: 24px;
   }
 
   :deep(.swiper-button-prev) {
-    left: 20px;
+    left: 24px;
+  }
+
+  &:hover {
+    :deep(.swiper-button-next),
+    :deep(.swiper-button-prev) {
+      opacity: 1;
+    }
   }
 }
 
@@ -375,34 +411,43 @@ const attributionParts = computed(() => {
 .thumb-swiper {
   height: 120px;
   width: 100%;
-  background: rgba(0, 0, 0, 0.9);
-  padding: 12px 24px;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 16px 24px;
   box-sizing: border-box;
   flex-shrink: 0;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 
   :deep(.swiper-wrapper) {
     align-items: center;
   }
 
   :deep(.swiper-slide) {
-    width: 80px !important;
-    height: 80px !important;
-    opacity: 0.4;
-    transition: all 0.3s;
+    width: 72px !important;
+    height: 72px !important;
+    opacity: 0.5;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border-radius: 8px;
     overflow: hidden;
     flex-shrink: 0;
     cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   }
 
   :deep(.swiper-slide-thumb-active) {
     opacity: 1;
-    border: 2px solid #1976d2;
-    transform: scale(1.05);
+    border: 2px solid #64b5f6;
+    transform: scale(1.08);
+    box-shadow: 0 4px 16px rgba(100, 181, 246, 0.4);
   }
 
   :deep(.swiper-slide-visible) {
-    opacity: 0.7;
+    opacity: 0.65;
+  }
+
+  :deep(.swiper-slide-visible:hover) {
+    opacity: 0.85;
+    transform: scale(1.02);
   }
 }
 
