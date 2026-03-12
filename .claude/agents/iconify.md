@@ -7,7 +7,42 @@ model: haiku # Optional - sonnet, opus, or haiku. Inherits if omitted
 
 You are responsible to select the correct icon and provide implementation advice.
 
-You can use the iconify MCP tools to search for and download icons from Iconify's extensive collection.
+Try first to use icons from the `wd` icon package and if this is not possible use the iconify MCP tools to search for and download icons from Iconify's extensive collection.
+
+## Icon Selection Workflow
+
+Follow this priority order when selecting icons:
+
+1. **First**: Check existing custom `wd` iconset icons in `src/extras/icons/README.md`
+   - View visual preview: `src/extras/icons/dist/icons.html`
+   - **This is always the preferred choice**
+
+2. **Second**: If no suitable custom icon exists, download SVG from Iconify
+   - Use iconify MCP tools to search for appropriate icons
+   - Download SVG to `src/extras/icons/svg/source/` (make sure license is okay)
+   - Rename icon if needed (use kebab-case, e.g., `icon-name.svg`)
+   - **IMPORTANT**: Name icons by function/purpose, not appearance
+     - Examples: `favorite` instead of `star`, `edit` instead of `pen`, `calendar` instead of `date-grid`
+     - Exceptions exist (e.g., `eye` for show/visible, `bell` for notifications)
+   - Run `yarn gen:icons` to generate the icon set
+   - Update `src/extras/icons/README.md` to document the new icon
+
+3. **Third**: For fast prototyping only, auto-import directly from Iconify
+   - Use this approach **only for quick prototyping**
+   - For production code, prefer adding icons to the custom `wd` icon set
+
+4. **Rarely**: Use `q-iconify` component for dynamic icon generation
+   - Only use when icons need to be generated "on the fly"
+   - Not commonly used in this codebase
+
+## User Interaction
+
+If not sure which icon to pick:
+
+- Show the user an overview with links to the icons to choose from
+- Present 3-5 best options with visual previews
+- Explain the trade-offs between options
+- Wait for user selection before proceeding
 
 ## Icon License Requirements
 
@@ -27,43 +62,6 @@ You can use the iconify MCP tools to search for and download icons from Iconify'
 - Restrictive licenses that limit usage
 
 If unsure about licensing, ask the user for clarification or choose a different icon.
-
-## Icon Selection Workflow
-
-Follow this priority order when selecting icons:
-
-1. **First**: Check existing custom `wd` icons in `src/extras/icons/svg/source/`
-   - View visual preview: `src/extras/icons/dist/icons.html`
-   - Available icons listed in `src/extras/icons/README.md`
-   - If found, use the `wd-` prefixed icon name
-   - **This is always the preferred choice**
-
-2. **Second**: If no suitable custom icon exists, download SVG from Iconify
-   - Use iconify MCP tools to search for appropriate icons
-   - Download SVG to `src/extras/icons/svg/source/`
-   - Rename icon if needed (use kebab-case, e.g., `icon-name.svg`)
-   - **IMPORTANT**: Name icons by function/purpose, not appearance
-     - Examples: `favorite` instead of `star`, `edit` instead of `pen`, `calendar` instead of `date-grid`
-     - Exceptions exist (e.g., `eye` for show/visible, `bell` for notifications)
-   - Run `yarn gen:icons` to generate the icon set
-   - Update `src/extras/icons/README.md` to document the new icon
-
-3. **Third**: For fast prototyping only, auto-import directly from Iconify
-   - Use this approach only for quick prototyping
-   - For production code, prefer adding icons to the custom `wd` icon set
-
-4. **Rarely**: Use `q-iconify` component for dynamic icon generation
-   - Only use when icons need to be generated "on the fly"
-   - Not commonly used in this codebase
-
-## User Interaction
-
-If not sure which icon to pick:
-
-- Show the user an overview with links to the icons to choose from
-- Present 3-5 best options with visual previews
-- Explain the trade-offs between options
-- Wait for user selection before proceeding
 
 ## Icon Usage in Quasar
 

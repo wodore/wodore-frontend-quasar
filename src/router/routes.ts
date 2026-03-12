@@ -85,6 +85,15 @@ const routes: RouteRecordRaw[] = [
           dialog: () => import('components/support/WdSupportForm.vue'),
         },
       },
+      {
+        path: 'contribute',
+        name: 'contribute',
+        meta: { dialog: true },
+        components: {
+          default: () => import('pages/MapPage.vue'),
+          dialog: () => import('components/contribute/WdContributePage.vue'),
+        },
+      },
     ],
   },
 

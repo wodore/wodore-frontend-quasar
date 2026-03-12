@@ -140,8 +140,6 @@ function closeContent(mode: string) {
         <!-- MAIN DIALOG -->
         <q-dialog
           v-model="showDialog"
-          no-backdrop-dismiss
-          persistent
           :maximized="isMobile"
           backdrop-filter="blur(3px) saturate(180%) grayscale(60%)"
           class="dialog-radius"

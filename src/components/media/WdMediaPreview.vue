@@ -2,6 +2,7 @@
 import { ref, computed, watchEffect, type Component } from 'vue';
 import { useTimeoutFn } from '@vueuse/core';
 import { useQuasar } from 'quasar';
+import { useRouter } from 'vue-router';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import type { Swiper as SwiperType } from 'swiper';
 import { EffectFade, Keyboard, Thumbs } from 'swiper/modules';
@@ -9,12 +10,6 @@ import type { HutImage } from '@composables/useHutImages';
 import WdMediaDialog from './WdMediaDialog.vue';
 import WdNoImage from './WdNoImage.vue';
 import IconAddPhoto from '~icons/material-symbols/add-a-photo.svg';
-import IconOpenInNew from '~icons/material-symbols/open-in-new.svg';
-import IconAndroid from '~icons/material-symbols/android.svg';
-import IconApple from '~icons/bxl/apple';
-import IconLanguage from '~icons/material-symbols/public.svg';
-import IconUpload from '~icons/material-symbols/upload.svg';
-import IconHiking from '~icons/material-symbols/hiking.svg';
 
 // Import Swiper styles
 import 'swiper/css';
@@ -32,6 +27,14 @@ interface Props {
   thumbnailSize?: number;
   showAttribution?: boolean;
   osmId?: string | null;
+  osmFeature?: string | null;
+  osmIdOnly?: string | null;
+  refugesId?: string | null;
+  mapcompleteTheme?: string | null;
+  mapcompleteUserlayout?: string | null;
+  // Hut coordinates for precise location linking
+  hutLat?: number | null;
+  hutLon?: number | null;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -43,6 +46,13 @@ const props = withDefaults(defineProps<Props>(), {
   thumbnailSize: 50,
   showAttribution: true,
   osmId: null,
+  osmFeature: null,
+  osmIdOnly: null,
+  refugesId: null,
+  mapcompleteTheme: null,
+  mapcompleteUserlayout: null,
+  hutLat: null,
+  hutLon: null,
 });
 
 const emit = defineEmits<{
@@ -51,8 +61,8 @@ const emit = defineEmits<{
 }>();
 
 const $q = useQuasar();
+const router = useRouter();
 const dialogOpen = ref(false);
-const contributionDialogOpen = ref(false);
 const currentSlide = ref(0);
 const swiperRef = ref<SwiperType | null>(null);
 const thumbsSwiperRef = ref<SwiperType | null>(null);
@@ -137,37 +147,47 @@ const getCurrentImageProviderIcon = () => {
   return currentImage.value?.provider?.icon || undefined;
 };
 
-// Handle add image click
+// Handle add image click - navigate to contribute page
 const handleAddImageClick = () => {
   emit('add-image-click');
-  contributionDialogOpen.value = true;
-};
 
-// Open external contribution platforms
-const openMapComplete = () => {
-  if (props.osmId) {
-    window.open(`https://mapcomplete.org/images.html#osmId=${props.osmId}`, '_blank');
+  // Build query parameters
+  const query: Record<string, string> = {};
+
+  // Add OSM data if available
+  if (props.osmFeature && props.osmIdOnly) {
+    query.osm_feature = props.osmFeature;
+    query.osm_id_only = props.osmIdOnly;
+    query.osm_id = `${props.osmFeature}/${props.osmIdOnly}`;
+  } else if (props.osmId) {
+    // Fallback to osm_id if no feature/id_only
+    query.osm_id = props.osmId;
   }
-};
 
-const openPanoramax = () => {
-  window.open('https://panoramax.openstreetmap.fr/', '_blank');
-};
+  // Add mapcomplete parameters if available
+  if (props.mapcompleteTheme) {
+    query.mapcomplete_theme = props.mapcompleteTheme;
+  }
+  if (props.mapcompleteUserlayout) {
+    query.mapcomplete_userlayout = props.mapcompleteUserlayout;
+  }
 
-const openPanoramaxAndroid = () => {
-  window.open('https://play.google.com/store/apps/details?id=app.panoramax', '_blank');
-};
+  // Add refuges ID if available
+  if (props.refugesId) {
+    query.refuges_id = props.refugesId;
+  }
 
-const openPanoramaxIOS = () => {
-  window.open('https://apps.apple.com/us/app/panoramax-photo/id6677045203', '_blank');
-};
+  // Use hut coordinates if available (only if both lat and lon are defined and not null/undefined)
+  if (props.hutLat != null && props.hutLon != null) {
+    query.lat = String(props.hutLat);
+    query.lon = String(props.hutLon);
+    query.zoom = '15'; // Default zoom for hut location
+  }
 
-const openWikimediaCommons = () => {
-  window.open('https://commons.wikimedia.org/wiki/Special:UploadWizard', '_blank');
-};
-
-const openCampToCamp = () => {
-  window.open('https://www.camptocamp.org/', '_blank');
+  router.push({
+    name: 'contribute',
+    query,
+  });
 };
 
 // Thumbnail container dimensions
@@ -289,202 +309,6 @@ const thumbnailContainerStyle = computed(() => {
       @close="dialogOpen = false"
     />
   </div>
-
-  <!-- Contribution Dialog (outside v-if so it's always available) -->
-  <q-dialog v-model="contributionDialogOpen">
-    <q-card style="min-width: 350px; max-width: 650px; border-radius: 16px">
-      <!-- Header Image -->
-      <q-img
-        src="https://cdn.pixabay.com/photo/2018/11/09/16/20/photographer-3804979_1280.jpg"
-        style="height: 160px"
-        class="shadow-4 header-image"
-      >
-        <div class="card-header-bg absolute-bottom"></div>
-        <div class="absolute-bottom text-white text-center">
-          <div class="text-h4 text-weight-bold" style="text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5)">
-            Contribute Images
-          </div>
-          <div class="text-caption q-mt-sm" style="opacity: 0.95">
-            Share your photos with the community
-          </div>
-        </div>
-      </q-img>
-
-      <q-card-section class="q-pt-lg">
-        <p class="text-body1 text-grey-8">
-          Direct upload is not supported yet. Contribute through these platforms (synced every 14
-          days):
-        </p>
-
-        <div class="row q-col-gutter-md q-mt-md">
-          <!-- MapComplete -->
-          <div v-if="osmId" class="col-12 col-sm-6">
-            <q-card
-              flat
-              bordered
-              class="platform-card mapcomplete"
-              clickable
-              @click="openMapComplete"
-            >
-              <q-card-section class="q-pa-md">
-                <div class="row items-center no-wrap">
-                  <div class="platform-icon-container">
-                    <q-img
-                      src="https://upload.wikimedia.org/wikipedia/commons/9/9a/MapComplete.svg"
-                      class="platform-icon"
-                      no-spinner
-                    />
-                  </div>
-                  <div class="col q-pl-md">
-                    <div class="text-h6 text-weight-medium">MapComplete</div>
-                    <div class="text-caption text-grey-7 q-mt-xs">
-                      Add images directly to this location on OpenStreetMap
-                    </div>
-                  </div>
-                </div>
-              </q-card-section>
-              <q-card-actions align="right" class="q-px-md q-pb-md">
-                <q-btn flat size="sm" label="Open Platform" class="text-primary">
-                  <q-iconify :is="IconOpenInNew" size="16px" />
-                </q-btn>
-              </q-card-actions>
-            </q-card>
-          </div>
-
-          <!-- Panoramax -->
-          <div class="col-12 col-sm-6">
-            <q-card flat bordered class="platform-card panoramax">
-              <q-card-section class="q-pa-md">
-                <div class="row items-start no-wrap">
-                  <div class="platform-icon-container">
-                    <q-img
-                      src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Panoramax.svg"
-                      class="platform-icon"
-                      no-spinner
-                    />
-                  </div>
-                  <div class="col q-pl-md">
-                    <div class="row items-center justify-between q-mb-xs">
-                      <div class="text-h6 text-weight-medium">Panoramax</div>
-                      <div class="app-store-badges">
-                        <q-btn
-                          flat
-                          dense
-                          size="sm"
-                          label="Android"
-                          @click.stop="openPanoramaxAndroid"
-                          class="store-badge android"
-                        >
-                          <q-iconify :is="IconAndroid" size="14px" />
-                        </q-btn>
-                        <q-btn
-                          flat
-                          dense
-                          size="sm"
-                          label="iOS"
-                          @click.stop="openPanoramaxIOS"
-                          class="store-badge ios q-ml-xs"
-                        >
-                          <q-iconify :is="IconApple" size="14px" />
-                        </q-btn>
-                      </div>
-                    </div>
-                    <div class="text-caption text-grey-7 q-mt-xs">
-                      Contribute geolocated photos via mobile app or web
-                    </div>
-                  </div>
-                </div>
-              </q-card-section>
-              <q-card-actions align="right" class="q-px-md q-pb-md">
-                <q-btn
-                  flat
-                  size="sm"
-                  label="Open Web App"
-                  @click.stop="openPanoramax"
-                  class="text-primary"
-                >
-                  <q-iconify :is="IconLanguage" size="16px" />
-                </q-btn>
-              </q-card-actions>
-            </q-card>
-          </div>
-
-          <!-- Wikimedia Commons -->
-          <div class="col-12 col-sm-6">
-            <q-card
-              flat
-              bordered
-              class="platform-card wikimedia"
-              clickable
-              @click="openWikimediaCommons"
-            >
-              <q-card-section class="q-pa-md">
-                <div class="row items-center no-wrap">
-                  <div class="platform-icon-container">
-                    <q-img
-                      src="https://upload.wikimedia.org/wikipedia/commons/4/4a/Commons-logo.svg"
-                      class="platform-icon"
-                      no-spinner
-                    />
-                  </div>
-                  <div class="col q-pl-md">
-                    <div class="text-h6 text-weight-medium">Wikimedia Commons</div>
-                    <div class="text-caption text-grey-7 q-mt-xs">
-                      Upload free media to the world's largest media library
-                    </div>
-                  </div>
-                </div>
-              </q-card-section>
-              <q-card-actions align="right" class="q-px-md q-pb-md">
-                <q-btn flat size="sm" label="Upload Now" class="text-primary">
-                  <q-iconify :is="IconUpload" size="16px" />
-                </q-btn>
-              </q-card-actions>
-            </q-card>
-          </div>
-
-          <!-- CampToCamp -->
-          <div class="col-12 col-sm-6">
-            <q-card
-              flat
-              bordered
-              class="platform-card camptocamp"
-              clickable
-              @click="openCampToCamp"
-            >
-              <q-card-section class="q-pa-md">
-                <div class="row items-center no-wrap">
-                  <div class="platform-icon-container">
-                    <q-img
-                      src="https://www.camptocamp.org/img/logo.433ae10f.svg"
-                      class="platform-icon"
-                      no-spinner
-                    />
-                  </div>
-                  <div class="col q-pl-md">
-                    <div class="text-h6 text-weight-medium">Camptocamp</div>
-                    <div class="text-caption text-grey-7 q-mt-xs">
-                      Outdoor community with hiking and climbing routes
-                    </div>
-                  </div>
-                </div>
-              </q-card-section>
-              <q-card-actions align="right" class="q-px-md q-pb-md">
-                <q-btn flat size="sm" label="Explore" class="text-primary">
-                  <q-iconify :is="IconHiking" size="16px" />
-                </q-btn>
-              </q-card-actions>
-            </q-card>
-          </div>
-        </div>
-      </q-card-section>
-
-      <q-separator />
-      <q-card-actions align="right">
-        <q-btn flat label="Close" color="primary" v-close-popup class="q-mr-sm" />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
 
   <!-- No images state -->
   <WdNoImage
@@ -690,137 +514,5 @@ const thumbnailContainerStyle = computed(() => {
 .thumbs-swiper-container {
   --thumbnail-size: 50px;
   position: absolute;
-}
-
-.card-header {
-  filter: blur(15px);
-  height: 60px;
-}
-
-.card-header__text {
-  background: none !important;
-  text-shadow: 0px 0px 8px rgb(0, 0, 0);
-}
-
-.header-image {
-  border-radius: 16px 16px 0 0;
-}
-
-.card-header-bg {
-  height: 80px;
-  background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.6));
-  backdrop-filter: blur(2px);
-}
-
-.platform-card {
-  border-radius: 12px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  background: #ffffff;
-  height: 100%;
-  position: relative;
-  overflow: hidden;
-
-  &:hover {
-    transform: translateY(-4px) scale(1.01);
-    box-shadow: 0 12px 32px rgba(52, 103, 81, 0.15);
-    border-color: rgba(52, 103, 81, 0.3);
-
-    .platform-icon-container {
-      transform: scale(1.05);
-    }
-  }
-
-  &.mapcomplete {
-    border-left: 3px solid #346751;
-
-    .platform-icon-container {
-      background: linear-gradient(135deg, rgba(52, 103, 81, 0.12), rgba(52, 103, 81, 0.05));
-    }
-  }
-
-  &.panoramax {
-    border-left: 3px solid #ff6b35;
-
-    .platform-icon-container {
-      background: linear-gradient(135deg, rgba(255, 107, 53, 0.12), rgba(255, 107, 53, 0.05));
-    }
-  }
-
-  &.wikimedia {
-    border-left: 3px solid #333333;
-
-    .platform-icon-container {
-      background: linear-gradient(135deg, rgba(51, 51, 51, 0.12), rgba(51, 51, 51, 0.05));
-    }
-  }
-
-  &.camptocamp {
-    border-left: 3px solid #7cb342;
-
-    .platform-icon-container {
-      background: linear-gradient(135deg, rgba(124, 179, 66, 0.12), rgba(124, 179, 66, 0.05));
-    }
-  }
-}
-
-.platform-icon-container {
-  width: 56px;
-  height: 56px;
-  min-width: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  flex-shrink: 0;
-  transition: transform 0.3s ease;
-  padding: 6px;
-}
-
-.platform-icon {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  max-width: 44px;
-  max-height: 44px;
-}
-
-.app-store-badges {
-  display: flex;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
-.store-badge {
-  border: 1px solid currentColor;
-  border-radius: 6px;
-  padding: 2px 8px;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  transition: all 0.2s ease;
-  min-height: 24px;
-
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  }
-
-  &.android {
-    color: #3ddc84;
-
-    &:hover {
-      background: rgba(61, 220, 132, 0.1);
-    }
-  }
-
-  &.ios {
-    color: #000000;
-
-    &:hover {
-      background: rgba(0, 0, 0, 0.05);
-    }
-  }
 }
 </style>
