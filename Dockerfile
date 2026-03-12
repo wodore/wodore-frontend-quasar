@@ -87,9 +87,9 @@ COPY --from=build-quasar /app/dist/pwa /usr/share/nginx/html
 COPY --from=build-replace-vars /replace_vars /usr/local/bin/replace_vars
 
 # Copy nginx configurations
-COPY docker/nginx-default.conf /etc/nginx/conf.d/00_default.conf
-COPY docker/nginx-proxy.conf /etc/nginx/conf.d/10_proxy.conf.not_used
-COPY docker/nginx-local.conf /etc/nginx/conf.d/10_local.conf.not_used
+COPY docker/nginx-default.conf /etc/nginx/http.d/default.conf.not_used
+COPY docker/nginx-proxy.conf /etc/nginx/http.d/proxy.conf.not_used
+COPY docker/nginx-local.conf /etc/nginx/http.d/local.conf.not_used
 COPY ./.env /dot_env_defaults
 
 # Copy entrypoint script
@@ -104,5 +104,6 @@ EXPOSE 8080
 # Use a shell to expand the variable at runtime
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]
+
 
 
