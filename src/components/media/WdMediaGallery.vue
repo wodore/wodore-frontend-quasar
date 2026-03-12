@@ -126,7 +126,7 @@ const downloadOriginal = () => {
 const onBackdropClick = (event: MouseEvent) => {
   const target = event.target as HTMLElement;
   // Close if clicking directly on the gallery container (backdrop)
-  if (target.classList.contains('swiper-gallery-container')) {
+  if (target.classList.contains('media-gallery-container')) {
     closeGallery();
   }
 };
@@ -155,7 +155,7 @@ const attributionParts = computed(() => {
 
 <template>
   <div
-    class="swiper-gallery-container"
+    class="media-gallery-container"
     :class="{ 'with-margin': shouldAddMargin }"
     @click="onBackdropClick"
   >
@@ -192,14 +192,10 @@ const attributionParts = computed(() => {
       @swiper="onSwiper"
     >
       <swiper-slide v-for="image in images" :key="image.id" class="main-slide">
-        <q-img
+        <img
           :src="getMainImageUrl(image)"
+          :alt="`Image by ${image.attribution?.short || 'unknown'}`"
           class="main-image"
-          spinner-color="white"
-          spinner-size="3rem"
-          no-transition
-          fit="contain"
-          no-default-spinner
         />
       </swiper-slide>
     </swiper>
@@ -216,7 +212,11 @@ const attributionParts = computed(() => {
       @swiper="setThumbsSwiper"
     >
       <swiper-slide v-for="image in images" :key="image.id" class="thumb-slide">
-        <q-img :src="getThumbnailUrl(image)" class="thumb-image" no-spinner no-transition />
+        <img
+          :src="getThumbnailUrl(image)"
+          :alt="`Thumbnail by ${image.attribution?.short || 'unknown'}`"
+          class="thumb-image"
+        />
       </swiper-slide>
     </swiper>
 
@@ -225,7 +225,7 @@ const attributionParts = computed(() => {
 </template>
 
 <style lang="scss" scoped>
-.swiper-gallery-container {
+.media-gallery-container {
   position: relative;
   width: 100%;
   height: 100vh;
@@ -381,31 +381,10 @@ const attributionParts = computed(() => {
 .main-image {
   width: 100%;
   height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  :deep(.q-img__container) {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  :deep(.q-img__image) {
-    object-fit: contain !important;
-    width: auto !important;
-    height: auto !important;
-    max-width: 100% !important;
-    max-height: 100% !important;
-  }
-
-  :deep(.q-img) {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+  display: block;
+  object-fit: contain;
+  max-width: 100%;
+  max-height: 100%;
 }
 
 .thumb-swiper {
@@ -425,7 +404,7 @@ const attributionParts = computed(() => {
   :deep(.swiper-slide) {
     width: 72px !important;
     height: 72px !important;
-    opacity: 0.5;
+    opacity: 0.7;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border-radius: 8px;
     overflow: hidden;
@@ -442,11 +421,11 @@ const attributionParts = computed(() => {
   }
 
   :deep(.swiper-slide-visible) {
-    opacity: 0.65;
+    opacity: 0.85;
   }
 
   :deep(.swiper-slide-visible:hover) {
-    opacity: 0.85;
+    opacity: 1;
     transform: scale(1.02);
   }
 }
@@ -461,14 +440,6 @@ const attributionParts = computed(() => {
   width: 100%;
   height: 100%;
   border-radius: 6px;
-
-  :deep(.q-img__container) {
-    width: 100%;
-    height: 100%;
-  }
-
-  :deep(.q-img__image) {
-    object-fit: cover !important;
-  }
+  object-fit: cover;
 }
 </style>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import WdSwiperGallery from './WdSwiperGallery.vue';
+import WdMediaGallery from './WdMediaGallery.vue';
 import type { HutImage } from 'src/composables/useHutImages';
 
 interface Props {
@@ -37,8 +37,8 @@ const onBackdropClick = (event: MouseEvent) => {
 <template>
   <q-dialog v-model="showDialog" maximized @hide="closeDialog" @keyup.esc="closeDialog">
     <q-card class="bg-black no-border no-box-shadow dialog-card" @click="onBackdropClick">
-      <!-- Swiper Gallery Component -->
-      <WdSwiperGallery
+      <!-- Media Gallery Component -->
+      <WdMediaGallery
         v-if="images.length > 0"
         :images="images"
         :initial-slide="initialSlide"

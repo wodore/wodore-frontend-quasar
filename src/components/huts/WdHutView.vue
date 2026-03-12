@@ -285,7 +285,7 @@ const { images: nearbyImages, loading: imagesLoading } = useHutImages(computed((
           <div class="row items-start q-gutter-sm">
             <!-- New image gallery using hut images API -->
             <div class="col-md-12 col-sm-7 col-7">
-              <WdHutImageGallery :images="nearbyImages" :loading="imagesLoading" />
+              <WdHutImageGallery :images="nearbyImages" :loading="imagesLoading" :hut="hut" />
             </div>
             <div
               class="col-md-12"

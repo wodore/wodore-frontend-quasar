@@ -126,6 +126,14 @@ yarn gen:api-local  # Local development API
 - **Routing**: [Vue Router](https://router.vuejs.org/)
 - **i18n**: [Vue I18n](https://vue-i18n.intlify.dev/)
 
+**Specialized Agents Available:**
+
+- **quasar agent** (`.claude/agents/quasar.md`) - Quasar components, styling, theming
+- **vueuse agent** (`.claude/agents/vueuse.md`) - VueUse composables and utilities
+- **iconify agent** (`.claude/agents/iconify.md`) - Icon selection and implementation
+- **maplibre agent** (`.claude/agents/maplibre.md`) - MapLibre GL implementation
+- **code-review agent** (`.claude/agents/code-review.md`) - Code review and best practices
+
 ### Key Libraries
 
 - **API Client**: [openapi-fetch](https://openapi-ts.pages.dev/) with auto-generated types
@@ -188,39 +196,27 @@ See `.env` file for all available variables
 
 ### Icons
 
-The project uses multiple icon systems:
+The project uses a custom icon system based on `wd` prefixed icons.
 
-#### 1. Quasar Built-in Icons
+**When you need to find or add an icon, use the iconify agent** (`.claude/agents/iconify.md`).
 
-```vue
-<q-icon name="add" />
-<!-- Material Icons -->
-<q-icon name="fas fa-home" />
-<!-- Font Awesome -->
-<q-icon name="img:path/to/icon.svg" />
-<!-- Custom SVG -->
-```
+The iconify agent will:
 
-#### 2. Custom `wd` Icons (Fantasticon)
+- Search existing custom `wd` icons first
+- Download and integrate new icons from Iconify if needed
+- Verify icon licenses (MIT, Apache 2.0, CC0 only)
+- Provide implementation guidance
 
-Add SVG files to `src/extras/icons/svg/source/` and run `yarn gen:icons`:
+Quick syntax reference:
 
 ```vue
 <q-icon name="wd-add-outline" />
-<q-icon name="wd-favorite" />
-<q-icon name="wd-calendar" />
+<!-- Custom wd icon (preferred) -->
+<q-icon name="add" />
+<!-- Quasar built-in -->
 ```
 
-Available custom icons: add-outline, add, arrowhead-\*, arrow-up-down, at, bell-outline, bell, calendar, checkmark, close, edit-outline, edit, eye-outline, eye, favorite-outline, favorite, gift, info-outline, info, link, location-question, menu-arrow, menu, message, more-vertical, question-mark, subject, text-outline
-
-#### 3. Iconify Icons (Unplugin Icons)
-
-Auto-imported from any Iconify collection:
-
-```vue
-<i-mdi-home />
-<i-carbon-arrow-right />
-```
+See `.claude/agents/iconify.md` for detailed workflow and usage examples.
 
 ### CSS and Styling
 
