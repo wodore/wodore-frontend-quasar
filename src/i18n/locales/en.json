@@ -113,7 +113,9 @@
     "no_guarantee": "without guarantee"
   },
   "media": {
-    "no_images_available": "No images available"
+    "no_images_available": "No images available",
+    "no_images": "No images",
+    "no_images_for_hut": "No images available for this hut"
   },
   "contribute": {
     "title": "Contribute",

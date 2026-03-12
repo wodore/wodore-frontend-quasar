@@ -96,7 +96,9 @@
     "no_guarantee": "senza garanzia"
   },
   "media": {
-    "no_images_available": "Nessuna immagine disponibile"
+    "no_images_available": "Nessuna immagine disponibile",
+    "no_images": "Nessuna immagine",
+    "no_images_for_hut": "Nessuna immagine disponibile per questo rifugio"
   },
   "contribute": {
     "title": "Contribuisci",

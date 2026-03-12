@@ -128,7 +128,9 @@
     "no_guarantee": "ohne Gewähr"
   },
   "media": {
-    "no_images_available": "Keine Bilder verfügbar"
+    "no_images_available": "Keine Bilder verfügbar",
+    "no_images": "Keine Bilder",
+    "no_images_for_hut": "Keine Bilder für diese Hütte verfügbar"
   },
   "contribute": {
     "title": "Mitmachen",
