@@ -13,7 +13,9 @@ function onClose(do_track = false) {
   if (do_track) {
     track('support-no-action');
   }
-  router.go(-1);
+  // Navigation is handled by MainLayout's onDialogHide()
+  // which is triggered when v-close-popup closes the dialog
+  // No need to call router.go(-1) here
 }
 
 const imgPath =
@@ -190,7 +192,14 @@ function toFeedback() {
     <q-separator />
     <q-card-actions>
       <q-space />
-      <q-btn label="Schliessen" color="secondary-700" flat @click="onClose(true)" class="q-ml-sm" />
+      <q-btn
+        label="Schliessen"
+        color="secondary-700"
+        flat
+        v-close-popup
+        @click="onClose(true)"
+        class="q-ml-sm"
+      />
       <!-- <q-btn
           label="Zurücksetzen"
           type="reset"

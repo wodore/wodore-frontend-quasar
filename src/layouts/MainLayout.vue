@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watchEffect } from 'vue';
+import { ref, computed, watchEffect, nextTick } from 'vue';
 import { useQuasar } from 'quasar';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@stores/auth-store';
@@ -31,14 +31,66 @@ const menuDrawerOpen = computed({
 });
 
 const contentDrawerOpen = ref(true);
-
 const showDialog = ref(false);
 
 const route = useRoute();
 const router = useRouter();
+
+// Track whether we should navigate when dialog closes
+// This prevents double navigation when browser back button is clicked
+let shouldNavigateOnHide = false;
+
 // check if route.meta.dialog is set
 watchEffect(() => {
-  showDialog.value = route.meta?.dialog as boolean;
+  const newDialogState = route.meta?.dialog as boolean;
+  showDialog.value = newDialogState;
+});
+
+// Set up router guards to track navigation source
+router.beforeEach((to, from, next) => {
+  const fromDialog = from.meta?.dialog as boolean;
+  const toDialog = to.meta?.dialog as boolean;
+
+  // If we're navigating away from a dialog route, prevent onDialogHide from navigating again
+  if (fromDialog && !toDialog) {
+    shouldNavigateOnHide = false;
+  }
+
+  next();
+});
+
+// Handle dialog close via backdrop click, ESC key, or close button
+// This ensures navigation happens consistently for user-initiated closes
+function onDialogHide() {
+  // Only navigate if this was a user-initiated dialog close (not router navigation)
+  if (!shouldNavigateOnHide) {
+    return;
+  }
+
+  // Reset flag to prevent duplicate navigation
+  shouldNavigateOnHide = false;
+
+  // Check if there's history to go back to
+  // If user came directly to this page (e.g., from external link), window.history.state.back will be null
+  if (window.history.state.back) {
+    router.back();
+  } else {
+    // No history to go back to, navigate to map instead
+    router.push({ name: 'map' });
+  }
+}
+
+// Watch for dialog state changes to enable navigation on hide
+// This MUST be set up as a separate watch after watchEffect to ensure proper ordering
+watchEffect(() => {
+  // When dialog opens, enable navigation on hide
+  // This allows backdrop click, ESC key, and close button to trigger navigation
+  if (showDialog.value) {
+    // Use nextTick to ensure this runs after the dialog is fully open
+    nextTick(() => {
+      shouldNavigateOnHide = true;
+    });
+  }
 });
 watchEffect(() => {
   contentDrawerOpen.value = route.meta?.content as boolean;
@@ -143,6 +195,8 @@ function closeContent(mode: string) {
           :maximized="isMobile"
           backdrop-filter="blur(3px) saturate(180%) grayscale(60%)"
           class="dialog-radius"
+          @hide="onDialogHide"
+          @escape-key="onDialogHide"
         >
           <router-view name="dialog" v-slot="{ Component, route }">
             <!-- <transition name="fade" mode="out-in"> -->

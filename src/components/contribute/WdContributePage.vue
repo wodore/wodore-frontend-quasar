@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { useQuasar } from 'quasar';
 import getImageUrl from '@services/imageService';
 import WdExternalLinkCard from './WdExternalLinkCard.vue';
 import track from '@services/analytics';
-import type { ExternalLink } from '../../../types/contribute';
+import type { ExternalLink } from '../../types/contribute';
 
 const $q = useQuasar();
-const router = useRouter();
 const route = useRoute();
 
 // Parse parameters from hash and query string
@@ -24,20 +23,20 @@ const params = computed(() => {
     result.lon = pMatch[3];
   }
 
-  // Parse lat/lon from query string (overrides hash if provided)
-  if (route.query.lat) {
-    result.lat = String(route.query.lat);
+  // Parse lat/lon from query string (overrides hash if provided) - with c_ prefix
+  if (route.query.c_lat) {
+    result.lat = String(route.query.c_lat);
   }
-  if (route.query.lon) {
-    result.lon = String(route.query.lon);
+  if (route.query.c_lon) {
+    result.lon = String(route.query.c_lon);
   }
-  if (route.query.zoom) {
-    result.zoom = String(route.query.zoom);
+  if (route.query.c_zoom) {
+    result.zoom = String(route.query.c_zoom);
   }
 
-  // Parse osm_id and extract feature type and ID
-  if (route.query.osm_id) {
-    const osmId = String(route.query.osm_id);
+  // Parse osm_id and extract feature type and ID - with c_ prefix
+  if (route.query.c_osm_id) {
+    const osmId = String(route.query.c_osm_id);
     result.osm_id = osmId;
 
     // Extract feature type and ID (e.g., "node/123" -> feature: "node", id: "123")
@@ -49,36 +48,36 @@ const params = computed(() => {
     }
   }
 
-  // Parse osm_feature and osm_id_only directly if provided
-  if (route.query.osm_feature) {
-    result.osm_feature = String(route.query.osm_feature);
+  // Parse osm_feature and osm_id_only directly if provided - with c_ prefix
+  if (route.query.c_osm_feature) {
+    result.osm_feature = String(route.query.c_osm_feature);
   }
-  if (route.query.osm_id_only) {
-    result.osm_id_only = String(route.query.osm_id_only);
+  if (route.query.c_osm_id_only) {
+    result.osm_id_only = String(route.query.c_osm_id_only);
     // Build full osm_id if we have both feature and id
     if (result.osm_feature) {
       result.osm_id = `${result.osm_feature}/${result.osm_id_only}`;
     }
   }
 
-  // Parse mapcomplete theme
-  if (route.query.mapcomplete_theme) {
-    result.mapcomplete_theme = String(route.query.mapcomplete_theme);
+  // Parse mapcomplete theme - with c_ prefix
+  if (route.query.c_mapcomplete_theme) {
+    result.mapcomplete_theme = String(route.query.c_mapcomplete_theme);
   }
 
-  // Parse mapcomplete userlayout
-  if (route.query.mapcomplete_userlayout) {
-    result.mapcomplete_userlayout = String(route.query.mapcomplete_userlayout);
+  // Parse mapcomplete userlayout - with c_ prefix
+  if (route.query.c_mapcomplete_userlayout) {
+    result.mapcomplete_userlayout = String(route.query.c_mapcomplete_userlayout);
   }
 
-  // Parse refuges ID
-  if (route.query.refuges_id) {
-    result.refuges_id = String(route.query.refuges_id);
+  // Parse refuges ID - with c_ prefix
+  if (route.query.c_refuges_id) {
+    result.refuges_id = String(route.query.c_refuges_id);
   }
 
-  // Parse Wikidata ID
-  if (route.query.qid) {
-    result.qid = String(route.query.qid);
+  // Parse Wikidata ID - with c_ prefix
+  if (route.query.c_qid) {
+    result.qid = String(route.query.c_qid);
   }
 
   return result;
@@ -218,7 +217,10 @@ function onClose(do_track = false) {
   if (do_track) {
     track('contribute-no-action');
   }
-  router.go(-1);
+
+  // Navigation is handled by MainLayout's onDialogHide()
+  // which is triggered when v-close-popup closes the dialog
+  // No need to call router.back() here
 }
 
 function onLinkClick(url: string) {
@@ -270,10 +272,52 @@ const headerImg = getImageUrl(imgPath, {
   border-radius: 8px;
   border-left: 3px solid var(--q-color-primary);
 }
+
+.close-btn-overlay {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 10;
+  padding: 6px;
+  border-radius: 8px;
+}
+
+.close-btn-overlay :deep(.q-icon) {
+  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.8))
+    drop-shadow(0 0 3px rgba(255, 255, 255, 0.5));
+}
+
+.no-footer-gap {
+  display: flex;
+  flex-direction: column;
+}
+
+.no-footer-gap > :deep(.q-card-section) {
+  flex: 1;
+  overflow: hidden;
+}
+
+.card-content {
+  padding: 0;
+  height: calc(100% - 140px);
+  /* 140px for header image */
+}
 </style>
 
 <template>
-  <q-card :class="{ 'card--desktop': $q.screen.gt.xs, 'card--mobile': $q.screen.xs }">
+  <q-card
+    :class="{ 'card--desktop': $q.screen.gt.xs, 'card--mobile': $q.screen.xs }"
+    class="no-footer-gap"
+  >
+    <q-btn
+      icon="wd-close"
+      flat
+      dense
+      v-close-popup
+      @click="onClose(true)"
+      class="close-btn-overlay"
+      color="white"
+    />
     <div>
       <q-img :src="headerImg" style="height: 140px" class="shadow-4">
         <div class="card-header absolute-bottom text-white text-h5"></div>
@@ -282,7 +326,7 @@ const headerImg = getImageUrl(imgPath, {
         </div>
       </q-img>
     </div>
-    <q-card-section style="padding: 0; height: calc(100% - 196px)">
+    <q-card-section class="card-content">
       <q-scroll-area
         class="fit"
         style="padding: 0 16px 0 16px"
@@ -326,10 +370,5 @@ const headerImg = getImageUrl(imgPath, {
         </div>
       </q-scroll-area>
     </q-card-section>
-    <q-separator />
-    <q-card-actions>
-      <q-space />
-      <q-btn label="Close" color="secondary-700" flat @click="onClose(true)" class="q-ml-sm" />
-    </q-card-actions>
   </q-card>
 </template>

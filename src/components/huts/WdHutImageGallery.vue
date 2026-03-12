@@ -100,27 +100,27 @@ const mapCompleteUrl = computed(() => {
 const handleContributeClick = () => {
   const query: Record<string, string> = {};
 
-  // Add OSM data if available
+  // Add OSM data if available (with c_ prefix)
   if (osmFeatureData.value) {
-    query.osm_feature = osmFeatureData.value.feature;
-    query.osm_id_only = osmFeatureData.value.id;
+    query.c_osm_feature = osmFeatureData.value.feature;
+    query.c_osm_id_only = osmFeatureData.value.id;
   }
 
-  // Add refuges ID if available
+  // Add refuges ID if available (with c_ prefix)
   if (refugesId.value) {
-    query.refuges_id = refugesId.value;
+    query.c_refuges_id = refugesId.value;
   }
 
-  // Add coordinates if available
+  // Add coordinates if available (with c_ prefix)
   if (props.hut?.location) {
-    query.lat = String(props.hut.location.lat);
-    query.lon = String(props.hut.location.lon);
-    query.zoom = '15';
+    query.c_lat = String(props.hut.location.lat);
+    query.c_lon = String(props.hut.location.lon);
+    query.c_zoom = '15';
   }
 
-  // Add mapcomplete parameters
-  query.mapcomplete_theme = 'theme';
-  query.mapcomplete_userlayout =
+  // Add mapcomplete parameters (with c_ prefix)
+  query.c_mapcomplete_theme = 'theme';
+  query.c_mapcomplete_userlayout =
     'https%3A%2F%2Fstudio.mapcomplete.org%2F2805144%2Flayers%2Fhuts_and_shelters%2Fhuts_and_shelters.json';
 
   router.push({

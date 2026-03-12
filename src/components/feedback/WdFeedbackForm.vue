@@ -6,8 +6,8 @@ import getImageUrl from '@services/imageService';
 import { clientWodore } from '@clients/index';
 
 import track from '@services/analytics';
+
 const $q = useQuasar();
-const router = useRouter();
 
 const anoymDefaultEmail = `anonym@${process.env.WODORE_DOMAIN}`;
 const message = reactive<{
@@ -50,7 +50,7 @@ function onSubmit() {
           //#icon: 'wd-checkmark',
           message: 'Nachricht gesendet',
         });
-        router.go(-1);
+        // Navigation is handled by MainLayout's onDialogHide()
         setTimeout(() => {
           onReset();
         }, 200);
@@ -75,6 +75,7 @@ function onSubmit() {
 }
 
 const anonymous = ref(false);
+
 function onClose() {
   if (message.email || message.message || message.subject) {
     $q.dialog({
@@ -93,13 +94,14 @@ function onClose() {
     })
       .onOk(() => {
         track('feedback-cancel');
-        router.go(-1);
+        // Navigation is handled by MainLayout's onDialogHide()
+        // which is triggered when v-close-popup closes the dialog
       })
       .onCancel(() => {
         track('feedback-continue');
       });
   } else {
-    router.go(-1);
+    // No changes - navigation is handled by MainLayout's onDialogHide()
   }
 }
 function onReset() {
@@ -122,6 +124,9 @@ function removeUrl(idx: number) {
   urls.value.splice(idx, 1);
 }
 function toSupport() {
+  // Navigation to support will be handled by router
+  // The dialog will close via v-close-popup on the link click
+  const router = useRouter();
   router.replace({ name: 'support' });
 }
 
@@ -338,7 +343,14 @@ function setAnonym(value: boolean) {
       </q-card-section>
       <q-separator />
       <q-card-actions>
-        <q-btn label="Schliessen" color="secondary-700" flat @click="onClose()" class="q-ml-sm" />
+        <q-btn
+          label="Schliessen"
+          color="secondary-700"
+          flat
+          v-close-popup
+          @click="onClose()"
+          class="q-ml-sm"
+        />
         <q-btn label="Zurücksetzen" type="reset" color="secondary-700" flat class="q-ml-sm" />
         <q-space />
         <q-btn label="Senden" flat type="submit" color="accent" />

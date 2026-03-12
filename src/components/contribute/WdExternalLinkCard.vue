@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import IconAndroid from '~icons/material-symbols/android.svg';
 import IconApple from '~icons/bxl/apple';
 import IconStar from '~icons/material-symbols/star.svg';
-import type { ExternalLink } from '../../../types/contribute';
+import type { ExternalLink } from '../../types/contribute';
 
 interface Props {
   link: ExternalLink;

@@ -98,6 +98,7 @@ export default configure(ctx => {
         '@pages': path.join(__dirname, './src/pages'),
         '@assets': path.join(__dirname, './src/assets'),
         '@boot': path.join(__dirname, './src/boot'),
+        '@types': path.join(__dirname, './src/types'),
       },
       vueRouterMode: 'history', // available values: 'hash', 'history'
       // vueRouterBase,

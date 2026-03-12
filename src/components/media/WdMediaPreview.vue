@@ -154,34 +154,34 @@ const handleAddImageClick = () => {
   // Build query parameters
   const query: Record<string, string> = {};
 
-  // Add OSM data if available
+  // Add OSM data if available (with c_ prefix)
   if (props.osmFeature && props.osmIdOnly) {
-    query.osm_feature = props.osmFeature;
-    query.osm_id_only = props.osmIdOnly;
-    query.osm_id = `${props.osmFeature}/${props.osmIdOnly}`;
+    query.c_osm_feature = props.osmFeature;
+    query.c_osm_id_only = props.osmIdOnly;
+    query.c_osm_id = `${props.osmFeature}/${props.osmIdOnly}`;
   } else if (props.osmId) {
     // Fallback to osm_id if no feature/id_only
-    query.osm_id = props.osmId;
+    query.c_osm_id = props.osmId;
   }
 
-  // Add mapcomplete parameters if available
+  // Add mapcomplete parameters if available (with c_ prefix)
   if (props.mapcompleteTheme) {
-    query.mapcomplete_theme = props.mapcompleteTheme;
+    query.c_mapcomplete_theme = props.mapcompleteTheme;
   }
   if (props.mapcompleteUserlayout) {
-    query.mapcomplete_userlayout = props.mapcompleteUserlayout;
+    query.c_mapcomplete_userlayout = props.mapcompleteUserlayout;
   }
 
-  // Add refuges ID if available
+  // Add refuges ID if available (with c_ prefix)
   if (props.refugesId) {
-    query.refuges_id = props.refugesId;
+    query.c_refuges_id = props.refugesId;
   }
 
   // Use hut coordinates if available (only if both lat and lon are defined and not null/undefined)
   if (props.hutLat != null && props.hutLon != null) {
-    query.lat = String(props.hutLat);
-    query.lon = String(props.hutLon);
-    query.zoom = '15'; // Default zoom for hut location
+    query.c_lat = String(props.hutLat);
+    query.c_lon = String(props.hutLon);
+    query.c_zoom = '15'; // Default zoom for hut location
   }
 
   router.push({
