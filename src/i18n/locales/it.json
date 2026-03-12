@@ -94,5 +94,47 @@
     "unit": "°C",
     "unavailable": "Dati meteo non disponibili",
     "no_guarantee": "senza garanzia"
+  },
+  "media": {
+    "no_images_available": "Nessuna immagine disponibile",
+    "no_images": "Nessuna immagine",
+    "no_images_for_hut": "Nessuna immagine disponibile per questo rifugio"
+  },
+  "contribute": {
+    "title": "Contribuisci",
+    "description": "Condividi foto & info con la community.",
+    "tip": "Clicca su un'app qui sotto per accedere direttamente al rifugio per caricare foto o fare modifiche",
+    "sync_note": "Gli aggiornamenti arrivano di solito entro un paio di settimane",
+    "contribute_images": "Aggiungi foto",
+    "platforms": {
+      "panoramax": {
+        "name": "Panoramax",
+        "description": "Carica foto con dettagli utili per gli altri"
+      },
+      "mapcomplete": {
+        "name": "MapComplete",
+        "description": "Aggiungi foto & info direttamente sulla mappa"
+      },
+      "wikimedia_commons": {
+        "name": "Wikimedia Commons",
+        "description": "Carica foto libere per tutti"
+      },
+      "openstreetmap": {
+        "name": "OpenStreetMap",
+        "description": "Migliora la mappa libera del mondo"
+      },
+      "refuges": {
+        "name": "Refuges.info",
+        "description": "Info capanne, foto e condizioni"
+      },
+      "camptocamp": {
+        "name": "Camptocamp",
+        "description": "Itinerari & racconti di viaggio"
+      }
+    },
+    "app_stores": {
+      "android": "Android",
+      "ios": "iOS"
+    }
   }
 }

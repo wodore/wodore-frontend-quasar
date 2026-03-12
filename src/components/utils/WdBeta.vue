@@ -39,10 +39,7 @@ a:hover {
     <q-icon
       size="15px"
       name="img:/logos/logo_beta.svg"
-      style="
-        padding-left: 10px;
-        transform: scale(3) translateY(-2.5px) translateX(-10px);
-      "
+      style="padding-left: 10px; transform: scale(3) translateY(-2.5px) translateX(-10px)"
     />
     <span :style="$q.platform.is.mobile ? 'font-size: x-small' : ''">
       Die Seite ist noch im Aufbau,
@@ -52,9 +49,7 @@ a:hover {
     <WdSupportButton
       :size="$q.platform.is.mobile ? '8px' : '10px'"
       class="text-accent-200"
-      style="
-        transform: scale(2) translateY(-0.7px) translateX(6.5px) rotate(-5deg);
-      "
+      style="transform: scale(2) translateY(-0.7px) translateX(6.5px) rotate(-5deg)"
     />
     <!-- <IconNotoHandshake
       style="

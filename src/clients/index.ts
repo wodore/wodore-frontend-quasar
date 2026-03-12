@@ -13,10 +13,7 @@ export const loading: Record<string, 'start' | 'loading' | 'stopped'> = {};
 const loadingMiddleware: Middleware = {
   async onRequest({ request }) {
     // Skip loading bar for search requests and availability requests
-    if (
-      request.url.includes('/geo/places/search') ||
-      request.url.includes('/availability/')
-    ) {
+    if (request.url.includes('/geo/places/search') || request.url.includes('/availability/')) {
       return;
     }
 
@@ -32,10 +29,7 @@ const loadingMiddleware: Middleware = {
   },
   async onResponse({ request }) {
     // Skip loading bar for search requests and availability requests
-    if (
-      request.url.includes('/geo/places/search') ||
-      request.url.includes('/availability/')
-    ) {
+    if (request.url.includes('/geo/places/search') || request.url.includes('/availability/')) {
       return;
     }
 

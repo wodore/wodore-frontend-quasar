@@ -28,7 +28,7 @@ const {
 } = useDraggable(menuContentRef, {
   handle: dragHandleRef,
   initialValue: { x: 0, y: 0 },
-  onMove: (position) => {
+  onMove: position => {
     // Only apply constraints when sticky (when dragging is enabled)
     if (!isSticky.value) return position;
 
@@ -45,7 +45,7 @@ const {
 });
 
 // Track dragging state with timeout
-watch(vueuseDragging, (newVal) => {
+watch(vueuseDragging, newVal => {
   if (newVal) {
     // Started dragging
     wasDragging.value = true;
@@ -63,7 +63,7 @@ watch(vueuseDragging, (newVal) => {
 });
 
 // When menu opens, focus the search input
-watch(showMenu, (newVal) => {
+watch(showMenu, newVal => {
   if (newVal) {
     nextTick(() => {
       placeSearchRef.value?.focus();
@@ -77,7 +77,7 @@ watch(showMenu, (newVal) => {
 });
 
 // When entering sticky mode, capture current position
-watch(isSticky, (newVal) => {
+watch(isSticky, newVal => {
   if (newVal && menuContentRef.value) {
     // Capture position BEFORE applying fixed positioning
     const rect = menuContentRef.value.getBoundingClientRect();
@@ -148,11 +148,7 @@ function closeMenu() {
         @click="showMenu = true"
       >
         <template v-slot:prepend>
-          <q-icon
-            @click="showMenu = true"
-            class="text-icon cursor-pointer"
-            size="sm"
-          >
+          <q-icon @click="showMenu = true" class="text-icon cursor-pointer" size="sm">
             <IconEvaSearchOutline />
           </q-icon>
         </template>
@@ -182,14 +178,7 @@ function closeMenu() {
           style="position: absolute; top: 6px; right: 6px"
         >
           <!-- Pin/Drag handle -->
-          <q-btn
-            v-if="!isSticky"
-            dense
-            round
-            flat
-            color="primary-400"
-            @click="toggleSticky"
-          >
+          <q-btn v-if="!isSticky" dense round flat color="primary-400" @click="toggleSticky">
             <q-icon size="sm">
               <IconEvaUnlockOutline />
             </q-icon>
@@ -212,14 +201,7 @@ function closeMenu() {
           </q-btn>
 
           <!-- Close button -->
-          <q-btn
-            dense
-            round
-            @click="closeMenu"
-            color="accent-700"
-            icon="wd-close"
-          >
-          </q-btn>
+          <q-btn dense round @click="closeMenu" color="accent-700" icon="wd-close"> </q-btn>
         </div>
 
         <!-- Search component (single instance) -->

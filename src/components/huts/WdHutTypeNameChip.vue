@@ -31,10 +31,8 @@ const color_bg = computed(() => (props.color2 ? props.color2 : 'white'));
         :name="
           'img:' +
           getImageUrl(
-            ($q.platform.is.mobile
-              ? type.symbol?.detailed
-              : type.symbol?.simple) as string,
-            { fit: true, size: '48x48' },
+            ($q.platform.is.mobile ? type.symbol?.detailed : type.symbol?.simple) as string,
+            { fit: true, size: '48x48' }
           )
         "
       />

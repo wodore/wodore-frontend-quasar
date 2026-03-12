@@ -28,8 +28,7 @@ const placeTypeIcon = computed<string | undefined>(() => {
     return undefined;
   }
 
-  const placeType = props.hut
-    .place_type as schemasWodore['CategoryPlaceTypeSchema'];
+  const placeType = props.hut.place_type as schemasWodore['CategoryPlaceTypeSchema'];
 
   // Check for symbol.detailed (nested structure for GeoPlaces)
   if (placeType.symbol && typeof placeType.symbol === 'object') {
@@ -52,8 +51,7 @@ const placeTypeName = computed<string>(() => {
     return '';
   }
 
-  const placeType = props.hut
-    .place_type as schemasWodore['CategoryPlaceTypeSchema'];
+  const placeType = props.hut.place_type as schemasWodore['CategoryPlaceTypeSchema'];
 
   if (placeType.name) {
     return placeType.name;
@@ -78,24 +76,13 @@ function onPreviewClick(event: Event) {
 
 <template>
   <div>
-    <q-item
-      clickable
-      v-ripple
-      @click="onClick"
-      :class="{ 'bg-dark-600': selected }"
-      dark
-      dense
-    >
+    <q-item clickable v-ripple @click="onClick" :class="{ 'bg-dark-600': selected }" dark dense>
       <q-item-section avatar>
         <img v-if="placeTypeIcon" :src="placeTypeIcon" :alt="hut.name" />
       </q-item-section>
       <q-item-section>
-        <q-item-label overline class="text-primary-400" lines="1">{{
-          placeTypeName
-        }}</q-item-label>
-        <q-item-label class="text-primary-100 text-body1" lines="2">{{
-          hut.name
-        }}</q-item-label>
+        <q-item-label overline class="text-primary-400" lines="1">{{ placeTypeName }}</q-item-label>
+        <q-item-label class="text-primary-100 text-body1" lines="2">{{ hut.name }}</q-item-label>
         <q-item-label caption class="text-primary-300">
           <div v-if="hut.elevation">
             <q-icon size="xs">
@@ -109,14 +96,7 @@ function onPreviewClick(event: Event) {
 
       <!-- Preview button (desktop only) -->
       <q-item-section v-if="!isMobile" side class="q-pr-md">
-        <q-btn
-          flat
-          round
-          dense
-          color="primary-300"
-          @click="onPreviewClick"
-          size="sm"
-        >
+        <q-btn flat round dense color="primary-300" @click="onPreviewClick" size="sm">
           <q-icon size="sm">
             <IconEvaEyeOutline />
           </q-icon>

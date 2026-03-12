@@ -11,9 +11,7 @@ const login = function () {
 </script>
 
 <template>
-  <div
-    class="window-height bg-primary text-white text-center q-pa-md flex flex-center"
-  >
+  <div class="window-height bg-primary text-white text-center q-pa-md flex flex-center">
     <div>
       <a>
         <q-icon size="13vh" name="img:/logos/wodore_original.svg" />

@@ -36,7 +36,9 @@
       "@services/*": ["src/services/*"],
       "@extras/*": ["src/extras/*"],
       "clients/*": ["src/clients/*"],
-      "@clients/*": ["src/clients/*"]
+      "@clients/*": ["src/clients/*"],
+      "types/*": ["src/types/*"],
+      "@types/*": ["src/types/*"]
     }
   },
   "include": ["src/**/*", "src-pwa/**/*", "quasar.config.ts"],

@@ -18,15 +18,10 @@ defineEmits<{ close: [mode: string] }>();
 const topOffset = 76.5;
 const bottomOffset = 100;
 const portraitHeight = ref(process.env.CLIENT ? window.innerHeight * 0.4 : 400);
-const portraitHeightMax = ref(
-  process.env.CLIENT ? window.innerHeight - topOffset : 800,
-);
+const portraitHeightMax = ref(process.env.CLIENT ? window.innerHeight - topOffset : 800);
 const portraitHeightMin = ref(portraitHeight.value);
 const portraitHeightAvg = computed(() => {
-  return (
-    portraitHeightMin.value +
-    (portraitHeightMax.value - portraitHeightMin.value) / 2
-  );
+  return portraitHeightMin.value + (portraitHeightMax.value - portraitHeightMin.value) / 2;
 });
 const portraitHeightBtnIcon = computed(() => {
   if (draggingFab.value) {
@@ -47,7 +42,7 @@ function setPortraitHeight() {
 
 const draggingFab = ref(false);
 
-const moveFab: TouchPanValue = (ev) => {
+const moveFab: TouchPanValue = ev => {
   if (!(ev && ev.evt && ev.delta)) {
     return;
   }
@@ -104,10 +99,7 @@ const moveFab: TouchPanValue = (ev) => {
     :breakpoint="0"
     class="shadow-2"
   >
-    <div
-      class="text-primary-100 absolute-top z-max q-pa-xs q-ma-xs"
-      style="width: 50px"
-    >
+    <div class="text-primary-100 absolute-top z-max q-pa-xs q-ma-xs" style="width: 50px">
       <q-btn
         round
         dense
@@ -171,10 +163,7 @@ const moveFab: TouchPanValue = (ev) => {
           @click="$emit('close', 'portrait')"
         />
       </div>
-      <div
-        style="padding-top: 0px"
-        class="background--blur scroll shadow-2 fit"
-      >
+      <div style="padding-top: 0px" class="background--blur scroll shadow-2 fit">
         <!-- <transition name="fade" mode="out-in">
           <router-view name="content" />
         </transition> -->

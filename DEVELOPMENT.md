@@ -300,7 +300,16 @@ git commit -m "Update API client types"
 
 ### Icon Development
 
-Add custom icons to the project:
+**For icon selection and implementation, use the iconify agent** (`.claude/agents/iconify.md`).
+
+The iconify agent will help you:
+
+- Search existing custom `wd` icons
+- Find and download new icons from Iconify
+- Verify icon licenses (MIT, Apache 2.0, CC0 only)
+- Provide implementation guidance
+
+To manually add custom icons:
 
 ```bash
 # 1. Add SVG file to source directory
@@ -316,6 +325,8 @@ yarn gen:icons
 git add src/extras/icons/
 git commit -m "Add my-icon to custom icon set"
 ```
+
+**Important**: Name icons by function/purpose, not appearance (e.g., `favorite` instead of `star`, `edit` instead of `pen`).
 
 ## Testing
 

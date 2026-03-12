@@ -27,8 +27,7 @@ const fetchBackendVersion = async () => {
       backendHash.value = data.hash_long || '';
     }
   } catch (err) {
-    backendError.value =
-      err instanceof Error ? err.message : 'Failed to fetch backend version';
+    backendError.value = err instanceof Error ? err.message : 'Failed to fetch backend version';
     console.error('Failed to fetch backend version:', err);
   } finally {
     backendLoading.value = false;
@@ -40,12 +39,7 @@ onMounted(fetchBackendVersion);
 
 <template>
   <div class="column q-gutter-xs shadow-1 q-pb-xl q-pl-xs">
-    <WdVersionTag
-      type="frontend"
-      :version="frontendVersion"
-      :hash="frontendHash"
-    >
-    </WdVersionTag>
+    <WdVersionTag type="frontend" :version="frontendVersion" :hash="frontendHash"> </WdVersionTag>
     <WdVersionTag
       type="backend"
       :version="backendVersion"

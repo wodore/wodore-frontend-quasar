@@ -58,9 +58,7 @@ defineProps<Props>();
         >
           <div
             class="text-h5 q-ma-none q-mt-xs hut-title-row"
-            :class="[
-              $q.screen.xs || $q.platform.is.mobile ? 'text-h6' : 'text-h5',
-            ]"
+            :class="[$q.screen.xs || $q.platform.is.mobile ? 'text-h6' : 'text-h5']"
           >
             <a
               v-if="hut.url"

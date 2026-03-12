@@ -27,7 +27,7 @@ export function usePwaUpdate() {
           color: 'white',
           handler: () => {
             // Tell the waiting service worker to skip waiting
-            navigator.serviceWorker.ready.then((registration) => {
+            navigator.serviceWorker.ready.then(registration => {
               registration.waiting?.postMessage({ type: 'SKIP_WAITING' });
             });
 

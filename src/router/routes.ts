@@ -1,9 +1,6 @@
 import { RouteLocation, RouteLocationRaw, RouteRecordRaw } from 'vue-router';
 
-function redirectFix(
-  to: RouteLocation,
-  newRouteName: string,
-): RouteLocationRaw {
+function redirectFix(to: RouteLocation, newRouteName: string): RouteLocationRaw {
   return {
     //path: to.path.replace(oldPath, newPath),
     name: newRouteName,
@@ -33,11 +30,11 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/m/hut/:slug',
-    redirect: (to) => redirectFix(to, 'map-hut'),
+    redirect: to => redirectFix(to, 'map-hut'),
   },
   {
     path: '/m',
-    redirect: (to) => redirectFix(to, 'map'),
+    redirect: to => redirectFix(to, 'map'),
   },
   {
     path: '/',
@@ -86,6 +83,15 @@ const routes: RouteRecordRaw[] = [
         components: {
           default: () => import('pages/MapPage.vue'),
           dialog: () => import('components/support/WdSupportForm.vue'),
+        },
+      },
+      {
+        path: 'contribute',
+        name: 'contribute',
+        meta: { dialog: true },
+        components: {
+          default: () => import('pages/MapPage.vue'),
+          dialog: () => import('components/contribute/WdContributePage.vue'),
         },
       },
     ],

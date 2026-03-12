@@ -6,8 +6,8 @@ import getImageUrl from '@services/imageService';
 import { clientWodore } from '@clients/index';
 
 import track from '@services/analytics';
+
 const $q = useQuasar();
-const router = useRouter();
 
 const anoymDefaultEmail = `anonym@${process.env.WODORE_DOMAIN}`;
 const message = reactive<{
@@ -29,7 +29,7 @@ const urls = ref<Array<{ value: string; id: number; placeholder: string }>>([]);
 //const message = ref<string>('');
 function onSubmit() {
   console.debug(`Submitted form for '${message.email}'`, message.message);
-  message.urls = urls.value.map((url) => url.value);
+  message.urls = urls.value.map(url => url.value);
   if (message.email == anoymDefaultEmail) {
     message.get_updates = false;
   }
@@ -50,7 +50,7 @@ function onSubmit() {
           //#icon: 'wd-checkmark',
           message: 'Nachricht gesendet',
         });
-        router.go(-1);
+        // Navigation is handled by MainLayout's onDialogHide()
         setTimeout(() => {
           onReset();
         }, 200);
@@ -75,6 +75,7 @@ function onSubmit() {
 }
 
 const anonymous = ref(false);
+
 function onClose() {
   if (message.email || message.message || message.subject) {
     $q.dialog({
@@ -93,13 +94,14 @@ function onClose() {
     })
       .onOk(() => {
         track('feedback-cancel');
-        router.go(-1);
+        // Navigation is handled by MainLayout's onDialogHide()
+        // which is triggered when v-close-popup closes the dialog
       })
       .onCancel(() => {
         track('feedback-continue');
       });
   } else {
-    router.go(-1);
+    // No changes - navigation is handled by MainLayout's onDialogHide()
   }
 }
 function onReset() {
@@ -122,11 +124,13 @@ function removeUrl(idx: number) {
   urls.value.splice(idx, 1);
 }
 function toSupport() {
+  // Navigation to support will be handled by router
+  // The dialog will close via v-close-popup on the link click
+  const router = useRouter();
   router.replace({ name: 'support' });
 }
 
-const imgPath =
-  'https://cdn.pixabay.com/photo/2014/05/11/11/12/mailbox-341744_1280.jpg';
+const imgPath = 'https://cdn.pixabay.com/photo/2014/05/11/11/12/mailbox-341744_1280.jpg';
 
 const headerImg = getImageUrl(imgPath, {
   focal: '0.5,0.45',
@@ -204,17 +208,13 @@ function setAnonym(value: boolean) {
                 :rules="[
                   (val) => (val && val.length > 0) || 'Please type something',
                 ]" -->
-  <q-card
-    :class="{ 'card--desktop': $q.screen.gt.xs, 'card--mobile': $q.screen.xs }"
-  >
+  <q-card :class="{ 'card--desktop': $q.screen.gt.xs, 'card--mobile': $q.screen.xs }">
     <!-- style="min-width: 400px; width: 500px; max-width: 700px" -->
     <q-form @submit="onSubmit" @reset="onReset" class="fit">
       <div>
         <q-img :src="headerImg" style="height: 140px" class="shadow-4">
           <div class="card-header absolute-bottom text-white text-h5"></div>
-          <div
-            class="absolute-bottom text-accent-400 text-h4 text-center card-header__text"
-          >
+          <div class="absolute-bottom text-accent-400 text-h4 text-center card-header__text">
             Rückmeldung
           </div>
         </q-img>
@@ -234,8 +234,8 @@ function setAnonym(value: boolean) {
         >
           <div class="col no-wrap items-center q-py-md">
             <p class="text-body1 q-pt-md">
-              <b>Sag, was du denkst!</b> Jede Rückmeldung, egal ob positiv oder
-              negativ, hilft weiter.
+              <b>Sag, was du denkst!</b> Jede Rückmeldung, egal ob positiv oder negativ, hilft
+              weiter.
             </p>
             <p class="text-body2">
               Jegliche
@@ -265,7 +265,7 @@ function setAnonym(value: boolean) {
                 placeholder="name@domain.com"
                 type="email"
                 maxlength="100"
-                :rules="[(val) => !!val || 'E-Mail fehlt']"
+                :rules="[val => !!val || 'E-Mail fehlt']"
                 :disable="anonymous"
               >
                 <template v-slot:prepend> <q-icon name="wd-at" /> </template>
@@ -276,11 +276,7 @@ function setAnonym(value: boolean) {
                     @click="setAnonym(false)"
                     class="anonym_icon"
                   />
-                  <IconMdiAnonymousCircle
-                    v-else
-                    @click="setAnonym(true)"
-                    class="anonym_icon"
-                  />
+                  <IconMdiAnonymousCircle v-else @click="setAnonym(true)" class="anonym_icon" />
                   <!-- <q-icon
                   :name="isPwd ? 'visibility_off' : 'visibility'"
                   class="cursor-pointer"
@@ -299,10 +295,9 @@ function setAnonym(value: boolean) {
                 outlined
                 type="textarea"
                 maxlength="10000"
-                :rules="[(val) => !!val || 'Nachricht fehlt']"
+                :rules="[val => !!val || 'Nachricht fehlt']"
               >
-                <template v-slot:prepend>
-                  <q-icon name="wd-text-outline" /> </template
+                <template v-slot:prepend> <q-icon name="wd-text-outline" /> </template
               ></q-input>
               <q-input
                 v-for="(url, idx) in urls"
@@ -316,11 +311,7 @@ function setAnonym(value: boolean) {
                 <!-- :rules="[(val) => !!val || 'URL fehlt']" -->
                 <template v-slot:prepend> <q-icon name="wd-link" /> </template>
                 <template v-slot:after>
-                  <q-icon
-                    name="wd-close"
-                    @click="removeUrl(idx)"
-                    class="cursor-pointer"
-                  />
+                  <q-icon name="wd-close" @click="removeUrl(idx)" class="cursor-pointer" />
                 </template>
               </q-input>
               <div class="">
@@ -343,9 +334,7 @@ function setAnonym(value: boolean) {
                   size="lg"
                 >
                   Halte mich auf dem Laufenden.<br />
-                  <span class="text-caption"
-                    >Bei wichtigen Updates erhältst du eine E-Mail.
-                  </span>
+                  <span class="text-caption">Bei wichtigen Updates erhältst du eine E-Mail. </span>
                 </q-checkbox>
               </div>
             </div>
@@ -358,16 +347,11 @@ function setAnonym(value: boolean) {
           label="Schliessen"
           color="secondary-700"
           flat
+          v-close-popup
           @click="onClose()"
           class="q-ml-sm"
         />
-        <q-btn
-          label="Zurücksetzen"
-          type="reset"
-          color="secondary-700"
-          flat
-          class="q-ml-sm"
-        />
+        <q-btn label="Zurücksetzen" type="reset" color="secondary-700" flat class="q-ml-sm" />
         <q-space />
         <q-btn label="Senden" flat type="submit" color="accent" />
       </q-card-actions>

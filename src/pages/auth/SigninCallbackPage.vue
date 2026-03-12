@@ -15,7 +15,7 @@ const authenticateOidc = () => {
       //router.go(-1);
       //router.push('/');
     })
-    .catch((error) => {
+    .catch(error => {
       console.log(error);
     });
   //await services.$auth.signInCallback()

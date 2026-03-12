@@ -51,12 +51,8 @@ function isMonthOpen(month: TypeMonths): schemasWodore['AnswerEnum'] {
 }
 function getMonthIcons(month: TypeMonths): TypeMonthIconsPath {
   const idx = parseInt(month);
-  const prevMonth: TypeMonths = (idx >= 0 ? idx - 1 : 11)
-    .toString()
-    .padStart(2, '0') as TypeMonths;
-  const nextMonth: TypeMonths = (idx >= 11 ? 0 : idx + 1)
-    .toString()
-    .padStart(2, '0') as TypeMonths;
+  const prevMonth: TypeMonths = (idx >= 0 ? idx - 1 : 11).toString().padStart(2, '0') as TypeMonths;
+  const nextMonth: TypeMonths = (idx >= 11 ? 0 : idx + 1).toString().padStart(2, '0') as TypeMonths;
   const monthAns = isMonthOpen(month);
   const prevMonthAns = isMonthOpen(prevMonth);
   const nextMonthAns = isMonthOpen(nextMonth);
@@ -68,18 +64,13 @@ function getMonthIcons(month: TypeMonths): TypeMonthIconsPath {
   }
   return {
     main0:
-      getIconAnswer(r.main0) === undefined
-        ? getUnknownIcon()
-        : (getIconAnswer(r.main0) as string),
+      getIconAnswer(r.main0) === undefined ? getUnknownIcon() : (getIconAnswer(r.main0) as string),
     main1: getIconAnswer(r.main1),
     minor: getIconAnswer(r.minor),
   };
 }
 
-function getIconAnswer(
-  answer: TypeIconText,
-  size: string = '48x48',
-): string | undefined {
+function getIconAnswer(answer: TypeIconText, size: string = '48x48'): string | undefined {
   let img: string;
   if (answer == 'open') {
     img = getOpenIcon();

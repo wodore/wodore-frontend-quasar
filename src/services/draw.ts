@@ -18,8 +18,7 @@ modes = MapboxDrawWaypoint.enable(modes);
 // set correct maplibre styles
 (MapboxDraw.constants.classes.CONTROL_BASE as unknown) = 'maplibregl-ctrl';
 (MapboxDraw.constants.classes.CONTROL_PREFIX as unknown) = 'maplibregl-ctrl-';
-(MapboxDraw.constants.classes.CONTROL_GROUP as unknown) =
-  'maplibregl-ctrl-group';
+(MapboxDraw.constants.classes.CONTROL_GROUP as unknown) = 'maplibregl-ctrl-group';
 const LINE_COLOR = '#00F';
 const POINT_COLOR = '#00A';
 const mapDraw = new MapboxDraw({

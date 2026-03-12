@@ -55,9 +55,7 @@ function trackSource(slug: string) {
         <!--{{ ref.slug }}-->
         <img
           :style="{ height: $q.platform.is.mobile ? '24px' : '24px' }"
-          :src="
-            getImageUrl(ref.logo, { fit: true, size: '48x48', quality: 90 })
-          "
+          :src="getImageUrl(ref.logo, { fit: true, size: '48x48', quality: 90 })"
         />
         <q-tooltip :hide-delay="150" :delay="150">
           <span>{{ ref.fullname }}</span

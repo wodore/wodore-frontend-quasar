@@ -126,5 +126,47 @@
     "unit": "°C",
     "unavailable": "Wetterdaten nicht verfügbar",
     "no_guarantee": "ohne Gewähr"
+  },
+  "media": {
+    "no_images_available": "Keine Bilder verfügbar",
+    "no_images": "Keine Bilder",
+    "no_images_for_hut": "Keine Bilder für diese Hütte verfügbar"
+  },
+  "contribute": {
+    "title": "Mitmachen",
+    "description": "Teile Fotos & Infos mit der Community.",
+    "tip": "Klicke eine App an, um direkt zur Unterkunft zu gelangen und Fotos hochzuladen oder Änderungen vorzunehmen",
+    "sync_note": "Updates kommen meistens innerhalb von ein paar Wochen",
+    "contribute_images": "Bilder hinzufügen",
+    "platforms": {
+      "panoramax": {
+        "name": "Panoramax",
+        "description": "Lade Fotos mit Infos für andere hoch"
+      },
+      "mapcomplete": {
+        "name": "MapComplete",
+        "description": "Fotos & Infos direkt auf der Karte ergänzen"
+      },
+      "wikimedia_commons": {
+        "name": "Wikimedia Commons",
+        "description": "Lade freie Fotos für alle hoch"
+      },
+      "openstreetmap": {
+        "name": "OpenStreetMap",
+        "description": "Verbessere die freie Weltkarte"
+      },
+      "refuges": {
+        "name": "Refuges.info",
+        "description": "Hütteninfos, Fotos und Bedingungen"
+      },
+      "camptocamp": {
+        "name": "Camptocamp",
+        "description": "Routen & Tourenberichte"
+      }
+    },
+    "app_stores": {
+      "android": "Android",
+      "ios": "iOS"
+    }
   }
 }

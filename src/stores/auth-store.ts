@@ -61,7 +61,7 @@ export const useAuthStore = defineStore('auth', () => {
           authUser.value.profile as unknown as {
             'urn:zitadel:iam:org:project:roles': { string: unknown };
           }
-        )['urn:zitadel:iam:org:project:roles'],
+        )['urn:zitadel:iam:org:project:roles']
       );
       return keys;
     }

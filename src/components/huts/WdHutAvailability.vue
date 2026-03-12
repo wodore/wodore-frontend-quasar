@@ -113,8 +113,7 @@ const barRadius = computed(() => {
 // Check if data is unknown
 const isUnknown = computed(() => {
   return (
-    props.day.reservation_status === 'unknown' ||
-    (props.day.free === 0 && props.day.total === 0)
+    props.day.reservation_status === 'unknown' || (props.day.free === 0 && props.day.total === 0)
   );
 });
 
@@ -341,9 +340,7 @@ const barColorLight = computed(() => {
       <div
         class="bar-frame row no-wrap items-start justify-between"
         :class="[
-          isSelected
-            ? `month_${monthKey}--gradient-dark`
-            : `month_${monthKey}--gradient-light`,
+          isSelected ? `month_${monthKey}--gradient-dark` : `month_${monthKey}--gradient-light`,
           { selected: isSelected, today: isToday, weekend: isWeekend },
         ]"
         :style="{ backgroundColor: isLoadingState ? '#ccc' : undefined }"
@@ -355,11 +352,7 @@ const barColorLight = computed(() => {
             <span>{{ formattedDate }}</span>
           </div>
           <div class="symbol-row">
-            <q-icon
-              v-if="typeIcon && !isLoadingState"
-              :name="typeIcon"
-              size="20px"
-            />
+            <q-icon v-if="typeIcon && !isLoadingState" :name="typeIcon" size="20px" />
             <q-skeleton v-else type="circle" width="20px" height="20px" />
           </div>
         </div>
@@ -391,11 +384,7 @@ const barColorLight = computed(() => {
             </template>
           </div>
         </div>
-        <q-skeleton
-          v-else
-          class="bar-bg"
-          :style="{ borderRadius: barRadius }"
-        />
+        <q-skeleton v-else class="bar-bg" :style="{ borderRadius: barRadius }" />
       </div>
       <q-tooltip :delay="700">
         <div>{{ fullWeekday }}, {{ fullDateWithYear }}</div>
@@ -406,9 +395,6 @@ const barColorLight = computed(() => {
         </div>
       </q-tooltip>
     </div>
-    <div
-      class="text-center column justify-center items-center"
-      style="min-height: 6px"
-    ></div>
+    <div class="text-center column justify-center items-center" style="min-height: 6px"></div>
   </a>
 </template>

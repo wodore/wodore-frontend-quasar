@@ -4,2884 +4,3884 @@
  */
 
 export interface paths {
-  '/v1/geo/places/search': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/geo/images/nearby": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Nearby Images
+         * @description Get images near a location from multiple sources as a GeoJSON FeatureCollection.
+         *
+         *     Aggregates internal Wodore database images with external sources (Wikidata, Flickr, etc.).
+         *     Returns GeoJSON Point features with full image metadata.
+         *
+         *     Algorithm:
+         *     1. Find GeoPlaces within 10m of the coordinate
+         *     2. If found, use those places for provider queries
+         *     3. If not found within 10m, expand radius incrementally
+         *     4. Query all enabled providers in parallel
+         *     5. Merge and deduplicate results
+         *     6. Return GeoJSON FeatureCollection sorted by distance
+         *
+         *     Providers are queried with GeoPlace objects, so they can extract
+         *     required information (e.g., QID from osm_tags for Wikidata).
+         */
+        get: operations["nearby_images"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Search Geoplaces
-     * @description Search for geographic places using fuzzy text search across all language fields.
-     *
-     *     Performance optimizations:
-     *     - Fast prefix matching using B-tree indexes (very fast)
-     *     - Trigram similarity only when needed (slower)
-     *     - Early exit if enough prefix matches found
-     */
-    get: operations['search_geoplaces'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/geo/places/nearby': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/geo/images/place/{place_slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Images For Place
+         * @description Get images for a specific GeoPlace from multiple sources.
+         *
+         *     Wodore provider uses the place directly (very fast).
+         *     External providers use the place's coordinates with the given radius.
+         *
+         *     Returns GeoJSON Point features with full image metadata.
+         */
+        get: operations["images_for_place"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Nearby Geoplaces
-     * @description Find places near coordinates within a radius, ordered by distance.
-     */
-    get: operations['nearby_geoplaces'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/categories/tree/{parent_slug}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/geo/images/hut/{hut_slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Images For Hut
+         * @description Get images for a specific Hut from multiple sources.
+         *
+         *     Wodore provider uses the hut directly (very fast).
+         *     External providers use the hut's coordinates with the given radius.
+         *
+         *     Returns GeoJSON Point features with full image metadata.
+         */
+        get: operations["images_for_hut"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Category Tree
-     * @description Get category hierarchy as a tree structure.
-     *
-     *     Supports dot or slash-notation slugs with max one parent (e.g., `map/transport`).
-     *     The parent is optional but if slug is ambiguous, returns 400 error with available paths.
-     *     Use `root` to return all root categories.
-     *     Always excludes the root from results (returns children).
-     */
-    get: operations['get_category_tree'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/categories/list/{parent_slug}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/geo/places/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search Geoplaces
+         * @description Search for geographic places using fuzzy text search across all language fields.
+         *
+         *     Performance optimizations:
+         *     - Fast prefix matching using B-tree indexes (very fast)
+         *     - Trigram similarity only when needed (slower)
+         *     - Early exit if enough prefix matches found
+         */
+        get: operations["search_geoplaces"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Category List
-     * @description Get flat list of categories.
-     *
-     *     Supports dot-notation slugs with max one parent (e.g., 'accommodation.hut').
-     *     If slug is ambiguous, returns 400 error with available paths.
-     *     If slug is omitted, returns all categories.
-     *     Always excludes the root from results (returns children).
-     */
-    get: operations['get_category_list_all'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/categories/map/{parent_slug}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/geo/places/nearby": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Nearby Geoplaces
+         * @description Find places near coordinates within a radius, ordered by distance.
+         */
+        get: operations["nearby_geoplaces"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Category Map
-     * @description Get category hierarchy as a nested dictionary mapping.
-     *
-     *     Keys are category slugs, values contain category data with nested 'children' dict.
-     *
-     *     Supports dot-notation slugs with max one parent (e.g., 'accommodation.hut').
-     *     If slug is ambiguous, returns 400 error with available paths.
-     *     If slug is omitted, returns all root categories as a map.
-     *     Always excludes the root from results (returns children).
-     */
-    get: operations['get_category_map_all'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/huts/bookings': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/geo/places/amenity/{place_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Amenity
+         * @description Get detailed information for an amenity place including AmenityDetail data.
+         *
+         *     Returns base GeoPlace fields plus amenity-specific information like
+         *     operating status, opening hours, websites, and phone numbers.
+         */
+        get: operations["get_amenity"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get hut bookings (deprecated)
-     * @deprecated
-     * @description **DEPRECATED**: Use `/huts/availability.geojson` instead. This endpoint will be removed in a future version.
-     */
-    get: operations['get_hut_bookings'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/huts/bookings.geojson': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/categories/tree/{parent_slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Category Tree
+         * @description Get category hierarchy as a tree structure.
+         *
+         *     Supports dot or slash-notation slugs with max one parent (e.g., `map/transport`).
+         *     The parent is optional but if slug is ambiguous, returns 400 error with available paths.
+         *     Use `root` to return all root categories.
+         *     Always excludes the root from results (returns children).
+         */
+        get: operations["get_category_tree"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get hut bookings as GeoJSON (deprecated)
-     * @deprecated
-     * @description **DEPRECATED**: Use `/huts/availability.geojson` instead. This endpoint will be removed in a future version.
-     */
-    get: operations['get_hut_bookings_geojson'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/huts/availability/{date}.geojson': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/categories/list/{parent_slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Category List
+         * @description Get flat list of categories.
+         *
+         *     Supports dot-notation slugs with max one parent (e.g., 'accommodation.hut').
+         *     If slug is ambiguous, returns 400 error with available paths.
+         *     If slug is omitted, returns all categories.
+         *     Always excludes the root from results (returns children).
+         */
+        get: operations["get_category_list_all"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Hut Availability Geojson
-     * @description Get availability data as GeoJSON FeatureCollection for map visualization.
-     */
-    get: operations['get_hut_availability_geojson'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/huts/{slug}/availability/{date}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/categories/map/{parent_slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Category Map
+         * @description Get category hierarchy as a nested dictionary mapping.
+         *
+         *     Keys are category slugs, values contain category data with nested 'children' dict.
+         *
+         *     Supports dot-notation slugs with max one parent (e.g., 'accommodation.hut').
+         *     If slug is ambiguous, returns 400 error with available paths.
+         *     If slug is omitted, returns all root categories as a map.
+         *     Always excludes the root from results (returns children).
+         */
+        get: operations["get_category_map_all"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Hut Availability Current
-     * @description Get current availability data for a specific hut with detailed metadata and booking links.
-     */
-    get: operations['get_hut_availability_current'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/huts/{slug}/availability/{date}/trend': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/categories/symbol/{variant}/{parent}/{slug}.svg": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Category Symbol Svg With Parent
+         * @description Redirect to the SVG icon for a category with explicit parent.
+         *
+         *     Variant options: detailed, simple, mono
+         *     Example: /v1/categories/symbol/detailed/map/transport.svg
+         *
+         *     If the category doesn't have a symbol for the variant, returns 404.
+         */
+        get: operations["get_category_symbol_svg_with_parent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Hut Availability Trend
-     * @description Get historical availability trend data showing how availability changed over time for a specific date.
-     */
-    get: operations['get_hut_availability_trend'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/huts/search': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/categories/symbol/{variant}/{slug}.svg": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Category Symbol Svg
+         * @description Redirect to the SVG icon for a category.
+         *
+         *     Variant options: detailed, simple, mono
+         *     Slug can be a simple slug (e.g., 'transport') or root category
+         *
+         *     If the category doesn't have a symbol for the variant, returns 404.
+         */
+        get: operations["get_category_symbol_svg"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Search Huts
-     * @description Search for huts using fuzzy text search across all language fields.
-     */
-    get: operations['search_huts'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/huts/huts': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/huts/bookings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get hut bookings (deprecated)
+         * @deprecated
+         * @description **DEPRECATED**: Use `/huts/availability.geojson` instead. This endpoint will be removed in a future version.
+         */
+        get: operations["get_hut_bookings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Huts
-     * @description Get a list with huts.
-     */
-    get: operations['get_huts'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/huts/huts.geojson': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/huts/bookings.geojson": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get hut bookings as GeoJSON (deprecated)
+         * @deprecated
+         * @description **DEPRECATED**: Use `/huts/availability.geojson` instead. This endpoint will be removed in a future version.
+         */
+        get: operations["get_hut_bookings_geojson"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Get Huts Geojson */
-    get: operations['get_huts_geojson'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/huts/{slug}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/huts/availability/{date}.geojson": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Hut Availability Geojson
+         * @description Get availability data as GeoJSON FeatureCollection for map visualization.
+         */
+        get: operations["get_hut_availability_geojson"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Hut
-     * @description Get a hut by its slug.
-     */
-    get: operations['get_hut'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/meteo/weather_codes': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/huts/{slug}/availability/{date}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Hut Availability Current
+         * @description Get current availability data for a specific hut with detailed metadata and booking links.
+         */
+        get: operations["get_hut_availability_current"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Weather Codes
-     * @description Get all weather codes as a dictionary with WMO code as key.
-     *
-     *     Returns weather codes with symbols from the specified collection.
-     *     If a WMO code is missing from the collection, an error is raised.
-     */
-    get: operations['get_weather_codes'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/meteo/weather_codes/{code}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/huts/{slug}/availability/{date}/trend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Hut Availability Trend
+         * @description Get historical availability trend data showing how availability changed over time for a specific date.
+         */
+        get: operations["get_hut_availability_trend"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Weather Code
-     * @description Get a specific weather code by WMO code.
-     */
-    get: operations['get_weather_code'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/meteo/symbol/{collection}/{time}/{code}.svg': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/huts/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search Huts
+         * @description Search for huts using fuzzy text search across all language fields.
+         */
+        get: operations["search_huts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Weather Code Svg
-     * @description Redirect to the SVG icon for a weather code from a specific collection.
-     *
-     *     Collection examples: weather-icons-outlined-mono, weather-icons-filled, meteoswiss-filled
-     *     Time options: day, night
-     *
-     *     If the collection doesn't have a symbol for the WMO code, returns 404.
-     */
-    get: operations['get_weather_code_svg'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/organizations/': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/huts/huts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Huts
+         * @description Get a list with huts.
+         */
+        get: operations["get_huts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Organizations
-     * @description Get a list of all organizations used for the huts.
-     */
-    get: operations['get_organizations'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/organizations/{slug}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/huts/huts.geojson": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Huts Geojson */
+        get: operations["get_huts_geojson"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Get Organization */
-    get: operations['get_organization'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/symbols/': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/huts/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Hut
+         * @description Get a hut by its slug.
+         */
+        get: operations["get_hut"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Symbols
-     * @description Get a list of all symbols. By default only returns active symbols.
-     */
-    get: operations['get_symbols'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/symbols/by-id/{id}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/meteo/weather_codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Weather Codes
+         * @description Get all weather codes as a dictionary with WMO code as key.
+         *
+         *     Returns weather codes with symbols from the specified collection.
+         *     If a WMO code is missing from the collection, an error is raised.
+         */
+        get: operations["get_weather_codes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Symbol By Id
-     * @description Get a single symbol by UUID.
-     */
-    get: operations['get_symbol_by_id'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/symbols/slug/{slug}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/meteo/weather_codes/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Weather Code
+         * @description Get a specific weather code by WMO code.
+         */
+        get: operations["get_weather_code"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Symbols By Slug
-     * @description Get all style variants for a symbol by slug. By default only returns active symbols.
-     */
-    get: operations['get_symbols_by_slug'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/symbols/{style_slug}/{slug}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/meteo/symbol/{collection}/{time}/{code}.svg": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Weather Code Svg
+         * @description Redirect to the SVG icon for a weather code from a specific collection.
+         *
+         *     Collection examples: weather-icons-outlined-mono, weather-icons-filled, meteoswiss-filled
+         *     Time options: day, night
+         *
+         *     If the collection doesn't have a symbol for the WMO code, returns 404.
+         */
+        get: operations["get_weather_code_svg"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Symbol By Style And Slug
-     * @description Get a single symbol by style and slug. Returns the same schema as by-id endpoint.
-     */
-    get: operations['get_symbol_by_style_and_slug'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/feedback/': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/organizations/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Organizations
+         * @description Get a list of all organizations used for the huts.
+         */
+        get: operations["get_organizations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /** Create Feedback */
-    post: operations['server_apps_feedbacks_api_create_feedback'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/v1/version': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/v1/organizations/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Organization */
+        get: operations["get_organization"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get Version
-     * @description Get version information including git short hash, full hash, package version, build timestamp, and environment.
-     */
-    get: operations['server_apps_utils_api_get_version'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
+    "/v1/symbols/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Symbols
+         * @description Get a list of all symbols. By default only returns active symbols.
+         */
+        get: operations["get_symbols"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/symbols/by-id/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Symbol By Id
+         * @description Get a single symbol by UUID.
+         */
+        get: operations["get_symbol_by_id"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/symbols/slug/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Symbols By Slug
+         * @description Get all style variants for a symbol by slug. By default only returns active symbols.
+         */
+        get: operations["get_symbols_by_slug"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/symbols/{style_slug}/{slug}.svg": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Symbol Svg
+         * @description Redirect to the SVG file for a symbol by style and slug.
+         *
+         *     Style options: detailed, simple, mono
+         *     Example: /v1/symbols/detailed/mountain.svg
+         *
+         *     If the symbol doesn't exist or has no SVG file, returns 404.
+         */
+        get: operations["get_symbol_svg"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/symbols/{style_slug}/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Symbol By Style And Slug
+         * @description Get a single symbol by style and slug. Returns the same schema as by-id endpoint.
+         */
+        get: operations["get_symbol_by_style_and_slug"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/feedback/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Feedback */
+        post: operations["server_apps_feedbacks_api_create_feedback"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/version": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Version
+         * @description Get version information including git short hash, full hash, package version, build timestamp, and environment.
+         */
+        get: operations["server_apps_utils_api_get_version"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-  schemas: {
-    /**
-     * IncludeModeEnum
-     * @description Include mode for nested objects - controls level of detail.
-     * @enum {string}
-     */
-    IncludeModeEnum: 'no' | 'slug' | 'all';
-    /**
-     * CategoryPlaceTypeSchema
-     * @description Schema for category place type with symbols (used in GeoPlace).
-     */
-    CategoryPlaceTypeSchema: {
-      /** Slug */
-      slug: string;
-      /** Name */
-      name: string;
-      /**
-       * Description
-       * @default
-       */
-      description: string;
-      /** Symbol */
-      symbol?: {
-        [key: string]: string;
-      } | null;
-    };
-    /**
-     * GeoPlaceSearchSchema
-     * @description Schema for search results with location coordinates.
-     */
-    GeoPlaceSearchSchema: {
-      /** Id */
-      id: number;
-      /** Name */
-      name: string;
-      /** Country Code */
-      country_code: string | null;
-      /** Elevation */
-      elevation: number | null;
-      /** Importance */
-      importance: number;
-      location: components['schemas']['LocationSchema'];
-      /** Place Type */
-      place_type?:
-        | string
-        | components['schemas']['CategoryPlaceTypeSchema']
-        | null;
-      /** Sources */
-      sources?:
-        | components['schemas']['OrganizationSourceIdSlugSchema'][]
-        | components['schemas']['OrganizationSourceIdDetailSchema'][]
-        | null;
-      /** Score */
-      score?: number | null;
-    };
-    /**
-     * LocationSchema
-     * @description Location with longitude, latitude and optional elevation in WSG84.
-     *
-     *     Attributes:
-     *         lon: Longitude (x).
-     *         lat: Latitude (y).
-     *         ele: Elevation in meter.
-     */
-    LocationSchema: {
-      /**
-       * Latitude (y) in WGS84
-       * @example 45.9765729
-       */
-      lat: number;
-      /**
-       * Longitude (x) in WGS84
-       * @example 7.6496971
-       */
-      lon: number;
-    };
-    /**
-     * OrganizationSearchSchema
-     * @description Schema for organization in search results.
-     */
-    OrganizationSearchSchema: {
-      /** Slug */
-      slug: string;
-      /** Name */
-      name?: string | null;
-      /** Logo */
-      logo?: string | null;
-    };
-    /**
-     * OrganizationSourceIdDetailSchema
-     * @description Schema for organization with source ID - full details version.
-     */
-    OrganizationSourceIdDetailSchema: {
-      source: components['schemas']['OrganizationSearchSchema'];
-      /** Source Id */
-      source_id?: string | null;
-    };
-    /**
-     * OrganizationSourceIdSlugSchema
-     * @description Schema for organization with source ID - slug only version.
-     */
-    OrganizationSourceIdSlugSchema: {
-      /** Source */
-      source: string;
-      /** Source Id */
-      source_id?: string | null;
-    };
-    /**
-     * GeoPlaceNearbySchema
-     * @description Schema for nearby places with distance information.
-     */
-    GeoPlaceNearbySchema: {
-      /** Id */
-      id: number;
-      /** Name */
-      name: string;
-      /** Country Code */
-      country_code: string | null;
-      /** Elevation */
-      elevation: number | null;
-      /** Importance */
-      importance: number;
-      location: components['schemas']['LocationSchema'];
-      /** Place Type */
-      place_type?:
-        | string
-        | components['schemas']['CategoryPlaceTypeSchema']
-        | null;
-      /** Sources */
-      sources?:
-        | components['schemas']['OrganizationSourceIdSlugSchema'][]
-        | components['schemas']['OrganizationSourceIdDetailSchema'][]
-        | null;
-      /** Distance */
-      distance?: number | null;
-    };
-    /**
-     * MediaUrlModeEnum
-     * @description Media URL mode for image fields.
-     * @enum {string}
-     */
-    MediaUrlModeEnum: 'no' | 'relative' | 'absolute';
-    /**
-     * CategoryTreeSchema
-     * @description Hierarchical tree representation of categories.
-     */
-    CategoryTreeSchema: {
-      /** Slug */
-      slug: string;
-      /** Name */
-      name: string;
-      /**
-       * Description
-       * @default
-       */
-      description: string;
-      /** Order */
-      order: number;
-      /** Level */
-      level: number;
-      /** Parent */
-      parent?: string | null;
-      /** Identifier */
-      identifier: string;
-      /** Symbol Detailed */
-      symbol_detailed?: string | null;
-      /** Symbol Simple */
-      symbol_simple?: string | null;
-      /** Symbol Mono */
-      symbol_mono?: string | null;
-      /**
-       * Children
-       * @default false
-       */
-      children: components['schemas']['CategoryTreeSchema'][] | boolean;
-    };
-    /**
-     * CategoryListItemSchema
-     * @description Simple category item for list view.
-     */
-    CategoryListItemSchema: {
-      /** Slug */
-      slug: string;
-      /** Name */
-      name: string;
-      /**
-       * Description
-       * @default
-       */
-      description: string;
-      /** Order */
-      order: number;
-      /** Level */
-      level: number;
-      /** Parent */
-      parent?: string | null;
-      /** Identifier */
-      identifier: string;
-      /** Children */
-      children: boolean;
-      /** Symbol Detailed */
-      symbol_detailed?: string | null;
-      /** Symbol Simple */
-      symbol_simple?: string | null;
-      /** Symbol Mono */
-      symbol_mono?: string | null;
-    };
-    /**
-     * CategoryMapSchema
-     * @description Category with children for map view.
-     */
-    CategoryMapSchema: {
-      /** Slug */
-      slug: string;
-      /** Name */
-      name: string;
-      /**
-       * Description
-       * @default
-       */
-      description: string;
-      /** Order */
-      order: number;
-      /** Level */
-      level: number;
-      /** Parent */
-      parent?: string | null;
-      /** Identifier */
-      identifier: string;
-      /** Children Count */
-      children_count: number;
-      /** Symbol Detailed */
-      symbol_detailed?: string | null;
-      /** Symbol Simple */
-      symbol_simple?: string | null;
-      /** Symbol Mono */
-      symbol_mono?: string | null;
-      /**
-       * Children
-       * @default {}
-       */
-      children: {
-        [key: string]: components['schemas']['CategoryMapSchema'];
-      };
-    };
-    /** HutBookingsQuery */
-    HutBookingsQuery: {
-      /**
-       * Slugs
-       * @description Comma separated list with slugs to use, per default all.
-       */
-      slugs?: string | null;
-      /**
-       * Days
-       * @description Show bookings for this many days.
-       * @default 1
-       */
-      days: number;
-      /**
-       * Date
-       * @description Date to start with bookings (yyyy-mm-dd, 'now' or 'weekend').
-       * @default now
-       */
-      date: string | ('now' | 'weekend');
-      /**
-       * Request interval
-       * @description Time in seconds to wait between requests to the booking service for each hut. If not set uses recommanded default value.
-       */
-      request_interval?: number | null;
-    };
-    /** HutBookingSchema */
-    HutBookingSchema: {
-      /** Link */
-      link: string;
-      /**
-       * Date
-       * Format: date
-       */
-      date: string;
-      reservation_status: components['schemas']['ReservationStatusEnum'];
-      /** Free */
-      free: number;
-      /** Total */
-      total: number;
-      /** Occupancy Percent */
-      occupancy_percent: number;
-      /** Occupancy Steps */
-      occupancy_steps: number;
-      occupancy_status: components['schemas']['OccupancyStatusEnum'];
-      /**
-       * Hut Type
-       * @default unknown
-       */
-      hut_type: string;
-    };
-    /** HutBookingsSchema */
-    HutBookingsSchema: {
-      /** Slug */
-      slug: string;
-      /** Hut Id */
-      hut_id: number;
-      /**
-       * Source Id
-       * @description External source organization's ID for this hut
-       */
-      source_id: string;
-      /**
-       * Source
-       * @description Source slug, e.g. hrs
-       */
-      source: string;
-      /** Days */
-      days: number;
-      /** Link */
-      link: string;
-      /**
-       * Start Date
-       * Format: date
-       */
-      start_date: string;
-      /** Bookings */
-      bookings: components['schemas']['HutBookingSchema'][];
-      location: components['schemas']['LocationSchema'];
-    };
-    /**
-     * OccupancyStatusEnum
-     * @description Enum with with occuptation status.
-     * @enum {string}
-     */
-    OccupancyStatusEnum:
-      | 'unknown'
-      | 'empty'
-      | 'low'
-      | 'medium'
-      | 'high'
-      | 'full';
-    /**
-     * ReservationStatusEnum
-     * @description Enum with reservation status.
-     * @enum {string}
-     */
-    ReservationStatusEnum:
-      | 'unknown'
-      | 'possible'
-      | 'not_possible'
-      | 'not_online';
-    /** Feature[Point, HutBookingsProps] */
-    Feature_Point_HutBookingsProps_: {
-      /** Bbox */
-      bbox?:
-        | [number, number, number, number]
-        | [number, number, number, number, number, number]
-        | null;
-      /**
-       * Type
-       * @constant
-       */
-      type: 'Feature';
-      geometry: components['schemas']['Point'] | null;
-      properties: components['schemas']['HutBookingsProps'] | null;
-      /** Id */
-      id?: number | string | null;
-    };
-    /** HutBookingsFeatureCollection */
-    HutBookingsFeatureCollection: {
-      /** Bbox */
-      bbox?:
-        | [number, number, number, number]
-        | [number, number, number, number, number, number]
-        | null;
-      /**
-       * Type
-       * @constant
-       */
-      type: 'FeatureCollection';
-      /** Features */
-      features: components['schemas']['Feature_Point_HutBookingsProps_'][];
-    };
-    /** HutBookingsProps */
-    HutBookingsProps: {
-      /** Slug */
-      slug: string;
-      /** Hut Id */
-      hut_id: number;
-      /**
-       * Source Id
-       * @description External source organization's ID for this hut
-       */
-      source_id: string;
-      /**
-       * Source
-       * @description Source slug, e.g. hrs
-       */
-      source: string;
-      /** Days */
-      days: number;
-      /** Link */
-      link: string;
-      /**
-       * Start Date
-       * Format: date
-       */
-      start_date: string;
-      /** Bookings */
-      bookings: components['schemas']['HutBookingSchema'][];
-    };
-    /**
-     * Point
-     * @description Point Model
-     */
-    Point: {
-      /** Bbox */
-      bbox?:
-        | [number, number, number, number]
-        | [number, number, number, number, number, number]
-        | null;
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      type: 'Point';
-      /** Coordinates */
-      coordinates:
-        | components['schemas']['Position2D']
-        | components['schemas']['Position3D'];
-    };
-    Position2D: [number, number];
-    Position3D: [number, number, number];
-    /**
-     * DatePathParam
-     * @description Path parameter for date.
-     */
-    DatePathParam: {
-      /**
-       * Date
-       * @description Start date. Accepts ISO dates (2026-01-15, 26-01-15), European format (15.01.2026), or keywords: 'now', 'today', 'weekend'.
-       */
-      date: string;
-    };
-    /**
-     * AvailabilityGeoJSONQuery
-     * @description Query parameters for GeoJSON availability endpoint.
-     */
-    AvailabilityGeoJSONQuery: {
-      /**
-       * Hut Slugs
-       * @description Comma-separated list of hut slugs to filter (e.g., 'aarbiwak,almageller'). If not set, returns all huts.
-       */
-      slugs?: string | null;
-      /**
-       * Days
-       * @description Number of days to fetch from start date.
-       * @default 1
-       */
-      days: number;
-      /**
-       * Offset
-       * @description Pagination offset for results.
-       * @default 0
-       */
-      offset: number;
-      /**
-       * Limit
-       * @description Maximum number of huts to return. If not set, returns all matching huts.
-       */
-      limit?: number | null;
-    };
-    /**
-     * AvailabilityDaySchema
-     * @description Single day's availability data for a hut.
-     */
-    AvailabilityDaySchema: {
-      /**
-       * Date
-       * Format: date
-       * @description Availability date
-       */
-      date: string;
-      /** @description Reservation status (unknown, possible, not_possible, not_online) */
-      reservation_status: components['schemas']['ReservationStatusEnum'];
-      /**
-       * Free
-       * @description Number of free places
-       */
-      free: number;
-      /**
-       * Total
-       * @description Total number of places
-       */
-      total: number;
-      /**
-       * Occupancy Percent
-       * @description Occupancy percentage (0-100)
-       */
-      occupancy_percent: number;
-      /**
-       * Occupancy Steps
-       * @description Occupancy in discrete steps (0-100, increments of 10)
-       */
-      occupancy_steps: number;
-      /** @description Occupancy status (empty, low, medium, high, full, unknown) */
-      occupancy_status: components['schemas']['OccupancyStatusEnum'];
-      /**
-       * Hut Type
-       * @description Hut type on this date (e.g., 'hut', 'bivouac')
-       * @default unknown
-       */
-      hut_type: string;
-    };
-    /** Feature[Point, HutAvailabilityPropertiesSchema] */
-    Feature_Point_HutAvailabilityPropertiesSchema_: {
-      /** Bbox */
-      bbox?:
-        | [number, number, number, number]
-        | [number, number, number, number, number, number]
-        | null;
-      /**
-       * Type
-       * @constant
-       */
-      type: 'Feature';
-      geometry: components['schemas']['Point'] | null;
-      properties:
-        | components['schemas']['HutAvailabilityPropertiesSchema']
-        | null;
-      /** Id */
-      id?: number | string | null;
-    };
-    /**
-     * HutAvailabilityFeatureCollection
-     * @description GeoJSON FeatureCollection of hut availability data.
-     */
-    HutAvailabilityFeatureCollection: {
-      /** Bbox */
-      bbox?:
-        | [number, number, number, number]
-        | [number, number, number, number, number, number]
-        | null;
-      /**
-       * Type
-       * @constant
-       */
-      type: 'FeatureCollection';
-      /** Features */
-      features: components['schemas']['Feature_Point_HutAvailabilityPropertiesSchema_'][];
-    };
-    /**
-     * HutAvailabilityPropertiesSchema
-     * @description Properties for a hut availability GeoJSON feature.
-     */
-    HutAvailabilityPropertiesSchema: {
-      /**
-       * Slug
-       * @description Hut slug identifier
-       */
-      slug: string;
-      /**
-       * Id
-       * @description Hut database ID
-       */
-      id: number;
-      /**
-       * Source Id
-       * @description External source organization's ID for this hut
-       */
-      source_id: string;
-      /**
-       * Source
-       * @description Source organization slug (e.g., 'hrs', 'sac')
-       */
-      source: string;
-      /**
-       * Source Link
-       * @description External link to the hut page on the source website
-       */
-      source_link: string;
-      /**
-       * Days
-       * @description Number of days of availability data
-       */
-      days: number;
-      /**
-       * Start Date
-       * Format: date
-       * @description Start date of availability period
-       */
-      start_date: string;
-      /**
-       * Data
-       * @description List of availability data for each day
-       */
-      data: components['schemas']['AvailabilityDaySchema'][];
-    };
-    /**
-     * CurrentAvailabilityQuery
-     * @description Query parameters for current availability endpoint.
-     */
-    CurrentAvailabilityQuery: {
-      /**
-       * Days
-       * @description Number of days to fetch from start date.
-       * @default 1
-       */
-      days: number;
-    };
-    /**
-     * CurrentAvailabilityDaySchema
-     * @description Single day's current availability data with metadata.
-     */
-    CurrentAvailabilityDaySchema: {
-      /**
-       * Date
-       * Format: date
-       * @description Availability date
-       */
-      date: string;
-      /** @description Reservation status (unknown, possible, not_possible, not_online) */
-      reservation_status: components['schemas']['ReservationStatusEnum'];
-      /**
-       * Free
-       * @description Number of free places
-       */
-      free: number;
-      /**
-       * Total
-       * @description Total number of places
-       */
-      total: number;
-      /**
-       * Occupancy Percent
-       * @description Occupancy percentage (0-100)
-       */
-      occupancy_percent: number;
-      /**
-       * Occupancy Steps
-       * @description Occupancy in discrete steps (0-100, increments of 10)
-       */
-      occupancy_steps: number;
-      /** @description Occupancy status (empty, low, medium, high, full, unknown) */
-      occupancy_status: components['schemas']['OccupancyStatusEnum'];
-      /**
-       * Hut Type
-       * @description Hut type on this date (e.g., 'hut', 'bivouac')
-       * @default unknown
-       */
-      hut_type: string;
-      /**
-       * Link
-       * @description Booking link for this date
-       */
-      link: string;
-      /**
-       * First Checked
-       * Format: date-time
-       * @description When this availability was first recorded
-       */
-      first_checked: string;
-      /**
-       * Last Checked
-       * Format: date-time
-       * @description When this availability was last checked
-       */
-      last_checked: string;
-    };
-    /**
-     * CurrentAvailabilitySchema
-     * @description Current availability data for a specific hut.
-     */
-    CurrentAvailabilitySchema: {
-      /**
-       * Slug
-       * @description Hut slug identifier
-       */
-      slug: string;
-      /**
-       * Id
-       * @description Hut database ID
-       */
-      id: number;
-      /**
-       * Source Id
-       * @description External source organization's ID for this hut
-       */
-      source_id: string;
-      /**
-       * Source Link
-       * @description External source organization's link for this hut
-       */
-      source_link: string;
-      /**
-       * Source
-       * @description Source organization slug (e.g., 'hrs', 'sac')
-       */
-      source: string;
-      /**
-       * Days
-       * @description Number of days of availability data
-       */
-      days: number;
-      /**
-       * Start Date
-       * Format: date
-       * @description Start date of availability period
-       */
-      start_date: string;
-      /**
-       * Data
-       * @description List of current availability data for each day
-       */
-      data: components['schemas']['CurrentAvailabilityDaySchema'][];
-    };
-    /**
-     * DatePathParamTrend
-     * @description Path parameter for trend endpoint.
-     */
-    DatePathParamTrend: {
-      /**
-       * Date
-       * @description Target date to analyze. Accepts ISO dates (2026-01-15, 26-01-15), European format (15.01.2026), or keywords: 'now', 'today', 'weekend'.
-       */
-      date: string;
-    };
-    /**
-     * AvailabilityTrendQuery
-     * @description Query parameters for availability trend endpoint.
-     */
-    AvailabilityTrendQuery: {
-      /**
-       * Limit
-       * @description How many days back to show history from the target date.
-       * @default 7
-       */
-      limit: number;
-    };
-    /**
-     * AvailabilityTrendDaySchema
-     * @description Single historical availability data point.
-     */
-    AvailabilityTrendDaySchema: {
-      /**
-       * Date
-       * Format: date
-       * @description Availability date this data applies to
-       */
-      date: string;
-      /**
-       * Free
-       * @description Number of free places
-       */
-      free: number;
-      /**
-       * Total
-       * @description Total number of places
-       */
-      total: number;
-      /**
-       * Occupancy Percent
-       * @description Occupancy percentage (0-100)
-       */
-      occupancy_percent: number;
-      /** @description Occupancy status (empty, low, medium, high, full, unknown) */
-      occupancy_status: components['schemas']['OccupancyStatusEnum'];
-      /** @description Reservation status (unknown, possible, not_possible, not_online) */
-      reservation_status: components['schemas']['ReservationStatusEnum'];
-      /**
-       * Hut Type
-       * @description Hut type on this date (e.g., 'hut', 'bivouac')
-       * @default unknown
-       */
-      hut_type: string;
-      /**
-       * First Checked
-       * Format: date-time
-       * @description When this state was first observed
-       */
-      first_checked: string;
-      /**
-       * Last Checked
-       * Format: date-time
-       * @description When this state was last confirmed
-       */
-      last_checked: string;
-    };
-    /**
-     * AvailabilityTrendSchema
-     * @description Historical availability trend data for a specific hut and date.
-     */
-    AvailabilityTrendSchema: {
-      /**
-       * Slug
-       * @description Hut slug identifier
-       */
-      slug: string;
-      /**
-       * Id
-       * @description Hut database ID
-       */
-      id: number;
-      /**
-       * Target Date
-       * Format: date
-       * @description The date for which trend data is shown
-       */
-      target_date: string;
-      /**
-       * Period Start
-       * Format: date
-       * @description Start of the trend period (target_date - limit days)
-       */
-      period_start: string;
-      /**
-       * Period End
-       * Format: date
-       * @description End of the trend period (target_date)
-       */
-      period_end: string;
-      /**
-       * Data
-       * @description Historical availability changes, ordered by first_checked (newest first)
-       */
-      data: components['schemas']['AvailabilityTrendDaySchema'][];
-    };
-    /**
-     * CapacitySimpleSchema
-     * @description Simplified capacity schema for search results.
-     */
-    CapacitySimpleSchema: {
-      /** Open */
-      open?: number | null;
-      /** Closed */
-      closed?: number | null;
-    };
-    /**
-     * HutSearchResultSchema
-     * @description Simplified schema for hut search results - optimized for fast autocomplete.
-     */
-    HutSearchResultSchema: {
-      /** Name */
-      name: string;
-      /** Slug */
-      slug: string;
-      /** Hut Type */
-      hut_type?: unknown;
-      capacity: components['schemas']['CapacitySimpleSchema'];
-      location: components['schemas']['LocationSchema'];
-      /** Elevation */
-      elevation?: number | null;
-      /** Avatar */
-      avatar?: string | null;
-      /** Score */
-      score: number;
-      /** Sources */
-      sources?: unknown;
-    };
-    /**
-     * TristateEnum
-     * @description Tristate enum with `true`, `false` and `unset`.
-     * @enum {string}
-     */
-    TristateEnum: 'true' | 'false' | 'unset';
-    /**
-     * AnswerEnum
-     * @description Anser enum.
-     *
-     *     'yesish' and 'noish' means it is likely to be 'yes' or 'no'.
-     *     'maybe' means is is either 'yes' or 'no'.
-     * @enum {string}
-     */
-    AnswerEnum: 'yes' | 'yesish' | 'maybe' | 'noish' | 'no' | 'unknown';
-    CountryTuple: [string, string];
-    /**
-     * HutSchemaList
-     * @description Schema for hut list endpoints (without created/modified timestamps).
-     */
-    HutSchemaList: {
-      /** Slug */
-      slug: string;
-      /** Name */
-      name: string | null;
-      /** Description */
-      description: string | null;
-      /** Description Attribution */
-      description_attribution: string;
-      owner: components['schemas']['OwnerSchema'] | null;
-      /** Review Status */
-      review_status?: string | null;
-      /** Is Public */
-      is_public?: boolean | null;
-      /** Is Active */
-      is_active?: boolean | null;
-      /** Is Modified */
-      is_modified?: boolean | null;
-      type_open?: components['schemas']['HutTypeSchema'] | null;
-      type_closed?: components['schemas']['HutTypeSchema'] | null;
-      /** Elevation */
-      elevation?: number | null;
-      location?: components['schemas']['LocationSchema'] | null;
-      /** Url */
-      url?: string | null;
-      country?: components['schemas']['CountryTuple'] | null;
-      /** Capacity Open */
-      capacity_open?: number | null;
-      /** Capacity Closed */
-      capacity_closed?: number | null;
-      /** Sources */
-      sources: components['schemas']['OrganizationBaseSchema'][] | null;
-      /**
-       * Photos
-       * @default
-       */
-      photos: string;
-      /**
-       * Photos Attribution
-       * @default
-       */
-      photos_attribution: string;
-      /** Images */
-      images: components['schemas']['ImageInfoSchema'][] | null;
-      open_monthly?: components['schemas']['OpenMonthlySchema'] | null;
-      /** Has Availability */
-      has_availability?: boolean | null;
-      /** Availability Source */
-      availability_source?: string | null;
-    };
-    /** HutTypeSchema */
-    HutTypeSchema: {
-      /** Order */
-      order?: number | null;
-      /** Slug */
-      slug: string;
-      /** Name */
-      name: string | null;
-      /** Symbol */
-      symbol?: {
-        [key: string]: string | null;
-      } | null;
-    };
-    /** ImageInfoSchema */
-    ImageInfoSchema: {
-      /** Image */
-      image: string;
-      image_meta: components['schemas']['ImageMetaSchema'];
-      license: components['schemas']['LicenseInfoSchema'];
-      /** Author */
-      author?: string | null;
-      /** Caption */
-      caption?: string | null;
-      /** Author Url */
-      author_url?: string | null;
-      /** Source Url */
-      source_url?: string | null;
-      organization?: components['schemas']['OrganizationImageSchema'] | null;
-      /** Attribution */
-      attribution?: string | null;
-      /**
-       * Urls
-       * @description Return the image URL with the transformations applied.
-       */
-      readonly urls: {
-        [key: string]: string;
-      };
-    };
-    /** ImageMetaAreaSchema */
-    ImageMetaAreaSchema: {
-      /** X1 */
-      x1: number;
-      /** X2 */
-      x2: number;
-      /** Y1 */
-      y1: number;
-      /** Y2 */
-      y2: number;
-    };
-    /** ImageMetaSchema */
-    ImageMetaSchema: {
-      crop?: components['schemas']['ImageMetaAreaSchema'] | null;
-      focal?: components['schemas']['ImageMetaAreaSchema'] | null;
-      /** Width */
-      width?: number | null;
-      /** Height */
-      height?: number | null;
-    };
-    /**
-     * LicenseInfoSchema
-     * @description Important information, for example for an image
-     */
-    LicenseInfoSchema: {
-      /** Slug */
-      slug: string;
-      /** Name */
-      name: string | null;
-      /** Fullname */
-      fullname: string | null;
-      /** Description */
-      description?: string | null;
-      /** Link */
-      link?: string | null;
-    };
-    /**
-     * OpenMonthlySchema
-     * @description Shows for every month if it is usally, open, partially open or closed.
-     *     Can be accessed as index, but it starts with 1 (month_01)!.
-     *
-     *     Attributes:
-     *         url: URL which shows if it is open or not.
-     *         month_mm (OpenMonthly): Month (starting with 01).
-     */
-    OpenMonthlySchema: {
-      /**
-       * Url
-       * @description URL which shows if it is open or not.
-       * @default
-       */
-      url: string;
-      /** @default unknown */
-      month_01: components['schemas']['AnswerEnum'];
-      /** @default unknown */
-      month_02: components['schemas']['AnswerEnum'];
-      /** @default unknown */
-      month_03: components['schemas']['AnswerEnum'];
-      /** @default unknown */
-      month_04: components['schemas']['AnswerEnum'];
-      /** @default unknown */
-      month_05: components['schemas']['AnswerEnum'];
-      /** @default unknown */
-      month_06: components['schemas']['AnswerEnum'];
-      /** @default unknown */
-      month_07: components['schemas']['AnswerEnum'];
-      /** @default unknown */
-      month_08: components['schemas']['AnswerEnum'];
-      /** @default unknown */
-      month_09: components['schemas']['AnswerEnum'];
-      /** @default unknown */
-      month_10: components['schemas']['AnswerEnum'];
-      /** @default unknown */
-      month_11: components['schemas']['AnswerEnum'];
-      /** @default unknown */
-      month_12: components['schemas']['AnswerEnum'];
-    } & {
-      [key: string]: unknown;
-    };
-    /** OrganizationBaseSchema */
-    OrganizationBaseSchema: {
-      /** Slug */
-      slug: string;
-      /** Name */
-      name: string;
-      /** Fullname */
-      fullname: string;
-      /** Link */
-      link: string;
-      /** Logo */
-      logo: string;
-      /** Public */
-      public: boolean;
-      /** Source Id */
-      source_id: string;
-    };
-    /** OrganizationImageSchema */
-    OrganizationImageSchema: {
-      /** Slug */
-      slug: string | null;
-      /** Name */
-      name: string | null;
-      /** Fullname */
-      fullname: string | null;
-      /** Link */
-      link: string | null;
-      /** Logo */
-      logo: string | null;
-    };
-    /** OwnerSchema */
-    OwnerSchema: {
-      /** Name */
-      name: string | null;
-      /** Slug */
-      slug: string;
-      /**
-       * Adresse (URL)
-       * @default
-       */
-      url: string | null;
-    };
-    /** BaseModel */
-    BaseModel: Record<string, never>;
-    /**
-     * Feature
-     * @description Feature Model
-     */
-    Feature: {
-      /** Bbox */
-      bbox?:
-        | [number, number, number, number]
-        | [number, number, number, number, number, number]
-        | null;
-      /**
-       * Type
-       * @constant
-       */
-      type: 'Feature';
-      /** Geometry */
-      geometry:
-        | (
-            | components['schemas']['Point']
-            | components['schemas']['MultiPoint']
-            | components['schemas']['LineString']
-            | components['schemas']['MultiLineString']
-            | components['schemas']['Polygon']
-            | components['schemas']['MultiPolygon']
-            | components['schemas']['GeometryCollection']
-          )
-        | null;
-      /** Properties */
-      properties:
-        | {
+    schemas: {
+        /** Feature[Point, ImagePropertiesSchema] */
+        Feature_Point_ImagePropertiesSchema_: {
+            /** Bbox */
+            bbox?: [
+                number,
+                number,
+                number,
+                number
+            ] | [
+                number,
+                number,
+                number,
+                number,
+                number,
+                number
+            ] | null;
+            /**
+             * Type
+             * @constant
+             */
+            type: "Feature";
+            geometry: components["schemas"]["Point"] | null;
+            properties: components["schemas"]["ImagePropertiesSchema"] | null;
+            /** Id */
+            id?: number | string | null;
+        };
+        /**
+         * ImageAttributionSchema
+         * @description Comprehensive attribution information for an image.
+         */
+        ImageAttributionSchema: {
+            /**
+             * Short
+             * @description Short HTML attribution with license icon, license link, and provider link
+             */
+            short: string;
+            /**
+             * Full
+             * @description Full attribution string (e.g., 'CC BY-SA 4.0, Author Name on Wodore')
+             */
+            full: string;
+            /**
+             * License Icon
+             * @description URL to license icon image
+             */
+            license_icon?: string | null;
+            /**
+             * License Short
+             * @description Short license name with link
+             */
+            license_short: string;
+            /**
+             * License Full
+             * @description Full license name with link
+             */
+            license_full: string;
+            /**
+             * Author
+             * @description Author name with provider link (e.g., 'Name on Wodore')
+             */
+            author: string;
+        };
+        /**
+         * ImageAuthorSchema
+         * @description Author information for an image.
+         */
+        ImageAuthorSchema: {
+            /**
+             * Name
+             * @description Author name
+             */
+            name: string;
+            /**
+             * Url
+             * @description Author profile URL
+             */
+            url?: string | null;
+        };
+        /**
+         * ImageCollectionResponse
+         * @description Complete response for nearby_images endpoint including metadata.
+         */
+        ImageCollectionResponse: {
+            /**
+             * Type
+             * @description GeoJSON type
+             * @default FeatureCollection
+             */
+            type: string;
+            /**
+             * Features
+             * @description List of image features as GeoJSON
+             */
+            features: components["schemas"]["Feature_Point_ImagePropertiesSchema_"][];
+            /** @description Metadata about the image collection */
+            metadata: components["schemas"]["ImageMetadataSchema"];
+        };
+        /**
+         * ImageLicenseSchema
+         * @description License information for an image.
+         */
+        ImageLicenseSchema: {
+            /**
+             * Slug
+             * @description License slug (e.g., 'cc-by-sa-4.0', 'cc0')
+             */
+            slug: string;
+            /**
+             * Name
+             * @description Human-readable license name
+             */
+            name: string;
+            /**
+             * Url
+             * @description Link to license text
+             */
+            url?: string | null;
+            /**
+             * Icon
+             * @description URL to license icon image
+             */
+            icon?: string | null;
+        };
+        /**
+         * ImageMetadataSchema
+         * @description Metadata for the image collection response.
+         */
+        ImageMetadataSchema: {
+            /**
+             * Total
+             * @description Total number of images returned in the collection
+             */
+            total: number;
+            /**
+             * Sources Queried
+             * @description List of provider sources that were queried
+             */
+            sources_queried: string[];
+            /**
+             * Query Radius M
+             * @description Search radius used for the query in meters
+             */
+            query_radius_m: number;
+            /**
+             * Center
+             * @description Center point of the query as {lat, lon}
+             */
+            center: {
+                [key: string]: number;
+            };
+            /**
+             * Geoplaces Found
+             * @description Number of GeoPlaces found within search radius
+             */
+            geoplaces_found: number;
+            /**
+             * Huts Found
+             * @description Number of Huts found within search radius
+             */
+            huts_found: number;
+        };
+        /**
+         * ImagePlaceReferenceSchema
+         * @description Brief reference to a GeoPlace or Hut associated with an image.
+         */
+        ImagePlaceReferenceSchema: {
+            /**
+             * Id
+             * @description Place database ID
+             */
+            id: number;
+            /**
+             * Slug
+             * @description Place slug identifier
+             */
+            slug: string;
+            /**
+             * Name
+             * @description Place name
+             */
+            name: string;
+            /** @description Place coordinates */
+            location: components["schemas"]["LocationSchema"];
+        };
+        /**
+         * ImagePropertiesSchema
+         * @description Properties for an image GeoJSON feature.
+         *     Follows the pattern from HutAvailabilityPropertiesSchema.
+         */
+        ImagePropertiesSchema: {
+            /** @description Provider/organization information */
+            provider: components["schemas"]["ImageProviderSchema"];
+            /**
+             * Source Id
+             * @description Original ID in the source system
+             */
+            source_id: string;
+            /**
+             * Source Url
+             * @description Deep link back to the source
+             */
+            source_url?: string | null;
+            /**
+             * Image Type
+             * @description Image type: 'flat' or '360'
+             */
+            image_type: string;
+            /**
+             * Captured At
+             * @description When the photo was taken
+             */
+            captured_at?: string | null;
+            /**
+             * Distance M
+             * @description Distance from query coordinate in meters
+             */
+            distance_m: number;
+            /** @description Comprehensive attribution information */
+            attribution: components["schemas"]["ImageAttributionSchema"];
+            /** @description Image author details */
+            author?: components["schemas"]["ImageAuthorSchema"] | null;
+            /** @description Image license information */
+            license: components["schemas"]["ImageLicenseSchema"];
+            /** @description Image URLs for different sizes */
+            urls: components["schemas"]["ImageUrlsSchema"];
+            /**
+             * Score
+             * @description Metadata quality score (0-100)
+             * @default 0
+             */
+            score: number;
+            /**
+             * Width
+             * @description Image width in pixels
+             */
+            width?: number | null;
+            /**
+             * Height
+             * @description Image height in pixels
+             */
+            height?: number | null;
+            /**
+             * Is Portrait
+             * @description True if image is portrait-oriented (height > width)
+             */
+            is_portrait?: boolean | null;
+            /**
+             * Focal
+             * @description Focal point area coordinates (x1, y1, x2, y2) for smart cropping
+             */
+            focal?: {
+                [key: string]: number;
+            } | null;
+            /**
+             * Crop
+             * @description Crop area coordinates (x1, y1, x2, y2) for specific region extraction
+             */
+            crop?: {
+                [key: string]: number;
+            } | null;
+            /**
+             * Source Found
+             * @description Sources where this image was found (e.g., ['osm', 'wikidata'])
+             */
+            source_found?: string[] | null;
+            /** @description Associated GeoPlace or Hut reference */
+            place?: components["schemas"]["ImagePlaceReferenceSchema"] | null;
+        };
+        /**
+         * ImageProviderSchema
+         * @description Provider/organization information for an image.
+         */
+        ImageProviderSchema: {
+            /**
+             * Slug
+             * @description Provider/organization slug
+             */
+            slug: string;
+            /**
+             * Name
+             * @description Provider/organization name
+             */
+            name: string;
+            /**
+             * Url
+             * @description Provider/organization website URL
+             */
+            url?: string | null;
+            /**
+             * Icon
+             * @description Provider/organization icon/logo URL
+             */
+            icon?: string | null;
+            /**
+             * Description
+             * @description Provider/organization description
+             */
+            description?: string | null;
+        };
+        /**
+         * ImageUrlsSchema
+         * @description Image URLs for different sizes and orientations.
+         */
+        ImageUrlsSchema: {
+            /**
+             * Original
+             * @description Original image URLs (raw, proxy)
+             */
+            original: {
+                [key: string]: string;
+            };
+            /**
+             * Square
+             * @description Square-cropped image URLs (avatar, thumb, preview, placeholder, medium, large with @2x variants)
+             */
+            square?: {
+                [key: string]: string;
+            } | null;
+            /**
+             * Portrait
+             * @description Portrait-oriented image URLs (thumb, preview, placeholder, medium, large with @2x variants)
+             */
+            portrait?: {
+                [key: string]: string;
+            } | null;
+            /**
+             * Landscape
+             * @description Landscape-oriented image URLs (thumb, preview, placeholder, medium, large with @2x variants)
+             */
+            landscape?: {
+                [key: string]: string;
+            } | null;
+            /**
+             * Preferred
+             * @description Preferred orientation URL based on image dimensions
+             */
+            preferred?: string | null;
+        };
+        /**
+         * LocationSchema
+         * @description Location with longitude, latitude and optional elevation in WSG84.
+         *
+         *     Attributes:
+         *         lon: Longitude (x).
+         *         lat: Latitude (y).
+         *         ele: Elevation in meter.
+         */
+        LocationSchema: {
+            /**
+             * Latitude (y) in WGS84
+             * @example 45.9765729
+             */
+            lat: number;
+            /**
+             * Longitude (x) in WGS84
+             * @example 7.6496971
+             */
+            lon: number;
+        };
+        /**
+         * Point
+         * @description Point Model
+         */
+        Point: {
+            /** Bbox */
+            bbox?: [
+                number,
+                number,
+                number,
+                number
+            ] | [
+                number,
+                number,
+                number,
+                number,
+                number,
+                number
+            ] | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "Point";
+            /** Coordinates */
+            coordinates: components["schemas"]["Position2D"] | components["schemas"]["Position3D"];
+        };
+        Position2D: [
+            number,
+            number
+        ];
+        Position3D: [
+            number,
+            number,
+            number
+        ];
+        /**
+         * IncludeModeEnum
+         * @description Include mode for nested objects - controls level of detail.
+         * @enum {string}
+         */
+        IncludeModeEnum: "no" | "slug" | "all";
+        /**
+         * CategoryPlaceTypeSchema
+         * @description Schema for category place type with symbols (used in GeoPlace).
+         */
+        CategoryPlaceTypeSchema: {
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Symbol */
+            symbol?: {
+                [key: string]: string;
+            } | null;
+        };
+        /**
+         * GeoPlaceSearchSchema
+         * @description Schema for search results with location coordinates.
+         */
+        GeoPlaceSearchSchema: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Country Code */
+            country_code: string | null;
+            /** Elevation */
+            elevation: number | null;
+            /** Importance */
+            importance: number;
+            location: components["schemas"]["LocationSchema"];
+            /** Place Type */
+            place_type?: string | components["schemas"]["CategoryPlaceTypeSchema"] | null;
+            /** Sources */
+            sources?: components["schemas"]["OrganizationSourceIdSlugSchema"][] | components["schemas"]["OrganizationSourceIdDetailSchema"][] | null;
+            /** Score */
+            score?: number | null;
+        };
+        /**
+         * OrganizationSearchSchema
+         * @description Schema for organization in search results.
+         */
+        OrganizationSearchSchema: {
+            /** Slug */
+            slug: string;
+            /** Name */
+            name?: string | null;
+            /** Logo */
+            logo?: string | null;
+        };
+        /**
+         * OrganizationSourceIdDetailSchema
+         * @description Schema for organization with source ID - full details version.
+         */
+        OrganizationSourceIdDetailSchema: {
+            source: components["schemas"]["OrganizationSearchSchema"];
+            /** Source Id */
+            source_id?: string | null;
+        };
+        /**
+         * OrganizationSourceIdSlugSchema
+         * @description Schema for organization with source ID - slug only version.
+         */
+        OrganizationSourceIdSlugSchema: {
+            /** Source */
+            source: string;
+            /** Source Id */
+            source_id?: string | null;
+        };
+        /**
+         * GeoPlaceNearbySchema
+         * @description Schema for nearby places with distance information.
+         */
+        GeoPlaceNearbySchema: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Country Code */
+            country_code: string | null;
+            /** Elevation */
+            elevation: number | null;
+            /** Importance */
+            importance: number;
+            location: components["schemas"]["LocationSchema"];
+            /** Place Type */
+            place_type?: string | components["schemas"]["CategoryPlaceTypeSchema"] | null;
+            /** Sources */
+            sources?: components["schemas"]["OrganizationSourceIdSlugSchema"][] | components["schemas"]["OrganizationSourceIdDetailSchema"][] | null;
+            /** Distance */
+            distance?: number | null;
+        };
+        /**
+         * AmenityDetailSchema
+         * @description Schema for amenity detailed information.
+         */
+        AmenityDetailSchema: {
+            /** Operating Status */
+            operating_status: string;
+            /**
+             * Opening Months
+             * @description Monthly availability per month: {'jan': 'yes', 'feb': 'yes', ...}
+             */
+            opening_months?: {
+                [key: string]: string;
+            };
+            /**
+             * Opening Hours
+             * @description Structured weekly hours per weekday + public holidays
+             */
+            opening_hours?: {
+                [key: string]: unknown;
+            };
+            /** Websites */
+            websites?: components["schemas"]["WebsiteSchema"][];
+            /** Phones */
+            phones?: components["schemas"]["PhoneSchema"][];
+            /** Extra */
+            extra?: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * AmenitySchema
+         * @description Schema for amenity places with full details.
+         */
+        AmenitySchema: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Country Code */
+            country_code: string | null;
+            /** Elevation */
+            elevation: number | null;
+            /** Importance */
+            importance: number;
+            location: components["schemas"]["LocationSchema"];
+            /** Place Type */
+            place_type?: string | components["schemas"]["CategoryPlaceTypeSchema"] | null;
+            /** Sources */
+            sources?: components["schemas"]["OrganizationSourceIdSlugSchema"][] | components["schemas"]["OrganizationSourceIdDetailSchema"][] | null;
+            /** Description */
+            description?: string | null;
+            /** Detail Type */
+            detail_type: string;
+            /** Review Status */
+            review_status?: string | null;
+            amenity_detail?: components["schemas"]["AmenityDetailSchema"] | null;
+        };
+        /**
+         * PhoneSchema
+         * @description Schema for phone number with optional label.
+         */
+        PhoneSchema: {
+            /** Number */
+            number: string;
+            /** Label */
+            label?: string | null;
+        };
+        /**
+         * WebsiteSchema
+         * @description Schema for website with optional label.
+         */
+        WebsiteSchema: {
+            /** Url */
+            url: string;
+            /** Label */
+            label?: string | null;
+        };
+        /**
+         * MediaUrlModeEnum
+         * @description Media URL mode for image fields.
+         * @enum {string}
+         */
+        MediaUrlModeEnum: "no" | "relative" | "absolute";
+        /**
+         * CategoryTreeSchema
+         * @description Hierarchical tree representation of categories.
+         */
+        CategoryTreeSchema: {
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Order */
+            order: number;
+            /** Level */
+            level: number;
+            /** Parent */
+            parent?: string | null;
+            /** Identifier */
+            identifier: string;
+            /** Color */
+            color: string;
+            /** Symbol Detailed */
+            symbol_detailed?: string | null;
+            /** Symbol Simple */
+            symbol_simple?: string | null;
+            /** Symbol Mono */
+            symbol_mono?: string | null;
+            /**
+             * Children
+             * @default false
+             */
+            children: components["schemas"]["CategoryTreeSchema"][] | boolean;
+        };
+        /**
+         * CategoryListItemSchema
+         * @description Simple category item for list view.
+         */
+        CategoryListItemSchema: {
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Order */
+            order: number;
+            /** Level */
+            level: number;
+            /** Parent */
+            parent?: string | null;
+            /** Identifier */
+            identifier: string;
+            /** Color */
+            color: string;
+            /** Children */
+            children: boolean;
+            /** Symbol Detailed */
+            symbol_detailed?: string | null;
+            /** Symbol Simple */
+            symbol_simple?: string | null;
+            /** Symbol Mono */
+            symbol_mono?: string | null;
+        };
+        /**
+         * CategoryMapSchema
+         * @description Category with children for map view.
+         */
+        CategoryMapSchema: {
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Order */
+            order: number;
+            /** Level */
+            level: number;
+            /** Parent */
+            parent?: string | null;
+            /** Identifier */
+            identifier: string;
+            /** Color */
+            color: string;
+            /** Children Count */
+            children_count: number;
+            /** Symbol Detailed */
+            symbol_detailed?: string | null;
+            /** Symbol Simple */
+            symbol_simple?: string | null;
+            /** Symbol Mono */
+            symbol_mono?: string | null;
+            /**
+             * Children
+             * @default {}
+             */
+            children: {
+                [key: string]: components["schemas"]["CategoryMapSchema"];
+            };
+        };
+        /**
+         * SymbolVariantEnum
+         * @description Symbol variant types for categories.
+         * @enum {string}
+         */
+        SymbolVariantEnum: "detailed" | "simple" | "mono";
+        /** HutBookingsQuery */
+        HutBookingsQuery: {
+            /**
+             * Slugs
+             * @description Comma separated list with slugs to use, per default all.
+             */
+            slugs?: string | null;
+            /**
+             * Days
+             * @description Show bookings for this many days.
+             * @default 1
+             */
+            days: number;
+            /**
+             * Date
+             * @description Date to start with bookings (yyyy-mm-dd, 'now' or 'weekend').
+             * @default now
+             */
+            date: string | ("now" | "weekend");
+            /**
+             * Request interval
+             * @description Time in seconds to wait between requests to the booking service for each hut. If not set uses recommanded default value.
+             */
+            request_interval?: number | null;
+        };
+        /** HutBookingSchema */
+        HutBookingSchema: {
+            /** Link */
+            link: string;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            reservation_status: components["schemas"]["ReservationStatusEnum"];
+            /** Free */
+            free: number;
+            /** Total */
+            total: number;
+            /** Occupancy Percent */
+            occupancy_percent: number;
+            /** Occupancy Steps */
+            occupancy_steps: number;
+            occupancy_status: components["schemas"]["OccupancyStatusEnum"];
+            /**
+             * Hut Type
+             * @default unknown
+             */
+            hut_type: string;
+        };
+        /** HutBookingsSchema */
+        HutBookingsSchema: {
+            /** Slug */
+            slug: string;
+            /** Hut Id */
+            hut_id: number;
+            /**
+             * Source Id
+             * @description External source organization's ID for this hut
+             */
+            source_id: string;
+            /**
+             * Source
+             * @description Source slug, e.g. hrs
+             */
+            source: string;
+            /** Days */
+            days: number;
+            /** Link */
+            link: string;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** Bookings */
+            bookings: components["schemas"]["HutBookingSchema"][];
+            location: components["schemas"]["LocationSchema"];
+        };
+        /**
+         * OccupancyStatusEnum
+         * @description Enum with with occuptation status.
+         * @enum {string}
+         */
+        OccupancyStatusEnum: "unknown" | "empty" | "low" | "medium" | "high" | "full";
+        /**
+         * ReservationStatusEnum
+         * @description Enum with reservation status.
+         * @enum {string}
+         */
+        ReservationStatusEnum: "unknown" | "possible" | "not_possible" | "not_online";
+        /** Feature[Point, HutBookingsProps] */
+        Feature_Point_HutBookingsProps_: {
+            /** Bbox */
+            bbox?: [
+                number,
+                number,
+                number,
+                number
+            ] | [
+                number,
+                number,
+                number,
+                number,
+                number,
+                number
+            ] | null;
+            /**
+             * Type
+             * @constant
+             */
+            type: "Feature";
+            geometry: components["schemas"]["Point"] | null;
+            properties: components["schemas"]["HutBookingsProps"] | null;
+            /** Id */
+            id?: number | string | null;
+        };
+        /** HutBookingsFeatureCollection */
+        HutBookingsFeatureCollection: {
+            /** Bbox */
+            bbox?: [
+                number,
+                number,
+                number,
+                number
+            ] | [
+                number,
+                number,
+                number,
+                number,
+                number,
+                number
+            ] | null;
+            /**
+             * Type
+             * @constant
+             */
+            type: "FeatureCollection";
+            /** Features */
+            features: components["schemas"]["Feature_Point_HutBookingsProps_"][];
+        };
+        /** HutBookingsProps */
+        HutBookingsProps: {
+            /** Slug */
+            slug: string;
+            /** Hut Id */
+            hut_id: number;
+            /**
+             * Source Id
+             * @description External source organization's ID for this hut
+             */
+            source_id: string;
+            /**
+             * Source
+             * @description Source slug, e.g. hrs
+             */
+            source: string;
+            /** Days */
+            days: number;
+            /** Link */
+            link: string;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** Bookings */
+            bookings: components["schemas"]["HutBookingSchema"][];
+        };
+        /**
+         * DatePathParam
+         * @description Path parameter for date.
+         */
+        DatePathParam: {
+            /**
+             * Date
+             * @description Start date. Accepts ISO dates (2026-01-15, 26-01-15), European format (15.01.2026), or keywords: 'now', 'today', 'weekend'.
+             */
+            date: string;
+        };
+        /**
+         * AvailabilityGeoJSONQuery
+         * @description Query parameters for GeoJSON availability endpoint.
+         */
+        AvailabilityGeoJSONQuery: {
+            /**
+             * Hut Slugs
+             * @description Comma-separated list of hut slugs to filter (e.g., 'aarbiwak,almageller'). If not set, returns all huts.
+             */
+            slugs?: string | null;
+            /**
+             * Days
+             * @description Number of days to fetch from start date.
+             * @default 1
+             */
+            days: number;
+            /**
+             * Offset
+             * @description Pagination offset for results.
+             * @default 0
+             */
+            offset: number;
+            /**
+             * Limit
+             * @description Maximum number of huts to return. If not set, returns all matching huts.
+             */
+            limit?: number | null;
+        };
+        /**
+         * AvailabilityDaySchema
+         * @description Single day's availability data for a hut.
+         */
+        AvailabilityDaySchema: {
+            /**
+             * Date
+             * Format: date
+             * @description Availability date
+             */
+            date: string;
+            /** @description Reservation status (unknown, possible, not_possible, not_online) */
+            reservation_status: components["schemas"]["ReservationStatusEnum"];
+            /**
+             * Free
+             * @description Number of free places
+             */
+            free: number;
+            /**
+             * Total
+             * @description Total number of places
+             */
+            total: number;
+            /**
+             * Occupancy Percent
+             * @description Occupancy percentage (0-100)
+             */
+            occupancy_percent: number;
+            /**
+             * Occupancy Steps
+             * @description Occupancy in discrete steps (0-100, increments of 10)
+             */
+            occupancy_steps: number;
+            /** @description Occupancy status (empty, low, medium, high, full, unknown) */
+            occupancy_status: components["schemas"]["OccupancyStatusEnum"];
+            /**
+             * Hut Type
+             * @description Hut type on this date (e.g., 'hut', 'bivouac')
+             * @default unknown
+             */
+            hut_type: string;
+            /**
+             * Type Slug
+             * @description Hut type slug (e.g., 'hut', 'bivouac')
+             */
+            type_slug?: string | null;
+            /**
+             * Type Identifier
+             * @description Hut type identifier symbol (emoji)
+             */
+            type_identifier?: string | null;
+            /**
+             * Type Color
+             * @description Hut type color as hex code
+             */
+            type_color?: string | null;
+            /**
+             * Type
+             * @description Either 'standard' or 'reduced' depending on which hut type applies
+             */
+            type?: string | null;
+        };
+        /** Feature[Point, HutAvailabilityPropertiesSchema] */
+        Feature_Point_HutAvailabilityPropertiesSchema_: {
+            /** Bbox */
+            bbox?: [
+                number,
+                number,
+                number,
+                number
+            ] | [
+                number,
+                number,
+                number,
+                number,
+                number,
+                number
+            ] | null;
+            /**
+             * Type
+             * @constant
+             */
+            type: "Feature";
+            geometry: components["schemas"]["Point"] | null;
+            properties: components["schemas"]["HutAvailabilityPropertiesSchema"] | null;
+            /** Id */
+            id?: number | string | null;
+        };
+        /**
+         * HutAvailabilityFeatureCollection
+         * @description GeoJSON FeatureCollection of hut availability data.
+         */
+        HutAvailabilityFeatureCollection: {
+            /** Bbox */
+            bbox?: [
+                number,
+                number,
+                number,
+                number
+            ] | [
+                number,
+                number,
+                number,
+                number,
+                number,
+                number
+            ] | null;
+            /**
+             * Type
+             * @constant
+             */
+            type: "FeatureCollection";
+            /** Features */
+            features: components["schemas"]["Feature_Point_HutAvailabilityPropertiesSchema_"][];
+        };
+        /**
+         * HutAvailabilityPropertiesSchema
+         * @description Properties for a hut availability GeoJSON feature.
+         */
+        HutAvailabilityPropertiesSchema: {
+            /**
+             * Slug
+             * @description Hut slug identifier
+             */
+            slug: string;
+            /**
+             * Id
+             * @description Hut database ID
+             */
+            id: number;
+            /**
+             * Source Id
+             * @description External source organization's ID for this hut
+             */
+            source_id: string;
+            /**
+             * Source
+             * @description Source organization slug (e.g., 'hrs', 'sac')
+             */
+            source: string;
+            /**
+             * Source Link
+             * @description External link to the hut page on the source website
+             */
+            source_link: string;
+            /**
+             * Days
+             * @description Number of days of availability data
+             */
+            days: number;
+            /**
+             * Start Date
+             * Format: date
+             * @description Start date of availability period
+             */
+            start_date: string;
+            /**
+             * Type Standard Slug
+             * @description Hut type slug in standard state (summer/fully open)
+             */
+            type_standard_slug?: string | null;
+            /**
+             * Type Standard Identifier
+             * @description Hut type identifier symbol in standard state
+             */
+            type_standard_identifier?: string | null;
+            /**
+             * Type Standard Color
+             * @description Hut type color as hex code in standard state
+             */
+            type_standard_color?: string | null;
+            /**
+             * Type Standard Order
+             * @description Hut type display order in standard state
+             */
+            type_standard_order?: number | null;
+            /**
+             * Type Reduced Slug
+             * @description Hut type slug in reduced state (winter/closed)
+             */
+            type_reduced_slug?: string | null;
+            /**
+             * Type Reduced Identifier
+             * @description Hut type identifier symbol in reduced state
+             */
+            type_reduced_identifier?: string | null;
+            /**
+             * Type Reduced Color
+             * @description Hut type color as hex code in reduced state
+             */
+            type_reduced_color?: string | null;
+            /**
+             * Type Reduced Order
+             * @description Hut type display order in reduced state
+             */
+            type_reduced_order?: number | null;
+            /**
+             * Data
+             * @description List of availability data for each day
+             */
+            data: components["schemas"]["AvailabilityDaySchema"][];
+        };
+        /**
+         * CurrentAvailabilityQuery
+         * @description Query parameters for current availability endpoint.
+         */
+        CurrentAvailabilityQuery: {
+            /**
+             * Days
+             * @description Number of days to fetch from start date.
+             * @default 1
+             */
+            days: number;
+        };
+        /**
+         * CurrentAvailabilityDaySchema
+         * @description Single day's current availability data with metadata.
+         */
+        CurrentAvailabilityDaySchema: {
+            /**
+             * Date
+             * Format: date
+             * @description Availability date
+             */
+            date: string;
+            /** @description Reservation status (unknown, possible, not_possible, not_online) */
+            reservation_status: components["schemas"]["ReservationStatusEnum"];
+            /**
+             * Free
+             * @description Number of free places
+             */
+            free: number;
+            /**
+             * Total
+             * @description Total number of places
+             */
+            total: number;
+            /**
+             * Occupancy Percent
+             * @description Occupancy percentage (0-100)
+             */
+            occupancy_percent: number;
+            /**
+             * Occupancy Steps
+             * @description Occupancy in discrete steps (0-100, increments of 10)
+             */
+            occupancy_steps: number;
+            /** @description Occupancy status (empty, low, medium, high, full, unknown) */
+            occupancy_status: components["schemas"]["OccupancyStatusEnum"];
+            /**
+             * Hut Type
+             * @description Hut type on this date (e.g., 'hut', 'bivouac')
+             * @default unknown
+             */
+            hut_type: string;
+            /**
+             * Type Slug
+             * @description Hut type slug (e.g., 'hut', 'bivouac')
+             */
+            type_slug?: string | null;
+            /**
+             * Type Identifier
+             * @description Hut type identifier symbol (emoji)
+             */
+            type_identifier?: string | null;
+            /**
+             * Type Color
+             * @description Hut type color as hex code
+             */
+            type_color?: string | null;
+            /**
+             * Type
+             * @description Either 'standard' or 'reduced' depending on which hut type applies
+             */
+            type?: string | null;
+            /**
+             * Link
+             * @description Booking link for this date
+             */
+            link: string;
+            /**
+             * First Checked
+             * Format: date-time
+             * @description When this availability was first recorded
+             */
+            first_checked: string;
+            /**
+             * Last Checked
+             * Format: date-time
+             * @description When this availability was last checked
+             */
+            last_checked: string;
+        };
+        /**
+         * CurrentAvailabilitySchema
+         * @description Current availability data for a specific hut.
+         */
+        CurrentAvailabilitySchema: {
+            /**
+             * Slug
+             * @description Hut slug identifier
+             */
+            slug: string;
+            /**
+             * Id
+             * @description Hut database ID
+             */
+            id: number;
+            /**
+             * Source Id
+             * @description External source organization's ID for this hut
+             */
+            source_id: string;
+            /**
+             * Source Link
+             * @description External source organization's link for this hut
+             */
+            source_link: string;
+            /**
+             * Source
+             * @description Source organization slug (e.g., 'hrs', 'sac')
+             */
+            source: string;
+            /**
+             * Days
+             * @description Number of days of availability data
+             */
+            days: number;
+            /**
+             * Start Date
+             * Format: date
+             * @description Start date of availability period
+             */
+            start_date: string;
+            /**
+             * Type Standard Slug
+             * @description Hut type slug in standard state (summer/fully open)
+             */
+            type_standard_slug?: string | null;
+            /**
+             * Type Standard Identifier
+             * @description Hut type identifier symbol in standard state
+             */
+            type_standard_identifier?: string | null;
+            /**
+             * Type Standard Color
+             * @description Hut type color as hex code in standard state
+             */
+            type_standard_color?: string | null;
+            /**
+             * Type Standard Order
+             * @description Hut type display order in standard state
+             */
+            type_standard_order?: number | null;
+            /**
+             * Type Reduced Slug
+             * @description Hut type slug in reduced state (winter/closed)
+             */
+            type_reduced_slug?: string | null;
+            /**
+             * Type Reduced Identifier
+             * @description Hut type identifier symbol in reduced state
+             */
+            type_reduced_identifier?: string | null;
+            /**
+             * Type Reduced Color
+             * @description Hut type color as hex code in reduced state
+             */
+            type_reduced_color?: string | null;
+            /**
+             * Type Reduced Order
+             * @description Hut type display order in reduced state
+             */
+            type_reduced_order?: number | null;
+            /**
+             * Data
+             * @description List of current availability data for each day
+             */
+            data: components["schemas"]["CurrentAvailabilityDaySchema"][];
+        };
+        /**
+         * DatePathParamTrend
+         * @description Path parameter for trend endpoint.
+         */
+        DatePathParamTrend: {
+            /**
+             * Date
+             * @description Target date to analyze. Accepts ISO dates (2026-01-15, 26-01-15), European format (15.01.2026), or keywords: 'now', 'today', 'weekend'.
+             */
+            date: string;
+        };
+        /**
+         * AvailabilityTrendQuery
+         * @description Query parameters for availability trend endpoint.
+         */
+        AvailabilityTrendQuery: {
+            /**
+             * Limit
+             * @description How many days back to show history from the target date.
+             * @default 7
+             */
+            limit: number;
+        };
+        /**
+         * AvailabilityTrendDaySchema
+         * @description Single historical availability data point.
+         */
+        AvailabilityTrendDaySchema: {
+            /**
+             * Date
+             * Format: date
+             * @description Availability date this data applies to
+             */
+            date: string;
+            /**
+             * Free
+             * @description Number of free places
+             */
+            free: number;
+            /**
+             * Total
+             * @description Total number of places
+             */
+            total: number;
+            /**
+             * Occupancy Percent
+             * @description Occupancy percentage (0-100)
+             */
+            occupancy_percent: number;
+            /** @description Occupancy status (empty, low, medium, high, full, unknown) */
+            occupancy_status: components["schemas"]["OccupancyStatusEnum"];
+            /** @description Reservation status (unknown, possible, not_possible, not_online) */
+            reservation_status: components["schemas"]["ReservationStatusEnum"];
+            /**
+             * Hut Type
+             * @description Hut type on this date (e.g., 'hut', 'bivouac')
+             * @default unknown
+             */
+            hut_type: string;
+            /**
+             * First Checked
+             * Format: date-time
+             * @description When this state was first observed
+             */
+            first_checked: string;
+            /**
+             * Last Checked
+             * Format: date-time
+             * @description When this state was last confirmed
+             */
+            last_checked: string;
+        };
+        /**
+         * AvailabilityTrendSchema
+         * @description Historical availability trend data for a specific hut and date.
+         */
+        AvailabilityTrendSchema: {
+            /**
+             * Slug
+             * @description Hut slug identifier
+             */
+            slug: string;
+            /**
+             * Id
+             * @description Hut database ID
+             */
+            id: number;
+            /**
+             * Target Date
+             * Format: date
+             * @description The date for which trend data is shown
+             */
+            target_date: string;
+            /**
+             * Period Start
+             * Format: date
+             * @description Start of the trend period (target_date - limit days)
+             */
+            period_start: string;
+            /**
+             * Period End
+             * Format: date
+             * @description End of the trend period (target_date)
+             */
+            period_end: string;
+            /**
+             * Data
+             * @description Historical availability changes, ordered by first_checked (newest first)
+             */
+            data: components["schemas"]["AvailabilityTrendDaySchema"][];
+        };
+        /**
+         * CapacitySimpleSchema
+         * @description Simplified capacity schema for search results.
+         */
+        CapacitySimpleSchema: {
+            /** Open */
+            open?: number | null;
+            /** Closed */
+            closed?: number | null;
+        };
+        /**
+         * HutSearchResultSchema
+         * @description Simplified schema for hut search results - optimized for fast autocomplete.
+         */
+        HutSearchResultSchema: {
+            /** Name */
+            name: string;
+            /** Slug */
+            slug: string;
+            /** Hut Type */
+            hut_type?: unknown;
+            capacity: components["schemas"]["CapacitySimpleSchema"];
+            location: components["schemas"]["LocationSchema"];
+            /** Elevation */
+            elevation?: number | null;
+            /** Avatar */
+            avatar?: string | null;
+            /** Score */
+            score: number;
+            /** Sources */
+            sources?: unknown;
+        };
+        /**
+         * TristateEnum
+         * @description Tristate enum with `true`, `false` and `unset`.
+         * @enum {string}
+         */
+        TristateEnum: "true" | "false" | "unset";
+        /**
+         * AnswerEnum
+         * @description Anser enum.
+         *
+         *     'yesish' and 'noish' means it is likely to be 'yes' or 'no'.
+         *     'maybe' means is is either 'yes' or 'no'.
+         * @enum {string}
+         */
+        AnswerEnum: "yes" | "yesish" | "maybe" | "noish" | "no" | "unknown";
+        CountryTuple: [
+            string,
+            string
+        ];
+        /**
+         * HutSchemaList
+         * @description Schema for hut list endpoints (without created/modified timestamps).
+         */
+        HutSchemaList: {
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Description Attribution */
+            description_attribution: string;
+            owner: components["schemas"]["OwnerSchema"] | null;
+            /** Review Status */
+            review_status?: string | null;
+            /** Is Public */
+            is_public?: boolean | null;
+            /** Is Active */
+            is_active?: boolean | null;
+            /** Is Modified */
+            is_modified?: boolean | null;
+            type_open?: components["schemas"]["HutTypeSchema"] | null;
+            type_closed?: components["schemas"]["HutTypeSchema"] | null;
+            /** Elevation */
+            elevation?: number | null;
+            location?: components["schemas"]["LocationSchema"] | null;
+            /** Url */
+            url?: string | null;
+            country?: components["schemas"]["CountryTuple"] | null;
+            /** Capacity Open */
+            capacity_open?: number | null;
+            /** Capacity Closed */
+            capacity_closed?: number | null;
+            /** Sources */
+            sources: components["schemas"]["OrganizationBaseSchema"][] | null;
+            /**
+             * Photos
+             * @default
+             */
+            photos: string;
+            /**
+             * Photos Attribution
+             * @default
+             */
+            photos_attribution: string;
+            /** Images */
+            images: components["schemas"]["ImageInfoSchema"][] | null;
+            open_monthly?: components["schemas"]["OpenMonthlySchema"] | null;
+            /** Has Availability */
+            has_availability?: boolean | null;
+            /** Availability Source */
+            availability_source?: string | null;
+        };
+        /** HutTypeSchema */
+        HutTypeSchema: {
+            /** Order */
+            order?: number | null;
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string | null;
+            /** Symbol */
+            symbol?: {
+                [key: string]: string | null;
+            } | null;
+        };
+        /** ImageInfoSchema */
+        ImageInfoSchema: {
+            /** Image */
+            image: string;
+            image_meta: components["schemas"]["ImageMetaSchema"];
+            license: components["schemas"]["LicenseInfoSchema"];
+            /** Author */
+            author?: string | null;
+            /** Caption */
+            caption?: string | null;
+            /** Author Url */
+            author_url?: string | null;
+            /** Source Url */
+            source_url?: string | null;
+            organization?: components["schemas"]["OrganizationImageSchema"] | null;
+            /** Attribution */
+            attribution?: string | null;
+            /**
+             * Urls
+             * @description Return the image URL with the transformations applied.
+             */
+            readonly urls: {
+                [key: string]: string;
+            };
+        };
+        /** ImageMetaAreaSchema */
+        ImageMetaAreaSchema: {
+            /** X1 */
+            x1: number;
+            /** X2 */
+            x2: number;
+            /** Y1 */
+            y1: number;
+            /** Y2 */
+            y2: number;
+        };
+        /** ImageMetaSchema */
+        ImageMetaSchema: {
+            crop?: components["schemas"]["ImageMetaAreaSchema"] | null;
+            focal?: components["schemas"]["ImageMetaAreaSchema"] | null;
+            /** Width */
+            width?: number | null;
+            /** Height */
+            height?: number | null;
+        };
+        /**
+         * LicenseInfoSchema
+         * @description Important information, for example for an image
+         */
+        LicenseInfoSchema: {
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string | null;
+            /** Fullname */
+            fullname: string | null;
+            /** Description */
+            description?: string | null;
+            /** Link */
+            link?: string | null;
+        };
+        /**
+         * OpenMonthlySchema
+         * @description Shows for every month if it is usally, open, partially open or closed.
+         *     Can be accessed as index, but it starts with 1 (month_01)!.
+         *
+         *     Attributes:
+         *         url: URL which shows if it is open or not.
+         *         month_mm (OpenMonthly): Month (starting with 01).
+         */
+        OpenMonthlySchema: {
+            /**
+             * Url
+             * @description URL which shows if it is open or not.
+             * @default
+             */
+            url: string;
+            /** @default unknown */
+            month_01: components["schemas"]["AnswerEnum"];
+            /** @default unknown */
+            month_02: components["schemas"]["AnswerEnum"];
+            /** @default unknown */
+            month_03: components["schemas"]["AnswerEnum"];
+            /** @default unknown */
+            month_04: components["schemas"]["AnswerEnum"];
+            /** @default unknown */
+            month_05: components["schemas"]["AnswerEnum"];
+            /** @default unknown */
+            month_06: components["schemas"]["AnswerEnum"];
+            /** @default unknown */
+            month_07: components["schemas"]["AnswerEnum"];
+            /** @default unknown */
+            month_08: components["schemas"]["AnswerEnum"];
+            /** @default unknown */
+            month_09: components["schemas"]["AnswerEnum"];
+            /** @default unknown */
+            month_10: components["schemas"]["AnswerEnum"];
+            /** @default unknown */
+            month_11: components["schemas"]["AnswerEnum"];
+            /** @default unknown */
+            month_12: components["schemas"]["AnswerEnum"];
+        } & {
             [key: string]: unknown;
-          }
-        | components['schemas']['BaseModel']
-        | null;
-      /** Id */
-      id?: number | string | null;
+        };
+        /** OrganizationBaseSchema */
+        OrganizationBaseSchema: {
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string;
+            /** Fullname */
+            fullname: string;
+            /** Link */
+            link: string;
+            /** Logo */
+            logo: string;
+            /** Public */
+            public: boolean;
+            /** Source Id */
+            source_id: string;
+        };
+        /** OrganizationImageSchema */
+        OrganizationImageSchema: {
+            /** Slug */
+            slug: string | null;
+            /** Name */
+            name: string | null;
+            /** Fullname */
+            fullname: string | null;
+            /** Link */
+            link: string | null;
+            /** Logo */
+            logo: string | null;
+        };
+        /** OwnerSchema */
+        OwnerSchema: {
+            /** Name */
+            name: string | null;
+            /** Slug */
+            slug: string;
+            /**
+             * Adresse (URL)
+             * @default
+             */
+            url: string | null;
+        };
+        /** BaseModel */
+        BaseModel: Record<string, never>;
+        /**
+         * Feature
+         * @description Feature Model
+         */
+        Feature: {
+            /** Bbox */
+            bbox?: [
+                number,
+                number,
+                number,
+                number
+            ] | [
+                number,
+                number,
+                number,
+                number,
+                number,
+                number
+            ] | null;
+            /**
+             * Type
+             * @constant
+             */
+            type: "Feature";
+            /** Geometry */
+            geometry: (components["schemas"]["Point"] | components["schemas"]["MultiPoint"] | components["schemas"]["LineString"] | components["schemas"]["MultiLineString"] | components["schemas"]["Polygon"] | components["schemas"]["MultiPolygon"] | components["schemas"]["GeometryCollection"]) | null;
+            /** Properties */
+            properties: {
+                [key: string]: unknown;
+            } | components["schemas"]["BaseModel"] | null;
+            /** Id */
+            id?: number | string | null;
+        };
+        /**
+         * FeatureCollection
+         * @description FeatureCollection Model
+         */
+        FeatureCollection: {
+            /** Bbox */
+            bbox?: [
+                number,
+                number,
+                number,
+                number
+            ] | [
+                number,
+                number,
+                number,
+                number,
+                number,
+                number
+            ] | null;
+            /**
+             * Type
+             * @constant
+             */
+            type: "FeatureCollection";
+            /** Features */
+            features: components["schemas"]["Feature"][];
+        };
+        /**
+         * GeometryCollection
+         * @description GeometryCollection Model
+         */
+        GeometryCollection: {
+            /** Bbox */
+            bbox?: [
+                number,
+                number,
+                number,
+                number
+            ] | [
+                number,
+                number,
+                number,
+                number,
+                number,
+                number
+            ] | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "GeometryCollection";
+            /** Geometries */
+            geometries: (components["schemas"]["Point"] | components["schemas"]["MultiPoint"] | components["schemas"]["LineString"] | components["schemas"]["MultiLineString"] | components["schemas"]["Polygon"] | components["schemas"]["MultiPolygon"] | components["schemas"]["GeometryCollection"])[];
+        };
+        /**
+         * LineString
+         * @description LineString Model
+         */
+        LineString: {
+            /** Bbox */
+            bbox?: [
+                number,
+                number,
+                number,
+                number
+            ] | [
+                number,
+                number,
+                number,
+                number,
+                number,
+                number
+            ] | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "LineString";
+            /** Coordinates */
+            coordinates: (components["schemas"]["Position2D"] | components["schemas"]["Position3D"])[];
+        };
+        /**
+         * MultiLineString
+         * @description MultiLineString Model
+         */
+        MultiLineString: {
+            /** Bbox */
+            bbox?: [
+                number,
+                number,
+                number,
+                number
+            ] | [
+                number,
+                number,
+                number,
+                number,
+                number,
+                number
+            ] | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "MultiLineString";
+            /** Coordinates */
+            coordinates: (components["schemas"]["Position2D"] | components["schemas"]["Position3D"])[][];
+        };
+        /**
+         * MultiPoint
+         * @description MultiPoint Model
+         */
+        MultiPoint: {
+            /** Bbox */
+            bbox?: [
+                number,
+                number,
+                number,
+                number
+            ] | [
+                number,
+                number,
+                number,
+                number,
+                number,
+                number
+            ] | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "MultiPoint";
+            /** Coordinates */
+            coordinates: (components["schemas"]["Position2D"] | components["schemas"]["Position3D"])[];
+        };
+        /**
+         * MultiPolygon
+         * @description MultiPolygon Model
+         */
+        MultiPolygon: {
+            /** Bbox */
+            bbox?: [
+                number,
+                number,
+                number,
+                number
+            ] | [
+                number,
+                number,
+                number,
+                number,
+                number,
+                number
+            ] | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "MultiPolygon";
+            /** Coordinates */
+            coordinates: (components["schemas"]["Position2D"] | components["schemas"]["Position3D"])[][][];
+        };
+        /**
+         * Polygon
+         * @description Polygon Model
+         */
+        Polygon: {
+            /** Bbox */
+            bbox?: [
+                number,
+                number,
+                number,
+                number
+            ] | [
+                number,
+                number,
+                number,
+                number,
+                number,
+                number
+            ] | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "Polygon";
+            /** Coordinates */
+            coordinates: (components["schemas"]["Position2D"] | components["schemas"]["Position3D"])[][];
+        };
+        /** FieldsParam[HutSchemaDetails] */
+        FieldsParam_HutSchemaDetails_: {
+            /**
+             * Include
+             * @description Comma separated list with field names, use `__all__` in order to include every field.
+             */
+            include?: unknown;
+            /**
+             * Exclude
+             * @description Comma separated list with field names, if set it uses all fields except the excluded ones.
+             */
+            exclude?: unknown;
+        };
+        /**
+         * HutSchemaDetails
+         * @description Schema for single hut detail endpoint (with all details including timestamps).
+         */
+        HutSchemaDetails: {
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Description Attribution */
+            description_attribution: string;
+            owner: components["schemas"]["OwnerSchema"] | null;
+            /** Review Status */
+            review_status?: string | null;
+            /** Is Public */
+            is_public?: boolean | null;
+            /** Is Active */
+            is_active?: boolean | null;
+            /** Is Modified */
+            is_modified?: boolean | null;
+            type_open?: components["schemas"]["HutTypeSchema"] | null;
+            type_closed?: components["schemas"]["HutTypeSchema"] | null;
+            /** Elevation */
+            elevation?: number | null;
+            location?: components["schemas"]["LocationSchema"] | null;
+            /** Url */
+            url?: string | null;
+            country?: components["schemas"]["CountryTuple"] | null;
+            /** Capacity Open */
+            capacity_open?: number | null;
+            /** Capacity Closed */
+            capacity_closed?: number | null;
+            /** Sources */
+            sources: components["schemas"]["OrganizationBaseSchema"][] | null;
+            /**
+             * Photos
+             * @default
+             */
+            photos: string;
+            /**
+             * Photos Attribution
+             * @default
+             */
+            photos_attribution: string;
+            /** Images */
+            images: components["schemas"]["ImageInfoSchema"][] | null;
+            open_monthly?: components["schemas"]["OpenMonthlySchema"] | null;
+            /** Has Availability */
+            has_availability?: boolean | null;
+            /** Availability Source */
+            availability_source?: string | null;
+            /** Edit Link */
+            edit_link?: string | null;
+            /** Translations */
+            translations?: unknown | null;
+            /** Created */
+            created?: string | null;
+            /** Modified */
+            modified?: string | null;
+        };
+        /**
+         * DayTimeEnum
+         * @description Day/night time options.
+         * @enum {string}
+         */
+        DayTimeEnum: "day" | "night";
+        /** FieldsParam[OrganizationOptional] */
+        FieldsParam_OrganizationOptional_: {
+            /**
+             * Include
+             * @description Comma separated list with field names, use `__all__` in order to include every field.
+             */
+            include?: unknown;
+            /**
+             * Exclude
+             * @description Comma separated list with field names, if set it uses all fields except the excluded ones.
+             */
+            exclude?: unknown;
+        };
+        /** OrganizationOptional */
+        OrganizationOptional: {
+            /** Name */
+            name: string | null;
+            /** Fullname */
+            fullname?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Attribution */
+            attribution?: string | null;
+            /** Url */
+            url?: string | null;
+            /** Config */
+            config?: {
+                [key: string]: unknown;
+            } | null;
+            /** Props Schema */
+            props_schema?: {
+                [key: string]: unknown;
+            } | null;
+            /** Order */
+            order?: number | null;
+            /** Slug */
+            slug?: string | null;
+            /**
+             * Link patten to object
+             * @description Link pattern to corresponding object. Variables to use: {{id}}, {{lang}}, {{props}}, {{config}}.)
+             */
+            link_hut_pattern?: string | null;
+            /**
+             * Logo
+             * @description Organiztion logo as image
+             * @default organizations/logos/missing.png
+             */
+            logo: string | null;
+            /**
+             * Aktiv
+             * @default true
+             */
+            is_active: boolean | null;
+            /**
+             * Public
+             * @default false
+             */
+            is_public: boolean | null;
+            /**
+             * Light Color
+             * @description light theme color as hex number with #
+             * @default #4B8E43
+             */
+            color_light: string | null;
+            /**
+             * Dark Color
+             * @description dark theme color as hex number with #
+             * @default #61B958
+             */
+            color_dark: string | null;
+        };
+        /** FieldsParam[SymbolOptional] */
+        FieldsParam_SymbolOptional_: {
+            /**
+             * Include
+             * @description Comma separated list with field names, use `__all__` in order to include every field.
+             */
+            include?: unknown;
+            /**
+             * Exclude
+             * @description Comma separated list with field names, if set it uses all fields except the excluded ones.
+             */
+            exclude?: unknown;
+        };
+        /**
+         * SymbolOptional
+         * @description Schema for Symbol model with all fields optional.
+         */
+        SymbolOptional: {
+            /** Id */
+            id?: string | null;
+            /**
+             * Slug
+             * @description Symbol identifier (e.g., 'water', 'mountain')
+             */
+            slug?: string | null;
+            /**
+             * Style
+             * @description Symbol style variant
+             * @default detailed
+             */
+            style: string | null;
+            /**
+             * SVG File
+             * @description SVG file for this symbol
+             */
+            svg_file?: string | null;
+            /**
+             * Search Text
+             * @description Keywords for admin search (e.g., 'water, river, lake, blue')
+             */
+            search_text?: string | null;
+            /** License */
+            license?: number | null;
+            /**
+             * Author
+             * @default
+             */
+            author: string | null;
+            /**
+             * Author URL
+             * @default
+             */
+            author_url: string | null;
+            /**
+             * Source URL
+             * @default
+             */
+            source_url: string | null;
+            /** Source Organization */
+            source_org?: number | null;
+            /**
+             * Aktiv
+             * @description Only shown to admin if not active
+             * @default true
+             */
+            is_active: boolean | null;
+        };
+        /** ResponseSchema */
+        ResponseSchema: {
+            /** Message */
+            message: string;
+            /** Id */
+            id: number;
+        };
+        /** FeedbackCreate */
+        FeedbackCreate: {
+            /** Urls */
+            urls?: string[] | null;
+            /** Email */
+            email: string;
+            /** Subject */
+            subject: string;
+            /** Message */
+            message: string;
+            /** Get Updates */
+            get_updates: boolean;
+        };
+        /** VersionSchema */
+        VersionSchema: {
+            /**
+             * Hash
+             * @description Git commit short hash
+             * @example abc123e
+             */
+            hash: string;
+            /**
+             * Hash Long
+             * @description Git commit full hash
+             * @example abc123ef4567890abcdef1234567890abcdef12
+             */
+            hash_long: string;
+            /**
+             * Version
+             * @description Sematic version
+             * @example 1.2.0
+             */
+            version: string;
+            /**
+             * Timestamp
+             * Format: date-time
+             * @description Build timestamp
+             */
+            timestamp: string;
+            /**
+             * Environment
+             * @description Current environment (development, production)
+             * @example production
+             */
+            environment: string;
+        };
     };
-    /**
-     * FeatureCollection
-     * @description FeatureCollection Model
-     */
-    FeatureCollection: {
-      /** Bbox */
-      bbox?:
-        | [number, number, number, number]
-        | [number, number, number, number, number, number]
-        | null;
-      /**
-       * Type
-       * @constant
-       */
-      type: 'FeatureCollection';
-      /** Features */
-      features: components['schemas']['Feature'][];
-    };
-    /**
-     * GeometryCollection
-     * @description GeometryCollection Model
-     */
-    GeometryCollection: {
-      /** Bbox */
-      bbox?:
-        | [number, number, number, number]
-        | [number, number, number, number, number, number]
-        | null;
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      type: 'GeometryCollection';
-      /** Geometries */
-      geometries: (
-        | components['schemas']['Point']
-        | components['schemas']['MultiPoint']
-        | components['schemas']['LineString']
-        | components['schemas']['MultiLineString']
-        | components['schemas']['Polygon']
-        | components['schemas']['MultiPolygon']
-        | components['schemas']['GeometryCollection']
-      )[];
-    };
-    /**
-     * LineString
-     * @description LineString Model
-     */
-    LineString: {
-      /** Bbox */
-      bbox?:
-        | [number, number, number, number]
-        | [number, number, number, number, number, number]
-        | null;
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      type: 'LineString';
-      /** Coordinates */
-      coordinates: (
-        | components['schemas']['Position2D']
-        | components['schemas']['Position3D']
-      )[];
-    };
-    /**
-     * MultiLineString
-     * @description MultiLineString Model
-     */
-    MultiLineString: {
-      /** Bbox */
-      bbox?:
-        | [number, number, number, number]
-        | [number, number, number, number, number, number]
-        | null;
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      type: 'MultiLineString';
-      /** Coordinates */
-      coordinates: (
-        | components['schemas']['Position2D']
-        | components['schemas']['Position3D']
-      )[][];
-    };
-    /**
-     * MultiPoint
-     * @description MultiPoint Model
-     */
-    MultiPoint: {
-      /** Bbox */
-      bbox?:
-        | [number, number, number, number]
-        | [number, number, number, number, number, number]
-        | null;
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      type: 'MultiPoint';
-      /** Coordinates */
-      coordinates: (
-        | components['schemas']['Position2D']
-        | components['schemas']['Position3D']
-      )[];
-    };
-    /**
-     * MultiPolygon
-     * @description MultiPolygon Model
-     */
-    MultiPolygon: {
-      /** Bbox */
-      bbox?:
-        | [number, number, number, number]
-        | [number, number, number, number, number, number]
-        | null;
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      type: 'MultiPolygon';
-      /** Coordinates */
-      coordinates: (
-        | components['schemas']['Position2D']
-        | components['schemas']['Position3D']
-      )[][][];
-    };
-    /**
-     * Polygon
-     * @description Polygon Model
-     */
-    Polygon: {
-      /** Bbox */
-      bbox?:
-        | [number, number, number, number]
-        | [number, number, number, number, number, number]
-        | null;
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      type: 'Polygon';
-      /** Coordinates */
-      coordinates: (
-        | components['schemas']['Position2D']
-        | components['schemas']['Position3D']
-      )[][];
-    };
-    /** FieldsParam[HutSchemaDetails] */
-    FieldsParam_HutSchemaDetails_: {
-      /**
-       * Include
-       * @description Comma separated list with field names, use `__all__` in order to include every field.
-       */
-      include?: unknown;
-      /**
-       * Exclude
-       * @description Comma separated list with field names, if set it uses all fields except the excluded ones.
-       */
-      exclude?: unknown;
-    };
-    /**
-     * HutSchemaDetails
-     * @description Schema for single hut detail endpoint (with all details including timestamps).
-     */
-    HutSchemaDetails: {
-      /** Slug */
-      slug: string;
-      /** Name */
-      name: string | null;
-      /** Description */
-      description: string | null;
-      /** Description Attribution */
-      description_attribution: string;
-      owner: components['schemas']['OwnerSchema'] | null;
-      /** Review Status */
-      review_status?: string | null;
-      /** Is Public */
-      is_public?: boolean | null;
-      /** Is Active */
-      is_active?: boolean | null;
-      /** Is Modified */
-      is_modified?: boolean | null;
-      type_open?: components['schemas']['HutTypeSchema'] | null;
-      type_closed?: components['schemas']['HutTypeSchema'] | null;
-      /** Elevation */
-      elevation?: number | null;
-      location?: components['schemas']['LocationSchema'] | null;
-      /** Url */
-      url?: string | null;
-      country?: components['schemas']['CountryTuple'] | null;
-      /** Capacity Open */
-      capacity_open?: number | null;
-      /** Capacity Closed */
-      capacity_closed?: number | null;
-      /** Sources */
-      sources: components['schemas']['OrganizationBaseSchema'][] | null;
-      /**
-       * Photos
-       * @default
-       */
-      photos: string;
-      /**
-       * Photos Attribution
-       * @default
-       */
-      photos_attribution: string;
-      /** Images */
-      images: components['schemas']['ImageInfoSchema'][] | null;
-      open_monthly?: components['schemas']['OpenMonthlySchema'] | null;
-      /** Has Availability */
-      has_availability?: boolean | null;
-      /** Availability Source */
-      availability_source?: string | null;
-      /** Edit Link */
-      edit_link?: string | null;
-      /** Translations */
-      translations?: unknown | null;
-      /** Created */
-      created?: string | null;
-      /** Modified */
-      modified?: string | null;
-    };
-    /**
-     * DayTimeEnum
-     * @description Day/night time options.
-     * @enum {string}
-     */
-    DayTimeEnum: 'day' | 'night';
-    /** FieldsParam[OrganizationOptional] */
-    FieldsParam_OrganizationOptional_: {
-      /**
-       * Include
-       * @description Comma separated list with field names, use `__all__` in order to include every field.
-       */
-      include?: unknown;
-      /**
-       * Exclude
-       * @description Comma separated list with field names, if set it uses all fields except the excluded ones.
-       */
-      exclude?: unknown;
-    };
-    /** OrganizationOptional */
-    OrganizationOptional: {
-      /** Name */
-      name: string | null;
-      /** Fullname */
-      fullname?: string | null;
-      /** Description */
-      description?: string | null;
-      /** Attribution */
-      attribution?: string | null;
-      /** Url */
-      url?: string | null;
-      /** Config */
-      config?: {
-        [key: string]: unknown;
-      } | null;
-      /** Props Schema */
-      props_schema?: {
-        [key: string]: unknown;
-      } | null;
-      /** Order */
-      order?: number | null;
-      /** Slug */
-      slug?: string | null;
-      /**
-       * Link patten to object
-       * @description Link pattern to corresponding object. Variables to use: {{id}}, {{lang}}, {{props}}, {{config}}.)
-       */
-      link_hut_pattern?: string | null;
-      /**
-       * Logo
-       * @description Organiztion logo as image
-       * @default organizations/logos/missing.png
-       */
-      logo: string | null;
-      /**
-       * Aktiv
-       * @default true
-       */
-      is_active: boolean | null;
-      /**
-       * Public
-       * @default false
-       */
-      is_public: boolean | null;
-      /**
-       * Light Color
-       * @description light theme color as hex number with #
-       * @default #4B8E43
-       */
-      color_light: string | null;
-      /**
-       * Dark Color
-       * @description dark theme color as hex number with #
-       * @default #61B958
-       */
-      color_dark: string | null;
-    };
-    /** FieldsParam[SymbolOptional] */
-    FieldsParam_SymbolOptional_: {
-      /**
-       * Include
-       * @description Comma separated list with field names, use `__all__` in order to include every field.
-       */
-      include?: unknown;
-      /**
-       * Exclude
-       * @description Comma separated list with field names, if set it uses all fields except the excluded ones.
-       */
-      exclude?: unknown;
-    };
-    /**
-     * SymbolOptional
-     * @description Schema for Symbol model with all fields optional.
-     */
-    SymbolOptional: {
-      /** Id */
-      id?: string | null;
-      /**
-       * Slug
-       * @description Symbol identifier (e.g., 'water', 'mountain')
-       */
-      slug?: string | null;
-      /**
-       * Style
-       * @description Symbol style variant
-       * @default detailed
-       */
-      style: string | null;
-      /**
-       * SVG File
-       * @description SVG file for this symbol
-       */
-      svg_file?: string | null;
-      /**
-       * Search Text
-       * @description Keywords for admin search (e.g., 'water, river, lake, blue')
-       */
-      search_text?: string | null;
-      /** License */
-      license?: number | null;
-      /**
-       * Author
-       * @default
-       */
-      author: string | null;
-      /**
-       * Author URL
-       * @default
-       */
-      author_url: string | null;
-      /**
-       * Source URL
-       * @default
-       */
-      source_url: string | null;
-      /** Source Organization */
-      source_org?: number | null;
-      /**
-       * Aktiv
-       * @description Only shown to admin if not active
-       * @default true
-       */
-      is_active: boolean | null;
-    };
-    /** ResponseSchema */
-    ResponseSchema: {
-      /** Message */
-      message: string;
-      /** Id */
-      id: number;
-    };
-    /** FeedbackCreate */
-    FeedbackCreate: {
-      /** Urls */
-      urls?: string[] | null;
-      /** Email */
-      email: string;
-      /** Subject */
-      subject: string;
-      /** Message */
-      message: string;
-      /** Get Updates */
-      get_updates: boolean;
-    };
-    /** VersionSchema */
-    VersionSchema: {
-      /**
-       * Hash
-       * @description Git commit short hash
-       * @example abc123e
-       */
-      hash: string;
-      /**
-       * Hash Long
-       * @description Git commit full hash
-       * @example abc123ef4567890abcdef1234567890abcdef12
-       */
-      hash_long: string;
-      /**
-       * Version
-       * @description Sematic version
-       * @example 1.2.0
-       */
-      version: string;
-      /**
-       * Timestamp
-       * Format: date-time
-       * @description Build timestamp
-       */
-      timestamp: string;
-      /**
-       * Environment
-       * @description Current environment (development, production)
-       * @example production
-       */
-      environment: string;
-    };
-  };
-  responses: never;
-  parameters: never;
-  requestBodies: never;
-  headers: never;
-  pathItems: never;
+    responses: never;
+    parameters: never;
+    requestBodies: never;
+    headers: never;
+    pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-  search_geoplaces: {
-    parameters: {
-      query: {
-        /** @description Select language code: de, en, fr, it. */
-        lang?: string;
-        /**
-         * @description Search query string to match against place names in all languages
-         * @example Matterhorn
-         */
-        q: string;
-        /** @description Maximum number of results to return */
-        limit?: number;
-        /** @description Number of results to skip for pagination */
-        offset?: number;
-        /** @description Filter by place type slugs (e.g., 'peak', 'pass', 'lake'). Use 'parent.child' format for child categories. */
-        types?: string[] | null;
-        /** @description Filter by parent category slugs (e.g., 'terrain', 'transport') */
-        categories?: string[] | null;
-        /** @description Filter by country codes (e.g., 'CH', 'FR', 'IT') */
-        countries?: string[] | null;
-        /** @description Minimum similarity score (0.0-1.0). Lower values return more results but with lower relevance. Recommended: 0.1 for fuzzy matching, 0.3 for stricter matching. */
-        threshold?: number;
-        /** @description Minimum importance score (0-100). Higher values filter for more prominent places. */
-        min_importance?: number;
-        /** @description Remove near-identical places that share a name and a very close location before pagination. */
-        deduplicate?: boolean;
-        /** @description Include place type information: 'no' excludes field, 'slug' returns type slug only, 'all' returns full type details with name and description */
-        include_place_type?: 'no' | 'slug' | 'all';
-        /** @description Include data sources: 'no' excludes field, 'slug' returns source slugs only, 'all' returns full source details with name and logo */
-        include_sources?: 'no' | 'slug' | 'all';
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['GeoPlaceSearchSchema'][];
-        };
-      };
-    };
-  };
-  nearby_geoplaces: {
-    parameters: {
-      query: {
-        /** @description Select language code: de, en, fr, it. */
-        lang?: string;
-        /**
-         * @description Latitude coordinate
-         * @example 46.0342
-         */
-        lat: number;
-        /**
-         * @description Longitude coordinate
-         * @example 7.6488
-         */
-        lon: number;
-        /** @description Search radius in meters (default: 10000 = 10km) */
-        radius?: number;
-        /** @description Maximum number of results */
-        limit?: number;
-        /** @description Number of results to skip for pagination */
-        offset?: number;
-        /** @description Filter by place type slugs (e.g., 'peak', 'pass'). Use 'parent.child' format for child categories. */
-        types?: string[] | null;
-        /** @description Filter by parent category slugs */
-        categories?: string[] | null;
-        /** @description Minimum importance score (0-100) */
-        min_importance?: number;
-        /** @description Include place type information: 'no' excludes field, 'slug' returns type slug only, 'all' returns full type details with name and description */
-        include_place_type?: 'no' | 'slug' | 'all';
-        /** @description Include data sources: 'no' excludes field, 'slug' returns source slugs only, 'all' returns full source details with name and logo */
-        include_sources?: 'no' | 'slug' | 'all';
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['GeoPlaceNearbySchema'][];
-        };
-      };
-    };
-  };
-  get_category_tree: {
-    parameters: {
-      query?: {
-        /** @description Select language code: de, en, fr, it. */
-        lang?: string;
-        /** @description Maximum depth level relative to request slug, for the last level children are set to a boolean */
-        level?: number | null;
-        /** @description Only include active categories */
-        is_active?: boolean;
-        /** @description How to return media URLs: 'no' (exclude), 'relative' (relative paths), 'absolute' (full URLs) */
-        media_mode?: 'no' | 'relative' | 'absolute';
-      };
-      header?: never;
-      path: {
-        parent_slug: string | 'root';
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['CategoryTreeSchema'][];
-        };
-      };
-    };
-  };
-  get_category_list_all: {
-    parameters: {
-      query?: {
-        /** @description Select language code: de, en, fr, it. */
-        lang?: string;
-        /** @description Maximum depth level relative to request slug */
-        level?: number | null;
-        /** @description Only include active categories */
-        is_active?: boolean;
-        /** @description How to return media URLs: 'no' (exclude), 'relative' (relative paths), 'absolute' (full URLs) */
-        media_mode?: 'no' | 'relative' | 'absolute';
-      };
-      header?: never;
-      path: {
-        parent_slug: string | 'root';
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['CategoryListItemSchema'][];
-        };
-      };
-    };
-  };
-  get_category_map_all: {
-    parameters: {
-      query?: {
-        /** @description Select language code: de, en, fr, it. */
-        lang?: string;
-        /** @description Maximum depth level relative to request slug */
-        level?: number | null;
-        /** @description Only include active categories */
-        is_active?: boolean;
-        /** @description How to return media URLs: 'no' (exclude), 'relative' (relative paths), 'absolute' (full URLs) */
-        media_mode?: 'no' | 'relative' | 'absolute';
-      };
-      header?: never;
-      path: {
-        parent_slug: string | 'root';
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': {
-            [key: string]: components['schemas']['CategoryMapSchema'];
-          };
-        };
-      };
-    };
-  };
-  get_hut_bookings: {
-    parameters: {
-      query?: {
-        /** @description Select language code: de, en, fr, it. */
-        lang?: string;
-        /** @description Comma separated list with slugs to use, per default all. */
-        slugs?: string | null;
-        /** @description Show bookings for this many days. */
-        days?: number;
-        /** @description Date to start with bookings (yyyy-mm-dd, 'now' or 'weekend'). */
-        date?: string | ('now' | 'weekend');
-        /** @description Time in seconds to wait between requests to the booking service for each hut. If not set uses recommanded default value. */
-        request_interval?: number | null;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HutBookingsSchema'][];
-        };
-      };
-    };
-  };
-  get_hut_bookings_geojson: {
-    parameters: {
-      query?: {
-        /** @description Select language code: de, en, fr, it. */
-        lang?: string;
-        /** @description Comma separated list with slugs to use, per default all. */
-        slugs?: string | null;
-        /** @description Show bookings for this many days. */
-        days?: number;
-        /** @description Date to start with bookings (yyyy-mm-dd, 'now' or 'weekend'). */
-        date?: string | ('now' | 'weekend');
-        /** @description Time in seconds to wait between requests to the booking service for each hut. If not set uses recommanded default value. */
-        request_interval?: number | null;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HutBookingsFeatureCollection'];
-        };
-      };
-    };
-  };
-  get_hut_availability_geojson: {
-    parameters: {
-      query?: {
-        /** @description Select language code: de, en, fr, it. */
-        lang?: string;
-        /** @description Comma-separated list of hut slugs to filter (e.g., 'aarbiwak,almageller'). If not set, returns all huts. */
-        slugs?: string | null;
-        /** @description Number of days to fetch from start date. */
-        days?: number;
-        /** @description Pagination offset for results. */
-        offset?: number;
-        /** @description Maximum number of huts to return. If not set, returns all matching huts. */
-        limit?: number | null;
-      };
-      header?: never;
-      path: {
-        /** @description Start date. Accepts ISO dates (2026-01-15, 26-01-15), European format (15.01.2026), or keywords: 'now', 'today', 'weekend'. */
-        date: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HutAvailabilityFeatureCollection'];
-        };
-      };
-    };
-  };
-  get_hut_availability_current: {
-    parameters: {
-      query?: {
-        /** @description Select language code: de, en, fr, it. */
-        lang?: string;
-        /** @description Number of days to fetch from start date. */
-        days?: number;
-      };
-      header?: never;
-      path: {
-        slug: string;
-        /** @description Start date. Accepts ISO dates (2026-01-15, 26-01-15), European format (15.01.2026), or keywords: 'now', 'today', 'weekend'. */
-        date: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['CurrentAvailabilitySchema'];
-        };
-      };
-    };
-  };
-  get_hut_availability_trend: {
-    parameters: {
-      query?: {
-        /** @description Select language code: de, en, fr, it. */
-        lang?: string;
-        /** @description How many days back to show history from the target date. */
-        limit?: number;
-      };
-      header?: never;
-      path: {
-        slug: string;
-        /** @description Target date to analyze. Accepts ISO dates (2026-01-15, 26-01-15), European format (15.01.2026), or keywords: 'now', 'today', 'weekend'. */
-        date: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['AvailabilityTrendSchema'];
-        };
-      };
-    };
-  };
-  search_huts: {
-    parameters: {
-      query: {
-        /** @description Select language code: de, en, fr, it. */
-        lang?: string;
-        /**
-         * @description Search query string to match against hut names in all languages
-         * @example rotond
-         */
-        q: string;
-        /** @description Number of results to skip for pagination */
-        offset?: number;
-        /** @description Maximum number of results to return */
-        limit?: number | null;
-        /** @description Minimum similarity score (0.0-1.0). Lower values return more results but with lower relevance. Recommended: 0.1 for fuzzy matching, 0.3 for stricter matching. */
-        threshold?: number;
-        /** @description Include hut type information: 'no' excludes field, 'slug' returns type slugs only, 'all' returns full type details with icons */
-        include_hut_type?: 'no' | 'slug' | 'all';
-        /** @description Include data sources: 'no' excludes field, 'slug' returns source slugs only, 'all' returns full source details with logos */
-        include_sources?: 'no' | 'slug' | 'all';
-        /** @description Include avatar/primary photo URL in results */
-        include_avatar?: boolean;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HutSearchResultSchema'][];
-        };
-      };
-    };
-  };
-  get_huts: {
-    parameters: {
-      query?: {
-        /** @description Select language code: de, en, fr, it. */
-        lang?: string;
-        offset?: number;
-        limit?: number | null;
-        is_modified?: 'true' | 'false' | 'unset';
-        is_public?: 'true' | 'false' | 'unset';
-        is_active?: 'true' | 'false' | 'unset';
-        has_availability?: 'true' | 'false' | 'unset';
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HutSchemaList'][];
-        };
-      };
-    };
-  };
-  get_huts_geojson: {
-    parameters: {
-      query?: {
-        /** @description Select language code: de, en, fr, it. */
-        lang?: string;
-        offset?: number;
-        limit?: number | null;
-        has_availability?: 'true' | 'false' | 'unset';
-        embed_all?: boolean;
-        embed_type?: boolean;
-        embed_owner?: boolean;
-        embed_capacity?: boolean;
-        embed_sources?: boolean;
-        include_elevation?: boolean;
-        include_name?: boolean;
-        include_has_availability?: boolean;
-        flat?: boolean;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['FeatureCollection'];
-        };
-      };
-    };
-  };
-  get_hut: {
-    parameters: {
-      query?: {
-        /** @description Select language code: de, en, fr, it. */
-        lang?: string;
-        /** @description Comma separated list with field names, use `__all__` in order to include every field. */
-        include?: unknown;
-        /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
-        exclude?: unknown;
-      };
-      header?: never;
-      path: {
-        slug: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['HutSchemaDetails'];
-        };
-      };
-    };
-  };
-  get_weather_codes: {
-    parameters: {
-      query?: {
-        /** @description Select language code: de, en, fr, it. */
-        lang?: string;
-        /** @description Symbol collection slug (default: weather-icons-outlined-mono) */
-        collection?: string;
-        /** @description Filter by category slug (supports dot notation like 'meteo.rain') */
-        category?: string | null;
-        /** @description Include symbols: 'no' excludes, 'slug' returns slugs only, 'all' returns full URLs */
-        include_symbols?: 'no' | 'slug' | 'all';
-        /** @description Include category: 'no' excludes, 'slug' returns slug, 'all' returns full details with symbols */
-        include_category?: 'no' | 'slug' | 'all';
-        /** @description Include collection: 'no' excludes, 'slug' returns slug, 'all' returns full details */
-        include_collection?: 'no' | 'slug' | 'all';
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': {
-            [key: string]: {
-              [key: string]: unknown;
+    nearby_images: {
+        parameters: {
+            query: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /**
+                 * @description Latitude in WGS84
+                 * @example 46.570088
+                 */
+                lat: number;
+                /**
+                 * @description Longitude in WGS84
+                 * @example 8.2221
+                 */
+                lon: number;
+                /**
+                 * @description Search radius in meters
+                 * @example 5000.0
+                 */
+                radius?: number;
+                /** @description Comma-separated provider list (e.g., 'wodore,wikidata,flickr') */
+                sources?: string | null;
+                /** @description Coordinate precision: 'broad' (3), 'normal' (4), 'precise' (6) */
+                precision?: string;
+                /** @description Maximum number of images to return */
+                limit?: number;
             };
-          };
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-      };
-    };
-  };
-  get_weather_code: {
-    parameters: {
-      query?: {
-        /** @description Select language code: de, en, fr, it. */
-        lang?: string;
-        /** @description Symbol collection slug (default: weather-icons-outlined-mono) */
-        collection?: string;
-        /** @description Include symbols: 'no' excludes, 'slug' returns slugs only, 'all' returns full URLs */
-        include_symbols?: 'no' | 'slug' | 'all';
-        /** @description Include category: 'no' excludes, 'slug' returns slug, 'all' returns full details with symbols */
-        include_category?: 'no' | 'slug' | 'all';
-        /** @description Include collection: 'no' excludes, 'slug' returns slug, 'all' returns full details */
-        include_collection?: 'no' | 'slug' | 'all';
-      };
-      header?: never;
-      path: {
-        code: number;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImageCollectionResponse"];
+                };
+            };
         };
-        content: {
-          'application/json': {
-            [key: string]: unknown;
-          };
+    };
+    images_for_place: {
+        parameters: {
+            query?: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /**
+                 * @description Search radius in meters for external providers
+                 * @example 5000.0
+                 */
+                radius?: number;
+                /** @description Comma-separated provider list (e.g., 'wodore,wikidata,flickr'). If provided without wodore, wodore images are not shown but place is still used for location. */
+                sources?: string | null;
+                /** @description Maximum number of images to return */
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                place_slug: string;
+            };
+            cookie?: never;
         };
-      };
-    };
-  };
-  get_weather_code_svg: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        collection: string;
-        /** @description Day/night time options. */
-        time: 'day' | 'night';
-        code: number;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImageCollectionResponse"];
+                };
+            };
         };
-        content?: never;
-      };
     };
-  };
-  get_organizations: {
-    parameters: {
-      query?: {
-        /** @description Select language code: de, en, fr, it. */
-        lang?: string;
-        /** @description Comma separated list with field names, use `__all__` in order to include every field. */
-        include?: unknown;
-        /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
-        exclude?: unknown;
-        is_public?: boolean | null;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    images_for_hut: {
+        parameters: {
+            query?: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /**
+                 * @description Search radius in meters for external providers
+                 * @example 5000.0
+                 */
+                radius?: number;
+                /** @description Comma-separated provider list (e.g., 'wodore,wikidata,flickr'). If provided without wodore, wodore images are not shown but hut is still used for location. */
+                sources?: string | null;
+                /** @description Maximum number of images to return */
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                hut_slug: string;
+            };
+            cookie?: never;
         };
-        content: {
-          'application/json': components['schemas']['OrganizationOptional'][];
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImageCollectionResponse"];
+                };
+            };
         };
-      };
     };
-  };
-  get_organization: {
-    parameters: {
-      query?: {
-        /** @description Select language code: de, en, fr, it. */
-        lang?: string;
-        /** @description Comma separated list with field names, use `__all__` in order to include every field. */
-        include?: unknown;
-        /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
-        exclude?: unknown;
-      };
-      header?: never;
-      path: {
-        slug: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    search_geoplaces: {
+        parameters: {
+            query: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /**
+                 * @description Search query string to match against place names in all languages
+                 * @example Matterhorn
+                 */
+                q: string;
+                /** @description Maximum number of results to return */
+                limit?: number;
+                /** @description Number of results to skip for pagination */
+                offset?: number;
+                /** @description Filter by place type slugs (e.g., 'peak', 'pass', 'lake'). Use 'parent.child' format for child categories. */
+                types?: string[] | null;
+                /** @description Filter by parent category slugs (e.g., 'terrain', 'transport') */
+                categories?: string[] | null;
+                /** @description Filter by country codes (e.g., 'CH', 'FR', 'IT') */
+                countries?: string[] | null;
+                /** @description Minimum similarity score (0.0-1.0). Lower values return more results but with lower relevance. Recommended: 0.1 for fuzzy matching, 0.3 for stricter matching. */
+                threshold?: number;
+                /** @description Minimum importance score (0-100). Higher values filter for more prominent places. */
+                min_importance?: number;
+                /** @description Remove near-identical places that share a name and a very close location before pagination. */
+                deduplicate?: boolean;
+                /** @description Include place type information: 'no' excludes field, 'slug' returns type slug only, 'all' returns full type details with name and description */
+                include_place_type?: "no" | "slug" | "all";
+                /** @description Include data sources: 'no' excludes field, 'slug' returns source slugs only, 'all' returns full source details with name and logo */
+                include_sources?: "no" | "slug" | "all";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        content: {
-          'application/json': components['schemas']['OrganizationOptional'];
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GeoPlaceSearchSchema"][];
+                };
+            };
         };
-      };
     };
-  };
-  get_symbols: {
-    parameters: {
-      query?: {
-        /** @description Select language code: de, en, fr, it. */
-        lang?: string;
-        /** @description Comma separated list with field names, use `__all__` in order to include every field. */
-        include?: unknown;
-        /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
-        exclude?: unknown;
-        /** @description Filter by active status (default: True) */
-        is_active?: boolean;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    nearby_geoplaces: {
+        parameters: {
+            query: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /**
+                 * @description Latitude coordinate
+                 * @example 46.0342
+                 */
+                lat: number;
+                /**
+                 * @description Longitude coordinate
+                 * @example 7.6488
+                 */
+                lon: number;
+                /** @description Search radius in meters (default: 10000 = 10km) */
+                radius?: number;
+                /** @description Maximum number of results */
+                limit?: number;
+                /** @description Number of results to skip for pagination */
+                offset?: number;
+                /** @description Filter by place type slugs (e.g., 'peak', 'pass'). Use 'parent.child' format for child categories. */
+                types?: string[] | null;
+                /** @description Filter by parent category slugs */
+                categories?: string[] | null;
+                /** @description Minimum importance score (0-100) */
+                min_importance?: number;
+                /** @description Include place type information: 'no' excludes field, 'slug' returns type slug only, 'all' returns full type details with name and description */
+                include_place_type?: "no" | "slug" | "all";
+                /** @description Include data sources: 'no' excludes field, 'slug' returns source slugs only, 'all' returns full source details with name and logo */
+                include_sources?: "no" | "slug" | "all";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        content: {
-          'application/json': components['schemas']['SymbolOptional'][];
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GeoPlaceNearbySchema"][];
+                };
+            };
         };
-      };
     };
-  };
-  get_symbol_by_id: {
-    parameters: {
-      query?: {
-        /** @description Select language code: de, en, fr, it. */
-        lang?: string;
-        /** @description Comma separated list with field names, use `__all__` in order to include every field. */
-        include?: unknown;
-        /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
-        exclude?: unknown;
-        /** @description Filter by active status (default: True) */
-        is_active?: boolean;
-      };
-      header?: never;
-      path: {
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    get_amenity: {
+        parameters: {
+            query?: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /** @description Include data sources: 'no' excludes field, 'slug' returns source slugs only, 'all' returns full source details with name and logo */
+                include_sources?: "no" | "slug" | "all";
+            };
+            header?: never;
+            path: {
+                place_id: number;
+            };
+            cookie?: never;
         };
-        content: {
-          'application/json': components['schemas']['SymbolOptional'];
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AmenitySchema"];
+                };
+            };
         };
-      };
     };
-  };
-  get_symbols_by_slug: {
-    parameters: {
-      query?: {
-        /** @description Select language code: de, en, fr, it. */
-        lang?: string;
-        /** @description Comma separated list with field names, use `__all__` in order to include every field. */
-        include?: unknown;
-        /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
-        exclude?: unknown;
-        /** @description Filter by style (detailed, simple, mono) */
-        style?: string | null;
-        /** @description Filter by active status (default: True) */
-        is_active?: boolean;
-      };
-      header?: never;
-      path: {
-        slug: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    get_category_tree: {
+        parameters: {
+            query?: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /** @description Maximum depth level relative to request slug, for the last level children are set to a boolean */
+                level?: number | null;
+                /** @description Only include active categories */
+                is_active?: boolean;
+                /** @description How to return media URLs: 'no' (exclude), 'relative' (relative paths), 'absolute' (full URLs) */
+                media_mode?: "no" | "relative" | "absolute";
+            };
+            header?: never;
+            path: {
+                parent_slug: string | "root";
+            };
+            cookie?: never;
         };
-        content: {
-          'application/json': components['schemas']['SymbolOptional'][];
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryTreeSchema"][];
+                };
+            };
         };
-      };
     };
-  };
-  get_symbol_by_style_and_slug: {
-    parameters: {
-      query?: {
-        /** @description Select language code: de, en, fr, it. */
-        lang?: string;
-        /** @description Comma separated list with field names, use `__all__` in order to include every field. */
-        include?: unknown;
-        /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
-        exclude?: unknown;
-        /** @description Filter by active status (default: True) */
-        is_active?: boolean;
-      };
-      header?: never;
-      path: {
-        style_slug: string;
-        slug: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    get_category_list_all: {
+        parameters: {
+            query?: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /** @description Maximum depth level relative to request slug */
+                level?: number | null;
+                /** @description Only include active categories */
+                is_active?: boolean;
+                /** @description How to return media URLs: 'no' (exclude), 'relative' (relative paths), 'absolute' (full URLs) */
+                media_mode?: "no" | "relative" | "absolute";
+            };
+            header?: never;
+            path: {
+                parent_slug: string | "root";
+            };
+            cookie?: never;
         };
-        content: {
-          'application/json': components['schemas']['SymbolOptional'];
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryListItemSchema"][];
+                };
+            };
         };
-      };
     };
-  };
-  server_apps_feedbacks_api_create_feedback: {
-    parameters: {
-      query?: {
-        send_email?: boolean;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['FeedbackCreate'];
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    get_category_map_all: {
+        parameters: {
+            query?: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /** @description Maximum depth level relative to request slug */
+                level?: number | null;
+                /** @description Only include active categories */
+                is_active?: boolean;
+                /** @description How to return media URLs: 'no' (exclude), 'relative' (relative paths), 'absolute' (full URLs) */
+                media_mode?: "no" | "relative" | "absolute";
+            };
+            header?: never;
+            path: {
+                parent_slug: string | "root";
+            };
+            cookie?: never;
         };
-        content: {
-          'application/json': components['schemas']['ResponseSchema'];
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: components["schemas"]["CategoryMapSchema"];
+                    };
+                };
+            };
         };
-      };
     };
-  };
-  server_apps_utils_api_get_version: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    get_category_symbol_svg_with_parent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Symbol variant types for categories. */
+                variant: "detailed" | "simple" | "mono";
+                parent: string;
+                slug: string;
+            };
+            cookie?: never;
         };
-        content: {
-          'application/json': components['schemas']['VersionSchema'];
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
-      };
     };
-  };
+    get_category_symbol_svg: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Symbol variant types for categories. */
+                variant: "detailed" | "simple" | "mono";
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_hut_bookings: {
+        parameters: {
+            query?: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /** @description Comma separated list with slugs to use, per default all. */
+                slugs?: string | null;
+                /** @description Show bookings for this many days. */
+                days?: number;
+                /** @description Date to start with bookings (yyyy-mm-dd, 'now' or 'weekend'). */
+                date?: string | ("now" | "weekend");
+                /** @description Time in seconds to wait between requests to the booking service for each hut. If not set uses recommanded default value. */
+                request_interval?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HutBookingsSchema"][];
+                };
+            };
+        };
+    };
+    get_hut_bookings_geojson: {
+        parameters: {
+            query?: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /** @description Comma separated list with slugs to use, per default all. */
+                slugs?: string | null;
+                /** @description Show bookings for this many days. */
+                days?: number;
+                /** @description Date to start with bookings (yyyy-mm-dd, 'now' or 'weekend'). */
+                date?: string | ("now" | "weekend");
+                /** @description Time in seconds to wait between requests to the booking service for each hut. If not set uses recommanded default value. */
+                request_interval?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HutBookingsFeatureCollection"];
+                };
+            };
+        };
+    };
+    get_hut_availability_geojson: {
+        parameters: {
+            query?: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /** @description Comma-separated list of hut slugs to filter (e.g., 'aarbiwak,almageller'). If not set, returns all huts. */
+                slugs?: string | null;
+                /** @description Number of days to fetch from start date. */
+                days?: number;
+                /** @description Pagination offset for results. */
+                offset?: number;
+                /** @description Maximum number of huts to return. If not set, returns all matching huts. */
+                limit?: number | null;
+            };
+            header?: never;
+            path: {
+                /** @description Start date. Accepts ISO dates (2026-01-15, 26-01-15), European format (15.01.2026), or keywords: 'now', 'today', 'weekend'. */
+                date: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HutAvailabilityFeatureCollection"];
+                };
+            };
+        };
+    };
+    get_hut_availability_current: {
+        parameters: {
+            query?: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /** @description Number of days to fetch from start date. */
+                days?: number;
+            };
+            header?: never;
+            path: {
+                slug: string;
+                /** @description Start date. Accepts ISO dates (2026-01-15, 26-01-15), European format (15.01.2026), or keywords: 'now', 'today', 'weekend'. */
+                date: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurrentAvailabilitySchema"];
+                };
+            };
+        };
+    };
+    get_hut_availability_trend: {
+        parameters: {
+            query?: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /** @description How many days back to show history from the target date. */
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                slug: string;
+                /** @description Target date to analyze. Accepts ISO dates (2026-01-15, 26-01-15), European format (15.01.2026), or keywords: 'now', 'today', 'weekend'. */
+                date: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvailabilityTrendSchema"];
+                };
+            };
+        };
+    };
+    search_huts: {
+        parameters: {
+            query: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /**
+                 * @description Search query string to match against hut names in all languages
+                 * @example rotond
+                 */
+                q: string;
+                /** @description Number of results to skip for pagination */
+                offset?: number;
+                /** @description Maximum number of results to return */
+                limit?: number | null;
+                /** @description Minimum similarity score (0.0-1.0). Lower values return more results but with lower relevance. Recommended: 0.1 for fuzzy matching, 0.3 for stricter matching. */
+                threshold?: number;
+                /** @description Include hut type information: 'no' excludes field, 'slug' returns type slugs only, 'all' returns full type details with icons */
+                include_hut_type?: "no" | "slug" | "all";
+                /** @description Include data sources: 'no' excludes field, 'slug' returns source slugs only, 'all' returns full source details with logos */
+                include_sources?: "no" | "slug" | "all";
+                /** @description Include avatar/primary photo URL in results */
+                include_avatar?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HutSearchResultSchema"][];
+                };
+            };
+        };
+    };
+    get_huts: {
+        parameters: {
+            query?: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                offset?: number;
+                limit?: number | null;
+                is_modified?: "true" | "false" | "unset";
+                is_public?: "true" | "false" | "unset";
+                is_active?: "true" | "false" | "unset";
+                has_availability?: "true" | "false" | "unset";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HutSchemaList"][];
+                };
+            };
+        };
+    };
+    get_huts_geojson: {
+        parameters: {
+            query?: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                offset?: number;
+                limit?: number | null;
+                has_availability?: "true" | "false" | "unset";
+                embed_all?: boolean;
+                embed_type?: boolean;
+                embed_owner?: boolean;
+                embed_capacity?: boolean;
+                embed_sources?: boolean;
+                include_elevation?: boolean;
+                include_name?: boolean;
+                include_has_availability?: boolean;
+                flat?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeatureCollection"];
+                };
+            };
+        };
+    };
+    get_hut: {
+        parameters: {
+            query?: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /** @description Comma separated list with field names, use `__all__` in order to include every field. */
+                include?: unknown;
+                /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
+                exclude?: unknown;
+            };
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HutSchemaDetails"];
+                };
+            };
+        };
+    };
+    get_weather_codes: {
+        parameters: {
+            query?: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /** @description Symbol collection slug (default: weather-icons-outlined-mono) */
+                collection?: string;
+                /** @description Filter by category slug (supports dot notation like 'meteo.rain') */
+                category?: string | null;
+                /** @description Include symbols: 'no' excludes, 'slug' returns slugs only, 'all' returns full URLs */
+                include_symbols?: "no" | "slug" | "all";
+                /** @description Include category: 'no' excludes, 'slug' returns slug, 'all' returns full details with symbols */
+                include_category?: "no" | "slug" | "all";
+                /** @description Include collection: 'no' excludes, 'slug' returns slug, 'all' returns full details */
+                include_collection?: "no" | "slug" | "all";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    get_weather_code: {
+        parameters: {
+            query?: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /** @description Symbol collection slug (default: weather-icons-outlined-mono) */
+                collection?: string;
+                /** @description Include symbols: 'no' excludes, 'slug' returns slugs only, 'all' returns full URLs */
+                include_symbols?: "no" | "slug" | "all";
+                /** @description Include category: 'no' excludes, 'slug' returns slug, 'all' returns full details with symbols */
+                include_category?: "no" | "slug" | "all";
+                /** @description Include collection: 'no' excludes, 'slug' returns slug, 'all' returns full details */
+                include_collection?: "no" | "slug" | "all";
+            };
+            header?: never;
+            path: {
+                code: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    get_weather_code_svg: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection: string;
+                /** @description Day/night time options. */
+                time: "day" | "night";
+                code: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_organizations: {
+        parameters: {
+            query?: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /** @description Comma separated list with field names, use `__all__` in order to include every field. */
+                include?: unknown;
+                /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
+                exclude?: unknown;
+                is_public?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationOptional"][];
+                };
+            };
+        };
+    };
+    get_organization: {
+        parameters: {
+            query?: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /** @description Comma separated list with field names, use `__all__` in order to include every field. */
+                include?: unknown;
+                /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
+                exclude?: unknown;
+            };
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationOptional"];
+                };
+            };
+        };
+    };
+    get_symbols: {
+        parameters: {
+            query?: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /** @description Comma separated list with field names, use `__all__` in order to include every field. */
+                include?: unknown;
+                /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
+                exclude?: unknown;
+                /** @description Filter by active status (default: True) */
+                is_active?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SymbolOptional"][];
+                };
+            };
+        };
+    };
+    get_symbol_by_id: {
+        parameters: {
+            query?: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /** @description Comma separated list with field names, use `__all__` in order to include every field. */
+                include?: unknown;
+                /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
+                exclude?: unknown;
+                /** @description Filter by active status (default: True) */
+                is_active?: boolean;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SymbolOptional"];
+                };
+            };
+        };
+    };
+    get_symbols_by_slug: {
+        parameters: {
+            query?: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /** @description Comma separated list with field names, use `__all__` in order to include every field. */
+                include?: unknown;
+                /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
+                exclude?: unknown;
+                /** @description Filter by style (detailed, simple, mono) */
+                style?: string | null;
+                /** @description Filter by active status (default: True) */
+                is_active?: boolean;
+            };
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SymbolOptional"][];
+                };
+            };
+        };
+    };
+    get_symbol_svg: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                style_slug: string;
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_symbol_by_style_and_slug: {
+        parameters: {
+            query?: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /** @description Comma separated list with field names, use `__all__` in order to include every field. */
+                include?: unknown;
+                /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
+                exclude?: unknown;
+                /** @description Filter by active status (default: True) */
+                is_active?: boolean;
+            };
+            header?: never;
+            path: {
+                style_slug: string;
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SymbolOptional"];
+                };
+            };
+        };
+    };
+    server_apps_feedbacks_api_create_feedback: {
+        parameters: {
+            query?: {
+                send_email?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedbackCreate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseSchema"];
+                };
+            };
+        };
+    };
+    server_apps_utils_api_get_version: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionSchema"];
+                };
+            };
+        };
+    };
 }

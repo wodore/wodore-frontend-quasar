@@ -97,17 +97,10 @@ $opacity-light: 0.7;
   .#{$month}--gradient-dark {
     background: linear-gradient(
       to right,
-      rgba(
-          color.adjust($start-color, $lightness: -$darken-amount),
-          $opacity-dark
-        )
-        0%,
-      rgba(color.adjust($color, $lightness: -$darken-amount), $opacity-dark)
-        $grad-start,
-      rgba(color.adjust($color, $lightness: -$darken-amount), $opacity-dark)
-        $grad-end,
-      rgba(color.adjust($end-color, $lightness: -$darken-amount), $opacity-dark)
-        100%
+      rgba(color.adjust($start-color, $lightness: -$darken-amount), $opacity-dark) 0%,
+      rgba(color.adjust($color, $lightness: -$darken-amount), $opacity-dark) $grad-start,
+      rgba(color.adjust($color, $lightness: -$darken-amount), $opacity-dark) $grad-end,
+      rgba(color.adjust($end-color, $lightness: -$darken-amount), $opacity-dark) 100%
     );
     color: map-get($months-fg, $month); /* Text color */
   }
@@ -115,20 +108,10 @@ $opacity-light: 0.7;
   .#{$month}--gradient-light {
     background: linear-gradient(
       to right,
-      rgba(
-          color.adjust($start-color, $lightness: $lighten-amount),
-          $opacity-light
-        )
-        0%,
-      rgba(color.adjust($color, $lightness: $lighten-amount), $opacity-light)
-        $grad-start,
-      rgba(color.adjust($color, $lightness: $lighten-amount), $opacity-light)
-        $grad-end,
-      rgba(
-          color.adjust($end-color, $lightness: $lighten-amount),
-          $opacity-light
-        )
-        100%
+      rgba(color.adjust($start-color, $lightness: $lighten-amount), $opacity-light) 0%,
+      rgba(color.adjust($color, $lightness: $lighten-amount), $opacity-light) $grad-start,
+      rgba(color.adjust($color, $lightness: $lighten-amount), $opacity-light) $grad-end,
+      rgba(color.adjust($end-color, $lightness: $lighten-amount), $opacity-light) 100%
     );
     color: map-get($months-fg, $month); /* Text color */
   }

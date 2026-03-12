@@ -67,7 +67,7 @@ function dateRangeOptions(date: string) {
 // hack, because the date always make a transition when i goes to the correct date
 // since we use it to set it to the last position we dont want this transition the first time
 const noTrans = ref(true);
-watch(showMenu, (val) => {
+watch(showMenu, val => {
   if (val == false) {
     noTrans.value = true; // do not use transition the next time
     return;
@@ -121,9 +121,7 @@ function setNewDate(value: string) {
 
 onMounted(() => {
   if (selectedDate.value === undefined) {
-    selectedDate.value = $route.query.date
-      ? ($route.query.date as string)
-      : undefined;
+    selectedDate.value = $route.query.date ? ($route.query.date as string) : undefined;
   }
 });
 
@@ -142,7 +140,7 @@ watch(
       setNewDate(newDate);
     }
   },
-  { immediate: true },
+  { immediate: true }
 );
 
 function resetDate() {
@@ -223,7 +221,7 @@ const gotoToday = function () {
   }
 };
 
-const handleDateSwipe: TouchSwipeValue = (e) => {
+const handleDateSwipe: TouchSwipeValue = e => {
   e.evt?.preventDefault();
   // if ($q.platform.is.mobile && calRigth.value !== null) {
   if (e.direction == 'right') {
@@ -288,7 +286,7 @@ const decrementDisabled = computed(() => {
 });
 
 // Handle swipe gestures on date input
-const handleDateInputSwipe: TouchSwipeValue = (e) => {
+const handleDateInputSwipe: TouchSwipeValue = e => {
   e.evt?.preventDefault();
   e.evt?.stopPropagation();
   if (e.direction == 'right' && !decrementDisabled.value) {
@@ -329,11 +327,7 @@ const handleDateInputSwipe: TouchSwipeValue = (e) => {
       'q-ml-xs': isMobile,
     }"
     class="q-mr-md"
-    :style="
-      isMobile
-        ? 'max-width: 130px; max-height: 40px'
-        : 'max-width: 210px; max-height: 40px'
-    "
+    :style="isMobile ? 'max-width: 130px; max-height: 40px' : 'max-width: 210px; max-height: 40px'"
   >
     <!-- CALENDAR -->
     <q-popup-proxy
@@ -353,13 +347,7 @@ const handleDateInputSwipe: TouchSwipeValue = (e) => {
             class="q-ma-xs z-top text-icon"
             style="position: absolute; width: 32px; top: 6px; right: 6px"
           >
-            <q-btn
-              dense
-              round
-              v-close-popup
-              color="accent-700"
-              icon="wd-close"
-            ></q-btn>
+            <q-btn dense round v-close-popup color="accent-700" icon="wd-close"></q-btn>
           </div>
           <!-- HEADER -->
           <q-list padding class="bg-dark-700">
@@ -371,18 +359,14 @@ const handleDateInputSwipe: TouchSwipeValue = (e) => {
               </q-item-section> -->
               <!-- NAME - EMAIL -->
               <q-item-section v-if="!showCalendarError">
-                <q-item-label class="text-h6 text-accent">{{
-                  selectedDateDay
-                }}</q-item-label>
+                <q-item-label class="text-h6 text-accent">{{ selectedDateDay }}</q-item-label>
                 <q-item-label class="text-body2 text-primary-100">{{
                   selectedDateLongName
                 }}</q-item-label>
               </q-item-section>
               <!-- ERROR MESSAGE HEADER -->
               <q-item-section v-else>
-                <q-item-label class="text-h6 text-accent">
-                  Im Moment nicht verfügbar
-                </q-item-label>
+                <q-item-label class="text-h6 text-accent"> Im Moment nicht verfügbar </q-item-label>
               </q-item-section>
             </q-item>
           </q-list>
@@ -414,16 +398,11 @@ const handleDateInputSwipe: TouchSwipeValue = (e) => {
                   justify-content: center;
                 "
               >
-                <p class="text-h6 text-primary-100">
-                  Ah Blöd, da geht nichts mehr!
-                </p>
+                <p class="text-h6 text-primary-100">Ah Blöd, da geht nichts mehr!</p>
                 <p class="text-body2 text-primary-200 q-mt-md">
                   Der SAC hat den Zugriff eingeschrenkt!<br />
                   Gerne
-                  <a
-                    href="https://www.sac-cas.ch/de/kontakt/"
-                    target="_blank"
-                    class="text-accent"
+                  <a href="https://www.sac-cas.ch/de/kontakt/" target="_blank" class="text-accent"
                     >direkt nachhaken</a
                   >.
                 </p>
@@ -431,17 +410,11 @@ const handleDateInputSwipe: TouchSwipeValue = (e) => {
                   class="q-mt-md q-pa-sm bg-dark-700 rounded-borders text-center"
                   style="border: 1px solid rgba(255, 193, 7, 0.3)"
                 >
-                  <p
-                    class="text-body2 text-accent q-mb-none"
-                    style="font-weight: 500"
-                  >
+                  <p class="text-body2 text-accent q-mb-none" style="font-weight: 500">
                     🔧 Eine neue Lösung ist in Arbeit...
                   </p>
                 </div>
-                <p
-                  class="text-caption text-primary-400 q-mt-md"
-                  style="font-size: 0.75rem"
-                >
+                <p class="text-caption text-primary-400 q-mt-md" style="font-size: 0.75rem">
                   Alternativ:
                   <a
                     href="https://www.deine-berge.de/av_reservierung.php"
@@ -450,10 +423,7 @@ const handleDateInputSwipe: TouchSwipeValue = (e) => {
                     >deine-berge</a
                   >
                   oder
-                  <a
-                    href="https://www.hut-reservation.org"
-                    target="_blank"
-                    class="text-accent"
+                  <a href="https://www.hut-reservation.org" target="_blank" class="text-accent"
                     >hut-reservation</a
                   >
                 </p>
@@ -494,10 +464,7 @@ const handleDateInputSwipe: TouchSwipeValue = (e) => {
                   formatDate(addToDate(Date.now(), { month: 1 }), 'YYYY/MM')
                 "
                 :navigation-max-year-month="
-                  formatDate(
-                    addToDate(Date.now(), { years: 2, month: 1 }),
-                    'YYYY/MM',
-                  )
+                  formatDate(addToDate(Date.now(), { years: 2, month: 1 }), 'YYYY/MM')
                 "
                 mask="DD.MM.YY"
                 @navigation="updateRigth"

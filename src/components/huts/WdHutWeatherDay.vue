@@ -28,9 +28,7 @@ const todayMidnight = computed(() => {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
 });
 const dayDiff = computed(() =>
-  Math.round(
-    (dateObj.value.getTime() - todayMidnight.value.getTime()) / 86400000,
-  ),
+  Math.round((dateObj.value.getTime() - todayMidnight.value.getTime()) / 86400000)
 );
 const isToday = computed(() => dayDiff.value === 0);
 const dayLabel = computed(() => {
@@ -59,9 +57,7 @@ const iconUrl = computed(() => {
   }
   const isDay = props.day.is_day_majority !== false;
   const symbolKey = isDay ? 'symbol_day' : 'symbol_night';
-  const url = (iconEntry.value as Record<string, unknown>)[symbolKey] as
-    | string
-    | undefined;
+  const url = (iconEntry.value as Record<string, unknown>)[symbolKey] as string | undefined;
   return url ?? null;
 });
 const iconDescription = computed(() => {
@@ -79,21 +75,16 @@ const iconDescription = computed(() => {
   );
 });
 const tempMax = computed(() =>
-  props.day.temp_max !== null ? Math.round(props.day.temp_max) : null,
+  props.day.temp_max !== null ? Math.round(props.day.temp_max) : null
 );
 const tempMin = computed(() =>
-  props.day.temp_min !== null ? Math.round(props.day.temp_min) : null,
+  props.day.temp_min !== null ? Math.round(props.day.temp_min) : null
 );
 const isRange = computed(
-  () =>
-    tempMin.value !== null &&
-    tempMax.value !== null &&
-    tempMin.value !== tempMax.value,
+  () => tempMin.value !== null && tempMax.value !== null && tempMin.value !== tempMax.value
 );
 const isLoading = computed(() => props.day.loading === true);
-const hasTemps = computed(
-  () => tempMin.value !== null && tempMax.value !== null,
-);
+const hasTemps = computed(() => tempMin.value !== null && tempMax.value !== null);
 const conditionLabel = computed(() => {
   if (iconDescription.value) {
     return iconDescription.value;
@@ -107,10 +98,7 @@ const conditionLabel = computed(() => {
 
 <template>
   <div class="weather-day column items-center">
-    <div
-      class="weather-day__label"
-      :class="{ 'weather-day__label--today': isToday }"
-    >
+    <div class="weather-day__label" :class="{ 'weather-day__label--today': isToday }">
       {{ dayLabel }}
     </div>
     <div class="weather-day__icon">
@@ -122,12 +110,7 @@ const conditionLabel = computed(() => {
         fit="contain"
         no-spinner
       />
-      <q-skeleton
-        v-else-if="isLoading"
-        type="circle"
-        width="36px"
-        height="36px"
-      />
+      <q-skeleton v-else-if="isLoading" type="circle" width="36px" height="36px" />
       <div v-else class="weather-day__icon-empty"></div>
       <q-tooltip v-if="conditionLabel" :delay="500">
         {{ conditionLabel }}

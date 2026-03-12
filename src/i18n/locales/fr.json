@@ -94,5 +94,47 @@
     "unit": "°C",
     "unavailable": "Donnees meteo indisponibles",
     "no_guarantee": "sans garantie"
+  },
+  "media": {
+    "no_images_available": "Aucune image disponible",
+    "no_images": "Aucune image",
+    "no_images_for_hut": "Aucune image disponible pour ce refuge"
+  },
+  "contribute": {
+    "title": "Contribuer",
+    "description": "Partage tes photos & infos avec la communauté.",
+    "tip": "Cliquez sur une application ci-dessous pour accéder directement à l'hébergement et télécharger des photos ou faire des modifications",
+    "sync_note": "Les mises à jour arrivent généralement en quelques semaines",
+    "contribute_images": "Ajouter des photos",
+    "platforms": {
+      "panoramax": {
+        "name": "Panoramax",
+        "description": "Partage des photos avec des détails utiles"
+      },
+      "mapcomplete": {
+        "name": "MapComplete",
+        "description": "Ajoute photos & infos directement sur la carte"
+      },
+      "wikimedia_commons": {
+        "name": "Wikimedia Commons",
+        "description": "Partage tes photos libres"
+      },
+      "openstreetmap": {
+        "name": "OpenStreetMap",
+        "description": "Améliore la carte libre du monde"
+      },
+      "refuges": {
+        "name": "Refuges.info",
+        "description": "Infos cabanes, photos et conditions"
+      },
+      "camptocamp": {
+        "name": "Camptocamp",
+        "description": "Routes & récits de course"
+      }
+    },
+    "app_stores": {
+      "android": "Android",
+      "ios": "iOS"
+    }
   }
 }

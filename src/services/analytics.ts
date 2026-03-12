@@ -1,9 +1,6 @@
 // src/types/umami.d.ts
 interface Umami {
-  track(
-    event_name: string,
-    event_data?: { [key: string]: unknown },
-  ): Promise<string> | undefined;
+  track(event_name: string, event_data?: { [key: string]: unknown }): Promise<string> | undefined;
 }
 
 declare let umami: Umami | undefined;
@@ -11,7 +8,7 @@ declare let umami: Umami | undefined;
 // src/utils/umami.ts
 export default function track(
   event_name: string,
-  event_data?: { [key: string]: unknown },
+  event_data?: { [key: string]: unknown }
 ): Promise<string> | undefined {
   if (typeof umami !== 'undefined') {
     console.debug('track data: "' + event_name + '"', event_data);
