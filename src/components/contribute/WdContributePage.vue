@@ -352,14 +352,6 @@ const headerImg = getImageUrl(imgPath, {
             {{ $t('contribute.description') }}
           </p>
 
-          <!-- Global note banner -->
-          <div class="note-banner q-mb-md">
-            <q-icon name="wd-info-outline" size="sm" class="q-mr-xs" />
-            <span class="text-caption text-grey-8">
-              {{ $t('contribute.sync_note') }}
-            </span>
-          </div>
-
           <!-- Featured Links -->
           <div v-if="featuredLinks.length > 0" class="q-mt-md">
             <div class="row q-col-gutter-md">
@@ -369,8 +361,16 @@ const headerImg = getImageUrl(imgPath, {
             </div>
           </div>
 
+          <!-- Sync note banner - between featured and regular apps -->
+          <div class="note-banner q-my-md">
+            <q-icon name="wd-info-outline" size="sm" class="q-mr-xs" />
+            <span class="text-caption text-grey-8">
+              {{ $t('contribute.sync_note') }}
+            </span>
+          </div>
+
           <!-- Regular Links -->
-          <div v-if="regularLinks.length > 0" class="q-mt-lg">
+          <div v-if="regularLinks.length > 0" class="q-mt-md">
             <div class="row q-col-gutter-md">
               <div v-for="link in regularLinks" :key="link.name" class="col-12 col-sm-6">
                 <WdExternalLinkCard :link="link" @click="onLinkClick" />
