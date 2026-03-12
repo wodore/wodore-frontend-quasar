@@ -111,5 +111,40 @@
     "unit": "°C",
     "unavailable": "Weather data not available",
     "no_guarantee": "without guarantee"
+  },
+  "contribute": {
+    "title": "Contribute",
+    "description": "Share your photos and info with the outdoor community. What you add on these platforms shows up here too!",
+    "sync_note": "Updates usually appear within a couple weeks",
+    "platforms": {
+      "panoramax": {
+        "name": "Panoramax",
+        "description": "Upload photos with details for others"
+      },
+      "mapcomplete": {
+        "name": "MapComplete",
+        "description": "Add photos & details right on the map"
+      },
+      "wikimedia_commons": {
+        "name": "Wikimedia Commons",
+        "description": "Upload free photos for everyone to use"
+      },
+      "openstreetmap": {
+        "name": "OpenStreetMap",
+        "description": "Improve the free world map"
+      },
+      "refuges": {
+        "name": "Refuges.info",
+        "description": "Hut info, photos, and conditions"
+      },
+      "camptocamp": {
+        "name": "Camptocamp",
+        "description": "Routes & trip reports"
+      }
+    },
+    "app_stores": {
+      "android": "Android",
+      "ios": "iOS"
+    }
   }
 }

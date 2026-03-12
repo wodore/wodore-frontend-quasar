@@ -105,7 +105,7 @@ const renderTemplate = (template: string, params: Record<string, string>): strin
   return result;
 };
 
-// Define contribution links
+// Define contribution links with translation keys
 // Logic and information separated - could be moved to backend later
 const contributeLinksData: ExternalLink[] = [
   {
@@ -113,7 +113,9 @@ const contributeLinksData: ExternalLink[] = [
       'https://panoramax.openstreetmap.fr/#map=${zoom}/${lat}/${lon}',
       'https://panoramax.openstreetmap.fr/',
     ],
-    name: 'Panoramax',
+    nameKey: 'contribute.platforms.panoramax.name',
+    descriptionKey: 'contribute.platforms.panoramax.description',
+    name: 'Panoramax', // fallback for components that don't support translation keys yet
     description: 'Contribute geolocated photos via mobile app or web',
     icon: 'https://upload.wikimedia.org/wikipedia/commons/a/a9/Panoramax.svg',
     color: 'accent',
@@ -132,6 +134,8 @@ const contributeLinksData: ExternalLink[] = [
       'https://mapcomplete.org/${mapcomplete_theme}.html?z=${zoom}&lat=${lat}&lon=${lon}',
       'https://mapcomplete.org',
     ],
+    nameKey: 'contribute.platforms.mapcomplete.name',
+    descriptionKey: 'contribute.platforms.mapcomplete.description',
     name: 'MapComplete',
     description: 'Add images and information directly to this OpenStreetMap location',
     icon: 'https://upload.wikimedia.org/wikipedia/commons/9/9a/MapComplete.svg',
@@ -147,6 +151,8 @@ const contributeLinksData: ExternalLink[] = [
       'https://www.wikidata.org/wiki/${qid}',
       'https://commons.wikimedia.org/wiki/Special:UploadWizard',
     ],
+    nameKey: 'contribute.platforms.wikimedia_commons.name',
+    descriptionKey: 'contribute.platforms.wikimedia_commons.description',
     name: 'Wikimedia Commons',
     description: "Upload free media to the world's largest media library",
     icon: 'https://upload.wikimedia.org/wikipedia/commons/4/4a/Commons-logo.svg',
@@ -159,6 +165,8 @@ const contributeLinksData: ExternalLink[] = [
       'https://www.openstreetmap.org/#map=${zoom}/${lat}/${lon}',
       'https://www.openstreetmap.org',
     ],
+    nameKey: 'contribute.platforms.openstreetmap.name',
+    descriptionKey: 'contribute.platforms.openstreetmap.description',
     name: 'OpenStreetMap',
     description: 'The free wiki world map - add and edit geographic data',
     icon: 'https://upload.wikimedia.org/wikipedia/commons/b/b0/Openstreetmap_logo.svg',
@@ -167,6 +175,8 @@ const contributeLinksData: ExternalLink[] = [
   },
   {
     urls: ['https://www.refuges.info/point/${refuges_id}', 'https://www.refuges.info'],
+    nameKey: 'contribute.platforms.refuges.name',
+    descriptionKey: 'contribute.platforms.refuges.description',
     name: 'Refuges.info',
     description: 'Outdoor community with hut information, photos, and conditions',
     icon: 'https://www.refuges.info/images/icones/favicon.svg',
@@ -175,6 +185,8 @@ const contributeLinksData: ExternalLink[] = [
   },
   {
     urls: ['https://www.camptocamp.org/'],
+    nameKey: 'contribute.platforms.camptocamp.name',
+    descriptionKey: 'contribute.platforms.camptocamp.description',
     name: 'Camptocamp',
     description: 'Outdoor community with hiking and climbing routes',
     icon: 'https://www.camptocamp.org/img/logo.433ae10f.svg',
@@ -322,7 +334,7 @@ const headerImg = getImageUrl(imgPath, {
       <q-img :src="headerImg" style="height: 140px" class="shadow-4">
         <div class="card-header absolute-bottom text-white text-h5"></div>
         <div class="absolute-bottom text-accent-400 text-h4 text-center card-header__text">
-          Contribute
+          {{ $t('contribute.title') }}
         </div>
       </q-img>
     </div>
@@ -337,16 +349,14 @@ const headerImg = getImageUrl(imgPath, {
       >
         <div class="col no-wrap items-center q-py-md">
           <p class="text-body1 q-pt-md">
-            Help improve Wodore and the outdoor community! Add photos and information through these
-            platforms. Your contributions to OpenStreetMap and uploaded images sync back to this
-            page.
+            {{ $t('contribute.description') }}
           </p>
 
           <!-- Global note banner -->
           <div class="note-banner q-mb-md">
             <q-icon name="wd-info-outline" size="sm" class="q-mr-xs" />
             <span class="text-caption text-grey-8">
-              Images and information are synced periodically (typically every 14 days)
+              {{ $t('contribute.sync_note') }}
             </span>
           </div>
 

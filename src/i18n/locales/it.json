@@ -94,5 +94,40 @@
     "unit": "°C",
     "unavailable": "Dati meteo non disponibili",
     "no_guarantee": "senza garanzia"
+  },
+  "contribute": {
+    "title": "Contribuisci",
+    "description": "Condividi le tue foto e info con la community outdoor. Quello che aggiungi su queste piattaforme appare anche qui!",
+    "sync_note": "Gli aggiornamenti arrivano di solito entro un paio di settimane",
+    "platforms": {
+      "panoramax": {
+        "name": "Panoramax",
+        "description": "Carica foto con dettagli utili per gli altri"
+      },
+      "mapcomplete": {
+        "name": "MapComplete",
+        "description": "Aggiungi foto & info direttamente sulla mappa"
+      },
+      "wikimedia_commons": {
+        "name": "Wikimedia Commons",
+        "description": "Carica foto libere per tutti"
+      },
+      "openstreetmap": {
+        "name": "OpenStreetMap",
+        "description": "Migliora la mappa libera del mondo"
+      },
+      "refuges": {
+        "name": "Refuges.info",
+        "description": "Info capanne, foto e condizioni"
+      },
+      "camptocamp": {
+        "name": "Camptocamp",
+        "description": "Itinerari & racconti di viaggio"
+      }
+    },
+    "app_stores": {
+      "android": "Android",
+      "ios": "iOS"
+    }
   }
 }

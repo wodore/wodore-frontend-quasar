@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import IconAndroid from '~icons/material-symbols/android.svg';
 import IconApple from '~icons/bxl/apple';
 import IconStar from '~icons/material-symbols/star.svg';
 import type { ExternalLink } from '../../types/contribute';
+
+const { t } = useI18n();
 
 interface Props {
   link: ExternalLink;
@@ -17,6 +20,15 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   (e: 'click', url: string): void;
 }>();
+
+// Get translated name and description
+const displayName = computed(() => {
+  return props.link.nameKey ? t(props.link.nameKey) : props.link.name;
+});
+
+const displayDescription = computed(() => {
+  return props.link.descriptionKey ? t(props.link.descriptionKey) : props.link.description;
+});
 
 // Get the final URL (already rendered by parent component)
 const finalUrl = computed(() => {
@@ -64,7 +76,7 @@ const openAppStore = (event: Event, store: 'google' | 'apple') => {
           <div class="col q-pl-md">
             <div class="row items-center justify-between q-mb-xs">
               <div class="text-title text-h5">
-                {{ link.name }}
+                {{ displayName }}
                 <q-iconify :is="IconStar" color="yellow-9" size="sm" class="star-icon q-ml-sm" />
               </div>
               <div v-if="hasAppLinks" class="app-store-badges">
@@ -93,7 +105,7 @@ const openAppStore = (event: Event, store: 'google' | 'apple') => {
               </div>
             </div>
             <div class="text-caption text-grey-7">
-              {{ link.description }}
+              {{ displayDescription }}
             </div>
           </div>
         </div>
@@ -111,7 +123,7 @@ const openAppStore = (event: Event, store: 'google' | 'apple') => {
           <div class="col q-pl-sm">
             <div class="row items-center justify-between">
               <div class="text-body2 text-weight-medium">
-                {{ link.name }}
+                {{ displayName }}
               </div>
               <div v-if="hasAppLinks" class="app-store-badges">
                 <q-btn
@@ -142,7 +154,7 @@ const openAppStore = (event: Event, store: 'google' | 'apple') => {
         </div>
         <!-- Description on new line, full width -->
         <div class="text-caption text-grey-7">
-          {{ link.description }}
+          {{ displayDescription }}
         </div>
       </q-card-section>
     </template>
