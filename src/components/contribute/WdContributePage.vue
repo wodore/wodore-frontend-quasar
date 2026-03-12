@@ -80,6 +80,11 @@ const params = computed(() => {
     result.qid = String(route.query.c_qid);
   }
 
+  // Parse c_ref parameter - to determine context
+  if (route.query.c_ref) {
+    result.ref = String(route.query.c_ref);
+  }
+
   return result;
 });
 
@@ -110,24 +115,6 @@ const renderTemplate = (template: string, params: Record<string, string>): strin
 const contributeLinksData: ExternalLink[] = [
   {
     urls: [
-      'https://panoramax.openstreetmap.fr/#map=${zoom}/${lat}/${lon}',
-      'https://panoramax.openstreetmap.fr/',
-    ],
-    nameKey: 'contribute.platforms.panoramax.name',
-    descriptionKey: 'contribute.platforms.panoramax.description',
-    name: 'Panoramax', // fallback for components that don't support translation keys yet
-    description: 'Contribute geolocated photos via mobile app or web',
-    icon: 'https://upload.wikimedia.org/wikipedia/commons/a/a9/Panoramax.svg',
-    color: 'accent',
-    apps: {
-      google: 'https://play.google.com/store/apps/details?id=app.panoramax',
-      apple: 'https://apps.apple.com/us/app/panoramax-photo/id6677045203',
-    },
-    order: 1,
-    featured: true,
-  },
-  {
-    urls: [
       'https://mapcomplete.org/${mapcomplete_theme}.html?z=${zoom}&lat=${lat}&lon=${lon}&userlayout=${mapcomplete_userlayout}#${osm_feature}/${osm_id_only}',
       'https://mapcomplete.org/${mapcomplete_theme}.html?z=${zoom}&lat=${lat}&lon=${lon}#${osm_feature}/${osm_id_only}',
       'https://mapcomplete.org/${mapcomplete_theme}.html?z=${zoom}&lat=${lat}&lon=${lon}&userlayout=${mapcomplete_userlayout}',
@@ -142,6 +129,25 @@ const contributeLinksData: ExternalLink[] = [
     color: 'primary',
     apps: {
       google: 'https://play.google.com/store/apps/details?id=org.mapcomplete',
+    },
+    order: 1,
+    featured: true,
+    starRating: 1,
+  },
+  {
+    urls: [
+      'https://panoramax.openstreetmap.fr/#map=${zoom}/${lat}/${lon}',
+      'https://panoramax.openstreetmap.fr/',
+    ],
+    nameKey: 'contribute.platforms.panoramax.name',
+    descriptionKey: 'contribute.platforms.panoramax.description',
+    name: 'Panoramax',
+    description: 'Contribute geolocated photos via mobile app or web',
+    icon: 'https://upload.wikimedia.org/wikipedia/commons/a/a9/Panoramax.svg',
+    color: 'accent',
+    apps: {
+      google: 'https://play.google.com/store/apps/details?id=app.panoramax',
+      apple: 'https://apps.apple.com/us/app/panoramax-photo/id6677045203',
     },
     order: 2,
     featured: true,
@@ -225,6 +231,11 @@ const regularLinks = computed(() => {
   return contributeLinks.value.filter(link => !link.featured);
 });
 
+// Check if we should show the tip (only when c_ref=hut)
+const showTip = computed(() => {
+  return params.value.ref === 'hut';
+});
+
 function onClose(do_track = false) {
   if (do_track) {
     track('contribute-no-action');
@@ -283,6 +294,58 @@ const headerImg = getImageUrl(imgPath, {
   background: rgba(0, 0, 0, 0.03);
   border-radius: 8px;
   border-left: 3px solid var(--q-color-primary);
+}
+
+.note-banner {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 8px;
+  border-left: 3px solid var(--q-color-primary);
+  flex-direction: column;
+  gap: 4px;
+}
+
+.note-banner .q-icon {
+  align-self: flex-start;
+}
+
+.note-banner span {
+  text-align: left;
+}
+
+@media (min-width: 600px) {
+  .note-banner {
+    flex-direction: row;
+    gap: 8px;
+  }
+}
+
+.tip-banner {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  background: rgba(255, 193, 7, 0.1);
+  border-radius: 8px;
+  border-left: 3px solid var(--q-color-warning);
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tip-banner .q-icon {
+  align-self: flex-start;
+}
+
+.tip-banner span {
+  text-align: left;
+}
+
+@media (min-width: 600px) {
+  .tip-banner {
+    flex-direction: row;
+    gap: 8px;
+  }
 }
 
 .close-btn-overlay {
@@ -351,6 +414,14 @@ const headerImg = getImageUrl(imgPath, {
           <p class="text-body1 q-pt-md">
             {{ $t('contribute.description') }}
           </p>
+
+          <!-- Tip banner - only show when c_ref=hut -->
+          <div v-if="showTip" class="tip-banner q-mb-md">
+            <q-icon name="wd-tip" size="sm" class="q-mr-xs" />
+            <span class="text-caption text-grey-8">
+              {{ $t('contribute.tip') }}
+            </span>
+          </div>
 
           <!-- Featured Links -->
           <div v-if="featuredLinks.length > 0" class="q-mt-md">

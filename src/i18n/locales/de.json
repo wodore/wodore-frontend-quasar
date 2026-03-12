@@ -127,10 +127,15 @@
     "unavailable": "Wetterdaten nicht verfügbar",
     "no_guarantee": "ohne Gewähr"
   },
+  "media": {
+    "no_images_available": "Keine Bilder verfügbar"
+  },
   "contribute": {
     "title": "Mitmachen",
-    "description": "Teile deine Fotos und Infos mit der Outdoor-Community. Was du hier einträgst, erscheint auch bei Wodore!",
+    "description": "Teile Fotos & Infos mit der Community.",
+    "tip": "Klicke eine App an, um direkt zur Unterkunft zu gelangen und Fotos hochzuladen oder Änderungen vorzunehmen",
     "sync_note": "Updates kommen meistens innerhalb von ein paar Wochen",
+    "contribute_images": "Bilder hinzufügen",
     "platforms": {
       "panoramax": {
         "name": "Panoramax",

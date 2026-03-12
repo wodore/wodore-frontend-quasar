@@ -49,7 +49,7 @@ const onBackdropClick = (event: MouseEvent) => {
       <div v-else class="fit flex flex-center text-white">
         <div class="text-center">
           <q-icon name="image_not_supported" size="4rem" />
-          <p class="q-mt-md">No images available</p>
+          <p class="q-mt-md">{{ $t('media.no_images_available') }}</p>
         </div>
       </div>
     </q-card>
@@ -57,6 +57,19 @@ const onBackdropClick = (event: MouseEvent) => {
 </template>
 
 <style lang="scss" scoped>
+:deep(.q-card) {
+  box-shadow: none;
+  border-radius: 0;
+}
+
+:deep(.q-dialog__backdrop) {
+  background: rgba(0, 0, 0, 1) !important;
+}
+
+:deep(.q-dialog__inner) {
+  padding: 0 !important;
+}
+
 :deep(.q-card) {
   box-shadow: none;
   border-radius: 0;

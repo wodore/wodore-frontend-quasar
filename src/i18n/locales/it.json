@@ -95,10 +95,15 @@
     "unavailable": "Dati meteo non disponibili",
     "no_guarantee": "senza garanzia"
   },
+  "media": {
+    "no_images_available": "Nessuna immagine disponibile"
+  },
   "contribute": {
     "title": "Contribuisci",
-    "description": "Condividi le tue foto e info con la community outdoor. Quello che aggiungi su queste piattaforme appare anche qui!",
+    "description": "Condividi foto & info con la community.",
+    "tip": "Clicca su un'app qui sotto per accedere direttamente al rifugio per caricare foto o fare modifiche",
     "sync_note": "Gli aggiornamenti arrivano di solito entro un paio di settimane",
+    "contribute_images": "Aggiungi foto",
     "platforms": {
       "panoramax": {
         "name": "Panoramax",

@@ -14,4 +14,5 @@ export interface ExternalLink {
   icon?: string;
   color?: string;
   featured?: boolean;
+  starRating?: number; // Number of stars to display (0-5)
 }

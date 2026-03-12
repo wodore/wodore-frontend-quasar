@@ -123,6 +123,9 @@ const handleContributeClick = () => {
   query.c_mapcomplete_userlayout =
     'https%3A%2F%2Fstudio.mapcomplete.org%2F2805144%2Flayers%2Fhuts_and_shelters%2Fhuts_and_shelters.json';
 
+  // Add context reference to show tip banner
+  query.c_ref = 'hut';
+
   router.push({
     name: 'contribute',
     query,
@@ -131,8 +134,8 @@ const handleContributeClick = () => {
 </script>
 
 <template>
-  <!-- Contribute button overlay (only show when there are images) -->
-  <div v-if="images.length > 0" class="image-gallery-container">
+  <!-- With images: show contribute button overlay -->
+  <div v-if="images.length > 0" class="image-gallery-container q-ma-sm q-ma-md-lg">
     <q-btn
       flat
       dense
@@ -140,15 +143,15 @@ const handleContributeClick = () => {
       color="accent-800"
       @click="handleContributeClick"
     >
-      <q-iconify :is="IconAddPhoto" size="20px" />
-      <q-tooltip>Contribute images</q-tooltip>
+      <q-iconify :is="IconAddPhoto" size="32px" />
+      <q-tooltip :delay="500">{{ $t('contribute.contribute_images') }}</q-tooltip>
     </q-btn>
 
     <WdMediaPreview
       :images="images"
       :loading="loading"
       :add-image-url="mapCompleteUrl"
-      empty-state-message="No images available for this hut"
+      empty-state-message="No images"
       :empty-state-icon="IconAddPhoto"
       :osm-feature="osmFeature"
       :osm-id-only="osmIdOnly"
@@ -161,9 +164,10 @@ const handleContributeClick = () => {
     />
   </div>
 
-  <!-- No images - just show the media preview with empty state -->
+  <!-- Without images: just show the media preview (will use default slot with WdNoImage) -->
   <WdMediaPreview
     v-else
+    class="q-ma-sm q-ma-md-lg"
     :images="images"
     :loading="loading"
     :add-image-url="mapCompleteUrl"
@@ -190,17 +194,22 @@ const handleContributeClick = () => {
   top: 5px;
   left: 12px;
   z-index: 10;
-  padding: 6px;
+  padding: 8px;
   border-radius: 8px;
+  transition: all 0.2s ease;
 }
 
 .contribute-btn-overlay :deep(.q-iconify) {
-  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.8))
-    drop-shadow(0 0 3px rgba(255, 255, 255, 0.5));
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.9))
+    drop-shadow(0 0 2px rgba(255, 255, 255, 0.7));
+  transition: all 0.2s ease;
+}
+
+.contribute-btn-overlay:hover {
+  transform: scale(1.1);
 }
 
 .contribute-btn-overlay:hover :deep(.q-iconify) {
-  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.9))
-    drop-shadow(0 0 4px rgba(255, 255, 255, 0.6));
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 1)) drop-shadow(0 0 3px rgba(255, 255, 255, 0.8));
 }
 </style>

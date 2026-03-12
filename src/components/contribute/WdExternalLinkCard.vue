@@ -77,7 +77,16 @@ const openAppStore = (event: Event, store: 'google' | 'apple') => {
             <div class="row items-center justify-between q-mb-xs">
               <div class="text-title text-h5">
                 {{ displayName }}
-                <q-iconify :is="IconStar" color="yellow-9" size="sm" class="star-icon q-ml-sm" />
+                <template v-if="link.starRating">
+                  <q-iconify
+                    v-for="i in link.starRating"
+                    :key="i"
+                    :is="IconStar"
+                    color="yellow-9"
+                    size="sm"
+                    class="star-icon q-ml-xs"
+                  />
+                </template>
               </div>
               <div v-if="hasAppLinks" class="app-store-badges">
                 <q-btn

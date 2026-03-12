@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watchEffect, type Component } from 'vue';
 import { useTimeoutFn } from '@vueuse/core';
-import { useQuasar } from 'quasar';
 import { useRouter } from 'vue-router';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import type { Swiper as SwiperType } from 'swiper';
@@ -60,7 +59,6 @@ const emit = defineEmits<{
   (e: 'add-image-click'): void;
 }>();
 
-const $q = useQuasar();
 const router = useRouter();
 const dialogOpen = ref(false);
 const currentSlide = ref(0);
@@ -184,6 +182,9 @@ const handleAddImageClick = () => {
     query.c_zoom = '15'; // Default zoom for hut location
   }
 
+  // Add context reference to show tip banner
+  query.c_ref = 'hut';
+
   router.push({
     name: 'contribute',
     query,
@@ -217,13 +218,7 @@ const thumbnailContainerStyle = computed(() => {
     <q-spinner v-if="showSpinner" color="primary" size="3rem" />
   </div>
 
-  <div
-    v-else-if="hasImages"
-    :class="{
-      'q-ma-sm': $q.screen.gt.sm,
-      'q-ma-lg': $q.screen.gt.md,
-    }"
-  >
+  <div v-else-if="hasImages">
     <!-- Main image swiper with thumbnails overlay -->
     <div class="media-preview-container">
       <div
@@ -310,13 +305,15 @@ const thumbnailContainerStyle = computed(() => {
     />
   </div>
 
-  <!-- No images state -->
-  <WdNoImage
-    v-if="!loading && !hasImages"
-    :message="emptyStateMessage"
-    :icon="emptyStateIcon || IconAddPhoto"
-    :on-contribute="handleAddImageClick"
-  />
+  <!-- No images state - use slot for customization -->
+  <slot name="no-image">
+    <WdNoImage
+      v-if="!loading && !hasImages"
+      :message="emptyStateMessage"
+      :icon="emptyStateIcon || IconAddPhoto"
+      :on-contribute="handleAddImageClick"
+    />
+  </slot>
 </template>
 
 <style lang="scss" scoped>
@@ -324,6 +321,8 @@ const thumbnailContainerStyle = computed(() => {
   max-width: 400px;
   margin: 0 auto;
   width: 100%;
+  // Ensure border-box for consistent sizing across components
+  box-sizing: border-box;
 }
 
 .media-preview-wrapper {
@@ -332,6 +331,8 @@ const thumbnailContainerStyle = computed(() => {
   // Fixed aspect ratio container to prevent size changes
   padding-top: 66.67%; // 3:2 aspect ratio (landscape)
   background: #f5f5f5; // Placeholder background
+  // Ensure border-box for consistent sizing
+  box-sizing: border-box;
 }
 
 .preview-swiper {
@@ -340,6 +341,16 @@ const thumbnailContainerStyle = computed(() => {
   left: 0;
   width: 100%;
   height: 100%;
+  // Override Swiper's default content-box to ensure consistent sizing
+  box-sizing: border-box;
+
+  :deep(.swiper-wrapper) {
+    box-sizing: border-box;
+  }
+
+  :deep(.swiper-slide) {
+    box-sizing: border-box;
+  }
 }
 
 .preview-slide {

@@ -236,11 +236,7 @@ const attributionParts = computed(() => {
 }
 
 .with-margin {
-  max-width: calc(100vw - 80px);
-  max-height: calc(100vh - 80px);
-  margin: 40px;
-  border-radius: 16px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  // Margins removed - always full screen
 }
 
 .close-btn {

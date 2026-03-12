@@ -1,4 +1,5 @@
 export type IconsId =
+  | "tip"
   | "text-outline"
   | "subject"
   | "server"
@@ -37,6 +38,7 @@ export type IconsId =
   | "add-outline";
 
 export type IconsKey =
+  | "Tip"
   | "TextOutline"
   | "Subject"
   | "Server"
@@ -75,6 +77,7 @@ export type IconsKey =
   | "AddOutline";
 
 export enum Icons {
+  Tip = "tip",
   TextOutline = "text-outline",
   Subject = "subject",
   Server = "server",
@@ -114,40 +117,41 @@ export enum Icons {
 }
 
 export const ICONS_CODEPOINTS: { [key in Icons]: string } = {
-  [Icons.TextOutline]: "61697",
-  [Icons.Subject]: "61698",
-  [Icons.Server]: "61699",
-  [Icons.QuestionMark]: "61700",
-  [Icons.MoreVertical]: "61701",
-  [Icons.Message]: "61702",
-  [Icons.Menu]: "61703",
-  [Icons.MenuArrow]: "61704",
-  [Icons.LocationQuestion]: "61705",
-  [Icons.Link]: "61706",
-  [Icons.Info]: "61707",
-  [Icons.InfoOutline]: "61708",
-  [Icons.Gift]: "61709",
-  [Icons.Filter]: "61710",
-  [Icons.FilterOutline]: "61711",
-  [Icons.Favorite]: "61712",
-  [Icons.FavoriteOutline]: "61713",
-  [Icons.Eye]: "61714",
-  [Icons.EyeOutline]: "61715",
-  [Icons.Edit]: "61716",
-  [Icons.EditOutline]: "61717",
-  [Icons.Close]: "61718",
-  [Icons.Checkmark]: "61719",
-  [Icons.Calendar]: "61720",
-  [Icons.Browser]: "61721",
-  [Icons.Bell]: "61722",
-  [Icons.BellOutline]: "61723",
-  [Icons.At]: "61724",
-  [Icons.ArrowheadUp]: "61725",
-  [Icons.ArrowheadRight]: "61726",
-  [Icons.ArrowheadLeft]: "61727",
-  [Icons.ArrowheadDown]: "61728",
-  [Icons.ArrowUpDown]: "61729",
-  [Icons.AlertTriangleOutline]: "61730",
-  [Icons.Add]: "61731",
-  [Icons.AddOutline]: "61732",
+  [Icons.Tip]: "61697",
+  [Icons.TextOutline]: "61698",
+  [Icons.Subject]: "61699",
+  [Icons.Server]: "61700",
+  [Icons.QuestionMark]: "61701",
+  [Icons.MoreVertical]: "61702",
+  [Icons.Message]: "61703",
+  [Icons.Menu]: "61704",
+  [Icons.MenuArrow]: "61705",
+  [Icons.LocationQuestion]: "61706",
+  [Icons.Link]: "61707",
+  [Icons.Info]: "61708",
+  [Icons.InfoOutline]: "61709",
+  [Icons.Gift]: "61710",
+  [Icons.Filter]: "61711",
+  [Icons.FilterOutline]: "61712",
+  [Icons.Favorite]: "61713",
+  [Icons.FavoriteOutline]: "61714",
+  [Icons.Eye]: "61715",
+  [Icons.EyeOutline]: "61716",
+  [Icons.Edit]: "61717",
+  [Icons.EditOutline]: "61718",
+  [Icons.Close]: "61719",
+  [Icons.Checkmark]: "61720",
+  [Icons.Calendar]: "61721",
+  [Icons.Browser]: "61722",
+  [Icons.Bell]: "61723",
+  [Icons.BellOutline]: "61724",
+  [Icons.At]: "61725",
+  [Icons.ArrowheadUp]: "61726",
+  [Icons.ArrowheadRight]: "61727",
+  [Icons.ArrowheadLeft]: "61728",
+  [Icons.ArrowheadDown]: "61729",
+  [Icons.ArrowUpDown]: "61730",
+  [Icons.AlertTriangleOutline]: "61731",
+  [Icons.Add]: "61732",
+  [Icons.AddOutline]: "61733",
 };

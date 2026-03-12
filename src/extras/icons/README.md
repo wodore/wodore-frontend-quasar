@@ -46,6 +46,7 @@ Icons:
 | `wd-gift`                   | Gift/promotion               |
 | `wd-info-outline`           | Information (outlined)       |
 | `wd-info`                   | Information (filled)         |
+| `wd-tip`                    | Tip/hint/idea/suggestion     |
 | `wd-link`                   | Hyperlink/reference          |
 | `wd-location-question`      | Location help/coordinates    |
 | `wd-menu-arrow`             | Menu navigation              |

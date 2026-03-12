@@ -95,10 +95,15 @@
     "unavailable": "Donnees meteo indisponibles",
     "no_guarantee": "sans garantie"
   },
+  "media": {
+    "no_images_available": "Aucune image disponible"
+  },
   "contribute": {
     "title": "Contribuer",
-    "description": "Partage tes photos et infos avec la communauté outdoor. Ce que tu ajoutes sur ces plateformes apparaît ici aussi !",
+    "description": "Partage tes photos & infos avec la communauté.",
+    "tip": "Cliquez sur une application ci-dessous pour accéder directement à l'hébergement et télécharger des photos ou faire des modifications",
     "sync_note": "Les mises à jour arrivent généralement en quelques semaines",
+    "contribute_images": "Ajouter des photos",
     "platforms": {
       "panoramax": {
         "name": "Panoramax",

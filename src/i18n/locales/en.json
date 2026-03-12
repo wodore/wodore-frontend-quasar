@@ -112,10 +112,15 @@
     "unavailable": "Weather data not available",
     "no_guarantee": "without guarantee"
   },
+  "media": {
+    "no_images_available": "No images available"
+  },
   "contribute": {
     "title": "Contribute",
-    "description": "Share your photos and info with the outdoor community. What you add on these platforms shows up here too!",
-    "sync_note": "Updates usually appear within a couple weeks",
+    "description": "Share your photos & info with the community.",
+    "tip": "Click an app below to go directly to the accommodation to upload images or make changes",
+    "sync_note": "Updates appear within a couple weeks",
+    "contribute_images": "Add images",
     "platforms": {
       "panoramax": {
         "name": "Panoramax",
