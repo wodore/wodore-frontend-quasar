@@ -21,7 +21,7 @@ interface Props {
   loading?: boolean;
   addImageUrl?: string;
   emptyStateMessage?: string;
-  emptyStateIcon?: string | Component | Record<string, unknown> | undefined;
+  emptyStateIcon?: Component;
   maxThumbnailCount?: number;
   thumbnailSize?: number;
   showAttribution?: boolean;
@@ -34,6 +34,8 @@ interface Props {
   // Hut coordinates for precise location linking
   hutLat?: number | null;
   hutLon?: number | null;
+  // Use reduced height for no-image state
+  reducedHeightNoImage?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -52,6 +54,7 @@ const props = withDefaults(defineProps<Props>(), {
   mapcompleteUserlayout: null,
   hutLat: null,
   hutLon: null,
+  reducedHeightNoImage: false,
 });
 
 const emit = defineEmits<{
@@ -310,8 +313,9 @@ const thumbnailContainerStyle = computed(() => {
     <WdNoImage
       v-if="!loading && !hasImages"
       :message="emptyStateMessage"
-      :icon="emptyStateIcon || IconAddPhoto"
+      :icon="emptyStateIcon ?? IconAddPhoto"
       :on-contribute="handleAddImageClick"
+      :reduced-height="reducedHeightNoImage"
     />
   </slot>
 </template>

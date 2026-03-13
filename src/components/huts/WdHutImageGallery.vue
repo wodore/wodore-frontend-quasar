@@ -181,6 +181,7 @@ const handleContributeClick = () => {
     :mapcomplete-userlayout="'https%3A%2F%2Fstudio.mapcomplete.org%2F2805144%2Flayers%2Fhuts_and_shelters%2Fhuts_and_shelters.json'"
     :hut-lat="hut?.location?.lat ?? null"
     :hut-lon="hut?.location?.lon ?? null"
+    :reduced-height-no-image="true"
   />
 </template>
 
