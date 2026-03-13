@@ -2043,10 +2043,10 @@
   resolved "https://registry.npmjs.org/@maplibre/geojson-vt/-/geojson-vt-5.0.4.tgz"
   integrity sha512-KGg9sma45S+stfH9vPCJk1J0lSDLWZgCT9Y8u8qWZJyjFlP8MNP1WGTxIMYJZjDvVT3PDn05kN1C95Sut1HpgQ==
 
-"@maplibre/geojson-vt@^6.0.1":
-  version "6.0.1"
-  resolved "https://registry.yarnpkg.com/@maplibre/geojson-vt/-/geojson-vt-6.0.1.tgz#f3875ce06fdb3faa3696c84627632448d3a7ebc6"
-  integrity sha512-VXoddR6nvJUXGXfN0FZBA2o3Z2FnTdylnsDB2mMXFJavwfWsGDfrNpC2utWFmY1CSiOs1TKSDH2/Aa1yvg0JUA==
+"@maplibre/geojson-vt@^6.0.2":
+  version "6.0.2"
+  resolved "https://registry.yarnpkg.com/@maplibre/geojson-vt/-/geojson-vt-6.0.2.tgz#a2ac1a61bd491febc4d9609a49c095d5817fea25"
+  integrity sha512-OnXnV2m1yBULKOlUanNFTiOeXCktvWYY4yWoHVETlp6ShJGUhY3DNt9XzPByL24h4JcoJRccPBlMhH1o8cvmyQ==
   dependencies:
     kdbush "^4.0.2"
 
@@ -7561,9 +7561,9 @@ mapbox-gl@*:
     tinyqueue "^3.0.0"
 
 maplibre-gl@^5:
-  version "5.20.0"
-  resolved "https://registry.yarnpkg.com/maplibre-gl/-/maplibre-gl-5.20.0.tgz#24044a2a6ba3c4ae59b6f6d2e2ed66b05996d791"
-  integrity sha512-hUQ/4KkxVKLbAD4coW+9/tJ9/jOKKcN7q4F92EQ5mjbUJ2m1sz6uoiB3VqW/VaogUxmWd896l1cc9TtV4+uvJA==
+  version "5.20.1"
+  resolved "https://registry.yarnpkg.com/maplibre-gl/-/maplibre-gl-5.20.1.tgz#6903c4085fd383bf2167edcb2b7fcc5f6dfbf4b1"
+  integrity sha512-57YIgfRct+rrk78ldoWRuLWRnXV/1vM2Rk0QYfEDQmsXdpgbACwvGoREIOZtyDIaq/GJK/ORYEriaAdVZuNfvw==
   dependencies:
     "@mapbox/jsonlint-lines-primitives" "^2.0.2"
     "@mapbox/point-geometry" "^1.1.0"
@@ -7571,7 +7571,7 @@ maplibre-gl@^5:
     "@mapbox/unitbezier" "^0.0.1"
     "@mapbox/vector-tile" "^2.0.4"
     "@mapbox/whoots-js" "^3.1.0"
-    "@maplibre/geojson-vt" "^6.0.1"
+    "@maplibre/geojson-vt" "^6.0.2"
     "@maplibre/maplibre-gl-style-spec" "^24.7.0"
     "@maplibre/mlt" "^1.1.7"
     "@maplibre/vt-pbf" "^4.3.0"
