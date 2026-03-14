@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useQuasar } from 'quasar';
 import type { HutImage } from '@composables/useHutImages';
 import type { schemasWodore } from '@clients/index';
 import WdMediaPreview from '../media/WdMediaPreview.vue';
 import IconAddPhoto from '~icons/material-symbols/add-a-photo.svg';
 
+const $q = useQuasar();
 const router = useRouter();
 
 interface Props {
@@ -17,6 +19,9 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
 });
+
+// Responsive icon size
+const iconSize = computed(() => ($q.screen.xs ? '24px' : '32px'));
 
 // Extract OSM link from sources
 const osmLink = computed(() => {
@@ -136,14 +141,8 @@ const handleContributeClick = () => {
 <template>
   <!-- With images: show contribute button overlay -->
   <div v-if="images.length > 0" class="image-gallery-container">
-    <q-btn
-      flat
-      dense
-      class="contribute-btn-overlay"
-      color="accent-800"
-      @click="handleContributeClick"
-    >
-      <q-iconify :is="IconAddPhoto" size="32px" />
+    <q-btn flat dense class="contribute-btn-overlay" color="grey-7" @click="handleContributeClick">
+      <q-iconify :is="IconAddPhoto" :size="iconSize" />
       <q-tooltip :delay="500">{{ $t('contribute.contribute_images') }}</q-tooltip>
     </q-btn>
 
@@ -198,20 +197,32 @@ const handleContributeClick = () => {
   z-index: 10;
   padding: 8px;
   border-radius: 8px;
+  background: transparent;
   transition: all 0.2s ease;
 }
 
+.contribute-btn-overlay :deep(.q-btn__content) {
+  background: transparent;
+}
+
 .contribute-btn-overlay :deep(.q-iconify) {
-  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.9))
-    drop-shadow(0 0 2px rgba(255, 255, 255, 0.7));
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.8))
+    drop-shadow(0 0 2px rgba(255, 255, 255, 0.6));
   transition: all 0.2s ease;
 }
 
 .contribute-btn-overlay:hover {
-  transform: scale(1.1);
+  transform: scale(1.2);
+  background: transparent;
+}
+
+.contribute-btn-overlay:hover :deep(.q-btn__content) {
+  background: transparent;
+  color: var(--q-color-grey-9);
 }
 
 .contribute-btn-overlay:hover :deep(.q-iconify) {
-  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 1)) drop-shadow(0 0 3px rgba(255, 255, 255, 0.8));
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.9))
+    drop-shadow(0 0 2px rgba(255, 255, 255, 0.7));
 }
 </style>
