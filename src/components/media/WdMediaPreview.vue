@@ -516,12 +516,20 @@ const thumbnailContainerStyle = computed(() => {
   top: 6px;
   right: 6px;
   z-index: 10;
+  max-width: 300px;
 
   &.stationary {
     position: absolute;
     top: 6px;
     right: 6px;
     z-index: 100;
+  }
+
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 140px;
   }
 
   :deep(a) {
