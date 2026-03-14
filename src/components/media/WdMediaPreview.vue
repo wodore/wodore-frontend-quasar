@@ -233,7 +233,7 @@ const thumbnailContainerStyle = computed(() => {
   <div
     v-if="loading && !hasImages"
     class="flex flex-center"
-    style="min-height: 200px; border-radius: 25px"
+    style="min-height: 100px; border-radius: 25px"
   >
     <q-spinner v-if="showSpinner" color="primary" size="3rem" />
   </div>
@@ -247,13 +247,13 @@ const thumbnailContainerStyle = computed(() => {
       >
         <!-- Attribution badge (top-right) - stationary -->
         <div class="license-badge-custom stationary">
+          <span v-if="getCurrentImageAuthor()" v-html="getCurrentImageAuthor()" />
           <img
             v-if="getCurrentImageProviderIcon()"
             :src="getCurrentImageProviderIcon()"
             class="provider-icon"
             alt="Provider icon"
           />
-          <span v-if="getCurrentImageAuthor()" v-html="getCurrentImageAuthor()" />
         </div>
 
         <swiper
