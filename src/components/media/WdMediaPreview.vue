@@ -2,9 +2,10 @@
 import { ref, computed, watchEffect, type Component } from 'vue';
 import { useTimeoutFn } from '@vueuse/core';
 import { useRouter } from 'vue-router';
+import { useQuasar } from 'quasar';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import type { Swiper as SwiperType } from 'swiper';
-import { EffectFade, Keyboard, Thumbs } from 'swiper/modules';
+import { EffectFade, Keyboard, Pagination, Thumbs } from 'swiper/modules';
 import type { HutImage } from '@composables/useHutImages';
 import WdMediaDialog from './WdMediaDialog.vue';
 import WdNoImage from './WdNoImage.vue';
@@ -14,6 +15,7 @@ import IconAddPhoto from '~icons/material-symbols/add-a-photo.svg';
 import 'swiper/css';
 import 'swiper/css/effect-fade';
 import 'swiper/css/keyboard';
+import 'swiper/css/pagination';
 import 'swiper/css/thumbs';
 
 interface Props {
@@ -63,6 +65,11 @@ const emit = defineEmits<{
 }>();
 
 const router = useRouter();
+const $q = useQuasar();
+
+// Check if mobile view
+const isMobile = computed(() => $q.screen.xs);
+
 const dialogOpen = ref(false);
 const currentSlide = ref(0);
 const swiperRef = ref<SwiperType | null>(null);
@@ -257,12 +264,21 @@ const thumbnailContainerStyle = computed(() => {
         </div>
 
         <swiper
-          :modules="[EffectFade, Keyboard, Thumbs]"
+          :modules="[EffectFade, Keyboard, Pagination, Thumbs]"
           :slides-per-view="1"
           :space-between="0"
           :effect="'fade'"
           :fade-effect="{ crossFade: true }"
           :keyboard="{ enabled: true }"
+          :loop="true"
+          :pagination="
+            isMobile && images.length > 1
+              ? {
+                  clickable: true,
+                  dynamicBullets: true,
+                }
+              : false
+          "
           :thumbs="{ swiper: thumbsSwiperRef }"
           :initial-slide="0"
           class="preview-swiper"
@@ -281,7 +297,7 @@ const thumbnailContainerStyle = computed(() => {
 
         <!-- Thumbnail Swiper - overlaid on image (outside main swiper) -->
         <div
-          v-if="images.length > 1"
+          v-if="images.length > 1 && !isMobile"
           class="thumbs-swiper-container"
           :style="thumbnailContainerStyle"
         >
@@ -500,12 +516,20 @@ const thumbnailContainerStyle = computed(() => {
   top: 6px;
   right: 6px;
   z-index: 10;
+  max-width: 300px;
 
   &.stationary {
     position: absolute;
     top: 6px;
     right: 6px;
     z-index: 100;
+  }
+
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 140px;
   }
 
   :deep(a) {
@@ -520,6 +544,14 @@ const thumbnailContainerStyle = computed(() => {
     text-decoration-color: #64b5f6;
     text-decoration: underline dotted;
   }
+
+  @media (max-width: 599px) {
+    font-size: 0.6rem;
+    padding: 3px 5px;
+    gap: 4px;
+    top: 4px;
+    right: 4px;
+  }
 }
 
 .provider-icon {
@@ -528,6 +560,11 @@ const thumbnailContainerStyle = computed(() => {
   object-fit: contain;
   flex-shrink: 0;
   border-radius: 2px;
+
+  @media (max-width: 599px) {
+    width: 12px;
+    height: 12px;
+  }
 }
 
 .absolute-bottom-right {
@@ -537,5 +574,23 @@ const thumbnailContainerStyle = computed(() => {
 .thumbs-swiper-container {
   --thumbnail-size: 50px;
   position: absolute;
+}
+
+// Custom pagination styling for mobile
+.preview-swiper {
+  :deep(.swiper-pagination) {
+    bottom: 8px !important;
+  }
+
+  :deep(.swiper-pagination-bullet) {
+    background: rgba(255, 255, 255, 0.5);
+    opacity: 1;
+    transition: all 0.3s ease;
+  }
+
+  :deep(.swiper-pagination-bullet-active) {
+    background: #64b5f6 !important;
+    width: 8px !important;
+  }
 }
 </style>

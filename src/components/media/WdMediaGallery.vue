@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import type { Swiper as SwiperType } from 'swiper';
-import { Keyboard, Navigation, Thumbs } from 'swiper/modules';
+import { Keyboard, Navigation, Thumbs, Zoom } from 'swiper/modules';
 import type { HutImage } from 'src/composables/useHutImages';
 import type { ImageSizeVariants } from 'src/types/geo';
 import IconCloseOutline from '~icons/eva/close-outline';
@@ -13,6 +13,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/thumbs';
 import 'swiper/css/keyboard';
+import 'swiper/css/zoom';
 
 interface Props {
   images: HutImage[];
@@ -178,7 +179,7 @@ const attributionParts = computed(() => {
 
     <!-- Main Swiper -->
     <swiper
-      :modules="[Keyboard, Navigation, Thumbs]"
+      :modules="[Keyboard, Navigation, Thumbs, Zoom]"
       :slides-per-view="1"
       :space-between="0"
       :keyboard="{
@@ -187,16 +188,23 @@ const attributionParts = computed(() => {
       :navigation="true"
       :thumbs="{ swiper: thumbsSwiper }"
       :initial-slide="initialSlide"
+      :zoom="{
+        maxRatio: 3,
+        minRatio: 1,
+        toggle: true,
+      }"
       class="main-swiper"
       @slide-change="onSlideChange"
       @swiper="onSwiper"
     >
       <swiper-slide v-for="image in images" :key="image.id" class="main-slide">
-        <img
-          :src="getMainImageUrl(image)"
-          :alt="`Image by ${image.attribution?.short || 'unknown'}`"
-          class="main-image"
-        />
+        <div class="swiper-zoom-container">
+          <img
+            :src="getMainImageUrl(image)"
+            :alt="`Image by ${image.attribution?.short || 'unknown'}`"
+            class="main-image"
+          />
+        </div>
       </swiper-slide>
     </swiper>
 
@@ -372,6 +380,14 @@ const attributionParts = computed(() => {
   overflow: hidden;
   height: 100%;
   width: 100%;
+}
+
+.main-slide :deep(.swiper-zoom-container) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
 }
 
 .main-image {
