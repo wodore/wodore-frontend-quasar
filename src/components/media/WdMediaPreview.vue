@@ -21,7 +21,7 @@ interface Props {
   loading?: boolean;
   addImageUrl?: string;
   emptyStateMessage?: string;
-  emptyStateIcon?: string | Component | Record<string, unknown> | undefined;
+  emptyStateIcon?: Component;
   maxThumbnailCount?: number;
   thumbnailSize?: number;
   showAttribution?: boolean;
@@ -34,6 +34,8 @@ interface Props {
   // Hut coordinates for precise location linking
   hutLat?: number | null;
   hutLon?: number | null;
+  // Use reduced height for no-image state
+  reducedHeightNoImage?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -52,6 +54,7 @@ const props = withDefaults(defineProps<Props>(), {
   mapcompleteUserlayout: null,
   hutLat: null,
   hutLon: null,
+  reducedHeightNoImage: false,
 });
 
 const emit = defineEmits<{
@@ -135,11 +138,28 @@ const getProviderIcon = (image: HutImage) => {
 const hasImages = computed(() => props.images.length > 0);
 
 // Get short attribution for current image
-const getCurrentImageAttribution = () => {
-  if (!currentImage.value?.attribution || !props.showAttribution) return '';
-  return currentImage.value.attribution.short || currentImage.value.attribution.full || '';
-};
+//const getCurrentImageAttribution = () => {
+//  if (!currentImage.value?.attribution || !props.showAttribution) return '';
+//  return currentImage.value.attribution.short || currentImage.value.attribution.full || '';
+//};
 
+const getCurrentImageAuthor = () => {
+  if (!currentImage.value || !props.showAttribution) return '';
+
+  const authorName = currentImage.value.author?.name;
+  const providerName = currentImage.value.provider?.name;
+
+  // Don't show "Unknown" as author
+  if (authorName && authorName !== 'Unknown' && authorName !== 'unknown') {
+    return authorName;
+  }
+
+  if (providerName) {
+    return providerName;
+  }
+
+  return '';
+};
 // Get provider icon for current image
 const getCurrentImageProviderIcon = () => {
   return currentImage.value?.provider?.icon || undefined;
@@ -213,7 +233,7 @@ const thumbnailContainerStyle = computed(() => {
   <div
     v-if="loading && !hasImages"
     class="flex flex-center"
-    style="min-height: 200px; border-radius: 25px"
+    style="min-height: 100px; border-radius: 25px"
   >
     <q-spinner v-if="showSpinner" color="primary" size="3rem" />
   </div>
@@ -226,14 +246,14 @@ const thumbnailContainerStyle = computed(() => {
         style="border-radius: 16px; overflow: hidden; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1)"
       >
         <!-- Attribution badge (top-right) - stationary -->
-        <div v-if="getCurrentImageAttribution()" class="license-badge-custom stationary">
+        <div class="license-badge-custom stationary">
+          <span v-if="getCurrentImageAuthor()" v-html="getCurrentImageAuthor()" />
           <img
             v-if="getCurrentImageProviderIcon()"
             :src="getCurrentImageProviderIcon()"
             class="provider-icon"
             alt="Provider icon"
           />
-          <span v-html="getCurrentImageAttribution()" />
         </div>
 
         <swiper
@@ -310,16 +330,16 @@ const thumbnailContainerStyle = computed(() => {
     <WdNoImage
       v-if="!loading && !hasImages"
       :message="emptyStateMessage"
-      :icon="emptyStateIcon || IconAddPhoto"
+      :icon="emptyStateIcon ?? IconAddPhoto"
       :on-contribute="handleAddImageClick"
+      :reduced-height="reducedHeightNoImage"
     />
   </slot>
 </template>
 
 <style lang="scss" scoped>
 .media-preview-container {
-  max-width: 400px;
-  margin: 0 auto;
+  // Remove max-width to let Quasar grid control width
   width: 100%;
   // Ensure border-box for consistent sizing across components
   box-sizing: border-box;
@@ -372,7 +392,7 @@ const thumbnailContainerStyle = computed(() => {
 
   :deep(.swiper-wrapper) {
     align-items: center;
-    justify-content: flex-end;
+    justify-content: flex-start;
   }
 
   :deep(.swiper-slide) {
@@ -457,17 +477,9 @@ const thumbnailContainerStyle = computed(() => {
 
 .preview-image {
   border-radius: 16px !important;
-  max-width: 400px;
-  min-width: 200px;
+  // Remove max-width to let Quasar grid control width
   width: 100%;
   display: block;
-}
-
-@media (width <=$breakpoint-xs-max) {
-  .preview-image {
-    max-width: 300px;
-    min-width: 100px;
-  }
 }
 
 .license-badge-custom {

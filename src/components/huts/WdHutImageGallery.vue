@@ -6,6 +6,8 @@ import type { schemasWodore } from '@clients/index';
 import WdMediaPreview from '../media/WdMediaPreview.vue';
 import IconAddPhoto from '~icons/material-symbols/add-a-photo.svg';
 
+const router = useRouter();
+
 interface Props {
   images: HutImage[];
   loading?: boolean;
@@ -15,8 +17,6 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
 });
-
-const router = useRouter();
 
 // Extract OSM link from sources
 const osmLink = computed(() => {
@@ -135,7 +135,7 @@ const handleContributeClick = () => {
 
 <template>
   <!-- With images: show contribute button overlay -->
-  <div v-if="images.length > 0" class="image-gallery-container q-ma-sm q-ma-md-lg">
+  <div v-if="images.length > 0" class="image-gallery-container">
     <q-btn
       flat
       dense
@@ -148,6 +148,7 @@ const handleContributeClick = () => {
     </q-btn>
 
     <WdMediaPreview
+      class="q-ma-sm q-ma-md-lg"
       :images="images"
       :loading="loading"
       :add-image-url="mapCompleteUrl"
@@ -181,6 +182,7 @@ const handleContributeClick = () => {
     :mapcomplete-userlayout="'https%3A%2F%2Fstudio.mapcomplete.org%2F2805144%2Flayers%2Fhuts_and_shelters%2Fhuts_and_shelters.json'"
     :hut-lat="hut?.location?.lat ?? null"
     :hut-lon="hut?.location?.lon ?? null"
+    :reduced-height-no-image="true"
   />
 </template>
 

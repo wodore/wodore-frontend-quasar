@@ -130,7 +130,8 @@
   "media": {
     "no_images_available": "Keine Bilder verfügbar",
     "no_images": "Keine Bilder",
-    "no_images_for_hut": "Keine Bilder für diese Hütte verfügbar"
+    "no_images_for_hut": "Bilder hinzufügen",
+    "no_photos_yet": "Noch keine Fotos"
   },
   "contribute": {
     "title": "Mitmachen",

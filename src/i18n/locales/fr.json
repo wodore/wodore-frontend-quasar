@@ -98,7 +98,8 @@
   "media": {
     "no_images_available": "Aucune image disponible",
     "no_images": "Aucune image",
-    "no_images_for_hut": "Aucune image disponible pour ce refuge"
+    "no_images_for_hut": "Ajouter des photos",
+    "no_photos_yet": "Pas encore de photos"
   },
   "contribute": {
     "title": "Contribuer",

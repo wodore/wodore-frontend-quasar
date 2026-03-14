@@ -115,7 +115,8 @@
   "media": {
     "no_images_available": "No images available",
     "no_images": "No images",
-    "no_images_for_hut": "No images available for this hut"
+    "no_images_for_hut": "Add images",
+    "no_photos_yet": "No photos yet"
   },
   "contribute": {
     "title": "Contribute",

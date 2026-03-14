@@ -53,6 +53,7 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
           source_id: props.source_id,
           attribution: props.attribution || { short: '', full: '' },
           license: props.license || { name: '', slug: '', url: null },
+          author: props.author || { name: undefined, url: null },
           urls: props.urls,
           is_portrait: props.is_portrait,
           captured_at: props.captured_at,

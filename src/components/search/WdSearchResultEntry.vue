@@ -22,13 +22,26 @@ const emit = defineEmits<{
   preview: [place: schemasWodore['GeoPlaceSearchSchema']];
 }>();
 
+// Get the first category (as CategoryPlaceTypeSchema or string)
+const firstCategory = computed<schemasWodore['CategoryPlaceTypeSchema'] | string | null>(() => {
+  if (
+    !props.hut.categories ||
+    !Array.isArray(props.hut.categories) ||
+    props.hut.categories.length === 0
+  ) {
+    return null;
+  }
+  return props.hut.categories[0];
+});
+
 // Get place type icon URL
 const placeTypeIcon = computed<string | undefined>(() => {
-  if (!props.hut.place_type || typeof props.hut.place_type !== 'object') {
+  const category = firstCategory.value;
+  if (!category || typeof category !== 'object') {
     return undefined;
   }
 
-  const placeType = props.hut.place_type as schemasWodore['CategoryPlaceTypeSchema'];
+  const placeType = category as schemasWodore['CategoryPlaceTypeSchema'];
 
   // Check for symbol.detailed (nested structure for GeoPlaces)
   if (placeType.symbol && typeof placeType.symbol === 'object') {
@@ -47,14 +60,17 @@ const placeTypeIcon = computed<string | undefined>(() => {
 
 // Get place type name
 const placeTypeName = computed<string>(() => {
-  if (!props.hut.place_type || typeof props.hut.place_type !== 'object') {
+  const category = firstCategory.value;
+  if (!category) {
     return '';
   }
 
-  const placeType = props.hut.place_type as schemasWodore['CategoryPlaceTypeSchema'];
+  if (typeof category === 'string') {
+    return category;
+  }
 
-  if (placeType.name) {
-    return placeType.name;
+  if (category.name) {
+    return category.name;
   }
 
   return '';
