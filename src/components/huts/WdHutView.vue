@@ -282,19 +282,14 @@ const { images: nearbyImages, loading: imagesLoading } = useHutImages(computed((
             {{ hut.owner?.name }}
           </h2>
 
+          <!-- Gallery section (always same width) -->
           <div class="row items-start q-gutter-sm">
-            <!-- New image gallery using hut images API -->
             <div class="col-md-12 col-sm-7 col-7">
               <WdHutImageGallery :images="nearbyImages" :loading="imagesLoading" :hut="hut" />
             </div>
-            <div
-              class="col-md-12"
-              :class="{
-                'col-sm-4': nearbyImages.length > 0,
-                'col-4': nearbyImages.length > 0,
-                'col-12': nearbyImages.length === 0,
-              }"
-            >
+
+            <!-- Chips: side-by-side when images exist, below when no images -->
+            <div class="col-md-12 col-sm-4 col-4">
               <div
                 class="row items-start justify-start q-gutter-sm"
                 :class="{

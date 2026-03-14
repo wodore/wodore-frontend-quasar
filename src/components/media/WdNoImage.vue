@@ -77,8 +77,7 @@ const handleKeydown = (event: KeyboardEvent) => {
 
 <style lang="scss" scoped>
 .no-image-container {
-  max-width: 400px;
-  margin: 0 auto;
+  // Remove max-width to let Quasar grid control width
   width: 100%;
   // Ensure border-box for consistent sizing across components
   box-sizing: border-box;
@@ -96,7 +95,11 @@ const handleKeydown = (event: KeyboardEvent) => {
   box-sizing: border-box;
 
   &.reduced-height {
-    padding-top: 33.33%; // 50% of 66.67% = 1:3 aspect ratio
+    padding-top: 33.33%; // 50% of 66.67% = 1:3 aspect ratio (desktop)
+
+    @media (max-width: 599px) {
+      padding-top: 50%; // 1:2 aspect ratio (mobile - taller)
+    }
   }
 }
 

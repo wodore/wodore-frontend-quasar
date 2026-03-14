@@ -1149,8 +1149,8 @@ export interface components {
             /** Importance */
             importance: number;
             location: components["schemas"]["LocationSchema"];
-            /** Place Type */
-            place_type?: string | components["schemas"]["CategoryPlaceTypeSchema"] | null;
+            /** Categories */
+            categories?: string[] | components["schemas"]["CategoryPlaceTypeSchema"][] | null;
             /** Sources */
             sources?: components["schemas"]["OrganizationSourceIdSlugSchema"][] | components["schemas"]["OrganizationSourceIdDetailSchema"][] | null;
             /** Score */
@@ -1203,8 +1203,8 @@ export interface components {
             /** Importance */
             importance: number;
             location: components["schemas"]["LocationSchema"];
-            /** Place Type */
-            place_type?: string | components["schemas"]["CategoryPlaceTypeSchema"] | null;
+            /** Categories */
+            categories?: string[] | components["schemas"]["CategoryPlaceTypeSchema"][] | null;
             /** Sources */
             sources?: components["schemas"]["OrganizationSourceIdSlugSchema"][] | components["schemas"]["OrganizationSourceIdDetailSchema"][] | null;
             /** Distance */
@@ -1256,8 +1256,8 @@ export interface components {
             /** Importance */
             importance: number;
             location: components["schemas"]["LocationSchema"];
-            /** Place Type */
-            place_type?: string | components["schemas"]["CategoryPlaceTypeSchema"] | null;
+            /** Categories */
+            categories?: string[] | components["schemas"]["CategoryPlaceTypeSchema"][] | null;
             /** Sources */
             sources?: components["schemas"]["OrganizationSourceIdSlugSchema"][] | components["schemas"]["OrganizationSourceIdDetailSchema"][] | null;
             /** Description */
@@ -2284,8 +2284,8 @@ export interface components {
             fullname: string | null;
             /** Description */
             description?: string | null;
-            /** Link */
-            link?: string | null;
+            /** Url */
+            url?: string | null;
         };
         /**
          * OpenMonthlySchema
@@ -2355,8 +2355,8 @@ export interface components {
             name: string | null;
             /** Fullname */
             fullname: string | null;
-            /** Link */
-            link: string | null;
+            /** Url */
+            url: string | null;
             /** Logo */
             logo: string | null;
         };
@@ -2903,6 +2903,8 @@ export interface operations {
                 precision?: string;
                 /** @description Maximum number of images to return */
                 limit?: number;
+                /** @description Force cache refresh - bypass cache and update all cached data from providers */
+                update_cache?: boolean;
             };
             header?: never;
             path?: never;
@@ -2935,6 +2937,8 @@ export interface operations {
                 sources?: string | null;
                 /** @description Maximum number of images to return */
                 limit?: number;
+                /** @description Force cache refresh - bypass cache and update all cached data from providers */
+                update_cache?: boolean;
             };
             header?: never;
             path: {
@@ -2969,6 +2973,8 @@ export interface operations {
                 sources?: string | null;
                 /** @description Maximum number of images to return */
                 limit?: number;
+                /** @description Force cache refresh - bypass cache and update all cached data from providers */
+                update_cache?: boolean;
             };
             header?: never;
             path: {
@@ -3003,7 +3009,7 @@ export interface operations {
                 limit?: number;
                 /** @description Number of results to skip for pagination */
                 offset?: number;
-                /** @description Filter by place type slugs (e.g., 'peak', 'pass', 'lake'). Use 'parent.child' format for child categories. */
+                /** @description Filter by category slugs (e.g., 'peak', 'pass', 'lake'). Use 'parent.child' format for child categories. */
                 types?: string[] | null;
                 /** @description Filter by parent category slugs (e.g., 'terrain', 'transport') */
                 categories?: string[] | null;
@@ -3015,8 +3021,8 @@ export interface operations {
                 min_importance?: number;
                 /** @description Remove near-identical places that share a name and a very close location before pagination. */
                 deduplicate?: boolean;
-                /** @description Include place type information: 'no' excludes field, 'slug' returns type slug only, 'all' returns full type details with name and description */
-                include_place_type?: "no" | "slug" | "all";
+                /** @description Include categories information: 'no' excludes field, 'slug' returns category slugs only, 'all' returns full category details with name and description */
+                include_categories?: "no" | "slug" | "all";
                 /** @description Include data sources: 'no' excludes field, 'slug' returns source slugs only, 'all' returns full source details with name and logo */
                 include_sources?: "no" | "slug" | "all";
             };
@@ -3058,14 +3064,14 @@ export interface operations {
                 limit?: number;
                 /** @description Number of results to skip for pagination */
                 offset?: number;
-                /** @description Filter by place type slugs (e.g., 'peak', 'pass'). Use 'parent.child' format for child categories. */
+                /** @description Filter by category slugs (e.g., 'peak', 'pass'). Use 'parent.child' format for child categories. */
                 types?: string[] | null;
                 /** @description Filter by parent category slugs */
                 categories?: string[] | null;
                 /** @description Minimum importance score (0-100) */
                 min_importance?: number;
-                /** @description Include place type information: 'no' excludes field, 'slug' returns type slug only, 'all' returns full type details with name and description */
-                include_place_type?: "no" | "slug" | "all";
+                /** @description Include categories information: 'no' excludes field, 'slug' returns category slugs only, 'all' returns full category details with name and description */
+                include_categories?: "no" | "slug" | "all";
                 /** @description Include data sources: 'no' excludes field, 'slug' returns source slugs only, 'all' returns full source details with name and logo */
                 include_sources?: "no" | "slug" | "all";
             };
