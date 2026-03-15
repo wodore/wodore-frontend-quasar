@@ -23,6 +23,10 @@ export interface HutImage {
     slug: string;
     url?: string | null;
   };
+  author: {
+    name?: string;
+    url?: string | null;
+  };
   urls: {
     square: Record<string, string>;
     landscape: Record<string, string>;

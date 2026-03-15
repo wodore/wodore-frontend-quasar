@@ -2,9 +2,10 @@
 import { ref, computed, watchEffect, type Component } from 'vue';
 import { useTimeoutFn } from '@vueuse/core';
 import { useRouter } from 'vue-router';
+import { useQuasar } from 'quasar';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import type { Swiper as SwiperType } from 'swiper';
-import { EffectFade, Keyboard, Thumbs } from 'swiper/modules';
+import { EffectFade, Keyboard, Pagination, Thumbs } from 'swiper/modules';
 import type { HutImage } from '@composables/useHutImages';
 import WdMediaDialog from './WdMediaDialog.vue';
 import WdNoImage from './WdNoImage.vue';
@@ -14,6 +15,7 @@ import IconAddPhoto from '~icons/material-symbols/add-a-photo.svg';
 import 'swiper/css';
 import 'swiper/css/effect-fade';
 import 'swiper/css/keyboard';
+import 'swiper/css/pagination';
 import 'swiper/css/thumbs';
 
 interface Props {
@@ -21,7 +23,7 @@ interface Props {
   loading?: boolean;
   addImageUrl?: string;
   emptyStateMessage?: string;
-  emptyStateIcon?: string | Component | Record<string, unknown> | undefined;
+  emptyStateIcon?: Component;
   maxThumbnailCount?: number;
   thumbnailSize?: number;
   showAttribution?: boolean;
@@ -34,6 +36,8 @@ interface Props {
   // Hut coordinates for precise location linking
   hutLat?: number | null;
   hutLon?: number | null;
+  // Use reduced height for no-image state
+  reducedHeightNoImage?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -52,6 +56,7 @@ const props = withDefaults(defineProps<Props>(), {
   mapcompleteUserlayout: null,
   hutLat: null,
   hutLon: null,
+  reducedHeightNoImage: false,
 });
 
 const emit = defineEmits<{
@@ -60,6 +65,11 @@ const emit = defineEmits<{
 }>();
 
 const router = useRouter();
+const $q = useQuasar();
+
+// Check if mobile view
+const isMobile = computed(() => $q.screen.xs);
+
 const dialogOpen = ref(false);
 const currentSlide = ref(0);
 const swiperRef = ref<SwiperType | null>(null);
@@ -135,11 +145,28 @@ const getProviderIcon = (image: HutImage) => {
 const hasImages = computed(() => props.images.length > 0);
 
 // Get short attribution for current image
-const getCurrentImageAttribution = () => {
-  if (!currentImage.value?.attribution || !props.showAttribution) return '';
-  return currentImage.value.attribution.short || currentImage.value.attribution.full || '';
-};
+//const getCurrentImageAttribution = () => {
+//  if (!currentImage.value?.attribution || !props.showAttribution) return '';
+//  return currentImage.value.attribution.short || currentImage.value.attribution.full || '';
+//};
 
+const getCurrentImageAuthor = () => {
+  if (!currentImage.value || !props.showAttribution) return '';
+
+  const authorName = currentImage.value.author?.name;
+  const providerName = currentImage.value.provider?.name;
+
+  // Don't show "Unknown" as author
+  if (authorName && authorName !== 'Unknown' && authorName !== 'unknown') {
+    return authorName;
+  }
+
+  if (providerName) {
+    return providerName;
+  }
+
+  return '';
+};
 // Get provider icon for current image
 const getCurrentImageProviderIcon = () => {
   return currentImage.value?.provider?.icon || undefined;
@@ -213,7 +240,7 @@ const thumbnailContainerStyle = computed(() => {
   <div
     v-if="loading && !hasImages"
     class="flex flex-center"
-    style="min-height: 200px; border-radius: 25px"
+    style="min-height: 100px; border-radius: 25px"
   >
     <q-spinner v-if="showSpinner" color="primary" size="3rem" />
   </div>
@@ -226,23 +253,32 @@ const thumbnailContainerStyle = computed(() => {
         style="border-radius: 16px; overflow: hidden; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1)"
       >
         <!-- Attribution badge (top-right) - stationary -->
-        <div v-if="getCurrentImageAttribution()" class="license-badge-custom stationary">
+        <div class="license-badge-custom stationary">
+          <span v-if="getCurrentImageAuthor()" v-html="getCurrentImageAuthor()" />
           <img
             v-if="getCurrentImageProviderIcon()"
             :src="getCurrentImageProviderIcon()"
             class="provider-icon"
             alt="Provider icon"
           />
-          <span v-html="getCurrentImageAttribution()" />
         </div>
 
         <swiper
-          :modules="[EffectFade, Keyboard, Thumbs]"
+          :modules="[EffectFade, Keyboard, Pagination, Thumbs]"
           :slides-per-view="1"
           :space-between="0"
           :effect="'fade'"
           :fade-effect="{ crossFade: true }"
           :keyboard="{ enabled: true }"
+          :loop="true"
+          :pagination="
+            isMobile && images.length > 1
+              ? {
+                  clickable: true,
+                  dynamicBullets: true,
+                }
+              : false
+          "
           :thumbs="{ swiper: thumbsSwiperRef }"
           :initial-slide="0"
           class="preview-swiper"
@@ -261,7 +297,7 @@ const thumbnailContainerStyle = computed(() => {
 
         <!-- Thumbnail Swiper - overlaid on image (outside main swiper) -->
         <div
-          v-if="images.length > 1"
+          v-if="images.length > 1 && !isMobile"
           class="thumbs-swiper-container"
           :style="thumbnailContainerStyle"
         >
@@ -310,16 +346,16 @@ const thumbnailContainerStyle = computed(() => {
     <WdNoImage
       v-if="!loading && !hasImages"
       :message="emptyStateMessage"
-      :icon="emptyStateIcon || IconAddPhoto"
+      :icon="emptyStateIcon ?? IconAddPhoto"
       :on-contribute="handleAddImageClick"
+      :reduced-height="reducedHeightNoImage"
     />
   </slot>
 </template>
 
 <style lang="scss" scoped>
 .media-preview-container {
-  max-width: 400px;
-  margin: 0 auto;
+  // Remove max-width to let Quasar grid control width
   width: 100%;
   // Ensure border-box for consistent sizing across components
   box-sizing: border-box;
@@ -372,7 +408,7 @@ const thumbnailContainerStyle = computed(() => {
 
   :deep(.swiper-wrapper) {
     align-items: center;
-    justify-content: flex-end;
+    justify-content: flex-start;
   }
 
   :deep(.swiper-slide) {
@@ -457,17 +493,9 @@ const thumbnailContainerStyle = computed(() => {
 
 .preview-image {
   border-radius: 16px !important;
-  max-width: 400px;
-  min-width: 200px;
+  // Remove max-width to let Quasar grid control width
   width: 100%;
   display: block;
-}
-
-@media (width <=$breakpoint-xs-max) {
-  .preview-image {
-    max-width: 300px;
-    min-width: 100px;
-  }
 }
 
 .license-badge-custom {
@@ -488,12 +516,20 @@ const thumbnailContainerStyle = computed(() => {
   top: 6px;
   right: 6px;
   z-index: 10;
+  max-width: 300px;
 
   &.stationary {
     position: absolute;
     top: 6px;
     right: 6px;
     z-index: 100;
+  }
+
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 140px;
   }
 
   :deep(a) {
@@ -508,6 +544,14 @@ const thumbnailContainerStyle = computed(() => {
     text-decoration-color: #64b5f6;
     text-decoration: underline dotted;
   }
+
+  @media (max-width: 599px) {
+    font-size: 0.6rem;
+    padding: 3px 5px;
+    gap: 4px;
+    top: 4px;
+    right: 4px;
+  }
 }
 
 .provider-icon {
@@ -516,6 +560,11 @@ const thumbnailContainerStyle = computed(() => {
   object-fit: contain;
   flex-shrink: 0;
   border-radius: 2px;
+
+  @media (max-width: 599px) {
+    width: 12px;
+    height: 12px;
+  }
 }
 
 .absolute-bottom-right {
@@ -525,5 +574,23 @@ const thumbnailContainerStyle = computed(() => {
 .thumbs-swiper-container {
   --thumbnail-size: 50px;
   position: absolute;
+}
+
+// Custom pagination styling for mobile
+.preview-swiper {
+  :deep(.swiper-pagination) {
+    bottom: 8px !important;
+  }
+
+  :deep(.swiper-pagination-bullet) {
+    background: rgba(255, 255, 255, 0.5);
+    opacity: 1;
+    transition: all 0.3s ease;
+  }
+
+  :deep(.swiper-pagination-bullet-active) {
+    background: #64b5f6 !important;
+    width: 8px !important;
+  }
 }
 </style>
