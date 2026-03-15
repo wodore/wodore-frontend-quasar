@@ -4,6 +4,9 @@ import { useQuasar } from 'quasar';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@stores/auth-store';
 import { useMapMenuStore } from '@stores/map/map-menu-store';
+import { useUserSettingsStore } from '@stores/user-settings-store';
+import { useLocalPropertiesStore } from '@stores/local-properties-store';
+import { useSyncedPropertiesStore } from '@stores/synced-properties-store';
 import { useMeta } from 'quasar';
 import WodoreLogo from 'components/wodore/WodoreLogo.vue';
 import WdPlaceSearchMenu from 'components/search/WdPlaceSearchMenu.vue';
@@ -11,6 +14,14 @@ import WdPlaceSearchDialog from 'components/search/WdPlaceSearchDialog.vue';
 
 const authStore = useAuthStore();
 const menuStore = useMapMenuStore();
+
+// Initialize stores (this will create localStorage keys on first load)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const userSettingsStore = useUserSettingsStore();
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const localPropertiesStore = useLocalPropertiesStore();
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const syncedPropertiesStore = useSyncedPropertiesStore();
 
 const $q = useQuasar();
 
