@@ -1,37 +1,18 @@
 <script setup lang="ts">
-import { ref, inject, watchEffect, watch, onErrorCaptured } from 'vue';
+import { ref, inject, watchEffect, watch, onErrorCaptured, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { useResizeObserver, useDebounceFn } from '@vueuse/core';
-//import {
-//  hutsLayerLayout,
-//  hutsLayerPaint,
-//  hutsOccupationLayerPaint,
-//} from '../../stores/map/styles.ts.old';
+import { useResizeObserver, useDebounceFn, useThrottleFn, useEventListener } from '@vueuse/core';
 import { useQuasar } from 'quasar';
 import { useBasemapStore } from '@stores/map/basemap-store';
-// showErrorDialog
+import { useLocalPropertiesStore } from '@stores/local-properties-store';
 import { showErrorDialogPersistent, ErrorCode } from '@components/error';
-//import { useHutsStore } from '@stores/huts-store';
-//import { Todo, Meta } from './models';
 import type { Map, PaddingOptions } from 'maplibre-gl';
-import {
-  LngLatLike,
-  MapGeoJSONFeature,
-  MapLayerEventType,
-  Point,
-  //GeoJSONSourceSpecification,
-} from 'maplibre-gl';
-// https://indoorequal.github.io/vue-maplibre-gl/
+import { LngLatLike, MapGeoJSONFeature, MapLayerEventType, Point } from 'maplibre-gl';
 import {
   MglMap,
-  //MglGeoJsonSource,
-  //MglCustomControl,
   MglNavigationControl,
   MglScaleControl,
-  //MglSymbolLayer,
-  //MglCircleLayer,
   MglEvent,
-  //MglStyleSwitchControl,
   MglGeolocateControl,
   MglAttributionControl,
   useMap,
@@ -119,22 +100,27 @@ function getDangerMargin(): number {
 // Setup
 // ============================================================================
 
-// import MglStyleSwitchControl from './styleSwitch.control';
 const $q = useQuasar();
 const router = useRouter();
 const route = useRoute();
 const basemapStore = useBasemapStore();
 const mapRef = useMap();
-//const hutStore = useHutsStore();
+const localPropertiesStore = useLocalPropertiesStore();
 
 // Use a static ref for initial map style to prevent vue-maplibre-gl's reactive watcher
 // from overriding our transformStyle callback when basemap changes
 // After initial load, style switching is handled by basemapStore.setBasemap()
 const initialMapStyle = ref(basemapStore.getBasemap()?.style);
 
-// Reactive map center and zoom (set from defaults or API)
-const mapCenter = ref<LngLatLike>([8.22, 46.7]);
-const mapZoom = ref<number>(7.5);
+// Get initial location from store (handles URL hash, storage, defaults)
+const initialLocation = localPropertiesStore.getInitialLocation();
+
+// Reactive map center and zoom (initialized from store)
+const mapCenter = ref<LngLatLike>([initialLocation.lng, initialLocation.lat]);
+const mapZoom = ref<number>(initialLocation.zoom);
+
+// Page visibility - only track location when tab is active
+const isPageVisible = computed(() => !document.hidden);
 
 type layoutType = {
   header: { size: number; offset: number; space: boolean };
@@ -199,6 +185,59 @@ function onMapLoad(e: MglEvent<'load'>) {
   e.map.on('mouseenter', HUT_LAYER_ID, onLayerEnter);
   e.map.on('mouseleave', HUT_LAYER_ID, onLayerLeave);
   e.map.on('click', HUT_LAYER_ID, onHutLayerClick);
+
+  // Track location changes with throttling (updates every 1s max)
+  // Only when tab is active
+  const updateLocation = useThrottleFn(() => {
+    // Only update location if this tab/page is visible
+    if (!isPageVisible.value) {
+      return;
+    }
+
+    const center = e.map.getCenter();
+    const zoom = e.map.getZoom();
+
+    localPropertiesStore.updateLocation({
+      lat: center.lat,
+      lng: center.lng,
+      zoom: zoom,
+      bearing: e.map.getBearing(),
+      pitch: e.map.getPitch(),
+    });
+  }, 1000); // Throttle to 1 second
+
+  // Update location on map movements (only 'end' events to reduce redundant calls)
+  e.map.on('moveend', updateLocation);
+  e.map.on('zoomend', updateLocation);
+  e.map.on('rotateend', updateLocation);
+  e.map.on('pitchend', updateLocation);
+
+  // Immediate update function (for visibility changes)
+  const immediateUpdate = () => {
+    if (!isPageVisible.value) return;
+
+    const center = e.map.getCenter();
+    const zoom = e.map.getZoom();
+
+    localPropertiesStore.updateLocation({
+      lat: center.lat,
+      lng: center.lng,
+      zoom: zoom,
+      bearing: e.map.getBearing(),
+      pitch: e.map.getPitch(),
+    });
+  };
+
+  // Listen for visibility changes
+  useEventListener(document, 'visibilitychange', () => {
+    if (!document.hidden) {
+      // Update location immediately when tab becomes visible
+      immediateUpdate();
+    } else {
+      // Force save when tab becomes hidden
+      localPropertiesStore.forceSave();
+    }
+  });
 
   console.debug('Map controls added.', route.query.draw);
   if ('draw' in route.query) {
