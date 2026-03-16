@@ -53,7 +53,19 @@ yarn lint:fix         # Fix linting issues
 yarn format           # Format with Prettier
 ```
 
-**IMPORTANT**: Always run `yarn lint` after making code changes to verify there are no errors or warnings before committing.
+**IMPORTANT**: Always run both `yarn lint` and `npx vue-tsc --noEmit` after making code changes to verify there are no ESLint warnings or TypeScript errors before committing.
+
+**CRITICAL**: Check ESLint for all modified files to catch:
+
+- Unused imports (e.g., `Platform` imported but never used)
+- Unused variables in catch blocks (use empty `catch {}` for silent error handling)
+- Other code quality issues
+
+Example ESLint check for specific files:
+
+```bash
+npx eslint src/stores/user-settings-store.ts src/stores/local-properties-store.ts
+```
 
 ## Related Projects
 
