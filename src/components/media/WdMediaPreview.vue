@@ -5,12 +5,11 @@ import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import type { Swiper as SwiperType } from 'swiper';
-import { EffectCreative, Keyboard, Navigation, Pagination, Thumbs } from 'swiper/modules';
+import { EffectFade, Keyboard, Navigation, Pagination, Thumbs } from 'swiper/modules';
 import type { HutImage } from '@composables/useHutImages';
 import WdMediaDialog from './WdMediaDialog.vue';
 import WdNoImage from './WdNoImage.vue';
 import IconAddPhoto from '~icons/material-symbols/add-a-photo.svg';
-import { previewCreativeEffect } from './swiper-effects';
 
 // Import Swiper styles
 import 'swiper/css';
@@ -18,7 +17,7 @@ import 'swiper/css/navigation';
 import 'swiper/css/keyboard';
 import 'swiper/css/pagination';
 import 'swiper/css/thumbs';
-import 'swiper/css/effect-creative';
+import 'swiper/css/effect-fade';
 
 interface Props {
   images: HutImage[];
@@ -68,6 +67,26 @@ const emit = defineEmits<{
 
 const router = useRouter();
 const $q = useQuasar();
+
+// Open dialog with specific image using Quasar Dialog plugin
+const openDialog = (index: number) => {
+  currentSlide.value = index;
+  emit('image-click', props.images[index], index);
+
+  // Use Quasar's Dialog plugin for proper back button handling
+  $q.dialog({
+    component: WdMediaDialog,
+    componentProps: {
+      images: props.images,
+      initialSlide: index,
+    },
+  }).onDismiss(() => {
+    // Dialog closed (back button, ESC, backdrop click, etc.)
+    dialogOpen.value = false;
+  });
+
+  dialogOpen.value = true;
+};
 
 // Precise device detection
 const hasTouch = computed(() => {
@@ -140,13 +159,6 @@ const onThumbsSwiper = (swiper: SwiperType) => {
 // Handle slide change
 const onSlideChange = (swiper: SwiperType) => {
   currentSlide.value = swiper.activeIndex;
-};
-
-// Open dialog with specific image
-const openDialog = (index: number) => {
-  currentSlide.value = index;
-  dialogOpen.value = true;
-  emit('image-click', props.images[index], index);
 };
 
 // Handle image click
@@ -303,11 +315,11 @@ const thumbnailContainerStyle = computed(() => {
         </div>
 
         <swiper
-          :modules="[EffectCreative, Keyboard, Navigation, Pagination, Thumbs]"
+          :modules="[EffectFade, Keyboard, Navigation, Pagination, Thumbs]"
           :slides-per-view="1"
           :space-between="0"
-          :effect="'creative'"
-          :creative-effect="previewCreativeEffect"
+          :effect="'fade'"
+          :fade-effect="{ crossFade: true }"
           :keyboard="{ enabled: true }"
           :loop="true"
           :speed="600"
@@ -376,13 +388,7 @@ const thumbnailContainerStyle = computed(() => {
       </div>
     </div>
 
-    <!-- Media Dialog -->
-    <WdMediaDialog
-      v-if="dialogOpen"
-      :images="images"
-      :initial-slide="currentSlide"
-      @close="dialogOpen = false"
-    />
+    <!-- Media Dialog is now invoked via Quasar Dialog plugin -->
   </div>
 
   <!-- No images state - use slot for customization -->
@@ -413,6 +419,66 @@ const thumbnailContainerStyle = computed(() => {
   background: #f5f5f5; // Placeholder background
   // Ensure border-box for consistent sizing
   box-sizing: border-box;
+
+  // Navigation buttons - gray arrows with transparency, no background
+  :deep(.swiper-button-prev),
+  :deep(.swiper-button-next) {
+    // Remove background completely
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+
+    // Size and positioning
+    width: 44px !important;
+    height: 44px !important;
+
+    // Arrow color (gray with transparency)
+    color: rgba(120, 120, 120, 0.8) !important;
+
+    // Smooth transitions
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+
+    // Remove border radius since no background
+    border-radius: 0 !important;
+
+    // SVG icon sizing (Swiper v12 uses SVG)
+    :deep(svg) {
+      width: 100% !important;
+      height: 100% !important;
+      fill: currentColor !important;
+    }
+
+    // Hover state - darker gray
+    &:hover {
+      color: rgba(80, 80, 80, 1) !important;
+      transform: scale(1.1) !important;
+    }
+
+    // Active state
+    &:active {
+      transform: scale(0.95) !important;
+    }
+
+    // Focus state for accessibility
+    &:focus {
+      outline: 2px solid rgba(100, 181, 246, 0.6) !important;
+      outline-offset: 2px !important;
+    }
+
+    // Disabled state
+    &.swiper-button-disabled {
+      opacity: 0.3 !important;
+      cursor: not-allowed !important;
+    }
+  }
+
+  :deep(.swiper-button-prev) {
+    left: 8px !important;
+  }
+
+  :deep(.swiper-button-next) {
+    right: 8px !important;
+  }
 }
 
 .preview-swiper {
@@ -636,42 +702,82 @@ const thumbnailContainerStyle = computed(() => {
     width: 8px !important;
   }
 
-  // Custom navigation buttons for desktop
+  // Custom navigation buttons for desktop - gray arrows with transparency, no background
   :deep(.swiper-button-prev),
   :deep(.swiper-button-next) {
-    background: rgba(120, 120, 120, 0.4) !important;
-    backdrop-filter: blur(4px) !important;
-    -webkit-backdrop-filter: blur(4px) !important;
-    width: 40px !important;
-    height: 40px !important;
-    border-radius: 50% !important;
-    color: rgba(255, 255, 255, 0.8) !important;
+    // Remove background completely
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+
+    // Size and positioning
+    width: 44px !important;
+    height: 44px !important;
+
+    // Arrow color (gray with transparency) - IMPORTANT: override all Quasar inherited colors
+    color: rgba(120, 120, 120, 0.8) !important;
+
+    // Smooth transitions
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 
-    &::after {
-      font-size: 20px !important;
-      font-weight: bold !important;
+    // Remove border radius since no background
+    border-radius: 0 !important;
+
+    // SVG icon sizing and color - CRITICAL: Override Quasar SVG styles
+    :deep(svg) {
+      width: 100% !important;
+      height: 100% !important;
+      fill: rgba(120, 120, 120, 0.8) !important;
+      color: rgba(120, 120, 120, 0.8) !important;
     }
 
+    // Force SVG path colors - this is what actually gets colored
+    :deep(svg path) {
+      fill: rgba(120, 120, 120, 0.8) !important;
+      stroke: rgba(120, 120, 120, 0.8) !important;
+    }
+
+    // Hover state - darker gray
     &:hover {
-      background: rgba(120, 120, 120, 0.6) !important;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
-      transform: scale(1.05) !important;
-      color: rgba(255, 255, 255, 1) !important;
+      color: rgba(80, 80, 80, 1) !important;
+
+      :deep(svg) {
+        fill: rgba(80, 80, 80, 1) !important;
+        color: rgba(80, 80, 80, 1) !important;
+      }
+
+      :deep(svg path) {
+        fill: rgba(80, 80, 80, 1) !important;
+        stroke: rgba(80, 80, 80, 1) !important;
+      }
+
+      transform: scale(1.1) !important;
     }
 
+    // Active state
+    &:active {
+      transform: scale(0.95) !important;
+    }
+
+    // Focus state for accessibility
     &:focus {
-      outline: 2px solid #64b5f6 !important;
+      outline: 2px solid rgba(100, 181, 246, 0.6) !important;
       outline-offset: 2px !important;
+    }
+
+    // Disabled state
+    &.swiper-button-disabled {
+      opacity: 0.3 !important;
+      cursor: not-allowed !important;
     }
   }
 
   :deep(.swiper-button-prev) {
-    left: 8px;
+    left: 8px !important;
   }
 
   :deep(.swiper-button-next) {
-    right: 8px;
+    right: 8px !important;
   }
 }
 </style>
