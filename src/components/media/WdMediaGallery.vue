@@ -295,6 +295,7 @@ onUnmounted(() => {
 .main-swiper {
   flex: 1;
   width: 100%;
+  min-height: 0; // CRITICAL: Allow flex item to shrink below content size
   display: flex;
   align-items: center;
   justify-content: center;
@@ -393,6 +394,7 @@ onUnmounted(() => {
   overflow: hidden;
   height: 100%;
   width: 100%;
+  min-height: 0; // Allow slide to shrink
 }
 
 .main-slide :deep(.swiper-zoom-container) {
@@ -401,6 +403,7 @@ onUnmounted(() => {
   justify-content: center;
   width: 100%;
   height: 100%;
+  min-height: 0; // Allow zoom container to shrink
 }
 
 // Image wrapper - creates positioning context that matches actual image dimensions
@@ -408,47 +411,51 @@ onUnmounted(() => {
   position: relative;
   display: inline-block;
   max-width: 100%;
-  max-height: 100%;
+  max-height: 100%; // Constrain to parent height
+  padding-bottom: 32px; // Reserve space for attribution
+  box-sizing: border-box; // Include padding in max-height calculation
 }
 
 .main-image {
   display: block;
   max-width: 100%;
-  max-height: 100vh; // Don't exceed viewport height
+  max-height: calc(100% - 32px); // Subtract attribution space from image height
   object-fit: contain;
+  width: auto;
+  height: auto;
 }
 
 // Attribution overlay positioned relative to actual image content
 .image-attribution-overlay {
   position: absolute;
-  bottom: 8px;
-  right: 8px;
+  bottom: 8px; // Position inside the reserved padding space
+  right: 0;
   z-index: 10;
-  max-width: calc(100% - 16px);
+  max-width: calc(100% - 8px);
   display: flex;
   align-items: center;
   gap: 6px;
-  color: rgba(0, 0, 0, 0.85);
+  color: rgba(255, 255, 255, 0.85);
   font-size: 0.8125rem;
   line-height: 1.4;
-  background: rgba(255, 255, 255, 0.5);
-  padding: 6px 10px;
-  border-radius: 6px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
   pointer-events: none; // Allow clicks to pass through to image for zoom
   transition: opacity 0.3s ease;
+  padding: 4px 8px; // Add padding for better visibility
+  background: rgba(0, 0, 0, 0.3); // Subtle background for readability
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 
   :deep(a) {
-    color: rgba(0, 0, 0, 0.85);
+    color: rgba(255, 255, 255, 0.85);
     text-decoration: underline dotted;
-    text-decoration-color: rgba(0, 0, 0, 0.4);
+    text-decoration-color: rgba(255, 255, 255, 0.4);
     transition: all 0.2s;
   }
 
   :deep(a:hover) {
-    color: #1976d2;
-    text-decoration-color: #1976d2;
+    color: #64b5f6;
+    text-decoration-color: #64b5f6;
     text-decoration: underline dotted;
   }
 
@@ -460,13 +467,9 @@ onUnmounted(() => {
     filter: brightness(1.1) contrast(1.1);
   }
 
-  // Mobile - smaller font and spacing
+  // Mobile - smaller font
   @media (max-width: 768px) {
-    bottom: 16px;
-    right: 16px;
     font-size: 0.75rem;
-    padding: 6px 12px;
-    max-width: calc(100% - 32px);
 
     .provider-icon {
       width: 18px;
