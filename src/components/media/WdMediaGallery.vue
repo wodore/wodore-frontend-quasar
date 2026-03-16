@@ -4,7 +4,9 @@ import { Swiper, SwiperSlide } from 'swiper/vue';
 import type { Swiper as SwiperType } from 'swiper';
 import { Keyboard, Mousewheel, Navigation, Thumbs, Zoom, EffectFade } from 'swiper/modules';
 import type { HutImage } from 'src/composables/useHutImages';
-import type { ImageSizeVariants } from 'src/types/geo';
+import { useDeviceDetection } from '@composables/useDeviceDetection';
+import { useMediaPreload } from '@composables/useMediaPreload';
+import { useTimeoutFn } from '@vueuse/core';
 import IconCloseOutline from '~icons/eva/close-outline';
 import IconDownloadOutline from '~icons/eva/download-outline';
 
@@ -35,6 +37,17 @@ const mainSwiper = ref<SwiperType | null>(null);
 const activeSlideIndex = ref(props.initialSlide);
 const loadedImages = ref<Set<string>>(new Set());
 
+// Use shared device detection
+const { hasTouch } = useDeviceDetection();
+
+// Use shared media preload composable
+const imagesRef = computed(() => props.images);
+const activeSlideRef = computed(() => activeSlideIndex.value);
+const { getGalleryImageUrl, getPreviewImageUrl, preloadAdjacentImages } = useMediaPreload(
+  imagesRef,
+  activeSlideRef
+);
+
 // Track which images have loaded
 const isImageLoaded = (imageId: string) => {
   return loadedImages.value.has(imageId);
@@ -60,63 +73,9 @@ const onSlideChange = (swiper: SwiperType) => {
   activeSlideIndex.value = swiper.realIndex;
 };
 
-// Get optimal image size based on screen size - NEVER upscale
-const getOptimalImageSize = (): 'large' | 'medium' => {
-  const screenWidth = window.innerWidth;
-  const screenHeight = window.innerHeight;
-
-  // Calculate max size we need (considering thumbnails and margins)
-  const maxHeight = screenHeight - 140; // Leave room for thumbnails
-  const maxWidth = screenWidth >= 1200 ? screenWidth - 80 : screenWidth; // Add margin on large screens
-
-  // Always use at least medium, use large if screen is big enough
-  if (maxWidth <= 1600 || maxHeight <= 1200) {
-    return 'medium';
-  }
-  return 'large';
-};
-
-// Get image URL for main gallery with proper size and orientation
+// Get image URL for display (reusing preload function for consistency)
 const getMainImageUrl = (image: HutImage): string => {
-  if (!image.urls) return '';
-
-  // Use is_portrait to determine orientation, default to landscape
-  const orientation = image.is_portrait ? 'portrait' : 'landscape';
-  const urls = image.urls[orientation] || image.urls.landscape;
-
-  if (!urls) return '';
-
-  const size = getOptimalImageSize();
-
-  // Use @2x version for HiDPI devices
-  const pixelRatio = window.devicePixelRatio || 1;
-  if (pixelRatio >= 1.5) {
-    const size2x = `${size}@2x` as keyof ImageSizeVariants;
-    if (urls[size2x]) {
-      return urls[size2x];
-    }
-  }
-
-  // Fallback to smaller sizes if the chosen size doesn't exist
-  if (urls[size]) {
-    return urls[size];
-  }
-  if (urls.medium) {
-    return urls.medium;
-  }
-  return urls.preview || urls.thumb || '';
-};
-
-// Get thumbnail URL (small square images) with HiDPI support
-const getThumbnailUrl = (image: HutImage) => {
-  if (!image.urls?.square) return '';
-
-  const pixelRatio = window.devicePixelRatio || 1;
-  // Use @2x for HiDPI devices
-  if (pixelRatio >= 1.5 && image.urls.square['thumb@2x']) {
-    return image.urls.square['thumb@2x'];
-  }
-  return image.urls.square.thumb || '';
+  return getGalleryImageUrl(image);
 };
 
 // Get current image
@@ -141,55 +100,15 @@ const shouldAddMargin = computed(() => {
   return window.innerWidth >= 1200;
 });
 
-// Precise device detection
-const hasTouch = computed(() => {
-  // Check for actual touch capability
-  return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-});
-
 // Show navigation only on non-touch devices with multiple images
 const showNavigation = computed(() => {
   return !hasTouch.value && props.images.length > 1;
 });
 
-// Preload images for better performance
-const preloadImage = (imageUrl: string) => {
-  if (!imageUrl) return;
-
-  const img = new window.Image();
-  img.src = imageUrl;
-};
-
-// Preload gallery main images (current, next, previous)
-const preloadGalleryImages = () => {
-  const currentIndex = activeSlideIndex.value;
-  const indicesToPreload = [
-    currentIndex, // Current
-    (currentIndex + 1) % props.images.length, // Next
-    (currentIndex - 1 + props.images.length) % props.images.length, // Previous
-  ];
-
-  indicesToPreload.forEach(index => {
-    const image = props.images[index];
-    if (image) {
-      const imageUrl = getMainImageUrl(image);
-      preloadImage(imageUrl);
-    }
-  });
-};
-
-// Preload thumbnail images (up to 8, primarily for mobile)
-const preloadThumbnailImages = () => {
-  const thumbsToPreload = Math.min(props.images.length, 8);
-
-  for (let i = 0; i < thumbsToPreload; i++) {
-    const image = props.images[i];
-    if (image) {
-      const thumbUrl = getThumbnailUrl(image);
-      preloadImage(thumbUrl);
-    }
-  }
-};
+// Preload with timeout - properly managed by useTimeoutFn
+const { start: startPreloading } = useTimeoutFn(() => {
+  preloadAdjacentImages();
+}, 200);
 
 // Handle back button to close gallery
 const onBackButton = () => {
@@ -201,11 +120,8 @@ onMounted(() => {
   window.history.pushState({ galleryOpen: true }, '');
   window.addEventListener('popstate', onBackButton);
 
-  // Wait for initial render to complete, then preload images
-  setTimeout(() => {
-    preloadGalleryImages();
-    preloadThumbnailImages();
-  }, 200);
+  // Start preloading with proper timeout management
+  startPreloading();
 });
 
 onUnmounted(() => {
@@ -299,7 +215,7 @@ onUnmounted(() => {
     >
       <swiper-slide v-for="image in images" :key="image.id" class="thumb-slide">
         <img
-          :src="getThumbnailUrl(image)"
+          :src="getPreviewImageUrl(image)"
           :alt="`Thumbnail by ${image.attribution?.short || 'unknown'}`"
           class="thumb-image"
         />
