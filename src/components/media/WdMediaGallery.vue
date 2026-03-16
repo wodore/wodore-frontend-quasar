@@ -4,7 +4,9 @@ import { Swiper, SwiperSlide } from 'swiper/vue';
 import type { Swiper as SwiperType } from 'swiper';
 import { Keyboard, Mousewheel, Navigation, Thumbs, Zoom, EffectFade } from 'swiper/modules';
 import type { HutImage } from 'src/composables/useHutImages';
-import type { ImageSizeVariants } from 'src/types/geo';
+import { useDeviceDetection } from '@composables/useDeviceDetection';
+import { useMediaPreload } from '@composables/useMediaPreload';
+import { useTimeoutFn } from '@vueuse/core';
 import IconCloseOutline from '~icons/eva/close-outline';
 import IconDownloadOutline from '~icons/eva/download-outline';
 
@@ -33,6 +35,28 @@ const emit = defineEmits<{
 const thumbsSwiper = ref<SwiperType | null>(null);
 const mainSwiper = ref<SwiperType | null>(null);
 const activeSlideIndex = ref(props.initialSlide);
+const loadedImages = ref<Set<string>>(new Set());
+
+// Use shared device detection
+const { hasTouch } = useDeviceDetection();
+
+// Use shared media preload composable
+const imagesRef = computed(() => props.images);
+const activeSlideRef = computed(() => activeSlideIndex.value);
+const { getGalleryImageUrl, getPreviewImageUrl, preloadAdjacentImages } = useMediaPreload(
+  imagesRef,
+  activeSlideRef
+);
+
+// Track which images have loaded
+const isImageLoaded = (imageId: string) => {
+  return loadedImages.value.has(imageId);
+};
+
+// Mark image as loaded
+const onImageLoad = (imageId: string) => {
+  loadedImages.value.add(imageId);
+};
 
 // Set thumbs swiper
 const setThumbsSwiper = (swiper: SwiperType) => {
@@ -49,63 +73,9 @@ const onSlideChange = (swiper: SwiperType) => {
   activeSlideIndex.value = swiper.realIndex;
 };
 
-// Get optimal image size based on screen size - NEVER upscale
-const getOptimalImageSize = (): 'large' | 'medium' => {
-  const screenWidth = window.innerWidth;
-  const screenHeight = window.innerHeight;
-
-  // Calculate max size we need (considering thumbnails and margins)
-  const maxHeight = screenHeight - 140; // Leave room for thumbnails
-  const maxWidth = screenWidth >= 1200 ? screenWidth - 80 : screenWidth; // Add margin on large screens
-
-  // Always use at least medium, use large if screen is big enough
-  if (maxWidth <= 1600 || maxHeight <= 1200) {
-    return 'medium';
-  }
-  return 'large';
-};
-
-// Get image URL for main gallery with proper size and orientation
+// Get image URL for display (reusing preload function for consistency)
 const getMainImageUrl = (image: HutImage): string => {
-  if (!image.urls) return '';
-
-  // Use is_portrait to determine orientation, default to landscape
-  const orientation = image.is_portrait ? 'portrait' : 'landscape';
-  const urls = image.urls[orientation] || image.urls.landscape;
-
-  if (!urls) return '';
-
-  const size = getOptimalImageSize();
-
-  // Use @2x version for HiDPI devices
-  const pixelRatio = window.devicePixelRatio || 1;
-  if (pixelRatio >= 1.5) {
-    const size2x = `${size}@2x` as keyof ImageSizeVariants;
-    if (urls[size2x]) {
-      return urls[size2x];
-    }
-  }
-
-  // Fallback to smaller sizes if the chosen size doesn't exist
-  if (urls[size]) {
-    return urls[size];
-  }
-  if (urls.medium) {
-    return urls.medium;
-  }
-  return urls.preview || urls.thumb || '';
-};
-
-// Get thumbnail URL (small square images) with HiDPI support
-const getThumbnailUrl = (image: HutImage) => {
-  if (!image.urls?.square) return '';
-
-  const pixelRatio = window.devicePixelRatio || 1;
-  // Use @2x for HiDPI devices
-  if (pixelRatio >= 1.5 && image.urls.square['thumb@2x']) {
-    return image.urls.square['thumb@2x'];
-  }
-  return image.urls.square.thumb || '';
+  return getGalleryImageUrl(image);
 };
 
 // Get current image
@@ -130,6 +100,16 @@ const shouldAddMargin = computed(() => {
   return window.innerWidth >= 1200;
 });
 
+// Show navigation only on non-touch devices with multiple images
+const showNavigation = computed(() => {
+  return !hasTouch.value && props.images.length > 1;
+});
+
+// Preload with timeout - properly managed by useTimeoutFn
+const { start: startPreloading } = useTimeoutFn(() => {
+  preloadAdjacentImages();
+}, 200);
+
 // Handle back button to close gallery
 const onBackButton = () => {
   closeGallery();
@@ -139,6 +119,9 @@ onMounted(() => {
   // Push history state when gallery opens so back button works
   window.history.pushState({ galleryOpen: true }, '');
   window.addEventListener('popstate', onBackButton);
+
+  // Start preloading with proper timeout management
+  startPreloading();
 });
 
 onUnmounted(() => {
@@ -174,7 +157,7 @@ onUnmounted(() => {
         sensitivity: 1,
         releaseOnEdges: false,
       }"
-      :navigation="true"
+      :navigation="showNavigation"
       :thumbs="{ swiper: thumbsSwiper }"
       :initial-slide="initialSlide"
       :loop="true"
@@ -197,10 +180,15 @@ onUnmounted(() => {
               :src="getMainImageUrl(image)"
               :alt="`Image by ${image.attribution?.short || 'unknown'}`"
               class="main-image"
+              @load="onImageLoad(image.id)"
             />
 
             <!-- Attribution - positioned relative to image wrapper -->
-            <div v-if="image.attribution" class="image-attribution-overlay">
+            <div
+              v-if="image.attribution"
+              class="image-attribution-overlay"
+              :class="{ 'attribution-visible': isImageLoaded(image.id) }"
+            >
               <span v-html="image.attribution.full || image.attribution.short || ''" />
               <img
                 v-if="image.provider?.icon"
@@ -227,7 +215,7 @@ onUnmounted(() => {
     >
       <swiper-slide v-for="image in images" :key="image.id" class="thumb-slide">
         <img
-          :src="getThumbnailUrl(image)"
+          :src="getPreviewImageUrl(image)"
           :alt="`Thumbnail by ${image.attribution?.short || 'unknown'}`"
           class="thumb-image"
         />
@@ -448,6 +436,11 @@ onUnmounted(() => {
   border-radius: 4px;
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
+  opacity: 0; // Start hidden
+
+  &.attribution-visible {
+    opacity: 1; // Fade in when loaded
+  }
 
   :deep(a) {
     color: rgba(255, 255, 255, 0.85);

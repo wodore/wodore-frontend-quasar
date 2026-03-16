@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watchEffect, type Component } from 'vue';
+import { ref, computed, watch, watchEffect, onMounted, type Component } from 'vue';
 import { useTimeoutFn } from '@vueuse/core';
 import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
@@ -7,6 +7,8 @@ import { Swiper, SwiperSlide } from 'swiper/vue';
 import type { Swiper as SwiperType } from 'swiper';
 import { EffectFade, Keyboard, Navigation, Pagination, Thumbs } from 'swiper/modules';
 import type { HutImage } from '@composables/useHutImages';
+import { useDeviceDetection } from '@composables/useDeviceDetection';
+import { useMediaPreload } from '@composables/useMediaPreload';
 import WdMediaDialog from './WdMediaDialog.vue';
 import WdNoImage from './WdNoImage.vue';
 import IconAddPhoto from '~icons/material-symbols/add-a-photo.svg';
@@ -88,12 +90,6 @@ const openDialog = (index: number) => {
   dialogOpen.value = true;
 };
 
-// Precise device detection
-const hasTouch = computed(() => {
-  // Check for actual touch capability
-  return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-});
-
 // const isMobilePlatform = computed(() => {
 //   // Mobile platform (iOS, Android, etc.)
 //   // Available for future use
@@ -113,11 +109,6 @@ const isDesktopWidth = computed(() => {
 
 // Check if mobile view (for backward compatibility)
 const isMobile = computed(() => $q.screen.xs);
-
-// Show navigation: no touch capability AND has multiple images
-const showNavigation = computed(() => {
-  return !hasTouch.value && props.images.length > 1;
-});
 
 // Show thumbnails: desktop width AND has multiple images
 const showThumbnails = computed(() => {
@@ -160,6 +151,39 @@ const onThumbsSwiper = (swiper: SwiperType) => {
 const onSlideChange = (swiper: SwiperType) => {
   currentSlide.value = swiper.activeIndex;
 };
+
+// Use shared device detection
+const { hasTouch } = useDeviceDetection();
+
+// Show navigation only on non-touch devices with multiple images
+const showNavigation = computed(() => {
+  return !hasTouch.value && props.images.length > 1;
+});
+
+// Use shared media preload composable
+const { preloadAdjacentImages } = useMediaPreload(
+  computed(() => props.images),
+  currentSlide
+);
+
+// Preload with timeout - properly managed by useTimeoutFn
+const { start: startPreloadAfterSlide } = useTimeoutFn(() => {
+  preloadAdjacentImages();
+}, 200);
+
+const { start: startInitialPreload } = useTimeoutFn(() => {
+  preloadAdjacentImages();
+}, 300);
+
+// Watch for slide changes and preload new images
+watch(currentSlide, () => {
+  startPreloadAfterSlide();
+});
+
+// Initial preload when component mounts
+onMounted(() => {
+  startInitialPreload();
+});
 
 // Handle image click
 const handleImageClick = () => {
@@ -332,7 +356,7 @@ const thumbnailContainerStyle = computed(() => {
               : false
           "
           :pagination="
-            isMobile && images.length > 1
+            (!showThumbnails || isMobile) && images.length > 1
               ? {
                   clickable: true,
                   dynamicBullets: true,
