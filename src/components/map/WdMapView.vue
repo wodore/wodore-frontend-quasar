@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, inject, watchEffect, watch, onErrorCaptured, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { useResizeObserver, useDebounceFn, useThrottleFn } from '@vueuse/core';
+import { useResizeObserver, useDebounceFn, useThrottleFn, useEventListener } from '@vueuse/core';
 import { useQuasar } from 'quasar';
 import { useBasemapStore } from '@stores/map/basemap-store';
 import { useLocalPropertiesStore } from '@stores/local-properties-store';
@@ -191,7 +191,6 @@ function onMapLoad(e: MglEvent<'load'>) {
   const updateLocation = useThrottleFn(() => {
     // Only update location if this tab/page is visible
     if (!isPageVisible.value) {
-      console.debug('[location] Skipping location update - page not visible');
       return;
     }
 
@@ -205,32 +204,36 @@ function onMapLoad(e: MglEvent<'load'>) {
       bearing: e.map.getBearing(),
       pitch: e.map.getPitch(),
     });
-
-    console.debug('[location] Location updated:', {
-      lat: center.lat.toFixed(4),
-      lng: center.lng.toFixed(4),
-      zoom: zoom.toFixed(1),
-    });
   }, 1000); // Throttle to 1 second
 
-  // Update location on map movements
-  e.map.on('move', updateLocation);
+  // Update location on map movements (only 'end' events to reduce redundant calls)
   e.map.on('moveend', updateLocation);
-  e.map.on('zoom', updateLocation);
   e.map.on('zoomend', updateLocation);
-  e.map.on('rotate', updateLocation);
   e.map.on('rotateend', updateLocation);
-  e.map.on('pitch', updateLocation);
   e.map.on('pitchend', updateLocation);
 
-  // Listen for visibility changes to log when tracking resumes
-  document.addEventListener('visibilitychange', () => {
+  // Immediate update function (for visibility changes)
+  const immediateUpdate = () => {
+    if (!isPageVisible.value) return;
+
+    const center = e.map.getCenter();
+    const zoom = e.map.getZoom();
+
+    localPropertiesStore.updateLocation({
+      lat: center.lat,
+      lng: center.lng,
+      zoom: zoom,
+      bearing: e.map.getBearing(),
+      pitch: e.map.getPitch(),
+    });
+  };
+
+  // Listen for visibility changes
+  useEventListener(document, 'visibilitychange', () => {
     if (!document.hidden) {
-      console.debug('[location] Page visible - location tracking resumed');
       // Update location immediately when tab becomes visible
-      updateLocation();
+      immediateUpdate();
     } else {
-      console.debug('[location] Page hidden - location tracking paused');
       // Force save when tab becomes hidden
       localPropertiesStore.forceSave();
     }
