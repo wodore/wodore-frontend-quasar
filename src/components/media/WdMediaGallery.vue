@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import type { Swiper as SwiperType } from 'swiper';
-import { Keyboard, Navigation, Thumbs, Zoom } from 'swiper/modules';
+import { Keyboard, Mousewheel, Navigation, Thumbs, Zoom, EffectFade } from 'swiper/modules';
 import type { HutImage } from 'src/composables/useHutImages';
 import type { ImageSizeVariants } from 'src/types/geo';
 import IconCloseOutline from '~icons/eva/close-outline';
@@ -13,7 +13,9 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/thumbs';
 import 'swiper/css/keyboard';
+import 'swiper/css/mousewheel';
 import 'swiper/css/zoom';
+import 'swiper/css/effect-fade';
 
 interface Props {
   images: HutImage[];
@@ -42,9 +44,9 @@ const onSwiper = (swiper: SwiperType) => {
   mainSwiper.value = swiper;
 };
 
-// Handle slide change
+// Handle slide change - use realIndex for loop mode
 const onSlideChange = (swiper: SwiperType) => {
-  activeSlideIndex.value = swiper.activeIndex;
+  activeSlideIndex.value = swiper.realIndex;
 };
 
 // Get optimal image size based on screen size - NEVER upscale
@@ -111,7 +113,7 @@ const currentImage = computed(() => {
   return props.images[activeSlideIndex.value];
 });
 
-// Close gallery
+// Close gallery - now emits close event for Quasar Dialog plugin
 const closeGallery = () => {
   emit('close');
 };
@@ -123,43 +125,29 @@ const downloadOriginal = () => {
   }
 };
 
-// Handle backdrop click - close if clicking outside the image
-const onBackdropClick = (event: MouseEvent) => {
-  const target = event.target as HTMLElement;
-  // Close if clicking directly on the gallery container (backdrop)
-  if (target.classList.contains('media-gallery-container')) {
-    closeGallery();
-  }
-};
-
 // Check if we should add margin (large screens)
 const shouldAddMargin = computed(() => {
   return window.innerWidth >= 1200;
 });
 
-// Build custom attribution parts
-const attributionParts = computed(() => {
-  if (!currentImage.value?.attribution) return [];
+// Handle back button to close gallery
+const onBackButton = () => {
+  closeGallery();
+};
 
-  // Use full attribution for detailed display
-  const attr = currentImage.value.attribution;
-  if (attr.full) {
-    return [attr.full];
-  }
-  if (attr.short) {
-    return [attr.short];
-  }
+onMounted(() => {
+  // Push history state when gallery opens so back button works
+  window.history.pushState({ galleryOpen: true }, '');
+  window.addEventListener('popstate', onBackButton);
+});
 
-  return [];
+onUnmounted(() => {
+  window.removeEventListener('popstate', onBackButton);
 });
 </script>
 
 <template>
-  <div
-    class="media-gallery-container"
-    :class="{ 'with-margin': shouldAddMargin }"
-    @click="onBackdropClick"
-  >
+  <div class="media-gallery-container" :class="{ 'with-margin': shouldAddMargin }">
     <!-- Close button -->
     <q-btn flat round dense class="close-btn" @click="closeGallery">
       <q-iconify :is="IconCloseOutline" size="20px" />
@@ -172,22 +160,26 @@ const attributionParts = computed(() => {
       <q-tooltip>Download original</q-tooltip>
     </q-btn>
 
-    <!-- Attribution - top left -->
-    <div v-if="attributionParts.length > 0" class="attribution-top-left">
-      <span class="attribution-text" v-html="attributionParts.join(' ')" />
-    </div>
-
     <!-- Main Swiper -->
     <swiper
-      :modules="[Keyboard, Navigation, Thumbs, Zoom]"
+      :modules="[Keyboard, Mousewheel, Navigation, Thumbs, Zoom, EffectFade]"
       :slides-per-view="1"
       :space-between="0"
       :keyboard="{
         enabled: true,
       }"
+      :mousewheel="{
+        enabled: true,
+        forceToAxis: false,
+        sensitivity: 1,
+        releaseOnEdges: false,
+      }"
       :navigation="true"
       :thumbs="{ swiper: thumbsSwiper }"
       :initial-slide="initialSlide"
+      :loop="true"
+      :effect="'fade'"
+      :fade-effect="{ crossFade: true }"
       :zoom="{
         maxRatio: 3,
         minRatio: 1,
@@ -199,11 +191,25 @@ const attributionParts = computed(() => {
     >
       <swiper-slide v-for="image in images" :key="image.id" class="main-slide">
         <div class="swiper-zoom-container">
-          <img
-            :src="getMainImageUrl(image)"
-            :alt="`Image by ${image.attribution?.short || 'unknown'}`"
-            class="main-image"
-          />
+          <!-- Wrapper div that matches image dimensions - creates positioning context -->
+          <div class="image-wrapper">
+            <img
+              :src="getMainImageUrl(image)"
+              :alt="`Image by ${image.attribution?.short || 'unknown'}`"
+              class="main-image"
+            />
+
+            <!-- Attribution - positioned relative to image wrapper -->
+            <div v-if="image.attribution" class="image-attribution-overlay">
+              <span v-html="image.attribution.full || image.attribution.short || ''" />
+              <img
+                v-if="image.provider?.icon"
+                :src="image.provider.icon"
+                class="provider-icon"
+                alt="Provider icon"
+              />
+            </div>
+          </div>
         </div>
       </swiper-slide>
     </swiper>
@@ -289,79 +295,90 @@ const attributionParts = computed(() => {
   }
 }
 
-.attribution-top-left {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  z-index: 1000;
-  max-width: calc(100% - 160px);
-
-  .attribution-text {
-    color: rgba(255, 255, 255, 0.95);
-    font-size: 0.8125rem;
-    line-height: 1.4;
-    background: rgba(0, 0, 0, 0.3);
-    padding: 8px 14px;
-    border-radius: 6px;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-
-    :deep(a) {
-      color: rgba(255, 255, 255, 0.95);
-      text-decoration: underline dotted;
-      text-decoration-color: rgba(255, 255, 255, 0.5);
-      transition: all 0.2s;
-    }
-
-    :deep(a:hover) {
-      color: #64b5f6;
-      text-decoration-color: #64b5f6;
-      text-decoration: underline dotted;
-    }
-  }
-}
-
 .main-swiper {
   flex: 1;
   width: 100%;
+  min-height: 0; // CRITICAL: Allow flex item to shrink below content size
   display: flex;
   align-items: center;
   justify-content: center;
 
+  // Navigation buttons - gray arrows with transparency, no background
   :deep(.swiper-button-next),
   :deep(.swiper-button-prev) {
-    color: white;
-    opacity: 0.8;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
+    // Remove background completely
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
 
+    // Size and positioning
+    width: 44px !important;
+    height: 44px !important;
+
+    // Arrow color (gray with transparency) - IMPORTANT: override all inherited colors
+    color: rgba(120, 120, 120, 0.8) !important;
+
+    // Smooth transitions
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+
+    // Remove border radius since no background
+    border-radius: 0 !important;
+
+    // SVG icon sizing and color - CRITICAL: Override any framework SVG styles
+    :deep(svg) {
+      width: 100% !important;
+      height: 100% !important;
+      fill: rgba(120, 120, 120, 0.8) !important;
+      color: rgba(120, 120, 120, 0.8) !important;
+    }
+
+    // Force SVG path colors - this is what actually gets colored
+    :deep(svg path) {
+      fill: rgba(120, 120, 120, 0.8) !important;
+      stroke: rgba(120, 120, 120, 0.8) !important;
+    }
+
+    // Hover state - darker gray
     &:hover {
-      opacity: 1;
-      background: rgba(0, 0, 0, 0.6);
-      transform: scale(1.05);
+      color: rgba(80, 80, 80, 1) !important;
+
+      :deep(svg) {
+        fill: rgba(80, 80, 80, 1) !important;
+        color: rgba(80, 80, 80, 1) !important;
+      }
+
+      :deep(svg path) {
+        fill: rgba(80, 80, 80, 1) !important;
+        stroke: rgba(80, 80, 80, 1) !important;
+      }
+
+      transform: scale(1.1) !important;
     }
 
+    // Active state
     &:active {
-      transform: scale(0.95);
+      transform: scale(0.95) !important;
     }
 
-    &::after {
-      font-size: 22px;
-      font-weight: 600;
+    // Focus state for accessibility
+    &:focus {
+      outline: 2px solid rgba(100, 181, 246, 0.6) !important;
+      outline-offset: 2px !important;
+    }
+
+    // Disabled state
+    &.swiper-button-disabled {
+      opacity: 0.3 !important;
+      cursor: not-allowed !important;
     }
   }
 
   :deep(.swiper-button-next) {
-    right: 24px;
+    right: 24px !important;
   }
 
   :deep(.swiper-button-prev) {
-    left: 24px;
+    left: 24px !important;
   }
 
   &:hover {
@@ -380,6 +397,7 @@ const attributionParts = computed(() => {
   overflow: hidden;
   height: 100%;
   width: 100%;
+  min-height: 0; // Allow slide to shrink
 }
 
 .main-slide :deep(.swiper-zoom-container) {
@@ -388,15 +406,79 @@ const attributionParts = computed(() => {
   justify-content: center;
   width: 100%;
   height: 100%;
+  min-height: 0; // Allow zoom container to shrink
+}
+
+// Image wrapper - creates positioning context that matches actual image dimensions
+.image-wrapper {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  max-height: 100%; // Constrain to parent height
+  padding-bottom: 40px; // Reserve space for attribution (increased from 32px)
+  box-sizing: border-box; // Include padding in max-height calculation
 }
 
 .main-image {
-  width: 100%;
-  height: 100%;
   display: block;
-  object-fit: contain;
   max-width: 100%;
-  max-height: 100%;
+  max-height: calc(100% - 40px); // Subtract attribution space from image height
+  object-fit: contain;
+  width: auto;
+  height: auto;
+}
+
+// Attribution overlay positioned relative to actual image content
+.image-attribution-overlay {
+  position: absolute;
+  bottom: 12px; // Position inside the reserved padding space
+  right: 8px;
+  z-index: 10;
+  max-width: calc(100% - 16px);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  pointer-events: auto; // Allow clicking on links
+  transition: opacity 0.3s ease;
+  padding: 4px 8px; // Add padding for better visibility
+  background: rgba(0, 0, 0, 0.3); // Subtle background for readability
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+
+  :deep(a) {
+    color: rgba(255, 255, 255, 0.85);
+    text-decoration: underline dotted;
+    text-decoration-color: rgba(255, 255, 255, 0.4);
+    transition: all 0.2s;
+  }
+
+  :deep(a:hover) {
+    color: #64b5f6;
+    text-decoration-color: #64b5f6;
+    text-decoration: underline dotted;
+  }
+
+  .provider-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    flex-shrink: 0;
+    filter: brightness(1.1) contrast(1.1);
+  }
+
+  // Mobile - smaller font
+  @media (max-width: 768px) {
+    font-size: 0.75rem;
+
+    .provider-icon {
+      width: 18px;
+      height: 18px;
+    }
+  }
 }
 
 .thumb-swiper {
