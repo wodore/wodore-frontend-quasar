@@ -5,18 +5,20 @@ import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import type { Swiper as SwiperType } from 'swiper';
-import { EffectFade, Keyboard, Pagination, Thumbs } from 'swiper/modules';
+import { EffectCreative, Keyboard, Navigation, Pagination, Thumbs } from 'swiper/modules';
 import type { HutImage } from '@composables/useHutImages';
 import WdMediaDialog from './WdMediaDialog.vue';
 import WdNoImage from './WdNoImage.vue';
 import IconAddPhoto from '~icons/material-symbols/add-a-photo.svg';
+import { previewCreativeEffect } from './swiper-effects';
 
 // Import Swiper styles
 import 'swiper/css';
-import 'swiper/css/effect-fade';
+import 'swiper/css/navigation';
 import 'swiper/css/keyboard';
 import 'swiper/css/pagination';
 import 'swiper/css/thumbs';
+import 'swiper/css/effect-creative';
 
 interface Props {
   images: HutImage[];
@@ -46,7 +48,7 @@ const props = withDefaults(defineProps<Props>(), {
   emptyStateMessage: 'No images available',
   emptyStateIcon: undefined,
   maxThumbnailCount: 5,
-  thumbnailSize: 50,
+  thumbnailSize: 40,
   showAttribution: true,
   osmId: null,
   osmFeature: null,
@@ -67,8 +69,41 @@ const emit = defineEmits<{
 const router = useRouter();
 const $q = useQuasar();
 
-// Check if mobile view
+// Precise device detection
+const hasTouch = computed(() => {
+  // Check for actual touch capability
+  return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+});
+
+// const isMobilePlatform = computed(() => {
+//   // Mobile platform (iOS, Android, etc.)
+//   // Available for future use
+//   return $q.platform.is.mobile;
+// });
+
+// const hasHdpi = computed(() => {
+//   // High DPI display (Retina, etc.)
+//   // Available for future use
+//   return window.devicePixelRatio && window.devicePixelRatio >= 1.5;
+// });
+
+const isDesktopWidth = computed(() => {
+  // Desktop breakpoint (width >= 1024px)
+  return $q.screen.width >= 1024;
+});
+
+// Check if mobile view (for backward compatibility)
 const isMobile = computed(() => $q.screen.xs);
+
+// Show navigation: no touch capability AND has multiple images
+const showNavigation = computed(() => {
+  return !hasTouch.value && props.images.length > 1;
+});
+
+// Show thumbnails: desktop width AND has multiple images
+const showThumbnails = computed(() => {
+  return isDesktopWidth.value && props.images.length > 1;
+});
 
 const dialogOpen = ref(false);
 const currentSlide = ref(0);
@@ -252,6 +287,10 @@ const thumbnailContainerStyle = computed(() => {
         class="media-preview-wrapper"
         style="border-radius: 16px; overflow: hidden; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1)"
       >
+        <!-- Navigation buttons - desktop only, no touch -->
+        <div v-if="showNavigation" class="swiper-button-prev"></div>
+        <div v-if="showNavigation" class="swiper-button-next"></div>
+
         <!-- Attribution badge (top-right) - stationary -->
         <div class="license-badge-custom stationary">
           <span v-if="getCurrentImageAuthor()" v-html="getCurrentImageAuthor()" />
@@ -264,13 +303,22 @@ const thumbnailContainerStyle = computed(() => {
         </div>
 
         <swiper
-          :modules="[EffectFade, Keyboard, Pagination, Thumbs]"
+          :modules="[EffectCreative, Keyboard, Navigation, Pagination, Thumbs]"
           :slides-per-view="1"
           :space-between="0"
-          :effect="'fade'"
-          :fade-effect="{ crossFade: true }"
+          :effect="'creative'"
+          :creative-effect="previewCreativeEffect"
           :keyboard="{ enabled: true }"
           :loop="true"
+          :speed="600"
+          :navigation="
+            showNavigation
+              ? {
+                  nextEl: '.swiper-button-next',
+                  prevEl: '.swiper-button-prev',
+                }
+              : false
+          "
           :pagination="
             isMobile && images.length > 1
               ? {
@@ -296,11 +344,7 @@ const thumbnailContainerStyle = computed(() => {
         </swiper>
 
         <!-- Thumbnail Swiper - overlaid on image (outside main swiper) -->
-        <div
-          v-if="images.length > 1 && !isMobile"
-          class="thumbs-swiper-container"
-          :style="thumbnailContainerStyle"
-        >
+        <div v-if="showThumbnails" class="thumbs-swiper-container" :style="thumbnailContainerStyle">
           <swiper
             :modules="[Thumbs]"
             :watch-slides-progress="true"
@@ -377,7 +421,6 @@ const thumbnailContainerStyle = computed(() => {
   left: 0;
   width: 100%;
   height: 100%;
-  // Override Swiper's default content-box to ensure consistent sizing
   box-sizing: border-box;
 
   :deep(.swiper-wrapper) {
@@ -591,6 +634,44 @@ const thumbnailContainerStyle = computed(() => {
   :deep(.swiper-pagination-bullet-active) {
     background: #64b5f6 !important;
     width: 8px !important;
+  }
+
+  // Custom navigation buttons for desktop
+  :deep(.swiper-button-prev),
+  :deep(.swiper-button-next) {
+    background: rgba(120, 120, 120, 0.4) !important;
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 50% !important;
+    color: rgba(255, 255, 255, 0.8) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+
+    &::after {
+      font-size: 20px !important;
+      font-weight: bold !important;
+    }
+
+    &:hover {
+      background: rgba(120, 120, 120, 0.6) !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+      transform: scale(1.05) !important;
+      color: rgba(255, 255, 255, 1) !important;
+    }
+
+    &:focus {
+      outline: 2px solid #64b5f6 !important;
+      outline-offset: 2px !important;
+    }
+  }
+
+  :deep(.swiper-button-prev) {
+    left: 8px;
+  }
+
+  :deep(.swiper-button-next) {
+    right: 8px;
   }
 }
 </style>

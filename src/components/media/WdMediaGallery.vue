@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import type { Swiper as SwiperType } from 'swiper';
-import { Keyboard, Navigation, Thumbs, Zoom } from 'swiper/modules';
+import { Keyboard, Mousewheel, Navigation, Thumbs, Zoom } from 'swiper/modules';
 import type { HutImage } from 'src/composables/useHutImages';
 import type { ImageSizeVariants } from 'src/types/geo';
 import IconCloseOutline from '~icons/eva/close-outline';
@@ -13,6 +13,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/thumbs';
 import 'swiper/css/keyboard';
+import 'swiper/css/mousewheel';
 import 'swiper/css/zoom';
 
 interface Props {
@@ -179,15 +180,22 @@ const attributionParts = computed(() => {
 
     <!-- Main Swiper -->
     <swiper
-      :modules="[Keyboard, Navigation, Thumbs, Zoom]"
+      :modules="[Keyboard, Mousewheel, Navigation, Thumbs, Zoom]"
       :slides-per-view="1"
       :space-between="0"
       :keyboard="{
         enabled: true,
       }"
+      :mousewheel="{
+        enabled: true,
+        forceToAxis: false,
+        sensitivity: 1,
+        releaseOnEdges: false,
+      }"
       :navigation="true"
       :thumbs="{ swiper: thumbsSwiper }"
       :initial-slide="initialSlide"
+      :loop="true"
       :zoom="{
         maxRatio: 3,
         minRatio: 1,
