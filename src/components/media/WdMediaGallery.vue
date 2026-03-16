@@ -33,6 +33,17 @@ const emit = defineEmits<{
 const thumbsSwiper = ref<SwiperType | null>(null);
 const mainSwiper = ref<SwiperType | null>(null);
 const activeSlideIndex = ref(props.initialSlide);
+const loadedImages = ref<Set<string>>(new Set());
+
+// Track which images have loaded
+const isImageLoaded = (imageId: string) => {
+  return loadedImages.value.has(imageId);
+};
+
+// Mark image as loaded
+const onImageLoad = (imageId: string) => {
+  loadedImages.value.add(imageId);
+};
 
 // Set thumbs swiper
 const setThumbsSwiper = (swiper: SwiperType) => {
@@ -130,6 +141,56 @@ const shouldAddMargin = computed(() => {
   return window.innerWidth >= 1200;
 });
 
+// Precise device detection
+const hasTouch = computed(() => {
+  // Check for actual touch capability
+  return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+});
+
+// Show navigation only on non-touch devices with multiple images
+const showNavigation = computed(() => {
+  return !hasTouch.value && props.images.length > 1;
+});
+
+// Preload images for better performance
+const preloadImage = (imageUrl: string) => {
+  if (!imageUrl) return;
+
+  const img = new window.Image();
+  img.src = imageUrl;
+};
+
+// Preload gallery main images (current, next, previous)
+const preloadGalleryImages = () => {
+  const currentIndex = activeSlideIndex.value;
+  const indicesToPreload = [
+    currentIndex, // Current
+    (currentIndex + 1) % props.images.length, // Next
+    (currentIndex - 1 + props.images.length) % props.images.length, // Previous
+  ];
+
+  indicesToPreload.forEach(index => {
+    const image = props.images[index];
+    if (image) {
+      const imageUrl = getMainImageUrl(image);
+      preloadImage(imageUrl);
+    }
+  });
+};
+
+// Preload thumbnail images (up to 8, primarily for mobile)
+const preloadThumbnailImages = () => {
+  const thumbsToPreload = Math.min(props.images.length, 8);
+
+  for (let i = 0; i < thumbsToPreload; i++) {
+    const image = props.images[i];
+    if (image) {
+      const thumbUrl = getThumbnailUrl(image);
+      preloadImage(thumbUrl);
+    }
+  }
+};
+
 // Handle back button to close gallery
 const onBackButton = () => {
   closeGallery();
@@ -139,6 +200,12 @@ onMounted(() => {
   // Push history state when gallery opens so back button works
   window.history.pushState({ galleryOpen: true }, '');
   window.addEventListener('popstate', onBackButton);
+
+  // Wait for initial render to complete, then preload images
+  setTimeout(() => {
+    preloadGalleryImages();
+    preloadThumbnailImages();
+  }, 200);
 });
 
 onUnmounted(() => {
@@ -174,7 +241,7 @@ onUnmounted(() => {
         sensitivity: 1,
         releaseOnEdges: false,
       }"
-      :navigation="true"
+      :navigation="showNavigation"
       :thumbs="{ swiper: thumbsSwiper }"
       :initial-slide="initialSlide"
       :loop="true"
@@ -197,10 +264,15 @@ onUnmounted(() => {
               :src="getMainImageUrl(image)"
               :alt="`Image by ${image.attribution?.short || 'unknown'}`"
               class="main-image"
+              @load="onImageLoad(image.id)"
             />
 
             <!-- Attribution - positioned relative to image wrapper -->
-            <div v-if="image.attribution" class="image-attribution-overlay">
+            <div
+              v-if="image.attribution"
+              class="image-attribution-overlay"
+              :class="{ 'attribution-visible': isImageLoaded(image.id) }"
+            >
               <span v-html="image.attribution.full || image.attribution.short || ''" />
               <img
                 v-if="image.provider?.icon"
@@ -448,6 +520,11 @@ onUnmounted(() => {
   border-radius: 4px;
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
+  opacity: 0; // Start hidden
+
+  &.attribution-visible {
+    opacity: 1; // Fade in when loaded
+  }
 
   :deep(a) {
     color: rgba(255, 255, 255, 0.85);

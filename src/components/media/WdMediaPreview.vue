@@ -332,7 +332,7 @@ const thumbnailContainerStyle = computed(() => {
               : false
           "
           :pagination="
-            isMobile && images.length > 1
+            (!showThumbnails || isMobile) && images.length > 1
               ? {
                   clickable: true,
                   dynamicBullets: true,
