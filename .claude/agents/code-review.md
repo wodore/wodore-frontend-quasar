@@ -250,9 +250,40 @@ const huts = ref<schemasWodore['Hut'][]>([]);
 ### Code Quality
 
 - [ ] Run `yarn lint` before committing
+- [ ] Run `npx vue-tsc --noEmit` to check TypeScript compilation
+- [ ] Check ESLint for all modified files: `npx eslint path/to/file.ts`
 - [ ] Fix all linting errors and warnings
 - [ ] Use meaningful variable/function names
 - [ ] Add comments for complex logic
+
+**CRITICAL ESLint Checks:**
+
+Always verify ESLint passes for your changes. Common issues:
+
+1. **Unused imports**: Remove imports that aren't used (e.g., `Platform` imported but never used)
+2. **Unused variables in catch blocks**: Use empty `catch {}` for silent error handling instead of `catch (error) {}`
+3. **Other code quality issues**
+
+Example ESLint workflow:
+
+```bash
+# Check specific files
+npx eslint src/stores/user-settings-store.ts src/stores/local-properties-store.ts
+
+# Auto-fix issues
+npx eslint src/stores/user-settings-store.ts --fix
+
+# Full project check
+yarn lint
+```
+
+**TypeScript Compilation:**
+
+Always verify TypeScript compilation passes:
+
+```bash
+npx vue-tsc --noEmit
+```
 
 ## Common Issues to Watch For
 
