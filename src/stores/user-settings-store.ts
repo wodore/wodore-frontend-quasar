@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed, watch } from 'vue';
 import { useDebounceFn } from '@vueuse/core';
+import { LocalStorage } from 'quasar';
 
 /**
  * User Settings Store
@@ -75,20 +76,47 @@ const syncStrategies: Record<keyof UserSettings, SyncStrategy> = {
 };
 
 export const useUserSettingsStore = defineStore('userSettings', () => {
+  // SSR Guard: Return defaults on server
+  if (typeof window === 'undefined') {
+    const defaultSettingsRef = ref(defaultSettings);
+    return {
+      settings: defaultSettingsRef,
+      uiSettings: computed(() => defaultSettings.ui),
+      mapSettings: computed(() => defaultSettings.map),
+      availableOverlays: computed(() => defaultSettings.ui.availableOverlays),
+      preferredBasemaps: computed(() => defaultSettings.ui.preferredBasemaps),
+      updateUISetting: () => {},
+      updateMapSetting: () => {},
+      setAvailableOverlays: () => {},
+      addAvailableOverlay: () => {},
+      removeAvailableOverlay: () => {},
+      setPreferredBasemaps: () => {},
+      addPreferredBasemap: () => {},
+      removePreferredBasemap: () => {},
+      syncPending: async () => {},
+      resetToDefaults: () => {},
+      exportSettings: () => '',
+      importSettings: () => false,
+    };
+  }
+
+  // Storage key with namespace
+  const STORAGE_KEY = 'wodore:userSettings';
+
   // Load from localStorage first
   const loadSettings = (): UserSettings => {
     try {
-      const stored = localStorage.getItem('userSettings');
+      const stored = LocalStorage.getItem(STORAGE_KEY) as UserSettings | null;
       if (stored) {
-        const parsed = JSON.parse(stored);
+        const parsed = stored; // Quasar already parses JSON
         // Merge with defaults to handle new properties
         return {
           ui: { ...defaultSettings.ui, ...parsed.ui },
           map: { ...defaultSettings.map, ...parsed.map },
         };
       }
-    } catch (error) {
-      console.error('[user-settings] Failed to load from storage:', error);
+    } catch {
+      // Silent error handling
     }
     return defaultSettings;
   };
@@ -98,17 +126,15 @@ export const useUserSettingsStore = defineStore('userSettings', () => {
 
   // Save to localStorage (debounced)
   const saveSettings = useDebounceFn(() => {
-    localStorage.setItem('userSettings', JSON.stringify(settings.value));
-    console.debug('[user-settings] Saved to localStorage');
+    LocalStorage.set(STORAGE_KEY, settings.value);
   }, 500);
 
   // Watch for changes and save
   watch(settings, saveSettings, { deep: true });
 
   // Save immediately on initialization to ensure key exists
-  if (!localStorage.getItem('userSettings')) {
-    localStorage.setItem('userSettings', JSON.stringify(settings.value));
-    console.debug('[user-settings] Initialized with defaults');
+  if (!LocalStorage.hasItem(STORAGE_KEY)) {
+    LocalStorage.set(STORAGE_KEY, settings.value);
   }
 
   // Track which settings need server sync (prepare for future)
@@ -207,7 +233,6 @@ export const useUserSettingsStore = defineStore('userSettings', () => {
     //   )
     // );
 
-    console.debug('[user-settings] Syncing settings:', Array.from(pendingSync.value));
     pendingSync.value.clear();
   }, 500);
 

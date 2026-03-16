@@ -64,6 +64,38 @@ const defaultSessionState: SessionState = {
 };
 
 export const useLocalPropertiesStore = defineStore('localProperties', () => {
+  // SSR Guard: Return defaults on server
+  if (typeof window === 'undefined') {
+    const defaultStateRef = ref({
+      location: { ...defaultLocationState },
+      session: { ...defaultSessionState },
+    });
+    return {
+      persistentState: defaultStateRef,
+      sessionState: ref({ ...defaultSessionState }),
+      currentLocation: computed(() => defaultLocationState),
+      sessionStartTime: computed(() => Date.now()),
+      clipboardLocation: computed(() => undefined),
+      lastActiveTab: computed(() => 'map'),
+      updateLocation: () => {},
+      setLocation: () => {},
+      getLastKnownLocation: () => defaultLocationState,
+      isLocationStale: () => true,
+      forceSave: () => {},
+      resetLocation: () => {},
+      updateSession: () => {},
+      setClipboardLocation: () => {},
+      setLastActiveTab: () => {},
+      parseLocationFromHash: () => null,
+      getInitialLocation: () => ({ ...defaultLocationState }),
+      clearAll: () => {},
+    };
+  }
+
+  // Storage keys with namespace
+  const STORAGE_KEY = 'wodore:localProperties';
+  const SESSION_STORAGE_KEY = 'wodore:localPropertiesSession';
+
   // ========================================
   // Persistent state (localStorage)
   // NOTE: Using manual LocalStorage instead of useStorage to prevent cross-tab sync
@@ -78,18 +110,18 @@ export const useLocalPropertiesStore = defineStore('localProperties', () => {
   // Load from localStorage on initialization (one-time read)
   const loadFromStorage = (): LocalProperties => {
     try {
-      const stored = LocalStorage.getItem('localProperties');
+      const stored = LocalStorage.getItem(STORAGE_KEY) as LocalProperties | null;
       if (stored) {
-        const parsed = JSON.parse(stored as string);
+        // Quasar already parses JSON
         return {
           location: {
             ...defaultLocationState,
-            ...parsed.location,
+            ...stored.location,
           },
         };
       }
-    } catch (error) {
-      console.error('[local-properties] Failed to load from storage:', error);
+    } catch {
+      // Silent error handling
     }
     return { location: { ...defaultLocationState } };
   };
@@ -99,8 +131,7 @@ export const useLocalPropertiesStore = defineStore('localProperties', () => {
 
   // Save to localStorage (debounced to 1 second for live updates)
   const saveToStorage = useDebounceFn(() => {
-    LocalStorage.set('localProperties', JSON.stringify(persistentState.value));
-    console.debug('[local-properties] Saved to localStorage (no cross-tab sync)');
+    LocalStorage.set(STORAGE_KEY, persistentState.value);
   }, 1000); // 1 second debounce for live updates
 
   // Watch for changes and save to localStorage
@@ -113,9 +144,8 @@ export const useLocalPropertiesStore = defineStore('localProperties', () => {
   );
 
   // Save immediately on initialization to ensure key exists
-  if (!LocalStorage.hasItem('localProperties')) {
-    LocalStorage.set('localProperties', JSON.stringify(persistentState.value));
-    console.debug('[local-properties] Initialized with defaults');
+  if (!LocalStorage.hasItem(STORAGE_KEY)) {
+    LocalStorage.set(STORAGE_KEY, persistentState.value);
   }
 
   // ========================================
@@ -127,19 +157,19 @@ export const useLocalPropertiesStore = defineStore('localProperties', () => {
   // Load session state from sessionStorage
   const loadSessionFromStorage = (): SessionState => {
     try {
-      const stored = SessionStorage.getItem('local-properties-session');
+      const stored = SessionStorage.getItem(SESSION_STORAGE_KEY) as SessionState | null;
       if (stored) {
-        return JSON.parse(stored as string);
+        return stored; // Quasar already parses JSON
       }
-    } catch (error) {
-      console.error('[local-properties] Failed to load session from storage:', error);
+    } catch {
+      // Silent error handling
     }
     return { ...defaultSessionState };
   };
 
   // Save session state to sessionStorage
   const saveSessionToStorage = () => {
-    SessionStorage.set('local-properties-session', JSON.stringify(sessionState.value));
+    SessionStorage.set(SESSION_STORAGE_KEY, sessionState.value);
   };
 
   // Initialize session state
@@ -210,8 +240,7 @@ export const useLocalPropertiesStore = defineStore('localProperties', () => {
    * Overrides the debounced save
    */
   const forceSave = () => {
-    LocalStorage.set('localProperties', JSON.stringify(persistentState.value));
-    console.debug('[local-properties] Location saved (immediate):', persistentState.value.location);
+    LocalStorage.set(STORAGE_KEY, persistentState.value);
   };
 
   // ========================================
@@ -335,7 +364,6 @@ export const useLocalPropertiesStore = defineStore('localProperties', () => {
     // Check URL hash first
     const hashLocation = parseLocationFromHash();
     if (hashLocation) {
-      console.debug('[local-properties] Using location from URL hash:', hashLocation);
       return hashLocation;
     }
 
@@ -343,12 +371,10 @@ export const useLocalPropertiesStore = defineStore('localProperties', () => {
     const lastLocation = persistentState.value.location;
     if (!isLocationStale(60)) {
       // Location is less than 60 minutes old
-      console.debug('[local-properties] Using last known location:', lastLocation);
       return lastLocation;
     }
 
     // Use default location
-    console.debug('[local-properties] Using default location:', defaultLocationState);
     return { ...defaultLocationState };
   };
 

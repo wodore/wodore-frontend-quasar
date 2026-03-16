@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed, watch } from 'vue';
+import { useEventListener } from '@vueuse/core';
+import { LocalStorage } from 'quasar';
 
 /**
  * Synced Properties Store
@@ -16,7 +18,7 @@ import { ref, computed, watch } from 'vue';
  *
  * Cross-Tab Behavior:
  * - YES: Search history, visited places, favorites sync across tabs
- * - Uses useStorage() which automatically syncs via storage event
+ * - Uses storage event listener for cross-tab sync
  * - All tabs see the same data in real-time
  */
 
@@ -74,21 +76,54 @@ const MAX_VISITED_PLACES = 50;
 const MAX_FAVORITES = 500;
 
 export const useSyncedPropertiesStore = defineStore('syncedProperties', () => {
+  // SSR Guard: Return defaults on server
+  if (typeof window === 'undefined') {
+    const defaultPropsRef = ref({ ...defaultSyncedProperties });
+    return {
+      properties: defaultPropsRef,
+      pendingSync: ref(new Set()),
+      isSyncing: ref(false),
+      searchHistory: computed(() => []),
+      visitedPlaces: computed(() => []),
+      favorites: computed(() => []),
+      recentSearches: computed(() => []),
+      recentPlaces: computed(() => []),
+      addSearchHistory: () => {},
+      clearSearchHistory: () => {},
+      removeSearchHistory: () => {},
+      addVisitedPlace: () => {},
+      clearVisitedPlaces: () => {},
+      removeVisitedPlace: () => {},
+      addFavorite: () => {},
+      removeFavorite: () => {},
+      isFavorite: () => false,
+      getFavoritesByType: () => [],
+      clearFavorites: () => {},
+      syncPending: async () => {},
+      mergeFromServer: () => {},
+      clearAll: () => {},
+      exportProperties: (): string => '',
+      importProperties: () => false,
+    };
+  }
+
+  // Storage key with namespace
+  const STORAGE_KEY = 'wodore:syncedProperties';
+
   // Load from localStorage first
   const loadProperties = (): SyncedProperties => {
     try {
-      const stored = localStorage.getItem('syncedProperties');
+      const stored = LocalStorage.getItem(STORAGE_KEY) as SyncedProperties | null;
       if (stored) {
-        const parsed = JSON.parse(stored);
-        // Merge with defaults to handle new properties
+        // Quasar already parses JSON
         return {
-          searchHistory: parsed.searchHistory || [],
-          visitedPlaces: parsed.visitedPlaces || [],
-          favorites: parsed.favorites || [],
+          searchHistory: stored.searchHistory || [],
+          visitedPlaces: stored.visitedPlaces || [],
+          favorites: stored.favorites || [],
         };
       }
-    } catch (error) {
-      console.error('[synced-properties] Failed to load from storage:', error);
+    } catch {
+      // Silent error handling
     }
     return { ...defaultSyncedProperties };
   };
@@ -98,17 +133,31 @@ export const useSyncedPropertiesStore = defineStore('syncedProperties', () => {
 
   // Save to localStorage immediately (no debounce - want instant sync across tabs)
   const saveProperties = () => {
-    localStorage.setItem('syncedProperties', JSON.stringify(properties.value));
-    console.debug('[synced-properties] Saved to localStorage');
+    LocalStorage.set(STORAGE_KEY, properties.value);
   };
 
   // Watch for changes and save
   watch(properties, saveProperties, { deep: true });
 
+  // Listen for cross-tab changes (storage event)
+  useEventListener(window, 'storage', e => {
+    if (e.key === STORAGE_KEY && e.newValue) {
+      try {
+        const parsed = JSON.parse(e.newValue);
+        properties.value = {
+          searchHistory: parsed.searchHistory || [],
+          visitedPlaces: parsed.visitedPlaces || [],
+          favorites: parsed.favorites || [],
+        };
+      } catch {
+        // Silent error handling
+      }
+    }
+  });
+
   // Save immediately on initialization to ensure key exists
-  if (!localStorage.getItem('syncedProperties')) {
-    localStorage.setItem('syncedProperties', JSON.stringify(properties.value));
-    console.debug('[synced-properties] Initialized with defaults');
+  if (!LocalStorage.hasItem(STORAGE_KEY)) {
+    LocalStorage.set(STORAGE_KEY, properties.value);
   }
 
   // Track which properties need server sync (prepare for future)
@@ -321,7 +370,6 @@ export const useSyncedPropertiesStore = defineStore('syncedProperties', () => {
       //   )
       // );
 
-      console.debug('[synced-properties] Syncing properties:', Array.from(pendingSync.value));
       pendingSync.value.clear();
     } catch (error) {
       console.error('[synced-properties] Failed to sync properties:', error);
