@@ -412,14 +412,14 @@ onUnmounted(() => {
   display: inline-block;
   max-width: 100%;
   max-height: 100%; // Constrain to parent height
-  padding-bottom: 32px; // Reserve space for attribution
+  padding-bottom: 40px; // Reserve space for attribution (increased from 32px)
   box-sizing: border-box; // Include padding in max-height calculation
 }
 
 .main-image {
   display: block;
   max-width: 100%;
-  max-height: calc(100% - 32px); // Subtract attribution space from image height
+  max-height: calc(100% - 40px); // Subtract attribution space from image height
   object-fit: contain;
   width: auto;
   height: auto;
@@ -428,10 +428,10 @@ onUnmounted(() => {
 // Attribution overlay positioned relative to actual image content
 .image-attribution-overlay {
   position: absolute;
-  bottom: 8px; // Position inside the reserved padding space
-  right: 0;
+  bottom: 12px; // Position inside the reserved padding space
+  right: 8px;
   z-index: 10;
-  max-width: calc(100% - 8px);
+  max-width: calc(100% - 16px);
   display: flex;
   align-items: center;
   gap: 6px;
