@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ref } from 'vue';
 import { useDialogPluginComponent } from 'quasar';
 import WdMediaGallery from './WdMediaGallery.vue';
 import type { HutImage } from 'src/composables/useHutImages';

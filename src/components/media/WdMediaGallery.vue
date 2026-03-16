@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import type { Swiper as SwiperType } from 'swiper';
-import { Keyboard, Mousewheel, Navigation, Thumbs, Zoom } from 'swiper/modules';
+import { Keyboard, Mousewheel, Navigation, Thumbs, Zoom, EffectFade } from 'swiper/modules';
 import type { HutImage } from 'src/composables/useHutImages';
 import type { ImageSizeVariants } from 'src/types/geo';
 import IconCloseOutline from '~icons/eva/close-outline';
@@ -15,6 +15,7 @@ import 'swiper/css/thumbs';
 import 'swiper/css/keyboard';
 import 'swiper/css/mousewheel';
 import 'swiper/css/zoom';
+import 'swiper/css/effect-fade';
 
 interface Props {
   images: HutImage[];
@@ -161,7 +162,7 @@ onUnmounted(() => {
 
     <!-- Main Swiper -->
     <swiper
-      :modules="[Keyboard, Mousewheel, Navigation, Thumbs, Zoom]"
+      :modules="[Keyboard, Mousewheel, Navigation, Thumbs, Zoom, EffectFade]"
       :slides-per-view="1"
       :space-between="0"
       :keyboard="{
@@ -177,6 +178,8 @@ onUnmounted(() => {
       :thumbs="{ swiper: thumbsSwiper }"
       :initial-slide="initialSlide"
       :loop="true"
+      :effect="'fade'"
+      :fade-effect="{ crossFade: true }"
       :zoom="{
         maxRatio: 3,
         minRatio: 1,
@@ -438,7 +441,7 @@ onUnmounted(() => {
   color: rgba(255, 255, 255, 0.85);
   font-size: 0.8125rem;
   line-height: 1.4;
-  pointer-events: none; // Allow clicks to pass through to image for zoom
+  pointer-events: auto; // Allow clicking on links
   transition: opacity 0.3s ease;
   padding: 4px 8px; // Add padding for better visibility
   background: rgba(0, 0, 0, 0.3); // Subtle background for readability
