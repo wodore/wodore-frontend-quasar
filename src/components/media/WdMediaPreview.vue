@@ -161,27 +161,50 @@ const showNavigation = computed(() => {
 });
 
 // Use shared media preload composable
-const { preloadAdjacentImages } = useMediaPreload(
+const { preloadImage, preloadThumbnailImages } = useMediaPreload(
   computed(() => props.images),
   currentSlide
 );
 
+// Preload only the current image for gallery (simplified - no prev/next)
+const preloadCurrentImageForGallery = () => {
+  const currentImage = props.images[currentSlide.value];
+  if (currentImage) {
+    // Preload gallery-sized image (not preview size)
+    const isPortrait = currentImage.is_portrait;
+    const orientation = isPortrait ? 'portrait' : 'landscape';
+    const urls = currentImage.urls[orientation] || currentImage.urls.landscape;
+
+    if (urls) {
+      // Try to preload medium size for gallery
+      const galleryUrl = urls.medium || urls.large || urls.preview || '';
+      if (galleryUrl) {
+        preloadImage(galleryUrl);
+      }
+    }
+  }
+};
+
 // Preload with timeout - properly managed by useTimeoutFn
 const { start: startPreloadAfterSlide } = useTimeoutFn(() => {
-  preloadAdjacentImages();
+  preloadCurrentImageForGallery();
 }, 200);
 
 const { start: startInitialPreload } = useTimeoutFn(() => {
-  preloadAdjacentImages();
+  preloadCurrentImageForGallery();
 }, 300);
 
-// Watch for slide changes and preload new images
+// Watch for slide changes and preload new image
 watch(currentSlide, () => {
   startPreloadAfterSlide();
 });
 
 // Initial preload when component mounts
 onMounted(() => {
+  // Preload thumbnails in background (small, fast, with retry logic)
+  preloadThumbnailImages();
+
+  // Preload current image for gallery
   startInitialPreload();
 });
 
