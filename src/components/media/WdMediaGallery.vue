@@ -201,6 +201,9 @@ onUnmounted(() => {
         minRatio: 1,
         toggle: true,
       }"
+      :observer="true"
+      :observe-parents="true"
+      :observe-slide-children="true"
       class="main-swiper"
       @slide-change="onSlideChange"
       @swiper="onSwiper"
@@ -231,7 +234,7 @@ onUnmounted(() => {
                 <b>{{ formatImageDate(image.captured_at) }}</b>
               </div>
               <div class="attribution-line">
-                <span class="attribution-text">
+                <span class="attribution-text" :data-image-id="image.id">
                   <q-icon name="wd-info-outline" size="16px" class="attribution-icon" />
                   <span v-html="image.attribution.full || image.attribution.short || ''" />
                 </span>
@@ -432,6 +435,12 @@ onUnmounted(() => {
   height: 100%;
   width: 100%;
   min-height: 0; // Allow slide to shrink
+  pointer-events: none; // Disable pointer events by default
+}
+
+.main-slide.swiper-slide-active {
+  pointer-events: auto; // Enable pointer events only for active slide
+  z-index: 10; // Ensure active slide is on top
 }
 
 .main-slide :deep(.swiper-zoom-container) {
@@ -510,6 +519,8 @@ onUnmounted(() => {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      isolation: isolate; // Create new stacking context
+      pointer-events: auto; // Ensure pointer events work
     }
 
     .attribution-icon {
