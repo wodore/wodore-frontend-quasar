@@ -226,6 +226,10 @@ onUnmounted(() => {
                 'attribution-hidden': isZoomed,
               }"
             >
+              <div v-if="image.captured_at" class="attribution-line">
+                <q-icon name="wd-calendar" size="16px" class="attribution-icon" />
+                <b>{{ formatImageDate(image.captured_at) }}</b>
+              </div>
               <div class="attribution-line">
                 <span class="attribution-text">
                   <q-icon name="wd-info-outline" size="16px" class="attribution-icon" />
@@ -237,10 +241,6 @@ onUnmounted(() => {
                   class="provider-icon"
                   alt="Provider icon"
                 />
-              </div>
-              <div v-if="image.captured_at" class="attribution-line">
-                <q-icon name="wd-calendar" size="16px" class="attribution-icon" />
-                <span>{{ formatImageDate(image.captured_at) }}</span>
               </div>
             </div>
           </div>
@@ -449,7 +449,7 @@ onUnmounted(() => {
   display: inline-block;
   max-width: 100%;
   max-height: 100%; // Constrain to parent height
-  padding-bottom: 40px; // Reserve space for attribution
+  padding-bottom: 60px; // Reserve space for attribution below image
   box-sizing: border-box; // Include padding in max-height calculation
 }
 
@@ -465,7 +465,7 @@ onUnmounted(() => {
 // Attribution overlay positioned relative to actual image content
 .image-attribution-overlay {
   position: absolute;
-  bottom: 12px; // Position inside the reserved padding space
+  bottom: -0px; // Position below the image
   left: 8px; // Positioned on the left side
   z-index: 10;
   max-width: calc(100% - 16px);
