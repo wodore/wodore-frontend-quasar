@@ -120,6 +120,7 @@ const currentSlide = ref(0);
 const swiperRef = ref<SwiperType | null>(null);
 const thumbsSwiperRef = ref<SwiperType | null>(null);
 const showSpinner = ref(false);
+const loadedThumbnails = ref<Set<string>>(new Set());
 
 // Show spinner after 500ms of loading
 const { start: startSpinnerTimeout, stop: stopSpinnerTimeout } = useTimeoutFn(() => {
@@ -211,6 +212,26 @@ onMounted(() => {
 // Handle image click
 const handleImageClick = () => {
   openDialog(currentSlide.value);
+};
+
+// Track which thumbnails have loaded
+const isThumbnailLoaded = (imageId: string) => {
+  return loadedThumbnails.value.has(imageId);
+};
+
+// Mark thumbnail as loaded
+const onThumbnailLoad = (imageId: string) => {
+  loadedThumbnails.value.add(imageId);
+};
+
+// Mark thumbnail as failed to load
+const onThumbnailError = (imageId: string) => {
+  loadedThumbnails.value.add(`${imageId}_error`);
+};
+
+// Check if thumbnail failed to load
+const isThumbnailError = (imageId: string) => {
+  return loadedThumbnails.value.has(`${imageId}_error`);
 };
 
 // Get current image
@@ -336,7 +357,13 @@ const thumbnailContainerStyle = computed(() => {
     class="flex flex-center"
     style="min-height: 100px; border-radius: 25px"
   >
-    <q-spinner v-if="showSpinner" color="primary" size="3rem" />
+    <WdNoImage
+      :message="emptyStateMessage"
+      :icon="emptyStateIcon ?? IconAddPhoto"
+      :on-contribute="handleAddImageClick"
+      :reduced-height="reducedHeightNoImage"
+      :loading="true"
+    />
   </div>
 
   <div v-else-if="hasImages">
@@ -414,13 +441,25 @@ const thumbnailContainerStyle = computed(() => {
             @swiper="onThumbsSwiper"
             :style="{ '--thumbnail-size': `${thumbnailSize}px` }"
           >
-            <swiper-slide v-for="image in images" :key="image.id" class="thumb-slide-inline">
-              <div class="thumb-content-wrapper">
+            <swiper-slide
+              v-for="(image, index) in images"
+              :key="image.id"
+              class="thumb-slide-inline"
+            >
+              <div
+                class="thumb-content-wrapper"
+                :class="{ 'thumb-error': isThumbnailError(image.id) }"
+              >
                 <img
                   :src="getThumbnailUrl(image)"
                   class="thumb-image-inline"
+                  :class="{ 'thumb-loaded': isThumbnailLoaded(image.id) }"
                   :alt="`Thumbnail by ${image.attribution?.short || 'unknown'}`"
+                  @load="onThumbnailLoad(image.id)"
+                  @error="onThumbnailError(image.id)"
+                  v-show="!isThumbnailError(image.id)"
                 />
+                <div v-if="!isThumbnailLoaded(image.id)" class="thumb-number">{{ index + 1 }}</div>
                 <div v-if="getProviderIcon(image)" class="thumb-provider-icon-bg">
                   <img
                     :src="getProviderIcon(image)"
@@ -613,6 +652,11 @@ const thumbnailContainerStyle = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  background: rgba(0, 0, 0, 0.15); // Loading placeholder background (darker)
+
+  &.thumb-error {
+    background: rgba(255, 0, 0, 0.1); // Red tint for error
+  }
 }
 
 .thumb-image-inline {
@@ -624,6 +668,35 @@ const thumbnailContainerStyle = computed(() => {
   position: relative;
   background: transparent;
   object-fit: cover;
+  opacity: 0; // Start hidden
+  transition: opacity 0.3s ease;
+
+  &.thumb-loaded {
+    opacity: 1; // Fade in when loaded
+  }
+}
+
+.thumb-number {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 20px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.3); // Subtle, lighter than background
+  user-select: none;
+  pointer-events: none;
+  z-index: 1; // Above provider icon
+}
+
+.thumb-error-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(255, 100, 100, 0.6); // Red tint for error
+  opacity: 0.8;
+  z-index: 2; // Above everything
 }
 
 .thumb-provider-icon-bg {
