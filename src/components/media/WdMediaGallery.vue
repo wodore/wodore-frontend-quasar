@@ -58,6 +58,16 @@ const onImageLoad = (imageId: string) => {
   loadedImages.value.add(imageId);
 };
 
+// Mark image as failed to load
+const onImageError = (imageId: string) => {
+  loadedImages.value.add(`${imageId}_error`);
+};
+
+// Check if image failed to load
+const isImageError = (imageId: string) => {
+  return loadedImages.value.has(`${imageId}_error`);
+};
+
 // Set thumbs swiper
 const setThumbsSwiper = (swiper: SwiperType) => {
   thumbsSwiper.value = swiper;
@@ -218,6 +228,8 @@ onUnmounted(() => {
               :alt="`Image by ${image.attribution?.short || 'unknown'}`"
               class="main-image"
               @load="onImageLoad(image.id)"
+              @error="onImageError(image.id)"
+              v-show="!isImageError(image.id)"
             />
 
             <!-- Attribution - positioned relative to image wrapper -->
@@ -262,12 +274,24 @@ onUnmounted(() => {
       class="thumb-swiper"
       @swiper="setThumbsSwiper"
     >
-      <swiper-slide v-for="image in images" :key="image.id" class="thumb-slide">
-        <img
-          :src="getPreviewImageUrl(image)"
-          :alt="`Thumbnail by ${image.attribution?.short || 'unknown'}`"
-          class="thumb-image"
-        />
+      <swiper-slide v-for="(image, index) in images" :key="image.id" class="thumb-slide">
+        <div
+          class="thumb-image-wrapper"
+          :class="{
+            'thumb-loaded': isImageLoaded(image.id),
+            'thumb-error': isImageError(image.id),
+          }"
+        >
+          <img
+            :src="getPreviewImageUrl(image)"
+            :alt="`Thumbnail by ${image.attribution?.short || 'unknown'}`"
+            class="thumb-image"
+            @load="onImageLoad(image.id)"
+            @error="onImageError(image.id)"
+            v-show="!isImageError(image.id)"
+          />
+          <div v-if="!isImageLoaded(image.id)" class="thumb-number">{{ index + 1 }}</div>
+        </div>
       </swiper-slide>
     </swiper>
 
@@ -626,10 +650,54 @@ onUnmounted(() => {
   justify-content: center;
 }
 
+.thumb-image-wrapper {
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.15); // Loading placeholder background
+  position: relative;
+
+  &.thumb-loaded {
+    background: transparent; // Remove background when loaded
+  }
+
+  &.thumb-error {
+    background: rgba(255, 0, 0, 0.1); // Red tint for error
+  }
+}
+
 .thumb-image {
   width: 100%;
   height: 100%;
   border-radius: 6px;
   object-fit: cover;
+  opacity: 0; // Start hidden
+  transition: opacity 0.3s ease;
+
+  .thumb-loaded & {
+    opacity: 1; // Fade in when loaded
+  }
+}
+
+.thumb-number {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4); // Subtle, lighter than background
+  user-select: none;
+  pointer-events: none;
+}
+
+.thumb-error-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(255, 100, 100, 0.6); // Red tint for error
+  opacity: 0.8;
 }
 </style>
