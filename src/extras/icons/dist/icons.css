@@ -1,7 +1,7 @@
 @font-face {
     font-family: "icons";
-    src: url("./icons.woff?e2c47890364f54d245a31b131e84566f") format("woff"),
-url("./icons.woff2?e2c47890364f54d245a31b131e84566f") format("woff2");
+    src: url("./icons.woff?7946463239729e81c85c69b4f47f7069") format("woff"),
+url("./icons.woff2?7946463239729e81c85c69b4f47f7069") format("woff2");
 }
 
 i[class^="wd-"]:before, i[class*=" wd-"]:before {
@@ -81,48 +81,51 @@ i[class^="wd-"]:before, i[class*=" wd-"]:before {
 .wd-edit-outline:before {
     content: "\f116";
 }
-.wd-close:before {
+.wd-copyright:before {
     content: "\f117";
 }
-.wd-checkmark:before {
+.wd-close:before {
     content: "\f118";
 }
-.wd-calendar:before {
+.wd-checkmark:before {
     content: "\f119";
 }
-.wd-browser:before {
+.wd-calendar:before {
     content: "\f11a";
 }
-.wd-bell:before {
+.wd-browser:before {
     content: "\f11b";
 }
-.wd-bell-outline:before {
+.wd-bell:before {
     content: "\f11c";
 }
-.wd-at:before {
+.wd-bell-outline:before {
     content: "\f11d";
 }
-.wd-arrowhead-up:before {
+.wd-at:before {
     content: "\f11e";
 }
-.wd-arrowhead-right:before {
+.wd-arrowhead-up:before {
     content: "\f11f";
 }
-.wd-arrowhead-left:before {
+.wd-arrowhead-right:before {
     content: "\f120";
 }
-.wd-arrowhead-down:before {
+.wd-arrowhead-left:before {
     content: "\f121";
 }
-.wd-arrow-up-down:before {
+.wd-arrowhead-down:before {
     content: "\f122";
 }
-.wd-alert-triangle-outline:before {
+.wd-arrow-up-down:before {
     content: "\f123";
 }
-.wd-add:before {
+.wd-alert-triangle-outline:before {
     content: "\f124";
 }
-.wd-add-outline:before {
+.wd-add:before {
     content: "\f125";
+}
+.wd-add-outline:before {
+    content: "\f126";
 }

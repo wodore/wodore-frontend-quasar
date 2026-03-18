@@ -3,10 +3,11 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import type { Swiper as SwiperType } from 'swiper';
 import { Keyboard, Mousewheel, Navigation, Thumbs, Zoom, EffectFade } from 'swiper/modules';
+import { date } from 'quasar';
 import type { HutImage } from 'src/composables/useHutImages';
 import { useDeviceDetection } from '@composables/useDeviceDetection';
 import { useMediaPreload } from '@composables/useMediaPreload';
-import { useTimeoutFn } from '@vueuse/core';
+import { useI18n } from 'vue-i18n';
 import IconCloseOutline from '~icons/eva/close-outline';
 import IconDownloadOutline from '~icons/eva/download-outline';
 
@@ -36,6 +37,7 @@ const thumbsSwiper = ref<SwiperType | null>(null);
 const mainSwiper = ref<SwiperType | null>(null);
 const activeSlideIndex = ref(props.initialSlide);
 const loadedImages = ref<Set<string>>(new Set());
+const isZoomed = ref(false);
 
 // Use shared device detection
 const { hasTouch } = useDeviceDetection();
@@ -43,10 +45,8 @@ const { hasTouch } = useDeviceDetection();
 // Use shared media preload composable
 const imagesRef = computed(() => props.images);
 const activeSlideRef = computed(() => activeSlideIndex.value);
-const { getGalleryImageUrl, getPreviewImageUrl, preloadAdjacentImages } = useMediaPreload(
-  imagesRef,
-  activeSlideRef
-);
+const { getGalleryImageUrl, getPreviewImageUrl, preloadAdjacentImages, preloadThumbnailImages } =
+  useMediaPreload(imagesRef, activeSlideRef);
 
 // Track which images have loaded
 const isImageLoaded = (imageId: string) => {
@@ -71,6 +71,39 @@ const onSwiper = (swiper: SwiperType) => {
 // Handle slide change - use realIndex for loop mode
 const onSlideChange = (swiper: SwiperType) => {
   activeSlideIndex.value = swiper.realIndex;
+};
+
+// Handle zoom change - hide attribution when zoomed
+const onZoomChange = (_swiper: SwiperType, scale: number) => {
+  isZoomed.value = scale > 1;
+};
+
+// Get i18n locale for date formatting
+const { locale } = useI18n();
+
+// Format image date for display (localized)
+const formatImageDate = (dateString: string | null | undefined): string => {
+  if (!dateString) return '';
+
+  try {
+    const dateObj = new Date(dateString);
+
+    // Check if date is valid
+    if (isNaN(dateObj.getTime())) return '';
+
+    const currentLocale = locale.value;
+
+    // Format based on locale
+    if (currentLocale === 'de') {
+      // German: "15. Januar 2026"
+      return date.formatDate(dateObj, 'D. MMMM YYYY');
+    } else {
+      // English: "January 15, 2026"
+      return date.formatDate(dateObj, 'MMMM D, YYYY');
+    }
+  } catch {
+    return '';
+  }
 };
 
 // Get image URL for display (reusing preload function for consistency)
@@ -105,11 +138,6 @@ const showNavigation = computed(() => {
   return !hasTouch.value && props.images.length > 1;
 });
 
-// Preload with timeout - properly managed by useTimeoutFn
-const { start: startPreloading } = useTimeoutFn(() => {
-  preloadAdjacentImages();
-}, 200);
-
 // Handle back button to close gallery
 const onBackButton = () => {
   closeGallery();
@@ -120,8 +148,13 @@ onMounted(() => {
   window.history.pushState({ galleryOpen: true }, '');
   window.addEventListener('popstate', onBackButton);
 
-  // Start preloading with proper timeout management
-  startPreloading();
+  // Preload thumbnails immediately in background (they're small, fast to load)
+  // Don't await - let them load progressively with retry logic
+  preloadThumbnailImages();
+
+  // Preload adjacent images in background (don't await to keep gallery snappy)
+  // The retry logic in preloadImage will handle rate limiting gracefully
+  preloadAdjacentImages();
 });
 
 onUnmounted(() => {
@@ -171,6 +204,7 @@ onUnmounted(() => {
       class="main-swiper"
       @slide-change="onSlideChange"
       @swiper="onSwiper"
+      @zoom-change="onZoomChange"
     >
       <swiper-slide v-for="image in images" :key="image.id" class="main-slide">
         <div class="swiper-zoom-container">
@@ -187,15 +221,27 @@ onUnmounted(() => {
             <div
               v-if="image.attribution"
               class="image-attribution-overlay"
-              :class="{ 'attribution-visible': isImageLoaded(image.id) }"
+              :class="{
+                'attribution-visible': isImageLoaded(image.id) && !isZoomed,
+                'attribution-hidden': isZoomed,
+              }"
             >
-              <span v-html="image.attribution.full || image.attribution.short || ''" />
-              <img
-                v-if="image.provider?.icon"
-                :src="image.provider.icon"
-                class="provider-icon"
-                alt="Provider icon"
-              />
+              <div class="attribution-line">
+                <span class="attribution-text">
+                  <q-icon name="wd-info-outline" size="16px" class="attribution-icon" />
+                  <span v-html="image.attribution.full || image.attribution.short || ''" />
+                </span>
+                <img
+                  v-if="image.provider?.icon"
+                  :src="image.provider.icon"
+                  class="provider-icon"
+                  alt="Provider icon"
+                />
+              </div>
+              <div v-if="image.captured_at" class="attribution-line">
+                <q-icon name="wd-calendar" size="16px" class="attribution-icon" />
+                <span>{{ formatImageDate(image.captured_at) }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -403,7 +449,7 @@ onUnmounted(() => {
   display: inline-block;
   max-width: 100%;
   max-height: 100%; // Constrain to parent height
-  padding-bottom: 40px; // Reserve space for attribution (increased from 32px)
+  padding-bottom: 40px; // Reserve space for attribution
   box-sizing: border-box; // Include padding in max-height calculation
 }
 
@@ -420,26 +466,62 @@ onUnmounted(() => {
 .image-attribution-overlay {
   position: absolute;
   bottom: 12px; // Position inside the reserved padding space
-  right: 8px;
+  left: 8px; // Positioned on the left side
   z-index: 10;
   max-width: calc(100% - 16px);
   display: flex;
-  align-items: center;
-  gap: 6px;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start; // Align entire block to the left
   color: rgba(255, 255, 255, 0.85);
   font-size: 0.8125rem;
   line-height: 1.4;
   pointer-events: auto; // Allow clicking on links
-  transition: opacity 0.3s ease;
-  padding: 4px 8px; // Add padding for better visibility
+  transition: opacity 0.5s ease; // Default: fade in slowly (500ms)
+  padding: 6px 8px; // Add padding for better visibility
   background: rgba(0, 0, 0, 0.3); // Subtle background for readability
   border-radius: 4px;
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   opacity: 0; // Start hidden
+  text-align: left; // Left-align all text
 
   &.attribution-visible {
-    opacity: 1; // Fade in when loaded
+    opacity: 1; // Fade in when loaded (500ms)
+  }
+
+  &.attribution-hidden {
+    transition: opacity 0.15s ease; // Fade out quickly (150ms)
+    opacity: 0;
+  }
+
+  .attribution-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: flex-start; // Left-align each line
+    text-align: left;
+
+    .attribution-text {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      justify-content: flex-start; // Left-align attribution text
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .attribution-icon {
+      flex-shrink: 0;
+      opacity: 0.9;
+    }
+
+    span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
   }
 
   :deep(a) {
@@ -466,6 +548,16 @@ onUnmounted(() => {
   // Mobile - smaller font
   @media (max-width: 768px) {
     font-size: 0.75rem;
+    padding: 4px 6px;
+    gap: 3px;
+
+    .attribution-line {
+      gap: 4px;
+
+      .attribution-icon {
+        font-size: 14px;
+      }
+    }
 
     .provider-icon {
       width: 18px;

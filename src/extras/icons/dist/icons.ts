@@ -21,6 +21,7 @@ export type IconsId =
   | "eye-outline"
   | "edit"
   | "edit-outline"
+  | "copyright"
   | "close"
   | "checkmark"
   | "calendar"
@@ -60,6 +61,7 @@ export type IconsKey =
   | "EyeOutline"
   | "Edit"
   | "EditOutline"
+  | "Copyright"
   | "Close"
   | "Checkmark"
   | "Calendar"
@@ -99,6 +101,7 @@ export enum Icons {
   EyeOutline = "eye-outline",
   Edit = "edit",
   EditOutline = "edit-outline",
+  Copyright = "copyright",
   Close = "close",
   Checkmark = "checkmark",
   Calendar = "calendar",
@@ -139,19 +142,20 @@ export const ICONS_CODEPOINTS: { [key in Icons]: string } = {
   [Icons.EyeOutline]: "61716",
   [Icons.Edit]: "61717",
   [Icons.EditOutline]: "61718",
-  [Icons.Close]: "61719",
-  [Icons.Checkmark]: "61720",
-  [Icons.Calendar]: "61721",
-  [Icons.Browser]: "61722",
-  [Icons.Bell]: "61723",
-  [Icons.BellOutline]: "61724",
-  [Icons.At]: "61725",
-  [Icons.ArrowheadUp]: "61726",
-  [Icons.ArrowheadRight]: "61727",
-  [Icons.ArrowheadLeft]: "61728",
-  [Icons.ArrowheadDown]: "61729",
-  [Icons.ArrowUpDown]: "61730",
-  [Icons.AlertTriangleOutline]: "61731",
-  [Icons.Add]: "61732",
-  [Icons.AddOutline]: "61733",
+  [Icons.Copyright]: "61719",
+  [Icons.Close]: "61720",
+  [Icons.Checkmark]: "61721",
+  [Icons.Calendar]: "61722",
+  [Icons.Browser]: "61723",
+  [Icons.Bell]: "61724",
+  [Icons.BellOutline]: "61725",
+  [Icons.At]: "61726",
+  [Icons.ArrowheadUp]: "61727",
+  [Icons.ArrowheadRight]: "61728",
+  [Icons.ArrowheadLeft]: "61729",
+  [Icons.ArrowheadDown]: "61730",
+  [Icons.ArrowUpDown]: "61731",
+  [Icons.AlertTriangleOutline]: "61732",
+  [Icons.Add]: "61733",
+  [Icons.AddOutline]: "61734",
 };
