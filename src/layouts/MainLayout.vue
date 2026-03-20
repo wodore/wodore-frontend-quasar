@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { ref, computed, watchEffect, nextTick } from 'vue';
+import { ref, computed, watchEffect, markRaw, nextTick, type Component } from 'vue';
+import { defineAsyncComponent } from 'vue';
 import { useQuasar } from 'quasar';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@stores/auth-store';
 import { useMapMenuStore } from '@stores/map/map-menu-store';
+import { useMapContentStore } from '@stores/map/map-content-store';
 import { useUserSettingsStore } from '@stores/user-settings-store';
 import { useLocalPropertiesStore } from '@stores/local-properties-store';
 import { useSyncedPropertiesStore } from '@stores/synced-properties-store';
@@ -11,9 +13,12 @@ import { useMeta } from 'quasar';
 import WodoreLogo from 'components/wodore/WodoreLogo.vue';
 import WdPlaceSearchMenu from 'components/search/WdPlaceSearchMenu.vue';
 import WdPlaceSearchDialog from 'components/search/WdPlaceSearchDialog.vue';
+import WdBottomSheet from '@components/utils/WdBottomSheet.vue';
 
+// Initialize stores
 const authStore = useAuthStore();
 const menuStore = useMapMenuStore();
+const contentStore = useMapContentStore();
 
 // Initialize stores (this will create localStorage keys on first load)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -24,12 +29,12 @@ const localPropertiesStore = useLocalPropertiesStore();
 const syncedPropertiesStore = useSyncedPropertiesStore();
 
 const $q = useQuasar();
+const route = useRoute();
+const router = useRouter();
 
-const isMobile = computed(() => {
-  return $q.screen.xs;
-});
+const isMobile = computed(() => $q.screen.lt.md);
 
-// Use store for menu drawer state
+// Menu drawer state
 const menuDrawerOpen = computed({
   get: () => menuStore.menuOpen,
   set: val => {
@@ -41,14 +46,9 @@ const menuDrawerOpen = computed({
   },
 });
 
-const contentDrawerOpen = ref(true);
 const showDialog = ref(false);
 
-const route = useRoute();
-const router = useRouter();
-
 // Track whether we should navigate when dialog closes
-// This prevents double navigation when browser back button is clicked
 let shouldNavigateOnHide = false;
 
 // check if route.meta.dialog is set
@@ -62,7 +62,6 @@ router.beforeEach((to, from, next) => {
   const fromDialog = from.meta?.dialog as boolean;
   const toDialog = to.meta?.dialog as boolean;
 
-  // If we're navigating away from a dialog route, prevent onDialogHide from navigating again
   if (fromDialog && !toDialog) {
     shouldNavigateOnHide = false;
   }
@@ -71,41 +70,71 @@ router.beforeEach((to, from, next) => {
 });
 
 // Handle dialog close via backdrop click, ESC key, or close button
-// This ensures navigation happens consistently for user-initiated closes
 function onDialogHide() {
-  // Only navigate if this was a user-initiated dialog close (not router navigation)
   if (!shouldNavigateOnHide) {
     return;
   }
 
-  // Reset flag to prevent duplicate navigation
   shouldNavigateOnHide = false;
 
-  // Check if there's history to go back to
-  // If user came directly to this page (e.g., from external link), window.history.state.back will be null
   if (window.history.state.back) {
     router.back();
   } else {
-    // No history to go back to, navigate to map instead
     router.push({ name: 'map' });
   }
 }
 
-// Watch for dialog state changes to enable navigation on hide
-// This MUST be set up as a separate watch after watchEffect to ensure proper ordering
+// Watch for dialog state changes
 watchEffect(() => {
-  // When dialog opens, enable navigation on hide
-  // This allows backdrop click, ESC key, and close button to trigger navigation
   if (showDialog.value) {
-    // Use nextTick to ensure this runs after the dialog is fully open
     nextTick(() => {
       shouldNavigateOnHide = true;
     });
   }
 });
-watchEffect(() => {
-  contentDrawerOpen.value = route.meta?.content as boolean;
+
+// Content drawer state (synced with store)
+const contentDrawerOpen = computed({
+  get: () => contentStore.contentOpen,
+  set: val => {
+    if (!val) {
+      contentStore.close();
+    }
+  },
 });
+
+// Static component map with markRaw (prevents re-evaluation)
+const componentMap: Record<string, { title: Component; content: Component; actions: Component }> = {
+  place: {
+    title: markRaw(
+      defineAsyncComponent(() => import('@/components/content/place/WdPlaceTitle.vue'))
+    ),
+    content: markRaw(
+      defineAsyncComponent(() => import('@/components/content/place/WdPlaceContent.vue'))
+    ),
+    actions: markRaw(
+      defineAsyncComponent(() => import('@/components/content/place/WdPlaceActions.vue'))
+    ),
+  },
+};
+
+// Computed selects from static map
+const contentTitleComponent = computed(() => {
+  const type = contentStore.contentType;
+  if (!type || !componentMap[type]) return null;
+  return componentMap[type].title ?? null;
+});
+
+const contentActionsComponent = computed(() => {
+  const type = contentStore.contentType;
+  if (!type || !componentMap[type]) return null;
+  return componentMap[type].actions ?? null;
+});
+
+function closeContent() {
+  contentStore.close();
+}
+
 const appTitle = process.env.WODORE_APP_NAME || 'Wodore';
 const appEnv = process.env.WODORE_ENV || 'production';
 const isStaging = computed(() => appEnv === 'staging');
@@ -136,15 +165,6 @@ useMeta(() => {
     },
   };
 });
-function closeContent(mode: string) {
-  //contentDrawerOpen.value = false;
-  console.debug(`Closed content in ${mode} mode.`);
-  router.push({
-    name: 'map',
-    hash: route.hash,
-    query: route.query,
-  });
-}
 </script>
 <style lang="scss">
 .app-header {
@@ -179,6 +199,19 @@ function closeContent(mode: string) {
   transform: rotate(-20deg);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
   pointer-events: none;
+}
+
+// Critical CSS for nested QLayout in container mode (inside drawer)
+// Without this, the layout wrappers collapse to 0 height
+.q-layout-container > div > div {
+  min-height: 0;
+  max-height: 100%;
+  height: 100%;
+}
+
+.q-layout-container .q-layout {
+  min-height: 100%;
+  height: 100%;
 }
 </style>
 <template>
@@ -248,11 +281,120 @@ function closeContent(mode: string) {
     <q-page-container>
       <router-view v-slot="{ Component }">
         <component :is="Component" />
-        <!-- <keep-alive>
-        </keep-alive> -->
       </router-view>
     </q-page-container>
-    <!-- MAP CONTENT -->
-    <WdMapContent @close="closeContent" v-model="contentDrawerOpen" />
+
+    <!-- Content Drawer (Desktop) -->
+    <q-drawer
+      v-if="!isMobile"
+      v-model="contentDrawerOpen"
+      side="right"
+      :width="$q.screen.gt.md ? 460 : 380"
+      :breakpoint="0"
+      class="shadow-2"
+    >
+      <q-layout
+        view="lhh LpR lff"
+        container
+        class="no-background bg-grey-3"
+        :style="`height: ${$q.screen.gt.sm ? 'calc(100% - 80px)' : '100%'}`"
+      >
+        <!-- Close button -->
+        <div class="absolute-top z-max q-pa-sm" style="pointer-events: none">
+          <q-btn
+            round
+            dense
+            unelevated
+            color="accent-100"
+            icon="wd-close"
+            @click="closeContent"
+            class="text-primary-900"
+            size="md"
+            style="pointer-events: auto"
+          />
+        </div>
+
+        <!-- Sticky Header (Actions + Title) -->
+        <q-header class="no-background">
+          <!-- Actions Toolbar (Desktop only) -->
+          <component
+            v-if="contentActionsComponent && $q.screen.gt.sm"
+            :is="contentActionsComponent"
+            :slug="contentStore.contentSlug"
+          />
+          <!-- Title -->
+          <component
+            v-if="contentTitleComponent"
+            :is="contentTitleComponent"
+            :slug="contentStore.contentSlug"
+          />
+        </q-header>
+
+        <!-- Scrollable Content -->
+        <q-page-container class="fit" style="height: 100%">
+          <q-scroll-area
+            visible
+            :thumb-style="{
+              width: '6px',
+              backgroundColor: '#998019',
+              opacity: '0.5',
+              borderRadius: '8px 0 0 8px',
+            }"
+            style="height: 100%"
+            class="fit"
+          >
+            <q-page class="q-px-md">
+              <router-view name="content" v-slot="{ Component, route: contentRoute }">
+                <transition name="fade" mode="out-in">
+                  <component :is="Component" :key="contentRoute.path" />
+                </transition>
+              </router-view>
+            </q-page>
+          </q-scroll-area>
+        </q-page-container>
+
+        <!-- Footer (Actions for smaller desktop screens) -->
+        <q-footer v-if="contentActionsComponent && !$q.screen.gt.sm" class="footer-toolbar">
+          <component :is="contentActionsComponent" :slug="contentStore.contentSlug" />
+        </q-footer>
+      </q-layout>
+    </q-drawer>
   </q-layout>
+
+  <!-- Mobile Bottom Sheet (OUTSIDE QLayout, only on mobile) -->
+  <WdBottomSheet v-if="isMobile" v-model="contentDrawerOpen" @close="closeContent">
+    <!-- Close button (top-right corner) -->
+    <div class="absolute" style="top: 10px; right: 10px; z-index: 1000">
+      <q-btn round dense flat icon="wd-close" @click="closeContent" class="text-grey-7" size="md" />
+    </div>
+
+    <!-- Header slot -->
+    <template #header>
+      <div class="q-px-md q-pt-sm q-pb-xs" style="padding-right: 50px">
+        <component
+          v-if="contentTitleComponent"
+          :is="contentTitleComponent"
+          :slug="contentStore.contentSlug"
+        />
+      </div>
+    </template>
+
+    <!-- Content (native scroll) -->
+    <div class="q-px-md">
+      <router-view name="content" v-slot="{ Component, route: contentRoute }">
+        <transition name="fade" mode="out-in">
+          <component :is="Component" :key="contentRoute.path" />
+        </transition>
+      </router-view>
+    </div>
+
+    <!-- Footer slot -->
+    <template #footer>
+      <component
+        v-if="contentActionsComponent"
+        :is="contentActionsComponent"
+        :slug="contentStore.contentSlug"
+      />
+    </template>
+  </WdBottomSheet>
 </template>
