@@ -8998,6 +8998,11 @@ pupa@^3.1.0:
   dependencies:
     escape-goat "^4.0.0"
 
+pure-web-bottom-sheet@^0.5.0:
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/pure-web-bottom-sheet/-/pure-web-bottom-sheet-0.5.0.tgz#46deeb50fc2b68347c95ec3429c3670fd370e635"
+  integrity sha512-vrRu1vn4dMAbOtQ8yTO575czPvV/53aaS2rNtPs17uwE9wmrrZ9Terl28XcgHq2XVlEVgnWkNZDiCPbF4H1Quw==
+
 qs@~6.14.0:
   version "6.14.2"
   resolved "https://registry.npmjs.org/qs/-/qs-6.14.2.tgz"

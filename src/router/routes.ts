@@ -50,11 +50,11 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'hut/:slug',
         name: 'map-hut',
-        meta: { content: true },
+        meta: { content: true, contentType: 'place' },
         components: {
           default: () => import('pages/MapPage.vue'),
           menu: () => import('components/map/WdMapMenu.vue'),
-          content: () => import('components/huts/WdHutView.vue'),
+          content: () => import('components/content/place/WdPlaceContent.vue'),
         },
         props: { content: true },
       },
@@ -64,7 +64,6 @@ const routes: RouteRecordRaw[] = [
         components: {
           default: () => import('pages/MapPage.vue'),
           menu: () => import('components/map/WdMapMenu.vue'),
-          content: () => import('components/huts/WdHutView.vue'),
         },
       },
       {

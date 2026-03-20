@@ -105,6 +105,16 @@ export default configure(ctx => {
       // vueDevtools,
       // vueOptionsAPI: false,
 
+      // Configure Vue to treat web components as custom elements
+      viteVuePluginOptions: {
+        template: {
+          compilerOptions: {
+            isCustomElement: (tag: string) =>
+              tag === 'bottom-sheet' || tag.startsWith('bottom-sheet'),
+          },
+        },
+      },
+
       // rebuildCache: true, // rebuilds Vite/linter/etc cache on startup
 
       // publicPath: '/',
