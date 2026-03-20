@@ -210,8 +210,14 @@ const isHutClosed = computed<'yes' | 'yesish' | 'no' | 'noish' | 'maybe' | 'unkn
           </q-item-section>
           <q-item-section>
             <q-item-label>
-              {{ place.location.lat.toPrecision(7) }},
-              {{ place.location.lon.toPrecision(6) }}
+              <a
+                :href="`geo:${place.location.lat},${place.location.lon}`"
+                target="_blank"
+                class="text-primary"
+              >
+                {{ place.location.lat.toPrecision(7) }},
+                {{ place.location.lon.toPrecision(6) }}
+              </a>
             </q-item-label>
           </q-item-section>
           <q-item-section side>

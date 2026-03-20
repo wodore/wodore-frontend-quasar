@@ -44,14 +44,9 @@ const { place } = usePlace(computed(() => props.slug));
 
 <template>
   <q-no-ssr>
-    <q-toolbar v-if="place">
+    <q-toolbar v-if="place" class="no-background" style="background-color: unset">
       <q-toolbar-title
-        style="
-          text-wrap: wrap;
-          transform: translateY(4px);
-          margin-left: 3px;
-          background-color: unset;
-        "
+        style="text-wrap: wrap; transform: translateY(4px); margin-left: 3px"
         class="text-primary-900 hut-toolbar-title"
       >
         <div

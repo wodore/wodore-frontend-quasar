@@ -293,9 +293,14 @@ useMeta(() => {
       :breakpoint="0"
       class="shadow-2"
     >
-      <q-layout view="lhh LpR lff" container class="no-background bg-grey-3" style="height: 100%">
+      <q-layout
+        view="lhh LpR lff"
+        container
+        class="no-background bg-grey-3"
+        :style="`height: ${$q.screen.gt.sm ? 'calc(100% - 80px)' : '100%'}`"
+      >
         <!-- Close button -->
-        <div class="absolute-top z-max q-pa-sm">
+        <div class="absolute-top z-max q-pa-sm" style="pointer-events: none">
           <q-btn
             round
             dense
@@ -305,6 +310,7 @@ useMeta(() => {
             @click="closeContent"
             class="text-primary-900"
             size="md"
+            style="pointer-events: auto"
           />
         </div>
 
@@ -337,7 +343,7 @@ useMeta(() => {
             style="height: 100%"
             class="fit"
           >
-            <q-page style="height: 100%" class="q-px-md fit">
+            <q-page class="q-px-md">
               <router-view name="content" v-slot="{ Component, route: contentRoute }">
                 <transition name="fade" mode="out-in">
                   <component :is="Component" :key="contentRoute.path" />

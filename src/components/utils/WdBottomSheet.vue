@@ -13,15 +13,17 @@ const emit = defineEmits<{
 }>();
 
 const internalOpen = ref(false);
+const currentSnapIndex = ref(2); // Track current snap index (starts at index 2 - initial)
+const previousSnapIndex = ref(2); // Track previous snap index to detect dismissal from index 1
 
 // Toolbar height (from Quasar toolbar)
 const toolbarHeight = 330;
 
 // Calculate snap points
-// 370px from bottom = (100vh - 370px) from top
-// On a 667px screen: 667 - 370 = 297px ≈ 44.5vh
-// On a 844px screen: 844 - 370 = 474px ≈ 56.1vh
-// Using 50vh as a reasonable approximation
+// Index 3 (top): maxSnap
+// Index 2 (initial): defaultSnap
+// Index 1 (header only): 150px
+// Index 0 (collapsed/dismissed): handled by swipe-to-dismiss
 const defaultSnap = '370px';
 
 // Max height: 100vh - toolbar height
@@ -34,9 +36,13 @@ watch(
     if (open) {
       nextTick(() => {
         internalOpen.value = true;
+        currentSnapIndex.value = 2; // Reset to initial snap
+        previousSnapIndex.value = 2; // Reset previous snap
       });
     } else {
       internalOpen.value = false;
+      currentSnapIndex.value = 2;
+      previousSnapIndex.value = 2;
     }
   },
   { immediate: true }
@@ -46,8 +52,16 @@ watch(
 function handleSnapPositionChange(event: { detail: { sheetState: string; snapIndex: number } }) {
   const { sheetState, snapIndex } = event.detail;
 
-  // If sheet is collapsed (snapIndex 0, swiped down to bottom), close it
-  if (snapIndex === 0 && sheetState === 'collapsed') {
+  console.debug('[bottom-sheet] sheet state', sheetState);
+  console.debug('[bottom-sheet] snap index', snapIndex);
+
+  // Store previous index before updating
+  previousSnapIndex.value = currentSnapIndex.value;
+  currentSnapIndex.value = snapIndex;
+
+  // Handle dismiss only when at index 0 (collapsed)
+  // Only allow dismiss if user was previously at index 1 (header-only state)
+  if (snapIndex === 0 && sheetState === 'collapsed' && previousSnapIndex.value === 1) {
     internalOpen.value = false;
     emit('update:modelValue', false);
     emit('close');
@@ -63,6 +77,15 @@ const sheetKey = computed(() => (props.modelValue ? 'open' : 'closed'));
 bottom-sheet {
   z-index: 10;
 }
+
+/* Force the snap at index 1 (bottom) to always stop - prevents skipping from index 2 to 0 */
+bottom-sheet [slot='snap'].bottom::before {
+  scroll-snap-stop: always;
+}
+
+bottom-sheet::part(footer) {
+  z-index: 9999;
+}
 </style>
 
 <template>
@@ -71,14 +94,14 @@ bottom-sheet {
     :key="sheetKey"
     v-model="internalOpen"
     nested-scroll
-    swipe-to-dismiss
     expand-to-scroll
+    swipe-to-dismiss
     @snap-position-change="handleSnapPositionChange"
   >
     <!-- Snap points -->
     <div slot="snap" :style="{ '--snap': maxSnap }" class="top"></div>
     <div slot="snap" :style="{ '--snap': defaultSnap }" class="initial"></div>
-    <div slot="snap" style="--snap: 150px"></div>
+    <div slot="snap" style="--snap: 150px" class="bottom"></div>
 
     <!-- Header -->
     <div slot="header" v-if="$slots.header">

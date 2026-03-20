@@ -127,7 +127,17 @@ watch(menuOpen, () => {
 </style>
 
 <template>
-  <q-toolbar class="footer-toolbar bg-white q-pr-sm">
+  <q-toolbar class="footer-toolbar bg-white q-pr-sm q-pl-md">
+    <!-- Geo location link (first position) -->
+    <WdToolbarButton
+      v-if="place && place.location"
+      size="md"
+      class="text-primary-900"
+      icon="eva-pin-fill"
+      :href="`geo:${place.location.lat},${place.location.lon}`"
+      target="_blank"
+    />
+
     <WdSourceButtons v-if="place" :hut="place" />
     <q-space />
 
