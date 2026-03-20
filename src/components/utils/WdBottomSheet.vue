@@ -15,7 +15,7 @@ const emit = defineEmits<{
 const internalOpen = ref(false);
 
 // Toolbar height (from Quasar toolbar)
-const toolbarHeight = 100;
+const toolbarHeight = 330;
 
 // Calculate snap points
 // 370px from bottom = (100vh - 370px) from top
@@ -61,7 +61,7 @@ const sheetKey = computed(() => (props.modelValue ? 'open' : 'closed'));
 
 <style scoped>
 bottom-sheet {
-  z-index: 9999;
+  z-index: 10;
 }
 </style>
 

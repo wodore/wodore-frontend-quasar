@@ -104,31 +104,31 @@ const contentDrawerOpen = computed({
 });
 
 // Static component map with markRaw (prevents re-evaluation)
-const componentMap: Record<string, { header: Component; content: Component; footer: Component }> = {
+const componentMap: Record<string, { title: Component; content: Component; actions: Component }> = {
   place: {
-    header: markRaw(
-      defineAsyncComponent(() => import('@/components/content/place/WdPlaceHeader.vue'))
+    title: markRaw(
+      defineAsyncComponent(() => import('@/components/content/place/WdPlaceTitle.vue'))
     ),
     content: markRaw(
       defineAsyncComponent(() => import('@/components/content/place/WdPlaceContent.vue'))
     ),
-    footer: markRaw(
-      defineAsyncComponent(() => import('@/components/content/place/WdPlaceFooter.vue'))
+    actions: markRaw(
+      defineAsyncComponent(() => import('@/components/content/place/WdPlaceActions.vue'))
     ),
   },
 };
 
 // Computed selects from static map
-const contentHeaderComponent = computed(() => {
+const contentTitleComponent = computed(() => {
   const type = contentStore.contentType;
   if (!type || !componentMap[type]) return null;
-  return componentMap[type].header ?? null;
+  return componentMap[type].title ?? null;
 });
 
-const contentFooterComponent = computed(() => {
+const contentActionsComponent = computed(() => {
   const type = contentStore.contentType;
   if (!type || !componentMap[type]) return null;
-  return componentMap[type].footer ?? null;
+  return componentMap[type].actions ?? null;
 });
 
 function closeContent() {
@@ -199,6 +199,19 @@ useMeta(() => {
   transform: rotate(-20deg);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
   pointer-events: none;
+}
+
+// Critical CSS for nested QLayout in container mode (inside drawer)
+// Without this, the layout wrappers collapse to 0 height
+.q-layout-container > div > div {
+  min-height: 0;
+  max-height: 100%;
+  height: 100%;
+}
+
+.q-layout-container .q-layout {
+  min-height: 100%;
+  height: 100%;
 }
 </style>
 <template>
@@ -280,75 +293,82 @@ useMeta(() => {
       :breakpoint="0"
       class="shadow-2"
     >
-      <!-- Close button -->
-      <div class="absolute-top z-max q-pa-xs q-ma-xs" style="width: 50px">
-        <q-btn
-          round
-          dense
-          unelevated
-          color="accent-100"
-          icon="wd-close"
-          @click="closeContent"
-          class="text-primary-900"
-        />
-      </div>
+      <q-layout view="lhh LpR lff" container class="no-background bg-grey-3" style="height: 100%">
+        <!-- Close button -->
+        <div class="absolute-top z-max q-pa-sm">
+          <q-btn
+            round
+            dense
+            unelevated
+            color="accent-100"
+            icon="wd-close"
+            @click="closeContent"
+            class="text-primary-900"
+            size="md"
+          />
+        </div>
 
-      <!-- Header area -->
-      <div v-if="contentHeaderComponent" class="bg-primary-800 q-pt-lg">
-        <component :is="contentHeaderComponent" :slug="contentStore.contentSlug" />
-        <component
-          v-if="contentFooterComponent && $q.screen.gt.sm"
-          :is="contentFooterComponent"
-          :slug="contentStore.contentSlug"
-        />
-      </div>
+        <!-- Sticky Header (Actions + Title) -->
+        <q-header class="no-background">
+          <!-- Actions Toolbar (Desktop only) -->
+          <component
+            v-if="contentActionsComponent && $q.screen.gt.sm"
+            :is="contentActionsComponent"
+            :slug="contentStore.contentSlug"
+          />
+          <!-- Title -->
+          <component
+            v-if="contentTitleComponent"
+            :is="contentTitleComponent"
+            :slug="contentStore.contentSlug"
+          />
+        </q-header>
 
-      <!-- Scrollable content area -->
-      <q-scroll-area
-        visible
-        :thumb-style="{
-          width: '6px',
-          backgroundColor: '#998019',
-          opacity: '0.5',
-          borderRadius: '8px 0 0 8px',
-        }"
-        :style="`height: calc(100% - ${$q.screen.gt.sm ? '160px' : '120px'})`"
-        class="fit"
-      >
-        <router-view name="content" v-slot="{ Component, route: contentRoute }">
-          <transition name="fade" mode="out-in">
-            <component :is="Component" :key="contentRoute.path" />
-          </transition>
-        </router-view>
-      </q-scroll-area>
+        <!-- Scrollable Content -->
+        <q-page-container class="fit" style="height: 100%">
+          <q-scroll-area
+            visible
+            :thumb-style="{
+              width: '6px',
+              backgroundColor: '#998019',
+              opacity: '0.5',
+              borderRadius: '8px 0 0 8px',
+            }"
+            style="height: 100%"
+            class="fit"
+          >
+            <q-page style="height: 100%" class="q-px-md fit">
+              <router-view name="content" v-slot="{ Component, route: contentRoute }">
+                <transition name="fade" mode="out-in">
+                  <component :is="Component" :key="contentRoute.path" />
+                </transition>
+              </router-view>
+            </q-page>
+          </q-scroll-area>
+        </q-page-container>
 
-      <!-- Footer for mobile-sized desktop screens -->
-      <div v-if="contentFooterComponent && !$q.screen.gt.sm" class="absolute-bottom">
-        <component :is="contentFooterComponent" :slug="contentStore.contentSlug" />
-      </div>
+        <!-- Footer (Actions for smaller desktop screens) -->
+        <q-footer v-if="contentActionsComponent && !$q.screen.gt.sm" class="footer-toolbar">
+          <component :is="contentActionsComponent" :slug="contentStore.contentSlug" />
+        </q-footer>
+      </q-layout>
     </q-drawer>
   </q-layout>
 
   <!-- Mobile Bottom Sheet (OUTSIDE QLayout, only on mobile) -->
   <WdBottomSheet v-if="isMobile" v-model="contentDrawerOpen" @close="closeContent">
+    <!-- Close button (top-right corner) -->
+    <div class="absolute" style="top: 10px; right: 10px; z-index: 1000">
+      <q-btn round dense flat icon="wd-close" @click="closeContent" class="text-grey-7" size="md" />
+    </div>
+
     <!-- Header slot -->
     <template #header>
-      <div class="row items-center q-pa-md">
-        <div class="col">
-          <component
-            v-if="contentHeaderComponent"
-            :is="contentHeaderComponent"
-            :slug="contentStore.contentSlug"
-          />
-        </div>
-        <q-btn
-          round
-          dense
-          unelevated
-          color="accent-100"
-          icon="wd-close"
-          @click="closeContent"
-          class="text-primary-700"
+      <div class="q-px-md q-pt-sm q-pb-xs" style="padding-right: 50px">
+        <component
+          v-if="contentTitleComponent"
+          :is="contentTitleComponent"
+          :slug="contentStore.contentSlug"
         />
       </div>
     </template>
@@ -365,8 +385,8 @@ useMeta(() => {
     <!-- Footer slot -->
     <template #footer>
       <component
-        v-if="contentFooterComponent"
-        :is="contentFooterComponent"
+        v-if="contentActionsComponent"
+        :is="contentActionsComponent"
         :slug="contentStore.contentSlug"
       />
     </template>

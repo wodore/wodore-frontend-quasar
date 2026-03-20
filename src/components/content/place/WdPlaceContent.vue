@@ -109,7 +109,12 @@ const isHutClosed = computed<'yes' | 'yesish' | 'no' | 'noish' | 'maybe' | 'unkn
         </div>
 
         <div class="col-md-12 col-sm-4 col-4">
-          <div class="row items-start justify-start q-gutter-sm">
+          <div
+            class="row items-start justify-start q-gutter-sm"
+            :class="{
+              'q-gutter-lg': $q.screen.gt.sm,
+            }"
+          >
             <WdHutTypeChip
               class="shadow-0 col-md-6 col-sm-12 col-12"
               :type="place.type_open"
@@ -126,14 +131,17 @@ const isHutClosed = computed<'yes' | 'yesish' | 'no' | 'noish' | 'maybe' | 'unkn
             <q-chip
               v-if="place.elevation"
               size="md"
-              class="bg-grey-4 shadow-0 col-md-6 col-sm-12 col-12"
+              class="bg-grey-4 q-mr-none shadow-0 col-md-6 col-sm-12 col-12"
+              style="min-width: 90px; max-width: 90px; max-height: 30px"
             >
               <q-avatar class="bg-grey-5" text-color="primary-500">
                 <q-icon size="20px">
                   <IconMingcuteMountain2Fill />
                 </q-icon>
               </q-avatar>
-              <span class="text-primary-500">{{ place.elevation }} m</span>
+              <span class="text-primary-500" style="font-weight: 500; width: 28px"
+                >{{ place.elevation }} m</span
+              >
             </q-chip>
           </div>
         </div>
