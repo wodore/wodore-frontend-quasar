@@ -78,13 +78,16 @@ bottom-sheet {
   z-index: 10;
 }
 
+bottom-sheet::part(footer) {
+  z-index: 100;
+}
+</style>
+
+<style>
 /* Force the snap at index 1 (bottom) to always stop - prevents skipping from index 2 to 0 */
+/* This needs to be unscoped to work with the web component's slotted content */
 bottom-sheet [slot='snap'].bottom::before {
   scroll-snap-stop: always;
-}
-
-bottom-sheet::part(footer) {
-  z-index: 9999;
 }
 </style>
 
