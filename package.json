@@ -11,6 +11,9 @@
     "lint:fix": "eslint --fix --ext .js,.ts,.vue ./",
     "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\"",
     "test": "echo \"No test specified\" && exit 0",
+    "story:dev": "histoire dev",
+    "story:build": "histoire build",
+    "story:preview": "histoire preview",
     "dev": "yarn run dev:pwa",
     "dev:spa": "quasar dev -m spa --port 9000",
     "dev:ssr": "quasar dev -m ssr --port 9000",
@@ -77,6 +80,7 @@
     "watch": "^1.0.2"
   },
   "devDependencies": {
+    "@histoire/plugin-vue": "^1.0.0-beta.1",
     "@iconify/json": "^2.2.202",
     "@intlify/unplugin-vue-i18n": "^11",
     "@playwright/test": "^1.58.2",
@@ -97,6 +101,7 @@
     "fantasticon": "^4.1.0",
     "git-cliff": "^2.8.0",
     "git-rev-sync": "^3.0.2",
+    "histoire": "^1.0.0-beta.1",
     "lint-staged": "^16.2.7",
     "oslllo-svg-fixer": "^6.0.1",
     "prettier": "^3.0.3",
