@@ -26,6 +26,7 @@ declare module 'vue' {
     IconFa6SolidLocationCrosshairs: typeof import('~icons/fa6-solid/location-crosshairs')['default']
     IconMingcuteMountain2Fill: typeof import('~icons/mingcute/mountain2-fill')['default']
     IconNotoV1Construction: typeof import('~icons/noto-v1/construction')['default']
+    IconTablerArrowUp: typeof import('~icons/tabler/arrow-up')['default']
     QIconify: typeof import('./src/components/quasar/QIconify.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']

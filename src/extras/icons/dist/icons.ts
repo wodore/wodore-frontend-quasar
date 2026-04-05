@@ -19,6 +19,7 @@ export type IconsId =
   | "favorite-outline"
   | "eye"
   | "eye-outline"
+  | "elevation-outline"
   | "edit"
   | "edit-outline"
   | "copyright"
@@ -59,6 +60,7 @@ export type IconsKey =
   | "FavoriteOutline"
   | "Eye"
   | "EyeOutline"
+  | "ElevationOutline"
   | "Edit"
   | "EditOutline"
   | "Copyright"
@@ -99,6 +101,7 @@ export enum Icons {
   FavoriteOutline = "favorite-outline",
   Eye = "eye",
   EyeOutline = "eye-outline",
+  ElevationOutline = "elevation-outline",
   Edit = "edit",
   EditOutline = "edit-outline",
   Copyright = "copyright",
@@ -140,22 +143,23 @@ export const ICONS_CODEPOINTS: { [key in Icons]: string } = {
   [Icons.FavoriteOutline]: "61714",
   [Icons.Eye]: "61715",
   [Icons.EyeOutline]: "61716",
-  [Icons.Edit]: "61717",
-  [Icons.EditOutline]: "61718",
-  [Icons.Copyright]: "61719",
-  [Icons.Close]: "61720",
-  [Icons.Checkmark]: "61721",
-  [Icons.Calendar]: "61722",
-  [Icons.Browser]: "61723",
-  [Icons.Bell]: "61724",
-  [Icons.BellOutline]: "61725",
-  [Icons.At]: "61726",
-  [Icons.ArrowheadUp]: "61727",
-  [Icons.ArrowheadRight]: "61728",
-  [Icons.ArrowheadLeft]: "61729",
-  [Icons.ArrowheadDown]: "61730",
-  [Icons.ArrowUpDown]: "61731",
-  [Icons.AlertTriangleOutline]: "61732",
-  [Icons.Add]: "61733",
-  [Icons.AddOutline]: "61734",
+  [Icons.ElevationOutline]: "61717",
+  [Icons.Edit]: "61718",
+  [Icons.EditOutline]: "61719",
+  [Icons.Copyright]: "61720",
+  [Icons.Close]: "61721",
+  [Icons.Checkmark]: "61722",
+  [Icons.Calendar]: "61723",
+  [Icons.Browser]: "61724",
+  [Icons.Bell]: "61725",
+  [Icons.BellOutline]: "61726",
+  [Icons.At]: "61727",
+  [Icons.ArrowheadUp]: "61728",
+  [Icons.ArrowheadRight]: "61729",
+  [Icons.ArrowheadLeft]: "61730",
+  [Icons.ArrowheadDown]: "61731",
+  [Icons.ArrowUpDown]: "61732",
+  [Icons.AlertTriangleOutline]: "61733",
+  [Icons.Add]: "61734",
+  [Icons.AddOutline]: "61735",
 };

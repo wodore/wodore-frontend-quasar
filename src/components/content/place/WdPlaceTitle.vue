@@ -16,27 +16,42 @@ const { place } = usePlace(computed(() => props.slug));
 
 <template>
   <q-no-ssr>
-    <div v-if="place" class="wd-place-title row no-wrap items-center">
+    <div v-if="place" class="wd-place-title row no-wrap">
       <!-- Avatar (type icon) -->
       <div class="wd-place-title__avatar col-auto q-mr-sm">
         <q-icon
           v-if="place.type_open && place.type_open.symbol"
           :name="'img:' + place.type_open?.symbol.detailed"
-          size="40px"
+          size="44px"
         />
       </div>
 
-      <!-- Overline + Title -->
-      <div class="wd-place-title__text col">
-        <q-icon size="16px" class="text-accent-900">
-          <IconMingcuteMountain2Fill />
-        </q-icon>
-        <span v-if="place.elevation" class="wd-place-title__owner text-caption text-accent-900">
-          {{ place.elevation }}m |
-        </span>
-        <span v-if="place.owner" class="wd-place-title__owner text-caption text-accent-900">
-          {{ place.owner?.name }}
-        </span>
+      <!-- Title block: overline / title / subtitle -->
+      <div class="wd-place-title__text col self-center">
+        <!-- Overline: elevation + weather -->
+        <div
+          v-if="place.elevation || place.location"
+          class="wd-place-title__overline text-caption text-accent-900"
+        >
+          <span v-if="place.elevation" class="wd-place-title__elevation">
+            <q-icon size="14px" name="wd-elevation-outline" />
+            {{ place.elevation }}m
+          </span>
+          <span v-if="place.elevation && place.location" class="wd-place-title__dot">•</span>
+          <WdWeatherSelect
+            v-if="place.location"
+            :latitude="place.location.lat"
+            :longitude="place.location.lon"
+            collection="weather-icons-outlined"
+            :elevation="place.elevation ?? undefined"
+            :size="18"
+            color="accent-900"
+            :label="true"
+            class="wd-place-title__weather"
+          />
+        </div>
+
+        <!-- Title -->
         <div
           class="wd-place-title__name"
           :class="$q.screen.xs || $q.platform.is.mobile ? 'text-h6' : 'text-h5'"
@@ -49,19 +64,18 @@ const { place } = usePlace(computed(() => props.slug));
             class="text-primary-900"
           >
             {{ place.name }}
-            <q-icon size="11pt" style="transform: translateY(-6px)">
+            <q-icon size="10pt" class="text-grey-5" style="transform: translateY(-6px)">
               <IconEvaExternalLinkFill />
             </q-icon>
           </a>
           <span v-else class="text-primary-900">{{ place.name }}</span>
         </div>
-      </div>
 
-      <!-- Weather icon -->
-      <!-- <div class="wd-place-title__weather col-auto"> -->
-      <!--   <WdWeatherSelect v-if="place.location" :latitude="place.location.lat" :longitude="place.location.lon" -->
-      <!--     :elevation="place.elevation ?? undefined" /> -->
-      <!-- </div> -->
+        <!-- Subtitle: owner -->
+        <div v-if="place.owner" class="wd-place-title__subtitle text-caption text-grey-7">
+          {{ place.owner?.name }}
+        </div>
+      </div>
     </div>
   </q-no-ssr>
 </template>
@@ -72,7 +86,33 @@ const { place } = usePlace(computed(() => props.slug));
 }
 
 .wd-place-title__text {
-  min-width: 0; // allow text truncation in flex layout
+  min-width: 0;
+}
+
+.wd-place-title__overline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wd-place-title__elevation {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.wd-place-title__dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-size: 1.2em;
 }
 
 .wd-place-title__name {
@@ -82,8 +122,8 @@ const { place } = usePlace(computed(() => props.slug));
   text-overflow: ellipsis;
 }
 
-.wd-place-title__owner {
-  line-height: 1.2;
+.wd-place-title__subtitle {
+  line-height: 1.3;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -95,9 +135,11 @@ const { place } = usePlace(computed(() => props.slug));
   justify-content: center;
 }
 
-.wd-place-title__weather {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.wd-place-title__weather :deep(.weather-select) {
+  margin-left: 0;
+}
+
+.wd-place-title__weather :deep(.weather-select__mask) {
+  transform: translateY(-2px);
 }
 </style>

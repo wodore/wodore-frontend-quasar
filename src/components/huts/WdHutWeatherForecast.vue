@@ -12,7 +12,7 @@ const { width: windowWidth } = useWindowSize();
 const { t } = useI18n();
 const $q = useQuasar();
 const meteoStore = useMeteoStore();
-const { weatherCodesCollection, weatherCodes } = storeToRefs(meteoStore);
+const { weatherCodesCollection } = storeToRefs(meteoStore);
 const { selectedDateOrToday } = storeToRefs(useHutsStore());
 
 interface WeatherDay {
@@ -22,6 +22,15 @@ interface WeatherDay {
   temp_min: number | null;
   temp_max: number | null;
   loading?: boolean;
+}
+
+interface LocalWeatherCodeEntry {
+  symbol_day?: string;
+  symbol_night?: string;
+  description_day?: string;
+  description_night?: string;
+  description?: string;
+  [key: string]: unknown;
 }
 
 interface Props {
@@ -111,6 +120,9 @@ const collection = computed(
   () => props.collection ?? weatherCodesCollection.value ?? 'weather-icons-filled'
 );
 
+// Local weather codes ref so this component doesn't clobber the global store state
+const localWeatherCodes = ref<Record<string, LocalWeatherCodeEntry>>({});
+
 const initializeDateRange = () => {
   const items: WeatherDay[] = [];
   const today = new Date();
@@ -161,7 +173,7 @@ const getWeatherEntry = (code: number | null) => {
   if (code === null || code === undefined) {
     return undefined;
   }
-  return weatherCodes.value?.[String(code)];
+  return localWeatherCodes.value?.[String(code)];
 };
 
 const getIconUrl = (day: WeatherDay) => {
@@ -280,8 +292,14 @@ watch(
   { immediate: true }
 );
 
-watchEffect(() => {
-  meteoStore.setWeatherCodesContext(quasarLang.value, collection.value);
+// Fetch weather codes for this component's own collection (independent of the global store)
+watchEffect(async () => {
+  const codes = await meteoStore.getWeatherCodes(quasarLang.value, {
+    collection: collection.value,
+  });
+  if (codes) {
+    localWeatherCodes.value = codes;
+  }
 });
 </script>
 

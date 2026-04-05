@@ -191,6 +191,7 @@ const isHutClosed = computed<'yes' | 'yesish' | 'no' | 'noish' | 'maybe' | 'unkn
           :longitude="place.location.lon"
           :elevation="place.elevation ?? undefined"
           :loading="weatherLoading"
+          collection="weather-icons-filled-animated"
         />
       </div>
 

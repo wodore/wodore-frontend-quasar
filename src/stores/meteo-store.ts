@@ -234,46 +234,43 @@ export const useMeteoStore = defineStore('meteo', () => {
     return data as Record<string, WeatherCodeEntry>;
   };
 
-  const getWeatherCodes = async (lang: string, options: { collection: string }) => {
+  const getWeatherCodes = async (
+    lang: string,
+    options: { collection: string }
+  ): Promise<Record<string, WeatherCodeEntry>> => {
     const collection = options.collection;
     const key = `weather_codes:${lang}:${collection}`;
 
     if (weatherCodesCache.value[key]) {
       weatherCodes.value = weatherCodesCache.value[key];
-    } else {
-      const cached = localStorage.getItem(key);
-      if (cached) {
-        try {
-          const parsed = JSON.parse(cached) as Record<string, WeatherCodeEntry>;
-          weatherCodesCache.value[key] = parsed;
-          weatherCodes.value = parsed;
-        } catch {
-          // ignore invalid cache
-        }
+      return weatherCodesCache.value[key];
+    }
+
+    const cached = localStorage.getItem(key);
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached) as Record<string, WeatherCodeEntry>;
+        weatherCodesCache.value[key] = parsed;
+        weatherCodes.value = parsed;
+        return parsed;
+      } catch {
+        // ignore invalid cache
       }
     }
 
     if (weatherCodesInFlight.value.has(key)) {
-      return weatherCodes;
+      return weatherCodes.value;
     }
     weatherCodesInFlight.value.add(key);
-    fetchWeatherCodes(lang, collection)
-      .then(data => {
-        if (!data) {
-          return;
-        }
-        weatherCodesCache.value[key] = data;
-        weatherCodes.value = data;
-        localStorage.setItem(key, JSON.stringify(data));
-      })
-      .catch(() => {
-        // ignore fetch errors for now
-      })
-      .finally(() => {
-        weatherCodesInFlight.value.delete(key);
-      });
-
-    return weatherCodes;
+    const data = await fetchWeatherCodes(lang, collection);
+    if (data) {
+      weatherCodesCache.value[key] = data;
+      weatherCodes.value = data;
+      localStorage.setItem(key, JSON.stringify(data));
+      return data;
+    }
+    weatherCodesInFlight.value.delete(key);
+    return weatherCodes.value;
   };
 
   const setWeatherCodesContext = (lang: string, collection?: string) => {

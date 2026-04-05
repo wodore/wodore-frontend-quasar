@@ -57,3 +57,4 @@ Icons:
 | `wd-server`                 | Server/backend               |
 | `wd-subject`                | Subject/category             |
 | `wd-text-outline`           | Text/content                 |
+| `wd-elevation-outline`      | Elevation icon (mountain)    |
