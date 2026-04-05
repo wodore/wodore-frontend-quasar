@@ -170,12 +170,6 @@ useMeta(() => {
 .app-header {
   backdrop-filter: blur(10px);
   background-color: rgba(color('primary', 800), 0.85) !important;
-  //background: linear-gradient(
-  //  180deg,
-  //  rgba(color('primary', 800), 1) 0%,
-  //  rgba(color('primary', 800), 0.95) 10%,
-  //  rgba(color('primary', 700), 0.7) 100%
-  //);
 }
 
 .preview-badge {
@@ -218,7 +212,7 @@ useMeta(() => {
   <WdAnalytics />
   <q-layout view="hHh LpR fFf" class="overflow-hidden">
     <div v-if="isStaging" class="preview-badge">preview</div>
-    <q-header class="text-white shadow-6 app-header">
+    <q-header class="text-white app-header" bordered>
       <!-- TOOLBAR -->
       <q-toolbar>
         <WdMenuButton desktop v-model="menuDrawerOpen" />
