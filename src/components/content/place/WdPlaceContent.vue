@@ -97,11 +97,6 @@ const isHutClosed = computed<'yes' | 'yesish' | 'no' | 'noish' | 'maybe' | 'unkn
 
     <!-- Content -->
     <div v-else-if="place" class="q-py-md">
-      <!-- Owner -->
-      <h2 class="text-subtitle1 text-accent-900 q-ma-none q-mb-sm">
-        {{ place.owner?.name }}
-      </h2>
-
       <!-- Gallery and Type Chips -->
       <div class="row items-start q-gutter-sm">
         <div class="col-md-12 col-sm-7 col-7">

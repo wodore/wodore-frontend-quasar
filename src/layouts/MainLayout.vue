@@ -315,7 +315,7 @@ useMeta(() => {
         </div>
 
         <!-- Sticky Header (Actions + Title) -->
-        <q-header class="no-background">
+        <q-header class="no-background" style="background: none !important">
           <!-- Actions Toolbar (Desktop only) -->
           <component
             v-if="contentActionsComponent && $q.screen.gt.sm"

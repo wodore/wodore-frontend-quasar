@@ -2,6 +2,8 @@
 .thumbs.db
 node_modules
 .vscode
+tmp/
+screenshots/
 
 # Quasar core related directories
 .quasar
