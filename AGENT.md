@@ -51,6 +51,11 @@ yarn serve:ssr
 yarn lint             # Check code
 yarn lint:fix         # Fix linting issues
 yarn format           # Format with Prettier
+
+# Component development (Histoire)
+yarn story:dev        # Start Histoire dev server
+yarn story:build      # Build static Histoire site
+yarn story:preview    # Preview built Histoire site
 ```
 
 **IMPORTANT**: Always run both `yarn lint` and `npx vue-tsc --noEmit` after making code changes to verify there are no ESLint warnings or TypeScript errors before committing.
@@ -84,6 +89,9 @@ All paths are relative to the repository root (`wodore-frontend-quasar/`).
 wodore-frontend-quasar/
 ├── docs/
 │   └── specs/               # Feature specifications and design docs
+├── stories/                 # Histoire component stories
+│   ├── components/          # Component stories (mirrors src/components/)
+│   └── README.md            # Stories documentation
 ├── src/
 │   ├── assets/              # Static assets (images, icons, etc.)
 │   ├── boot/                # Quasar boot files (loaded before app starts)
@@ -100,6 +108,7 @@ wodore-frontend-quasar/
 │   ├── services/            # Business logic and services
 │   ├── stores/              # Pinia stores (state management)
 │   ├── types/               # TypeScript type definitions
+│   ├── histoire-setup.ts    # Histoire configuration/setup
 │   ├── App.vue              # Root component
 │   └── env.d.ts             # Environment type definitions
 ├── src-pwa/                 # PWA-specific files
@@ -108,6 +117,7 @@ wodore-frontend-quasar/
 ├── .env                     # Environment variables (committed)
 ├── .env.local               # Local overrides (gitignored)
 ├── .env.[dev|prod]          # Environment-specific vars
+├── histoire.config.ts       # Histoire configuration
 ├── quasar.config.ts         # Quasar framework configuration
 ├── Dockerfile               # Multi-stage Docker build
 └── package.json             # Dependencies and scripts
@@ -160,6 +170,7 @@ yarn gen:api-local  # Local development API
 - **Package Manager**: Yarn
 - **Linting**: ESLint with TypeScript and Vue plugins
 - **Formatting**: Prettier
+- **Component Development**: [Histoire](https://histoire.dev/) - Component story/playground tool
 - **Icons**:
   - [Quasar Icons](https://quasar.dev/vue-components/icon) (Material Icons, etc.)
   - Custom `wd` icons via [Fantasticon](https://github.com/tancredi/fantasticon)

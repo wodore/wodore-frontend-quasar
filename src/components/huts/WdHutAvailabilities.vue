@@ -575,6 +575,7 @@ const upcomingMonthClass = computed(() => {
   --availability-item-width: 78px;
   min-height: 100%;
   height: 100%;
+  width: 100%;
 }
 
 .month-selector {
@@ -631,6 +632,7 @@ const upcomingMonthClass = computed(() => {
 
 .availability-scroll-area {
   height: 80px;
+  width: 100%;
 }
 
 .availability-content {

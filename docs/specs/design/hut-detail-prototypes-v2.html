@@ -1,0 +1,1704 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Wodore Hut Detail - Design Variations v2</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;500;700&family=Roboto:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ============================================================
+       RESET & BASE
+       ============================================================ */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        /* Wodore Colors (from quasar.variables.scss) */
+        --primary-100: #8fd6b7;
+        --primary-500: #346751;
+        --primary-700: #224e3b;
+        --primary-900: #133426;
+
+        --accent-100: #e8c563;
+        --accent-500: #bfab25;
+        --accent-700: #998019;
+        --accent-900: #6f5610;
+
+        --secondary-100: #b2d7e1;
+
+        --positive-200: #6ee3b0;
+        --positive-400: #32d77a;
+        --positive-500: #25bf5e;
+        --positive-900: #156b4b;
+
+        --negative-100: #f2acab;
+        --negative-200: #eb817f;
+        --negative-500: #bf211e;
+        --negative-900: #961a17;
+
+        --dark-500: #112119;
+        --grey-200: #eeeeee;
+        --grey-400: #bdbdbd;
+        --grey-500: #9e9e9e;
+        --grey-600: #757575;
+        --grey-700: #616161;
+        --grey-800: #424242;
+        --grey-900: #212121;
+        --white: #ffffff;
+
+        /* Category colors */
+        --cat-hut: #dfebfa;
+        --cat-bivouac: #d4d4ff;
+        --cat-selfhut: #4b8e43;
+        --cat-alp: #d88a55;
+
+        /* Typography */
+        --font-heading: 'Roboto Condensed', 'Roboto', sans-serif;
+        --font-body: 'Roboto', sans-serif;
+
+        /* Dimensions */
+        --phone-width: 375px;
+        --phone-height: 812px;
+        --sheet-radius: 20px 20px 0 0;
+      }
+
+      body {
+        font-family: var(--font-body);
+        background: #f0f0f0;
+        color: var(--grey-900);
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* ============================================================
+       PAGE LAYOUT
+       ============================================================ */
+      .page-header {
+        text-align: center;
+        padding: 40px 20px 20px;
+        max-width: 1800px;
+        margin: 0 auto;
+      }
+
+      .page-header h1 {
+        font-family: var(--font-heading);
+        font-size: 2rem;
+        font-weight: 400;
+        color: var(--primary-700);
+        margin-bottom: 8px;
+      }
+
+      .page-header p {
+        color: var(--grey-600);
+        font-size: 0.95rem;
+        margin-bottom: 20px;
+      }
+
+      .feature-notes {
+        max-width: 800px;
+        margin: 0 auto 30px;
+        padding: 16px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        text-align: left;
+      }
+
+      .feature-notes h3 {
+        font-size: 1rem;
+        color: var(--primary-700);
+        margin-bottom: 12px;
+      }
+
+      .feature-notes ul {
+        list-style: none;
+        padding: 0;
+      }
+
+      .feature-notes li {
+        padding: 4px 0;
+        font-size: 0.85rem;
+        color: var(--grey-700);
+      }
+
+      .feature-notes li:before {
+        content: '✓ ';
+        color: var(--positive-500);
+        font-weight: bold;
+        margin-right: 6px;
+      }
+
+      .prototypes-container {
+        display: flex;
+        gap: 40px;
+        max-width: 1800px;
+        margin: 20px auto;
+        padding: 0 20px 60px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+
+      /* ============================================================
+       PHONE FRAME
+       ============================================================ */
+      .phone-frame {
+        width: var(--phone-width);
+        height: var(--phone-height);
+        border-radius: 40px;
+        background: #000;
+        padding: 12px;
+        box-shadow:
+          0 20px 60px rgba(0, 0, 0, 0.3),
+          0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+        position: relative;
+        flex-shrink: 0;
+      }
+
+      .phone-screen {
+        width: 100%;
+        height: 100%;
+        border-radius: 30px;
+        overflow: hidden;
+        position: relative;
+        background: var(--grey-200);
+      }
+
+      .phone-label {
+        text-align: center;
+        margin-bottom: 16px;
+      }
+
+      .phone-label h2 {
+        font-family: var(--font-heading);
+        font-size: 1.2rem;
+        font-weight: 500;
+        color: var(--primary-700);
+      }
+
+      .phone-label p {
+        font-size: 0.8rem;
+        color: var(--grey-500);
+        margin-top: 4px;
+      }
+
+      .phone-label .rating {
+        font-size: 0.75rem;
+        color: var(--accent-700);
+        margin-top: 4px;
+        font-weight: 500;
+      }
+
+      /* ============================================================
+       MAP BACKGROUND
+       ============================================================ */
+      .map-area {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #e8e4d8 0%, #d4d0c4 50%, #e0dcd0 100%);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .map-marker {
+        position: absolute;
+        width: 30px;
+        height: 40px;
+        left: 50%;
+        top: 35%;
+        transform: translate(-50%, -100%);
+        z-index: 5;
+      }
+
+      .map-marker::before {
+        content: '';
+        position: absolute;
+        width: 30px;
+        height: 30px;
+        background: var(--primary-500);
+        border-radius: 50% 50% 50% 0;
+        transform: rotate(-45deg);
+        left: 0;
+        top: 0;
+        box-shadow: 0 2px 8px rgba(52, 103, 81, 0.4);
+      }
+
+      .map-marker::after {
+        content: '';
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        background: white;
+        border-radius: 50%;
+        left: 9px;
+        top: 9px;
+      }
+
+      /* ============================================================
+       BOTTOM SHEET - BASE
+       ============================================================ */
+      .bottom-sheet {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--white);
+        border-radius: var(--sheet-radius);
+        transition: height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+        z-index: 10;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .drag-handle {
+        width: 36px;
+        height: 4px;
+        background: var(--grey-400);
+        border-radius: 2px;
+        margin: 10px auto 6px;
+        flex-shrink: 0;
+        cursor: grab;
+      }
+
+      /* ============================================================
+       SNAP CONTROLS
+       ============================================================ */
+      .snap-controls {
+        position: absolute;
+        top: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 6px;
+        z-index: 20;
+        background: rgba(255, 255, 255, 0.92);
+        padding: 4px;
+        border-radius: 20px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+      }
+
+      .snap-btn {
+        border: none;
+        padding: 6px 14px;
+        border-radius: 16px;
+        font-family: var(--font-heading);
+        font-size: 0.75rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: transparent;
+        color: var(--grey-600);
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+      }
+
+      .snap-btn:hover {
+        background: var(--grey-200);
+      }
+
+      .snap-btn.active {
+        background: var(--primary-500);
+        color: white;
+        box-shadow: 0 2px 6px rgba(52, 103, 81, 0.3);
+      }
+
+      /* ============================================================
+       SHEET HEADER
+       ============================================================ */
+      .sheet-header {
+        padding: 0 16px 8px;
+        flex-shrink: 0;
+      }
+
+      .sheet-title-row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .sheet-title {
+        font-family: var(--font-heading);
+        font-size: 1.25rem;
+        font-weight: 500;
+        color: var(--primary-900);
+        line-height: 1.3;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .header-icon {
+        width: 28px;
+        height: 28px;
+        flex-shrink: 0;
+      }
+
+      .sheet-subtitle {
+        font-family: var(--font-heading);
+        font-size: 0.875rem;
+        font-weight: 400;
+        color: var(--accent-700);
+        margin-top: 2px;
+        margin-left: 34px;
+      }
+
+      .weather-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--secondary-100);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        flex-shrink: 0;
+      }
+
+      .close-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(0, 0, 0, 0.06);
+        color: var(--grey-600);
+        font-size: 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+      }
+
+      /* ============================================================
+       ACTION TOOLBAR (footer)
+       ============================================================ */
+      .action-toolbar {
+        display: flex;
+        align-items: center;
+        padding: 6px 10px;
+        border-top: 1px solid var(--grey-200);
+        background: var(--white);
+        flex-shrink: 0;
+        gap: 2px;
+      }
+
+      .action-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: none;
+        background: transparent;
+        color: var(--primary-700);
+        font-size: 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .action-spacer {
+        flex: 1;
+      }
+
+      .review-badge {
+        font-size: 0.65rem;
+        font-weight: 500;
+        padding: 2px 8px;
+        border-radius: 10px;
+        border: 1px solid var(--positive-500);
+        color: var(--primary-800);
+      }
+
+      /* ============================================================
+       CONTENT AREA
+       ============================================================ */
+      .sheet-content {
+        flex: 1;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+      }
+
+      /* ============================================================
+       VARIATION 1: HORIZONTAL EFFICIENCY
+       ============================================================ */
+      .var-1 .sheet-content {
+        padding: 8px 16px;
+      }
+
+      .var-1 .badges-strip-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+
+      .var-1 .badge-compact {
+        width: 90px;
+        height: 30px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        padding: 0 4px;
+        gap: 2px;
+        flex-shrink: 0;
+      }
+
+      .var-1 .badge-compact.open {
+        background: var(--positive-200);
+      }
+
+      .var-1 .badge-compact.closed {
+        background: var(--negative-100);
+      }
+
+      .var-1 .badge-avatar {
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .var-1 .badge-compact.open .badge-avatar {
+        background: var(--positive-400);
+      }
+
+      .var-1 .badge-compact.closed .badge-avatar {
+        background: var(--negative-200);
+      }
+
+      .var-1 .badge-avatar img {
+        width: 20px;
+        height: 20px;
+        filter: brightness(0) invert(1);
+      }
+
+      .var-1 .badge-text {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--accent-900);
+        flex: 1;
+        text-align: center;
+      }
+
+      .var-1 .seasonal-dots {
+        display: flex;
+        gap: 2px;
+        flex-shrink: 0;
+      }
+
+      .var-1 .month-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+      }
+
+      .var-1 .month-dot.open {
+        background: var(--positive-400);
+      }
+      .var-1 .month-dot.closed {
+        background: var(--negative-200);
+      }
+      .var-1 .month-dot.current {
+        width: 12px;
+        height: 12px;
+        border: 2px solid white;
+        box-shadow: 0 0 0 1px var(--primary-500);
+      }
+
+      .var-1 .book-btn-compact {
+        width: 160px;
+        height: 36px;
+        background: var(--accent-500);
+        color: white;
+        border: none;
+        border-radius: 18px;
+        font-family: var(--font-heading);
+        font-weight: 500;
+        font-size: 0.875rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        margin-bottom: 8px;
+      }
+
+      /* ============================================================
+       VARIATION 2: VERTICAL CLARITY
+       ============================================================ */
+      .var-2 .sheet-content {
+        padding: 8px 16px;
+      }
+
+      .var-2 .badge-full {
+        width: 100%;
+        height: 44px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+        gap: 8px;
+        margin-bottom: 8px;
+        border: 1px solid;
+      }
+
+      .var-2 .badge-full.open {
+        background: var(--positive-200);
+        border-color: var(--positive-400);
+      }
+
+      .var-2 .badge-full.closed {
+        background: var(--negative-100);
+        border-color: var(--negative-200);
+      }
+
+      .var-2 .badge-icon {
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+      }
+
+      .var-2 .badge-icon img {
+        width: 100%;
+        height: 100%;
+      }
+
+      .var-2 .badge-name {
+        font-family: var(--font-heading);
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--accent-900);
+        flex: 1;
+      }
+
+      .var-2 .badge-capacity {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--accent-900);
+        background: rgba(255, 255, 255, 0.5);
+        padding: 4px 10px;
+        border-radius: 12px;
+      }
+
+      .var-2 .seasonal-strip-card {
+        background: var(--grey-200);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 12px;
+      }
+
+      .var-2 .month-grid {
+        display: flex;
+        gap: 2px;
+      }
+
+      .var-2 .month-cell {
+        flex: 1;
+        text-align: center;
+        padding: 6px 2px;
+        border-radius: 4px;
+        font-size: 0.65rem;
+        font-family: var(--font-heading);
+      }
+
+      .var-2 .month-cell.open {
+        background: var(--positive-200);
+        color: var(--positive-900);
+      }
+
+      .var-2 .month-cell.closed {
+        background: var(--negative-100);
+        color: var(--negative-900);
+      }
+
+      .var-2 .month-label {
+        display: block;
+        font-weight: 600;
+      }
+
+      .var-2 .month-status {
+        display: block;
+        font-size: 0.8rem;
+        margin-top: 2px;
+      }
+
+      .var-2 .current-marker {
+        text-align: center;
+        margin-top: 4px;
+        color: var(--accent-700);
+        font-size: 0.7rem;
+      }
+
+      .var-2 .book-btn-full {
+        width: 100%;
+        height: 48px;
+        background: var(--accent-500);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-family: var(--font-heading);
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 8px rgba(191, 171, 37, 0.3);
+      }
+
+      .var-2 .image-container {
+        width: 100%;
+        aspect-ratio: 16 / 10;
+        border-radius: 12px;
+        overflow: hidden;
+        background: var(--grey-200);
+      }
+
+      .var-2 .image-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      /* ============================================================
+       VARIATION 3: INTEGRATED STRIP
+       ============================================================ */
+      .var-3 .sheet-content {
+        padding: 8px 16px;
+      }
+
+      .var-3 .badges-row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+        position: relative;
+      }
+
+      .var-3 .badge-integrated {
+        flex: 1;
+        min-width: 142px;
+        height: 68px;
+        border-radius: 10px;
+        padding: 8px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .var-3 .badge-integrated.open {
+        background: linear-gradient(
+          to bottom,
+          var(--positive-200) 0%,
+          rgba(110, 227, 176, 0.3) 100%
+        );
+      }
+
+      .var-3 .badge-integrated.closed {
+        background: linear-gradient(
+          to bottom,
+          var(--negative-100) 0%,
+          rgba(242, 172, 171, 0.3) 100%
+        );
+      }
+
+      .var-3 .badge-top {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 8px;
+      }
+
+      .var-3 .badge-integrated-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .var-3 .badge-integrated-icon img {
+        width: 20px;
+        height: 20px;
+      }
+
+      .var-3 .badge-integrated-name {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--accent-900);
+        flex: 1;
+      }
+
+      .var-3 .badge-integrated-capacity {
+        font-size: 0.875rem;
+        font-weight: 700;
+        color: var(--accent-900);
+      }
+
+      .var-3 .seasonal-bar {
+        display: flex;
+        gap: 1px;
+        height: 20px;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+
+      .var-3 .bar-segment {
+        flex: 1;
+        position: relative;
+      }
+
+      .var-3 .bar-segment.open {
+        background: var(--positive-400);
+      }
+
+      .var-3 .bar-segment.closed {
+        background: var(--negative-200);
+      }
+
+      .var-3 .bar-segment.current::after {
+        content: '';
+        position: absolute;
+        top: -4px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 4px;
+        height: 4px;
+        background: white;
+        border-radius: 50%;
+        box-shadow: 0 0 0 1px var(--primary-500);
+      }
+
+      .var-3 .book-btn-float {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 120px;
+        height: 32px;
+        background: var(--accent-500);
+        color: white;
+        border: none;
+        border-radius: 16px;
+        font-family: var(--font-heading);
+        font-weight: 600;
+        font-size: 0.8rem;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(191, 171, 37, 0.4);
+        z-index: 10;
+      }
+
+      /* ============================================================
+       VARIATION 4: ICON-FIRST
+       ============================================================ */
+      .var-4 .sheet-header-large {
+        text-align: center;
+        padding: 12px 16px 8px;
+      }
+
+      .var-4 .large-icon {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 8px;
+      }
+
+      .var-4 .large-icon img {
+        width: 100%;
+        height: 100%;
+      }
+
+      .var-4 .sheet-content {
+        padding: 8px 16px;
+      }
+
+      .var-4 .type-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--grey-200);
+      }
+
+      .var-4 .type-icon-large {
+        width: 48px;
+        height: 48px;
+        flex-shrink: 0;
+      }
+
+      .var-4 .type-icon-large img {
+        width: 100%;
+        height: 100%;
+      }
+
+      .var-4 .type-info {
+        flex: 1;
+        font-size: 0.875rem;
+        color: var(--grey-800);
+      }
+
+      .var-4 .type-info strong {
+        font-weight: 600;
+        color: var(--accent-900);
+      }
+
+      .var-4 .book-btn-inline {
+        width: 80px;
+        height: 40px;
+        background: transparent;
+        color: var(--accent-700);
+        border: 2px solid var(--accent-500);
+        border-radius: 8px;
+        font-family: var(--font-heading);
+        font-weight: 600;
+        font-size: 0.75rem;
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+
+      .var-4 .seasonal-gradient {
+        height: 24px;
+        border-radius: 12px;
+        margin: 12px 0;
+        position: relative;
+        background: linear-gradient(
+          to right,
+          var(--negative-200) 0%,
+          var(--negative-200) 16%,
+          var(--positive-400) 25%,
+          var(--positive-400) 75%,
+          var(--negative-200) 84%,
+          var(--negative-200) 100%
+        );
+      }
+
+      .var-4 .gradient-marker {
+        position: absolute;
+        top: -8px;
+        left: 20%;
+        width: 0;
+        height: 0;
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-bottom: 8px solid var(--accent-700);
+      }
+
+      /* ============================================================
+       VARIATION 5: SPLIT VIEW
+       ============================================================ */
+      .var-5 .sheet-content {
+        padding: 8px 16px;
+      }
+
+      .var-5 .split-container {
+        display: flex;
+        gap: 8px;
+        height: 240px;
+      }
+
+      .var-5 .split-left {
+        width: 150px;
+        border-radius: 12px;
+        overflow: hidden;
+        background: linear-gradient(
+          135deg,
+          rgba(77, 178, 134, 0.2) 0%,
+          rgba(77, 178, 134, 0.05) 100%
+        );
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        flex-shrink: 0;
+      }
+
+      .var-5 .split-left img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .var-5 .placeholder-icon {
+        width: 64px;
+        height: 64px;
+        opacity: 0.4;
+      }
+
+      .var-5 .split-right {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .var-5 .badge-narrow {
+        height: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        padding: 0 8px;
+        gap: 6px;
+      }
+
+      .var-5 .badge-narrow.open {
+        background: var(--positive-200);
+      }
+
+      .var-5 .badge-narrow.closed {
+        background: var(--negative-100);
+      }
+
+      .var-5 .badge-narrow-icon {
+        width: 24px;
+        height: 24px;
+        flex-shrink: 0;
+      }
+
+      .var-5 .badge-narrow-icon img {
+        width: 100%;
+        height: 100%;
+      }
+
+      .var-5 .badge-narrow-text {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--accent-900);
+        flex: 1;
+      }
+
+      .var-5 .badge-narrow-capacity {
+        font-size: 0.875rem;
+        font-weight: 700;
+        color: var(--accent-900);
+      }
+
+      .var-5 .seasonal-vertical {
+        flex: 1;
+        width: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        margin: 4px auto;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+
+      .var-5 .vertical-cell {
+        flex: 1;
+        position: relative;
+      }
+
+      .var-5 .vertical-cell.open {
+        background: var(--positive-400);
+      }
+
+      .var-5 .vertical-cell.closed {
+        background: var(--negative-200);
+      }
+
+      .var-5 .vertical-cell.current::before {
+        content: '';
+        position: absolute;
+        left: -3px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 3px;
+        height: 100%;
+        background: var(--accent-700);
+      }
+
+      .var-5 .book-btn-narrow {
+        width: 100%;
+        height: 40px;
+        background: var(--accent-500);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-family: var(--font-heading);
+        font-weight: 600;
+        font-size: 0.8rem;
+        cursor: pointer;
+        margin-top: auto;
+      }
+
+      /* ============================================================
+       SNAP HEIGHTS
+       ============================================================ */
+      .snap-1 {
+        height: 150px;
+      }
+      .snap-2 {
+        height: 370px;
+      }
+      .snap-3 {
+        height: calc(100% - 44px);
+      }
+
+      .var-3 .snap-2 {
+        height: 400px;
+      }
+      .var-5 .snap-2 {
+        height: 390px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-header">
+      <h1>Wodore Hut Detail - Design Variations v2</h1>
+      <p>5 distinct design approaches for mobile bottom-sheet hut details</p>
+
+      <div class="feature-notes">
+        <h3>New Features in v2:</h3>
+        <ul>
+          <li>Category type names shown in badges (German: Hütte, Biwak, etc.)</li>
+          <li>Real category icons from API (symbol_simple)</li>
+          <li>Compact seasonal strips (2 colors only, no legends)</li>
+          <li>Redesigned BOOK button (not full-width)</li>
+          <li>Category icon in header</li>
+          <li>Focus on Snap 1 & 2 compactness</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="prototypes-container">
+      <!-- ============================================================
+         VARIATION 1: HORIZONTAL EFFICIENCY
+         ============================================================ -->
+      <div class="phone-wrapper">
+        <div class="phone-label">
+          <h2>1. Horizontal Efficiency</h2>
+          <p>Ultra-compact, all data side-by-side</p>
+          <div class="rating">★★★★★ Info Density | ★★★☆☆ Readability</div>
+        </div>
+        <div class="phone-frame">
+          <div class="phone-screen">
+            <div class="map-area">
+              <div class="map-marker"></div>
+
+              <div class="snap-controls" data-variation="1">
+                <button class="snap-btn" onclick="setSnap(1, 1)">Snap 1</button>
+                <button class="snap-btn active" onclick="setSnap(1, 2)">Snap 2</button>
+                <button class="snap-btn" onclick="setSnap(1, 3)">Snap 3</button>
+              </div>
+
+              <div class="bottom-sheet var-1 snap-2" id="sheet-1">
+                <button class="close-btn">&times;</button>
+                <div class="drag-handle"></div>
+
+                <div class="sheet-header">
+                  <div class="sheet-title-row">
+                    <div style="flex: 1">
+                      <div class="sheet-title">
+                        <img
+                          src="http://localhost:8000/media/symbols/hut_GmPpPaT.svg"
+                          class="header-icon"
+                          alt="Hütte"
+                        />
+                        Schreckhornhütte SAC
+                      </div>
+                      <div class="sheet-subtitle">SAC Basel · 2530 m</div>
+                    </div>
+                    <div class="weather-icon">☀️</div>
+                  </div>
+                </div>
+
+                <div class="sheet-content">
+                  <div class="badges-strip-row">
+                    <div class="badge-compact open">
+                      <div class="badge-avatar">
+                        <img
+                          src="http://localhost:8000/media/symbols/hut_GmPpPaT.svg"
+                          alt="Hütte"
+                        />
+                      </div>
+                      <span class="badge-text">60</span>
+                    </div>
+                    <div class="badge-compact closed">
+                      <div class="badge-avatar">
+                        <img
+                          src="http://localhost:8000/media/symbols/selfhut_8QPbZdP.svg"
+                          alt="Unbewartet"
+                        />
+                      </div>
+                      <span class="badge-text">16</span>
+                    </div>
+                    <div class="seasonal-dots">
+                      <div class="month-dot closed"></div>
+                      <div class="month-dot closed"></div>
+                      <div class="month-dot closed current"></div>
+                      <div class="month-dot open"></div>
+                      <div class="month-dot open"></div>
+                      <div class="month-dot open"></div>
+                      <div class="month-dot open"></div>
+                      <div class="month-dot open"></div>
+                      <div class="month-dot open"></div>
+                      <div class="month-dot open"></div>
+                      <div class="month-dot closed"></div>
+                      <div class="month-dot closed"></div>
+                    </div>
+                  </div>
+
+                  <button class="book-btn-compact">BUCHEN →</button>
+
+                  <div
+                    style="
+                      height: 60px;
+                      background: var(--grey-200);
+                      border-radius: 8px;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      color: var(--grey-500);
+                      font-size: 0.75rem;
+                    "
+                  >
+                    Bild laden...
+                  </div>
+                </div>
+
+                <div class="action-toolbar">
+                  <button class="action-btn">📍</button>
+                  <button class="action-btn">🏠</button>
+                  <button class="action-btn">🗺️</button>
+                  <div class="action-spacer"></div>
+                  <span class="review-badge">ok</span>
+                  <button class="action-btn">👁</button>
+                  <button class="action-btn">⋮</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================
+         VARIATION 2: VERTICAL CLARITY
+         ============================================================ -->
+      <div class="phone-wrapper">
+        <div class="phone-label">
+          <h2>2. Vertical Clarity</h2>
+          <p>Stacked cards, easy to scan</p>
+          <div class="rating">★★★★★ Readability | ★★☆☆☆ Info Density</div>
+        </div>
+        <div class="phone-frame">
+          <div class="phone-screen">
+            <div class="map-area">
+              <div class="map-marker"></div>
+
+              <div class="snap-controls" data-variation="2">
+                <button class="snap-btn" onclick="setSnap(2, 1)">Snap 1</button>
+                <button class="snap-btn active" onclick="setSnap(2, 2)">Snap 2</button>
+                <button class="snap-btn" onclick="setSnap(2, 3)">Snap 3</button>
+              </div>
+
+              <div class="bottom-sheet var-2 snap-2" id="sheet-2">
+                <button class="close-btn">&times;</button>
+                <div class="drag-handle"></div>
+
+                <div class="sheet-header">
+                  <div class="sheet-title-row">
+                    <div style="flex: 1">
+                      <div class="sheet-title">
+                        <img
+                          src="http://localhost:8000/media/symbols/hut_GmPpPaT.svg"
+                          class="header-icon"
+                          alt="Hütte"
+                        />
+                        Schreckhornhütte SAC
+                      </div>
+                      <div class="sheet-subtitle">SAC Basel · 2530 m</div>
+                    </div>
+                    <div class="weather-icon">☀️</div>
+                  </div>
+                </div>
+
+                <div class="sheet-content">
+                  <div class="badge-full open">
+                    <div class="badge-icon">
+                      <img src="http://localhost:8000/media/symbols/hut_GmPpPaT.svg" alt="Hütte" />
+                    </div>
+                    <span class="badge-name">Hütte</span>
+                    <span class="badge-capacity">60 Betten</span>
+                  </div>
+
+                  <div class="badge-full closed">
+                    <div class="badge-icon">
+                      <img
+                        src="http://localhost:8000/media/symbols/selfhut_8QPbZdP.svg"
+                        alt="Unbewartet"
+                      />
+                    </div>
+                    <span class="badge-name">Winterraum</span>
+                    <span class="badge-capacity">16 Betten</span>
+                  </div>
+
+                  <div class="seasonal-strip-card">
+                    <div class="month-grid">
+                      <div class="month-cell closed">
+                        <span class="month-label">J</span>
+                        <span class="month-status">✕</span>
+                      </div>
+                      <div class="month-cell closed">
+                        <span class="month-label">F</span>
+                        <span class="month-status">✕</span>
+                      </div>
+                      <div class="month-cell closed">
+                        <span class="month-label">M</span>
+                        <span class="month-status">✕</span>
+                      </div>
+                      <div class="month-cell open">
+                        <span class="month-label">A</span>
+                        <span class="month-status">✓</span>
+                      </div>
+                      <div class="month-cell open">
+                        <span class="month-label">M</span>
+                        <span class="month-status">✓</span>
+                      </div>
+                      <div class="month-cell open">
+                        <span class="month-label">J</span>
+                        <span class="month-status">✓</span>
+                      </div>
+                      <div class="month-cell open">
+                        <span class="month-label">J</span>
+                        <span class="month-status">✓</span>
+                      </div>
+                      <div class="month-cell open">
+                        <span class="month-label">A</span>
+                        <span class="month-status">✓</span>
+                      </div>
+                      <div class="month-cell open">
+                        <span class="month-label">S</span>
+                        <span class="month-status">✓</span>
+                      </div>
+                      <div class="month-cell open">
+                        <span class="month-label">O</span>
+                        <span class="month-status">✓</span>
+                      </div>
+                      <div class="month-cell closed">
+                        <span class="month-label">N</span>
+                        <span class="month-status">✕</span>
+                      </div>
+                      <div class="month-cell closed">
+                        <span class="month-label">D</span>
+                        <span class="month-status">✕</span>
+                      </div>
+                    </div>
+                    <div class="current-marker">↑ März (aktuell)</div>
+                  </div>
+
+                  <button class="book-btn-full">JETZT BUCHEN →</button>
+
+                  <div class="image-container">
+                    <img
+                      src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=375&fit=crop&q=80"
+                      alt="Hütte"
+                    />
+                  </div>
+                </div>
+
+                <div class="action-toolbar">
+                  <button class="action-btn">📍</button>
+                  <button class="action-btn">🏠</button>
+                  <button class="action-btn">🗺️</button>
+                  <div class="action-spacer"></div>
+                  <span class="review-badge">ok</span>
+                  <button class="action-btn">👁</button>
+                  <button class="action-btn">⋮</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================
+         VARIATION 3: INTEGRATED STRIP
+         ============================================================ -->
+      <div class="phone-wrapper">
+        <div class="phone-label">
+          <h2>3. Integrated Strip</h2>
+          <p>Seasonal bar inside each badge</p>
+          <div class="rating">★★★★☆ Innovation | ★★★★☆ Clarity</div>
+        </div>
+        <div class="phone-frame">
+          <div class="phone-screen">
+            <div class="map-area">
+              <div class="map-marker"></div>
+
+              <div class="snap-controls" data-variation="3">
+                <button class="snap-btn" onclick="setSnap(3, 1)">Snap 1</button>
+                <button class="snap-btn active" onclick="setSnap(3, 2)">Snap 2</button>
+                <button class="snap-btn" onclick="setSnap(3, 3)">Snap 3</button>
+              </div>
+
+              <div class="bottom-sheet var-3 snap-2" id="sheet-3">
+                <button class="close-btn">&times;</button>
+                <div class="drag-handle"></div>
+
+                <div class="sheet-header">
+                  <div class="sheet-title-row">
+                    <div style="flex: 1">
+                      <div class="sheet-title">
+                        <img
+                          src="http://localhost:8000/media/symbols/hut_GmPpPaT.svg"
+                          class="header-icon"
+                          alt="Hütte"
+                        />
+                        Schreckhornhütte SAC
+                      </div>
+                      <div class="sheet-subtitle">SAC Basel · 2530 m</div>
+                    </div>
+                    <div class="weather-icon">☀️</div>
+                  </div>
+                </div>
+
+                <div class="sheet-content">
+                  <div class="badges-row">
+                    <div class="badge-integrated open">
+                      <div class="badge-top">
+                        <div class="badge-integrated-icon">
+                          <img
+                            src="http://localhost:8000/media/symbols/hut_GmPpPaT.svg"
+                            alt="Hütte"
+                          />
+                        </div>
+                        <span class="badge-integrated-name">Hütte</span>
+                        <span class="badge-integrated-capacity">60</span>
+                      </div>
+                      <div class="seasonal-bar">
+                        <div class="bar-segment closed"></div>
+                        <div class="bar-segment closed"></div>
+                        <div class="bar-segment closed current"></div>
+                        <div class="bar-segment open"></div>
+                        <div class="bar-segment open"></div>
+                        <div class="bar-segment open"></div>
+                        <div class="bar-segment open"></div>
+                        <div class="bar-segment open"></div>
+                        <div class="bar-segment open"></div>
+                        <div class="bar-segment open"></div>
+                        <div class="bar-segment closed"></div>
+                        <div class="bar-segment closed"></div>
+                      </div>
+                    </div>
+
+                    <div class="badge-integrated closed">
+                      <div class="badge-top">
+                        <div class="badge-integrated-icon">
+                          <img
+                            src="http://localhost:8000/media/symbols/selfhut_8QPbZdP.svg"
+                            alt="Winterraum"
+                          />
+                        </div>
+                        <span class="badge-integrated-name">Winter</span>
+                        <span class="badge-integrated-capacity">16</span>
+                      </div>
+                      <div class="seasonal-bar">
+                        <div class="bar-segment open"></div>
+                        <div class="bar-segment open"></div>
+                        <div class="bar-segment open"></div>
+                        <div class="bar-segment closed"></div>
+                        <div class="bar-segment closed"></div>
+                        <div class="bar-segment closed"></div>
+                        <div class="bar-segment closed"></div>
+                        <div class="bar-segment closed"></div>
+                        <div class="bar-segment closed"></div>
+                        <div class="bar-segment closed"></div>
+                        <div class="bar-segment open"></div>
+                        <div class="bar-segment open"></div>
+                      </div>
+                    </div>
+
+                    <button class="book-btn-float">BUCHEN</button>
+                  </div>
+
+                  <div
+                    style="
+                      width: 100%;
+                      height: 140px;
+                      background: var(--grey-200);
+                      border-radius: 12px;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      color: var(--grey-500);
+                    "
+                  >
+                    <img
+                      src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=240&fit=crop&q=80"
+                      style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px"
+                      alt="Hütte"
+                    />
+                  </div>
+                </div>
+
+                <div class="action-toolbar">
+                  <button class="action-btn">📍</button>
+                  <button class="action-btn">🏠</button>
+                  <button class="action-btn">🗺️</button>
+                  <div class="action-spacer"></div>
+                  <span class="review-badge">ok</span>
+                  <button class="action-btn">👁</button>
+                  <button class="action-btn">⋮</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================
+         VARIATION 4: ICON-FIRST
+         ============================================================ -->
+      <div class="phone-wrapper">
+        <div class="phone-label">
+          <h2>4. Icon-First</h2>
+          <p>Large icon dominates, minimal text</p>
+          <div class="rating">★★★★☆ Visual Identity | ★★★☆☆ Learning Curve</div>
+        </div>
+        <div class="phone-frame">
+          <div class="phone-screen">
+            <div class="map-area">
+              <div class="map-marker"></div>
+
+              <div class="snap-controls" data-variation="4">
+                <button class="snap-btn" onclick="setSnap(4, 1)">Snap 1</button>
+                <button class="snap-btn active" onclick="setSnap(4, 2)">Snap 2</button>
+                <button class="snap-btn" onclick="setSnap(4, 3)">Snap 3</button>
+              </div>
+
+              <div class="bottom-sheet var-4 snap-2" id="sheet-4">
+                <button class="close-btn">&times;</button>
+                <div class="drag-handle"></div>
+
+                <div class="sheet-header-large">
+                  <div class="large-icon">
+                    <img src="http://localhost:8000/media/symbols/hut_GmPpPaT.svg" alt="Hütte" />
+                  </div>
+                  <div class="sheet-title" style="justify-content: center">
+                    Schreckhornhütte SAC
+                  </div>
+                  <div class="sheet-subtitle" style="margin-left: 0; text-align: center">
+                    SAC Basel · 2530 m
+                  </div>
+                </div>
+
+                <div class="sheet-content">
+                  <div class="type-row">
+                    <div class="type-icon-large">
+                      <img src="http://localhost:8000/media/symbols/hut_GmPpPaT.svg" alt="Hütte" />
+                    </div>
+                    <div class="type-info"><strong>Hütte</strong> · 60 Betten</div>
+                    <button class="book-btn-inline">BUCH</button>
+                  </div>
+
+                  <div class="type-row">
+                    <div class="type-icon-large">
+                      <img
+                        src="http://localhost:8000/media/symbols/selfhut_8QPbZdP.svg"
+                        alt="Winterraum"
+                      />
+                    </div>
+                    <div class="type-info"><strong>Winterraum</strong> · 16 Betten</div>
+                  </div>
+
+                  <div class="seasonal-gradient">
+                    <div class="gradient-marker"></div>
+                  </div>
+
+                  <div
+                    style="
+                      width: 100%;
+                      height: 120px;
+                      background: var(--grey-200);
+                      border-radius: 12px;
+                      overflow: hidden;
+                    "
+                  >
+                    <img
+                      src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=240&fit=crop&q=80"
+                      style="width: 100%; height: 100%; object-fit: cover"
+                      alt="Hütte"
+                    />
+                  </div>
+                </div>
+
+                <div class="action-toolbar">
+                  <button class="action-btn">📍</button>
+                  <button class="action-btn">🏠</button>
+                  <button class="action-btn">🗺️</button>
+                  <div class="action-spacer"></div>
+                  <span class="review-badge">ok</span>
+                  <button class="action-btn">👁</button>
+                  <button class="action-btn">⋮</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================
+         VARIATION 5: SPLIT VIEW
+         ============================================================ -->
+      <div class="phone-wrapper">
+        <div class="phone-label">
+          <h2>5. Split View</h2>
+          <p>Image left, data right (asymmetric)</p>
+          <div class="rating">★★★★★ Image Priority | ★★☆☆☆ No-Image Fallback</div>
+        </div>
+        <div class="phone-frame">
+          <div class="phone-screen">
+            <div class="map-area">
+              <div class="map-marker"></div>
+
+              <div class="snap-controls" data-variation="5">
+                <button class="snap-btn" onclick="setSnap(5, 1)">Snap 1</button>
+                <button class="snap-btn active" onclick="setSnap(5, 2)">Snap 2</button>
+                <button class="snap-btn" onclick="setSnap(5, 3)">Snap 3</button>
+              </div>
+
+              <div class="bottom-sheet var-5 snap-2" id="sheet-5">
+                <button class="close-btn">&times;</button>
+                <div class="drag-handle"></div>
+
+                <div class="sheet-header">
+                  <div class="sheet-title-row">
+                    <div style="flex: 1">
+                      <div class="sheet-title">
+                        <img
+                          src="http://localhost:8000/media/symbols/hut_GmPpPaT.svg"
+                          class="header-icon"
+                          alt="Hütte"
+                        />
+                        Schreckhornhütte SAC
+                      </div>
+                      <div class="sheet-subtitle">SAC Basel · 2530 m</div>
+                    </div>
+                    <div class="weather-icon">☀️</div>
+                  </div>
+                </div>
+
+                <div class="sheet-content">
+                  <div class="split-container">
+                    <div class="split-left">
+                      <img
+                        src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=300&h=480&fit=crop&q=80"
+                        alt="Hütte"
+                      />
+                    </div>
+
+                    <div class="split-right">
+                      <div class="badge-narrow open">
+                        <div class="badge-narrow-icon">
+                          <img
+                            src="http://localhost:8000/media/symbols/hut_GmPpPaT.svg"
+                            alt="Hütte"
+                          />
+                        </div>
+                        <span class="badge-narrow-text">Hütte</span>
+                        <span class="badge-narrow-capacity">60</span>
+                      </div>
+
+                      <div class="badge-narrow closed">
+                        <div class="badge-narrow-icon">
+                          <img
+                            src="http://localhost:8000/media/symbols/selfhut_8QPbZdP.svg"
+                            alt="Winter"
+                          />
+                        </div>
+                        <span class="badge-narrow-text">Winter</span>
+                        <span class="badge-narrow-capacity">16</span>
+                      </div>
+
+                      <div class="seasonal-vertical">
+                        <div class="vertical-cell closed"></div>
+                        <div class="vertical-cell closed"></div>
+                        <div class="vertical-cell closed current"></div>
+                        <div class="vertical-cell open"></div>
+                        <div class="vertical-cell open"></div>
+                        <div class="vertical-cell open"></div>
+                        <div class="vertical-cell open"></div>
+                        <div class="vertical-cell open"></div>
+                        <div class="vertical-cell open"></div>
+                        <div class="vertical-cell open"></div>
+                        <div class="vertical-cell closed"></div>
+                        <div class="vertical-cell closed"></div>
+                      </div>
+
+                      <button class="book-btn-narrow">BUCHEN</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="action-toolbar">
+                  <button class="action-btn">📍</button>
+                  <button class="action-btn">🏠</button>
+                  <button class="action-btn">🗺️</button>
+                  <div class="action-spacer"></div>
+                  <span class="review-badge">ok</span>
+                  <button class="action-btn">👁</button>
+                  <button class="action-btn">⋮</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const snapHeights = {
+        1: { 1: '150px', 2: '370px', 3: 'calc(100% - 44px)' },
+        2: { 1: '150px', 2: '370px', 3: 'calc(100% - 44px)' },
+        3: { 1: '150px', 2: '400px', 3: 'calc(100% - 44px)' },
+        4: { 1: '150px', 2: '370px', 3: 'calc(100% - 44px)' },
+        5: { 1: '150px', 2: '390px', 3: 'calc(100% - 44px)' },
+      };
+
+      function setSnap(variation, snap) {
+        const sheet = document.getElementById('sheet-' + variation);
+        const controls = document.querySelector(`.snap-controls[data-variation="${variation}"]`);
+        const buttons = controls.querySelectorAll('.snap-btn');
+
+        buttons.forEach((btn, i) => {
+          btn.classList.toggle('active', i + 1 === snap);
+        });
+
+        sheet.style.height = snapHeights[variation][snap];
+
+        const content = sheet.querySelector('.sheet-content');
+        const header = sheet.querySelector('.sheet-header, .sheet-header-large');
+        const footer = sheet.querySelector('.action-toolbar');
+
+        if (snap === 1) {
+          content.style.display = 'none';
+          if (header) header.style.display = '';
+          footer.style.display = '';
+        } else {
+          content.style.display = '';
+          if (header) header.style.display = '';
+          footer.style.display = '';
+        }
+      }
+    </script>
+  </body>
+</html>

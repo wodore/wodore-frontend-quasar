@@ -4,7 +4,6 @@ import type { components as compWodore } from './wodore_v1';
 import { LoadingBar } from 'quasar';
 
 import { useAuthStore } from '@stores/auth-store';
-const authStore = useAuthStore();
 
 export type schemasWodore = compWodore['schemas'];
 
@@ -47,6 +46,7 @@ const loadingMiddleware: Middleware = {
 const authMiddleware: Middleware = {
   async onRequest({ request }) {
     // fetch token, if it doesn’t exist
+    const authStore = useAuthStore();
     const accessToken = authStore.access_token;
     if (accessToken) {
       request.headers.set('Authorization', `Bearer ${accessToken}`);

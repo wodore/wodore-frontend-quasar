@@ -4,6 +4,7 @@ export type IconsId =
   | "subject"
   | "server"
   | "question-mark"
+  | "no-bed-flat"
   | "more-vertical"
   | "message"
   | "menu"
@@ -19,6 +20,7 @@ export type IconsId =
   | "favorite-outline"
   | "eye"
   | "eye-outline"
+  | "elevation-outline"
   | "edit"
   | "edit-outline"
   | "copyright"
@@ -28,6 +30,8 @@ export type IconsId =
   | "browser"
   | "bell"
   | "bell-outline"
+  | "bed-flat"
+  | "bed-flat-outline"
   | "at"
   | "arrowhead-up"
   | "arrowhead-right"
@@ -44,6 +48,7 @@ export type IconsKey =
   | "Subject"
   | "Server"
   | "QuestionMark"
+  | "NoBedFlat"
   | "MoreVertical"
   | "Message"
   | "Menu"
@@ -59,6 +64,7 @@ export type IconsKey =
   | "FavoriteOutline"
   | "Eye"
   | "EyeOutline"
+  | "ElevationOutline"
   | "Edit"
   | "EditOutline"
   | "Copyright"
@@ -68,6 +74,8 @@ export type IconsKey =
   | "Browser"
   | "Bell"
   | "BellOutline"
+  | "BedFlat"
+  | "BedFlatOutline"
   | "At"
   | "ArrowheadUp"
   | "ArrowheadRight"
@@ -84,6 +92,7 @@ export enum Icons {
   Subject = "subject",
   Server = "server",
   QuestionMark = "question-mark",
+  NoBedFlat = "no-bed-flat",
   MoreVertical = "more-vertical",
   Message = "message",
   Menu = "menu",
@@ -99,6 +108,7 @@ export enum Icons {
   FavoriteOutline = "favorite-outline",
   Eye = "eye",
   EyeOutline = "eye-outline",
+  ElevationOutline = "elevation-outline",
   Edit = "edit",
   EditOutline = "edit-outline",
   Copyright = "copyright",
@@ -108,6 +118,8 @@ export enum Icons {
   Browser = "browser",
   Bell = "bell",
   BellOutline = "bell-outline",
+  BedFlat = "bed-flat",
+  BedFlatOutline = "bed-flat-outline",
   At = "at",
   ArrowheadUp = "arrowhead-up",
   ArrowheadRight = "arrowhead-right",
@@ -125,37 +137,41 @@ export const ICONS_CODEPOINTS: { [key in Icons]: string } = {
   [Icons.Subject]: "61699",
   [Icons.Server]: "61700",
   [Icons.QuestionMark]: "61701",
-  [Icons.MoreVertical]: "61702",
-  [Icons.Message]: "61703",
-  [Icons.Menu]: "61704",
-  [Icons.MenuArrow]: "61705",
-  [Icons.LocationQuestion]: "61706",
-  [Icons.Link]: "61707",
-  [Icons.Info]: "61708",
-  [Icons.InfoOutline]: "61709",
-  [Icons.Gift]: "61710",
-  [Icons.Filter]: "61711",
-  [Icons.FilterOutline]: "61712",
-  [Icons.Favorite]: "61713",
-  [Icons.FavoriteOutline]: "61714",
-  [Icons.Eye]: "61715",
-  [Icons.EyeOutline]: "61716",
-  [Icons.Edit]: "61717",
-  [Icons.EditOutline]: "61718",
-  [Icons.Copyright]: "61719",
-  [Icons.Close]: "61720",
-  [Icons.Checkmark]: "61721",
-  [Icons.Calendar]: "61722",
-  [Icons.Browser]: "61723",
-  [Icons.Bell]: "61724",
-  [Icons.BellOutline]: "61725",
-  [Icons.At]: "61726",
-  [Icons.ArrowheadUp]: "61727",
-  [Icons.ArrowheadRight]: "61728",
-  [Icons.ArrowheadLeft]: "61729",
-  [Icons.ArrowheadDown]: "61730",
-  [Icons.ArrowUpDown]: "61731",
-  [Icons.AlertTriangleOutline]: "61732",
-  [Icons.Add]: "61733",
-  [Icons.AddOutline]: "61734",
+  [Icons.NoBedFlat]: "61702",
+  [Icons.MoreVertical]: "61703",
+  [Icons.Message]: "61704",
+  [Icons.Menu]: "61705",
+  [Icons.MenuArrow]: "61706",
+  [Icons.LocationQuestion]: "61707",
+  [Icons.Link]: "61708",
+  [Icons.Info]: "61709",
+  [Icons.InfoOutline]: "61710",
+  [Icons.Gift]: "61711",
+  [Icons.Filter]: "61712",
+  [Icons.FilterOutline]: "61713",
+  [Icons.Favorite]: "61714",
+  [Icons.FavoriteOutline]: "61715",
+  [Icons.Eye]: "61716",
+  [Icons.EyeOutline]: "61717",
+  [Icons.ElevationOutline]: "61718",
+  [Icons.Edit]: "61719",
+  [Icons.EditOutline]: "61720",
+  [Icons.Copyright]: "61721",
+  [Icons.Close]: "61722",
+  [Icons.Checkmark]: "61723",
+  [Icons.Calendar]: "61724",
+  [Icons.Browser]: "61725",
+  [Icons.Bell]: "61726",
+  [Icons.BellOutline]: "61727",
+  [Icons.BedFlat]: "61728",
+  [Icons.BedFlatOutline]: "61729",
+  [Icons.At]: "61730",
+  [Icons.ArrowheadUp]: "61731",
+  [Icons.ArrowheadRight]: "61732",
+  [Icons.ArrowheadLeft]: "61733",
+  [Icons.ArrowheadDown]: "61734",
+  [Icons.ArrowUpDown]: "61735",
+  [Icons.AlertTriangleOutline]: "61736",
+  [Icons.Add]: "61737",
+  [Icons.AddOutline]: "61738",
 };

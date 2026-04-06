@@ -57,6 +57,8 @@
   "nov": "Nov",
   "dec": "Dec",
   "hut_type": "Hut Type",
+  "standard": "Standard",
+  "reduced": "Reduced",
   "jan": "Jan",
   "location": "Location",
   "map": {

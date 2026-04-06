@@ -88,6 +88,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/geo/places/overlays": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Overlay Categories
+         * @description Get available overlay categories for map tile filtering.
+         *
+         *     Returns root-level categories that can be used as overlay filters
+         *     in vector tile requests (via the `categories` parameter).
+         */
+        get: operations["get_overlay_categories"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/geo/places/search": {
         parameters: {
             query?: never;
@@ -784,7 +807,7 @@ export interface components {
              * Name
              * @description Author name
              */
-            name: string;
+            name?: string | null;
             /**
              * Url
              * @description Author profile URL
@@ -883,7 +906,7 @@ export interface components {
              * Id
              * @description Place database ID
              */
-            id: number;
+            id?: number | null;
             /**
              * Slug
              * @description Place slug identifier
@@ -2219,6 +2242,8 @@ export interface components {
             order?: number | null;
             /** Slug */
             slug: string;
+            /** Color */
+            color: string;
             /** Name */
             name: string | null;
             /** Symbol */
@@ -2991,6 +3016,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ImageCollectionResponse"];
+                };
+            };
+        };
+    };
+    get_overlay_categories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown[];
                 };
             };
         };

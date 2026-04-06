@@ -9,11 +9,15 @@ import { schemasWodore } from '@clients/index';
 import { useHutsStore } from '@stores/huts-store';
 import { storeToRefs } from 'pinia';
 import WdHutImageGallery from '@components/huts/WdHutImageGallery.vue';
-import WdHutTypeChip from '@components/huts/WdHutTypeChip.vue';
+// import WdHutTypeChip from '@components/huts/WdHutTypeChip.vue';
 import WdHutAvailabilities from '@components/huts/WdHutAvailabilities.vue';
-import WdHutOpenMonthly from '@components/huts/monthly/WdHutOpenMonthly.vue';
+// import WdHutOpenMonthly from '@components/huts/monthly/WdHutOpenMonthly.vue';
 import WdHutWeatherForecast from '@components/huts/WdHutWeatherForecast.vue';
 import WdTextClamp from '@components/utils/WdTextClamp.vue';
+import WdPlaceTypeBadge from '@components/content/place/WdPlaceTypeBadge.vue';
+import WdStatBox from '@components/content/WdStatBox.vue';
+import WdYearStripe from '@components/content/place/WdYearStripe.vue';
+import type { WdYearStripeRow } from '@components/content/place/WdYearStripe.vue';
 
 interface Props {
   slug: string;
@@ -47,25 +51,72 @@ const { loading: weatherLoading } = usePlaceWeather(
 );
 
 // Computed properties
-const isHutOpen = computed<schemasWodore['AnswerEnum']>(() => {
-  const currentMonth = selectedMonth.value;
-  if (!place.value?.open_monthly) return 'unknown';
-  const o = place.value.open_monthly[`month_${currentMonth}`];
-  return (o as schemasWodore['AnswerEnum']) ?? 'unknown';
-});
+// const isHutOpen = computed<schemasWodore['AnswerEnum']>(() => {
+//   const currentMonth = selectedMonth.value;
+//   if (!place.value?.open_monthly) return 'unknown';
+//   const o = place.value.open_monthly[`month_${currentMonth}`];
+//   return (o as schemasWodore['AnswerEnum']) ?? 'unknown';
+// });
+//
+// const isHutClosed = computed<'yes' | 'yesish' | 'no' | 'noish' | 'maybe' | 'unknown'>(() => {
+//   switch (isHutOpen.value) {
+//     case 'yes':
+//       return 'no';
+//     case 'yesish':
+//       return 'noish';
+//     case 'no':
+//       return 'yes';
+//     case 'noish':
+//       return 'yesish';
+//   }
+//   return isHutOpen.value;
+// });
 
-const isHutClosed = computed<'yes' | 'yesish' | 'no' | 'noish' | 'maybe' | 'unknown'>(() => {
-  switch (isHutOpen.value) {
-    case 'yes':
-      return 'no';
-    case 'yesish':
-      return 'noish';
-    case 'no':
-      return 'yes';
-    case 'noish':
-      return 'yesish';
+type AnswerEnum = schemasWodore['AnswerEnum'];
+
+const answerToPercentage: Record<AnswerEnum, number | undefined> = {
+  yes: 100,
+  yesish: 75,
+  maybe: 50,
+  noish: 25,
+  no: 0,
+  unknown: undefined,
+};
+
+const answerToPercentageInverse: Record<AnswerEnum, number | undefined> = {
+  yes: 0,
+  yesish: 25,
+  maybe: 50,
+  noish: 75,
+  no: 100,
+  unknown: undefined,
+};
+
+function getMonthAnswer(month: number): AnswerEnum {
+  if (!place.value?.open_monthly) return 'unknown';
+  const key = `month_${month.toString().padStart(2, '0')}`;
+  const o = place.value.open_monthly[key];
+  return (o as AnswerEnum) ?? 'unknown';
+}
+
+const yearStripeRows = computed<WdYearStripeRow[]>(() => {
+  const rows: WdYearStripeRow[] = [];
+  if (place.value?.type_open?.name) {
+    rows.push({
+      color: place.value.type_open.color,
+      months: Array.from({ length: 12 }, (_, i) => answerToPercentage[getMonthAnswer(i + 1)]),
+    });
   }
-  return isHutOpen.value;
+  if (place.value?.type_closed?.name) {
+    rows.push({
+      color: place.value.type_closed.color,
+      months: Array.from(
+        { length: 12 },
+        (_, i) => answerToPercentageInverse[getMonthAnswer(i + 1)]
+      ),
+    });
+  }
+  return rows;
 });
 </script>
 
@@ -97,10 +148,57 @@ const isHutClosed = computed<'yes' | 'yesish' | 'no' | 'noish' | 'maybe' | 'unkn
 
     <!-- Content -->
     <div v-else-if="place" class="q-py-md">
-      <!-- Owner -->
-      <h2 class="text-subtitle1 text-accent-900 q-ma-none q-mb-sm">
-        {{ place.owner?.name }}
-      </h2>
+      <!-- Year Stripe -->
+      <WdYearStripe
+        :rows="yearStripeRows"
+        :selected-month="selectedMonth ? parseInt(selectedMonth) : undefined"
+      />
+
+      <!-- Type Badges -->
+      <div class="row q-gutter-sm q-mb-sm">
+        <WdPlaceTypeBadge
+          v-if="place.type_open?.name"
+          :color="place.type_open.color"
+          :icon="
+            place.type_open.symbol?.detailed ? 'img:' + place.type_open.symbol.detailed : undefined
+          "
+          :label="$t('standard')"
+        >
+          {{ place.type_open.name }}
+          <template #append>
+            <WdStatBox
+              v-if="place.capacity_open != null"
+              icon="wd-bed-flat"
+              zero-icon="wd-no-bed-flat"
+              :zero="place.capacity_open === 0"
+            >
+              {{ place.capacity_open }}
+            </WdStatBox>
+          </template>
+        </WdPlaceTypeBadge>
+        <WdPlaceTypeBadge
+          v-if="place.type_closed?.name"
+          :color="place.type_closed.color"
+          :icon="
+            place.type_closed.symbol?.detailed
+              ? 'img:' + place.type_closed.symbol.detailed
+              : undefined
+          "
+          :label="$t('reduced')"
+        >
+          {{ place.type_closed.name }}
+          <template #append>
+            <WdStatBox
+              v-if="place.capacity_closed != null"
+              icon="wd-bed-flat"
+              zero-icon="wd-no-bed-flat"
+              :zero="place.capacity_closed === 0"
+            >
+              {{ place.capacity_closed }}
+            </WdStatBox>
+          </template>
+        </WdPlaceTypeBadge>
+      </div>
 
       <!-- Gallery and Type Chips -->
       <div class="row items-start q-gutter-sm">
@@ -108,43 +206,27 @@ const isHutClosed = computed<'yes' | 'yesish' | 'no' | 'noish' | 'maybe' | 'unkn
           <WdHutImageGallery :images="images" :loading="imagesLoading" :hut="place" />
         </div>
 
-        <div class="col-md-12 col-sm-4 col-4">
-          <div
-            class="row items-start justify-start q-gutter-sm"
-            :class="{
-              'q-gutter-lg': $q.screen.gt.sm,
-            }"
-          >
-            <WdHutTypeChip
-              class="shadow-0 col-md-6 col-sm-12 col-12"
-              :type="place.type_open"
-              :capacity="place.capacity_open"
-              :open="isHutOpen"
-            />
-            <WdHutTypeChip
-              class="shadow-0 col-md-6 col-sm-12 col-12"
-              :type="place.type_closed"
-              :capacity="place.capacity_closed"
-              :open="isHutClosed"
-            />
-            <!-- Elevation chip -->
-            <q-chip
-              v-if="place.elevation"
-              size="md"
-              class="bg-grey-4 q-mr-none shadow-0 col-md-6 col-sm-12 col-12"
-              style="min-width: 90px; max-width: 90px; max-height: 30px"
-            >
+        <!-- <div class="col-md-12 col-sm-4 col-4">
+          <div class="row items-start justify-start q-gutter-sm" :class="{
+            'q-gutter-lg': $q.screen.gt.sm,
+          }">
+            <WdHutTypeChip class="shadow-0 col-md-6 col-sm-12 col-12" :type="place.type_open"
+              :capacity="place.capacity_open" :open="isHutOpen" />
+            <WdHutTypeChip class="shadow-0 col-md-6 col-sm-12 col-12" :type="place.type_closed"
+              :capacity="place.capacity_closed" :open="isHutClosed" /> -->
+        <!-- Elevation chip -->
+        <!--
+            <q-chip v-if="place.elevation" size="md" class="bg-grey-4 q-mr-none shadow-0 col-md-6 col-sm-12 col-12"
+              style="min-width: 90px; max-width: 90px; max-height: 30px">
               <q-avatar class="bg-grey-5" text-color="primary-500">
                 <q-icon size="20px">
                   <IconMingcuteMountain2Fill />
                 </q-icon>
               </q-avatar>
-              <span class="text-primary-500" style="font-weight: 500; width: 28px"
-                >{{ place.elevation }} m</span
-              >
+              <span class="text-primary-500" style="font-weight: 500; width: 28px">{{ place.elevation }} m</span>
             </q-chip>
           </div>
-        </div>
+        </div> -->
       </div>
 
       <!-- Description -->
@@ -182,11 +264,9 @@ const isHutClosed = computed<'yes' | 'yesish' | 'no' | 'noish' | 'maybe' | 'unkn
       />
 
       <!-- Open Monthly -->
-      <WdHutOpenMonthly
-        :open_monthly="place.open_monthly"
-        :type_open="place.type_open"
-        :type_closed="place.type_closed"
-      />
+      <!--
+      <WdHutOpenMonthly :open_monthly="place.open_monthly" :type_open="place.type_open"
+        :type_closed="place.type_closed" /> -->
 
       <!-- Weather (lazy loaded) -->
       <div ref="weatherSection">
@@ -196,6 +276,7 @@ const isHutClosed = computed<'yes' | 'yesish' | 'no' | 'noish' | 'maybe' | 'unkn
           :longitude="place.location.lon"
           :elevation="place.elevation ?? undefined"
           :loading="weatherLoading"
+          collection="weather-icons-filled-animated"
         />
       </div>
 

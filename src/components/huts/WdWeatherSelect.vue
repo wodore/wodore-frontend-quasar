@@ -6,20 +6,41 @@ import { useMeteoStore } from '@stores/meteo-store';
 import { useHutsStore } from '@stores/huts-store';
 import { storeToRefs } from 'pinia';
 
-const props = defineProps<{
-  latitude: number;
-  longitude: number;
-  elevation?: number;
-  collection?: string;
-  targetId?: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    latitude: number;
+    longitude: number;
+    elevation?: number;
+    collection?: string;
+    targetId?: string;
+    /** Icon size in pixels (default: 48) */
+    size?: number;
+    /** When true, the drop-shadow on the icon is removed */
+    noShadow?: boolean;
+    /** When true, shows the condition text next to the icon instead of a tooltip */
+    label?: boolean;
+    /** CSS color to recolor the icon and label text (e.g. "grey-7" or "#555") */
+    color?: string;
+  }>(),
+  {
+    size: 48,
+    noShadow: false,
+    label: false,
+    color: undefined,
+  }
+);
 
 const { selectedDateOrToday } = storeToRefs(useHutsStore());
 const meteoStore = useMeteoStore();
-const { weatherCodes, weatherCodesCollection } = storeToRefs(meteoStore);
+const { weatherCodesCollection } = storeToRefs(meteoStore);
 const { t } = useI18n();
 const $q = useQuasar();
 const isMobile = computed(() => $q.platform.is.mobile);
+
+/** Whether the color prop is a raw CSS color value (not a Quasar palette name) */
+const isCssColor = computed(
+  () => props.color !== undefined && /^(#|rgb|var|hsl)/.test(props.color)
+);
 
 const quasarLang = computed(() => {
   const isoName = $q.lang?.isoName ?? 'de';
@@ -28,6 +49,9 @@ const quasarLang = computed(() => {
 const collection = computed(
   () => props.collection ?? weatherCodesCollection.value ?? 'weather-icons-filled'
 );
+
+// Local weather codes ref so this component doesn't depend on the global store state
+const localWeatherCodes = ref<Record<string, Record<string, unknown>>>({});
 
 const selectedDateObj = computed(() => {
   const parts = selectedDateOrToday.value.split('.');
@@ -53,7 +77,7 @@ const iconEntry = computed(() => {
   if (code === null || code === undefined) {
     return null;
   }
-  return weatherCodes.value[String(code)] ?? null;
+  return localWeatherCodes.value[String(code)] ?? null;
 });
 const iconUrl = computed(() => {
   if (!iconEntry.value) {
@@ -117,9 +141,14 @@ const scrollToForecast = () => {
   el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
 
-watchEffect(() => {
-  // TODO -> should be in the store!
-  meteoStore.setWeatherCodesContext(quasarLang.value, collection.value);
+// Fetch weather codes for this component's own collection (independent of the global store)
+watchEffect(async () => {
+  const codes = await meteoStore.getWeatherCodes(quasarLang.value, {
+    collection: collection.value,
+  });
+  if (codes) {
+    localWeatherCodes.value = codes;
+  }
 });
 
 watchEffect(() => {
@@ -158,11 +187,38 @@ watchEffect(() => {
 </script>
 
 <template>
-  <span v-if="canShow" class="weather-select" @click="isMobile && scrollToForecast()">
-    <q-img v-if="iconUrl" :src="iconUrl" width="48px" height="48px" fit="contain" no-spinner />
+  <span
+    v-if="canShow"
+    class="weather-select"
+    :class="{
+      [`text-${color}`]: !!color && !isCssColor,
+    }"
+    @click="isMobile && scrollToForecast()"
+  >
+    <!-- Colored mode: plain span with CSS mask + bg color -->
+    <span
+      v-if="iconUrl && color"
+      class="weather-select__mask"
+      :class="[isCssColor ? undefined : `bg-${color}`]"
+      :style="{
+        width: `${size}px`,
+        height: `${size}px`,
+        backgroundColor: isCssColor ? color : undefined,
+        WebkitMaskImage: `url(${iconUrl})`,
+        maskImage: `url(${iconUrl})`,
+      }"
+    />
+    <!-- Uncolored mode: q-icon with optional shadow -->
+    <q-icon
+      v-else-if="iconUrl"
+      :name="'img:' + iconUrl"
+      :size="`${size}px`"
+      :style="!noShadow ? 'filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25))' : undefined"
+    />
     <span v-else class="weather-select__empty"></span>
+    <span v-if="label && iconDescription" class="weather-select__label">{{ iconDescription }}</span>
     <q-tooltip
-      v-if="conditionLabel"
+      v-if="!label && conditionLabel"
       :delay="$q.platform.is.mobile ? 100 : 500"
       :hide-delay="$q.platform.is.mobile ? 800 : 200"
     >
@@ -176,20 +232,30 @@ watchEffect(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
-  margin-left: 8px;
+  gap: 4px;
   vertical-align: middle;
   cursor: pointer;
   flex-shrink: 0;
 }
 
-.weather-select__empty {
-  width: 48px;
-  height: 48px;
+.weather-select__mask {
+  display: inline-block;
+  flex-shrink: 0;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-position: center;
+  mask-position: center;
 }
 
-.weather-select :deep(img) {
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
+.weather-select__empty {
+  width: v-bind('`${size}px`');
+  height: v-bind('`${size}px`');
+}
+
+.weather-select__label {
+  font-size: 0.85em;
+  white-space: nowrap;
 }
 </style>
