@@ -15,6 +15,9 @@ import WdHutOpenMonthly from '@components/huts/monthly/WdHutOpenMonthly.vue';
 import WdHutWeatherForecast from '@components/huts/WdHutWeatherForecast.vue';
 import WdTextClamp from '@components/utils/WdTextClamp.vue';
 import WdPlaceTypeBadge from '@components/content/place/WdPlaceTypeBadge.vue';
+import WdStatBox from '@components/content/WdStatBox.vue';
+import WdYearStripe from '@components/content/place/WdYearStripe.vue';
+import type { WdYearStripeRow } from '@components/content/place/WdYearStripe.vue';
 
 interface Props {
   slug: string;
@@ -68,6 +71,53 @@ const isHutClosed = computed<'yes' | 'yesish' | 'no' | 'noish' | 'maybe' | 'unkn
   }
   return isHutOpen.value;
 });
+
+type AnswerEnum = schemasWodore['AnswerEnum'];
+
+const answerToPercentage: Record<AnswerEnum, number | undefined> = {
+  yes: 100,
+  yesish: 75,
+  maybe: 50,
+  noish: 25,
+  no: 0,
+  unknown: undefined,
+};
+
+const answerToPercentageInverse: Record<AnswerEnum, number | undefined> = {
+  yes: 0,
+  yesish: 25,
+  maybe: 50,
+  noish: 75,
+  no: 100,
+  unknown: undefined,
+};
+
+function getMonthAnswer(month: number): AnswerEnum {
+  if (!place.value?.open_monthly) return 'unknown';
+  const key = `month_${month.toString().padStart(2, '0')}`;
+  const o = place.value.open_monthly[key];
+  return (o as AnswerEnum) ?? 'unknown';
+}
+
+const yearStripeRows = computed<WdYearStripeRow[]>(() => {
+  const rows: WdYearStripeRow[] = [];
+  if (place.value?.type_open?.name) {
+    rows.push({
+      color: place.value.type_open.color,
+      months: Array.from({ length: 12 }, (_, i) => answerToPercentage[getMonthAnswer(i + 1)]),
+    });
+  }
+  if (place.value?.type_closed?.name) {
+    rows.push({
+      color: place.value.type_closed.color,
+      months: Array.from(
+        { length: 12 },
+        (_, i) => answerToPercentageInverse[getMonthAnswer(i + 1)]
+      ),
+    });
+  }
+  return rows;
+});
 </script>
 
 <style scoped lang="scss">
@@ -98,6 +148,12 @@ const isHutClosed = computed<'yes' | 'yesish' | 'no' | 'noish' | 'maybe' | 'unkn
 
     <!-- Content -->
     <div v-else-if="place" class="q-py-md">
+      <!-- Year Stripe -->
+      <WdYearStripe
+        :rows="yearStripeRows"
+        :selected-month="selectedMonth ? parseInt(selectedMonth) : undefined"
+      />
+
       <!-- Type Badges -->
       <div class="row q-gutter-sm q-mb-sm">
         <WdPlaceTypeBadge
@@ -107,9 +163,18 @@ const isHutClosed = computed<'yes' | 'yesish' | 'no' | 'noish' | 'maybe' | 'unkn
             place.type_open.symbol?.detailed ? 'img:' + place.type_open.symbol.detailed : undefined
           "
           :label="$t('standard')"
-          :stat="place.capacity_open ?? undefined"
         >
           {{ place.type_open.name }}
+          <template #append>
+            <WdStatBox
+              v-if="place.capacity_open != null"
+              icon="wd-bed-flat"
+              zero-icon="wd-no-bed-flat"
+              :zero="place.capacity_open === 0"
+            >
+              {{ place.capacity_open }}
+            </WdStatBox>
+          </template>
         </WdPlaceTypeBadge>
         <WdPlaceTypeBadge
           v-if="place.type_closed?.name"
@@ -120,9 +185,18 @@ const isHutClosed = computed<'yes' | 'yesish' | 'no' | 'noish' | 'maybe' | 'unkn
               : undefined
           "
           :label="$t('reduced')"
-          :stat="place.capacity_closed ?? undefined"
         >
           {{ place.type_closed.name }}
+          <template #append>
+            <WdStatBox
+              v-if="place.capacity_closed != null"
+              icon="wd-bed-flat"
+              zero-icon="wd-no-bed-flat"
+              :zero="place.capacity_closed === 0"
+            >
+              {{ place.capacity_closed }}
+            </WdStatBox>
+          </template>
         </WdPlaceTypeBadge>
       </div>
 

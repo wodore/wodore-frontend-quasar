@@ -6,15 +6,12 @@ interface Props {
   bgColor?: string;
   icon?: string;
   label?: string;
-  stat?: string | number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   color: '#346751',
   bgColor: undefined,
 });
-
-const isZero = computed(() => props.stat === 0 || props.stat === '0');
 
 const bgStyle = computed(() => {
   const hex = props.color;
@@ -39,14 +36,7 @@ const bgStyle = computed(() => {
         <slot />
       </div>
     </div>
-    <div v-if="stat != null" class="wd-info-badge__stat">
-      <q-icon
-        :name="isZero ? 'wd-no-bed-flat' : 'wd-bed-flat'"
-        :size="isZero ? '16px' : '16px'"
-        class="wd-info-badge__stat-icon"
-      />
-      <span v-if="!isZero" class="wd-info-badge__stat-value">{{ stat }}</span>
-    </div>
+    <slot name="append" />
   </div>
 </template>
 
@@ -86,29 +76,5 @@ const bgStyle = computed(() => {
   color: #346751;
   font-size: 0.8rem;
   line-height: 1.2;
-}
-
-.wd-info-badge__stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex-shrink: 0;
-  min-width: 32px;
-  padding: 2px 6px;
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 4px;
-  gap: 0;
-}
-
-.wd-info-badge__stat-value {
-  font-size: 0.8rem;
-  font-weight: 700;
-  line-height: 1.1;
-  color: #346751;
-  font-variant-numeric: tabular-nums;
-}
-
-.wd-info-badge__stat-icon {
-  color: #777;
 }
 </style>

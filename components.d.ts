@@ -81,6 +81,7 @@ declare module 'vue' {
     WdSearchResultEntry: typeof import('./src/components/search/WdSearchResultEntry.vue')['default']
     WdSelectDate: typeof import('./src/components/WdSelectDate.vue')['default']
     WdSourceButtons: typeof import('./src/components/huts/WdSourceButtons.vue')['default']
+    WdStatBox: typeof import('./src/components/content/WdStatBox.vue')['default']
     WdStripeBadge: typeof import('./src/components/support/WdStripeBadge.vue')['default']
     WdStripeLink: typeof import('./src/components/support/WdStripeLink.vue')['default']
     WdSupportButton: typeof import('./src/components/support/WdSupportButton.vue')['default']
@@ -92,6 +93,7 @@ declare module 'vue' {
     WdVersionsPanel: typeof import('./src/components/version/WdVersionsPanel.vue')['default']
     WdVersionTag: typeof import('./src/components/version/WdVersionTag.vue')['default']
     WdWeatherSelect: typeof import('./src/components/huts/WdWeatherSelect.vue')['default']
+    WdYearStripe: typeof import('./src/components/content/place/WdYearStripe.vue')['default']
     WodoreLogo: typeof import('./src/components/wodore/WodoreLogo.vue')['default']
   }
 }
