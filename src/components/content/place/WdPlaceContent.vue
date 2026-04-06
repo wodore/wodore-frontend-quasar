@@ -14,6 +14,7 @@ import WdHutAvailabilities from '@components/huts/WdHutAvailabilities.vue';
 import WdHutOpenMonthly from '@components/huts/monthly/WdHutOpenMonthly.vue';
 import WdHutWeatherForecast from '@components/huts/WdHutWeatherForecast.vue';
 import WdTextClamp from '@components/utils/WdTextClamp.vue';
+import WdPlaceTypeBadge from '@components/content/place/WdPlaceTypeBadge.vue';
 
 interface Props {
   slug: string;
@@ -97,6 +98,34 @@ const isHutClosed = computed<'yes' | 'yesish' | 'no' | 'noish' | 'maybe' | 'unkn
 
     <!-- Content -->
     <div v-else-if="place" class="q-py-md">
+      <!-- Type Badges -->
+      <div class="row q-gutter-sm q-mb-sm">
+        <WdPlaceTypeBadge
+          v-if="place.type_open?.name"
+          :color="place.type_open.color"
+          :icon="
+            place.type_open.symbol?.detailed ? 'img:' + place.type_open.symbol.detailed : undefined
+          "
+          :label="$t('standard')"
+          :stat="place.capacity_open ?? undefined"
+        >
+          {{ place.type_open.name }}
+        </WdPlaceTypeBadge>
+        <WdPlaceTypeBadge
+          v-if="place.type_closed?.name"
+          :color="place.type_closed.color"
+          :icon="
+            place.type_closed.symbol?.detailed
+              ? 'img:' + place.type_closed.symbol.detailed
+              : undefined
+          "
+          :label="$t('reduced')"
+          :stat="place.capacity_closed ?? undefined"
+        >
+          {{ place.type_closed.name }}
+        </WdPlaceTypeBadge>
+      </div>
+
       <!-- Gallery and Type Chips -->
       <div class="row items-start q-gutter-sm">
         <div class="col-md-12 col-sm-7 col-7">

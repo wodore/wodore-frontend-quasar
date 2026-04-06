@@ -77,6 +77,7 @@ declare module 'vue' {
     WdPlaceSearchDialog: typeof import('./src/components/search/WdPlaceSearchDialog.vue')['default']
     WdPlaceSearchMenu: typeof import('./src/components/search/WdPlaceSearchMenu.vue')['default']
     WdPlaceTitle: typeof import('./src/components/content/place/WdPlaceTitle.vue')['default']
+    WdPlaceTypeBadge: typeof import('./src/components/content/place/WdPlaceTypeBadge.vue')['default']
     WdSearchResultEntry: typeof import('./src/components/search/WdSearchResultEntry.vue')['default']
     WdSelectDate: typeof import('./src/components/WdSelectDate.vue')['default']
     WdSourceButtons: typeof import('./src/components/huts/WdSourceButtons.vue')['default']

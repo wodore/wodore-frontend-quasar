@@ -65,6 +65,8 @@
   "nov": "Nov",
   "dec": "Dez",
   "hut_type": "Hüttenart",
+  "standard": "Standard",
+  "reduced": "Reduziert",
   "jan": "Jan",
   "location": "Lage",
   "map": {
