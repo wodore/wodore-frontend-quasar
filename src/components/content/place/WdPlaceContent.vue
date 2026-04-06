@@ -9,9 +9,9 @@ import { schemasWodore } from '@clients/index';
 import { useHutsStore } from '@stores/huts-store';
 import { storeToRefs } from 'pinia';
 import WdHutImageGallery from '@components/huts/WdHutImageGallery.vue';
-import WdHutTypeChip from '@components/huts/WdHutTypeChip.vue';
+// import WdHutTypeChip from '@components/huts/WdHutTypeChip.vue';
 import WdHutAvailabilities from '@components/huts/WdHutAvailabilities.vue';
-import WdHutOpenMonthly from '@components/huts/monthly/WdHutOpenMonthly.vue';
+// import WdHutOpenMonthly from '@components/huts/monthly/WdHutOpenMonthly.vue';
 import WdHutWeatherForecast from '@components/huts/WdHutWeatherForecast.vue';
 import WdTextClamp from '@components/utils/WdTextClamp.vue';
 import WdPlaceTypeBadge from '@components/content/place/WdPlaceTypeBadge.vue';
@@ -51,26 +51,26 @@ const { loading: weatherLoading } = usePlaceWeather(
 );
 
 // Computed properties
-const isHutOpen = computed<schemasWodore['AnswerEnum']>(() => {
-  const currentMonth = selectedMonth.value;
-  if (!place.value?.open_monthly) return 'unknown';
-  const o = place.value.open_monthly[`month_${currentMonth}`];
-  return (o as schemasWodore['AnswerEnum']) ?? 'unknown';
-});
-
-const isHutClosed = computed<'yes' | 'yesish' | 'no' | 'noish' | 'maybe' | 'unknown'>(() => {
-  switch (isHutOpen.value) {
-    case 'yes':
-      return 'no';
-    case 'yesish':
-      return 'noish';
-    case 'no':
-      return 'yes';
-    case 'noish':
-      return 'yesish';
-  }
-  return isHutOpen.value;
-});
+// const isHutOpen = computed<schemasWodore['AnswerEnum']>(() => {
+//   const currentMonth = selectedMonth.value;
+//   if (!place.value?.open_monthly) return 'unknown';
+//   const o = place.value.open_monthly[`month_${currentMonth}`];
+//   return (o as schemasWodore['AnswerEnum']) ?? 'unknown';
+// });
+//
+// const isHutClosed = computed<'yes' | 'yesish' | 'no' | 'noish' | 'maybe' | 'unknown'>(() => {
+//   switch (isHutOpen.value) {
+//     case 'yes':
+//       return 'no';
+//     case 'yesish':
+//       return 'noish';
+//     case 'no':
+//       return 'yes';
+//     case 'noish':
+//       return 'yesish';
+//   }
+//   return isHutOpen.value;
+// });
 
 type AnswerEnum = schemasWodore['AnswerEnum'];
 
@@ -206,43 +206,27 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
           <WdHutImageGallery :images="images" :loading="imagesLoading" :hut="place" />
         </div>
 
-        <div class="col-md-12 col-sm-4 col-4">
-          <div
-            class="row items-start justify-start q-gutter-sm"
-            :class="{
-              'q-gutter-lg': $q.screen.gt.sm,
-            }"
-          >
-            <WdHutTypeChip
-              class="shadow-0 col-md-6 col-sm-12 col-12"
-              :type="place.type_open"
-              :capacity="place.capacity_open"
-              :open="isHutOpen"
-            />
-            <WdHutTypeChip
-              class="shadow-0 col-md-6 col-sm-12 col-12"
-              :type="place.type_closed"
-              :capacity="place.capacity_closed"
-              :open="isHutClosed"
-            />
-            <!-- Elevation chip -->
-            <q-chip
-              v-if="place.elevation"
-              size="md"
-              class="bg-grey-4 q-mr-none shadow-0 col-md-6 col-sm-12 col-12"
-              style="min-width: 90px; max-width: 90px; max-height: 30px"
-            >
+        <!-- <div class="col-md-12 col-sm-4 col-4">
+          <div class="row items-start justify-start q-gutter-sm" :class="{
+            'q-gutter-lg': $q.screen.gt.sm,
+          }">
+            <WdHutTypeChip class="shadow-0 col-md-6 col-sm-12 col-12" :type="place.type_open"
+              :capacity="place.capacity_open" :open="isHutOpen" />
+            <WdHutTypeChip class="shadow-0 col-md-6 col-sm-12 col-12" :type="place.type_closed"
+              :capacity="place.capacity_closed" :open="isHutClosed" /> -->
+        <!-- Elevation chip -->
+        <!--
+            <q-chip v-if="place.elevation" size="md" class="bg-grey-4 q-mr-none shadow-0 col-md-6 col-sm-12 col-12"
+              style="min-width: 90px; max-width: 90px; max-height: 30px">
               <q-avatar class="bg-grey-5" text-color="primary-500">
                 <q-icon size="20px">
                   <IconMingcuteMountain2Fill />
                 </q-icon>
               </q-avatar>
-              <span class="text-primary-500" style="font-weight: 500; width: 28px"
-                >{{ place.elevation }} m</span
-              >
+              <span class="text-primary-500" style="font-weight: 500; width: 28px">{{ place.elevation }} m</span>
             </q-chip>
           </div>
-        </div>
+        </div> -->
       </div>
 
       <!-- Description -->
@@ -280,11 +264,9 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
       />
 
       <!-- Open Monthly -->
-      <WdHutOpenMonthly
-        :open_monthly="place.open_monthly"
-        :type_open="place.type_open"
-        :type_closed="place.type_closed"
-      />
+      <!--
+      <WdHutOpenMonthly :open_monthly="place.open_monthly" :type_open="place.type_open"
+        :type_closed="place.type_closed" /> -->
 
       <!-- Weather (lazy loaded) -->
       <div ref="weatherSection">

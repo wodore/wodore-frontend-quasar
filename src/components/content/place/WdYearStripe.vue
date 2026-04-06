@@ -68,24 +68,27 @@ function cellStyle(color: string | undefined, value: number | undefined) {
   if (value === undefined || !color) {
     return {};
   }
-  const light = lighten(color, 0.2);
-  const lightEmpty = lighten(color, 0.7);
+  // Background gets progressively darker with higher value
+  // 0% → very light (0.7 lightened), 100% → full color
+  const lightAmount = 0.7 - (value / 100) * 0.7; // 0.7 at 0%, 0 at 100%
+  const bg = lighten(color, Math.max(0, lightAmount));
   if (value === 0) {
-    return { backgroundColor: lightEmpty };
+    return { backgroundColor: bg };
   }
   if (value >= 100) {
     return { backgroundColor: color };
   }
-  // Cap at 70% so stripes don't get too thick at 75%
+  // Stripes: proportional thickness, use lightened color softened to 85%
+  const stripeColor = lighten(color, lightAmount * 0.5);
   const capped = Math.min(value, 70);
   const stripePx = Math.round((capped / 100) * 10);
   const gapPx = 10 - stripePx;
   return {
-    backgroundColor: light,
+    backgroundColor: bg,
     backgroundImage: `repeating-linear-gradient(
       -45deg,
-      ${color} 0,
-      ${color} ${stripePx}px,
+      ${stripeColor} 0,
+      ${stripeColor} ${stripePx}px,
       transparent ${stripePx}px,
       transparent ${stripePx + gapPx}px
     )`,
