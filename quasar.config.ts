@@ -143,6 +143,7 @@ export default configure(ctx => {
         WODORE_OICD_RESOURCE_ID: process.env.WODORE_OICD_RESOURCE_ID,
         WODORE_MAPTILER_API_KEY: process.env.WODORE_MAPTILER_API_KEY,
         WODORE_TILE_SERVER_URL: process.env.WODORE_TILE_SERVER_URL,
+        WODORE_OFFICIAL_URL: process.env.WODORE_OFFICIAL_URL,
       },
       // rawDefine: {}
       // ignorePublicFolder: true,
