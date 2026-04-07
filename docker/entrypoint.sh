@@ -22,7 +22,7 @@ if [ "$CONFIG_FILE" != "default" ]; then
   rm -f "/etc/nginx/http.d/default.conf"
 fi
 # Staging: block search engine indexing
-if [ "${WODORE_ENV}" = "staging" ]; then
+if [ "${WODORE_ENV}" != "production" ]; then
   printf 'User-agent: *\nDisallow: /\n' > /usr/share/nginx/html/robots.txt
   # Uncomment all directives below "# Staging" sections
   sed -i '/# Staging/{n;s/^    # //}' "/etc/nginx/http.d/${CONFIG_FILE}.conf"
