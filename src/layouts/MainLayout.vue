@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watchEffect, markRaw, nextTick, type Component } from 'vue';
+import { ref, computed, watchEffect, markRaw, nextTick, onMounted, type Component } from 'vue';
 import { defineAsyncComponent } from 'vue';
 import { useQuasar } from 'quasar';
 import { useRoute, useRouter } from 'vue-router';
@@ -137,7 +137,9 @@ function closeContent() {
 
 const appTitle = process.env.WODORE_APP_NAME || 'Wodore';
 const appEnv = process.env.WODORE_ENV || 'production';
+const officialUrl = process.env.WODORE_OFFICIAL_URL || '';
 const isStaging = computed(() => appEnv === 'staging');
+const isNotProduction = computed(() => appEnv !== 'production');
 const metaData = {
   title: appTitle,
   meta: {
@@ -164,6 +166,23 @@ useMeta(() => {
       },
     },
   };
+});
+
+onMounted(() => {
+  if (isNotProduction.value && officialUrl) {
+    $q.notify({
+      type: 'warning',
+      color: 'negative-800',
+      textColor: 'white',
+      message: `This is a ${appEnv} environment.`,
+      html: true,
+      caption: `<a href="${officialUrl}" target="_blank" rel="noopener" style="color: inherit; text-decoration: underline">Goto production version.</a>`,
+      timeout: 10000,
+      progress: true,
+      position: 'bottom',
+      actions: [{ icon: 'wd-close', color: 'white', dense: true, round: true }],
+    });
+  }
 });
 </script>
 <style lang="scss">
