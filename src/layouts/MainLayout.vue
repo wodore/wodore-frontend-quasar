@@ -169,7 +169,7 @@ useMeta(() => {
 });
 
 onMounted(() => {
-  if (isNotProduction.value && officialUrl) {
+  if (isNotProduction.value && officialUrl && !process.env.DEV) {
     $q.notify({
       type: 'warning',
       color: 'negative-800',
