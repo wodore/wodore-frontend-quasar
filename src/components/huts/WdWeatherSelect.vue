@@ -5,6 +5,7 @@ import { useQuasar } from 'quasar';
 import { useMeteoStore } from '@stores/meteo-store';
 import { useHutsStore } from '@stores/huts-store';
 import { storeToRefs } from 'pinia';
+import WdIcon from 'components/utils/WdIcon.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -36,11 +37,6 @@ const { weatherCodesCollection } = storeToRefs(meteoStore);
 const { t } = useI18n();
 const $q = useQuasar();
 const isMobile = computed(() => $q.platform.is.mobile);
-
-/** Whether the color prop is a raw CSS color value (not a Quasar palette name) */
-const isCssColor = computed(
-  () => props.color !== undefined && /^(#|rgb|var|hsl)/.test(props.color)
-);
 
 const quasarLang = computed(() => {
   const isoName = $q.lang?.isoName ?? 'de';
@@ -187,32 +183,12 @@ watchEffect(() => {
 </script>
 
 <template>
-  <span
-    v-if="canShow"
-    class="weather-select"
-    :class="{
-      [`text-${color}`]: !!color && !isCssColor,
-    }"
-    @click="isMobile && scrollToForecast()"
-  >
-    <!-- Colored mode: plain span with CSS mask + bg color -->
-    <span
-      v-if="iconUrl && color"
-      class="weather-select__mask"
-      :class="[isCssColor ? undefined : `bg-${color}`]"
-      :style="{
-        width: `${size}px`,
-        height: `${size}px`,
-        backgroundColor: isCssColor ? color : undefined,
-        WebkitMaskImage: `url(${iconUrl})`,
-        maskImage: `url(${iconUrl})`,
-      }"
-    />
-    <!-- Uncolored mode: q-icon with optional shadow -->
-    <q-icon
-      v-else-if="iconUrl"
-      :name="'img:' + iconUrl"
+  <span v-if="canShow" class="weather-select" @click="isMobile && scrollToForecast()">
+    <WdIcon
+      v-if="iconUrl"
+      :name="iconUrl"
       :size="`${size}px`"
+      :color="color"
       :style="!noShadow ? 'filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25))' : undefined"
     />
     <span v-else class="weather-select__empty"></span>
@@ -238,24 +214,12 @@ watchEffect(() => {
   flex-shrink: 0;
 }
 
-.weather-select__mask {
-  display: inline-block;
-  flex-shrink: 0;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  -webkit-mask-position: center;
-  mask-position: center;
-}
-
 .weather-select__empty {
   width: v-bind('`${size}px`');
   height: v-bind('`${size}px`');
 }
 
 .weather-select__label {
-  font-size: 0.85em;
   white-space: nowrap;
 }
 </style>

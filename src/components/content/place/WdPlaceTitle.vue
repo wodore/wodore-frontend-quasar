@@ -42,12 +42,13 @@ const { place } = usePlace(computed(() => props.slug));
             v-if="place.location"
             :latitude="place.location.lat"
             :longitude="place.location.lon"
-            collection="weather-icons-outlined"
+            collection="weather-icons-outlined-mono"
             :elevation="place.elevation ?? undefined"
             :size="18"
             color="accent-900"
             :label="true"
             class="wd-place-title__weather"
+            no-shadow
           />
         </div>
 

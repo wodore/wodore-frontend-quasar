@@ -27,7 +27,7 @@ const bgStyle = computed(() => {
 
 <template>
   <div class="wd-info-badge" :style="bgStyle">
-    <q-icon v-if="icon" :name="icon" size="22px" class="wd-info-badge__icon" />
+    <q-icon v-if="icon" :name="icon" size="24px" class="wd-info-badge__icon" />
     <div class="wd-info-badge__text">
       <div v-if="label" class="wd-info-badge__label">
         {{ label }}
@@ -45,9 +45,9 @@ const bgStyle = computed(() => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 8px 4px 6px;
+  padding: 4px 4px 4px 6px;
   border: 1px solid rgba(0, 0, 0, 0.07);
-  border-left: 4px solid;
+  border-left: 6px solid;
   border-radius: 6px;
 }
 
