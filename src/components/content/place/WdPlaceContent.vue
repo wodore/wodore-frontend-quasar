@@ -147,7 +147,7 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
     </div>
 
     <!-- Content -->
-    <div v-else-if="place" class="q-py-md">
+    <div v-else-if="place" class="q-pb-md">
       <!-- Year Stripe -->
       <WdYearStripe
         :rows="yearStripeRows"
@@ -155,7 +155,7 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
       />
 
       <!-- Type Badges -->
-      <div class="row q-gutter-sm q-mb-sm">
+      <div class="row q-gutter-sm q-mb-md">
         <WdPlaceTypeBadge
           v-if="place.type_open?.name"
           :color="place.type_open.color"
