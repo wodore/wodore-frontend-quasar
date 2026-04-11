@@ -226,6 +226,21 @@ onMounted(() => {
   min-height: 100%;
   height: 100%;
 }
+
+// Prevent wide content (e.g. Swiper sliders) from pushing the
+// content drawer wider than its configured :width prop.
+//
+// Quasar's QDrawer sets inline width but no max-width or overflow.
+// Wide children with large intrinsic min-width can push the aside
+// element wider. These rules enforce containment on the drawer itself
+// and its content wrapper.
+aside.content-drawer {
+  overflow: hidden !important;
+
+  .q-drawer__content {
+    overflow-x: hidden !important;
+  }
+}
 </style>
 <template>
   <WdAnalytics />
@@ -304,12 +319,12 @@ onMounted(() => {
       side="right"
       :width="$q.screen.gt.md ? 460 : 380"
       :breakpoint="0"
-      class="shadow-2"
+      class="shadow-2 content-drawer"
     >
       <q-layout
         view="lhh LpR lff"
         container
-        class="no-background bg-grey-3"
+        class="no-background bg-grey-3 overflow-hidden"
         :style="`height: ${$q.screen.gt.sm ? 'calc(100% - 80px)' : '100%'}`"
       >
         <!-- Close button -->
@@ -353,10 +368,12 @@ onMounted(() => {
               opacity: '0.5',
               borderRadius: '8px 0 0 8px',
             }"
-            style="height: 100%"
             class="fit"
           >
-            <q-page class="q-px-md">
+            <q-page
+              class="q-px-md"
+              :style="{ height: '100%', maxWidth: ($q.screen.gt.md ? 460 : 380) + 'px' }"
+            >
               <router-view name="content" v-slot="{ Component, route: contentRoute }">
                 <transition name="fade" mode="out-in">
                   <component :is="Component" :key="contentRoute.path" />

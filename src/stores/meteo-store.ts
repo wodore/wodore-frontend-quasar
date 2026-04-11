@@ -33,6 +33,7 @@ export interface WeatherWindowSummary {
   gust_max: number | null;
   sunshine_sum: number | null;
   rain_sum: number | null;
+  snowfall_sum: number | null;
   model: string | null;
 }
 
@@ -41,6 +42,7 @@ interface HourlyData {
   temperature_2m: number[];
   weather_code: number[];
   rain: number[];
+  snowfall: number[];
   wind_speed_10m: number[];
   wind_gusts_10m: number[];
   is_day: number[];
@@ -57,6 +59,14 @@ interface WeatherCodeEntry {
   symbol_night?: string;
   [key: string]: unknown;
 }
+
+interface CachedWeatherCodes {
+  storedAt: number;
+  data: Record<string, WeatherCodeEntry>;
+}
+
+const WEATHER_CODES_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
 const roundToStep = (value: number, step: number) => Math.round(value / step) * step;
 
 const formatDateKey = (value: Date) => formatDate(value, 'YYYY-MM-DD');
@@ -110,6 +120,7 @@ const summarizeDaily = (
       winds: number[];
       gusts: number[];
       rains: number[];
+      snowfalls: number[];
       sunshines: number[];
       codes: number[];
       isDayCount: number;
@@ -129,6 +140,7 @@ const summarizeDaily = (
         winds: [],
         gusts: [],
         rains: [],
+        snowfalls: [],
         sunshines: [],
         codes: [],
         isDayCount: 0,
@@ -140,18 +152,34 @@ const summarizeDaily = (
     const wind = hourly.wind_speed_10m[idx];
     const gust = hourly.wind_gusts_10m[idx];
     const rain = hourly.rain[idx];
+    const snow = hourly.snowfall[idx];
     const sunshine = hourly.sunshine_duration[idx];
     const code = hourly.weather_code[idx];
     if (Number.isFinite(temp)) bucket.temps.push(temp);
     if (Number.isFinite(wind)) bucket.winds.push(wind);
     if (Number.isFinite(gust)) bucket.gusts.push(gust);
     if (Number.isFinite(rain)) bucket.rains.push(rain);
+    if (Number.isFinite(snow)) bucket.snowfalls.push(snow);
     if (Number.isFinite(sunshine)) bucket.sunshines.push(sunshine);
     if (Number.isFinite(code)) bucket.codes.push(code);
     if (hourly.is_day[idx] === 1) {
       bucket.isDayCount += 1;
     }
     bucket.totalCount += 1;
+  });
+
+  // Build full-day (00:00-23:59) precipitation sums
+  const fullDayPrecip = new Map<string, { rain: number; snowfall: number }>();
+  hourly.time.forEach((time, idx) => {
+    const dateKey = formatDateKey(time);
+    if (!fullDayPrecip.has(dateKey)) {
+      fullDayPrecip.set(dateKey, { rain: 0, snowfall: 0 });
+    }
+    const bucket = fullDayPrecip.get(dateKey)!;
+    const rain = hourly.rain[idx];
+    const snow = hourly.snowfall[idx];
+    if (Number.isFinite(rain)) bucket.rain += rain;
+    if (Number.isFinite(snow)) bucket.snowfall += snow;
   });
 
   // if (grouped.size === 0 && hourly.time.length > 0) {
@@ -173,13 +201,15 @@ const summarizeDaily = (
     const windMin = bucket.winds.length > 0 ? Math.min(...bucket.winds) : null;
     const windMax = bucket.winds.length > 0 ? Math.max(...bucket.winds) : null;
     const gustMax = bucket.gusts.length > 0 ? Math.max(...bucket.gusts) : null;
-    const rainSum =
-      bucket.rains.length > 0 ? bucket.rains.reduce((sum, value) => sum + value, 0) : null;
     const sunshineSum =
       bucket.sunshines.length > 0 ? bucket.sunshines.reduce((sum, value) => sum + value, 0) : null;
     const weatherCode = summarizeWeatherCode(bucket.codes, minOccurrences);
     const isDayRatio = bucket.totalCount > 0 ? bucket.isDayCount / bucket.totalCount : 0;
     const isDayMajority = bucket.totalCount > 0 ? isDayRatio >= 0.5 : null;
+    // Use full-day precipitation (not just time window)
+    const fullDay = fullDayPrecip.get(dateKey);
+    const rainSum = fullDay ? (fullDay.rain > 0 ? fullDay.rain : null) : null;
+    const snowfallSum = fullDay ? (fullDay.snowfall > 0 ? fullDay.snowfall : null) : null;
     summaries[dateKey] = {
       weather_code: weatherCode,
       is_day_majority: isDayMajority,
@@ -190,6 +220,7 @@ const summarizeDaily = (
       gust_max: gustMax,
       sunshine_sum: sunshineSum,
       rain_sum: rainSum,
+      snowfall_sum: snowfallSum,
     };
   });
   return summaries;
@@ -234,6 +265,37 @@ export const useMeteoStore = defineStore('meteo', () => {
     return data as Record<string, WeatherCodeEntry>;
   };
 
+  /** Parse localStorage value, handling both old (raw data) and new (envelope) formats */
+  const parseCachedWeatherCodes = (raw: string): CachedWeatherCodes | null => {
+    try {
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      // New envelope format
+      if (typeof parsed.storedAt === 'number' && parsed.data && typeof parsed.data === 'object') {
+        return parsed as unknown as CachedWeatherCodes;
+      }
+      // Old format — wrap it so we can still use the data but flag it as stale
+      return { storedAt: 0, data: parsed as unknown as Record<string, WeatherCodeEntry> };
+    } catch {
+      return null;
+    }
+  };
+
+  /** Background refresh: fetch and update cache without blocking callers */
+  const refreshWeatherCodesCache = async (lang: string, collection: string, key: string) => {
+    if (weatherCodesInFlight.value.has(key)) {
+      return;
+    }
+    weatherCodesInFlight.value.add(key);
+    const data = await fetchWeatherCodes(lang, collection);
+    if (data) {
+      weatherCodesCache.value[key] = data;
+      weatherCodes.value = data;
+      const envelope: CachedWeatherCodes = { storedAt: Date.now(), data };
+      localStorage.setItem(key, JSON.stringify(envelope));
+    }
+    weatherCodesInFlight.value.delete(key);
+  };
+
   const getWeatherCodes = async (
     lang: string,
     options: { collection: string }
@@ -241,23 +303,29 @@ export const useMeteoStore = defineStore('meteo', () => {
     const collection = options.collection;
     const key = `weather_codes:${lang}:${collection}`;
 
+    // 1. In-memory cache — return immediately
     if (weatherCodesCache.value[key]) {
       weatherCodes.value = weatherCodesCache.value[key];
       return weatherCodesCache.value[key];
     }
 
-    const cached = localStorage.getItem(key);
-    if (cached) {
-      try {
-        const parsed = JSON.parse(cached) as Record<string, WeatherCodeEntry>;
-        weatherCodesCache.value[key] = parsed;
-        weatherCodes.value = parsed;
-        return parsed;
-      } catch {
-        // ignore invalid cache
+    // 2. localStorage — stale-while-revalidate
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      const cached = parseCachedWeatherCodes(raw);
+      if (cached) {
+        weatherCodesCache.value[key] = cached.data;
+        weatherCodes.value = cached.data;
+
+        // If cache is older than TTL, refresh in background
+        if (Date.now() - cached.storedAt > WEATHER_CODES_CACHE_TTL) {
+          void refreshWeatherCodesCache(lang, collection, key);
+        }
+        return cached.data;
       }
     }
 
+    // 3. No cache at all — fetch from API
     if (weatherCodesInFlight.value.has(key)) {
       return weatherCodes.value;
     }
@@ -266,7 +334,8 @@ export const useMeteoStore = defineStore('meteo', () => {
     if (data) {
       weatherCodesCache.value[key] = data;
       weatherCodes.value = data;
-      localStorage.setItem(key, JSON.stringify(data));
+      const envelope: CachedWeatherCodes = { storedAt: Date.now(), data };
+      localStorage.setItem(key, JSON.stringify(envelope));
       return data;
     }
     weatherCodesInFlight.value.delete(key);
@@ -291,11 +360,7 @@ export const useMeteoStore = defineStore('meteo', () => {
         if (!stored) {
           return null;
         }
-        try {
-          return JSON.parse(stored) as Record<string, WeatherCodeEntry>;
-        } catch {
-          return null;
-        }
+        return parseCachedWeatherCodes(stored)?.data ?? null;
       })();
     if (cached) {
       weatherCodesCache.value[key] = cached;
@@ -330,6 +395,7 @@ export const useMeteoStore = defineStore('meteo', () => {
         'temperature_2m',
         'weather_code',
         'rain',
+        'snowfall',
         'wind_speed_10m',
         'wind_gusts_10m',
         'is_day',
@@ -365,10 +431,11 @@ export const useMeteoStore = defineStore('meteo', () => {
       const temperature = hourly.variables(0)?.valuesArray() ?? [];
       const weatherCode = hourly.variables(1)?.valuesArray() ?? [];
       const rain = hourly.variables(2)?.valuesArray() ?? [];
-      const windSpeed = hourly.variables(3)?.valuesArray() ?? [];
-      const windGusts = hourly.variables(4)?.valuesArray() ?? [];
-      const isDay = hourly.variables(5)?.valuesArray() ?? [];
-      const sunshine = hourly.variables(6)?.valuesArray() ?? [];
+      const snowfall = hourly.variables(3)?.valuesArray() ?? [];
+      const windSpeed = hourly.variables(4)?.valuesArray() ?? [];
+      const windGusts = hourly.variables(5)?.valuesArray() ?? [];
+      const isDay = hourly.variables(6)?.valuesArray() ?? [];
+      const sunshine = hourly.variables(7)?.valuesArray() ?? [];
 
       // console.debug('[meteo-store] hourly model stats', {
       //   model: response.model(),
@@ -383,6 +450,7 @@ export const useMeteoStore = defineStore('meteo', () => {
         temperature_2m: Array.from(temperature),
         weather_code: Array.from(weatherCode),
         rain: Array.from(rain),
+        snowfall: Array.from(snowfall),
         wind_speed_10m: Array.from(windSpeed),
         wind_gusts_10m: Array.from(windGusts),
         is_day: Array.from(isDay),
@@ -401,6 +469,7 @@ export const useMeteoStore = defineStore('meteo', () => {
       temperature_2m: [],
       weather_code: [],
       rain: [],
+      snowfall: [],
       wind_speed_10m: [],
       wind_gusts_10m: [],
       is_day: [],
@@ -411,6 +480,7 @@ export const useMeteoStore = defineStore('meteo', () => {
       | 'temperature_2m'
       | 'weather_code'
       | 'rain'
+      | 'snowfall'
       | 'wind_speed_10m'
       | 'wind_gusts_10m'
       | 'is_day'
@@ -429,6 +499,7 @@ export const useMeteoStore = defineStore('meteo', () => {
       combined.temperature_2m.push(pickValue('temperature_2m', idx) ?? NaN);
       combined.weather_code.push(pickValue('weather_code', idx) ?? NaN);
       combined.rain.push(pickValue('rain', idx) ?? NaN);
+      combined.snowfall.push(pickValue('snowfall', idx) ?? NaN);
       combined.wind_speed_10m.push(pickValue('wind_speed_10m', idx) ?? NaN);
       combined.wind_gusts_10m.push(pickValue('wind_gusts_10m', idx) ?? NaN);
       combined.is_day.push(pickValue('is_day', idx) ?? NaN);
@@ -594,6 +665,7 @@ export const useMeteoStore = defineStore('meteo', () => {
         gust_max: pickField(dateKey, 'gust_max'),
         sunshine_sum: pickField(dateKey, 'sunshine_sum'),
         rain_sum: pickField(dateKey, 'rain_sum'),
+        snowfall_sum: pickField(dateKey, 'snowfall_sum'),
         model,
       });
       current = addToDate(current, { days: 1 });
