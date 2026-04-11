@@ -2,7 +2,9 @@ export type IconsId =
   | "tip"
   | "text-outline"
   | "subject"
+  | "snow"
   | "server"
+  | "rain"
   | "question-mark"
   | "no-bed-flat"
   | "more-vertical"
@@ -46,7 +48,9 @@ export type IconsKey =
   | "Tip"
   | "TextOutline"
   | "Subject"
+  | "Snow"
   | "Server"
+  | "Rain"
   | "QuestionMark"
   | "NoBedFlat"
   | "MoreVertical"
@@ -90,7 +94,9 @@ export enum Icons {
   Tip = "tip",
   TextOutline = "text-outline",
   Subject = "subject",
+  Snow = "snow",
   Server = "server",
+  Rain = "rain",
   QuestionMark = "question-mark",
   NoBedFlat = "no-bed-flat",
   MoreVertical = "more-vertical",
@@ -135,43 +141,45 @@ export const ICONS_CODEPOINTS: { [key in Icons]: string } = {
   [Icons.Tip]: "61697",
   [Icons.TextOutline]: "61698",
   [Icons.Subject]: "61699",
-  [Icons.Server]: "61700",
-  [Icons.QuestionMark]: "61701",
-  [Icons.NoBedFlat]: "61702",
-  [Icons.MoreVertical]: "61703",
-  [Icons.Message]: "61704",
-  [Icons.Menu]: "61705",
-  [Icons.MenuArrow]: "61706",
-  [Icons.LocationQuestion]: "61707",
-  [Icons.Link]: "61708",
-  [Icons.Info]: "61709",
-  [Icons.InfoOutline]: "61710",
-  [Icons.Gift]: "61711",
-  [Icons.Filter]: "61712",
-  [Icons.FilterOutline]: "61713",
-  [Icons.Favorite]: "61714",
-  [Icons.FavoriteOutline]: "61715",
-  [Icons.Eye]: "61716",
-  [Icons.EyeOutline]: "61717",
-  [Icons.ElevationOutline]: "61718",
-  [Icons.Edit]: "61719",
-  [Icons.EditOutline]: "61720",
-  [Icons.Copyright]: "61721",
-  [Icons.Close]: "61722",
-  [Icons.Checkmark]: "61723",
-  [Icons.Calendar]: "61724",
-  [Icons.Browser]: "61725",
-  [Icons.Bell]: "61726",
-  [Icons.BellOutline]: "61727",
-  [Icons.BedFlat]: "61728",
-  [Icons.BedFlatOutline]: "61729",
-  [Icons.At]: "61730",
-  [Icons.ArrowheadUp]: "61731",
-  [Icons.ArrowheadRight]: "61732",
-  [Icons.ArrowheadLeft]: "61733",
-  [Icons.ArrowheadDown]: "61734",
-  [Icons.ArrowUpDown]: "61735",
-  [Icons.AlertTriangleOutline]: "61736",
-  [Icons.Add]: "61737",
-  [Icons.AddOutline]: "61738",
+  [Icons.Snow]: "61700",
+  [Icons.Server]: "61701",
+  [Icons.Rain]: "61702",
+  [Icons.QuestionMark]: "61703",
+  [Icons.NoBedFlat]: "61704",
+  [Icons.MoreVertical]: "61705",
+  [Icons.Message]: "61706",
+  [Icons.Menu]: "61707",
+  [Icons.MenuArrow]: "61708",
+  [Icons.LocationQuestion]: "61709",
+  [Icons.Link]: "61710",
+  [Icons.Info]: "61711",
+  [Icons.InfoOutline]: "61712",
+  [Icons.Gift]: "61713",
+  [Icons.Filter]: "61714",
+  [Icons.FilterOutline]: "61715",
+  [Icons.Favorite]: "61716",
+  [Icons.FavoriteOutline]: "61717",
+  [Icons.Eye]: "61718",
+  [Icons.EyeOutline]: "61719",
+  [Icons.ElevationOutline]: "61720",
+  [Icons.Edit]: "61721",
+  [Icons.EditOutline]: "61722",
+  [Icons.Copyright]: "61723",
+  [Icons.Close]: "61724",
+  [Icons.Checkmark]: "61725",
+  [Icons.Calendar]: "61726",
+  [Icons.Browser]: "61727",
+  [Icons.Bell]: "61728",
+  [Icons.BellOutline]: "61729",
+  [Icons.BedFlat]: "61730",
+  [Icons.BedFlatOutline]: "61731",
+  [Icons.At]: "61732",
+  [Icons.ArrowheadUp]: "61733",
+  [Icons.ArrowheadRight]: "61734",
+  [Icons.ArrowheadLeft]: "61735",
+  [Icons.ArrowheadDown]: "61736",
+  [Icons.ArrowUpDown]: "61737",
+  [Icons.AlertTriangleOutline]: "61738",
+  [Icons.Add]: "61739",
+  [Icons.AddOutline]: "61740",
 };

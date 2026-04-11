@@ -4,7 +4,6 @@ import { copyToClipboard } from 'quasar';
 import { useIntersectionObserver } from '@vueuse/core';
 import { usePlace } from '@composables/usePlace';
 import { useHutImages } from '@composables/useHutImages';
-import { usePlaceWeather } from '@composables/usePlaceWeather';
 import { schemasWodore } from '@clients/index';
 import { useHutsStore } from '@stores/huts-store';
 import { storeToRefs } from 'pinia';
@@ -12,7 +11,7 @@ import WdHutImageGallery from '@components/huts/WdHutImageGallery.vue';
 // import WdHutTypeChip from '@components/huts/WdHutTypeChip.vue';
 import WdHutAvailabilities from '@components/huts/WdHutAvailabilities.vue';
 // import WdHutOpenMonthly from '@components/huts/monthly/WdHutOpenMonthly.vue';
-import WdHutWeatherForecast from '@components/huts/WdHutWeatherForecast.vue';
+import WdWeatherForecast from '@components/content/place/WdWeatherForecast.vue';
 import WdTextClamp from '@components/utils/WdTextClamp.vue';
 import WdPlaceTypeBadge from '@components/content/place/WdPlaceTypeBadge.vue';
 import WdStatBox from '@components/content/WdStatBox.vue';
@@ -41,14 +40,6 @@ useIntersectionObserver(weatherSection, ([{ isIntersecting }]) => {
     weatherSectionVisible.value = true;
   }
 });
-
-const { loading: weatherLoading } = usePlaceWeather(
-  computed(() =>
-    weatherSectionVisible.value && place.value?.location
-      ? { lat: place.value.location.lat, lon: place.value.location.lon }
-      : undefined
-  )
-);
 
 // Computed properties
 // const isHutOpen = computed<schemasWodore['AnswerEnum']>(() => {
@@ -270,12 +261,11 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
 
       <!-- Weather (lazy loaded) -->
       <div ref="weatherSection">
-        <WdHutWeatherForecast
+        <WdWeatherForecast
           v-if="weatherSectionVisible && place.location"
           :latitude="place.location.lat"
           :longitude="place.location.lon"
           :elevation="place.elevation ?? undefined"
-          :loading="weatherLoading"
           collection="weather-icons-filled-animated"
         />
       </div>

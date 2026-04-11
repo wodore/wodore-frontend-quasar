@@ -126,6 +126,8 @@
     "temp": "Temp.",
     "range_separator": "...",
     "unit": "°C",
+    "rain": "Regen",
+    "snowfall": "Schnee",
     "unavailable": "Wetterdaten nicht verfügbar",
     "no_guarantee": "ohne Gewähr"
   },
