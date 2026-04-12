@@ -259,7 +259,7 @@ const tooltipContent = computed(() => {
 }
 
 .wd-weather-day--past {
-  opacity: 0.5;
+  opacity: 0.6;
 }
 
 .wd-weather-day--today {
@@ -289,7 +289,7 @@ const tooltipContent = computed(() => {
   line-height: 1.2;
   color: rgba(color('dark'), 0.5);
   text-align: center;
-  margin-bottom: 1px;
+  margin-bottom: -4px;
 
   @media (min-width: 600px) {
     font-size: 11px;
@@ -302,7 +302,7 @@ const tooltipContent = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 1px;
+  margin-bottom: 4px;
 }
 
 .wd-weather-day__icon :deep(img) {
@@ -346,16 +346,17 @@ const tooltipContent = computed(() => {
 
 .wd-weather-day__precip {
   font-size: 9px;
-  line-height: 1.2;
+  line-height: 1.3;
   min-height: 12px;
   margin-top: 1px;
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
+  flex-direction: column;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 1px;
 
   @media (min-width: 600px) {
     font-size: 10px;
