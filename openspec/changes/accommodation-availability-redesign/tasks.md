@@ -2,7 +2,7 @@
 
 ## Phase 1: Shared Components
 
-- [ ] **T1: Create WdDayLabel component**
+- [x] **T1: Create WdDayLabel component**
   - File: `src/components/content/place/WdDayLabel.vue`
   - Extract day-label logic from WdWeatherDay
   - Props: `date: string`, `isActive?: boolean`
@@ -10,7 +10,7 @@
   - Bold day name when `isActive` is true
   - No background, no opacity — just text content
 
-- [ ] **T2: Refactor WdWeatherDay to use WdDayLabel**
+- [x] **T2: Refactor WdWeatherDay to use WdDayLabel**
   - File: `src/components/content/place/WdWeatherDay.vue`
   - Replace inline day-name + date template with `<WdDayLabel :date="day.date" :is-active="isSelected" />`
   - Remove the now-redundant computed properties (`dayLabel`, `dateLabel`, `dayDiff`, `isToday`)
@@ -19,7 +19,7 @@
 
 ## Phase 2: Availability Day Component
 
-- [ ] **T3: Create WdAccommodationDay component**
+- [x] **T3: Create WdAccommodationDay component**
   - File: `src/components/huts/WdAccommodationDay.vue`
   - Layout: top stripe → WdDayLabel → availability icon (q-img, 28px) → free (bold) → total (light)
   - Props: `day`, `availabilityIcons`, `isSelected?`, `hutTypeColor?`
@@ -31,7 +31,7 @@
 
 ## Phase 3: Availability Parent Component
 
-- [ ] **T4: Create WdAccommodationAvailabilities component**
+- [x] **T4: Create WdAccommodationAvailabilities component**
   - File: `src/components/huts/WdAccommodationAvailabilities.vue`
   - Fetch availability icons from `/v1/categories/map/availability` on mount
   - Initialize date range (4 days before → 365 days after today)
@@ -45,7 +45,7 @@
 
 ## Phase 4: Integration & Comparison
 
-- [ ] **T5: Add WdAccommodationAvailabilities to WdPlaceContent**
+- [x] **T5: Add WdAccommodationAvailabilities to WdPlaceContent**
   - File: `src/components/content/place/WdPlaceContent.vue`
   - Add new component below the existing `WdHutAvailabilities`
   - Pass `slug` and `has_availability` props
@@ -54,7 +54,7 @@
 
 ## Phase 5: Polish & Verify
 
-- [ ] **T6: Visual testing and refinement**
+- [x] **T6: Visual testing and refinement**
   - Verify Swiper scrolling works smoothly on desktop and mobile
   - Verify availability SVG icons render correctly
   - Verify hut type color stripe shows per day
