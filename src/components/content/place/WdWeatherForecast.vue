@@ -216,14 +216,14 @@ watchEffect(async () => {
         enabled: true,
         sticky: true,
         momentum: true,
-        momentumRatio: 0.5,
+        momentumRatio: 0.02,
         momentumBounce: false,
-        minimumVelocity: 0.1,
+        minimumVelocity: 0.02,
       }"
       :scrollbar="{
         draggable: true,
-        hide: false,
-        snapOnRelease: true,
+        hide: true,
+        snapOnRelease: false,
       }"
       :initial-slide="selectedSlideIndex"
       :grab-cursor="true"
@@ -277,7 +277,7 @@ watchEffect(async () => {
 
 .wd-weather-forecast__swiper {
   width: 100%;
-  padding-bottom: 14px;
+  padding-bottom: 2px;
   cursor: grab;
 
   &:active {
