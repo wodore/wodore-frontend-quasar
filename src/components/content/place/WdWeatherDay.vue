@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, watchEffect } from 'vue';
-import { date, useQuasar } from 'quasar';
+import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useMeteoStore } from '@stores/meteo-store';
 import { storeToRefs } from 'pinia';
+import WdDayLabel from './WdDayLabel.vue';
 
-const { formatDate } = date;
 const { t } = useI18n();
 const $q = useQuasar();
 const meteoStore = useMeteoStore();
@@ -71,18 +71,6 @@ const dayDiff = computed(() =>
 const isToday = computed(() => dayDiff.value === 0);
 const isPast = computed(() => dayDiff.value < 0);
 const isLoading = computed(() => props.day.loading === true);
-
-const dayLabel = computed(() => {
-  if (dayDiff.value === 0) return t('weather.today');
-  if (dayDiff.value === 1) return t('weather.tomorrow');
-  if (dayDiff.value === -1) return t('weather.yesterday');
-  const locale = $q.lang?.isoName ?? 'de';
-  return new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(dateObj.value);
-});
-
-const dateLabel = computed(() => {
-  return formatDate(dateObj.value, 'DD.MM.');
-});
 
 const iconEntry = computed(() => {
   if (props.day.weather_code === null) return null;
@@ -181,18 +169,8 @@ const tooltipContent = computed(() => {
       'wd-weather-day--selected': isSelected,
     }"
   >
-    <!-- Day name -->
-    <div
-      class="wd-weather-day__name"
-      :class="{
-        'wd-weather-day__name--today': isToday,
-        'wd-weather-day__name--selected': isSelected,
-      }"
-    >
-      {{ dayLabel }}
-    </div>
-    <!-- Date -->
-    <div class="wd-weather-day__date">{{ dateLabel }}</div>
+    <!-- Day name + date -->
+    <WdDayLabel :date="day.date" :is-active="isSelected || isToday" />
 
     <!-- Weather icon -->
     <div class="wd-weather-day__icon">
@@ -250,11 +228,13 @@ const tooltipContent = computed(() => {
 
 <style scoped lang="scss">
 .wd-weather-day {
-  width: 64px;
-  min-width: 64px;
+  width: 68px;
+  min-width: 68px;
+  max-width: 68px;
   padding: 6px 4px 5px;
   border-radius: 10px;
   user-select: none;
+  box-sizing: border-box;
   transition: background-color 0.2s ease;
 }
 
@@ -268,32 +248,6 @@ const tooltipContent = computed(() => {
 
 .wd-weather-day--selected {
   background: rgba(color('accent'), 0.12);
-}
-
-.wd-weather-day__name {
-  font-size: 11px;
-  line-height: 1.2;
-  font-weight: 500;
-  color: rgba(color('dark'), 0.75);
-  text-align: center;
-  white-space: nowrap;
-}
-
-.wd-weather-day__name--today {
-  font-weight: 700;
-  color: rgba(color('dark'), 0.95);
-}
-
-.wd-weather-day__date {
-  font-size: 10px;
-  line-height: 1.2;
-  color: rgba(color('dark'), 0.5);
-  text-align: center;
-  margin-bottom: -4px;
-
-  @media (min-width: 600px) {
-    font-size: 11px;
-  }
 }
 
 .wd-weather-day__icon {

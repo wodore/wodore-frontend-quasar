@@ -9,7 +9,8 @@ import { useHutsStore } from '@stores/huts-store';
 import { storeToRefs } from 'pinia';
 import WdHutImageGallery from '@components/huts/WdHutImageGallery.vue';
 // import WdHutTypeChip from '@components/huts/WdHutTypeChip.vue';
-import WdHutAvailabilities from '@components/huts/WdHutAvailabilities.vue';
+// import WdHutAvailabilities from '@components/huts/WdHutAvailabilities.vue';
+import WdAccommodationAvailabilities from '@components/huts/WdAccommodationAvailabilities.vue';
 // import WdHutOpenMonthly from '@components/huts/monthly/WdHutOpenMonthly.vue';
 import WdWeatherForecast from '@components/content/place/WdWeatherForecast.vue';
 import WdTextClamp from '@components/utils/WdTextClamp.vue';
@@ -231,25 +232,37 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
       </div>
 
       <!-- Availabilities -->
-      <WdHutAvailabilities
+      <!--
+      <WdHutAvailabilities :slug="slug" :has-availability="place.has_availability ?? undefined" :symbol-map="{
+        ...(place.type_open?.slug
+          ? {
+            [place.type_open.slug]: {
+              detailed: `https://hub.wodore.com/media/huts/types/symbols/detailed/${place.type_open.slug}.png`,
+              simple: `https://hub.wodore.com/media/huts/types/symbols/simple/${place.type_open.slug}.png`,
+            },
+          }
+          : {}),
+        ...(place.type_closed?.slug
+          ? {
+            [place.type_closed.slug]: {
+              detailed: `https://hub.wodore.com/media/huts/types/symbols/detailed/${place.type_closed.slug}.png`,
+              simple: `https://hub.wodore.com/media/huts/types/symbols/simple/${place.type_closed.slug}.png`,
+            },
+          }
+          : {}),
+      }" />
+-->
+
+      <!-- New Availability (Swiper-based, for comparison) -->
+      <WdAccommodationAvailabilities
         :slug="slug"
         :has-availability="place.has_availability ?? undefined"
-        :symbol-map="{
-          ...(place.type_open?.slug
-            ? {
-                [place.type_open.slug]: {
-                  detailed: `https://hub.wodore.com/media/huts/types/symbols/detailed/${place.type_open.slug}.png`,
-                  simple: `https://hub.wodore.com/media/huts/types/symbols/simple/${place.type_open.slug}.png`,
-                },
-              }
+        :hut-type-icons="{
+          ...(place.type_open?.symbol?.simple && place.type_open?.slug
+            ? { [place.type_open.slug]: place.type_open.symbol.simple }
             : {}),
-          ...(place.type_closed?.slug
-            ? {
-                [place.type_closed.slug]: {
-                  detailed: `https://hub.wodore.com/media/huts/types/symbols/detailed/${place.type_closed.slug}.png`,
-                  simple: `https://hub.wodore.com/media/huts/types/symbols/simple/${place.type_closed.slug}.png`,
-                },
-              }
+          ...(place.type_closed?.symbol?.simple && place.type_closed?.slug
+            ? { [place.type_closed.slug]: place.type_closed.symbol.simple }
             : {}),
         }"
       />

@@ -4,13 +4,14 @@ import { date, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import type { Swiper as SwiperType } from 'swiper';
-import { FreeMode, Scrollbar } from 'swiper/modules';
+import { FreeMode, Scrollbar, Mousewheel } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/free-mode';
 import 'swiper/css/scrollbar';
 import { useMeteoStore } from '@stores/meteo-store';
 import { useHutsStore } from '@stores/huts-store';
 import { storeToRefs } from 'pinia';
+import { useSlideCount } from '@composables/useSlideCount';
 import WdWeatherDay from './WdWeatherDay.vue';
 
 const { formatDate, subtractFromDate, addToDate } = date;
@@ -43,6 +44,8 @@ const props = defineProps<Props>();
 const forecastDays = ref<WeatherDay[]>([]);
 const error = ref<string | null>(null);
 const swiperInstance = ref<SwiperType | null>(null);
+const forecastContainer = ref<HTMLElement | null>(null);
+const { slidesPerView } = useSlideCount(forecastContainer, 68);
 
 const hasLocation = computed(
   () => Number.isFinite(props.latitude) && Number.isFinite(props.longitude)
@@ -187,7 +190,7 @@ watchEffect(async () => {
 </script>
 
 <template>
-  <div v-if="canShowForecast" class="wd-weather-forecast">
+  <div v-if="canShowForecast" ref="forecastContainer" class="wd-weather-forecast">
     <!-- Header -->
     <div class="wd-weather-forecast__header q-mt-sm q-mb-xs">
       <div class="text-subtitle1 text-accent">
@@ -209,21 +212,27 @@ watchEffect(async () => {
     <!-- Swiper forecast slider -->
     <swiper
       v-if="forecastDays.length"
-      :modules="[FreeMode, Scrollbar]"
-      :slides-per-view="'auto'"
+      :modules="[FreeMode, Scrollbar, Mousewheel]"
+      :slides-per-view="slidesPerView"
       :space-between="0"
       :free-mode="{
         enabled: true,
-        sticky: true,
+        sticky: false,
         momentum: true,
-        momentumRatio: 0.02,
+        momentumRatio: 1,
         momentumBounce: false,
-        minimumVelocity: 0.02,
+        minimumVelocity: 0.1,
       }"
       :scrollbar="{
         draggable: true,
         hide: true,
         snapOnRelease: false,
+      }"
+      :mousewheel="{
+        enabled: true,
+        forceToAxis: false,
+        releaseOnEdges: false,
+        sensitivity: 0.15,
       }"
       :initial-slide="selectedSlideIndex"
       :grab-cursor="true"
@@ -292,7 +301,7 @@ watchEffect(async () => {
 }
 
 .wd-weather-forecast__slide {
-  width: 64px;
+  width: 68px;
   flex-shrink: 0;
 }
 
