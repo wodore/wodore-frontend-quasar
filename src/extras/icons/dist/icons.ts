@@ -11,6 +11,7 @@ export type IconsId =
   | "message"
   | "menu"
   | "menu-arrow"
+  | "location-share-outline"
   | "location-question"
   | "link"
   | "info"
@@ -57,6 +58,7 @@ export type IconsKey =
   | "Message"
   | "Menu"
   | "MenuArrow"
+  | "LocationShareOutline"
   | "LocationQuestion"
   | "Link"
   | "Info"
@@ -103,6 +105,7 @@ export enum Icons {
   Message = "message",
   Menu = "menu",
   MenuArrow = "menu-arrow",
+  LocationShareOutline = "location-share-outline",
   LocationQuestion = "location-question",
   Link = "link",
   Info = "info",
@@ -150,36 +153,37 @@ export const ICONS_CODEPOINTS: { [key in Icons]: string } = {
   [Icons.Message]: "61706",
   [Icons.Menu]: "61707",
   [Icons.MenuArrow]: "61708",
-  [Icons.LocationQuestion]: "61709",
-  [Icons.Link]: "61710",
-  [Icons.Info]: "61711",
-  [Icons.InfoOutline]: "61712",
-  [Icons.Gift]: "61713",
-  [Icons.Filter]: "61714",
-  [Icons.FilterOutline]: "61715",
-  [Icons.Favorite]: "61716",
-  [Icons.FavoriteOutline]: "61717",
-  [Icons.Eye]: "61718",
-  [Icons.EyeOutline]: "61719",
-  [Icons.ElevationOutline]: "61720",
-  [Icons.Edit]: "61721",
-  [Icons.EditOutline]: "61722",
-  [Icons.Copyright]: "61723",
-  [Icons.Close]: "61724",
-  [Icons.Checkmark]: "61725",
-  [Icons.Calendar]: "61726",
-  [Icons.Browser]: "61727",
-  [Icons.Bell]: "61728",
-  [Icons.BellOutline]: "61729",
-  [Icons.BedFlat]: "61730",
-  [Icons.BedFlatOutline]: "61731",
-  [Icons.At]: "61732",
-  [Icons.ArrowheadUp]: "61733",
-  [Icons.ArrowheadRight]: "61734",
-  [Icons.ArrowheadLeft]: "61735",
-  [Icons.ArrowheadDown]: "61736",
-  [Icons.ArrowUpDown]: "61737",
-  [Icons.AlertTriangleOutline]: "61738",
-  [Icons.Add]: "61739",
-  [Icons.AddOutline]: "61740",
+  [Icons.LocationShareOutline]: "61709",
+  [Icons.LocationQuestion]: "61710",
+  [Icons.Link]: "61711",
+  [Icons.Info]: "61712",
+  [Icons.InfoOutline]: "61713",
+  [Icons.Gift]: "61714",
+  [Icons.Filter]: "61715",
+  [Icons.FilterOutline]: "61716",
+  [Icons.Favorite]: "61717",
+  [Icons.FavoriteOutline]: "61718",
+  [Icons.Eye]: "61719",
+  [Icons.EyeOutline]: "61720",
+  [Icons.ElevationOutline]: "61721",
+  [Icons.Edit]: "61722",
+  [Icons.EditOutline]: "61723",
+  [Icons.Copyright]: "61724",
+  [Icons.Close]: "61725",
+  [Icons.Checkmark]: "61726",
+  [Icons.Calendar]: "61727",
+  [Icons.Browser]: "61728",
+  [Icons.Bell]: "61729",
+  [Icons.BellOutline]: "61730",
+  [Icons.BedFlat]: "61731",
+  [Icons.BedFlatOutline]: "61732",
+  [Icons.At]: "61733",
+  [Icons.ArrowheadUp]: "61734",
+  [Icons.ArrowheadRight]: "61735",
+  [Icons.ArrowheadLeft]: "61736",
+  [Icons.ArrowheadDown]: "61737",
+  [Icons.ArrowUpDown]: "61738",
+  [Icons.AlertTriangleOutline]: "61739",
+  [Icons.Add]: "61740",
+  [Icons.AddOutline]: "61741",
 };
