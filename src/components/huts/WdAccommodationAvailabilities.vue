@@ -240,7 +240,7 @@ const formatMonthLabel = (dateObj: Date) => {
 const nextMonths = computed(() => {
   const months: { label: string; date: string; key: string; monthKey: string }[] = [];
   const base = new Date();
-  for (let i = 0; i <= 7; i++) {
+  for (let i = 0; i <= 5; i++) {
     const monthDate = addToDate(base, { months: i });
     months.push({
       label: formatMonthLabel(monthDate),
@@ -326,7 +326,7 @@ watchEffect(() => {
           :class="[
             month.key === activeMonthKey
               ? `month_${month.monthKey}--gradient-dark`
-              : `month_${month.monthKey}--gradient`,
+              : `month_${month.monthKey}--gradient-light`,
             {
               'month-chip-wrap--first': idx === 0,
               'month-chip-wrap--last': idx === nextMonths.length - 1,
