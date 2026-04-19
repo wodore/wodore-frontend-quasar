@@ -195,7 +195,7 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
 
       <!-- Gallery and Type Chips -->
       <div class="row items-start q-gutter-sm">
-        <div class="col-md-12 col-sm-7 col-7">
+        <div class="col-md-12 col-sm-7 col-12">
           <WdHutImageGallery :images="images" :loading="imagesLoading" :hut="place" />
         </div>
 
