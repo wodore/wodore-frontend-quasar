@@ -175,18 +175,18 @@ const tooltipContent = computed(() => {
     <!-- Weather icon -->
     <div class="wd-weather-day__icon">
       <q-skeleton v-if="isLoading" type="circle" :width="`${size}px`" :height="`${size}px`" />
-      <q-img
-        v-else-if="iconUrl"
-        :src="iconUrl"
-        :width="`${size}px`"
-        :height="`${size}px`"
-        fit="contain"
-        no-spinner
-      >
+      <template v-else-if="iconUrl">
+        <img
+          :src="iconUrl"
+          :width="size"
+          :height="size"
+          style="object-fit: contain"
+          loading="eager"
+        />
         <q-tooltip v-if="tooltipContent.length" :delay="700">
           <div v-for="(line, i) in tooltipContent" :key="i">{{ line }}</div>
         </q-tooltip>
-      </q-img>
+      </template>
       <div
         v-else
         class="wd-weather-day__icon-empty"

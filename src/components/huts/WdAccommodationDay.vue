@@ -154,13 +154,13 @@ const tooltipLines = computed(() => {
       </template>
       <template v-else>
         <div class="wd-accommodation-day__avail-icon">
-          <q-img
+          <img
             v-if="iconUrl"
             :src="iconUrl"
-            width="16px"
-            height="16px"
-            fit="contain"
-            no-spinner
+            width="16"
+            height="16"
+            style="object-fit: contain"
+            loading="eager"
           />
         </div>
         <span v-if="!isUnknown" class="wd-accommodation-day__free" :style="{ color: freeColor }">
@@ -189,13 +189,13 @@ const tooltipLines = computed(() => {
         class="wd-accommodation-day__badge"
         :style="badgeStyle"
       >
-        <q-img
+        <img
           v-if="hutTypeIconUrl"
           :src="hutTypeIconUrl"
-          width="14px"
-          height="14px"
-          fit="contain"
-          no-spinner
+          width="14"
+          height="14"
+          style="object-fit: contain; flex-shrink: 0; opacity: 0.75"
+          loading="eager"
           class="wd-accommodation-day__badge-icon"
         />
         <span class="wd-accommodation-day__badge-total">{{ day.total }}</span>
@@ -258,11 +258,6 @@ const tooltipLines = computed(() => {
   border-radius: 4px;
   border: 1px solid rgba(0, 0, 0, 0.07);
   border-left: 4px solid;
-}
-
-.wd-accommodation-day__badge-icon {
-  flex-shrink: 0;
-  opacity: 0.75;
 }
 
 .wd-accommodation-day__badge-total {

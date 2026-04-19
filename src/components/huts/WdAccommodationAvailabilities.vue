@@ -349,19 +349,22 @@ watchEffect(() => {
     <swiper
       v-if="availabilityItems.length"
       :modules="[Virtual, FreeMode, Scrollbar, Mousewheel]"
-      virtual
+      :virtual="{
+        addSlidesAfter: 14,
+        addSlidesBefore: 14,
+      }"
       :slides-per-view="slidesPerView"
       :space-between="0"
       :free-mode="{
         enabled: true,
         sticky: false,
         momentum: true,
-        momentumRatio: 0.02,
+        momentumRatio: 1,
         momentumBounce: false,
-        minimumVelocity: 0.02,
+        minimumVelocity: 0.3,
       }"
       :scrollbar="{
-        draggable: true,
+        draggable: false,
         hide: true,
         snapOnRelease: false,
       }"
@@ -369,7 +372,7 @@ watchEffect(() => {
         enabled: true,
         forceToAxis: false,
         releaseOnEdges: false,
-        sensitivity: 0.15,
+        sensitivity: 0.22,
       }"
       :initial-slide="selectedSlideIndex"
       :grab-cursor="true"
