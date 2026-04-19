@@ -221,10 +221,10 @@ watchEffect(async () => {
         momentum: true,
         momentumRatio: 1,
         momentumBounce: false,
-        minimumVelocity: 0.1,
+        minimumVelocity: 0.3,
       }"
       :scrollbar="{
-        draggable: true,
+        draggable: false,
         hide: true,
         snapOnRelease: false,
       }"
@@ -232,7 +232,7 @@ watchEffect(async () => {
         enabled: true,
         forceToAxis: false,
         releaseOnEdges: false,
-        sensitivity: 0.15,
+        sensitivity: 0.22,
       }"
       :initial-slide="selectedSlideIndex"
       :grab-cursor="true"

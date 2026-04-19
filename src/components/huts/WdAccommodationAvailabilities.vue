@@ -240,7 +240,7 @@ const formatMonthLabel = (dateObj: Date) => {
 const nextMonths = computed(() => {
   const months: { label: string; date: string; key: string; monthKey: string }[] = [];
   const base = new Date();
-  for (let i = 0; i <= 7; i++) {
+  for (let i = 0; i <= 5; i++) {
     const monthDate = addToDate(base, { months: i });
     months.push({
       label: formatMonthLabel(monthDate),
@@ -326,7 +326,7 @@ watchEffect(() => {
           :class="[
             month.key === activeMonthKey
               ? `month_${month.monthKey}--gradient-dark`
-              : `month_${month.monthKey}--gradient`,
+              : `month_${month.monthKey}--gradient-light`,
             {
               'month-chip-wrap--first': idx === 0,
               'month-chip-wrap--last': idx === nextMonths.length - 1,
@@ -349,19 +349,22 @@ watchEffect(() => {
     <swiper
       v-if="availabilityItems.length"
       :modules="[Virtual, FreeMode, Scrollbar, Mousewheel]"
-      virtual
+      :virtual="{
+        addSlidesAfter: 14,
+        addSlidesBefore: 14,
+      }"
       :slides-per-view="slidesPerView"
       :space-between="0"
       :free-mode="{
         enabled: true,
         sticky: false,
         momentum: true,
-        momentumRatio: 0.02,
+        momentumRatio: 1,
         momentumBounce: false,
-        minimumVelocity: 0.02,
+        minimumVelocity: 0.3,
       }"
       :scrollbar="{
-        draggable: true,
+        draggable: false,
         hide: true,
         snapOnRelease: false,
       }"
@@ -369,7 +372,7 @@ watchEffect(() => {
         enabled: true,
         forceToAxis: false,
         releaseOnEdges: false,
-        sensitivity: 0.15,
+        sensitivity: 0.22,
       }"
       :initial-slide="selectedSlideIndex"
       :grab-cursor="true"
