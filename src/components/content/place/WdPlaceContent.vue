@@ -144,6 +144,7 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
       <WdYearStripe
         :rows="yearStripeRows"
         :selected-month="selectedMonth ? parseInt(selectedMonth) : undefined"
+        stacked
       />
 
       <!-- Type Badges -->
