@@ -4,15 +4,15 @@ import { copyToClipboard } from 'quasar';
 import { useIntersectionObserver } from '@vueuse/core';
 import { usePlace } from '@composables/usePlace';
 import { useHutImages } from '@composables/useHutImages';
-import { usePlaceWeather } from '@composables/usePlaceWeather';
 import { schemasWodore } from '@clients/index';
 import { useHutsStore } from '@stores/huts-store';
 import { storeToRefs } from 'pinia';
 import WdHutImageGallery from '@components/huts/WdHutImageGallery.vue';
 // import WdHutTypeChip from '@components/huts/WdHutTypeChip.vue';
-import WdHutAvailabilities from '@components/huts/WdHutAvailabilities.vue';
+// import WdHutAvailabilities from '@components/huts/WdHutAvailabilities.vue';
+import WdAccommodationAvailabilities from '@components/huts/WdAccommodationAvailabilities.vue';
 // import WdHutOpenMonthly from '@components/huts/monthly/WdHutOpenMonthly.vue';
-import WdHutWeatherForecast from '@components/huts/WdHutWeatherForecast.vue';
+import WdWeatherForecast from '@components/content/place/WdWeatherForecast.vue';
 import WdTextClamp from '@components/utils/WdTextClamp.vue';
 import WdPlaceTypeBadge from '@components/content/place/WdPlaceTypeBadge.vue';
 import WdStatBox from '@components/content/WdStatBox.vue';
@@ -41,14 +41,6 @@ useIntersectionObserver(weatherSection, ([{ isIntersecting }]) => {
     weatherSectionVisible.value = true;
   }
 });
-
-const { loading: weatherLoading } = usePlaceWeather(
-  computed(() =>
-    weatherSectionVisible.value && place.value?.location
-      ? { lat: place.value.location.lat, lon: place.value.location.lon }
-      : undefined
-  )
-);
 
 // Computed properties
 // const isHutOpen = computed<schemasWodore['AnswerEnum']>(() => {
@@ -147,15 +139,16 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
     </div>
 
     <!-- Content -->
-    <div v-else-if="place" class="q-py-md">
+    <div v-else-if="place" class="q-pb-md">
       <!-- Year Stripe -->
       <WdYearStripe
         :rows="yearStripeRows"
         :selected-month="selectedMonth ? parseInt(selectedMonth) : undefined"
+        stacked
       />
 
       <!-- Type Badges -->
-      <div class="row q-gutter-sm q-mb-sm">
+      <div class="row q-gutter-sm q-mb-md">
         <WdPlaceTypeBadge
           v-if="place.type_open?.name"
           :color="place.type_open.color"
@@ -202,7 +195,7 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
 
       <!-- Gallery and Type Chips -->
       <div class="row items-start q-gutter-sm">
-        <div class="col-md-12 col-sm-7 col-7">
+        <div class="col-md-12 col-sm-7 col-12">
           <WdHutImageGallery :images="images" :loading="imagesLoading" :hut="place" />
         </div>
 
@@ -240,25 +233,37 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
       </div>
 
       <!-- Availabilities -->
-      <WdHutAvailabilities
+      <!--
+      <WdHutAvailabilities :slug="slug" :has-availability="place.has_availability ?? undefined" :symbol-map="{
+        ...(place.type_open?.slug
+          ? {
+            [place.type_open.slug]: {
+              detailed: `https://hub.wodore.com/media/huts/types/symbols/detailed/${place.type_open.slug}.png`,
+              simple: `https://hub.wodore.com/media/huts/types/symbols/simple/${place.type_open.slug}.png`,
+            },
+          }
+          : {}),
+        ...(place.type_closed?.slug
+          ? {
+            [place.type_closed.slug]: {
+              detailed: `https://hub.wodore.com/media/huts/types/symbols/detailed/${place.type_closed.slug}.png`,
+              simple: `https://hub.wodore.com/media/huts/types/symbols/simple/${place.type_closed.slug}.png`,
+            },
+          }
+          : {}),
+      }" />
+-->
+
+      <!-- New Availability (Swiper-based, for comparison) -->
+      <WdAccommodationAvailabilities
         :slug="slug"
         :has-availability="place.has_availability ?? undefined"
-        :symbol-map="{
-          ...(place.type_open?.slug
-            ? {
-                [place.type_open.slug]: {
-                  detailed: `https://hub.wodore.com/media/huts/types/symbols/detailed/${place.type_open.slug}.png`,
-                  simple: `https://hub.wodore.com/media/huts/types/symbols/simple/${place.type_open.slug}.png`,
-                },
-              }
+        :hut-type-icons="{
+          ...(place.type_open?.symbol?.simple && place.type_open?.slug
+            ? { [place.type_open.slug]: place.type_open.symbol.simple }
             : {}),
-          ...(place.type_closed?.slug
-            ? {
-                [place.type_closed.slug]: {
-                  detailed: `https://hub.wodore.com/media/huts/types/symbols/detailed/${place.type_closed.slug}.png`,
-                  simple: `https://hub.wodore.com/media/huts/types/symbols/simple/${place.type_closed.slug}.png`,
-                },
-              }
+          ...(place.type_closed?.symbol?.simple && place.type_closed?.slug
+            ? { [place.type_closed.slug]: place.type_closed.symbol.simple }
             : {}),
         }"
       />
@@ -270,12 +275,11 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
 
       <!-- Weather (lazy loaded) -->
       <div ref="weatherSection">
-        <WdHutWeatherForecast
+        <WdWeatherForecast
           v-if="weatherSectionVisible && place.location"
           :latitude="place.location.lat"
           :longitude="place.location.lon"
           :elevation="place.elevation ?? undefined"
-          :loading="weatherLoading"
           collection="weather-icons-filled-animated"
         />
       </div>

@@ -17,14 +17,16 @@ const currentSnapIndex = ref(2); // Track current snap index (starts at index 2 
 const previousSnapIndex = ref(2); // Track previous snap index to detect dismissal from index 1
 
 // Toolbar height (from Quasar toolbar)
-const toolbarHeight = 330;
+const toolbarHeight = 50;
 
 // Calculate snap points
-// Index 3 (top): maxSnap
+// Index 5 (top): maxSnap
+// Index 4: 80vh
+// Index 3: 60vh
 // Index 2 (initial): defaultSnap
 // Index 1 (header only): 150px
 // Index 0 (collapsed/dismissed): handled by swipe-to-dismiss
-const defaultSnap = '370px';
+const defaultSnap = '330px';
 
 // Max height: 100vh - toolbar height
 const maxSnap = `calc(100vh - ${toolbarHeight}px)`;
@@ -96,13 +98,15 @@ bottom-sheet [slot='snap'].bottom::before {
     v-if="internalOpen"
     :key="sheetKey"
     v-model="internalOpen"
+    :style="{ '--sheet-max-height': maxSnap, '--sheet-border-radius': '24px' }"
     nested-scroll
     expand-to-scroll
     swipe-to-dismiss
     @snap-position-change="handleSnapPositionChange"
   >
     <!-- Snap points -->
-    <div slot="snap" :style="{ '--snap': maxSnap }" class="top"></div>
+    <div slot="snap" style="--snap: 80vh"></div>
+    <div slot="snap" style="--snap: 60vh"></div>
     <div slot="snap" :style="{ '--snap': defaultSnap }" class="initial"></div>
     <div slot="snap" style="--snap: 150px" class="bottom"></div>
 

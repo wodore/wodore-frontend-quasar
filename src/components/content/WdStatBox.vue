@@ -44,7 +44,7 @@ withDefaults(defineProps<Props>(), {
 .wd-stat-box__value {
   font-size: 0.8rem;
   font-weight: 700;
-  line-height: 1.1;
+  line-height: 0.8;
   color: #346751;
   font-variant-numeric: tabular-nums;
 }

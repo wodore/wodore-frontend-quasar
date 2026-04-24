@@ -157,7 +157,7 @@ const handleContributeClick = () => {
     </q-btn>
 
     <WdMediaPreview
-      class="q-ma-sm q-ma-md-lg"
+      class="gallery-media-preview"
       :images="images"
       :loading="loading"
       :add-image-url="mapCompleteUrl"
@@ -195,18 +195,40 @@ const handleContributeClick = () => {
   />
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .image-gallery-container {
   position: relative;
 }
 
+// On mobile no margin so stripe and button align flush to the container edge
+.gallery-media-preview {
+  margin: 8px;
+}
+
+@media (min-width: 1024px) {
+  .gallery-media-preview {
+    margin: 16px;
+  }
+}
+
+@media (max-width: 599px) {
+  .gallery-media-preview {
+    margin: 0;
+  }
+}
+
 .contribute-btn-overlay {
   position: absolute;
-  top: 5px;
-  left: 12px;
+  top: 2px;
+  left: 2px;
   z-index: 10;
   padding: 8px;
   border-radius: 50%;
+
+  @media (min-width: 600px) {
+    top: 5px;
+    left: 12px;
+  }
 }
 
 .contribute-btn-overlay :deep(.q-iconify) {

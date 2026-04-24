@@ -30,25 +30,29 @@ const { place } = usePlace(computed(() => props.slug));
       <div class="wd-place-title__text col self-center">
         <!-- Overline: elevation + weather -->
         <div
-          v-if="place.elevation || place.location"
           class="wd-place-title__overline text-caption text-accent-900"
+          :class="{ invisible: !place.elevation && !place.location }"
         >
-          <span v-if="place.elevation" class="wd-place-title__elevation">
-            <q-icon size="14px" name="wd-elevation-outline" />
-            {{ place.elevation }}m
-          </span>
-          <span v-if="place.elevation && place.location" class="wd-place-title__dot">•</span>
-          <WdWeatherSelect
-            v-if="place.location"
-            :latitude="place.location.lat"
-            :longitude="place.location.lon"
-            collection="weather-icons-outlined"
-            :elevation="place.elevation ?? undefined"
-            :size="18"
-            color="accent-900"
-            :label="true"
-            class="wd-place-title__weather"
-          />
+          <template v-if="place.elevation || place.location">
+            <span v-if="place.elevation" class="wd-place-title__elevation">
+              <q-icon size="14px" name="wd-elevation-outline" />
+              {{ place.elevation }}m
+            </span>
+            <span v-if="place.elevation && place.location" class="wd-place-title__dot">•</span>
+            <WdWeatherSelect
+              v-if="place.location"
+              :latitude="place.location.lat"
+              :longitude="place.location.lon"
+              collection="weather-icons-outlined-mono"
+              :elevation="place.elevation ?? undefined"
+              :size="18"
+              color="accent-900"
+              :label="true"
+              class="wd-place-title__weather"
+              no-shadow
+            />
+          </template>
+          <span v-else>&ZeroWidthSpace;</span>
         </div>
 
         <!-- Title -->
@@ -72,8 +76,12 @@ const { place } = usePlace(computed(() => props.slug));
         </div>
 
         <!-- Subtitle: owner -->
-        <div v-if="place.owner" class="wd-place-title__subtitle text-caption text-grey-7">
-          {{ place.owner?.name }}
+        <div
+          class="wd-place-title__subtitle text-caption text-grey-7"
+          :class="{ invisible: !place.owner }"
+        >
+          <template v-if="place.owner">{{ place.owner.name }}</template>
+          <span v-else>&ZeroWidthSpace;</span>
         </div>
       </div>
     </div>

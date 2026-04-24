@@ -94,6 +94,8 @@
     "temp": "Temp.",
     "range_separator": "...",
     "unit": "°C",
+    "rain": "Pluie",
+    "snowfall": "Neige",
     "unavailable": "Donnees meteo indisponibles",
     "no_guarantee": "sans garantie"
   },
