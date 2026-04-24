@@ -73,6 +73,8 @@
     "openmeteo": "^1.2.3",
     "pinia": "^3.0.4",
     "pure-web-bottom-sheet": "^0.6.0",
+    "quasar": "^2.19.3",
+    "pure-web-bottom-sheet": "^0.6.0",
     "quasar": "^2.17.0",
     "register-service-worker": "^1.0.0",
     "swiper": "^12.1.3",
