@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watchEffect, watch, nextTick } from 'vue';
+import { computed, ref, watchEffect, watch } from 'vue';
 import { date, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { Swiper, SwiperSlide } from 'swiper/vue';
@@ -44,6 +44,7 @@ const props = defineProps<Props>();
 const forecastDays = ref<WeatherDay[]>([]);
 const error = ref<string | null>(null);
 const swiperInstance = ref<SwiperType | null>(null);
+const initialSlideDone = ref(false);
 const forecastContainer = ref<HTMLElement | null>(null);
 const { slidesPerView } = useSlideCount(forecastContainer, 68);
 
@@ -89,6 +90,16 @@ const selectedSlideIndex = computed(() => {
 
 const onSwiper = (swiper: SwiperType) => {
   swiperInstance.value = swiper;
+  // Defer initial scroll so slides have time to render
+  const targetIdx = selectedSlideIndex.value;
+  if (targetIdx > 0) {
+    setTimeout(() => {
+      swiper.slideTo(targetIdx, 0);
+      initialSlideDone.value = true;
+    }, 50);
+  } else {
+    initialSlideDone.value = true;
+  }
 };
 
 const initializeDateRange = (): WeatherDay[] => {
@@ -168,19 +179,17 @@ watchEffect(() => {
     });
 });
 
-// Scroll to selected date when it changes
+// Scroll to selected date when it changes (after initial positioning is done)
 watch(
   () => selectedDateStr.value,
   () => {
+    if (!initialSlideDone.value) return;
     if (!canShowForecast.value || !swiperInstance.value) return;
     const idx = selectedSlideIndex.value;
     if (idx >= 0) {
-      nextTick(() => {
-        swiperInstance.value?.slideTo(idx, 300);
-      });
+      swiperInstance.value.slideTo(idx, 300);
     }
-  },
-  { immediate: true }
+  }
 );
 
 // Ensure weather codes are loaded
@@ -214,6 +223,7 @@ watchEffect(async () => {
       v-if="forecastDays.length"
       :modules="[FreeMode, Scrollbar, Mousewheel]"
       :slides-per-view="slidesPerView"
+      :slides-per-group="1"
       :space-between="0"
       :free-mode="{
         enabled: true,

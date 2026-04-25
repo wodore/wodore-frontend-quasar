@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watchEffect, watch, nextTick } from 'vue';
+import { ref, computed, watchEffect, watch } from 'vue';
 import { date } from 'quasar';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import type { Swiper as SwiperType } from 'swiper';
@@ -200,9 +200,20 @@ const swiperContainer = ref<HTMLElement | null>(null);
 const { slidesPerView } = useSlideCount(swiperContainer, 68);
 
 const swiperInstance = ref<SwiperType | null>(null);
+const initialSlideDone = ref(false);
 const onSwiper = (swiper: SwiperType) => {
   swiperInstance.value = swiper;
   activeIndex.value = swiper.activeIndex;
+  // Defer initial scroll so virtual slides have time to render
+  const targetIdx = selectedSlideIndex.value;
+  if (targetIdx > 0) {
+    setTimeout(() => {
+      swiper.slideTo(targetIdx, 0);
+      initialSlideDone.value = true;
+    }, 50);
+  } else {
+    initialSlideDone.value = true;
+  }
 };
 
 const selectedSlideIndex = computed(() => {
@@ -216,20 +227,18 @@ const onSlideChange = () => {
   loadFromIndex(activeIndex.value, 14);
 };
 
-// Scroll to selected date
+// Scroll to selected date (only after initial positioning is done)
 watch(
   () => startDate.value,
   () => {
+    if (!initialSlideDone.value) return;
     if (!swiperInstance.value || availabilityItems.value.length === 0) return;
     const idx = selectedSlideIndex.value;
     if (idx >= 0) {
-      nextTick(() => {
-        swiperInstance.value?.slideTo(idx, 300);
-      });
+      swiperInstance.value.slideTo(idx, 300);
       loadFromIndex(Math.max(0, idx - 4), 22);
     }
-  },
-  { immediate: true }
+  }
 );
 
 // --- Month selector ---
@@ -294,12 +303,6 @@ watchEffect(() => {
   if (selectedIndex >= 0) {
     loadFromIndex(Math.max(0, selectedIndex - 4), 22);
   }
-
-  nextTick(() => {
-    if (swiperInstance.value) {
-      swiperInstance.value.slideTo(selectedSlideIndex.value, 0);
-    }
-  });
 });
 </script>
 
@@ -354,6 +357,7 @@ watchEffect(() => {
         addSlidesBefore: 14,
       }"
       :slides-per-view="slidesPerView"
+      :slides-per-group="1"
       :space-between="0"
       :free-mode="{
         enabled: true,
