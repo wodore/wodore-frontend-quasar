@@ -315,6 +315,22 @@ const getImageAuthor = (image: HutImage) => {
 // Check if we have images
 const hasImages = computed(() => props.images.length > 0);
 
+// Mobile stripe slides: appends add-image slide at the end when >= 3 images on mobile
+type StripeSlide = { type: 'image'; image: HutImage; imageIndex: number } | { type: 'add-image' };
+
+const mobileStripeSlides = computed<StripeSlide[]>(() => {
+  if (!isMobile.value || props.images.length < 3) {
+    return props.images.map((image, i) => ({ type: 'image' as const, image, imageIndex: i }));
+  }
+  const slides: StripeSlide[] = props.images.map((image, i) => ({
+    type: 'image' as const,
+    image,
+    imageIndex: i,
+  }));
+  slides.push({ type: 'add-image' });
+  return slides;
+});
+
 // Get short attribution for current image
 //const getCurrentImageAttribution = () => {
 //  if (!currentImage.value?.attribution || !props.showAttribution) return '';
@@ -448,35 +464,44 @@ const thumbnailContainerStyle = computed(() => {
         class="mobile-stripe-swiper"
       >
         <swiper-slide
-          v-for="(image, index) in images"
-          :key="image.id"
+          v-for="(slide, index) in mobileStripeSlides"
+          :key="slide.type === 'image' ? slide.image.id : `add-image-${index}`"
           class="mobile-stripe-slide"
-          @click="openDialog(index)"
+          @click="slide.type === 'image' ? openDialog(slide.imageIndex) : handleAddImageClick()"
         >
+          <!-- Add-image slide -->
+          <div v-if="slide.type === 'add-image'" class="stripe-add-image-wrapper">
+            <q-iconify :is="IconAddPhoto" size="36px" color="grey-5" class="add-image-icon" />
+          </div>
+          <!-- Image slide -->
           <div
+            v-else
             class="stripe-image-wrapper"
-            :class="{ 'stripe-error': isStripeImageError(image.id) }"
+            :class="{ 'stripe-error': isStripeImageError(slide.image.id) }"
           >
             <img
-              :src="getStripeImageUrl(image)"
+              :src="getStripeImageUrl(slide.image)"
               class="stripe-image"
-              :class="{ 'stripe-loaded': isStripeImageLoaded(image.id) }"
-              :alt="`Image by ${image.attribution?.short || 'unknown'}`"
-              @load="onStripeImageLoad(image.id)"
-              @error="onStripeImageError(image.id)"
-              v-show="!isStripeImageError(image.id)"
+              :class="{ 'stripe-loaded': isStripeImageLoaded(slide.image.id) }"
+              :alt="`Image by ${slide.image.attribution?.short || 'unknown'}`"
+              @load="onStripeImageLoad(slide.image.id)"
+              @error="onStripeImageError(slide.image.id)"
+              v-show="!isStripeImageError(slide.image.id)"
             />
-            <div v-if="!isStripeImageLoaded(image.id)" class="stripe-number">
-              {{ index + 1 }}
+            <div v-if="!isStripeImageLoaded(slide.image.id)" class="stripe-number">
+              {{ slide.imageIndex + 1 }}
             </div>
             <!-- Per-image attribution overlay -->
-            <div v-if="getImageAuthor(image) || getProviderIcon(image)" class="stripe-attribution">
-              <span v-if="getImageAuthor(image)" class="stripe-author">{{
-                getImageAuthor(image)
+            <div
+              v-if="getImageAuthor(slide.image) || getProviderIcon(slide.image)"
+              class="stripe-attribution"
+            >
+              <span v-if="getImageAuthor(slide.image)" class="stripe-author">{{
+                getImageAuthor(slide.image)
               }}</span>
               <img
-                v-if="getProviderIcon(image)"
-                :src="getProviderIcon(image)"
+                v-if="getProviderIcon(slide.image)"
+                :src="getProviderIcon(slide.image)"
                 class="stripe-provider-icon"
                 alt="Provider icon"
               />
@@ -743,6 +768,29 @@ const thumbnailContainerStyle = computed(() => {
   &.stripe-error {
     background: rgba(255, 0, 0, 0.05);
   }
+}
+
+.stripe-add-image-wrapper {
+  height: 100%;
+  width: 65px;
+  border-radius: 8px;
+  border: 2px dashed rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0.03);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin: 0 6px;
+  transition: background 0.3s ease;
+
+  &:active {
+    background: rgba(0, 0, 0, 0.08);
+  }
+}
+
+.add-image-icon {
+  opacity: 0.5;
+  transition: all 0.3s ease;
 }
 
 .stripe-image {
