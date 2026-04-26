@@ -144,6 +144,7 @@ const handleContributeClick = () => {
   <!-- With images: show contribute button overlay -->
   <div v-if="images.length > 0" class="image-gallery-container">
     <q-btn
+      v-if="!$q.screen.xs"
       flat
       dense
       round
