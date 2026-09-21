@@ -116,14 +116,15 @@ const contentDrawerOpen = computed({
 const bottomSheetRef = ref<InstanceType<typeof WdBottomSheet> | null>(null);
 
 // When new content is opened while the sheet is already showing (e.g. another
-// hut is clicked on the map), snap the sheet back to its initial position so
-// the new content is visible from the top. On desktop the ref is null
-// (sheet not rendered), making this a no-op.
+// hut is clicked on the map), keep the sheet at its current snap position and
+// only reset the content scroll so the new content starts at the top. Fresh
+// opens (sheet was entirely closed) naturally start at the initial snap point.
+// On desktop the ref is null (sheet not rendered), making this a no-op.
 watch(
   () => contentStore.contentSlug ?? contentStore.contentId,
   () => {
     if (contentStore.contentOpen) {
-      bottomSheetRef.value?.snapToInitial({ behavior: 'smooth' });
+      bottomSheetRef.value?.onContentChanged();
     }
   }
 );

@@ -7,7 +7,8 @@ import { useBasemapStore } from '@stores/map/basemap-store';
 import { useLocalPropertiesStore } from '@stores/local-properties-store';
 import { showErrorDialogPersistent, ErrorCode } from '@components/error';
 import type { Map, PaddingOptions } from 'maplibre-gl';
-import { LngLatLike, MapGeoJSONFeature, MapLayerEventType, Point } from 'maplibre-gl';
+import { LngLatLike, MapGeoJSONFeature, MapLayerEventType, Point, setWorkerUrl } from 'maplibre-gl';
+import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import {
   MglMap,
   MglNavigationControl,
@@ -20,6 +21,12 @@ import {
 
 import mapDraw from '@services/draw';
 import { clientWodore } from '@clients/index';
+
+// MapLibre v6 resolves its web worker via import.meta.url, which breaks under
+// Vite's dependency optimization: the rewritten worker URL 404s and vector
+// tile sources (like the huts layer) silently never render. Point the library
+// at the worker chunk emitted by Vite instead.
+setWorkerUrl(maplibreWorkerUrl);
 
 // ============================================================================
 // Constants
@@ -359,6 +366,24 @@ function onHutLayerClick(e: MapLayerEventType['click']) {
     }
   }
 }
+
+// Clear the hut selection when the hut route is left (sheet dismissed by
+// dragging, closed via the X button, or back navigation). Without this the
+// marker stays selected and the next tap on the same hut is treated as a
+// deselect-toggle (pushes back to the map) instead of re-opening its content.
+watch(
+  () => route.params.slug,
+  slug => {
+    if (slug === undefined && selectedHutFeature.value !== undefined) {
+      const featureId = selectedHutFeature.value.id;
+      selectedHutFeature.value = undefined;
+      mapRef.map?.setFeatureState(
+        { source: HUT_SOURCE_ID, sourceLayer: HUT_SOURCE_LAYER, id: featureId },
+        { selected: false }
+      );
+    }
+  }
+);
 
 /**
  * Get platform-specific padding for map viewport
