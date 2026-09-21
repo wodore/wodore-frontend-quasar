@@ -1,4 +1,10 @@
-## ADDED Requirements
+# availability-scroll Specification
+
+## Purpose
+
+Defines the automatic scroll behavior of the availability stripe: it scrolls to the selected date (or today) when the Swiper becomes ready and follows subsequent date changes.
+
+## Requirements
 
 ### Requirement: Scroll to selected date on initialization
 
@@ -35,3 +41,9 @@ WdAccommodationAvailabilities SHALL scroll to the first day of a month when its 
 ### Requirement: No race condition between initialization and Swiper readiness
 
 The initial scroll SHALL be triggered from the Swiper `onSwiper` callback (which fires when the instance is ready), not from a watch with `immediate: true` or a `nextTick` in `watchEffect`.
+
+#### Scenario: Scroll triggers once Swiper instance is ready
+
+- **WHEN** the component mounts and the Swiper instance finishes initializing
+- **THEN** the initial scroll fires from the `onSwiper` callback
+- **AND** no scroll attempt occurs before the Swiper instance exists

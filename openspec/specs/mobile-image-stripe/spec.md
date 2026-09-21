@@ -1,3 +1,9 @@
+# mobile-image-stripe Specification
+
+## Purpose
+
+Defines the horizontally scrollable image stripe shown on mobile viewports in the gallery preview, replacing the single-image Swiper, including image sizing and aspect-ratio handling.
+
 ## Requirements
 
 ### Requirement: Mobile image stripe rendering

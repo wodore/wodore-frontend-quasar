@@ -1,4 +1,10 @@
-## ADDED Requirements
+# mobile-stripe-add-slide Specification
+
+## Purpose
+
+Defines the inline add-image slide appended to the mobile gallery stripe to encourage image contributions on mobile.
+
+## Requirements
 
 ### Requirement: Inline add-image slide in mobile stripe
 

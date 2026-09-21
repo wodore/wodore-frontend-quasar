@@ -1,4 +1,10 @@
-## ADDED Requirements
+# accommodation-availability Specification
+
+## Purpose
+
+Defines how WdAccommodationAvailabilities displays hut availability as a horizontal Swiper stripe: free-mode scrolling, per-day occupancy icons from the availability categories API, and day cell rendering.
+
+## Requirements
 
 ### Requirement: Swiper-based horizontal availability display
 
