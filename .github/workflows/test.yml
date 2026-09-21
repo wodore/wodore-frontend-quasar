@@ -50,6 +50,12 @@ jobs:
       - name: Run unit tests
         run: rm -rf allure-results && yarn test:unit
 
+      - name: Show Allure results (debug)
+        if: always()
+        run: |
+          ls -la allure-results/ 2>/dev/null || echo 'no allure-results dir'
+          echo "result files: $(ls allure-results/unit 2>/dev/null | wc -l)"
+
       - name: Cache Allure (npm)
         uses: actions/cache@v4
         with:
