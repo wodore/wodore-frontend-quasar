@@ -1,4 +1,10 @@
-## ADDED Requirements
+# day-label Specification
+
+## Purpose
+
+Defines contextual, locale-aware day naming for WdDayLabel: Heute/Morgen/Gestern relative labels and weekday abbreviations for all other dates, formatted via the Quasar locale.
+
+## Requirements
 
 ### Requirement: Display contextual day name
 

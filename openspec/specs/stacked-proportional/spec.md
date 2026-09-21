@@ -1,4 +1,10 @@
-## ADDED Requirements
+# stacked-proportional Specification
+
+## Purpose
+
+Defines stacked proportional rendering for month cells in the year stripe overview: a single rectangle with diagonal multi-color stripes whose thickness is proportional to each type's value.
+
+## Requirements
 
 ### Requirement: Single rectangle with multi-color stripes
 
