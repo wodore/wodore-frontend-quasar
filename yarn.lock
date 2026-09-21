@@ -10445,10 +10445,10 @@ pupa@^3.1.0:
   dependencies:
     escape-goat "^4.0.0"
 
-pure-web-bottom-sheet@^0.6.0:
-  version "0.6.0"
-  resolved "https://registry.yarnpkg.com/pure-web-bottom-sheet/-/pure-web-bottom-sheet-0.6.0.tgz#38e7b3d61879b2dbbbed487ec639b37c6153b3b1"
-  integrity sha512-uJ6M6Dsvv7RScsWFqBxciXWYYCJLI1YkOv1m5dFoJSSgicNep8g0SlIvxrizu1Bk597c5MuNe2DRAhYa4FA5zQ==
+pure-web-bottom-sheet@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/pure-web-bottom-sheet/-/pure-web-bottom-sheet-1.0.0.tgz#0ee8dcb10cf44ff462ead181151e9485c764f675"
+  integrity sha512-dBvi059J5UWlumfP04qUNsF4EPWg8/wsv7SQ2B5gc8DUqqUrI5pMudNZFQ7T8nSnY0C7Az7/TZjpp2+PsEpilw==
 
 qs@~6.14.0:
   version "6.14.2"

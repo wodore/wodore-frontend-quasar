@@ -244,6 +244,8 @@ watchEffect(async () => {
         releaseOnEdges: false,
         sensitivity: 0.22,
       }"
+      :touch-move-stop-propagation="false"
+      :touch-start-prevent-default="false"
       :initial-slide="selectedSlideIndex"
       :grab-cursor="true"
       class="wd-weather-forecast__swiper"

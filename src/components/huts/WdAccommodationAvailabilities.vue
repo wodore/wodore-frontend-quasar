@@ -378,6 +378,10 @@ watchEffect(() => {
         releaseOnEdges: false,
         sensitivity: 0.22,
       }"
+      :touch-move-stop-propagation="false"
+      :touch-start-prevent-default="false"
+      :touch-angle="10"
+      :threshold="0"
       :initial-slide="selectedSlideIndex"
       :grab-cursor="true"
       class="wd-accommodation-availabilities__swiper"

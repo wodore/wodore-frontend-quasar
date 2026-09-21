@@ -1,5 +1,14 @@
 <script setup lang="ts">
-import { ref, computed, watchEffect, markRaw, nextTick, onMounted, type Component } from 'vue';
+import {
+  ref,
+  computed,
+  watch,
+  watchEffect,
+  markRaw,
+  nextTick,
+  onMounted,
+  type Component,
+} from 'vue';
 import { defineAsyncComponent } from 'vue';
 import { useQuasar } from 'quasar';
 import { useRoute, useRouter } from 'vue-router';
@@ -102,6 +111,22 @@ const contentDrawerOpen = computed({
     }
   },
 });
+
+// Mobile bottom sheet ref (for programmatic snap control)
+const bottomSheetRef = ref<InstanceType<typeof WdBottomSheet> | null>(null);
+
+// When new content is opened while the sheet is already showing (e.g. another
+// hut is clicked on the map), snap the sheet back to its initial position so
+// the new content is visible from the top. On desktop the ref is null
+// (sheet not rendered), making this a no-op.
+watch(
+  () => contentStore.contentSlug ?? contentStore.contentId,
+  () => {
+    if (contentStore.contentOpen) {
+      bottomSheetRef.value?.snapToInitial({ behavior: 'smooth' });
+    }
+  }
+);
 
 // Static component map with markRaw (prevents re-evaluation)
 const componentMap: Record<string, { title: Component; content: Component; actions: Component }> = {
@@ -392,7 +417,12 @@ aside.content-drawer {
   </q-layout>
 
   <!-- Mobile Bottom Sheet (OUTSIDE QLayout, only on mobile) -->
-  <WdBottomSheet v-if="isMobile" v-model="contentDrawerOpen" @close="closeContent">
+  <WdBottomSheet
+    v-if="isMobile"
+    ref="bottomSheetRef"
+    v-model="contentDrawerOpen"
+    @close="closeContent"
+  >
     <!-- Close button (top-right corner) -->
     <div class="absolute" style="top: 10px; right: 10px; z-index: 1000">
       <q-btn round dense flat icon="wd-close" @click="closeContent" class="text-grey-7" size="md" />
