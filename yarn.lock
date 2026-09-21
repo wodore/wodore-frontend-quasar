@@ -10445,10 +10445,10 @@ pupa@^3.1.0:
   dependencies:
     escape-goat "^4.0.0"
 
-pure-web-bottom-sheet@^0.6.0:
-  version "0.6.0"
-  resolved "https://registry.yarnpkg.com/pure-web-bottom-sheet/-/pure-web-bottom-sheet-0.6.0.tgz#38e7b3d61879b2dbbbed487ec639b37c6153b3b1"
-  integrity sha512-uJ6M6Dsvv7RScsWFqBxciXWYYCJLI1YkOv1m5dFoJSSgicNep8g0SlIvxrizu1Bk597c5MuNe2DRAhYa4FA5zQ==
+pure-web-bottom-sheet@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/pure-web-bottom-sheet/-/pure-web-bottom-sheet-1.0.0.tgz#0ee8dcb10cf44ff462ead181151e9485c764f675"
+  integrity sha512-dBvi059J5UWlumfP04qUNsF4EPWg8/wsv7SQ2B5gc8DUqqUrI5pMudNZFQ7T8nSnY0C7Az7/TZjpp2+PsEpilw==
 
 qs@~6.14.0:
   version "6.14.2"
@@ -10462,10 +10462,10 @@ quansync@^0.2.11:
   resolved "https://registry.npmjs.org/quansync/-/quansync-0.2.11.tgz"
   integrity sha512-AifT7QEbW9Nri4tAwR5M/uzpBuqfZf+zwaEM/QkzEjj7NBuFD2rBuy0K3dE+8wltbezDV7JMA0WfnCPYRSYbXA==
 
-quasar@^2.17.0:
-  version "2.18.6"
-  resolved "https://registry.npmjs.org/quasar/-/quasar-2.18.6.tgz"
-  integrity sha512-ZlK+vJXOBPSFDCNQDBDNwSI+AHoqaFPxK8ve6mhsYLhMKWI5b8zsGY9VU1xYjngO2aBvU4fvGWXy4tTbzrBk8Q==
+quasar@^2.19.3:
+  version "2.19.3"
+  resolved "https://registry.yarnpkg.com/quasar/-/quasar-2.19.3.tgz#b32fe557a79f4f8ae5b303f5847f992776d8a321"
+  integrity sha512-z9uEiZfpkkwUGedgVfARRoF7h30qWSZwUfUTLOo/jXCiGL5KYQt5N39XpKVOW0Y7lGF9kSAZuFHvYoPZoMUpfg==
 
 query-string@^5.0.1:
   version "5.1.1"

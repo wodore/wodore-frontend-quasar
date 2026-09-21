@@ -46,11 +46,11 @@ const getSymbolForDay = (hutType?: string) => {
 interface AvailabilityDay {
   date: string;
   reservation_status: string;
-  free: number;
-  total: number;
-  occupancy_percent: number;
-  occupancy_steps: number;
-  occupancy_status: 'empty' | 'low' | 'medium' | 'high' | 'full' | 'unknown';
+  free?: number | null;
+  total?: number | null;
+  occupancy_percent?: number | null;
+  occupancy_steps?: number | null;
+  occupancy_status: 'empty' | 'low' | 'medium' | 'high' | 'full' | 'free_unknown' | 'unknown';
   hut_type?: string;
   link: string;
   loading?: boolean;
