@@ -50,24 +50,17 @@ jobs:
       - name: Run unit tests
         run: rm -rf allure-results && yarn test:unit
 
-      - name: Show Allure results (debug)
-        if: always()
-        run: |
-          ls -la allure-results/ 2>/dev/null || echo 'no allure-results dir'
-          echo "result files: $(ls allure-results/unit 2>/dev/null | wc -l)"
-
       - name: Cache Allure (npm)
         uses: actions/cache@v4
         with:
           path: ~/.npm
           key: allure-${{ runner.os }}
 
+      # allure@3 (Allure Report 3): the allure-action reads the v3 summary
+      # format; the v2 allure-commandline report is not parseable by it
       - name: Generate Allure report
         if: always()
-        run: |
-          npx -y allure generate allure-results/unit --clean
-          cat allure-report/widgets/summary.json 2>/dev/null \
-            || echo 'no summary.json'
+        run: npx -y allure@3 generate allure-results/unit
 
       - name: Post Allure summary
         if: always()
