@@ -5,15 +5,15 @@ import WdDayLabel from '@components/content/place/WdDayLabel.vue';
 
 const { t } = useI18n();
 
-type OccupancyStatus = 'empty' | 'low' | 'medium' | 'high' | 'full' | 'unknown';
+type OccupancyStatus = 'empty' | 'low' | 'medium' | 'high' | 'full' | 'free_unknown' | 'unknown';
 
 interface AvailabilityDay {
   date: string;
   reservation_status: string;
-  free: number;
-  total: number;
-  occupancy_percent: number;
-  occupancy_steps: number;
+  free?: number | null;
+  total?: number | null;
+  occupancy_percent?: number | null;
+  occupancy_steps?: number | null;
   occupancy_status: OccupancyStatus;
   hut_type: string;
   type_slug?: string | null;
@@ -48,9 +48,22 @@ const isUnknown = computed(
     (props.day.free === 0 && props.day.total === 0 && !isLoading.value)
 );
 
+/** Free beds confirmed, but count not published by the source */
+const isFreeUnknown = computed(
+  () =>
+    !isUnknown.value && (props.day.occupancy_status === 'free_unknown' || props.day.free == null)
+);
+
 const iconUrl = computed(() => {
   const status = props.day.occupancy_status;
-  return props.availabilityIcons[status] ?? props.availabilityIcons['unknown'] ?? null;
+  if (props.availabilityIcons[status]) {
+    return props.availabilityIcons[status];
+  }
+  // Fallback until a dedicated free_unknown icon exists on the backend
+  if (isFreeUnknown.value) {
+    return props.availabilityIcons['medium'] ?? props.availabilityIcons['unknown'] ?? null;
+  }
+  return props.availabilityIcons['unknown'] ?? null;
 });
 
 /** Occupancy status display name */
@@ -62,6 +75,7 @@ const statusLabel = computed(() => {
     medium: 'MITTEL',
     high: 'HOCH',
     full: 'VOLL',
+    free_unknown: 'FREI ?',
     unknown: 'unbekannt',
   };
   return map[props.day.occupancy_status] ?? '';
@@ -84,6 +98,8 @@ const freeColor = computed(() => {
       return '#ef6c00';
     case 'medium':
       return '#87b52d';
+    case 'free_unknown':
+      return '#779F28'; // medium, a bit darker
     case 'low':
     case 'empty':
       return '#4B8E43';
@@ -91,6 +107,16 @@ const freeColor = computed(() => {
       return 'rgba(17, 33, 25, 0.4)';
   }
 });
+
+/** Free count for display: '?' if not published by the source (free_unknown) */
+const freeLabel = computed(() =>
+  props.day.free == null || isUnknown.value ? '?' : String(props.day.free)
+);
+
+/** Total for display: '?' if not published by the source */
+const totalLabel = computed(() =>
+  props.day.total == null || isUnknown.value ? '?' : String(props.day.total)
+);
 
 /** Badge style derived from hut type color (like PlaceTypeBadge) */
 const badgeStyle = computed(() => {
@@ -122,7 +148,7 @@ const tooltipLines = computed(() => {
     lines.push(t('availability.no_data'));
   } else if (!isLoading.value) {
     lines.push(
-      `${props.day.free} ${t('availability.free')} / ${props.day.total} ${t('availability.total')}`
+      `${freeLabel.value} ${t('availability.free')} / ${totalLabel.value} ${t('availability.total')}`
     );
   }
   if (props.day.hut_type && props.day.hut_type !== 'unknown') {
@@ -164,7 +190,7 @@ const tooltipLines = computed(() => {
           />
         </div>
         <span v-if="!isUnknown" class="wd-accommodation-day__free" :style="{ color: freeColor }">
-          {{ day.free }}
+          {{ freeLabel }}
         </span>
       </template>
     </div>
@@ -185,7 +211,7 @@ const tooltipLines = computed(() => {
         <q-skeleton type="text" width="40px" height="14px" />
       </template>
       <div
-        v-else-if="day.total > 0 && hutTypeColor"
+        v-else-if="(day.total ?? 0) > 0 && hutTypeColor"
         class="wd-accommodation-day__badge"
         :style="badgeStyle"
       >
@@ -200,8 +226,10 @@ const tooltipLines = computed(() => {
         />
         <span class="wd-accommodation-day__badge-total">{{ day.total }}</span>
       </div>
-      <!-- Unknown: show ? in same space, no badge -->
-      <span v-else-if="isUnknown" class="wd-accommodation-day__badge-unknown">?</span>
+      <!-- Unknown or missing total: show ? in same space, no badge -->
+      <span v-else-if="isUnknown || day.total == null" class="wd-accommodation-day__badge-unknown"
+        >?</span
+      >
     </div>
 
     <!-- Tooltip -->
