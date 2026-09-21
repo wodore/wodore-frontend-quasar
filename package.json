@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "@fontsource/roboto-condensed": "^5.0",
-    "@indoorequal/vue-maplibre-gl": "^8",
+    "@indoorequal/vue-maplibre-gl": "^9.0.1",
     "@mapbox/mapbox-gl-draw": "^1.4.3",
     "@mapbox/polyline": "^1.2.1",
     "@pmndrs/detect-gpu": "^6.0.0",

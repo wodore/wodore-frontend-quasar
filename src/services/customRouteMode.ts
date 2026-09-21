@@ -4,7 +4,7 @@ import { DrawCustomMode } from '@mapbox/mapbox-gl-draw';
 import axios from 'axios';
 import { Feature, LineString, Point, FeatureCollection, GeoJSON } from 'geojson';
 import polyline from '@mapbox/polyline';
-import { Map } from 'maplibre-gl'; // or 'mapbox-gl' if using Mapbox
+import { Map, type MapEventType } from 'maplibre-gl'; // or 'mapbox-gl' if using Mapbox
 
 async function getRouteValhalla(coordinates: [number, number][]) {
   try {
@@ -188,14 +188,23 @@ const CustomRouteMode: DrawCustomMode<CustomRouteState> = {
 
         this.updateUIClasses({ mouse: 'add' });
         this.activateUIButton('custom_route');
-        (this.map as unknown as Map).fire('draw.custom_route.update', {
-          coordinates: state.coordinates,
-        });
+        // SAFETY: this.map is the maplibre Map the draw control was created with, but is
+        // typed as the legacy mapbox-gl DrawableMap; the unknown-cast bridges to
+        // maplibre's Map. Only the shared method subset (fire) is used.
+        (this.map as unknown as Map).fire(
+          // SAFETY: custom mapbox-gl-draw event unknown to maplibre's MapEventType keys
+          'draw.custom_route.update' as keyof MapEventType,
+          {
+            coordinates: state.coordinates,
+          }
+        );
 
+        // SAFETY: same legacy DrawableMap -> maplibre Map bridge as above
         updatePointFeatures(state, this.map as unknown as Map);
 
         if (state.coordinates.length > 1) {
           getRouteValhalla(state.coordinates).then(route => {
+            // SAFETY: same legacy DrawableMap -> maplibre Map bridge as above
             displayRoute(route, this.map as unknown as Map);
           });
           //this.getRoute(state.coordinates);
@@ -204,7 +213,7 @@ const CustomRouteMode: DrawCustomMode<CustomRouteState> = {
     }
   },
   toDisplayFeatures(
-    state: CustomRouteState,
+    _state: CustomRouteState,
     geojson: GeoJSON
     //display: (geojson: GeoJSON),
   ) {
@@ -222,7 +231,9 @@ const CustomRouteMode: DrawCustomMode<CustomRouteState> = {
     this.updateUIClasses({ mouse: 'none' });
     this.activateUIButton();
     if (state.coordinates.length > 0) {
-      (this.map as unknown as Map).fire('draw.custom_route.complete', {
+      // SAFETY: legacy DrawableMap -> maplibre Map bridge as above; custom draw
+      // event unknown to maplibre's MapEventType keys
+      (this.map as unknown as Map).fire('draw.custom_route.complete' as keyof MapEventType, {
         coordinates: state.coordinates,
       });
     }

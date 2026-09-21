@@ -1,6 +1,7 @@
 <script setup lang="ts">
 //import { Map } from 'maplibre-gl';
 import { QPageStickyProps, QFabProps, useQuasar, LocalStorage } from 'quasar';
+import type { AllPaintProperties } from '@maplibre/maplibre-gl-style-spec';
 import { OpacitySpecification, OverlaySwitchItem } from '@stores/map/utils/interfaces';
 import { useOverlayStore } from '@stores/map/overlay-store';
 import { useBasemapStore } from '@stores/map/basemap-store';
@@ -209,7 +210,9 @@ function addOverlayLayer({
       if (opacity !== undefined && opacityProperties.length > 0) {
         for (const property of opacityProperties) {
           console.debug(`  Set paint '${property}' property for layer '${layer.id}' to ${opacity}`);
-          mapRef.map?.setPaintProperty(layer.id, property, opacity);
+          // maplibre-gl v6: setPaintProperty expects a literal paint property name; the
+          // dynamic names come from opacityPropertiesByType and are valid paint props
+          mapRef.map?.setPaintProperty(layer.id, property as keyof AllPaintProperties, opacity);
         }
       }
     } else {

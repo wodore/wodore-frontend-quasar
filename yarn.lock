@@ -1584,10 +1584,10 @@
     "@iconify/types" "^2.0.0"
     mlly "^1.8.0"
 
-"@indoorequal/vue-maplibre-gl@^8":
-  version "8.4.2"
-  resolved "https://registry.npmjs.org/@indoorequal/vue-maplibre-gl/-/vue-maplibre-gl-8.4.2.tgz"
-  integrity sha512-oPSO37a5PrjG2PiYqnQmpaOHcwqZA1LaoQ3Pma/Mljt6zD9fE7fyS98TGznQezEXxBtrutjlNenmFC43zQULeA==
+"@indoorequal/vue-maplibre-gl@^9.0.1":
+  version "9.0.1"
+  resolved "https://registry.yarnpkg.com/@indoorequal/vue-maplibre-gl/-/vue-maplibre-gl-9.0.1.tgz#44646ca3cbbdd340903a61bbfdb9b990c2b8ec92"
+  integrity sha512-9jPSJMej0tYANYDTmkobysTOGS7FyZk48bo3g3YB3wE/CQ3fq0hy1cY6emVA8RwYOh6UDAa4PT4efC7ZWGU+Mg==
 
 "@inquirer/external-editor@^1.0.2":
   version "1.0.3"
