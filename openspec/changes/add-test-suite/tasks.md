@@ -30,7 +30,7 @@
 - [x] 4.2 Run `yarn lint`, `npx vue-tsc --noEmit`, `yarn test:unit` (with `--clean-alluredir` semantics for the results dir)
 - [x] 4.3 `npx -y allure generate allure-results/unit --clean` (cache npm like the backend does)
 - [x] 4.4 Post via `allure-framework/allure-action@v0.6.6` with `GITHUB_TOKEN`; verify no e2e step exists in CI
-- [ ] 4.5 Open a test PR and confirm the Allure check appears on it
+- [x] 4.5 Open a test PR and confirm the Allure check appears on it
 
 ## 5. Validation & Docs
 
