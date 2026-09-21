@@ -1,0 +1,68 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  pull-requests: write
+  checks: write
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Read Node.js version from .nvmrc
+        id: nvmrc
+        run: echo "NODE_VERSION=$(cat .nvmrc)" >> $GITHUB_OUTPUT
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ steps.nvmrc.outputs.NODE_VERSION }}
+          cache: yarn
+
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.cache/node-gyp
+          key: node-modules-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+
+      - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: yarn install --immutable
+
+      # NOTE: e2e (Playwright) is intentionally NOT run in CI — it requires a
+      # real dev server + backend and stays a local-only suite for now.
+      - name: Run unit tests
+        run: rm -rf allure-results && yarn test:unit
+
+      - name: Cache Allure (npm)
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: allure-${{ runner.os }}
+
+      - name: Generate Allure report
+        if: always()
+        run: npx -y allure generate allure-results/unit --clean
+
+      - name: Post Allure summary
+        if: always()
+        uses: allure-framework/allure-action@v0.6.6
+        with:
+          report-directory: "./allure-report"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
