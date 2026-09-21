@@ -61,3 +61,5 @@ Icons:
 | `wd-bed-flat`               | Bed icon (e.g. for total beds) (filled)   |
 | `wd-bed-flat-outline`       | Bed icon (e.g. for total beds) (outlined) |
 | `wd-no-bed-flat`            | Bed icon strikethrough                    |
+| `wd-rain`                   | Rain/precipitation                        |
+| `wd-snow`                   | Snow/snowfall                             |

@@ -62,7 +62,7 @@ const bgStyle = computed(() => {
 }
 
 .wd-info-badge__label {
-  font-size: 0.6rem;
+  font-size: 0.5rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: #888;

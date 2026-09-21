@@ -12,7 +12,21 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "baseUrl": "."
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@components/*": ["src/components/*"],
+      "@composables/*": ["src/composables/*"],
+      "@layouts/*": ["src/layouts/*"],
+      "@pages/*": ["src/pages/*"],
+      "@assets/*": ["src/assets/*"],
+      "@boot/*": ["src/boot/*"],
+      "@stores/*": ["src/stores/*"],
+      "@services/*": ["src/services/*"],
+      "@extras/*": ["src/extras/*"],
+      "@clients/*": ["src/clients/*"],
+      "@types/*": ["src/types/*"]
+    }
   },
   "include": ["src/**/*", "stories/**/*", ".storybook/**/*"],
   "exclude": ["node_modules"],

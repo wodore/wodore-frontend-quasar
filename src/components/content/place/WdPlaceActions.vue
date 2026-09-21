@@ -65,7 +65,7 @@ function getReviewText(status: string | null | undefined): string {
 }
 
 // Watch and star state
-const watchHut = ref(false);
+//const watchHut = ref(false);
 const starHut = ref(false);
 function toggleHutStar() {
   starHut.value = !starHut.value;
@@ -127,13 +127,13 @@ watch(menuOpen, () => {
 </style>
 
 <template>
-  <q-toolbar class="footer-toolbar bg-white q-pr-sm q-pl-md">
+  <q-toolbar class="footer-toolbar bg-white q-pr-sm">
     <!-- Geo location link (first position) -->
     <WdToolbarButton
       v-if="place && place.location"
       size="md"
       class="text-primary-900"
-      icon="eva-pin-fill"
+      icon="wd-location-share-outline"
       :href="`geo:${place.location.lat},${place.location.lon}`"
       target="_blank"
     />
@@ -145,12 +145,8 @@ watch(menuOpen, () => {
       {{ getReviewText(place.review_status) }}
     </q-badge>
 
-    <WdToolbarButton
-      size="md"
-      :color="watchHut ? 'accent' : 'primary-900'"
-      :icon="watchHut ? 'wd-eye' : 'wd-eye-outline'"
-      style="opacity: 0.5; cursor: not-allowed"
-    />
+    <!-- <WdToolbarButton size="md" :color="watchHut ? 'accent' : 'primary-900'" -->
+    <!--   :icon="watchHut ? 'wd-eye' : 'wd-eye-outline'" style="opacity: 0.5; cursor: not-allowed" /> -->
 
     <WdToolbarButton size="md" class="text-primary-900" icon="wd-more-vertical">
       <q-menu

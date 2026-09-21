@@ -94,6 +94,8 @@
     "temp": "Temp.",
     "range_separator": "...",
     "unit": "°C",
+    "rain": "Pioggia",
+    "snowfall": "Neve",
     "unavailable": "Dati meteo non disponibili",
     "no_guarantee": "senza garanzia"
   },

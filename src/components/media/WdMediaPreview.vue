@@ -5,7 +5,16 @@ import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import type { Swiper as SwiperType } from 'swiper';
-import { EffectFade, Keyboard, Navigation, Pagination, Thumbs } from 'swiper/modules';
+import {
+  EffectFade,
+  FreeMode,
+  Keyboard,
+  Mousewheel,
+  Navigation,
+  Pagination,
+  Scrollbar,
+  Thumbs,
+} from 'swiper/modules';
 import type { HutImage } from '@composables/useHutImages';
 import { useDeviceDetection } from '@composables/useDeviceDetection';
 import { useMediaPreload } from '@composables/useMediaPreload';
@@ -20,6 +29,8 @@ import 'swiper/css/keyboard';
 import 'swiper/css/pagination';
 import 'swiper/css/thumbs';
 import 'swiper/css/effect-fade';
+import 'swiper/css/free-mode';
+import 'swiper/css/scrollbar';
 
 interface Props {
   images: HutImage[];
@@ -121,6 +132,7 @@ const swiperRef = ref<SwiperType | null>(null);
 const thumbsSwiperRef = ref<SwiperType | null>(null);
 const showSpinner = ref(false);
 const loadedThumbnails = ref<Set<string>>(new Set());
+const loadedStripeImages = ref<Set<string>>(new Set());
 
 // Show spinner after 500ms of loading
 const { start: startSpinnerTimeout, stop: stopSpinnerTimeout } = useTimeoutFn(() => {
@@ -234,6 +246,23 @@ const isThumbnailError = (imageId: string) => {
   return loadedThumbnails.value.has(`${imageId}_error`);
 };
 
+// Stripe image load tracking
+const isStripeImageLoaded = (imageId: string) => {
+  return loadedStripeImages.value.has(imageId);
+};
+
+const onStripeImageLoad = (imageId: string) => {
+  loadedStripeImages.value.add(imageId);
+};
+
+const onStripeImageError = (imageId: string) => {
+  loadedStripeImages.value.add(`${imageId}_error`);
+};
+
+const isStripeImageError = (imageId: string) => {
+  return loadedStripeImages.value.has(`${imageId}_error`);
+};
+
 // Get current image
 const currentImage = computed(() => {
   return props.images[currentSlide.value] || null;
@@ -251,13 +280,56 @@ const getThumbnailUrl = (image: HutImage) => {
   return image.urls.square.thumb || image.urls.square.preview || '';
 };
 
+// Get image URL for mobile stripe — uses correct orientation
+const getStripeImageUrl = (image: HutImage) => {
+  const isPortrait = image.is_portrait;
+  const orientation = isPortrait ? 'portrait' : 'landscape';
+  const urls = image.urls[orientation] || image.urls.landscape;
+  if (!urls) return '';
+  return urls.thumb || urls.preview || '';
+};
+
 // Get provider icon for any image
 const getProviderIcon = (image: HutImage) => {
   return image?.provider?.icon || undefined;
 };
 
+// Get author name for a specific image (for stripe attribution)
+const getImageAuthor = (image: HutImage) => {
+  if (!props.showAttribution) return '';
+
+  const authorName = image.author?.name;
+  const providerName = image.provider?.name;
+
+  if (authorName && authorName !== 'Unknown' && authorName !== 'unknown') {
+    return authorName;
+  }
+
+  if (providerName) {
+    return providerName;
+  }
+
+  return '';
+};
+
 // Check if we have images
 const hasImages = computed(() => props.images.length > 0);
+
+// Mobile stripe slides: appends add-image slide at the end when >= 3 images on mobile
+type StripeSlide = { type: 'image'; image: HutImage; imageIndex: number } | { type: 'add-image' };
+
+const mobileStripeSlides = computed<StripeSlide[]>(() => {
+  if (!isMobile.value || props.images.length < 3) {
+    return props.images.map((image, i) => ({ type: 'image' as const, image, imageIndex: i }));
+  }
+  const slides: StripeSlide[] = props.images.map((image, i) => ({
+    type: 'image' as const,
+    image,
+    imageIndex: i,
+  }));
+  slides.push({ type: 'add-image' });
+  return slides;
+});
 
 // Get short attribution for current image
 //const getCurrentImageAttribution = () => {
@@ -352,11 +424,7 @@ const thumbnailContainerStyle = computed(() => {
 </script>
 
 <template>
-  <div
-    v-if="loading && !hasImages"
-    class="flex flex-center"
-    style="min-height: 100px; border-radius: 25px"
-  >
+  <div v-if="loading && !hasImages" class="flex flex-center no-image-mobile-wrapper">
     <WdNoImage
       :message="emptyStateMessage"
       :icon="emptyStateIcon ?? IconAddPhoto"
@@ -367,8 +435,84 @@ const thumbnailContainerStyle = computed(() => {
   </div>
 
   <div v-else-if="hasImages">
-    <!-- Main image swiper with thumbnails overlay -->
-    <div class="media-preview-container">
+    <!-- Mobile: horizontal image stripe -->
+    <div v-if="isMobile" class="mobile-stripe-container">
+      <swiper
+        :modules="[FreeMode, Scrollbar, Mousewheel]"
+        :slides-per-view="'auto'"
+        :space-between="4"
+        :free-mode="{
+          enabled: true,
+          sticky: false,
+          momentum: true,
+          momentumRatio: 1,
+          momentumBounce: false,
+          minimumVelocity: 0.3,
+        }"
+        :scrollbar="{
+          draggable: false,
+          hide: true,
+          snapOnRelease: false,
+        }"
+        :mousewheel="{
+          enabled: true,
+          forceToAxis: false,
+          releaseOnEdges: false,
+          sensitivity: 0.22,
+        }"
+        :grab-cursor="true"
+        class="mobile-stripe-swiper"
+      >
+        <swiper-slide
+          v-for="(slide, index) in mobileStripeSlides"
+          :key="slide.type === 'image' ? slide.image.id : `add-image-${index}`"
+          class="mobile-stripe-slide"
+          @click="slide.type === 'image' ? openDialog(slide.imageIndex) : handleAddImageClick()"
+        >
+          <!-- Add-image slide -->
+          <div v-if="slide.type === 'add-image'" class="stripe-add-image-wrapper">
+            <q-iconify :is="IconAddPhoto" size="36px" color="grey-5" class="add-image-icon" />
+          </div>
+          <!-- Image slide -->
+          <div
+            v-else
+            class="stripe-image-wrapper"
+            :class="{ 'stripe-error': isStripeImageError(slide.image.id) }"
+          >
+            <img
+              :src="getStripeImageUrl(slide.image)"
+              class="stripe-image"
+              :class="{ 'stripe-loaded': isStripeImageLoaded(slide.image.id) }"
+              :alt="`Image by ${slide.image.attribution?.short || 'unknown'}`"
+              @load="onStripeImageLoad(slide.image.id)"
+              @error="onStripeImageError(slide.image.id)"
+              v-show="!isStripeImageError(slide.image.id)"
+            />
+            <div v-if="!isStripeImageLoaded(slide.image.id)" class="stripe-number">
+              {{ slide.imageIndex + 1 }}
+            </div>
+            <!-- Per-image attribution overlay -->
+            <div
+              v-if="getImageAuthor(slide.image) || getProviderIcon(slide.image)"
+              class="stripe-attribution"
+            >
+              <span v-if="getImageAuthor(slide.image)" class="stripe-author">{{
+                getImageAuthor(slide.image)
+              }}</span>
+              <img
+                v-if="getProviderIcon(slide.image)"
+                :src="getProviderIcon(slide.image)"
+                class="stripe-provider-icon"
+                alt="Provider icon"
+              />
+            </div>
+          </div>
+        </swiper-slide>
+      </swiper>
+    </div>
+
+    <!-- Desktop: main image swiper with thumbnails overlay -->
+    <div v-else class="media-preview-container">
       <div
         class="media-preview-wrapper"
         style="border-radius: 16px; overflow: hidden; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1)"
@@ -405,14 +549,7 @@ const thumbnailContainerStyle = computed(() => {
                 }
               : false
           "
-          :pagination="
-            (!showThumbnails || isMobile) && images.length > 1
-              ? {
-                  clickable: true,
-                  dynamicBullets: true,
-                }
-              : false
-          "
+          :pagination="!showThumbnails && images.length > 1"
           :thumbs="{ swiper: thumbsSwiperRef }"
           :initial-slide="0"
           class="preview-swiper"
@@ -459,7 +596,9 @@ const thumbnailContainerStyle = computed(() => {
                   @error="onThumbnailError(image.id)"
                   v-show="!isThumbnailError(image.id)"
                 />
-                <div v-if="!isThumbnailLoaded(image.id)" class="thumb-number">{{ index + 1 }}</div>
+                <div v-if="!isThumbnailLoaded(image.id)" class="thumb-number">
+                  {{ index + 1 }}
+                </div>
                 <div v-if="getProviderIcon(image)" class="thumb-provider-icon-bg">
                   <img
                     :src="getProviderIcon(image)"
@@ -479,13 +618,14 @@ const thumbnailContainerStyle = computed(() => {
 
   <!-- No images state - use slot for customization -->
   <slot name="no-image">
-    <WdNoImage
-      v-if="!loading && !hasImages"
-      :message="emptyStateMessage"
-      :icon="emptyStateIcon ?? IconAddPhoto"
-      :on-contribute="handleAddImageClick"
-      :reduced-height="reducedHeightNoImage"
-    />
+    <div v-if="!loading && !hasImages" class="no-image-mobile-wrapper">
+      <WdNoImage
+        :message="emptyStateMessage"
+        :icon="emptyStateIcon ?? IconAddPhoto"
+        :on-contribute="handleAddImageClick"
+        :reduced-height="reducedHeightNoImage"
+      />
+    </div>
   </slot>
 </template>
 
@@ -565,6 +705,175 @@ const thumbnailContainerStyle = computed(() => {
   :deep(.swiper-button-next) {
     right: 8px !important;
   }
+}
+
+// Mobile stripe styles
+.mobile-stripe-container {
+  width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+// Constrain no-image state to match stripe height on mobile
+.no-image-mobile-wrapper {
+  width: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+
+  @media (max-width: 599px) {
+    :deep(.no-image-wrapper) {
+      padding-top: 0 !important;
+      height: 85px;
+    }
+
+    :deep(.no-image-content) {
+      position: relative;
+      padding: 8px 12px;
+    }
+  }
+}
+
+.mobile-stripe-swiper {
+  width: 100%;
+  padding-bottom: 2px;
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  &.swiper-scrollbar-lock {
+    padding-bottom: 0;
+    cursor: default;
+  }
+}
+
+.mobile-stripe-slide {
+  width: auto !important;
+  height: 85px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.stripe-image-wrapper {
+  position: relative;
+  height: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &.stripe-error {
+    background: rgba(255, 0, 0, 0.05);
+  }
+}
+
+.stripe-add-image-wrapper {
+  height: 100%;
+  width: 65px;
+  border-radius: 8px;
+  border: 2px dashed rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0.03);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin: 0 6px;
+  transition: background 0.3s ease;
+
+  &:active {
+    background: rgba(0, 0, 0, 0.08);
+  }
+}
+
+.add-image-icon {
+  opacity: 0.5;
+  transition: all 0.3s ease;
+}
+
+.stripe-image {
+  height: 100%;
+  width: auto;
+  display: block;
+  border-radius: 8px;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+
+  &.stripe-loaded {
+    opacity: 1;
+  }
+}
+
+.stripe-number {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 18px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.15);
+  user-select: none;
+  pointer-events: none;
+}
+
+// Per-image attribution overlay inside stripe slides
+.stripe-attribution {
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  border-radius: 4px;
+  padding: 2px 4px;
+  pointer-events: none;
+}
+
+.stripe-author {
+  font-size: 0.5rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 70px;
+  line-height: 1.2;
+}
+
+.stripe-provider-icon {
+  width: 10px;
+  height: 10px;
+  object-fit: contain;
+  flex-shrink: 0;
+  border-radius: 1px;
+}
+
+// Scrollbar styling (matching WdWeatherForecast)
+.mobile-stripe-swiper :deep(.swiper-scrollbar) {
+  height: 3px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 2px;
+  bottom: 2px;
+}
+
+.mobile-stripe-swiper :deep(.swiper-scrollbar-drag) {
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 2px;
+  min-width: 24px;
+}
+
+.mobile-stripe-swiper :deep(.swiper-scrollbar:hover) {
+  height: 5px;
+}
+
+.mobile-stripe-swiper :deep(.swiper-scrollbar:hover .swiper-scrollbar-drag) {
+  background: rgba(0, 0, 0, 0.35);
 }
 
 .preview-swiper {

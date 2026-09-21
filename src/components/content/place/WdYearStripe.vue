@@ -95,19 +95,65 @@ function cellStyle(color: string | undefined, value: number | undefined) {
   };
 }
 
-// Stacked: merge all rows into one, using the first row's color for cells
-// where row[0] has the highest value, row[1] color otherwise
-function stackedStyle(monthIndex: number) {
-  if (props.rows.length === 0) return {};
-  const values = props.rows.map(row => ({
-    value: row.months[monthIndex],
-    color: row.color,
-  }));
-  // Find the dominant row (highest value, ignore undefined)
-  const defined = values.filter(v => v.value !== undefined);
-  if (defined.length === 0) return {};
-  const dominant = defined.reduce((a, b) => ((a.value ?? 0) > (b.value ?? 0) ? a : b));
-  return cellStyle(dominant.color, dominant.value);
+interface StackedSegment {
+  value: number;
+  color: string;
+}
+
+function stackedSegments(monthIndex: number): StackedSegment[] {
+  const segments: StackedSegment[] = [];
+  for (const row of props.rows) {
+    const v = row.months[monthIndex];
+    if (v !== undefined && v > 0 && row.color) {
+      segments.push({ value: v, color: row.color });
+    }
+  }
+  return segments;
+}
+
+function stackedCellStyle(monthIndex: number) {
+  const segments = stackedSegments(monthIndex);
+  if (segments.length === 0) return {};
+
+  const totalRaw = segments.reduce((sum, s) => sum + s.value, 0);
+
+  // Single type at 100%+ with no others → solid fill
+  if (segments.length === 1 && segments[0].value >= 100) {
+    return { backgroundColor: segments[0].color };
+  }
+
+  // Normalize if sum > 100
+  const normalized: StackedSegment[] =
+    totalRaw > 100
+      ? segments.map(s => ({ value: (s.value / totalRaw) * 100, color: s.color }))
+      : segments;
+
+  const totalNorm = normalized.reduce((sum, s) => sum + s.value, 0);
+  const basePx = 10;
+  const cyclePx = basePx; // total cycle width in pixels
+
+  // Build one repeating-linear-gradient with all colors in sequence
+  const colorStops: string[] = [];
+  let offset = 0;
+  for (const seg of normalized) {
+    const width = (seg.value / 100) * cyclePx;
+    colorStops.push(`${seg.color} ${offset}px`);
+    offset += width;
+    colorStops.push(`${seg.color} ${offset}px`);
+  }
+
+  // Gray remainder if sum < 100
+  const remainder = 100 - totalNorm;
+  if (remainder > 0) {
+    const grayWidth = (remainder / 100) * cyclePx;
+    colorStops.push(`#e0e0e0 ${offset}px`);
+    offset += grayWidth;
+    colorStops.push(`#e0e0e0 ${offset}px`);
+  }
+
+  return {
+    backgroundImage: `repeating-linear-gradient(-45deg, ${colorStops.join(', ')})`,
+  };
 }
 
 function stackedClass(monthIndex: number) {
@@ -138,7 +184,7 @@ function stackedClass(monthIndex: number) {
         :key="mi"
         class="wd-year-stripe__cell wd-year-stripe__cell--stacked"
         :class="stackedClass(mi)"
-        :style="stackedStyle(mi)"
+        :style="stackedCellStyle(mi)"
       />
     </div>
     <!-- Normal: one row per entry -->
@@ -215,7 +261,7 @@ function stackedClass(monthIndex: number) {
 }
 
 .wd-year-stripe__cell--stacked {
-  height: 12px;
+  height: 8px;
 }
 
 .wd-year-stripe__cell--unknown {

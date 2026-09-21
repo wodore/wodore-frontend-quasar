@@ -1460,7 +1460,7 @@ export interface components {
         /** HutBookingSchema */
         HutBookingSchema: {
             /** Link */
-            link: string;
+            link?: string | null;
             /**
              * Date
              * Format: date
@@ -1468,13 +1468,13 @@ export interface components {
             date: string;
             reservation_status: components["schemas"]["ReservationStatusEnum"];
             /** Free */
-            free: number;
+            free?: number | null;
             /** Total */
-            total: number;
+            total?: number | null;
             /** Occupancy Percent */
-            occupancy_percent: number;
+            occupancy_percent?: number | null;
             /** Occupancy Steps */
-            occupancy_steps: number;
+            occupancy_steps?: number | null;
             occupancy_status: components["schemas"]["OccupancyStatusEnum"];
             /**
              * Hut Type
@@ -1513,10 +1513,10 @@ export interface components {
         };
         /**
          * OccupancyStatusEnum
-         * @description Enum with with occuptation status.
+         * @description Enum with occupancy status.
          * @enum {string}
          */
-        OccupancyStatusEnum: "unknown" | "empty" | "low" | "medium" | "high" | "full";
+        OccupancyStatusEnum: "unknown" | "free_unknown" | "empty" | "low" | "medium" | "high" | "full";
         /**
          * ReservationStatusEnum
          * @description Enum with reservation status.
@@ -1655,25 +1655,25 @@ export interface components {
             reservation_status: components["schemas"]["ReservationStatusEnum"];
             /**
              * Free
-             * @description Number of free places
+             * @description Number of free places (null = not published by source)
              */
-            free: number;
+            free?: number | null;
             /**
              * Total
-             * @description Total number of places
+             * @description Total number of places (null = not published by source)
              */
-            total: number;
+            total?: number | null;
             /**
              * Occupancy Percent
-             * @description Occupancy percentage (0-100)
+             * @description Occupancy percentage (0-100), null if not computable
              */
-            occupancy_percent: number;
+            occupancy_percent?: number | null;
             /**
              * Occupancy Steps
-             * @description Occupancy in discrete steps (0-100, increments of 10)
+             * @description Occupancy in discrete steps (0-100, increments of 10), null if not computable
              */
-            occupancy_steps: number;
-            /** @description Occupancy status (empty, low, medium, high, full, unknown) */
+            occupancy_steps?: number | null;
+            /** @description Occupancy status (empty, low, medium, high, full, free_unknown, unknown) */
             occupancy_status: components["schemas"]["OccupancyStatusEnum"];
             /**
              * Hut Type
@@ -1869,25 +1869,25 @@ export interface components {
             reservation_status: components["schemas"]["ReservationStatusEnum"];
             /**
              * Free
-             * @description Number of free places
+             * @description Number of free places (null = not published by source)
              */
-            free: number;
+            free?: number | null;
             /**
              * Total
-             * @description Total number of places
+             * @description Total number of places (null = not published by source)
              */
-            total: number;
+            total?: number | null;
             /**
              * Occupancy Percent
-             * @description Occupancy percentage (0-100)
+             * @description Occupancy percentage (0-100), null if not computable
              */
-            occupancy_percent: number;
+            occupancy_percent?: number | null;
             /**
              * Occupancy Steps
-             * @description Occupancy in discrete steps (0-100, increments of 10)
+             * @description Occupancy in discrete steps (0-100, increments of 10), null if not computable
              */
-            occupancy_steps: number;
-            /** @description Occupancy status (empty, low, medium, high, full, unknown) */
+            occupancy_steps?: number | null;
+            /** @description Occupancy status (empty, low, medium, high, full, free_unknown, unknown) */
             occupancy_status: components["schemas"]["OccupancyStatusEnum"];
             /**
              * Hut Type
@@ -2056,20 +2056,20 @@ export interface components {
             date: string;
             /**
              * Free
-             * @description Number of free places
+             * @description Number of free places (null = not published by source)
              */
-            free: number;
+            free?: number | null;
             /**
              * Total
-             * @description Total number of places
+             * @description Total number of places (null = not published by source)
              */
-            total: number;
+            total?: number | null;
             /**
              * Occupancy Percent
-             * @description Occupancy percentage (0-100)
+             * @description Occupancy percentage (0-100), null if not computable
              */
-            occupancy_percent: number;
-            /** @description Occupancy status (empty, low, medium, high, full, unknown) */
+            occupancy_percent?: number | null;
+            /** @description Occupancy status (empty, low, medium, high, full, free_unknown, unknown) */
             occupancy_status: components["schemas"]["OccupancyStatusEnum"];
             /** @description Reservation status (unknown, possible, not_possible, not_online) */
             reservation_status: components["schemas"]["ReservationStatusEnum"];
