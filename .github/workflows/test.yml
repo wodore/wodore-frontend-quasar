@@ -10,6 +10,8 @@ on:
 permissions:
   pull-requests: write
   checks: write
+  # Publishing the Allure report to the gh-pages branch
+  contents: write
 
 jobs:
   unit-tests:
@@ -66,5 +68,29 @@ jobs:
         if: always()
         uses: allure-framework/allure-action@v0.6.6
         with:
-          report-directory: "./allure-report"
+          report-directory: './allure-report'
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Full report hosted on GitHub Pages, one directory per run; old runs
+      # are kept so PR links stay valid
+      - name: Publish report to GitHub Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./allure-report
+          destination_dir: allure/${{ github.run_number }}
+          keep_files: true
+          commit_message: >-
+            Allure report for run ${{ github.run_number }}
+
+      - name: Add report link to PR
+        if: always() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REPO=${GITHUB_REPOSITORY,,}
+          URL="https://${REPO%%/*}.github.io/${REPO#*/}"
+          URL="$URL/allure/${{ github.run_number }}/"
+          gh pr comment "${{ github.event.pull_request.number }}" \
+            --body "📊 Full Allure report: $URL"
