@@ -64,7 +64,10 @@ jobs:
 
       - name: Generate Allure report
         if: always()
-        run: npx -y allure generate allure-results/unit --clean
+        run: |
+          npx -y allure generate allure-results/unit --clean
+          cat allure-report/widgets/summary.json 2>/dev/null \
+            || echo 'no summary.json'
 
       - name: Post Allure summary
         if: always()
