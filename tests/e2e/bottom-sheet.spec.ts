@@ -81,7 +81,7 @@ async function tapHutMarkerBySweep(page: Page, targetName: string): Promise<bool
   return false;
 }
 
-test('sheet content scrolls directly while the sheet is partially open', async ({ page }) => {
+test('sheet expands to fullscreen first, then content scrolls', async ({ page }) => {
   allure.label('feature', 'bottom-sheet');
   allure.severity('critical');
   test.setTimeout(180_000);
@@ -105,26 +105,31 @@ test('sheet content scrolls directly while the sheet is partially open', async (
   });
   expect(overflow).toBeGreaterThan(50);
 
-  const before = await getSheetState(page);
-  expect(before.exists).toBe(true);
-  const beforeHost = before.hostScrollTop;
-
-  // Drag up on the text content: this must scroll the content, not move the
-  // sheet (the old expand-to-scroll behavior expanded the sheet instead)
-  const top = (await getSheetTop(page)) ?? 0;
   const vp = page.viewportSize();
-  await touchDrag(
-    page,
-    Math.round((vp?.width ?? 390) / 2),
-    top + 160,
-    Math.round((vp?.width ?? 390) / 2),
-    top + 60
-  );
+  const cx = Math.round((vp?.width ?? 390) / 2);
+  const top = (await getSheetTop(page)) ?? 0;
 
-  const after = await getSheetState(page);
-  expect(after.contentScrollTop).toBeGreaterThan(0);
-  // The sheet stays at its snap position - the gesture scrolled the content
-  expect(Math.abs((after.hostScrollTop ?? 0) - (beforeHost ?? 0))).toBeLessThan(30);
+  // Drag up on the content: the SHEET expands towards fullscreen first
+  await touchDrag(page, cx, top + 220, cx, 90, { steps: 10, gap: 20 });
+  const expanded = await getSheetState(page);
+  expect(expanded.sheetState).toBe('expanded');
+
+  // The sheet stops at the toolbar (50px), it must not cover or overshoot it
+  const sheetTop = (await getSheetTop(page)) ?? -1;
+  expect(sheetTop).toBeGreaterThanOrEqual(45);
+  expect(sheetTop).toBeLessThanOrEqual(60);
+  await page.screenshot({ path: 'test-results/sheet-expanded.png' });
+
+  // Now - fully expanded - a further drag scrolls the content normally
+  const scrollBefore = expanded.contentScrollTop ?? 0;
+  await touchDrag(page, cx, 600, cx, 300, { steps: 10, gap: 20 });
+  const scrolled = await getSheetState(page);
+  expect(scrolled.contentScrollTop).toBeGreaterThan(scrollBefore);
+
+  // The sheet stays expanded (fullscreen) while the content scrolls
+  expect(scrolled.sheetState).toBe('expanded');
+  expect(scrolled.hostScrollTop).toBe(expanded.hostScrollTop);
+  await page.screenshot({ path: 'test-results/sheet-expanded-scrolled.png' });
 });
 
 test('dismissed sheet reopens when tapping the same hut marker again', async ({ page }) => {

@@ -28,8 +28,9 @@ const toolbarHeight = 50;
 // Index 0 (collapsed/dismissed): handled by swipe-to-dismiss
 const defaultSnap = '330px';
 
-// Max height: 100vh - toolbar height
-const maxSnap = `calc(100vh - ${toolbarHeight}px)`;
+// Max height: visible viewport minus toolbar (dvh = dynamic viewport, so the
+// sheet stops right at the app toolbar on mobile instead of overshooting it)
+const maxSnap = `calc(100dvh - ${toolbarHeight}px)`;
 
 // Sync with v-model
 watch(
@@ -113,6 +114,29 @@ bottom-sheet::part(footer) {
 bottom-sheet [slot='snap'].bottom::before {
   scroll-snap-stop: always;
 }
+
+/*
+ * On touch devices, let vertical touch gestures on the sheet content reach
+ * the host scroll container while the sheet is not fully expanded.
+ *
+ * With expand-to-scroll the sheet must be expandable by dragging its content:
+ * the library sets `touch-action: pan-y` on .sheet-content (WebKit overflow
+ * guard), but .sheet-content has `overflow-y: hidden` while the sheet is not
+ * expanded - so `pan-y` hands vertical gestures to an element that cannot
+ * scroll and the gesture dies before the host can expand the sheet.
+ *
+ * While the sheet is not expanded, reset touch-action to `auto`: vertical
+ * gestures then scroll the nearest y-scrollable ancestor - the host scroll
+ * container - which drives the CSS scroll snap to expand the sheet. Once the
+ * sheet IS expanded, the library default applies and the content scrolls
+ * normally. Touch-action restrictions apply along the whole ancestor chain,
+ * so no other restriction may be reintroduced in between.
+ */
+@media (pointer: coarse) {
+  bottom-sheet[expand-to-scroll]:not([data-sheet-state='expanded'])::part(content) {
+    touch-action: auto !important;
+  }
+}
 </style>
 
 <template>
@@ -122,6 +146,7 @@ bottom-sheet [slot='snap'].bottom::before {
     :key="sheetKey"
     :style="{ '--sheet-max-height': maxSnap, '--sheet-border-radius': '24px' }"
     nested-scroll
+    expand-to-scroll
     swipe-to-dismiss
     @snap-position-change="handleSnapPositionChange"
   >
