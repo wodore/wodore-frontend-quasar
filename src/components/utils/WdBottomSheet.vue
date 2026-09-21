@@ -40,6 +40,7 @@ watch(
       nextTick(() => {
         internalOpen.value = true;
         currentSnapIndex.value = 2; // Reset to initial snap
+        reachedSnapAfterOpen.value = false;
       });
     } else {
       internalOpen.value = false;
@@ -48,6 +49,13 @@ watch(
   },
   { immediate: true }
 );
+
+// Whether the sheet has reached a real snap position since it opened. The
+// web component mounts its host scroll container at scrollTop 0 - which is
+// the collapsed position - and can emit one collapsed@0 event during the
+// initial snap animation. Dismissing on that artifact would instantly
+// self-close the freshly opened sheet (seen on real devices).
+const reachedSnapAfterOpen = ref(false);
 
 // Handle snap position changes
 function handleSnapPositionChange(event: { detail: { sheetState: string; snapIndex: number } }) {
@@ -64,10 +72,13 @@ function handleSnapPositionChange(event: { detail: { sheetState: string; snapInd
   // previous snap index missed fast flings and left the app in a state where
   // the sheet was visually gone but still considered open.
   if (snapIndex === 0 && sheetState === 'collapsed') {
+    if (!reachedSnapAfterOpen.value) return; // mount artifact, see above
     internalOpen.value = false;
     emit('update:modelValue', false);
     emit('close');
+    return;
   }
+  reachedSnapAfterOpen.value = true;
 }
 
 // Force re-render when modelValue changes from false -> true
@@ -137,6 +148,37 @@ bottom-sheet [slot='snap'].bottom::before {
     touch-action: auto !important;
   }
 }
+
+/*
+ * Guarantee scrollability at the expanded state.
+ *
+ * The library toggles .sheet-content overflow-y with a scroll-timeline
+ * animation (hidden until the host scroll reaches exactly 100%). On real
+ * touch devices the settled scroll position can be a fraction off the
+ * maximum (dynamic viewport rounding, momentum), so the timeline never
+ * completes and the content stays unscrollable. Force it open.
+ */
+bottom-sheet[expand-to-scroll][data-sheet-state='expanded']::part(content) {
+  overflow-y: auto !important;
+}
+
+/*
+ * Rounded top corners while partially open, square top edge when expanded.
+ * The border-radius transition animates the change; the :host shadow rules
+ * use the same properties, document styles on the host element win.
+ */
+bottom-sheet {
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  transition:
+    border-top-left-radius 0.25s ease,
+    border-top-right-radius 0.25s ease;
+}
+
+bottom-sheet[data-sheet-state='expanded'] {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
 </style>
 
 <template>
@@ -144,7 +186,7 @@ bottom-sheet [slot='snap'].bottom::before {
     v-if="internalOpen"
     ref="sheetElement"
     :key="sheetKey"
-    :style="{ '--sheet-max-height': maxSnap, '--sheet-border-radius': '24px' }"
+    :style="{ '--sheet-max-height': maxSnap }"
     nested-scroll
     expand-to-scroll
     swipe-to-dismiss

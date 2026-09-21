@@ -46,39 +46,29 @@ async function expandDescription(page: Page): Promise<void> {
 }
 
 /**
- * Taps a hut marker on the map by sweeping a grid of candidate points above
- * the sheet until the target hut's content opens.
+ * Taps a hut marker at the exact screen position of its coordinates.
  *
- * Marker screen positions cannot be computed statically: the map recentres
- * on the selected hut with viewport padding that tracks the sheet position.
- * The sweep skips the area around the currently selected hut's marker (the
- * padded viewport center) so it never toggles the open hut closed.
+ * Uses the map instance exposed on window (dev mode only) to project the
+ * hut's location - immune to the map's dynamic padding and recentring,
+ * which make static offsets unreliable.
  */
-async function tapHutMarkerBySweep(page: Page, targetName: string): Promise<boolean> {
-  const canvas = await page.locator('.maplibregl-canvas').first().boundingBox();
-  if (!canvas) return false;
-  const sheetTop = (await getSheetTop(page)) ?? canvas.y + canvas.height;
-  // Padded viewport center ~ where the currently selected hut's marker sits
-  const pivotX = canvas.x + canvas.width / 2;
-  const pivotY = canvas.y + (sheetTop - canvas.y) / 2;
-
-  for (let y = canvas.y + 70; y < sheetTop - 40; y += 48) {
-    for (let x = canvas.x + 45; x < canvas.x + canvas.width - 45; x += 48) {
-      // Skip the current hut's marker zone (tapping it would toggle it closed)
-      if (Math.abs(x - pivotX) < 75 && Math.abs(y - pivotY) < 75) continue;
-      await touchTap(page, x, y);
-      if (
-        await page
-          .getByText(targetName)
-          .first()
-          .isVisible()
-          .catch(() => false)
-      ) {
-        return true;
-      }
-    }
-  }
-  return false;
+async function tapHutMarker(page: Page, lon: number, lat: number): Promise<void> {
+  const point = await page.evaluate(
+    ([lng, ltd]) => {
+      const map = (window as unknown as Record<string, unknown>).__wodoreMap as
+        | { project: (ll: [number, number]) => { x: number; y: number } }
+        | undefined;
+      if (!map) return null;
+      const p = map.project([lng, ltd]);
+      const canvas = document.querySelector('.maplibregl-canvas');
+      if (!canvas) return null;
+      const rect = canvas.getBoundingClientRect();
+      return { x: rect.x + p.x, y: rect.y + p.y };
+    },
+    [lon, lat]
+  );
+  expect(point, 'map instance not available (dev mode only)').toBeTruthy();
+  await touchTap(page, point.x, point.y);
 }
 
 test('sheet expands to fullscreen first, then content scrolls', async ({ page }) => {
@@ -118,6 +108,17 @@ test('sheet expands to fullscreen first, then content scrolls', async ({ page })
   const sheetTop = (await getSheetTop(page)) ?? -1;
   expect(sheetTop).toBeGreaterThanOrEqual(45);
   expect(sheetTop).toBeLessThanOrEqual(60);
+
+  // The content must be scrollable at the expanded state. The library drives
+  // overflow-y with a scroll-timeline animation that can fail to complete on
+  // real devices (fractional viewport rounding) - assert the computed value.
+  const overflowY = await page.evaluate(() => {
+    const content = document
+      .querySelector('bottom-sheet')
+      ?.shadowRoot?.querySelector('.sheet-content');
+    return content ? window.getComputedStyle(content).overflowY : 'none';
+  });
+  expect(overflowY).toBe('auto');
   await page.screenshot({ path: 'test-results/sheet-expanded.png' });
 
   // Now - fully expanded - a further drag scrolls the content normally
@@ -129,6 +130,12 @@ test('sheet expands to fullscreen first, then content scrolls', async ({ page })
   // The sheet stays expanded (fullscreen) while the content scrolls
   expect(scrolled.sheetState).toBe('expanded');
   expect(scrolled.hostScrollTop).toBe(expanded.hostScrollTop);
+
+  // And it keeps scrolling with further gestures
+  const midScroll = scrolled.contentScrollTop ?? 0;
+  await touchDrag(page, cx, 600, cx, 300, { steps: 10, gap: 20 });
+  const scrolledMore = await getSheetState(page);
+  expect(scrolledMore.contentScrollTop).toBeGreaterThan(midScroll);
   await page.screenshot({ path: 'test-results/sheet-expanded-scrolled.png' });
 });
 
@@ -197,10 +204,10 @@ test('sheet keeps its snap position when another hut is opened', async ({ page }
   expect(reduced.hostScrollTop ?? 999).toBeLessThan(220);
 
   // Open the second hut: the sheet must load the new hut but KEEP its position
-  const opened = await tapHutMarkerBySweep(page, 'Odello');
-  expect(opened, 'could not find the second hut marker on the map').toBe(true);
+  await tapHutMarker(page, 9.731958601514826, 46.276941317541564); // Odello Grandori
 
   await expect(page).toHaveURL(/\/hut\/odello-grandori/, { timeout: 10_000 });
+  await expect(page.getByText('Odello').first()).toBeVisible({ timeout: 30_000 });
 
   // Position kept: still at the header-only snap, not snapped back to 330px
   const after = await getSheetState(page);

@@ -187,6 +187,12 @@ useResizeObserver(mapDiv, () => {
 function onMapLoad(e: MglEvent<'load'>) {
   console.debug(`[onMapLoad] Maplibre version ${e.map.version} loaded`);
 
+  // Dev-only handle for debugging and e2e tests (map.project for exact
+  // marker tap positions). Stripped from production behavior by the guard.
+  if (process.env.DEV) {
+    (window as unknown as Record<string, unknown>).__wodoreMap = e.map;
+  }
+
   e.map.scrollZoom.setWheelZoomRate(0.003);
   onMapStyledata(e as unknown as MglEvent<'styledata'>);
   e.map.on('mouseenter', HUT_LAYER_ID, onLayerEnter);
