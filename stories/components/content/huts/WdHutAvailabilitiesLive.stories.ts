@@ -42,7 +42,7 @@ export const Interactive = meta.story({
   args: {
     slug: 'aarbiwak',
   },
-  render: args => ({
+  render: (args: { slug: string; hasAvailability?: boolean }) => ({
     components: { WdHutAvailabilities },
     setup() {
       return { args };

@@ -54,15 +54,15 @@ const fetchAvailabilityIcons = async () => {
 };
 
 // --- Date range ---
-type OccupancyStatus = 'empty' | 'low' | 'medium' | 'high' | 'full' | 'unknown';
+type OccupancyStatus = 'empty' | 'low' | 'medium' | 'high' | 'full' | 'free_unknown' | 'unknown';
 
 interface AvailabilityDay {
   date: string;
   reservation_status: string;
-  free: number;
-  total: number;
-  occupancy_percent: number;
-  occupancy_steps: number;
+  free?: number | null;
+  total?: number | null;
+  occupancy_percent?: number | null;
+  occupancy_steps?: number | null;
   occupancy_status: OccupancyStatus;
   hut_type: string;
   type_slug?: string | null;

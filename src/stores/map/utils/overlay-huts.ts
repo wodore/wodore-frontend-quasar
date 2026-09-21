@@ -105,6 +105,8 @@ function getAvailColors(day: number): ExpressionSpecification {
     '#99CC33', // Yellow Green - Low occupancy
     'medium',
     '#FFA726', // Orange - Medium occupancy
+    'free_unknown',
+    '#E09321', // Darker Orange - Free beds, count unknown
     'high',
     '#EF6C00', // Dark Orange - High occupancy
     'full',
@@ -126,9 +128,20 @@ function getHutsOccupationDayLayout(day: number) {
       ['<', day, ['length', ['get', 'data']]],
       [
         'concat',
-        ['get', 'free', ['at', day, ['get', 'data']]],
+        // free is null if the source does not publish the count (free_unknown)
+        [
+          'case',
+          ['==', ['get', 'free', ['at', day, ['get', 'data']]], null],
+          '?',
+          ['to-string', ['get', 'free', ['at', day, ['get', 'data']]]],
+        ],
         '\n',
-        ['get', 'total', ['at', day, ['get', 'data']]],
+        [
+          'case',
+          ['==', ['get', 'total', ['at', day, ['get', 'data']]], null],
+          '?',
+          ['to-string', ['get', 'total', ['at', day, ['get', 'data']]]],
+        ],
       ],
       '',
     ],
