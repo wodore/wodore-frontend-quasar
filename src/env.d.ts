@@ -20,6 +20,7 @@ declare namespace NodeJS {
     WODORE_OICD_CLIENT_ID: string;
     WODORE_OICD_RESOURCE_ID: string;
     WODORE_MAPTILER_API_KEY: string;
+    WODORE_OFFICIAL_URL: string;
     TIMESTAMP_VERSION_HEX: string;
   }
 }

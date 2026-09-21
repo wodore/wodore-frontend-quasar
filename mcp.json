@@ -11,6 +11,10 @@
       "command": "npx",
       "args": ["-y", "iconify-mcp-server@latest"],
       "env": {}
+    },
+    "penpot": {
+      "type": "http",
+      "url": "http://localhost:4401/mcp"
     }
   }
 }

@@ -1,6 +1,8 @@
 {
   "map_styles": "Plans",
   "contact": "Contact",
+  "standard": "Standard",
+  "reduced": "Réduit",
   "less": "moins",
   "more": "plus",
   "overlay_style": "Couches",
@@ -92,6 +94,8 @@
     "temp": "Temp.",
     "range_separator": "...",
     "unit": "°C",
+    "rain": "Pluie",
+    "snowfall": "Neige",
     "unavailable": "Donnees meteo indisponibles",
     "no_guarantee": "sans garantie"
   },

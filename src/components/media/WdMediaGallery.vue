@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import type { Swiper as SwiperType } from 'swiper';
-import { Keyboard, Navigation, Thumbs, Zoom } from 'swiper/modules';
+import { Keyboard, Mousewheel, Navigation, Thumbs, Zoom, EffectFade } from 'swiper/modules';
+import { date } from 'quasar';
 import type { HutImage } from 'src/composables/useHutImages';
-import type { ImageSizeVariants } from 'src/types/geo';
+import { useDeviceDetection } from '@composables/useDeviceDetection';
+import { useMediaPreload } from '@composables/useMediaPreload';
+import { useI18n } from 'vue-i18n';
 import IconCloseOutline from '~icons/eva/close-outline';
 import IconDownloadOutline from '~icons/eva/download-outline';
 
@@ -13,7 +16,9 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/thumbs';
 import 'swiper/css/keyboard';
+import 'swiper/css/mousewheel';
 import 'swiper/css/zoom';
+import 'swiper/css/effect-fade';
 
 interface Props {
   images: HutImage[];
@@ -31,6 +36,37 @@ const emit = defineEmits<{
 const thumbsSwiper = ref<SwiperType | null>(null);
 const mainSwiper = ref<SwiperType | null>(null);
 const activeSlideIndex = ref(props.initialSlide);
+const loadedImages = ref<Set<string>>(new Set());
+const isZoomed = ref(false);
+
+// Use shared device detection
+const { hasTouch } = useDeviceDetection();
+
+// Use shared media preload composable
+const imagesRef = computed(() => props.images);
+const activeSlideRef = computed(() => activeSlideIndex.value);
+const { getGalleryImageUrl, getPreviewImageUrl, preloadAdjacentImages, preloadThumbnailImages } =
+  useMediaPreload(imagesRef, activeSlideRef);
+
+// Track which images have loaded
+const isImageLoaded = (imageId: string) => {
+  return loadedImages.value.has(imageId);
+};
+
+// Mark image as loaded
+const onImageLoad = (imageId: string) => {
+  loadedImages.value.add(imageId);
+};
+
+// Mark image as failed to load
+const onImageError = (imageId: string) => {
+  loadedImages.value.add(`${imageId}_error`);
+};
+
+// Check if image failed to load
+const isImageError = (imageId: string) => {
+  return loadedImages.value.has(`${imageId}_error`);
+};
 
 // Set thumbs swiper
 const setThumbsSwiper = (swiper: SwiperType) => {
@@ -42,68 +78,47 @@ const onSwiper = (swiper: SwiperType) => {
   mainSwiper.value = swiper;
 };
 
-// Handle slide change
+// Handle slide change - use realIndex for loop mode
 const onSlideChange = (swiper: SwiperType) => {
-  activeSlideIndex.value = swiper.activeIndex;
+  activeSlideIndex.value = swiper.realIndex;
 };
 
-// Get optimal image size based on screen size - NEVER upscale
-const getOptimalImageSize = (): 'large' | 'medium' => {
-  const screenWidth = window.innerWidth;
-  const screenHeight = window.innerHeight;
-
-  // Calculate max size we need (considering thumbnails and margins)
-  const maxHeight = screenHeight - 140; // Leave room for thumbnails
-  const maxWidth = screenWidth >= 1200 ? screenWidth - 80 : screenWidth; // Add margin on large screens
-
-  // Always use at least medium, use large if screen is big enough
-  if (maxWidth <= 1600 || maxHeight <= 1200) {
-    return 'medium';
-  }
-  return 'large';
+// Handle zoom change - hide attribution when zoomed
+const onZoomChange = (_swiper: SwiperType, scale: number) => {
+  isZoomed.value = scale > 1;
 };
 
-// Get image URL for main gallery with proper size and orientation
-const getMainImageUrl = (image: HutImage): string => {
-  if (!image.urls) return '';
+// Get i18n locale for date formatting
+const { locale } = useI18n();
 
-  // Use is_portrait to determine orientation, default to landscape
-  const orientation = image.is_portrait ? 'portrait' : 'landscape';
-  const urls = image.urls[orientation] || image.urls.landscape;
+// Format image date for display (localized)
+const formatImageDate = (dateString: string | null | undefined): string => {
+  if (!dateString) return '';
 
-  if (!urls) return '';
+  try {
+    const dateObj = new Date(dateString);
 
-  const size = getOptimalImageSize();
+    // Check if date is valid
+    if (isNaN(dateObj.getTime())) return '';
 
-  // Use @2x version for HiDPI devices
-  const pixelRatio = window.devicePixelRatio || 1;
-  if (pixelRatio >= 1.5) {
-    const size2x = `${size}@2x` as keyof ImageSizeVariants;
-    if (urls[size2x]) {
-      return urls[size2x];
+    const currentLocale = locale.value;
+
+    // Format based on locale
+    if (currentLocale === 'de') {
+      // German: "15. Januar 2026"
+      return date.formatDate(dateObj, 'D. MMMM YYYY');
+    } else {
+      // English: "January 15, 2026"
+      return date.formatDate(dateObj, 'MMMM D, YYYY');
     }
+  } catch {
+    return '';
   }
-
-  // Fallback to smaller sizes if the chosen size doesn't exist
-  if (urls[size]) {
-    return urls[size];
-  }
-  if (urls.medium) {
-    return urls.medium;
-  }
-  return urls.preview || urls.thumb || '';
 };
 
-// Get thumbnail URL (small square images) with HiDPI support
-const getThumbnailUrl = (image: HutImage) => {
-  if (!image.urls?.square) return '';
-
-  const pixelRatio = window.devicePixelRatio || 1;
-  // Use @2x for HiDPI devices
-  if (pixelRatio >= 1.5 && image.urls.square['thumb@2x']) {
-    return image.urls.square['thumb@2x'];
-  }
-  return image.urls.square.thumb || '';
+// Get image URL for display (reusing preload function for consistency)
+const getMainImageUrl = (image: HutImage): string => {
+  return getGalleryImageUrl(image);
 };
 
 // Get current image
@@ -111,7 +126,7 @@ const currentImage = computed(() => {
   return props.images[activeSlideIndex.value];
 });
 
-// Close gallery
+// Close gallery - now emits close event for Quasar Dialog plugin
 const closeGallery = () => {
   emit('close');
 };
@@ -123,43 +138,42 @@ const downloadOriginal = () => {
   }
 };
 
-// Handle backdrop click - close if clicking outside the image
-const onBackdropClick = (event: MouseEvent) => {
-  const target = event.target as HTMLElement;
-  // Close if clicking directly on the gallery container (backdrop)
-  if (target.classList.contains('media-gallery-container')) {
-    closeGallery();
-  }
-};
-
 // Check if we should add margin (large screens)
 const shouldAddMargin = computed(() => {
   return window.innerWidth >= 1200;
 });
 
-// Build custom attribution parts
-const attributionParts = computed(() => {
-  if (!currentImage.value?.attribution) return [];
+// Show navigation only on non-touch devices with multiple images
+const showNavigation = computed(() => {
+  return !hasTouch.value && props.images.length > 1;
+});
 
-  // Use full attribution for detailed display
-  const attr = currentImage.value.attribution;
-  if (attr.full) {
-    return [attr.full];
-  }
-  if (attr.short) {
-    return [attr.short];
-  }
+// Handle back button to close gallery
+const onBackButton = () => {
+  closeGallery();
+};
 
-  return [];
+onMounted(() => {
+  // Push history state when gallery opens so back button works
+  window.history.pushState({ galleryOpen: true }, '');
+  window.addEventListener('popstate', onBackButton);
+
+  // Preload thumbnails immediately in background (they're small, fast to load)
+  // Don't await - let them load progressively with retry logic
+  preloadThumbnailImages();
+
+  // Preload adjacent images in background (don't await to keep gallery snappy)
+  // The retry logic in preloadImage will handle rate limiting gracefully
+  preloadAdjacentImages();
+});
+
+onUnmounted(() => {
+  window.removeEventListener('popstate', onBackButton);
 });
 </script>
 
 <template>
-  <div
-    class="media-gallery-container"
-    :class="{ 'with-margin': shouldAddMargin }"
-    @click="onBackdropClick"
-  >
+  <div class="media-gallery-container" :class="{ 'with-margin': shouldAddMargin }">
     <!-- Close button -->
     <q-btn flat round dense class="close-btn" @click="closeGallery">
       <q-iconify :is="IconCloseOutline" size="20px" />
@@ -172,38 +186,79 @@ const attributionParts = computed(() => {
       <q-tooltip>Download original</q-tooltip>
     </q-btn>
 
-    <!-- Attribution - top left -->
-    <div v-if="attributionParts.length > 0" class="attribution-top-left">
-      <span class="attribution-text" v-html="attributionParts.join(' ')" />
-    </div>
-
     <!-- Main Swiper -->
     <swiper
-      :modules="[Keyboard, Navigation, Thumbs, Zoom]"
+      :modules="[Keyboard, Mousewheel, Navigation, Thumbs, Zoom, EffectFade]"
       :slides-per-view="1"
       :space-between="0"
       :keyboard="{
         enabled: true,
       }"
-      :navigation="true"
+      :mousewheel="{
+        enabled: true,
+        forceToAxis: false,
+        sensitivity: 1,
+        releaseOnEdges: false,
+      }"
+      :navigation="showNavigation"
       :thumbs="{ swiper: thumbsSwiper }"
       :initial-slide="initialSlide"
+      :loop="true"
+      :effect="'fade'"
+      :fade-effect="{ crossFade: true }"
       :zoom="{
         maxRatio: 3,
         minRatio: 1,
         toggle: true,
       }"
+      :observer="true"
+      :observe-parents="true"
+      :observe-slide-children="true"
       class="main-swiper"
       @slide-change="onSlideChange"
       @swiper="onSwiper"
+      @zoom-change="onZoomChange"
     >
       <swiper-slide v-for="image in images" :key="image.id" class="main-slide">
         <div class="swiper-zoom-container">
-          <img
-            :src="getMainImageUrl(image)"
-            :alt="`Image by ${image.attribution?.short || 'unknown'}`"
-            class="main-image"
-          />
+          <!-- Wrapper div that matches image dimensions - creates positioning context -->
+          <div class="image-wrapper">
+            <img
+              :src="getMainImageUrl(image)"
+              :alt="`Image by ${image.attribution?.short || 'unknown'}`"
+              class="main-image"
+              @load="onImageLoad(image.id)"
+              @error="onImageError(image.id)"
+              v-show="!isImageError(image.id)"
+            />
+
+            <!-- Attribution - positioned relative to image wrapper -->
+            <div
+              v-if="image.attribution"
+              class="image-attribution-overlay"
+              :class="{
+                'attribution-visible': isImageLoaded(image.id) && !isZoomed,
+                'attribution-hidden': isZoomed,
+              }"
+            >
+              <div v-if="image.captured_at" class="attribution-line">
+                <q-icon name="wd-calendar" size="16px" class="attribution-icon" />
+                <b>{{ formatImageDate(image.captured_at) }}</b>
+              </div>
+              <div class="attribution-line">
+                <span class="attribution-text" :data-image-id="image.id">
+                  <q-icon name="wd-info-outline" size="16px" class="attribution-icon" />
+                  <span v-html="image.attribution.full || image.attribution.short || ''" />
+                </span>
+                <img
+                  v-if="image.provider?.icon"
+                  :src="image.provider.icon"
+                  class="provider-icon"
+                  alt="Provider icon"
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </swiper-slide>
     </swiper>
@@ -219,12 +274,24 @@ const attributionParts = computed(() => {
       class="thumb-swiper"
       @swiper="setThumbsSwiper"
     >
-      <swiper-slide v-for="image in images" :key="image.id" class="thumb-slide">
-        <img
-          :src="getThumbnailUrl(image)"
-          :alt="`Thumbnail by ${image.attribution?.short || 'unknown'}`"
-          class="thumb-image"
-        />
+      <swiper-slide v-for="(image, index) in images" :key="image.id" class="thumb-slide">
+        <div
+          class="thumb-image-wrapper"
+          :class="{
+            'thumb-loaded': isImageLoaded(image.id),
+            'thumb-error': isImageError(image.id),
+          }"
+        >
+          <img
+            :src="getPreviewImageUrl(image)"
+            :alt="`Thumbnail by ${image.attribution?.short || 'unknown'}`"
+            class="thumb-image"
+            @load="onImageLoad(image.id)"
+            @error="onImageError(image.id)"
+            v-show="!isImageError(image.id)"
+          />
+          <div v-if="!isImageLoaded(image.id)" class="thumb-number">{{ index + 1 }}</div>
+        </div>
       </swiper-slide>
     </swiper>
 
@@ -289,79 +356,90 @@ const attributionParts = computed(() => {
   }
 }
 
-.attribution-top-left {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  z-index: 1000;
-  max-width: calc(100% - 160px);
-
-  .attribution-text {
-    color: rgba(255, 255, 255, 0.95);
-    font-size: 0.8125rem;
-    line-height: 1.4;
-    background: rgba(0, 0, 0, 0.3);
-    padding: 8px 14px;
-    border-radius: 6px;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-
-    :deep(a) {
-      color: rgba(255, 255, 255, 0.95);
-      text-decoration: underline dotted;
-      text-decoration-color: rgba(255, 255, 255, 0.5);
-      transition: all 0.2s;
-    }
-
-    :deep(a:hover) {
-      color: #64b5f6;
-      text-decoration-color: #64b5f6;
-      text-decoration: underline dotted;
-    }
-  }
-}
-
 .main-swiper {
   flex: 1;
   width: 100%;
+  min-height: 0; // CRITICAL: Allow flex item to shrink below content size
   display: flex;
   align-items: center;
   justify-content: center;
 
+  // Navigation buttons - gray arrows with transparency, no background
   :deep(.swiper-button-next),
   :deep(.swiper-button-prev) {
-    color: white;
-    opacity: 0.8;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
+    // Remove background completely
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
 
+    // Size and positioning
+    width: 44px !important;
+    height: 44px !important;
+
+    // Arrow color (gray with transparency) - IMPORTANT: override all inherited colors
+    color: rgba(120, 120, 120, 0.8) !important;
+
+    // Smooth transitions
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+
+    // Remove border radius since no background
+    border-radius: 0 !important;
+
+    // SVG icon sizing and color - CRITICAL: Override any framework SVG styles
+    :deep(svg) {
+      width: 100% !important;
+      height: 100% !important;
+      fill: rgba(120, 120, 120, 0.8) !important;
+      color: rgba(120, 120, 120, 0.8) !important;
+    }
+
+    // Force SVG path colors - this is what actually gets colored
+    :deep(svg path) {
+      fill: rgba(120, 120, 120, 0.8) !important;
+      stroke: rgba(120, 120, 120, 0.8) !important;
+    }
+
+    // Hover state - darker gray
     &:hover {
-      opacity: 1;
-      background: rgba(0, 0, 0, 0.6);
-      transform: scale(1.05);
+      color: rgba(80, 80, 80, 1) !important;
+
+      :deep(svg) {
+        fill: rgba(80, 80, 80, 1) !important;
+        color: rgba(80, 80, 80, 1) !important;
+      }
+
+      :deep(svg path) {
+        fill: rgba(80, 80, 80, 1) !important;
+        stroke: rgba(80, 80, 80, 1) !important;
+      }
+
+      transform: scale(1.1) !important;
     }
 
+    // Active state
     &:active {
-      transform: scale(0.95);
+      transform: scale(0.95) !important;
     }
 
-    &::after {
-      font-size: 22px;
-      font-weight: 600;
+    // Focus state for accessibility
+    &:focus {
+      outline: 2px solid rgba(100, 181, 246, 0.6) !important;
+      outline-offset: 2px !important;
+    }
+
+    // Disabled state
+    &.swiper-button-disabled {
+      opacity: 0.3 !important;
+      cursor: not-allowed !important;
     }
   }
 
   :deep(.swiper-button-next) {
-    right: 24px;
+    right: 24px !important;
   }
 
   :deep(.swiper-button-prev) {
-    left: 24px;
+    left: 24px !important;
   }
 
   &:hover {
@@ -380,6 +458,13 @@ const attributionParts = computed(() => {
   overflow: hidden;
   height: 100%;
   width: 100%;
+  min-height: 0; // Allow slide to shrink
+  pointer-events: none; // Disable pointer events by default
+}
+
+.main-slide.swiper-slide-active {
+  pointer-events: auto; // Enable pointer events only for active slide
+  z-index: 10; // Ensure active slide is on top
 }
 
 .main-slide :deep(.swiper-zoom-container) {
@@ -388,15 +473,132 @@ const attributionParts = computed(() => {
   justify-content: center;
   width: 100%;
   height: 100%;
+  min-height: 0; // Allow zoom container to shrink
+}
+
+// Image wrapper - creates positioning context that matches actual image dimensions
+.image-wrapper {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  max-height: 100%; // Constrain to parent height
+  padding-bottom: 60px; // Reserve space for attribution below image
+  box-sizing: border-box; // Include padding in max-height calculation
 }
 
 .main-image {
-  width: 100%;
-  height: 100%;
   display: block;
-  object-fit: contain;
   max-width: 100%;
-  max-height: 100%;
+  max-height: calc(100% - 40px); // Subtract attribution space from image height
+  object-fit: contain;
+  width: auto;
+  height: auto;
+}
+
+// Attribution overlay positioned relative to actual image content
+.image-attribution-overlay {
+  position: absolute;
+  bottom: -0px; // Position below the image
+  left: 8px; // Positioned on the left side
+  z-index: 10;
+  max-width: calc(100% - 16px);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start; // Align entire block to the left
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  pointer-events: auto; // Allow clicking on links
+  transition: opacity 0.5s ease; // Default: fade in slowly (500ms)
+  padding: 6px 8px; // Add padding for better visibility
+  background: rgba(0, 0, 0, 0.3); // Subtle background for readability
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 0; // Start hidden
+  text-align: left; // Left-align all text
+
+  &.attribution-visible {
+    opacity: 1; // Fade in when loaded (500ms)
+  }
+
+  &.attribution-hidden {
+    transition: opacity 0.15s ease; // Fade out quickly (150ms)
+    opacity: 0;
+  }
+
+  .attribution-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: flex-start; // Left-align each line
+    text-align: left;
+
+    .attribution-text {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      justify-content: flex-start; // Left-align attribution text
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      isolation: isolate; // Create new stacking context
+      pointer-events: auto; // Ensure pointer events work
+    }
+
+    .attribution-icon {
+      flex-shrink: 0;
+      opacity: 0.9;
+    }
+
+    span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  :deep(a) {
+    color: rgba(255, 255, 255, 0.85);
+    text-decoration: underline dotted;
+    text-decoration-color: rgba(255, 255, 255, 0.4);
+    transition: all 0.2s;
+  }
+
+  :deep(a:hover) {
+    color: #64b5f6;
+    text-decoration-color: #64b5f6;
+    text-decoration: underline dotted;
+  }
+
+  .provider-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    flex-shrink: 0;
+    filter: brightness(1.1) contrast(1.1);
+  }
+
+  // Mobile - smaller font
+  @media (max-width: 768px) {
+    font-size: 0.75rem;
+    padding: 4px 6px;
+    gap: 3px;
+
+    .attribution-line {
+      gap: 4px;
+
+      .attribution-icon {
+        font-size: 14px;
+      }
+    }
+
+    .provider-icon {
+      width: 18px;
+      height: 18px;
+    }
+  }
 }
 
 .thumb-swiper {
@@ -448,10 +650,54 @@ const attributionParts = computed(() => {
   justify-content: center;
 }
 
+.thumb-image-wrapper {
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.15); // Loading placeholder background
+  position: relative;
+
+  &.thumb-loaded {
+    background: transparent; // Remove background when loaded
+  }
+
+  &.thumb-error {
+    background: rgba(255, 0, 0, 0.1); // Red tint for error
+  }
+}
+
 .thumb-image {
   width: 100%;
   height: 100%;
   border-radius: 6px;
   object-fit: cover;
+  opacity: 0; // Start hidden
+  transition: opacity 0.3s ease;
+
+  .thumb-loaded & {
+    opacity: 1; // Fade in when loaded
+  }
+}
+
+.thumb-number {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4); // Subtle, lighter than background
+  user-select: none;
+  pointer-events: none;
+}
+
+.thumb-error-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(255, 100, 100, 0.6); // Red tint for error
+  opacity: 0.8;
 }
 </style>

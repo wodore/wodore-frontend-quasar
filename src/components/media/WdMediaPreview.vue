@@ -1,22 +1,36 @@
 <script setup lang="ts">
-import { ref, computed, watchEffect, type Component } from 'vue';
+import { ref, computed, watch, watchEffect, onMounted, type Component } from 'vue';
 import { useTimeoutFn } from '@vueuse/core';
 import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import type { Swiper as SwiperType } from 'swiper';
-import { EffectFade, Keyboard, Pagination, Thumbs } from 'swiper/modules';
+import {
+  EffectFade,
+  FreeMode,
+  Keyboard,
+  Mousewheel,
+  Navigation,
+  Pagination,
+  Scrollbar,
+  Thumbs,
+} from 'swiper/modules';
 import type { HutImage } from '@composables/useHutImages';
+import { useDeviceDetection } from '@composables/useDeviceDetection';
+import { useMediaPreload } from '@composables/useMediaPreload';
 import WdMediaDialog from './WdMediaDialog.vue';
 import WdNoImage from './WdNoImage.vue';
 import IconAddPhoto from '~icons/material-symbols/add-a-photo.svg';
 
 // Import Swiper styles
 import 'swiper/css';
-import 'swiper/css/effect-fade';
+import 'swiper/css/navigation';
 import 'swiper/css/keyboard';
 import 'swiper/css/pagination';
 import 'swiper/css/thumbs';
+import 'swiper/css/effect-fade';
+import 'swiper/css/free-mode';
+import 'swiper/css/scrollbar';
 
 interface Props {
   images: HutImage[];
@@ -46,7 +60,7 @@ const props = withDefaults(defineProps<Props>(), {
   emptyStateMessage: 'No images available',
   emptyStateIcon: undefined,
   maxThumbnailCount: 5,
-  thumbnailSize: 50,
+  thumbnailSize: 40,
   showAttribution: true,
   osmId: null,
   osmFeature: null,
@@ -67,14 +81,58 @@ const emit = defineEmits<{
 const router = useRouter();
 const $q = useQuasar();
 
-// Check if mobile view
+// Open dialog with specific image using Quasar Dialog plugin
+const openDialog = (index: number) => {
+  currentSlide.value = index;
+  emit('image-click', props.images[index], index);
+
+  // Use Quasar's Dialog plugin for proper back button handling
+  $q.dialog({
+    component: WdMediaDialog,
+    componentProps: {
+      images: props.images,
+      initialSlide: index,
+    },
+  }).onDismiss(() => {
+    // Dialog closed (back button, ESC, backdrop click, etc.)
+    dialogOpen.value = false;
+  });
+
+  dialogOpen.value = true;
+};
+
+// const isMobilePlatform = computed(() => {
+//   // Mobile platform (iOS, Android, etc.)
+//   // Available for future use
+//   return $q.platform.is.mobile;
+// });
+
+// const hasHdpi = computed(() => {
+//   // High DPI display (Retina, etc.)
+//   // Available for future use
+//   return window.devicePixelRatio && window.devicePixelRatio >= 1.5;
+// });
+
+const isDesktopWidth = computed(() => {
+  // Desktop breakpoint (width >= 1024px)
+  return $q.screen.width >= 1024;
+});
+
+// Check if mobile view (for backward compatibility)
 const isMobile = computed(() => $q.screen.xs);
+
+// Show thumbnails: desktop width AND has multiple images
+const showThumbnails = computed(() => {
+  return isDesktopWidth.value && props.images.length > 1;
+});
 
 const dialogOpen = ref(false);
 const currentSlide = ref(0);
 const swiperRef = ref<SwiperType | null>(null);
 const thumbsSwiperRef = ref<SwiperType | null>(null);
 const showSpinner = ref(false);
+const loadedThumbnails = ref<Set<string>>(new Set());
+const loadedStripeImages = ref<Set<string>>(new Set());
 
 // Show spinner after 500ms of loading
 const { start: startSpinnerTimeout, stop: stopSpinnerTimeout } = useTimeoutFn(() => {
@@ -107,16 +165,102 @@ const onSlideChange = (swiper: SwiperType) => {
   currentSlide.value = swiper.activeIndex;
 };
 
-// Open dialog with specific image
-const openDialog = (index: number) => {
-  currentSlide.value = index;
-  dialogOpen.value = true;
-  emit('image-click', props.images[index], index);
+// Use shared device detection
+const { hasTouch } = useDeviceDetection();
+
+// Show navigation only on non-touch devices with multiple images
+const showNavigation = computed(() => {
+  return !hasTouch.value && props.images.length > 1;
+});
+
+// Use shared media preload composable
+const { preloadImage, preloadThumbnailImages } = useMediaPreload(
+  computed(() => props.images),
+  currentSlide
+);
+
+// Preload only the current image for gallery (simplified - no prev/next)
+const preloadCurrentImageForGallery = () => {
+  const currentImage = props.images[currentSlide.value];
+  if (currentImage) {
+    // Preload gallery-sized image (not preview size)
+    const isPortrait = currentImage.is_portrait;
+    const orientation = isPortrait ? 'portrait' : 'landscape';
+    const urls = currentImage.urls[orientation] || currentImage.urls.landscape;
+
+    if (urls) {
+      // Try to preload medium size for gallery
+      const galleryUrl = urls.medium || urls.large || urls.preview || '';
+      if (galleryUrl) {
+        preloadImage(galleryUrl);
+      }
+    }
+  }
 };
+
+// Preload with timeout - properly managed by useTimeoutFn
+const { start: startPreloadAfterSlide } = useTimeoutFn(() => {
+  preloadCurrentImageForGallery();
+}, 200);
+
+const { start: startInitialPreload } = useTimeoutFn(() => {
+  preloadCurrentImageForGallery();
+}, 300);
+
+// Watch for slide changes and preload new image
+watch(currentSlide, () => {
+  startPreloadAfterSlide();
+});
+
+// Initial preload when component mounts
+onMounted(() => {
+  // Preload thumbnails in background (small, fast, with retry logic)
+  preloadThumbnailImages();
+
+  // Preload current image for gallery
+  startInitialPreload();
+});
 
 // Handle image click
 const handleImageClick = () => {
   openDialog(currentSlide.value);
+};
+
+// Track which thumbnails have loaded
+const isThumbnailLoaded = (imageId: string) => {
+  return loadedThumbnails.value.has(imageId);
+};
+
+// Mark thumbnail as loaded
+const onThumbnailLoad = (imageId: string) => {
+  loadedThumbnails.value.add(imageId);
+};
+
+// Mark thumbnail as failed to load
+const onThumbnailError = (imageId: string) => {
+  loadedThumbnails.value.add(`${imageId}_error`);
+};
+
+// Check if thumbnail failed to load
+const isThumbnailError = (imageId: string) => {
+  return loadedThumbnails.value.has(`${imageId}_error`);
+};
+
+// Stripe image load tracking
+const isStripeImageLoaded = (imageId: string) => {
+  return loadedStripeImages.value.has(imageId);
+};
+
+const onStripeImageLoad = (imageId: string) => {
+  loadedStripeImages.value.add(imageId);
+};
+
+const onStripeImageError = (imageId: string) => {
+  loadedStripeImages.value.add(`${imageId}_error`);
+};
+
+const isStripeImageError = (imageId: string) => {
+  return loadedStripeImages.value.has(`${imageId}_error`);
 };
 
 // Get current image
@@ -136,13 +280,56 @@ const getThumbnailUrl = (image: HutImage) => {
   return image.urls.square.thumb || image.urls.square.preview || '';
 };
 
+// Get image URL for mobile stripe — uses correct orientation
+const getStripeImageUrl = (image: HutImage) => {
+  const isPortrait = image.is_portrait;
+  const orientation = isPortrait ? 'portrait' : 'landscape';
+  const urls = image.urls[orientation] || image.urls.landscape;
+  if (!urls) return '';
+  return urls.thumb || urls.preview || '';
+};
+
 // Get provider icon for any image
 const getProviderIcon = (image: HutImage) => {
   return image?.provider?.icon || undefined;
 };
 
+// Get author name for a specific image (for stripe attribution)
+const getImageAuthor = (image: HutImage) => {
+  if (!props.showAttribution) return '';
+
+  const authorName = image.author?.name;
+  const providerName = image.provider?.name;
+
+  if (authorName && authorName !== 'Unknown' && authorName !== 'unknown') {
+    return authorName;
+  }
+
+  if (providerName) {
+    return providerName;
+  }
+
+  return '';
+};
+
 // Check if we have images
 const hasImages = computed(() => props.images.length > 0);
+
+// Mobile stripe slides: appends add-image slide at the end when >= 3 images on mobile
+type StripeSlide = { type: 'image'; image: HutImage; imageIndex: number } | { type: 'add-image' };
+
+const mobileStripeSlides = computed<StripeSlide[]>(() => {
+  if (!isMobile.value || props.images.length < 3) {
+    return props.images.map((image, i) => ({ type: 'image' as const, image, imageIndex: i }));
+  }
+  const slides: StripeSlide[] = props.images.map((image, i) => ({
+    type: 'image' as const,
+    image,
+    imageIndex: i,
+  }));
+  slides.push({ type: 'add-image' });
+  return slides;
+});
 
 // Get short attribution for current image
 //const getCurrentImageAttribution = () => {
@@ -237,21 +424,103 @@ const thumbnailContainerStyle = computed(() => {
 </script>
 
 <template>
-  <div
-    v-if="loading && !hasImages"
-    class="flex flex-center"
-    style="min-height: 100px; border-radius: 25px"
-  >
-    <q-spinner v-if="showSpinner" color="primary" size="3rem" />
+  <div v-if="loading && !hasImages" class="flex flex-center no-image-mobile-wrapper">
+    <WdNoImage
+      :message="emptyStateMessage"
+      :icon="emptyStateIcon ?? IconAddPhoto"
+      :on-contribute="handleAddImageClick"
+      :reduced-height="reducedHeightNoImage"
+      :loading="true"
+    />
   </div>
 
   <div v-else-if="hasImages">
-    <!-- Main image swiper with thumbnails overlay -->
-    <div class="media-preview-container">
+    <!-- Mobile: horizontal image stripe -->
+    <div v-if="isMobile" class="mobile-stripe-container">
+      <swiper
+        :modules="[FreeMode, Scrollbar, Mousewheel]"
+        :slides-per-view="'auto'"
+        :space-between="4"
+        :free-mode="{
+          enabled: true,
+          sticky: false,
+          momentum: true,
+          momentumRatio: 1,
+          momentumBounce: false,
+          minimumVelocity: 0.3,
+        }"
+        :scrollbar="{
+          draggable: false,
+          hide: true,
+          snapOnRelease: false,
+        }"
+        :mousewheel="{
+          enabled: true,
+          forceToAxis: false,
+          releaseOnEdges: false,
+          sensitivity: 0.22,
+        }"
+        :grab-cursor="true"
+        class="mobile-stripe-swiper"
+      >
+        <swiper-slide
+          v-for="(slide, index) in mobileStripeSlides"
+          :key="slide.type === 'image' ? slide.image.id : `add-image-${index}`"
+          class="mobile-stripe-slide"
+          @click="slide.type === 'image' ? openDialog(slide.imageIndex) : handleAddImageClick()"
+        >
+          <!-- Add-image slide -->
+          <div v-if="slide.type === 'add-image'" class="stripe-add-image-wrapper">
+            <q-iconify :is="IconAddPhoto" size="36px" color="grey-5" class="add-image-icon" />
+          </div>
+          <!-- Image slide -->
+          <div
+            v-else
+            class="stripe-image-wrapper"
+            :class="{ 'stripe-error': isStripeImageError(slide.image.id) }"
+          >
+            <img
+              :src="getStripeImageUrl(slide.image)"
+              class="stripe-image"
+              :class="{ 'stripe-loaded': isStripeImageLoaded(slide.image.id) }"
+              :alt="`Image by ${slide.image.attribution?.short || 'unknown'}`"
+              @load="onStripeImageLoad(slide.image.id)"
+              @error="onStripeImageError(slide.image.id)"
+              v-show="!isStripeImageError(slide.image.id)"
+            />
+            <div v-if="!isStripeImageLoaded(slide.image.id)" class="stripe-number">
+              {{ slide.imageIndex + 1 }}
+            </div>
+            <!-- Per-image attribution overlay -->
+            <div
+              v-if="getImageAuthor(slide.image) || getProviderIcon(slide.image)"
+              class="stripe-attribution"
+            >
+              <span v-if="getImageAuthor(slide.image)" class="stripe-author">{{
+                getImageAuthor(slide.image)
+              }}</span>
+              <img
+                v-if="getProviderIcon(slide.image)"
+                :src="getProviderIcon(slide.image)"
+                class="stripe-provider-icon"
+                alt="Provider icon"
+              />
+            </div>
+          </div>
+        </swiper-slide>
+      </swiper>
+    </div>
+
+    <!-- Desktop: main image swiper with thumbnails overlay -->
+    <div v-else class="media-preview-container">
       <div
         class="media-preview-wrapper"
         style="border-radius: 16px; overflow: hidden; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1)"
       >
+        <!-- Navigation buttons - desktop only, no touch -->
+        <div v-if="showNavigation" class="swiper-button-prev"></div>
+        <div v-if="showNavigation" class="swiper-button-next"></div>
+
         <!-- Attribution badge (top-right) - stationary -->
         <div class="license-badge-custom stationary">
           <span v-if="getCurrentImageAuthor()" v-html="getCurrentImageAuthor()" />
@@ -264,21 +533,23 @@ const thumbnailContainerStyle = computed(() => {
         </div>
 
         <swiper
-          :modules="[EffectFade, Keyboard, Pagination, Thumbs]"
+          :modules="[EffectFade, Keyboard, Navigation, Pagination, Thumbs]"
           :slides-per-view="1"
           :space-between="0"
           :effect="'fade'"
           :fade-effect="{ crossFade: true }"
           :keyboard="{ enabled: true }"
           :loop="true"
-          :pagination="
-            isMobile && images.length > 1
+          :speed="600"
+          :navigation="
+            showNavigation
               ? {
-                  clickable: true,
-                  dynamicBullets: true,
+                  nextEl: '.swiper-button-next',
+                  prevEl: '.swiper-button-prev',
                 }
               : false
           "
+          :pagination="!showThumbnails && images.length > 1"
           :thumbs="{ swiper: thumbsSwiperRef }"
           :initial-slide="0"
           class="preview-swiper"
@@ -296,11 +567,7 @@ const thumbnailContainerStyle = computed(() => {
         </swiper>
 
         <!-- Thumbnail Swiper - overlaid on image (outside main swiper) -->
-        <div
-          v-if="images.length > 1 && !isMobile"
-          class="thumbs-swiper-container"
-          :style="thumbnailContainerStyle"
-        >
+        <div v-if="showThumbnails" class="thumbs-swiper-container" :style="thumbnailContainerStyle">
           <swiper
             :modules="[Thumbs]"
             :watch-slides-progress="true"
@@ -311,13 +578,27 @@ const thumbnailContainerStyle = computed(() => {
             @swiper="onThumbsSwiper"
             :style="{ '--thumbnail-size': `${thumbnailSize}px` }"
           >
-            <swiper-slide v-for="image in images" :key="image.id" class="thumb-slide-inline">
-              <div class="thumb-content-wrapper">
+            <swiper-slide
+              v-for="(image, index) in images"
+              :key="image.id"
+              class="thumb-slide-inline"
+            >
+              <div
+                class="thumb-content-wrapper"
+                :class="{ 'thumb-error': isThumbnailError(image.id) }"
+              >
                 <img
                   :src="getThumbnailUrl(image)"
                   class="thumb-image-inline"
+                  :class="{ 'thumb-loaded': isThumbnailLoaded(image.id) }"
                   :alt="`Thumbnail by ${image.attribution?.short || 'unknown'}`"
+                  @load="onThumbnailLoad(image.id)"
+                  @error="onThumbnailError(image.id)"
+                  v-show="!isThumbnailError(image.id)"
                 />
+                <div v-if="!isThumbnailLoaded(image.id)" class="thumb-number">
+                  {{ index + 1 }}
+                </div>
                 <div v-if="getProviderIcon(image)" class="thumb-provider-icon-bg">
                   <img
                     :src="getProviderIcon(image)"
@@ -332,24 +613,19 @@ const thumbnailContainerStyle = computed(() => {
       </div>
     </div>
 
-    <!-- Media Dialog -->
-    <WdMediaDialog
-      v-if="dialogOpen"
-      :images="images"
-      :initial-slide="currentSlide"
-      @close="dialogOpen = false"
-    />
+    <!-- Media Dialog is now invoked via Quasar Dialog plugin -->
   </div>
 
   <!-- No images state - use slot for customization -->
   <slot name="no-image">
-    <WdNoImage
-      v-if="!loading && !hasImages"
-      :message="emptyStateMessage"
-      :icon="emptyStateIcon ?? IconAddPhoto"
-      :on-contribute="handleAddImageClick"
-      :reduced-height="reducedHeightNoImage"
-    />
+    <div v-if="!loading && !hasImages" class="no-image-mobile-wrapper">
+      <WdNoImage
+        :message="emptyStateMessage"
+        :icon="emptyStateIcon ?? IconAddPhoto"
+        :on-contribute="handleAddImageClick"
+        :reduced-height="reducedHeightNoImage"
+      />
+    </div>
   </slot>
 </template>
 
@@ -369,6 +645,235 @@ const thumbnailContainerStyle = computed(() => {
   background: #f5f5f5; // Placeholder background
   // Ensure border-box for consistent sizing
   box-sizing: border-box;
+
+  // Navigation buttons - gray arrows with transparency, no background
+  :deep(.swiper-button-prev),
+  :deep(.swiper-button-next) {
+    // Remove background completely
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+
+    // Size and positioning
+    width: 44px !important;
+    height: 44px !important;
+
+    // Arrow color (gray with transparency)
+    color: rgba(120, 120, 120, 0.8) !important;
+
+    // Smooth transitions
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+
+    // Remove border radius since no background
+    border-radius: 0 !important;
+
+    // SVG icon sizing (Swiper v12 uses SVG)
+    :deep(svg) {
+      width: 100% !important;
+      height: 100% !important;
+      fill: currentColor !important;
+    }
+
+    // Hover state - darker gray
+    &:hover {
+      color: rgba(80, 80, 80, 1) !important;
+      transform: scale(1.1) !important;
+    }
+
+    // Active state
+    &:active {
+      transform: scale(0.95) !important;
+    }
+
+    // Focus state for accessibility
+    &:focus {
+      outline: 2px solid rgba(100, 181, 246, 0.6) !important;
+      outline-offset: 2px !important;
+    }
+
+    // Disabled state
+    &.swiper-button-disabled {
+      opacity: 0.3 !important;
+      cursor: not-allowed !important;
+    }
+  }
+
+  :deep(.swiper-button-prev) {
+    left: 8px !important;
+  }
+
+  :deep(.swiper-button-next) {
+    right: 8px !important;
+  }
+}
+
+// Mobile stripe styles
+.mobile-stripe-container {
+  width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+// Constrain no-image state to match stripe height on mobile
+.no-image-mobile-wrapper {
+  width: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+
+  @media (max-width: 599px) {
+    :deep(.no-image-wrapper) {
+      padding-top: 0 !important;
+      height: 85px;
+    }
+
+    :deep(.no-image-content) {
+      position: relative;
+      padding: 8px 12px;
+    }
+  }
+}
+
+.mobile-stripe-swiper {
+  width: 100%;
+  padding-bottom: 2px;
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  &.swiper-scrollbar-lock {
+    padding-bottom: 0;
+    cursor: default;
+  }
+}
+
+.mobile-stripe-slide {
+  width: auto !important;
+  height: 85px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.stripe-image-wrapper {
+  position: relative;
+  height: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &.stripe-error {
+    background: rgba(255, 0, 0, 0.05);
+  }
+}
+
+.stripe-add-image-wrapper {
+  height: 100%;
+  width: 65px;
+  border-radius: 8px;
+  border: 2px dashed rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0.03);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin: 0 6px;
+  transition: background 0.3s ease;
+
+  &:active {
+    background: rgba(0, 0, 0, 0.08);
+  }
+}
+
+.add-image-icon {
+  opacity: 0.5;
+  transition: all 0.3s ease;
+}
+
+.stripe-image {
+  height: 100%;
+  width: auto;
+  display: block;
+  border-radius: 8px;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+
+  &.stripe-loaded {
+    opacity: 1;
+  }
+}
+
+.stripe-number {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 18px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.15);
+  user-select: none;
+  pointer-events: none;
+}
+
+// Per-image attribution overlay inside stripe slides
+.stripe-attribution {
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  border-radius: 4px;
+  padding: 2px 4px;
+  pointer-events: none;
+}
+
+.stripe-author {
+  font-size: 0.5rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 70px;
+  line-height: 1.2;
+}
+
+.stripe-provider-icon {
+  width: 10px;
+  height: 10px;
+  object-fit: contain;
+  flex-shrink: 0;
+  border-radius: 1px;
+}
+
+// Scrollbar styling (matching WdWeatherForecast)
+.mobile-stripe-swiper :deep(.swiper-scrollbar) {
+  height: 3px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 2px;
+  bottom: 2px;
+}
+
+.mobile-stripe-swiper :deep(.swiper-scrollbar-drag) {
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 2px;
+  min-width: 24px;
+}
+
+.mobile-stripe-swiper :deep(.swiper-scrollbar:hover) {
+  height: 5px;
+}
+
+.mobile-stripe-swiper :deep(.swiper-scrollbar:hover .swiper-scrollbar-drag) {
+  background: rgba(0, 0, 0, 0.35);
 }
 
 .preview-swiper {
@@ -377,7 +882,6 @@ const thumbnailContainerStyle = computed(() => {
   left: 0;
   width: 100%;
   height: 100%;
-  // Override Swiper's default content-box to ensure consistent sizing
   box-sizing: border-box;
 
   :deep(.swiper-wrapper) {
@@ -457,6 +961,11 @@ const thumbnailContainerStyle = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  background: rgba(0, 0, 0, 0.15); // Loading placeholder background (darker)
+
+  &.thumb-error {
+    background: rgba(255, 0, 0, 0.1); // Red tint for error
+  }
 }
 
 .thumb-image-inline {
@@ -468,6 +977,35 @@ const thumbnailContainerStyle = computed(() => {
   position: relative;
   background: transparent;
   object-fit: cover;
+  opacity: 0; // Start hidden
+  transition: opacity 0.3s ease;
+
+  &.thumb-loaded {
+    opacity: 1; // Fade in when loaded
+  }
+}
+
+.thumb-number {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 20px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.3); // Subtle, lighter than background
+  user-select: none;
+  pointer-events: none;
+  z-index: 1; // Above provider icon
+}
+
+.thumb-error-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(255, 100, 100, 0.6); // Red tint for error
+  opacity: 0.8;
+  z-index: 2; // Above everything
 }
 
 .thumb-provider-icon-bg {
@@ -591,6 +1129,84 @@ const thumbnailContainerStyle = computed(() => {
   :deep(.swiper-pagination-bullet-active) {
     background: #64b5f6 !important;
     width: 8px !important;
+  }
+
+  // Custom navigation buttons for desktop - gray arrows with transparency, no background
+  :deep(.swiper-button-prev),
+  :deep(.swiper-button-next) {
+    // Remove background completely
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+
+    // Size and positioning
+    width: 44px !important;
+    height: 44px !important;
+
+    // Arrow color (gray with transparency) - IMPORTANT: override all Quasar inherited colors
+    color: rgba(120, 120, 120, 0.8) !important;
+
+    // Smooth transitions
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+
+    // Remove border radius since no background
+    border-radius: 0 !important;
+
+    // SVG icon sizing and color - CRITICAL: Override Quasar SVG styles
+    :deep(svg) {
+      width: 100% !important;
+      height: 100% !important;
+      fill: rgba(120, 120, 120, 0.8) !important;
+      color: rgba(120, 120, 120, 0.8) !important;
+    }
+
+    // Force SVG path colors - this is what actually gets colored
+    :deep(svg path) {
+      fill: rgba(120, 120, 120, 0.8) !important;
+      stroke: rgba(120, 120, 120, 0.8) !important;
+    }
+
+    // Hover state - darker gray
+    &:hover {
+      color: rgba(80, 80, 80, 1) !important;
+
+      :deep(svg) {
+        fill: rgba(80, 80, 80, 1) !important;
+        color: rgba(80, 80, 80, 1) !important;
+      }
+
+      :deep(svg path) {
+        fill: rgba(80, 80, 80, 1) !important;
+        stroke: rgba(80, 80, 80, 1) !important;
+      }
+
+      transform: scale(1.1) !important;
+    }
+
+    // Active state
+    &:active {
+      transform: scale(0.95) !important;
+    }
+
+    // Focus state for accessibility
+    &:focus {
+      outline: 2px solid rgba(100, 181, 246, 0.6) !important;
+      outline-offset: 2px !important;
+    }
+
+    // Disabled state
+    &.swiper-button-disabled {
+      opacity: 0.3 !important;
+      cursor: not-allowed !important;
+    }
+  }
+
+  :deep(.swiper-button-prev) {
+    left: 8px !important;
+  }
+
+  :deep(.swiper-button-next) {
+    right: 8px !important;
   }
 }
 </style>

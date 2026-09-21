@@ -65,6 +65,8 @@
   "nov": "Nov",
   "dec": "Dez",
   "hut_type": "Hüttenart",
+  "standard": "Standard",
+  "reduced": "Reduziert",
   "jan": "Jan",
   "location": "Lage",
   "map": {
@@ -124,6 +126,8 @@
     "temp": "Temp.",
     "range_separator": "...",
     "unit": "°C",
+    "rain": "Regen",
+    "snowfall": "Schnee",
     "unavailable": "Wetterdaten nicht verfügbar",
     "no_guarantee": "ohne Gewähr"
   },

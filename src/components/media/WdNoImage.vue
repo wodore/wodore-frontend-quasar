@@ -12,6 +12,7 @@ interface Props {
   icon?: Component;
   onContribute?: () => void;
   reducedHeight?: boolean;
+  loading?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -19,6 +20,7 @@ const props = withDefaults(defineProps<Props>(), {
   icon: undefined,
   onContribute: undefined,
   reducedHeight: false,
+  loading: false,
 });
 
 // Computed properties for cleaner template
@@ -49,7 +51,12 @@ const handleKeydown = (event: KeyboardEvent) => {
   <div class="no-image-container">
     <div class="no-image-wrapper" :class="{ 'reduced-height': reducedHeight }">
       <div class="no-image-content">
+        <!-- Loading state: subtle spinner -->
+        <q-spinner v-if="loading" color="grey-4" size="48px" />
+
+        <!-- Normal state: clickable content -->
         <div
+          v-else
           class="content-wrapper"
           role="button"
           tabindex="0"

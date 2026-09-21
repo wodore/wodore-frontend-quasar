@@ -88,6 +88,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/geo/places/overlays": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Overlay Categories
+         * @description Get available overlay categories for map tile filtering.
+         *
+         *     Returns root-level categories that can be used as overlay filters
+         *     in vector tile requests (via the `categories` parameter).
+         */
+        get: operations["get_overlay_categories"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/geo/places/search": {
         parameters: {
             query?: never;
@@ -784,7 +807,7 @@ export interface components {
              * Name
              * @description Author name
              */
-            name: string;
+            name?: string | null;
             /**
              * Url
              * @description Author profile URL
@@ -883,7 +906,7 @@ export interface components {
              * Id
              * @description Place database ID
              */
-            id: number;
+            id?: number | null;
             /**
              * Slug
              * @description Place slug identifier
@@ -1437,7 +1460,7 @@ export interface components {
         /** HutBookingSchema */
         HutBookingSchema: {
             /** Link */
-            link: string;
+            link?: string | null;
             /**
              * Date
              * Format: date
@@ -1445,13 +1468,13 @@ export interface components {
             date: string;
             reservation_status: components["schemas"]["ReservationStatusEnum"];
             /** Free */
-            free: number;
+            free?: number | null;
             /** Total */
-            total: number;
+            total?: number | null;
             /** Occupancy Percent */
-            occupancy_percent: number;
+            occupancy_percent?: number | null;
             /** Occupancy Steps */
-            occupancy_steps: number;
+            occupancy_steps?: number | null;
             occupancy_status: components["schemas"]["OccupancyStatusEnum"];
             /**
              * Hut Type
@@ -1490,10 +1513,10 @@ export interface components {
         };
         /**
          * OccupancyStatusEnum
-         * @description Enum with with occuptation status.
+         * @description Enum with occupancy status.
          * @enum {string}
          */
-        OccupancyStatusEnum: "unknown" | "empty" | "low" | "medium" | "high" | "full";
+        OccupancyStatusEnum: "unknown" | "free_unknown" | "empty" | "low" | "medium" | "high" | "full";
         /**
          * ReservationStatusEnum
          * @description Enum with reservation status.
@@ -1632,25 +1655,25 @@ export interface components {
             reservation_status: components["schemas"]["ReservationStatusEnum"];
             /**
              * Free
-             * @description Number of free places
+             * @description Number of free places (null = not published by source)
              */
-            free: number;
+            free?: number | null;
             /**
              * Total
-             * @description Total number of places
+             * @description Total number of places (null = not published by source)
              */
-            total: number;
+            total?: number | null;
             /**
              * Occupancy Percent
-             * @description Occupancy percentage (0-100)
+             * @description Occupancy percentage (0-100), null if not computable
              */
-            occupancy_percent: number;
+            occupancy_percent?: number | null;
             /**
              * Occupancy Steps
-             * @description Occupancy in discrete steps (0-100, increments of 10)
+             * @description Occupancy in discrete steps (0-100, increments of 10), null if not computable
              */
-            occupancy_steps: number;
-            /** @description Occupancy status (empty, low, medium, high, full, unknown) */
+            occupancy_steps?: number | null;
+            /** @description Occupancy status (empty, low, medium, high, full, free_unknown, unknown) */
             occupancy_status: components["schemas"]["OccupancyStatusEnum"];
             /**
              * Hut Type
@@ -1846,25 +1869,25 @@ export interface components {
             reservation_status: components["schemas"]["ReservationStatusEnum"];
             /**
              * Free
-             * @description Number of free places
+             * @description Number of free places (null = not published by source)
              */
-            free: number;
+            free?: number | null;
             /**
              * Total
-             * @description Total number of places
+             * @description Total number of places (null = not published by source)
              */
-            total: number;
+            total?: number | null;
             /**
              * Occupancy Percent
-             * @description Occupancy percentage (0-100)
+             * @description Occupancy percentage (0-100), null if not computable
              */
-            occupancy_percent: number;
+            occupancy_percent?: number | null;
             /**
              * Occupancy Steps
-             * @description Occupancy in discrete steps (0-100, increments of 10)
+             * @description Occupancy in discrete steps (0-100, increments of 10), null if not computable
              */
-            occupancy_steps: number;
-            /** @description Occupancy status (empty, low, medium, high, full, unknown) */
+            occupancy_steps?: number | null;
+            /** @description Occupancy status (empty, low, medium, high, full, free_unknown, unknown) */
             occupancy_status: components["schemas"]["OccupancyStatusEnum"];
             /**
              * Hut Type
@@ -2033,20 +2056,20 @@ export interface components {
             date: string;
             /**
              * Free
-             * @description Number of free places
+             * @description Number of free places (null = not published by source)
              */
-            free: number;
+            free?: number | null;
             /**
              * Total
-             * @description Total number of places
+             * @description Total number of places (null = not published by source)
              */
-            total: number;
+            total?: number | null;
             /**
              * Occupancy Percent
-             * @description Occupancy percentage (0-100)
+             * @description Occupancy percentage (0-100), null if not computable
              */
-            occupancy_percent: number;
-            /** @description Occupancy status (empty, low, medium, high, full, unknown) */
+            occupancy_percent?: number | null;
+            /** @description Occupancy status (empty, low, medium, high, full, free_unknown, unknown) */
             occupancy_status: components["schemas"]["OccupancyStatusEnum"];
             /** @description Reservation status (unknown, possible, not_possible, not_online) */
             reservation_status: components["schemas"]["ReservationStatusEnum"];
@@ -2219,6 +2242,8 @@ export interface components {
             order?: number | null;
             /** Slug */
             slug: string;
+            /** Color */
+            color: string;
             /** Name */
             name: string | null;
             /** Symbol */
@@ -2991,6 +3016,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ImageCollectionResponse"];
+                };
+            };
+        };
+    };
+    get_overlay_categories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown[];
                 };
             };
         };

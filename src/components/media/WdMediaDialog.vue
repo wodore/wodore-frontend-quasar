@@ -1,7 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { useDialogPluginComponent } from 'quasar';
 import WdMediaGallery from './WdMediaGallery.vue';
 import type { HutImage } from 'src/composables/useHutImages';
+
+defineEmits([...useDialogPluginComponent.emits]);
+
+const { dialogRef, onDialogHide } = useDialogPluginComponent();
 
 interface Props {
   images: HutImage[];
@@ -11,39 +15,17 @@ interface Props {
 withDefaults(defineProps<Props>(), {
   initialSlide: 0,
 });
-
-const emit = defineEmits<{
-  (e: 'close'): void;
-}>();
-
-const showDialog = ref(true);
-
-// Close dialog
-const closeDialog = () => {
-  showDialog.value = false;
-  emit('close');
-};
-
-// Handle backdrop click - close if clicking outside the gallery
-const onBackdropClick = (event: MouseEvent) => {
-  const target = event.target as HTMLElement;
-  // Close if clicking on the dialog card (backdrop)
-  if (target.classList.contains('dialog-card') || target.classList.contains('q-card')) {
-    closeDialog();
-  }
-};
 </script>
 
 <template>
-  <q-dialog v-model="showDialog" maximized @hide="closeDialog" @keyup.esc="closeDialog">
-    <q-card class="bg-black no-border no-box-shadow dialog-card" @click="onBackdropClick">
+  <q-dialog ref="dialogRef" maximized @hide="onDialogHide">
+    <q-card class="bg-black no-border no-box-shadow dialog-card">
       <!-- Media Gallery Component -->
       <WdMediaGallery
         v-if="images.length > 0"
         :images="images"
         :initial-slide="initialSlide"
-        @close="closeDialog"
-        @click.stop
+        @close="onDialogHide"
       />
       <!-- Empty state -->
       <div v-else class="fit flex flex-center text-white">

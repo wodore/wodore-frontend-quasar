@@ -88,6 +88,7 @@ export default [
       '@typescript-eslint/no-var-requires': 'off',
       '@typescript-eslint/no-unused-vars': 'warn',
       'no-unused-vars': 'off',
+      'vue/no-deprecated-slot-attribute': 'off',
     },
   },
 

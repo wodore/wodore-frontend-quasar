@@ -2,11 +2,16 @@
 .thumbs.db
 node_modules
 .vscode
+tmp/
+screenshots/
 
 # Quasar core related directories
 .quasar
 /dist
 /quasar.config.*.temporary.compiled*
+
+# Histoire build output
+.histoire
 
 # Cordova related directories and files
 /src-cordova/node_modules

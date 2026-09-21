@@ -80,7 +80,15 @@ const openColor = computed(() => {
     size="md"
     v-if="type && type.name"
     :class="'bg-' + color_bg + ' q-mr-none'"
-    style="min-width: 90px; max-width: 90px; max-height: 30px"
+    style="
+      min-width: 90px;
+      max-width: 90px;
+      height: 30px !important;
+      min-height: 30px !important;
+      max-height: 30px !important;
+      padding-top: 0;
+      padding-bottom: 0;
+    "
   >
     <q-avatar :class="'bg-' + color_bg_avantar" text-color="white">
       <q-icon

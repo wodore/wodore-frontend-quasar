@@ -1,0 +1,5 @@
+/* Constrain story preview height in docs */
+.sb-story[data-story-block] {
+  max-height: 500px;
+  overflow: auto;
+}
