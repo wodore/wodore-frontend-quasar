@@ -7,11 +7,11 @@ const { t } = useI18n();
 interface AvailabilityDay {
   date: string;
   reservation_status: string;
-  free: number;
-  total: number;
-  occupancy_percent: number;
-  occupancy_steps: number;
-  occupancy_status: 'empty' | 'low' | 'medium' | 'high' | 'full';
+  free?: number | null;
+  total?: number | null;
+  occupancy_percent?: number | null;
+  occupancy_steps?: number | null;
+  occupancy_status: 'empty' | 'low' | 'medium' | 'high' | 'full' | 'free_unknown' | 'unknown';
   hut_type: string;
   link: string;
   loading?: boolean;
@@ -72,12 +72,13 @@ const fullDateWithYear = computed(() => {
 // Calculate the height of the occupied portion based on occupancy_percent
 // Uses a formula that exaggerates low values and dampens high values for better visual representation
 const occupiedHeight = computed(() => {
-  // If unknown, no bar should be shown
-  if (isUnknown.value) {
+  // If unknown or free_unknown, no bar should be shown
+  // (free_unknown: free beds confirmed, but occupancy not computable)
+  if (isUnknown.value || isFreeUnknown.value) {
     return '0%';
   }
 
-  let occupiedRatio = props.day.occupancy_percent;
+  let occupiedRatio = props.day.occupancy_percent ?? 0;
 
   // If occupancy_percent is already 0-100, convert to 0-1
   if (occupiedRatio > 1) {
@@ -117,6 +118,21 @@ const isUnknown = computed(() => {
   );
 });
 
+// Free beds confirmed, but count not published by the source (free_unknown)
+const isFreeUnknown = computed(() => {
+  return !isUnknown.value && props.day.occupancy_status === 'free_unknown';
+});
+
+// Free count for display: '?' if not published by the source
+const freeLabel = computed(() =>
+  isUnknown.value || props.day.free == null ? '?' : String(props.day.free)
+);
+
+// Total for display: '?' if not published by the source
+const totalLabel = computed(() =>
+  isUnknown.value || props.day.total == null ? '?' : String(props.day.total)
+);
+
 // Determine bar color based on occupancy_status
 const barColor = computed(() => {
   if (isUnknown.value) {
@@ -127,6 +143,8 @@ const barColor = computed(() => {
       return '#d32f2f'; // red
     case 'high':
       return '#ffa726'; // orange
+    case 'free_unknown':
+      return '#87b52d'; // yellow-green, a bit darker than medium
     case 'medium':
       return '#99cc33'; // yellow-green
     case 'low':
@@ -151,6 +169,8 @@ const barColorLight = computed(() => {
       return 'rgba(211, 47, 47, 0.3)'; // red with 30% opacity
     case 'high':
       return 'rgba(255, 167, 38, 0.3)'; // orange with 30% opacity
+    case 'free_unknown':
+      return 'rgba(135, 181, 45, 0.3)'; // yellow-green (darker medium) with 30% opacity
     case 'medium':
       return 'rgba(153, 204, 51, 0.3)'; // yellow-green with 30% opacity
     case 'low':
@@ -376,12 +396,7 @@ const barColorLight = computed(() => {
             }"
           ></div>
           <div class="bar-content">
-            <template v-if="isUnknown">
-              <div class="free-label">?</div>
-            </template>
-            <template v-else>
-              <div class="free-label">{{ day.free }}</div>
-            </template>
+            <div class="free-label">{{ freeLabel }}</div>
           </div>
         </div>
         <q-skeleton v-else class="bar-bg" :style="{ borderRadius: barRadius }" />
@@ -390,7 +405,7 @@ const barColorLight = computed(() => {
         <div>{{ fullWeekday }}, {{ fullDateWithYear }}</div>
         <div v-if="isUnknown">{{ t('availability.no_data') }}</div>
         <div v-else>
-          {{ day.free }} {{ t('availability.free') }} / {{ day.total }}
+          {{ freeLabel }} {{ t('availability.free') }} / {{ totalLabel }}
           {{ t('availability.total') }}
         </div>
       </q-tooltip>
