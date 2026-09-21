@@ -118,7 +118,12 @@ export const useUserSettingsStore = defineStore('userSettings', () => {
     } catch {
       // Silent error handling
     }
-    return defaultSettings;
+    // Clone so mutations of the store state never leak into the shared
+    // module-level defaults
+    return {
+      ui: { ...defaultSettings.ui },
+      map: { ...defaultSettings.map },
+    };
   };
 
   // Reactive state
@@ -247,7 +252,10 @@ export const useUserSettingsStore = defineStore('userSettings', () => {
 
   // Reset to defaults
   const resetToDefaults = () => {
-    Object.assign(settings.value, defaultSettings);
+    Object.assign(settings.value, {
+      ui: { ...defaultSettings.ui },
+      map: { ...defaultSettings.map },
+    });
     pendingSync.value.add('ui');
     pendingSync.value.add('map');
     triggerDebouncedSync();

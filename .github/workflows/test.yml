@@ -1,0 +1,96 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  pull-requests: write
+  checks: write
+  # Publishing the Allure report to the gh-pages branch
+  contents: write
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Read Node.js version from .nvmrc
+        id: nvmrc
+        run: echo "NODE_VERSION=$(cat .nvmrc)" >> $GITHUB_OUTPUT
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ steps.nvmrc.outputs.NODE_VERSION }}
+          cache: yarn
+
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.cache/node-gyp
+          key: node-modules-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+
+      - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: yarn install --immutable
+
+      # NOTE: e2e (Playwright) is intentionally NOT run in CI — it requires a
+      # real dev server + backend and stays a local-only suite for now.
+      - name: Run unit tests
+        run: rm -rf allure-results && yarn test:unit
+
+      - name: Cache Allure (npm)
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: allure-${{ runner.os }}
+
+      # allure@3 (Allure Report 3): the allure-action reads the v3 summary
+      # format; the v2 allure-commandline report is not parseable by it
+      - name: Generate Allure report
+        if: always()
+        run: npx -y allure@3 generate allure-results/unit
+
+      - name: Post Allure summary
+        if: always()
+        uses: allure-framework/allure-action@v0.6.6
+        with:
+          report-directory: './allure-report'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Full report hosted on GitHub Pages, one directory per run; old runs
+      # are kept so PR links stay valid
+      - name: Publish report to GitHub Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./allure-report
+          destination_dir: allure/${{ github.run_number }}
+          keep_files: true
+          commit_message: >-
+            Allure report for run ${{ github.run_number }}
+
+      - name: Add report link to PR
+        if: always() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REPO=${GITHUB_REPOSITORY,,}
+          URL="https://${REPO%%/*}.github.io/${REPO#*/}"
+          URL="$URL/allure/${{ github.run_number }}/"
+          gh pr comment "${{ github.event.pull_request.number }}" \
+            --body "📊 Full Allure report: $URL"

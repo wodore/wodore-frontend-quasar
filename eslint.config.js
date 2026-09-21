@@ -15,6 +15,12 @@ export default [
       '**/.quasar/**',
       '**/node_modules/**',
       '**/quasar.config.*.temporary.compiled*',
+      // Test results and generated reports
+      '**/allure-report/**',
+      '**/allure-results/**',
+      '**/playwright-report/**',
+      '**/test-results/**',
+      '**/coverage/**',
     ],
   },
 

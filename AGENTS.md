@@ -58,6 +58,35 @@ yarn story:build      # Build static Histoire site
 yarn story:preview    # Preview built Histoire site
 ```
 
+### Testing
+
+```bash
+# Unit tests (Vitest) — run in CI on every PR, Allure report posted to the PR
+yarn test:unit            # run once
+yarn test:unit:watch      # watch mode
+yarn test:unit:coverage   # with coverage
+
+# E2E smoke suite (Playwright) — LOCAL ONLY, never in CI
+yarn dev                  # 1. start the dev server (required!)
+yarn test:e2e             # 2. run the suite (mobile-chrome project)
+
+# Allure reports
+yarn allure:generate      # merge unit + e2e results, generate report
+yarn allure:open          # open the generated report in a browser
+yarn allure:clean         # remove all results and reports
+```
+
+**Test structure**: `tests/unit/` (Vitest, node env; store specs use happy-dom via a
+`// @vitest-environment happy-dom` docblock) and `tests/e2e/` (Playwright).
+
+**E2E preconditions**: dev server on `http://localhost:9000` (`yarn dev`) and a reachable
+backend (`E2E_API_HOST`, default `http://127.0.0.1:8000`). The hut deep-link test uses
+`E2E_HUT_SLUG` (default `aarbiwak`) and skips when the hut is not found. E2E is
+intentionally not part of CI (deterministic CI is handled by the unit suite).
+
+**CI**: `.github/workflows/test.yml` runs the unit suite on every PR and posts the Allure
+report via `allure-framework/allure-action` (same pattern as wodore-backend).
+
 **IMPORTANT**: Always run both `yarn lint` and `npx vue-tsc --noEmit` after making code changes to verify there are no ESLint warnings or TypeScript errors before committing.
 
 **CRITICAL**: Check ESLint for all modified files to catch:
