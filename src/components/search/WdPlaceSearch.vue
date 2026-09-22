@@ -6,6 +6,7 @@ import { useI18n } from 'vue-i18n';
 import { MapInstance } from '@indoorequal/vue-maplibre-gl/dist/lib/lib/mapRegistry';
 import { useRouter, useRoute } from 'vue-router';
 import { useDebounceFn } from '@vueuse/core';
+import { useLatestRequest } from '@composables/useLatestRequest';
 import WdSearchResultEntry from './WdSearchResultEntry.vue';
 
 const { locale } = useI18n();
@@ -47,6 +48,8 @@ const loading = ref(false);
 const selectedIndex = ref(-1);
 
 // Search function
+const latestSearch = useLatestRequest();
+
 async function performSearchInternal(newSearchText: string) {
   if (newSearchText.length < 2) {
     searchResults.value = [];
@@ -54,6 +57,7 @@ async function performSearchInternal(newSearchText: string) {
   }
 
   loading.value = true;
+  const token = latestSearch.next();
 
   try {
     //const { data, error } = await clientWodore.GET('/v1/huts/search', {
@@ -73,6 +77,9 @@ async function performSearchInternal(newSearchText: string) {
       },
     });
 
+    // A newer search superseded this one - do not overwrite its results
+    if (!latestSearch.isLatest(token)) return;
+
     if (error) {
       console.error('Search error:', error);
       searchResults.value = [];
@@ -80,10 +87,13 @@ async function performSearchInternal(newSearchText: string) {
       searchResults.value = data || [];
     }
   } catch (err) {
+    if (!latestSearch.isLatest(token)) return;
     console.error('Search failed:', err);
     searchResults.value = [];
   } finally {
-    loading.value = false;
+    if (latestSearch.isLatest(token)) {
+      loading.value = false;
+    }
   }
 }
 

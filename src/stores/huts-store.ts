@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
+import { useLatestRequest } from '@composables/useLatestRequest';
 
 // import {
 //   //HutService,
@@ -99,7 +100,13 @@ export const useHutsStore = defineStore('huts', () => {
     date: string;
     days?: number;
   }
+
+  // Latest-wins guard: an older availability response must not overwrite a
+  // newer one when the date changes quickly
+  const latestBookings = useLatestRequest();
+
   async function fetchHutBookingsGeojson({ date = 'now', days = 8 }: fetchHutBookingsGeojsonArgs) {
+    const token = latestBookings.next();
     clientWodore
       //.GET('/v1/huts/bookings.geojson', {
       .GET('/v1/huts/availability/{date}.geojson', {
@@ -113,11 +120,13 @@ export const useHutsStore = defineStore('huts', () => {
         },
       })
       .then(({ data }) => {
+        if (!latestBookings.isLatest(token)) return;
         if (data) {
           bookingsGeojson.value = data as schemasWodore['HutAvailabilityFeatureCollection'];
         }
       })
       .catch(() => {
+        if (!latestBookings.isLatest(token)) return;
         Notify.create({
           type: 'negative',
           position: 'bottom',

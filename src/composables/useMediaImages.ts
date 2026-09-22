@@ -2,6 +2,7 @@ import { ref, watchEffect, type Ref } from 'vue';
 import { clientWodore } from '@clients/index';
 import type { components } from '@clients/wodore_v1.d';
 import type { HutImage } from './useHutImages';
+import { useLatestRequest } from './useLatestRequest';
 
 // Type shortcuts from OpenAPI generated types
 type ImageCollectionResponse = components['schemas']['ImageCollectionResponse'];
@@ -41,6 +42,7 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
     return response.features
       .filter(feature => feature.properties !== null)
       .map(feature => {
+        // SAFETY: filtered for non-null properties directly above
         const props = feature.properties!;
         return {
           id: `${props.provider.slug}_${props.source_id}`,
@@ -65,6 +67,8 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
           crop: props.crop,
           place: props.place,
           score: props.score,
+          // SAFETY: the mapped literal is a superset of HutImage's optional
+          // fields; the double cast bridges the local HutImage interface
         } as unknown as HutImage;
       });
   };
@@ -72,11 +76,14 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
   /**
    * Fetch images by hut slug (specialized endpoint - fastest)
    */
+  const latest = useLatestRequest();
+
   const fetchByHutSlug = async (slug: string, radius = 50, limit = 20) => {
     if (!slug) return;
 
     loading.value = true;
     error.value = null;
+    const token = latest.next();
 
     try {
       const { data, error: err } = await clientWodore.GET('/v1/geo/images/hut/{hut_slug}', {
@@ -92,6 +99,9 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
         },
       });
 
+      // A newer request superseded this one - do not overwrite its results
+      if (!latest.isLatest(token)) return;
+
       if (err) {
         // Silently handle errors - don't console.error network failures
         const errorMessage = (err as { message?: string }).message || String(err);
@@ -104,11 +114,14 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
           images.value = [];
         }
       } else if (data) {
+        // SAFETY: generated OpenAPI response type does not carry the geojson
+        // feature shape; the runtime payload matches ImageCollectionResponse
         images.value = transformResponse(data as unknown as ImageCollectionResponse);
       } else {
         images.value = [];
       }
     } catch (err) {
+      if (!latest.isLatest(token)) return;
       // Handle unexpected errors silently
       const errorMessage = (err as { message?: string }).message || String(err);
       if (errorMessage === 'Failed to fetch') {
@@ -120,7 +133,9 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
         images.value = [];
       }
     } finally {
-      loading.value = false;
+      if (latest.isLatest(token)) {
+        loading.value = false;
+      }
     }
   };
 
@@ -138,6 +153,7 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
 
     loading.value = true;
     error.value = null;
+    const token = latest.next();
 
     // For progressive loading, fetch wodore first
     if (progressive) {
@@ -175,35 +191,50 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
         });
 
         // Handle wodore response first
-        wodorePromise.then(({ data, error: err }) => {
-          loadingWodore.value = false;
+        wodorePromise
+          .then(({ data, error: err }) => {
+            loadingWodore.value = false;
 
-          if (err) {
-            console.error('Error fetching wodore images:', err);
-          } else if (data) {
-            const wodoreImages = transformResponse(data as unknown as ImageCollectionResponse);
-            images.value = mergeImages(images.value, wodoreImages);
-          }
-        });
+            if (err) {
+              console.error('Error fetching wodore images:', err);
+            } else if (data) {
+              // A newer request superseded this one - do not merge stale images
+              if (!latest.isLatest(token)) return;
+              // SAFETY: same generated-type gap as fetchByHutSlug
+              const wodoreImages = transformResponse(data as unknown as ImageCollectionResponse);
+              images.value = mergeImages(images.value, wodoreImages);
+            }
+          })
+          .catch(() => {
+            // Rejected promises must not escape unhandled
+            loadingWodore.value = false;
+          });
 
         // Handle all sources response
         const { data: allData, error: allErr } = await allPromise;
         loadingAll.value = false;
 
+        // A newer request superseded this one - do not overwrite its state
+        if (!latest.isLatest(token)) return;
+
         if (allErr) {
           console.error('Error fetching all images:', allErr);
           error.value = 'Failed to load images';
         } else if (allData) {
+          // SAFETY: same generated-type gap as fetchByHutSlug
           const allImages = transformResponse(allData as unknown as ImageCollectionResponse);
           images.value = mergeImages(images.value, allImages);
         }
       } catch (err) {
+        if (!latest.isLatest(token)) return;
         console.error('Error fetching nearby images:', err);
         error.value = 'Failed to load images';
         loadingWodore.value = false;
         loadingAll.value = false;
       } finally {
-        loading.value = false;
+        if (latest.isLatest(token)) {
+          loading.value = false;
+        }
       }
     } else {
       // Non-progressive: single request
@@ -220,17 +251,24 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
           },
         });
 
+        // A newer request superseded this one - do not overwrite its state
+        if (!latest.isLatest(token)) return;
+
         if (err) {
           console.error('Error fetching nearby images:', err);
           error.value = 'Failed to load images';
         } else if (data) {
+          // SAFETY: same generated-type gap as fetchByHutSlug
           images.value = transformResponse(data as unknown as ImageCollectionResponse);
         }
       } catch (err) {
+        if (!latest.isLatest(token)) return;
         console.error('Error fetching nearby images:', err);
         error.value = 'Failed to load images';
       } finally {
-        loading.value = false;
+        if (latest.isLatest(token)) {
+          loading.value = false;
+        }
       }
     }
   };
