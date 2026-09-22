@@ -79,6 +79,20 @@ yarn allure:clean         # remove all results and reports
 **Test structure**: `tests/unit/` (Vitest, node env; store specs use happy-dom via a
 `// @vitest-environment happy-dom` docblock) and `tests/e2e/` (Playwright).
 
+**Test structure**: `tests/unit/` (Vitest, node env; store specs use happy-dom via a
+`// @vitest-environment happy-dom` docblock) and `tests/e2e/` (Playwright).
+
+**Dev server ports & worktree testing**: `dev:pwa`/`dev:spa`/`dev:ssr` no longer
+hardcode a port — Quasar defaults to 9000, and a custom port is passed with
+`yarn dev -p 9001`. When working in git worktrees (parallel branches/PRs), use
+ports **9001-9010** so multiple dev servers can run side by side. Note:
+`.env.local` is gitignored and does not propagate to new worktrees — copy it
+from the main checkout, or API hosts / map keys will be missing.
+
+**Status reporting convention**: when a dev server is running, always tell the
+user where it is (full URL and which branch it serves). Always show active PRs
+in the summary as markdown links (e.g. `[PR #138](…/pull/138)`).
+
 **E2E preconditions**: dev server on `http://localhost:9000` (`yarn dev`) and a reachable
 backend (`E2E_API_HOST`, default `http://127.0.0.1:8000`). The hut deep-link test uses
 `E2E_HUT_SLUG` (default `aarbiwak`) and skips when the hut is not found. E2E is
