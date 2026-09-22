@@ -5,6 +5,7 @@ import { useCssVar, useWindowSize } from '@vueuse/core';
 import { useI18n } from 'vue-i18n';
 import { useMeteoStore } from '@stores/meteo-store';
 import { useHutsStore } from '@stores/huts-store';
+import { useLatestRequest } from '@composables/useLatestRequest';
 import { storeToRefs } from 'pinia';
 
 const { formatDate, subtractFromDate, addToDate } = date;
@@ -219,6 +220,7 @@ const scrollToToday = (animate: boolean, targetDate: Date = new Date()) => {
 };
 
 const lastLoadedKey = ref<string | null>(null);
+const latestForecast = useLatestRequest();
 
 watchEffect(() => {
   if (!canShowForecast.value) {
@@ -243,6 +245,7 @@ watchEffect(() => {
   const elevation = props.elevation;
 
   error.value = null;
+  const token = latestForecast.next();
 
   meteoStore
     .getDaily({ latitude, longitude }, typeof elevation === 'number' ? elevation : undefined, {
@@ -251,6 +254,8 @@ watchEffect(() => {
       weatherModels: ['meteoswiss_icon_seamless', 'best_match'],
     })
     .then(items => {
+      // A newer forecast request superseded this one - do not overwrite it
+      if (!latestForecast.isLatest(token)) return;
       //console.debug('[weather-forecast] daily result', {
       //  count: items.length,
       //  first: items[0],
@@ -277,6 +282,7 @@ watchEffect(() => {
       });
     })
     .catch(() => {
+      if (!latestForecast.isLatest(token)) return;
       error.value = t('weather.unavailable');
     });
 });

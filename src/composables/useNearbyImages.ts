@@ -1,5 +1,6 @@
 import { ref, watchEffect, type Ref } from 'vue';
 import { clientWodore } from '@clients/index';
+import { useLatestRequest } from './useLatestRequest';
 import type { HutImage, NearbyImagesResponse, NearbyImageFeature } from 'src/types/geo';
 
 /**
@@ -35,6 +36,8 @@ export function useNearbyImages(lat?: Ref<number | undefined>, lon?: Ref<number 
   /**
    * Fetch nearby images
    */
+  const latest = useLatestRequest();
+
   const fetchNearbyImages = async (latitude: number, longitude: number) => {
     if (!latitude || !longitude) {
       return;
@@ -42,6 +45,7 @@ export function useNearbyImages(lat?: Ref<number | undefined>, lon?: Ref<number 
 
     loading.value = true;
     error.value = null;
+    const token = latest.next();
 
     // Start both requests in parallel
     loadingWodore.value = true;
@@ -78,35 +82,51 @@ export function useNearbyImages(lat?: Ref<number | undefined>, lon?: Ref<number 
       });
 
       // Handle wodore response first (usually faster)
-      wodorePromise.then(({ data, error: err }) => {
-        loadingWodore.value = false;
+      wodorePromise
+        .then(({ data, error: err }) => {
+          loadingWodore.value = false;
 
-        if (err) {
-          console.error('Error fetching wodore images:', err);
-        } else if (data) {
-          const wodoreImages = transformResponse(data as unknown as NearbyImagesResponse);
-          images.value = mergeImages(images.value, wodoreImages);
-        }
-      });
+          if (err) {
+            console.error('Error fetching wodore images:', err);
+          } else if (data) {
+            // A newer request superseded this one - do not merge stale images
+            if (!latest.isLatest(token)) return;
+            // SAFETY: openapi-fetch's generated response type for this
+            // endpoint does not carry the geojson feature shape; the runtime
+            // payload matches NearbyImagesResponse
+            const wodoreImages = transformResponse(data as unknown as NearbyImagesResponse);
+            images.value = mergeImages(images.value, wodoreImages);
+          }
+        })
+        .catch(() => {
+          // Rejected promises must not escape unhandled
+          loadingWodore.value = false;
+        });
 
       // Handle all sources response
       const { data: allData, error: allErr } = await allPromise;
       loadingAll.value = false;
 
+      if (!latest.isLatest(token)) return;
+
       if (allErr) {
         console.error('Error fetching all images:', allErr);
         error.value = 'Failed to load images';
       } else if (allData) {
+        // SAFETY: same generated-type gap as the wodore response above
         const allImages = transformResponse(allData as unknown as NearbyImagesResponse);
         images.value = mergeImages(images.value, allImages);
       }
     } catch (err) {
+      if (!latest.isLatest(token)) return;
       console.error('Error fetching nearby images:', err);
       error.value = 'Failed to load images';
       loadingWodore.value = false;
       loadingAll.value = false;
     } finally {
-      loading.value = false;
+      if (latest.isLatest(token)) {
+        loading.value = false;
+      }
     }
   };
 

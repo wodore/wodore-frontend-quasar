@@ -138,11 +138,6 @@ const downloadOriginal = () => {
   }
 };
 
-// Check if we should add margin (large screens)
-const shouldAddMargin = computed(() => {
-  return window.innerWidth >= 1200;
-});
-
 // Show navigation only on non-touch devices with multiple images
 const showNavigation = computed(() => {
   return !hasTouch.value && props.images.length > 1;
@@ -173,7 +168,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="media-gallery-container" :class="{ 'with-margin': shouldAddMargin }">
+  <div class="media-gallery-container">
     <!-- Close button -->
     <q-btn flat round dense class="close-btn" @click="closeGallery">
       <q-iconify :is="IconCloseOutline" size="20px" />
@@ -308,10 +303,6 @@ onUnmounted(() => {
   flex-direction: column;
   background: black;
   transition: all 0.3s ease;
-}
-
-.with-margin {
-  // Margins removed - always full screen
 }
 
 .close-btn {

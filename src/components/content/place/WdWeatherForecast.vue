@@ -2,6 +2,7 @@
 import { computed, ref, watchEffect, watch } from 'vue';
 import { date, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
+import { useLatestRequest } from '@composables/useLatestRequest';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import type { Swiper as SwiperType } from 'swiper';
 import { FreeMode, Scrollbar, Mousewheel } from 'swiper/modules';
@@ -125,6 +126,7 @@ const initializeDateRange = (): WeatherDay[] => {
 };
 
 const lastLoadedKey = ref<string | null>(null);
+const latestForecast = useLatestRequest();
 
 // Fetch daily forecast data
 watchEffect(() => {
@@ -145,6 +147,7 @@ watchEffect(() => {
   const elevation = props.elevation;
 
   error.value = null;
+  const token = latestForecast.next();
 
   meteoStore
     .getDaily({ latitude, longitude }, typeof elevation === 'number' ? elevation : undefined, {
@@ -153,6 +156,8 @@ watchEffect(() => {
       weatherModels: ['meteoswiss_icon_seamless', 'best_match'],
     })
     .then(items => {
+      // A newer forecast request superseded this one - do not overwrite it
+      if (!latestForecast.isLatest(token)) return;
       if (!items.length) {
         error.value = t('weather.unavailable');
         return;
@@ -175,6 +180,7 @@ watchEffect(() => {
       });
     })
     .catch(() => {
+      if (!latestForecast.isLatest(token)) return;
       error.value = t('weather.unavailable');
     });
 });

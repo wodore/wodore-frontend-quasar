@@ -1,4 +1,5 @@
 import { ref, watch, type Ref } from 'vue';
+import { useLatestRequest } from './useLatestRequest';
 
 export interface WeatherParams {
   lat: number;
@@ -9,6 +10,7 @@ export function usePlaceWeather(params: Ref<WeatherParams | undefined>) {
   const weather = ref<Record<string, unknown> | null>(null);
   const loading = ref(false);
   const error = ref<Error | null>(null);
+  const latest = useLatestRequest();
 
   watch(
     params,
@@ -20,6 +22,7 @@ export function usePlaceWeather(params: Ref<WeatherParams | undefined>) {
 
       loading.value = true;
       error.value = null;
+      const token = latest.next();
 
       try {
         // Fetch weather data using Open-Meteo API
@@ -31,12 +34,17 @@ export function usePlaceWeather(params: Ref<WeatherParams | undefined>) {
         }
 
         const data = await response.json();
+        // A newer request superseded this one - do not overwrite its state
+        if (!latest.isLatest(token)) return;
         weather.value = data;
       } catch (err) {
+        if (!latest.isLatest(token)) return;
         error.value = err as Error;
         console.error('Failed to fetch weather:', err);
       } finally {
-        loading.value = false;
+        if (latest.isLatest(token)) {
+          loading.value = false;
+        }
       }
     },
     { immediate: true }
