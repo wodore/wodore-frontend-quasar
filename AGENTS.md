@@ -87,7 +87,10 @@ hardcode a port — Quasar defaults to 9000, and a custom port is passed with
 `yarn dev -p 9001`. When working in git worktrees (parallel branches/PRs), use
 ports **9001-9010** so multiple dev servers can run side by side. Note:
 `.env.local` is gitignored and does not propagate to new worktrees — copy it
-from the main checkout, or API hosts / map keys will be missing.
+from the main checkout, or API hosts / map keys will be missing. Also run
+`git submodule update --init` in new worktrees — `src/assets/wodore-design`
+(the map/overlay icon assets) is a submodule; without it the overlay and
+map-picker icons 404.
 
 **Status reporting convention**: when a dev server is running, always tell the
 user where it is (full URL and which branch it serves). Always show active PRs
