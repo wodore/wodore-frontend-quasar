@@ -231,7 +231,7 @@ test('sheet header gets a shadow once content is scrolled', async ({ page }) => 
   const hasShadow = await page.evaluate(() => {
     const host = document.querySelector('bottom-sheet');
     if (!host) return false;
-    const header = host.querySelector('.sheet-header-row');
+    const header = host.shadowRoot?.querySelector('.sheet-header');
     if (!header) return false;
     return window.getComputedStyle(header).boxShadow !== 'none';
   });

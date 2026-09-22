@@ -249,17 +249,19 @@ bottom-sheet[data-sheet-state='expanded'] {
 }
 
 /*
- * Header elevation: the header slot content gets a drop shadow once the
- * content below it is scrolled (standard mobile app-bar pattern). The
- * attribute is toggled by the component's content scroll listener.
+ * Header elevation: the header gets a drop shadow once the content is
+ * scrolled (standard mobile app-bar pattern). The shadow lives on the
+ * shadow-DOM header element itself and the header is elevated with z-index,
+ * otherwise later-painted content (the photo gallery) covers the shadow.
+ * The attribute is toggled by the component's content scroll listener.
  */
-bottom-sheet .sheet-header-row {
-  background: var(--sheet-background, #f2f2f2);
+bottom-sheet::part(header) {
   transition: box-shadow 0.2s ease;
 }
 
-bottom-sheet[data-content-scrolled] .sheet-header-row {
+bottom-sheet[data-content-scrolled]::part(header) {
   box-shadow: 0 4px 10px -4px rgba(0, 0, 0, 0.35);
+  z-index: 10;
 }
 </style>
 
