@@ -10,7 +10,9 @@ import type { Page } from '@playwright/test';
 
 export interface SheetState {
   exists: boolean;
-  /** Host element scrollTop - the sheet's visual snap position (0 = fully expanded) */
+  /** Host element scrollTop - drives the sheet's visual position:
+   *  0 = collapsed/dismissed, ~150 = header-only snap, ~330 = initial snap,
+   *  max (~viewport - toolbar) = fully expanded */
   hostScrollTop: number | null;
   /** Inner content scrollTop */
   contentScrollTop: number | null;

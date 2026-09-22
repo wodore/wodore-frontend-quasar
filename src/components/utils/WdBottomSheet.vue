@@ -14,7 +14,6 @@ const emit = defineEmits<{
 }>();
 
 const internalOpen = ref(false);
-const currentSnapIndex = ref(2); // Track current snap index (starts at index 2 - initial)
 
 // Toolbar height (from Quasar toolbar)
 const toolbarHeight = 50;
@@ -39,12 +38,10 @@ watch(
     if (open) {
       nextTick(() => {
         internalOpen.value = true;
-        currentSnapIndex.value = 2; // Reset to initial snap
         reachedSnapAfterOpen.value = false;
       });
     } else {
       internalOpen.value = false;
-      currentSnapIndex.value = 2;
     }
   },
   { immediate: true }
@@ -64,8 +61,6 @@ function handleSnapPositionChange(event: { detail: { sheetState: string; snapInd
 
   console.debug('[bottom-sheet] sheet state', sheetState);
   console.debug('[bottom-sheet] snap index', snapIndex);
-
-  currentSnapIndex.value = snapIndex;
 
   // The sheet is dismissed whenever it reaches the collapsed state at the
   // bottom snap. Any gesture path that ends here (fast fling from above or a

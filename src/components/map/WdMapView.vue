@@ -846,15 +846,6 @@ watch(
       }
 
       selectHutBySlug(newSlug, isInitialLoad);
-    } else if (oldSlug && selectedHutFeature.value) {
-      // Slug was removed, deselect hut
-      if (mapRef.map) {
-        mapRef.map.setFeatureState(
-          { source: HUT_SOURCE_ID, sourceLayer: HUT_SOURCE_LAYER, id: selectedHutFeature.value.id },
-          { selected: false }
-        );
-      }
-      selectedHutFeature.value = undefined;
     }
   },
   { immediate: true } // Run on component mount
