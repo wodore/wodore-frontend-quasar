@@ -122,15 +122,19 @@ function attachContentScrollListener(sheet: BottomSheet): void {
  * leaving the sheet invisible at the collapsed position. Poll briefly until
  * the shadow is ready.
  */
+let armTimer: ReturnType<typeof setTimeout> | null = null;
+
 function armFreshSheet(): void {
   const sheet = sheetElement.value;
   if (!sheet) return;
 
   const tryArm = (remaining: number) => {
+    // The sheet may have been closed again while polling
+    if (!internalOpen.value) return;
     const element = sheet.shadowRoot?.querySelector('.sheet-content');
     if (!element) {
       if (remaining > 0) {
-        setTimeout(() => tryArm(remaining - 1), 100);
+        armTimer = setTimeout(() => tryArm(remaining - 1), 100);
       } else {
         console.debug('[bottom-sheet] shadow content never appeared');
       }
@@ -143,6 +147,10 @@ function armFreshSheet(): void {
 }
 
 function detachContentScrollListener(): void {
+  if (armTimer !== null) {
+    clearTimeout(armTimer);
+    armTimer = null;
+  }
   detachContentScroll?.();
   detachContentScroll = null;
 }
