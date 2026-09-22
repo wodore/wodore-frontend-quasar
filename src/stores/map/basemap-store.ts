@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { reactive } from 'vue';
+import { reactive, watch } from 'vue';
 import { BasemapSwitchItem } from '@stores/map/utils/interfaces';
 import { getRasterStyle } from '@stores/map/utils/raster';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
@@ -9,6 +9,9 @@ import { LocalStorage } from 'quasar';
 import { getGPUTier } from '@pmndrs/detect-gpu';
 import { useOverlayStore } from './overlay-store';
 import { StyleSpecification } from 'maplibre-gl';
+import { i18n, currentLocale } from '@services/locale';
+
+const t = i18n.global.t;
 
 const swissTopoRasterStyle = getRasterStyle({
   name: 'ch-swisstopo-raster',
@@ -425,6 +428,29 @@ export const useBasemapStore = defineStore('basemap', () => {
   // Initialize as empty reactive array
   const basemaps = reactive<Array<BasemapSwitchItem>>([]);
 
+  // i18n keys per basemap name — labels are re-applied in place when the
+  // UI language changes (styles depend on async GPU detection and are NOT
+  // rebuilt, only the labels swap)
+  const BASEMAP_LABEL_KEYS: Record<string, string> = {
+    'ch-swisstopo-light': 'basemaps.swiss_light',
+    'ch-swisstopo-full': 'basemaps.swiss_raster',
+    'Satellite Hybrid': 'basemaps.satellite',
+    'outdoor-osm': 'basemaps.outdoor',
+    'oe-vector': 'basemaps.austria_vector',
+    'oe-raster': 'basemaps.austria_raster',
+  };
+
+  const applyBasemapLabels = () => {
+    for (const basemap of basemaps) {
+      const key = BASEMAP_LABEL_KEYS[basemap.name];
+      if (key) {
+        basemap.label = t(key);
+      }
+    }
+  };
+
+  watch(currentLocale, applyBasemapLabels);
+
   // Cached initialization promise - concurrent callers share one init run,
   // and a failed run resets the cache so the next call can retry
   let basemapInitPromise: Promise<void> | null = null;
@@ -501,11 +527,11 @@ export const useBasemapStore = defineStore('basemap', () => {
       useRaster
     );
 
-    // Populate basemaps array
+    // Populate basemaps array (labels resolved via i18n — see applyBasemapLabels)
     const basemapItems: BasemapSwitchItem[] = [
       {
         name: 'ch-swisstopo-light',
-        label: 'Schweiz Topo Light',
+        label: t('basemaps.swiss_light'),
         show: true,
         active: false,
         img: getImageUrl('swiss-vector.png'),
@@ -520,7 +546,7 @@ export const useBasemapStore = defineStore('basemap', () => {
       },
       {
         name: 'ch-swisstopo-full',
-        label: 'Schweiz Topo Raster',
+        label: t('basemaps.swiss_raster'),
         show: true,
         active: false,
         img: getImageUrl('swiss-raster.png'),
@@ -532,7 +558,7 @@ export const useBasemapStore = defineStore('basemap', () => {
       },
       {
         name: 'Satellite Hybrid',
-        label: 'Satellite',
+        label: t('basemaps.satellite'),
         show: true,
         active: false,
         img: getImageUrl('satellite.png'),
@@ -546,7 +572,7 @@ export const useBasemapStore = defineStore('basemap', () => {
       },
       {
         name: 'outdoor-osm',
-        label: 'Outdoor OSM',
+        label: t('basemaps.outdoor'),
         show: false,
         active: false,
         img: getImageUrl('outdoor-v2.png'),
@@ -560,7 +586,7 @@ export const useBasemapStore = defineStore('basemap', () => {
       },
       {
         name: 'oe-vector',
-        label: 'Östereich Topo Vector',
+        label: t('basemaps.austria_vector'),
         active: false,
         show: false,
         img: getImageUrl('swiss-vector.png'),
@@ -572,7 +598,7 @@ export const useBasemapStore = defineStore('basemap', () => {
       },
       {
         name: 'oe-raster',
-        label: 'Östereich Topo Raster',
+        label: t('basemaps.austria_raster'),
         show: false,
         active: false,
         img: getImageUrl('oe-raster.png'),

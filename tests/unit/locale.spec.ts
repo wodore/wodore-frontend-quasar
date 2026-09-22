@@ -2,7 +2,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as allure from 'allure-js-commons';
 import { createPinia, setActivePinia } from 'pinia';
-import { SUPPORTED_LOCALES, resolveLocale, isLocale, LANGUAGE_OPTIONS } from '@/i18n';
+import {
+  SUPPORTED_LOCALES,
+  resolveLocale,
+  isLocale,
+  LANGUAGE_OPTIONS,
+  detectSystemLocale,
+} from '@/i18n';
 import { currentLocale, getStoredLocale, initLocale, setLocale } from '@services/locale';
 import { useUserSettingsStore } from '@stores/user-settings-store';
 
@@ -53,17 +59,63 @@ describe('locale resolution', () => {
     }
   });
 
-  it('falls back to German for invalid, legacy or missing values', () => {
+  it('falls back to English for invalid, legacy or missing values', () => {
     allure.label('feature', 'language-switch');
     allure.severity('critical');
 
     expect(isLocale('es')).toBe(false);
-    expect(resolveLocale('es')).toBe('de');
-    expect(resolveLocale('de-CH')).toBe('de');
-    expect(resolveLocale('')).toBe('de');
-    expect(resolveLocale(undefined)).toBe('de');
-    expect(resolveLocale(null)).toBe('de');
-    expect(resolveLocale(42)).toBe('de');
+    expect(resolveLocale('es')).toBe('en');
+    expect(resolveLocale('de-CH')).toBe('en');
+    expect(resolveLocale('')).toBe('en');
+    expect(resolveLocale(undefined)).toBe('en');
+    expect(resolveLocale(null)).toBe('en');
+    expect(resolveLocale(42)).toBe('en');
+  });
+
+  it('detects the system language with English fallback', () => {
+    allure.label('feature', 'language-switch');
+    allure.severity('critical');
+
+    // happy-dom default language list
+    const originalLanguages = navigator.languages;
+    const originalLanguage = navigator.language;
+
+    Object.defineProperty(navigator, 'languages', {
+      value: ['fr-CH', 'fr', 'de'],
+      configurable: true,
+    });
+    expect(detectSystemLocale()).toBe('fr');
+
+    Object.defineProperty(navigator, 'languages', {
+      value: ['de-CH', 'de'],
+      configurable: true,
+    });
+    expect(detectSystemLocale()).toBe('de');
+
+    Object.defineProperty(navigator, 'languages', {
+      value: ['es-ES', 'ja-JP'],
+      configurable: true,
+    });
+    expect(detectSystemLocale()).toBe('en');
+
+    Object.defineProperty(navigator, 'languages', {
+      value: undefined,
+      configurable: true,
+    });
+    Object.defineProperty(navigator, 'language', {
+      value: 'it-CH',
+      configurable: true,
+    });
+    expect(detectSystemLocale()).toBe('it');
+
+    Object.defineProperty(navigator, 'languages', {
+      value: originalLanguages,
+      configurable: true,
+    });
+    Object.defineProperty(navigator, 'language', {
+      value: originalLanguage,
+      configurable: true,
+    });
   });
 });
 
@@ -79,18 +131,27 @@ describe('locale service', () => {
     expect(getStoredLocale()).toBe('fr');
   });
 
-  it('falls back to German when the stored value is invalid', () => {
+  it('falls back to English when the stored value is invalid', () => {
     seedStoredLanguage('klingon');
 
-    expect(getStoredLocale()).toBe('de');
+    expect(getStoredLocale()).toBe('en');
     // The store sanitizes the legacy value on load
-    expect(useUserSettingsStore().uiSettings.language).toBe('de');
+    expect(useUserSettingsStore().uiSettings.language).toBe('en');
+  });
+
+  it('reports whether stored settings existed (first-visit detection)', () => {
+    // Fresh localStorage -> first visit
+    expect(useUserSettingsStore().hasStoredSettings).toBe(false);
+    // A NEW store instance (fresh pinia, as on the next app boot) sees the
+    // defaults the first store wrote on init
+    setActivePinia(createPinia());
+    expect(useUserSettingsStore().hasStoredSettings).toBe(true);
   });
 
   it('initLocale applies the locale to the i18n instance', () => {
     expect(initLocale('it')).toBe('it');
     expect(currentLocale()).toBe('it');
-    // initLocale must not write back to the store
+    // initLocale must not write back to the store (default language)
     expect(useUserSettingsStore().uiSettings.language).toBe('de');
   });
 
@@ -108,6 +169,6 @@ describe('locale service', () => {
   it('setLocale ignores invalid values', () => {
     setLocale('gsw' as unknown as Parameters<typeof setLocale>[0]);
 
-    expect(currentLocale()).toBe('de');
+    expect(currentLocale()).toBe('en');
   });
 });

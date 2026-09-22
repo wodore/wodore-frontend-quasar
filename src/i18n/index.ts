@@ -19,8 +19,12 @@ export type Locales = Locale[];
  */
 export const SUPPORTED_LOCALES: Locales = ['de', 'en', 'fr', 'it'];
 
-/** Fallback locale if none stored / stored value is invalid. */
-export const FALLBACK_LOCALE: Locale = 'de';
+/**
+ * Fallback locale: used for unsupported system languages on first visit,
+ * for invalid persisted values and as the vue-i18n fallback for missing
+ * message keys.
+ */
+export const FALLBACK_LOCALE: Locale = 'en';
 
 /**
  * Language picker options with native names.
@@ -40,8 +44,31 @@ export function isLocale(value: unknown): value is Locale {
 
 /**
  * Validate a (possibly persisted, possibly legacy) value as a supported
- * locale, falling back to German for anything unknown.
+ * locale, falling back to the fallback locale for anything unknown.
  */
 export function resolveLocale(value: unknown): Locale {
   return isLocale(value) ? value : FALLBACK_LOCALE;
+}
+
+/**
+ * Detect the user's preferred UI language from the browser/OS settings.
+ * Returns the first supported match (e.g. 'de-CH' -> 'de'), or English if
+ * none of the system languages is supported.
+ */
+export function detectSystemLocale(): Locale {
+  if (typeof navigator === 'undefined') {
+    return FALLBACK_LOCALE;
+  }
+  const candidates =
+    typeof navigator.languages === 'object' && navigator.languages.length > 0
+      ? navigator.languages
+      : [navigator.language];
+  for (const candidate of candidates) {
+    if (typeof candidate !== 'string') continue;
+    const primary = candidate.split('-')[0]?.toLowerCase();
+    if (isLocale(primary)) {
+      return primary;
+    }
+  }
+  return FALLBACK_LOCALE;
 }

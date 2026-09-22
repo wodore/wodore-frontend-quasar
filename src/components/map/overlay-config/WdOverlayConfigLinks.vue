@@ -16,7 +16,7 @@ defineProps<Props>();
 
 <template>
   <div v-if="links.length > 0" class="q-px-md q-pb-md">
-    <div class="text-caption text-grey-7 q-mb-xs">Weiterführende Links</div>
+    <div class="text-caption text-grey-7 q-mb-xs">{{ $t('overlay_config.further_links') }}</div>
     <q-list dense class="transparent">
       <q-item
         v-for="(link, index) in links"

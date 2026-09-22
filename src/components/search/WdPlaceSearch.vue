@@ -9,7 +9,7 @@ import { useDebounceFn } from '@vueuse/core';
 import { useLatestRequest } from '@composables/useLatestRequest';
 import WdSearchResultEntry from './WdSearchResultEntry.vue';
 
-const { locale } = useI18n();
+const { locale, t } = useI18n();
 const $q = useQuasar();
 const router = useRouter();
 const route = useRoute();
@@ -368,7 +368,7 @@ function handleSwipeDown() {
         v-else-if="searchText.length >= 2 || lastSearchText.length >= 2"
         class="no-results bg-dark-500"
       >
-        Keine Orte gefunden
+        {{ t('search_ui.no_places') }}
       </div>
       <div
         v-else
@@ -380,7 +380,7 @@ function handleSwipeDown() {
           <q-icon size="xl" color="primary-300">
             <IconEvaSearchOutline />
           </q-icon>
-          <div class="text-primary-300 q-mt-md">Suche nach Hütten, Gipfeln und mehr...</div>
+          <div class="text-primary-300 q-mt-md">{{ t('search_ui.placeholder_hint') }}</div>
         </div>
       </div>
     </q-scroll-area>

@@ -12,19 +12,20 @@ const activeLocale = computed(() => currentLocale());
 
 <template>
   <q-btn flat dense round size="lg" class="text-icon" :aria-label="t('menu.select_language')">
-    <q-icon><IconEvaGlobe2Outline /></q-icon>
+    <q-icon><IconMdiTranslate /></q-icon>
     <q-tooltip anchor="bottom middle" self="top middle" :delay="500">
       {{ t('menu.select_language') }}
     </q-tooltip>
 
     <q-menu anchor="bottom right" self="top right">
-      <q-list dense style="min-width: 160px">
+      <q-list dense class="bg-dark-500 text-white dialog-radius" style="min-width: 160px">
         <q-item
           v-for="option in LANGUAGE_OPTIONS"
           :key="option.value"
           clickable
           v-close-popup
           :active="option.value === activeLocale"
+          class="text-white"
           @click="setLocale(option.value)"
         >
           <q-item-section>{{ option.label }}</q-item-section>

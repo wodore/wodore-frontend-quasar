@@ -37,3 +37,13 @@
 - [x] 6.2 `yarn lint` and `npx vue-tsc --noEmit` pass without warnings/errors
 - [x] 6.3 `yarn test:unit` passes (incl. new locale specs)
 - [x] 6.4 Manual smoke test on dev server: switch through all four languages, verify persistence across reload, URL unchanged, map/detail data reload in the new language _(headless portion verified: app boots, all changed modules compile via Vite dev server; interactive switching left for review on the running dev server)_
+
+## 7. Review follow-up (second iteration)
+
+- [x] 7.1 Fix language menu transparency (opaque dark background matching app menus) and replace the globe icon with a translate icon
+- [x] 7.2 Mobile: move the switcher into the menu drawer toolbar, left of the feedback button (header shows it on desktop only)
+- [x] 7.3 Default language = detected system language (de/en/fr/it), English fallback; manual selection persists and wins (`detectSystemLocale`, `hasStoredSettings`, first-visit boot logic)
+- [x] 7.4 Externalize remaining hardcoded German across all src files: overlay labels/legends/categories (factory rebuild on locale change), basemap names (label re-apply), search components, availability titles, date picker, multi-select filter, overlay links, 404 page, meta description
+- [x] 7.5 Translate the full DataPolicy page into en/fr/it (`data_policy.*` namespace)
+- [x] 7.6 Update locale unit tests for the new fallback (en) and system detection
+- [x] 7.7 Visual check of the switcher (desktop header + mobile drawer, menu open) via Playwright screenshots

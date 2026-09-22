@@ -525,11 +525,13 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
   // Auto-initialize on store creation
   initializeAllOverlays();
 
-  // Refetch localized categories when the UI language changes: category
-  // labels/descriptions are language-dependent, so clear the cache and
-  // repopulate all overlay filters/legends with the new locale.
+  // Refetch localized categories when the UI language changes. Rebuild the
+  // overlays FIRST (fresh translated labels/legends/config objects), then
+  // clear the category cache and repopulate all overlay filters/legends
+  // against the new configs — deterministic order, single watcher.
   watch(currentLocale, () => {
-    console.debug('[OverlayConfigStore] Locale changed — invalidating category cache');
+    console.debug('[OverlayConfigStore] Locale changed — rebuilding overlays and category cache');
+    overlayStore.rebuildOverlays();
     categoryCache.value.clear();
     void initializeAllOverlays();
   });

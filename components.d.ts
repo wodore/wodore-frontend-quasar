@@ -26,6 +26,7 @@ declare module 'vue' {
     IconFa6SolidLocationCrosshairs: typeof import('~icons/fa6-solid/location-crosshairs')['default']
     IconMdiAnonymousCircle: typeof import('~icons/mdi/anonymous-circle')['default']
     IconMdiAnonymousCircleOff: typeof import('~icons/mdi/anonymous-circle-off')['default']
+    IconMdiTranslate: typeof import('~icons/mdi/translate')['default']
     IconMingcuteMountain2Fill: typeof import('~icons/mingcute/mountain2-fill')['default']
     IconNotoV1Construction: typeof import('~icons/noto-v1/construction')['default']
     QIconify: typeof import('./src/components/quasar/QIconify.vue')['default']

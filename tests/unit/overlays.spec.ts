@@ -64,8 +64,9 @@ describe('overlay config sanity', () => {
 
   it('huts overlay item exposes name and style', () => {
     allure.label('feature', 'map-overlays');
-    expect(overlays.huts.name).toBe('huts');
-    expect(overlays.huts.style).toBeDefined();
-    expect(overlays.huts.style.version).toBe(8);
+    const huts = overlays.createHuts();
+    expect(huts.name).toBe('huts');
+    expect(huts.style).toBeDefined();
+    expect(huts.style.version).toBe(8);
   });
 });

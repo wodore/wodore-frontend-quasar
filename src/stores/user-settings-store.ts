@@ -109,6 +109,8 @@ export const useUserSettingsStore = defineStore('userSettings', () => {
   const STORAGE_KEY = 'wodore:userSettings';
 
   // Load from localStorage first
+  const hadStoredSettings = LocalStorage.hasItem(STORAGE_KEY);
+
   const loadSettings = (): UserSettings => {
     try {
       const stored = LocalStorage.getItem(STORAGE_KEY) as UserSettings | null;
@@ -294,6 +296,10 @@ export const useUserSettingsStore = defineStore('userSettings', () => {
     // State
     settings,
     pendingSync,
+    // Whether settings existed in localStorage before this store was
+    // created (false on first visit — lets the locale boot logic apply the
+    // detected system language instead of the default)
+    hasStoredSettings: hadStoredSettings,
 
     // Computed
     uiSettings,

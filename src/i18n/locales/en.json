@@ -174,7 +174,8 @@
     "total": "Total",
     "tooltip": "{free} free / {total} total",
     "unknown": "Unknown",
-    "no_data": "No data"
+    "no_data": "No data",
+    "title": "Availability"
   },
   "reset": "Reset",
   "send": "Send",
@@ -249,16 +250,190 @@
     "error_solution": "🔧 A new solution is in the works...",
     "error_dismiss": "Too bad, maybe next time...",
     "alternative": "Alternatively:",
-    "or": "or"
+    "or": "or",
+    "not_available": "Currently unavailable"
   },
   "overlay_config": {
     "reset_done": "Settings reset",
     "settings_placeholder": "Settings will be implemented in phase 4+.",
     "settings": "Settings",
-    "tab_legend": "Info"
+    "tab_legend": "Info",
+    "further_links": "Further links"
   },
   "beta": {
     "caption": "This page is still under construction, {feedback} is welcome!",
     "feedback_link": "feedback"
+  },
+  "overlays": {
+    "huts": {
+      "label": "Huts",
+      "filter_types": "Accommodation",
+      "legend_accommodation": "Accommodation",
+      "legend_accommodation_desc": "Different types of accommodation",
+      "legend_availability": "Availability",
+      "legend_availability_desc": "Occupancy status"
+    },
+    "transport_stops": {
+      "label": "Stops",
+      "legend_title": "Stops",
+      "legend_desc": "Public transport stops",
+      "bus": "Bus",
+      "bus_desc": "Bus stops",
+      "train": "Train",
+      "train_desc": "Train stations",
+      "other": "Other",
+      "other_desc": "Other stops"
+    },
+    "info": "Information",
+    "skitouren": {
+      "label": "Ski tours",
+      "desc": "Ski tour routes by Swisstopo. Watch out for avalanche danger and weather conditions.",
+      "link_skitourenkarte": "Swisstopo ski tour map"
+    },
+    "link_avalanche": "SLF avalanche warning",
+    "snowshoes": {
+      "label": "Snowshoes",
+      "desc": "Snowshoe routes by Swisstopo. Winter equipment required.",
+      "link": "Swisstopo snowshoe hiking"
+    },
+    "protected_nature": {
+      "label": "Nature protection",
+      "legend_title": "Protected areas",
+      "desc": "Wildlife reserves and hunting ban areas protecting wildlife",
+      "by_law": "Legally binding",
+      "recommended": "Recommended",
+      "link": "Wildlife rest areas info"
+    },
+    "sheepdogs": {
+      "label": "Livestock guardian dogs",
+      "desc": "Alpine pastures with livestock guardian dogs. Keep dogs on a leash and keep distance from herds.",
+      "pastures": "Protected alpine pastures",
+      "link": "Rules of conduct for guardian dogs"
+    },
+    "hillslope": {
+      "label": "Slope angle",
+      "legend_title": "Slope angle",
+      "desc": "Slopes over 30° (critical for avalanches)",
+      "range_30_35": "Slope angle 30° to 35°",
+      "range_35_40": "Slope angle 35° to 40°",
+      "range_40_45": "Slope angle 40° to 45°",
+      "range_45": "Slope angle over 45°",
+      "link_map_info": "Slope angle map info"
+    },
+    "difficulty": "Difficulty",
+    "skislopes": {
+      "label": "Ski slopes",
+      "desc": "Ski slopes by international colour classification",
+      "green": "Green - Very easy",
+      "green_desc": "Very flat slopes for beginners",
+      "blue": "Blue - Easy",
+      "blue_desc": "Easy slopes with moderate gradient",
+      "red": "Red - Intermediate",
+      "red_desc": "Intermediate slopes",
+      "black": "Black - Difficult",
+      "black_desc": "Difficult slopes with steep sections"
+    },
+    "hiking": {
+      "label": "Hiking trails",
+      "legend_title": "Trail categories",
+      "desc": "Official hiking trail categories by Swisstopo",
+      "wanderweg": "Hiking trail",
+      "wanderweg_desc": "Easy trails, suitable for most age groups",
+      "bergwanderweg": "Mountain trail",
+      "bergwanderweg_desc": "More demanding routes, may include steep slopes or suspension bridges",
+      "alpinwanderweg": "Alpine trail",
+      "alpinwanderweg_desc": "Most difficult routes, alpine experience and equipment required",
+      "link_wanderland": "Switzerland hiking network",
+      "link_sac_scale": "SAC hiking scale"
+    },
+    "cycling": {
+      "label": "Cycling",
+      "desc": "Cycling routes from OpenStreetMap, shown via Waymarked Trails",
+      "link": "Switzerland cycling network"
+    },
+    "mtb": {
+      "label": "Mountain bike",
+      "desc": "Mountain bike routes from OpenStreetMap, shown via Waymarked Trails",
+      "link": "Switzerland mountain bike network"
+    }
+  },
+  "basemaps": {
+    "swiss_light": "Switzerland Topo Light",
+    "swiss_raster": "Switzerland Topo Raster",
+    "satellite": "Satellite",
+    "outdoor": "Outdoor OSM",
+    "austria_vector": "Austria Topo Vector",
+    "austria_raster": "Austria Topo Raster"
+  },
+  "multi_select": {
+    "select_all": "Select all",
+    "deselect_all": "Deselect all",
+    "selected_count": "{selected} of {total} selected",
+    "no_filter_active": "No filter active"
+  },
+  "error_notfound": {
+    "title": "Oops. Lost your way ...",
+    "back": "take me back"
+  },
+  "meta": {
+    "description": "Where will your next tour take you?"
+  },
+  "search_ui": {
+    "no_places": "No places found",
+    "placeholder_hint": "Search for huts, summits and more...",
+    "preview_on_map": "Preview on map"
+  },
+  "data_policy": {
+    "title": "Privacy Policy for Wodore",
+    "last_updated": "Last updated:",
+    "last_updated_date": "June 10, 2024",
+    "summary": "Summary",
+    "summary_processing": "Data processing:",
+    "summary_processing_text": "We use essential cookies and track anonymous usage data with Umami to improve the site.",
+    "summary_sharing": "Data sharing:",
+    "summary_sharing_text": "Your data is not shared with third parties.",
+    "summary_providers": "Service providers:",
+    "summary_providers_text": "We use Cloudinary for image hosting, Infomaniak for cloud services, Zitadel for user management (self-hosted) and Stripe for payment processing.",
+    "summary_rights": "User rights:",
+    "summary_rights_text": "You have the right to access, correct and delete your data upon request.",
+    "summary_more": "For further details, please read the full policy below.",
+    "intro": "Welcome to Wodore! We are committed to protecting your privacy and ensuring that your personal information is handled safely and responsibly. This privacy policy explains how we collect, use and protect information when you visit our website {link} (the \"site\").",
+    "s1": "1. Definitions",
+    "s1_personal_data": "Personal data:",
+    "s1_personal_data_text": "Any information relating to an identified or identifiable person.",
+    "s1_cookies": "Cookies:",
+    "s1_cookies_text": "Small files stored on your device that serve to improve your experience on our site.",
+    "s1_providers": "Service providers:",
+    "s1_providers_text": "Third-party companies we use to support our services.",
+    "s2": "2. Information we collect",
+    "s2_cookies": "Cookies:",
+    "s2_cookies_text": "We only use essential cookies to ensure the proper functioning of our website. These cookies are necessary for the operation of the site and cannot be disabled in our systems.",
+    "s2_tracking": "Tracking:",
+    "s2_tracking_text": "We use {link} for tracking purposes. This tracking is internal, anonymous and serves exclusively to improve the site. Umami ensures anonymity by not collecting any personal data (PII). Data such as page views, referrers, browser types, operating systems, device types, screen sizes, URLs visited and time spent on the page are tracked. This data is analysed in aggregated form to improve the performance and user experience of the website without compromising individual privacy.",
+    "s3": "3. Use of the information",
+    "s3_text": "The information we collect is used exclusively to improve your experience on our website. We do not share your data with third parties unless necessary for the administration and improvement of our website and services.",
+    "s4": "4. Service providers",
+    "s4_intro": "To provide our services, we use the following service providers:",
+    "s4_cloudinary": "Cloudinary:",
+    "s4_cloudinary_text": "Used for {link}.",
+    "s4_cloudinary_link": "image hosting and delivery",
+    "s4_infomaniak": "Infomaniak:",
+    "s4_infomaniak_text": "Cloud service provider used for {link}.",
+    "s4_infomaniak_link": "hosting and other services",
+    "s4_zitadel": "Zitadel:",
+    "s4_zitadel_text": "We use {link} for user management, which is self-hosted.",
+    "s4_stripe": "Stripe:",
+    "s4_stripe_text": "Used for {link}.",
+    "s4_stripe_link": "payment processing",
+    "s5": "5. Data access, correction and deletion",
+    "s5_text": "You have the right to access, correct and delete your data. If you wish to exercise these rights, please contact us at {link}. We will respond to your request within a reasonable timeframe.",
+    "s6": "6. Data security",
+    "s6_text": "We take the security of your data seriously and implement appropriate technical and organisational measures to protect it from unauthorised access, disclosure, alteration or destruction.",
+    "s7": "7. Updates to this policy",
+    "s7_text": "We may update this privacy policy from time to time to reflect changes in our practices or applicable laws. When we make changes, we will adjust the \"Last updated\" date at the top of this page. We recommend that you review this policy regularly to stay informed about how we protect your information.",
+    "s8": "8. Contact us",
+    "s8_text": "If you have questions or concerns about this privacy policy, please contact us at:",
+    "email": "Email:",
+    "closing": "Thank you for entrusting your information to Wodore. We are committed to ensuring your privacy and security."
   }
 }

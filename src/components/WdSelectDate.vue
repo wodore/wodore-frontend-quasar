@@ -369,7 +369,9 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
               </q-item-section>
               <!-- ERROR MESSAGE HEADER -->
               <q-item-section v-else>
-                <q-item-label class="text-h6 text-accent"> Im Moment nicht verfügbar </q-item-label>
+                <q-item-label class="text-h6 text-accent">
+                  {{ t('select_date.not_available') }}
+                </q-item-label>
               </q-item-section>
             </q-item>
           </q-list>

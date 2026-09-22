@@ -1,6 +1,6 @@
 <script setup lang="ts">
 defineOptions({
-  name: 'ErrorNotFound',
+  name: 'DataPolicy',
 });
 </script>
 
@@ -11,142 +11,144 @@ defineOptions({
       style="max-width: 880px; height: calc(100% - 100px)"
     >
       <q-scroll-area style="height: 101%" class="q-px-md">
-        <h5 class="text-accent">Datenschutzerklärung für Wodore</h5>
+        <h5 class="text-accent">{{ $t('data_policy.title') }}</h5>
 
-        <p><strong>Zuletzt aktualisiert:</strong> 10. Juni 2024</p>
+        <p>
+          <strong>{{ $t('data_policy.last_updated') }}</strong>
+          {{ $t('data_policy.last_updated_date') }}
+        </p>
 
-        <h6>Zusammenfassung</h6>
+        <h6>{{ $t('data_policy.summary') }}</h6>
         <div class="text-body2">
           <p>
-            <strong>Datenverarbeitung:</strong> Wir verwenden essentielle Cookies und verfolgen
-            anonyme Nutzungsdaten mit Umami, um die Seite zu verbessern.
-          </p>
-
-          <p><strong>Datenweitergabe:</strong> Ihre Daten werden nicht an Dritte weitergegeben.</p>
-
-          <p>
-            <strong>Dienstleister:</strong> Wir verwenden Cloudinary für das Hosting von Bildern,
-            Informaniak für Cloud-Dienste, Zitadel für das Benutzermanagement (selbst gehostet) und
-            Stripe für die Zahlungsabwicklung.
+            <strong>{{ $t('data_policy.summary_processing') }}</strong>
+            {{ $t('data_policy.summary_processing_text') }}
           </p>
 
           <p>
-            <strong>Benutzerrechte:</strong> Sie haben das Recht, Ihre Daten auf Anfrage
-            zuzugreifen, zu korrigieren und zu löschen.
+            <strong>{{ $t('data_policy.summary_sharing') }}</strong>
+            {{ $t('data_policy.summary_sharing_text') }}
           </p>
 
-          <p>Für weitere Details lesen Sie bitte die vollständige Richtlinie unten.</p>
+          <p>
+            <strong>{{ $t('data_policy.summary_providers') }}</strong>
+            {{ $t('data_policy.summary_providers_text') }}
+          </p>
+
+          <p>
+            <strong>{{ $t('data_policy.summary_rights') }}</strong>
+            {{ $t('data_policy.summary_rights_text') }}
+          </p>
+
+          <p>{{ $t('data_policy.summary_more') }}</p>
         </div>
 
         <hr class="q-my-xl" />
         <div class="text-body3">
           <p>
-            Willkommen bei Wodore! Wir verpflichten uns, Ihre Privatsphäre zu schützen und
-            sicherzustellen, dass Ihre persönlichen Informationen sicher und verantwortungsbewusst
-            behandelt werden. Diese Datenschutzerklärung erläutert, wie wir Informationen sammeln,
-            verwenden und schützen, wenn Sie unsere Website
-            <a href="https://wodore.com">wodore.com</a> (die "Seite") besuchen.
+            <i18n-t keypath="data_policy.intro" tag="span">
+              <template #link>
+                <a href="https://wodore.com">wodore.com</a>
+              </template>
+            </i18n-t>
           </p>
 
-          <h6>1. Definitionen</h6>
+          <h6>{{ $t('data_policy.s1') }}</h6>
           <ul>
             <li>
-              <strong>Personenbezogene Daten:</strong> Alle Informationen, die sich auf eine
-              identifizierte oder identifizierbare Person beziehen.
+              <strong>{{ $t('data_policy.s1_personal_data') }}</strong>
+              {{ $t('data_policy.s1_personal_data_text') }}
             </li>
             <li>
-              <strong>Cookies:</strong> Kleine Dateien, die auf Ihrem Gerät gespeichert werden und
-              dazu dienen, Ihre Erfahrung auf unserer Seite zu verbessern.
+              <strong>{{ $t('data_policy.s1_cookies') }}</strong>
+              {{ $t('data_policy.s1_cookies_text') }}
             </li>
             <li>
-              <strong>Dienstleister:</strong> Drittunternehmen, die wir zur Unterstützung unserer
-              Dienste nutzen.
+              <strong>{{ $t('data_policy.s1_providers') }}</strong>
+              {{ $t('data_policy.s1_providers_text') }}
             </li>
           </ul>
 
-          <h6>2. Informationen, die wir sammeln</h6>
+          <h6>{{ $t('data_policy.s2') }}</h6>
           <p>
-            <strong>Cookies:</strong> Wir verwenden nur essentielle Cookies, um die ordnungsgemäße
-            Funktion unserer Website zu gewährleisten. Diese Cookies sind notwendig für den Betrieb
-            der Website und können in unseren Systemen nicht deaktiviert werden.
+            <strong>{{ $t('data_policy.s2_cookies') }}</strong>
+            {{ $t('data_policy.s2_cookies_text') }}
           </p>
 
           <p>
-            <strong>Tracking:</strong> Wir verwenden <a href="https://umami.is/">Umami</a> zu
-            Verfolgungszwecken. Diese Verfolgung ist intern, anonym und dient ausschließlich der
-            Verbesserung der Seite. Umami stellt die Anonymität sicher, indem keine
-            personenbezogenen Daten (PII) gesammelt werden. Es werden Daten wie Seitenaufrufe,
-            Referrer, Browsertypen, Betriebssysteme, Gerätetypen, Bildschirmgrößen, aufgerufene URLs
-            und Verweildauer auf der Seite verfolgt. Diese Daten werden in aggregierter Form
-            analysiert, um die Leistung und Benutzererfahrung der Website zu verbessern, ohne die
-            Privatsphäre des Einzelnen zu beeinträchtigen.
+            <strong>{{ $t('data_policy.s2_tracking') }}</strong>
+            <i18n-t keypath="data_policy.s2_tracking_text" tag="span">
+              <template #link>
+                <a href="https://umami.is/">Umami</a>
+              </template>
+            </i18n-t>
           </p>
 
-          <h6>3. Verwendung der Informationen</h6>
-          <p>
-            Die von uns gesammelten Informationen werden ausschließlich dazu verwendet, Ihre
-            Erfahrung auf unserer Website zu verbessern. Wir geben Ihre Daten nicht an Dritte
-            weiter, außer wenn dies zur Verwaltung und Verbesserung unserer Website und Dienste
-            erforderlich ist.
-          </p>
+          <h6>{{ $t('data_policy.s3') }}</h6>
+          <p>{{ $t('data_policy.s3_text') }}</p>
 
-          <h6>4. Dienstleister</h6>
-          <p>Zur Bereitstellung unserer Dienste verwenden wir die folgenden Dienstleister:</p>
+          <h6>{{ $t('data_policy.s4') }}</h6>
+          <p>{{ $t('data_policy.s4_intro') }}</p>
           <ul>
             <li>
-              <strong>Cloudinary:</strong> Verwendet für
-              <a href="https://cloudinary.com/">Bildhosting und -bereitstellung</a>.
+              <strong>{{ $t('data_policy.s4_cloudinary') }}</strong>
+              <i18n-t keypath="data_policy.s4_cloudinary_text" tag="span">
+                <template #link>
+                  <a href="https://cloudinary.com/">{{ $t('data_policy.s4_cloudinary_link') }}</a>
+                </template>
+              </i18n-t>
             </li>
             <li>
-              <strong>Informaniak:</strong> Cloud-Service-Provider, der für
-              <a href="https://www.infomaniak.com/">Hosting und andere Dienste</a>
-              verwendet wird.
+              <strong>{{ $t('data_policy.s4_infomaniak') }}</strong>
+              <i18n-t keypath="data_policy.s4_infomaniak_text" tag="span">
+                <template #link>
+                  <a href="https://www.infomaniak.com/">{{
+                    $t('data_policy.s4_infomaniak_link')
+                  }}</a>
+                </template>
+              </i18n-t>
             </li>
             <li>
-              <strong>Zitadel:</strong> Wir verwenden <a href="https://zitadel.com/">Zitadel</a> für
-              das Benutzermanagement, das selbst gehostet wird.
+              <strong>{{ $t('data_policy.s4_zitadel') }}</strong>
+              <i18n-t keypath="data_policy.s4_zitadel_text" tag="span">
+                <template #link>
+                  <a href="https://zitadel.com/">Zitadel</a>
+                </template>
+              </i18n-t>
             </li>
             <li>
-              <strong>Stripe:</strong> Verwendet für
-              <a href="https://stripe.com/">Zahlungsabwicklung</a>.
+              <strong>{{ $t('data_policy.s4_stripe') }}</strong>
+              <i18n-t keypath="data_policy.s4_stripe_text" tag="span">
+                <template #link>
+                  <a href="https://stripe.com/">{{ $t('data_policy.s4_stripe_link') }}</a>
+                </template>
+              </i18n-t>
             </li>
           </ul>
 
-          <h6>5. Datenzugriff, Korrektur und Löschung</h6>
+          <h6>{{ $t('data_policy.s5') }}</h6>
           <p>
-            Sie haben das Recht, auf Ihre Daten zuzugreifen, sie zu korrigieren und zu löschen. Wenn
-            Sie diese Rechte ausüben möchten, kontaktieren Sie uns bitte unter
-            <a href="mailto:tb@wodore.com">tb@wodore.com</a>. Wir werden Ihre Anfrage innerhalb
-            eines angemessenen Zeitrahmens beantworten.
+            <i18n-t keypath="data_policy.s5_text" tag="span">
+              <template #link>
+                <a href="mailto:tb@wodore.com">tb@wodore.com</a>
+              </template>
+            </i18n-t>
           </p>
 
-          <h6>6. Datensicherheit</h6>
+          <h6>{{ $t('data_policy.s6') }}</h6>
+          <p>{{ $t('data_policy.s6_text') }}</p>
+
+          <h6>{{ $t('data_policy.s7') }}</h6>
+          <p>{{ $t('data_policy.s7_text') }}</p>
+
+          <h6>{{ $t('data_policy.s8') }}</h6>
+          <p>{{ $t('data_policy.s8_text') }}</p>
           <p>
-            Wir nehmen die Sicherheit Ihrer Daten ernst und implementieren geeignete technische und
-            organisatorische Maßnahmen, um sie vor unbefugtem Zugriff, Offenlegung, Veränderung oder
-            Zerstörung zu schützen.
+            {{ $t('data_policy.email') }}
+            <a href="mailto:tb@wodore.com">tb@wodore.com</a>
           </p>
 
-          <h6>7. Aktualisierungen dieser Richtlinie</h6>
-          <p>
-            Wir können diese Datenschutzerklärung von Zeit zu Zeit aktualisieren, um Änderungen
-            unserer Praktiken oder geltenden Gesetze widerzuspiegeln. Wenn wir Änderungen vornehmen,
-            werden wir das Datum "Zuletzt aktualisiert" oben auf dieser Seite anpassen. Wir
-            empfehlen Ihnen, diese Richtlinie regelmäßig zu überprüfen, um informiert zu bleiben,
-            wie wir Ihre Informationen schützen.
-          </p>
-
-          <h6>8. Kontaktieren Sie uns</h6>
-          <p>
-            Wenn Sie Fragen oder Bedenken bezüglich dieser Datenschutzerklärung haben, kontaktieren
-            Sie uns bitte unter:
-          </p>
-          <p>Email: <a href="mailto:tb@wodore.com">tb@wodore.com</a></p>
-
-          <p class="q-pb-xl q-mt-lg text-body1">
-            Vielen Dank, dass Sie Wodore Ihre Informationen anvertrauen. Wir sind bestrebt, Ihre
-            Privatsphäre und Sicherheit zu gewährleisten.
-          </p>
+          <p class="q-pb-xl q-mt-lg text-body1">{{ $t('data_policy.closing') }}</p>
         </div>
       </q-scroll-area>
     </q-card>

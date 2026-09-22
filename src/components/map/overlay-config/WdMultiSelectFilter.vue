@@ -114,7 +114,7 @@ function getIconUrl(iconUrl: string | undefined): string | undefined {
         flat
         dense
         size="sm"
-        :label="allSelected ? 'Alle abwählen' : 'Alle auswählen'"
+        :label="allSelected ? $t('multi_select.deselect_all') : $t('multi_select.select_all')"
         color="primary"
         @click="toggleAll"
         class="select-all-btn"
@@ -123,8 +123,13 @@ function getIconUrl(iconUrl: string | undefined): string | undefined {
 
     <!-- Selection count -->
     <div class="text-caption text-grey-7 q-mb-sm">
-      <span v-if="allSelected">Kein Filter aktiv</span>
-      <span v-else>{{ selectedValues.length }} von {{ allOptions.length }} ausgewählt</span>
+      <span v-if="allSelected">{{ $t('multi_select.no_filter_active') }}</span>
+      <span v-else>{{
+        $t('multi_select.selected_count', {
+          selected: selectedValues.length,
+          total: allOptions.length,
+        })
+      }}</span>
     </div>
 
     <!-- Options list -->

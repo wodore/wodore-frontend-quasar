@@ -13,11 +13,11 @@ The frontend SHALL support exactly four UI languages: German (`de`), English (`e
 
 ### Requirement: Language selection UI
 
-The system SHALL provide a language switcher in the main header toolbar that is visible and usable for both authenticated and unauthenticated users on desktop and mobile.
+The system SHALL provide a language switcher that is visible and usable for both authenticated and unauthenticated users: in the app header toolbar on desktop, and inside the mobile menu toolbar (left of the feedback button) on mobile. The menu SHALL be styled with an opaque background consistent with the app's dark menus.
 
 #### Scenario: Switch language as anonymous mobile user
 
-- **WHEN** an unauthenticated user on a mobile viewport taps the language button in the header
+- **WHEN** an unauthenticated user on a mobile viewport opens the menu drawer and taps the language button in the drawer toolbar
 - **THEN** a menu with the four supported languages opens and selecting one switches the UI language
 
 #### Scenario: Active language indicated
@@ -41,22 +41,32 @@ The selected language SHALL be persisted in the user settings store (`ui.languag
 
 ### Requirement: Locale initialization and fallback
 
-On application boot the system SHALL initialize the vue-i18n locale from the persisted user setting. If the stored value is missing, invalid, or unsupported, the system SHALL fall back to German (`de`). The i18n instance SHALL use `de` as fallback locale for missing message keys.
+On application boot the system SHALL initialize the vue-i18n locale from the persisted user setting. On first visit (no persisted setting) the system SHALL detect the browser/OS system language and use it if supported, falling back to English (`en`). If a stored value is invalid or unsupported, the system SHALL fall back to English. The i18n instance SHALL use `en` as fallback locale for missing message keys. A manually selected language always wins over the detected system language.
 
-#### Scenario: First visit
+#### Scenario: First visit with supported system language
 
-- **WHEN** a user opens the app with no persisted settings
-- **THEN** the UI language is German
+- **WHEN** a user opens the app for the first time with a French browser/OS language
+- **THEN** the UI language is French and the choice is persisted
+
+#### Scenario: First visit with unsupported system language
+
+- **WHEN** a user opens the app for the first time with a system language outside de/en/fr/it
+- **THEN** the UI language is English
+
+#### Scenario: Manual selection wins
+
+- **WHEN** the user has manually selected a language and reloads the page or reopens the app
+- **THEN** the manually selected language is used, regardless of the system language
 
 #### Scenario: Invalid stored value
 
 - **WHEN** the persisted `ui.language` is not one of `de`/`en`/`fr`/`it`
-- **THEN** the UI language falls back to German and subsequent persistence stores a valid value once the user selects a language
+- **THEN** the UI language falls back to English and subsequent persistence stores a valid value once the user selects a language
 
 #### Scenario: Missing translation key
 
-- **WHEN** a message key is absent in the active locale file but present in `de.json`
-- **THEN** the German text is displayed instead of a raw key
+- **WHEN** a message key is absent in the active locale file but present in the master schema
+- **THEN** the fallback locale text is displayed instead of a raw key
 
 ### Requirement: Framework and component library localization
 

@@ -11,7 +11,7 @@ defineOptions({
         <q-icon size="13vh" name="img:/errors/logo_404.svg" />
       </a>
       <div style="font-size: 12vh" class="text-white">404</div>
-      <div class="text-h4" style="opacity: 0.4">Oops. Verlaufen ...</div>
+      <div class="text-h4" style="opacity: 0.4">{{ $t('error_notfound.title') }}</div>
 
       <q-btn
         class="q-mt-xl"
@@ -19,7 +19,7 @@ defineOptions({
         text-color="accent"
         to="/"
         size="lg"
-        label="bring mich zurück"
+        :label="$t('error_notfound.back')"
         flat
         no-caps
       />
