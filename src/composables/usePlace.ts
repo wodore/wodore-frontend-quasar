@@ -35,7 +35,11 @@ export function usePlace(slug: Ref<string | undefined>) {
       return;
     }
 
-    abortController = new AbortController();
+    // Capture this request's controller: the closures below must not read
+    // the reassigned abortController variable, or a superseded request
+    // passes the aborted check and overwrites newer state
+    const controller = new AbortController();
+    abortController = controller;
     loading.value = true;
     error.value = null;
 
@@ -43,10 +47,11 @@ export function usePlace(slug: Ref<string | undefined>) {
     const requestPromise = clientWodore
       .GET('/v1/huts/{slug}', {
         params: { path: { slug: newSlug } },
+        signal: controller.signal,
       })
       .then(({ data, error: apiError }) => {
-        // Only update if not aborted
-        if (abortController?.signal.aborted) {
+        // Only update if this request was not superseded
+        if (controller.signal.aborted) {
           return undefined;
         }
 
@@ -59,12 +64,15 @@ export function usePlace(slug: Ref<string | undefined>) {
         return data as schemasWodore['HutSchemaDetails'];
       })
       .catch(err => {
-        error.value = err as Error;
+        // A superseded request must not clobber the newer request's state
+        if (!controller.signal.aborted) {
+          error.value = err as Error;
+        }
         throw err;
       })
       .finally(() => {
-        // Only update state if not aborted
-        if (!abortController?.signal.aborted) {
+        // Only update state if this request was not superseded
+        if (!controller.signal.aborted) {
           loading.value = false;
         }
         pendingRequests.delete(newSlug);
