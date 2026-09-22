@@ -32,11 +32,11 @@ export default class AuthService {
     this.userManager = new UserManager(settings);
     // handle events
     this.userManager.events.addAccessTokenExpiring(function () {
-      console.log('auth: access token expiring');
+      console.debug('auth: access token expiring');
     });
 
     this.userManager.events.addAccessTokenExpired(function () {
-      console.log('auth: access token expired');
+      console.debug('auth: access token expired');
     });
 
     this.userManager.events.addSilentRenewError(function (err: Error) {
@@ -44,21 +44,21 @@ export default class AuthService {
     });
 
     this.userManager.events.addUserLoaded(function (user: User) {
-      console.log('auth: user loaded', user);
+      console.debug('auth: user loaded', user);
       authStore.setUpUserCredentials(user);
     });
 
     this.userManager.events.addUserUnloaded(function () {
-      console.log('auth: user unloaded');
+      console.debug('auth: user unloaded');
       authStore.clearUserSession();
     });
 
     this.userManager.events.addUserSignedOut(function () {
-      console.log('auth: user signed out');
+      console.debug('auth: user signed out');
     });
 
     this.userManager.events.addUserSessionChanged(function () {
-      console.log('auth: user session changed');
+      console.debug('auth: user session changed');
     });
   }
 

@@ -664,6 +664,11 @@ async function selectHutBySlug(slug: string, isInitialLoad: boolean = false): Pr
 
         // Wait for source data to be loaded, then select the hut
         const checkInterval = setInterval(() => {
+          // Route moved on while polling - a newer hut selection takes over
+          if (route.params.slug !== slug) {
+            clearInterval(checkInterval);
+            return;
+          }
           const features = mapRef.map?.querySourceFeatures(HUT_SOURCE_ID, {
             sourceLayer: HUT_SOURCE_LAYER,
             filter: ['==', ['get', 'slug'], slug],
@@ -801,6 +806,12 @@ watch(
             const checkInterval = setInterval(() => {
               attempts++;
 
+              // Route moved on while polling - stop selecting the old hut
+              if (route.params.slug !== newSlug) {
+                clearInterval(checkInterval);
+                return;
+              }
+
               const features = mapRef.map?.querySourceFeatures(HUT_SOURCE_ID, {
                 sourceLayer: HUT_SOURCE_LAYER,
                 filter: ['==', ['get', 'slug'], newSlug],
@@ -883,11 +894,11 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
   right: v-bind(right);
   pointer-events: none;
   transition:
-    transform $drawer-duration $drawer-transistion,
-    left $drawer-duration $drawer-transistion,
-    right $drawer-duration $drawer-transistion,
-    top $drawer-duration $drawer-transistion,
-    bottom $drawer-duration $drawer-transistion !important;
+    transform $drawer-duration $drawer-transition,
+    left $drawer-duration $drawer-transition,
+    right $drawer-duration $drawer-transition,
+    top $drawer-duration $drawer-transition,
+    bottom $drawer-duration $drawer-transition !important;
 }
 
 //.maplibregl-ctrl-top-left {

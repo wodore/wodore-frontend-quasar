@@ -153,7 +153,7 @@ const initializeDateRange = () => {
     currentDate = addToDate(currentDate, { days: 1 });
   }
 
-  console.log(
+  console.debug(
     'Initialized date range:',
     items.length,
     'days from',
@@ -173,11 +173,11 @@ const loadAvailabilityDataForRange = async (startDateStr: string, days: number) 
   const requestKey = `${startDateStr}-${days}`;
 
   if (loadingRequests.value.has(requestKey)) {
-    console.log('Already loading range:', requestKey);
+    console.debug('Already loading range:', requestKey);
     return;
   }
 
-  console.log('Loading data for range:', requestKey);
+  console.debug('Loading data for range:', requestKey);
   loadingRequests.value.add(requestKey);
 
   try {
@@ -198,7 +198,7 @@ const loadAvailabilityDataForRange = async (startDateStr: string, days: number) 
       console.error('Availability fetch error:', err);
       error.value = 'Failed to load availability';
     } else if (data && 'data' in data && Array.isArray(data.data)) {
-      console.log('Successfully fetched data for range:', requestKey, 'items:', data.data.length);
+      console.debug('Successfully fetched data for range:', requestKey, 'items:', data.data.length);
 
       // Update items in-place in the array
       data.data.forEach(day => {
@@ -281,7 +281,7 @@ const updateScrollMetrics = () => {
 };
 
 const onVirtualScroll = (details: { index: number; from: number; to: number }) => {
-  console.log('Virtual scroll:', details);
+  console.debug('Virtual scroll:', details);
   ensureRangeLoaded(details.from, details.to);
   updateScrollMetrics();
 };
@@ -290,18 +290,18 @@ const onVirtualScroll = (details: { index: number; from: number; to: number }) =
 const scrollToSelectedDate = (animate: boolean) => {
   nextTick(() => {
     if (!virtualScrollRef.value || !scrollAreaRef.value || availabilityItems.value.length === 0) {
-      console.log('Cannot scroll - refs or availabilityItems not ready');
+      console.debug('Cannot scroll - refs or availabilityItems not ready');
       return;
     }
 
     const index = availabilityItems.value.findIndex(item => item.date === startDate.value);
 
     if (index >= 0) {
-      console.log('Scrolling to selected date:', startDate.value, 'at index:', index);
+      console.debug('Scrolling to selected date:', startDate.value, 'at index:', index);
       const targetLeft = Math.max(0, index * itemWidth.value);
       scrollAreaRef.value.setScrollPosition('horizontal', targetLeft, animate ? 300 : 0);
     } else {
-      console.log('Selected date not found in availabilityItems:', startDate.value);
+      console.debug('Selected date not found in availabilityItems:', startDate.value);
     }
   });
 };
@@ -350,7 +350,7 @@ watchEffect(() => {
     return;
   }
 
-  console.log('Slug changed to:', props.slug);
+  console.debug('Slug changed to:', props.slug);
   lastLoadedSlug.value = props.slug;
 
   // Initialize the full date range
@@ -368,7 +368,7 @@ watchEffect(() => {
 
 // Watch for selected date changes and scroll to the new date
 watch(selectedDate, () => {
-  console.log('Selected date changed to:', selectedDate.value);
+  console.debug('Selected date changed to:', selectedDate.value);
   // Scroll to the newly selected date
   scrollToSelectedDate(true);
 });

@@ -30,7 +30,6 @@ const headerImg = getImageUrl(imgPath, {
   quality: 50,
   //filters: ['grayscale()'],
 });
-console.log(headerImg);
 function toFeedback() {
   router.replace({ name: 'feedback' });
 }

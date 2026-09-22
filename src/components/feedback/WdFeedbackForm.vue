@@ -115,8 +115,6 @@ function onReset() {
 function addUrl() {
   const len = urls.value.length;
   const id = len > 0 ? urls.value[len - 1].id + 1 : 0;
-  console.log(urls.value);
-  console.log(id);
   urls.value.push({
     value: '',
     id: id,
@@ -140,7 +138,6 @@ const headerImg = getImageUrl(imgPath, {
   quality: 50,
   //filters: ['grayscale()'],
 });
-console.log(headerImg);
 let origEmail = '';
 function setAnonym(value: boolean) {
   if (value) {

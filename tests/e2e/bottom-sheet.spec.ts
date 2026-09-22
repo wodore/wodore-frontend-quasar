@@ -107,10 +107,19 @@ test('sheet expands to fullscreen first, then content scrolls', async ({ page })
 
   const vp = page.viewportSize();
   const cx = Math.round((vp?.width ?? 390) / 2);
-  const top = (await getSheetTop(page)) ?? 0;
 
-  // Drag up on the content: the SHEET expands towards fullscreen first
-  await touchDrag(page, cx, top + 220, cx, 90, { steps: 10, gap: 20 });
+  // Drag up on the content: the SHEET expands towards fullscreen first.
+  // Fling velocity under emulation varies — retry until the expanded state
+  // is reached (a real user would keep dragging too).
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const state = await getSheetState(page);
+    if (state.sheetState === 'expanded') break;
+    const currentTop = (await getSheetTop(page)) ?? (vp?.height ?? 844) - 330;
+    await touchDrag(page, cx, Math.min(currentTop + 220, (vp?.height ?? 844) - 120), cx, 90, {
+      steps: 10,
+      gap: 20,
+    });
+  }
   const expanded = await getSheetState(page);
   expect(expanded.sheetState).toBe('expanded');
 

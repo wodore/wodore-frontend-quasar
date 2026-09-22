@@ -22,7 +22,7 @@ export default boot(() => {
       // The new service worker has taken control
       // We can reload if needed, but the user already clicked reload
       // so this is just for cleanup or logging
-      console.log('Service worker controller changed - new version active');
+      console.debug('Service worker controller changed - new version active');
     });
   }
 });

@@ -5,35 +5,35 @@
 // QLayout - https://github.com/quasarframework/quasar/blob/dev/ui/src/components/layout/QLayout.sass
 .q-body--layout-animate {
   .q-drawer__backdrop {
-    transition: background-color $drawer-duration $drawer-transistion !important;
+    transition: background-color $drawer-duration $drawer-transition !important;
   }
   .q-drawer {
     transition:
-      transform $drawer-duration $drawer-transistion,
-      width $drawer-duration $drawer-transistion,
-      top $drawer-duration $drawer-transistion,
-      bottom $drawer-duration $drawer-transistion !important;
+      transform $drawer-duration $drawer-transition,
+      width $drawer-duration $drawer-transition,
+      top $drawer-duration $drawer-transition,
+      bottom $drawer-duration $drawer-transition !important;
   }
   .q-layout__section--marginal {
     transition:
-      transform $drawer-duration $drawer-transistion,
-      left $drawer-duration $drawer-transistion,
-      right $drawer-duration $drawer-transistion !important;
+      transform $drawer-duration $drawer-transition,
+      left $drawer-duration $drawer-transition,
+      right $drawer-duration $drawer-transition !important;
   }
   .q-page-container {
     transition:
-      padding-top $drawer-duration $drawer-transistion,
-      padding-right $drawer-duration $drawer-transistion,
-      padding-bottom $drawer-duration $drawer-transistion,
-      padding-left $drawer-duration $drawer-transistion !important;
+      padding-top $drawer-duration $drawer-transition,
+      padding-right $drawer-duration $drawer-transition,
+      padding-bottom $drawer-duration $drawer-transition,
+      padding-left $drawer-duration $drawer-transition !important;
   }
   .q-page-sticky {
     transition:
       transform $drawer-duration,
-      left $drawer-duration $drawer-transistion,
-      right $drawer-duration $drawer-transistion,
-      top $drawer-duration $drawer-transistion,
-      bottom $drawer-duration $drawer-transistion !important;
+      left $drawer-duration $drawer-transition,
+      right $drawer-duration $drawer-transition,
+      top $drawer-duration $drawer-transition,
+      bottom $drawer-duration $drawer-transition !important;
   }
 }
 .q-drawer {

@@ -39,9 +39,6 @@ export const useOverlayStore = defineStore('overlay', () => {
   ]);
 
   // Debug: Check sheepdogs overlay structure
-  console.log('[overlay-store] sheepdogs overlay:', sheepdogs);
-  console.log('[overlay-store] sheepdogs name:', sheepdogs.name);
-  console.log('[overlay-store] sheepdogs label:', sheepdogs.label);
 
   const savedOverlays: Array<OverlaySwitchItem> = LocalStorage.hasItem('overlays')
     ? (LocalStorage.getItem('overlays') as Array<OverlaySwitchItem>)

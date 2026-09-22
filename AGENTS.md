@@ -82,10 +82,10 @@ yarn allure:clean         # remove all results and reports
 **Test structure**: `tests/unit/` (Vitest, node env; store specs use happy-dom via a
 `// @vitest-environment happy-dom` docblock) and `tests/e2e/` (Playwright).
 
-**Dev server ports & worktree testing**: `dev:pwa`/`dev:spa`/`dev:ssr` no longer
-hardcode a port — Quasar defaults to 9000, and a custom port is passed with
-`yarn dev -p 9001`. When working in git worktrees (parallel branches/PRs), use
-ports **9001-9010** so multiple dev servers can run side by side. Note:
+**Dev server ports & worktree testing**: Quasar's PWA mode defaults to port **9200**
+when no port is passed — always pass one explicitly: `yarn dev:pwa -p 9000`. When
+working in git worktrees (parallel branches/PRs), use ports **9001-9010** so multiple
+dev servers can run side by side. Note:
 `.env.local` is gitignored and does not propagate to new worktrees — copy it
 from the main checkout, or API hosts / map keys will be missing. Also run
 `git submodule update --init` in new worktrees — `src/assets/wodore-design`
