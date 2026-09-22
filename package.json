@@ -120,6 +120,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-vue": "^10.7.0",
     "fantasticon": "^4.1.0",
+    "geojson": "^0.5.0",
     "git-cliff": "^2.8.0",
     "git-rev-sync": "^3.0.2",
     "happy-dom": "^20.14.5",

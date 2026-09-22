@@ -894,11 +894,11 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
   right: v-bind(right);
   pointer-events: none;
   transition:
-    transform $drawer-duration $drawer-transistion,
-    left $drawer-duration $drawer-transistion,
-    right $drawer-duration $drawer-transistion,
-    top $drawer-duration $drawer-transistion,
-    bottom $drawer-duration $drawer-transistion !important;
+    transform $drawer-duration $drawer-transition,
+    left $drawer-duration $drawer-transition,
+    right $drawer-duration $drawer-transition,
+    top $drawer-duration $drawer-transition,
+    bottom $drawer-duration $drawer-transition !important;
 }
 
 //.maplibregl-ctrl-top-left {

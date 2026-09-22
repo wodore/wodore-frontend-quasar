@@ -244,7 +244,9 @@ onUnmounted(() => {
               <div class="attribution-line">
                 <span class="attribution-text" :data-image-id="image.id">
                   <q-icon name="wd-info-outline" size="16px" class="attribution-icon" />
-                  <span v-html="sanitizeHtml(image.attribution.full || image.attribution.short || '')" />
+                  <span
+                    v-html="sanitizeHtml(image.attribution.full || image.attribution.short || '')"
+                  />
                 </span>
                 <img
                   v-if="image.provider?.icon"
