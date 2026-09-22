@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watchEffect, computed } from 'vue';
+import { ref, watchEffect, watch, computed } from 'vue';
 //import { useRouter, useRoute } from 'vue-router';
 import { copyToClipboard } from 'quasar';
 import { IntersectionValue, useQuasar } from 'quasar';
@@ -50,59 +50,83 @@ const isHutClosed = computed<'yes' | 'yesish' | 'no' | 'noish' | 'maybe' | 'unkn
   return isHutOpen.value;
 });
 const headerShadow = ref(false);
-//const { data, error } = await
-watchEffect(() => {
-  // Don't reset hut.value to undefined - keep showing previous hut until new data loads
-  headerShadow.value = false;
-  if (props.slug) {
-    clientWodore
-      .GET('/v1/huts/{slug}', {
-        params: { path: { slug: props.slug } },
-      })
-      .then(({ data }) => {
-        if (data) {
-          hut.value = data as schemasWodore['HutSchemaDetails'];
-          let desc = hut.value.name + ' - ';
-          let cap = '';
-          if (hut.value.type_open?.name && hut.value.type_open.slug != 'unknown') {
-            desc +=
-              hut.value.type_open.name?.charAt(0).toUpperCase() +
-              hut.value.type_open.name?.slice(1);
-            if (hut.value.capacity_open && hut.value.capacity_open > 0) {
-              cap = ` mit ${hut.value.capacity_open}`;
-            }
-          }
-          if (hut.value.type_closed && hut.value.type_closed.slug != 'unknown') {
-            desc += '/' + hut.value.type_closed.name;
-            if (
-              hut.value.capacity_closed &&
-              hut.value.capacity_closed > 0 &&
-              hut.value.capacity_closed != hut.value.capacity_open
-            ) {
-              cap += `, resp. ${hut.value.capacity_closed},`;
-            }
-          }
-          if (hut.value.elevation) {
-            desc += ` auf ${hut.value.elevation}m`;
-          }
-          if (cap) {
-            cap += ' Plätzen.';
-          }
-          const appTitle = process.env.WODORE_APP_NAME || 'Wodore';
-          const metaData = {
-            title: hut.value.name ? hut.value.name : appTitle,
-            meta: {
-              description: {
-                name: 'description',
-                content: desc + cap,
-              },
-            },
-          };
-          useMeta(metaData);
-        }
-      });
+const error = ref<string | null>(null);
+let activeHutRequest: AbortController | null = null;
+
+// Meta tags react to the loaded hut (useMeta must run in setup context)
+const metaDescription = computed(() => {
+  const h = hut.value;
+  if (!h) return '';
+  let desc = h.name + ' - ';
+  let cap = '';
+  if (h.type_open?.name && h.type_open.slug != 'unknown') {
+    desc += h.type_open.name?.charAt(0).toUpperCase() + h.type_open.name?.slice(1);
+    if (h.capacity_open && h.capacity_open > 0) {
+      cap = ` mit ${h.capacity_open}`;
+    }
   }
+  if (h.type_closed && h.type_closed.slug != 'unknown') {
+    desc += '/' + h.type_closed.name;
+    if (h.capacity_closed && h.capacity_closed > 0 && h.capacity_closed != h.capacity_open) {
+      cap += `, resp. ${h.capacity_closed},`;
+    }
+  }
+  if (h.elevation) {
+    desc += ` auf ${h.elevation}m`;
+  }
+  if (cap) {
+    cap += ' Plätzen.';
+  }
+  return desc + cap;
 });
+
+useMeta(() => ({
+  title: hut.value?.name || process.env.WODORE_APP_NAME || 'Wodore',
+  meta: {
+    description: {
+      name: 'description',
+      content: metaDescription.value,
+    },
+  },
+}));
+
+// Don't reset hut.value to undefined - keep showing previous hut until new data loads
+watch(
+  () => props.slug,
+  async slug => {
+    headerShadow.value = false;
+    if (!slug) return;
+
+    // Abort a still-running previous request so a stale response cannot
+    // overwrite the state of a newer hut
+    activeHutRequest?.abort();
+    const controller = new AbortController();
+    activeHutRequest = controller;
+    error.value = null;
+
+    try {
+      const { data, error: requestError } = await clientWodore.GET('/v1/huts/{slug}', {
+        params: { path: { slug } },
+        signal: controller.signal,
+      });
+      if (controller.signal.aborted) return;
+      if (requestError) {
+        error.value = 'Hütte konnte nicht geladen werden';
+        console.warn('[WdHutView] Failed to fetch hut:', slug, requestError);
+        return;
+      }
+      if (data) {
+        hut.value = data as schemasWodore['HutSchemaDetails'];
+      }
+    } catch {
+      if (!controller.signal.aborted) {
+        error.value = 'Hütte konnte nicht geladen werden';
+        console.warn('[WdHutView] Failed to fetch hut:', slug);
+      }
+    }
+  },
+  { immediate: true }
+);
 
 const headerImg = ref<string | undefined>(undefined);
 
@@ -272,6 +296,7 @@ const { images: nearbyImages, loading: imagesLoading } = useHutImages(computed((
         style="height: 100%"
         class="fit"
       >
+        <div v-if="error" class="q-pa-md text-negative">{{ error }}</div>
         <q-page style="height: 100%" class="q-px-md fit" v-if="hut">
           <!-- used to add shadow to header -->
           <h2

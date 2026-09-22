@@ -208,6 +208,20 @@ const loadAvailabilityDataForRange = async (startDateStr: string, days: number) 
         }
       });
     }
+  } catch (err) {
+    console.error('Availability fetch failed:', err);
+    error.value = 'Failed to load availability';
+    // Clear the skeleton state of the days in the failed window - otherwise
+    // they stay loading forever and the error banner never becomes reachable
+    const endDateStr = formatDate(
+      addToDate(new Date(startDateStr), { days: Math.max(days - 1, 0) }),
+      'YYYY-MM-DD'
+    );
+    availabilityItems.value = availabilityItems.value.map(item =>
+      item.loading && item.date >= startDateStr && item.date <= endDateStr
+        ? { ...item, loading: false }
+        : item
+    );
   } finally {
     loadingRequests.value.delete(requestKey);
   }

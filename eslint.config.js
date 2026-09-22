@@ -56,6 +56,7 @@ export default [
         WheelEvent: 'readonly',
         HTMLElement: 'readonly',
         HTMLInputElement: 'readonly',
+        AbortController: 'readonly',
 
         // Custom globals
         ga: 'readonly',
