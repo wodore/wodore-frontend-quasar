@@ -6554,7 +6554,7 @@ domino@^2.1.6:
   resolved "https://registry.npmjs.org/domino/-/domino-2.1.6.tgz"
   integrity sha512-3VdM/SXBZX2omc9JF9nOPCtDaYQ67BGp5CoLpIQlO2KCAPETs8TcDHacF26jXadGbvUteZzRTeos2fhID5+ucQ==
 
-dompurify@^3.4.0:
+dompurify@^3.4.0, dompurify@^3.4.15:
   version "3.4.15"
   resolved "https://registry.yarnpkg.com/dompurify/-/dompurify-3.4.15.tgz#30351b34513894f428c13bddb28bff0a027ae804"
   integrity sha512-EUBjM+B+lkDE41iE82DDSCfkoPGfXx8IxFxPMjNzm/Uk4xDet77rTN9wqlxlVg71kK7XGuUMv6wUxJUwwv+Xyw==
