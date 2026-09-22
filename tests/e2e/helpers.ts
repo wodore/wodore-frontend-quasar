@@ -35,22 +35,30 @@ export async function requireDevServer(): Promise<void> {
 /**
  * Looks up the test hut via the backend API to decide whether the hut detail
  * test can run. Returns the hut name (for content assertions) when found.
+ * Retries once on transient failures to avoid flaky skips.
  */
 export async function lookupHut(
   request: APIRequestContext,
   slug: string
 ): Promise<{ exists: boolean; name?: string }> {
-  try {
-    const response = await request.get(`${API_URL}/v1/huts/${slug}`, {
-      timeout: 8000,
-      failOnStatusCode: false,
-    });
-    if (!response.ok()) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const response = await request.get(`${API_URL}/v1/huts/${slug}`, {
+        timeout: 8000,
+        failOnStatusCode: false,
+      });
+      if (response.ok()) {
+        const hut = (await response.json()) as { name?: string };
+        return { exists: true, name: hut.name };
+      }
+      if (response.status() >= 500 && attempt === 0) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        continue;
+      }
       return { exists: false };
+    } catch {
+      if (attempt === 1) return { exists: false };
     }
-    const hut = (await response.json()) as { name?: string };
-    return { exists: true, name: hut.name };
-  } catch {
-    return { exists: false };
   }
+  return { exists: false };
 }

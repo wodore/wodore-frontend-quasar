@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, computed } from 'vue';
 import { VBottomSheet } from 'pure-web-bottom-sheet/vue';
-import type { BottomSheet, SnapToPointOptions } from 'pure-web-bottom-sheet';
+import type { BottomSheet } from 'pure-web-bottom-sheet';
 
 interface Props {
   modelValue: boolean;
@@ -14,23 +14,21 @@ const emit = defineEmits<{
 }>();
 
 const internalOpen = ref(false);
-const currentSnapIndex = ref(2); // Track current snap index (starts at index 2 - initial)
-const previousSnapIndex = ref(2); // Track previous snap index to detect dismissal from index 1
 
 // Toolbar height (from Quasar toolbar)
 const toolbarHeight = 50;
 
 // Calculate snap points
-// Index 5 (top): maxSnap
-// Index 4: 80vh
-// Index 3: 60vh
+// Index 4 (top): maxSnap
+// Index 3: 70vh
 // Index 2 (initial): defaultSnap
 // Index 1 (header only): 150px
 // Index 0 (collapsed/dismissed): handled by swipe-to-dismiss
 const defaultSnap = '330px';
 
-// Max height: 100vh - toolbar height
-const maxSnap = `calc(100vh - ${toolbarHeight}px)`;
+// Max height: visible viewport minus toolbar (dvh = dynamic viewport, so the
+// sheet stops right at the app toolbar on mobile instead of overshooting it)
+const maxSnap = `calc(100dvh - ${toolbarHeight}px)`;
 
 // Sync with v-model
 watch(
@@ -39,17 +37,22 @@ watch(
     if (open) {
       nextTick(() => {
         internalOpen.value = true;
-        currentSnapIndex.value = 2; // Reset to initial snap
-        previousSnapIndex.value = 2; // Reset previous snap
+        reachedSnapAfterOpen.value = false;
       });
     } else {
       internalOpen.value = false;
-      currentSnapIndex.value = 2;
-      previousSnapIndex.value = 2;
     }
   },
   { immediate: true }
 );
+
+// Whether the sheet has reached a real snap position since it opened. The
+// web component mounts its host scroll container at scrollTop 0 - which is
+// the collapsed position - and can emit one collapsed@0 event during the
+// initial snap animation. Dismissing on that artifact would instantly
+// self-close the freshly opened sheet (seen on real devices).
+const reachedSnapAfterOpen = ref(false);
+const INITIAL_SNAP_INDEX = 2;
 
 // Handle snap position changes
 function handleSnapPositionChange(event: { detail: { sheetState: string; snapIndex: number } }) {
@@ -58,17 +61,19 @@ function handleSnapPositionChange(event: { detail: { sheetState: string; snapInd
   console.debug('[bottom-sheet] sheet state', sheetState);
   console.debug('[bottom-sheet] snap index', snapIndex);
 
-  // Store previous index before updating
-  previousSnapIndex.value = currentSnapIndex.value;
-  currentSnapIndex.value = snapIndex;
-
-  // Handle dismiss only when at index 0 (collapsed)
-  // Only allow dismiss if user was previously at index 1 (header-only state)
-  if (snapIndex === 0 && sheetState === 'collapsed' && previousSnapIndex.value === 1) {
+  // The sheet is dismissed whenever it reaches the collapsed state at the
+  // bottom snap. Any gesture path that ends here (fast fling from above or a
+  // swipe from the header-only snap) must close the sheet - gating on the
+  // previous snap index missed fast flings and left the app in a state where
+  // the sheet was visually gone but still considered open.
+  if (snapIndex === 0 && sheetState === 'collapsed') {
+    if (!reachedSnapAfterOpen.value) return; // mount artifact, see above
     internalOpen.value = false;
     emit('update:modelValue', false);
     emit('close');
+    return;
   }
+  reachedSnapAfterOpen.value = true;
 }
 
 // Force re-render when modelValue changes from false -> true
@@ -76,31 +81,102 @@ function handleSnapPositionChange(event: { detail: { sheetState: string; snapInd
 const sheetKey = computed(() => (props.modelValue ? 'open' : 'closed'));
 
 // Snap index of the initial snap point (defaultSnap) - see snap point list above
-const INITIAL_SNAP_INDEX = 2;
 
 // Underlying <bottom-sheet> web component. VBottomSheet is a functional
 // component, so the template ref binds to its rendered root element.
 const sheetElement = ref<BottomSheet | null>(null);
 
+// Shadow state for the header slot: elevated once the content is scrolled
+const contentScrolled = ref(false);
+let detachContentScroll: (() => void) | null = null;
+
+function onContentScroll(event: Event): void {
+  const target = event.target as { scrollTop?: number } | null;
+  const scrolled = (target?.scrollTop ?? 0) > 2;
+  if (scrolled === contentScrolled.value) return;
+  contentScrolled.value = scrolled;
+  sheetElement.value?.toggleAttribute('data-content-scrolled', scrolled);
+}
+
+function attachContentScrollListener(sheet: BottomSheet): void {
+  const element = sheet.shadowRoot?.querySelector('.sheet-content');
+  if (!element) return;
+  element.addEventListener('scroll', onContentScroll, { passive: true });
+  detachContentScroll = () => element.removeEventListener('scroll', onContentScroll);
+  sheet.toggleAttribute('data-content-scrolled', element.scrollTop > 2);
+}
+
 /**
- * Snap the sheet back to its initial snap point (defaultSnap).
+ * Arm a freshly mounted sheet: attach the content scroll listener and snap
+ * to the initial position.
  *
- * Used when new content is opened while the sheet is already showing (e.g.
- * another hut is clicked on the map) so the new content is visible from the
- * top. Also resets the inner content scroll position. No-op while the sheet
- * is not mounted - fresh opens already start at the initial snap point.
+ * The web component builds its shadow DOM and slotted snap points
+ * asynchronously after connection - immediately after mount the shadow may
+ * not exist and snapToPoint would silently do nothing (index out of range),
+ * leaving the sheet invisible at the collapsed position. Poll briefly until
+ * the shadow is ready.
  */
-function snapToInitial(options?: SnapToPointOptions) {
+let armTimer: ReturnType<typeof setTimeout> | null = null;
+
+function armFreshSheet(): void {
   const sheet = sheetElement.value;
   if (!sheet) return;
 
-  // Reset inner content scroll so newly loaded content starts at the top
-  sheet.shadowRoot?.querySelector('.sheet-content')?.scrollTo({ top: 0 });
-
-  sheet.snapToPoint(INITIAL_SNAP_INDEX, options);
+  const tryArm = (remaining: number) => {
+    // The sheet may have been closed again while polling
+    if (!internalOpen.value) return;
+    const element = sheet.shadowRoot?.querySelector('.sheet-content');
+    if (!element) {
+      if (remaining > 0) {
+        armTimer = setTimeout(() => tryArm(remaining - 1), 100);
+      } else {
+        console.debug('[bottom-sheet] shadow content never appeared');
+      }
+      return;
+    }
+    attachContentScrollListener(sheet);
+    sheet.snapToPoint(INITIAL_SNAP_INDEX);
+  };
+  tryArm(20);
 }
 
-defineExpose({ snapToInitial });
+function detachContentScrollListener(): void {
+  if (armTimer !== null) {
+    clearTimeout(armTimer);
+    armTimer = null;
+  }
+  detachContentScroll?.();
+  detachContentScroll = null;
+}
+
+watch(
+  internalOpen,
+  open => {
+    if (open) {
+      // flush: post - the element must exist before we can reach into it
+      armFreshSheet();
+    } else {
+      detachContentScrollListener();
+    }
+  },
+  { flush: 'post' }
+);
+
+/**
+ * Reset the inner content scroll so newly loaded content starts at the top.
+ *
+ * Called when new content is opened while the sheet is already showing (e.g.
+ * another hut is selected on the map). The sheet's snap position is kept as
+ * requested - only the content scroll position is reset. No-op while the
+ * sheet is not mounted - fresh opens already start at the initial snap point.
+ */
+function onContentChanged() {
+  const sheet = sheetElement.value;
+  if (!sheet) return;
+
+  sheet.shadowRoot?.querySelector('.sheet-content')?.scrollTo({ top: 0 });
+}
+defineExpose({ onContentChanged });
 </script>
 
 <style scoped>
@@ -121,31 +197,83 @@ bottom-sheet [slot='snap'].bottom::before {
 }
 
 /*
- * On touch devices, let vertical touch gestures on the sheet content reach the
- * host scroll container while the sheet is not fully expanded.
+ * On touch devices, let vertical touch gestures on the sheet content reach
+ * the host scroll container while the sheet is not fully expanded.
  *
- * The library's WebKit workaround sets `touch-action: pan-y` on .sheet-content
- * (to guard the horizontal overflow scroller on iOS). But with expand-to-scroll,
- * .sheet-content has `overflow-y: hidden` when the sheet is not expanded, so
- * declaring `pan-y` hands vertical gestures to an element that cannot scroll -
- * the gesture is consumed and the host never receives it (the sheet cannot be
- * expanded by dragging the content).
+ * With expand-to-scroll the sheet must be expandable by dragging its content:
+ * the library sets `touch-action: pan-y` on .sheet-content (WebKit overflow
+ * guard), but .sheet-content has `overflow-y: hidden` while the sheet is not
+ * expanded - so `pan-y` hands vertical gestures to an element that cannot
+ * scroll and the gesture dies before the host can expand the sheet.
  *
- * Fix: while the sheet is not expanded, reset touch-action to `auto`. Touch-action
- * restrictions apply along the whole ancestor chain of the touch target, so the
- * content must not declare ANY restriction (pan-x would block vertical panning of
- * the host in Blink/Gecko). With `auto`, vertical gestures scroll the nearest
- * y-scrollable ancestor - the host scroll container - which drives the CSS scroll
- * snap to expand the sheet. When the sheet IS expanded, the library's default
- * `touch-action: pan-y` applies and the content scrolls normally.
- *
- * Verified in Chromium touch emulation (see openspec fix-mobile-touch-scroll).
- * iOS Safari behavior still needs a real-device check.
+ * While the sheet is not expanded, reset touch-action to `auto`: vertical
+ * gestures then scroll the nearest y-scrollable ancestor - the host scroll
+ * container - which drives the CSS scroll snap to expand the sheet. Once the
+ * sheet IS expanded, the library default applies and the content scrolls
+ * normally. Touch-action restrictions apply along the whole ancestor chain,
+ * so no other restriction may be reintroduced in between.
  */
 @media (pointer: coarse) {
   bottom-sheet[expand-to-scroll]:not([data-sheet-state='expanded'])::part(content) {
     touch-action: auto !important;
   }
+}
+
+/*
+ * Guarantee scrollability at the expanded state.
+ *
+ * The library toggles .sheet-content overflow-y with a scroll-timeline
+ * animation (hidden until the host scroll reaches exactly 100%). On real
+ * touch devices the settled scroll position can be a fraction off the
+ * maximum (dynamic viewport rounding, momentum), so the timeline never
+ * completes and the content stays unscrollable. Force it open.
+ */
+bottom-sheet[expand-to-scroll][data-sheet-state='expanded']::part(content) {
+  overflow-y: auto !important;
+}
+
+/*
+ * Rounded top corners while partially open, square top edge when expanded.
+ * The border-radius transition animates the change; the :host shadow rules
+ * use the same properties, document styles on the host element win.
+ */
+bottom-sheet {
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  transition:
+    border-top-left-radius 0.25s ease,
+    border-top-right-radius 0.25s ease;
+}
+
+bottom-sheet[data-sheet-state='expanded'] {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+/*
+ * Header elevation: the header gets a drop shadow once the content is
+ * scrolled (standard mobile app-bar pattern). The shadow lives on the
+ * shadow-DOM header element itself and the header is elevated with z-index,
+ * otherwise later-painted content (the photo gallery) covers the shadow.
+ * The attribute is toggled by the component's content scroll listener.
+ */
+bottom-sheet::part(header) {
+  transition: box-shadow 0.2s ease;
+}
+
+bottom-sheet[data-content-scrolled]::part(header) {
+  box-shadow: 0 4px 10px -4px rgba(0, 0, 0, 0.35);
+  z-index: 10;
+}
+
+/*
+ * Slotted app content inherits box-sizing through the flattened (shadow)
+ * tree, where the document-wide border-box reset does not reach. Without
+ * this, padded bars (e.g. the footer q-toolbar) overflow the sheet by their
+ * own padding and push buttons off-screen.
+ */
+bottom-sheet * {
+  box-sizing: border-box;
 }
 </style>
 
@@ -154,15 +282,14 @@ bottom-sheet [slot='snap'].bottom::before {
     v-if="internalOpen"
     ref="sheetElement"
     :key="sheetKey"
-    :style="{ '--sheet-max-height': maxSnap, '--sheet-border-radius': '24px' }"
+    :style="{ '--sheet-max-height': maxSnap }"
     nested-scroll
     expand-to-scroll
     swipe-to-dismiss
     @snap-position-change="handleSnapPositionChange"
   >
     <!-- Snap points -->
-    <div slot="snap" style="--snap: 80vh"></div>
-    <div slot="snap" style="--snap: 60vh"></div>
+    <div slot="snap" style="--snap: 70vh"></div>
     <div slot="snap" :style="{ '--snap': defaultSnap }" class="initial"></div>
     <div slot="snap" style="--snap: 150px" class="bottom"></div>
 
