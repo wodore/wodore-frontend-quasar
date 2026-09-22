@@ -1,28 +1,35 @@
 <script lang="ts" setup>
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { useAuthService } from 'src/composables/useAuthService';
-//import { useRouter } from 'vue-router';
 
 const $auth = useAuthService();
-//const router = useRouter()
+const router = useRouter();
 
-//import { useAuth } from '../stores/auth-store';
-//const authStore = useAuth();
-const silentRefreshOidc = () => {
-  $auth
-    .renewToken()
-    .then(user => {
-      //authStore.setUpUserCredentials(user)
-      console.log('Silent refresh', user);
-      //router.push('/map')
-    })
-    .catch(error => {
-      console.log(error);
-    });
-};
+const error = ref<string | null>(null);
 
-silentRefreshOidc();
+$auth
+  .renewToken()
+  .then(() => {
+    console.debug('[silent-refresh] Token renewed');
+  })
+  .catch(err => {
+    console.warn('[silent-refresh] Token renewal failed:', err);
+    error.value = 'Die Sitzung konnte nicht aktualisiert werden.';
+  });
+
+function backToLogin() {
+  router.push({ name: 'login' });
+}
 </script>
 
 <template>
-  <h3>Refresh...</h3>
+  <q-page class="row items-center justify-evenly">
+    <h5 v-if="!error">Refresh...</h5>
+    <div v-else class="column items-center q-gutter-md">
+      <h5 class="text-negative q-mb-none">Aktualisierung fehlgeschlagen</h5>
+      <p class="text-grey-7 q-mt-none">{{ error }}</p>
+      <q-btn color="primary" label="Neu anmelden" unelevated @click="backToLogin" />
+    </div>
+  </q-page>
 </template>

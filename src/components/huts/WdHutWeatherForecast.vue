@@ -430,7 +430,7 @@ watchEffect(async () => {
 
 .weather-forecast__table-wrap {
   min-width: max-content;
-  --weather-item-width: 48x;
+  --weather-item-width: 48px;
   --weather-left-width: 6px;
   --weather-right-width: 6px;
   --weather-pill-size: 20px;

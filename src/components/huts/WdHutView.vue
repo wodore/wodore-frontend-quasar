@@ -53,6 +53,32 @@ const headerShadow = ref(false);
 const error = ref<string | null>(null);
 let activeHutRequest: AbortController | null = null;
 
+// Symbol URLs for the availability section, keyed by hut type slug. Built as a
+// computed so the object identity is stable between renders - an inline object
+// in the template would be rebuilt every render and defeat the child's
+// memoization.
+const SYMBOL_BASE_URL = 'https://hub.wodore.com/media/huts/types/symbols';
+const symbolMap = computed<Record<string, { detailed: string; simple: string }>>(() => {
+  const map: Record<string, { detailed: string; simple: string }> = {
+    unknown: {
+      detailed: `${SYMBOL_BASE_URL}/detailed/unknown.png`,
+      simple: `${SYMBOL_BASE_URL}/simple/unknown.png`,
+    },
+  };
+  const hutValue = hut.value;
+  if (hutValue) {
+    for (const type of [hutValue.type_open, hutValue.type_closed]) {
+      if (type?.slug) {
+        map[type.slug] = {
+          detailed: `${SYMBOL_BASE_URL}/detailed/${type.slug}.png`,
+          simple: `${SYMBOL_BASE_URL}/simple/${type.slug}.png`,
+        };
+      }
+    }
+  }
+  return map;
+});
+
 // Meta tags react to the loaded hut (useMeta must run in setup context)
 const metaDescription = computed(() => {
   const h = hut.value;
@@ -368,28 +394,7 @@ const { images: nearbyImages, loading: imagesLoading } = useHutImages(computed((
             v-if="slug"
             :slug="slug"
             :has-availability="hut.has_availability ?? undefined"
-            :symbol-map="{
-              ...(hut.type_open?.slug
-                ? {
-                    [hut.type_open.slug]: {
-                      detailed: `https://hub.wodore.com/media/huts/types/symbols/detailed/${hut.type_open.slug}.png`,
-                      simple: `https://hub.wodore.com/media/huts/types/symbols/simple/${hut.type_open.slug}.png`,
-                    },
-                  }
-                : {}),
-              ...(hut.type_closed?.slug
-                ? {
-                    [hut.type_closed.slug]: {
-                      detailed: `https://hub.wodore.com/media/huts/types/symbols/detailed/${hut.type_closed.slug}.png`,
-                      simple: `https://hub.wodore.com/media/huts/types/symbols/simple/${hut.type_closed.slug}.png`,
-                    },
-                  }
-                : {}),
-              unknown: {
-                detailed: 'https://hub.wodore.com/media/huts/types/symbols/detailed/unknown.png',
-                simple: 'https://hub.wodore.com/media/huts/types/symbols/simple/unknown.png',
-              },
-            }"
+            :symbol-map="symbolMap"
           />
 
           <WdHutOpenMonthly

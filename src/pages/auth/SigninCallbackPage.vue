@@ -1,34 +1,35 @@
 <script lang="ts" setup>
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { useAuthService } from 'src/composables/useAuthService';
-//import { useRouter } from 'vue-router';
 
 const $auth = useAuthService();
-//const router = useRouter();
+const router = useRouter();
 
-const authenticateOidc = () => {
-  //try {
-  $auth
-    .signinCallback()
-    .then(() => {
-      //console.log('User authenticated', user)
-      //authStore.setUpUserCredentials(user)
-      //router.go(-1);
-      //router.push('/');
-    })
-    .catch(error => {
-      console.log(error);
-    });
-  //await services.$auth.signInCallback()
-  //} catch (error) {
-  //}
-};
+const error = ref<string | null>(null);
 
-authenticateOidc();
-// await authenticateOidc()
+$auth
+  .signinCallback()
+  .then(() => {
+    // Success - the auth store reacts to the new session and routing continues
+  })
+  .catch(err => {
+    console.warn('[signin-callback] Authentication failed:', err);
+    error.value = 'Die Anmeldung konnte nicht abgeschlossen werden.';
+  });
+
+function backToLogin() {
+  router.push({ name: 'login' });
+}
 </script>
 
 <template>
   <q-page class="row items-center justify-evenly">
-    <h5>Authenticate...</h5>
+    <h5 v-if="!error">Authenticate...</h5>
+    <div v-else class="column items-center q-gutter-md">
+      <h5 class="text-negative q-mb-none">Anmeldung fehlgeschlagen</h5>
+      <p class="text-grey-7 q-mt-none">{{ error }}</p>
+      <q-btn color="primary" label="Zum Login" unelevated @click="backToLogin" />
+    </div>
   </q-page>
 </template>

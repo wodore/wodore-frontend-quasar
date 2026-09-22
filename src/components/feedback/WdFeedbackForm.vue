@@ -107,7 +107,9 @@ function onClose() {
 }
 function onReset() {
   message.email = '';
+  message.subject = '';
   message.message = '';
+  urls.value = [];
 }
 
 function addUrl() {

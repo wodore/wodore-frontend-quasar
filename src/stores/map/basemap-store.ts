@@ -425,8 +425,9 @@ export const useBasemapStore = defineStore('basemap', () => {
   // Initialize as empty reactive array
   const basemaps = reactive<Array<BasemapSwitchItem>>([]);
 
-  // Flag to track if basemaps have been initialized
-  let basemapsInitialized = false;
+  // Cached initialization promise - concurrent callers share one init run,
+  // and a failed run resets the cache so the next call can retry
+  let basemapInitPromise: Promise<void> | null = null;
 
   // Get saved basemap name from localStorage (not the full object)
   const savedBasemapName = LocalStorage.getItem('basemapName') as string | null;
@@ -467,10 +468,7 @@ export const useBasemapStore = defineStore('basemap', () => {
   }
 
   // Async function to initialize basemaps based on GPU tier
-  async function initializeBasemaps() {
-    if (basemapsInitialized) {
-      return; // Already initialized
-    }
+  async function runBasemapInit() {
 
     // Check if we have a cached GPU tier result (valid for 2 days)
     const cachedGpuTier = LocalStorage.getItem('gpuTier');
@@ -614,12 +612,23 @@ export const useBasemapStore = defineStore('basemap', () => {
     if (basemapToSet) {
       setBasemap(basemapToSet);
     }
+  }
 
-    basemapsInitialized = true;
+  // Share one initialization run across concurrent callers. The catch keeps
+  // the returned promise from rejecting unhandled and resets the cache so a
+  // failed initialization is retried on the next call.
+  function initializeBasemaps(): Promise<void> {
+    if (!basemapInitPromise) {
+      basemapInitPromise = runBasemapInit().catch(error => {
+        basemapInitPromise = null;
+        console.error('[basemap-store] Basemap initialization failed:', error);
+      });
+    }
+    return basemapInitPromise;
   }
 
   // Call initialization immediately
-  initializeBasemaps();
+  void initializeBasemaps();
 
   return {
     basemaps,

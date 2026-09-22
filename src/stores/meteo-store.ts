@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref, watchEffect } from 'vue';
+import { ref, shallowRef, watchEffect } from 'vue';
 import { fetchWeatherApi } from 'openmeteo';
 import { date } from 'quasar';
 import { clientWodore } from '@clients/index';
@@ -227,7 +227,10 @@ const summarizeDaily = (
 };
 
 export const useMeteoStore = defineStore('meteo', () => {
-  const cache = ref<Record<string, CacheEntry>>({});
+  // shallowRef: entries are large (hundreds of Dates + numeric arrays) and are
+  // always replaced wholesale, never mutated in place - deep reactivity would
+  // only add overhead
+  const cache = shallowRef<Record<string, CacheEntry>>({});
   const weatherCodes = ref<Record<string, WeatherCodeEntry>>({});
   const weatherCodesLang = ref('de');
   const weatherCodesCollection = ref(DEFAULT_SYMBOL_COLLECTION);
@@ -555,9 +558,12 @@ export const useMeteoStore = defineStore('meteo', () => {
       //   key,
       //   timeCount: hourly.time.length,
       // });
-      cache.value[key] = {
-        updatedAt: now,
-        hourly,
+      cache.value = {
+        ...cache.value,
+        [key]: {
+          updatedAt: now,
+          hourly,
+        },
       };
     }
 

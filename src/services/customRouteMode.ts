@@ -32,6 +32,7 @@ async function getRouteValhalla(coordinates: [number, number][]) {
     return route;
   } catch (error) {
     console.error('Error fetching route from Valhalla:', error);
+    return null;
   }
 }
 function displayRoute(route: any, map: Map) {
@@ -148,6 +149,10 @@ interface CustomRouteState {
   selectedPointId: string | null;
 }
 
+// Sequence counter for route requests: rapid clicks fire overlapping Valhalla
+// requests; only the latest response may render (slower older ones are stale).
+let routeRequestId = 0;
+
 const CustomRouteMode: DrawCustomMode<CustomRouteState> = {
   onSetup() {
     const state: CustomRouteState = {
@@ -203,21 +208,24 @@ const CustomRouteMode: DrawCustomMode<CustomRouteState> = {
         updatePointFeatures(state, this.map as unknown as Map);
 
         if (state.coordinates.length > 1) {
+          const requestId = ++routeRequestId;
           getRouteValhalla(state.coordinates).then(route => {
+            if (requestId !== routeRequestId) return; // superseded by a newer request
+            if (!route) return; // fetch failed - keep the previous route
             // SAFETY: same legacy DrawableMap -> maplibre Map bridge as above
             displayRoute(route, this.map as unknown as Map);
           });
-          //this.getRoute(state.coordinates);
         }
       }
     }
   },
   toDisplayFeatures(
     _state: CustomRouteState,
-    geojson: GeoJSON
+    _geojson: GeoJSON
     //display: (geojson: GeoJSON),
   ) {
-    console.log('Add geo json: ' + geojson);
+    // Nothing to render - point and route features are drawn imperatively
+    // (updatePointFeatures / displayRoute) instead of via geojson diffing.
   },
   //updateRouteFromPoints(state: CustomRouteState) {
   //  const coordinates = state.pointFeatures.map(
