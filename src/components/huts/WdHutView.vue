@@ -3,6 +3,7 @@ import { ref, watchEffect, watch, computed } from 'vue';
 //import { useRouter, useRoute } from 'vue-router';
 import { copyToClipboard } from 'quasar';
 import { IntersectionValue, useQuasar } from 'quasar';
+import { sanitizeHtml } from '@/utils/sanitize-html';
 import getImageUrl from '@services/imageService';
 import { clientWodore, schemasWodore } from '@clients/index';
 import { useHutsStore } from '@stores/huts-store';
@@ -385,7 +386,7 @@ const { images: nearbyImages, loading: imagesLoading } = useHutImages(computed((
             <div
               class="attribution attr_link text-right"
               style="padding: 0"
-              v-html="hut.description_attribution"
+              v-html="sanitizeHtml(hut.description_attribution)"
             ></div>
             <WdTextClamp :max-lines="5" :text="hut.description" style="padding-bottom: 0" />
           </body>

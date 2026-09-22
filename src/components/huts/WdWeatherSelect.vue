@@ -2,6 +2,7 @@
 import { computed, ref, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
+import { sanitizeHtml } from '@/utils/sanitize-html';
 import { useMeteoStore } from '@stores/meteo-store';
 import { useHutsStore } from '@stores/huts-store';
 import { storeToRefs } from 'pinia';
@@ -198,7 +199,7 @@ watchEffect(() => {
       :delay="$q.platform.is.mobile ? 100 : 500"
       :hide-delay="$q.platform.is.mobile ? 800 : 200"
     >
-      <span v-html="conditionLabel"></span>
+      <span v-html="sanitizeHtml(conditionLabel)"></span>
     </q-tooltip>
   </span>
 </template>

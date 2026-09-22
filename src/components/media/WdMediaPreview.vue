@@ -3,6 +3,7 @@ import { ref, computed, watch, watchEffect, onMounted, type Component } from 'vu
 import { useTimeoutFn } from '@vueuse/core';
 import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
+import { sanitizeHtml } from '@/utils/sanitize-html';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import type { Swiper as SwiperType } from 'swiper';
 import {
@@ -523,7 +524,7 @@ const thumbnailContainerStyle = computed(() => {
 
         <!-- Attribution badge (top-right) - stationary -->
         <div class="license-badge-custom stationary">
-          <span v-if="getCurrentImageAuthor()" v-html="getCurrentImageAuthor()" />
+          <span v-if="getCurrentImageAuthor()" v-html="sanitizeHtml(getCurrentImageAuthor())" />
           <img
             v-if="getCurrentImageProviderIcon()"
             :src="getCurrentImageProviderIcon()"

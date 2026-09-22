@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Swiper, SwiperSlide } from 'swiper/vue';
+import { sanitizeHtml } from '@/utils/sanitize-html';
 import type { Swiper as SwiperType } from 'swiper';
 import { Keyboard, Mousewheel, Navigation, Thumbs, Zoom, EffectFade } from 'swiper/modules';
 import { date } from 'quasar';
@@ -243,7 +244,7 @@ onUnmounted(() => {
               <div class="attribution-line">
                 <span class="attribution-text" :data-image-id="image.id">
                   <q-icon name="wd-info-outline" size="16px" class="attribution-icon" />
-                  <span v-html="image.attribution.full || image.attribution.short || ''" />
+                  <span v-html="sanitizeHtml(image.attribution.full || image.attribution.short || '')" />
                 </span>
                 <img
                   v-if="image.provider?.icon"
