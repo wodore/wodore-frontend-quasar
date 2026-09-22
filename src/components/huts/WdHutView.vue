@@ -81,7 +81,7 @@ const metaDescription = computed(() => {
 });
 
 useMeta(() => ({
-  title: hut.value?.name || (process.env.WODORE_APP_NAME || 'Wodore'),
+  title: hut.value?.name || process.env.WODORE_APP_NAME || 'Wodore',
   meta: {
     description: {
       name: 'description',
