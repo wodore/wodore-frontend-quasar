@@ -271,9 +271,12 @@ export const useMeteoStore = defineStore('meteo', () => {
       const parsed = JSON.parse(raw) as Record<string, unknown>;
       // New envelope format
       if (typeof parsed.storedAt === 'number' && parsed.data && typeof parsed.data === 'object') {
+        // SAFETY: shape verified above (storedAt is a number, data is an object);
+        // the entry values are trusted from our own localStorage envelope
         return parsed as unknown as CachedWeatherCodes;
       }
       // Old format — wrap it so we can still use the data but flag it as stale
+      // SAFETY: legacy payload was a plain code→entry map written by this store
       return { storedAt: 0, data: parsed as unknown as Record<string, WeatherCodeEntry> };
     } catch {
       return null;
@@ -286,14 +289,19 @@ export const useMeteoStore = defineStore('meteo', () => {
       return;
     }
     weatherCodesInFlight.value.add(key);
-    const data = await fetchWeatherCodes(lang, collection);
-    if (data) {
-      weatherCodesCache.value[key] = data;
-      weatherCodes.value = data;
-      const envelope: CachedWeatherCodes = { storedAt: Date.now(), data };
-      localStorage.setItem(key, JSON.stringify(envelope));
+    try {
+      const data = await fetchWeatherCodes(lang, collection);
+      if (data) {
+        weatherCodesCache.value[key] = data;
+        weatherCodes.value = data;
+        const envelope: CachedWeatherCodes = { storedAt: Date.now(), data };
+        localStorage.setItem(key, JSON.stringify(envelope));
+      }
+    } finally {
+      // Always release the in-flight marker - a failed fetch must not block
+      // this key forever
+      weatherCodesInFlight.value.delete(key);
     }
-    weatherCodesInFlight.value.delete(key);
   };
 
   const getWeatherCodes = async (
@@ -319,7 +327,7 @@ export const useMeteoStore = defineStore('meteo', () => {
 
         // If cache is older than TTL, refresh in background
         if (Date.now() - cached.storedAt > WEATHER_CODES_CACHE_TTL) {
-          void refreshWeatherCodesCache(lang, collection, key);
+          void refreshWeatherCodesCache(lang, collection, key).catch(() => {});
         }
         return cached.data;
       }
@@ -330,16 +338,21 @@ export const useMeteoStore = defineStore('meteo', () => {
       return weatherCodes.value;
     }
     weatherCodesInFlight.value.add(key);
-    const data = await fetchWeatherCodes(lang, collection);
-    if (data) {
-      weatherCodesCache.value[key] = data;
-      weatherCodes.value = data;
-      const envelope: CachedWeatherCodes = { storedAt: Date.now(), data };
-      localStorage.setItem(key, JSON.stringify(envelope));
-      return data;
+    try {
+      const data = await fetchWeatherCodes(lang, collection);
+      if (data) {
+        weatherCodesCache.value[key] = data;
+        weatherCodes.value = data;
+        const envelope: CachedWeatherCodes = { storedAt: Date.now(), data };
+        localStorage.setItem(key, JSON.stringify(envelope));
+        return data;
+      }
+      return weatherCodes.value;
+    } finally {
+      // Always release the in-flight marker - a failed fetch must not block
+      // this key forever
+      weatherCodesInFlight.value.delete(key);
     }
-    weatherCodesInFlight.value.delete(key);
-    return weatherCodes.value;
   };
 
   const setWeatherCodesContext = (lang: string, collection?: string) => {
@@ -372,7 +385,7 @@ export const useMeteoStore = defineStore('meteo', () => {
     weatherCodesLastFetchKey.value = key;
     void getWeatherCodes(weatherCodesLang.value, {
       collection: weatherCodesCollection.value,
-    });
+    }).catch(() => {});
   });
 
   const fetchHourly = async ({
@@ -573,8 +586,7 @@ export const useMeteoStore = defineStore('meteo', () => {
     const timezone = options?.timezone ?? 'Europe/Berlin';
     const weatherCodeMinOccurrences = options?.weatherCodeMinOccurrences ?? 3;
     const models = options?.weatherModels ?? DEFAULT_MODELS;
-    // const hourly = await fetchCachedHourly({
-    const hourly = await fetchHourly({
+    const hourly = await fetchCachedHourly({
       latitude: location.latitude,
       longitude: location.longitude,
       elevation,

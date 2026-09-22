@@ -8,6 +8,7 @@ import { clientWodore } from '@clients/index';
 import track from '@services/analytics';
 
 const $q = useQuasar();
+const router = useRouter();
 
 const anoymDefaultEmail = `anonym@${process.env.WODORE_DOMAIN}`;
 const message = reactive<{
@@ -126,7 +127,6 @@ function removeUrl(idx: number) {
 function toSupport() {
   // Navigation to support will be handled by router
   // The dialog will close via v-close-popup on the link click
-  const router = useRouter();
   router.replace({ name: 'support' });
 }
 
