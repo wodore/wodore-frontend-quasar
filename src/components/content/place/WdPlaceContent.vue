@@ -36,6 +36,20 @@ const { images, loading: imagesLoading } = useHutImages(computed(() => props.slu
 const weatherSection = ref<HTMLElement>();
 const weatherSectionVisible = ref(false);
 
+// Simple symbol icons for the availability section, keyed by place type slug.
+// A computed keeps the object identity stable between renders (an inline
+// object in the template would be rebuilt every render).
+const hutTypeIcons = computed<Record<string, string>>(() => {
+  const icons: Record<string, string> = {};
+  const placeValue = place.value;
+  for (const type of [placeValue?.type_open, placeValue?.type_closed]) {
+    if (type?.slug && type.symbol?.simple) {
+      icons[type.slug] = type.symbol.simple;
+    }
+  }
+  return icons;
+});
+
 useIntersectionObserver(weatherSection, ([{ isIntersecting }]) => {
   if (isIntersecting) {
     weatherSectionVisible.value = true;
@@ -258,14 +272,7 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
       <WdAccommodationAvailabilities
         :slug="slug"
         :has-availability="place.has_availability ?? undefined"
-        :hut-type-icons="{
-          ...(place.type_open?.symbol?.simple && place.type_open?.slug
-            ? { [place.type_open.slug]: place.type_open.symbol.simple }
-            : {}),
-          ...(place.type_closed?.symbol?.simple && place.type_closed?.slug
-            ? { [place.type_closed.slug]: place.type_closed.symbol.simple }
-            : {}),
-        }"
+        :hut-type-icons="hutTypeIcons"
       />
 
       <!-- Open Monthly -->

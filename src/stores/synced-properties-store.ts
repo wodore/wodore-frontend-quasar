@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, nextTick } from 'vue';
 import { useEventListener } from '@vueuse/core';
 import { LocalStorage } from 'quasar';
 
@@ -131,8 +131,14 @@ export const useSyncedPropertiesStore = defineStore('syncedProperties', () => {
   // Reactive state
   const properties = ref<SyncedProperties>(loadProperties());
 
+  // While applying an update that arrived from ANOTHER tab via the storage
+  // event, the deep watch below must not save again - writing back would fire
+  // a storage event in the other tab and ping-pong between tabs forever.
+  let applyingExternalUpdate = false;
+
   // Save to localStorage immediately (no debounce - want instant sync across tabs)
   const saveProperties = () => {
+    if (applyingExternalUpdate) return;
     LocalStorage.set(STORAGE_KEY, properties.value);
   };
 
@@ -144,11 +150,16 @@ export const useSyncedPropertiesStore = defineStore('syncedProperties', () => {
     if (e.key === STORAGE_KEY && e.newValue) {
       try {
         const parsed = JSON.parse(e.newValue);
+        applyingExternalUpdate = true;
         properties.value = {
           searchHistory: parsed.searchHistory || [],
           visitedPlaces: parsed.visitedPlaces || [],
           favorites: parsed.favorites || [],
         };
+        // Reset after the watch flush has run (skipped due to the flag)
+        nextTick(() => {
+          applyingExternalUpdate = false;
+        });
       } catch {
         // Silent error handling
       }
