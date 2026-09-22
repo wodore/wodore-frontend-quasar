@@ -554,7 +554,7 @@ export const useMeteoStore = defineStore('meteo', () => {
       if (!hourly) {
         return null;
       }
-      // console.log('[meteo-store] fetched hourly summary', {
+      // console.debug('[meteo-store] fetched hourly summary', {
       //   key,
       //   timeCount: hourly.time.length,
       // });
@@ -600,7 +600,7 @@ export const useMeteoStore = defineStore('meteo', () => {
       models,
     });
 
-    // console.log('[meteo-store] Cached Fetched Hourly data', hourly);
+    // console.debug('[meteo-store] Cached Fetched Hourly data', hourly);
 
     if (!hourly) {
       return [];
@@ -615,7 +615,7 @@ export const useMeteoStore = defineStore('meteo', () => {
     > = {
       combined: summarizeDaily(hourly, startMinutes, endMinutes, weatherCodeMinOccurrences),
     };
-    // console.log('Sumarized by model', summariesByModel);
+    // console.debug('Sumarized by model', summariesByModel);
 
     const selectedDate =
       startDateInput === 'now' || startDateInput === undefined
@@ -688,7 +688,7 @@ export const useMeteoStore = defineStore('meteo', () => {
       });
       current = addToDate(current, { days: 1 });
     }
-    // console.log('[meteo-store] summary sample:', {
+    // console.debug('[meteo-store] summary sample:', {
     //   first: results[0],
     //   last: results[results.length - 1],
     //   count: results.length,

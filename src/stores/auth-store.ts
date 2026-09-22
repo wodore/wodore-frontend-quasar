@@ -57,6 +57,8 @@ export const useAuthStore = defineStore('auth', () => {
       'urn:zitadel:iam:org:project:roles' in authUser.value.profile
     ) {
       const keys = Object.keys(
+        // SAFETY: the guard above proves the profile contains the Zitadel
+        // roles claim; TS cannot narrow `'key' in obj` on index signatures.
         (
           authUser.value.profile as unknown as {
             'urn:zitadel:iam:org:project:roles': { string: unknown };
@@ -95,7 +97,7 @@ export const useAuthStore = defineStore('auth', () => {
     ) {
       return true;
     }
-    //console.log('Roles:', roles);
+    //console.debug('Roles:', roles);
     return roles.value.includes(role);
   }
 
