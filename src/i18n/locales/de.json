@@ -76,7 +76,8 @@
       "webgl_hint": "Dies tritt auf, wenn Ihr Gerät oder Browser WebGL nicht unterstützt.",
       "generic_message": "Beim Laden der Karte ist ein Fehler aufgetreten",
       "reload": "Seite neu laden"
-    }
+    },
+    "layers": "Ebenen"
   },
   "favorites": "Favoriten",
   "layers": "Layers",
@@ -135,7 +136,8 @@
     "no_images_available": "Keine Bilder verfügbar",
     "no_images": "Keine Bilder",
     "no_images_for_hut": "Bilder hinzufügen",
-    "no_photos_yet": "Noch keine Fotos"
+    "no_photos_yet": "Noch keine Fotos",
+    "download_original": "Original herunterladen"
   },
   "contribute": {
     "title": "Mitmachen",
@@ -173,5 +175,90 @@
       "android": "Android",
       "ios": "iOS"
     }
+  },
+  "reset": "Zurücksetzen",
+  "send": "Senden",
+  "yes": "Ja",
+  "no": "Nein",
+  "today": "heute",
+  "login": "Login",
+  "logout": "Logout",
+  "issue": "Issue",
+  "feedback_label": "Feedback",
+  "user": {
+    "settings": "Benutzer Einstellungen",
+    "umami_tracking": "Umami Tracking",
+    "tracking_caption": "{me} einschliessen beim tracken.",
+    "tracking_me": "Mich",
+    "external_links": "Externe Links",
+    "admin": {
+      "backend": "Wodore backend admin",
+      "api_docs": "Wodore API docs",
+      "analytics": "Umami analytics",
+      "iam": "Identity access management",
+      "traefik": "Traefik dashboard (reverse proxy)"
+    }
+  },
+  "feedback": {
+    "button": "Sende Feedback",
+    "title": "Sag, was du denkst!",
+    "subject": "Betreff",
+    "email": "E-Mail",
+    "email_placeholder": "name@domain.com",
+    "message": "Nachricht",
+    "url": "URL",
+    "notify_updates": "Bei wichtigen Updates erhältst du eine E-Mail.",
+    "sent": "Nachricht gesendet",
+    "send_failed": "Nachricht konnte nicht gesendet werden",
+    "discard_title": "Bist du sicher?",
+    "discard_message": "Deine Eingaben gehen verloren! Schliessen?",
+    "support": "Unterstützung",
+    "title_rest": "Jede Rückmeldung, egal ob positiv oder negativ, hilft weiter.",
+    "support_intro": "Jegliche",
+    "support_outro": "für das Projekt ist willkommen.",
+    "email_required": "E-Mail fehlt",
+    "message_required": "Nachricht fehlt",
+    "keep_me_posted": "Halte mich auf dem Laufenden."
+  },
+  "support": {
+    "intro_prefix": "Unterstütze das Projekt mit",
+    "intro_middle": ", einem",
+    "intro_suffix": "oder einem monatlichem:",
+    "tip_link": "Trinkgeld",
+    "manage_payments": "Monatliche Zahlungen verwalten.",
+    "cancel_anytime": "*Jederzeit kündbar.",
+    "one_man_project": "Im Moment ist es ein {term} und das Geld wird für eine bessere Infrastruktur, Lizenzen und potenzielle neue Features benötigt.",
+    "hands_on_title": "Ich haue gerne selber in die Tasten!",
+    "hands_on_super": "Super",
+    "hands_on_intro": ", aktive Unterstützung ist sehr willkommen, zum Beispiel:",
+    "contribute_editor": "Hütteninfos reviewen und anpassen (als Editor)",
+    "contribute_dev_prefix": "Entwicklung von Frontend (",
+    "contribute_dev_middle": ") oder Backend (",
+    "contribute_design": "Unterstützung bei Design-Aufgaben",
+    "contact_invite": "Bitte trete mit mir in",
+    "contact_link": "Kontakt",
+    "title": "Support",
+    "one_man_project_term": "Ein-Mann-Projekt"
+  },
+  "select_date": {
+    "placeholder": "Datum auswählen",
+    "error_title": "Ah Blöd, da geht nichts mehr!",
+    "error_restricted": "Der SAC hat den Zugriff eingeschrenkt!",
+    "error_contact": "Gerne",
+    "error_contact_link": "direkt nachhaken",
+    "error_solution": "🔧 Eine neue Lösung ist in Arbeit...",
+    "error_dismiss": "Schade, dann halt nicht...",
+    "alternative": "Alternativ:",
+    "or": "oder"
+  },
+  "overlay_config": {
+    "reset_done": "Einstellungen zurückgesetzt",
+    "settings_placeholder": "Einstellungen werden in Phase 4+ implementiert.",
+    "settings": "Einstellungen",
+    "tab_legend": "Info"
+  },
+  "beta": {
+    "caption": "Die Seite ist noch im Aufbau, {feedback} ist willkommen!",
+    "feedback_link": "Feedback"
   }
 }

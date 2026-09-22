@@ -1,10 +1,14 @@
 import { boot } from 'quasar/wrappers';
-import { createI18n } from 'vue-i18n';
-// I18nOptions
-import messages from 'src/i18n';
+import { useQuasar } from 'quasar';
+
+// The vue-i18n instance itself lives in the locale service; this boot file
+// registers it on the app, applies the persisted locale + Quasar lang pack
+// and declares the typed message schema (de.json is the master).
+import { i18n, initLocale, bindQuasarForLocale, getStoredLocale } from '@services/locale';
+import messages from '@/i18n';
 
 export type MessageLanguages = keyof typeof messages;
-// Type-define 'en-US' as the master schema for the resource
+// Type-define 'de' as the master schema for the resource
 export type MessageSchema = (typeof messages)['de'];
 
 // See https://vue-i18n.intlify.dev/guide/advanced/typescript.html#global-resource-schema-type-definition
@@ -23,13 +27,11 @@ declare module 'vue-i18n' {
   export interface DefineNumberFormat {}
 }
 
-export default boot(({ app }) => {
-  const i18n = createI18n({
-    locale: 'de',
-    legacy: false,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    messages: messages as any,
-  });
+export default boot(({ app, store }) => {
+  bindQuasarForLocale(useQuasar());
+  // Initialize from the persisted user setting (localStorage-backed);
+  // the language is intentionally never read from or written to the URL.
+  initLocale(getStoredLocale(store));
 
   // Set i18n instance on app
   app.use(i18n);

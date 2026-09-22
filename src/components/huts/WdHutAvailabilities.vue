@@ -3,6 +3,7 @@ import { ref, computed, watchEffect, watch, nextTick } from 'vue';
 import { date, QVirtualScroll, QScrollArea, useQuasar } from 'quasar';
 import { useCssVar, useElementSize } from '@vueuse/core';
 import { clientWodore } from '@clients/index';
+import { currentLocale } from '@services/locale';
 import { useHutsStore } from '@stores/huts-store';
 import { storeToRefs } from 'pinia';
 import WdHutAvailability from './WdHutAvailability.vue';
@@ -188,7 +189,7 @@ const loadAvailabilityDataForRange = async (startDateStr: string, days: number) 
           date: startDateStr,
         },
         query: {
-          lang: 'de',
+          lang: currentLocale(),
           days: days,
         },
       },
@@ -364,6 +365,13 @@ watchEffect(() => {
   if (selectedIndex >= 0) {
     ensureRangeLoaded(selectedIndex, selectedIndex);
   }
+});
+
+// Reload localized availability data when the UI language changes
+// (resets the slug guard so the initialization effect above re-runs
+// and refetches with the new locale)
+watch(currentLocale, () => {
+  lastLoadedSlug.value = undefined;
 });
 
 // Watch for selected date changes and scroll to the new date

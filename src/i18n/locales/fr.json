@@ -43,7 +43,8 @@
     "max_walk_time": "Temps de marche maximum",
     "time_range": "Intervalle de temps",
     "add_station": "Ajouter une gare",
-    "no_connection": "Pas de connection"
+    "no_connection": "Pas de connection",
+    "departures": "Départs"
   },
   "map": {
     "error": {
@@ -52,7 +53,8 @@
       "webgl_hint": "Cela se produit lorsque votre appareil ou navigateur ne prend pas en charge WebGL.",
       "generic_message": "Une erreur s'est produite lors du chargement de la carte",
       "reload": "Recharger la page"
-    }
+    },
+    "layers": "Couches"
   },
   "map_style": "Carte",
   "location": "Lieu",
@@ -103,7 +105,8 @@
     "no_images_available": "Aucune image disponible",
     "no_images": "Aucune image",
     "no_images_for_hut": "Ajouter des photos",
-    "no_photos_yet": "Pas encore de photos"
+    "no_photos_yet": "Pas encore de photos",
+    "download_original": "Télécharger l'original"
   },
   "contribute": {
     "title": "Contribuer",
@@ -141,5 +144,121 @@
       "android": "Android",
       "ios": "iOS"
     }
+  },
+  "edit": "Modifier",
+  "favorite": "Favori",
+  "show_map": "Carte",
+  "search": "Rechercher",
+  "close": "Fermer",
+  "pin_something": "Épingler",
+  "unpin_something": "Détacher",
+  "drag_to_move": "Faire glisser pour déplacer",
+  "favorites": "Favoris",
+  "hut_type": "Type de cabane",
+  "filter": "Filtre",
+  "service_unavailable": "Service indisponible",
+  "availability": {
+    "free": "Libres",
+    "total": "Total",
+    "tooltip": "{free} libres / {total} total",
+    "unknown": "Inconnu",
+    "no_data": "Aucune donnée"
+  },
+  "jan": "Janv",
+  "feb": "Févr",
+  "mar": "Mars",
+  "apr": "Avr",
+  "may": "Mai",
+  "jun": "Juin",
+  "jul": "Juil",
+  "aug": "Août",
+  "sep": "Sept",
+  "oct": "Oct",
+  "nov": "Nov",
+  "dec": "Déc",
+  "reset": "Réinitialiser",
+  "send": "Envoyer",
+  "yes": "Oui",
+  "no": "Non",
+  "today": "aujourd'hui",
+  "login": "Connexion",
+  "logout": "Déconnexion",
+  "issue": "Issue",
+  "feedback_label": "Commentaire",
+  "user": {
+    "settings": "Paramètres utilisateur",
+    "umami_tracking": "Suivi Umami",
+    "tracking_caption": "Inclure {me} dans le suivi.",
+    "tracking_me": "moi",
+    "external_links": "Liens externes",
+    "admin": {
+      "backend": "Admin backend Wodore",
+      "api_docs": "Docs API Wodore",
+      "analytics": "Statistiques Umami",
+      "iam": "Gestion des identités et des accès",
+      "traefik": "Tableau de bord Traefik (reverse proxy)"
+    }
+  },
+  "feedback": {
+    "button": "Envoyer un commentaire",
+    "title": "Dites-nous ce que vous pensez !",
+    "subject": "Objet",
+    "email": "E-mail",
+    "email_placeholder": "name@domain.com",
+    "message": "Message",
+    "url": "URL",
+    "notify_updates": "Vous recevrez un e-mail pour les mises à jour importantes.",
+    "sent": "Message envoyé",
+    "send_failed": "Le message n'a pas pu être envoyé",
+    "discard_title": "Êtes-vous sûr ?",
+    "discard_message": "Vos saisies seront perdues ! Fermer ?",
+    "support": "Soutien",
+    "title_rest": "Tout retour, positif ou négatif, aide.",
+    "support_intro": "Tout",
+    "support_outro": "au projet est le bienvenu.",
+    "email_required": "E-mail manquant",
+    "message_required": "Message manquant",
+    "keep_me_posted": "Tenez-moi informé."
+  },
+  "support": {
+    "intro_prefix": "Soutenez le projet avec",
+    "intro_middle": ", un",
+    "intro_suffix": "ou un abonnement mensuel :",
+    "tip_link": "pourboire",
+    "manage_payments": "Gérer les paiements mensuels.",
+    "cancel_anytime": "*Résiliable à tout moment.",
+    "one_man_project": "Pour l'instant, c'est un {term} et l'argent est nécessaire pour une meilleure infrastructure, des licences et de potentielles nouvelles fonctionnalités.",
+    "hands_on_title": "J'ai envie de taper moi-même sur le clavier !",
+    "hands_on_super": "Super",
+    "hands_on_intro": ", tout soutien actif est le bienvenu, par exemple :",
+    "contribute_editor": "Vérifier et ajuster les infos des cabanes (en tant qu'éditeur)",
+    "contribute_dev_prefix": "Développement du frontend (",
+    "contribute_dev_middle": ") ou du backend (",
+    "contribute_design": "Aide pour les tâches de design",
+    "contact_invite": "N'hésitez pas à entrer en",
+    "contact_link": "contact",
+    "title": "Soutien",
+    "one_man_project_term": "projet d'une seule personne"
+  },
+  "select_date": {
+    "placeholder": "Choisir une date",
+    "error_title": "Oh non, plus rien ne fonctionne !",
+    "error_restricted": "Le CAS a restreint l'accès !",
+    "error_contact": "N'hésitez pas à",
+    "error_contact_link": "relancer directement",
+    "error_solution": "🔧 Une nouvelle solution est en préparation...",
+    "error_dismiss": "Dommage, peut-être une autre fois...",
+    "alternative": "Alternativement :",
+    "or": "ou"
+  },
+  "overlay_config": {
+    "reset_done": "Paramètres réinitialisés",
+    "settings_placeholder": "Les paramètres seront implémentés à la phase 4+.",
+    "settings": "Paramètres",
+    "tab_legend": "Info"
+  },
+  "beta": {
+    "caption": "Cette page est encore en construction, les {feedback} sont bienvenus !",
+    "feedback_link": "commentaires"
   }
 }

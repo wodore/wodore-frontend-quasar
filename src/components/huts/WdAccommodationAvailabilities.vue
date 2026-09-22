@@ -8,6 +8,7 @@ import 'swiper/css';
 import 'swiper/css/free-mode';
 import 'swiper/css/scrollbar';
 import { clientWodore } from '@clients/index';
+import { currentLocale } from '@services/locale';
 import { useHutsStore } from '@stores/huts-store';
 import { storeToRefs } from 'pinia';
 import { useSlideCount } from '@composables/useSlideCount';
@@ -36,7 +37,7 @@ const fetchAvailabilityIcons = async () => {
     const { data, error } = await clientWodore.GET('/v1/categories/map/{parent_slug}', {
       params: {
         path: { parent_slug: 'availability' },
-        query: { lang: 'de', is_active: true, media_mode: 'absolute' },
+        query: { lang: currentLocale(), is_active: true, media_mode: 'absolute' },
       },
     });
     if (error || !data) return;
@@ -159,7 +160,7 @@ const loadFromIndex = async (fromIndex: number, days: number = 14) => {
     const { data, error: err } = await clientWodore.GET('/v1/huts/{slug}/availability/{date}', {
       params: {
         path: { slug: props.slug, date: startDateStr },
-        query: { lang: 'de', days: count },
+        query: { lang: currentLocale(), days: count },
       },
     });
 
@@ -303,6 +304,13 @@ watchEffect(() => {
   if (selectedIndex >= 0) {
     loadFromIndex(Math.max(0, selectedIndex - 4), 22);
   }
+});
+
+// Reload localized availability icons/data when the UI language changes
+// (resets the slug guard so the initialization effect above re-runs
+// and refetches with the new locale)
+watch(currentLocale, () => {
+  lastLoadedSlug.value = undefined;
 });
 </script>
 

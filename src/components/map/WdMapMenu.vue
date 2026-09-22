@@ -85,7 +85,7 @@ function handleOverlayConfigClose() {
             unelevated
             flat
             @click="$auth?.signinRedirect()"
-            label="Login"
+            :label="$t('login')"
             style="opacity: 0.8"
           />
           <q-btn
@@ -94,7 +94,7 @@ function handleOverlayConfigClose() {
             unelevated
             flat
             @click="$auth?.logout()"
-            label="Logout"
+            :label="$t('logout')"
             style="opacity: 0.8"
           />
         </div>

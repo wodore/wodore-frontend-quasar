@@ -123,14 +123,14 @@ function handleReset() {
       <template v-if="showResetButton">
         <q-separator class="q-mb-md" />
         <div class="row justify-end">
-          <q-btn flat label="Zurücksetzen" @click="handleReset" size="sm" />
+          <q-btn flat :label="$t('reset')" @click="handleReset" size="sm" />
         </div>
       </template>
     </q-tab-panel>
 
     <!-- Settings Panel -->
     <q-tab-panel name="settings" v-if="hasSettings" class="bg-transparent">
-      <div class="text-body2 text-grey-7">Einstellungen werden in Phase 4+ implementiert.</div>
+      <div class="text-body2 text-grey-7">{{ $t('overlay_config.settings_placeholder') }}</div>
     </q-tab-panel>
   </q-tab-panels>
 </template>

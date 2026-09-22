@@ -173,13 +173,13 @@ onUnmounted(() => {
     <!-- Close button -->
     <q-btn flat round dense class="close-btn" @click="closeGallery">
       <q-iconify :is="IconCloseOutline" size="20px" />
-      <q-tooltip>Close</q-tooltip>
+      <q-tooltip>{{ $t('close') }}</q-tooltip>
     </q-btn>
 
     <!-- Download button -->
     <q-btn flat round dense class="download-btn" @click="downloadOriginal">
       <q-iconify :is="IconDownloadOutline" size="20px" />
-      <q-tooltip>Download original</q-tooltip>
+      <q-tooltip>{{ $t('media.download_original') }}</q-tooltip>
     </q-btn>
 
     <!-- Main Swiper -->

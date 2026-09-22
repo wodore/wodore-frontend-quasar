@@ -246,6 +246,15 @@ See `.env` file for all available variables
 
 ## Common Patterns
 
+### i18n / Language Switch
+
+- Supported UI languages: `de`, `en`, `fr`, `it` (see `src/i18n/index.ts`; German is the master message schema and the fallback locale).
+- The active locale is persisted in the user settings store (`ui.language`, localStorage `wodore:userSettings`) — never in the URL.
+- `src/services/locale.ts` owns the vue-i18n instance: `setLocale()` switches vue-i18n + Quasar lang pack + persists the setting; `currentLocale()` is the reactive read.
+- Localized API calls pass `lang: currentLocale()` (the backend supports `lang` on data endpoints with fallback).
+- Stores/components holding localized remote data watch `currentLocale` and refetch on language change.
+- User-visible strings belong in `src/i18n/locales/*.json`; all four files must keep an identical key set (de.json is the master schema — vue-i18n typing flags drift).
+
 ### Best Practices
 
 **IMPORTANT Development Guidelines:**

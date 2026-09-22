@@ -10,6 +10,9 @@ const { selectedDate } = storeToRefs(useHutsStore());
 const { removeBookings, fetchHutBookingsGeojson } = useHutsStore();
 import { useRouter, useRoute, RouteLocationRaw } from 'vue-router';
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 import track from '@services/analytics';
 import enUS from 'quasar/lang/en-US.js'; // Adjust the path if necessary
 
@@ -38,7 +41,7 @@ const selectedDateDay = computed<string>(() => {
   if (selectedDateObj.value !== undefined) {
     return formatDate(selectedDateObj.value, 'dddd');
   }
-  return 'Datum auswählen';
+  return t('select_date.placeholder');
 });
 const selectedDateDisplay = computed(() => {
   if (selectedDateObj.value !== undefined && selectedDate.value) {
@@ -398,12 +401,15 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
                   justify-content: center;
                 "
               >
-                <p class="text-h6 text-primary-100">Ah Blöd, da geht nichts mehr!</p>
+                <p class="text-h6 text-primary-100">{{ t('select_date.error_title') }}</p>
                 <p class="text-body2 text-primary-200 q-mt-md">
-                  Der SAC hat den Zugriff eingeschrenkt!<br />
-                  Gerne
-                  <a href="https://www.sac-cas.ch/de/kontakt/" target="_blank" class="text-accent"
-                    >direkt nachhaken</a
+                  {{ t('select_date.error_restricted') }}<br />
+                  {{ t('select_date.error_contact') }}
+                  <a
+                    href="https://www.sac-cas.ch/de/kontakt/"
+                    target="_blank"
+                    class="text-accent"
+                    >{{ t('select_date.error_contact_link') }}</a
                   >.
                 </p>
                 <div
@@ -411,18 +417,18 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
                   style="border: 1px solid rgba(255, 193, 7, 0.3)"
                 >
                   <p class="text-body2 text-accent q-mb-none" style="font-weight: 500">
-                    🔧 Eine neue Lösung ist in Arbeit...
+                    {{ t('select_date.error_solution') }}
                   </p>
                 </div>
                 <p class="text-caption text-primary-400 q-mt-md" style="font-size: 0.75rem">
-                  Alternativ:
+                  {{ t('select_date.alternative') }}
                   <a
                     href="https://www.deine-berge.de/av_reservierung.php"
                     target="_blank"
                     class="text-accent"
                     >deine-berge</a
                   >
-                  oder
+                  {{ t('select_date.or') }}
                   <a href="https://www.hut-reservation.org" target="_blank" class="text-accent"
                     >hut-reservation</a
                   >
@@ -477,7 +483,7 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
             <q-btn
               v-if="showCalendarError"
               v-close-popup
-              label="Schade, dann halt nicht..."
+              :label="t('select_date.error_dismiss')"
               color="secondary"
               flat
               no-caps
@@ -491,10 +497,10 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
                 @click="gotoToday"
                 class="q-mr-md text-accent"
                 :class="{ 'text-dark-200': todayDisabled }"
-                >heute</q-btn
+                >{{ t('today') }}</q-btn
               >
               <q-btn
-                label="Zurücksetzen"
+                :label="t('reset')"
                 color="secondary"
                 :disable="selectedDate === undefined"
                 flat

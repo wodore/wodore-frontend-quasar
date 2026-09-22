@@ -120,7 +120,8 @@
     "no_images_available": "No images available",
     "no_images": "No images",
     "no_images_for_hut": "Add images",
-    "no_photos_yet": "No photos yet"
+    "no_photos_yet": "No photos yet",
+    "download_original": "Download original"
   },
   "contribute": {
     "title": "Contribute",
@@ -158,5 +159,106 @@
       "android": "Android",
       "ios": "iOS"
     }
+  },
+  "edit": "Edit",
+  "favorite": "Favorite",
+  "show_map": "Map",
+  "search": "Search",
+  "close": "Close",
+  "pin_something": "Pin",
+  "unpin_something": "Unpin",
+  "drag_to_move": "Drag to move",
+  "favorites": "Favorites",
+  "availability": {
+    "free": "Free",
+    "total": "Total",
+    "tooltip": "{free} free / {total} total",
+    "unknown": "Unknown",
+    "no_data": "No data"
+  },
+  "reset": "Reset",
+  "send": "Send",
+  "yes": "Yes",
+  "no": "No",
+  "today": "today",
+  "login": "Log in",
+  "logout": "Log out",
+  "issue": "Issue",
+  "feedback_label": "Feedback",
+  "user": {
+    "settings": "User settings",
+    "umami_tracking": "Umami tracking",
+    "tracking_caption": "Include {me} in tracking.",
+    "tracking_me": "me",
+    "external_links": "External links",
+    "admin": {
+      "backend": "Wodore backend admin",
+      "api_docs": "Wodore API documentation",
+      "analytics": "Umami analytics",
+      "iam": "Identity access management",
+      "traefik": "Traefik dashboard (reverse proxy)"
+    }
+  },
+  "feedback": {
+    "button": "Send feedback",
+    "title": "Tell us what you think!",
+    "subject": "Subject",
+    "email": "Email",
+    "email_placeholder": "name@domain.com",
+    "message": "Message",
+    "url": "URL",
+    "notify_updates": "You will receive an email for important updates.",
+    "sent": "Message sent",
+    "send_failed": "Message could not be sent",
+    "discard_title": "Are you sure?",
+    "discard_message": "Your input will be lost! Close?",
+    "support": "Support",
+    "title_rest": "Any feedback, positive or negative, helps.",
+    "support_intro": "Any",
+    "support_outro": "for the project is welcome.",
+    "email_required": "Email is missing",
+    "message_required": "Message is missing",
+    "keep_me_posted": "Keep me up to date."
+  },
+  "support": {
+    "intro_prefix": "Support the project with",
+    "intro_middle": ", a",
+    "intro_suffix": "or a monthly:",
+    "tip_link": "tip",
+    "manage_payments": "Manage monthly payments.",
+    "cancel_anytime": "*Cancelable anytime.",
+    "one_man_project": "At the moment this is a {term} and the money is needed for better infrastructure, licences and potential new features.",
+    "hands_on_title": "I'd love to get my hands on the keyboard myself!",
+    "hands_on_super": "Great",
+    "hands_on_intro": ", active support is very welcome, for example:",
+    "contribute_editor": "Review and adjust hut info (as an editor)",
+    "contribute_dev_prefix": "Development of frontend (",
+    "contribute_dev_middle": ") or backend (",
+    "contribute_design": "Support with design tasks",
+    "contact_invite": "Please get in",
+    "contact_link": "touch",
+    "title": "Support",
+    "one_man_project_term": "one-man project"
+  },
+  "select_date": {
+    "placeholder": "Select date",
+    "error_title": "Oh no, nothing works anymore!",
+    "error_restricted": "The SAC has restricted access!",
+    "error_contact": "Feel free to",
+    "error_contact_link": "follow up directly",
+    "error_solution": "🔧 A new solution is in the works...",
+    "error_dismiss": "Too bad, maybe next time...",
+    "alternative": "Alternatively:",
+    "or": "or"
+  },
+  "overlay_config": {
+    "reset_done": "Settings reset",
+    "settings_placeholder": "Settings will be implemented in phase 4+.",
+    "settings": "Settings",
+    "tab_legend": "Info"
+  },
+  "beta": {
+    "caption": "This page is still under construction, {feedback} is welcome!",
+    "feedback_link": "feedback"
   }
 }

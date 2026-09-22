@@ -304,6 +304,7 @@ onMounted(() => {
         <WdPlaceSearchDialog v-if="isMobile" />
         <WdSupportButton v-if="!authStore.isLoggedIn && !isMobile" class="text-secondary-700" />
         <WdFeedbackButton v-if="!isMobile" />
+        <WdLanguageSwitcher />
 
         <WdUser v-if="authStore.isLoggedIn" />
 

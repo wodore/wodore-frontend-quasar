@@ -5,7 +5,6 @@
     "not_serviced": "nessun servizio",
     "serviced": "servito",
     "basic_hotel": "Hotel essenziale",
-    "hut.alp": "Alpe",
     "basic_shelter": "Rifugio d'emergenza",
     "camping": "Campeggio",
     "hotel": "Hotel",
@@ -14,7 +13,8 @@
     "unknown": "Sconosciuto",
     "bivouac": "Bivacco",
     "hostel": "Ostello",
-    "unattended_hut": "Capanna incustodita"
+    "unattended_hut": "Capanna incustodita",
+    "alp": "Alpe"
   },
   "contact": "Contatto",
   "standard": "Standard",
@@ -43,7 +43,8 @@
     "max_walk_time": "Tempo massimo di percorrenza",
     "time_range": "Intervallo di tempo",
     "add_station": "Aggiungi stazione",
-    "no_connection": "Nessuna connessione"
+    "no_connection": "Nessuna connessione",
+    "departures": "Partenze"
   },
   "map": {
     "error": {
@@ -52,7 +53,8 @@
       "webgl_hint": "Ciò accade quando il dispositivo o il browser non supporta WebGL.",
       "generic_message": "Si è verificato un errore durante il caricamento della mappa",
       "reload": "Ricarica la pagina"
-    }
+    },
+    "layers": "Livelli"
   },
   "map_style": "Carta geografica",
   "location": "Posizione",
@@ -103,7 +105,8 @@
     "no_images_available": "Nessuna immagine disponibile",
     "no_images": "Nessuna immagine",
     "no_images_for_hut": "Aggiungi foto",
-    "no_photos_yet": "Nessuna foto ancora"
+    "no_photos_yet": "Nessuna foto ancora",
+    "download_original": "Scarica l'originale"
   },
   "contribute": {
     "title": "Contribuisci",
@@ -141,5 +144,121 @@
       "android": "Android",
       "ios": "iOS"
     }
+  },
+  "edit": "Modifica",
+  "favorite": "Preferito",
+  "show_map": "Mappa",
+  "search": "Cerca",
+  "close": "Chiudi",
+  "pin_something": "Fissa",
+  "unpin_something": "Sblocca",
+  "drag_to_move": "Trascina per spostare",
+  "favorites": "Preferiti",
+  "hut_type": "Tipo di rifugio",
+  "filter": "Filtro",
+  "service_unavailable": "Servizio non disponibile",
+  "availability": {
+    "free": "Liberi",
+    "total": "Totale",
+    "tooltip": "{free} liberi / {total} totale",
+    "unknown": "Sconosciuto",
+    "no_data": "Nessun dato"
+  },
+  "jan": "Gen",
+  "feb": "Feb",
+  "mar": "Mar",
+  "apr": "Apr",
+  "may": "Mag",
+  "jun": "Giu",
+  "jul": "Lug",
+  "aug": "Ago",
+  "sep": "Set",
+  "oct": "Ott",
+  "nov": "Nov",
+  "dec": "Dic",
+  "reset": "Reimposta",
+  "send": "Invia",
+  "yes": "Sì",
+  "no": "No",
+  "today": "oggi",
+  "login": "Accedi",
+  "logout": "Disconnessione",
+  "issue": "Issue",
+  "feedback_label": "Feedback",
+  "user": {
+    "settings": "Impostazioni utente",
+    "umami_tracking": "Tracciamento Umami",
+    "tracking_caption": "Includi {me} nel tracciamento.",
+    "tracking_me": "mi",
+    "external_links": "Link esterni",
+    "admin": {
+      "backend": "Admin backend Wodore",
+      "api_docs": "Documentazione API Wodore",
+      "analytics": "Analitica Umami",
+      "iam": "Gestione identità e accessi",
+      "traefik": "Dashboard Traefik (reverse proxy)"
+    }
+  },
+  "feedback": {
+    "button": "Invia feedback",
+    "title": "Dicci cosa ne pensi!",
+    "subject": "Oggetto",
+    "email": "Email",
+    "email_placeholder": "name@domain.com",
+    "message": "Messaggio",
+    "url": "URL",
+    "notify_updates": "Riceverai un'email per gli aggiornamenti importanti.",
+    "sent": "Messaggio inviato",
+    "send_failed": "Impossibile inviare il messaggio",
+    "discard_title": "Sei sicuro?",
+    "discard_message": "Le tue modifiche andranno perse! Chiudere?",
+    "support": "Supporto",
+    "title_rest": "Ogni feedback, positivo o negativo, aiuta.",
+    "support_intro": "Qualsiasi",
+    "support_outro": "al progetto è benvenuto.",
+    "email_required": "Email mancante",
+    "message_required": "Messaggio mancante",
+    "keep_me_posted": "Tienimi aggiornato."
+  },
+  "support": {
+    "intro_prefix": "Sostieni il progetto con",
+    "intro_middle": ", un",
+    "intro_suffix": "oppure con un abbonamento mensile:",
+    "tip_link": "mancia",
+    "manage_payments": "Gestisci i pagamenti mensili.",
+    "cancel_anytime": "*Disdisibile in qualsiasi momento.",
+    "one_man_project": "Al momento è un {term} e il denaro serve per una migliore infrastruttura, licenze e potenziali nuove funzionalità.",
+    "hands_on_title": "Mi piacerebbe metter mano alla tastiera!",
+    "hands_on_super": "Fantastico",
+    "hands_on_intro": ", il supporto attivo è molto benvenuto, ad esempio:",
+    "contribute_editor": "Rivedere e correggere le info dei rifugi (come editor)",
+    "contribute_dev_prefix": "Sviluppo del frontend (",
+    "contribute_dev_middle": ") o del backend (",
+    "contribute_design": "Supporto per le attività di design",
+    "contact_invite": "Entra in",
+    "contact_link": "contatto",
+    "title": "Supporto",
+    "one_man_project_term": "progetto di una sola persona"
+  },
+  "select_date": {
+    "placeholder": "Seleziona una data",
+    "error_title": "Ah cavolo, non funziona più nulla!",
+    "error_restricted": "La CAS ha limitato l’accesso!",
+    "error_contact": "Non esitare a",
+    "error_contact_link": "contattarli direttamente",
+    "error_solution": "🔧 Una nuova soluzione è in lavorazione...",
+    "error_dismiss": "Peccato, sarà per la prossima volta...",
+    "alternative": "In alternativa:",
+    "or": "o"
+  },
+  "overlay_config": {
+    "reset_done": "Impostazioni ripristinate",
+    "settings_placeholder": "Le impostazioni saranno implementate nella fase 4+.",
+    "settings": "Impostazioni",
+    "tab_legend": "Info"
+  },
+  "beta": {
+    "caption": "Questa pagina è ancora in costruzione, i {feedback} sono benvenuti!",
+    "feedback_link": "feedback"
   }
 }
