@@ -431,7 +431,7 @@ aside.content-drawer {
 
     <!-- Header slot -->
     <template #header>
-      <div class="q-px-md q-pt-sm q-pb-xs" style="padding-right: 50px">
+      <div class="sheet-header-row q-px-md q-pt-sm q-pb-xs" style="padding-right: 50px">
         <component
           v-if="contentTitleComponent"
           :is="contentTitleComponent"

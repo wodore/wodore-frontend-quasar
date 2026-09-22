@@ -56,6 +56,7 @@ watch(
 // initial snap animation. Dismissing on that artifact would instantly
 // self-close the freshly opened sheet (seen on real devices).
 const reachedSnapAfterOpen = ref(false);
+const INITIAL_SNAP_INDEX = 2;
 
 // Handle snap position changes
 function handleSnapPositionChange(event: { detail: { sheetState: string; snapIndex: number } }) {
@@ -91,6 +92,74 @@ const sheetKey = computed(() => (props.modelValue ? 'open' : 'closed'));
 // component, so the template ref binds to its rendered root element.
 const sheetElement = ref<BottomSheet | null>(null);
 
+// Shadow state for the header slot: elevated once the content is scrolled
+const contentScrolled = ref(false);
+let detachContentScroll: (() => void) | null = null;
+
+function onContentScroll(event: Event): void {
+  const target = event.target as { scrollTop?: number } | null;
+  const scrolled = (target?.scrollTop ?? 0) > 2;
+  if (scrolled === contentScrolled.value) return;
+  contentScrolled.value = scrolled;
+  sheetElement.value?.toggleAttribute('data-content-scrolled', scrolled);
+}
+
+function attachContentScrollListener(sheet: BottomSheet): void {
+  const element = sheet.shadowRoot?.querySelector('.sheet-content');
+  if (!element) return;
+  element.addEventListener('scroll', onContentScroll, { passive: true });
+  detachContentScroll = () => element.removeEventListener('scroll', onContentScroll);
+  sheet.toggleAttribute('data-content-scrolled', element.scrollTop > 2);
+}
+
+/**
+ * Arm a freshly mounted sheet: attach the content scroll listener and snap
+ * to the initial position.
+ *
+ * The web component builds its shadow DOM and slotted snap points
+ * asynchronously after connection - immediately after mount the shadow may
+ * not exist and snapToPoint would silently do nothing (index out of range),
+ * leaving the sheet invisible at the collapsed position. Poll briefly until
+ * the shadow is ready.
+ */
+function armFreshSheet(): void {
+  const sheet = sheetElement.value;
+  if (!sheet) return;
+
+  const tryArm = (remaining: number) => {
+    const element = sheet.shadowRoot?.querySelector('.sheet-content');
+    if (!element) {
+      if (remaining > 0) {
+        setTimeout(() => tryArm(remaining - 1), 100);
+      } else {
+        console.debug('[bottom-sheet] shadow content never appeared');
+      }
+      return;
+    }
+    attachContentScrollListener(sheet);
+    sheet.snapToPoint(INITIAL_SNAP_INDEX);
+  };
+  tryArm(20);
+}
+
+function detachContentScrollListener(): void {
+  detachContentScroll?.();
+  detachContentScroll = null;
+}
+
+watch(
+  internalOpen,
+  open => {
+    if (open) {
+      // flush: post - the element must exist before we can reach into it
+      armFreshSheet();
+    } else {
+      detachContentScrollListener();
+    }
+  },
+  { flush: 'post' }
+);
+
 /**
  * Reset the inner content scroll so newly loaded content starts at the top.
  *
@@ -105,7 +174,6 @@ function onContentChanged() {
 
   sheet.shadowRoot?.querySelector('.sheet-content')?.scrollTo({ top: 0 });
 }
-
 defineExpose({ onContentChanged });
 </script>
 
@@ -178,6 +246,20 @@ bottom-sheet {
 bottom-sheet[data-sheet-state='expanded'] {
   border-top-left-radius: 0;
   border-top-right-radius: 0;
+}
+
+/*
+ * Header elevation: the header slot content gets a drop shadow once the
+ * content below it is scrolled (standard mobile app-bar pattern). The
+ * attribute is toggled by the component's content scroll listener.
+ */
+bottom-sheet .sheet-header-row {
+  background: var(--sheet-background, #f2f2f2);
+  transition: box-shadow 0.2s ease;
+}
+
+bottom-sheet[data-content-scrolled] .sheet-header-row {
+  box-shadow: 0 4px 10px -4px rgba(0, 0, 0, 0.35);
 }
 </style>
 

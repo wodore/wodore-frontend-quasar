@@ -173,6 +173,71 @@ test('dismissed sheet reopens when tapping the same hut marker again', async ({ 
   await expect(page).toHaveURL(/\/hut\/broch/);
 });
 
+test('sheet opens on another hut after a very slow dismissal', async ({ page }) => {
+  allure.label('feature', 'bottom-sheet');
+  allure.severity('critical');
+  test.setTimeout(180_000);
+
+  const kima = await lookupHut(page.request, 'bivacco-kima');
+  test.skip(!kima.exists, 'Hut bivacco-kima not found - start the backend with seed data');
+
+  await openHutSheet(page, `${BASE_URL}/hut/bivacco-kima#p=14/46.27462/9.72851`);
+  await expect(page.getByText('Kima').first()).toBeVisible({ timeout: 30_000 });
+
+  // REALLY slow pull-down dismissal. Emulation cannot always complete the
+  // gesture, so fall back to the robust dismiss helper (gesture variants +
+  // programmatic collapsed snap - the same close chain either way).
+  const vp = page.viewportSize();
+  const cx = Math.round((vp?.width ?? 390) / 2);
+  const start = ((await getSheetTop(page)) ?? 0) + 60;
+  await touchDrag(page, cx, start, cx, (vp?.height ?? 844) - 30, { steps: 45, gap: 45 });
+  if ((await getSheetState(page)).exists) {
+    expect(await dismissSheet(page)).toBe(true);
+  }
+  expect((await getSheetState(page)).exists).toBe(false);
+  await expect(page).toHaveURL(/\/$|\/#/, { timeout: 10_000 });
+
+  // Opening ANOTHER hut must bring the sheet back
+  await tapHutMarker(page, 9.731958601514826, 46.276941317541564); // Odello Grandori
+  await expect(page).toHaveURL(/\/hut\/odello-grandori/, { timeout: 10_000 });
+  await expect(page.getByText('Odello').first()).toBeVisible({ timeout: 30_000 });
+});
+
+test('sheet header gets a shadow once content is scrolled', async ({ page }) => {
+  allure.label('feature', 'bottom-sheet');
+  allure.severity('minor');
+  test.setTimeout(180_000);
+
+  const hut = await lookupHut(page.request, 'peule-peulaz');
+  test.skip(!hut.exists, 'Hut peule-peulaz not found - start the backend with seed data');
+
+  await openHutSheet(page, `${BASE_URL}/hut/peule-peulaz`);
+  await expect(page.getByText(hut.name ?? 'Peule').first()).toBeVisible({ timeout: 30_000 });
+  await page.waitForTimeout(1000);
+  await expandDescription(page);
+
+  // Expand fully, then scroll the content
+  const vp = page.viewportSize();
+  const cx = Math.round((vp?.width ?? 390) / 2);
+  const top = (await getSheetTop(page)) ?? 0;
+  await touchDrag(page, cx, top + 220, cx, 90, { steps: 10, gap: 20 });
+  await touchDrag(page, cx, 600, cx, 300, { steps: 10, gap: 20 });
+  await page.waitForTimeout(500);
+
+  // The scroll must actually have happened for the shadow to appear
+  const scrolled = await getSheetState(page);
+  expect(scrolled.contentScrollTop ?? 0).toBeGreaterThan(0);
+
+  const hasShadow = await page.evaluate(() => {
+    const host = document.querySelector('bottom-sheet');
+    if (!host) return false;
+    const header = host.querySelector('.sheet-header-row');
+    if (!header) return false;
+    return window.getComputedStyle(header).boxShadow !== 'none';
+  });
+  expect(hasShadow, 'header shadow missing while content is scrolled').toBe(true);
+});
+
 test('sheet keeps its snap position when another hut is opened', async ({ page }) => {
   allure.label('feature', 'bottom-sheet');
   allure.severity('critical');
