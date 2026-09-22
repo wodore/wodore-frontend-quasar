@@ -469,7 +469,6 @@ export const useBasemapStore = defineStore('basemap', () => {
 
   // Async function to initialize basemaps based on GPU tier
   async function runBasemapInit() {
-
     // Check if we have a cached GPU tier result (valid for 2 days)
     const cachedGpuTier = LocalStorage.getItem('gpuTier');
     const cachedGpuTierTime = LocalStorage.getItem('gpuTierTime') as number | null;
