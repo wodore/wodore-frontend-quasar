@@ -263,6 +263,16 @@ bottom-sheet[data-content-scrolled]::part(header) {
   box-shadow: 0 4px 10px -4px rgba(0, 0, 0, 0.35);
   z-index: 10;
 }
+
+/*
+ * Slotted app content inherits box-sizing through the flattened (shadow)
+ * tree, where the document-wide border-box reset does not reach. Without
+ * this, padded bars (e.g. the footer q-toolbar) overflow the sheet by their
+ * own padding and push buttons off-screen.
+ */
+bottom-sheet * {
+  box-sizing: border-box;
+}
 </style>
 
 <template>

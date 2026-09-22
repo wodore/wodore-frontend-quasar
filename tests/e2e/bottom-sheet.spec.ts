@@ -83,6 +83,16 @@ test('sheet expands to fullscreen first, then content scrolls', async ({ page })
   await expect(page.getByText(hut.name ?? 'Peule').first()).toBeVisible({ timeout: 30_000 });
   await page.waitForTimeout(1000);
 
+  // Slotted footer content must not overflow the viewport (box-sizing fix:
+  // content-box would add the toolbar padding on top of the full width and
+  // push the footer menu off-screen)
+  const footerOverflow = await page.evaluate(() => {
+    const toolbar = document.querySelector('bottom-sheet .q-toolbar');
+    if (!toolbar) return 0;
+    return toolbar.getBoundingClientRect().right - window.innerWidth;
+  });
+  expect(footerOverflow).toBeLessThanOrEqual(0);
+
   await expandDescription(page);
 
   // The content must overflow the sheet at its initial (partial) snap

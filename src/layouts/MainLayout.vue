@@ -115,6 +115,17 @@ const contentDrawerOpen = computed({
 // Mobile bottom sheet ref (for programmatic snap control)
 const bottomSheetRef = ref<InstanceType<typeof WdBottomSheet> | null>(null);
 
+// Desktop drawer: shadow the header once the content is scrolled
+const drawerContentScrolled = ref(false);
+
+interface DrawerScrollInfo {
+  verticalPosition?: number;
+}
+
+function onDrawerScroll(info: DrawerScrollInfo): void {
+  drawerContentScrolled.value = (info.verticalPosition ?? 0) > 2;
+}
+
 // When new content is opened while the sheet is already showing (e.g. another
 // hut is clicked on the map), keep the sheet at its current snap position and
 // only reset the content scroll so the new content starts at the top. Fresh
@@ -260,11 +271,20 @@ onMounted(() => {
 // Wide children with large intrinsic min-width can push the aside
 // element wider. These rules enforce containment on the drawer itself
 // and its content wrapper.
-aside.content-drawer {
+// The content drawer's user classes (content-drawer) land on Quasar's inner
+// .q-drawer__content div (NOT the aside) - target that element.
+.q-drawer__content.content-drawer {
   overflow: hidden !important;
 
-  .q-drawer__content {
-    overflow-x: hidden !important;
+  // Drawer header elevation: drop shadow once the content is scrolled
+  // (mirrors the mobile sheet header shadow). The header area is backed by
+  // the layout's grey background, so the shadow reads cleanly.
+  .q-header {
+    transition: box-shadow 0.2s ease;
+  }
+
+  .q-header.content-drawer-header-scrolled {
+    box-shadow: 0 4px 10px -4px rgba(0, 0, 0, 0.35);
   }
 }
 </style>
@@ -351,7 +371,7 @@ aside.content-drawer {
         view="lhh LpR lff"
         container
         class="no-background bg-grey-3 overflow-hidden"
-        :style="`height: ${$q.screen.gt.sm ? 'calc(100% - 80px)' : '100%'}`"
+        style="height: 100%"
       >
         <!-- Close button -->
         <div class="absolute-top z-max q-pa-sm" style="pointer-events: none">
@@ -369,7 +389,11 @@ aside.content-drawer {
         </div>
 
         <!-- Sticky Header (Actions + Title) -->
-        <q-header class="no-background" style="background: none !important">
+        <q-header
+          class="no-background"
+          :class="{ 'content-drawer-header-scrolled': drawerContentScrolled }"
+          style="background: none !important"
+        >
           <!-- Actions Toolbar (Desktop only) -->
           <component
             v-if="contentActionsComponent && $q.screen.gt.sm"
@@ -388,6 +412,7 @@ aside.content-drawer {
         <q-page-container class="fit" style="height: 100%">
           <q-scroll-area
             visible
+            @scroll="onDrawerScroll"
             :thumb-style="{
               width: '6px',
               backgroundColor: '#998019',
