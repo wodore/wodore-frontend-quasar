@@ -19,9 +19,8 @@ const internalOpen = ref(false);
 const toolbarHeight = 50;
 
 // Calculate snap points
-// Index 5 (top): maxSnap
-// Index 4: 80vh
-// Index 3: 60vh
+// Index 4 (top): maxSnap
+// Index 3: 70vh
 // Index 2 (initial): defaultSnap
 // Index 1 (header only): 150px
 // Index 0 (collapsed/dismissed): handled by swipe-to-dismiss
@@ -290,8 +289,7 @@ bottom-sheet * {
     @snap-position-change="handleSnapPositionChange"
   >
     <!-- Snap points -->
-    <div slot="snap" style="--snap: 80vh"></div>
-    <div slot="snap" style="--snap: 60vh"></div>
+    <div slot="snap" style="--snap: 70vh"></div>
     <div slot="snap" :style="{ '--snap': defaultSnap }" class="initial"></div>
     <div slot="snap" style="--snap: 150px" class="bottom"></div>
 
