@@ -31,6 +31,12 @@ dist-ssr
 src/clients/wodore_v1.d.ts
 src/extras/icons/dist
 
+# Vendored impeccable design skill (installed via `npx impeccable install`)
+.claude/skills/
+.github/skills/
+.opencode/skills/
+.agents/skills/
+
 # Logs
 logs
 *.log
