@@ -43,7 +43,7 @@ const activeLocale = computed(() => currentLocale());
       :offset="[0, 8]"
       class="bg-dark-500"
       style="
-        border-radius: 16px;
+        border-radius: 20px;
         box-shadow:
           0 12px 32px rgba(0, 0, 0, 0.45),
           0 4px 12px rgba(0, 0, 0, 0.35);
@@ -75,7 +75,7 @@ const activeLocale = computed(() => currentLocale());
   padding: 4px;
 
   &__item {
-    border-radius: 10px;
+    border-radius: 12px;
     min-height: 34px;
 
     &:hover {
