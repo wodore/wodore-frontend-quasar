@@ -291,7 +291,7 @@ function setAnonym(value: boolean) {
                 autogrow
                 counter
                 :aria-label="t('feedback.message')"
-                placeholder="Nachricht"
+                :placeholder="t('feedback.message')"
                 dense
                 outlined
                 type="textarea"
