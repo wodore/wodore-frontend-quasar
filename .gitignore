@@ -51,3 +51,7 @@ AGENT/
 # Impeccable engine binaries (16MB platform builds; launcher downloads them
 # on demand from GitHub releases into ~/.impeccable — see scripts/impeccable)
 **/skills/impeccable/scripts/bin/
+
+# Impeccable run artifacts (critique snapshots, live sessions; design.json
+# sidecar lives in wodore-design)
+.impeccable/
