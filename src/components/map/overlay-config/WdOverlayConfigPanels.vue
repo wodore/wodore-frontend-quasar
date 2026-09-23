@@ -41,9 +41,12 @@ const legendAttribution = computed(() => props.overlayConfig?.legend?.attributio
 // Sub-tab for Info section (auto-select first section)
 const infoSubTab = ref(legendSections.value[0]?.title || '');
 
-// Update infoSubTab when legend sections change
+// Update infoSubTab when legend sections change — also reset when the
+// current tab no longer exists (e.g. after a language switch the section
+// titles are re-translated and a stale selection would show an empty panel)
 watch(legendSections, newSections => {
-  if (newSections.length > 0 && !infoSubTab.value) {
+  if (newSections.length === 0) return;
+  if (!newSections.some(section => section.title === infoSubTab.value)) {
     infoSubTab.value = newSections[0].title;
   }
 });
