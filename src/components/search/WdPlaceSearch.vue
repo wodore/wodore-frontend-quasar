@@ -329,7 +329,7 @@ function handleSwipeDown() {
         :placeholder="t('search_ui.placeholder')"
         autofocus
         @keydown="onKeyDown"
-        class="toolbar-font"
+        class="toolbar-font wd-search-field"
       >
         <template v-slot:append>
           <q-spinner v-if="loading" class="wd-info-text" size="16px" />

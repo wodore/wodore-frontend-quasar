@@ -95,7 +95,8 @@ const switchCloseIcon =
       padding="sm"
       :direction="direction"
       persistent
-      :color="switcherOpen ? 'negative-300' : 'icon'"
+      class="wd-switcher-fab"
+      :class="{ 'wd-switcher-fab--open': switcherOpen }"
       v-model="switcherOpen"
     >
       <WdBasemapSwitchItem
@@ -116,7 +117,8 @@ const switchCloseIcon =
         flat
         style="padding: 0"
         :ripple="false"
-        :color="switcherLocked ? 'accent-500' : 'secondary-800'"
+        class="wd-toolbar-btn"
+        :class="{ 'wd-toolbar-btn--active': switcherLocked }"
         @click="toggleSwitcherLocked"
       >
         <q-icon>

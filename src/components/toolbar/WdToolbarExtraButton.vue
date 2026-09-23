@@ -5,7 +5,7 @@ interface Props {
   disabled?: boolean;
 }
 withDefaults(defineProps<Props>(), {
-  iconColor: 'primary-800',
+  iconColor: undefined,
   disabled: false,
 });
 </script>

@@ -253,10 +253,10 @@ onMounted(() => {
   padding: 2px 32px 2px 26px;
   background-image: repeating-linear-gradient(
     -45deg,
-    color('accent', 700),
-    color('accent', 700) 6px,
-    color('accent', 600) 6px,
-    color('accent', 600) 12px
+    color('accent', 900),
+    color('accent', 900) 6px,
+    color('accent', 800) 6px,
+    color('accent', 800) 12px
   );
   color: white;
   transform: rotate(-20deg);
@@ -320,7 +320,7 @@ onMounted(() => {
         <WdPlaceSearchMenu v-if="!isMobile" />
         <WdSelectDate />
         <WdPlaceSearchDialog v-if="isMobile" />
-        <WdSupportButton v-if="!authStore.isLoggedIn && !isMobile" class="text-secondary-700" />
+        <WdSupportButton v-if="!authStore.isLoggedIn && !isMobile" class="wd-info-text" />
         <WdFeedbackButton v-if="!isMobile" />
         <WdLanguageSwitcher v-if="!isMobile" />
         <WdThemeSwitcher v-if="!isMobile" />

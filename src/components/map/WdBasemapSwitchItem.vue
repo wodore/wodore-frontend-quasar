@@ -9,7 +9,13 @@ defineProps<Props>();
 </script>
 
 <template>
-  <q-btn round style="padding: 0" :ripple="false" :color="active ? 'accent-500' : 'primary-400'">
+  <q-btn
+    round
+    style="padding: 0"
+    :ripple="false"
+    class="wd-basemap-item"
+    :class="{ 'wd-basemap-item--active': active }"
+  >
     <q-avatar size="55px">
       <img style="padding: 3px" :src="img" />
     </q-avatar>

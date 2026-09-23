@@ -387,7 +387,8 @@ function overlayIcon(name: string) {
       padding="sm"
       :direction="direction"
       persistent
-      :color="switcherOpen ? 'negative-300' : 'icon'"
+      class="wd-switcher-fab"
+      :class="{ 'wd-switcher-fab--open': switcherOpen }"
       v-model="switcherOpen"
     >
       <div class="overlay-scroll">

@@ -57,9 +57,6 @@ function getReviewInfo(
   }
 }
 
-function getReviewColor(status: string | null | undefined): string {
-  return getReviewInfo(status, 0);
-}
 function getReviewText(status: string | null | undefined): string {
   return getReviewInfo(status, 1);
 }
@@ -141,7 +138,7 @@ watch(menuOpen, () => {
     <WdSourceButtons v-if="place" :hut="place" />
     <q-space />
 
-    <q-badge v-if="place" outline class="q-mr-xs" :color="getReviewColor(place.review_status)">
+    <q-badge v-if="place" class="q-mr-xs review-badge">
       {{ getReviewText(place.review_status) }}
     </q-badge>
 
@@ -159,7 +156,7 @@ watch(menuOpen, () => {
           <WdToolbarExtraButton
             @click="toggleHutStar"
             :icon="starHut ? 'wd-favorite' : 'wd-favorite-outline'"
-            :icon-color="starHut ? 'accent' : 'primary-800'"
+            :icon-color="starHut ? 'accent' : undefined"
             :disabled="true"
           >
             {{ $t('favorite') }}

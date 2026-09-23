@@ -141,10 +141,8 @@ function closeMenu() {
         readonly
         model-value=""
         dense
-        dark
-        standout
         :placeholder="$t('search') + ' ...'"
-        class="toolbar-font"
+        class="toolbar-font wd-search-field"
         @click="showMenu = true"
       >
         <template v-slot:prepend>
@@ -178,7 +176,7 @@ function closeMenu() {
           style="position: absolute; top: 6px; right: 6px"
         >
           <!-- Pin/Drag handle -->
-          <q-btn v-if="!isSticky" dense round flat color="primary-400" @click="toggleSticky">
+          <q-btn v-if="!isSticky" dense round flat class="wd-toolbar-btn" @click="toggleSticky">
             <q-icon size="sm">
               <IconEvaUnlockOutline />
             </q-icon>
@@ -189,9 +187,9 @@ function closeMenu() {
             dense
             round
             flat
-            color="primary-400"
+            class="wd-toolbar-btn"
             ref="dragHandleRef"
-            class="cursor-move"
+            style="cursor: move"
             @click="handleDragHandleClick"
           >
             <q-icon size="sm">
@@ -201,7 +199,7 @@ function closeMenu() {
           </q-btn>
 
           <!-- Close button -->
-          <q-btn dense round @click="closeMenu" color="accent-700" icon="wd-close"> </q-btn>
+          <q-btn dense round @click="closeMenu" class="wd-toolbar-btn" icon="wd-close"> </q-btn>
         </div>
 
         <!-- Search component (single instance) -->

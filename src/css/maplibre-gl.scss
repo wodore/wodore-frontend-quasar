@@ -160,3 +160,27 @@
   color: #333;
   box-sizing: border-box;
 }
+
+// Night theme: dim the light basemap (interaction-safe canvas filter) and
+// theme the native map controls
+body.body--dark .maplibregl-canvas {
+  filter: brightness(0.72) saturate(0.92);
+}
+
+body.body--light .maplibregl-ctrl-group {
+  background-color: #fdfefd;
+  box-shadow: 0 0 0 1px var(--wd-ridge);
+}
+
+body.body--dark .maplibregl-ctrl-group {
+  background-color: #112119;
+  box-shadow: 0 0 0 1px #1c3629;
+}
+
+body.body--dark .maplibregl-ctrl-group button + button {
+  border-top: 1px solid #1c3629;
+}
+
+body.body--dark .maplibregl-ctrl-icon {
+  filter: invert(1) brightness(1.6);
+}

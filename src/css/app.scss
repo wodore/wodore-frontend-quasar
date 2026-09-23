@@ -132,3 +132,101 @@ body {
 @import './fonts.scss';
 // Maplibre overwrites
 @import './maplibre-gl.scss';
+
+// WdToolbarButton - theme-aware instrument pill (colors only)
+.wd-toolbar-btn {
+  color: var(--wd-info) !important;
+
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.body--light .wd-toolbar-btn {
+  background-color: var(--wd-surface) !important;
+  border: 1px solid var(--wd-ridge);
+}
+
+.body--light .wd-toolbar-btn:hover {
+  background-color: var(--wd-wash) !important;
+}
+
+.body--dark .wd-toolbar-btn {
+  background-color: var(--wd-surface-deep) !important;
+}
+
+.body--dark .wd-toolbar-btn:hover {
+  background-color: var(--wd-wash) !important;
+}
+
+// Active/selected toolbar pill: forest fill, paper icon
+.wd-toolbar-btn--active {
+  background-color: $primary !important;
+  border-color: $primary;
+  color: $white !important;
+}
+
+// Header/menu icon buttons that hardcode mint (text-icon): readable in Day
+.body--light .text-icon {
+  color: var(--wd-info) !important;
+}
+
+// Fab switcher pills (overlay / basemap rail): themed instead of red/mint
+.q-fab.wd-switcher-fab {
+  color: var(--wd-info) !important;
+  border: 1px solid var(--wd-ridge);
+}
+
+.body--light .q-fab.wd-switcher-fab {
+  background-color: var(--wd-surface) !important;
+}
+
+.body--dark .q-fab.wd-switcher-fab {
+  background-color: var(--wd-surface-deep) !important;
+}
+
+.q-fab.wd-switcher-fab--open {
+  background-color: $primary !important;
+  border-color: $primary;
+  color: $white !important;
+}
+
+// Basemap thumbnails: ridge ring at rest, forest ring when active
+.wd-basemap-item {
+  background-color: transparent !important;
+  border: 1px solid var(--wd-ridge);
+}
+
+.wd-basemap-item--active {
+  border: 2px solid $primary;
+}
+
+// Search field - visible fill in both themes
+.wd-search-field .q-field__control:before {
+  border-color: var(--wd-ridge) !important;
+}
+
+.wd-search-field .q-field__control {
+  background: var(--wd-surface-deep) !important;
+}
+
+.body--light .wd-search-field .q-field__control {
+  background: $white !important;
+  border: 1px solid var(--wd-ridge);
+}
+
+.wd-search-field input {
+  color: var(--wd-ink) !important;
+}
+
+.wd-search-field input::placeholder {
+  color: var(--wd-info) !important;
+  opacity: 1;
+}
+
+// Review badge - neutral outline (red reserved for availability)
+.q-badge.review-badge {
+  color: var(--wd-ink) !important;
+  border-color: var(--wd-ridge) !important;
+  background-color: var(--wd-surface-deep) !important;
+}
