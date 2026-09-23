@@ -16,6 +16,31 @@ Feature specifications and design guidelines are located in `docs/specs/`:
 - `wd_hut_search.md` - Hut search feature specification
 - Other feature specs as they are added
 
+## Impeccable Design Skill
+
+The repo carries the [impeccable](https://impeccable.style/) design skill
+(`.claude/skills/impeccable/`, linked for other harnesses via
+`.agents/skills/impeccable`, `.github/`, `.opencode/`). Update it with
+`npx impeccable@latest install --project`; engine binaries under
+`**/skills/impeccable/scripts/bin/` are gitignored (the launcher downloads
+them per machine).
+
+The design context files (`PRODUCT.md`, `DESIGN.md`) live in the
+**wodore-design** repo, not here. They are linked via
+`IMPECCABLE_CONTEXT_DIR`:
+
+```bash
+# sibling checkout of wodore-design (default local layout)
+IMPECCABLE_CONTEXT_DIR=../wodore-design .claude/skills/impeccable/scripts/impeccable context
+
+# or via the git submodule (after the design branch is merged to main and
+# the submodule pointer is updated)
+IMPECCABLE_CONTEXT_DIR=src/assets/wodore-design .claude/skills/impeccable/scripts/impeccable context
+```
+
+Any agent doing design work in this repo should load context that way before
+critiquing or building UI.
+
 ## Essential Commands
 
 Use `yarn run` command. Check `package.json` for details.
