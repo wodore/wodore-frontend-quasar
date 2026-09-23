@@ -3,6 +3,9 @@ import { ref, computed, watch } from 'vue';
 import { useDebounceFn } from '@vueuse/core';
 import { LocalStorage } from 'quasar';
 
+import { resolveLocale } from '@/i18n';
+import type { Locale } from '@/i18n';
+
 /**
  * User Settings Store
  *
@@ -25,7 +28,9 @@ export interface UserSettings {
     availableOverlays: string[];
     preferredBasemaps: string[];
     theme: 'light' | 'dark' | 'auto';
-    language: string;
+    /** Supported UI language (see src/i18n). Invalid legacy values are
+     * sanitized to the fallback locale on load. */
+    language: Locale;
     units: 'metric' | 'imperial';
   };
   map: {
@@ -104,6 +109,8 @@ export const useUserSettingsStore = defineStore('userSettings', () => {
   const STORAGE_KEY = 'wodore:userSettings';
 
   // Load from localStorage first
+  const hadStoredSettings = LocalStorage.hasItem(STORAGE_KEY);
+
   const loadSettings = (): UserSettings => {
     try {
       const stored = LocalStorage.getItem(STORAGE_KEY) as UserSettings | null;
@@ -111,7 +118,7 @@ export const useUserSettingsStore = defineStore('userSettings', () => {
         const parsed = stored; // Quasar already parses JSON
         // Merge with defaults to handle new properties
         return {
-          ui: { ...defaultSettings.ui, ...parsed.ui },
+          ui: { ...defaultSettings.ui, ...parsed.ui, language: resolveLocale(parsed.ui?.language) },
           map: { ...defaultSettings.map, ...parsed.map },
         };
       }
@@ -289,6 +296,10 @@ export const useUserSettingsStore = defineStore('userSettings', () => {
     // State
     settings,
     pendingSync,
+    // Whether settings existed in localStorage before this store was
+    // created (false on first visit — lets the locale boot logic apply the
+    // detected system language instead of the default)
+    hasStoredSettings: hadStoredSettings,
 
     // Computed
     uiSettings,

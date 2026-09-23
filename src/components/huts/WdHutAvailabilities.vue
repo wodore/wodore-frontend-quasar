@@ -3,6 +3,8 @@ import { ref, computed, watchEffect, watch, nextTick } from 'vue';
 import { date, QVirtualScroll, QScrollArea, useQuasar } from 'quasar';
 import { useCssVar, useElementSize } from '@vueuse/core';
 import { clientWodore } from '@clients/index';
+import { currentLocale } from '@services/locale';
+import { LOCALE_TAGS } from '@/i18n';
 import { useHutsStore } from '@stores/huts-store';
 import { storeToRefs } from 'pinia';
 import WdHutAvailability from './WdHutAvailability.vue';
@@ -80,7 +82,8 @@ const startDate = computed<string>(() => {
 });
 
 const formatMonthLabel = (dateObj: Date) => {
-  return dateObj.toLocaleDateString('de-CH', { month: 'short' }).toUpperCase();
+  // currentLocale() read keeps the label reactive to language switches
+  return dateObj.toLocaleDateString(LOCALE_TAGS[currentLocale()], { month: 'short' }).toUpperCase();
 };
 
 const nextMonths = computed(() => {
@@ -188,7 +191,7 @@ const loadAvailabilityDataForRange = async (startDateStr: string, days: number) 
           date: startDateStr,
         },
         query: {
-          lang: 'de',
+          lang: currentLocale(),
           days: days,
         },
       },
@@ -366,6 +369,13 @@ watchEffect(() => {
   }
 });
 
+// Reload localized availability data when the UI language changes
+// (resets the slug guard so the initialization effect above re-runs
+// and refetches with the new locale)
+watch(currentLocale, () => {
+  lastLoadedSlug.value = undefined;
+});
+
 // Watch for selected date changes and scroll to the new date
 watch(selectedDate, () => {
   console.debug('Selected date changed to:', selectedDate.value);
@@ -374,13 +384,15 @@ watch(selectedDate, () => {
 });
 
 const monthStarts = computed(() => {
+  // currentLocale() is read here so month labels re-render on language switch
+  const localeTag = LOCALE_TAGS[currentLocale()];
   const starts: { index: number; label: string; monthKey: string }[] = [];
   availabilityItems.value.forEach((item, index) => {
     if (index === 0) {
       const date = new Date(item.date);
       starts.push({
         index,
-        label: date.toLocaleDateString('de-CH', {
+        label: date.toLocaleDateString(localeTag, {
           month: 'long',
           year: 'numeric',
         }),
@@ -397,7 +409,7 @@ const monthStarts = computed(() => {
     ) {
       starts.push({
         index,
-        label: currDate.toLocaleDateString('de-CH', {
+        label: currDate.toLocaleDateString(localeTag, {
           month: 'long',
           year: 'numeric',
         }),
@@ -486,7 +498,7 @@ const upcomingMonthClass = computed(() => {
 <template>
   <div v-if="hasAvailability !== false" ref="dialogRef">
     <div class="row items-center no-wrap q-mb-xs q-mt-sm">
-      <div class="text-subtitle1 text-accent">Verfügbarkeit</div>
+      <div class="text-subtitle1 text-accent">{{ $t('availability.title') }}</div>
       <!-- Month Selection -->
       <q-btn v-if="!isMobile" dense flat class="month-nav row" @click="scrollByMonths(-5)">
         <q-icon size="sm">

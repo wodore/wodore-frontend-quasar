@@ -3,6 +3,9 @@ import { ref, computed, watch } from 'vue';
 import { useQuasar } from 'quasar';
 import { useOverlayConfigStore } from '@stores/map/overlay-config-store';
 import { useOverlayStore } from '@stores/map/overlay-store';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 import WdOverlayConfigFilter from './WdOverlayConfigFilter.vue';
 import WdOverlayConfigPanels from './WdOverlayConfigPanels.vue';
 
@@ -113,9 +116,9 @@ const overlayLabel = computed(() => {
 
 function getTabLabel(tab: string): string {
   const tabLabels: Record<string, string> = {
-    filter: 'Filter',
-    legend: 'Info',
-    settings: 'Einstellungen',
+    filter: t('filter'),
+    legend: t('overlay_config.tab_legend'),
+    settings: t('overlay_config.settings'),
   };
   return tabLabels[tab] || tab;
 }
@@ -124,7 +127,7 @@ function resetDefaults() {
   configStore.resetOverlayPreferences(props.overlayName);
   $q.notify({
     type: 'positive',
-    message: 'Einstellungen zurückgesetzt',
+    message: t('overlay_config.reset_done'),
     position: 'bottom',
     timeout: 1500,
   });
@@ -200,7 +203,7 @@ function resetDefaults() {
       <div class="q-pa-md">
         <q-separator class="q-mb-md" />
         <div class="row justify-end">
-          <q-btn flat label="Zurücksetzen" @click="resetDefaults" size="sm" />
+          <q-btn flat :label="t('reset')" @click="resetDefaults" size="sm" />
         </div>
       </div>
     </q-card>

@@ -42,8 +42,11 @@ a:hover {
       style="padding-left: 10px; transform: scale(3) translateY(-2.5px) translateX(-10px)"
     />
     <span :style="$q.platform.is.mobile ? 'font-size: x-small' : ''">
-      Die Seite ist noch im Aufbau,
-      <a class="link" @click="toFeedback">Feedback</a> ist willkommen!
+      <i18n-t keypath="beta.caption" tag="span">
+        <template #feedback>
+          <a class="link" @click="toFeedback">{{ $t('beta.feedback_link') }}</a>
+        </template>
+      </i18n-t>
     </span>
 
     <WdSupportButton

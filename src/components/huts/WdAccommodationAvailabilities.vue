@@ -8,6 +8,9 @@ import 'swiper/css';
 import 'swiper/css/free-mode';
 import 'swiper/css/scrollbar';
 import { clientWodore } from '@clients/index';
+import { currentLocale } from '@services/locale';
+import { LOCALE_TAGS } from '@/i18n';
+import { useI18n } from 'vue-i18n';
 import { useHutsStore } from '@stores/huts-store';
 import { storeToRefs } from 'pinia';
 import { useSlideCount } from '@composables/useSlideCount';
@@ -15,6 +18,7 @@ import WdAccommodationDay from './WdAccommodationDay.vue';
 
 const { formatDate, addToDate, subtractFromDate } = date;
 const { selectedDate } = storeToRefs(useHutsStore());
+const { t } = useI18n();
 
 interface Props {
   slug: string;
@@ -36,7 +40,7 @@ const fetchAvailabilityIcons = async () => {
     const { data, error } = await clientWodore.GET('/v1/categories/map/{parent_slug}', {
       params: {
         path: { parent_slug: 'availability' },
-        query: { lang: 'de', is_active: true, media_mode: 'absolute' },
+        query: { lang: currentLocale(), is_active: true, media_mode: 'absolute' },
       },
     });
     if (error || !data) return;
@@ -90,9 +94,9 @@ const startDate = computed(() => {
   return formatDate(new Date(), 'YYYY-MM-DD');
 });
 
-/** Display format: dd.mm or "Heute" */
+/** Display format: dd.mm or "today" */
 const startDateDisplay = computed(() => {
-  if (startDate.value === today.value) return 'Heute';
+  if (startDate.value === today.value) return t('today');
   const d = new Date(`${startDate.value}T00:00:00`);
   const dd = String(d.getDate()).padStart(2, '0');
   const mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -159,7 +163,7 @@ const loadFromIndex = async (fromIndex: number, days: number = 14) => {
     const { data, error: err } = await clientWodore.GET('/v1/huts/{slug}/availability/{date}', {
       params: {
         path: { slug: props.slug, date: startDateStr },
-        query: { lang: 'de', days: count },
+        query: { lang: currentLocale(), days: count },
       },
     });
 
@@ -243,7 +247,8 @@ watch(
 
 // --- Month selector ---
 const formatMonthLabel = (dateObj: Date) => {
-  return dateObj.toLocaleDateString('de-CH', { month: 'short' }).toUpperCase();
+  // currentLocale() read keeps the label reactive to language switches
+  return dateObj.toLocaleDateString(LOCALE_TAGS[currentLocale()], { month: 'short' }).toUpperCase();
 };
 
 const nextMonths = computed(() => {
@@ -304,6 +309,13 @@ watchEffect(() => {
     loadFromIndex(Math.max(0, selectedIndex - 4), 22);
   }
 });
+
+// Reload localized availability icons/data when the UI language changes
+// (resets the slug guard so the initialization effect above re-runs
+// and refetches with the new locale)
+watch(currentLocale, () => {
+  lastLoadedSlug.value = undefined;
+});
 </script>
 
 <template>
@@ -314,7 +326,7 @@ watchEffect(() => {
   >
     <!-- Header -->
     <div class="row items-center no-wrap q-mb-xs q-mt-sm">
-      <div class="text-subtitle1 text-accent">Verfügbarkeit</div>
+      <div class="text-subtitle1 text-accent">{{ $t('availability.title') }}</div>
       <div class="col row justify-center">
         <q-btn dense flat class="today-btn" @click="scrollToDate(startDate)">
           <q-icon name="wd-calendar" size="14px" class="q-mr-xs" />

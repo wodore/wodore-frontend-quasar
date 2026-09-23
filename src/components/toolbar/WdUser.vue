@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { ref, watchEffect } from 'vue';
+import { ref, watchEffect, computed } from 'vue';
 
 //import { useRouter, useRoute } from 'vue-router';
 //import track from '@services/analytics';
 import { useAuthStore } from '@stores/auth-store';
 import { useAuthService } from 'src/composables/useAuthService';
 import { LocalStorage } from 'quasar';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const authStore = useAuthStore();
 const $auth = useAuthService();
@@ -24,45 +27,47 @@ watchEffect(() => {
   }
 });
 
-const adminLinks = [
+const adminLinks = computed(() => [
   {
     url: `${process.env.WODORE_API_HOST}/admin/`,
     name: 'Admin',
-    caption: 'Wodore backend admin',
+    caption: t('user.admin.backend'),
     group: 'admin',
     avatar: `https://${process.env.WODORE_DOMAIN}/apple-touch-icon.png`,
   },
   {
     url: `${process.env.WODORE_API_HOST}/v1/docs`,
     name: 'API',
-    caption: 'Wodore API docs',
+    caption: t('user.admin.api_docs'),
     group: 'root',
     avatar: 'https://www.openapis.org/wp-content/uploads/sites/3/2019/06/favicon-140x140.png',
   },
   {
     url: `https://stats.${process.env.WODORE_DOMAIN}/websites/${process.env.WODORE_UMAMI_WEBSITE_ID}`,
     name: 'Analytics',
-    caption: 'Umami analytics',
+    caption: t('user.admin.analytics'),
     group: 'admin',
     avatar: `https://stats.${process.env.WODORE_DOMAIN}/apple-touch-icon.png`,
   },
   {
     url: `${process.env.WODORE_OICD_ISSUER_URL}/ui/console/`,
     name: 'Zitadel',
-    caption: 'Identity access management',
+    caption: t('user.admin.iam'),
     group: 'root',
     avatar: `${process.env.WODORE_OICD_ISSUER_URL}/ui/console/favicon.ico`,
   },
   {
     url: `https://traefik.${process.env.WODORE_DOMAIN}`,
     name: 'Traefik',
-    caption: 'Traefik dashboard (reverse proxy)',
+    caption: t('user.admin.traefik'),
     group: 'root',
     avatar: `https://traefik.${process.env.WODORE_DOMAIN}/dashboard/statics/icons/favicon-96x96.png`,
   },
-];
+]);
 
-const filteredAdminLinks = adminLinks.filter(v => authStore.hasRole('group:' + v.group, true));
+const filteredAdminLinks = computed(() =>
+  adminLinks.value.filter(v => authStore.hasRole('group:' + v.group, true))
+);
 
 //const $router = useRouter();
 //const $route = useRoute();
@@ -111,7 +116,7 @@ const showMenu = ref(false);
             round
             href="https://iam.wodore.com/ui/console/users/me"
             target="_blank"
-            aria-label="Benutzer Einstellungen"
+            :aria-label="t('user.settings')"
             class="q-mt-xs"
             ><q-icon> <IconEvaSettingsOutline /> </q-icon
           ></q-btn>
@@ -169,9 +174,13 @@ const showMenu = ref(false);
               <!-- SETTINGS -->
               <q-item tag="label" v-ripple>
                 <q-item-section>
-                  <q-item-label>Umami Tracking</q-item-label>
+                  <q-item-label>{{ t('user.umami_tracking') }}</q-item-label>
                   <q-item-label class="text-caption text-primary-300">
-                    <b>Mich</b> einschliessen beim tracken.
+                    <i18n-t keypath="user.tracking_caption" tag="span">
+                      <template #me
+                        ><b>{{ t('user.tracking_me') }}</b></template
+                      >
+                    </i18n-t>
                   </q-item-label>
                 </q-item-section>
                 <q-item-section side top>
@@ -179,9 +188,9 @@ const showMenu = ref(false);
                 </q-item-section>
               </q-item>
               <!-- LINKS -->
-              <q-item-label header v-if="filteredAdminLinks" class="text-primary-100"
-                >Externe Links</q-item-label
-              >
+              <q-item-label header v-if="filteredAdminLinks" class="text-primary-100">{{
+                t('user.external_links')
+              }}</q-item-label>
               <q-item
                 v-for="link in filteredAdminLinks"
                 :key="link.name"
@@ -214,7 +223,7 @@ const showMenu = ref(false);
             color="accent-700"
             unelevated
             @click="$auth.logout()"
-            label="Logout"
+            :label="t('logout')"
             style="opacity: 0.8"
           />
         </div>

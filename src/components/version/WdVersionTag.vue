@@ -43,7 +43,9 @@ const isStaging = computed(() => appEnv === 'staging');
     </q-tooltip>
     <q-icon :name="iconName" size="14px" color="grey-6" />
     <q-spinner v-if="loading" size="14px" color="grey-6" />
-    <q-badge v-else-if="error" color="negative" text-color="white" dense rounded>Issue</q-badge>
+    <q-badge v-else-if="error" color="negative" text-color="white" dense rounded>{{
+      $t('issue')
+    }}</q-badge>
     <span v-else class="text-caption text-grey-6">
       <span class="text-weight-medium">
         <a v-if="url" target="_blank" :href="`${url}/releases/tag/v${version}`"

@@ -1,5 +1,6 @@
 import { ref, watchEffect, type Ref } from 'vue';
 import { clientWodore } from '@clients/index';
+import { currentLocale } from '@services/locale';
 import { useLatestRequest } from './useLatestRequest';
 import type { HutImage, NearbyImagesResponse, NearbyImageFeature } from 'src/types/geo';
 
@@ -62,7 +63,7 @@ export function useNearbyImages(lat?: Ref<number | undefined>, lon?: Ref<number 
             precision: 'precise',
             limit: 5,
             sources: 'wodore',
-            lang: 'de',
+            lang: currentLocale(),
           },
         },
       });
@@ -76,7 +77,7 @@ export function useNearbyImages(lat?: Ref<number | undefined>, lon?: Ref<number 
             radius: 50,
             precision: 'normal',
             limit: 20,
-            lang: 'de',
+            lang: currentLocale(),
           },
         },
       });

@@ -12,3 +12,74 @@ export default {
 
 export type Locale = 'de' | 'en' | 'fr' | 'it';
 export type Locales = Locale[];
+
+/**
+ * The app's supported UI languages. Keep in sync with the backend
+ * `lang` query parameter (de, en, fr, it — backend falls back internally).
+ */
+export const SUPPORTED_LOCALES: Locales = ['de', 'en', 'fr', 'it'];
+
+/**
+ * Fallback locale: used for unsupported system languages on first visit,
+ * for invalid persisted values and as the vue-i18n fallback for missing
+ * message keys.
+ */
+export const FALLBACK_LOCALE: Locale = 'en';
+
+/**
+ * BCP-47 tags used for Intl formatting (month names etc.) per app locale.
+ * Swiss variants where they exist.
+ */
+export const LOCALE_TAGS: Record<Locale, string> = {
+  de: 'de-CH',
+  en: 'en-US',
+  fr: 'fr-CH',
+  it: 'it-CH',
+};
+
+/**
+ * Language picker options with native names.
+ * Native names are shown regardless of the active UI language (standard
+ * language-picker pattern) and are therefore constants, not i18n messages.
+ */
+export const LANGUAGE_OPTIONS: { value: Locale; label: string }[] = [
+  { value: 'de', label: 'Deutsch' },
+  { value: 'en', label: 'English' },
+  { value: 'fr', label: 'Français' },
+  { value: 'it', label: 'Italiano' },
+];
+
+export function isLocale(value: unknown): value is Locale {
+  return typeof value === 'string' && (SUPPORTED_LOCALES as string[]).includes(value);
+}
+
+/**
+ * Validate a (possibly persisted, possibly legacy) value as a supported
+ * locale, falling back to the fallback locale for anything unknown.
+ */
+export function resolveLocale(value: unknown): Locale {
+  return isLocale(value) ? value : FALLBACK_LOCALE;
+}
+
+/**
+ * Detect the user's preferred UI language from the browser/OS settings.
+ * Returns the first supported match (e.g. 'de-CH' -> 'de'), or English if
+ * none of the system languages is supported.
+ */
+export function detectSystemLocale(): Locale {
+  if (typeof navigator === 'undefined') {
+    return FALLBACK_LOCALE;
+  }
+  const candidates =
+    typeof navigator.languages === 'object' && navigator.languages.length > 0
+      ? navigator.languages
+      : [navigator.language];
+  for (const candidate of candidates) {
+    if (typeof candidate !== 'string') continue;
+    const primary = candidate.split('-')[0]?.toLowerCase();
+    if (isLocale(primary)) {
+      return primary;
+    }
+  }
+  return FALLBACK_LOCALE;
+}

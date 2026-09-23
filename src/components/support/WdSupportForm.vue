@@ -5,6 +5,9 @@ import getImageUrl from 'src/services/imageService';
 //import { clientWodore } from '@clients/index';
 
 import track from '@services/analytics';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const $q = useQuasar();
 const router = useRouter();
@@ -82,7 +85,7 @@ function toFeedback() {
       <q-img :src="headerImg" style="height: 140px" class="shadow-4">
         <div class="card-header absolute-bottom text-white text-h5"></div>
         <div class="absolute-bottom text-accent-400 text-h4 text-center card-header__text">
-          Support
+          {{ t('support.title') }}
         </div>
       </q-img>
     </div>
@@ -101,16 +104,17 @@ function toFeedback() {
       >
         <div class="col no-wrap items-center q-py-md">
           <p class="text-body1 q-pt-md">
-            Unterstütze das Projekt mit
-            <a class="link" @click="toFeedback">Feedback</a>, einem
+            {{ t('support.intro_prefix') }}
+            <a class="link" @click="toFeedback">{{ t('feedback_label') }}</a
+            >{{ t('support.intro_middle') }}
             <WdStripeLink
               stripe-id="28o02Oda19qnbiE28a"
-              name="Trinkgeld"
+              :name="t('support.tip_link')"
               icon="tip"
               class="link"
               @click="onClose(false)"
             />
-            oder einem monatlichem:
+            {{ t('support.intro_suffix') }}
           </p>
           <div class="q-pt-lg row justify-center">
             <q-btn-group style="border-radius: 40px; max-width: 400px">
@@ -152,37 +156,41 @@ function toFeedback() {
             </q-btn-group>
             <div class="text-center">
               <p class="text-body2 q-pt-xs text-secondary-800">
-                <a href="https://billing.stripe.com/p/login/aEU9AA29o9vv7JucMM" target="_blank"
-                  >Monatliche Zahlungen verwalten.</a
-                >
-                <span class="text-grey-7"> *Jederzeit kündbar. </span>
+                <a href="https://billing.stripe.com/p/login/aEU9AA29o9vv7JucMM" target="_blank">{{
+                  t('support.manage_payments')
+                }}</a>
+                <span class="text-grey-7"> {{ t('support.cancel_anytime') }} </span>
               </p>
             </div>
           </div>
           <div class="text-body2 q-pt-md q-pb-md">
-            Im Moment ist es ein <i>Ein-Mann-Projekt</i> und das Geld wird für eine bessere
-            Infrastruktur, Lizenzen und potenzielle neue Features benötigt.
+            <i18n-t keypath="support.one_man_project" tag="span">
+              <template #term
+                ><i>{{ t('support.one_man_project_term') }}</i></template
+              >
+            </i18n-t>
           </div>
           <q-card class="text-body2 bg-secondary-900 text-white q-my-lg">
             <q-card-section>
-              <h5 class="q-mb-md q-mt-none">Ich haue gerne selber in die Tasten!</h5>
+              <h5 class="q-mb-md q-mt-none">{{ t('support.hands_on_title') }}</h5>
               <div>
-                <b>Super</b>, aktive Unterstützung ist sehr willkommen, zum Beispiel:
+                <b>{{ t('support.hands_on_super') }}</b
+                >{{ t('support.hands_on_intro') }}
                 <ul>
-                  <li>Hütteninfos reviewen und anpassen (als Editor)</li>
+                  <li>{{ t('support.contribute_editor') }}</li>
                   <li>
-                    Entwicklung von Frontend (<a href="https://quasar.dev/" target="_blank"
-                      >Quasar</a
-                    >) oder Backend (<a href="https://www.djangoproject.com/" target="_blank"
-                      >Django</a
-                    >)
+                    {{ t('support.contribute_dev_prefix')
+                    }}<a href="https://quasar.dev/" target="_blank">Quasar</a
+                    >{{ t('support.contribute_dev_middle')
+                    }}<a href="https://www.djangoproject.com/" target="_blank">Django</a>)
                   </li>
-                  <li>Unterstützung bei Design-Aufgaben</li>
+                  <li>{{ t('support.contribute_design') }}</li>
                   <li>...</li>
                 </ul>
               </div>
-              Bitte trete mit mir in
-              <a style="cursor: pointer" @click="toFeedback">Kontakt</a>!
+              {{ t('support.contact_invite') }}
+              <a style="cursor: pointer" @click="toFeedback">{{ t('support.contact_link') }}</a
+              >!
             </q-card-section>
           </q-card>
         </div>
@@ -192,7 +200,7 @@ function toFeedback() {
     <q-card-actions>
       <q-space />
       <q-btn
-        label="Schliessen"
+        :label="t('close')"
         color="secondary-700"
         flat
         v-close-popup

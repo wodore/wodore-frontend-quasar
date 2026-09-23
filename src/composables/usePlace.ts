@@ -1,5 +1,6 @@
 import { ref, watch, onScopeDispose, type Ref } from 'vue';
 import { clientWodore, type schemasWodore } from '@clients/index';
+import { currentLocale } from '@services/locale';
 
 // Request cache to prevent duplicate simultaneous requests
 const pendingRequests = new Map<string, Promise<schemasWodore['HutSchemaDetails'] | undefined>>();
@@ -46,7 +47,7 @@ export function usePlace(slug: Ref<string | undefined>) {
     // Create request promise
     const requestPromise = clientWodore
       .GET('/v1/huts/{slug}', {
-        params: { path: { slug: newSlug } },
+        params: { path: { slug: newSlug }, query: { lang: currentLocale() } },
         signal: controller.signal,
       })
       .then(({ data, error: apiError }) => {
@@ -95,9 +96,11 @@ export function usePlace(slug: Ref<string | undefined>) {
   }
 
   watch(
-    slug,
-    newSlug => {
+    [slug, currentLocale],
+    ([newSlug]) => {
       if (newSlug) {
+        // Refetches both on slug change and UI language change (hut details
+        // are localized server-side via the lang param)
         fetchPlace(newSlug);
       } else {
         place.value = undefined;

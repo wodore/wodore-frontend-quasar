@@ -20,6 +20,7 @@ import {
 } from '@indoorequal/vue-maplibre-gl';
 
 import mapDraw from '@services/draw';
+import { currentLocale } from '@services/locale';
 import { clientWodore } from '@clients/index';
 
 // MapLibre v6 resolves its web worker via import.meta.url, which breaks under
@@ -641,6 +642,7 @@ async function selectHutBySlug(slug: string, isInitialLoad: boolean = false): Pr
       const { data } = await clientWodore.GET('/v1/huts/{slug}', {
         params: {
           path: { slug },
+          query: { lang: currentLocale() },
         },
       });
 
@@ -728,6 +730,7 @@ async function selectHutBySlug(slug: string, isInitialLoad: boolean = false): Pr
       const { data } = await clientWodore.GET('/v1/huts/{slug}', {
         params: {
           path: { slug },
+          query: { lang: currentLocale() },
         },
       });
 
@@ -781,7 +784,7 @@ watch(
         // Fetch from API (non-blocking)
         clientWodore
           .GET('/v1/huts/{slug}', {
-            params: { path: { slug: newSlug } },
+            params: { path: { slug: newSlug }, query: { lang: currentLocale() } },
           })
           .then(({ data }) => {
             if (!data?.location) return;

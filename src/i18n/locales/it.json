@@ -5,7 +5,6 @@
     "not_serviced": "nessun servizio",
     "serviced": "servito",
     "basic_hotel": "Hotel essenziale",
-    "hut.alp": "Alpe",
     "basic_shelter": "Rifugio d'emergenza",
     "camping": "Campeggio",
     "hotel": "Hotel",
@@ -14,7 +13,9 @@
     "unknown": "Sconosciuto",
     "bivouac": "Bivacco",
     "hostel": "Ostello",
-    "unattended_hut": "Capanna incustodita"
+    "unattended_hut": "Capanna incustodita",
+    "alp": "Alpe",
+    "load_error": "Impossibile caricare il rifugio"
   },
   "contact": "Contatto",
   "standard": "Standard",
@@ -43,7 +44,8 @@
     "max_walk_time": "Tempo massimo di percorrenza",
     "time_range": "Intervallo di tempo",
     "add_station": "Aggiungi stazione",
-    "no_connection": "Nessuna connessione"
+    "no_connection": "Nessuna connessione",
+    "departures": "Partenze"
   },
   "map": {
     "error": {
@@ -52,7 +54,8 @@
       "webgl_hint": "Ciò accade quando il dispositivo o il browser non supporta WebGL.",
       "generic_message": "Si è verificato un errore durante il caricamento della mappa",
       "reload": "Ricarica la pagina"
-    }
+    },
+    "layers": "Livelli"
   },
   "map_style": "Carta geografica",
   "location": "Posizione",
@@ -103,7 +106,8 @@
     "no_images_available": "Nessuna immagine disponibile",
     "no_images": "Nessuna immagine",
     "no_images_for_hut": "Aggiungi foto",
-    "no_photos_yet": "Nessuna foto ancora"
+    "no_photos_yet": "Nessuna foto ancora",
+    "download_original": "Scarica l'originale"
   },
   "contribute": {
     "title": "Contribuisci",
@@ -141,5 +145,307 @@
       "android": "Android",
       "ios": "iOS"
     }
+  },
+  "edit": "Modifica",
+  "favorite": "Preferito",
+  "show_map": "Mappa",
+  "search": "Cerca",
+  "close": "Chiudi",
+  "pin_something": "Fissa",
+  "unpin_something": "Sblocca",
+  "drag_to_move": "Trascina per spostare",
+  "favorites": "Preferiti",
+  "hut_type": "Tipo di rifugio",
+  "filter": "Filtro",
+  "service_unavailable": "Servizio non disponibile",
+  "availability": {
+    "free": "Liberi",
+    "total": "Totale",
+    "tooltip": "{free} liberi / {total} totale",
+    "unknown": "Sconosciuto",
+    "no_data": "Nessun dato",
+    "title": "Disponibilità",
+    "status": {
+      "empty": "LIBERI",
+      "low": "BASSO",
+      "medium": "MEDIO",
+      "high": "ALTO",
+      "full": "PIENO",
+      "free_unknown": "LIBERI ?",
+      "unknown": "sconosciuto"
+    }
+  },
+  "jan": "Gen",
+  "feb": "Feb",
+  "mar": "Mar",
+  "apr": "Apr",
+  "may": "Mag",
+  "jun": "Giu",
+  "jul": "Lug",
+  "aug": "Ago",
+  "sep": "Set",
+  "oct": "Ott",
+  "nov": "Nov",
+  "dec": "Dic",
+  "reset": "Reimposta",
+  "send": "Invia",
+  "yes": "Sì",
+  "no": "No",
+  "today": "oggi",
+  "login": "Accedi",
+  "logout": "Disconnessione",
+  "issue": "Issue",
+  "feedback_label": "Feedback",
+  "user": {
+    "settings": "Impostazioni utente",
+    "umami_tracking": "Tracciamento Umami",
+    "tracking_caption": "Includi {me} nel tracciamento.",
+    "tracking_me": "mi",
+    "external_links": "Link esterni",
+    "admin": {
+      "backend": "Admin backend Wodore",
+      "api_docs": "Documentazione API Wodore",
+      "analytics": "Analitica Umami",
+      "iam": "Gestione identità e accessi",
+      "traefik": "Dashboard Traefik (reverse proxy)"
+    }
+  },
+  "feedback": {
+    "button": "Invia feedback",
+    "title": "Dicci cosa ne pensi!",
+    "subject": "Oggetto",
+    "email": "Email",
+    "email_placeholder": "name@domain.com",
+    "message": "Messaggio",
+    "url": "URL",
+    "notify_updates": "Riceverai un'email per gli aggiornamenti importanti.",
+    "sent": "Messaggio inviato",
+    "send_failed": "Impossibile inviare il messaggio",
+    "discard_title": "Sei sicuro?",
+    "discard_message": "Le tue modifiche andranno perse! Chiudere?",
+    "support": "Supporto",
+    "title_rest": "Ogni feedback, positivo o negativo, aiuta.",
+    "support_intro": "Qualsiasi",
+    "support_outro": "al progetto è benvenuto.",
+    "email_required": "Email mancante",
+    "message_required": "Messaggio mancante",
+    "keep_me_posted": "Tienimi aggiornato.",
+    "header_title": "Feedback"
+  },
+  "support": {
+    "intro_prefix": "Sostieni il progetto con",
+    "intro_middle": ", un",
+    "intro_suffix": "oppure con un abbonamento mensile:",
+    "tip_link": "mancia",
+    "manage_payments": "Gestisci i pagamenti mensili.",
+    "cancel_anytime": "*Disdisibile in qualsiasi momento.",
+    "one_man_project": "Al momento è un {term} e il denaro serve per una migliore infrastruttura, licenze e potenziali nuove funzionalità.",
+    "hands_on_title": "Mi piacerebbe metter mano alla tastiera!",
+    "hands_on_super": "Fantastico",
+    "hands_on_intro": ", il supporto attivo è molto benvenuto, ad esempio:",
+    "contribute_editor": "Rivedere e correggere le info dei rifugi (come editor)",
+    "contribute_dev_prefix": "Sviluppo del frontend (",
+    "contribute_dev_middle": ") o del backend (",
+    "contribute_design": "Supporto per le attività di design",
+    "contact_invite": "Entra in",
+    "contact_link": "contatto",
+    "title": "Supporto",
+    "one_man_project_term": "progetto di una sola persona"
+  },
+  "select_date": {
+    "placeholder": "Seleziona una data",
+    "error_title": "Ah cavolo, non funziona più nulla!",
+    "error_restricted": "La CAS ha limitato l’accesso!",
+    "error_contact": "Non esitare a",
+    "error_contact_link": "contattarli direttamente",
+    "error_solution": "🔧 Una nuova soluzione è in lavorazione...",
+    "error_dismiss": "Peccato, sarà per la prossima volta...",
+    "alternative": "In alternativa:",
+    "or": "o",
+    "not_available": "Attualmente non disponibile"
+  },
+  "overlay_config": {
+    "reset_done": "Impostazioni ripristinate",
+    "settings_placeholder": "Le impostazioni saranno implementate nella fase 4+.",
+    "settings": "Impostazioni",
+    "tab_legend": "Info",
+    "further_links": "Link utili"
+  },
+  "beta": {
+    "caption": "Questa pagina è ancora in costruzione, i {feedback} sono benvenuti!",
+    "feedback_link": "feedback"
+  },
+  "overlays": {
+    "huts": {
+      "label": "Rifugi",
+      "filter_types": "Alloggi",
+      "legend_accommodation": "Alloggi",
+      "legend_accommodation_desc": "Diversi tipi di alloggio",
+      "legend_availability": "Disponibilità",
+      "legend_availability_desc": "Stato di occupazione"
+    },
+    "transport_stops": {
+      "label": "Fermate",
+      "legend_title": "Fermate",
+      "legend_desc": "Fermate dei trasporti pubblici",
+      "bus": "Bus",
+      "bus_desc": "Fermate dei bus",
+      "train": "Treno",
+      "train_desc": "Stazioni",
+      "other": "Altri",
+      "other_desc": "Altre fermate"
+    },
+    "info": "Informazioni",
+    "skitouren": {
+      "label": "Sci alpinismo",
+      "desc": "Itinerari di sci alpinismo di Swisstopo. Attenzione al pericolo di valanghe e alle condizioni meteo.",
+      "link_skitourenkarte": "Carta sci alpinismo Swisstopo"
+    },
+    "link_avalanche": "Bollettino valanghe SLF",
+    "snowshoes": {
+      "label": "Ciaspole",
+      "desc": "Itinerari ciaspole di Swisstopo. Attrezzatura invernale richiesta.",
+      "link": "Swisstopo escursioni ciaspole"
+    },
+    "protected_nature": {
+      "label": "Protezione della natura",
+      "legend_title": "Zone protette",
+      "desc": "Zone di tranquillità della fauna e riserve di caccia per proteggere la fauna selvatica",
+      "by_law": "Vincolante per legge",
+      "recommended": "Consigliato",
+      "link": "Info zone di tranquillità"
+    },
+    "sheepdogs": {
+      "label": "Cani da protezione",
+      "desc": "Alpi con cani da protezione del bestiame. Tenere i cani al guinzaglio e mantenere le distanze dalle mandrie.",
+      "pastures": "Alpi protette",
+      "link": "Regole di comportamento cani da protezione"
+    },
+    "hillslope": {
+      "label": "Pendenza",
+      "legend_title": "Pendenza",
+      "desc": "Pendii oltre 30° (critici per le valanghe)",
+      "range_30_35": "Pendenza da 30° a 35°",
+      "range_35_40": "Pendenza da 35° a 40°",
+      "range_40_45": "Pendenza da 40° a 45°",
+      "range_45": "Pendenza oltre 45°",
+      "link_map_info": "Info carta pendenze"
+    },
+    "difficulty": "Difficoltà",
+    "skislopes": {
+      "label": "Piste da sci",
+      "desc": "Piste da sci secondo la classificazione internazionale dei colori",
+      "green": "Verde - Molto facile",
+      "green_desc": "Piste molto pianeggianti per principianti",
+      "blue": "Blu - Facile",
+      "blue_desc": "Piste facili con pendenza moderata",
+      "red": "Rosso - Intermedio",
+      "red_desc": "Piste di media difficoltà",
+      "black": "Nero - Difficile",
+      "black_desc": "Piste difficili con tratti ripidi"
+    },
+    "hiking": {
+      "label": "Sentieri",
+      "legend_title": "Categorie dei sentieri",
+      "desc": "Categorie ufficiali dei sentieri di Swisstopo",
+      "wanderweg": "Sentiero escursionistico",
+      "wanderweg_desc": "Sentieri facili, adatti a tutte le età",
+      "bergwanderweg": "Sentiero di montagna",
+      "bergwanderweg_desc": "Itinerari più impegnativi, possono includere pendii ripidi o ponti sospesi",
+      "alpinwanderweg": "Sentiero alpino",
+      "alpinwanderweg_desc": "Itinerari più difficili, esperienza e attrezzatura alpine richieste",
+      "link_wanderland": "Rete Svizzera a piedi",
+      "link_sac_scale": "Scala escursionistica CAS"
+    },
+    "cycling": {
+      "label": "Bicicletta",
+      "desc": "Itinerari in bici da OpenStreetMap, mostrati via Waymarked Trails",
+      "link": "Rete Svizzera in bici"
+    },
+    "mtb": {
+      "label": "Mountain bike",
+      "desc": "Itinerari MTB da OpenStreetMap, mostrati via Waymarked Trails",
+      "link": "Rete Svizzera in mountain bike"
+    }
+  },
+  "basemaps": {
+    "swiss_light": "Svizzera Topo Light",
+    "swiss_raster": "Svizzera Topo Raster",
+    "satellite": "Satellite",
+    "outdoor": "Outdoor OSM",
+    "austria_vector": "Austria Topo Vector",
+    "austria_raster": "Austria Topo Raster"
+  },
+  "multi_select": {
+    "select_all": "Seleziona tutto",
+    "deselect_all": "Deseleziona tutto",
+    "selected_count": "{selected} di {total} selezionati",
+    "no_filter_active": "Nessun filtro attivo"
+  },
+  "error_notfound": {
+    "title": "Ops. Ti sei perso ...",
+    "back": "riportami indietro"
+  },
+  "meta": {
+    "description": "Dove ti porterà la tua prossima escursione?"
+  },
+  "search_ui": {
+    "no_places": "Nessun luogo trovato",
+    "placeholder_hint": "Cerca rifugi, vette e altro...",
+    "preview_on_map": "Anteprima sulla mappa",
+    "placeholder": "Cerca luoghi..."
+  },
+  "data_policy": {
+    "title": "Informativa sulla privacy di Wodore",
+    "last_updated": "Ultimo aggiornamento:",
+    "last_updated_date": "10 giugno 2024",
+    "summary": "Riepilogo",
+    "summary_processing": "Trattamento dei dati:",
+    "summary_processing_text": "Utilizziamo cookie essenziali e tracciamo dati di utilizzo anonimi con Umami per migliorare il sito.",
+    "summary_sharing": "Condivisione dei dati:",
+    "summary_sharing_text": "I tuoi dati non vengono condivisi con terzi.",
+    "summary_providers": "Fornitori di servizi:",
+    "summary_providers_text": "Utilizziamo Cloudinary per l’hosting delle immagini, Infomaniak per i servizi cloud, Zitadel per la gestione degli utenti (self-hosted) e Stripe per l’elaborazione dei pagamenti.",
+    "summary_rights": "Diritti degli utenti:",
+    "summary_rights_text": "Hai il diritto di accedere ai tuoi dati, correggerli ed eliminarli su richiesta.",
+    "summary_more": "Per ulteriori dettagli, leggi l’informativa completa qui sotto.",
+    "intro": "Benvenuto su Wodore! Ci impegniamo a proteggere la tua privacy e a garantire che le tue informazioni personali siano trattate in modo sicuro e responsabile. Questa informativa sulla privacy spiega come raccogliamo, utilizziamo e proteggiamo le informazioni quando visiti il nostro sito web {link} (il « sito »).",
+    "s1": "1. Definizioni",
+    "s1_personal_data": "Dati personali:",
+    "s1_personal_data_text": "Qualsiasi informazione relativa a una persona identificata o identificabile.",
+    "s1_cookies": "Cookie:",
+    "s1_cookies_text": "Piccoli file memorizzati sul tuo dispositivo che servono a migliorare la tua esperienza sul nostro sito.",
+    "s1_providers": "Fornitori di servizi:",
+    "s1_providers_text": "Aziende terze che utilizziamo per supportare i nostri servizi.",
+    "s2": "2. Informazioni che raccogliamo",
+    "s2_cookies": "Cookie:",
+    "s2_cookies_text": "Utilizziamo solo cookie essenziali per garantire il corretto funzionamento del nostro sito web. Questi cookie sono necessari per il funzionamento del sito e non possono essere disattivati nei nostri sistemi.",
+    "s2_tracking": "Tracciamento:",
+    "s2_tracking_text": "Utilizziamo {link} a fini di tracciamento. Questo tracciamento è interno, anonimo e serve esclusivamente a migliorare il sito. Umami garantisce l’anonimato non raccogliendo alcun dato personale (PII). Vengono tracciati dati come visualizzazioni di pagina, referrer, tipi di browser, sistemi operativi, tipi di dispositivo, dimensioni dello schermo, URL visitati e tempo trascorso sulla pagina. Questi dati vengono analizzati in forma aggregata per migliorare le prestazioni e l’esperienza utente del sito senza compromettere la privacy individuale.",
+    "s3": "3. Utilizzo delle informazioni",
+    "s3_text": "Le informazioni che raccogliamo vengono utilizzate esclusivamente per migliorare la tua esperienza sul nostro sito web. Non condividiamo i tuoi dati con terzi, salvo quando ciò sia necessario per l’amministrazione e il miglioramento del nostro sito e dei nostri servizi.",
+    "s4": "4. Fornitori di servizi",
+    "s4_intro": "Per fornire i nostri servizi, utilizziamo i seguenti fornitori:",
+    "s4_cloudinary": "Cloudinary:",
+    "s4_cloudinary_text": "Utilizzato per {link}.",
+    "s4_cloudinary_link": "l’hosting e la distribuzione di immagini",
+    "s4_infomaniak": "Infomaniak:",
+    "s4_infomaniak_text": "Fornitore di servizi cloud utilizzato per {link}.",
+    "s4_infomaniak_link": "l’hosting e altri servizi",
+    "s4_zitadel": "Zitadel:",
+    "s4_zitadel_text": "Utilizziamo {link} per la gestione degli utenti, self-hosted.",
+    "s4_stripe": "Stripe:",
+    "s4_stripe_text": "Utilizzato per {link}.",
+    "s4_stripe_link": "l’elaborazione dei pagamenti",
+    "s5": "5. Accesso, correzione ed eliminazione dei dati",
+    "s5_text": "Hai il diritto di accedere ai tuoi dati, correggerli ed eliminarli. Se desideri esercitare questi diritti, contattaci all’indirizzo {link}. Risponderemo alla tua richiesta entro un termine ragionevole.",
+    "s6": "6. Sicurezza dei dati",
+    "s6_text": "Prendiamo sul serio la sicurezza dei tuoi dati e implementiamo adeguate misure tecniche e organizzative per proteggerli da accessi non autorizzati, divulgazione, alterazione o distruzione.",
+    "s7": "7. Aggiornamenti di questa informativa",
+    "s7_text": "Potremmo aggiornare questa informativa sulla privacy di tanto in tanto per riflettere modifiche alle nostre pratiche o alle leggi applicabili. Quando apportiamo modifiche, adegueremo la data « Ultimo aggiornamento » in cima a questa pagina. Ti consigliamo di consultare regolarmente questa informativa per rimanere informato su come proteggiamo le tue informazioni.",
+    "s8": "8. Contattaci",
+    "s8_text": "Se hai domande o dubbi riguardo a questa informativa sulla privacy, contattaci all’indirizzo:",
+    "email": "Email:",
+    "closing": "Grazie per aver affidato le tue informazioni a Wodore. Ci impegniamo a garantire la tua privacy e sicurezza."
   }
 }

@@ -10,7 +10,7 @@ function toggleModel() {
 </script>
 
 <template>
-  <WdToolbarButton icon="wd-message" @click="toggleModel" aria-label="Sende Feedback">
+  <WdToolbarButton icon="wd-message" @click="toggleModel" :aria-label="$t('feedback.button')">
     <!-- <q-tooltip v-if="!$q.screen.xs" anchor="center left" self="center right"
       >Kontakt</q-tooltip
     > -->

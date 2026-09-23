@@ -9,5 +9,6 @@ function toggleModel() {
 </script>
 
 <template>
-  <WdToolbarButton icon="wd-camera" @click="toggleModel" aria-label="Contribute"> </WdToolbarButton>
+  <WdToolbarButton icon="wd-camera" @click="toggleModel" :aria-label="$t('contribute.title')">
+  </WdToolbarButton>
 </template>
