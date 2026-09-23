@@ -86,7 +86,7 @@ const hutsLayerSelectedPaint: CircleLayerSpecification['paint'] = {
     'case',
     ['boolean', ['feature-state', 'color'], false],
     ['feature-state', 'color'],
-    '#3366ff',
+    '#2673bf',
   ],
   'circle-opacity': ['case', ['boolean', ['feature-state', 'selected'], false], 0.7, 0],
   'circle-radius': ['interpolate', ['linear'], ['zoom'], 7, 10, 15, 40],
@@ -100,18 +100,18 @@ function getAvailColors(day: number): ExpressionSpecification {
     'match',
     ['get', 'occupancy_status', ['at', day, ['get', 'data']]],
     'empty',
-    '#33FF33', // Neon Green - Empty state
+    '#25BF5E', // positive-500 - free state
     'low',
-    '#99CC33', // Yellow Green - Low occupancy
+    '#F6AD4B', // amber-300 - low occupancy
     'medium',
-    '#FFA726', // Orange - Medium occupancy
+    '#EA9A37', // amber-400 - medium occupancy
     'free_unknown',
-    '#E09321', // Darker Orange - Free beds, count unknown
+    '#7FAB88', // muted green - free beds, count unknown
     'high',
-    '#EF6C00', // Dark Orange - High occupancy
+    '#C3731F', // amber-600 - high occupancy
     'full',
-    '#D32F2F', // Red - Full occupancy
-    '#D4D4D4', // Gray - Default state
+    '#961A17', // negative-700 - full occupancy
+    '#575757', // black-100 - unknown/default state
   ];
 }
 const hutsOccupationLayerPaint = {

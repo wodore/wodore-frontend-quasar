@@ -89,23 +89,23 @@ const hutTypeIconUrl = computed(() => {
   return props.hutTypeIcons[slug] ?? null;
 });
 
-/** Free number color based on occupancy status */
+/** Free number color based on occupancy status (Day text shades, DESIGN.md occupancy scale) */
 const freeColor = computed(() => {
-  if (isUnknown.value) return 'rgba(17, 33, 25, 0.4)';
+  if (isUnknown.value) return '#575757';
   switch (props.day.occupancy_status) {
     case 'full':
-      return '#d32f2f';
+      return '#961a17';
     case 'high':
-      return '#ef6c00';
+      return '#8a4b1b';
     case 'medium':
-      return '#87b52d';
+      return '#8a4b1b';
     case 'free_unknown':
-      return '#779F28'; // medium, a bit darker
+      return '#198053'; // free family, degree unknown
     case 'low':
     case 'empty':
-      return '#4B8E43';
+      return '#198053';
     default:
-      return 'rgba(17, 33, 25, 0.4)';
+      return '#575757';
   }
 });
 

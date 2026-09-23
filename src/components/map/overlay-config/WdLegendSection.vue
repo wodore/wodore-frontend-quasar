@@ -18,7 +18,7 @@ defineProps<Props>();
 <template>
   <div>
     <!-- Section Description -->
-    <div v-if="section.description" class="text-caption text-grey-7 q-mb-md">
+    <div v-if="section.description" class="text-caption wd-ink-soft-text q-mb-md">
       {{ section.description }}
     </div>
 
@@ -107,7 +107,7 @@ defineProps<Props>();
         <!-- Item Label and Description -->
         <q-item-section>
           <q-item-label>{{ item.label }}</q-item-label>
-          <q-item-label v-if="item.description" caption class="text-grey-7">
+          <q-item-label v-if="item.description" caption class="wd-ink-soft-text">
             {{ item.description }}
           </q-item-label>
         </q-item-section>
@@ -117,6 +117,9 @@ defineProps<Props>();
 </template>
 
 <style scoped lang="scss">
+.wd-ink-soft-text {
+  color: var(--wd-ink-soft) !important;
+}
 .line-indicator {
   width: 40px;
   height: 3px;

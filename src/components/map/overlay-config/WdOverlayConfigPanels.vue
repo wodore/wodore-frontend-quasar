@@ -67,7 +67,7 @@ function handleReset() {
     <q-tab-panel name="legend" v-if="hasLegend" class="q-pa-none legend-panel">
       <!-- Sub-tabs for Info section (sticky) - only show if multiple sections -->
       <div v-if="hasMultipleLegendSections" class="sticky-subtabs">
-        <q-tabs v-model="infoSubTab" dense no-caps class="text-grey-8" indicator-color="primary">
+        <q-tabs v-model="infoSubTab" dense no-caps class="" indicator-color="primary">
           <q-tab
             v-for="section in legendSections"
             :key="section.title"
@@ -130,12 +130,15 @@ function handleReset() {
 
     <!-- Settings Panel -->
     <q-tab-panel name="settings" v-if="hasSettings" class="bg-transparent">
-      <div class="text-body2 text-grey-7">{{ $t('overlay_config.settings_placeholder') }}</div>
+      <div class="text-body2 wd-ink-soft-text">{{ $t('overlay_config.settings_placeholder') }}</div>
     </q-tab-panel>
   </q-tab-panels>
 </template>
 
 <style scoped lang="scss">
+.wd-ink-soft-text {
+  color: var(--wd-ink-soft) !important;
+}
 // Legend panel styles
 .legend-panel {
   display: flex;

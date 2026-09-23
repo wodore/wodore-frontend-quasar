@@ -94,6 +94,7 @@ declare module 'vue' {
     WdSupportButton: typeof import('./src/components/support/WdSupportButton.vue')['default']
     WdSupportForm: typeof import('./src/components/support/WdSupportForm.vue')['default']
     WdTextClamp: typeof import('./src/components/utils/WdTextClamp.vue')['default']
+    WdThemeSwitcher: typeof import('./src/components/toolbar/WdThemeSwitcher.vue')['default']
     WdToolbarButton: typeof import('./src/components/toolbar/WdToolbarButton.vue')['default']
     WdToolbarExtraButton: typeof import('./src/components/toolbar/WdToolbarExtraButton.vue')['default']
     WdUser: typeof import('./src/components/toolbar/WdUser.vue')['default']

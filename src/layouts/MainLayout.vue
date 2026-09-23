@@ -224,9 +224,21 @@ onMounted(() => {
 });
 </script>
 <style lang="scss">
+.wd-surface {
+  background: var(--wd-surface) !important;
+}
+.wd-ink-soft-text {
+  color: var(--wd-ink-soft) !important;
+}
 .app-header {
   backdrop-filter: blur(10px);
-  background-color: rgba(color('primary', 800), 0.85) !important;
+  color: var(--wd-ink);
+}
+.body--light .app-header {
+  background-color: rgba(253, 254, 253, 0.85) !important;
+}
+.body--dark .app-header {
+  background-color: rgba(17, 33, 25, 0.88) !important;
 }
 
 .preview-badge {
@@ -293,12 +305,17 @@ onMounted(() => {
   <WdAnalytics />
   <q-layout view="hHh LpR fFf" class="overflow-hidden">
     <div v-if="isStaging" class="preview-badge">preview</div>
-    <q-header class="text-white app-header" bordered>
+    <q-header class="app-header" bordered>
       <!-- TOOLBAR -->
       <q-toolbar>
         <WdMenuButton desktop v-model="menuDrawerOpen" />
         <q-toolbar-title>
-          <WodoreLogo class="text-h4" :text="!isMobile" icon />
+          <WodoreLogo
+            class="text-h4"
+            :text="!isMobile"
+            icon
+            :text-color-left="$q.dark.isActive ? 'white' : 'black'"
+          />
         </q-toolbar-title>
         <WdPlaceSearchMenu v-if="!isMobile" />
         <WdSelectDate />
@@ -343,7 +360,11 @@ onMounted(() => {
       <!-- TOOLBAR mobile -->
       <q-toolbar v-if="isMobile" class="bg-primary-600 shadow-6">
         <q-toolbar-title>
-          <WodoreLogo text class="text-h5" />
+          <WodoreLogo
+            text
+            class="text-h5"
+            :text-color-left="$q.dark.isActive ? 'white' : 'black'"
+          />
         </q-toolbar-title>
 
         <WdLanguageSwitcher size="md" />
@@ -375,7 +396,7 @@ onMounted(() => {
       <q-layout
         view="lhh LpR lff"
         container
-        class="no-background bg-grey-3 overflow-hidden"
+        class="no-background wd-surface overflow-hidden"
         style="height: 100%"
       >
         <!-- Close button -->
@@ -456,7 +477,15 @@ onMounted(() => {
   >
     <!-- Close button (top-right corner) -->
     <div class="absolute" style="top: 10px; right: 10px; z-index: 1000">
-      <q-btn round dense flat icon="wd-close" @click="closeContent" class="text-grey-7" size="md" />
+      <q-btn
+        round
+        dense
+        flat
+        icon="wd-close"
+        @click="closeContent"
+        class="wd-ink-soft-text"
+        size="md"
+      />
     </div>
 
     <!-- Header slot -->
