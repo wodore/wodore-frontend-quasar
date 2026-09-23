@@ -27,6 +27,17 @@ export const SUPPORTED_LOCALES: Locales = ['de', 'en', 'fr', 'it'];
 export const FALLBACK_LOCALE: Locale = 'en';
 
 /**
+ * BCP-47 tags used for Intl formatting (month names etc.) per app locale.
+ * Swiss variants where they exist.
+ */
+export const LOCALE_TAGS: Record<Locale, string> = {
+  de: 'de-CH',
+  en: 'en-US',
+  fr: 'fr-CH',
+  it: 'it-CH',
+};
+
+/**
  * Language picker options with native names.
  * Native names are shown regardless of the active UI language (standard
  * language-picker pattern) and are therefore constants, not i18n messages.

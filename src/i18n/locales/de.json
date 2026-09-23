@@ -21,7 +21,8 @@
     "bivouac": "Biwak",
     "camping": "Zeltplatz",
     "others": "Anderes",
-    "unknown": "Unbekannt"
+    "unknown": "Unbekannt",
+    "load_error": "Hütte konnte nicht geladen werden"
   },
   "lang": {
     "german": "Deutsch",
@@ -116,7 +117,16 @@
     "tooltip": "{free} Frei / {total} Total",
     "unknown": "Unbekannt",
     "no_data": "Keine Angaben",
-    "title": "Verfügbarkeit"
+    "title": "Verfügbarkeit",
+    "status": {
+      "empty": "FREI",
+      "low": "TIEF",
+      "medium": "MITTEL",
+      "high": "HOCH",
+      "full": "VOLL",
+      "free_unknown": "FREI ?",
+      "unknown": "unbekannt"
+    }
   },
   "weather": {
     "title": "Wetter",
@@ -219,7 +229,8 @@
     "support_outro": "für das Projekt ist willkommen.",
     "email_required": "E-Mail fehlt",
     "message_required": "Nachricht fehlt",
-    "keep_me_posted": "Halte mich auf dem Laufenden."
+    "keep_me_posted": "Halte mich auf dem Laufenden.",
+    "header_title": "Rückmeldung"
   },
   "support": {
     "intro_prefix": "Unterstütze das Projekt mit",
@@ -381,7 +392,8 @@
   "search_ui": {
     "no_places": "Keine Orte gefunden",
     "placeholder_hint": "Suche nach Hütten, Gipfeln und mehr...",
-    "preview_on_map": "Vorschau auf Karte"
+    "preview_on_map": "Vorschau auf Karte",
+    "placeholder": "Orte suchen..."
   },
   "data_policy": {
     "title": "Datenschutzerklärung für Wodore",

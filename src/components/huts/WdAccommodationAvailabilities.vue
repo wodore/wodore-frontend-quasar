@@ -9,6 +9,8 @@ import 'swiper/css/free-mode';
 import 'swiper/css/scrollbar';
 import { clientWodore } from '@clients/index';
 import { currentLocale } from '@services/locale';
+import { LOCALE_TAGS } from '@/i18n';
+import { useI18n } from 'vue-i18n';
 import { useHutsStore } from '@stores/huts-store';
 import { storeToRefs } from 'pinia';
 import { useSlideCount } from '@composables/useSlideCount';
@@ -16,6 +18,7 @@ import WdAccommodationDay from './WdAccommodationDay.vue';
 
 const { formatDate, addToDate, subtractFromDate } = date;
 const { selectedDate } = storeToRefs(useHutsStore());
+const { t } = useI18n();
 
 interface Props {
   slug: string;
@@ -91,9 +94,9 @@ const startDate = computed(() => {
   return formatDate(new Date(), 'YYYY-MM-DD');
 });
 
-/** Display format: dd.mm or "Heute" */
+/** Display format: dd.mm or "today" */
 const startDateDisplay = computed(() => {
-  if (startDate.value === today.value) return 'Heute';
+  if (startDate.value === today.value) return t('today');
   const d = new Date(`${startDate.value}T00:00:00`);
   const dd = String(d.getDate()).padStart(2, '0');
   const mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -244,7 +247,8 @@ watch(
 
 // --- Month selector ---
 const formatMonthLabel = (dateObj: Date) => {
-  return dateObj.toLocaleDateString('de-CH', { month: 'short' }).toUpperCase();
+  // currentLocale() read keeps the label reactive to language switches
+  return dateObj.toLocaleDateString(LOCALE_TAGS[currentLocale()], { month: 'short' }).toUpperCase();
 };
 
 const nextMonths = computed(() => {

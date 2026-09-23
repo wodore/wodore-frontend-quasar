@@ -1,5 +1,5 @@
 import { boot } from 'quasar/wrappers';
-import { useQuasar } from 'quasar';
+import type { QVueGlobals } from 'quasar';
 
 // The vue-i18n instance itself lives in the locale service; this boot file
 // registers it on the app, applies the persisted locale + Quasar lang pack
@@ -36,7 +36,11 @@ declare module 'vue-i18n' {
 }
 
 export default boot(({ app, store }) => {
-  bindQuasarForLocale(useQuasar());
+  // $q is registered by the Quasar plugin as a global property.
+  // useQuasar() (Vue inject) only works inside component setup — NOT in
+  // boot files — so read the global property instead to bind the instance
+  // for lang-pack switching.
+  bindQuasarForLocale(app.config.globalProperties.$q as QVueGlobals);
   // Initialize from the persisted user setting (localStorage-backed); the
   // language is intentionally never read from or written to the URL.
   // First visit: detect the system language (English fallback) and persist

@@ -318,7 +318,7 @@ function handleSwipeDown() {
         dense
         dark
         outlined
-        placeholder="Orte suchen..."
+        :placeholder="t('search_ui.placeholder')"
         autofocus
         @keydown="onKeyDown"
         class="toolbar-font"

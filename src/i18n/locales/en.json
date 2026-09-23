@@ -16,7 +16,8 @@
     "unknown": "Unkown",
     "bivouac": "Bivouc",
     "hostel": "Hostel",
-    "unattended_hut": "Unattended Hut"
+    "unattended_hut": "Unattended Hut",
+    "load_error": "Hut could not be loaded"
   },
   "lang": {
     "english": "English",
@@ -175,7 +176,16 @@
     "tooltip": "{free} free / {total} total",
     "unknown": "Unknown",
     "no_data": "No data",
-    "title": "Availability"
+    "title": "Availability",
+    "status": {
+      "empty": "FREE",
+      "low": "LOW",
+      "medium": "MEDIUM",
+      "high": "HIGH",
+      "full": "FULL",
+      "free_unknown": "FREE ?",
+      "unknown": "unknown"
+    }
   },
   "reset": "Reset",
   "send": "Send",
@@ -219,7 +229,8 @@
     "support_outro": "for the project is welcome.",
     "email_required": "Email is missing",
     "message_required": "Message is missing",
-    "keep_me_posted": "Keep me up to date."
+    "keep_me_posted": "Keep me up to date.",
+    "header_title": "Feedback"
   },
   "support": {
     "intro_prefix": "Support the project with",
@@ -381,7 +392,8 @@
   "search_ui": {
     "no_places": "No places found",
     "placeholder_hint": "Search for huts, summits and more...",
-    "preview_on_map": "Preview on map"
+    "preview_on_map": "Preview on map",
+    "placeholder": "Search places..."
   },
   "data_policy": {
     "title": "Privacy Policy for Wodore",

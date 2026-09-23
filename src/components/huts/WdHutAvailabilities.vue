@@ -4,6 +4,7 @@ import { date, QVirtualScroll, QScrollArea, useQuasar } from 'quasar';
 import { useCssVar, useElementSize } from '@vueuse/core';
 import { clientWodore } from '@clients/index';
 import { currentLocale } from '@services/locale';
+import { LOCALE_TAGS } from '@/i18n';
 import { useHutsStore } from '@stores/huts-store';
 import { storeToRefs } from 'pinia';
 import WdHutAvailability from './WdHutAvailability.vue';
@@ -81,7 +82,8 @@ const startDate = computed<string>(() => {
 });
 
 const formatMonthLabel = (dateObj: Date) => {
-  return dateObj.toLocaleDateString('de-CH', { month: 'short' }).toUpperCase();
+  // currentLocale() read keeps the label reactive to language switches
+  return dateObj.toLocaleDateString(LOCALE_TAGS[currentLocale()], { month: 'short' }).toUpperCase();
 };
 
 const nextMonths = computed(() => {
@@ -382,13 +384,15 @@ watch(selectedDate, () => {
 });
 
 const monthStarts = computed(() => {
+  // currentLocale() is read here so month labels re-render on language switch
+  const localeTag = LOCALE_TAGS[currentLocale()];
   const starts: { index: number; label: string; monthKey: string }[] = [];
   availabilityItems.value.forEach((item, index) => {
     if (index === 0) {
       const date = new Date(item.date);
       starts.push({
         index,
-        label: date.toLocaleDateString('de-CH', {
+        label: date.toLocaleDateString(localeTag, {
           month: 'long',
           year: 'numeric',
         }),
@@ -405,7 +409,7 @@ const monthStarts = computed(() => {
     ) {
       starts.push({
         index,
-        label: currDate.toLocaleDateString('de-CH', {
+        label: currDate.toLocaleDateString(localeTag, {
           month: 'long',
           year: 'numeric',
         }),

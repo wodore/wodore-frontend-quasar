@@ -14,7 +14,8 @@
     "bivouac": "Bivacco",
     "hostel": "Ostello",
     "unattended_hut": "Capanna incustodita",
-    "alp": "Alpe"
+    "alp": "Alpe",
+    "load_error": "Impossibile caricare il rifugio"
   },
   "contact": "Contatto",
   "standard": "Standard",
@@ -163,7 +164,16 @@
     "tooltip": "{free} liberi / {total} totale",
     "unknown": "Sconosciuto",
     "no_data": "Nessun dato",
-    "title": "Disponibilità"
+    "title": "Disponibilità",
+    "status": {
+      "empty": "LIBERI",
+      "low": "BASSO",
+      "medium": "MEDIO",
+      "high": "ALTO",
+      "full": "PIENO",
+      "free_unknown": "LIBERI ?",
+      "unknown": "sconosciuto"
+    }
   },
   "jan": "Gen",
   "feb": "Feb",
@@ -219,7 +229,8 @@
     "support_outro": "al progetto è benvenuto.",
     "email_required": "Email mancante",
     "message_required": "Messaggio mancante",
-    "keep_me_posted": "Tienimi aggiornato."
+    "keep_me_posted": "Tienimi aggiornato.",
+    "header_title": "Feedback"
   },
   "support": {
     "intro_prefix": "Sostieni il progetto con",
@@ -381,7 +392,8 @@
   "search_ui": {
     "no_places": "Nessun luogo trovato",
     "placeholder_hint": "Cerca rifugi, vette e altro...",
-    "preview_on_map": "Anteprima sulla mappa"
+    "preview_on_map": "Anteprima sulla mappa",
+    "placeholder": "Cerca luoghi..."
   },
   "data_policy": {
     "title": "Informativa sulla privacy di Wodore",

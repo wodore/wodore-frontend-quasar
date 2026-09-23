@@ -217,7 +217,7 @@ function setAnonym(value: boolean) {
         <q-img :src="headerImg" style="height: 140px" class="shadow-4">
           <div class="card-header absolute-bottom text-white text-h5"></div>
           <div class="absolute-bottom text-accent-400 text-h4 text-center card-header__text">
-            Rückmeldung
+            {{ t('feedback.header_title') }}
           </div>
         </q-img>
       </div>
@@ -248,7 +248,7 @@ function setAnonym(value: boolean) {
               <q-input
                 v-model="message.subject"
                 dense
-                aria-label="Betreff"
+                :aria-label="t('feedback.subject')"
                 outlined
                 counter
                 :placeholder="t('feedback.subject')"
@@ -262,7 +262,7 @@ function setAnonym(value: boolean) {
                 dense
                 v-model="message.email"
                 outlined
-                aria-label="E-Mail"
+                :aria-label="t('feedback.email')"
                 placeholder="name@domain.com"
                 type="email"
                 maxlength="100"
@@ -290,7 +290,7 @@ function setAnonym(value: boolean) {
                 v-model="message.message"
                 autogrow
                 counter
-                aria-label="Nachricht"
+                :aria-label="t('feedback.message')"
                 placeholder="Nachricht"
                 dense
                 outlined

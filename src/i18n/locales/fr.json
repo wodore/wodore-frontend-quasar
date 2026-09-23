@@ -19,7 +19,8 @@
     "unknown": "Inconnu",
     "bivouac": "Bivouac",
     "hostel": "Auberge",
-    "unattended_hut": "Cabane sans surveillance"
+    "unattended_hut": "Cabane sans surveillance",
+    "load_error": "Impossible de charger la cabane"
   },
   "lang": {
     "english": "Anglais",
@@ -163,7 +164,16 @@
     "tooltip": "{free} libres / {total} total",
     "unknown": "Inconnu",
     "no_data": "Aucune donnée",
-    "title": "Disponibilité"
+    "title": "Disponibilité",
+    "status": {
+      "empty": "LIBRE",
+      "low": "BAS",
+      "medium": "MOYEN",
+      "high": "ÉLEVÉ",
+      "full": "COMPLET",
+      "free_unknown": "LIBRE ?",
+      "unknown": "inconnu"
+    }
   },
   "jan": "Janv",
   "feb": "Févr",
@@ -219,7 +229,8 @@
     "support_outro": "au projet est le bienvenu.",
     "email_required": "E-mail manquant",
     "message_required": "Message manquant",
-    "keep_me_posted": "Tenez-moi informé."
+    "keep_me_posted": "Tenez-moi informé.",
+    "header_title": "Commentaire"
   },
   "support": {
     "intro_prefix": "Soutenez le projet avec",
@@ -381,7 +392,8 @@
   "search_ui": {
     "no_places": "Aucun lieu trouvé",
     "placeholder_hint": "Rechercher cabanes, sommets et plus...",
-    "preview_on_map": "Aperçu sur la carte"
+    "preview_on_map": "Aperçu sur la carte",
+    "placeholder": "Rechercher des lieux..."
   },
   "data_policy": {
     "title": "Politique de confidentialité de Wodore",

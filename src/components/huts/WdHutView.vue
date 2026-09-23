@@ -10,6 +10,8 @@ import { useHutsStore } from '@stores/huts-store';
 import { storeToRefs } from 'pinia';
 import { useMeta } from 'quasar';
 import { useHutImages } from '@composables/useHutImages';
+import { currentLocale } from '@services/locale';
+import { i18n } from '@services/locale';
 import WdHutImageGallery from './WdHutImageGallery.vue';
 const { selectedMonth } = storeToRefs(useHutsStore());
 
@@ -118,9 +120,11 @@ useMeta(() => ({
 }));
 
 // Don't reset hut.value to undefined - keep showing previous hut until new data loads
+// Also refetches when the UI language changes (hut details are localized
+// server-side via the lang param)
 watch(
-  () => props.slug,
-  async slug => {
+  [() => props.slug, currentLocale],
+  async ([slug]) => {
     headerShadow.value = false;
     if (!slug) return;
 
@@ -133,12 +137,12 @@ watch(
 
     try {
       const { data, error: requestError } = await clientWodore.GET('/v1/huts/{slug}', {
-        params: { path: { slug } },
+        params: { path: { slug }, query: { lang: currentLocale() } },
         signal: controller.signal,
       });
       if (controller.signal.aborted) return;
       if (requestError) {
-        error.value = 'Hütte konnte nicht geladen werden';
+        error.value = i18n.global.t('hut.load_error');
         console.warn('[WdHutView] Failed to fetch hut:', slug, requestError);
         return;
       }
@@ -147,7 +151,7 @@ watch(
       }
     } catch {
       if (!controller.signal.aborted) {
-        error.value = 'Hütte konnte nicht geladen werden';
+        error.value = i18n.global.t('hut.load_error');
         console.warn('[WdHutView] Failed to fetch hut:', slug);
       }
     }
