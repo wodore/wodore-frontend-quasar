@@ -288,6 +288,32 @@ function onMapError(e: unknown) {
   //showErrorDialog({ errorCode: ErrorCode.MAP_ERROR });
 }
 
+/**
+ * WebGL support pre-check. When WebGL is unavailable the map fails with a
+ * GPUInitializationError that is only console-logged, and every subsequent
+ * map interaction throws generic TypeErrors — which the error-based
+ * detection above cannot recognize (the map just stays white). Detecting it
+ * up front lets us show the proper error dialog and skip mounting MglMap.
+ */
+const webglSupported = (() => {
+  if (typeof document === 'undefined') return true; // SSR — decide on client
+  try {
+    const canvas = document.createElement('canvas');
+    return !!(
+      canvas.getContext('webgl2') ||
+      canvas.getContext('webgl') ||
+      canvas.getContext('experimental-webgl')
+    );
+  } catch {
+    return false;
+  }
+})();
+
+if (!webglSupported) {
+  console.error('[WdMapView] WebGL is not supported by this browser/device');
+  showErrorDialogPersistent(ErrorCode.WEBGL_NOT_SUPPORTED);
+}
+
 // Capture errors from child components (like MglMap)
 onErrorCaptured((err, instance, info) => {
   console.error('[onErrorCaptured] Error caught from child component:', err, info);
@@ -913,6 +939,7 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
   <q-no-ssr>
     <div ref="mapDiv" style="height: 100vh">
       <MglMap
+        v-if="webglSupported"
         @map:load="onMapLoad"
         @map:error="onMapError"
         @map:styledata="onMapStyledata"
