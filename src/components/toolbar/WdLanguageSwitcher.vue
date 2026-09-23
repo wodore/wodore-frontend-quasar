@@ -4,6 +4,14 @@ import { useI18n } from 'vue-i18n';
 import { setLocale, currentLocale } from '@services/locale';
 import { LANGUAGE_OPTIONS } from '@/i18n';
 
+const props = withDefaults(
+  defineProps<{
+    /** Quasar button size ('md' in the mobile drawer toolbar, 'lg' default) */
+    size?: string;
+  }>(),
+  { size: 'lg' }
+);
+
 const { t } = useI18n();
 
 // Reactive read of the active locale (i18n.global.locale is a ref)
@@ -11,7 +19,14 @@ const activeLocale = computed(() => currentLocale());
 </script>
 
 <template>
-  <q-btn flat dense round size="lg" class="text-icon" :aria-label="t('menu.select_language')">
+  <q-btn
+    flat
+    dense
+    round
+    :size="props.size"
+    class="text-icon"
+    :aria-label="t('menu.select_language')"
+  >
     <q-icon><IconMdiTranslate /></q-icon>
     <q-tooltip anchor="bottom middle" self="top middle" :delay="500">
       {{ t('menu.select_language') }}

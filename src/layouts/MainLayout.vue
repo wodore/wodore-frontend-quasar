@@ -345,7 +345,7 @@ onMounted(() => {
           <WodoreLogo text class="text-h5" />
         </q-toolbar-title>
 
-        <WdLanguageSwitcher />
+        <WdLanguageSwitcher size="md" />
         <WdFeedbackButton size="md" />
 
         <!-- MENU BUTTON mobile close -->
