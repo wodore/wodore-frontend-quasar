@@ -54,6 +54,44 @@
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// THEME SURFACES (The Alpine Instrument - Day & Night, see wodore-design/DESIGN.md)
+// Quasar's Dark plugin toggles body--light / body--dark; these tokens drive
+// theme-aware components. Text shades follow the Shade-Role rule: deep on
+// Day, ice on Night (WCAG AA verified pairs).
+body {
+  background: var(--wd-page);
+  transition: background-color 0.3s ease;
+}
+
+.body--light {
+  --wd-page: #f6f9f7;
+  --wd-surface: #fdfefd;
+  --wd-surface-deep: #f6f9f7;
+  --wd-ridge: #dde7e0;
+  --wd-ink: #1c1c1c;
+  --wd-ink-soft: #29626b;
+  --wd-info: #29626b;
+  --wd-gold-text: #846a15;
+  --wd-avail: #198053;
+  --wd-closed: #bf211e;
+  --wd-wash: rgba(0, 0, 0, 0.06);
+}
+
+.body--dark {
+  --wd-page: #0a140f;
+  --wd-surface: #112119;
+  --wd-surface-deep: #0e1b14;
+  --wd-ridge: #1c3629;
+  --wd-ink: #f2f7f4;
+  --wd-ink-soft: #6dc59f;
+  --wd-info: #9dd9d2;
+  --wd-gold-text: #bfab25;
+  --wd-avail: #25bf5e;
+  --wd-closed: #f2acab;
+  --wd-wash: rgba(255, 255, 255, 0.1);
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // COMPONENTS
 
 // Input button - compact button styled like a field for icon-only interactions

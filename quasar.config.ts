@@ -58,6 +58,7 @@ export default configure(ctx => {
     /// axios
     boot: [
       'i18n',
+      'theme',
       'icons',
       { server: false, path: 'auth' },
       { server: false, path: 'maplibre' },
@@ -225,8 +226,12 @@ export default configure(ctx => {
       // directives: [],
 
       // Quasar plugins
-      plugins: ['Notify', 'Dialog', 'LocalStorage', 'LoadingBar', 'Meta'],
+      plugins: ['Dark', 'Notify', 'Dialog', 'LocalStorage', 'LoadingBar', 'Meta'],
       config: {
+        // Light default; the theme boot applies the persisted setting
+        // ('light' | 'dark' | 'auto' in user settings).
+        dark: false,
+
         loadingBar: {
           color: 'accent-700',
           size: '2px',

@@ -306,6 +306,7 @@ onMounted(() => {
         <WdSupportButton v-if="!authStore.isLoggedIn && !isMobile" class="text-secondary-700" />
         <WdFeedbackButton v-if="!isMobile" />
         <WdLanguageSwitcher v-if="!isMobile" />
+        <WdThemeSwitcher v-if="!isMobile" />
 
         <WdUser v-if="authStore.isLoggedIn" />
 
@@ -346,6 +347,7 @@ onMounted(() => {
         </q-toolbar-title>
 
         <WdLanguageSwitcher size="md" />
+        <WdThemeSwitcher size="md" />
         <WdFeedbackButton size="md" />
 
         <!-- MENU BUTTON mobile close -->

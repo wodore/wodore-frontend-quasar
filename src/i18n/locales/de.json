@@ -35,7 +35,8 @@
     "it": "@:lang.italian"
   },
   "menu": {
-    "select_language": "Sprache auswählen"
+    "select_language": "Sprache auswählen",
+    "select_theme": "Farbschema"
   },
   "search": "Suchen",
   "close": "Schliessen",
@@ -447,5 +448,10 @@
     "s8_text": "Wenn Sie Fragen oder Bedenken bezüglich dieser Datenschutzerklärung haben, kontaktieren Sie uns bitte unter:",
     "email": "Email:",
     "closing": "Vielen Dank, dass Sie Wodore Ihre Informationen anvertrauen. Wir sind bestrebt, Ihre Privatsphäre und Sicherheit zu gewährleisten."
+  },
+  "theme": {
+    "auto": "System",
+    "light": "Hell",
+    "dark": "Dunkel"
   }
 }

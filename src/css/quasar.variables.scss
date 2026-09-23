@@ -24,8 +24,8 @@ $breakpoint-md: 1439px;
 $breakpoint-lg: 1919px;
 
 // BORDER
-$generic-border-radius: 6px;
-$dialog-border-radius: 20px;
+$generic-border-radius: 4px;
+$dialog-border-radius: 16px;
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // COLORS
@@ -71,6 +71,27 @@ $colors: (
   'icon': (
     500: $icon,
     700: $icon,
+  ),
+  'amber': (
+    100: #ffd582,
+    200: #ffc064,
+    300: #f6ad4b,
+    400: #ea9a37,
+    500: #db892a,
+    600: #c3731f,
+    700: #a95f1c,
+    800: #8a4b1b,
+    900: #69391c,
+  ),
+  'muted-green': (
+    500: #7fab88,
+  ),
+  'day': (
+    100: #fdfefd,
+    300: #f6f9f7,
+    500: #eef4f0,
+    700: #dde7e0,
+    900: #1c1c1c,
   ),
   'primary': (
     100: #8fd6b7,
