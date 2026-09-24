@@ -235,11 +235,12 @@ body.body--dark {
   color: #a9f0d2 !important;
 }
 
-// Open state: gold icon, no fill (user rule: no icon bg in any state)
+// Open state: gold icon, no fill (user rule: no icon bg in any state).
+// Night: never white (the old #fdfefd fill leaked as the white open-toggle).
 .q-fab.wd-switcher-fab--open,
 .q-fab.wd-switcher-fab--open:hover {
-  background-color: #fdfefd !important;
-  border-color: #346751 !important;
+  background-color: transparent !important;
+  border-color: transparent !important;
 
   .q-fab__icon,
   .q-fab__active-icon {
@@ -268,14 +269,15 @@ body.body--dark {
   border: 3px solid #346751;
 }
 
-// Search field - greenish pine at night, white at day
+// Search field - toolbar-family in both themes: greenish fill slightly
+// lighter than the sage bar in Day (paper text, ice icons), pine at night.
 .wd-search-field .q-field__control:before {
   border-color: var(--wd-ridge) !important;
 }
 
 .wd-search-field .q-field__control {
-  background: #fdfefd !important;
-  border: 1px solid #c9d4cd !important;
+  background: #3f6a50 !important;
+  border: 1px solid #4d7a61 !important;
 }
 
 .body--dark .wd-search-field .q-field__control {
@@ -284,15 +286,15 @@ body.body--dark {
 }
 
 .wd-search-field input {
-  color: #1c1c1c !important;
+  color: #f2f7f4 !important;
 }
 
 .body--dark .wd-search-field input {
   color: #f2f7f4 !important;
 }
 
-.body--dark .wd-search-field .q-icon,
-.body--dark .wd-search-field .q-field__append .q-icon {
+.wd-search-field .q-icon,
+.wd-search-field .q-field__append .q-icon {
   color: #a9f0d2 !important;
 }
 
@@ -494,20 +496,26 @@ body.body--dark .q-drawer {
   border-left: 1px solid var(--wd-ridge);
 }
 
-// Date field: original incumbent standout look, only colors adjusted per
-// theme (Day: white field, dark text; Night: lifted pine, paper, ridge).
+// Date field: incumbent standout look, recolored per theme. Day matches
+// the sage toolbar family (greenish fill slightly lighter than the bar,
+// paper text, ice icons); Night lifted pine, paper, ridge.
 // Includes the wd-input-button nav fields (same control family).
 .wd-date-field .q-field__control,
 .wd-input-button.q-field--standout .q-field__control {
-  background: #fdfefd !important;
-  border: 1px solid #c9d4cd !important;
+  background: #3f6a50 !important;
+  border: 1px solid #4d7a61 !important;
 }
 
 .wd-date-field,
 .wd-date-field input,
 .wd-input-button.q-field--standout,
 .wd-input-button.q-field--standout input {
-  color: #1c1c1c !important;
+  color: #f2f7f4 !important;
+}
+
+.wd-date-field .q-icon,
+.wd-input-button .q-icon {
+  color: #a9f0d2 !important;
 }
 
 .body--dark .wd-date-field .q-field__control,
@@ -528,14 +536,54 @@ body.body--dark .q-drawer {
   color: #a9f0d2 !important;
 }
 
-// Fab action buttons with image previews (basemap thumbs + image-rendered
-// overlay glyphs) are map-floating: SOLID theme fill (zones rule). Day keeps
-// the light chip; night is lifted pine so image icons stay legible.
+// Fab action buttons split in two families (corrected zones rule):
+// 1. IMAGE buttons (basemap thumbs + raster activity symbols): map-floating,
+//    SOLID chips — white in Day (dark raster glyphs), pine at Night with the
+//    glyphs inverted to light (dark PNGs vanish on pine otherwise).
+// 2. GLYPH buttons (wd-info/filter marker toggles): they sit directly on the
+//    light basemap — dark glyphs, NO background, in BOTH themes.
 .q-fab__actions .q-btn:has(img) {
   background: #fdfefd !important;
   border: 1px solid #dde7e0 !important;
 }
 .body--dark .q-fab__actions .q-btn:has(img) {
-  background: #14291f !important;
+  background: #112119 !important;
   border: 1px solid #1c3629 !important;
+
+  img {
+    filter: invert(1) sepia(1) hue-rotate(100deg) saturate(1.4) brightness(1.05);
+  }
+}
+
+.q-fab__actions .q-btn:not(:has(img)),
+body .q-fab__actions .q-btn:not(:has(img)) {
+  background: transparent !important;
+  border: none !important;
+
+  .q-icon,
+  & .q-icon {
+    color: #1c1c1c !important;
+  }
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.08) !important;
+  }
+}
+
+body .q-fab__actions .q-btn:not(:has(img)) .q-icon {
+  color: #1c1c1c !important;
+}
+
+// Mobile drawer toolbar sits on forest: icons follow the header rule
+// (cream in light, ice in night), not the info-teal used on light surfaces
+body.body--light .q-toolbar.bg-primary-600 .text-icon,
+body.body--light .q-toolbar.bg-primary-600 .q-btn .q-icon {
+  color: #f2f7f4 !important;
+}
+
+// Night: every input inside the content drawer renders light text
+// (mobile hut date field slipped through the field-family theming)
+body.body--dark .q-drawer input,
+body.body--dark .content-drawer input {
+  color: #f2f7f4 !important;
 }

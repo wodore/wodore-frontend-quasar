@@ -92,7 +92,11 @@ function openConfig(overlayName: string, initialTab?: string) {
   // Use the overlay's own (translated, locale-reactive) label as the config
   // drawer title instead of a hardcoded map
   const overlayLabel =
-    overlayStore.overlays.find(o => o.name === overlayName)?.label ?? overlayName;
+    (
+      overlayStore.overlays.find((o): boolean => o.name === overlayName) as
+        | (typeof overlayStore.overlays)[number]
+        | undefined
+    )?.label ?? overlayName;
 
   menuStore.openOverlayConfig(overlayName, initialTab);
   menuStore.menuData.title = overlayLabel;

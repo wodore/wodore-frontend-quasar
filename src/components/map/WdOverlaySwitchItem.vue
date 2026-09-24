@@ -23,7 +23,9 @@ const overlayStore = useOverlayStore();
 const menuStore = useMapMenuStore();
 
 const overlayConfig = computed(() => {
-  const overlay = overlayStore.overlays.find(o => o.name === props.overlayName);
+  const overlay = overlayStore.overlays.find((o): boolean => o.name === props.overlayName) as
+    | (typeof overlayStore.overlays)[number]
+    | undefined;
   return overlay?.config;
 });
 
@@ -113,6 +115,13 @@ function onFilterClick(event: Event) {
     color: var(--wd-chrome-btn-ink);
   }
 
+  // Raster activity symbols (huts, bike, hiking, ...): dark glyphs float
+  // on the light map in Day (no bg). At Night they get a pine disc and the
+  // glyph inverts to light ice - dark PNGs would vanish on pine.
+  img {
+    display: block;
+  }
+
   // Active: gold icon, no fill (product rule: no icon bg in any state)
   &.active {
     .q-icon {
@@ -129,6 +138,10 @@ function onFilterClick(event: Event) {
     background-color: var(--wd-chrome-btn-hover);
   }
 }
+
+// Night rail treatment for image-bearing overlay buttons (activity rail):
+// pine disc + inverted light glyph. (The img filter lives in app.scss —
+// :global + nesting here once compiled to a page-level body filter.)
 
 .overlay-side-icons {
   display: flex;
@@ -149,24 +162,24 @@ function onFilterClick(event: Event) {
     color 0.2s,
     background-color 0.2s;
 
-  // Icon follows themed ink (the Quasar color prop would pin it dark)
+  // Icon sits directly on the light basemap: dark glyph in BOTH themes
+  // (corrected zones rule); no background in any state. Active = gold.
   .q-icon,
   &.q-btn :deep(.q-icon) {
-    color: var(--wd-chrome-btn-ink) !important;
+    color: #1c1c1c !important;
   }
 
   &:hover {
-    color: #f2f7f4;
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(0, 0, 0, 0.08);
     .q-icon {
-      color: #f2f7f4 !important;
+      color: #1c1c1c !important;
     }
   }
 
   &.active {
-    color: #f2f7f4;
+    color: #bfab25;
     .q-icon {
-      color: #f2f7f4 !important;
+      color: #bfab25 !important;
     }
   }
 }
