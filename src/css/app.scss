@@ -212,14 +212,25 @@ body.body--dark {
   color: $white !important;
 }
 
-// Basemap thumbnails: ridge ring at rest, forest ring when active
+// Basemap thumbnails: SOLID fill (they float over the map), ridge border,
+// unmistakable 3px forest ring when selected (user rule: solid bg on map
+// controls; translucent fills sink into the imagery)
 .wd-basemap-item {
-  background-color: transparent !important;
-  border: 1px solid var(--wd-ridge);
+  background-color: var(--wd-surface) !important;
+  border: 1px solid #c9d4cd;
+  box-shadow: 0 1px 4px rgba(10, 20, 15, 0.25);
+}
+
+.body--dark .wd-basemap-item {
+  border-color: var(--wd-ridge);
+}
+
+.wd-basemap-item:hover {
+  border-color: #346751;
 }
 
 .wd-basemap-item--active {
-  border: 2px solid $primary;
+  border: 3px solid #346751;
 }
 
 // Search field - visible fill in both themes

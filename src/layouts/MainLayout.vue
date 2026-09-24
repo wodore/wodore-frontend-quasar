@@ -246,8 +246,9 @@ body.body--light .app-header {
   border-bottom: 1px solid rgba(10, 20, 15, 0.25);
 }
 
-// Header buttons: Day = incumbent white pills with deep-green icons;
-// Night = flat transparent icon chrome with ice icons.
+// Header buttons: flat icon chrome in BOTH themes (user rule: no icon
+// bg) — cream icons on the Day sage bar, ice icons on the Night pine bar.
+// The date field keeps its light chip (it is a field, not an icon).
 .app-header .q-btn {
   background: transparent !important;
   border-width: 0 !important;
@@ -258,22 +259,24 @@ body.body--light .app-header {
   background: rgba(255, 255, 255, 0.1) !important;
 }
 
-body.body--light .app-header .q-btn {
-  background: #fdfefd !important;
-}
-
 body.body--light .app-header .q-btn .q-icon,
 body.body--light .app-header .q-btn .text-icon {
-  color: #224e3b !important;
-}
-
-// Wordmark on the Day sage bar: cream "wo" + gold "dore" (incumbent look)
-body.body--light .app-header .text-black {
   color: #f2f7f4 !important;
 }
 
-body.body--light .app-header .q-btn:hover {
-  background: #f0f4f1 !important;
+// Wordmark "wo": theme ink on surfaces; cream on the header bars (both
+// themes use green bars where dark ink would vanish)
+.wd-wordmark-wo {
+  color: var(--wd-ink);
+}
+
+.app-header .wd-wordmark-wo,
+.app-header .text-black {
+  color: #f2f7f4 !important;
+}
+
+body.body--light .app-header .text-black {
+  color: #f2f7f4 !important;
 }
 
 body.body--dark .app-header .q-btn .q-icon,

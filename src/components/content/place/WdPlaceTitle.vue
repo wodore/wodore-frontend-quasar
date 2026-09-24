@@ -46,7 +46,7 @@ const { place } = usePlace(computed(() => props.slug));
               collection="weather-icons-outlined-mono"
               :elevation="place.elevation ?? undefined"
               :size="18"
-              color="accent-100"
+              :color="$q.dark.isActive ? 'accent-100' : 'accent-800'"
               :label="true"
               class="wd-place-title__weather"
               no-shadow

@@ -181,3 +181,22 @@ body.body--dark .maplibregl-ctrl-group button + button {
 body.body--dark .maplibregl-ctrl-icon {
   filter: invert(1) brightness(1.6);
 }
+
+// Attribution: readable pill over terrain in both themes
+.maplibregl-ctrl-attrib {
+  background: rgba(255, 255, 255, 0.85);
+  color: #616161;
+
+  a {
+    color: #616161;
+  }
+}
+
+body.body--dark .maplibregl-ctrl-attrib {
+  background: rgba(10, 20, 15, 0.75);
+  color: #9dd9d2;
+
+  a {
+    color: #9dd9d2;
+  }
+}

@@ -388,7 +388,7 @@ function handleSwipeDown() {
           <q-icon size="xl" class="wd-info-text">
             <IconEvaSearchOutline />
           </q-icon>
-          <div class="text-primary-300 q-mt-md">{{ t('search_ui.placeholder_hint') }}</div>
+          <div class="wd-ink-soft-text q-mt-md">{{ t('search_ui.placeholder_hint') }}</div>
         </div>
       </div>
     </q-scroll-area>
