@@ -118,18 +118,18 @@ watch(menuOpen, () => {
 
 <style scoped>
 .footer-toolbar {
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  border-top: 1px solid var(--wd-ridge);
   box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
 }
 </style>
 
 <template>
-  <q-toolbar class="footer-toolbar bg-white q-pr-sm">
+  <q-toolbar class="footer-toolbar wd-surface q-pr-sm">
     <!-- Geo location link (first position) -->
     <WdToolbarButton
       v-if="place && place.location"
       size="md"
-      class="text-primary-900"
+      class="wd-ink-text"
       icon="wd-location-share-outline"
       :href="`geo:${place.location.lat},${place.location.lon}`"
       target="_blank"
@@ -145,7 +145,7 @@ watch(menuOpen, () => {
     <!-- <WdToolbarButton size="md" :color="watchHut ? 'accent' : 'primary-900'" -->
     <!--   :icon="watchHut ? 'wd-eye' : 'wd-eye-outline'" style="opacity: 0.5; cursor: not-allowed" /> -->
 
-    <WdToolbarButton size="md" class="text-primary-900" icon="wd-more-vertical">
+    <WdToolbarButton size="md" class="wd-ink-text" icon="wd-more-vertical">
       <q-menu
         class="bg-primary-100 q-menu--quasar"
         v-model="menuOpen"

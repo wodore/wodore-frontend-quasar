@@ -1,15 +1,17 @@
 // QUASAR overwrites
 // https://fontsource.org/docs/getting-started/introduction
-
-@import '@fontsource/roboto-condensed/latin-100-italic.css';
-@import '@fontsource/roboto-condensed/latin-100.css';
-@import '@fontsource/roboto-condensed/latin-300-italic.css';
-@import '@fontsource/roboto-condensed/latin-300.css';
-@import '@fontsource/roboto-condensed/latin-400-italic.css';
-@import '@fontsource/roboto-condensed/latin-400.css';
-@import '@fontsource/roboto-condensed/latin-500-italic.css';
-@import '@fontsource/roboto-condensed/latin-500.css';
-@import '@fontsource/roboto-condensed/latin-700-italic.css';
-@import '@fontsource/roboto-condensed/latin-700.css';
-@import '@fontsource/roboto-condensed/latin-900-italic.css';
-@import '@fontsource/roboto-condensed/latin-900.css';
+// Barlow Semi Condensed: display, headings, labels, uppercase controls
+// (mirrors the previous roboto-condensed latin+italic delivery)
+@import '@fontsource/barlow-semi-condensed/latin-300-italic.css';
+@import '@fontsource/barlow-semi-condensed/latin-300.css';
+@import '@fontsource/barlow-semi-condensed/latin-400-italic.css';
+@import '@fontsource/barlow-semi-condensed/latin-400.css';
+@import '@fontsource/barlow-semi-condensed/latin-500-italic.css';
+@import '@fontsource/barlow-semi-condensed/latin-500.css';
+@import '@fontsource/barlow-semi-condensed/latin-600-italic.css';
+@import '@fontsource/barlow-semi-condensed/latin-600.css';
+// Barlow: body text
+@import '@fontsource/barlow/latin-400-italic.css';
+@import '@fontsource/barlow/latin-400.css';
+@import '@fontsource/barlow/latin-500-italic.css';
+@import '@fontsource/barlow/latin-500.css';

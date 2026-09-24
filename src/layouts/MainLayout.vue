@@ -232,12 +232,8 @@ onMounted(() => {
 }
 .app-header {
   backdrop-filter: blur(10px);
-  color: var(--wd-ink);
-}
-.body--light .app-header {
-  background-color: rgba(253, 254, 253, 0.85) !important;
-}
-.body--dark .app-header {
+  // Incumbent look: the header stays dark in BOTH themes
+  color: $white;
   background-color: rgba(17, 33, 25, 0.88) !important;
 }
 
@@ -288,6 +284,8 @@ onMounted(() => {
 // .q-drawer__content div (NOT the aside) - target that element.
 .q-drawer__content.content-drawer {
   overflow: hidden !important;
+  background: var(--wd-surface);
+  color: var(--wd-ink);
 
   // Drawer header elevation: drop shadow once the content is scrolled
   // (mirrors the mobile sheet header shadow). The header area is backed by
@@ -408,7 +406,7 @@ onMounted(() => {
             color="accent-100"
             icon="wd-close"
             @click="closeContent"
-            class="text-primary-900"
+            class="wd-ink-text"
             size="md"
             style="pointer-events: auto"
           />

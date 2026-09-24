@@ -30,7 +30,7 @@ const { place } = usePlace(computed(() => props.slug));
       <div class="wd-place-title__text col self-center">
         <!-- Overline: elevation + weather -->
         <div
-          class="wd-place-title__overline text-caption text-accent-900"
+          class="wd-place-title__overline text-caption wd-gold-text"
           :class="{ invisible: !place.elevation && !place.location }"
         >
           <template v-if="place.elevation || place.location">
@@ -46,7 +46,7 @@ const { place } = usePlace(computed(() => props.slug));
               collection="weather-icons-outlined-mono"
               :elevation="place.elevation ?? undefined"
               :size="18"
-              color="accent-900"
+              color="accent-100"
               :label="true"
               class="wd-place-title__weather"
               no-shadow
@@ -65,19 +65,19 @@ const { place } = usePlace(computed(() => props.slug));
             :href="place.url"
             target="_blank"
             @click="track('hut link click')"
-            class="text-primary-900"
+            class="wd-ink-text"
           >
             {{ place.name }}
-            <q-icon size="10pt" class="text-grey-5" style="transform: translateY(-6px)">
+            <q-icon size="10pt" class="wd-ink-soft-text" style="transform: translateY(-6px)">
               <IconEvaExternalLinkFill />
             </q-icon>
           </a>
-          <span v-else class="text-primary-900">{{ place.name }}</span>
+          <span v-else class="wd-ink-text">{{ place.name }}</span>
         </div>
 
         <!-- Subtitle: owner -->
         <div
-          class="wd-place-title__subtitle text-caption text-grey-7"
+          class="wd-place-title__subtitle text-caption wd-ink-soft-text"
           :class="{ invisible: !place.owner }"
         >
           <template v-if="place.owner">{{ place.owner.name }}</template>

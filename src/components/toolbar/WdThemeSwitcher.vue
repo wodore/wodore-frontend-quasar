@@ -49,6 +49,7 @@ function select(mode: ThemeMode): void {
       class="bg-dark-500"
       style="
         border-radius: 16px;
+        color: #f2f7f4;
         box-shadow:
           0 12px 32px rgba(0, 0, 0, 0.45),
           0 4px 12px rgba(0, 0, 0, 0.35);

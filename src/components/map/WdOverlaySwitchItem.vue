@@ -105,30 +105,32 @@ function onFilterClick(event: Event) {
   padding: 0;
   margin: 0;
   border-radius: 100;
-  background: color('icon');
+  background: color('dark', 500);
   box-shadow: $button-shadow;
   transition: background-color 0.2s;
   border-bottom: 3px solid rgba(0, 0, 0, 0.15);
 
   .q-icon {
     opacity: 0.6;
+    color: color('icon');
   }
 
   &.active {
-    background-color: color('accent', 500);
+    background-color: color('primary');
 
     .q-icon {
       opacity: 1;
-      color: white;
+      color: #f2f7f4;
     }
 
     &:hover {
-      background-color: color('accent', 400);
+      background-color: color('primary', 700);
     }
   }
 
   &:hover {
-    background: color('icon');
+    background-color: rgba(255, 255, 255, 0.1);
+    background: color('dark', 500);
   }
 }
 
@@ -150,15 +152,15 @@ function onFilterClick(event: Event) {
   transition:
     color 0.2s,
     background-color 0.2s;
-  color: var(--q-primary);
+  color: color('icon');
 
   &:hover {
-    color: var(--q-accent);
-    background-color: rgba(var(--q-accent-rgb), 0.1);
+    color: #f2f7f4;
+    background-color: rgba(255, 255, 255, 0.1);
   }
 
   &.active {
-    color: var(--q-accent);
+    color: #f2f7f4;
   }
 }
 

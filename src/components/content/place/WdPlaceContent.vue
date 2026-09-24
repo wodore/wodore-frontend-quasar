@@ -223,9 +223,9 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
               :capacity="place.capacity_closed" :open="isHutClosed" /> -->
         <!-- Elevation chip -->
         <!--
-            <q-chip v-if="place.elevation" size="md" class="bg-grey-4 q-mr-none shadow-0 col-md-6 col-sm-12 col-12"
+            <q-chip v-if="place.elevation" size="md" class="wd-surface-deep q-mr-none shadow-0 col-md-6 col-sm-12 col-12"
               style="min-width: 90px; max-width: 90px; max-height: 30px">
-              <q-avatar class="bg-grey-5" text-color="primary-500">
+              <q-avatar class="wd-ridge-bg" text-color="primary-500">
                 <q-icon size="20px">
                   <IconMingcuteMountain2Fill />
                 </q-icon>

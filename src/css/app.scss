@@ -133,26 +133,18 @@ body {
 // Maplibre overwrites
 @import './maplibre-gl.scss';
 
-// WdToolbarButton - theme-aware instrument pill (colors only)
+// WdToolbarButton - dark-chrome instrument pill in both themes
 .wd-toolbar-btn {
-  color: var(--wd-info) !important;
-
+  color: $icon !important;
+  background-color: $dark !important;
+  border: 1px solid transparent;
   transition:
     background-color 0.2s ease,
     border-color 0.2s ease;
 }
 
-.body--light .wd-toolbar-btn {
-  background-color: var(--wd-surface) !important;
-  border: 1px solid var(--wd-ridge);
-}
-
-.body--light .wd-toolbar-btn:hover {
-  background-color: var(--wd-wash) !important;
-}
-
-.body--dark .wd-toolbar-btn {
-  background-color: var(--wd-surface-deep) !important;
+.wd-toolbar-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 .body--dark .wd-toolbar-btn:hover {
@@ -166,23 +158,44 @@ body {
   color: $white !important;
 }
 
-// Header/menu icon buttons that hardcode mint (text-icon): readable in Day
-.body--light .text-icon {
-  color: var(--wd-info) !important;
+// Header/menu icon buttons keep the incumbent mint (text-icon): the
+// header is dark in BOTH themes, so ice-mint is always readable.
+
+// Global theme-surface utilities (usable from any component)
+.wd-surface {
+  background: var(--wd-surface) !important;
+}
+.wd-surface-deep {
+  background: var(--wd-surface-deep) !important;
+}
+.wd-ridge-bg {
+  background: var(--wd-ridge) !important;
+}
+.wd-gold-text {
+  color: var(--wd-gold-text) !important;
+}
+.wd-ink-text {
+  color: var(--wd-ink) !important;
+}
+.wd-ink-soft-text {
+  color: var(--wd-ink-soft) !important;
 }
 
-// Fab switcher pills (overlay / basemap rail): themed instead of red/mint
+// Fab switcher pills (overlay / basemap rail): ONE dark-chrome family in
+// both themes — pine-panel fill, ice icon, ridge border; open = forest
 .q-fab.wd-switcher-fab {
-  color: var(--wd-info) !important;
+  background-color: $dark !important;
+  color: $icon !important;
   border: 1px solid var(--wd-ridge);
 }
 
-.body--light .q-fab.wd-switcher-fab {
-  background-color: var(--wd-surface) !important;
+.q-fab.wd-switcher-fab:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
 }
 
-.body--dark .q-fab.wd-switcher-fab {
-  background-color: var(--wd-surface-deep) !important;
+.q-fab.wd-switcher-fab .q-fab__icon,
+.q-fab.wd-switcher-fab .q-fab__active-icon {
+  color: $icon !important;
 }
 
 .q-fab.wd-switcher-fab--open {

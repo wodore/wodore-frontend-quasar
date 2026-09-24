@@ -164,7 +164,7 @@
 // Night theme: dim the light basemap (interaction-safe canvas filter) and
 // theme the native map controls
 body.body--dark .maplibregl-canvas {
-  filter: brightness(0.72) saturate(0.92);
+  filter: brightness(0.65) saturate(0.92);
 }
 
 body.body--light .maplibregl-ctrl-group {

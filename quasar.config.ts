@@ -70,9 +70,8 @@ export default configure(ctx => {
     css: ['app.scss'],
 
     // https://github.com/quasarframework/quasar/tree/dev/extras
-    extras: [
-      'roboto-font', // optional, you are not bound to it
-    ],
+    // (fonts ship self-hosted via @fontsource, see src/css/fonts.scss)
+    extras: [],
 
     // FAVICON version, change manually in src-pwa/manifest.json as well!
     htmlVariables: {

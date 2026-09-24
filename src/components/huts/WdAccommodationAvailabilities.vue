@@ -458,7 +458,7 @@ watch(currentLocale, () => {
 .today-btn {
   padding: 0 6px;
   min-height: 20px;
-  color: rgba(0, 0, 0, 0.6);
+  color: var(--wd-ink-soft);
   font-size: 11px;
 }
 

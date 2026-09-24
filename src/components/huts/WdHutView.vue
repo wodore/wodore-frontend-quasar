@@ -340,7 +340,7 @@ const { images: nearbyImages, loading: imagesLoading } = useHutImages(computed((
           <!-- used to add shadow to header -->
           <h2
             :style="($q.screen.gt.sm ? 'margin-top: -3px; ' : '') + 'text-wrap: wrap;'"
-            class="text-subtitle1 text-accent-900 q-ma-none q-mb-sm"
+            class="text-subtitle1 wd-gold-text q-ma-none q-mb-sm"
           >
             <span v-intersection="addHeaderShadow" />
             {{ hut.owner?.name }}
