@@ -71,6 +71,7 @@ body {
   --wd-surface-deep: #f6f9f7;
   --wd-ridge: #dde7e0;
   --wd-ink: #1c1c1c;
+  --wd-ink-rgb: 28, 28, 28;
   --wd-ink-soft: #29626b;
   --wd-info: #29626b;
   --wd-gold-text: #846a15;
@@ -85,6 +86,7 @@ body {
   --wd-surface-deep: #0e1b14;
   --wd-ridge: #1c3629;
   --wd-ink: #f2f7f4;
+  --wd-ink-rgb: 242, 247, 244;
   --wd-ink-soft: #8fd6b7;
   --wd-info: #9dd9d2;
   --wd-gold-text: #bfab25;
@@ -501,4 +503,11 @@ body.body--dark .wd-date-field .q-field__control {
 body.body--dark .wd-date-field,
 body.body--dark .wd-date-field input {
   color: var(--wd-ink) !important;
+}
+
+// Fab action buttons with image previews (basemap thumbs) need a light
+// chip in both themes; glyph actions keep their theme fill.
+.q-fab__actions .q-btn:has(img) {
+  background: #fdfefd !important;
+  border: 1px solid #dde7e0 !important;
 }

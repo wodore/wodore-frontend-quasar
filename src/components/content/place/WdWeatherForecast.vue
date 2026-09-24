@@ -286,7 +286,7 @@ watchEffect(async () => {
 .wd-weather-forecast__attribution {
   text-align: right;
   font-size: 10px;
-  color: rgba(color('dark'), 0.5);
+  color: rgba(var(--wd-ink-rgb), 0.5);
 }
 
 .wd-weather-forecast__attribution a {
@@ -299,7 +299,7 @@ watchEffect(async () => {
 }
 
 .wd-weather-forecast__disclaimer {
-  color: rgba(color('dark'), 0.35);
+  color: rgba(var(--wd-ink-rgb), 0.35);
 }
 
 .wd-weather-forecast__swiper {
