@@ -458,7 +458,7 @@ body.body--dark .app-header .text-icon {
           <q-btn
             round
             dense
-            unelevated
+            flat
             icon="wd-close"
             @click="closeContent"
             class="wd-close-btn"

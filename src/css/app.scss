@@ -419,10 +419,12 @@ body.body--dark {
 // ── Button-family guards ───────────────────────────────────────────────
 // Close button on floating panels (content drawer, sheets): themed fill,
 // never the gold accent (gold is scarce, and accent-100 + paper failed AA).
+// Flat icon chrome: no fill, no border ring (round buttons would render
+// the border as a circle around the glyph)
 .wd-close-btn {
-  background-color: var(--wd-surface-deep) !important;
+  background-color: transparent !important;
   color: var(--wd-ink) !important;
-  border: 1px solid var(--wd-ridge);
+  border: none !important;
 }
 
 // A wd-toolbar-btn pill is always dark chrome: its icon stays ice even when
@@ -583,7 +585,9 @@ body .q-fab__actions .q-btn:not(:has(img)) .q-icon {
 // Mobile drawer toolbar sits on forest: icons follow the header rule
 // (cream in light, ice in night), not the info-teal used on light surfaces
 body.body--light .q-toolbar.bg-primary-600 .text-icon,
-body.body--light .q-toolbar.bg-primary-600 .q-btn .q-icon {
+body.body--light .q-toolbar.bg-primary-600 .q-btn .q-icon,
+body.body--dark .q-toolbar.bg-primary-600 .text-icon,
+body.body--dark .q-toolbar.bg-primary-600 .q-btn .q-icon {
   color: #f2f7f4 !important;
 }
 
@@ -639,8 +643,9 @@ body.body--dark .q-skeleton {
 }
 
 // 5: Mobile drawer header toolbar buttons: kill any pine fill remnants
-body.body--light .q-toolbar.bg-primary-600 .q-btn,
-body.body--light .q-toolbar.bg-primary-600 .q-btn::before {
+// (both themes - the earlier light-only scoping left dark pilled)
+body .q-toolbar.bg-primary-600 .q-btn,
+body .q-toolbar.bg-primary-600 .q-btn::before {
   background: transparent !important;
   border: none !important;
 }
