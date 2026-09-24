@@ -157,7 +157,7 @@ jobs:
               steps.pr.outputs.number
             }}/
           WODORE_DOMAIN: wodore.github.io
-          WODORE_API_HOST: https://stg.hub.wodore.com
+          WODORE_API_HOST: https://hub.stg.wodore.com
           WODORE_API_VERSION: v1
           WODORE_OFFICIAL_URL: https://wodo.re
           WODORE_APP_NAME: Wodore
