@@ -1,0 +1,1 @@
+{"id":"4e70f177e89320d4042d8f42770ea23e","fullName":"wodore:tests/unit/image-service.spec.ts#getImageUrl keeps absolute API URLs when replacement is disabled","name":"keeps absolute API URLs when replacement is disabled","status":"passed","testResultsByEnv":{"default":"fc9818944d6d5fc0f63d3aa7344a8649"}}
