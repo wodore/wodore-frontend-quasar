@@ -76,24 +76,24 @@ jobs:
           path: ~/.npm
           key: allure-${{ runner.os }}
 
-      # Restore this context's Allure history (per PR, and per main branch)
-      # so the trend graph builds across runs. First run has no history —
-      # tolerated. Allure reads previous history from the results dir and
-      # writes the updated one into allure-report/history on generate.
+      # Restore this context's Allure history (per PR, and per main
+      # branch) so the trend graph builds across runs. First run has no
+      # history — tolerated. EMPIRICAL: allure@3 reads history from
+      # <results-root>/history/ — a SIBLING of the unit results dir passed
+      # to generate — and does NOT write history back into the report;
+      # the next run's history is rebuilt from this report's per-test
+      # data after generate ("Build next-run history" step below).
       - name: Fetch Allure history
         run: |
           git fetch --depth=1 origin \
             gh-pages:refs/remotes/origin/gh-pages || true
-          mkdir -p allure-results/unit/history
+          mkdir -p allure-results/history
           CTX="${{ steps.ctx.outputs.dir }}"
-          # History lives inside each run dir (allure-report ships its own
-          # history/); restore from the newest existing run of this context
-          LATEST=$(git ls-tree --name-only "origin/gh-pages:${CTX}/" 2>/dev/null \
-            | grep -oE '[0-9]+$' | sort -n | tail -1 || true)
-          [ -z "$LATEST" ] && exit 0
-          git archive "origin/gh-pages:${CTX}/${LATEST}/history" \
-            | tar -x --strip-components=4 -C allure-results/unit/history \
-            || true
+          HIST="${CTX}/history/history.json"
+          if git cat-file -e "origin/gh-pages:${HIST}" 2>/dev/null; then
+            git show "origin/gh-pages:${HIST}" \
+              > allure-results/history/history.json
+          fi
 
       # allure@3 (Allure Report 3): the allure-action reads the v3 summary
       # format; the v2 allure-commandline report is not parseable by it
@@ -112,6 +112,64 @@ jobs:
           commit_message: >-
             Allure report for run ${{ github.run_number }}
 
+      # allure@3 does NOT write history back into the report; rebuild the
+      # next run's history.json from this report's per-test data. Capped at
+      # 2000 entries (63 tests here) to bound the gh-pages file size.
+      - name: Build next-run history
+        if: always()
+        run: |
+          cat > /tmp/build-history.js <<'EOF'
+          const fs = require('fs');
+          const h = {};
+          const d = 'allure-report/data/test-results';
+          for (const f of fs.readdirSync(d)) {
+            const j = JSON.parse(fs.readFileSync(d + '/' + f));
+            h[j.historyId] = {
+              status: j.status,
+              statusDetails: j.statusDetails || {},
+              trace: '',
+              stop: j.stop,
+            };
+          }
+          const capped = {};
+          for (const k of Object.keys(h).slice(0, 2000)) capped[k] = h[k];
+          fs.mkdirSync('allure-results/history', { recursive: true });
+          fs.writeFileSync(
+            'allure-results/history/history.json',
+            JSON.stringify(capped),
+          );
+          EOF
+          node /tmp/build-history.js
+
+      # Persist the history via plain git — a second peaceiris publish in
+      # the same job deadlocks on `checkout --orphan gh-pages` (branch
+      # already exists). Same checkout pattern as the cleanup job.
+      - name: Check out gh-pages for history
+        if: always()
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Commit Allure history
+        if: always()
+        run: |
+          CTX="${{ steps.ctx.outputs.dir }}"
+          mkdir -p "gh-pages/${CTX}/history"
+          cp allure-results/history/history.json \
+            "gh-pages/${CTX}/history/history.json"
+          cd gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "${CTX}/history/history.json"
+          if git diff --cached --quiet; then
+            echo "History unchanged - nothing to commit"
+          else
+            git commit -m \
+              "Allure history for ${CTX} (run ${{ github.run_number }})"
+            git push origin HEAD:gh-pages
+          fi
+
       # Single comment per PR, updated in place (never duplicated). The
       # allure-action check-run summary above stays as-is.
       # The allure-action posts its summary-table comment (with View
@@ -124,7 +182,9 @@ jobs:
           report-directory: './allure-report'
           github-token: ${{ secrets.GITHUB_TOKEN }}
           # Renders View links into the summary table's Report column
-          remote-href: https://wodore.github.io/wodore-frontend-quasar/allure/${{ steps.ctx.outputs.dir }}/${{ github.run_number }}/
+          remote-href: >-
+            https://wodore.github.io/wodore-frontend-quasar/allure/${{
+            steps.ctx.outputs.dir }}/${{ github.run_number }}/
 
       # Full report hosted on GitHub Pages, one directory per run per
       # context (PR / main); the shared history dir per context is
@@ -163,7 +223,8 @@ jobs:
                 `allure/pr-${num}/${{ github.run_number }}/`,
               ].join('');
               const sha = context.payload.pull_request.head.sha.slice(0, 7);
-              const link = `**Full report:** ${url} (run ${{ github.run_number }}, ${sha})`;
+              const link = `**Full report:** ${url}` +
+                ` (run ${{ github.run_number }}, ${sha})`;
               const body = newest.body.replace(
                 /\n?\*\*Full report:\*\*.*$/m, '',
               ).trimEnd() + `\n\n${link}`;
