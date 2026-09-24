@@ -5,28 +5,46 @@ on:
     branches:
       - main
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+    types: [opened, synchronize, reopened, ready_for_review, closed]
 
 permissions:
   pull-requests: write
   checks: write
-  # Publishing the Allure report to the gh-pages branch
+  # Publishing the Allure report + history to the gh-pages branch
   contents: write
+
+# Queue test runs per ref: the report and history pushes to gh-pages must
+# not race each other on the same PR/branch (runs of different PRs may
+# still overlap, as before).
+concurrency:
+  group: allure-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   unit-tests:
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.action != 'closed'
 
     steps:
       - name: Check out
         uses: actions/checkout@v4
+
+      - name: Resolve report context
+        id: ctx
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            PR_NUM=${{ github.event.pull_request.number }}
+            echo "dir=allure/pr-${PR_NUM}" >> "$GITHUB_OUTPUT"
+          else
+            echo "dir=allure/main" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Enable Corepack
         run: corepack enable
 
       - name: Read Node.js version from .nvmrc
         id: nvmrc
-        run: echo "NODE_VERSION=$(cat .nvmrc)" >> $GITHUB_OUTPUT
+        run: echo "NODE_VERSION=$(cat .nvmrc)" >> "$GITHUB_OUTPUT"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -58,6 +76,22 @@ jobs:
           path: ~/.npm
           key: allure-${{ runner.os }}
 
+      # Restore this context's Allure history (per PR, and per main branch)
+      # so the trend graph builds across runs. First run has no history —
+      # tolerated. Allure reads previous history from the results dir and
+      # writes the updated one into allure-report/history on generate.
+      - name: Fetch Allure history
+        run: |
+          git fetch --depth=1 origin \
+            gh-pages:refs/remotes/origin/gh-pages || true
+          mkdir -p allure-results/unit/history
+          HIST_DIR="${{ steps.ctx.outputs.dir }}/history"
+          git cat-file -e "origin/gh-pages:${HIST_DIR}" 2>/dev/null \
+            || exit 0
+          git archive origin/gh-pages "$HIST_DIR" \
+            | tar -x --strip-components=3 -C allure-results/unit/history \
+            || true
+
       # allure@3 (Allure Report 3): the allure-action reads the v3 summary
       # format; the v2 allure-commandline report is not parseable by it
       - name: Generate Allure report
@@ -71,26 +105,105 @@ jobs:
           report-directory: './allure-report'
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      # Full report hosted on GitHub Pages, one directory per run; old runs
-      # are kept so PR links stay valid
+      # Full report hosted on GitHub Pages, one directory per run per
+      # context (PR / main); the shared history dir per context is
+      # republished from the freshly generated report below.
       - name: Publish report to GitHub Pages
         if: always()
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./allure-report
-          destination_dir: allure/${{ github.run_number }}
+          destination_dir: ${{ steps.ctx.outputs.dir }}/${{ github.run_number }}
           keep_files: true
           commit_message: >-
             Allure report for run ${{ github.run_number }}
 
-      - name: Add report link to PR
+      - name: Publish Allure history
+        if: always()
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./allure-report/history
+          destination_dir: ${{ steps.ctx.outputs.dir }}/history
+          keep_files: true
+          commit_message: >-
+            Allure history for ${{ steps.ctx.outputs.dir }}
+
+      # Single comment per PR, updated in place (never duplicated). The
+      # allure-action check-run summary above stays as-is.
+      - name: Update report comment on PR
         if: always() && github.event_name == 'pull_request'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const num = context.payload.pull_request.number;
+            const sha = context.payload.pull_request.head.sha.slice(0, 7);
+            const run = ${{ github.run_number }};
+            const url = [
+              'https://wodore.github.io/wodore-frontend-quasar/',
+              `allure/pr-${num}/${run}/`,
+            ].join('');
+            const marker = '<!-- allure-report -->';
+            const { data: comments } = await github.rest.issues
+              .listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: num,
+              });
+            const ts = new Date().toISOString()
+              .slice(0, 16)
+              .replace('T', ' ');
+            const body = [
+              marker,
+              `📊 Full Allure report: ${url}`,
+              '',
+              `Run ${run} - commit ${sha} - ${ts} UTC`,
+            ].join('\n');
+            const existing = comments.find((c) =>
+              c.body.includes(marker),
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: num,
+                body,
+              });
+            }
+
+  # Remove the PR's whole report directory (all runs + history) when it
+  # closes, so gh-pages does not accumulate stale reports.
+  cleanup:
+    name: Remove PR reports
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+
+    steps:
+      - name: Check out gh-pages
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Remove PR report directory
         run: |
-          REPO=${GITHUB_REPOSITORY,,}
-          URL="https://${REPO%%/*}.github.io/${REPO#*/}"
-          URL="$URL/allure/${{ github.run_number }}/"
-          gh pr comment "${{ github.event.pull_request.number }}" \
-            --body "📊 Full Allure report: $URL"
+          cd gh-pages
+          DIR="allure/pr-${{ github.event.pull_request.number }}"
+          if [ -d "$DIR" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email \
+              "github-actions[bot]@users.noreply.github.com"
+            git rm -rq "$DIR"
+            git commit -qm "Remove Allure reports $DIR (PR closed)"
+            git push origin gh-pages
+          else
+            echo "Nothing to remove ($DIR absent)"
+          fi
