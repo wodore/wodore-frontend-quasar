@@ -198,6 +198,7 @@ jobs:
           script: |
             const num = ${{ steps.pr.outputs.number }};
             const sha = context.payload.pull_request.head.sha.slice(0, 7);
+            const builtAt = new Date().toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
             const url = [
               'https://wodore.github.io/wodore-frontend-quasar/',
               `pr-${num}/`,
@@ -227,7 +228,7 @@ jobs:
               ' width="180" height="180"></a>',
               '',
               `Read-only preview (no login) - talks to the production`,
-              ` API. Commit \`${sha}\`.`,
+              ` API. Commit ${sha} - built ${builtAt}.`,
               'Removed automatically when the PR is merged/closed or',
               ' the `preview` label is removed.',
             ].join('\n');
