@@ -444,7 +444,7 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
                 v-model="selectedDate"
                 minimal
                 flat
-                :dark="true"
+                :dark="$q.dark.isActive"
                 :options="dateRangeOptions"
                 first-day-of-week="1"
                 :navigation-min-year-month="formatDate(Date.now(), 'YYYY/MM')"
@@ -463,7 +463,7 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
                 v-if="$q.screen.gt.xs"
                 minimal
                 flat
-                :dark="true"
+                :dark="$q.dark.isActive"
                 :options="dateRangeOptions"
                 ref="calRigth"
                 color="accent"
@@ -480,7 +480,7 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
               </q-date>
             </div>
           </div>
-          <div class="q-pa-xs row items-center justify-center bg-dark-700">
+          <div class="q-pa-xs row items-center justify-center wd-surface-deep">
             <!-- ERROR FOOTER -->
             <q-btn
               v-if="showCalendarError"
@@ -561,9 +561,7 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
           readonly
           :model-value="selectedDateDisplay"
           dense
-          dark
-          standout
-          class="toolbar-font"
+          class="toolbar-font wd-search-field"
           @click="showMenu = true"
         >
           <!-- </q-input>:rules="[

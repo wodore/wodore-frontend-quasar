@@ -105,14 +105,14 @@ function onFilterClick(event: Event) {
   padding: 0;
   margin: 0;
   border-radius: 100;
-  background: color('dark', 500);
+  background: var(--wd-chrome-btn-bg);
   box-shadow: $button-shadow;
   transition: background-color 0.2s;
   border-bottom: 3px solid rgba(0, 0, 0, 0.15);
 
   .q-icon {
     opacity: 0.85;
-    color: color('icon');
+    color: var(--wd-chrome-btn-ink);
   }
 
   &.active {
@@ -130,7 +130,7 @@ function onFilterClick(event: Event) {
 
   &:hover {
     background-color: rgba(255, 255, 255, 0.1);
-    background: color('dark', 500);
+    background: var(--wd-chrome-btn-hover);
   }
 }
 
@@ -152,7 +152,7 @@ function onFilterClick(event: Event) {
   transition:
     color 0.2s,
     background-color 0.2s;
-  color: color('icon');
+  color: var(--wd-chrome-btn-ink);
 
   &:hover {
     color: #f2f7f4;

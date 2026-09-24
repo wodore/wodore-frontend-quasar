@@ -326,7 +326,7 @@ watch(currentLocale, () => {
   >
     <!-- Header -->
     <div class="row items-center no-wrap q-mb-xs q-mt-sm">
-      <div class="text-subtitle1 text-accent">{{ $t('availability.title') }}</div>
+      <div class="text-subtitle1 wd-gold-text">{{ $t('availability.title') }}</div>
       <div class="col row justify-center">
         <q-btn dense flat class="today-btn" @click="scrollToDate(startDate)">
           <q-icon name="wd-calendar" size="14px" class="q-mr-xs" />

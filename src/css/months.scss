@@ -102,7 +102,7 @@ $opacity-light: 0.8;
       rgba(color.adjust($color, $lightness: -$darken-amount), $opacity-dark) $grad-end,
       rgba(color.adjust($end-color, $lightness: -$darken-amount), $opacity-dark) 100%
     );
-    color: map-get($months-fg, $month); /* Text color */
+    color: var(--wd-ink); /* Text color: light fg on darkened tiles */
   }
 
   .#{$month}--gradient-light {

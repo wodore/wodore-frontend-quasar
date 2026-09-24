@@ -498,7 +498,7 @@ const upcomingMonthClass = computed(() => {
 <template>
   <div v-if="hasAvailability !== false" ref="dialogRef">
     <div class="row items-center no-wrap q-mb-xs q-mt-sm">
-      <div class="text-subtitle1 text-accent">{{ $t('availability.title') }}</div>
+      <div class="text-subtitle1 wd-gold-text">{{ $t('availability.title') }}</div>
       <!-- Month Selection -->
       <q-btn v-if="!isMobile" dense flat class="month-nav row" @click="scrollByMonths(-5)">
         <q-icon size="sm">

@@ -131,6 +131,9 @@ body {
 // separation comes from tonal steps and ridge borders instead.
 body.body--dark {
   --q-dark-shadow-color: transparent;
+  --wd-chrome-btn-bg: #112119;
+  --wd-chrome-btn-ink: #a9f0d2;
+  --wd-chrome-btn-hover: rgba(255, 255, 255, 0.1);
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -141,10 +144,11 @@ body.body--dark {
 // Maplibre overwrites
 @import './maplibre-gl.scss';
 
-// WdToolbarButton - dark-chrome instrument pill in both themes
+// WdToolbarButton - chrome instrument pill, themed via the chrome vars
+// (Day: white pill + deep-green icon, the incumbent look; Night: pine + ice)
 .wd-toolbar-btn {
-  color: $icon !important;
-  background-color: $dark !important;
+  color: var(--wd-chrome-btn-ink) !important;
+  background-color: var(--wd-chrome-btn-bg) !important;
   border: 1px solid transparent;
   transition:
     background-color 0.2s ease,
@@ -152,11 +156,7 @@ body.body--dark {
 }
 
 .wd-toolbar-btn:hover {
-  background-color: rgba(255, 255, 255, 0.1) !important;
-}
-
-.body--dark .wd-toolbar-btn:hover {
-  background-color: var(--wd-wash) !important;
+  background-color: var(--wd-chrome-btn-hover) !important;
 }
 
 // Active/selected toolbar pill: forest fill, paper icon
@@ -189,21 +189,21 @@ body.body--dark {
   color: var(--wd-ink-soft) !important;
 }
 
-// Fab switcher pills (overlay / basemap rail): ONE dark-chrome family in
-// both themes — pine-panel fill, ice icon, ridge border; open = forest
+// Fab switcher pills (overlay / basemap rail): same chrome family as the
+// toolbar pills (Day white + deep-green, Night pine + ice); open = forest
 .q-fab.wd-switcher-fab {
-  background-color: $dark !important;
-  color: $icon !important;
+  background-color: var(--wd-chrome-btn-bg) !important;
+  color: var(--wd-chrome-btn-ink) !important;
   border: 1px solid var(--wd-ridge);
 }
 
 .q-fab.wd-switcher-fab:hover {
-  background-color: rgba(255, 255, 255, 0.1) !important;
+  background-color: var(--wd-chrome-btn-hover) !important;
 }
 
 .q-fab.wd-switcher-fab .q-fab__icon,
 .q-fab.wd-switcher-fab .q-fab__active-icon {
-  color: $icon !important;
+  color: var(--wd-chrome-btn-ink) !important;
 }
 
 .q-fab.wd-switcher-fab--open {
@@ -345,10 +345,19 @@ body.body--light :is(.app-header, .q-drawer, bottom-sheet, .q-dialog__inner) {
 :root,
 body.body--light {
   --wd-glass: rgba(255, 255, 255, 0.2);
+  --wd-chrome-btn-bg: #fdfefd;
+  --wd-chrome-btn-ink: #224e3b;
+  --wd-chrome-btn-hover: rgba(0, 0, 0, 0.06);
 }
 
 body.body--dark {
   --wd-glass: rgba(10, 20, 15, 0.25);
+}
+
+// Hut-type chips: text always token ink (API-supplied tints may stay as bg)
+.wd-type-chip,
+.wd-chip-surface {
+  color: var(--wd-ink) !important;
 }
 
 // Themed hut-type chip (falls back when no custom color given)
@@ -357,4 +366,20 @@ body.body--dark {
   color: var(--wd-ink);
   border: 1px solid var(--wd-ridge);
   border-radius: 4px;
+}
+
+// Day: secondary-700 utility reads 3.2:1 on light surfaces; use the
+// shade-role info-teal instead. Night keeps the 700 (passes on pine).
+body.body--light .text-secondary-700 {
+  color: #29626b !important;
+}
+
+// Mobile drawer wordmark on its green bar: cream "wo" in Day too
+body.body--light .q-drawer .text-black {
+  color: #f2f7f4 !important;
+}
+
+// Drawer wordmark: cream "wo" on the green bar in BOTH themes
+body.body--dark .q-drawer .text-black {
+  color: #f2f7f4 !important;
 }

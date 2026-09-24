@@ -422,7 +422,7 @@ const { images: nearbyImages, loading: imagesLoading } = useHutImages(computed((
             :elevation="hut.elevation ?? undefined"
           />
           <!--LOCATION-->
-          <div class="text-subtitle1 text-accent">{{ $t('location') }}</div>
+          <div class="text-subtitle1 wd-gold-text">{{ $t('location') }}</div>
           <q-list dense>
             <q-item v-if="hut.location">
               <q-item-section side>

@@ -208,7 +208,7 @@ watchEffect(async () => {
   <div v-if="canShowForecast" ref="forecastContainer" class="wd-weather-forecast">
     <!-- Header -->
     <div class="wd-weather-forecast__header q-mt-sm q-mb-xs">
-      <div class="text-subtitle1 text-accent">
+      <div class="text-subtitle1 wd-gold-text">
         {{ t('weather.title') }}
       </div>
       <div class="wd-weather-forecast__attribution">

@@ -312,7 +312,7 @@ watchEffect(async () => {
 <template>
   <div v-if="canShowForecast" id="weather-forecast-section">
     <div class="weather-forecast__header q-mt-sm q-mb-xs">
-      <div class="text-subtitle1 text-accent">
+      <div class="text-subtitle1 wd-gold-text">
         {{ t('weather.title') }}
       </div>
       <div class="weather-forecast__attribution">

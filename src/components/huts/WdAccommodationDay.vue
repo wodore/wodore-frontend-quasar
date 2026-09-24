@@ -283,10 +283,8 @@ const tooltipLines = computed(() => {
   align-items: center;
   gap: 3px;
   padding: 2px 5px 2px 4px;
-  border-left: 4px solid;
   border-radius: 4px;
-  border: 1px solid rgba(0, 0, 0, 0.07);
-  border-left: 4px solid;
+  border: 1px solid var(--wd-ridge, rgba(0, 0, 0, 0.12));
 }
 
 .wd-accommodation-day__badge-total {
