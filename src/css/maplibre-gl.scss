@@ -48,13 +48,13 @@
 
 .maplibregl-ctrl-group {
   border-radius: $button-rounded-border-radius;
-  background: color('icon');
+  background: transparent;
   //border-bottom: 3px solid rgba(0, 0, 0, 0.15);
   overflow: hidden;
 }
 
 .maplibregl-ctrl-group:not(:empty) {
-  box-shadow: $button-shadow;
+  box-shadow: none;
 }
 //@media (-ms-high-contrast: active) {
 //  .maplibregl-ctrl-group:not(:empty) {
@@ -163,23 +163,21 @@
 
 // Theme the native map controls. NOTE: the map canvas itself is NOT
 // darkened in dark mode (product decision: identical light basemap in both
-// themes; a proper dark baselayer may come later).
+// themes; a proper dark baselayer may come later). Controls are flat: NO
+// fill in any state (user rule); the map is light in both themes, so the
+// default dark control glyphs stay legible and are NOT inverted.
 body.body--light .maplibregl-ctrl-group {
-  background-color: #fdfefd;
-  box-shadow: 0 0 0 1px var(--wd-ridge);
+  background-color: transparent;
+  box-shadow: none;
 }
 
 body.body--dark .maplibregl-ctrl-group {
-  background-color: #112119;
-  box-shadow: 0 0 0 1px #1c3629;
+  background-color: transparent;
+  box-shadow: none;
 }
 
 body.body--dark .maplibregl-ctrl-group button + button {
-  border-top: 1px solid #1c3629;
-}
-
-body.body--dark .maplibregl-ctrl-icon {
-  filter: invert(1) brightness(1.6);
+  border-top: 1px solid rgba(28, 54, 41, 0.5);
 }
 
 // Attribution: readable pill over terrain in both themes

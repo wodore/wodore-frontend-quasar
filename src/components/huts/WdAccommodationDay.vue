@@ -89,26 +89,6 @@ const hutTypeIconUrl = computed(() => {
   return props.hutTypeIcons[slug] ?? null;
 });
 
-/** Free number color based on occupancy status (Day text shades, DESIGN.md occupancy scale) */
-const freeColor = computed(() => {
-  if (isUnknown.value) return '#575757';
-  switch (props.day.occupancy_status) {
-    case 'full':
-      return '#961a17';
-    case 'high':
-      return '#8a4b1b';
-    case 'medium':
-      return '#8a4b1b';
-    case 'free_unknown':
-      return '#198053'; // free family, degree unknown
-    case 'low':
-    case 'empty':
-      return '#198053';
-    default:
-      return '#575757';
-  }
-});
-
 /** Free count for display: '?' if not published by the source (free_unknown) */
 const freeLabel = computed(() =>
   props.day.free == null || isUnknown.value ? '?' : String(props.day.free)
@@ -190,7 +170,11 @@ const tooltipLines = computed(() => {
             loading="eager"
           />
         </div>
-        <span v-if="!isUnknown" class="wd-accommodation-day__free" :style="{ color: freeColor }">
+        <span
+          v-if="!isUnknown"
+          class="wd-accommodation-day__free"
+          :class="'wd-occ-' + day.occupancy_status"
+        >
           {{ freeLabel }}
         </span>
       </template>
@@ -200,8 +184,10 @@ const tooltipLines = computed(() => {
     <div
       v-if="statusLabel"
       class="wd-accommodation-day__status"
-      :class="{ 'wd-accommodation-day__status--small': statusLabel.length > 5 }"
-      :style="{ color: freeColor }"
+      :class="[
+        { 'wd-accommodation-day__status--small': statusLabel.length > 5 },
+        'wd-occ-' + (isUnknown ? 'unknown' : day.occupancy_status),
+      ]"
     >
       {{ statusLabel }}
     </div>
@@ -290,14 +276,15 @@ const tooltipLines = computed(() => {
 .wd-accommodation-day__badge-total {
   font-size: 11px;
   line-height: 1.1;
-  color: rgba(color('dark'), 0.6);
+  color: var(--wd-ink-soft);
   font-weight: 600;
 }
 
 .wd-accommodation-day__badge-unknown {
   font-size: 13px;
   font-weight: 700;
-  color: rgba(color('dark'), 0.3);
+  color: var(--wd-ink-soft);
+  opacity: 0.6;
   line-height: 1;
 }
 
@@ -339,5 +326,43 @@ const tooltipLines = computed(() => {
 
 .wd-accommodation-day__status--small {
   font-size: 7px;
+}
+</style>
+<style>
+/* Occupancy status text shades per theme (DESIGN.md occupancy scale):
+   Day deep shades, Night ice shades - was hardcoded Day-only, unreadable
+   in dark mode. */
+.wd-occ-empty,
+.wd-occ-low,
+.wd-occ-free_unknown {
+  color: #198053;
+}
+.wd-occ-medium,
+.wd-occ-high {
+  color: #8a4b1b;
+}
+.wd-occ-full {
+  color: #961a17;
+}
+.wd-occ-unknown {
+  color: #575757;
+}
+
+body.body--dark .wd-occ-empty,
+body.body--dark .wd-occ-low,
+body.body--dark .wd-occ-free_unknown {
+  color: #25bf5e;
+}
+body.body--dark .wd-occ-medium {
+  color: #f6ad4b;
+}
+body.body--dark .wd-occ-high {
+  color: #ffc064;
+}
+body.body--dark .wd-occ-full {
+  color: #f2acab;
+}
+body.body--dark .wd-occ-unknown {
+  color: #fcfcfc;
 }
 </style>

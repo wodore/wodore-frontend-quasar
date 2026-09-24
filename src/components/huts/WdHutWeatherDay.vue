@@ -206,6 +206,6 @@ const conditionLabel = computed(() => {
 }
 
 .weather-day__temp-empty {
-  color: rgba(color('dark'), 0.45);
+  color: var(--wd-ink-soft, rgba(0, 0, 0, 0.5));
 }
 </style>

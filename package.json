@@ -55,7 +55,8 @@
     "gen:icons:watch": "watch 'yarn run gen:icons' src/extras/icons/svg/source",
     "postgen:icons": "yarn run eslint --fix src/extras/icons/dist/icons.ts",
     "gen:favs": "icongenie generate -p src/assets/icongenie/",
-    "gen:realfavs": "real-favicon generate src/assets/realfavgen.json src/assets/realfavgen_result.json public/realfavgen"
+    "gen:realfavs": "real-favicon generate src/assets/realfavgen.json src/assets/realfavgen_result.json public/realfavgen",
+    "test:visual": "node scripts/visual-matrix.mjs"
   },
   "dependencies": {
     "@fontsource/barlow": "^5.3.0",

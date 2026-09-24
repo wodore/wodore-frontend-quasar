@@ -144,26 +144,31 @@ body.body--dark {
 // Maplibre overwrites
 @import './maplibre-gl.scss';
 
-// WdToolbarButton - chrome instrument pill, themed via the chrome vars
-// (Day: white pill + deep-green icon, the incumbent look; Night: pine + ice)
+// WdToolbarButton - flat icon chrome: NO fill in any state (product rule).
+// Resting: transparent, theme icon ink. Hover: wash only. Active: gold icon.
 .wd-toolbar-btn {
   color: var(--wd-chrome-btn-ink) !important;
-  background-color: var(--wd-chrome-btn-bg) !important;
+  background-color: transparent !important;
   border: 1px solid transparent;
   transition:
     background-color 0.2s ease,
-    border-color 0.2s ease;
+    color 0.2s ease;
 }
 
 .wd-toolbar-btn:hover {
   background-color: var(--wd-chrome-btn-hover) !important;
 }
 
-// Active/selected toolbar pill: forest fill, paper icon
-.wd-toolbar-btn--active {
-  background-color: $primary !important;
-  border-color: $primary;
-  color: $white !important;
+// Active/selected: gold icon, no fill (user rule: no icon bg in any state)
+.wd-toolbar-btn--active,
+.wd-toolbar-btn--active:hover {
+  background-color: transparent !important;
+  border-color: transparent;
+  color: #bfab25 !important;
+
+  .q-icon {
+    color: #bfab25 !important;
+  }
 }
 
 // Header/menu icon buttons keep the incumbent mint (text-icon): the
@@ -192,9 +197,9 @@ body.body--dark {
 // Fab switcher pills (overlay / basemap rail): same chrome family as the
 // toolbar pills (Day white + deep-green, Night pine + ice); open = forest
 .q-fab.wd-switcher-fab {
-  background-color: var(--wd-chrome-btn-bg) !important;
+  background-color: transparent !important;
   color: var(--wd-chrome-btn-ink) !important;
-  border: 1px solid var(--wd-ridge);
+  border: 1px solid transparent;
 }
 
 .q-fab.wd-switcher-fab:hover {
@@ -206,10 +211,16 @@ body.body--dark {
   color: var(--wd-chrome-btn-ink) !important;
 }
 
-.q-fab.wd-switcher-fab--open {
-  background-color: $primary !important;
-  border-color: $primary;
-  color: $white !important;
+// Open state: gold icon, no fill (user rule: no icon bg in any state)
+.q-fab.wd-switcher-fab--open,
+.q-fab.wd-switcher-fab--open:hover {
+  background-color: transparent !important;
+  border-color: transparent;
+
+  .q-fab__icon,
+  .q-fab__active-icon {
+    color: #bfab25 !important;
+  }
 }
 
 // Basemap thumbnails: SOLID fill (they float over the map), ridge border,
@@ -320,6 +331,12 @@ body.body--dark {
   color: $icon !important;
 }
 
+// Active gold wins over the ink pin above (equal specificity, later wins)
+.wd-toolbar-btn--active.wd-ink-text,
+.wd-toolbar-btn--active.wd-ink-text .q-icon {
+  color: #bfab25 !important;
+}
+
 // Light surfaces (header, menu drawer, bottom sheet, dialogs): in Day the
 // toolbar pills go flat with readable info-teal icons instead of pine.
 body.body--light :is(.app-header, .q-drawer, bottom-sheet, .q-dialog__inner) {
@@ -337,17 +354,24 @@ body.body--light :is(.app-header, .q-drawer, bottom-sheet, .q-dialog__inner) {
     background-color: rgba(0, 0, 0, 0.06) !important;
   }
 
-  .wd-toolbar-btn--active {
-    background-color: $primary !important;
-    color: $white !important;
+  // No fill in any state; active = gold icon (matches dark theme)
+  .wd-toolbar-btn--active,
+  .wd-toolbar-btn--active:hover {
+    background-color: transparent !important;
+    color: #bfab25 !important;
 
     .q-icon {
-      color: $white !important;
+      color: #bfab25 !important;
     }
   }
 
   .wd-toolbar-btn.wd-ink-text {
     color: #29626b !important;
+  }
+
+  .wd-toolbar-btn--active.wd-ink-text,
+  .wd-toolbar-btn--active.wd-ink-text .q-icon {
+    color: #bfab25 !important;
   }
 }
 
@@ -393,4 +417,49 @@ body.body--light .q-drawer .text-black {
 // Drawer wordmark: cream "wo" on the green bar in BOTH themes
 body.body--dark .q-drawer .text-black {
   color: #f2f7f4 !important;
+}
+
+// DARK MODE: no shadows anywhere. Quasar >= 2.11 draws LIGHT shadows in
+// dark mode (--q-dark-shadow-color is disabled above) and 27 custom
+// box-shadow declarations exist across the app; the blanket rule below is
+// authoritative. Where a surface needs separation in dark, use a thin
+// ridge border (below) - never a light or dark shadow (product rule).
+body.body--dark *,
+body.body--dark *::before,
+body.body--dark *::after {
+  box-shadow: none !important;
+}
+
+// Structural separation in dark = thin ridge lines
+body.body--dark .q-header {
+  border-bottom: 1px solid var(--wd-ridge);
+}
+
+body.body--dark .q-drawer {
+  border-left: 1px solid var(--wd-ridge);
+}
+
+// Date field: original incumbent standout look, only colors adjusted per
+// theme (Day: white field, dark text; Night: pine-deep, paper, ridge)
+.wd-date-field .q-field__control {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+body.body--light .wd-date-field .q-field__control {
+  background: $white !important;
+}
+
+body.body--light .wd-date-field,
+body.body--light .wd-date-field input {
+  color: $black !important;
+}
+
+body.body--dark .wd-date-field .q-field__control {
+  background: var(--wd-surface-deep) !important;
+  border: 1px solid var(--wd-ridge);
+}
+
+body.body--dark .wd-date-field,
+body.body--dark .wd-date-field input {
+  color: var(--wd-ink) !important;
 }

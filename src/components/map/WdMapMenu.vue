@@ -58,7 +58,8 @@ function handleOverlayConfigClose() {
 }
 
 .map-menu__versions {
-  background: var(--wd-glass, rgba(255, 255, 255, 0.2));
+  /* Solid surface: translucent glass bled underlying content through */
+  background: var(--wd-surface-deep, #112119);
   /* border-radius: 0px; */
 }
 </style>

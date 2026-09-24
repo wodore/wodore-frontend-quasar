@@ -105,32 +105,28 @@ function onFilterClick(event: Event) {
   padding: 0;
   margin: 0;
   border-radius: 100;
-  background: var(--wd-chrome-btn-bg);
-  box-shadow: $button-shadow;
-  transition: background-color 0.2s;
-  border-bottom: 3px solid rgba(0, 0, 0, 0.15);
+  background: transparent;
+  transition: color 0.2s;
 
   .q-icon {
     opacity: 0.85;
     color: var(--wd-chrome-btn-ink);
   }
 
+  // Active: gold icon, no fill (product rule: no icon bg in any state)
   &.active {
-    background-color: color('primary');
-
     .q-icon {
       opacity: 1;
-      color: #f2f7f4;
+      color: #bfab25;
     }
 
     &:hover {
-      background-color: color('primary', 700);
+      background-color: rgba(255, 255, 255, 0.1);
     }
   }
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    background: var(--wd-chrome-btn-hover);
+    background-color: var(--wd-chrome-btn-hover);
   }
 }
 

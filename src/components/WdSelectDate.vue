@@ -559,9 +559,10 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
         <q-input
           id="menu"
           readonly
+          standout
           :model-value="selectedDateDisplay"
           dense
-          class="toolbar-font wd-search-field"
+          class="toolbar-font wd-date-field"
           @click="showMenu = true"
         >
           <!-- </q-input>:rules="[
