@@ -1,0 +1,246 @@
+name: PR Preview
+
+# Static GitHub Pages previews for pull requests carrying the 'preview'
+# label. Read-only (no login): Zitadel redirect URIs are exact-match, so
+# previews cannot authenticate; API access is read-only against prod.
+# Complex scenarios (login, writes) belong on the docker staging env.
+# See docs/pr-previews.md for setup (Pages activation, repo variables,
+# and the single backend CORS entry).
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled, closed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: pr-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    name: Deploy / cleanup preview
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve PR number and label state
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const num = context.payload.pull_request?.number;
+            if (!num) {
+              core.setOutput('number', '');
+              return;
+            }
+            core.setOutput('number', String(num));
+            const wasUnlabeled =
+              context.action === 'unlabeled' &&
+              context.payload.label?.name === 'preview';
+            if (context.eventName === 'closed' || wasUnlabeled) {
+              core.setOutput('action', 'cleanup');
+              return;
+            }
+            const labels = await github.rest.issues.listLabelsOnIssue({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: num,
+            });
+            const has = labels.data.some((l) => l.name === 'preview');
+            // Deploy only while the label is present
+            core.setOutput('action', has ? 'deploy' : 'skip');
+
+      - name: Stop if not applicable
+        if: steps.pr.outputs.action == 'skip' || steps.pr.outputs.number == ''
+        run: echo "No preview (label absent) - nothing to do."
+
+      # ---------- cleanup ----------
+      - name: Checkout gh-pages
+        if: steps.pr.outputs.action == 'cleanup'
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Remove preview folder
+        if: steps.pr.outputs.action == 'cleanup'
+        run: |
+          cd gh-pages
+          DIR="pr-${{ steps.pr.outputs.number }}"
+          if [ -d "$DIR" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email \
+              "github-actions[bot]@users.noreply.github.com"
+            git rm -rq "$DIR"
+            git commit -qm "Remove preview $DIR (closed/unlabeled)"
+            git push origin gh-pages
+            echo "REMOVED=1" >> "$GITHUB_ENV"
+          else
+            echo "REMOVED=0" >> "$GITHUB_ENV"
+          fi
+
+      - name: Update PR comment (cleanup)
+        if: steps.pr.outputs.action == 'cleanup'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const num = ${{ steps.pr.outputs.number }};
+            const removed = process.env.REMOVED === '1';
+            const marker = '<!-- pr-preview -->';
+            const { data: comments } = await github.rest.issues
+              .listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: num,
+              });
+            const existing = comments.find((c) => c.body.includes(marker));
+            const body = [
+              marker,
+              '**PR preview removed** (PR closed or label taken off).',
+            ].join('\n');
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else if (removed) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: num,
+                body,
+              });
+            }
+
+      # ---------- deploy ----------
+      - name: Checkout PR head
+        if: steps.pr.outputs.action == 'deploy'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          submodules: recursive
+
+      - name: Enable Corepack
+        if: steps.pr.outputs.action == 'deploy'
+        run: corepack enable
+
+      - name: Read Node.js version from .nvmrc
+        if: steps.pr.outputs.action == 'deploy'
+        id: nvmrc
+        run: echo "NODE_VERSION=$(cat .nvmrc)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Node
+        if: steps.pr.outputs.action == 'deploy'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ steps.nvmrc.outputs.NODE_VERSION }}
+          cache: 'yarn'
+
+      - name: Install
+        if: steps.pr.outputs.action == 'deploy'
+        run: yarn --frozen-lockfile
+
+      - name: Build preview (hash router, subpath, prod API)
+        if: steps.pr.outputs.action == 'deploy'
+        env:
+          WODORE_PUBLIC_PATH: >-
+            /wodore-frontend-quasar/pr-${{ steps.pr.outputs.number }}/
+          WODORE_ROUTER_MODE: hash
+          WODORE_ENV: preview
+          WODORE_URL: >-
+            https://wodore.github.io/wodore-frontend-quasar/pr-${{
+              steps.pr.outputs.number
+            }}/
+          WODORE_DOMAIN: wodore.github.io
+          WODORE_API_HOST: https://hub.wodore.com
+          WODORE_API_VERSION: v1
+          WODORE_OFFICIAL_URL: https://wodo.re
+          WODORE_APP_NAME: Wodore
+          # Public-by-design client values come from repository variables
+          # (docs/pr-previews.md); API host fixed per product decision.
+          WODORE_TILE_SERVER_URL: ${{ vars.WODORE_TILE_SERVER_URL }}
+          WODORE_MAPTILER_API_KEY: ${{ vars.WODORE_MAPTILER_API_KEY }}
+          WODORE_IMAGOR_URL: ${{ vars.WODORE_IMAGOR_URL }}
+          WODORE_IMAGOR_KEY: ${{ vars.WODORE_IMAGOR_KEY }}
+          WODORE_IMAGOR_REPLACE_API_HOST_MEDIA: >-
+            ${{ vars.WODORE_IMAGOR_REPLACE_API_HOST_MEDIA }}
+          WODORE_OICD_ISSUER_URL: ${{ vars.WODORE_OICD_ISSUER_URL }}
+          WODORE_OICD_CLIENT_ID: ${{ vars.WODORE_OICD_CLIENT_ID }}
+          WODORE_FRONTEND_GITHUB: >-
+            https://github.com/wodore/wodore-frontend-quasar
+          WODORE_BACKEND_GITHUB: >-
+            https://github.com/wodore/wodore-backend
+        run: yarn build:pwa
+
+      - name: Deploy to gh-pages
+        if: steps.pr.outputs.action == 'deploy'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: dist/pwa
+          destination_dir: pr-${{ steps.pr.outputs.number }}
+          keep_files: true
+          commit_message: >-
+            Preview pr-${{ steps.pr.outputs.number }} @ ${{
+              github.event.pull_request.head.sha
+            }}
+
+      - name: Comment preview URL + QR
+        if: steps.pr.outputs.action == 'deploy'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const num = ${{ steps.pr.outputs.number }};
+            const sha = context.payload.pull_request.head.sha.slice(0, 7);
+            const url = [
+              'https://wodore.github.io/wodore-frontend-quasar/',
+              `pr-${num}/`,
+            ].join('');
+            const qr = [
+              'https://api.qrserver.com/v1/create-qr-code/',
+              `?size=180x180&data=${encodeURIComponent(url)}`,
+            ].join('');
+            const marker = '<!-- pr-preview -->';
+            const { data: comments } = await github.rest.issues
+              .listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: num,
+              });
+            const existing = comments.find((c) =>
+              c.body.includes(marker),
+            );
+            const body = [
+              marker,
+              '## PR Preview',
+              '',
+              `**${url}**`,
+              '',
+              `<a href="${url}"><img src="${qr}"`,
+              ' alt="QR code to the preview"',
+              ' width="180" height="180"></a>',
+              '',
+              `Read-only preview (no login) - talks to the production`,
+              ` API. Commit \`${sha}\`.`,
+              'Removed automatically when the PR is merged/closed or',
+              ' the `preview` label is removed.',
+            ].join('\n');
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: num,
+                body,
+              });
+            }

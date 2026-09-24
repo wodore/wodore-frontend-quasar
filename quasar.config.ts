@@ -100,7 +100,10 @@ export default configure(ctx => {
         '@boot': path.join(__dirname, './src/boot'),
         '@types': path.join(__dirname, './src/types'),
       },
-      vueRouterMode: 'history', // available values: 'hash', 'history'
+      // GH Pages PR previews build with WODORE_ROUTER_MODE=hash (Pages has no
+      // SPA rewrite) and a subpath via WODORE_PUBLIC_PATH; unset = production
+      // defaults, behavior unchanged.
+      vueRouterMode: (process.env.WODORE_ROUTER_MODE as 'history' | 'hash' | undefined) || 'history', // available values: 'hash', 'history'
       // vueRouterBase,
       // vueDevtools,
       // vueOptionsAPI: false,
@@ -117,7 +120,7 @@ export default configure(ctx => {
 
       // rebuildCache: true, // rebuilds Vite/linter/etc cache on startup
 
-      // publicPath: '/',
+      publicPath: process.env.WODORE_PUBLIC_PATH || '/',
       // analyze: true,
       env: {
         TIMESTAMP_VERSION_HEX:
