@@ -85,11 +85,14 @@ jobs:
           git fetch --depth=1 origin \
             gh-pages:refs/remotes/origin/gh-pages || true
           mkdir -p allure-results/unit/history
-          HIST_DIR="${{ steps.ctx.outputs.dir }}/history"
-          git cat-file -e "origin/gh-pages:${HIST_DIR}" 2>/dev/null \
-            || exit 0
-          git archive origin/gh-pages "$HIST_DIR" \
-            | tar -x --strip-components=3 -C allure-results/unit/history \
+          CTX="${{ steps.ctx.outputs.dir }}"
+          # History lives inside each run dir (allure-report ships its own
+          # history/); restore from the newest existing run of this context
+          LATEST=$(git ls-tree --name-only "origin/gh-pages:${CTX}/" 2>/dev/null \
+            | grep -oE '[0-9]+$' | sort -n | tail -1 || true)
+          [ -z "$LATEST" ] && exit 0
+          git archive "origin/gh-pages:${CTX}/${LATEST}/history" \
+            | tar -x --strip-components=4 -C allure-results/unit/history \
             || true
 
       # allure@3 (Allure Report 3): the allure-action reads the v3 summary
@@ -118,17 +121,6 @@ jobs:
           keep_files: true
           commit_message: >-
             Allure report for run ${{ github.run_number }}
-
-      - name: Publish Allure history
-        if: always()
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./allure-report/history
-          destination_dir: ${{ steps.ctx.outputs.dir }}/history
-          keep_files: true
-          commit_message: >-
-            Allure history for ${{ steps.ctx.outputs.dir }}
 
       # Single comment per PR, updated in place (never duplicated). The
       # allure-action check-run summary above stays as-is.
