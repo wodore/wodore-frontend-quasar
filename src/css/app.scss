@@ -223,7 +223,12 @@ body.body--dark {
   color: #f2f7f4 !important;
 }
 .q-fab.wd-switcher-fab:hover {
-  background-color: var(--wd-chrome-btn-hover) !important;
+  // ZONES: map fabs stay SOLID on hover (translucent wash reads as
+  // a transparent toggle and strands after clicks)
+  background-color: #eef4f0 !important;
+}
+.body--dark .q-fab.wd-switcher-fab:hover {
+  background-color: #1a2f24 !important;
 }
 
 .q-fab.wd-switcher-fab .q-fab__icon,
