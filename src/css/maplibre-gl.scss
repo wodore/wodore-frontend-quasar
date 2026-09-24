@@ -161,12 +161,9 @@
   box-sizing: border-box;
 }
 
-// Night theme: dim the light basemap (interaction-safe canvas filter) and
-// theme the native map controls
-body.body--dark .maplibregl-canvas {
-  filter: brightness(0.65) saturate(0.92);
-}
-
+// Theme the native map controls. NOTE: the map canvas itself is NOT
+// darkened in dark mode (product decision: identical light basemap in both
+// themes; a proper dark baselayer may come later).
 body.body--light .maplibregl-ctrl-group {
   background-color: #fdfefd;
   box-shadow: 0 0 0 1px var(--wd-ridge);

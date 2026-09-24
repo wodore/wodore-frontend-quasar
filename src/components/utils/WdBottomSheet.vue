@@ -240,6 +240,11 @@ bottom-sheet[expand-to-scroll][data-sheet-state='expanded']::part(content) {
 bottom-sheet {
   border-top-left-radius: 24px;
   border-top-right-radius: 24px;
+  /* Theme the sheet surface: the web component defaults to light grey
+     (#f2f2f2) via --sheet-background; route it through the surface token
+     so the mobile hut sheet follows Day/Night. */
+  --sheet-background: var(--wd-surface);
+  color: var(--wd-ink);
   transition:
     border-top-left-radius 0.25s ease,
     border-top-right-radius 0.25s ease;

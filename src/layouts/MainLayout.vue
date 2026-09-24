@@ -232,9 +232,46 @@ onMounted(() => {
 }
 .app-header {
   backdrop-filter: blur(10px);
-  // Incumbent look: the header stays dark in BOTH themes
+  // Night (default here): pine bar, paper text. Day gets the lighter bar
+  // via the body--light override below.
   color: $white;
   background-color: rgba(17, 33, 25, 0.88) !important;
+}
+
+// Day: light toolbar (lighter than dark mode, per product direction):
+// day-panel bar with a ridge hairline; icons switch to readable info-teal.
+body.body--light .app-header {
+  color: #1c1c1c;
+  background-color: rgba(253, 254, 253, 0.9) !important;
+  border-bottom: 1px solid var(--wd-ridge);
+}
+
+// Header buttons are FLAT icon chrome in both themes: transparent
+// background, no borders, no pill fill - the icon color carries the theme
+// (Day: info-teal, Night: ice-mint). Hover is a subtle wash only.
+.app-header .q-btn {
+  background: transparent !important;
+  border-width: 0 !important;
+  box-shadow: none !important;
+}
+
+.app-header .q-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+body.body--light .app-header .q-btn,
+body.body--light .app-header .q-icon,
+body.body--light .app-header .text-icon {
+  color: #29626b !important;
+}
+
+body.body--light .app-header .q-btn:hover {
+  background: rgba(0, 0, 0, 0.06) !important;
+}
+
+body.body--dark .app-header .q-btn .q-icon,
+body.body--dark .app-header .text-icon {
+  color: #a9f0d2 !important;
 }
 
 .preview-badge {
@@ -403,10 +440,9 @@ onMounted(() => {
             round
             dense
             unelevated
-            color="accent-100"
             icon="wd-close"
             @click="closeContent"
-            class="wd-ink-text"
+            class="wd-close-btn"
             size="md"
             style="pointer-events: auto"
           />

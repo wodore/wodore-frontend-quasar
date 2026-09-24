@@ -15,14 +15,14 @@ const props = withDefaults(defineProps<Props>(), {
   color: 'white',
 });
 
-const color_bg = computed(() => (props.color2 ? props.color2 : 'white'));
+const color_bg = computed(() => (props.color2 ? props.color2 : ''));
 </script>
 <style scoped></style>
 <template>
   <q-chip
     size="md"
     v-if="type && type.name"
-    :class="'bg-' + color_bg + ' q-mr-none'"
+    :class="[color_bg ? 'bg-' + color_bg : 'wd-chip-surface', 'q-mr-none']"
     style="min-width: 40px; max-width: 200px; max-height: 30px"
   >
     <q-avatar :class="'bg-' + color" text-color="primary-500">
@@ -37,7 +37,7 @@ const color_bg = computed(() => (props.color2 ? props.color2 : 'white'));
         "
       />
     </q-avatar>
-    <span class="text-primary-500">{{ name }}</span>
+    <span class="wd-ink-text">{{ name }}</span>
     <slot></slot>
   </q-chip>
 </template>

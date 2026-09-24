@@ -58,7 +58,7 @@ function handleOverlayConfigClose() {
 }
 
 .map-menu__versions {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--wd-glass, rgba(255, 255, 255, 0.2));
   /* border-radius: 0px; */
 }
 </style>

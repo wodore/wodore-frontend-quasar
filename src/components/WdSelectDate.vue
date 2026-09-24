@@ -345,7 +345,7 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
     >
       <div>
         <!-- @update:model-value="setNewDate" -->
-        <q-card class="dialog-radius bg-dark-500">
+        <q-card class="dialog-radius wd-menu">
           <div
             class="q-ma-xs z-top text-icon"
             style="position: absolute; width: 32px; top: 6px; right: 6px"
@@ -353,7 +353,7 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
             <q-btn dense round v-close-popup color="accent-700" icon="wd-close"></q-btn>
           </div>
           <!-- HEADER -->
-          <q-list padding class="bg-dark-700">
+          <q-list padding>
             <q-item>
               <!-- <q-item-section avatar>
                 <q-avatar size="56px">

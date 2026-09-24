@@ -70,6 +70,23 @@ const openColor = computed(() => {
   return 'primary-400';
 });
 </script>
+<style scoped></style>
+<style>
+/* Night: semantic chips become translucent tints with theme text shades
+   (day keeps the pastel fills with dark text) */
+body.body--dark .wd-type-chip.bg-positive-200 {
+  background: rgba(37, 193, 94, 0.16) !important;
+  color: #25bf5e !important;
+}
+body.body--dark .wd-type-chip.bg-negative-100 {
+  background: rgba(191, 33, 30, 0.18) !important;
+  color: #f2acab !important;
+}
+body.body--dark .wd-type-chip.bg-primary-100 {
+  background: rgba(157, 217, 210, 0.14) !important;
+  color: #9dd9d2 !important;
+}
+</style>
 <style scoped>
 .badge {
   border-radius: 25px;
@@ -79,7 +96,7 @@ const openColor = computed(() => {
   <q-chip
     size="md"
     v-if="type && type.name"
-    :class="'bg-' + color_bg + ' q-mr-none'"
+    :class="'wd-type-chip bg-' + color_bg + ' q-mr-none'"
     style="
       min-width: 90px;
       max-width: 90px;

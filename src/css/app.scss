@@ -125,6 +125,14 @@ body {
 // months colors
 @import './months.scss';
 
+// ── Dark-mode elevation ────────────────────────────────────────────────
+// Quasar >= 2.11 draws LIGHT (white) shadows in dark mode by default,
+// which reads as glow on pine surfaces. Kill component elevation in dark;
+// separation comes from tonal steps and ridge borders instead.
+body.body--dark {
+  --q-dark-shadow-color: transparent;
+}
+
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // QUASAR overwrites
 @import './quasar.scss';
@@ -242,4 +250,111 @@ body {
   color: var(--wd-ink) !important;
   border-color: var(--wd-ridge) !important;
   background-color: var(--wd-surface-deep) !important;
+}
+
+// ── Menus and popup cards (language/user/date) ─────────────────────────
+// One themed menu family: day-panel + ink in Day, pine + paper in Night.
+// Quasar's .q-menu rules override utility classes, so !important is needed.
+.wd-menu {
+  background: var(--wd-surface) !important;
+  color: var(--wd-ink) !important;
+  border: 1px solid var(--wd-ridge);
+  border-radius: 16px;
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.18),
+    0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.body--dark .wd-menu {
+  box-shadow: none;
+}
+
+.wd-menu .q-item {
+  color: var(--wd-ink);
+}
+
+.wd-menu .q-item:hover {
+  background: var(--wd-wash);
+}
+
+.wd-menu .wd-menu__item--active {
+  background: var(--wd-surface-deep);
+}
+
+// ── Scrolled-header elevation in dark mode ─────────────────────────────
+// Elevation shadows are killed in dark mode; separation via ridge border.
+.body--dark .q-drawer__content.content-drawer .q-header.content-drawer-header-scrolled {
+  box-shadow: none;
+  border-bottom: 1px solid var(--wd-ridge);
+}
+
+.body--dark .footer-toolbar {
+  box-shadow: none !important;
+  border-top: 1px solid var(--wd-ridge);
+}
+
+// ── Button-family guards ───────────────────────────────────────────────
+// Close button on floating panels (content drawer, sheets): themed fill,
+// never the gold accent (gold is scarce, and accent-100 + paper failed AA).
+.wd-close-btn {
+  background-color: var(--wd-surface-deep) !important;
+  color: var(--wd-ink) !important;
+  border: 1px solid var(--wd-ridge);
+}
+
+// A wd-toolbar-btn pill is always dark chrome: its icon stays ice even when
+// a call site also applies wd-ink-text (equal-specificity order made ink
+// win on pine - a contrast bug this rule pins shut).
+.wd-toolbar-btn.wd-ink-text {
+  color: $icon !important;
+}
+
+// Light surfaces (header, menu drawer, bottom sheet, dialogs): in Day the
+// toolbar pills go flat with readable info-teal icons instead of pine.
+body.body--light :is(.app-header, .q-drawer, bottom-sheet, .q-dialog__inner) {
+  .wd-toolbar-btn {
+    background-color: transparent !important;
+    border-color: transparent !important;
+    color: #29626b !important;
+
+    .q-icon {
+      color: #29626b !important;
+    }
+  }
+
+  .wd-toolbar-btn:hover {
+    background-color: rgba(0, 0, 0, 0.06) !important;
+  }
+
+  .wd-toolbar-btn--active {
+    background-color: $primary !important;
+    color: $white !important;
+
+    .q-icon {
+      color: $white !important;
+    }
+  }
+
+  .wd-toolbar-btn.wd-ink-text {
+    color: #29626b !important;
+  }
+}
+
+// Glass surfaces (map-menu version column): light glass in Day, dark glass
+// in Night; components pick it up via var(--wd-glass).
+:root,
+body.body--light {
+  --wd-glass: rgba(255, 255, 255, 0.2);
+}
+
+body.body--dark {
+  --wd-glass: rgba(10, 20, 15, 0.25);
+}
+
+// Themed hut-type chip (falls back when no custom color given)
+.wd-chip-surface {
+  background: var(--wd-surface-deep);
+  color: var(--wd-ink);
+  border: 1px solid var(--wd-ridge);
+  border-radius: 4px;
 }

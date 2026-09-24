@@ -37,32 +37,20 @@ const activeLocale = computed(() => currentLocale());
          content-class/style props, its own .q-menu rules override utility
          classes, and a shadow on an inner element would be clipped by the
          container's overflow:hidden. -->
-    <q-menu
-      anchor="bottom middle"
-      self="top middle"
-      :offset="[0, 8]"
-      class="bg-dark-500"
-      style="
-        border-radius: 16px;
-        color: #f2f7f4;
-        box-shadow:
-          0 12px 32px rgba(0, 0, 0, 0.45),
-          0 4px 12px rgba(0, 0, 0, 0.35);
-      "
-    >
-      <q-list dense class="text-white lang-menu">
+    <q-menu anchor="bottom middle" self="top middle" :offset="[0, 8]" class="wd-menu">
+      <q-list dense class="lang-menu">
         <q-item
           v-for="option in LANGUAGE_OPTIONS"
           :key="option.value"
           clickable
           v-close-popup
-          class="lang-menu__item text-white"
-          :class="{ 'lang-menu__item--active bg-primary-800': option.value === activeLocale }"
+          class="lang-menu__item"
+          :class="{ 'wd-menu__item--active': option.value === activeLocale }"
           @click="setLocale(option.value)"
         >
           <q-item-section>{{ option.label }}</q-item-section>
           <q-item-section v-if="option.value === activeLocale" side>
-            <q-icon name="wd-checkmark" color="accent-100" size="xs" />
+            <q-icon name="wd-checkmark" class="wd-gold-text" size="xs" />
           </q-item-section>
         </q-item>
       </q-list>

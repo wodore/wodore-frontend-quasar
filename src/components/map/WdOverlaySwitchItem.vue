@@ -111,7 +111,7 @@ function onFilterClick(event: Event) {
   border-bottom: 3px solid rgba(0, 0, 0, 0.15);
 
   .q-icon {
-    opacity: 0.6;
+    opacity: 0.85;
     color: color('icon');
   }
 
