@@ -240,24 +240,29 @@ body.body--dark {
   color: #a9f0d2 !important;
 }
 
-// Open state: SOLID zone fill (map-floating controls keep solid bg in
-// every state - the earlier transparent overcorrection read as a missing
-// button). Gold icon marks openness; fills follow the family.
+// Open state: SOLID forest + paper icon - open reads as clearly active
+// (zone rule: map fabs solid in every state)
 .q-fab.wd-switcher-fab--open,
 .q-fab.wd-switcher-fab--open:hover {
-  background-color: #fdfefd !important;
-  border-color: #c9d4cd !important;
+  background-color: #346751 !important;
+  border-color: #224e3b !important;
 
   .q-fab__icon,
   .q-fab__active-icon {
-    color: #bfab25 !important;
+    color: #f2f7f4 !important;
   }
 }
 
 .body--dark .q-fab.wd-switcher-fab--open,
 .body--dark .q-fab.wd-switcher-fab--open:hover {
-  background-color: #112119 !important;
-  border-color: #1c3629 !important;
+  background-color: #346751 !important;
+  border-color: #224e3b !important;
+}
+
+// Night: the active-icon is a basemap thumbnail img (dark artwork) -
+// invert to ice like the action thumbnails or it vanishes on pine
+.body--dark .q-fab.wd-switcher-fab .q-fab__active-icon img {
+  filter: invert(1) sepia(1) hue-rotate(100deg) saturate(1.4) brightness(1.05);
 }
 
 // Basemap thumbnails: SOLID fill (they float over the map), ridge border,
