@@ -268,27 +268,41 @@ body.body--dark {
   border: 3px solid #346751;
 }
 
-// Search field - visible fill in both themes
+// Search field - greenish pine at night, white at day
 .wd-search-field .q-field__control:before {
   border-color: var(--wd-ridge) !important;
 }
 
 .wd-search-field .q-field__control {
-  background: var(--wd-surface-deep) !important;
+  background: #fdfefd !important;
+  border: 1px solid #c9d4cd !important;
 }
 
-.body--light .wd-search-field .q-field__control {
-  background: $white !important;
-  border: 1px solid var(--wd-ridge);
+.body--dark .wd-search-field .q-field__control {
+  background: #14291f !important;
+  border: 1px solid #1c3629 !important;
 }
 
 .wd-search-field input {
-  color: var(--wd-ink) !important;
+  color: #1c1c1c !important;
+}
+
+.body--dark .wd-search-field input {
+  color: #f2f7f4 !important;
+}
+
+.body--dark .wd-search-field .q-icon,
+.body--dark .wd-search-field .q-field__append .q-icon {
+  color: #a9f0d2 !important;
 }
 
 .wd-search-field input::placeholder {
-  color: var(--wd-info) !important;
+  color: #29626b !important;
   opacity: 1;
+}
+
+.body--dark .wd-search-field input::placeholder {
+  color: #9dd9d2 !important;
 }
 
 // Review badge - neutral outline (red reserved for availability)
@@ -481,33 +495,47 @@ body.body--dark .q-drawer {
 }
 
 // Date field: original incumbent standout look, only colors adjusted per
-// theme (Day: white field, dark text; Night: pine-deep, paper, ridge)
-.wd-date-field .q-field__control {
-  background: rgba(255, 255, 255, 0.12);
+// theme (Day: white field, dark text; Night: lifted pine, paper, ridge).
+// Includes the wd-input-button nav fields (same control family).
+.wd-date-field .q-field__control,
+.wd-input-button.q-field--standout .q-field__control {
+  background: #fdfefd !important;
+  border: 1px solid #c9d4cd !important;
 }
 
-body.body--light .wd-date-field .q-field__control {
-  background: $white !important;
+.wd-date-field,
+.wd-date-field input,
+.wd-input-button.q-field--standout,
+.wd-input-button.q-field--standout input {
+  color: #1c1c1c !important;
 }
 
-body.body--light .wd-date-field,
-body.body--light .wd-date-field input {
-  color: $black !important;
+.body--dark .wd-date-field .q-field__control,
+.body--dark .wd-input-button.q-field--standout .q-field__control {
+  background: #14291f !important;
+  border: 1px solid #1c3629 !important;
 }
 
-body.body--dark .wd-date-field .q-field__control {
-  background: var(--wd-surface-deep) !important;
-  border: 1px solid var(--wd-ridge);
+.body--dark .wd-date-field,
+.body--dark .wd-date-field input,
+.body--dark .wd-input-button.q-field--standout,
+.body--dark .wd-input-button.q-field--standout input {
+  color: #f2f7f4 !important;
 }
 
-body.body--dark .wd-date-field,
-body.body--dark .wd-date-field input {
-  color: var(--wd-ink) !important;
+.body--dark .wd-date-field .q-icon,
+.body--dark .wd-input-button .q-icon {
+  color: #a9f0d2 !important;
 }
 
-// Fab action buttons with image previews (basemap thumbs) need a light
-// chip in both themes; glyph actions keep their theme fill.
+// Fab action buttons with image previews (basemap thumbs + image-rendered
+// overlay glyphs) are map-floating: SOLID theme fill (zones rule). Day keeps
+// the light chip; night is lifted pine so image icons stay legible.
 .q-fab__actions .q-btn:has(img) {
   background: #fdfefd !important;
   border: 1px solid #dde7e0 !important;
+}
+.body--dark .q-fab__actions .q-btn:has(img) {
+  background: #14291f !important;
+  border: 1px solid #1c3629 !important;
 }

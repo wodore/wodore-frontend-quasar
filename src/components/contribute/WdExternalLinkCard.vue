@@ -174,8 +174,9 @@ const openAppStore = (event: Event, store: 'google' | 'apple') => {
 .external-link-card {
   border-radius: 12px;
   transition: all 0.2s ease;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  background: #ffffff;
+  border: 1px solid var(--wd-ridge);
+  background: var(--wd-surface);
+  color: var(--wd-ink);
   height: 100%;
   position: relative;
   overflow: hidden;

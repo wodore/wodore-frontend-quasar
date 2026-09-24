@@ -148,15 +148,26 @@ function onFilterClick(event: Event) {
   transition:
     color 0.2s,
     background-color 0.2s;
-  color: var(--wd-chrome-btn-ink);
+
+  // Icon follows themed ink (the Quasar color prop would pin it dark)
+  .q-icon,
+  &.q-btn :deep(.q-icon) {
+    color: var(--wd-chrome-btn-ink) !important;
+  }
 
   &:hover {
     color: #f2f7f4;
     background-color: rgba(255, 255, 255, 0.1);
+    .q-icon {
+      color: #f2f7f4 !important;
+    }
   }
 
   &.active {
     color: #f2f7f4;
+    .q-icon {
+      color: #f2f7f4 !important;
+    }
   }
 }
 
@@ -205,7 +216,6 @@ function onFilterClick(event: Event) {
         flat
         dense
         :icon="showBadge ? 'wd-filter' : 'wd-filter-outline'"
-        color="primary"
         size="xs"
         class="overlay-icon-btn"
         :class="{ active: isFilterActive }"
