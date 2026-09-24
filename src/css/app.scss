@@ -235,17 +235,24 @@ body.body--dark {
   color: #a9f0d2 !important;
 }
 
-// Open state: gold icon, no fill (user rule: no icon bg in any state).
-// Night: never white (the old #fdfefd fill leaked as the white open-toggle).
+// Open state: SOLID zone fill (map-floating controls keep solid bg in
+// every state - the earlier transparent overcorrection read as a missing
+// button). Gold icon marks openness; fills follow the family.
 .q-fab.wd-switcher-fab--open,
 .q-fab.wd-switcher-fab--open:hover {
-  background-color: transparent !important;
-  border-color: transparent !important;
+  background-color: #fdfefd !important;
+  border-color: #c9d4cd !important;
 
   .q-fab__icon,
   .q-fab__active-icon {
     color: #bfab25 !important;
   }
+}
+
+.body--dark .q-fab.wd-switcher-fab--open,
+.body--dark .q-fab.wd-switcher-fab--open:hover {
+  background-color: #112119 !important;
+  border-color: #1c3629 !important;
 }
 
 // Basemap thumbnails: SOLID fill (they float over the map), ridge border,
@@ -271,16 +278,35 @@ body.body--dark {
 
 // Search field - toolbar-family in both themes: greenish fill slightly
 // lighter than the sage bar in Day (paper text, ice icons), pine at night.
-.wd-search-field .q-field__control:before {
-  border-color: var(--wd-ridge) !important;
-}
 
-.wd-search-field .q-field__control {
+// ONE shared rule for the whole toolbar field family (search, date,
+// input-button nav fields): identical fill, border and text in every
+// theme - the two historical blocks had drifted and rendered unequal.
+.wd-search-field .q-field__control,
+.wd-date-field .q-field__control,
+.wd-input-button.q-field--standout .q-field__control {
   background: #3f6a50 !important;
   border: 1px solid #4d7a61 !important;
 }
 
-.body--dark .wd-search-field .q-field__control {
+.wd-search-field,
+.wd-search-field input,
+.wd-date-field,
+.wd-date-field input,
+.wd-input-button.q-field--standout,
+.wd-input-button.q-field--standout input {
+  color: #f2f7f4 !important;
+}
+
+.wd-search-field .q-icon,
+.wd-date-field .q-icon,
+.wd-input-button .q-icon {
+  color: #a9f0d2 !important;
+}
+
+.body--dark .wd-search-field .q-field__control,
+.body--dark .wd-date-field .q-field__control,
+.body--dark .wd-input-button.q-field--standout .q-field__control {
   background: #14291f !important;
   border: 1px solid #1c3629 !important;
 }
@@ -299,7 +325,9 @@ body.body--dark {
 }
 
 .wd-search-field input::placeholder {
-  color: #29626b !important;
+  // Paper at reduced alpha: legible on the sage fill (the old info-teal
+  // was ~1:1 on #3f6a50 - probes missed it reading input, not ::placeholder)
+  color: rgba(242, 247, 244, 0.78) !important;
   opacity: 1;
 }
 
@@ -496,46 +524,8 @@ body.body--dark .q-drawer {
   border-left: 1px solid var(--wd-ridge);
 }
 
-// Date field: incumbent standout look, recolored per theme. Day matches
-// the sage toolbar family (greenish fill slightly lighter than the bar,
-// paper text, ice icons); Night lifted pine, paper, ridge.
-// Includes the wd-input-button nav fields (same control family).
-.wd-date-field .q-field__control,
-.wd-input-button.q-field--standout .q-field__control {
-  background: #3f6a50 !important;
-  border: 1px solid #4d7a61 !important;
-}
-
-.wd-date-field,
-.wd-date-field input,
-.wd-input-button.q-field--standout,
-.wd-input-button.q-field--standout input {
-  color: #f2f7f4 !important;
-}
-
-.wd-date-field .q-icon,
-.wd-input-button .q-icon {
-  color: #a9f0d2 !important;
-}
-
-.body--dark .wd-date-field .q-field__control,
-.body--dark .wd-input-button.q-field--standout .q-field__control {
-  background: #14291f !important;
-  border: 1px solid #1c3629 !important;
-}
-
-.body--dark .wd-date-field,
-.body--dark .wd-date-field input,
-.body--dark .wd-input-button.q-field--standout,
-.body--dark .wd-input-button.q-field--standout input {
-  color: #f2f7f4 !important;
-}
-
-.body--dark .wd-date-field .q-icon,
-.body--dark .wd-input-button .q-icon {
-  color: #a9f0d2 !important;
-}
-
+// (The former separate date-field family block was merged into the shared
+// toolbar-field rule above - one rule, one truth.)
 // Fab action buttons split in two families (corrected zones rule):
 // 1. IMAGE buttons (basemap thumbs + raster activity symbols): map-floating,
 //    SOLID chips — white in Day (dark raster glyphs), pine at Night with the
