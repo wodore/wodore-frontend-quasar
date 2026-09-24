@@ -35,9 +35,11 @@ jobs:
               return;
             }
             core.setOutput('number', String(num));
+            const isPreviewLabel = (name) =>
+              (name || '').toLowerCase() === 'preview';
             const wasUnlabeled =
               context.action === 'unlabeled' &&
-              context.payload.label?.name === 'preview';
+              isPreviewLabel(context.payload.label?.name);
             if (context.eventName === 'closed' || wasUnlabeled) {
               core.setOutput('action', 'cleanup');
               return;
@@ -47,7 +49,7 @@ jobs:
               repo: context.repo.repo,
               issue_number: num,
             });
-            const has = labels.data.some((l) => l.name === 'preview');
+            const has = labels.data.some((l) => isPreviewLabel(l.name));
             // Deploy only while the label is present
             core.setOutput('action', has ? 'deploy' : 'skip');
 
@@ -155,7 +157,7 @@ jobs:
               steps.pr.outputs.number
             }}/
           WODORE_DOMAIN: wodore.github.io
-          WODORE_API_HOST: https://hub.wodore.com
+          WODORE_API_HOST: https://stg.wodore.com
           WODORE_API_VERSION: v1
           WODORE_OFFICIAL_URL: https://wodo.re
           WODORE_APP_NAME: Wodore
