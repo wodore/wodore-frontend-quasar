@@ -272,8 +272,15 @@ body.body--dark {
   border-color: #346751;
 }
 
-.wd-basemap-item--active {
+.q-fab__actions .q-btn.wd-basemap-item.wd-basemap-item--active {
   border: 3px solid #346751;
+  background-color: #346751 !important;
+  border-color: #346751 !important;
+
+  .q-avatar,
+  img {
+    opacity: 0.9;
+  }
 }
 
 // Search field - toolbar-family in both themes: greenish fill slightly
@@ -325,9 +332,8 @@ body.body--dark {
 }
 
 .wd-search-field input::placeholder {
-  // Paper at reduced alpha: legible on the sage fill (the old info-teal
-  // was ~1:1 on #3f6a50 - probes missed it reading input, not ::placeholder)
-  color: rgba(242, 247, 244, 0.78) !important;
+  // Paper at near-solid alpha for AA on the sage fill
+  color: rgba(242, 247, 244, 0.92) !important;
   opacity: 1;
 }
 
@@ -576,4 +582,55 @@ body.body--light .q-toolbar.bg-primary-600 .q-btn .q-icon {
 body.body--dark .q-drawer input,
 body.body--dark .content-drawer input {
   color: #f2f7f4 !important;
+}
+
+// ── Owner polish round ──────────────────────────────────────────────
+
+// 2: Overlay main button + icon button SELECTED state: unmistakable
+// forest fill + paper icon (vs pine/white idle)
+.q-fab__actions .q-btn.overlay-main-btn.active {
+  background-color: #346751 !important;
+  border-color: #346751 !important;
+
+  .q-icon {
+    color: #f2f7f4 !important;
+  }
+}
+
+.q-fab__actions .q-btn.overlay-icon-btn.active {
+  color: #f2f7f4 !important;
+  background-color: #346751 !important;
+
+  .q-icon {
+    color: #f2f7f4 !important;
+  }
+}
+
+// 3: Desktop header icon size (>=768px): compact 20px glyphs, >=40px targets
+@media (min-width: 768px) {
+  .app-header .q-btn .q-icon {
+    font-size: 20px !important;
+  }
+}
+
+// 1c: Weather skeleton visible in dark (ridge-family tones, not near-black)
+body.body--dark .q-skeleton {
+  background: var(--wd-ridge) !important;
+  opacity: 0.7;
+
+  &::after {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(157, 217, 210, 0.12),
+      transparent
+    ) !important;
+  }
+}
+
+// 5: Mobile drawer header toolbar buttons: kill any pine fill remnants
+body.body--light .q-toolbar.bg-primary-600 .q-btn,
+body.body--light .q-toolbar.bg-primary-600 .q-btn::before {
+  background: transparent !important;
+  border: none !important;
 }
