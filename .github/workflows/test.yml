@@ -155,6 +155,25 @@ jobs:
                 comment_id: c.id,
               });
             }
+            // Keep the full-report link on the surviving comment itself
+            const newest = allure[allure.length - 1];
+            if (newest) {
+              const url = [
+                'https://wodore.github.io/wodore-frontend-quasar/',
+                `allure/pr-${num}/${{ github.run_number }}/`,
+              ].join('');
+              const sha = context.payload.pull_request.head.sha.slice(0, 7);
+              const link = `**Full report:** ${url} (run ${{ github.run_number }}, ${sha})`;
+              const body = newest.body.replace(
+                /\n?\*\*Full report:\*\*.*$/m, '',
+              ).trimEnd() + `\n\n${link}`;
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: newest.id,
+                body,
+              });
+            }
 
   # Remove the PR's whole report directory (all runs + history) when it
   # closes, so gh-pages does not accumulate stale reports.
