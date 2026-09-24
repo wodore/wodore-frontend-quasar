@@ -224,7 +224,28 @@ const VIEWPORTS = { desktop: { width: 1440, height: 900 }, mobile: { width: 390,
 const schemes = ARGS.scheme ? [ARGS.scheme] : ['light', 'dark'];
 const tags = ARGS.tag ? [ARGS.tag] : ['desktop', 'mobile'];
 
+const ZONE_PROBE = `(() => {
+  // ZONES regression gate: header toolbar icons must be FLAT (no bg in any
+  // state incl. hover/active), map-floating controls must be SOLID (alpha 1).
+  const out = [];
+  const solid = c => !c.includes('rgba') || +c.split(',')[3] >= 1;
+  for (const b of document.querySelectorAll('.app-header .q-btn, header .q-btn')) {
+    const cs = getComputedStyle(b);
+    if (cs.backgroundColor !== 'rgba(0, 0, 0, 0)' && cs.backgroundColor !== 'transparent')
+      out.push({ zone: 'header', el: b.getAttribute('aria-label') || b.className.slice(0, 30), bg: cs.backgroundColor });
+  }
+  for (const b of document.querySelectorAll('.wd-switcher-fab, .overlay-main-btn, .overlay-icon-btn, .maplibregl-ctrl button')) {
+    const cs = getComputedStyle(b);
+    if (!solid(cs.backgroundColor))
+      out.push({ zone: 'map', el: b.className.slice(0, 30), bg: cs.backgroundColor });
+  }
+  return out;
+})()`;
+
 const CONTRAST_AUDIT = `(() => {
+  // Enumerates EVERY visible text node (querySelectorAll('*') incl. value
+  // spans inside weather/availability components) - do not filter by
+  // component, that is how weather temps escaped detection once.
   const s2l = c => (c /= 255) <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
   const parse = s => { const m = (s || '').match(/rgba?\\(([\\d.]+),\\s*([\\d.]+),\\s*([\\d.]+)(?:,\\s*([\\d.]+))?\\)/); return m ? [+m[1], +m[2], +m[3], m[4] === undefined ? 1 : +m[4]] : null; };
   const lum = ([r, g, b]) => 0.2126 * s2l(r) + 0.7152 * s2l(g) + 0.0722 * s2l(b);
@@ -305,6 +326,13 @@ for (const scheme of schemes) {
           if (violations.length) {
             report.contrast.push({ state: s.id, scheme, tag, violations });
             failed += violations.length;
+          }
+          // ZONES regression gate per state (header flat / map solid)
+          const zoneViolations = await page.evaluate(ZONE_PROBE);
+          if (zoneViolations.length) {
+            if (!report.zones) report.zones = [];
+            report.zones.push({ state: s.id, scheme, tag, zoneViolations });
+            failed += zoneViolations.length;
           }
         }
       } catch (e) {

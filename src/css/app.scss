@@ -197,25 +197,47 @@ body.body--dark {
 // Fab switcher pills (overlay / basemap rail): same chrome family as the
 // toolbar pills (Day white + deep-green, Night pine + ice); open = forest
 .q-fab.wd-switcher-fab {
-  background-color: transparent !important;
-  color: var(--wd-chrome-btn-ink) !important;
-  border: 1px solid transparent;
+  // ZONES: map-floating controls are SOLID (toolbar stays flat)
+  background-color: #fdfefd !important;
+  color: #1c1c1c !important;
+  border: 1px solid #c9d4cd !important;
+}
+.body--dark .q-fab.wd-switcher-fab {
+  background-color: #112119 !important;
+  color: #f2f7f4 !important;
+  border-color: #1c3629 !important;
 }
 
+.overlay-main-btn,
+.overlay-icon-btn {
+  background-color: #fdfefd !important;
+  border: 1px solid #c9d4cd !important;
+  color: #1c1c1c !important;
+}
+.body--dark .overlay-main-btn,
+.body--dark .overlay-icon-btn {
+  background-color: #112119 !important;
+  border: 1px solid #1c3629 !important;
+  color: #f2f7f4 !important;
+}
 .q-fab.wd-switcher-fab:hover {
   background-color: var(--wd-chrome-btn-hover) !important;
 }
 
 .q-fab.wd-switcher-fab .q-fab__icon,
 .q-fab.wd-switcher-fab .q-fab__active-icon {
-  color: var(--wd-chrome-btn-ink) !important;
+  color: #29626b !important;
+}
+.body--dark .q-fab.wd-switcher-fab .q-fab__icon,
+.body--dark .q-fab.wd-switcher-fab .q-fab__active-icon {
+  color: #a9f0d2 !important;
 }
 
 // Open state: gold icon, no fill (user rule: no icon bg in any state)
 .q-fab.wd-switcher-fab--open,
 .q-fab.wd-switcher-fab--open:hover {
-  background-color: transparent !important;
-  border-color: transparent;
+  background-color: #fdfefd !important;
+  border-color: #346751 !important;
 
   .q-fab__icon,
   .q-fab__active-icon {
@@ -285,6 +307,23 @@ body.body--dark {
   box-shadow:
     0 12px 32px rgba(0, 0, 0, 0.18),
     0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.body--light .q-card.wd-menu,
+.body--light .q-menu.wd-menu {
+  background: #3f6a50 !important;
+  color: #f2f7f4 !important;
+  border-color: rgba(10, 20, 15, 0.35);
+}
+.body--light .q-card.wd-menu .q-item,
+.body--light .q-menu.wd-menu .q-item,
+.body--light .q-card.wd-menu .q-date__header,
+.body--light .q-card.wd-menu .q-date__calendar-item,
+.body--light .q-card.wd-menu .q-date__calendar-days-container {
+  color: #f2f7f4 !important;
+}
+.body--light .q-card.wd-menu .q-date__calendar {
+  background: transparent;
 }
 
 .body--dark .wd-menu {

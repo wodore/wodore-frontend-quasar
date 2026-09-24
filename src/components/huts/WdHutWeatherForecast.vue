@@ -499,7 +499,7 @@ watchEffect(async () => {
 
 .weather-forecast__cell {
   font-size: 11px;
-  color: rgba(0, 0, 0, 0.72);
+  color: var(--wd-ink);
   text-align: center;
   white-space: nowrap;
   width: var(--weather-item-width);
@@ -539,7 +539,7 @@ watchEffect(async () => {
 }
 
 .weather-forecast__cell--past {
-  color: rgba(0, 0, 0, 0.35);
+  color: var(--wd-ink-soft);
 }
 
 .weather-forecast__cell--icon {
@@ -552,7 +552,7 @@ watchEffect(async () => {
 }
 
 .weather-forecast__icon--empty {
-  color: rgba(0, 0, 0, 0.35);
+  color: var(--wd-ink-soft);
 }
 
 .weather-forecast__cell--temp {
@@ -568,11 +568,11 @@ watchEffect(async () => {
 .weather-forecast__temp {
   display: inline-flex;
   align-items: center;
-  color: rgba(0, 0, 0, 0.65);
+  color: var(--wd-ink);
 }
 
 .weather-forecast__temp-icon {
-  color: rgba(0, 0, 0, 0.35);
+  color: var(--wd-ink-soft);
 }
 
 .weather-forecast__temp-icon--pill {
@@ -602,7 +602,7 @@ watchEffect(async () => {
   padding: 0;
   font-size: 11px;
   line-height: 1.4;
-  color: rgba(0, 0, 0, 0.5);
+  color: var(--wd-ink-soft);
   font-weight: 600;
 }
 
@@ -613,7 +613,7 @@ watchEffect(async () => {
 .weather-forecast__attribution {
   text-align: right;
   font-size: 10px;
-  color: rgba(0, 0, 0, 0.5);
+  color: var(--wd-ink-soft);
 }
 
 .weather-forecast__attribution a {
@@ -626,6 +626,6 @@ watchEffect(async () => {
 }
 
 .weather-forecast__disclaimer {
-  color: rgba(0, 0, 0, 0.35);
+  color: var(--wd-ink-soft);
 }
 </style>

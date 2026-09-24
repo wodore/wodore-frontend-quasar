@@ -260,8 +260,16 @@ body.body--light .app-header {
 }
 
 body.body--light .app-header .q-btn .q-icon,
-body.body--light .app-header .q-btn .text-icon {
+body.body--light .app-header .q-btn .text-icon,
+body.body--light .app-header .q-btn.text-icon,
+body.body--light .app-header button.text-icon {
   color: #f2f7f4 !important;
+  background: transparent !important;
+}
+// Quasar draws button fills on ::before - kill it in the header
+.app-header .q-btn::before {
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 // Wordmark "wo": theme ink on surfaces; cream on the header bars (both
@@ -280,6 +288,7 @@ body.body--light .app-header .text-black {
 }
 
 body.body--dark .app-header .q-btn .q-icon,
+body.body--dark .app-header .q-btn.text-icon,
 body.body--dark .app-header .text-icon {
   color: #a9f0d2 !important;
 }
