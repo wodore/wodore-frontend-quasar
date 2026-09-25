@@ -25,6 +25,11 @@ import { watchEffect } from 'vue';
 //import { OpenAPI } from '../../../clients/wodore_v1';
 
 const mapRef = useMap();
+
+// Tile server (Martin). Defaults to the public staging server so builds
+// without WODORE_TILE_SERVER_URL (e.g. PR previews) still work; local dev
+// overrides it via .env, CI via the GitHub repository variable.
+const TILE_SERVER_URL = process.env.WODORE_TILE_SERVER_URL || 'https://tiles.stg.wodore.com';
 //let imageSwitchZoom = 11;
 //if (Platform.is.mobile) {
 //  imageSwitchZoom = 9;
@@ -210,7 +215,7 @@ export const hutsStyle: StyleSpecification = {
   sources: {
     'wd-huts': {
       type: 'vector',
-      url: `${process.env.WODORE_TILE_SERVER_URL || 'http://localhost:8075'}/huts`,
+      url: `${TILE_SERVER_URL}/huts`,
       promoteId: 'slug',
     },
     'wd-bookings': {
@@ -219,9 +224,7 @@ export const hutsStyle: StyleSpecification = {
       promoteId: 'hut_id',
     },
   },
-  sprite: [
-    { id: 'wd', url: `${process.env.WODORE_TILE_SERVER_URL}/sprite/accommodation,availability` },
-  ],
+  sprite: [{ id: 'wd', url: `${TILE_SERVER_URL}/sprite/accommodation,availability` }],
   layers: [
     hutsOccpationDetailLayer(0),
     hutsOccpationDetailLayer(1),

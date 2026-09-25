@@ -5,8 +5,9 @@ added, removed when the PR closes or the label is taken off.
 
 - URL scheme: `https://wodore.github.io/wodore-frontend-quasar/pr-<N>/`
 - Read-only: **no login** (Zitadel redirect URIs are exact-match; a
-  per-PR origin cannot authenticate). API calls go to the production
-  API, read paths only.
+  per-PR origin cannot authenticate). API calls go to the public
+  staging API (`https://hub.stg.wodore.com` unless overridden), read
+  paths only.
 - Anything needing login or write flows belongs on the docker staging
   environment, not on previews.
 
@@ -30,22 +31,26 @@ added, removed when the PR closes or the label is taken off.
 
 ## One-time setup
 
-1. **GitHub Pages**: repo Settings → Pages → Source: *Deploy from a
-   branch* → Branch: `gh-pages`, folder `/ (root)`. The branch appears
+1. **GitHub Pages**: repo Settings → Pages → Source: _Deploy from a
+   branch_ → Branch: `gh-pages`, folder `/ (root)`. The branch appears
    after the first preview deploy (or push an empty initial commit).
 2. **Repository variables** (Settings → Secrets and variables → Actions
    → Variables; these are public-by-design client values, they ship in
    every production bundle anyway — hence variables, not secrets):
-   - `WODORE_TILE_SERVER_URL` — Martin tile server (public URL)
+   - `WODORE_API_HOST` — API host (optional; defaults to
+     `https://hub.stg.wodore.com`)
+   - `WODORE_TILE_SERVER_URL` — Martin tile server (optional; defaults
+     to `https://tiles.stg.wodore.com`)
    - `WODORE_MAPTILER_API_KEY`
    - `WODORE_IMAGOR_URL`, `WODORE_IMAGOR_KEY`,
      `WODORE_IMAGOR_REPLACE_API_HOST_MEDIA`
    - `WODORE_OICD_ISSUER_URL`, `WODORE_OICD_CLIENT_ID`
-   The values are whatever the production docker environment injects at
-   runtime (see the `.env` placeholder pattern in the Dockerfile).
-3. **Backend CORS** (hub.wodore.com): previews call the prod API from a
-   new origin. Add exactly one origin to the backend's CORS allow-list
-   (all PR subpaths share it):
+     The values are whatever the production docker environment injects at
+     runtime (see the `.env` placeholder pattern in the Dockerfile).
+3. **Backend CORS**: previews call the API (hub.stg.wodore.com by
+   default) and the Martin tile server from a new origin. Add exactly
+   one origin to each service's CORS allow-list (all PR subpaths share
+   it):
 
    ```text
    https://wodore.github.io
@@ -61,5 +66,6 @@ added, removed when the PR closes or the label is taken off.
   workflow; `GITHUB_TOKEN` only.
 - The service worker registers per subpath scope; stale preview caches
   age out on their own after a PR folder is deleted.
-- Map tiles, Imagor images and analytics run against prod services with
-  prod keys — identical to what any visitor's browser already receives.
+- Map tiles run against the staging Martin server by default
+  (`https://tiles.stg.wodore.com`); Imagor images and analytics run
+  against whatever the repo variables point at.
