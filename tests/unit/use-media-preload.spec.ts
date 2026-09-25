@@ -1,11 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ref } from 'vue';
-import {
-  useMediaPreload,
-  RETRY_DELAYS_MS,
-  getRetryDelayMs,
-} from '@composables/useMediaPreload';
+import { useMediaPreload, RETRY_DELAYS_MS, getRetryDelayMs } from '@composables/useMediaPreload';
 import type { HutImage } from '@composables/useHutImages';
 
 /** Minimal image fixture — only fields the composable reads. */
@@ -15,7 +11,10 @@ const makeImage = (overrides: Partial<HutImage> = {}): HutImage =>
     is_portrait: false,
     ...overrides,
     urls: {
-      square: { thumb: 'square-thumb', 'thumb@2x': 'square-thumb-2x' } as HutImage['urls']['square'],
+      square: {
+        thumb: 'square-thumb',
+        'thumb@2x': 'square-thumb-2x',
+      } as HutImage['urls']['square'],
       landscape: {
         preview: 'landscape-preview',
         thumb: 'landscape-thumb',
@@ -90,15 +89,30 @@ describe('useMediaPreload.preloadImage', () => {
     const { preloadImage } = setup();
     preloadImage('http://img.test/b.jpg', { maxRetries: 3 });
 
-    // 1 initial + 3 retries = 4 attempts total
-    for (let i = 0; i < 3; i++) {
-      FakeImage.instances[i].onerror?.();
-      vi.advanceTimersByTime(RETRY_DELAYS_MS[2] + 1);
-    }
+    // Retry 1 after 1s
+    FakeImage.instances[0].onerror?.();
+    vi.advanceTimersByTime(999);
+    expect(FakeImage.instances).toHaveLength(1);
+    vi.advanceTimersByTime(1);
+    expect(FakeImage.instances).toHaveLength(2);
+
+    // Retry 2 after 3s
+    FakeImage.instances[1].onerror?.();
+    vi.advanceTimersByTime(2999);
+    expect(FakeImage.instances).toHaveLength(2);
+    vi.advanceTimersByTime(1);
+    expect(FakeImage.instances).toHaveLength(3);
+
+    // Retry 3 after 7s
+    FakeImage.instances[2].onerror?.();
+    vi.advanceTimersByTime(6999);
+    expect(FakeImage.instances).toHaveLength(3);
+    vi.advanceTimersByTime(1);
     expect(FakeImage.instances).toHaveLength(4);
 
+    // Final attempt fails -> no further retries
     FakeImage.instances[3].onerror?.();
-    vi.advanceTimersByTime(RETRY_DELAYS_MS[2] + 1);
+    vi.advanceTimersByTime(60000);
     expect(FakeImage.instances).toHaveLength(4);
   });
 });
@@ -112,11 +126,27 @@ describe('useMediaPreload source picking', () => {
     vi.unstubAllGlobals();
   });
 
-  it('falls back to landscape variants for portrait images without portrait urls', () => {
+  it('picks the portrait variant when the image is portrait and has portrait urls', () => {
     const portrait = makeImage({ id: 'p', is_portrait: true });
+    portrait.urls.portrait = {
+      preview: 'portrait-preview',
+      thumb: 'portrait-thumb',
+      medium: 'portrait-medium',
+    } as HutImage['urls']['portrait'];
     const { getGalleryImageUrl } = useMediaPreload(ref([portrait]), ref(0));
 
-    // Small screen -> medium; portrait orientation wins over landscape
+    // Small screen -> medium size, from the portrait orientation block
+    vi.stubGlobal('innerWidth', 800);
+    vi.stubGlobal('innerHeight', 600);
+    expect(getGalleryImageUrl(portrait)).toBe('portrait-medium');
+  });
+
+  it('falls back to landscape variants for portrait images without portrait urls', () => {
+    const portrait = makeImage({ id: 'p-no-portrait', is_portrait: true });
+    const { getGalleryImageUrl } = useMediaPreload(ref([portrait]), ref(0));
+
+    // Small screen -> medium; no portrait urls present, so the landscape
+    // block is used as fallback
     vi.stubGlobal('innerWidth', 800);
     vi.stubGlobal('innerHeight', 600);
     expect(getGalleryImageUrl(portrait)).toBe('landscape-medium');

@@ -93,7 +93,8 @@ export function useMediaPreload(images: Ref<HutImage[]>, currentSlide: Ref<numbe
   };
 
   // Preload single image with retry logic for rate limiting
-  // Respects Retry-After header for 429 responses
+  // Fixed backoff schedule (1s/3s/7s, max 3 retries). Note: Retry-After is
+  // NOT honored - new Image() cannot read response headers (cross-origin).
   const preloadImage = (imageUrl: string, options: { maxRetries?: number } = {}): void => {
     if (!imageUrl || preloadedUrls.value.has(imageUrl)) return;
 
@@ -117,7 +118,7 @@ export function useMediaPreload(images: Ref<HutImage[]>, currentSlide: Ref<numbe
       };
 
       // Load directly - the onerror handler above implements the retry
-      // logic with exponential backoff (no HEAD preflight: it doubled
+      // logic with the fixed schedule (no HEAD preflight: it doubled
       // every image request against the imagor rate limiter).
       img.src = imageUrl;
     };
