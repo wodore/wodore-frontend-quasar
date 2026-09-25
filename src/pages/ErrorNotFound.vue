@@ -2,14 +2,16 @@
 defineOptions({
   name: 'ErrorNotFound',
 });
+
+const logoSrc = `img:${import.meta.env.BASE_URL}errors/logo_404.svg`;
 </script>
 
 <template>
   <div class="fullscreen bg-primary text-white text-center q-pa-md flex flex-center">
     <div>
-      <a href="/">
-        <q-icon size="13vh" name="img:/errors/logo_404.svg" />
-      </a>
+      <router-link to="/">
+        <q-icon size="13vh" :name="logoSrc" />
+      </router-link>
       <div style="font-size: 12vh" class="text-white">404</div>
       <div class="text-h4" style="opacity: 0.4">{{ $t('error_notfound.title') }}</div>
 
