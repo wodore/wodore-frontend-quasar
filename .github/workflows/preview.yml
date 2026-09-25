@@ -198,17 +198,21 @@ jobs:
       # SPA fallback: GitHub Pages has no server rewrite, so a custom 404.html
       # redirects subdirectory paths (e.g. /pr-150/hut/damma) back to the
       # hash router (/pr-150/#/hut/damma). Written once at the root.
-      - name: Publish SPA 404 fallback
+      - name: Checkout gh-pages for 404
+        if: steps.pr.outputs.action == 'deploy'
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+      - name: Write SPA 404 fallback
         if: steps.pr.outputs.action == 'deploy'
         run: |
-          cat > /tmp/404.html << 'FALLBACK'
+          cd gh-pages
+          cat > 404.html << 'FALLBACK'
           <!DOCTYPE html>
           <html>
           <head>
             <script>
-              // Redirect SPA paths to the hash router on GitHub Pages.
-              // e.g. /wodore-frontend-quasar/pr-42/hut/damma
-              //   -> /wodore-frontend-quasar/pr-42/#/hut/damma
               (function() {
                 var repo = '/wodore-frontend-quasar';
                 var path = window.location.pathname;
@@ -221,17 +225,15 @@ jobs:
                   );
                   return;
                 }
-                // Root or unknown: go to the repo root
                 window.location.replace(repo + '/');
               })();
             <\/script>
           </head>
-          <body>Redirecting…</body>
+          <body>Redirecting...</body>
           </html>
           FALLBACK
-          git fetch --depth=1 origin gh-pages:refs/remotes/origin/gh-pages || true
-          git checkout -q gh-pages -- 2>/dev/null || git checkout -q -b gh-pages
-          cp /tmp/404.html 404.html
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add 404.html
           git diff --cached --quiet || git commit -qm "Update SPA 404 fallback"
           git push origin gh-pages
