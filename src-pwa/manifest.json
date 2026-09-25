@@ -8,37 +8,37 @@
   "display_override": ["standalone", "fullscreen", "minimal-ui", "browser"],
   "icons": [
     {
-      "src": "/favicon_shape.svg?v=3",
+      "src": "favicon_shape.svg?v=3",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-192x192.png?v=3",
+      "src": "icons/icon-192x192.png?v=3",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-512x512.png?v=3",
+      "src": "icons/icon-512x512.png?v=3",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/favicon_maskable.svg?v=3",
+      "src": "favicon_maskable.svg?v=3",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "maskable"
     },
     {
-      "src": "/icons/icon-maskable-192x192.png?v=3",
+      "src": "icons/icon-maskable-192x192.png?v=3",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/icons/icon-maskable-512x512.png?v=3",
+      "src": "icons/icon-maskable-512x512.png?v=3",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
