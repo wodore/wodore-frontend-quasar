@@ -195,6 +195,47 @@ jobs:
               github.event.pull_request.head.sha
             }}
 
+      # SPA fallback: GitHub Pages has no server rewrite, so a custom 404.html
+      # redirects subdirectory paths (e.g. /pr-150/hut/damma) back to the
+      # hash router (/pr-150/#/hut/damma). Written once at the root.
+      - name: Publish SPA 404 fallback
+        if: steps.pr.outputs.action == 'deploy'
+        run: |
+          cat > /tmp/404.html << 'FALLBACK'
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <script>
+              // Redirect SPA paths to the hash router on GitHub Pages.
+              // e.g. /wodore-frontend-quasar/pr-42/hut/damma
+              //   -> /wodore-frontend-quasar/pr-42/#/hut/damma
+              (function() {
+                var repo = '/wodore-frontend-quasar';
+                var path = window.location.pathname;
+                if (!path.startsWith(repo)) return;
+                var sub = path.substring(repo.length);
+                var m = sub.match(/^(\/pr-\d+|\/main|\/allure[^\/]*)(\/.*)$/);
+                if (m) {
+                  window.location.replace(
+                    repo + m[1] + '/#' + m[2] + window.location.search
+                  );
+                  return;
+                }
+                // Root or unknown: go to the repo root
+n                window.location.replace(repo + '/');
+              })();
+            <\/script>
+          </head>
+          <body>Redirecting…</body>
+          </html>
+          FALLBACK
+          git fetch --depth=1 origin gh-pages:refs/remotes/origin/gh-pages || true
+          git checkout -q gh-pages -- 2>/dev/null || git checkout -q -b gh-pages
+          cp /tmp/404.html 404.html
+          git add 404.html
+          git diff --cached --quiet || git commit -qm "Update SPA 404 fallback"
+          git push origin gh-pages
+
       - name: Comment preview URL + QR
         if: steps.pr.outputs.action == 'deploy'
         uses: actions/github-script@v7
