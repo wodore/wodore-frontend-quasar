@@ -1,0 +1,1 @@
+{"id":"888bbcdede93f114e6ae1664446403e9","fullName":"wodore:tests/unit/sanitize-html.spec.ts#sanitizeHtml keeps license links and provider logos with inline styles intact","name":"keeps license links and provider logos with inline styles intact","status":"passed","testResultsByEnv":{"default":"c8a4a641be5b2af34ea0813691b3a357"}}

@@ -1,0 +1,1 @@
+{"id":"cc31e0df331a55615bff534baed1d441","fullName":"wodore:tests/unit/locale.spec.ts#locale service falls back to English when the stored value is invalid","name":"falls back to English when the stored value is invalid","status":"passed","testResultsByEnv":{"default":"558a34e4616bdafa413a928661156c52"}}
