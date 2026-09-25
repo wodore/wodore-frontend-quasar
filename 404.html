@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script>
+    (function() {
+      var repo = '/wodore-frontend-quasar';
+      var path = window.location.pathname;
+      if (!path.startsWith(repo)) return;
+      var sub = path.substring(repo.length);
+      var m = sub.match(/^(\/pr-\d+|\/main|\/allure[^\/]*)(\/.*)$/);
+      if (m) {
+        window.location.replace(
+          repo + m[1] + '/#' + m[2] + window.location.search
+        );
+        return;
+      }
+      window.location.replace(repo + '/');
+    })();
+  <\/script>
+</head>
+<body>Redirecting...</body>
+</html>
