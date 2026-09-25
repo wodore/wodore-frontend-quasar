@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
 const router = useRouter();
+
+const logoSrc = `img:${import.meta.env.BASE_URL}logos/logo_beta.svg`;
 function toFeedback() {
   router.push({ name: 'feedback' });
 }
@@ -38,7 +40,7 @@ a:hover {
     <!-- <WdDonationForm /> -->
     <q-icon
       size="15px"
-      :name="`img:${import.meta.env.BASE_URL}logos/logo_beta.svg`"
+      :name="logoSrc"
       style="padding-left: 10px; transform: scale(3) translateY(-2.5px) translateX(-10px)"
     />
     <span :style="$q.platform.is.mobile ? 'font-size: x-small' : ''">

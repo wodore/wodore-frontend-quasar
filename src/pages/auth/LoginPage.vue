@@ -5,6 +5,8 @@ import { useAuthService } from 'src/composables/useAuthService';
 
 const $auth = useAuthService();
 
+const logoSrc = `img:${import.meta.env.BASE_URL}logos/wodore_original.svg`;
+
 const login = function () {
   $auth.signinRedirect();
 };
@@ -14,7 +16,7 @@ const login = function () {
   <div class="window-height bg-primary text-white text-center q-pa-md flex flex-center">
     <div>
       <a>
-        <q-icon size="13vh" :name="`img:${import.meta.env.BASE_URL}logos/wodore_original.svg`" />
+        <q-icon size="13vh" :name="logoSrc" />
       </a>
       <div>
         <q-btn
