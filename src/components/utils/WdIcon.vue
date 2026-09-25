@@ -42,7 +42,17 @@ const isInlineSvg = computed(() => {
   // Delegate img: prefix, icon names, etc. to QIcon
   if (props.name.startsWith('img:')) return false;
   // Only URLs ending in .svg or absolute paths get inlined
-  return props.name.endsWith('.svg') || props.name.startsWith('/');
+  if (!props.name.endsWith('.svg') && !props.name.startsWith('/')) return false;
+  // Cross-origin SVGs are rendered as <img> (inline fetching is CORS-blocked
+  // when the API host differs from the page origin, e.g. PR previews)
+  if (props.name.startsWith('http://') || props.name.startsWith('https://')) {
+    try {
+      return new URL(props.name).origin === window.location.origin;
+    } catch {
+      return false;
+    }
+  }
+  return true;
 });
 
 /** The SVG source URL */
@@ -59,6 +69,19 @@ const sizeStyle = computed(() => {
 const isCssColor = computed(
   () => props.color !== undefined && /^(#|rgb|var|hsl)/.test(props.color)
 );
+
+/** For QIcon: cross-origin SVG URLs become img: so QIcon renders them as <img> */
+const qIconName = computed(() => {
+  if (!props.name) return props.name;
+  if (props.name.startsWith('img:')) return props.name;
+  if (
+    props.name.endsWith('.svg') &&
+    (props.name.startsWith('http://') || props.name.startsWith('https://'))
+  ) {
+    return 'img:' + props.name;
+  }
+  return props.name;
+});
 
 /** CSS classes for the wrapper */
 const wrapperClass = computed(() => ({
@@ -80,7 +103,7 @@ const wrapperStyle = computed(() => ({
   </i>
   <QIcon
     v-else
-    :name="name"
+    :name="qIconName"
     :size="size"
     :color="isCssColor ? undefined : (color as NamedColor)"
     :tag="tag"
