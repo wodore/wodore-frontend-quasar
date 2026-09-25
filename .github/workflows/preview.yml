@@ -222,7 +222,7 @@ jobs:
                   return;
                 }
                 // Root or unknown: go to the repo root
-n                window.location.replace(repo + '/');
+                window.location.replace(repo + '/');
               })();
             <\/script>
           </head>
