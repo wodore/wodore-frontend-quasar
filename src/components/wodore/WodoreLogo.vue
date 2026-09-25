@@ -15,7 +15,7 @@ const props = withDefaults(defineProps<Props>(), {
   text: false,
   textColorLeft: 'black',
   textColorRight: 'accent',
-  logoPath: '/logos/wodore_original.svg',
+  logoPath: `${import.meta.env.BASE_URL}logos/wodore_original.svg`,
 });
 
 const showIcon = computed(() => {

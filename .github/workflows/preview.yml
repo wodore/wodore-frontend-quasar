@@ -2,7 +2,8 @@ name: PR Preview
 
 # Static GitHub Pages previews for pull requests carrying the 'preview'
 # label. Read-only (no login): Zitadel redirect URIs are exact-match, so
-# previews cannot authenticate; API access is read-only against prod.
+# previews cannot authenticate; API access is read-only against the
+# staging API by default (overridable via WODORE_API_HOST).
 # Complex scenarios (login, writes) belong on the docker staging env.
 # See docs/pr-previews.md for setup (Pages activation, repo variables,
 # and the single backend CORS entry).
@@ -157,13 +158,16 @@ jobs:
               steps.pr.outputs.number
             }}/
           WODORE_DOMAIN: wodore.github.io
-          WODORE_API_HOST: https://hub.stg.wodore.com
+          WODORE_API_HOST: >-
+            ${{ vars.WODORE_API_HOST || 'https://hub.stg.wodore.com' }}
           WODORE_API_VERSION: v1
           WODORE_OFFICIAL_URL: https://wodo.re
           WODORE_APP_NAME: Wodore
           # Public-by-design client values come from repository variables
-          # (docs/pr-previews.md); API host fixed per product decision.
-          WODORE_TILE_SERVER_URL: ${{ vars.WODORE_TILE_SERVER_URL }}
+          # (docs/pr-previews.md); API host and tile server default to the
+          # public staging services and stay overridable via variables.
+          WODORE_TILE_SERVER_URL: >-
+            ${{ vars.WODORE_TILE_SERVER_URL || 'https://tiles.stg.wodore.com' }}
           WODORE_MAPTILER_API_KEY: ${{ vars.WODORE_MAPTILER_API_KEY }}
           WODORE_IMAGOR_URL: ${{ vars.WODORE_IMAGOR_URL }}
           WODORE_IMAGOR_KEY: ${{ vars.WODORE_IMAGOR_KEY }}
@@ -198,7 +202,8 @@ jobs:
           script: |
             const num = ${{ steps.pr.outputs.number }};
             const sha = context.payload.pull_request.head.sha.slice(0, 7);
-            const builtAt = new Date().toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
+            const builtAt = new Date().toISOString()
+              .replace('T', ' ').slice(0, 16) + ' UTC';
             const url = [
               'https://wodore.github.io/wodore-frontend-quasar/',
               `pr-${num}/`,
