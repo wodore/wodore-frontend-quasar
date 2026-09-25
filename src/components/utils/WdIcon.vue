@@ -42,17 +42,9 @@ const isInlineSvg = computed(() => {
   // Delegate img: prefix, icon names, etc. to QIcon
   if (props.name.startsWith('img:')) return false;
   // Only URLs ending in .svg or absolute paths get inlined
-  if (!props.name.endsWith('.svg') && !props.name.startsWith('/')) return false;
-  // Cross-origin SVGs are rendered as <img> (inline fetching is CORS-blocked
-  // when the API host differs from the page origin, e.g. PR previews)
-  if (props.name.startsWith('http://') || props.name.startsWith('https://')) {
-    try {
-      return new URL(props.name).origin === window.location.origin;
-    } catch {
-      return false;
-    }
-  }
-  return true;
+  // (cross-origin SVGs work now — the staging media endpoint sends
+  // Access-Control-Allow-Origin for wodore.github.io)
+  return props.name.endsWith('.svg') || props.name.startsWith('/');
 });
 
 /** The SVG source URL */
@@ -71,15 +63,10 @@ const isCssColor = computed(
 );
 
 /** For QIcon: cross-origin SVG URLs become img: so QIcon renders them as <img> */
+/** For QIcon: cross-origin SVG URLs become img: as a fallback when
+ * inline SVG is not active (isInlineSvg handles the primary path) */
 const qIconName = computed(() => {
   if (!props.name) return props.name;
-  if (props.name.startsWith('img:')) return props.name;
-  if (
-    props.name.endsWith('.svg') &&
-    (props.name.startsWith('http://') || props.name.startsWith('https://'))
-  ) {
-    return 'img:' + props.name;
-  }
   return props.name;
 });
 
