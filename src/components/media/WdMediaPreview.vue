@@ -481,6 +481,7 @@ const thumbnailContainerStyle = computed(() => {
             :class="{ 'stripe-error': isStripeImageError(slide.image.id) }"
           >
             <img
+              loading="lazy"
               :src="getStripeImageUrl(slide.image)"
               class="stripe-image"
               :class="{ 'stripe-loaded': isStripeImageLoaded(slide.image.id) }"
@@ -559,6 +560,7 @@ const thumbnailContainerStyle = computed(() => {
         >
           <swiper-slide v-for="image in images" :key="image.id" class="preview-slide">
             <img
+              loading="lazy"
               :src="getMainImageUrl(image)"
               :alt="`Image by ${image.attribution?.short || 'unknown'}`"
               class="preview-image"
@@ -589,6 +591,7 @@ const thumbnailContainerStyle = computed(() => {
                 :class="{ 'thumb-error': isThumbnailError(image.id) }"
               >
                 <img
+                  loading="lazy"
                   :src="getThumbnailUrl(image)"
                   class="thumb-image-inline"
                   :class="{ 'thumb-loaded': isThumbnailLoaded(image.id) }"

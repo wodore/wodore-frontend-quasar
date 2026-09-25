@@ -132,7 +132,7 @@ const closeGallery = () => {
   emit('close');
 };
 
-// Download original image
+// Download image (urls.original.raw is a large thumb, not the true original)
 const downloadOriginal = () => {
   if (currentImage.value) {
     window.open(currentImage.value.urls.original.raw, '_blank');
@@ -220,6 +220,7 @@ onUnmounted(() => {
           <!-- Wrapper div that matches image dimensions - creates positioning context -->
           <div class="image-wrapper">
             <img
+              loading="lazy"
               :src="getMainImageUrl(image)"
               :alt="`Image by ${image.attribution?.short || 'unknown'}`"
               class="main-image"
@@ -281,6 +282,7 @@ onUnmounted(() => {
           }"
         >
           <img
+            loading="lazy"
             :src="getPreviewImageUrl(image)"
             :alt="`Thumbnail by ${image.attribution?.short || 'unknown'}`"
             class="thumb-image"

@@ -2,6 +2,18 @@ import { ref, type Ref } from 'vue';
 import type { HutImage } from './useHutImages';
 import type { ImageSizeVariants } from 'src/types/geo';
 
+/**
+ * Retry schedule for transient upstream failures (imagor cache misses can
+ * surface as 429/5xx when the upstream source rate-limits): retry seconds
+ * later with increasing waits.
+ */
+export const RETRY_DELAYS_MS = [1000, 3000, 7000] as const;
+
+/** Delay before retry attempt `attemptNumber` (0-based); clamps to the last entry. */
+export function getRetryDelayMs(attemptNumber: number): number {
+  return RETRY_DELAYS_MS[Math.min(attemptNumber, RETRY_DELAYS_MS.length - 1)];
+}
+
 export function useMediaPreload(images: Ref<HutImage[]>, currentSlide: Ref<number>) {
   const preloadedUrls = ref<Set<string>>(new Set());
 
@@ -82,13 +94,10 @@ export function useMediaPreload(images: Ref<HutImage[]>, currentSlide: Ref<numbe
 
   // Preload single image with retry logic for rate limiting
   // Respects Retry-After header for 429 responses
-  const preloadImage = (
-    imageUrl: string,
-    options: { maxRetries?: number; retryDelay?: number } = {}
-  ): void => {
+  const preloadImage = (imageUrl: string, options: { maxRetries?: number } = {}): void => {
     if (!imageUrl || preloadedUrls.value.has(imageUrl)) return;
 
-    const { maxRetries = 3, retryDelay = 250 } = options;
+    const { maxRetries = 3 } = options;
 
     const attemptLoad = (attemptNumber: number) => {
       const img = new window.Image();
@@ -100,8 +109,8 @@ export function useMediaPreload(images: Ref<HutImage[]>, currentSlide: Ref<numbe
       img.onerror = () => {
         // Check if we should retry
         if (attemptNumber < maxRetries) {
-          // Exponential backoff: 250ms, 500ms, 1000ms
-          const delay = retryDelay * Math.pow(2, attemptNumber);
+          // Fixed schedule: 1s, 3s, 7s (see RETRY_DELAYS_MS)
+          const delay = getRetryDelayMs(attemptNumber);
           setTimeout(() => attemptLoad(attemptNumber + 1), delay);
         }
         // If max retries reached, silently fail - the browser will handle it naturally
@@ -141,7 +150,7 @@ export function useMediaPreload(images: Ref<HutImage[]>, currentSlide: Ref<numbe
         // Reduced spread since we have retry logic: 0ms, 50ms, 100ms, 150ms, 200ms
         const delay = i * 50;
         setTimeout(() => {
-          preloadImage(galleryImageUrl, { maxRetries: 3, retryDelay: 250 });
+          preloadImage(galleryImageUrl, { maxRetries: 3 });
         }, delay);
       }
     });
@@ -178,8 +187,8 @@ export function useMediaPreload(images: Ref<HutImage[]>, currentSlide: Ref<numbe
 
               img.onerror = () => {
                 if (attemptNumber < 3) {
-                  // Retry with exponential backoff
-                  const retryDelay = 250 * Math.pow(2, attemptNumber);
+                  // Fixed retry schedule: 1s, 3s, 7s (see RETRY_DELAYS_MS)
+                  const retryDelay = getRetryDelayMs(attemptNumber);
                   setTimeout(() => attemptLoad(attemptNumber + 1), retryDelay);
                 } else {
                   // Resolve anyway - thumbnail will show broken or browser will retry
