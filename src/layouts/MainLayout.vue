@@ -176,7 +176,7 @@ function closeContent() {
 const appTitle = process.env.WODORE_APP_NAME || 'Wodore';
 const appEnv = process.env.WODORE_ENV || 'production';
 const officialUrl = process.env.WODORE_OFFICIAL_URL || '';
-const isStaging = computed(() => appEnv === 'staging');
+const isStaging = computed(() => appEnv === 'staging' || appEnv === 'preview');
 const isNotProduction = computed(() => appEnv !== 'production');
 const metaData = {
   title: appTitle,
