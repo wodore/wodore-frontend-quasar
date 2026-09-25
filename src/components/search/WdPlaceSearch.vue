@@ -325,7 +325,6 @@ function handleSwipeDown() {
         :model-value="searchText"
         @update:model-value="onSearchInput"
         dense
-        outlined
         :placeholder="t('search_ui.placeholder')"
         autofocus
         @keydown="onKeyDown"
