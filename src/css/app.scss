@@ -486,21 +486,21 @@ body.body--dark {
     0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
-// Calendar and menus: sage like the toolbar family in Day, pine in Night.
-// ALL q-date internals must be forced transparent/sage — Quasar's q-date
-// defaults carry white backgrounds that override the card fill.
+// Calendar and menus: theme-aware via tokens (Day panel in light, pine in
+// dark). ALL q-date internals must be forced transparent — Quasar's
+// q-date defaults carry white backgrounds that override the card fill.
 .body--light .q-card.wd-menu,
 .body--light .q-menu.wd-menu {
-  background: #3f6a50 !important;
-  color: #f2f7f4 !important;
-  border-color: #4d7a61;
+  background: var(--wd-surface) !important;
+  color: var(--wd-ink) !important;
+  border-color: var(--wd-ridge);
 }
 .body--light .q-card.wd-menu .q-item,
 .body--light .q-menu.wd-menu .q-item,
 .body--light .q-card.wd-menu .q-date__header,
 .body--light .q-card.wd-menu .q-date__calendar-item,
 .body--light .q-card.wd-menu .q-date__calendar-days-container {
-  color: #f2f7f4 !important;
+  color: var(--wd-ink) !important;
 }
 .body--light .q-card.wd-menu .q-date,
 .body--light .q-card.wd-menu .q-date__header,
