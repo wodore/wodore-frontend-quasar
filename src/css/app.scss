@@ -108,15 +108,22 @@
   color: #f2f7f4 !important;
 }
 
-// Disabled / out-of-month days: faded
-.body--light .q-card.dialog-radius .q-date__calendar-item--out,
-.body--light .q-card.dialog-radius .q-date__calendar-item[aria-disabled='true'],
-.body--dark .q-card.dialog-radius .q-date__calendar-item--out,
-.body--dark .q-card.dialog-radius .q-date__calendar-item[aria-disabled='true'] {
+// Disabled / out-of-month days: faded but READABLE per theme (the old
+// paper-30% was near-invisible on the light card)
+.body--light .q-card.dialog-radius .q-date__calendar-item--out .q-btn,
+.body--light
+  .q-card.dialog-radius
+  .q-date__calendar-item[aria-disabled='true']
   .q-btn {
-    color: rgba(242, 247, 244, 0.3) !important;
-  }
-  opacity: 0.5;
+  color: rgba(28, 28, 28, 0.38) !important;
+}
+
+.body--dark .q-card.dialog-radius .q-date__calendar-item--out .q-btn,
+.body--dark
+  .q-card.dialog-radius
+  .q-date__calendar-item[aria-disabled='true']
+  .q-btn {
+  color: rgba(242, 247, 244, 0.45) !important;
 }
 
 // Hover on days: slightly lighter sage
