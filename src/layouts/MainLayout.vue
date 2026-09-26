@@ -375,9 +375,9 @@ body.body--dark .app-header .text-icon {
         <WdSelectDate />
         <WdPlaceSearchDialog v-if="isMobile" />
         <WdSupportButton v-if="!authStore.isLoggedIn && !isMobile" class="wd-info-text" />
-        <WdFeedbackButton v-if="!isMobile" />
-        <WdLanguageSwitcher v-if="!isMobile" />
-        <WdThemeSwitcher v-if="!isMobile" />
+        <WdFeedbackButton v-if="!isMobile" size="md" />
+        <WdLanguageSwitcher v-if="!isMobile" size="md" />
+        <WdThemeSwitcher v-if="!isMobile" size="md" />
 
         <WdUser v-if="authStore.isLoggedIn" />
 

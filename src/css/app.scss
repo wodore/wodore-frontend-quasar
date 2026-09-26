@@ -159,6 +159,14 @@
   opacity: 0.7;
 }
 
+// Light mode: close button is flat (no fill, no shadow, ink icon).
+// Dark mode keeps the accent-700 (orange) fill via the color prop.
+.body--light .q-card.dialog-radius .wd-close-btn .q-btn {
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--wd-ink) !important;
+}
+
 // ─── Mobile rail: mint-green circles (Day) ───────────────────────────────
 @media (max-width: 600px) {
   .body--light .overlay-main-btn:not(:has(img)),
@@ -499,6 +507,22 @@ body.body--dark {
     0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
+// The wd icon font registers a `.wd-menu:before` glyph rule (icon "wd-menu")
+// that also matches DIVs carrying the wd-menu class - e.g. the calendar
+// card - rendering a tofu "?" box that pushes the title down. Restrict the
+// glyph to real <i> icon elements.
+.wd-menu:not(i)::before {
+  content: none !important;
+  display: none !important;
+}
+
+// No hover feedback on the calendar card header (date title) and the
+// month/year title buttons in the navigation bar
+.q-card.wd-menu .q-list .q-item:hover,
+.q-card.wd-menu .q-date__navigation .q-btn:hover {
+  background: transparent !important;
+}
+
 // Calendar and menus: theme-aware via tokens (Day panel in light, pine in
 // dark). ALL q-date internals must be forced transparent — Quasar's
 // q-date defaults carry white backgrounds that override the card fill.
@@ -773,13 +797,6 @@ body.body--dark .content-drawer input {
 
   .q-icon {
     color: #f2f7f4 !important;
-  }
-}
-
-// 3: Desktop header icon size (>=768px): compact 20px glyphs, >=40px targets
-@media (min-width: 768px) {
-  .app-header .q-btn .q-icon {
-    font-size: 20px !important;
   }
 }
 
