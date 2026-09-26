@@ -252,9 +252,12 @@ function onLinkClick(url: string) {
 
 const imgPath = 'https://cdn.pixabay.com/photo/2018/11/09/16/20/photographer-3804979_1280.jpg';
 
-// Raw CDN url: imagor processing breaks on unsigned (manual) builds;
-// an external photo needs no proxy
-const headerImg = imgPath;
+const headerImg = getImageUrl(imgPath, {
+  fit: true,
+  size: '800x300',
+  smart: true,
+  quality: 80,
+});
 </script>
 
 <style lang="scss" scoped>

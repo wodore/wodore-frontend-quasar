@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n';
 import { useMeteoStore } from '@stores/meteo-store';
 import { storeToRefs } from 'pinia';
 import WdDayLabel from './WdDayLabel.vue';
+import WdIcon from 'components/utils/WdIcon.vue';
 
 const { t } = useI18n();
 const $q = useQuasar();
@@ -176,13 +177,9 @@ const tooltipContent = computed(() => {
     <div class="wd-weather-day__icon">
       <q-skeleton v-if="isLoading" type="circle" :width="`${size}px`" :height="`${size}px`" />
       <template v-else-if="iconUrl">
-        <img
-          :src="iconUrl"
-          :width="size"
-          :height="size"
-          style="object-fit: contain"
-          loading="eager"
-        />
+        <!-- Inline SVG (not <img>): the mono weather symbols are black
+        source files - only an inlined svg can be recolored for dark mode -->
+        <WdIcon :name="iconUrl" :size="`${size}px`" class="wd-weather-day__symbol" />
         <q-tooltip v-if="tooltipContent.length" :delay="700">
           <div v-for="(line, i) in tooltipContent" :key="i">{{ line }}</div>
         </q-tooltip>
@@ -330,5 +327,12 @@ const tooltipContent = computed(() => {
 
 .wd-weather-day__snow {
   color: rgba(var(--wd-ink-rgb), 0.45);
+}
+
+// Mono weather symbols: recolor with the surrounding text color (black
+// source files would stay black on the dark surface)
+.wd-weather-day__symbol :deep(svg),
+.wd-weather-day__symbol :deep(svg path) {
+  fill: currentColor;
 }
 </style>
