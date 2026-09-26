@@ -352,8 +352,8 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
           >
             <q-btn dense round v-close-popup color="accent-700" icon="wd-close"></q-btn>
           </div>
-          <!-- HEADER -->
-          <q-list padding>
+          <!-- HEADER: same slight bg as the footer -->
+          <q-list padding class="wd-surface-deep">
             <q-item>
               <!-- <q-item-section avatar>
                 <q-avatar size="56px">
