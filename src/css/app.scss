@@ -332,10 +332,15 @@ body.body--dark {
 // light-chrome in BOTH themes (owner rule: no dark-mode inversion of
 // overlay/basemap toggle buttons). Open = forest.
 .q-fab.wd-switcher-fab {
-  // ZONES: map-floating controls are SOLID (toolbar stays flat)
+  // ZONES: map-floating controls are SOLID (toolbar stays flat).
+  // Shared map-control elevation: a hard bottom edge - the tactile
+  // "physical button" look, consistent across fabs / rail / native ctrl
   background-color: #fdfefd !important;
   color: #1c1c1c !important;
   border: 1px solid #c9d4cd !important;
+  box-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.18),
+    0 1px 3px rgba(10, 20, 15, 0.2);
 }
 
 .overlay-main-btn,
@@ -343,6 +348,9 @@ body.body--dark {
   background-color: #fdfefd !important;
   border: 1px solid #c9d4cd !important;
   color: #1c1c1c !important;
+  box-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.18),
+    0 1px 3px rgba(10, 20, 15, 0.2);
 }
 .q-fab.wd-switcher-fab:hover {
   // ZONES: map fabs stay SOLID on hover (translucent wash reads as
@@ -355,46 +363,43 @@ body.body--dark {
   color: #29626b !important;
 }
 
-// Open state: SOLID forest + paper icon - open reads as clearly active
-// (zone rule: map fabs solid in every state)
+// Open state: gold fill - the one true primary, the "head-torch" the
+// user is meant to find (impeccable consult: gold is scarce, the open
+// toggle is the single place it earns a fill). Dark icon on gold.
 .q-fab.wd-switcher-fab--open,
 .q-fab.wd-switcher-fab--open:hover {
-  background-color: #346751 !important;
-  border-color: #224e3b !important;
+  background-color: #bfab25 !important;
+  border-color: #846a15 !important;
 
   .q-fab__icon,
   .q-fab__active-icon {
-    color: #f2f7f4 !important;
+    color: #1c1c1c !important;
   }
 }
 
-.body--dark .q-fab.wd-switcher-fab--open,
-.q-fab.wd-switcher-fab--open:hover {
-  background-color: #346751 !important;
-  border-color: #224e3b !important;
-}
-
-// Basemap thumbnails: SOLID fill (they float over the map), ridge border,
-// unmistakable 3px forest ring when selected (user rule: solid bg on map
-// controls; translucent fills sink into the imagery)
+// Basemap thumbnails: solid white chips, ridge border, shared
+// map-control elevation (see the --wd-map-elev shadow below)
 .wd-basemap-item {
   background-color: #fdfefd !important;
   border: 1px solid #c9d4cd;
-  box-shadow: 0 1px 4px rgba(10, 20, 15, 0.25);
+  box-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.18),
+    0 1px 3px rgba(10, 20, 15, 0.2);
 }
 
 .wd-basemap-item:hover {
   border-color: #346751;
 }
 
+// Selected basemap: white chip + gold ring - the shared "selected"
+// language for map controls (small gold surface, never a gold fill)
 .q-fab__actions .q-btn.wd-basemap-item.wd-basemap-item--active {
-  border: 3px solid #346751;
-  background-color: #346751 !important;
-  border-color: #346751 !important;
+  border: 2px solid #bfab25 !important;
+  background-color: #fdfefd !important;
 
   .q-avatar,
   img {
-    opacity: 0.9;
+    opacity: 1;
   }
 }
 
@@ -704,6 +709,18 @@ body.body--dark *::after {
   box-shadow: none !important;
 }
 
+// Exception: map-floating controls keep the shared elevation at night -
+// they sit on the (always light) basemap, where a flat chip loses its
+// definition just like in Day (owner: consistent 3D on ALL map buttons)
+body.body--dark .q-fab.wd-switcher-fab,
+body.body--dark .overlay-main-btn,
+body.body--dark .wd-basemap-item,
+body.body--dark .maplibregl-ctrl-group {
+  box-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.18),
+    0 1px 3px rgba(10, 20, 15, 0.2) !important;
+}
+
 // Structural separation in dark = thin ridge lines
 body.body--dark .q-header {
   border-bottom: 1px solid var(--wd-ridge);
@@ -764,23 +781,30 @@ body.body--dark .content-drawer input {
 
 // ── Owner polish round ──────────────────────────────────────────────
 
-// 2: Overlay main button + icon button SELECTED state: unmistakable
-// forest fill + paper icon (vs pine/white idle)
+// 2: Overlay SELECTED state: white chip + gold icon (glyph buttons) /
+// gold ring (raster buttons). impeccable consult: a gold or forest FILL
+// at rail scale reads as noise - the icon/ring is the "small, warm,
+// pointed" signal the design system asks for.
 .q-fab__actions .q-btn.overlay-main-btn.active {
-  background-color: #346751 !important;
-  border-color: #346751 !important;
+  background-color: #fdfefd !important;
+  border-color: #c9d4cd !important;
 
   .q-icon {
-    color: #f2f7f4 !important;
+    color: #bfab25 !important;
   }
 }
 
+// Raster-symbol buttons (huts, bike, hiking, ...): gold ring instead of
+// a gold icon (the PNG glyph cannot be recolored)
+.q-fab__actions .q-btn.overlay-main-btn.active:has(img) {
+  border: 2px solid #bfab25 !important;
+}
+
 .q-fab__actions .q-btn.overlay-icon-btn.active {
-  color: #f2f7f4 !important;
-  background-color: #346751 !important;
+  background-color: transparent !important;
 
   .q-icon {
-    color: #f2f7f4 !important;
+    color: #bfab25 !important;
   }
 }
 
@@ -849,4 +873,14 @@ body .q-toolbar.bg-primary-600 .q-btn::before {
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
+}
+
+// Mobile rail (mint circles): active keeps the solid forest fill - on the
+// mint family a ring would read as noise. Must live AFTER the
+// white-chip+gold active rule to win the cascade at equal specificity.
+@media (max-width: 600px) {
+  .q-fab__actions .q-btn.overlay-main-btn.active {
+    background-color: #346751 !important;
+    border: none !important;
+  }
 }

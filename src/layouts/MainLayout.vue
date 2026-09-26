@@ -293,15 +293,20 @@ body.body--dark .app-header .text-icon {
   color: #a9f0d2 !important;
 }
 
+// Diagonal preview ribbon at the top-left corner. Intentionally overlaps
+// the header edge and is partially clipped by the viewport - that is the
+// classic "ribbon" look, NOT a bug (owner confirmed).
 .preview-badge {
-  margin-left: 4px;
-  font-size: 10px;
-  line-height: 1;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  padding: 3px 8px;
-  border-radius: 4px;
+  position: fixed;
+  top: 1px;
+  left: -26px;
+  z-index: 6000;
+  font-size: 11px;
+  line-height: 10px;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  padding: 2px 32px 2px 26px;
+  transform: rotate(-20deg);
   background-image: repeating-linear-gradient(
     -45deg,
     color('accent', 900),
@@ -310,6 +315,7 @@ body.body--dark .app-header .text-icon {
     color('accent', 800) 12px
   );
   color: white;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
   pointer-events: none;
 }
 
@@ -355,11 +361,11 @@ body.body--dark .app-header .text-icon {
 <template>
   <WdAnalytics />
   <q-layout view="hHh LpR fFf" class="overflow-hidden">
+    <div v-if="isStaging" class="preview-badge">preview</div>
     <q-header class="app-header" bordered>
       <!-- TOOLBAR -->
       <q-toolbar>
         <WdMenuButton desktop v-model="menuDrawerOpen" />
-        <div v-if="isStaging" class="preview-badge">preview</div>
         <q-toolbar-title>
           <WodoreLogo
             class="text-h4"

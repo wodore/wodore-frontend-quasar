@@ -54,12 +54,16 @@
   border-radius: $button-rounded-border-radius;
   background: #fdfefd;
   border: 1px solid #c9d4cd;
-  box-shadow: 0 1px 4px rgba(10, 20, 15, 0.25);
+  box-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.18),
+    0 1px 3px rgba(10, 20, 15, 0.2);
   overflow: hidden;
 }
 
 .maplibregl-ctrl-group:not(:empty) {
-  box-shadow: none;
+  box-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.18),
+    0 1px 3px rgba(10, 20, 15, 0.2);
 }
 //@media (-ms-high-contrast: active) {
 //  .maplibregl-ctrl-group:not(:empty) {
