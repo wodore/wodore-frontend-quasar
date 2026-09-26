@@ -32,7 +32,9 @@ writeFileSync(cssPath, out);
 
 // Collect icon names for the collision scan (idempotent: matches both
 // `.wd-x:before` from a fresh fantasticon run and `i.wd-x:before` after scoping)
-const iconNames = [...css.matchAll(/^(?:i\.)?\.?(wd-[a-z0-9-]+):before/gm)].map((m) => m[1].replace(/^wd-/, ''));
+const iconNames = [...css.matchAll(/^(?:i\.)?\.?(wd-[a-z0-9-]+):before/gm)].map(m =>
+  m[1].replace(/^wd-/, '')
+);
 
 // Scan src for non-icon class usages matching icon names
 const srcDir = new URL('../src', import.meta.url).pathname;

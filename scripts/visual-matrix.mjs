@@ -337,9 +337,7 @@ for (const scheme of schemes) {
           }
           // axe-core a11y audit per state (serious/critical only - the
           // contrast audit above already covers color contrast in detail)
-          const axe = await new AxeBuilder({ page })
-            .withTags(['wcag2a', 'wcag2aa'])
-            .analyze();
+          const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
           const axeViolations = axe.violations
             .filter(v => v.impact === 'serious' || v.impact === 'critical')
             .map(v => ({ id: v.id, impact: v.impact, nodes: v.nodes.length, help: v.help }));
