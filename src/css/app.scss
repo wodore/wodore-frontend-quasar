@@ -371,12 +371,14 @@ body.body--dark {
     0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
-// Calendar and menus: ALWAYS dark like main's bg-dark-500
+// Calendar and menus: sage like the toolbar family in Day, pine in Night.
+// ALL q-date internals must be forced transparent/sage — Quasar's q-date
+// defaults carry white backgrounds that override the card fill.
 .body--light .q-card.wd-menu,
 .body--light .q-menu.wd-menu {
-  background: #112119 !important;
+  background: #3f6a50 !important;
   color: #f2f7f4 !important;
-  border-color: rgba(10, 20, 15, 0.35);
+  border-color: #4d7a61;
 }
 .body--light .q-card.wd-menu .q-item,
 .body--light .q-menu.wd-menu .q-item,
@@ -385,8 +387,33 @@ body.body--dark {
 .body--light .q-card.wd-menu .q-date__calendar-days-container {
   color: #f2f7f4 !important;
 }
-.body--light .q-card.wd-menu .q-date__calendar {
-  background: transparent;
+.body--light .q-card.wd-menu .q-date,
+.body--light .q-card.wd-menu .q-date__header,
+.body--light .q-card.wd-menu .q-date__calendar,
+.body--light .q-card.wd-menu .q-date__calendar-days,
+.body--light .q-card.wd-menu .q-date__calendar-days-container,
+.body--light .q-card.wd-menu .q-date__navigation,
+.body--light .q-card.wd-menu .q-date__days,
+.body--light .q-card.wd-menu .q-date__days-container,
+.body--light .q-card.wd-menu .q-date__months-container,
+.body--light .q-card.wd-menu .q-date__years-container,
+.body--light .q-card.wd-menu .q-date__content,
+.body--light .q-card.wd-menu .q-btn,
+.body--light .q-card.wd-menu .q-badge,
+.body--light .q-card.wd-menu .q-banner,
+.body--light .q-card.wd-menu .separator {
+  background: transparent !important;
+  color: #f2f7f4 !important;
+}
+// Calendar day buttons inside the sage card
+.body--light .q-card.wd-menu .q-date__calendar-item .q-btn {
+  background: transparent !important;
+  color: #f2f7f4 !important;
+}
+.body--light .q-card.wd-menu .q-date__calendar-item .q-btn--active,
+.body--light .q-card.wd-menu .q-date__calendar-item .q-btn[aria-current='true'] {
+  background: #346751 !important;
+  color: #f2f7f4 !important;
 }
 
 .body--dark .wd-menu {
