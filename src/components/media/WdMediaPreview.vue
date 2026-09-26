@@ -19,6 +19,7 @@ import {
 import type { HutImage } from '@composables/useHutImages';
 import { useDeviceDetection } from '@composables/useDeviceDetection';
 import { useMediaPreload } from '@composables/useMediaPreload';
+import { useImageRetry, filterOutFailed } from '@composables/useImageRetry';
 import WdMediaDialog from './WdMediaDialog.vue';
 import WdNoImage from './WdNoImage.vue';
 import IconAddPhoto from '~icons/material-symbols/add-a-photo.svg';
@@ -83,16 +84,16 @@ const router = useRouter();
 const $q = useQuasar();
 
 // Open dialog with specific image using Quasar Dialog plugin
-const openDialog = (index: number) => {
-  currentSlide.value = index;
-  emit('image-click', props.images[index], index);
+const openDialog = (originalIndex: number) => {
+  currentSlide.value = originalIndex;
+  emit('image-click', props.images[originalIndex], originalIndex);
 
   // Use Quasar's Dialog plugin for proper back button handling
   $q.dialog({
     component: WdMediaDialog,
     componentProps: {
       images: props.images,
-      initialSlide: index,
+      initialSlide: originalIndex,
     },
   }).onDismiss(() => {
     // Dialog closed (back button, ESC, backdrop click, etc.)
@@ -124,7 +125,7 @@ const isMobile = computed(() => $q.screen.xs);
 
 // Show thumbnails: desktop width AND has multiple images
 const showThumbnails = computed(() => {
-  return isDesktopWidth.value && props.images.length > 1;
+  return isDesktopWidth.value && visibleImages.value.length > 1;
 });
 
 const dialogOpen = ref(false);
@@ -171,7 +172,7 @@ const { hasTouch } = useDeviceDetection();
 
 // Show navigation only on non-touch devices with multiple images
 const showNavigation = computed(() => {
-  return !hasTouch.value && props.images.length > 1;
+  return !hasTouch.value && visibleImages.value.length > 1;
 });
 
 // Use shared media preload composable
@@ -180,9 +181,22 @@ const { preloadImage, preloadThumbnailImages } = useMediaPreload(
   currentSlide
 );
 
+// Retry visible image loads (same schedule as the preloader); images that
+// still fail are removed from view entirely (no black/error slides).
+const { failedImageIds, markLoaded: retryLoaded, handleError: retryError } = useImageRetry();
+
+// Visible images with their ORIGINAL index (needed for the fullscreen dialog,
+// which receives the unfiltered list)
+const visibleImagesWithIndex = computed(() =>
+  props.images
+    .map((image, index) => ({ image, index }))
+    .filter(({ image }) => !failedImageIds.value.has(image.id))
+);
+const visibleImages = computed(() => filterOutFailed(props.images, failedImageIds.value));
+
 // Preload only the current image for gallery (simplified - no prev/next)
 const preloadCurrentImageForGallery = () => {
-  const currentImage = props.images[currentSlide.value];
+  const currentImage = visibleImages.value[currentSlide.value];
   if (currentImage) {
     // Preload gallery-sized image (not preview size)
     const isPortrait = currentImage.is_portrait;
@@ -224,7 +238,9 @@ onMounted(() => {
 
 // Handle image click
 const handleImageClick = () => {
-  openDialog(currentSlide.value);
+  // Map rendered (filtered) slide index to the original list index
+  const originalIndex = visibleImagesWithIndex.value[currentSlide.value]?.index ?? currentSlide.value;
+  openDialog(originalIndex);
 };
 
 // Track which thumbnails have loaded
@@ -234,12 +250,15 @@ const isThumbnailLoaded = (imageId: string) => {
 
 // Mark thumbnail as loaded
 const onThumbnailLoad = (imageId: string) => {
+  retryLoaded(imageId, 'thumb');
   loadedThumbnails.value.add(imageId);
 };
 
-// Mark thumbnail as failed to load
-const onThumbnailError = (imageId: string) => {
-  loadedThumbnails.value.add(`${imageId}_error`);
+// Retry thumbnail failures; mark errored only when permanently failed
+const onThumbnailError = (imageId: string, event: Event) => {
+  if (retryError(imageId, 'thumb', event)) {
+    loadedThumbnails.value.add(`${imageId}_error`);
+  }
 };
 
 // Check if thumbnail failed to load
@@ -253,11 +272,20 @@ const isStripeImageLoaded = (imageId: string) => {
 };
 
 const onStripeImageLoad = (imageId: string) => {
+  retryLoaded(imageId, 'stripe');
   loadedStripeImages.value.add(imageId);
 };
 
-const onStripeImageError = (imageId: string) => {
-  loadedStripeImages.value.add(`${imageId}_error`);
+// Retry stripe failures; mark errored only when permanently failed
+const onStripeImageError = (imageId: string, event: Event) => {
+  if (retryError(imageId, 'stripe', event)) {
+    loadedStripeImages.value.add(`${imageId}_error`);
+  }
+};
+
+// Retry main preview slide failures (removal from view happens via filtering)
+const onMainImageError = (imageId: string, event: Event) => {
+  retryError(imageId, 'main', event);
 };
 
 const isStripeImageError = (imageId: string) => {
@@ -266,7 +294,7 @@ const isStripeImageError = (imageId: string) => {
 
 // Get current image
 const currentImage = computed(() => {
-  return props.images[currentSlide.value] || null;
+  return visibleImages.value[currentSlide.value] || null;
 });
 
 // Get image URL for display
@@ -314,19 +342,23 @@ const getImageAuthor = (image: HutImage) => {
 };
 
 // Check if we have images
-const hasImages = computed(() => props.images.length > 0);
+const hasImages = computed(() => visibleImages.value.length > 0);
 
 // Mobile stripe slides: appends add-image slide at the end when >= 3 images on mobile
 type StripeSlide = { type: 'image'; image: HutImage; imageIndex: number } | { type: 'add-image' };
 
 const mobileStripeSlides = computed<StripeSlide[]>(() => {
-  if (!isMobile.value || props.images.length < 3) {
-    return props.images.map((image, i) => ({ type: 'image' as const, image, imageIndex: i }));
+  if (!isMobile.value || visibleImages.value.length < 3) {
+    return visibleImagesWithIndex.value.map(({ image, index }) => ({
+      type: 'image' as const,
+      image,
+      imageIndex: index,
+    }));
   }
-  const slides: StripeSlide[] = props.images.map((image, i) => ({
+  const slides: StripeSlide[] = visibleImagesWithIndex.value.map(({ image, index }) => ({
     type: 'image' as const,
     image,
-    imageIndex: i,
+    imageIndex: index,
   }));
   slides.push({ type: 'add-image' });
   return slides;
@@ -487,7 +519,7 @@ const thumbnailContainerStyle = computed(() => {
               :class="{ 'stripe-loaded': isStripeImageLoaded(slide.image.id) }"
               :alt="`Image by ${slide.image.attribution?.short || 'unknown'}`"
               @load="onStripeImageLoad(slide.image.id)"
-              @error="onStripeImageError(slide.image.id)"
+              @error="onStripeImageError(slide.image.id, $event)"
               v-show="!isStripeImageError(slide.image.id)"
             />
             <div v-if="!isStripeImageLoaded(slide.image.id)" class="stripe-number">
@@ -551,20 +583,21 @@ const thumbnailContainerStyle = computed(() => {
                 }
               : false
           "
-          :pagination="!showThumbnails && images.length > 1"
+          :pagination="!showThumbnails && visibleImages.length > 1"
           :thumbs="{ swiper: thumbsSwiperRef }"
           :initial-slide="0"
           class="preview-swiper"
           @swiper="onSwiper"
           @slide-change="onSlideChange"
         >
-          <swiper-slide v-for="image in images" :key="image.id" class="preview-slide">
+          <swiper-slide v-for="image in visibleImages" :key="image.id" class="preview-slide">
             <img
               loading="lazy"
               :src="getMainImageUrl(image)"
               :alt="`Image by ${image.attribution?.short || 'unknown'}`"
               class="preview-image"
               @click="handleImageClick"
+              @error="onMainImageError(image.id, $event)"
             />
           </swiper-slide>
         </swiper>
@@ -582,30 +615,30 @@ const thumbnailContainerStyle = computed(() => {
             :style="{ '--thumbnail-size': `${thumbnailSize}px` }"
           >
             <swiper-slide
-              v-for="(image, index) in images"
-              :key="image.id"
+              v-for="(item, index) in visibleImagesWithIndex"
+              :key="item.image.id"
               class="thumb-slide-inline"
             >
               <div
                 class="thumb-content-wrapper"
-                :class="{ 'thumb-error': isThumbnailError(image.id) }"
+                :class="{ 'thumb-error': isThumbnailError(item.image.id) }"
               >
                 <img
                   loading="lazy"
-                  :src="getThumbnailUrl(image)"
+                  :src="getThumbnailUrl(item.image)"
                   class="thumb-image-inline"
-                  :class="{ 'thumb-loaded': isThumbnailLoaded(image.id) }"
-                  :alt="`Thumbnail by ${image.attribution?.short || 'unknown'}`"
-                  @load="onThumbnailLoad(image.id)"
-                  @error="onThumbnailError(image.id)"
-                  v-show="!isThumbnailError(image.id)"
+                  :class="{ 'thumb-loaded': isThumbnailLoaded(item.image.id) }"
+                  :alt="`Thumbnail by ${item.image.attribution?.short || 'unknown'}`"
+                  @load="onThumbnailLoad(item.image.id)"
+                  @error="onThumbnailError(item.image.id, $event)"
+                  v-show="!isThumbnailError(item.image.id)"
                 />
-                <div v-if="!isThumbnailLoaded(image.id)" class="thumb-number">
+                <div v-if="!isThumbnailLoaded(item.image.id)" class="thumb-number">
                   {{ index + 1 }}
                 </div>
-                <div v-if="getProviderIcon(image)" class="thumb-provider-icon-bg">
+                <div v-if="getProviderIcon(item.image)" class="thumb-provider-icon-bg">
                   <img
-                    :src="getProviderIcon(image)"
+                    :src="getProviderIcon(item.image)"
                     class="thumb-provider-icon-small"
                     alt="Provider icon"
                   />

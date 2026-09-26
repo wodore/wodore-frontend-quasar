@@ -8,6 +8,7 @@ import { date } from 'quasar';
 import type { HutImage } from 'src/composables/useHutImages';
 import { useDeviceDetection } from '@composables/useDeviceDetection';
 import { useMediaPreload } from '@composables/useMediaPreload';
+import { useImageRetry, filterOutFailed } from '@composables/useImageRetry';
 import { useI18n } from 'vue-i18n';
 import IconCloseOutline from '~icons/eva/close-outline';
 import IconDownloadOutline from '~icons/eva/download-outline';
@@ -49,6 +50,11 @@ const activeSlideRef = computed(() => activeSlideIndex.value);
 const { getGalleryImageUrl, getPreviewImageUrl, preloadAdjacentImages, preloadThumbnailImages } =
   useMediaPreload(imagesRef, activeSlideRef);
 
+// Retry visible image loads (same schedule as the preloader); images that
+// still fail are removed from view entirely (no black slides).
+const { failedImageIds, markLoaded: retryLoaded, handleError: retryError } = useImageRetry();
+const visibleImages = computed(() => filterOutFailed(props.images, failedImageIds.value));
+
 // Track which images have loaded
 const isImageLoaded = (imageId: string) => {
   return loadedImages.value.has(imageId);
@@ -56,12 +62,17 @@ const isImageLoaded = (imageId: string) => {
 
 // Mark image as loaded
 const onImageLoad = (imageId: string) => {
+  retryLoaded(imageId, 'main');
+  retryLoaded(imageId, 'thumb');
   loadedImages.value.add(imageId);
 };
 
-// Mark image as failed to load
-const onImageError = (imageId: string) => {
-  loadedImages.value.add(`${imageId}_error`);
+// Handle image load failure (main slides + thumbs)
+const onImageError = (imageId: string, slot: 'main' | 'thumb', event: Event) => {
+  // Retry first; only mark errored once permanently failed
+  if (retryError(imageId, slot, event)) {
+    loadedImages.value.add(`${imageId}_error`);
+  }
 };
 
 // Check if image failed to load
@@ -122,9 +133,9 @@ const getMainImageUrl = (image: HutImage): string => {
   return getGalleryImageUrl(image);
 };
 
-// Get current image
+// Get current image (from the visible, non-failed list)
 const currentImage = computed(() => {
-  return props.images[activeSlideIndex.value];
+  return visibleImages.value[activeSlideIndex.value];
 });
 
 // Close gallery - now emits close event for Quasar Dialog plugin
@@ -184,6 +195,7 @@ onUnmounted(() => {
 
     <!-- Main Swiper -->
     <swiper
+      v-if="visibleImages.length > 0"
       :modules="[Keyboard, Mousewheel, Navigation, Thumbs, Zoom, EffectFade]"
       :slides-per-view="1"
       :space-between="0"
@@ -215,7 +227,7 @@ onUnmounted(() => {
       @swiper="onSwiper"
       @zoom-change="onZoomChange"
     >
-      <swiper-slide v-for="image in images" :key="image.id" class="main-slide">
+      <swiper-slide v-for="image in visibleImages" :key="image.id" class="main-slide">
         <div class="swiper-zoom-container">
           <!-- Wrapper div that matches image dimensions - creates positioning context -->
           <div class="image-wrapper">
@@ -225,7 +237,7 @@ onUnmounted(() => {
               :alt="`Image by ${image.attribution?.short || 'unknown'}`"
               class="main-image"
               @load="onImageLoad(image.id)"
-              @error="onImageError(image.id)"
+              @error="onImageError(image.id, 'main', $event)"
               v-show="!isImageError(image.id)"
             />
 
@@ -264,7 +276,7 @@ onUnmounted(() => {
 
     <!-- Thumbnail Swiper - using square thumbs (only if more than 1 image) -->
     <swiper
-      v-if="images.length > 1"
+      v-if="visibleImages.length > 1"
       :modules="[Thumbs]"
       :watch-slides-progress="true"
       :slides-per-view="'auto'"
@@ -273,7 +285,7 @@ onUnmounted(() => {
       class="thumb-swiper"
       @swiper="setThumbsSwiper"
     >
-      <swiper-slide v-for="(image, index) in images" :key="image.id" class="thumb-slide">
+      <swiper-slide v-for="(image, index) in visibleImages" :key="image.id" class="thumb-slide">
         <div
           class="thumb-image-wrapper"
           :class="{
@@ -287,7 +299,7 @@ onUnmounted(() => {
             :alt="`Thumbnail by ${image.attribution?.short || 'unknown'}`"
             class="thumb-image"
             @load="onImageLoad(image.id)"
-            @error="onImageError(image.id)"
+            @error="onImageError(image.id, 'thumb', $event)"
             v-show="!isImageError(image.id)"
           />
           <div v-if="!isImageLoaded(image.id)" class="thumb-number">{{ index + 1 }}</div>
