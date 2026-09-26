@@ -11589,10 +11589,10 @@ quansync@^0.2.11:
   resolved "https://registry.npmjs.org/quansync/-/quansync-0.2.11.tgz"
   integrity sha512-AifT7QEbW9Nri4tAwR5M/uzpBuqfZf+zwaEM/QkzEjj7NBuFD2rBuy0K3dE+8wltbezDV7JMA0WfnCPYRSYbXA==
 
-quasar@^2.22.0:
-  version "2.22.0"
-  resolved "https://registry.yarnpkg.com/quasar/-/quasar-2.22.0.tgz#490c821d2148c1dc9900c8bc6dae485b7e7a3334"
-  integrity sha512-0WAJ0ZnNMWK7QNFnpOVLyUDeEZ6cexkO+f7GjOEEIITIynH2xkfuryWO97Pa/G/+eQJc0ZwX9GohEXXwYTIBew==
+quasar@^2.33.1:
+  version "2.33.1"
+  resolved "https://registry.yarnpkg.com/quasar/-/quasar-2.33.1.tgz#f7008610decc457c4e204468df75f35e8322199a"
+  integrity sha512-lFuCQYK8nLmK/oCu5+s3DMRMgVsGbz/72yUuhyQ7S1KSX8C0VaruqQfHp34nBFh955PIsAU/gmwdhMUu0dHphQ==
 
 query-string@^5.0.1:
   version "5.1.1"
