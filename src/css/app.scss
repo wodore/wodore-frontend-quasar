@@ -1135,18 +1135,17 @@ a.wd-accommodation-day {
   box-shadow: none !important;
 }
 
-// Header weather icon: the mono SVG collection ships black-filled paths,
-// which ignore the text color - recolor via currentColor so it follows
-// the theme (light: accent-800, dark: accent-100)
-.wd-place-title__weather svg,
-.wd-place-title__weather svg path,
-.wd-place-title__weather svg use,
-.wd-place-title__weather svg circle,
-.wd-place-title__weather svg g {
-  // !important: some weather symbol files carry inline style="fill:..."
-  // on their shapes, which beats plain CSS - those rendered black at
-  // night on real devices
+// Header weather icon: the mono weather symbols are STROKE-based
+// (fill="none" stroke="#000") - a fill-only override does nothing for
+// them, which is why the glyph stayed black on the dark surface.
+// Recolor exactly the black attributes, preserving each shape's
+// outline/fill pattern.
+.wd-place-title__weather svg [fill='#000'] {
   fill: currentColor !important;
+}
+
+.wd-place-title__weather svg [stroke='#000'] {
+  stroke: currentColor !important;
 }
 
 // The overlay RAIL (.overlay-scroll, overflow-y: auto) flashed a native
