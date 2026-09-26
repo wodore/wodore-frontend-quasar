@@ -118,7 +118,7 @@ jobs:
             ${{ vars.WODORE_IMAGOR_REPLACE_API_HOST_MEDIA }}
           WODORE_OICD_ISSUER_URL: ${{ vars.WODORE_OICD_ISSUER_URL }}
           WODORE_OICD_CLIENT_ID: ${{ vars.WODORE_OICD_CLIENT_ID }}
-        run: yarn build -m capacitor
+        run: yarn build:capacitor
 
       - name: Build debug APK
         if: steps.check-build.outputs.result != 'false'
