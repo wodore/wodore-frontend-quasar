@@ -476,9 +476,8 @@ body.body--dark .app-header .text-icon {
 
         <!-- Sticky Header (Actions + Title) -->
         <q-header
-          class="no-background"
+          class="wd-drawer-header"
           :class="{ 'content-drawer-header-scrolled': drawerContentScrolled }"
-          style="background: none !important"
         >
           <!-- Actions Toolbar (Desktop only) -->
           <component

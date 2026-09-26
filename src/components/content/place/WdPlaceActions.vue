@@ -124,7 +124,7 @@ watch(menuOpen, () => {
 </style>
 
 <template>
-  <q-toolbar class="footer-toolbar wd-surface q-pr-sm">
+  <q-toolbar class="footer-toolbar wd-surface q-pr-sm wd-drawer-actions">
     <!-- Geo location link (mobile only - a geo: URL is not useful on the
          desktop planning context) -->
     <WdToolbarButton
@@ -148,7 +148,7 @@ watch(menuOpen, () => {
 
     <WdToolbarButton size="md" class="wd-ink-text" icon="wd-more-vertical">
       <q-menu
-        class="bg-primary-100 q-menu--quasar"
+        class="bg-primary-100 q-menu--quasar wd-menu"
         v-model="menuOpen"
         anchor="top right"
         self="bottom right"

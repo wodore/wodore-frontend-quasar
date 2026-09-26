@@ -385,25 +385,44 @@ body.body--dark {
   z-index: 0;
 }
 
-// Active overlay: ONE glass rectangle behind the whole row (circle +
-// info/filter icons) - a bit shorter than the buttons, horizontally
-// centered, just a bit wider than its content (owner reference look).
-// Rendered only while the overlay is active.
-.overlay-switch-item:has(.overlay-main-btn.active)::before {
+// Active overlay: ONE glass rectangle behind the info/filter buttons,
+// positioned right of the circle per the owner spec. Animated in/out so
+// the toggle selection change reads as a transition, not a jump.
+.overlay-switch-item::before {
   content: '';
   position: absolute;
-  left: 50%;
+  right: -18px;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: calc(100% - 4px);
-  height: 26px;
-  background: rgba(255, 255, 255, 0.72);
+  width: 40px;
+  height: 34px;
+  background: #ffffffb8;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border: 1px solid #c9d4cd;
-  border-radius: 100px;
-  box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px #0a140f33;
   z-index: -1;
+  opacity: 0;
+  transition:
+    opacity 0.18s ease-out,
+    transform 0.18s ease-out;
+  pointer-events: none;
+}
+
+.overlay-switch-item:has(.overlay-main-btn.active)::before {
+  opacity: 1;
+}
+
+// toggle selection change: chips + icons transition smoothly too
+.overlay-main-btn,
+.overlay-main-btn .q-icon,
+.overlay-main-btn img {
+  transition:
+    background-color 0.18s ease-out,
+    box-shadow 0.18s ease-out,
+    opacity 0.18s ease-out,
+    filter 0.18s ease-out;
 }
 .q-fab.wd-switcher-fab:hover {
   // ZONES: map fabs stay SOLID on hover (translucent wash reads as
@@ -1021,4 +1040,30 @@ img {
   .q-icon {
     color: #1c1c1c !important;
   }
+}
+
+// Content drawer header: SOLID themed surface (a transparent header let
+// scrolled content bleed through as lines across title/meta)
+.q-drawer .q-header.wd-drawer-header {
+  background: var(--wd-surface) !important;
+  border-bottom: 1px solid transparent;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.q-drawer .q-header.wd-drawer-header.content-drawer-header-scrolled {
+  border-bottom-color: var(--wd-ridge);
+}
+
+// The actions toolbar's always-on dark border-top was an idle line under
+// the header - killed; scrolled elevation separates instead
+.body--dark .q-drawer .footer-toolbar {
+  border-top: none;
+}
+
+// Drawer actions toolbar: keep the org buttons clear of the top-left
+// close chip
+.q-drawer .wd-drawer-actions {
+  padding-left: 48px;
 }
