@@ -179,11 +179,8 @@ jobs:
           BASE="https://github.com/${GITHUB_REPOSITORY}/actions/runs"
           export URL="${BASE}/${GITHUB_RUN_ID}/artifacts/${ART_ID}"
           echo "URL=$URL" >> "$GITHUB_ENV"
-          npx --yes --package qrcode node -e '
-            const QR = require("qrcode");
-            QR.toString(process.env.URL, { type: "utf8", margin: 2 })
-              .then(t => process.stdout.write(t));
-          ' > /tmp/apk-qr.txt
+          npx --yes --package qrcode qrcode -t utf8 -q 2 \
+            -o /tmp/apk-qr.txt "$URL"
 
       - name: Comment APK artifact link on the PR
         # Upserts a single comment per PR (marker-based, like the preview
