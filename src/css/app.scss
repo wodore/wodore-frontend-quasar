@@ -59,11 +59,11 @@
 // Scoped to the WdSelectDate card ONLY (the search card also uses
 // dialog-radius — the calendar has a q-date inside as discriminator)
 .q-card.dialog-radius:has(.q-date) {
-  background: #3f6a50 !important;
+  background: #112119 !important;
   color: #f2f7f4 !important;
 }
 .q-card.dialog-radius:has(.q-date) .wd-surface-deep {
-  background: #366047 !important;
+  background: #0e1b14 !important;
 }
 
 // All q-date surfaces transparent (Quasar defaults to white)
