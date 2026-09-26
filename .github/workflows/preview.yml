@@ -168,9 +168,9 @@ jobs:
           # public staging services and stay overridable via variables.
           WODORE_TILE_SERVER_URL: >-
             ${{ vars.WODORE_TILE_SERVER_URL || 'https://tiles.stg.wodore.com' }}
-          WODORE_MAPTILER_API_KEY: ${{ vars.WODORE_MAPTILER_API_KEY }}
+          WODORE_MAPTILER_API_KEY: ${{ secrets.WODORE_MAPTILER_API_KEY }}
           WODORE_IMAGOR_URL: ${{ vars.WODORE_IMAGOR_URL }}
-          WODORE_IMAGOR_KEY: ${{ vars.WODORE_IMAGOR_KEY }}
+          WODORE_IMAGOR_KEY: ${{ secrets.WODORE_IMAGOR_KEY }}
           WODORE_IMAGOR_REPLACE_API_HOST_MEDIA: >-
             ${{ vars.WODORE_IMAGOR_REPLACE_API_HOST_MEDIA }}
           WODORE_OICD_ISSUER_URL: ${{ vars.WODORE_OICD_ISSUER_URL }}
