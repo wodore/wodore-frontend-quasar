@@ -1,1 +1,0 @@
-import{d as n,o as e,m as o,ab as s,p as t,aW as c}from"./index-C4hqM4on.js";const m=n({__name:"QIconify",props:{is:{}},setup(a){return(r,p)=>(e(),o(s,null,{default:t(()=>[(e(),o(c(a.is)))]),_:1}))}});export{m as _};
