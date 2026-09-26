@@ -239,7 +239,8 @@ onMounted(() => {
 // Handle image click
 const handleImageClick = () => {
   // Map rendered (filtered) slide index to the original list index
-  const originalIndex = visibleImagesWithIndex.value[currentSlide.value]?.index ?? currentSlide.value;
+  const originalIndex =
+    visibleImagesWithIndex.value[currentSlide.value]?.index ?? currentSlide.value;
   openDialog(originalIndex);
 };
 
@@ -679,7 +680,7 @@ const thumbnailContainerStyle = computed(() => {
   width: 100%;
   // Fixed aspect ratio container to prevent size changes
   padding-top: 66.67%; // 3:2 aspect ratio (landscape)
-  background: #f5f5f5; // Placeholder background
+  background: var(--wd-surface-deep, #f5f5f5); // Placeholder background (theme-aware)
   // Ensure border-box for consistent sizing
   box-sizing: border-box;
 
@@ -797,7 +798,7 @@ const thumbnailContainerStyle = computed(() => {
   height: 100%;
   border-radius: 8px;
   overflow: hidden;
-  background: rgba(0, 0, 0, 0.06);
+  background: var(--wd-wash, rgba(0, 0, 0, 0.06));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -812,7 +813,7 @@ const thumbnailContainerStyle = computed(() => {
   width: 65px;
   border-radius: 8px;
   border: 2px dashed rgba(0, 0, 0, 0.15);
-  background: rgba(0, 0, 0, 0.03);
+  background: var(--wd-wash, rgba(0, 0, 0, 0.03));
   display: flex;
   align-items: center;
   justify-content: center;

@@ -25,7 +25,7 @@ const WdMapView = defineAsyncComponent(() => import('components/map/WdMapView.vu
 }
 </style>
 <template>
-  <q-page>
+  <q-page class="map-page">
     <Suspense>
       <q-no-ssr>
         <WdMapView />

@@ -103,7 +103,7 @@ const showMenu = ref(false);
       transition-show="jump-down"
       transition-hide="jump-up"
     >
-      <q-card class="bg-dark-500 text-white dialog-radius">
+      <q-card class="wd-menu dialog-radius">
         <!--  Close and Settings -->
         <div
           class="q-ma-xs z-top text-icon"

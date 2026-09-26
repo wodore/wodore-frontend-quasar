@@ -88,18 +88,31 @@ function onPreviewClick(event: Event) {
 }
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.wd-selected {
+  background: var(--wd-wash) !important;
+}
+.wd-ink-text {
+  color: var(--wd-ink) !important;
+}
+.wd-ink-soft-text {
+  color: var(--wd-ink-soft) !important;
+}
+.wd-info-text {
+  color: var(--wd-info) !important;
+}
+</style>
 
 <template>
   <div>
-    <q-item clickable v-ripple @click="onClick" :class="{ 'bg-dark-600': selected }" dark dense>
+    <q-item clickable v-ripple @click="onClick" :class="{ 'wd-selected': selected }" dense>
       <q-item-section avatar>
         <img v-if="placeTypeIcon" :src="placeTypeIcon" :alt="hut.name" />
       </q-item-section>
       <q-item-section>
-        <q-item-label overline class="text-primary-400" lines="1">{{ placeTypeName }}</q-item-label>
-        <q-item-label class="text-primary-100 text-body1" lines="2">{{ hut.name }}</q-item-label>
-        <q-item-label caption class="text-primary-300">
+        <q-item-label overline class="wd-info-text" lines="1">{{ placeTypeName }}</q-item-label>
+        <q-item-label class="wd-ink-text text-body1" lines="2">{{ hut.name }}</q-item-label>
+        <q-item-label caption class="wd-ink-soft-text">
           <div v-if="hut.elevation">
             <q-icon size="xs">
               <IconMingcuteMountain2Fill />
@@ -112,7 +125,7 @@ function onPreviewClick(event: Event) {
 
       <!-- Preview button (desktop only) -->
       <q-item-section v-if="!isMobile" side class="q-pr-md">
-        <q-btn flat round dense color="primary-300" @click="onPreviewClick" size="sm">
+        <q-btn flat round dense class="wd-info-text" @click="onPreviewClick" size="sm">
           <q-icon size="sm">
             <IconEvaEyeOutline />
           </q-icon>
@@ -120,6 +133,6 @@ function onPreviewClick(event: Event) {
         </q-btn>
       </q-item-section>
     </q-item>
-    <q-separator spaced inset="item" dark />
+    <q-separator spaced inset="item" />
   </div>
 </template>

@@ -264,7 +264,7 @@ const barColorLight = computed(() => {
   align-items: center;
   justify-content: center;
   padding: 3px 2px;
-  color: rgba(color('dark'), 0.6);
+  color: rgba(var(--wd-ink-rgb), 0.6);
   pointer-events: none;
 }
 
@@ -272,7 +272,7 @@ const barColorLight = computed(() => {
   font-size: 11px;
   line-height: 1;
   letter-spacing: 0.1px;
-  color: rgba(color('dark'), 0.6);
+  color: rgba(var(--wd-ink-rgb), 0.6);
   white-space: nowrap;
 }
 

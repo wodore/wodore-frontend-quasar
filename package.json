@@ -13,6 +13,7 @@
     "test": "yarn test:unit",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
+    "test:visual": "node scripts/visual-matrix.mjs",
     "test:unit:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "allure:generate": "rm -rf allure-results/merged && mkdir -p allure-results/merged && cp -R allure-results/unit/. allure-results/merged/ && if [ -d allure-results/e2e ]; then cp -R allure-results/e2e/. allure-results/merged/; fi; rm -rf allure-report && allure generate allure-results/merged",
@@ -53,11 +54,13 @@
     "pregen:icons": "yarn run icons:fix",
     "gen:icons": "fantasticon src/extras/icons/svg/build/fixed -o src/extras/icons/dist -p wd --normalize -t woff woff2",
     "gen:icons:watch": "watch 'yarn run gen:icons' src/extras/icons/svg/source",
-    "postgen:icons": "yarn run eslint --fix src/extras/icons/dist/icons.ts",
+    "postgen:icons": "node scripts/scope-icon-selectors.mjs && yarn run eslint --fix src/extras/icons/dist/icons.ts",
     "gen:favs": "icongenie generate -p src/assets/icongenie/",
     "gen:realfavs": "real-favicon generate src/assets/realfavgen.json src/assets/realfavgen_result.json public/realfavgen"
   },
   "dependencies": {
+    "@fontsource/barlow": "^5.3.0",
+    "@fontsource/barlow-semi-condensed": "^5.3.0",
     "@fontsource/roboto-condensed": "^5.3",
     "@indoorequal/vue-maplibre-gl": "^9.0.1",
     "@mapbox/mapbox-gl-draw": "^1.4.3",
@@ -92,6 +95,7 @@
     "watch": "^1.0.2"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@histoire/plugin-vue": "^1.0.0-beta.1",
     "@iconify/json": "^2.2.202",
     "@intlify/unplugin-vue-i18n": "^11",

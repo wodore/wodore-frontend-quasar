@@ -95,11 +95,13 @@ export default function getImageUrl(
   );
   let hash = 'unsafe';
 
-  if (!options.unsafe) {
-    hash = signPath(
-      rawPath,
-      process.env.WODORE_IMAGOR_KEY ? process.env.WODORE_IMAGOR_KEY : 'my_key'
-    );
+  // Sign only when a key is configured; keyless builds (local dev,
+  // manual preview deploys without the CI secret) fall back to unsafe
+  // URLs - staging Imagor accepts them (IMAGOR_UNSAFE=1). A bogus
+  // signature would 403/404 every image (the broken org-icon round).
+  const imagorKey = process.env.WODORE_IMAGOR_KEY;
+  if (!options.unsafe && imagorKey) {
+    hash = signPath(rawPath, imagorKey);
   }
   return url + '/' + hash + '/' + rawPath;
 }

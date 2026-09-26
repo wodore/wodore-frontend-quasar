@@ -280,7 +280,7 @@ const tooltipContent = computed(() => {
 }
 
 .wd-weather-day__temp-max {
-  color: rgba(color('dark'), 0.85);
+  color: rgba(var(--wd-ink-rgb), 0.85);
   font-weight: 600;
 }
 
@@ -289,12 +289,12 @@ const tooltipContent = computed(() => {
 }
 
 .wd-weather-day__temp-min {
-  color: rgba(color('dark'), 0.45);
+  color: rgba(var(--wd-ink-rgb), 0.45);
   font-weight: 400;
 }
 
 .wd-weather-day__temp-empty {
-  color: rgba(color('dark'), 0.3);
+  color: rgba(var(--wd-ink-rgb), 0.3);
   letter-spacing: 2px;
 }
 
@@ -325,10 +325,10 @@ const tooltipContent = computed(() => {
 }
 
 .wd-weather-day__rain {
-  color: rgba(color('dark'), 0.55);
+  color: rgba(var(--wd-ink-rgb), 0.55);
 }
 
 .wd-weather-day__snow {
-  color: rgba(color('dark'), 0.45);
+  color: rgba(var(--wd-ink-rgb), 0.45);
 }
 </style>

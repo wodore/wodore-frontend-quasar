@@ -38,14 +38,14 @@ withDefaults(defineProps<Props>(), {
 }
 
 .wd-stat-box__icon {
-  color: #777;
+  color: var(--wd-ink-soft);
 }
 
 .wd-stat-box__value {
   font-size: 0.8rem;
   font-weight: 700;
   line-height: 0.8;
-  color: #346751;
+  color: var(--wd-ink-soft);
   font-variant-numeric: tabular-nums;
 }
 </style>

@@ -54,7 +54,7 @@ defineProps<Props>();
             margin-left: 3px;
             background-color: unset;
           "
-          class="text-primary-900 hut-toolbar-title"
+          class="wd-ink-text hut-toolbar-title"
         >
           <div
             class="text-h5 q-ma-none q-mt-xs hut-title-row"

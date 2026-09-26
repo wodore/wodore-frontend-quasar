@@ -9,9 +9,16 @@ defineProps<Props>();
 </script>
 
 <template>
-  <q-btn round style="padding: 0" :ripple="false" :color="active ? 'accent-500' : 'primary-400'">
+  <q-btn
+    round
+    style="padding: 0"
+    :ripple="false"
+    class="wd-basemap-item"
+    :class="{ 'wd-basemap-item--active': active }"
+    :aria-label="label"
+  >
     <q-avatar size="55px">
-      <img style="padding: 3px" :src="img" />
+      <img style="padding: 3px" :src="img" :alt="label" />
     </q-avatar>
     <q-tooltip v-if="tooltip"> {{ label }} </q-tooltip>
   </q-btn>

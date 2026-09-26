@@ -1,10 +1,10 @@
 @use 'sass:color';
 /* https://chat.openai.com/share/8d3a31df-c32f-4c6e-bbdd-7d6f54758350 */
 
-$winter-color: #bfefff; // Light blue representing the cold winter skies
-$spring-color: #ffd699; // Warm peach symbolizing the onset of spring
-$summer-color: #ffe9a8; // Bright yellow representing the warmth of summer
-$autumn-color: #ffcccc; // Soft pink indicating the transition to autumn
+$winter-color: #b2d7e1; // secondary-100 - light glacier blue, winter
+$spring-color: #8ce9c7; // positive-100 - light signal green, spring
+$summer-color: #e8c563; // accent-100 - light gold, summer
+$autumn-color: #ffc064; // amber-200 - warm amber, autumn (no red: red is reserved for availability)
 
 $months-bg: (
   month_01: $winter-color,
@@ -102,7 +102,7 @@ $opacity-light: 0.8;
       rgba(color.adjust($color, $lightness: -$darken-amount), $opacity-dark) $grad-end,
       rgba(color.adjust($end-color, $lightness: -$darken-amount), $opacity-dark) 100%
     );
-    color: map-get($months-fg, $month); /* Text color */
+    color: var(--wd-ink); /* Text color: light fg on darkened tiles */
   }
 
   .#{$month}--gradient-light {

@@ -7,7 +7,7 @@ import TextClamp from 'vue3-text-clamp';
     <template #after="{ toggle, expanded, clamped }">
       <p
         style="text-decoration: underline dotted"
-        class="text-grey-6 cursor-pointer"
+        class="wd-info-text cursor-pointer"
         v-show="clamped"
         @click="toggle"
       >
@@ -15,7 +15,7 @@ import TextClamp from 'vue3-text-clamp';
       </p>
       <p
         style="text-decoration: underline dotted"
-        class="text-grey-6 cursor-pointer"
+        class="wd-info-text cursor-pointer"
         v-show="expanded"
         @click="toggle"
       >

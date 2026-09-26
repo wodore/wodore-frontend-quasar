@@ -528,7 +528,7 @@ export const createHiking = (): OverlaySwitchItem => ({
 //const public_transport_stops = getSwisstopoOverlay({
 //  name: 'ch.bav.haltestellen-oev',
 //  label: 'Haltestellen',
-//  icon: 'fa-solid fa-bus',
+//  icon: 'transport',
 //  opacity: ['interpolate', ['linear'], ['zoom'], 9, 0, 11, 0.8, 20, 0.85],
 //});
 export const createCycling = (): OverlaySwitchItem => ({
