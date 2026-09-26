@@ -424,6 +424,23 @@ body.body--dark {
   padding: 0 12px !important;
 }
 
+// The visible "frame" lives on the ::before pseudo (Quasar standout
+// convention): 1px dashed white 24% + wash bg, identical on all family
+// members (stg.wodore.com look)
+.wd-search-field .q-field__control::before,
+.wd-date-field .q-field__control::before,
+.wd-input-button.q-field--standout .q-field__control::before {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border: 1px dashed rgba(255, 255, 255, 0.24) !important;
+  border-radius: 6px !important;
+}
+
+// Kill the standard-variant underline + focus animation on search/date
+.wd-search-field.q-field--standard .q-field__control::after,
+.wd-date-field .q-field__control::after {
+  display: none !important;
+}
+
 .wd-search-field,
 .wd-search-field input,
 .wd-date-field,
