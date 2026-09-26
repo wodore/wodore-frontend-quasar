@@ -58,7 +58,7 @@
     "gen:realfavs": "real-favicon generate src/assets/realfavgen.json src/assets/realfavgen_result.json public/realfavgen"
   },
   "dependencies": {
-    "@fontsource/roboto-condensed": "^5.0",
+    "@fontsource/roboto-condensed": "^5.3",
     "@indoorequal/vue-maplibre-gl": "^9.0.1",
     "@mapbox/mapbox-gl-draw": "^1.4.3",
     "@mapbox/polyline": "^1.2.1",

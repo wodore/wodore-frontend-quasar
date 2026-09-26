@@ -1750,10 +1750,10 @@
   resolved "https://registry.yarnpkg.com/@exodus/bytes/-/bytes-1.15.0.tgz#54479e0f406cbad024d6fe1c3190ecca4468df3b"
   integrity sha512-UY0nlA+feH81UGSHv92sLEPLCeZFjXOuHhrIo0HQydScuQc8s0A7kL/UdgwgDq8g8ilksmuoF35YVTNphV2aBQ==
 
-"@fontsource/roboto-condensed@^5.0":
-  version "5.2.8"
-  resolved "https://registry.npmjs.org/@fontsource/roboto-condensed/-/roboto-condensed-5.2.8.tgz"
-  integrity sha512-M2OxXXGJQeif+LhxHjWiCEX3BHIYeZf64CcUTeh9AQFGp7DXo2UAXZiZUUOalVdOiuUtQSIi2CDHLDWFiyoECQ==
+"@fontsource/roboto-condensed@^5.3":
+  version "5.3.0"
+  resolved "https://registry.yarnpkg.com/@fontsource/roboto-condensed/-/roboto-condensed-5.3.0.tgz#77335105a938e2f33c5a1911d5a5fdf46e09fa70"
+  integrity sha512-Vbh5pesre/M/Jspd10btdKRqLSTe3yn4l6B2tXHGElCeASfA7Pgdpu1mb8wTG8E72J4Xk6FUfqnSe46UN2QAog==
 
 "@hapi/address@^4.0.1":
   version "4.1.0"
