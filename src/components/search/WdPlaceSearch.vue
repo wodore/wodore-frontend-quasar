@@ -257,13 +257,22 @@ function handleSwipeDown() {
 
 <style scoped>
 .toolbar-font {
+  .wd-surface {
+    background: var(--wd-surface) !important;
+  }
+  .wd-surface-deep {
+    background: var(--wd-surface-deep) !important;
+  }
+  .wd-info-text {
+    color: var(--wd-info) !important;
+  }
   font-size: medium;
 }
 
 .no-results {
   padding: 16px;
   text-align: center;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--wd-ink-soft);
 }
 
 /* Remove border-radius on mobile */
@@ -295,7 +304,7 @@ function handleSwipeDown() {
 
 <template>
   <q-card
-    :class="isMobile ? 'bg-dark-500' : 'dialog-radius bg-dark-500'"
+    :class="isMobile ? 'wd-search-card' : 'dialog-radius wd-search-card'"
     :style="
       isMobile
         ? 'width: 100vw; max-width: 100vw; height: 100vh; height: 100dvh;'
@@ -304,7 +313,7 @@ function handleSwipeDown() {
   >
     <!-- HEADER with search input (fixed position on mobile) -->
     <div
-      class="bg-dark-700 q-pa-md"
+      class="wd-surface-deep q-pa-md"
       :style="
         isMobile
           ? 'position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding-right: 84px !important'
@@ -316,19 +325,17 @@ function handleSwipeDown() {
         :model-value="searchText"
         @update:model-value="onSearchInput"
         dense
-        dark
-        outlined
         :placeholder="t('search_ui.placeholder')"
         autofocus
         @keydown="onKeyDown"
-        class="toolbar-font"
+        class="toolbar-font wd-search-field"
       >
         <template v-slot:append>
-          <q-spinner v-if="loading" color="white" size="16px" />
+          <q-spinner v-if="loading" class="wd-info-text" size="16px" />
           <q-icon
             v-else-if="searchText.length > 0"
-            class="text-icon cursor-pointer"
-            size="sm"
+            class="wd-info-text cursor-pointer"
+            size="26px"
             @click="clearSearch"
           >
             <IconEvaCloseOutline />
@@ -352,7 +359,7 @@ function handleSwipeDown() {
           : 'height: 400px; max-height: 600px'
       "
     >
-      <q-list v-if="searchResults.length > 0" class="bg-dark-500" :class="{ 'q-mt-sm': !isMobile }">
+      <q-list v-if="searchResults.length > 0" class="wd-surface" :class="{ 'q-mt-sm': !isMobile }">
         <transition-group name="search-result" tag="div">
           <WdSearchResultEntry
             v-for="(place, index) in searchResults"
@@ -366,21 +373,21 @@ function handleSwipeDown() {
       </q-list>
       <div
         v-else-if="searchText.length >= 2 || lastSearchText.length >= 2"
-        class="no-results bg-dark-500"
+        class="no-results wd-surface"
       >
         {{ t('search_ui.no_places') }}
       </div>
       <div
         v-else
-        class="no-results bg-dark-500"
+        class="no-results wd-surface"
         style="display: flex; align-items: center; justify-content: center; min-height: 300px"
         v-touch-swipe.down="isMobile && props.swipeToClose ? handleSwipeDown : undefined"
       >
         <div class="text-center">
-          <q-icon size="xl" color="primary-300">
+          <q-icon size="xl" class="wd-info-text">
             <IconEvaSearchOutline />
           </q-icon>
-          <div class="text-primary-300 q-mt-md">{{ t('search_ui.placeholder_hint') }}</div>
+          <div class="wd-ink-soft-text q-mt-md">{{ t('search_ui.placeholder_hint') }}</div>
         </div>
       </div>
     </q-scroll-area>

@@ -57,9 +57,6 @@ function getReviewInfo(
   }
 }
 
-function getReviewColor(status: string | null | undefined): string {
-  return getReviewInfo(status, 0);
-}
 function getReviewText(status: string | null | undefined): string {
   return getReviewInfo(status, 1);
 }
@@ -121,18 +118,19 @@ watch(menuOpen, () => {
 
 <style scoped>
 .footer-toolbar {
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  border-top: 1px solid var(--wd-ridge);
   box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
 }
 </style>
 
 <template>
-  <q-toolbar class="footer-toolbar bg-white q-pr-sm">
-    <!-- Geo location link (first position) -->
+  <q-toolbar class="footer-toolbar wd-surface q-pr-sm wd-drawer-actions">
+    <!-- Geo location link (mobile only - a geo: URL is not useful on the
+         desktop planning context) -->
     <WdToolbarButton
-      v-if="place && place.location"
+      v-if="$q.screen.xs && place && place.location"
       size="md"
-      class="text-primary-900"
+      class="wd-ink-text"
       icon="wd-location-share-outline"
       :href="`geo:${place.location.lat},${place.location.lon}`"
       target="_blank"
@@ -141,16 +139,16 @@ watch(menuOpen, () => {
     <WdSourceButtons v-if="place" :hut="place" />
     <q-space />
 
-    <q-badge v-if="place" outline class="q-mr-xs" :color="getReviewColor(place.review_status)">
+    <q-badge v-if="place" class="q-mr-xs review-badge">
       {{ getReviewText(place.review_status) }}
     </q-badge>
 
     <!-- <WdToolbarButton size="md" :color="watchHut ? 'accent' : 'primary-900'" -->
     <!--   :icon="watchHut ? 'wd-eye' : 'wd-eye-outline'" style="opacity: 0.5; cursor: not-allowed" /> -->
 
-    <WdToolbarButton size="md" class="text-primary-900" icon="wd-more-vertical">
+    <WdToolbarButton size="md" class="wd-ink-text" icon="wd-more-vertical">
       <q-menu
-        class="bg-primary-100 q-menu--quasar"
+        class="bg-primary-100 q-menu--quasar wd-menu"
         v-model="menuOpen"
         anchor="top right"
         self="bottom right"
@@ -159,7 +157,7 @@ watch(menuOpen, () => {
           <WdToolbarExtraButton
             @click="toggleHutStar"
             :icon="starHut ? 'wd-favorite' : 'wd-favorite-outline'"
-            :icon-color="starHut ? 'accent' : 'primary-800'"
+            :icon-color="starHut ? 'accent' : undefined"
             :disabled="true"
           >
             {{ $t('favorite') }}

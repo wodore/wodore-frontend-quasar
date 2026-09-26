@@ -35,7 +35,8 @@
     "it": "@:lang.italian"
   },
   "menu": {
-    "select_language": "Sprache auswählen"
+    "select_language": "Sprache auswählen",
+    "select_theme": "Farbschema"
   },
   "search": "Suchen",
   "close": "Schliessen",
@@ -368,6 +369,7 @@
       "link": "Mountainbikeland Schweiz"
     }
   },
+  "basemap": "Basiskarte",
   "basemaps": {
     "swiss_light": "Schweiz Topo Light",
     "swiss_raster": "Schweiz Topo Raster",
@@ -447,5 +449,12 @@
     "s8_text": "Wenn Sie Fragen oder Bedenken bezüglich dieser Datenschutzerklärung haben, kontaktieren Sie uns bitte unter:",
     "email": "Email:",
     "closing": "Vielen Dank, dass Sie Wodore Ihre Informationen anvertrauen. Wir sind bestrebt, Ihre Privatsphäre und Sicherheit zu gewährleisten."
-  }
+  },
+  "theme": {
+    "auto": "System",
+    "light": "Hell",
+    "dark": "Dunkel"
+  },
+  "basemap_lock": "Basiskarte fixieren",
+  "basemap_unlock": "Basiskarte lösen"
 }

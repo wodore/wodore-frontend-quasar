@@ -37,8 +37,16 @@ const fetchBackendVersion = async () => {
 onMounted(fetchBackendVersion);
 </script>
 
+<style scoped>
+/* real phones: keep clear of the gesture bar */
+:deep(.q-pb-xl),
+.column {
+  padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
+}
+</style>
+
 <template>
-  <div class="column q-gutter-xs shadow-1 q-pb-xl q-pl-xs">
+  <div class="column q-gutter-y-xs q-pb-xl q-px-sm q-mt-md">
     <WdVersionTag type="frontend" :version="frontendVersion" :hash="frontendHash"> </WdVersionTag>
     <WdVersionTag
       type="backend"

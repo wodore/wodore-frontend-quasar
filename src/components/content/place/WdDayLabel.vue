@@ -70,13 +70,13 @@ const dateLabel = computed(() => {
   font-size: 11px;
   line-height: 1.2;
   font-weight: 500;
-  color: rgba(color('dark'), 0.75);
+  color: var(--wd-ink-soft, rgba(0, 0, 0, 0.75));
   white-space: nowrap;
 }
 
 .wd-day-label__name--today {
   font-weight: 700;
-  color: rgba(color('dark'), 0.95);
+  color: var(--wd-ink, rgba(0, 0, 0, 0.95));
 }
 
 .wd-day-label__name--active {
@@ -86,7 +86,7 @@ const dateLabel = computed(() => {
 .wd-day-label__date {
   font-size: 10px;
   line-height: 1.2;
-  color: rgba(color('dark'), 0.5);
+  color: var(--wd-ink-soft, rgba(0, 0, 0, 0.5));
   text-align: center;
   margin-bottom: -4px;
 

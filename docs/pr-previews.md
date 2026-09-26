@@ -69,3 +69,13 @@ added, removed when the PR closes or the label is taken off.
 - Map tiles run against the staging Martin server by default
   (`https://tiles.stg.wodore.com`); Imagor images and analytics run
   against whatever the repo variables point at.
+
+## Per-commit preview paths (2026-09)
+
+Every build deploys to its own subpath `pr-<N>/<short-sha>/` (e.g.
+`https://wodore.github.io/wodore-frontend-quasar/pr-150/a1b2c3d/`). A fresh
+path per push can never be served stale from the Pages CDN, and all builds of
+a PR stay online and comparable until the PR closes (cleanup removes the
+whole `pr-<N>/` tree). The PR comment maintains the list:
+`[sha](commit-link) (build date): preview url` - newest first, capped at 15
+entries. The QR code always points at the latest build.

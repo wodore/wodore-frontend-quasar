@@ -94,7 +94,11 @@ const handleKeydown = (event: KeyboardEvent) => {
   position: relative;
   width: 100%;
   padding-top: 66.67%; // 3:2 aspect ratio (landscape)
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background: linear-gradient(
+    135deg,
+    var(--wd-surface, #fdfefd) 0%,
+    var(--wd-surface-deep, #e9ecef) 100%
+  );
   border-radius: 16px;
   overflow: hidden;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);

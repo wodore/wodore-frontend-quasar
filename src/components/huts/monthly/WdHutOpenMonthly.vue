@@ -126,7 +126,7 @@ function getUnknownIcon(): string {
 <template>
   <div v-if="props.open_monthly">
     <!-- <pre>{{ $props.open_monthly }}</pre> -->
-    <div class="text-subtitle1 text-accent q-mb-sm">{{ $t('hut_type') }}</div>
+    <div class="text-subtitle1 wd-gold-text q-mb-sm">{{ $t('hut_type') }}</div>
 
     <div class="row monthly overflow-hidden" v-if="!$q.platform.is.mobile">
       <div v-for="m in monthList" :key="m" class="col-md-2 col-sm-1 col-2">

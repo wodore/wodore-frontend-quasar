@@ -118,6 +118,11 @@ const bottomSheetRef = ref<InstanceType<typeof WdBottomSheet> | null>(null);
 
 // Desktop drawer: shadow the header once the content is scrolled
 const drawerContentScrolled = ref(false);
+const headerScrolled = ref(false);
+
+function onLayoutScroll(info: { position: number }): void {
+  headerScrolled.value = (info.position ?? 0) > 2;
+}
 
 interface DrawerScrollInfo {
   verticalPosition?: number;
@@ -176,7 +181,7 @@ function closeContent() {
 const appTitle = process.env.WODORE_APP_NAME || 'Wodore';
 const appEnv = process.env.WODORE_ENV || 'production';
 const officialUrl = process.env.WODORE_OFFICIAL_URL || '';
-const isStaging = computed(() => appEnv === 'staging');
+const isStaging = computed(() => appEnv === 'staging' || appEnv === 'preview');
 const isNotProduction = computed(() => appEnv !== 'production');
 const metaData = {
   title: appTitle,
@@ -224,11 +229,77 @@ onMounted(() => {
 });
 </script>
 <style lang="scss">
+.wd-surface {
+  background: var(--wd-surface) !important;
+}
+.wd-ink-soft-text {
+  color: var(--wd-ink-soft) !important;
+}
 .app-header {
   backdrop-filter: blur(10px);
-  background-color: rgba(color('primary', 800), 0.85) !important;
+  // Night (default here): pine bar, paper text. Day gets the lighter bar
+  // via the body--light override below.
+  color: $white;
+  background-color: rgba(17, 33, 25, 0.88) !important;
 }
 
+// Day: the incumbent wodore.com sage-pine toolbar (dark-200, lighter than
+// Night's pine) with cream text and white-pill buttons.
+body.body--light .app-header {
+  color: #f2f7f4;
+  background-color: rgba(49, 94, 71, 0.92) !important;
+}
+
+// Header buttons: flat icon chrome in BOTH themes (user rule: no icon
+// bg) — cream icons on the Day sage bar, ice icons on the Night pine bar.
+// The date field keeps its light chip (it is a field, not an icon).
+.app-header .q-btn {
+  background: transparent !important;
+  border-width: 0 !important;
+  box-shadow: none !important;
+}
+
+.app-header .q-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+body.body--light .app-header .q-btn .q-icon,
+body.body--light .app-header .q-btn .text-icon,
+body.body--light .app-header .q-btn.text-icon,
+body.body--light .app-header button.text-icon {
+  color: #f2f7f4 !important;
+  background: transparent !important;
+}
+// Quasar draws button fills on ::before - kill it in the header
+.app-header .q-btn::before {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+// Wordmark "wo": theme ink on surfaces; cream on the header bars (both
+// themes use green bars where dark ink would vanish)
+.wd-wordmark-wo {
+  color: var(--wd-ink);
+}
+
+.app-header .wd-wordmark-wo,
+.app-header .text-black {
+  color: #f2f7f4 !important;
+}
+
+body.body--light .app-header .text-black {
+  color: #f2f7f4 !important;
+}
+
+body.body--dark .app-header .q-btn .q-icon,
+body.body--dark .app-header .q-btn.text-icon,
+body.body--dark .app-header .text-icon {
+  color: #a9f0d2 !important;
+}
+
+// Diagonal preview ribbon at the top-left corner. Intentionally overlaps
+// the header edge and is partially clipped by the viewport - that is the
+// classic "ribbon" look, NOT a bug (owner confirmed).
 .preview-badge {
   position: fixed;
   top: 1px;
@@ -239,15 +310,15 @@ onMounted(() => {
   letter-spacing: 0.04em;
   text-transform: none;
   padding: 2px 32px 2px 26px;
+  transform: rotate(-20deg);
   background-image: repeating-linear-gradient(
     -45deg,
-    color('accent', 700),
-    color('accent', 700) 6px,
-    color('accent', 600) 6px,
-    color('accent', 600) 12px
+    color('accent', 900),
+    color('accent', 900) 6px,
+    color('accent', 800) 6px,
+    color('accent', 800) 12px
   );
   color: white;
-  transform: rotate(-20deg);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
   pointer-events: none;
 }
@@ -276,6 +347,8 @@ onMounted(() => {
 // .q-drawer__content div (NOT the aside) - target that element.
 .q-drawer__content.content-drawer {
   overflow: hidden !important;
+  background: var(--wd-surface);
+  color: var(--wd-ink);
 
   // Drawer header elevation: drop shadow once the content is scrolled
   // (mirrors the mobile sheet header shadow). The header area is backed by
@@ -291,21 +364,27 @@ onMounted(() => {
 </style>
 <template>
   <WdAnalytics />
-  <q-layout view="hHh LpR fFf" class="overflow-hidden">
+  <q-layout view="hHh LpR fFf" class="overflow-hidden" @scroll="onLayoutScroll">
     <div v-if="isStaging" class="preview-badge">preview</div>
-    <q-header class="text-white app-header" bordered>
+    <q-header class="app-header" :class="{ 'app-header--scrolled': headerScrolled }">
       <!-- TOOLBAR -->
       <q-toolbar>
         <WdMenuButton desktop v-model="menuDrawerOpen" />
         <q-toolbar-title>
-          <WodoreLogo class="text-h4" :text="!isMobile" icon />
+          <WodoreLogo
+            class="text-h4"
+            :text="!isMobile"
+            icon
+            :text-color-left="$q.dark.isActive ? 'white' : 'black'"
+          />
         </q-toolbar-title>
         <WdPlaceSearchMenu v-if="!isMobile" />
         <WdSelectDate />
         <WdPlaceSearchDialog v-if="isMobile" />
-        <WdSupportButton v-if="!authStore.isLoggedIn && !isMobile" class="text-secondary-700" />
-        <WdFeedbackButton v-if="!isMobile" />
-        <WdLanguageSwitcher v-if="!isMobile" />
+        <WdSupportButton v-if="!authStore.isLoggedIn && !isMobile" class="wd-info-text" />
+        <WdFeedbackButton v-if="!isMobile" size="md" />
+        <WdLanguageSwitcher v-if="!isMobile" size="md" />
+        <WdThemeSwitcher v-if="!isMobile" size="md" />
 
         <WdUser v-if="authStore.isLoggedIn" />
 
@@ -342,10 +421,15 @@ onMounted(() => {
       <!-- TOOLBAR mobile -->
       <q-toolbar v-if="isMobile" class="bg-primary-600 shadow-6">
         <q-toolbar-title>
-          <WodoreLogo text class="text-h5" />
+          <WodoreLogo
+            text
+            class="text-h5"
+            :text-color-left="$q.dark.isActive ? 'white' : 'black'"
+          />
         </q-toolbar-title>
 
         <WdLanguageSwitcher size="md" />
+        <WdThemeSwitcher size="md" />
         <WdFeedbackButton size="md" />
 
         <!-- MENU BUTTON mobile close -->
@@ -373,19 +457,18 @@ onMounted(() => {
       <q-layout
         view="lhh LpR lff"
         container
-        class="no-background bg-grey-3 overflow-hidden"
+        class="no-background wd-surface overflow-hidden"
         style="height: 100%"
       >
-        <!-- Close button -->
-        <div class="absolute-top z-max q-pa-sm" style="pointer-events: none">
+        <!-- Close button (top-LEFT, gold chip - reference design; the
+             top-right corner belongs to the 3-dot actions menu) -->
+        <div class="absolute z-max" style="top: 10px; left: 10px; pointer-events: none">
           <q-btn
             round
             dense
-            unelevated
-            color="accent-100"
             icon="wd-close"
             @click="closeContent"
-            class="text-primary-900"
+            class="wd-drawer-close"
             size="md"
             style="pointer-events: auto"
           />
@@ -393,9 +476,8 @@ onMounted(() => {
 
         <!-- Sticky Header (Actions + Title) -->
         <q-header
-          class="no-background"
+          class="wd-drawer-header"
           :class="{ 'content-drawer-header-scrolled': drawerContentScrolled }"
-          style="background: none !important"
         >
           <!-- Actions Toolbar (Desktop only) -->
           <component
@@ -454,7 +536,15 @@ onMounted(() => {
   >
     <!-- Close button (top-right corner) -->
     <div class="absolute" style="top: 10px; right: 10px; z-index: 1000">
-      <q-btn round dense flat icon="wd-close" @click="closeContent" class="text-grey-7" size="md" />
+      <q-btn
+        round
+        dense
+        flat
+        icon="wd-close"
+        @click="closeContent"
+        class="wd-ink-soft-text"
+        size="md"
+      />
     </div>
 
     <!-- Header slot -->

@@ -51,16 +51,20 @@ function handleOverlayConfigClose() {
 }
 
 .drawer-mobile {
+  /* anchor to the drawer's real box (not 100vh math, which lies on
+  mobile browsers with dynamic URL bars): flush top under the header,
+  flush bottom - the version footer lands exactly at the drawer bottom
+  on desktop emulation AND real phones */
   position: absolute;
-  top: 50px;
+  top: 51px;
   left: 0;
   right: 0;
-  height: calc(100vh - 60px);
-  height: calc(100dvh - 60px);
+  bottom: 0;
 }
 
 .map-menu__versions {
-  background: rgba(255, 255, 255, 0.2);
+  /* Solid surface: translucent glass bled underlying content through */
+  background: var(--wd-surface-deep, #112119);
   /* border-radius: 0px; */
 }
 </style>
@@ -83,28 +87,30 @@ function handleOverlayConfigClose() {
         <div class="q-pa-xs column q-gutter-sm">
           <q-btn
             v-if="!authStore.isLoggedIn"
-            color="secondary-700"
+            :color="$q.dark.isActive ? 'secondary-200' : 'secondary-800'"
             unelevated
             flat
             @click="$auth?.signinRedirect()"
             :label="$t('login')"
-            style="opacity: 0.8"
           />
           <q-btn
             v-else
-            color="accent-700"
+            :color="$q.dark.isActive ? 'accent-200' : 'accent-800'"
             unelevated
             flat
             @click="$auth?.logout()"
             :label="$t('logout')"
-            style="opacity: 0.8"
           />
         </div>
 
         <div class="">
           <!-- Privacy Policy Link -->
           <div v-if="authStore.isEditor()" class="text-center q-mb-sm">
-            <router-link :to="{ name: 'data-policy' }" target="_blank" class="text-secondary-700">
+            <router-link
+              :to="{ name: 'data-policy' }"
+              target="_blank"
+              :class="$q.dark.isActive ? 'text-secondary-200' : 'text-secondary-800'"
+            >
               Datenschutz
             </router-link>
           </div>

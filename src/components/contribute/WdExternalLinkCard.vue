@@ -174,8 +174,9 @@ const openAppStore = (event: Event, store: 'google' | 'apple') => {
 .external-link-card {
   border-radius: 12px;
   transition: all 0.2s ease;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  background: #ffffff;
+  border: 1px solid var(--wd-ridge);
+  background: var(--wd-surface);
+  color: var(--wd-ink);
   height: 100%;
   position: relative;
   overflow: hidden;
@@ -346,19 +347,14 @@ const openAppStore = (event: Event, store: 'google' | 'apple') => {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   }
 
-  &.android {
-    color: #000000;
-
-    &:hover {
-      background: rgba(0, 0, 0, 0.05);
-    }
-  }
-
+  // theme-aware: follow the card text color (were hardcoded #000000,
+  // unreadable on the dark card at night)
+  &.android,
   &.ios {
-    color: #000000;
+    color: inherit;
 
     &:hover {
-      background: rgba(0, 0, 0, 0.05);
+      background: var(--wd-wash, rgba(0, 0, 0, 0.05));
     }
   }
 }

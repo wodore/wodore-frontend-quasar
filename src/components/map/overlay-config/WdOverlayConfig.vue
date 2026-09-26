@@ -146,7 +146,7 @@ function resetDefaults() {
   >
     <q-card class="overlay-config-dialog column">
       <!-- Header toolbar with tabs and close button -->
-      <q-toolbar class="bg-grey-3 flex-shrink-0">
+      <q-toolbar class="wd-surface-deep flex-shrink-0">
         <q-tabs v-model="activeTab" dense compact class="no-padding">
           <q-tab name="legend" v-if="hasLegend" icon="wd-info-outline" />
           <q-tab
@@ -157,7 +157,7 @@ function resetDefaults() {
           <q-tab name="settings" v-if="hasSettings" icon="wd-edit" />
         </q-tabs>
         <q-space />
-        <q-btn icon="wd-close" flat round dense v-close-popup />
+        <q-btn v-if="!$q.screen.xs" icon="wd-close" flat round dense v-close-popup />
       </q-toolbar>
 
       <!-- Title and subtitle section -->
@@ -230,7 +230,15 @@ function resetDefaults() {
         <q-tab name="settings" v-if="hasSettings" icon="wd-edit" />
       </q-tabs>
       <q-space />
-      <q-btn flat dense round icon="wd-close" text-color="white" @click="emit('close')" />
+      <q-btn
+        v-if="!$q.screen.xs"
+        flat
+        dense
+        round
+        icon="wd-close"
+        text-color="white"
+        @click="emit('close')"
+      />
     </q-toolbar>
 
     <!-- Title and subtitle section -->
@@ -281,6 +289,9 @@ function resetDefaults() {
 </template>
 
 <style lang="scss" scoped>
+.wd-surface-deep {
+  background: var(--wd-surface-deep) !important;
+}
 // Main containers - Quasar's column class handles flex
 .overlay-config-dialog {
   width: 400px;

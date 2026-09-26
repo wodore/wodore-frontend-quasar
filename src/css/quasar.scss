@@ -41,7 +41,7 @@
   top: 0;
   bottom: 0;
   //z-index: $z-side;
-  background-color: white !important;
+  background-color: var(--wd-surface, white) !important;
 }
 .q-footer {
   //position: absolute;
@@ -57,7 +57,7 @@
   //top: 0;
   //bottom: 0;
   //z-index: $z-side;
-  background-color: white !important;
+  background-color: var(--wd-surface, white) !important;
 }
 // --
 

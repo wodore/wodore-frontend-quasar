@@ -21,6 +21,11 @@ export default [
       '**/playwright-report/**',
       '**/test-results/**',
       '**/coverage/**',
+      // Vendored impeccable design skill (installed via `npx impeccable install`)
+      '**/.claude/skills/**',
+      '**/.github/skills/**',
+      '**/.opencode/skills/**',
+      '**/.agents/skills/**',
     ],
   },
 

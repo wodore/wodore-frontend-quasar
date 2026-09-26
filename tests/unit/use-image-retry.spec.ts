@@ -1,10 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import {
-  useImageRetry,
-  filterOutFailed,
-  MAX_IMAGE_RETRIES,
-} from '@composables/useImageRetry';
+import { useImageRetry, filterOutFailed, MAX_IMAGE_RETRIES } from '@composables/useImageRetry';
 
 /** Fake <img> element recording src writes. */
 function makeImg(src = 'http://img.test/a.jpg') {

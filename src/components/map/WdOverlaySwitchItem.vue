@@ -23,7 +23,9 @@ const overlayStore = useOverlayStore();
 const menuStore = useMapMenuStore();
 
 const overlayConfig = computed(() => {
-  const overlay = overlayStore.overlays.find(o => o.name === props.overlayName);
+  const overlay = overlayStore.overlays.find((o): boolean => o.name === props.overlayName) as
+    | (typeof overlayStore.overlays)[number]
+    | undefined;
   return overlay?.config;
 });
 
@@ -105,42 +107,62 @@ function onFilterClick(event: Event) {
   padding: 0;
   margin: 0;
   border-radius: 100;
-  background: color('icon');
-  box-shadow: $button-shadow;
-  transition: background-color 0.2s;
-  border-bottom: 3px solid rgba(0, 0, 0, 0.15);
+  background: transparent;
+  transition: color 0.2s;
 
   .q-icon {
-    opacity: 0.6;
+    opacity: 0.85;
+    color: var(--wd-chrome-btn-ink);
   }
 
-  &.active {
-    background-color: color('accent', 500);
+  // Raster activity symbols (huts, bike, hiking, ...): dark glyphs float
+  // on the light map in Day (no bg). At Night they get a pine disc and the
+  // glyph inverts to light ice - dark PNGs would vanish on pine.
+  img {
+    display: block;
+  }
 
+  // Active: gold icon, no fill (product rule: no icon bg in any state)
+  &.active {
     .q-icon {
       opacity: 1;
-      color: white;
+      color: #bfab25;
     }
 
     &:hover {
-      background-color: color('accent', 400);
+      background-color: rgba(255, 255, 255, 0.1);
     }
   }
 
   &:hover {
-    background: color('icon');
+    background-color: var(--wd-chrome-btn-hover);
   }
 }
+
+// Night rail treatment for image-bearing overlay buttons (activity rail):
+// pine disc + inverted light glyph. (The img filter lives in app.scss —
+// :global + nesting here once compiled to a page-level body filter.)
 
 .overlay-side-icons {
   display: flex;
   flex-direction: column;
+  // center the 28px icon column on the 40px main button (was top-hugged
+  // after the min-height fix)
+  align-self: center;
+  gap: 0;
+  // whitespace between the buttons renders as anonymous flex items -
+  // zero them so the gap is exactly 0 (owner: pulled 2px closer twice)
+  font-size: 0;
   min-width: 22px;
   /* border-left: 2px solid rgba(color('primary', 200), 0.4); */
 }
 
 .overlay-icon-btn {
-  height: 10px;
+  // Quasar's q-btn min-height (20.6px dense) padded each 13.7px glyph
+  // with ~3.4px of internal whitespace - kill it so the glyphs touch
+  // (owner pulled the pair closer twice; the flex gap was already 0)
+  min-height: 0 !important;
+  height: 14px;
   width: 22px;
   padding: 0;
   margin: 0;
@@ -149,15 +171,26 @@ function onFilterClick(event: Event) {
   transition:
     color 0.2s,
     background-color 0.2s;
-  color: var(--q-primary);
+
+  // Icon sits directly on the light basemap: dark glyph in BOTH themes
+  // (corrected zones rule); no background in any state. Active = gold.
+  .q-icon,
+  &.q-btn :deep(.q-icon) {
+    color: #1c1c1c !important;
+  }
 
   &:hover {
-    color: var(--q-accent);
-    background-color: rgba(var(--q-accent-rgb), 0.1);
+    background-color: rgba(0, 0, 0, 0.08);
+    .q-icon {
+      color: #1c1c1c !important;
+    }
   }
 
   &.active {
-    color: var(--q-accent);
+    color: #bfab25;
+    .q-icon {
+      color: #bfab25 !important;
+    }
   }
 }
 
@@ -181,6 +214,7 @@ function onFilterClick(event: Event) {
       dense
       class="overlay-main-btn"
       :class="{ active }"
+      :aria-label="label"
       @click="onMainClick"
       :ripple="false"
     >
@@ -197,6 +231,7 @@ function onFilterClick(event: Event) {
         class="overlay-icon-btn"
         size="xs"
         :class="{ active: isInfoActive }"
+        :aria-label="`${label} info`"
         @click="onInfoClick"
       >
       </q-btn>
@@ -206,10 +241,10 @@ function onFilterClick(event: Event) {
         flat
         dense
         :icon="showBadge ? 'wd-filter' : 'wd-filter-outline'"
-        color="primary"
         size="xs"
         class="overlay-icon-btn"
         :class="{ active: isFilterActive }"
+        :aria-label="`${label} filter`"
         @click="onFilterClick"
       >
         <div v-if="showBadge" class="filter-badge"></div>
