@@ -1,1 +1,0 @@
-import{b as o}from"./index-CRjxUHql.js";import{u as n}from"./useAuthService-C1a017v8.js";import"./auth-store-CARrOTIr.js";import"./___vite-browser-external_commonjs-proxy-CHR-kdpd.js";const u=o(async()=>{n().signinSilent().then().catch(t=>console.warn("Could not silent login",t))});export{u as default};

@@ -1,1 +1,0 @@
-import{d as n,o as e,l as o,a5 as s,m as t,aN as c}from"./index-CIlYy2gc.js";const p=n({__name:"QIconify",props:{is:{}},setup(a){return(r,i)=>(e(),o(s,null,{default:t(()=>[(e(),o(c(a.is)))]),_:1}))}});export{p as _};
