@@ -369,7 +369,7 @@ body.body--dark {
 .q-fab.wd-switcher-fab--open,
 .q-fab.wd-switcher-fab--open:hover {
   background-color: #bfab25 !important;
-  border-color: #846a15 !important;
+  border-color: #bfab25 !important;
 
   .q-fab__icon,
   .q-fab__active-icon {
@@ -392,10 +392,15 @@ body.body--dark {
 }
 
 // Selected basemap: white chip + gold ring - the shared "selected"
-// language for map controls (small gold surface, never a gold fill)
+// language for map controls (small gold surface, never a gold fill).
+// Ring as box-shadow: zero layout impact on toggle.
 .q-fab__actions .q-btn.wd-basemap-item.wd-basemap-item--active {
-  border: 2px solid #bfab25 !important;
+  border-color: #c9d4cd !important;
   background-color: #fdfefd !important;
+  box-shadow:
+    0 0 0 2px #bfab25,
+    0 2px 0 rgba(0, 0, 0, 0.18),
+    0 1px 3px rgba(10, 20, 15, 0.2) !important;
 
   .q-avatar,
   img {
@@ -781,6 +786,12 @@ body.body--dark .content-drawer input {
 
 // ── Owner polish round ──────────────────────────────────────────────
 
+// Inactive rail icons dimmed - the gold selected state pops against them
+.q-fab__actions .overlay-main-btn:not(.active) .q-icon,
+.q-fab__actions .overlay-main-btn:not(.active) img {
+  opacity: 0.55;
+}
+
 // 2: Overlay SELECTED state: white chip + gold icon (glyph buttons) /
 // gold ring (raster buttons). impeccable consult: a gold or forest FILL
 // at rail scale reads as noise - the icon/ring is the "small, warm,
@@ -795,9 +806,15 @@ body.body--dark .content-drawer input {
 }
 
 // Raster-symbol buttons (huts, bike, hiking, ...): gold ring instead of
-// a gold icon (the PNG glyph cannot be recolored)
+// a gold icon (the PNG glyph cannot be recolored). The ring is a
+// box-shadow, NOT a border - borders change the inner content box and
+// make neighbors twitch on toggle; shadows never affect layout.
 .q-fab__actions .q-btn.overlay-main-btn.active:has(img) {
-  border: 2px solid #bfab25 !important;
+  border-color: #c9d4cd !important;
+  box-shadow:
+    0 0 0 2px #bfab25,
+    0 2px 0 rgba(0, 0, 0, 0.18),
+    0 1px 3px rgba(10, 20, 15, 0.2) !important;
 }
 
 .q-fab__actions .q-btn.overlay-icon-btn.active {
@@ -883,4 +900,15 @@ body .q-toolbar.bg-primary-600 .q-btn::before {
     background-color: #346751 !important;
     border: none !important;
   }
+}
+
+// Menu drawer toolbar: 1px bottom edge to match the bordered main header
+// (without it the drawer toolbar reads 1px shorter - visible jump when
+// the drawer covers the header on mobile)
+.q-drawer .q-toolbar.bg-primary-600 {
+  border-bottom: 1px solid rgba(10, 20, 15, 0.25);
+}
+
+.body--dark .q-drawer .q-toolbar.bg-primary-600 {
+  border-bottom: 1px solid #1c3629;
 }

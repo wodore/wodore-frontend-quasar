@@ -13,6 +13,13 @@ Ground rules learned the hard way:
    dialogs). If the assertion fails, mark the state FAILED and never save
    the wrong-state screenshot. Wrong-state captures silently corrupt the
    whole review.
+1a. **Always cache-bust the preview URL.** The PR preview on GitHub Pages
+   sits behind a ~10 min CDN HTML cache that serves stale hashed-asset
+   references - verifying against it produces phantom regressions (rules
+   that ARE deployed reading as missing). Every navigation to the preview
+   must append a timestamp query: `https://…/pr-150/?ts=1710000000`. Playwright
+   probes AND links shown to the owner both carry it. (The skill lives at
+   `.agents/skills/visual-verification/SKILL.md` in this repo.)
 2. **Full-resolution first.** Vision agents analyze individual full-res
    PNGs. Contact sheets downscale and hide small-text failures; if used at
    all, they are a human index only — the agent gets the originals.
