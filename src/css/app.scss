@@ -340,19 +340,22 @@ body.body--dark {
   background-color: #fdfefd !important;
   color: #1c1c1c !important;
   border: none !important;
-  box-shadow:
-    0 2px 0 rgba(0, 0, 0, 0.18),
-    0 1px 3px rgba(10, 20, 15, 0.2);
+  box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2);
 }
 
-.overlay-main-btn,
-.overlay-icon-btn {
+.overlay-main-btn {
   background-color: #fdfefd !important;
   border: 1px solid #c9d4cd !important;
   color: #1c1c1c !important;
-  box-shadow:
-    0 2px 0 rgba(0, 0, 0, 0.18),
-    0 1px 3px rgba(10, 20, 15, 0.2);
+  box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2);
+}
+
+// Side info/filter toggles: transparent glyph buttons - no background,
+// and NO shadow (a shadow without a surface is a floating artifact)
+.overlay-icon-btn {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 .q-fab.wd-switcher-fab:hover {
   // ZONES: map fabs stay SOLID on hover (translucent wash reads as
@@ -365,17 +368,17 @@ body.body--dark {
   color: #29626b !important;
 }
 
-// Open state: gold fill - the one true primary, the "head-torch" the
-// user is meant to find (impeccable consult: gold is scarce, the open
-// toggle is the single place it earns a fill). Dark icon on gold.
+// Open state: forest fill + paper icon - the brand action (design
+// system: forest green = brand actions / active states). Gold NEVER
+// fills a map button (owner rule: gold bg reads as too much).
 .q-fab.wd-switcher-fab--open,
 .q-fab.wd-switcher-fab--open:hover {
-  background-color: #bfab25 !important;
+  background-color: #346751 !important;
   border: none !important;
 
   .q-fab__icon,
   .q-fab__active-icon {
-    color: #1c1c1c !important;
+    color: #f2f7f4 !important;
   }
 }
 
@@ -384,9 +387,7 @@ body.body--dark {
 .wd-basemap-item {
   background-color: #fdfefd !important;
   border: 1px solid #c9d4cd;
-  box-shadow:
-    0 2px 0 rgba(0, 0, 0, 0.18),
-    0 1px 3px rgba(10, 20, 15, 0.2);
+  box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2);
 }
 
 .wd-basemap-item:hover {
@@ -395,13 +396,12 @@ body.body--dark {
 
 // Selected basemap: white chip + gold ring - the shared "selected"
 // language for map controls (small gold surface, never a gold fill).
-// Ring as box-shadow: zero layout impact on toggle.
+// INSET ring: inside the bounds, zero size/layout impact.
 .q-fab__actions .q-btn.wd-basemap-item.wd-basemap-item--active {
   border-color: #c9d4cd !important;
   background-color: #fdfefd !important;
   box-shadow:
-    0 0 0 2px #bfab25,
-    0 2px 0 rgba(0, 0, 0, 0.18),
+    inset 0 0 0 2px #bfab25,
     0 1px 3px rgba(10, 20, 15, 0.2) !important;
 
   .q-avatar,
@@ -723,9 +723,7 @@ body.body--dark .q-fab.wd-switcher-fab,
 body.body--dark .overlay-main-btn,
 body.body--dark .wd-basemap-item,
 body.body--dark .maplibregl-ctrl-group {
-  box-shadow:
-    0 2px 0 rgba(0, 0, 0, 0.18),
-    0 1px 3px rgba(10, 20, 15, 0.2) !important;
+  box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2) !important;
 }
 
 // Structural separation in dark = thin ridge lines
@@ -808,14 +806,13 @@ body.body--dark .content-drawer input {
 }
 
 // Raster-symbol buttons (huts, bike, hiking, ...): gold ring instead of
-// a gold icon (the PNG glyph cannot be recolored). The ring is a
-// box-shadow, NOT a border - borders change the inner content box and
-// make neighbors twitch on toggle; shadows never affect layout.
+// a gold icon (the PNG glyph cannot be recolored). The ring is an
+// INSET box-shadow - drawn INSIDE the button bounds, so the active
+// button never renders larger and neighbors can never shift.
 .q-fab__actions .q-btn.overlay-main-btn.active:has(img) {
   border-color: #c9d4cd !important;
   box-shadow:
-    0 0 0 2px #bfab25,
-    0 2px 0 rgba(0, 0, 0, 0.18),
+    inset 0 0 0 2px #bfab25,
     0 1px 3px rgba(10, 20, 15, 0.2) !important;
 }
 
@@ -894,20 +891,17 @@ body .q-toolbar.bg-primary-600 .q-btn::before {
   white-space: nowrap;
 }
 
-// Mobile rail (mint circles): active = GOLD fill with the dark raster
-// glyph (impeccable: matches the "filled circle + dark icon" family and
-// is the one place gold earns a fill - dark on gold is ~8:1; forest +
-// dark raster was muddy). Must live AFTER the white-chip+gold active
-// rule to win the cascade at equal specificity.
+// Mobile rail (mint circles): active = white chip + inset gold ring -
+// the SAME selected language as desktop (forest + dark raster was
+// muddy; gold fills are out). Must live AFTER the white-chip+gold
+// active rule to win the cascade at equal specificity.
 @media (max-width: 600px) {
   .q-fab__actions .q-btn.overlay-main-btn.active {
-    background-color: #bfab25 !important;
+    background-color: #fdfefd !important;
     border: none !important;
-    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.18) !important;
-
-    .q-icon {
-      color: #1c1c1c !important;
-    }
+    box-shadow:
+      inset 0 0 0 2px #bfab25,
+      0 1px 3px rgba(10, 20, 15, 0.2) !important;
   }
 }
 
