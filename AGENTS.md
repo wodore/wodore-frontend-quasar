@@ -92,6 +92,21 @@ from the main checkout, or API hosts / map keys will be missing. Also run
 (the map/overlay icon assets) is a submodule; without it the overlay and
 map-picker icons 404.
 
+**Capacitor (Android on-device dev)**: `yarn quasar dev -m capacitor -T android` prompts
+for the LAN IP, serves the dev server on it (port 9500), and opens Android Studio
+(snap install — path set via `bin.linuxAndroidStudio` in `quasar.config.ts`); run the
+app from the IDE onto a USB device (USB debugging enabled). The phone needs TCP access
+to the dev machine — open firewall ports
+(`sudo ufw allow from 192.168.1.0/24 to any port <port> proto tcp`) for **9500** (dev
+server), **8000** (backend — start Django with `runserver 0.0.0.0:8000`, it binds
+localhost-only by default), **8075** (tiles) and **8079** (imagor). `ping` working is
+NOT enough — ufw allows ICMP but blocks TCP by default (symptom: black screen in the
+app). Debug the WebView with
+`~/Android/Sdk/platform-tools/adb logcat -s Capacitor chromium Console` or full
+DevTools via `chrome://inspect` on desktop Chrome. App id: `com.wodore.app`
+(`src-capacitor/capacitor.config.json`). Note: OIDC (`auth.burgdev.local.gd` →
+127.0.0.1) does not work on device — the hostname resolves to the phone itself.
+
 **Status reporting convention**: when a dev server is running, always tell the
 user where it is (full URL and which branch it serves). Always show active PRs
 in the summary as markdown links (e.g. `[PR #138](…/pull/138)`).

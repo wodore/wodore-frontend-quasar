@@ -12,7 +12,14 @@ const { formatDate } = date;
 import IconsResolver from 'unplugin-icons/resolver';
 
 import { execSync } from 'child_process';
-const gitHash = process.env.GIT_HASH || execSync('git rev-parse HEAD').toString().trim();
+let gitHash = process.env.GIT_HASH || '';
+if (!gitHash) {
+  try {
+    gitHash = execSync('git rev-parse HEAD').toString().trim();
+  } catch {
+    // not a git repo / git unavailable — leave empty
+  }
+}
 
 // export default defineConfig({
 //   plugins: [
@@ -318,6 +325,12 @@ export default configure(ctx => {
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/developing-capacitor-apps/configuring-capacitor
     capacitor: {
       hideSplashscreen: true,
+    },
+
+    // IDE / tool binaries. Android Studio is installed as a snap on this
+    // machine, so Quasar cannot auto-detect a studio.sh tarball path.
+    bin: {
+      linuxAndroidStudio: '/snap/bin/android-studio',
     },
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/developing-electron-apps/configuring-electron
