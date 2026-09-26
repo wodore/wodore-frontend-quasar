@@ -937,7 +937,7 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
 <template>
   <!-- @map:render="onMapRender" -->
   <q-no-ssr>
-    <div ref="mapDiv" style="height: 100vh">
+    <div ref="mapDiv" style="height: 100vh; height: 100dvh">
       <MglMap
         v-if="webglSupported"
         @map:load="onMapLoad"

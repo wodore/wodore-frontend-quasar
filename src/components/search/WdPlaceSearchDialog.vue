@@ -40,7 +40,7 @@ function onSearchClose() {
       transition-show="slide-up"
       transition-hide="slide-down"
     >
-      <div style="position: relative; height: 100vh; width: 100vw">
+      <div style="position: relative; height: 100vh; height: 100dvh; width: 100vw">
         <!-- Close button (top right corner) -->
         <div
           class="q-ma-xs z-top text-icon"
@@ -57,7 +57,7 @@ function onSearchClose() {
           mobile
           swipe-to-close
           @close="onSearchClose"
-          style="height: 100vh; width: 100vw; max-width: 100vw"
+          style="height: 100vh; height: 100dvh; width: 100vw; max-width: 100vw"
         />
       </div>
     </q-dialog>
