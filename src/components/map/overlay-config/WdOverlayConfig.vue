@@ -157,7 +157,7 @@ function resetDefaults() {
           <q-tab name="settings" v-if="hasSettings" icon="wd-edit" />
         </q-tabs>
         <q-space />
-        <q-btn icon="wd-close" flat round dense v-close-popup />
+        <q-btn v-if="!$q.screen.xs" icon="wd-close" flat round dense v-close-popup />
       </q-toolbar>
 
       <!-- Title and subtitle section -->
@@ -230,7 +230,15 @@ function resetDefaults() {
         <q-tab name="settings" v-if="hasSettings" icon="wd-edit" />
       </q-tabs>
       <q-space />
-      <q-btn flat dense round icon="wd-close" text-color="white" @click="emit('close')" />
+      <q-btn
+        v-if="!$q.screen.xs"
+        flat
+        dense
+        round
+        icon="wd-close"
+        text-color="white"
+        @click="emit('close')"
+      />
     </q-toolbar>
 
     <!-- Title and subtitle section -->

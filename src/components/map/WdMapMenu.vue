@@ -50,11 +50,15 @@ function handleOverlayConfigClose() {
 }
 
 .drawer-mobile {
+  /* anchor to the drawer's real box (not 100vh math, which lies on
+  mobile browsers with dynamic URL bars): flush top under the header,
+  flush bottom - the version footer lands exactly at the drawer bottom
+  on desktop emulation AND real phones */
   position: absolute;
-  top: 50px;
+  top: 51px;
   left: 0;
   right: 0;
-  height: calc(100vh - 60px);
+  bottom: 0;
 }
 
 .map-menu__versions {

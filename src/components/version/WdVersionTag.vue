@@ -33,7 +33,8 @@ const url = computed(() => {
   return undefined;
 });
 const appEnv = process.env.WODORE_ENV || 'production';
-const isStaging = computed(() => appEnv === 'staging');
+// link the commit hash on staging AND preview (same as logged-in staging)
+const isStaging = computed(() => appEnv === 'staging' || appEnv === 'preview');
 </script>
 
 <template>

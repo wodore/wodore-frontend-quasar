@@ -16,7 +16,15 @@ withDefaults(
 const { t } = useI18n();
 const settings = useUserSettingsStore();
 
+// Initial setting follows the system (auto); once the user toggles,
+// cycle only between light and dark (owner rule - a proper
+// system-option setting UI may come later)
 const ORDER: ThemeMode[] = ['auto', 'light', 'dark'];
+
+function nextMode(current: ThemeMode): ThemeMode {
+  if (current === 'auto') return 'light';
+  return current === 'light' ? 'dark' : 'light';
+}
 
 // The icon and tooltip show the chosen SETTING (auto = follow system), not
 // the resolved theme - clicking cycles the setting itself.
@@ -28,8 +36,7 @@ const mode = computed<ThemeMode>(() => {
 const label = computed(() => t(`theme.${mode.value}`));
 
 function cycle(): void {
-  const next = ORDER[(ORDER.indexOf(mode.value) + 1) % ORDER.length];
-  settings.updateUISetting('theme', next);
+  settings.updateUISetting('theme', nextMode(mode.value));
 }
 </script>
 

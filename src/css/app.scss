@@ -176,11 +176,9 @@
 // light basemap at night - light controls on it read correctly).
 // Includes raster-symbol buttons — mint + dark glyphs has AA contrast.
 @media (max-width: 600px) {
-  // specificity must beat .q-fab__actions .q-btn:has(img) (0,2,1)
+  // circles on mobile; the color comes from the unified rail rule above
   .q-fab__actions .q-btn.overlay-main-btn,
   .q-fab__actions .q-btn.wd-overlay-btn {
-    background-color: rgba(143, 214, 183, 0.9) !important;
-    color: #1c1c1c !important;
     border-radius: 50%;
     border: none !important;
   }
@@ -343,8 +341,11 @@ body.body--dark {
   box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2);
 }
 
+// One rail idle color on EVERY viewport: opaque mint/ridge midpoint
+// (design consult #e7f2ec) - between the old desktop white and the
+// mobile mint, fully opaque
 .overlay-main-btn {
-  background-color: #fdfefd !important;
+  background-color: #e7f2ec !important;
   border: 1px solid #c9d4cd !important;
   color: #1c1c1c !important;
   box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2);
@@ -357,6 +358,18 @@ body.body--dark {
   border: none !important;
   box-shadow: none !important;
 }
+
+// Info/filter mini buttons: tinted glass pill so they survive the dark
+// raster basemap (design consult): white 72% + blur, ridge border,
+// forest-deep glyphs. Inactive on purpose - active turns gold (below).
+.overlay-side-icons {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid #c9d4cd;
+  border-radius: 100px;
+  box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2);
+}
 .q-fab.wd-switcher-fab:hover {
   // ZONES: map fabs stay SOLID on hover (translucent wash reads as
   // a transparent toggle and strands after clicks)
@@ -368,17 +381,17 @@ body.body--dark {
   color: #29626b !important;
 }
 
-// Open state: forest fill + paper icon - the brand action (design
-// system: forest green = brand actions / active states). Gold NEVER
-// fills a map button (owner rule: gold bg reads as too much).
+// Open state: the same white chip as everything else, with a GOLD icon
+// - "open" is a selected state and speaks the gold-icon language.
+// Forest fill read too dark over the light map (owner + design consult).
 .q-fab.wd-switcher-fab--open,
 .q-fab.wd-switcher-fab--open:hover {
-  background-color: #346751 !important;
+  background-color: #fdfefd !important;
   border: none !important;
 
   .q-fab__icon,
   .q-fab__active-icon {
-    color: #f2f7f4 !important;
+    color: #bfab25 !important;
   }
 }
 
@@ -744,6 +757,12 @@ body.body--dark .q-drawer {
 //    basemap at night, so dark PNGs on white chips stay legible).
 // 2. GLYPH buttons (wd-info/filter marker toggles): they sit directly on the
 //    light basemap — dark glyphs, NO background, in BOTH themes.
+// Rail raster buttons take the unified rail idle color (#e7f2ec),
+// not the white of basemap thumbnails - specificity beats :has(img)
+.q-fab__actions .q-btn.overlay-main-btn:has(img) {
+  background-color: #e7f2ec !important;
+}
+
 .q-fab__actions .q-btn:has(img) {
   background: #fdfefd !important;
   border: 1px solid #dde7e0 !important;
@@ -916,4 +935,22 @@ body .q-toolbar.bg-primary-600 .q-btn::before {
 
 .body--dark .q-drawer .q-toolbar.bg-primary-600 {
   border-bottom: 1px solid #1c3629;
+}
+
+// Main header: minimal elevation under the bar in both modes (design
+// consult) - dark shadow always; exempt from the dark-mode shadow kill
+.app-header {
+  box-shadow: 0 1px 4px rgba(10, 20, 15, 0.18) !important;
+}
+
+.body--dark .app-header {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28) !important;
+}
+
+// Map page: the map container keeps a LIGHT background in both themes -
+// basemaps are bright and a dark page bg flashes black while tiles load
+// (a dark baselayer may come later and will re-theme this)
+.map-page,
+.q-page:has(.maplibregl-map) {
+  background-color: #eef2ef;
 }

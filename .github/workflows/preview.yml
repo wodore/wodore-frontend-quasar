@@ -156,7 +156,7 @@ jobs:
           WODORE_URL: >-
             https://wodore.github.io/wodore-frontend-quasar/pr-${{
               steps.pr.outputs.number
-            }}/
+            }}/?ts=${{ github.event.pull_request.head.sha || github.sha }}
           WODORE_DOMAIN: wodore.github.io
           WODORE_API_HOST: >-
             ${{ vars.WODORE_API_HOST || 'https://hub.stg.wodore.com' }}
