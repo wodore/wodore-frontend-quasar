@@ -59,11 +59,11 @@
 // Scoped to the WdSelectDate card ONLY (the search card also uses
 // dialog-radius — the calendar has a q-date inside as discriminator)
 .q-card.dialog-radius:has(.q-date) {
-  background: #112119 !important;
-  color: #f2f7f4 !important;
+  background: var(--wd-surface) !important;
+  color: var(--wd-ink) !important;
 }
 .q-card.dialog-radius:has(.q-date) .wd-surface-deep {
-  background: #0e1b14 !important;
+  background: var(--wd-surface-deep) !important;
 }
 
 // All q-date surfaces transparent (Quasar defaults to white)
@@ -78,12 +78,13 @@
 
 // Day-of-week header row: muted turquoise
 .q-card.dialog-radius:has(.q-date) .q-date__calendar-days {
-  color: rgba(157, 217, 210, 0.7) !important;
+  color: var(--wd-ink-soft) !important;
+  opacity: 0.7;
 }
 
 // Day numbers: paper white
 .q-card.dialog-radius:has(.q-date) .q-date__calendar-item .q-btn {
-  color: #f2f7f4 !important;
+  color: var(--wd-ink) !important;
 }
 
 // Today: forest with paper text
@@ -794,12 +795,11 @@ body .q-toolbar.bg-primary-600 .q-btn::before {
 
 // Search card: always dark pine (like main's bg-dark-500) in both themes
 .wd-search-card {
-  background: #112119 !important;
-  color: #f2f7f4 !important;
+  background: var(--wd-surface) !important;
+  color: var(--wd-ink) !important;
 }
-.wd-search-card .wd-surface-deep,
-.wd-search-card .wd-search-field .q-field__control {
-  background: #0e1b14 !important;
+.wd-search-card .wd-surface-deep {
+  background: var(--wd-surface-deep) !important;
 }
 // Input field: rounded corners inside the search card
 .wd-search-card .q-field__control {
