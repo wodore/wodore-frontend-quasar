@@ -32,10 +32,11 @@ gh run watch $(gh run list --workflow preview.yml --limit 1 --json databaseId --
 curl -s -o /dev/null -w "%{http_code}" "https://wodore.github.io/wodore-frontend-quasar/pr-<N>/"
 ```
 
-**Cache-busting:** GitHub Pages caches the preview HTML for ~10 min. ALWAYS
-append a timestamp when opening or probing the preview (also in every
-Playwright script):
-`https://wodore.github.io/wodore-frontend-quasar/pr-<N>/?ts=$(date +%s)`
+**Per-commit paths:** every build deploys to `pr-<N>/<short-sha>/` (see the
+build list in the PR comment - newest first). These URLs are never
+CDN-cached; `?ts=` busting is only needed for the legacy `pr-<N>/` root or
+pages you have visited before:
+`https://wodore.github.io/wodore-frontend-quasar/pr-<N>/<short-sha>/`
 
 The preview builds with the staging API (`hub.stg.wodore.com`), hash
 routing, and a QR-code PR comment. Repo variables/secrets needed:

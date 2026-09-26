@@ -36,6 +36,10 @@ jobs:
               return;
             }
             core.setOutput('number', String(num));
+            core.setOutput(
+              'sha7',
+              (context.payload.pull_request.head.sha || context.sha).slice(0, 7)
+            );
             const isPreviewLabel = (name) =>
               (name || '').toLowerCase() === 'preview';
             const wasUnlabeled =
@@ -150,13 +154,18 @@ jobs:
         if: steps.pr.outputs.action == 'deploy'
         env:
           WODORE_PUBLIC_PATH: >-
-            /wodore-frontend-quasar/pr-${{ steps.pr.outputs.number }}/
+            /wodore-frontend-quasar/pr-${{ steps.pr.outputs.number }}/${{
+              steps.pr.outputs.sha7
+            }}/
           WODORE_ROUTER_MODE: hash
           WODORE_ENV: preview
+          # Per-commit path: every build lives at pr-N/<sha7>/ - a fresh
+          # URL per push that the Pages CDN has never cached, and all
+          # builds stay comparable until the PR closes
           WODORE_URL: >-
             https://wodore.github.io/wodore-frontend-quasar/pr-${{
               steps.pr.outputs.number
-            }}/?ts=${{ github.event.pull_request.head.sha || github.sha }}
+            }}/${{ steps.pr.outputs.sha7 }}/
           WODORE_DOMAIN: wodore.github.io
           WODORE_API_HOST: >-
             ${{ vars.WODORE_API_HOST || 'https://hub.stg.wodore.com' }}
@@ -188,7 +197,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
           publish_dir: dist/pwa
-          destination_dir: pr-${{ steps.pr.outputs.number }}
+          destination_dir: pr-${{ steps.pr.outputs.number }}/${{ steps.pr.outputs.sha7 }}
           keep_files: true
           commit_message: >-
             Preview pr-${{ steps.pr.outputs.number }} @ ${{
@@ -218,7 +227,9 @@ jobs:
                 var path = window.location.pathname;
                 if (!path.startsWith(repo)) return;
                 var sub = path.substring(repo.length);
-                var m = sub.match(/^(\/pr-\d+|\/main|\/allure[^\/]*)(\/.*)$/);
+                var m = sub.match(
+                  /^(\/pr-\d+(?:\/[0-9a-f]{7,40})?|\/main|\/allure[^\/]*)(\/.*)$/
+                );
                 if (m) {
                   window.location.replace(
                     repo + m[1] + '/#' + m[2] + window.location.search
@@ -244,13 +255,12 @@ jobs:
         with:
           script: |
             const num = ${{ steps.pr.outputs.number }};
-            const sha = context.payload.pull_request.head.sha.slice(0, 7);
+            const sha = '${{ steps.pr.outputs.sha7 }}';
+            const fullSha = context.payload.pull_request.head.sha;
             const builtAt = new Date().toISOString()
               .replace('T', ' ').slice(0, 16) + ' UTC';
-            const url = [
-              'https://wodore.github.io/wodore-frontend-quasar/',
-              `pr-${num}/`,
-            ].join('');
+            const base = 'https://wodore.github.io/wodore-frontend-quasar/';
+            const url = `${base}pr-${num}/${sha}/`;
             const qr = [
               'https://api.qrserver.com/v1/create-qr-code/',
               `?size=180x180&data=${encodeURIComponent(url)}`,
@@ -265,18 +275,39 @@ jobs:
             const existing = comments.find((c) =>
               c.body.includes(marker),
             );
+            // Build history: carry previous list entries over, prepend the
+            // new build, drop older duplicates of the same sha, cap the list
+            const prev = existing
+              ? existing.body
+                  .split('\n')
+                  .filter((l) => /^- \[[0-9a-f]{7}\]/.test(l))
+              : [];
+            const entry = [
+              `- [${sha}](${context.serverUrl}/wodore/`,
+              `wodore-frontend-quasar/commit/${fullSha})`,
+              ` (${builtAt}): ${url}`,
+            ].join('');
+            const list = [
+              entry,
+              ...prev.filter((l) => !l.startsWith(`- [${sha}]`)),
+            ].slice(0, 15);
             const body = [
               marker,
               '## PR Preview',
               '',
-              `**${url}**`,
+              `**Latest: ${url}**`,
               '',
               `<a href="${url}"><img src="${qr}"`,
-              ' alt="QR code to the preview"',
+              ' alt="QR code to the latest preview"',
               ' width="180" height="180"></a>',
               '',
-              `Read-only preview (no login) - talks to the production`,
-              ` API. Commit ${sha} - built ${builtAt}.`,
+              'Read-only preview (no login) - talks to the staging API.',
+              'Each build lives at its own commit path (never',
+              'CDN-cached); all are kept until the PR closes.',
+              '',
+              '**Builds:**',
+              ...list,
+              '',
               'Removed automatically when the PR is merged/closed or',
               ' the `preview` label is removed.',
             ].join('\n');
