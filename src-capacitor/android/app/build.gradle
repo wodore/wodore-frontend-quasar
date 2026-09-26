@@ -26,12 +26,14 @@ android {
             resValue 'string', 'app_name', 'Wodore Local'
         }
         ci {
-            // GitHub Actions builds (assembleCi): com.wodore.app.dev
+            // GitHub Actions builds (assembleCi): com.wodore.stg.dev —
+            // the id mirrors the staging environment baked into the APK
             initWith debug
             matchingFallbacks = ['debug']
-            applicationIdSuffix '.dev'
-            versionNameSuffix '-dev'
-            resValue 'string', 'app_name', 'Wodore Dev'
+            applicationId "com.wodore.stg.dev"
+            applicationIdSuffix ""
+            versionNameSuffix '-stg'
+            resValue 'string', 'app_name', 'Wodore Stg'
         }
         release {
             resValue 'string', 'app_name', 'Wodore'

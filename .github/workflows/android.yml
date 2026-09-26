@@ -120,7 +120,7 @@ jobs:
           WODORE_OICD_CLIENT_ID: ${{ vars.WODORE_OICD_CLIENT_ID }}
         run: yarn build:capacitor
 
-      - name: Build debug APK (ci variant, com.wodore.app.dev)
+      - name: Build dev APK (ci variant, com.wodore.stg.dev)
         if: steps.check-build.outputs.result != 'false'
         run: |
           cd src-capacitor/android
@@ -132,16 +132,16 @@ jobs:
         run: |
           VERSION=$(node -p "require('./package.json').version")
           SHORT_SHA=${GITHUB_SHA::8}
-          mv src-capacitor/android/app/build/outputs/apk/debug/app-debug.apk \
-            "wodore-debug-v${VERSION}-${SHORT_SHA}.apk"
-          ls -la wodore-debug-*.apk
+          mv src-capacitor/android/app/build/outputs/apk/ci/app-ci.apk \
+            "wodore-stg-v${VERSION}-${SHORT_SHA}.apk"
+          ls -la wodore-stg-*.apk
 
       - name: Upload APK artifact
         if: steps.check-build.outputs.result != 'false'
         uses: actions/upload-artifact@v4
         with:
-          name: wodore-android-debug
-          path: wodore-debug-*.apk
+          name: wodore-android-stg
+          path: wodore-stg-*.apk
           retention-days: 30
           if-no-files-found: error
 
@@ -156,7 +156,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           for i in 1 2 3 4 5 6 7 8 9 10; do
-            if gh release upload "$GITHUB_REF_NAME" wodore-debug-*.apk \
+            if gh release upload "$GITHUB_REF_NAME" wodore-stg-*.apk \
               --clobber --repo "$GITHUB_REPOSITORY"; then
               echo "APK attached to release $GITHUB_REF_NAME"
               exit 0
