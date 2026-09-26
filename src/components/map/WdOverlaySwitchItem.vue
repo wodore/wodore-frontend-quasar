@@ -163,7 +163,6 @@ function onFilterClick(event: Event) {
   width: 22px;
   padding: 0;
   margin: 0;
-  transform: translateX(-2px);
   border-radius: 100px;
   background-color: transparent;
   transition:
