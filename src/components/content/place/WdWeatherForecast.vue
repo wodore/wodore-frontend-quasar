@@ -208,7 +208,7 @@ watchEffect(async () => {
   <div v-if="canShowForecast" ref="forecastContainer" class="wd-weather-forecast">
     <!-- Header -->
     <div class="wd-weather-forecast__header q-mt-sm q-mb-xs">
-      <div class="text-subtitle1 text-accent">
+      <div class="text-subtitle1 wd-gold-text">
         {{ t('weather.title') }}
       </div>
       <div class="wd-weather-forecast__attribution">
@@ -286,7 +286,7 @@ watchEffect(async () => {
 .wd-weather-forecast__attribution {
   text-align: right;
   font-size: 10px;
-  color: rgba(color('dark'), 0.5);
+  color: rgba(var(--wd-ink-rgb), 0.5);
 }
 
 .wd-weather-forecast__attribution a {
@@ -299,7 +299,7 @@ watchEffect(async () => {
 }
 
 .wd-weather-forecast__disclaimer {
-  color: rgba(color('dark'), 0.35);
+  color: rgba(var(--wd-ink-rgb), 0.35);
 }
 
 .wd-weather-forecast__swiper {

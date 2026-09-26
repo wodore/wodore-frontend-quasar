@@ -21,9 +21,15 @@ const monthName = computed(() => getMonthName(props.month));
   height: 100%;
 }
 .header {
-  background-color: rgb(150, 150, 150);
+  background-color: var(--wd-ridge);
   width: 100%;
-  color: rgba(color('dark'), 0.6);
+  color: var(--wd-ink);
+}
+
+// Weather sprite icons render multicolor; monochrome them into the system
+.card :deep(img) {
+  filter: grayscale(1);
+  opacity: 0.9;
 }
 </style>
 <template>

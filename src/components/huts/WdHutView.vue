@@ -200,6 +200,15 @@ const { images: nearbyImages, loading: imagesLoading } = useHutImages(computed((
 </script>
 
 <style lang="scss" scoped>
+.wd-surface {
+  background: var(--wd-surface) !important;
+}
+.wd-surface-deep {
+  background: var(--wd-surface-deep) !important;
+}
+.wd-avatar-bg {
+  background: var(--wd-ridge) !important;
+}
 .no-background {
   background: none !important;
 }
@@ -306,8 +315,7 @@ const { images: nearbyImages, loading: imagesLoading } = useHutImages(computed((
   <q-layout
     view="lhh LpR lff"
     container
-    class="no-background"
-    :class="$q.dark.isActive ? 'bg-grey-9' : 'bg-grey-3'"
+    class="no-background wd-surface"
     :style="`height: ${$q.screen.gt.sm ? 'calc(100% - 80px)' : '100%'}`"
   >
     <WdHutHeader :hut="hut" :ontop="headerShadow">
@@ -332,7 +340,7 @@ const { images: nearbyImages, loading: imagesLoading } = useHutImages(computed((
           <!-- used to add shadow to header -->
           <h2
             :style="($q.screen.gt.sm ? 'margin-top: -3px; ' : '') + 'text-wrap: wrap;'"
-            class="text-subtitle1 text-accent-900 q-ma-none q-mb-sm"
+            class="text-subtitle1 wd-gold-text q-ma-none q-mb-sm"
           >
             <span v-intersection="addHeaderShadow" />
             {{ hut.owner?.name }}
@@ -368,11 +376,11 @@ const { images: nearbyImages, loading: imagesLoading } = useHutImages(computed((
                 <!-- Location Chip -->
                 <q-chip
                   size="md"
-                  class="bg-grey-4 q-mr-none shadow-0 col-md-6 col-sm-12 col-12"
+                  class="wd-surface-deep q-mr-none shadow-0 col-md-6 col-sm-12 col-12"
                   style="min-width: 90px; max-width: 90px; max-height: 30px"
                   v-if="hut.elevation"
                 >
-                  <q-avatar class="bg-grey-5" text-color="primary-500">
+                  <q-avatar class="wd-avatar-bg" text-color="primary-500">
                     <q-icon size="20px">
                       <IconMingcuteMountain2Fill />
                     </q-icon>
@@ -414,7 +422,7 @@ const { images: nearbyImages, loading: imagesLoading } = useHutImages(computed((
             :elevation="hut.elevation ?? undefined"
           />
           <!--LOCATION-->
-          <div class="text-subtitle1 text-accent">{{ $t('location') }}</div>
+          <div class="text-subtitle1 wd-gold-text">{{ $t('location') }}</div>
           <q-list dense>
             <q-item v-if="hut.location">
               <q-item-section side>

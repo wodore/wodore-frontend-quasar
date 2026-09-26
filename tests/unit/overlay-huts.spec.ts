@@ -87,13 +87,13 @@ describe('hutsStyle', () => {
     for (let i = 0; i + 1 < flat.length; i += 2) {
       pairs.push([flat[i], flat[i + 1]]);
     }
-    expect(pairs).toContainEqual(['empty', '#33FF33']);
-    expect(pairs).toContainEqual(['low', '#99CC33']);
-    expect(pairs).toContainEqual(['medium', '#FFA726']);
-    expect(pairs).toContainEqual(['high', '#EF6C00']);
-    expect(pairs).toContainEqual(['full', '#D32F2F']);
+    expect(pairs).toContainEqual(['empty', '#25BF5E']);
+    expect(pairs).toContainEqual(['low', '#F6AD4B']);
+    expect(pairs).toContainEqual(['medium', '#EA9A37']);
+    expect(pairs).toContainEqual(['high', '#C3731F']);
+    expect(pairs).toContainEqual(['full', '#961A17']);
     // Fallback for missing/unknown status
-    expect(color[color.length - 1]).toBe('#D4D4D4');
+    expect(color[color.length - 1]).toBe('#575757');
   });
 
   it('updates the bookings source when the store geojson changes', async () => {

@@ -47,3 +47,8 @@ AGENT/
 
 # local .env files
 .env.local*
+
+# Impeccable engine binaries (16MB platform builds; launcher downloads them
+# on demand from GitHub releases into ~/.impeccable — see scripts/impeccable)
+**/skills/impeccable/scripts/bin/
+.visual-tests/

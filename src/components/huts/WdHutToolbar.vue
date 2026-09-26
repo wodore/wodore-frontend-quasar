@@ -53,9 +53,6 @@ function getReviewInfo(
   }
 }
 
-function getReviewColor(status: string | null | undefined): string {
-  return getReviewInfo(status, 0);
-}
 function getReviewText(status: string | null | undefined): string {
   return getReviewInfo(status, 1);
 }
@@ -125,13 +122,13 @@ watch(menuOpen, () => {
 <style lang="scss" scoped></style>
 
 <template>
-  <q-toolbar>
+  <q-toolbar style="padding-right: 48px">
     <slot></slot>
     <q-space />
 
-    <q-badge outline v-if="hut" class="q-mr-xs" :color="getReviewColor(hut.review_status)"
-      >{{ getReviewText(hut.review_status) }}
-    </q-badge>
+    <q-badge v-if="hut" class="q-mr-xs review-badge">{{
+      getReviewText(hut.review_status)
+    }}</q-badge>
 
     <!-- @click="toggleHutWatch" -->
     <WdToolbarButton
@@ -141,7 +138,7 @@ watch(menuOpen, () => {
       style="opacity: 0.5; cursor: not-allowed"
     />
 
-    <WdToolbarButton size="md" class="text-primary-900" icon="wd-more-vertical">
+    <WdToolbarButton size="md" class="wd-ink-text" icon="wd-more-vertical">
       <q-menu class="bg-primary-100 q-menu--quasar" v-model="menuOpen">
         <q-list style="min-width: 100px">
           <WdToolbarExtraButton

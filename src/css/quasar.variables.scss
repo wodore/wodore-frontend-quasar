@@ -14,8 +14,8 @@
 // TYPOGRAPHY
 
 $typography-font-family-heading:
-  'Roboto Condensed', 'Roboto', '-apple-system', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-$typography-font-family: 'Roboto', '-apple-system', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  'Barlow Semi Condensed', 'Barlow', '-apple-system', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+$typography-font-family: 'Barlow', '-apple-system', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 
 $breakpoint-sm: 769px;
 
@@ -24,8 +24,8 @@ $breakpoint-md: 1439px;
 $breakpoint-lg: 1919px;
 
 // BORDER
-$generic-border-radius: 6px;
-$dialog-border-radius: 20px;
+$generic-border-radius: 4px;
+$dialog-border-radius: 16px;
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // COLORS
@@ -54,16 +54,16 @@ $dark: #112119;
 $dark-page: #0a140f;
 
 // hue=4 / saturation=0 / lightness max=80 / lightness min=20 / Lightness
-$positive: #25c15e;
+$positive: #25bf5e;
 // hue=0 / saturation=0 / lightness max=90 / lightness min=20 / Lightness
 $negative: #bf211e;
 // hue=0 / saturation=1 / lightness max=90 / lightness min=10 / Lightness
-$info: #246eb9;
+$info: #2673bf;
 // hue=-2 / saturation=0 / lightness max=80 / lightness min=20 / Lightness
 $warning: #ff3c38;
 
 // hue=0 / saturation=0 / lightness max=30 / lightness min=0 / Lightness
-$black: #171717;
+$black: #1c1c1c;
 // hue=0 / saturation=0 / lightness max=60 / lightness min=90 / Luminance
 $white: #ffffff;
 
@@ -71,6 +71,27 @@ $colors: (
   'icon': (
     500: $icon,
     700: $icon,
+  ),
+  'amber': (
+    100: #ffd582,
+    200: #ffc064,
+    300: #f6ad4b,
+    400: #ea9a37,
+    500: #db892a,
+    600: #c3731f,
+    700: #a95f1c,
+    800: #8a4b1b,
+    900: #69391c,
+  ),
+  'muted-green': (
+    500: #7fab88,
+  ),
+  'day': (
+    100: #fdfefd,
+    300: #f6f9f7,
+    500: #eef4f0,
+    700: #dde7e0,
+    900: #1c1c1c,
   ),
   'primary': (
     100: #8fd6b7,

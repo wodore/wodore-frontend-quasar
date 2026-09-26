@@ -30,7 +30,8 @@
     "it": "@:lang.italian"
   },
   "menu": {
-    "select_language": "select language"
+    "select_language": "select language",
+    "select_theme": "Theme"
   },
   "missing": "Missing",
   "transport": {
@@ -368,6 +369,7 @@
       "link": "Switzerland mountain bike network"
     }
   },
+  "basemap": "Basemap",
   "basemaps": {
     "swiss_light": "Switzerland Topo Light",
     "swiss_raster": "Switzerland Topo Raster",
@@ -447,5 +449,12 @@
     "s8_text": "If you have questions or concerns about this privacy policy, please contact us at:",
     "email": "Email:",
     "closing": "Thank you for entrusting your information to Wodore. We are committed to ensuring your privacy and security."
-  }
+  },
+  "theme": {
+    "auto": "Follow system",
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "basemap_lock": "Lock basemap switcher",
+  "basemap_unlock": "Unlock basemap switcher"
 }

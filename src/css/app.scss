@@ -43,14 +43,187 @@
 // effects
 
 @each $name, $schema in $colors {
-  .text-#{$name}--halo {
-    text-shadow: 0px 0px 4px rgba(color($name, 700), 0.7);
+  @if map.has-key($schema, 700) {
+    .text-#{$name}--halo {
+      text-shadow: 0px 0px 4px rgba(color($name, 700), 0.7);
+    }
   }
 }
 
 .dialog-radius {
   border-radius: $dialog-border-radius;
   overflow: hidden;
+}
+
+// ─── Calendar dialog (Select date) ─────────────────────────────────────────
+// Scoped to the WdSelectDate card ONLY (the search card also uses
+// dialog-radius — the calendar has a q-date inside as discriminator)
+.q-card.dialog-radius:has(.q-date) {
+  background: var(--wd-surface) !important;
+  color: var(--wd-ink) !important;
+}
+.q-card.dialog-radius:has(.q-date) .wd-surface-deep {
+  background: var(--wd-surface-deep) !important;
+}
+
+// All q-date surfaces transparent (Quasar defaults to white)
+.q-card.dialog-radius:has(.q-date) .q-date,
+.q-card.dialog-radius:has(.q-date) .q-date__main,
+.q-card.dialog-radius:has(.q-date) .q-date__content,
+.q-card.dialog-radius:has(.q-date) .q-date__calendar,
+.q-card.dialog-radius:has(.q-date) .q-date__days,
+.q-card.dialog-radius:has(.q-date) .q-date__months-container {
+  background: transparent !important;
+}
+
+// Day-of-week header row: muted turquoise
+.q-card.dialog-radius:has(.q-date) .q-date__calendar-days {
+  color: var(--wd-ink-soft) !important;
+  opacity: 0.7;
+}
+
+// Day numbers: paper white
+.q-card.dialog-radius:has(.q-date) .q-date__calendar-item .q-btn {
+  color: var(--wd-ink) !important;
+}
+
+// Today: forest with paper text
+.body--light .q-card.dialog-radius .q-date__calendar-item--today,
+.body--dark .q-card.dialog-radius .q-date__calendar-item--today {
+  .q-btn {
+    color: #bfab25 !important;
+    font-weight: 600;
+  }
+  .q-btn__layer {
+    background: transparent !important;
+  }
+}
+
+// Selected/active day: forest fill with paper text
+.body--light .q-card.dialog-radius .q-btn--outline,
+.body--light .q-card.dialog-radius .q-date__calendar-item .q-btn--active,
+.body--dark .q-card.dialog-radius .q-btn--outline,
+.body--dark .q-card.dialog-radius .q-date__calendar-item .q-btn--active {
+  background: #346751 !important;
+  color: #f2f7f4 !important;
+}
+
+// Disabled / out-of-month days: faded
+.body--light .q-card.dialog-radius .q-date__calendar-item--out,
+.body--light .q-card.dialog-radius .q-date__calendar-item[aria-disabled='true'],
+.body--dark .q-card.dialog-radius .q-date__calendar-item--out,
+.body--dark .q-card.dialog-radius .q-date__calendar-item[aria-disabled='true'] {
+  .q-btn {
+    color: rgba(242, 247, 244, 0.3) !important;
+  }
+  opacity: 0.5;
+}
+
+// Hover on days: slightly lighter sage
+.body--light .q-card.dialog-radius .q-date__calendar-item .q-btn:hover,
+.body--dark .q-card.dialog-radius .q-date__calendar-item .q-btn:hover {
+  background: #4a7a5e !important;
+}
+
+// Navigation arrows (prev/next month): ice-mint on transparent
+.body--light .q-card.dialog-radius .q-date__navigation,
+.body--dark .q-card.dialog-radius .q-date__navigation {
+  .q-btn {
+    background: transparent !important;
+    color: var(--wd-ink-soft) !important;
+  }
+}
+
+// Month/year selectors in the navigation bar
+.body--light .q-card.dialog-radius .q-date__navigation .q-date__header,
+.body--light .q-card.dialog-radius .q-date__subtitle,
+.body--light .q-card.dialog-radius .q-date__title,
+.body--dark .q-card.dialog-radius .q-date__navigation .q-date__header,
+.body--dark .q-card.dialog-radius .q-date__subtitle,
+.body--dark .q-card.dialog-radius .q-date__title {
+  color: var(--wd-ink) !important;
+}
+
+// Footer buttons (Today / Reset): gold accents
+.body--light .q-card.dialog-radius .text-accent,
+.body--dark .q-card.dialog-radius .text-accent {
+  color: var(--wd-gold-text) !important;
+}
+
+// Close button: subtle, smaller
+.body--light .q-card.dialog-radius .wd-close-btn .q-btn,
+.body--dark .q-card.dialog-radius .wd-close-btn .q-btn {
+  min-height: 28px !important;
+  // q-btn--round carries min-width: 2.4em (~34px) which beats width:
+  // force it down or radius 50% renders an ellipse
+  min-width: 28px !important;
+  width: 28px !important;
+  height: 28px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  opacity: 0.7;
+}
+
+// Light mode: close button is flat (no fill, no shadow, ink icon).
+// Dark mode keeps the accent-700 (orange) fill via the color prop.
+.body--light .q-card.dialog-radius .wd-close-btn .q-btn {
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--wd-ink) !important;
+}
+
+// ─── Mobile rail: mint-green circles in BOTH themes (the map keeps its
+// light basemap at night - light controls on it read correctly).
+// Includes raster-symbol buttons — mint + dark glyphs has AA contrast.
+@media (max-width: 600px) {
+  // specificity must beat .q-fab__actions .q-btn:has(img) (0,2,1)
+  .q-fab__actions .q-btn.overlay-main-btn,
+  .q-fab__actions .q-btn.wd-overlay-btn {
+    background-color: rgba(143, 214, 183, 0.9) !important;
+    color: #1c1c1c !important;
+    border-radius: 50%;
+    border: none !important;
+  }
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// THEME SURFACES (The Alpine Instrument - Day & Night, see wodore-design/DESIGN.md)
+// Quasar's Dark plugin toggles body--light / body--dark; these tokens drive
+// theme-aware components. Text shades follow the Shade-Role rule: deep on
+// Day, ice on Night (WCAG AA verified pairs).
+body {
+  background: var(--wd-page);
+  transition: background-color 0.3s ease;
+}
+
+.body--light {
+  --wd-page: #f6f9f7;
+  --wd-surface: #fdfefd;
+  --wd-surface-deep: #f6f9f7;
+  --wd-ridge: #dde7e0;
+  --wd-ink: #1c1c1c;
+  --wd-ink-rgb: 28, 28, 28;
+  --wd-ink-soft: #29626b;
+  --wd-info: #29626b;
+  --wd-gold-text: #846a15;
+  --wd-avail: #198053;
+  --wd-closed: #bf211e;
+  --wd-wash: rgba(0, 0, 0, 0.06);
+}
+
+.body--dark {
+  --wd-page: #0a140f;
+  --wd-surface: #112119;
+  --wd-surface-deep: #0e1b14;
+  --wd-ridge: #1c3629;
+  --wd-ink: #f2f7f4;
+  --wd-ink-rgb: 242, 247, 244;
+  --wd-ink-soft: #8fd6b7;
+  --wd-info: #9dd9d2;
+  --wd-gold-text: #bfab25;
+  --wd-avail: #25bf5e;
+  --wd-closed: #f2acab;
+  --wd-wash: rgba(255, 255, 255, 0.1);
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -85,6 +258,17 @@
 // months colors
 @import './months.scss';
 
+// ── Dark-mode elevation ────────────────────────────────────────────────
+// Quasar >= 2.11 draws LIGHT (white) shadows in dark mode by default,
+// which reads as glow on pine surfaces. Kill component elevation in dark;
+// separation comes from tonal steps and ridge borders instead.
+body.body--dark {
+  --q-dark-shadow-color: transparent;
+  --wd-chrome-btn-bg: #112119;
+  --wd-chrome-btn-ink: #a9f0d2;
+  --wd-chrome-btn-hover: rgba(255, 255, 255, 0.1);
+}
+
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // QUASAR overwrites
 @import './quasar.scss';
@@ -92,3 +276,644 @@
 @import './fonts.scss';
 // Maplibre overwrites
 @import './maplibre-gl.scss';
+
+// WdToolbarButton - flat icon chrome: NO fill in any state (product rule).
+// Resting: transparent, theme icon ink. Hover: wash only. Active: gold icon.
+.wd-toolbar-btn {
+  color: var(--wd-chrome-btn-ink) !important;
+  background-color: transparent !important;
+  border: 1px solid transparent;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.wd-toolbar-btn:hover {
+  background-color: var(--wd-chrome-btn-hover) !important;
+}
+
+// Active/selected: gold icon, no fill (user rule: no icon bg in any state)
+.wd-toolbar-btn--active,
+.wd-toolbar-btn--active:hover {
+  background-color: transparent !important;
+  border-color: transparent;
+  color: #bfab25 !important;
+
+  .q-icon {
+    color: #bfab25 !important;
+  }
+}
+
+// Header/menu icon buttons keep the incumbent mint (text-icon): the
+// header is dark in BOTH themes, so ice-mint is always readable.
+
+// Global theme-surface utilities (usable from any component)
+.wd-surface {
+  background: var(--wd-surface) !important;
+}
+.wd-surface-deep {
+  background: var(--wd-surface-deep) !important;
+}
+.wd-ridge-bg {
+  background: var(--wd-ridge) !important;
+}
+.wd-gold-text {
+  color: var(--wd-gold-text) !important;
+}
+.wd-ink-text {
+  color: var(--wd-ink) !important;
+}
+.wd-ink-soft-text {
+  color: var(--wd-ink-soft) !important;
+}
+
+// Fab switcher pills (overlay / basemap rail): same chrome family as the
+// toolbar pills. The map keeps its LIGHT basemap at night, so these stay
+// light-chrome in BOTH themes (owner rule: no dark-mode inversion of
+// overlay/basemap toggle buttons). Open = forest.
+.q-fab.wd-switcher-fab {
+  // ZONES: map-floating controls are SOLID (toolbar stays flat).
+  // Shared map-control elevation: a hard bottom edge - the tactile
+  // "physical button" look, consistent across fabs / rail / native ctrl.
+  // NO border: on a fully-rounded pill the border traces the whole edge
+  // and reads as a 3D lip the rail buttons don't have (owner note).
+  background-color: #fdfefd !important;
+  color: #1c1c1c !important;
+  border: none !important;
+  box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2);
+}
+
+.overlay-main-btn {
+  background-color: #fdfefd !important;
+  border: 1px solid #c9d4cd !important;
+  color: #1c1c1c !important;
+  box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2);
+}
+
+// Side info/filter toggles: transparent glyph buttons - no background,
+// and NO shadow (a shadow without a surface is a floating artifact)
+.overlay-icon-btn {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+.q-fab.wd-switcher-fab:hover {
+  // ZONES: map fabs stay SOLID on hover (translucent wash reads as
+  // a transparent toggle and strands after clicks)
+  background-color: #eef4f0 !important;
+}
+
+.q-fab.wd-switcher-fab .q-fab__icon,
+.q-fab.wd-switcher-fab .q-fab__active-icon {
+  color: #29626b !important;
+}
+
+// Open state: forest fill + paper icon - the brand action (design
+// system: forest green = brand actions / active states). Gold NEVER
+// fills a map button (owner rule: gold bg reads as too much).
+.q-fab.wd-switcher-fab--open,
+.q-fab.wd-switcher-fab--open:hover {
+  background-color: #346751 !important;
+  border: none !important;
+
+  .q-fab__icon,
+  .q-fab__active-icon {
+    color: #f2f7f4 !important;
+  }
+}
+
+// Basemap thumbnails: solid white chips, ridge border, shared
+// map-control elevation (see the --wd-map-elev shadow below)
+.wd-basemap-item {
+  background-color: #fdfefd !important;
+  border: 1px solid #c9d4cd;
+  box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2);
+}
+
+.wd-basemap-item:hover {
+  border-color: #346751;
+}
+
+// Selected basemap: white chip + gold ring - the shared "selected"
+// language for map controls (small gold surface, never a gold fill).
+// INSET ring: inside the bounds, zero size/layout impact.
+.q-fab__actions .q-btn.wd-basemap-item.wd-basemap-item--active {
+  border-color: #c9d4cd !important;
+  background-color: #fdfefd !important;
+  box-shadow:
+    inset 0 0 0 2px #bfab25,
+    0 1px 3px rgba(10, 20, 15, 0.2) !important;
+
+  .q-avatar,
+  img {
+    opacity: 1;
+  }
+}
+
+// Search field - toolbar-family in both themes: translucent white wash
+// over the header color (same technique as stg.wodore.com), rounded 6px,
+// no border. Paper text, ice icons.
+
+// ONE shared rule for the whole toolbar field family (search, date,
+// input-button nav fields): identical fill, border and text in every
+// theme - the two historical blocks had drifted and rendered unequal.
+.wd-search-field .q-field__control,
+.wd-date-field .q-field__control,
+.wd-input-button.q-field--standout .q-field__control {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border: none !important;
+  border-radius: 6px !important;
+  padding: 0 12px !important;
+}
+
+// The visible "frame" lives on the ::before pseudo (Quasar standout
+// convention): 1px dashed white 24% + wash bg, identical on all family
+// members (stg.wodore.com look)
+.wd-search-field .q-field__control::before,
+.wd-date-field .q-field__control::before,
+.wd-input-button.q-field--standout .q-field__control::before {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border: 1px dashed rgba(255, 255, 255, 0.24) !important;
+  border-radius: 6px !important;
+}
+
+// Dashed frame is a header-toolbar signature only: inside the search
+// dialog the input uses its solid ridge border instead
+.wd-search-card .wd-search-field .q-field__control::before {
+  background: transparent !important;
+  border: none !important;
+}
+
+// Kill the standard-variant underline + focus animation on search/date
+.wd-search-field.q-field--standard .q-field__control::after,
+.wd-date-field .q-field__control::after {
+  display: none !important;
+}
+
+.wd-search-field,
+.wd-search-field input,
+.wd-date-field,
+.wd-date-field input,
+.wd-input-button.q-field--standout,
+.wd-input-button.q-field--standout input {
+  color: #f2f7f4 !important;
+}
+
+.wd-search-field .q-icon,
+.wd-date-field .q-icon,
+.wd-input-button .q-icon {
+  color: #a9f0d2 !important;
+}
+
+.wd-search-field input {
+  color: #f2f7f4 !important;
+}
+
+.body--dark .wd-search-field input {
+  color: #f2f7f4 !important;
+}
+
+.wd-search-field .q-icon,
+.wd-search-field .q-field__append .q-icon {
+  color: #a9f0d2 !important;
+}
+
+.wd-search-field input::placeholder {
+  // Paper at near-solid alpha for AA on the sage fill
+  color: rgba(242, 247, 244, 0.92) !important;
+  opacity: 1;
+}
+
+.body--dark .wd-search-field input::placeholder {
+  color: #9dd9d2 !important;
+}
+
+// Review badge - neutral outline (red reserved for availability)
+.q-badge.review-badge {
+  color: var(--wd-ink) !important;
+  border-color: var(--wd-ridge) !important;
+  background-color: var(--wd-surface-deep) !important;
+}
+
+// ── Menus and popup cards (language/user/date) ─────────────────────────
+// One themed menu family: day-panel + ink in Day, pine + paper in Night.
+// Quasar's .q-menu rules override utility classes, so !important is needed.
+// :not(i) keeps this off <i class="wd-menu"> icon elements (the hamburger
+// icon carries the same class because the icon IS named wd-menu).
+.wd-menu:not(i) {
+  background: var(--wd-surface) !important;
+  color: var(--wd-ink) !important;
+  border: 1px solid var(--wd-ridge);
+  border-radius: 16px;
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.18),
+    0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+// The wd icon font registers a `.wd-menu:before` glyph rule (icon "wd-menu")
+// that also matches DIVs carrying the wd-menu class - e.g. the calendar
+// card - rendering a tofu "?" box that pushes the title down. Restrict the
+// glyph to real <i> icon elements.
+.wd-menu:not(i)::before {
+  content: none !important;
+  display: none !important;
+}
+
+// No hover feedback on the calendar card header (date title) and the
+// month/year title buttons in the navigation bar
+.q-card.wd-menu .q-list .q-item:hover,
+.q-card.wd-menu .q-date__navigation .q-btn:hover {
+  background: transparent !important;
+}
+
+// Calendar and menus: theme-aware via tokens (Day panel in light, pine in
+// dark). ALL q-date internals must be forced transparent — Quasar's
+// q-date defaults carry white backgrounds that override the card fill.
+.body--light .q-card.wd-menu,
+.body--light .q-menu.wd-menu {
+  background: var(--wd-surface) !important;
+  color: var(--wd-ink) !important;
+  border-color: var(--wd-ridge);
+}
+.body--light .q-card.wd-menu .q-item,
+.body--light .q-menu.wd-menu .q-item,
+.body--light .q-card.wd-menu .q-date__header,
+.body--light .q-card.wd-menu .q-date__calendar-item,
+.body--light .q-card.wd-menu .q-date__calendar-days-container {
+  color: var(--wd-ink) !important;
+}
+.body--light .q-card.wd-menu .q-date,
+.body--light .q-card.wd-menu .q-date__header,
+.body--light .q-card.wd-menu .q-date__calendar,
+.body--light .q-card.wd-menu .q-date__calendar-days,
+.body--light .q-card.wd-menu .q-date__calendar-days-container,
+.body--light .q-card.wd-menu .q-date__navigation,
+.body--light .q-card.wd-menu .q-date__days,
+.body--light .q-card.wd-menu .q-date__days-container,
+.body--light .q-card.wd-menu .q-date__months-container,
+.body--light .q-card.wd-menu .q-date__years-container,
+.body--light .q-card.wd-menu .q-date__content,
+.body--light .q-card.wd-menu .q-btn,
+.body--light .q-card.wd-menu .q-badge,
+.body--light .q-card.wd-menu .q-banner,
+.body--light .q-card.wd-menu .separator {
+  background: transparent !important;
+  color: var(--wd-ink) !important;
+}
+// Calendar day buttons inside the theme card
+.body--light .q-card.wd-menu .q-date__calendar-item .q-btn {
+  background: transparent !important;
+  color: var(--wd-ink) !important;
+}
+.body--light .q-card.wd-menu .q-date__calendar-item .q-btn--active,
+.body--light .q-card.wd-menu .q-date__calendar-item .q-btn[aria-current='true'] {
+  background: #346751 !important;
+  color: #f2f7f4 !important;
+}
+
+.body--dark .wd-menu {
+  box-shadow: none;
+}
+
+.wd-menu .q-item {
+  color: var(--wd-ink);
+}
+
+.wd-menu .q-item:hover {
+  background: var(--wd-wash);
+}
+
+.wd-menu .wd-menu__item--active {
+  background: var(--wd-surface-deep);
+}
+
+// ── Scrolled-header elevation in dark mode ─────────────────────────────
+// Elevation shadows are killed in dark mode; separation via ridge border.
+.body--dark .q-drawer__content.content-drawer .q-header.content-drawer-header-scrolled {
+  box-shadow: none;
+  border-bottom: 1px solid var(--wd-ridge);
+}
+
+.body--dark .footer-toolbar {
+  box-shadow: none !important;
+  border-top: 1px solid var(--wd-ridge);
+}
+
+// ── Button-family guards ───────────────────────────────────────────────
+// Close button on floating panels (content drawer, sheets): themed fill,
+// never the gold accent (gold is scarce, and accent-100 + paper failed AA).
+// Flat icon chrome: no fill, no border ring (round buttons would render
+// the border as a circle around the glyph)
+.wd-close-btn {
+  background-color: transparent !important;
+  color: var(--wd-ink) !important;
+  border: none !important;
+}
+
+// A wd-toolbar-btn pill is always dark chrome: its icon stays ice even when
+// a call site also applies wd-ink-text (equal-specificity order made ink
+// win on pine - a contrast bug this rule pins shut).
+.wd-toolbar-btn.wd-ink-text {
+  color: $icon !important;
+}
+
+// Active gold wins over the ink pin above (equal specificity, later wins)
+.wd-toolbar-btn--active.wd-ink-text,
+.wd-toolbar-btn--active.wd-ink-text .q-icon {
+  color: #bfab25 !important;
+}
+
+// Light surfaces (header, menu drawer, bottom sheet, dialogs): in Day the
+// toolbar pills go flat with readable info-teal icons instead of pine.
+body.body--light :is(.app-header, .q-drawer, bottom-sheet, .q-dialog__inner) {
+  .wd-toolbar-btn {
+    background-color: transparent !important;
+    border-color: transparent !important;
+    color: #29626b !important;
+
+    .q-icon {
+      color: #29626b !important;
+    }
+  }
+
+  .wd-toolbar-btn:hover {
+    background-color: rgba(0, 0, 0, 0.06) !important;
+  }
+
+  // No fill in any state; active = gold icon (matches dark theme)
+  .wd-toolbar-btn--active,
+  .wd-toolbar-btn--active:hover {
+    background-color: transparent !important;
+    color: #bfab25 !important;
+
+    .q-icon {
+      color: #bfab25 !important;
+    }
+  }
+
+  .wd-toolbar-btn.wd-ink-text {
+    color: #29626b !important;
+  }
+
+  .wd-toolbar-btn--active.wd-ink-text,
+  .wd-toolbar-btn--active.wd-ink-text .q-icon {
+    color: #bfab25 !important;
+  }
+}
+
+// Glass surfaces (map-menu version column): light glass in Day, dark glass
+// in Night; components pick it up via var(--wd-glass).
+:root,
+body.body--light {
+  --wd-glass: rgba(255, 255, 255, 0.2);
+  --wd-chrome-btn-bg: #fdfefd;
+  --wd-chrome-btn-ink: #224e3b;
+  --wd-chrome-btn-hover: rgba(0, 0, 0, 0.06);
+}
+
+body.body--dark {
+  --wd-glass: rgba(10, 20, 15, 0.25);
+}
+
+// Hut-type chips: text always token ink (API-supplied tints may stay as bg)
+.wd-type-chip,
+.wd-chip-surface {
+  color: var(--wd-ink) !important;
+}
+
+// Themed hut-type chip (falls back when no custom color given)
+.wd-chip-surface {
+  background: var(--wd-surface-deep);
+  color: var(--wd-ink);
+  border: 1px solid var(--wd-ridge);
+  border-radius: 4px;
+}
+
+// Day: secondary-700 utility reads 3.2:1 on light surfaces; use the
+// shade-role info-teal instead. Night keeps the 700 (passes on pine).
+body.body--light .text-secondary-700 {
+  color: #29626b !important;
+}
+
+// Mobile drawer wordmark on its green bar: cream "wo" in Day too
+body.body--light .q-drawer .text-black {
+  color: #f2f7f4 !important;
+}
+
+// Drawer wordmark: cream "wo" on the green bar in BOTH themes
+body.body--dark .q-drawer .text-black {
+  color: #f2f7f4 !important;
+}
+
+// DARK MODE: no shadows anywhere. Quasar >= 2.11 draws LIGHT shadows in
+// dark mode (--q-dark-shadow-color is disabled above) and 27 custom
+// box-shadow declarations exist across the app; the blanket rule below is
+// authoritative. Where a surface needs separation in dark, use a thin
+// ridge border (below) - never a light or dark shadow (product rule).
+body.body--dark *,
+body.body--dark *::before,
+body.body--dark *::after {
+  box-shadow: none !important;
+}
+
+// Exception: map-floating controls keep the shared elevation at night -
+// they sit on the (always light) basemap, where a flat chip loses its
+// definition just like in Day (owner: consistent 3D on ALL map buttons)
+body.body--dark .q-fab.wd-switcher-fab,
+body.body--dark .overlay-main-btn,
+body.body--dark .wd-basemap-item,
+body.body--dark .maplibregl-ctrl-group {
+  box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2) !important;
+}
+
+// Structural separation in dark = thin ridge lines
+body.body--dark .q-header {
+  border-bottom: 1px solid var(--wd-ridge);
+}
+
+body.body--dark .q-drawer {
+  border-left: 1px solid var(--wd-ridge);
+}
+
+// (The former separate date-field family block was merged into the shared
+// toolbar-field rule above - one rule, one truth.)
+// Fab action buttons split in two families (corrected zones rule):
+// 1. IMAGE buttons (basemap thumbs + raster activity symbols): map-floating,
+//    SOLID white chips with the original dark raster glyphs — in BOTH
+//    themes (owner rule: no dark inversion; the map keeps its light
+//    basemap at night, so dark PNGs on white chips stay legible).
+// 2. GLYPH buttons (wd-info/filter marker toggles): they sit directly on the
+//    light basemap — dark glyphs, NO background, in BOTH themes.
+.q-fab__actions .q-btn:has(img) {
+  background: #fdfefd !important;
+  border: 1px solid #dde7e0 !important;
+}
+
+.q-fab__actions .q-btn:not(:has(img)),
+body .q-fab__actions .q-btn:not(:has(img)) {
+  background: transparent !important;
+  border: none !important;
+
+  .q-icon,
+  & .q-icon {
+    color: #1c1c1c !important;
+  }
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.08) !important;
+  }
+}
+
+body .q-fab__actions .q-btn:not(:has(img)) .q-icon {
+  color: #1c1c1c !important;
+}
+
+// Mobile drawer toolbar sits on forest: icons follow the header rule
+// (cream in light, ice in night), not the info-teal used on light surfaces
+body.body--light .q-toolbar.bg-primary-600 .text-icon,
+body.body--light .q-toolbar.bg-primary-600 .q-btn .q-icon,
+body.body--dark .q-toolbar.bg-primary-600 .text-icon,
+body.body--dark .q-toolbar.bg-primary-600 .q-btn .q-icon {
+  color: #f2f7f4 !important;
+}
+
+// Night: every input inside the content drawer renders light text
+// (mobile hut date field slipped through the field-family theming)
+body.body--dark .q-drawer input,
+body.body--dark .content-drawer input {
+  color: #f2f7f4 !important;
+}
+
+// ── Owner polish round ──────────────────────────────────────────────
+
+// Inactive rail icons dimmed - the gold selected state pops against them
+.q-fab__actions .overlay-main-btn:not(.active) .q-icon,
+.q-fab__actions .overlay-main-btn:not(.active) img {
+  opacity: 0.75;
+}
+
+// 2: Overlay SELECTED state: white chip + gold icon (glyph buttons) /
+// gold ring (raster buttons). impeccable consult: a gold or forest FILL
+// at rail scale reads as noise - the icon/ring is the "small, warm,
+// pointed" signal the design system asks for.
+.q-fab__actions .q-btn.overlay-main-btn.active {
+  background-color: #fdfefd !important;
+  border-color: #c9d4cd !important;
+
+  .q-icon {
+    color: #bfab25 !important;
+  }
+}
+
+// Raster-symbol buttons (huts, bike, hiking, ...): gold ring instead of
+// a gold icon (the PNG glyph cannot be recolored). The ring is an
+// INSET box-shadow - drawn INSIDE the button bounds, so the active
+// button never renders larger and neighbors can never shift.
+.q-fab__actions .q-btn.overlay-main-btn.active:has(img) {
+  border-color: #c9d4cd !important;
+  box-shadow:
+    inset 0 0 0 2px #bfab25,
+    0 1px 3px rgba(10, 20, 15, 0.2) !important;
+}
+
+.q-fab__actions .q-btn.overlay-icon-btn.active {
+  background-color: transparent !important;
+
+  .q-icon {
+    color: #bfab25 !important;
+  }
+}
+
+// 1c: Weather skeleton visible in dark (ridge-family tones, not near-black)
+body.body--dark .q-skeleton {
+  background: var(--wd-ridge) !important;
+  opacity: 0.7;
+
+  &::after {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(157, 217, 210, 0.12),
+      transparent
+    ) !important;
+  }
+}
+
+// 5: Mobile drawer header toolbar buttons: kill any pine fill remnants
+// (both themes - the earlier light-only scoping left dark pilled)
+body .q-toolbar.bg-primary-600 .q-btn,
+body .q-toolbar.bg-primary-600 .q-btn::before {
+  background: transparent !important;
+  border: none !important;
+}
+
+// Search card: always dark pine (like main's bg-dark-500) in both themes
+.wd-search-card {
+  background: var(--wd-surface) !important;
+  color: var(--wd-ink) !important;
+}
+.wd-search-card .wd-surface-deep {
+  background: var(--wd-surface-deep) !important;
+}
+// Input field: rounded corners inside the search card
+.wd-search-card .q-field__control {
+  border-radius: 6px !important;
+}
+
+// Search input INSIDE the search card: light outline on the card surface,
+// same 6px radius + 12px padding as the toolbar family
+.wd-search-card .wd-search-field .q-field__control {
+  background: var(--wd-surface-deep) !important;
+  border: 1px solid var(--wd-ridge) !important;
+  border-radius: 6px !important;
+  padding: 0 12px !important;
+}
+.wd-search-card .wd-search-field input {
+  color: var(--wd-ink) !important;
+}
+.wd-search-card .wd-search-field input::placeholder {
+  color: var(--wd-ink-soft) !important;
+  opacity: 0.7;
+}
+.wd-search-card .wd-search-field .q-icon {
+  color: var(--wd-ink-soft) !important;
+}
+
+// Screen-reader-only fab labels (QFab renders its label inside the
+// trigger button - visually clipped, but gives icon-only fabs an
+// accessible name)
+.wd-switcher-fab .q-fab__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+// Mobile rail (mint circles): active = white chip + inset gold ring -
+// the SAME selected language as desktop (forest + dark raster was
+// muddy; gold fills are out). Must live AFTER the white-chip+gold
+// active rule to win the cascade at equal specificity.
+@media (max-width: 600px) {
+  .q-fab__actions .q-btn.overlay-main-btn.active {
+    background-color: #fdfefd !important;
+    border: none !important;
+    box-shadow:
+      inset 0 0 0 2px #bfab25,
+      0 1px 3px rgba(10, 20, 15, 0.2) !important;
+  }
+}
+
+// Menu drawer toolbar: 1px bottom edge to match the bordered main header
+// (without it the drawer toolbar reads 1px shorter - visible jump when
+// the drawer covers the header on mobile)
+.q-drawer .q-toolbar.bg-primary-600 {
+  /* 50px content + 1px edge = the bordered main header's 51px */
+  min-height: 51px;
+  border-bottom: 1px solid rgba(10, 20, 15, 0.25);
+}
+
+.body--dark .q-drawer .q-toolbar.bg-primary-600 {
+  border-bottom: 1px solid #1c3629;
+}

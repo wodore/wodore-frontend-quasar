@@ -33,7 +33,8 @@
     "it": "@:lang.italian"
   },
   "menu": {
-    "select_language": "choisir la langue"
+    "select_language": "choisir la langue",
+    "select_theme": "Thème"
   },
   "missing": "Manquant",
   "transport": {
@@ -368,6 +369,7 @@
       "link": "Réseau Suisse à VTT"
     }
   },
+  "basemap": "Fond de carte",
   "basemaps": {
     "swiss_light": "Suisse Topo Light",
     "swiss_raster": "Suisse Topo Raster",
@@ -447,5 +449,12 @@
     "s8_text": "Si vous avez des questions ou des préoccupations concernant cette politique de confidentialité, veuillez nous contacter à :",
     "email": "E-mail :",
     "closing": "Merci de confier vos informations à Wodore. Nous nous engageons à garantir votre vie privée et votre sécurité."
-  }
+  },
+  "theme": {
+    "auto": "Système",
+    "light": "Clair",
+    "dark": "Sombre"
+  },
+  "basemap_lock": "Verrouiller le fond de carte",
+  "basemap_unlock": "Déverrouiller le fond de carte"
 }

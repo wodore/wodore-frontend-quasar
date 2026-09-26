@@ -44,11 +44,14 @@ const value = computed({
     <!-- <WdToggleFilter v-else-if="filter.type === 'toggle'" ... /> -->
 
     <!-- Fallback for unknown filter types -->
-    <div v-else class="text-caption text-grey-7">Unbekannter Filtertyp: {{ filter.type }}</div>
+    <div v-else class="text-caption wd-ink-soft-text">Unbekannter Filtertyp: {{ filter.type }}</div>
   </div>
 </template>
 
 <style scoped lang="scss">
+.wd-ink-soft-text {
+  color: var(--wd-ink-soft) !important;
+}
 .filter-wrapper {
   margin-bottom: 16px;
 }

@@ -33,7 +33,8 @@
     "it": "@:lang.italian"
   },
   "menu": {
-    "select_language": "seleziona la lingua"
+    "select_language": "seleziona la lingua",
+    "select_theme": "Tema"
   },
   "missing": "mancante",
   "transport": {
@@ -368,6 +369,7 @@
       "link": "Rete Svizzera in mountain bike"
     }
   },
+  "basemap": "Mappa di base",
   "basemaps": {
     "swiss_light": "Svizzera Topo Light",
     "swiss_raster": "Svizzera Topo Raster",
@@ -447,5 +449,12 @@
     "s8_text": "Se hai domande o dubbi riguardo a questa informativa sulla privacy, contattaci all’indirizzo:",
     "email": "Email:",
     "closing": "Grazie per aver affidato le tue informazioni a Wodore. Ci impegniamo a garantire la tua privacy e sicurezza."
-  }
+  },
+  "theme": {
+    "auto": "Sistema",
+    "light": "Chiaro",
+    "dark": "Scuro"
+  },
+  "basemap_lock": "Blocca selettore mappa",
+  "basemap_unlock": "Sblocca selettore mappa"
 }

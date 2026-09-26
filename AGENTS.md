@@ -16,6 +16,58 @@ Feature specifications and design guidelines are located in `docs/specs/`:
 - `wd_hut_search.md` - Hut search feature specification
 - Other feature specs as they are added
 
+## PR Preview Workflow
+
+PRs with the `PREVIEW` label get an automatic live preview on GitHub
+Pages: `https://wodore.github.io/wodore-frontend-quasar/pr-<N>/`.
+
+**After every push to a preview PR, ALWAYS:**
+
+1. Wait for the `PR Preview` workflow to complete (`gh run watch`)
+2. Verify the preview URL returns HTTP 200
+3. Show the PR link and preview URL in your summary
+
+```bash
+gh run watch $(gh run list --workflow preview.yml --limit 1 --json databaseId --jq '.[0].databaseId') --exit-status
+curl -s -o /dev/null -w "%{http_code}" "https://wodore.github.io/wodore-frontend-quasar/pr-<N>/"
+```
+
+**Cache-busting:** GitHub Pages caches the preview HTML for ~10 min. ALWAYS
+append a timestamp when opening or probing the preview (also in every
+Playwright script):
+`https://wodore.github.io/wodore-frontend-quasar/pr-<N>/?ts=$(date +%s)`
+
+The preview builds with the staging API (`hub.stg.wodore.com`), hash
+routing, and a QR-code PR comment. Repo variables/secrets needed:
+`WODORE_IMAGOR_URL`, `WODORE_IMAGOR_KEY` (secret), `WODORE_MAPTILER_API_KEY`
+(secret). A `404.html` on gh-pages redirects path URLs to the hash
+router.
+
+## Impeccable Design Skill
+
+The repo carries the [impeccable](https://impeccable.style/) design skill
+(`.claude/skills/impeccable/`, linked for other harnesses via
+`.agents/skills/impeccable`, `.github/`, `.opencode/`). Update it with
+`npx impeccable@latest install --project`; engine binaries under
+`**/skills/impeccable/scripts/bin/` are gitignored (the launcher downloads
+them per machine).
+
+The design context files (`PRODUCT.md`, `DESIGN.md`) live in the
+**wodore-design** repo, not here. They are linked via
+`IMPECCABLE_CONTEXT_DIR`:
+
+```bash
+# sibling checkout of wodore-design (default local layout)
+IMPECCABLE_CONTEXT_DIR=../wodore-design .claude/skills/impeccable/scripts/impeccable context
+
+# or via the git submodule (after the design branch is merged to main and
+# the submodule pointer is updated)
+IMPECCABLE_CONTEXT_DIR=src/assets/wodore-design .claude/skills/impeccable/scripts/impeccable context
+```
+
+Any agent doing design work in this repo should load context that way before
+critiquing or building UI.
+
 ## Essential Commands
 
 Use `yarn run` command. Check `package.json` for details.
@@ -295,6 +347,13 @@ Quick syntax reference:
 ```
 
 See `.claude/agents/iconify.md` for detailed workflow and usage examples.
+
+**Icon-name / CSS-class namespace**: every icon generates a `.wd-<name>:before`
+glyph rule. Never give a non-icon element a class named like an icon
+(`wd-menu` on a card collides with the `wd-menu` icon). `yarn gen:icons`
+post-runs `scripts/scope-icon-selectors.mjs`, which scopes glyph rules to
+`<i>` elements and warns about class collisions — treat its warnings as
+rename requests. Legacy collisions are guarded with `:not(i)` in `app.scss`.
 
 ### CSS and Styling
 

@@ -122,7 +122,7 @@ function getIconUrl(iconUrl: string | undefined): string | undefined {
     </div>
 
     <!-- Selection count -->
-    <div class="text-caption text-grey-7 q-mb-sm">
+    <div class="text-caption wd-ink-soft-text q-mb-sm">
       <span v-if="allSelected">{{ $t('multi_select.no_filter_active') }}</span>
       <span v-else>{{
         $t('multi_select.selected_count', {
@@ -175,6 +175,9 @@ function getIconUrl(iconUrl: string | undefined): string | undefined {
 </template>
 
 <style scoped lang="scss">
+.wd-ink-soft-text {
+  color: var(--wd-ink-soft) !important;
+}
 .multiselect-filter {
   margin-bottom: 16px;
 }

@@ -65,7 +65,7 @@ const bgStyle = computed(() => {
   font-size: 0.5rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #888;
+  color: var(--wd-ink);
   line-height: 1;
 }
 
@@ -73,7 +73,7 @@ const bgStyle = computed(() => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: #346751;
+  color: var(--wd-ink-soft);
   font-size: 0.8rem;
   line-height: 1.2;
 }

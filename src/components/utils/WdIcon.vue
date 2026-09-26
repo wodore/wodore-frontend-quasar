@@ -42,6 +42,8 @@ const isInlineSvg = computed(() => {
   // Delegate img: prefix, icon names, etc. to QIcon
   if (props.name.startsWith('img:')) return false;
   // Only URLs ending in .svg or absolute paths get inlined
+  // (cross-origin SVGs work now — the staging media endpoint sends
+  // Access-Control-Allow-Origin for wodore.github.io)
   return props.name.endsWith('.svg') || props.name.startsWith('/');
 });
 
@@ -59,6 +61,14 @@ const sizeStyle = computed(() => {
 const isCssColor = computed(
   () => props.color !== undefined && /^(#|rgb|var|hsl)/.test(props.color)
 );
+
+/** For QIcon: cross-origin SVG URLs become img: so QIcon renders them as <img> */
+/** For QIcon: cross-origin SVG URLs become img: as a fallback when
+ * inline SVG is not active (isInlineSvg handles the primary path) */
+const qIconName = computed(() => {
+  if (!props.name) return props.name;
+  return props.name;
+});
 
 /** CSS classes for the wrapper */
 const wrapperClass = computed(() => ({
@@ -80,7 +90,7 @@ const wrapperStyle = computed(() => ({
   </i>
   <QIcon
     v-else
-    :name="name"
+    :name="qIconName"
     :size="size"
     :color="isCssColor ? undefined : (color as NamedColor)"
     :tag="tag"

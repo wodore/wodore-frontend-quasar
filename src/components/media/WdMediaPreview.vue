@@ -239,7 +239,8 @@ onMounted(() => {
 // Handle image click
 const handleImageClick = () => {
   // Map rendered (filtered) slide index to the original list index
-  const originalIndex = visibleImagesWithIndex.value[currentSlide.value]?.index ?? currentSlide.value;
+  const originalIndex =
+    visibleImagesWithIndex.value[currentSlide.value]?.index ?? currentSlide.value;
   openDialog(originalIndex);
 };
 

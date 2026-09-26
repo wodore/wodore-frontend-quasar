@@ -31,7 +31,7 @@ const rightText = computed(() => {
 
 <template>
   <span class="text-h4">
-    <span v-if="showText" class="text-black text-weight-medium">wo</span>
+    <span v-if="showText" class="wd-wordmark-wo text-weight-medium">wo</span>
     <q-icon v-if="showIcon" style="transform: translateY(-4px)" :name="'img:' + props.logoPath" />
     <span
       :style="{ 'margin-left': props.icon ? 0 : '3pt' }"

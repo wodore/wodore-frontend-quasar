@@ -345,15 +345,15 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
     >
       <div>
         <!-- @update:model-value="setNewDate" -->
-        <q-card class="dialog-radius bg-dark-500">
+        <q-card class="dialog-radius wd-menu">
           <div
-            class="q-ma-xs z-top text-icon"
+            class="q-ma-xs z-top text-icon wd-close-btn"
             style="position: absolute; width: 32px; top: 6px; right: 6px"
           >
             <q-btn dense round v-close-popup color="accent-700" icon="wd-close"></q-btn>
           </div>
-          <!-- HEADER -->
-          <q-list padding class="bg-dark-700">
+          <!-- HEADER: same slight bg as the footer -->
+          <q-list padding class="wd-surface-deep">
             <q-item>
               <!-- <q-item-section avatar>
                 <q-avatar size="56px">
@@ -444,7 +444,7 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
                 v-model="selectedDate"
                 minimal
                 flat
-                :dark="true"
+                :dark="$q.dark.isActive"
                 :options="dateRangeOptions"
                 first-day-of-week="1"
                 :navigation-min-year-month="formatDate(Date.now(), 'YYYY/MM')"
@@ -463,7 +463,7 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
                 v-if="$q.screen.gt.xs"
                 minimal
                 flat
-                :dark="true"
+                :dark="$q.dark.isActive"
                 :options="dateRangeOptions"
                 ref="calRigth"
                 color="accent"
@@ -480,7 +480,7 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
               </q-date>
             </div>
           </div>
-          <div class="q-pa-xs row items-center justify-center bg-dark-700">
+          <div class="q-pa-xs row items-center justify-center wd-surface-deep">
             <!-- ERROR FOOTER -->
             <q-btn
               v-if="showCalendarError"
@@ -547,7 +547,7 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
             <div
               class="q-field__control-container col relative-position row items-center justify-center no-wrap q-anchor--skip"
             >
-              <q-icon size="sm" class="text-icon">
+              <q-icon size="26px" class="text-icon">
                 <IconEvaArrowIosBackOutline />
               </q-icon>
             </div>
@@ -559,11 +559,11 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
         <q-input
           id="menu"
           readonly
+          standout
           :model-value="selectedDateDisplay"
           dense
-          dark
-          standout
-          class="toolbar-font"
+          class="toolbar-font wd-date-field"
+          :placeholder="$q.screen.gt.xs ? selectedDateDisplay || t('select_date.placeholder') : ''"
           @click="showMenu = true"
         >
           <!-- </q-input>:rules="[
@@ -575,7 +575,7 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
               @click="showMenu = true"
               name="wd-calendar"
               class="text-icon cursor-pointer"
-              size="sm"
+              size="26px"
             >
             </q-icon>
           </template>
@@ -606,7 +606,7 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
             <div
               class="q-field__control-container col relative-position row items-center justify-center no-wrap q-anchor--skip"
             >
-              <q-icon size="sm" class="text-icon">
+              <q-icon size="26px" class="text-icon">
                 <IconEvaArrowIosForwardOutline />
               </q-icon>
             </div>

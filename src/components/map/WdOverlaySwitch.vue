@@ -3,6 +3,7 @@
 import { QPageStickyProps, QFabProps, useQuasar, LocalStorage } from 'quasar';
 import type { AllPaintProperties } from '@maplibre/maplibre-gl-style-spec';
 import { OpacitySpecification, OverlaySwitchItem } from '@stores/map/utils/interfaces';
+import { useI18n } from 'vue-i18n';
 import { useOverlayStore } from '@stores/map/overlay-store';
 import { useBasemapStore } from '@stores/map/basemap-store';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
@@ -19,6 +20,7 @@ import { useOverlayConfigStore } from '@stores/map/overlay-config-store';
 import { useMapMenuStore } from '@stores/map/map-menu-store';
 
 //const emitter = inject(emitterSymbol)!;
+const { t } = useI18n();
 const overlayStore = useOverlayStore();
 const basemapStore = useBasemapStore();
 //basemapStore.setEmitter(emitter);
@@ -91,8 +93,8 @@ function openConfig(overlayName: string, initialTab?: string) {
 
   // Use the overlay's own (translated, locale-reactive) label as the config
   // drawer title instead of a hardcoded map
-  const overlayLabel =
-    overlayStore.overlays.find(o => o.name === overlayName)?.label ?? overlayName;
+  const overlay = overlayStore.overlays.find(o => o.name === overlayName);
+  const overlayLabel = overlay?.label ?? overlayName;
 
   menuStore.openOverlayConfig(overlayName, initialTab);
   menuStore.menuData.title = overlayLabel;
@@ -358,6 +360,9 @@ function overlayIcon(name: string) {
   max-height: calc(100vh - 210px);
   overflow-y: auto;
   overflow-x: hidden;
+  /* room for the 2px gold selection ring (a box-shadow) - without the
+  padding it is clipped at the top/bottom of the scroll viewport */
+  padding: 3px 0;
 }
 
 .styleFabGroup {
@@ -387,7 +392,10 @@ function overlayIcon(name: string) {
       padding="sm"
       :direction="direction"
       persistent
-      :color="switcherOpen ? 'negative-300' : 'icon'"
+      :label="t('overlay_style')"
+      class="wd-switcher-fab"
+      :class="{ 'wd-switcher-fab--open': switcherOpen }"
+      :aria-label="t('overlay_style')"
       v-model="switcherOpen"
     >
       <div class="overlay-scroll">

@@ -13,6 +13,13 @@ Ground rules learned the hard way:
    dialogs). If the assertion fails, mark the state FAILED and never save
    the wrong-state screenshot. Wrong-state captures silently corrupt the
    whole review.
+1a. **Always cache-bust the preview URL.** The PR preview on GitHub Pages
+   sits behind a ~10 min CDN HTML cache that serves stale hashed-asset
+   references - verifying against it produces phantom regressions (rules
+   that ARE deployed reading as missing). Every navigation to the preview
+   must append a timestamp query: `https://…/pr-150/?ts=1710000000`. Playwright
+   probes AND links shown to the owner both carry it. (The skill lives at
+   `.agents/skills/visual-verification/SKILL.md` in this repo.)
 2. **Full-resolution first.** Vision agents analyze individual full-res
    PNGs. Contact sheets downscale and hide small-text failures; if used at
    all, they are a human index only — the agent gets the originals.
@@ -45,6 +52,27 @@ Ground rules learned the hard way:
    fix, e.g. no-bg-everywhere stripping map fabs) are the primary way
    defects return. The gate lives in `scripts/visual-matrix.mjs`
    (`ZONE_PROBE` in report.json, exit 1 on violations).
+9. **Pseudo-element sweep (the "? glyph" lesson):** a tofu `?` in the UI
+   was a generated icon-font rule `.wd-menu:before` matching a DIV that
+   carried the same class name. Probes that only read real-element
+   styles miss this entirely. Every pass must enumerate pseudo-elements:
+   for each visible container, walk `getComputedStyle(el, ':before'/'::after')`
+   and flag `content` that is not `none` on non-`<i>` elements (private-use
+   glyphs render as ? boxes when the icon font-family is absent). Also
+   flag `content` on elements with no icon context.
+10. **Ask vision agents open-ended anomaly questions.** Targeted
+   questions ("is the title readable?") bias agents; the stray ? was
+   visible in earlier captures but never reported because nobody asked
+   "list EVERYTHING unusual". Always include one question of the form:
+   "List every anomaly you can see, however small — stray glyphs, odd
+   spacing, misalignment, artifacts" — and treat answers as leads.
+11. **Cross-check new CSS class names against the icon-font namespace.**
+   Icon fonts generate `.wd-<name>:before` rules — any UI class named
+   like an icon (`wd-menu` on a card) collides. In this repo
+   `yarn gen:icons` now runs `scripts/scope-icon-selectors.mjs` (scopes
+   glyphs to `<i>` elements + warns on collisions); never name a CSS
+   class after an icon, and scope any legacy collisions with
+   `:not(i)`.
 
 ## Tooling
 
