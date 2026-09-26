@@ -1,0 +1,1 @@
+import{b as a}from"./index-DdCFHEFg.js";import{F as r}from"./vue-maplibre-gl.es-DzsLYZ_x.js";const e=a(async({app:o})=>{o.use(r)});export{e as default};
