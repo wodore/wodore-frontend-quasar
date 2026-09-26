@@ -334,10 +334,12 @@ body.body--dark {
 .q-fab.wd-switcher-fab {
   // ZONES: map-floating controls are SOLID (toolbar stays flat).
   // Shared map-control elevation: a hard bottom edge - the tactile
-  // "physical button" look, consistent across fabs / rail / native ctrl
+  // "physical button" look, consistent across fabs / rail / native ctrl.
+  // NO border: on a fully-rounded pill the border traces the whole edge
+  // and reads as a 3D lip the rail buttons don't have (owner note).
   background-color: #fdfefd !important;
   color: #1c1c1c !important;
-  border: 1px solid #c9d4cd !important;
+  border: none !important;
   box-shadow:
     0 2px 0 rgba(0, 0, 0, 0.18),
     0 1px 3px rgba(10, 20, 15, 0.2);
@@ -369,7 +371,7 @@ body.body--dark {
 .q-fab.wd-switcher-fab--open,
 .q-fab.wd-switcher-fab--open:hover {
   background-color: #bfab25 !important;
-  border-color: #bfab25 !important;
+  border: none !important;
 
   .q-fab__icon,
   .q-fab__active-icon {
@@ -789,7 +791,7 @@ body.body--dark .content-drawer input {
 // Inactive rail icons dimmed - the gold selected state pops against them
 .q-fab__actions .overlay-main-btn:not(.active) .q-icon,
 .q-fab__actions .overlay-main-btn:not(.active) img {
-  opacity: 0.55;
+  opacity: 0.75;
 }
 
 // 2: Overlay SELECTED state: white chip + gold icon (glyph buttons) /
@@ -892,13 +894,20 @@ body .q-toolbar.bg-primary-600 .q-btn::before {
   white-space: nowrap;
 }
 
-// Mobile rail (mint circles): active keeps the solid forest fill - on the
-// mint family a ring would read as noise. Must live AFTER the
-// white-chip+gold active rule to win the cascade at equal specificity.
+// Mobile rail (mint circles): active = GOLD fill with the dark raster
+// glyph (impeccable: matches the "filled circle + dark icon" family and
+// is the one place gold earns a fill - dark on gold is ~8:1; forest +
+// dark raster was muddy). Must live AFTER the white-chip+gold active
+// rule to win the cascade at equal specificity.
 @media (max-width: 600px) {
   .q-fab__actions .q-btn.overlay-main-btn.active {
-    background-color: #346751 !important;
+    background-color: #bfab25 !important;
     border: none !important;
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.18) !important;
+
+    .q-icon {
+      color: #1c1c1c !important;
+    }
   }
 }
 
@@ -906,6 +915,8 @@ body .q-toolbar.bg-primary-600 .q-btn::before {
 // (without it the drawer toolbar reads 1px shorter - visible jump when
 // the drawer covers the header on mobile)
 .q-drawer .q-toolbar.bg-primary-600 {
+  /* 50px content + 1px edge = the bordered main header's 51px */
+  min-height: 51px;
   border-bottom: 1px solid rgba(10, 20, 15, 0.25);
 }
 

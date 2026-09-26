@@ -93,12 +93,8 @@ function openConfig(overlayName: string, initialTab?: string) {
 
   // Use the overlay's own (translated, locale-reactive) label as the config
   // drawer title instead of a hardcoded map
-  const overlayLabel =
-    (
-      overlayStore.overlays.find((o): boolean => o.name === overlayName) as
-        | (typeof overlayStore.overlays)[number]
-        | undefined
-    )?.label ?? overlayName;
+  const overlay = overlayStore.overlays.find(o => o.name === overlayName);
+  const overlayLabel = overlay?.label ?? overlayName;
 
   menuStore.openOverlayConfig(overlayName, initialTab);
   menuStore.menuData.title = overlayLabel;
@@ -364,6 +360,9 @@ function overlayIcon(name: string) {
   max-height: calc(100vh - 210px);
   overflow-y: auto;
   overflow-x: hidden;
+  /* room for the 2px gold selection ring (a box-shadow) - without the
+  padding it is clipped at the top/bottom of the scroll viewport */
+  padding: 3px 0;
 }
 
 .styleFabGroup {
