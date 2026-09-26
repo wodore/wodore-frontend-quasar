@@ -146,6 +146,9 @@ function onFilterClick(event: Event) {
 .overlay-side-icons {
   display: flex;
   flex-direction: column;
+  // center the 28px icon column on the 40px main button (was top-hugged
+  // after the min-height fix)
+  align-self: center;
   gap: 0;
   // whitespace between the buttons renders as anonymous flex items -
   // zero them so the gap is exactly 0 (owner: pulled 2px closer twice)
