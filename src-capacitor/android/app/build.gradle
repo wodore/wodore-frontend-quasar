@@ -17,7 +17,24 @@ android {
         }
     }
     buildTypes {
+        // Release keeps the base id (com.wodore.app) for the Play Store.
+        debug {
+            // Android Studio builds: com.wodore.app.local — coexists with
+            // CI (.dev) and release builds instead of signature-clashing.
+            applicationIdSuffix '.local'
+            versionNameSuffix '-local'
+            resValue 'string', 'app_name', 'Wodore Local'
+        }
+        ci {
+            // GitHub Actions builds (assembleCi): com.wodore.app.dev
+            initWith debug
+            matchingFallbacks = ['debug']
+            applicationIdSuffix '.dev'
+            versionNameSuffix '-dev'
+            resValue 'string', 'app_name', 'Wodore Dev'
+        }
         release {
+            resValue 'string', 'app_name', 'Wodore'
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

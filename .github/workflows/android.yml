@@ -120,12 +120,12 @@ jobs:
           WODORE_OICD_CLIENT_ID: ${{ vars.WODORE_OICD_CLIENT_ID }}
         run: yarn build:capacitor
 
-      - name: Build debug APK
+      - name: Build debug APK (ci variant, com.wodore.app.dev)
         if: steps.check-build.outputs.result != 'false'
         run: |
           cd src-capacitor/android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleCi --no-daemon
 
       - name: Rename APK with version and SHA
         if: steps.check-build.outputs.result != 'false'
