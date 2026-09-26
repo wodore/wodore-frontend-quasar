@@ -1,1 +1,0 @@
-{"id":"52ad1ed8acc24756654c143866014862","fullName":"wodore:tests/unit/use-media-preload.spec.ts#useMediaPreload.preloadImage retries with the fixed schedule and succeeds on a later attempt","name":"retries with the fixed schedule and succeeds on a later attempt","status":"passed","testResultsByEnv":{"default":"0fa234dc9d2cadb3c76d90a8b36dfe04"}}
