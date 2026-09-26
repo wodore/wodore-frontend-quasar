@@ -408,8 +408,9 @@ body.body--dark {
   }
 }
 
-// Search field - toolbar-family in both themes: greenish fill slightly
-// lighter than the sage bar in Day (paper text, ice icons), pine at night.
+// Search field - toolbar-family in both themes: translucent white wash
+// over the header color (same technique as stg.wodore.com), rounded 6px,
+// no border. Paper text, ice icons.
 
 // ONE shared rule for the whole toolbar field family (search, date,
 // input-button nav fields): identical fill, border and text in every
@@ -417,8 +418,10 @@ body.body--dark {
 .wd-search-field .q-field__control,
 .wd-date-field .q-field__control,
 .wd-input-button.q-field--standout .q-field__control {
-  background: #3f6a50 !important;
-  border: 1px solid #4d7a61 !important;
+  background: rgba(255, 255, 255, 0.07) !important;
+  border: none !important;
+  border-radius: 6px !important;
+  padding: 0 12px !important;
 }
 
 .wd-search-field,
@@ -434,13 +437,6 @@ body.body--dark {
 .wd-date-field .q-icon,
 .wd-input-button .q-icon {
   color: #a9f0d2 !important;
-}
-
-.body--dark .wd-search-field .q-field__control,
-.body--dark .wd-date-field .q-field__control,
-.body--dark .wd-input-button.q-field--standout .q-field__control {
-  background: #14291f !important;
-  border: 1px solid #1c3629 !important;
 }
 
 .wd-search-field input {
@@ -806,11 +802,13 @@ body .q-toolbar.bg-primary-600 .q-btn::before {
   border-radius: 6px !important;
 }
 
-// Search input INSIDE the search card: light outline, not sage fill
-// (the header toolbar input stays sage — different surface)
+// Search input INSIDE the search card: light outline on the card surface,
+// same 6px radius + 12px padding as the toolbar family
 .wd-search-card .wd-search-field .q-field__control {
   background: var(--wd-surface-deep) !important;
   border: 1px solid var(--wd-ridge) !important;
+  border-radius: 6px !important;
+  padding: 0 12px !important;
 }
 .wd-search-card .wd-search-field input {
   color: var(--wd-ink) !important;

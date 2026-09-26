@@ -335,7 +335,7 @@ function handleSwipeDown() {
           <q-icon
             v-else-if="searchText.length > 0"
             class="wd-info-text cursor-pointer"
-            size="sm"
+            size="md"
             @click="clearSearch"
           >
             <IconEvaCloseOutline />
