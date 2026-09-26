@@ -563,7 +563,7 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
           :model-value="selectedDateDisplay"
           dense
           class="toolbar-font wd-date-field"
-          :placeholder="selectedDateDisplay || t('select_date.placeholder')"
+          :placeholder="$q.screen.gt.xs ? selectedDateDisplay || t('select_date.placeholder') : ''"
           @click="showMenu = true"
         >
           <!-- </q-input>:rules="[

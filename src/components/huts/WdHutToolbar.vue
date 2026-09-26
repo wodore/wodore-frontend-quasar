@@ -122,7 +122,7 @@ watch(menuOpen, () => {
 <style lang="scss" scoped></style>
 
 <template>
-  <q-toolbar>
+  <q-toolbar style="padding-right: 48px">
     <slot></slot>
     <q-space />
 

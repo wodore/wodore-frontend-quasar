@@ -453,8 +453,8 @@ body.body--dark .app-header .text-icon {
         class="no-background wd-surface overflow-hidden"
         style="height: 100%"
       >
-        <!-- Close button -->
-        <div class="absolute-top z-max q-pa-sm" style="pointer-events: none">
+        <!-- Close button (top-right, as on main) -->
+        <div class="absolute z-max" style="top: 10px; right: 10px; pointer-events: none">
           <q-btn
             round
             dense

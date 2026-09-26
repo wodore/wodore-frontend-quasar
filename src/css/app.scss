@@ -371,9 +371,10 @@ body.body--dark {
     0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
+// Calendar and menus: ALWAYS dark like main's bg-dark-500
 .body--light .q-card.wd-menu,
 .body--light .q-menu.wd-menu {
-  background: #3f6a50 !important;
+  background: #112119 !important;
   color: #f2f7f4 !important;
   border-color: rgba(10, 20, 15, 0.35);
 }
