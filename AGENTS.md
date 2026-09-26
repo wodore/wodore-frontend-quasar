@@ -38,6 +38,13 @@ CDN-cached; `?ts=` busting is only needed for the legacy `pr-<N>/` root or
 pages you have visited before:
 `https://wodore.github.io/wodore-frontend-quasar/pr-<N>/<short-sha>/`
 
+**Manual preview builds (when Actions lags):** `.env.local` OVERRIDES env
+vars in quasar's dotenv (`override: file !== '.env'`) and would bake LAN/dev
+values (192.168.x.x backend, `auth.burgdev.local.gd` -> 127.0.0.1) into the
+deploy. Always hide it first:
+`mv .env.local .env.local.bak && yarn build:pwa && mv .env.local.bak .env.local`
+and pass the full CI env set (staging API/tiles/imagor, empty OIDC vars).
+
 The preview builds with the staging API (`hub.stg.wodore.com`), hash
 routing, and a QR-code PR comment. Repo variables/secrets needed:
 `WODORE_IMAGOR_URL`, `WODORE_IMAGOR_KEY` (secret), `WODORE_MAPTILER_API_KEY`
