@@ -315,7 +315,10 @@ onUnmounted(() => {
 .media-gallery-container {
   position: relative;
   width: 100%;
+  // 100vh fallback for browsers without dvh; dvh keeps the thumbnail strip
+  // inside the visible viewport when mobile browser UI (URL bar) is shown
   height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   background: black;
