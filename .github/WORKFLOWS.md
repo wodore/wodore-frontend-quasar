@@ -110,8 +110,9 @@ gh pr edit 123 --add-label "BUILD:docker"
 Builds a debug APK of the Capacitor Android app when merged PRs have
 the `BUILD:android` label. The APK is uploaded as a workflow artifact
 (named `wodore-debug-v<version>-<sha>.apk`); on version tags it is also
-attached to the GitHub release. Manual runs are possible via
-workflow_dispatch.
+attached to the GitHub release. The workflow comments on the merged PR
+with the artifact link and a scannable QR code for phones. Manual runs
+are possible via workflow_dispatch.
 
 ```bash
 # On a PR, add the BUILD:android label

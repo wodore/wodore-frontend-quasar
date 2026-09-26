@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write # attach APK to release on tags
-      pull-requests: read # find merged PR for the BUILD:android label check
+      pull-requests: write # find merged PR, post the APK link comment
     steps:
       - name: Check out
         uses: actions/checkout@v4
@@ -166,3 +166,90 @@ jobs:
           done
           echo "::warning::Could not attach APK to release \
           $GITHUB_REF_NAME — download from workflow artifacts instead."
+
+      - name: Generate QR code for the artifact download
+        # Encodes the run's artifact page so a phone can scan straight to
+        # the APK download (GitHub login required on the phone).
+        if: steps.check-build.outputs.result != 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          API="repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          ART_ID=$(gh api "${API}/artifacts" --jq '.artifacts[0].id')
+          BASE="https://github.com/${GITHUB_REPOSITORY}/actions/runs"
+          export URL="${BASE}/${GITHUB_RUN_ID}/artifacts/${ART_ID}"
+          echo "URL=$URL" >> "$GITHUB_ENV"
+          npx --yes --package qrcode node -e '
+            const QR = require("qrcode");
+            QR.toString(process.env.URL, { type: "utf8", margin: 2 })
+              .then(t => process.stdout.write(t));
+          ' > /tmp/apk-qr.txt
+
+      - name: Comment APK artifact link on the PR
+        # Upserts a single comment per PR (marker-based, like the preview
+        # workflow) with the artifact link and a scannable QR code.
+        if: >-
+          github.event_name == 'push' &&
+          github.ref == 'refs/heads/main' &&
+          steps.check-build.outputs.result == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const { data: prs } = await github.rest.repos
+              .listPullRequestsAssociatedWithCommit({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                commit_sha: context.sha
+              });
+            const pr = prs.find(p => p.state === 'open' || p.merged_at);
+            if (!pr) {
+              console.log('No associated PR — skipping comment');
+              return;
+            }
+            const qr = fs.readFileSync('/tmp/apk-qr.txt', 'utf8');
+            const url = process.env.URL;
+            const marker = '<!-- android-apk -->';
+            const body = [
+              marker,
+              '### 📱 Android debug APK',
+              '',
+              `Built from ${context.sha.slice(0, 8)} — ` +
+                `[artifact download](${url})`,
+              '',
+              'Scan to open the download on your phone ' +
+                '(GitHub login required):',
+              '',
+              '```',
+              qr.trim(),
+              '```',
+              '',
+              'Download, unzip, and install the `.apk` ' +
+                '(allow "unknown sources" if prompted).'
+            ].join('\n');
+            const { data: comments } = await github.rest.issues
+              .listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                per_page: 100
+              });
+            const existing = comments.find(
+              c => c.user.login === 'github-actions[bot]' &&
+                c.body.includes(marker)
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body
+              });
+            }
