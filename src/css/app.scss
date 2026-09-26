@@ -1135,17 +1135,14 @@ a.wd-accommodation-day {
   box-shadow: none !important;
 }
 
-// Header weather icon: the mono weather symbols are STROKE-based
-// (fill="none" stroke="#000") - a fill-only override does nothing for
-// them, which is why the glyph stayed black on the dark surface.
-// Recolor exactly the black attributes, preserving each shape's
-// outline/fill pattern.
-.wd-place-title__weather svg [fill='#000'] {
-  fill: currentColor !important;
-}
-
-.wd-place-title__weather svg [stroke='#000'] {
-  stroke: currentColor !important;
+// Header weather icon: the mono symbols are STROKE-based
+// (fill=none stroke=#000) and render through a <use> shadow clone -
+// CSS selectors cannot reach into the clone (computed styles on the
+// defs originals show gold while the clone renders its black
+// attributes). Engine-proof recolor: a filter on the rendered output.
+// Black strokes -> gold outline; transparent stays transparent.
+.body--dark .wd-place-title__weather svg {
+  filter: invert(1) sepia(1) saturate(2.4) hue-rotate(5deg) brightness(1.05);
 }
 
 // The overlay RAIL (.overlay-scroll, overflow-y: auto) flashed a native
