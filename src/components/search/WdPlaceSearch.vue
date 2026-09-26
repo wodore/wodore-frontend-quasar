@@ -307,7 +307,7 @@ function handleSwipeDown() {
     :class="isMobile ? 'wd-search-card' : 'dialog-radius wd-search-card'"
     :style="
       isMobile
-        ? 'width: 100vw; max-width: 100vw; height: 100dvh; height: 100vh;'
+        ? 'width: 100vw; max-width: 100vw; height: 100vh; height: 100dvh;'
         : 'width: 440px; max-width: 90vw'
     "
   >

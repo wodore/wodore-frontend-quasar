@@ -1,24 +1,25 @@
 name: Build Docker
 
-# Configures this workflow to run every time a change is pushed to the branch called `release`.
+# Configures this workflow to run every time a change is pushed to the
+# branch called `release`.
 on:
   push:
     branches:
       - main
     tags:
-      - "v*.*.*"
+      - 'v*.*.*'
   workflow_dispatch:
     inputs:
       custom_tag:
         description: "Tag name (use 'hash' for git SHA)"
         required: true
-        default: "hash"
+        default: 'hash'
       build_type:
-        description: "Build type: only pwa supported"
+        description: 'Build type: only pwa supported'
         required: true
-        default: "pwa"
+        default: 'pwa'
       add_edge_tag:
-        description: "Add edge tag"
+        description: 'Add edge tag'
         required: true
         type: boolean
         default: false
@@ -32,7 +33,8 @@ env:
 jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
-    # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this job.
+    # Sets the permissions granted to the `GITHUB_TOKEN` for the actions
+    # in this job.
     permissions:
       contents: read
       packages: write
@@ -43,9 +45,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          submodules: "true"
+          submodules: 'true'
           fetch-depth: 0 # Need full history to find PR for merged commits
-      - name: Check for BUILD label on main branch
+      - name: Check for BUILD:docker label on main branch
         id: check-build
         if: github.event_name == 'push'
         uses: actions/github-script@v7
@@ -53,27 +55,30 @@ jobs:
           script: |
             const commit = context.sha;
             // Find PRs that were merged with this commit
-            const { data: prs } = await github.rest.repos.listPullRequestsAssociatedWithCommit({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              commit_sha: commit
-            });
+            const { data: prs } = await github.rest.repos
+              .listPullRequestsAssociatedWithCommit({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                commit_sha: commit
+              });
 
-            // Check if any of the PRs have the BUILD label
+            // Check if any of the PRs have the BUILD:docker label
             const hasBuildLabel = prs.some(pr =>
-              pr.labels.some(label => label.name === 'BUILD')
+              pr.labels.some(label => label.name === 'BUILD:docker')
             );
 
             console.log(`Found ${prs.length} PR(s) for commit ${commit}`);
-            console.log(`Has BUILD label: ${hasBuildLabel}`);
+            console.log(`Has BUILD:docker label: ${hasBuildLabel}`);
 
             return hasBuildLabel;
           result-encoding: string
 
-      - name: Exit if no BUILD label on main
-        if: github.event_name == 'push' && steps.check-build.outputs.result != 'true'
+      - name: Exit if no BUILD:docker label on main
+        if: >-
+          github.event_name == 'push' &&
+          steps.check-build.outputs.result != 'true'
         run: |
-          echo "Skipping build: No BUILD label found on merged PR"
+          echo "Skipping build: No BUILD:docker label found on merged PR"
           exit 0
 
       - name: Log in to the Container registry
@@ -121,17 +126,21 @@ jobs:
               echo "USE_CUSTOM_TAG=false" >> $GITHUB_ENV
             else
               echo "USE_CUSTOM_TAG=true" >> $GITHUB_ENV
-              echo "CUSTOM_TAG_VALUE=${{ github.event.inputs.custom_tag }}" >> $GITHUB_ENV
+              echo "CUSTOM_TAG_VALUE=${{ github.event.inputs.custom_tag }}" \
+                >> $GITHUB_ENV
             fi
-            echo "ADD_EDGE_TAG=${{ github.event.inputs.add_edge_tag }}" >> $GITHUB_ENV
+            echo "ADD_EDGE_TAG=${{ github.event.inputs.add_edge_tag }}" \
+              >> $GITHUB_ENV
           else
             echo "USE_CUSTOM_TAG=false" >> $GITHUB_ENV
             echo "ADD_EDGE_TAG=false" >> $GITHUB_ENV
           fi
 
-      # This step uses [docker/metadata-action](https://github.com/docker/metadata-action#about)
-      # to extract tags and labels that will be applied to the specified image.
-      # The `id` "meta" allows the output of this step to be referenced in a subsequent step.
+      # This step uses docker/metadata-action to extract tags and labels
+      # that will be applied to the specified image.
+      # See: https://github.com/docker/metadata-action#about
+      # The `id` "meta" allows the output of this step to be referenced
+      # in a subsequent step.
       # The `images` value provides the base name for the tags and labels.
       - name: Extract metadata (tags, labels) for Docker
         id: meta
@@ -143,32 +152,60 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           flavor: |
             suffix=-${{ github.event.inputs.build_type || 'pwa' }},onlatest=true
-          tags: |
-            # Add 'edge' tag for main and develop branches (or when add_edge_tag is true)
-            type=edge,pattern=main,enable=${{ github.event_name != 'workflow_dispatch' || env.ADD_EDGE_TAG == 'true' }}
-            type=edge,pattern=develop,enable=${{ github.event_name != 'workflow_dispatch' || env.ADD_EDGE_TAG == 'true' }}
+          tags: >
+            # Add 'edge' tag for main and develop branches (or when
+            add_edge_tag is true)
+
+            type=edge,pattern=main,enable=${{ github.event_name !=
+            'workflow_dispatch' ||
+            env.ADD_EDGE_TAG == 'true' }}
+
+            type=edge,pattern=develop,enable=${{ github.event_name !=
+            'workflow_dispatch' ||
+            env.ADD_EDGE_TAG == 'true' }}
+
 
             # Use a custom tag if manually dispatched and not "hash"
-            type=raw,value=${{ env.CUSTOM_TAG_VALUE }},enable=${{ env.USE_CUSTOM_TAG == 'true' }}
+
+            type=raw,value=${{ env.CUSTOM_TAG_VALUE }},enable=${{
+            env.USE_CUSTOM_TAG == 'true' }}
+
 
             # Use the semantic version if provided explicitly
+
             type=raw,value=${{ env.VERSION }},enable=${{ env.VERSION_TAG }}
-            type=raw,value=${{ env.VERSION_MINOR }},enable=${{ env.VERSION_TAG }}
-            type=raw,value=${{ env.VERSION_MAJOR }},enable=${{ env.VERSION_TAG }}
+
+            type=raw,value=${{ env.VERSION_MINOR }},enable=${{
+            env.VERSION_TAG }}
+
+            type=raw,value=${{ env.VERSION_MAJOR }},enable=${{
+            env.VERSION_TAG }}
+
             type=raw,value=${{ env.LATEST }},enable=${{ env.VERSION_TAG }}
 
+
             # Timestamp + SHA tag format: YYYYMMDD-HHMM-sha-<short-sha>
+
             # Example: 20250105-1430-sha-d58d485
+
             # (always included unless custom tag is used and not "hash")
-            type=raw,value={{date 'YYYYMMDDTHHmm'}}-sha-{{sha}},enable=${{ env.USE_CUSTOM_TAG != 'true' }}
+
+            type=raw,value={{date 'YYYYMMDDTHHmm'}}-sha-{{sha}},enable=${{
+            env.USE_CUSTOM_TAG != 'true' }}
+
             ## Semantic version tags
+
             #type=semver,pattern={{version}}
+
             #type=semver,pattern={{major}}.{{minor}}
+
             #type=semver,pattern={{major}}
 
-      # This step uses the `docker/build-push-action` action to build the image, based on your repository's `Dockerfile`.
+      # This step uses the `docker/build-push-action` action to build the
+      # image, based on your repository's `Dockerfile`.
       # If the build succeeds, it pushes the image to GitHub Packages.
-      # It uses the `tags` and `labels` parameters to tag and label the image with the output from the "meta" step.
+      # It uses the `tags` and `labels` parameters to tag and label the
+      # image with the output from the "meta" step.
       - name: Build and push Docker image
         id: push
         if: |

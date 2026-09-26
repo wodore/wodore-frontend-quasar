@@ -55,5 +55,8 @@ jobs:
       - name: Check formatting
         run: yarn run format --check
 
+      - name: Type-check
+        run: npx vue-tsc --noEmit
+
       - name: Run tests
         run: yarn run test

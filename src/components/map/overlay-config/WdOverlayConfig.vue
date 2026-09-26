@@ -297,6 +297,7 @@ function resetDefaults() {
   width: 400px;
   max-width: 90vw;
   height: 100vh;
+  height: 100dvh;
 }
 
 .overlay-config-page {
