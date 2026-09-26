@@ -89,15 +89,10 @@ function setOverlayVisibility(overlay: OverlaySwitchItem): boolean {
 function openConfig(overlayName: string, initialTab?: string) {
   console.debug('[WdOverlaySwitch] Opening config for overlay:', overlayName, 'tab:', initialTab);
 
-  // Use menu store to open config in drawer
+  // Use the overlay's own (translated, locale-reactive) label as the config
+  // drawer title instead of a hardcoded map
   const overlayLabel =
-    {
-      huts: 'Unterkünfte',
-      'transport-stops': 'Haltestellen',
-      hiking: 'Wanderwege',
-      mtb: 'Mountainbike',
-      cycling: 'Fahrrad',
-    }[overlayName] || overlayName;
+    overlayStore.overlays.find(o => o.name === overlayName)?.label ?? overlayName;
 
   menuStore.openOverlayConfig(overlayName, initialTab);
   menuStore.menuData.title = overlayLabel;

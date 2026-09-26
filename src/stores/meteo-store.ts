@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia';
-import { ref, shallowRef, watchEffect } from 'vue';
+import { ref, shallowRef, watchEffect, watch } from 'vue';
 import { fetchWeatherApi } from 'openmeteo';
 import { date } from 'quasar';
 import { clientWodore } from '@clients/index';
+import { currentLocale } from '@services/locale';
 
 const { formatDate, addToDate, subtractFromDate } = date;
 
@@ -232,7 +233,7 @@ export const useMeteoStore = defineStore('meteo', () => {
   // only add overhead
   const cache = shallowRef<Record<string, CacheEntry>>({});
   const weatherCodes = ref<Record<string, WeatherCodeEntry>>({});
-  const weatherCodesLang = ref('de');
+  const weatherCodesLang = ref<string>(currentLocale());
   const weatherCodesCollection = ref(DEFAULT_SYMBOL_COLLECTION);
   const weatherCodesCache = ref<Record<string, Record<string, WeatherCodeEntry>>>({});
   const weatherCodesInFlight = ref<Set<string>>(new Set());
@@ -366,6 +367,13 @@ export const useMeteoStore = defineStore('meteo', () => {
       weatherCodesCollection.value = collection;
     }
   };
+
+  // Weather code descriptions are language-dependent (backend translates
+  // per lang param) — follow the UI language so the store-level weatherCodes
+  // ref (used by day components) is refetched on language switch.
+  watch(currentLocale, lang => {
+    setWeatherCodesContext(lang);
+  });
 
   watchEffect(() => {
     const key = `weather_codes:${weatherCodesLang.value}:${weatherCodesCollection.value}`;

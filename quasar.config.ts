@@ -26,12 +26,14 @@ import * as dotenv from 'dotenv';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-// Load .env files in the correct order (later files override earlier ones)
+// Load .env files in order. The base .env must NOT override existing
+// process env (CI builds set their env there); later local files may
+// override earlier ones.
 const envFiles = ['.env', '.env.local'];
 for (const file of envFiles) {
   const filePath = resolve(process.cwd(), file);
   if (existsSync(filePath)) {
-    dotenv.config({ path: filePath, override: true });
+    dotenv.config({ path: filePath, override: file !== '.env' });
   }
 }
 
@@ -100,7 +102,11 @@ export default configure(ctx => {
         '@boot': path.join(__dirname, './src/boot'),
         '@types': path.join(__dirname, './src/types'),
       },
-      vueRouterMode: 'history', // available values: 'hash', 'history'
+      // GH Pages PR previews build with WODORE_ROUTER_MODE=hash (Pages has no
+      // SPA rewrite) and a subpath via WODORE_PUBLIC_PATH; unset = production
+      // defaults, behavior unchanged.
+      vueRouterMode:
+        (process.env.WODORE_ROUTER_MODE as 'history' | 'hash' | undefined) || 'history', // available values: 'hash', 'history'
       // vueRouterBase,
       // vueDevtools,
       // vueOptionsAPI: false,
@@ -117,7 +123,7 @@ export default configure(ctx => {
 
       // rebuildCache: true, // rebuilds Vite/linter/etc cache on startup
 
-      // publicPath: '/',
+      publicPath: process.env.WODORE_PUBLIC_PATH || '/',
       // analyze: true,
       env: {
         TIMESTAMP_VERSION_HEX:

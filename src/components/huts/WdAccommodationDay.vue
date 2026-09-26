@@ -69,14 +69,15 @@ const iconUrl = computed(() => {
 /** Occupancy status display name */
 const statusLabel = computed(() => {
   if (isLoading.value) return '';
+  // t() inside the computed keeps the label reactive to language switches
   const map: Record<string, string> = {
-    empty: 'FREI',
-    low: 'TIEF',
-    medium: 'MITTEL',
-    high: 'HOCH',
-    full: 'VOLL',
-    free_unknown: 'FREI ?',
-    unknown: 'unbekannt',
+    empty: t('availability.status.empty'),
+    low: t('availability.status.low'),
+    medium: t('availability.status.medium'),
+    high: t('availability.status.high'),
+    full: t('availability.status.full'),
+    free_unknown: t('availability.status.free_unknown'),
+    unknown: t('availability.status.unknown'),
   };
   return map[props.day.occupancy_status] ?? '';
 });

@@ -41,9 +41,12 @@ const legendAttribution = computed(() => props.overlayConfig?.legend?.attributio
 // Sub-tab for Info section (auto-select first section)
 const infoSubTab = ref(legendSections.value[0]?.title || '');
 
-// Update infoSubTab when legend sections change
+// Update infoSubTab when legend sections change — also reset when the
+// current tab no longer exists (e.g. after a language switch the section
+// titles are re-translated and a stale selection would show an empty panel)
 watch(legendSections, newSections => {
-  if (newSections.length > 0 && !infoSubTab.value) {
+  if (newSections.length === 0) return;
+  if (!newSections.some(section => section.title === infoSubTab.value)) {
     infoSubTab.value = newSections[0].title;
   }
 });
@@ -123,14 +126,14 @@ function handleReset() {
       <template v-if="showResetButton">
         <q-separator class="q-mb-md" />
         <div class="row justify-end">
-          <q-btn flat label="Zurücksetzen" @click="handleReset" size="sm" />
+          <q-btn flat :label="$t('reset')" @click="handleReset" size="sm" />
         </div>
       </template>
     </q-tab-panel>
 
     <!-- Settings Panel -->
     <q-tab-panel name="settings" v-if="hasSettings" class="bg-transparent">
-      <div class="text-body2 text-grey-7">Einstellungen werden in Phase 4+ implementiert.</div>
+      <div class="text-body2 text-grey-7">{{ $t('overlay_config.settings_placeholder') }}</div>
     </q-tab-panel>
   </q-tab-panels>
 </template>

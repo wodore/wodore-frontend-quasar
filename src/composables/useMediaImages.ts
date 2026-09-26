@@ -1,5 +1,6 @@
 import { ref, watchEffect, type Ref } from 'vue';
 import { clientWodore } from '@clients/index';
+import { currentLocale } from '@services/locale';
 import type { components } from '@clients/wodore_v1.d';
 import type { HutImage } from './useHutImages';
 import { useLatestRequest } from './useLatestRequest';
@@ -44,6 +45,9 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
       .map(feature => {
         // SAFETY: filtered for non-null properties directly above
         const props = feature.properties!;
+        // SAFETY: the mapped literal is a superset of HutImage's optional
+        // fields; the double cast below bridges the local HutImage interface
+        // (which the generated client types don't match structurally).
         return {
           id: `${props.provider.slug}_${props.source_id}`,
           provider: {
@@ -67,8 +71,6 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
           crop: props.crop,
           place: props.place,
           score: props.score,
-          // SAFETY: the mapped literal is a superset of HutImage's optional
-          // fields; the double cast bridges the local HutImage interface
         } as unknown as HutImage;
       });
   };
@@ -92,7 +94,7 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
             hut_slug: slug,
           },
           query: {
-            lang: 'de',
+            lang: currentLocale(),
             radius,
             limit,
           },
@@ -171,7 +173,7 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
               precision: 'precise',
               limit: 5,
               sources: 'wodore',
-              lang: 'de',
+              lang: currentLocale(),
             },
           },
         });
@@ -185,7 +187,7 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
               radius,
               precision: 'normal',
               limit,
-              lang: 'de',
+              lang: currentLocale(),
             },
           },
         });
@@ -246,7 +248,7 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
               lon: longitude,
               radius,
               limit,
-              lang: 'de',
+              lang: currentLocale(),
             },
           },
         });
@@ -277,8 +279,7 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
    * Fetch images by place name (geocoding + nearby)
    * Note: This requires geocoding service, not yet implemented
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const fetchByPlaceName = async (placeName: string) => {
+  const fetchByPlaceName = async (_placeName: string) => {
     // TODO: Implement geocoding service
     console.warn('fetchByPlaceName not yet implemented - requires geocoding service');
     error.value = 'Place name search not yet implemented';

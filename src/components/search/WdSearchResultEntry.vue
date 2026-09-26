@@ -116,7 +116,7 @@ function onPreviewClick(event: Event) {
           <q-icon size="sm">
             <IconEvaEyeOutline />
           </q-icon>
-          <q-tooltip :delay="3000">Vorschau auf Karte</q-tooltip>
+          <q-tooltip :delay="3000">{{ $t('search_ui.preview_on_map') }}</q-tooltip>
         </q-btn>
       </q-item-section>
     </q-item>

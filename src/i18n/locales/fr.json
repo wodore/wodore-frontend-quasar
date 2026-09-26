@@ -19,7 +19,8 @@
     "unknown": "Inconnu",
     "bivouac": "Bivouac",
     "hostel": "Auberge",
-    "unattended_hut": "Cabane sans surveillance"
+    "unattended_hut": "Cabane sans surveillance",
+    "load_error": "Impossible de charger la cabane"
   },
   "lang": {
     "english": "Anglais",
@@ -43,7 +44,8 @@
     "max_walk_time": "Temps de marche maximum",
     "time_range": "Intervalle de temps",
     "add_station": "Ajouter une gare",
-    "no_connection": "Pas de connection"
+    "no_connection": "Pas de connection",
+    "departures": "Départs"
   },
   "map": {
     "error": {
@@ -52,7 +54,8 @@
       "webgl_hint": "Cela se produit lorsque votre appareil ou navigateur ne prend pas en charge WebGL.",
       "generic_message": "Une erreur s'est produite lors du chargement de la carte",
       "reload": "Recharger la page"
-    }
+    },
+    "layers": "Couches"
   },
   "map_style": "Carte",
   "location": "Lieu",
@@ -103,7 +106,8 @@
     "no_images_available": "Aucune image disponible",
     "no_images": "Aucune image",
     "no_images_for_hut": "Ajouter des photos",
-    "no_photos_yet": "Pas encore de photos"
+    "no_photos_yet": "Pas encore de photos",
+    "download_original": "Télécharger l'original"
   },
   "contribute": {
     "title": "Contribuer",
@@ -141,5 +145,307 @@
       "android": "Android",
       "ios": "iOS"
     }
+  },
+  "edit": "Modifier",
+  "favorite": "Favori",
+  "show_map": "Carte",
+  "search": "Rechercher",
+  "close": "Fermer",
+  "pin_something": "Épingler",
+  "unpin_something": "Détacher",
+  "drag_to_move": "Faire glisser pour déplacer",
+  "favorites": "Favoris",
+  "hut_type": "Type de cabane",
+  "filter": "Filtre",
+  "service_unavailable": "Service indisponible",
+  "availability": {
+    "free": "Libres",
+    "total": "Total",
+    "tooltip": "{free} libres / {total} total",
+    "unknown": "Inconnu",
+    "no_data": "Aucune donnée",
+    "title": "Disponibilité",
+    "status": {
+      "empty": "LIBRE",
+      "low": "BAS",
+      "medium": "MOYEN",
+      "high": "ÉLEVÉ",
+      "full": "COMPLET",
+      "free_unknown": "LIBRE ?",
+      "unknown": "inconnu"
+    }
+  },
+  "jan": "Janv",
+  "feb": "Févr",
+  "mar": "Mars",
+  "apr": "Avr",
+  "may": "Mai",
+  "jun": "Juin",
+  "jul": "Juil",
+  "aug": "Août",
+  "sep": "Sept",
+  "oct": "Oct",
+  "nov": "Nov",
+  "dec": "Déc",
+  "reset": "Réinitialiser",
+  "send": "Envoyer",
+  "yes": "Oui",
+  "no": "Non",
+  "today": "aujourd'hui",
+  "login": "Connexion",
+  "logout": "Déconnexion",
+  "issue": "Issue",
+  "feedback_label": "Commentaire",
+  "user": {
+    "settings": "Paramètres utilisateur",
+    "umami_tracking": "Suivi Umami",
+    "tracking_caption": "Inclure {me} dans le suivi.",
+    "tracking_me": "moi",
+    "external_links": "Liens externes",
+    "admin": {
+      "backend": "Admin backend Wodore",
+      "api_docs": "Docs API Wodore",
+      "analytics": "Statistiques Umami",
+      "iam": "Gestion des identités et des accès",
+      "traefik": "Tableau de bord Traefik (reverse proxy)"
+    }
+  },
+  "feedback": {
+    "button": "Envoyer un commentaire",
+    "title": "Dites-nous ce que vous pensez !",
+    "subject": "Objet",
+    "email": "E-mail",
+    "email_placeholder": "name@domain.com",
+    "message": "Message",
+    "url": "URL",
+    "notify_updates": "Vous recevrez un e-mail pour les mises à jour importantes.",
+    "sent": "Message envoyé",
+    "send_failed": "Le message n'a pas pu être envoyé",
+    "discard_title": "Êtes-vous sûr ?",
+    "discard_message": "Vos saisies seront perdues ! Fermer ?",
+    "support": "Soutien",
+    "title_rest": "Tout retour, positif ou négatif, aide.",
+    "support_intro": "Tout",
+    "support_outro": "au projet est le bienvenu.",
+    "email_required": "E-mail manquant",
+    "message_required": "Message manquant",
+    "keep_me_posted": "Tenez-moi informé.",
+    "header_title": "Commentaire"
+  },
+  "support": {
+    "intro_prefix": "Soutenez le projet avec",
+    "intro_middle": ", un",
+    "intro_suffix": "ou un abonnement mensuel :",
+    "tip_link": "pourboire",
+    "manage_payments": "Gérer les paiements mensuels.",
+    "cancel_anytime": "*Résiliable à tout moment.",
+    "one_man_project": "Pour l'instant, c'est un {term} et l'argent est nécessaire pour une meilleure infrastructure, des licences et de potentielles nouvelles fonctionnalités.",
+    "hands_on_title": "J'ai envie de taper moi-même sur le clavier !",
+    "hands_on_super": "Super",
+    "hands_on_intro": ", tout soutien actif est le bienvenu, par exemple :",
+    "contribute_editor": "Vérifier et ajuster les infos des cabanes (en tant qu'éditeur)",
+    "contribute_dev_prefix": "Développement du frontend (",
+    "contribute_dev_middle": ") ou du backend (",
+    "contribute_design": "Aide pour les tâches de design",
+    "contact_invite": "N'hésitez pas à entrer en",
+    "contact_link": "contact",
+    "title": "Soutien",
+    "one_man_project_term": "projet d'une seule personne"
+  },
+  "select_date": {
+    "placeholder": "Choisir une date",
+    "error_title": "Oh non, plus rien ne fonctionne !",
+    "error_restricted": "Le CAS a restreint l'accès !",
+    "error_contact": "N'hésitez pas à",
+    "error_contact_link": "relancer directement",
+    "error_solution": "🔧 Une nouvelle solution est en préparation...",
+    "error_dismiss": "Dommage, peut-être une autre fois...",
+    "alternative": "Alternativement :",
+    "or": "ou",
+    "not_available": "Actuellement indisponible"
+  },
+  "overlay_config": {
+    "reset_done": "Paramètres réinitialisés",
+    "settings_placeholder": "Les paramètres seront implémentés à la phase 4+.",
+    "settings": "Paramètres",
+    "tab_legend": "Info",
+    "further_links": "Liens complémentaires"
+  },
+  "beta": {
+    "caption": "Cette page est encore en construction, les {feedback} sont bienvenus !",
+    "feedback_link": "commentaires"
+  },
+  "overlays": {
+    "huts": {
+      "label": "Cabanes",
+      "filter_types": "Hébergements",
+      "legend_accommodation": "Hébergements",
+      "legend_accommodation_desc": "Différents types d’hébergement",
+      "legend_availability": "Disponibilité",
+      "legend_availability_desc": "Statut d’occupation"
+    },
+    "transport_stops": {
+      "label": "Arrêts",
+      "legend_title": "Arrêts",
+      "legend_desc": "Arrêts des transports publics",
+      "bus": "Bus",
+      "bus_desc": "Arrêts de bus",
+      "train": "Train",
+      "train_desc": "Gares",
+      "other": "Autres",
+      "other_desc": "Autres arrêts"
+    },
+    "info": "Information",
+    "skitouren": {
+      "label": "Courses de ski",
+      "desc": "Itinéraires de ski de randonnée de Swisstopo. Attention au danger d’avalanche et aux conditions météo.",
+      "link_skitourenkarte": "Carte des courses de ski Swisstopo"
+    },
+    "link_avalanche": "Bulletin d’avalanches SLF",
+    "snowshoes": {
+      "label": "Raquettes",
+      "desc": "Itinéraires raquettes de Swisstopo. Équipement d’hiver requis.",
+      "link": "Swisstopo randonnées raquettes"
+    },
+    "protected_nature": {
+      "label": "Protection de la nature",
+      "legend_title": "Zones protégées",
+      "desc": "Zones de tranquillité de la faune et réserves de chasse pour protéger la faune sauvage",
+      "by_law": "Légalement contraignant",
+      "recommended": "Recommandé",
+      "link": "Infos zones de tranquillité"
+    },
+    "sheepdogs": {
+      "label": "Chiens de garde",
+      "desc": "Pâturages d’alpage avec chiens de garde. Tenir les chiens en laisse et garder ses distances des troupeaux.",
+      "pastures": "Pâturages d’alpage protégés",
+      "link": "Règles de conduite chiens de garde"
+    },
+    "hillslope": {
+      "label": "Pente",
+      "legend_title": "Pente",
+      "desc": "Pentes de plus de 30° (critiques pour les avalanches)",
+      "range_30_35": "Pente de 30° à 35°",
+      "range_35_40": "Pente de 35° à 40°",
+      "range_40_45": "Pente de 40° à 45°",
+      "range_45": "Pente de plus de 45°",
+      "link_map_info": "Infos carte des pentes"
+    },
+    "difficulty": "Difficulté",
+    "skislopes": {
+      "label": "Pistes de ski",
+      "desc": "Pistes de ski selon la classification internationale des couleurs",
+      "green": "Vert - Très facile",
+      "green_desc": "Pistes très plates pour débutants",
+      "blue": "Bleu - Facile",
+      "blue_desc": "Pistes faciles avec pente modérée",
+      "red": "Rouge - Intermédiaire",
+      "red_desc": "Pistes de difficulté moyenne",
+      "black": "Noir - Difficile",
+      "black_desc": "Pistes difficiles avec sections raides"
+    },
+    "hiking": {
+      "label": "Sentiers de randonnée",
+      "legend_title": "Catégories de sentiers",
+      "desc": "Catégories officielles de sentiers de Swisstopo",
+      "wanderweg": "Sentier de randonnée",
+      "wanderweg_desc": "Sentiers faciles, adaptés à la plupart des âges",
+      "bergwanderweg": "Sentier de montagne",
+      "bergwanderweg_desc": "Itinéraires plus exigeants, peuvent inclure pentes raides ou ponts suspendus",
+      "alpinwanderweg": "Sentier alpin",
+      "alpinwanderweg_desc": "Itinéraires les plus difficiles, expérience et équipement alpins requis",
+      "link_wanderland": "Réseau Randonnée Suisse",
+      "link_sac_scale": "Échelle de randonnée CAS"
+    },
+    "cycling": {
+      "label": "Vélo",
+      "desc": "Itinéraires vélo d’OpenStreetMap, affichés via Waymarked Trails",
+      "link": "Réseau Suisse à vélo"
+    },
+    "mtb": {
+      "label": "VTT",
+      "desc": "Itinéraires VTT d’OpenStreetMap, affichés via Waymarked Trails",
+      "link": "Réseau Suisse à VTT"
+    }
+  },
+  "basemaps": {
+    "swiss_light": "Suisse Topo Light",
+    "swiss_raster": "Suisse Topo Raster",
+    "satellite": "Satellite",
+    "outdoor": "Outdoor OSM",
+    "austria_vector": "Autriche Topo Vector",
+    "austria_raster": "Autriche Topo Raster"
+  },
+  "multi_select": {
+    "select_all": "Tout sélectionner",
+    "deselect_all": "Tout désélectionner",
+    "selected_count": "{selected} sur {total} sélectionnés",
+    "no_filter_active": "Aucun filtre actif"
+  },
+  "error_notfound": {
+    "title": "Oups. Vous êtes perdu ...",
+    "back": "ramenez-moi"
+  },
+  "meta": {
+    "description": "Où votre prochaine tournée vous mènera-t-elle ?"
+  },
+  "search_ui": {
+    "no_places": "Aucun lieu trouvé",
+    "placeholder_hint": "Rechercher cabanes, sommets et plus...",
+    "preview_on_map": "Aperçu sur la carte",
+    "placeholder": "Rechercher des lieux..."
+  },
+  "data_policy": {
+    "title": "Politique de confidentialité de Wodore",
+    "last_updated": "Dernière mise à jour :",
+    "last_updated_date": "10 juin 2024",
+    "summary": "Résumé",
+    "summary_processing": "Traitement des données :",
+    "summary_processing_text": "Nous utilisons des cookies essentiels et suivons des données d’usage anonymes avec Umami afin d’améliorer le site.",
+    "summary_sharing": "Partage des données :",
+    "summary_sharing_text": "Vos données ne sont pas transmises à des tiers.",
+    "summary_providers": "Prestataires :",
+    "summary_providers_text": "Nous utilisons Cloudinary pour l’hébergement d’images, Infomaniak pour les services cloud, Zitadel pour la gestion des utilisateurs (auto-hébergé) et Stripe pour le traitement des paiements.",
+    "summary_rights": "Droits des utilisateurs :",
+    "summary_rights_text": "Vous avez le droit d’accéder à vos données, de les corriger et de les supprimer sur demande.",
+    "summary_more": "Pour plus de détails, veuillez lire la politique complète ci-dessous.",
+    "intro": "Bienvenue sur Wodore ! Nous nous engageons à protéger votre vie privée et à garantir que vos informations personnelles sont traitées de manière sûre et responsable. Cette politique de confidentialité explique comment nous collectons, utilisons et protégeons les informations lorsque vous visitez notre site web {link} (le « site »).",
+    "s1": "1. Définitions",
+    "s1_personal_data": "Données personnelles :",
+    "s1_personal_data_text": "Toute information se rapportant à une personne identifiée ou identifiable.",
+    "s1_cookies": "Cookies :",
+    "s1_cookies_text": "Petits fichiers stockés sur votre appareil qui servent à améliorer votre expérience sur notre site.",
+    "s1_providers": "Prestataires :",
+    "s1_providers_text": "Entreprises tierces que nous utilisons pour soutenir nos services.",
+    "s2": "2. Informations que nous collectons",
+    "s2_cookies": "Cookies :",
+    "s2_cookies_text": "Nous utilisons uniquement des cookies essentiels pour garantir le bon fonctionnement de notre site web. Ces cookies sont nécessaires au fonctionnement du site et ne peuvent pas être désactivés dans nos systèmes.",
+    "s2_tracking": "Suivi :",
+    "s2_tracking_text": "Nous utilisons {link} à des fins de suivi. Ce suivi est interne, anonyme et sert exclusivement à améliorer le site. Umami garantit l’anonymat en ne collectant aucune donnée personnelle (PII). Des données telles que les pages vues, les référents, les types de navigateurs, les systèmes d’exploitation, les types d’appareils, les tailles d’écran, les URL visitées et le temps passé sur la page sont suivies. Ces données sont analysées sous forme agrégée afin d’améliorer la performance et l’expérience utilisateur du site sans porter atteinte à la vie privée individuelle.",
+    "s3": "3. Utilisation des informations",
+    "s3_text": "Les informations que nous collectons sont utilisées exclusivement pour améliorer votre expérience sur notre site web. Nous ne transmettons pas vos données à des tiers, sauf si cela est nécessaire à l’administration et à l’amélioration de notre site et de nos services.",
+    "s4": "4. Prestataires",
+    "s4_intro": "Pour fournir nos services, nous utilisons les prestataires suivants :",
+    "s4_cloudinary": "Cloudinary :",
+    "s4_cloudinary_text": "Utilisé pour {link}.",
+    "s4_cloudinary_link": "l’hébergement et la diffusion d’images",
+    "s4_infomaniak": "Infomaniak :",
+    "s4_infomaniak_text": "Prestataire de services cloud utilisé pour {link}.",
+    "s4_infomaniak_link": "l’hébergement et d’autres services",
+    "s4_zitadel": "Zitadel :",
+    "s4_zitadel_text": "Nous utilisons {link} pour la gestion des utilisateurs, qui est auto-hébergée.",
+    "s4_stripe": "Stripe :",
+    "s4_stripe_text": "Utilisé pour {link}.",
+    "s4_stripe_link": "le traitement des paiements",
+    "s5": "5. Accès, correction et suppression des données",
+    "s5_text": "Vous avez le droit d’accéder à vos données, de les corriger et de les supprimer. Si vous souhaitez exercer ces droits, veuillez nous contacter à {link}. Nous répondrons à votre demande dans un délai raisonnable.",
+    "s6": "6. Sécurité des données",
+    "s6_text": "Nous prenons la sécurité de vos données au sérieux et mettons en œuvre des mesures techniques et organisationnelles appropriées pour les protéger contre tout accès non autorisé, divulgation, altération ou destruction.",
+    "s7": "7. Mises à jour de cette politique",
+    "s7_text": "Nous pouvons mettre à jour cette politique de confidentialité de temps en temps pour refléter les changements de nos pratiques ou des lois applicables. Lorsque nous apportons des modifications, nous ajustons la date « Dernière mise à jour » en haut de cette page. Nous vous recommandons de consulter régulièrement cette politique pour rester informé de la manière dont nous protégeons vos informations.",
+    "s8": "8. Nous contacter",
+    "s8_text": "Si vous avez des questions ou des préoccupations concernant cette politique de confidentialité, veuillez nous contacter à :",
+    "email": "E-mail :",
+    "closing": "Merci de confier vos informations à Wodore. Nous nous engageons à garantir votre vie privée et votre sécurité."
   }
 }

@@ -34,6 +34,45 @@ export type CategoryConfig = CategorySource;
 
 export type FilterType = 'multi-select' | 'single-select' | 'slider' | 'toggle' | 'range';
 
+/**
+ * Primitive filter/setting value: toggles (boolean), sliders/ranges
+ * (number), selects/colors (string), plus null.
+ */
+export type OverlayPrimitive = string | number | boolean | null;
+
+/**
+ * Runtime value of a filter or setting preference. Heterogeneous by design:
+ * primitives, arrays of primitives (multi-select) or flat option objects
+ * (e.g. `{min, max}` ranges), sourced from config definitions and
+ * persisted JSON. Bounded to one object/array level — the shapes the
+ * Quasar filter/setting inputs actually produce.
+ */
+export interface OverlayValueObject {
+  [key: string]: OverlayPrimitive | undefined;
+}
+export type OverlayValue = OverlayPrimitive | OverlayPrimitive[] | OverlayValueObject;
+
+/**
+ * Boundary guard for values read from persisted preferences or config
+ * definitions: accepts exactly the shapes `OverlayValue` allows and
+ * rejects everything else, so callers get a narrowed domain type
+ * without trusting localStorage blindly.
+ */
+export function isOverlayValue(value: unknown): value is OverlayValue {
+  const isPrimitive = (v: unknown): v is OverlayPrimitive =>
+    v === null || ['string', 'number', 'boolean'].includes(typeof v);
+  if (isPrimitive(value)) {
+    return true;
+  }
+  if (Array.isArray(value)) {
+    return value.every(isPrimitive);
+  }
+  if (typeof value === 'object') {
+    return Object.values(value).every(isPrimitive);
+  }
+  return false;
+}
+
 export interface FilterOption {
   value: string;
   label: string;

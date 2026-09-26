@@ -6,13 +6,14 @@
  */
 
 import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { LocalStorage } from 'quasar';
 import { useDebounceFn } from '@vueuse/core';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
 import type { ExpressionSpecification } from 'maplibre-gl';
 
 import { useOverlayStore } from '@stores/map/overlay-store';
+import { currentLocale } from '@services/locale';
 import type {
   OverlayPreferences,
   CategoryItem,
@@ -21,7 +22,9 @@ import type {
   FilterDefinition,
   FilterOption,
   OverlayConfig,
+  OverlayValue,
 } from '@stores/map/overlay-configs/types';
+import { isOverlayValue } from '@stores/map/overlay-configs/types';
 import { clientWodore } from '@clients/index';
 
 const PREFERENCES_KEY = 'overlayPreferences';
@@ -109,7 +112,7 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
           params: {
             path: { parent_slug: config.slug },
             query: {
-              lang: 'de',
+              lang: currentLocale(),
               is_active: true,
               media_mode: 'absolute',
             },
@@ -187,8 +190,12 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
 
     filter.options = categories.map(
       (category): FilterOption => ({
+        // SAFETY: categories come from the category API whose items carry
+        // dynamic value/label fields (valueField/labelField config); the
+        // double cast bridges the loosely typed record to FilterOption.
         value:
           ((category as unknown as Record<string, unknown>)[valueField] as string) || category.slug,
+        // SAFETY: same dynamic labelField access as the value mapping above
         label:
           ((category as unknown as Record<string, unknown>)[labelField] as string) || category.slug,
         icon: category.symbol_detailed || category.symbol_simple || undefined,
@@ -246,6 +253,8 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
         : 'name';
 
     section.items = categories.map(category => ({
+      // SAFETY: categories come from the category API with dynamic label
+      // fields (labelField config); cast bridges the loosely typed record.
       label:
         ((category as unknown as Record<string, unknown>)[labelField] as string) || category.slug,
       description: category.description || undefined,
@@ -303,11 +312,12 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
   // Filter Management
   // =================
 
-  function getFilterValue(overlayName: string, filterId: string): unknown {
+  function getFilterValue(overlayName: string, filterId: string): OverlayValue | undefined {
     const config = getOverlayConfig(overlayName);
     const filterDef = config?.filters?.find((f: FilterDefinition) => f.id === filterId);
 
-    return preferences.value[overlayName]?.filters?.[filterId] ?? filterDef?.defaultValue;
+    const raw = preferences.value[overlayName]?.filters?.[filterId] ?? filterDef?.defaultValue;
+    return isOverlayValue(raw) ? raw : undefined;
   }
 
   function setFilterValue(overlayName: string, filterId: string, value: unknown) {
@@ -428,11 +438,12 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
   // Settings Management (Phase 4+)
   // ===============================
 
-  function getSettingValue(overlayName: string, settingId: string): unknown {
+  function getSettingValue(overlayName: string, settingId: string): OverlayValue | undefined {
     const config = getOverlayConfig(overlayName);
     const settingDef = config?.settings?.find(s => s.id === settingId);
 
-    return preferences.value[overlayName]?.settings?.[settingId] ?? settingDef?.defaultValue;
+    const raw = preferences.value[overlayName]?.settings?.[settingId] ?? settingDef?.defaultValue;
+    return isOverlayValue(raw) ? raw : undefined;
   }
 
   function setSettingValue(overlayName: string, settingId: string, value: unknown) {
@@ -513,6 +524,17 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
 
   // Auto-initialize on store creation
   initializeAllOverlays();
+
+  // Refetch localized categories when the UI language changes. Rebuild the
+  // overlays FIRST (fresh translated labels/legends/config objects), then
+  // clear the category cache and repopulate all overlay filters/legends
+  // against the new configs — deterministic order, single watcher.
+  watch(currentLocale, () => {
+    console.debug('[OverlayConfigStore] Locale changed — rebuilding overlays and category cache');
+    overlayStore.rebuildOverlays();
+    categoryCache.value.clear();
+    void initializeAllOverlays();
+  });
 
   return {
     // State

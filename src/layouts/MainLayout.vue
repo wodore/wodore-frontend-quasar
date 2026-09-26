@@ -19,6 +19,7 @@ import { useUserSettingsStore } from '@stores/user-settings-store';
 import { useLocalPropertiesStore } from '@stores/local-properties-store';
 import { useSyncedPropertiesStore } from '@stores/synced-properties-store';
 import { useMeta } from 'quasar';
+import { i18n } from '@services/locale';
 import WodoreLogo from 'components/wodore/WodoreLogo.vue';
 import WdPlaceSearchMenu from 'components/search/WdPlaceSearchMenu.vue';
 import WdPlaceSearchDialog from 'components/search/WdPlaceSearchDialog.vue';
@@ -182,7 +183,7 @@ const metaData = {
   meta: {
     description: {
       name: 'description',
-      content: 'Wohin gipfelt deine nächste Tour?',
+      content: i18n.global.t('meta.description'),
     },
   },
 };
@@ -304,6 +305,7 @@ onMounted(() => {
         <WdPlaceSearchDialog v-if="isMobile" />
         <WdSupportButton v-if="!authStore.isLoggedIn && !isMobile" class="text-secondary-700" />
         <WdFeedbackButton v-if="!isMobile" />
+        <WdLanguageSwitcher v-if="!isMobile" />
 
         <WdUser v-if="authStore.isLoggedIn" />
 
@@ -343,6 +345,7 @@ onMounted(() => {
           <WodoreLogo text class="text-h5" />
         </q-toolbar-title>
 
+        <WdLanguageSwitcher size="md" />
         <WdFeedbackButton size="md" />
 
         <!-- MENU BUTTON mobile close -->

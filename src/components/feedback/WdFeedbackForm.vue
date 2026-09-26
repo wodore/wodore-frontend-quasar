@@ -6,6 +6,9 @@ import getImageUrl from '@services/imageService';
 import { clientWodore } from '@clients/index';
 
 import track from '@services/analytics';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const $q = useQuasar();
 const router = useRouter();
@@ -49,7 +52,7 @@ function onSubmit() {
           //#color: 'positive',
           //#textColor: 'black',
           //#icon: 'wd-checkmark',
-          message: 'Nachricht gesendet',
+          message: t('feedback.sent'),
         });
         // Navigation is handled by MainLayout's onDialogHide()
         setTimeout(() => {
@@ -62,7 +65,7 @@ function onSubmit() {
         });
         $q.notify({
           type: 'negative',
-          message: 'Nachricht konnte nicht gesendet werden',
+          message: t('feedback.send_failed'),
         });
       }
     })
@@ -70,7 +73,7 @@ function onSubmit() {
       track('feedback-fail', { message: JSON.stringify(message) });
       $q.notify({
         type: 'negative',
-        message: 'Nachricht konnte nicht gesendet werden',
+        message: t('feedback.send_failed'),
       });
     });
 }
@@ -81,15 +84,15 @@ function onClose() {
   if (message.email || message.message || message.subject) {
     $q.dialog({
       dark: true,
-      title: 'Bist du sicher?',
-      message: 'Deine Eingaben gehen verloren! Schliessen?',
+      title: t('feedback.discard_title'),
+      message: t('feedback.discard_message'),
       persistent: true,
       ok: {
-        label: 'Ja',
+        label: t('yes'),
         flat: true,
       },
       cancel: {
-        label: 'Nein',
+        label: t('no'),
         flat: true,
       },
     })
@@ -214,7 +217,7 @@ function setAnonym(value: boolean) {
         <q-img :src="headerImg" style="height: 140px" class="shadow-4">
           <div class="card-header absolute-bottom text-white text-h5"></div>
           <div class="absolute-bottom text-accent-400 text-h4 text-center card-header__text">
-            Rückmeldung
+            {{ t('feedback.header_title') }}
           </div>
         </q-img>
       </div>
@@ -233,23 +236,22 @@ function setAnonym(value: boolean) {
         >
           <div class="col no-wrap items-center q-py-md">
             <p class="text-body1 q-pt-md">
-              <b>Sag, was du denkst!</b> Jede Rückmeldung, egal ob positiv oder negativ, hilft
-              weiter.
+              <b>{{ t('feedback.title') }}</b> {{ t('feedback.title_rest') }}
             </p>
             <p class="text-body2">
-              Jegliche
-              <a class="link" @click="toSupport">Unterstützung</a>
-              für das Projekt ist willkommen.
+              {{ t('feedback.support_intro') }}
+              <a class="link" @click="toSupport">{{ t('feedback.support') }}</a>
+              {{ t('feedback.support_outro') }}
             </p>
             <!-- <div class="text-h4 text-accent-700">Feedback</div> -->
             <div class="q-gutter-md q-pt-md">
               <q-input
                 v-model="message.subject"
                 dense
-                aria-label="Betreff"
+                :aria-label="t('feedback.subject')"
                 outlined
                 counter
-                placeholder="Betreff"
+                :placeholder="t('feedback.subject')"
                 maxlength="60"
               >
                 <template v-slot:prepend>
@@ -260,11 +262,11 @@ function setAnonym(value: boolean) {
                 dense
                 v-model="message.email"
                 outlined
-                aria-label="E-Mail"
+                :aria-label="t('feedback.email')"
                 placeholder="name@domain.com"
                 type="email"
                 maxlength="100"
-                :rules="[val => !!val || 'E-Mail fehlt']"
+                :rules="[val => !!val || t('feedback.email_required')]"
                 :disable="anonymous"
               >
                 <template v-slot:prepend> <q-icon name="wd-at" /> </template>
@@ -288,13 +290,13 @@ function setAnonym(value: boolean) {
                 v-model="message.message"
                 autogrow
                 counter
-                aria-label="Nachricht"
-                placeholder="Nachricht"
+                :aria-label="t('feedback.message')"
+                :placeholder="t('feedback.message')"
                 dense
                 outlined
                 type="textarea"
                 maxlength="10000"
-                :rules="[val => !!val || 'Nachricht fehlt']"
+                :rules="[val => !!val || t('feedback.message_required')]"
               >
                 <template v-slot:prepend> <q-icon name="wd-text-outline" /> </template
               ></q-input>
@@ -318,7 +320,7 @@ function setAnonym(value: boolean) {
                   v-if="urls.length < 4"
                   @click="addUrl()"
                   class="text-grey-8 float-right"
-                  label="URL"
+                  :label="t('feedback.url')"
                   flat
                   icon="wd-add-outline"
                 />
@@ -332,8 +334,8 @@ function setAnonym(value: boolean) {
                   color="accent"
                   size="lg"
                 >
-                  Halte mich auf dem Laufenden.<br />
-                  <span class="text-caption">Bei wichtigen Updates erhältst du eine E-Mail. </span>
+                  {{ t('feedback.keep_me_posted') }}<br />
+                  <span class="text-caption">{{ t('feedback.notify_updates') }} </span>
                 </q-checkbox>
               </div>
             </div>
@@ -343,16 +345,16 @@ function setAnonym(value: boolean) {
       <q-separator />
       <q-card-actions>
         <q-btn
-          label="Schliessen"
+          :label="t('close')"
           color="secondary-700"
           flat
           v-close-popup
           @click="onClose()"
           class="q-ml-sm"
         />
-        <q-btn label="Zurücksetzen" type="reset" color="secondary-700" flat class="q-ml-sm" />
+        <q-btn :label="t('reset')" type="reset" color="secondary-700" flat class="q-ml-sm" />
         <q-space />
-        <q-btn label="Senden" flat type="submit" color="accent" />
+        <q-btn :label="t('send')" flat type="submit" color="accent" />
       </q-card-actions>
     </q-form>
   </q-card>

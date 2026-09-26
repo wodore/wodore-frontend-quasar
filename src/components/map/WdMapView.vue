@@ -20,6 +20,7 @@ import {
 } from '@indoorequal/vue-maplibre-gl';
 
 import mapDraw from '@services/draw';
+import { currentLocale } from '@services/locale';
 import { clientWodore } from '@clients/index';
 
 // MapLibre v6 resolves its web worker via import.meta.url, which breaks under
@@ -285,6 +286,32 @@ function onMapError(e: unknown) {
   // For other errors, show generic map error
   //console.error('[onMapError] Generic map error:', event.error);
   //showErrorDialog({ errorCode: ErrorCode.MAP_ERROR });
+}
+
+/**
+ * WebGL support pre-check. When WebGL is unavailable the map fails with a
+ * GPUInitializationError that is only console-logged, and every subsequent
+ * map interaction throws generic TypeErrors — which the error-based
+ * detection above cannot recognize (the map just stays white). Detecting it
+ * up front lets us show the proper error dialog and skip mounting MglMap.
+ */
+const webglSupported = (() => {
+  if (typeof document === 'undefined') return true; // SSR — decide on client
+  try {
+    const canvas = document.createElement('canvas');
+    return !!(
+      canvas.getContext('webgl2') ||
+      canvas.getContext('webgl') ||
+      canvas.getContext('experimental-webgl')
+    );
+  } catch {
+    return false;
+  }
+})();
+
+if (!webglSupported) {
+  console.error('[WdMapView] WebGL is not supported by this browser/device');
+  showErrorDialogPersistent(ErrorCode.WEBGL_NOT_SUPPORTED);
 }
 
 // Capture errors from child components (like MglMap)
@@ -641,6 +668,7 @@ async function selectHutBySlug(slug: string, isInitialLoad: boolean = false): Pr
       const { data } = await clientWodore.GET('/v1/huts/{slug}', {
         params: {
           path: { slug },
+          query: { lang: currentLocale() },
         },
       });
 
@@ -728,6 +756,7 @@ async function selectHutBySlug(slug: string, isInitialLoad: boolean = false): Pr
       const { data } = await clientWodore.GET('/v1/huts/{slug}', {
         params: {
           path: { slug },
+          query: { lang: currentLocale() },
         },
       });
 
@@ -781,7 +810,7 @@ watch(
         // Fetch from API (non-blocking)
         clientWodore
           .GET('/v1/huts/{slug}', {
-            params: { path: { slug: newSlug } },
+            params: { path: { slug: newSlug }, query: { lang: currentLocale() } },
           })
           .then(({ data }) => {
             if (!data?.location) return;
@@ -910,6 +939,7 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
   <q-no-ssr>
     <div ref="mapDiv" style="height: 100vh">
       <MglMap
+        v-if="webglSupported"
         @map:load="onMapLoad"
         @map:error="onMapError"
         @map:styledata="onMapStyledata"

@@ -26,6 +26,10 @@ import { Notify } from 'quasar';
 
 //import { useStorage } from '@vueuse/core';
 import { clientWodore, schemasWodore } from '@clients/index';
+import { currentLocale, i18n } from '@services/locale';
+import { watch } from 'vue';
+
+const t = i18n.global.t;
 //import { useRoute } from 'vue-router';
 
 // import  i18n  from 'src/boot/i18n';
@@ -105,7 +109,12 @@ export const useHutsStore = defineStore('huts', () => {
   // newer one when the date changes quickly
   const latestBookings = useLatestRequest();
 
+  // Last fetch arguments so the localized data can be refetched when the
+  // UI language changes (remote content is language-dependent)
+  const lastBookingsFetchArgs = ref<fetchHutBookingsGeojsonArgs | undefined>(undefined);
+
   async function fetchHutBookingsGeojson({ date = 'now', days = 8 }: fetchHutBookingsGeojsonArgs) {
+    lastBookingsFetchArgs.value = { date, days };
     const token = latestBookings.next();
     clientWodore
       //.GET('/v1/huts/bookings.geojson', {
@@ -116,6 +125,7 @@ export const useHutsStore = defineStore('huts', () => {
           },
           query: {
             days: days,
+            lang: currentLocale(),
           },
         },
       })
@@ -130,10 +140,8 @@ export const useHutsStore = defineStore('huts', () => {
         Notify.create({
           type: 'negative',
           position: 'bottom',
-          //caption: t('booking_service_unavailable'),
-          //message: t('error_caption'),
-          caption: 'Reservations Service nicht erreichbar',
-          message: 'Fehler',
+          caption: t('booking_service_unavailable'),
+          message: t('error_caption'),
           progress: true,
           timeout: 1800,
         });
@@ -163,6 +171,14 @@ export const useHutsStore = defineStore('huts', () => {
       return selectedDate.value.split('.')[1];
     }
     return (new Date().getMonth() + 1).toString().padStart(2, '0');
+  });
+
+  // Refetch localized availability data when the UI language changes
+  // (only if data was loaded before — nothing to refresh otherwise)
+  watch(currentLocale, () => {
+    if (lastBookingsFetchArgs.value) {
+      fetchHutBookingsGeojson(lastBookingsFetchArgs.value);
+    }
   });
   //$route.query.date ? ($route.query.date as string) : undefined,
   //);
