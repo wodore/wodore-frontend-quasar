@@ -130,7 +130,7 @@
 .body--dark .q-card.dialog-radius .q-date__navigation {
   .q-btn {
     background: transparent !important;
-    color: #a9f0d2 !important;
+    color: var(--wd-ink-soft) !important;
   }
 }
 
@@ -141,13 +141,13 @@
 .body--dark .q-card.dialog-radius .q-date__navigation .q-date__header,
 .body--dark .q-card.dialog-radius .q-date__subtitle,
 .body--dark .q-card.dialog-radius .q-date__title {
-  color: #f2f7f4 !important;
+  color: var(--wd-ink) !important;
 }
 
 // Footer buttons (Today / Reset): gold accents
 .body--light .q-card.dialog-radius .text-accent,
 .body--dark .q-card.dialog-radius .text-accent {
-  color: #bfab25 !important;
+  color: var(--wd-gold-text) !important;
 }
 
 // Close button: subtle, smaller
@@ -518,12 +518,12 @@ body.body--dark {
 .body--light .q-card.wd-menu .q-banner,
 .body--light .q-card.wd-menu .separator {
   background: transparent !important;
-  color: #f2f7f4 !important;
+  color: var(--wd-ink) !important;
 }
-// Calendar day buttons inside the sage card
+// Calendar day buttons inside the theme card
 .body--light .q-card.wd-menu .q-date__calendar-item .q-btn {
   background: transparent !important;
-  color: #f2f7f4 !important;
+  color: var(--wd-ink) !important;
 }
 .body--light .q-card.wd-menu .q-date__calendar-item .q-btn--active,
 .body--light .q-card.wd-menu .q-date__calendar-item .q-btn[aria-current='true'] {
