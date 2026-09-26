@@ -155,7 +155,11 @@ function onFilterClick(event: Event) {
 }
 
 .overlay-icon-btn {
-  height: 10px;
+  // Quasar's q-btn min-height (20.6px dense) padded each 13.7px glyph
+  // with ~3.4px of internal whitespace - kill it so the glyphs touch
+  // (owner pulled the pair closer twice; the flex gap was already 0)
+  min-height: 0 !important;
+  height: 14px;
   width: 22px;
   padding: 0;
   margin: 0;

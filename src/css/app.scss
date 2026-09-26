@@ -998,8 +998,9 @@ body .q-toolbar.bg-primary-600 .q-btn::before {
 .app-header {
   border-bottom: 1px solid transparent;
   transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
+    border-color 0.12s ease-out,
+    box-shadow 0.12s ease-out,
+    background-color 0.12s ease-out;
 }
 
 // Header elevation (line + soft shadow) only while content is scrolled
@@ -1007,13 +1008,15 @@ body .q-toolbar.bg-primary-600 .q-btn::before {
 .app-header--scrolled {
   border-bottom-color: rgba(10, 20, 15, 0.25);
   box-shadow: 0 1px 4px rgba(10, 20, 15, 0.18);
+  // clearly deeper sage when scrolled (owner: more obvious, fast)
+  background-color: #2a5340 !important;
 }
 
 .body--dark .app-header--scrolled {
   border-bottom-color: #1c3629;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
-  // slightly deepen the translucent pine bar when scrolled (owner rule)
-  background-color: #0e1b14 !important;
+  // deepest pine - clearly visible against the .88 translucent bar
+  background-color: #0a140f !important;
 }
 
 // Map page: the map container keeps a LIGHT background in both themes -
@@ -1024,6 +1027,31 @@ body .q-toolbar.bg-primary-600 .q-btn::before {
   background-color: #eef2ef;
 }
 
+// Map canvas fills the page area BELOW the 51px header. Was height:100vh,
+// which pushed the whole layout (drawer, version footer) 51px past the
+// viewport - the version info vanished below the fold on real phones.
+// dvh tracks the dynamic URL bar; vh is the fallback.
+.wd-map-fill {
+  height: calc(100vh - 51px);
+  height: calc(100dvh - 51px);
+}
+
+// The menu drawer's native scrollbar flashes when the overlay-config
+// menu mounts (content briefly taller/wider). Inner q-scroll-areas
+// provide styled scrolling - hide the native bars on the drawer shell.
+.q-drawer .q-drawer__content {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.overlay-config-container {
+  overflow: hidden;
+}
+
 // Native image drag steals pointer events from scroll gestures (the
 // weather symbols "captured" the mouse) - kill drag/select app-wide;
 // the map has no intentional image drags
@@ -1032,19 +1060,22 @@ img {
   user-select: none;
 }
 
-// Content drawer close (top-left): surface chip + soft shadow + ink icon
-// in both themes (impeccable consult: close is pure chrome - it must not
-// spend gold (scarce) or forest (brand actions); the surface token flips
-// per theme and matches the map-button family)
+// Content drawer close (top-left): FLAT tinted chip - no border, no
+// shadow; slightly darker than the surface in light, slightly lighter
+// in dark (owner rule). Ink icon.
 .wd-drawer-close {
-  background: var(--wd-surface) !important;
+  background: #eef4f0 !important;
   color: var(--wd-ink) !important;
-  border: 1px solid var(--wd-ridge) !important;
-  box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2) !important;
+  border: none !important;
+  box-shadow: none !important;
 
   .q-icon {
     color: var(--wd-ink) !important;
   }
+}
+
+.body--dark .wd-drawer-close {
+  background: #1a2f24 !important;
 }
 
 // Content drawer header: SOLID themed surface (a transparent header let
