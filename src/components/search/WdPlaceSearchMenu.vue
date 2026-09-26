@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue';
+import { ref, useTemplateRef, watch, nextTick } from 'vue';
 import { useDraggable } from '@vueuse/core';
 import WdPlaceSearch from './WdPlaceSearch.vue';
 
@@ -11,8 +11,8 @@ let dragTimeout: ReturnType<typeof setTimeout> | null = null;
 
 // Refs
 const placeSearchRef = ref<InstanceType<typeof WdPlaceSearch> | null>(null);
-const menuContentRef = ref<HTMLElement | null>(null);
-const dragHandleRef = ref<HTMLElement | null>(null);
+const menuContentRef = useTemplateRef<HTMLDivElement>('menuContentRef');
+const dragHandleRef = useTemplateRef<HTMLElement>('dragHandleRef');
 
 // Border constraints (in pixels from viewport edge)
 const BORDER_MARGIN = 0;

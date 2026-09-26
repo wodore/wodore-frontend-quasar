@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watchEffect, watch } from 'vue';
+import { ref, computed, useTemplateRef, watchEffect, watch } from 'vue';
 import { date } from 'quasar';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import type { Swiper as SwiperType } from 'swiper';
@@ -200,7 +200,7 @@ const loadFromIndex = async (fromIndex: number, days: number = 14) => {
 };
 
 // --- Swiper ---
-const swiperContainer = ref<HTMLElement | null>(null);
+const swiperContainer = useTemplateRef<HTMLDivElement>('swiperContainer');
 const { slidesPerView } = useSlideCount(swiperContainer, 68);
 
 const swiperInstance = ref<SwiperType | null>(null);

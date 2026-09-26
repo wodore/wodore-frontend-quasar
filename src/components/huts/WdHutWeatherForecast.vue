@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watchEffect, nextTick, watch } from 'vue';
+import { computed, ref, useTemplateRef, watchEffect, nextTick, watch } from 'vue';
 import { date, QScrollArea, QTable, useQuasar } from 'quasar';
 import { useCssVar, useWindowSize } from '@vueuse/core';
 import { useI18n } from 'vue-i18n';
@@ -45,7 +45,7 @@ const props = defineProps<Props>();
 
 const forecastDays = ref<WeatherDay[]>([]);
 const error = ref<string | null>(null);
-const containerRef = ref<HTMLElement | null>(null);
+const containerRef = useTemplateRef<HTMLDivElement>('containerRef');
 const scrollAreaRef = ref<InstanceType<typeof QScrollArea> | null>(null);
 const itemWidthVar = useCssVar('--weather-item-width', containerRef);
 const itemWidth = computed(() => {
