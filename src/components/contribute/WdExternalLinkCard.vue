@@ -347,19 +347,14 @@ const openAppStore = (event: Event, store: 'google' | 'apple') => {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   }
 
-  &.android {
-    color: #000000;
-
-    &:hover {
-      background: rgba(0, 0, 0, 0.05);
-    }
-  }
-
+  // theme-aware: follow the card text color (were hardcoded #000000,
+  // unreadable on the dark card at night)
+  &.android,
   &.ios {
-    color: #000000;
+    color: inherit;
 
     &:hover {
-      background: rgba(0, 0, 0, 0.05);
+      background: var(--wd-wash, rgba(0, 0, 0, 0.05));
     }
   }
 }

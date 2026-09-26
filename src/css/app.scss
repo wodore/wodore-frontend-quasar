@@ -1121,6 +1121,13 @@ a.wd-accommodation-day {
   box-shadow: none !important;
 }
 
+// Quasar draws button elevation on the ::before ripple overlay - that
+// pseudo shadow survived the rules above (visible in light mode; the
+// dark-mode global pseudo-kill masked it there)
+.wd-drawer-close::before {
+  box-shadow: none !important;
+}
+
 // Header weather icon: the mono SVG collection ships black-filled paths,
 // which ignore the text color - recolor via currentColor so it follows
 // the theme (light: accent-800, dark: accent-100)
@@ -1133,6 +1140,19 @@ a.wd-accommodation-day {
 // scrollbar when toggling overlays on/off (list height changes).
 // Hide the native bar - the rail is short, no scroll indicator needed.
 .overlay-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+// QScrollArea's inner container (overflow: auto) draws a NATIVE scrollbar
+// wherever the browser shows classic bars (mobile always, desktop Chrome
+// on scroll) - visible alongside Quasar's styled gold thumb. Hide the
+// native bar everywhere; scrolling still works (wheel/touch/trackpad).
+.q-scrollarea__container {
   scrollbar-width: none;
   -ms-overflow-style: none;
 
