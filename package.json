@@ -53,7 +53,7 @@
     "pregen:icons": "yarn run icons:fix",
     "gen:icons": "fantasticon src/extras/icons/svg/build/fixed -o src/extras/icons/dist -p wd --normalize -t woff woff2",
     "gen:icons:watch": "watch 'yarn run gen:icons' src/extras/icons/svg/source",
-    "postgen:icons": "yarn run eslint --fix src/extras/icons/dist/icons.ts",
+    "postgen:icons": "node scripts/scope-icon-selectors.mjs && yarn run eslint --fix src/extras/icons/dist/icons.ts",
     "gen:favs": "icongenie generate -p src/assets/icongenie/",
     "gen:realfavs": "real-favicon generate src/assets/realfavgen.json src/assets/realfavgen_result.json public/realfavgen"
   },

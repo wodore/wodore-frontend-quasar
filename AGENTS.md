@@ -343,6 +343,13 @@ Quick syntax reference:
 
 See `.claude/agents/iconify.md` for detailed workflow and usage examples.
 
+**Icon-name / CSS-class namespace**: every icon generates a `.wd-<name>:before`
+glyph rule. Never give a non-icon element a class named like an icon
+(`wd-menu` on a card collides with the `wd-menu` icon). `yarn gen:icons`
+post-runs `scripts/scope-icon-selectors.mjs`, which scopes glyph rules to
+`<i>` elements and warns about class collisions — treat its warnings as
+rename requests. Legacy collisions are guarded with `:not(i)` in `app.scss`.
+
 ### CSS and Styling
 
 #### Quasar Color System
