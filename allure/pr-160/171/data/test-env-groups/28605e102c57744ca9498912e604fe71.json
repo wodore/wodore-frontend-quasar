@@ -1,0 +1,1 @@
+{"id":"28605e102c57744ca9498912e604fe71","fullName":"wodore:tests/unit/raster.spec.ts#getRasterStyle builds one raster source and layer per layer name with the wd- prefix","name":"builds one raster source and layer per layer name with the wd- prefix","status":"passed","testResultsByEnv":{"default":"602bc14a3306df8aaf10f8c1bbaf5922"}}
