@@ -90,6 +90,21 @@ else
   # Update package.json version
   yarn version --new-version $NEW_VERSION --no-git-tag-version
 
+  # Sync Android version (versionName + versionCode) in the Capacitor project
+  GRADLE_FILE="src-capacitor/android/app/build.gradle"
+  MAJOR=$(echo "$NEW_VERSION" | cut -d. -f1)
+  MINOR=$(echo "$NEW_VERSION" | cut -d. -f2)
+  PATCH=$(echo "$NEW_VERSION" | cut -d. -f3)
+  NEW_CODE=$((MAJOR * 10000 + MINOR * 100 + PATCH))
+  CURRENT_CODE=$(grep -oE 'versionCode [0-9]+' "$GRADLE_FILE" | grep -oE '[0-9]+')
+  if [ "$NEW_CODE" -gt "$CURRENT_CODE" ]; then
+    sed -i "s/versionCode [0-9]\+/versionCode $NEW_CODE/" "$GRADLE_FILE"
+    sed -i "s/versionName \"[^\"]\+\"/versionName \"$NEW_VERSION\"/" "$GRADLE_FILE"
+    echo "Android version synced: versionName $NEW_VERSION, versionCode $NEW_CODE"
+  else
+    echo "Warning: computed Android versionCode $NEW_CODE <= current $CURRENT_CODE — leaving $GRADLE_FILE unchanged."
+  fi
+
   if [ -n "$NEW_TAG" ]; then
     echo "Bumped to version '$NEW_VERSION' (tag '$NEW_TAG')."
     echo "Please check the entries in 'CHANGELOG.md' and update it accordingly."
@@ -100,11 +115,12 @@ else
       echo "Changes to commit:"
       echo "- CHANGELOG.md"
       echo "- package.json"
+      echo "- src-capacitor/android/app/build.gradle"
       echo ""
       read -p "Do you want to commit these changes? (y/n) " -n 1 -r
       echo # (optional) move to a new line
       if [[ $REPLY =~ ^[Yy]$ ]]; then
-        git add CHANGELOG.md package.json
+        git add CHANGELOG.md package.json src-capacitor/android/app/build.gradle
         git commit -m "release: version $NEW_VERSION"
       else
         echo "Changes not committed. Please commit them manually if needed."

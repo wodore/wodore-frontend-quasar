@@ -1,0 +1,77 @@
+{
+  "params": {
+    "skipTrim": true,
+    "themeColor": "315e47",
+    "splashscreenColor": "315e47",
+    "icon": "src/assets/wodore-design/logo/exports/favicon_shape.png",
+    "padding": [0, 0]
+  },
+  "assets": [
+    {
+      "generator": "splashscreen",
+      "name": "splash.png",
+      "folder": "src-capacitor/android/app/src/main/res/drawable",
+      "sizes": [[480, 320]]
+    },
+    {
+      "generator": "splashscreen",
+      "name": "splash.png",
+      "folder": "src-capacitor/android/app/src/main/res/drawable-land-mdpi",
+      "sizes": [[480, 320]]
+    },
+    {
+      "generator": "splashscreen",
+      "name": "splash.png",
+      "folder": "src-capacitor/android/app/src/main/res/drawable-port-mdpi",
+      "sizes": [[320, 480]]
+    },
+    {
+      "generator": "splashscreen",
+      "name": "splash.png",
+      "folder": "src-capacitor/android/app/src/main/res/drawable-land-hdpi",
+      "sizes": [[800, 480]]
+    },
+    {
+      "generator": "splashscreen",
+      "name": "splash.png",
+      "folder": "src-capacitor/android/app/src/main/res/drawable-port-hdpi",
+      "sizes": [[480, 800]]
+    },
+    {
+      "generator": "splashscreen",
+      "name": "splash.png",
+      "folder": "src-capacitor/android/app/src/main/res/drawable-land-xhdpi",
+      "sizes": [[1280, 720]]
+    },
+    {
+      "generator": "splashscreen",
+      "name": "splash.png",
+      "folder": "src-capacitor/android/app/src/main/res/drawable-port-xhdpi",
+      "sizes": [[720, 1280]]
+    },
+    {
+      "generator": "splashscreen",
+      "name": "splash.png",
+      "folder": "src-capacitor/android/app/src/main/res/drawable-land-xxhdpi",
+      "sizes": [[1600, 960]]
+    },
+    {
+      "generator": "splashscreen",
+      "name": "splash.png",
+      "folder": "src-capacitor/android/app/src/main/res/drawable-port-xxhdpi",
+      "sizes": [[960, 1600]]
+    },
+    {
+      "generator": "splashscreen",
+      "name": "splash.png",
+      "folder": "src-capacitor/android/app/src/main/res/drawable-land-xxxhdpi",
+      "sizes": [[1920, 1280]]
+    },
+    {
+      "generator": "splashscreen",
+      "name": "splash.png",
+      "folder": "src-capacitor/android/app/src/main/res/drawable-port-xxxhdpi",
+      "sizes": [[1280, 1920]]
+    }
+  ]
+}
