@@ -16,6 +16,28 @@ Feature specifications and design guidelines are located in `docs/specs/`:
 - `wd_hut_search.md` - Hut search feature specification
 - Other feature specs as they are added
 
+## PR Preview Workflow
+
+PRs with the `PREVIEW` label get an automatic live preview on GitHub
+Pages: `https://wodore.github.io/wodore-frontend-quasar/pr-<N>/`.
+
+**After every push to a preview PR, ALWAYS:**
+
+1. Wait for the `PR Preview` workflow to complete (`gh run watch`)
+2. Verify the preview URL returns HTTP 200
+3. Show the PR link and preview URL in your summary
+
+```bash
+gh run watch $(gh run list --workflow preview.yml --limit 1 --json databaseId --jq '.[0].databaseId') --exit-status
+curl -s -o /dev/null -w "%{http_code}" "https://wodore.github.io/wodore-frontend-quasar/pr-<N>/"
+```
+
+The preview builds with the staging API (`hub.stg.wodore.com`), hash
+routing, and a QR-code PR comment. Repo variables/secrets needed:
+`WODORE_IMAGOR_URL`, `WODORE_IMAGOR_KEY` (secret), `WODORE_MAPTILER_API_KEY`
+(secret). A `404.html` on gh-pages redirects path URLs to the hash
+router.
+
 ## Impeccable Design Skill
 
 The repo carries the [impeccable](https://impeccable.style/) design skill
