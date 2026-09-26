@@ -1,0 +1,1 @@
+import{d as n,o as a,m as e,aa as s,w as t,aV as c}from"./index-CahoT_2c.js";const p=n({__name:"QIconify",props:{is:{}},setup(o){return(r,i)=>(a(),e(s,null,{default:t(()=>[(a(),e(c(o.is)))]),_:1}))}});export{p as _};
