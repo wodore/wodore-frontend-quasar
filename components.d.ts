@@ -16,7 +16,6 @@ declare module 'vue' {
     IconEvaCloseOutline: typeof import('~icons/eva/close-outline')['default']
     IconEvaExternalLinkFill: typeof import('~icons/eva/external-link-fill')['default']
     IconEvaEyeOutline: typeof import('~icons/eva/eye-outline')['default']
-    IconEvaGlobe2Outline: typeof import('~icons/eva/globe2-outline')['default']
     IconEvaLockFill: typeof import('~icons/eva/lock-fill')['default']
     IconEvaMoveOutline: typeof import('~icons/eva/move-outline')['default']
     IconEvaSearchOutline: typeof import('~icons/eva/search-outline')['default']
