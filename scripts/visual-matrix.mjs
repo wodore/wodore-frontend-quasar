@@ -22,6 +22,7 @@
  * contrast per element, not by eye.
  */
 import { chromium } from 'playwright';
+import AxeBuilder from '@axe-core/playwright';
 import { mkdirSync, writeFileSync } from 'fs';
 
 const ARGS = Object.fromEntries(
@@ -333,6 +334,19 @@ for (const scheme of schemes) {
             if (!report.zones) report.zones = [];
             report.zones.push({ state: s.id, scheme, tag, zoneViolations });
             failed += zoneViolations.length;
+          }
+          // axe-core a11y audit per state (serious/critical only - the
+          // contrast audit above already covers color contrast in detail)
+          const axe = await new AxeBuilder({ page })
+            .withTags(['wcag2a', 'wcag2aa'])
+            .analyze();
+          const axeViolations = axe.violations
+            .filter(v => v.impact === 'serious' || v.impact === 'critical')
+            .map(v => ({ id: v.id, impact: v.impact, nodes: v.nodes.length, help: v.help }));
+          if (axeViolations.length) {
+            if (!report.a11y) report.a11y = [];
+            report.a11y.push({ state: s.id, scheme, tag, axeViolations });
+            failed += axeViolations.length;
           }
         }
       } catch (e) {
