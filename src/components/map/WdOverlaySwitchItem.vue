@@ -204,6 +204,7 @@ function onFilterClick(event: Event) {
       dense
       class="overlay-main-btn"
       :class="{ active }"
+      :aria-label="label"
       @click="onMainClick"
       :ripple="false"
     >
@@ -220,6 +221,7 @@ function onFilterClick(event: Event) {
         class="overlay-icon-btn"
         size="xs"
         :class="{ active: isInfoActive }"
+        :aria-label="`${label} info`"
         @click="onInfoClick"
       >
       </q-btn>
@@ -232,6 +234,7 @@ function onFilterClick(event: Event) {
         size="xs"
         class="overlay-icon-btn"
         :class="{ active: isFilterActive }"
+        :aria-label="`${label} filter`"
         @click="onFilterClick"
       >
         <div v-if="showBadge" class="filter-badge"></div>

@@ -172,10 +172,13 @@
   color: var(--wd-ink) !important;
 }
 
-// ─── Mobile rail: mint-green circles (Day) ───────────────────────────────
+// ─── Mobile rail: mint-green circles in BOTH themes (the map keeps its
+// light basemap at night - light controls on it read correctly).
+// Includes raster-symbol buttons — mint + dark glyphs has AA contrast.
 @media (max-width: 600px) {
-  .body--light .overlay-main-btn:not(:has(img)),
-  .body--light .wd-overlay-btn {
+  // specificity must beat .q-fab__actions .q-btn:has(img) (0,2,1)
+  .q-fab__actions .q-btn.overlay-main-btn,
+  .q-fab__actions .q-btn.wd-overlay-btn {
     background-color: rgba(143, 214, 183, 0.9) !important;
     color: #1c1c1c !important;
     border-radius: 50%;
@@ -325,17 +328,14 @@ body.body--dark {
 }
 
 // Fab switcher pills (overlay / basemap rail): same chrome family as the
-// toolbar pills (Day white + deep-green, Night pine + ice); open = forest
+// toolbar pills. The map keeps its LIGHT basemap at night, so these stay
+// light-chrome in BOTH themes (owner rule: no dark-mode inversion of
+// overlay/basemap toggle buttons). Open = forest.
 .q-fab.wd-switcher-fab {
   // ZONES: map-floating controls are SOLID (toolbar stays flat)
   background-color: #fdfefd !important;
   color: #1c1c1c !important;
   border: 1px solid #c9d4cd !important;
-}
-.body--dark .q-fab.wd-switcher-fab {
-  background-color: #112119 !important;
-  color: #f2f7f4 !important;
-  border-color: #1c3629 !important;
 }
 
 .overlay-main-btn,
@@ -344,28 +344,15 @@ body.body--dark {
   border: 1px solid #c9d4cd !important;
   color: #1c1c1c !important;
 }
-.body--dark .overlay-main-btn,
-.body--dark .overlay-icon-btn {
-  background-color: #112119 !important;
-  border: 1px solid #1c3629 !important;
-  color: #f2f7f4 !important;
-}
 .q-fab.wd-switcher-fab:hover {
   // ZONES: map fabs stay SOLID on hover (translucent wash reads as
   // a transparent toggle and strands after clicks)
   background-color: #eef4f0 !important;
 }
-.body--dark .q-fab.wd-switcher-fab:hover {
-  background-color: #1a2f24 !important;
-}
 
 .q-fab.wd-switcher-fab .q-fab__icon,
 .q-fab.wd-switcher-fab .q-fab__active-icon {
   color: #29626b !important;
-}
-.body--dark .q-fab.wd-switcher-fab .q-fab__icon,
-.body--dark .q-fab.wd-switcher-fab .q-fab__active-icon {
-  color: #a9f0d2 !important;
 }
 
 // Open state: SOLID forest + paper icon - open reads as clearly active
@@ -382,28 +369,18 @@ body.body--dark {
 }
 
 .body--dark .q-fab.wd-switcher-fab--open,
-.body--dark .q-fab.wd-switcher-fab--open:hover {
+.q-fab.wd-switcher-fab--open:hover {
   background-color: #346751 !important;
   border-color: #224e3b !important;
-}
-
-// Night: the active-icon is a basemap thumbnail img (dark artwork) -
-// invert to ice like the action thumbnails or it vanishes on pine
-.body--dark .q-fab.wd-switcher-fab .q-fab__active-icon img {
-  filter: invert(1) sepia(1) hue-rotate(100deg) saturate(1.4) brightness(1.05);
 }
 
 // Basemap thumbnails: SOLID fill (they float over the map), ridge border,
 // unmistakable 3px forest ring when selected (user rule: solid bg on map
 // controls; translucent fills sink into the imagery)
 .wd-basemap-item {
-  background-color: var(--wd-surface) !important;
+  background-color: #fdfefd !important;
   border: 1px solid #c9d4cd;
   box-shadow: 0 1px 4px rgba(10, 20, 15, 0.25);
-}
-
-.body--dark .wd-basemap-item {
-  border-color: var(--wd-ridge);
 }
 
 .wd-basemap-item:hover {
@@ -740,21 +717,14 @@ body.body--dark .q-drawer {
 // toolbar-field rule above - one rule, one truth.)
 // Fab action buttons split in two families (corrected zones rule):
 // 1. IMAGE buttons (basemap thumbs + raster activity symbols): map-floating,
-//    SOLID chips — white in Day (dark raster glyphs), pine at Night with the
-//    glyphs inverted to light (dark PNGs vanish on pine otherwise).
+//    SOLID white chips with the original dark raster glyphs — in BOTH
+//    themes (owner rule: no dark inversion; the map keeps its light
+//    basemap at night, so dark PNGs on white chips stay legible).
 // 2. GLYPH buttons (wd-info/filter marker toggles): they sit directly on the
 //    light basemap — dark glyphs, NO background, in BOTH themes.
 .q-fab__actions .q-btn:has(img) {
   background: #fdfefd !important;
   border: 1px solid #dde7e0 !important;
-}
-.body--dark .q-fab__actions .q-btn:has(img) {
-  background: #112119 !important;
-  border: 1px solid #1c3629 !important;
-
-  img {
-    filter: invert(1) sepia(1) hue-rotate(100deg) saturate(1.4) brightness(1.05);
-  }
 }
 
 .q-fab__actions .q-btn:not(:has(img)),
@@ -867,4 +837,16 @@ body .q-toolbar.bg-primary-600 .q-btn::before {
 }
 .wd-search-card .wd-search-field .q-icon {
   color: var(--wd-ink-soft) !important;
+}
+
+// Screen-reader-only fab labels (QFab renders its label inside the
+// trigger button - visually clipped, but gives icon-only fabs an
+// accessible name)
+.wd-switcher-fab .q-fab__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }

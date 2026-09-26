@@ -369,6 +369,7 @@
       "link": "Switzerland mountain bike network"
     }
   },
+  "basemap": "Basemap",
   "basemaps": {
     "swiss_light": "Switzerland Topo Light",
     "swiss_raster": "Switzerland Topo Raster",
@@ -453,5 +454,7 @@
     "auto": "Follow system",
     "light": "Light",
     "dark": "Dark"
-  }
+  },
+  "basemap_lock": "Lock basemap switcher",
+  "basemap_unlock": "Unlock basemap switcher"
 }

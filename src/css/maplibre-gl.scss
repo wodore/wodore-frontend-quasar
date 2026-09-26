@@ -46,10 +46,15 @@
   max-width: calc(100vw - 120px);
 }
 
+// MapLibre controls (position / orientation, top-right): solid light
+// chrome in BOTH themes - same family as the overlay/basemap fabs
+// (ZONES: map-floating controls are solid; the map stays a light
+// basemap at night, so no dark inversion here either)
 .maplibregl-ctrl-group {
   border-radius: $button-rounded-border-radius;
-  background: transparent;
-  //border-bottom: 3px solid rgba(0, 0, 0, 0.15);
+  background: #fdfefd;
+  border: 1px solid #c9d4cd;
+  box-shadow: 0 1px 4px rgba(10, 20, 15, 0.25);
   overflow: hidden;
 }
 
@@ -75,7 +80,7 @@
 }
 
 .maplibregl-ctrl-group button + button {
-  border-top: 2px solid rgba(color('primary', 200), 0.4);
+  border-top: 1px solid #dde7e0;
 }
 
 .maplibregl-ctrl button .maplibregl-ctrl-icon {
@@ -97,8 +102,7 @@
 }
 
 .maplibregl-ctrl button:not(:disabled):hover {
-  //background-color: rgb(0 0 0 / 5%);
-  background-color: rgba(color('white', 500), 0.1);
+  background-color: #eef4f0;
 }
 
 //.maplibregl-ctrl-group button:focus:focus-visible {
@@ -113,12 +117,10 @@
 .maplibregl-ctrl-group button:focus:last-child,
 .maplibregl-ctrl-group button:hover:last-child {
   border-radius: 0 0 $button-rounded-border-radius $button-rounded-border-radius;
-  border-bottom: 3px solid rgba(0, 0, 0, 0.12);
 }
 
 .maplibregl-ctrl-group button:last-child {
   border-radius: 0 0 $button-rounded-border-radius $button-rounded-border-radius;
-  border-bottom: 3px solid rgba(0, 0, 0, 0.15);
 }
 
 .maplibregl-ctrl-top-right,
@@ -163,22 +165,11 @@
 
 // Theme the native map controls. NOTE: the map canvas itself is NOT
 // darkened in dark mode (product decision: identical light basemap in both
-// themes; a proper dark baselayer may come later). Controls are flat: NO
-// fill in any state (user rule); the map is light in both themes, so the
-// default dark control glyphs stay legible and are NOT inverted.
-body.body--light .maplibregl-ctrl-group {
-  background-color: transparent;
-  box-shadow: none;
-}
-
-body.body--dark .maplibregl-ctrl-group {
-  background-color: transparent;
-  box-shadow: none;
-}
-
-body.body--dark .maplibregl-ctrl-group button + button {
-  border-top: 1px solid rgba(28, 54, 41, 0.5);
-}
+// themes). Controls carry the same SOLID light chrome as the overlay /
+// basemap fabs (owner rule: consistent map-button styling, no dark
+// inversion - the map is light in both themes, so the default dark
+// control glyphs stay legible and are NOT inverted).
+// Solid fill + border live in the .maplibregl-ctrl-group base rule above.
 
 // Attribution: readable pill over terrain in both themes
 .maplibregl-ctrl-attrib {

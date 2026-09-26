@@ -2,11 +2,13 @@
 //import { Map } from 'maplibre-gl';
 import { QPageStickyProps, QFabProps, useQuasar } from 'quasar';
 import { BasemapSwitchItem } from '@stores/map/utils/interfaces';
+import { useI18n } from 'vue-i18n';
 import { useBasemapStore } from '@stores/map/basemap-store';
 //import { useMap } from '@indoorequal/vue-maplibre-gl';
 import { ref } from 'vue';
 
 //const emitter = inject(emitterSymbol)!;
+const { t } = useI18n();
 const basemapStore = useBasemapStore();
 //basemapStore.setEmitter(emitter);
 const $q = useQuasar();
@@ -95,8 +97,10 @@ const switchCloseIcon =
       padding="sm"
       :direction="direction"
       persistent
+      :label="t('basemap')"
       class="wd-switcher-fab"
       :class="{ 'wd-switcher-fab--open': switcherOpen }"
+      :aria-label="t('basemap')"
       v-model="switcherOpen"
     >
       <WdBasemapSwitchItem
@@ -119,6 +123,7 @@ const switchCloseIcon =
         :ripple="false"
         class="wd-toolbar-btn"
         :class="{ 'wd-toolbar-btn--active': switcherLocked }"
+        :aria-label="switcherLocked ? t('basemap_unlock') : t('basemap_lock')"
         @click="toggleSwitcherLocked"
       >
         <q-icon>

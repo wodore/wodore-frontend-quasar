@@ -369,6 +369,7 @@
       "link": "Réseau Suisse à VTT"
     }
   },
+  "basemap": "Fond de carte",
   "basemaps": {
     "swiss_light": "Suisse Topo Light",
     "swiss_raster": "Suisse Topo Raster",
@@ -453,5 +454,7 @@
     "auto": "Système",
     "light": "Clair",
     "dark": "Sombre"
-  }
+  },
+  "basemap_lock": "Verrouiller le fond de carte",
+  "basemap_unlock": "Déverrouiller le fond de carte"
 }

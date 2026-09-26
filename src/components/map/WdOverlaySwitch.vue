@@ -3,6 +3,7 @@
 import { QPageStickyProps, QFabProps, useQuasar, LocalStorage } from 'quasar';
 import type { AllPaintProperties } from '@maplibre/maplibre-gl-style-spec';
 import { OpacitySpecification, OverlaySwitchItem } from '@stores/map/utils/interfaces';
+import { useI18n } from 'vue-i18n';
 import { useOverlayStore } from '@stores/map/overlay-store';
 import { useBasemapStore } from '@stores/map/basemap-store';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
@@ -19,6 +20,7 @@ import { useOverlayConfigStore } from '@stores/map/overlay-config-store';
 import { useMapMenuStore } from '@stores/map/map-menu-store';
 
 //const emitter = inject(emitterSymbol)!;
+const { t } = useI18n();
 const overlayStore = useOverlayStore();
 const basemapStore = useBasemapStore();
 //basemapStore.setEmitter(emitter);
@@ -391,8 +393,10 @@ function overlayIcon(name: string) {
       padding="sm"
       :direction="direction"
       persistent
+      :label="t('overlay_style')"
       class="wd-switcher-fab"
       :class="{ 'wd-switcher-fab--open': switcherOpen }"
+      :aria-label="t('overlay_style')"
       v-model="switcherOpen"
     >
       <div class="overlay-scroll">

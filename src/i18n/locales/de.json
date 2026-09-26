@@ -369,6 +369,7 @@
       "link": "Mountainbikeland Schweiz"
     }
   },
+  "basemap": "Basiskarte",
   "basemaps": {
     "swiss_light": "Schweiz Topo Light",
     "swiss_raster": "Schweiz Topo Raster",
@@ -453,5 +454,7 @@
     "auto": "System",
     "light": "Hell",
     "dark": "Dunkel"
-  }
+  },
+  "basemap_lock": "Basiskarte fixieren",
+  "basemap_unlock": "Basiskarte lösen"
 }
