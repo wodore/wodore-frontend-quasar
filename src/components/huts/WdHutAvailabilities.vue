@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watchEffect, watch, nextTick } from 'vue';
+import { ref, computed, useTemplateRef, watchEffect, watch, nextTick } from 'vue';
 import { date, QVirtualScroll, QScrollArea, useQuasar } from 'quasar';
 import { useCssVar, useElementSize } from '@vueuse/core';
 import { clientWodore } from '@clients/index';
@@ -11,8 +11,8 @@ import WdHutAvailability from './WdHutAvailability.vue';
 
 const { formatDate, addToDate, subtractFromDate } = date;
 const { selectedDate } = storeToRefs(useHutsStore());
-const containerRef = ref<HTMLElement | null>(null);
-const dialogRef = ref<HTMLElement | null>(null);
+const containerRef = useTemplateRef<HTMLDivElement>('containerRef');
+const dialogRef = useTemplateRef<HTMLDivElement>('dialogRef');
 const { width: dialogWidth } = useElementSize(dialogRef);
 const virtualScrollRef = ref<InstanceType<typeof QVirtualScroll> | null>(null);
 const scrollAreaRef = ref<InstanceType<typeof QScrollArea> | null>(null);

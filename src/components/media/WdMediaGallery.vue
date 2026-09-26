@@ -209,7 +209,7 @@ onUnmounted(() => {
         releaseOnEdges: false,
       }"
       :navigation="showNavigation"
-      :thumbs="{ swiper: thumbsSwiper }"
+      :thumbs="{ swiper: thumbsSwiper as SwiperType | null }"
       :initial-slide="initialSlide"
       :loop="true"
       :effect="'fade'"

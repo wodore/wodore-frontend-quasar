@@ -584,7 +584,7 @@ const thumbnailContainerStyle = computed(() => {
               : false
           "
           :pagination="!showThumbnails && visibleImages.length > 1"
-          :thumbs="{ swiper: thumbsSwiperRef }"
+          :thumbs="{ swiper: thumbsSwiperRef as SwiperType | null }"
           :initial-slide="0"
           class="preview-swiper"
           @swiper="onSwiper"

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watchEffect, watch } from 'vue';
+import { computed, ref, useTemplateRef, watchEffect, watch } from 'vue';
 import { date, useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useLatestRequest } from '@composables/useLatestRequest';
@@ -46,7 +46,7 @@ const forecastDays = ref<WeatherDay[]>([]);
 const error = ref<string | null>(null);
 const swiperInstance = ref<SwiperType | null>(null);
 const initialSlideDone = ref(false);
-const forecastContainer = ref<HTMLElement | null>(null);
+const forecastContainer = useTemplateRef<HTMLDivElement>('forecastContainer');
 const { slidesPerView } = useSlideCount(forecastContainer, 68);
 
 const hasLocation = computed(
