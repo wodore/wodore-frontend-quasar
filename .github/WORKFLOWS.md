@@ -94,14 +94,30 @@ This project uses GitHub Actions for CI/CD automation.
 
 ### Smart Docker Builds
 
-**BUILD Label System**:
-Only builds Docker images when merged PRs have the `BUILD` label:
+**BUILD:docker Label System**:
+Only builds Docker images when merged PRs have the `BUILD:docker` label:
 
 ```bash
-# On a PR, add the BUILD label
-gh pr edit 123 --add-label "BUILD"
+# On a PR, add the BUILD:docker label
+gh pr edit 123 --add-label "BUILD:docker"
 
 # When merged, Docker image will be built automatically
+```
+
+### Android Package Builds
+
+**BUILD:android Label System**:
+Builds a debug APK of the Capacitor Android app when merged PRs have
+the `BUILD:android` label. The APK is uploaded as a workflow artifact
+(named `wodore-debug-v<version>-<sha>.apk`); on version tags it is also
+attached to the GitHub release. Manual runs are possible via
+workflow_dispatch.
+
+```bash
+# On a PR, add the BUILD:android label
+gh pr edit 123 --add-label "BUILD:android"
+
+# When merged, a debug APK will be built automatically
 ```
 
 ### Automated Versioning

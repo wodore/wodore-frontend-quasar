@@ -119,7 +119,10 @@ backend (`E2E_API_HOST`, default `http://127.0.0.1:8000`). The hut deep-link tes
 intentionally not part of CI (deterministic CI is handled by the unit suite).
 
 **CI**: `.github/workflows/test.yml` runs the unit suite on every PR and posts the Allure
-report via `allure-framework/allure-action` (same pattern as wodore-backend).
+report via `allure-framework/allure-action` (same pattern as wodore-backend). Package
+builds are label-gated on merged PRs: `BUILD:docker` triggers the Docker image build,
+`BUILD:android` the Capacitor debug-APK build (`.github/workflows/android.yml`); both
+also run on version tags and support manual dispatch.
 
 **IMPORTANT**: Always run both `yarn lint` and `npx vue-tsc --noEmit` after making code changes to verify there are no ESLint warnings or TypeScript errors before committing.
 
