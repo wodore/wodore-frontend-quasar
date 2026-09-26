@@ -97,6 +97,7 @@ const switchCloseIcon =
       padding="sm"
       :direction="direction"
       persistent
+      :stagger="30"
       :label="t('basemap')"
       class="wd-switcher-fab"
       :class="{ 'wd-switcher-fab--open': switcherOpen }"

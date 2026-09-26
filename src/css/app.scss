@@ -172,6 +172,23 @@
   color: var(--wd-ink) !important;
 }
 
+// QFab open animation: newer Quasar scales each action from the child's
+// own center with a stagger, which reads as "opens from the middle".
+// Anchor the scale at the fab side (top for the down rail, left for the
+// horizontal basemap rail) and tighten the stagger (felt slow).
+.q-fab.wd-switcher-fab {
+  --q-fab-stagger: 20ms;
+}
+
+.q-fab.wd-switcher-fab .q-fab__actions--down > * {
+  transform-origin: 50% 0;
+}
+
+.q-fab.wd-switcher-fab .q-fab__actions--left > *,
+.q-fab.wd-switcher-fab .q-fab__actions--right > *:not(:first-child) {
+  transform-origin: 0 50%;
+}
+
 // ─── Mobile rail: mint-green circles in BOTH themes (the map keeps its
 // light basemap at night - light controls on it read correctly).
 // Includes raster-symbol buttons — mint + dark glyphs has AA contrast.
@@ -333,11 +350,11 @@ body.body--dark {
   // ZONES: map-floating controls are SOLID (toolbar stays flat).
   // Shared map-control elevation: a hard bottom edge - the tactile
   // "physical button" look, consistent across fabs / rail / native ctrl.
-  // NO border: on a fully-rounded pill the border traces the whole edge
-  // and reads as a 3D lip the rail buttons don't have (owner note).
+  // same chrome as the rail buttons and the MapLibre native group:
+  // white chip + 1px ridge border + soft shadow (radius already 28px)
   background-color: #fdfefd !important;
   color: #1c1c1c !important;
-  border: none !important;
+  border: 1px solid #c9d4cd !important;
   box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2);
 }
 
@@ -362,13 +379,31 @@ body.body--dark {
 // Info/filter mini buttons: tinted glass pill so they survive the dark
 // raster basemap (design consult): white 72% + blur, ridge border,
 // forest-deep glyphs. Inactive on purpose - active turns gold (below).
-.overlay-side-icons {
+.overlay-switch-item {
+  // anchor for the active backdrop below
+  position: relative;
+  z-index: 0;
+}
+
+// Active overlay: ONE glass rectangle behind the whole row (circle +
+// info/filter icons) - a bit shorter than the buttons, horizontally
+// centered, just a bit wider than its content (owner reference look).
+// Rendered only while the overlay is active.
+.overlay-switch-item:has(.overlay-main-btn.active)::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(100% - 4px);
+  height: 26px;
   background: rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border: 1px solid #c9d4cd;
   border-radius: 100px;
   box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2);
+  z-index: -1;
 }
 .q-fab.wd-switcher-fab:hover {
   // ZONES: map fabs stay SOLID on hover (translucent wash reads as
@@ -386,8 +421,10 @@ body.body--dark {
 // Forest fill read too dark over the light map (owner + design consult).
 .q-fab.wd-switcher-fab--open,
 .q-fab.wd-switcher-fab--open:hover {
-  background-color: #fdfefd !important;
-  border: none !important;
+  // open = tinted chip (rail idle color) + gold icon: clearly toggled,
+  // still the same chip family (owner: make the toggled state obvious)
+  background-color: #e7f2ec !important;
+  border-color: #c9d4cd !important;
 
   .q-fab__icon,
   .q-fab__active-icon {
@@ -940,11 +977,22 @@ body .q-toolbar.bg-primary-600 .q-btn::before {
 // Main header: minimal elevation under the bar in both modes (design
 // consult) - dark shadow always; exempt from the dark-mode shadow kill
 .app-header {
-  box-shadow: 0 1px 4px rgba(10, 20, 15, 0.18) !important;
+  border-bottom: 1px solid transparent;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
-.body--dark .app-header {
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28) !important;
+// Header elevation (line + soft shadow) only while content is scrolled
+// under the header - flat over the map otherwise (owner rule)
+.app-header--scrolled {
+  border-bottom-color: rgba(10, 20, 15, 0.25);
+  box-shadow: 0 1px 4px rgba(10, 20, 15, 0.18);
+}
+
+.body--dark .app-header--scrolled {
+  border-bottom-color: #1c3629;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
 }
 
 // Map page: the map container keeps a LIGHT background in both themes -
@@ -953,4 +1001,24 @@ body .q-toolbar.bg-primary-600 .q-btn::before {
 .map-page,
 .q-page:has(.maplibregl-map) {
   background-color: #eef2ef;
+}
+
+// Native image drag steals pointer events from scroll gestures (the
+// weather symbols "captured" the mouse) - kill drag/select app-wide;
+// the map has no intentional image drags
+img {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+// Content drawer close (top-left): gold chip with dark X in BOTH themes
+// (reference design; gold is scarce but this is the one destructive-
+// ish primary on the drawer)
+.wd-drawer-close {
+  background: #bfab25 !important;
+  color: #1c1c1c !important;
+
+  .q-icon {
+    color: #1c1c1c !important;
+  }
 }

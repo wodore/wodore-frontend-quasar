@@ -392,6 +392,7 @@ function overlayIcon(name: string) {
       padding="sm"
       :direction="direction"
       persistent
+      :stagger="30"
       :label="t('overlay_style')"
       class="wd-switcher-fab"
       :class="{ 'wd-switcher-fab--open': switcherOpen }"

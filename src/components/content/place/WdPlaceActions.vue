@@ -125,9 +125,10 @@ watch(menuOpen, () => {
 
 <template>
   <q-toolbar class="footer-toolbar wd-surface q-pr-sm">
-    <!-- Geo location link (first position) -->
+    <!-- Geo location link (mobile only - a geo: URL is not useful on the
+         desktop planning context) -->
     <WdToolbarButton
-      v-if="place && place.location"
+      v-if="$q.screen.xs && place && place.location"
       size="md"
       class="wd-ink-text"
       icon="wd-location-share-outline"

@@ -118,6 +118,11 @@ const bottomSheetRef = ref<InstanceType<typeof WdBottomSheet> | null>(null);
 
 // Desktop drawer: shadow the header once the content is scrolled
 const drawerContentScrolled = ref(false);
+const headerScrolled = ref(false);
+
+function onLayoutScroll(info: { position: number }): void {
+  headerScrolled.value = (info.position ?? 0) > 2;
+}
 
 interface DrawerScrollInfo {
   verticalPosition?: number;
@@ -243,7 +248,6 @@ onMounted(() => {
 body.body--light .app-header {
   color: #f2f7f4;
   background-color: rgba(49, 94, 71, 0.92) !important;
-  border-bottom: 1px solid rgba(10, 20, 15, 0.25);
 }
 
 // Header buttons: flat icon chrome in BOTH themes (user rule: no icon
@@ -360,9 +364,9 @@ body.body--dark .app-header .text-icon {
 </style>
 <template>
   <WdAnalytics />
-  <q-layout view="hHh LpR fFf" class="overflow-hidden">
+  <q-layout view="hHh LpR fFf" class="overflow-hidden" @scroll="onLayoutScroll">
     <div v-if="isStaging" class="preview-badge">preview</div>
-    <q-header class="app-header" bordered>
+    <q-header class="app-header" :class="{ 'app-header--scrolled': headerScrolled }">
       <!-- TOOLBAR -->
       <q-toolbar>
         <WdMenuButton desktop v-model="menuDrawerOpen" />
@@ -456,15 +460,15 @@ body.body--dark .app-header .text-icon {
         class="no-background wd-surface overflow-hidden"
         style="height: 100%"
       >
-        <!-- Close button (top-right, as on main) -->
-        <div class="absolute z-max" style="top: 10px; right: 10px; pointer-events: none">
+        <!-- Close button (top-LEFT, gold chip - reference design; the
+             top-right corner belongs to the 3-dot actions menu) -->
+        <div class="absolute z-max" style="top: 10px; left: 10px; pointer-events: none">
           <q-btn
             round
             dense
-            flat
             icon="wd-close"
             @click="closeContent"
-            class="wd-close-btn"
+            class="wd-drawer-close"
             size="md"
             style="pointer-events: auto"
           />
