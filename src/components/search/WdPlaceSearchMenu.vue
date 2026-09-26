@@ -146,7 +146,7 @@ function closeMenu() {
         @click="showMenu = true"
       >
         <template v-slot:prepend>
-          <q-icon @click="showMenu = true" class="text-icon cursor-pointer" size="md">
+          <q-icon @click="showMenu = true" class="text-icon cursor-pointer" size="26px">
             <IconEvaSearchOutline />
           </q-icon>
         </template>

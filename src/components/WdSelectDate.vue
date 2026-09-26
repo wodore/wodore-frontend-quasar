@@ -547,7 +547,7 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
             <div
               class="q-field__control-container col relative-position row items-center justify-center no-wrap q-anchor--skip"
             >
-              <q-icon size="md" class="text-icon">
+              <q-icon size="26px" class="text-icon">
                 <IconEvaArrowIosBackOutline />
               </q-icon>
             </div>
@@ -575,7 +575,7 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
               @click="showMenu = true"
               name="wd-calendar"
               class="text-icon cursor-pointer"
-              size="md"
+              size="26px"
             >
             </q-icon>
           </template>
@@ -606,7 +606,7 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
             <div
               class="q-field__control-container col relative-position row items-center justify-center no-wrap q-anchor--skip"
             >
-              <q-icon size="md" class="text-icon">
+              <q-icon size="26px" class="text-icon">
                 <IconEvaArrowIosForwardOutline />
               </q-icon>
             </div>
