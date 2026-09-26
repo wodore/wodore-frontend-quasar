@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, computed } from 'vue';
+import { ref, watch, nextTick, computed, useTemplateRef } from 'vue';
 import { VBottomSheet } from 'pure-web-bottom-sheet/vue';
 import type { BottomSheet } from 'pure-web-bottom-sheet';
 
@@ -84,7 +84,7 @@ const sheetKey = computed(() => (props.modelValue ? 'open' : 'closed'));
 
 // Underlying <bottom-sheet> web component. VBottomSheet is a functional
 // component, so the template ref binds to its rendered root element.
-const sheetElement = ref<BottomSheet | null>(null);
+const sheetElement = useTemplateRef<BottomSheet>('sheetElement');
 
 // Shadow state for the header slot: elevated once the content is scrolled
 const contentScrolled = ref(false);

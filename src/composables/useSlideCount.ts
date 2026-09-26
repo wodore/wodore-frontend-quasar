@@ -1,4 +1,5 @@
-import { ref, type Ref } from 'vue';
+import type { MaybeRefOrGetter } from 'vue';
+import { ref } from 'vue';
 import { useResizeObserver } from '@vueuse/core';
 
 /**
@@ -9,7 +10,7 @@ import { useResizeObserver } from '@vueuse/core';
  * @param slideWidth - width of a single slide in pixels
  * @returns reactive number of slides that fit
  */
-export function useSlideCount(container: Ref<HTMLElement | null>, slideWidth: number) {
+export function useSlideCount(container: MaybeRefOrGetter<HTMLElement | null>, slideWidth: number) {
   const slidesPerView = ref(Math.max(1, Math.floor(380 / slideWidth))); // sensible default
 
   useResizeObserver(container, ([entry]) => {

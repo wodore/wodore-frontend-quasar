@@ -55,6 +55,7 @@ export default [
         KeyboardEvent: 'readonly',
         WheelEvent: 'readonly',
         HTMLElement: 'readonly',
+        HTMLDivElement: 'readonly',
         HTMLInputElement: 'readonly',
         AbortController: 'readonly',
 
