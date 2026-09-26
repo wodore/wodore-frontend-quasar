@@ -1111,3 +1111,32 @@ a.wd-accommodation-day {
   -webkit-user-drag: none;
   user-select: none;
 }
+
+// Hut drawer close: also kill Quasar's actionable/focus shadow on every
+// state - the chip must stay flat (owner rule)
+.wd-drawer-close.q-btn--actionable,
+.wd-drawer-close:active,
+.wd-drawer-close:hover,
+.wd-drawer-close:focus {
+  box-shadow: none !important;
+}
+
+// Header weather icon: the mono SVG collection ships black-filled paths,
+// which ignore the text color - recolor via currentColor so it follows
+// the theme (light: accent-800, dark: accent-100)
+.wd-place-title__weather svg,
+.wd-place-title__weather svg path {
+  fill: currentColor;
+}
+
+// The overlay RAIL (.overlay-scroll, overflow-y: auto) flashed a native
+// scrollbar when toggling overlays on/off (list height changes).
+// Hide the native bar - the rail is short, no scroll indicator needed.
+.overlay-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

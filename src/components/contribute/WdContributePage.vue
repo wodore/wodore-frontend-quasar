@@ -418,7 +418,7 @@ const headerImg = getImageUrl(imgPath, {
           <!-- Tip banner - only show when c_ref=hut -->
           <div v-if="showTip" class="tip-banner q-mb-md">
             <q-icon name="wd-tip" size="sm" class="q-mr-xs" />
-            <span class="text-caption text-grey-8">
+            <span class="text-caption wd-ink-soft-text">
               {{ $t('contribute.tip') }}
             </span>
           </div>
@@ -435,7 +435,7 @@ const headerImg = getImageUrl(imgPath, {
           <!-- Sync note banner - between featured and regular apps -->
           <div class="note-banner q-my-md">
             <q-icon name="wd-info-outline" size="sm" class="q-mr-xs" />
-            <span class="text-caption text-grey-8">
+            <span class="text-caption wd-ink-soft-text">
               {{ $t('contribute.sync_note') }}
             </span>
           </div>
