@@ -56,44 +56,33 @@
 }
 
 // ─── Calendar dialog (Select date) ─────────────────────────────────────────
-// The card renders with wd-surface in the DOM; sage toolbar family.
-// q-date uses minimal/flat so the header is absent; navigation arrows,
-// weekday headers, day numbers, and today highlight need overriding.
-.body--light .q-card.dialog-radius,
-.body--dark .q-card.dialog-radius {
+// Scoped to the WdSelectDate card ONLY (the search card also uses
+// dialog-radius — the calendar has a q-date inside as discriminator)
+.q-card.dialog-radius:has(.q-date) {
   background: #3f6a50 !important;
   color: #f2f7f4 !important;
 }
-.body--light .q-card.dialog-radius .wd-surface-deep,
-.body--dark .q-card.dialog-radius .wd-surface-deep {
+.q-card.dialog-radius:has(.q-date) .wd-surface-deep {
   background: #366047 !important;
 }
 
 // All q-date surfaces transparent (Quasar defaults to white)
-.body--light .q-card.dialog-radius .q-date,
-.body--light .q-card.dialog-radius .q-date__main,
-.body--light .q-card.dialog-radius .q-date__content,
-.body--light .q-card.dialog-radius .q-date__calendar,
-.body--light .q-card.dialog-radius .q-date__days,
-.body--light .q-card.dialog-radius .q-date__months-container,
-.body--dark .q-card.dialog-radius .q-date,
-.body--dark .q-card.dialog-radius .q-date__main,
-.body--dark .q-card.dialog-radius .q-date__content,
-.body--dark .q-card.dialog-radius .q-date__calendar,
-.body--dark .q-card.dialog-radius .q-date__days,
-.body--dark .q-card.dialog-radius .q-date__months-container {
+.q-card.dialog-radius:has(.q-date) .q-date,
+.q-card.dialog-radius:has(.q-date) .q-date__main,
+.q-card.dialog-radius:has(.q-date) .q-date__content,
+.q-card.dialog-radius:has(.q-date) .q-date__calendar,
+.q-card.dialog-radius:has(.q-date) .q-date__days,
+.q-card.dialog-radius:has(.q-date) .q-date__months-container {
   background: transparent !important;
 }
 
 // Day-of-week header row: muted turquoise
-.body--light .q-card.dialog-radius .q-date__calendar-days,
-.body--dark .q-card.dialog-radius .q-date__calendar-days {
+.q-card.dialog-radius:has(.q-date) .q-date__calendar-days {
   color: rgba(157, 217, 210, 0.7) !important;
 }
 
 // Day numbers: paper white
-.body--light .q-card.dialog-radius .q-date__calendar-item .q-btn,
-.body--dark .q-card.dialog-radius .q-date__calendar-item .q-btn {
+.q-card.dialog-radius:has(.q-date) .q-date__calendar-item .q-btn {
   color: #f2f7f4 !important;
 }
 
@@ -801,4 +790,18 @@ body .q-toolbar.bg-primary-600 .q-btn,
 body .q-toolbar.bg-primary-600 .q-btn::before {
   background: transparent !important;
   border: none !important;
+}
+
+// Search card: always dark pine (like main's bg-dark-500) in both themes
+.wd-search-card {
+  background: #112119 !important;
+  color: #f2f7f4 !important;
+}
+.wd-search-card .wd-surface-deep,
+.wd-search-card .wd-search-field .q-field__control {
+  background: #0e1b14 !important;
+}
+// Input field: rounded corners inside the search card
+.wd-search-card .q-field__control {
+  border-radius: 6px !important;
 }

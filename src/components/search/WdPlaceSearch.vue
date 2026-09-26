@@ -304,7 +304,7 @@ function handleSwipeDown() {
 
 <template>
   <q-card
-    :class="isMobile ? 'wd-surface' : 'dialog-radius wd-surface'"
+    :class="isMobile ? 'wd-search-card' : 'dialog-radius wd-search-card'"
     :style="
       isMobile
         ? 'width: 100vw; max-width: 100vw; height: 100dvh; height: 100vh;'
