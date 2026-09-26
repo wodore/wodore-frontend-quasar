@@ -55,6 +55,131 @@
   overflow: hidden;
 }
 
+// ─── Calendar dialog (Select date) ─────────────────────────────────────────
+// The card renders with wd-surface in the DOM; sage toolbar family.
+// q-date uses minimal/flat so the header is absent; navigation arrows,
+// weekday headers, day numbers, and today highlight need overriding.
+.body--light .q-card.dialog-radius,
+.body--dark .q-card.dialog-radius {
+  background: #3f6a50 !important;
+  color: #f2f7f4 !important;
+}
+.body--light .q-card.dialog-radius .wd-surface-deep,
+.body--dark .q-card.dialog-radius .wd-surface-deep {
+  background: #366047 !important;
+}
+
+// All q-date surfaces transparent (Quasar defaults to white)
+.body--light .q-card.dialog-radius .q-date,
+.body--light .q-card.dialog-radius .q-date__main,
+.body--light .q-card.dialog-radius .q-date__content,
+.body--light .q-card.dialog-radius .q-date__calendar,
+.body--light .q-card.dialog-radius .q-date__days,
+.body--light .q-card.dialog-radius .q-date__months-container,
+.body--dark .q-card.dialog-radius .q-date,
+.body--dark .q-card.dialog-radius .q-date__main,
+.body--dark .q-card.dialog-radius .q-date__content,
+.body--dark .q-card.dialog-radius .q-date__calendar,
+.body--dark .q-card.dialog-radius .q-date__days,
+.body--dark .q-card.dialog-radius .q-date__months-container {
+  background: transparent !important;
+}
+
+// Day-of-week header row: muted turquoise
+.body--light .q-card.dialog-radius .q-date__calendar-days,
+.body--dark .q-card.dialog-radius .q-date__calendar-days {
+  color: rgba(157, 217, 210, 0.7) !important;
+}
+
+// Day numbers: paper white
+.body--light .q-card.dialog-radius .q-date__calendar-item .q-btn,
+.body--dark .q-card.dialog-radius .q-date__calendar-item .q-btn {
+  color: #f2f7f4 !important;
+}
+
+// Today: forest with paper text
+.body--light .q-card.dialog-radius .q-date__calendar-item--today,
+.body--dark .q-card.dialog-radius .q-date__calendar-item--today {
+  .q-btn {
+    color: #bfab25 !important;
+    font-weight: 600;
+  }
+  .q-btn__layer {
+    background: transparent !important;
+  }
+}
+
+// Selected/active day: forest fill with paper text
+.body--light .q-card.dialog-radius .q-btn--outline,
+.body--light .q-card.dialog-radius .q-date__calendar-item .q-btn--active,
+.body--dark .q-card.dialog-radius .q-btn--outline,
+.body--dark .q-card.dialog-radius .q-date__calendar-item .q-btn--active {
+  background: #346751 !important;
+  color: #f2f7f4 !important;
+}
+
+// Disabled / out-of-month days: faded
+.body--light .q-card.dialog-radius .q-date__calendar-item--out,
+.body--light .q-card.dialog-radius .q-date__calendar-item[aria-disabled='true'],
+.body--dark .q-card.dialog-radius .q-date__calendar-item--out,
+.body--dark .q-card.dialog-radius .q-date__calendar-item[aria-disabled='true'] {
+  .q-btn {
+    color: rgba(242, 247, 244, 0.3) !important;
+  }
+  opacity: 0.5;
+}
+
+// Hover on days: slightly lighter sage
+.body--light .q-card.dialog-radius .q-date__calendar-item .q-btn:hover,
+.body--dark .q-card.dialog-radius .q-date__calendar-item .q-btn:hover {
+  background: #4a7a5e !important;
+}
+
+// Navigation arrows (prev/next month): ice-mint on transparent
+.body--light .q-card.dialog-radius .q-date__navigation,
+.body--dark .q-card.dialog-radius .q-date__navigation {
+  .q-btn {
+    background: transparent !important;
+    color: #a9f0d2 !important;
+  }
+}
+
+// Month/year selectors in the navigation bar
+.body--light .q-card.dialog-radius .q-date__navigation .q-date__header,
+.body--light .q-card.dialog-radius .q-date__subtitle,
+.body--light .q-card.dialog-radius .q-date__title,
+.body--dark .q-card.dialog-radius .q-date__navigation .q-date__header,
+.body--dark .q-card.dialog-radius .q-date__subtitle,
+.body--dark .q-card.dialog-radius .q-date__title {
+  color: #f2f7f4 !important;
+}
+
+// Footer buttons (Today / Reset): gold accents
+.body--light .q-card.dialog-radius .text-accent,
+.body--dark .q-card.dialog-radius .text-accent {
+  color: #bfab25 !important;
+}
+
+// Close button: subtle, smaller
+.body--light .q-card.dialog-radius .wd-close-btn .q-btn,
+.body--dark .q-card.dialog-radius .wd-close-btn .q-btn {
+  min-height: 28px !important;
+  width: 28px !important;
+  height: 28px !important;
+  opacity: 0.7;
+}
+
+// ─── Mobile rail: mint-green circles (Day) ───────────────────────────────
+@media (max-width: 600px) {
+  .body--light .overlay-main-btn:not(:has(img)),
+  .body--light .wd-overlay-btn {
+    background-color: rgba(143, 214, 183, 0.9) !important;
+    color: #1c1c1c !important;
+    border-radius: 50%;
+    border: none !important;
+  }
+}
+
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // THEME SURFACES (The Alpine Instrument - Day & Night, see wodore-design/DESIGN.md)
 // Quasar's Dark plugin toggles body--light / body--dark; these tokens drive
