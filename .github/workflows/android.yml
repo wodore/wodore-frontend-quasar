@@ -14,7 +14,7 @@ on:
     branches:
       - main
     tags:
-      - "v*.*.*"
+      - 'v*.*.*'
   workflow_dispatch:
 
 concurrency:
@@ -88,7 +88,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "21"
+          java-version: '21'
           cache: gradle
 
       - name: Install dependencies
