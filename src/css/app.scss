@@ -1012,6 +1012,8 @@ body .q-toolbar.bg-primary-600 .q-btn::before {
 .body--dark .app-header--scrolled {
   border-bottom-color: #1c3629;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
+  // slightly deepen the translucent pine bar when scrolled (owner rule)
+  background-color: #0e1b14 !important;
 }
 
 // Map page: the map container keeps a LIGHT background in both themes -
@@ -1030,15 +1032,18 @@ img {
   user-select: none;
 }
 
-// Content drawer close (top-left): gold chip with dark X in BOTH themes
-// (reference design; gold is scarce but this is the one destructive-
-// ish primary on the drawer)
+// Content drawer close (top-left): surface chip + soft shadow + ink icon
+// in both themes (impeccable consult: close is pure chrome - it must not
+// spend gold (scarce) or forest (brand actions); the surface token flips
+// per theme and matches the map-button family)
 .wd-drawer-close {
-  background: #bfab25 !important;
-  color: #1c1c1c !important;
+  background: var(--wd-surface) !important;
+  color: var(--wd-ink) !important;
+  border: 1px solid var(--wd-ridge) !important;
+  box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2) !important;
 
   .q-icon {
-    color: #1c1c1c !important;
+    color: var(--wd-ink) !important;
   }
 }
 
@@ -1066,4 +1071,12 @@ img {
 // close chip
 .q-drawer .wd-drawer-actions {
   padding-left: 48px;
+}
+
+// Availability days are real links (open the booking page) - but a
+// native link drag steals the pointer from the swiper drag. Kill drag
+// + selection on them; clicks still navigate.
+a.wd-accommodation-day {
+  -webkit-user-drag: none;
+  user-select: none;
 }

@@ -146,9 +146,9 @@ function onFilterClick(event: Event) {
 .overlay-side-icons {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  // whitespace between the two buttons renders as anonymous flex items -
-  // zero it so the gap is exactly the 2px above (owner: 2px closer)
+  gap: 0;
+  // whitespace between the buttons renders as anonymous flex items -
+  // zero them so the gap is exactly 0 (owner: pulled 2px closer twice)
   font-size: 0;
   min-width: 22px;
   /* border-left: 2px solid rgba(color('primary', 200), 0.4); */

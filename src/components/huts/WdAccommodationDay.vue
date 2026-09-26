@@ -144,6 +144,7 @@ const tooltipLines = computed(() => {
     :href="day.link"
     target="_blank"
     rel="noopener noreferrer"
+    draggable="false"
     class="wd-accommodation-day column items-center"
     :class="{
       'wd-accommodation-day--selected': isSelected,
