@@ -104,7 +104,9 @@ NOT enough — ufw allows ICMP but blocks TCP by default (symptom: black screen 
 app). Debug the WebView with
 `~/Android/Sdk/platform-tools/adb logcat -s Capacitor chromium Console` or full
 DevTools via `chrome://inspect` on desktop Chrome. App id: `com.wodore.app`
-(`src-capacitor/capacitor.config.json`). Note: OIDC (`auth.burgdev.local.gd` →
+(`src-capacitor/capacitor.config.json`). Launcher icons & splash screens are generated from the design
+submodule via icongenie profiles (`src/assets/icongenie/icongenie-capacitor-*.json`), included in `yarn gen:favs`.
+Note: OIDC (`auth.burgdev.local.gd` →
 127.0.0.1) does not work on device — the hostname resolves to the phone itself.
 
 **Status reporting convention**: when a dev server is running, always tell the
