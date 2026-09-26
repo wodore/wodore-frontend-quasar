@@ -298,7 +298,7 @@ function handleSwipeDown() {
     :class="isMobile ? 'bg-dark-500' : 'dialog-radius bg-dark-500'"
     :style="
       isMobile
-        ? 'width: 100vw; max-width: 100vw; height: 100dvh; height: 100vh;'
+        ? 'width: 100vw; max-width: 100vw; height: 100vh; height: 100dvh;'
         : 'width: 440px; max-width: 90vw'
     "
   >
