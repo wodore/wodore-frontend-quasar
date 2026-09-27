@@ -24,6 +24,7 @@ import WodoreLogo from 'components/wodore/WodoreLogo.vue';
 import WdPlaceSearchMenu from 'components/search/WdPlaceSearchMenu.vue';
 import WdPlaceSearchDialog from 'components/search/WdPlaceSearchDialog.vue';
 import WdBottomSheet from '@components/utils/WdBottomSheet.vue';
+import { useRequestProgress } from '@composables/useRequestProgress';
 
 // Initialize stores
 const authStore = useAuthStore();
@@ -43,6 +44,10 @@ const route = useRoute();
 const router = useRouter();
 
 const isMobile = computed(() => $q.screen.lt.md);
+
+// API request progress (bottom of the header toolbar, replaces the
+// viewport-top QAjaxBar)
+const { visible: progressVisible } = useRequestProgress();
 
 // Menu drawer state
 const menuDrawerOpen = computed({
@@ -237,6 +242,18 @@ onMounted(() => {
 }
 .app-header {
   backdrop-filter: blur(10px);
+  position: relative;
+}
+
+// API progress bar pinned to the bottom edge of the header toolbar —
+// absolutely positioned so it never shifts the layout when appearing
+.header-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+}
   // Night (default here): pine bar, paper text. Day gets the lighter bar
   // via the body--light override below.
   color: $white;
@@ -407,6 +424,15 @@ body.body--dark .app-header .text-icon {
         <!-- MENU BUTTON mobile open -->
         <WdMenuButton mobile function="open" side="right" v-model="menuDrawerOpen" />
       </q-toolbar>
+
+      <!-- API progress bar: pinned to the bottom edge of the toolbar -->
+      <q-linear-progress
+        v-if="progressVisible"
+        indeterminate
+        color="accent-500"
+        size="3px"
+        class="header-progress"
+      />
     </q-header>
 
     <!-- MENU -->
@@ -415,7 +441,7 @@ body.body--dark .app-header .text-icon {
       :side="isMobile ? 'right' : 'left'"
       :width="300"
       :breakpoint="610"
-      class="shadow-2"
+      class="shadow-2 menu-drawer"
       style="max-width: 80vw"
     >
       <!-- TOOLBAR mobile -->

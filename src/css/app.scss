@@ -1169,3 +1169,47 @@ a.wd-accommodation-day {
     display: none;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Capacitor (native app): edge-to-edge safe areas
+//
+// Android 15+ draws the app under the status and navigation bars.
+// Surfaces stay full-bleed; these rules push controls out of the system
+// bar zones. All env() insets evaluate to 0 in the PWA — no changes there.
+// ---------------------------------------------------------------------------
+body.capacitor {
+  // App header: toolbar below the status bar, header surface extends
+  // under it (the blurred pine bar shows through the bar zone)
+  .app-header {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  // Mobile menu drawer toolbar: the colored toolbar must extend under
+  // the status bar (fixes the see-through gap) and its buttons must sit
+  // below the system-tap zone (fixes flaky drawer button taps)
+  .menu-drawer .q-toolbar {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  // Maximized dialogs: content out of the system bars while the dialog
+  // surface (color/image) stays full-bleed behind them
+  .q-dialog__inner--maximized > div {
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  // MapLibre bottom controls (attribution, scale): lift above the
+  // Android navigation bar; the translucent map footer shade keeps them
+  // readable over the map
+  .maplibregl-ctrl-bottom-left .maplibregl-ctrl,
+  .maplibregl-ctrl-bottom-right .maplibregl-ctrl {
+    margin-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+
+  // Bottom-positioned map controls rendered as q-page-sticky elements
+  // (basemap switch): margin shifts them clear of the nav bar without
+  // fighting the sticky's inline transform
+  .wd-map-bottom-ctrl {
+    margin-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}

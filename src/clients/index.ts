@@ -1,45 +1,29 @@
 import createClient, { Middleware } from 'openapi-fetch';
 import type { paths as pathsWodore } from './wodore_v1';
 import type { components as compWodore } from './wodore_v1';
-import { LoadingBar } from 'quasar';
+import { requestStart, requestStop } from '@composables/useRequestProgress';
 
 import { useAuthStore } from '@stores/auth-store';
 
 export type schemasWodore = compWodore['schemas'];
 
-export const loading: Record<string, 'start' | 'loading' | 'stopped'> = {};
-
 const loadingMiddleware: Middleware = {
   async onRequest({ request }) {
-    // Skip loading bar for search requests and availability requests
+    // Skip the progress bar for search and availability requests
+    // (per-keystroke / polling traffic must not flash the header bar)
     if (request.url.includes('/geo/places/search') || request.url.includes('/availability/')) {
       return;
     }
 
-    // console.debug('Fetch: Request data from', request.url);
-    loading[request.url] = 'start';
-    setTimeout(() => {
-      if (loading[request.url] == 'start') {
-        loading[request.url] = 'loading';
-        LoadingBar.start();
-        console.debug('  start loading bar');
-      }
-    }, 300);
+    requestStart();
   },
   async onResponse({ request }) {
-    // Skip loading bar for search requests and availability requests
+    // Keep start/stop balanced for the skipped URLs too
     if (request.url.includes('/geo/places/search') || request.url.includes('/availability/')) {
       return;
     }
 
-    // console.debug('Fetch: Received data from', request.url);
-    if (request.url in loading) {
-      if (loading[request.url] == 'loading') {
-        LoadingBar.stop();
-        console.debug('  stop loading bar');
-      }
-    }
-    loading[request.url] = 'stopped';
+    requestStop();
   },
 };
 

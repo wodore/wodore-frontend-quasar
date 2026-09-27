@@ -1008,6 +1008,46 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
       ></MglSymbolLayer> -->
         <!-- </MglGeoJsonSource> -->
       </MglMap>
+      <!-- Translucent footer shade (native app): keeps the attribution
+           zone readable over the map while the map stays visible
+           through it. Rendered always, hidden outside capacitor via CSS. -->
+      <div class="map-footer-shade" aria-hidden="true"></div>
     </div>
   </q-no-ssr>
 </template>
+
+<style lang="scss">
+// Translucent map footer (native app only): a soft 20% tint over the
+// map behind the attribution / basemap controls and the Android nav
+// bar, so the map stays visible through it while the controls read
+// cleanly. Theme aware: black tint in dark mode, white in light mode.
+.map-footer-shade {
+  display: none;
+}
+
+body.capacitor .map-footer-shade {
+  display: block;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1; // below the map controls (z-5)
+  pointer-events: none;
+  height: calc(env(safe-area-inset-bottom, 0px) + 48px);
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.2),
+    rgba(0, 0, 0, 0.2) calc(100% - 24px),
+    transparent
+  );
+}
+
+body.capacitor.body--light .map-footer-shade {
+  background: linear-gradient(
+    to top,
+    rgba(255, 255, 255, 0.2),
+    rgba(255, 255, 255, 0.2) calc(100% - 24px),
+    transparent
+  );
+}
+</style>

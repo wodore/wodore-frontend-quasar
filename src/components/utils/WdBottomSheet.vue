@@ -27,8 +27,11 @@ const toolbarHeight = 50;
 const defaultSnap = '330px';
 
 // Max height: visible viewport minus toolbar (dvh = dynamic viewport, so the
-// sheet stops right at the app toolbar on mobile instead of overshooting it)
-const maxSnap = `calc(100dvh - ${toolbarHeight}px)`;
+// sheet stops right at the app toolbar on mobile instead of overshooting
+// it). In the native app the header sits below the status bar
+// (edge-to-edge), so its safe-area inset must be subtracted too — in the
+// PWA the inset is 0 and the behavior is unchanged.
+const maxSnap = `calc(100dvh - ${toolbarHeight}px - env(safe-area-inset-top, 0px))`;
 
 // Sync with v-model
 watch(
@@ -279,6 +282,15 @@ bottom-sheet[data-content-scrolled]::part(header) {
  */
 bottom-sheet * {
   box-sizing: border-box;
+}
+
+/*
+ * Native app (capacitor): lift the footer toolbar above the Android
+ * navigation bar. The sheet surface fills the bar zone behind it —
+ * empty space in the navigation area, buttons never inside it.
+ */
+body.capacitor bottom-sheet::part(footer) {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 </style>
 
