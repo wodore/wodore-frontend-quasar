@@ -243,8 +243,11 @@ const tooltipContent = computed(() => {
   opacity: 0.6;
 }
 
+// Today (unselected): quiet tonal fill - same language as the calendar's
+// today cell (owner: unified today/selected across availability+weather)
 .wd-weather-day--today {
   opacity: 1;
+  background: rgba(var(--wd-ink-rgb), 0.06);
 }
 
 // Selected: tonal fill + thin gold ridge (de-golded 2026-09-27:

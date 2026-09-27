@@ -229,7 +229,7 @@ const { images: nearbyImages, loading: imagesLoading } = useHutImages(computed((
 }
 
 .hut-image {
-  border-radius: 25px !important;
+  border-radius: 8px !important;
   max-width: 300px;
   min-width: 200px;
 }
@@ -268,7 +268,7 @@ const { images: nearbyImages, loading: imagesLoading } = useHutImages(computed((
   font-size: x-small;
   color: rgb(171, 171, 171);
   padding: 6px 20px 6px 10px;
-  border-radius: 10px 0 0 0;
+  border-radius: 8px 0 0 0;
 }
 
 .img-link :deep(a:active),

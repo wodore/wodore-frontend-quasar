@@ -120,7 +120,7 @@ function getUnknownIcon(): string {
 </script>
 <style scoped>
 .monthly {
-  border-radius: 5px;
+  border-radius: 4px;
 }
 </style>
 <template>

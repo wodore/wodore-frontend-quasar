@@ -233,7 +233,7 @@ const tooltipLines = computed(() => {
   min-width: 68px;
   max-width: 68px;
   padding: 6px 2px 8px;
-  border-radius: 10px;
+  border-radius: 8px;
   text-decoration: none;
   color: inherit;
   cursor: pointer;

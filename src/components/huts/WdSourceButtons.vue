@@ -28,7 +28,7 @@ function trackSource(slug: string) {
 </script>
 <style lang="scss" scoped>
 .content {
-  border-radius: 20px;
+  border-radius: 8px;
   padding: 4px;
   //margin: 5px;
   //margin-bottom: 20px;

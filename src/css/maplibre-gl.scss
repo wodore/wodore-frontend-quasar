@@ -46,6 +46,39 @@
   max-width: calc(100vw - 120px);
 }
 
+// Attribution: one compact instrument chip instead of a wrapping text
+// block - solid light surface (map chrome stays light in both themes),
+// 4px control radius, single line with ellipsis, halo over imagery.
+.maplibregl-ctrl-attrib.maplibregl-compact {
+  background: rgba(253, 254, 253, 0.92);
+  border-radius: 4px;
+  padding: 1px 8px;
+  max-width: min(46vw, 360px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 10px;
+  line-height: 16px;
+
+  a,
+  span {
+    color: #29626b;
+    text-shadow: 0 0 4px rgba(253, 254, 253, 0.85); // halo
+  }
+
+  button.maplibregl-ctrl-attrib-button {
+    border-radius: 4px;
+  }
+}
+
+// Mobile: keep the chip from fighting the scale bar - lift it 2px and
+// let the scale bar keep the very bottom edge
+@media (max-width: 599px) {
+  .maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib {
+    margin-bottom: 20px;
+  }
+}
+
 // MapLibre controls (position / orientation, top-right): solid light
 // chrome in BOTH themes - same family as the overlay/basemap fabs
 // (ZONES: map-floating controls are solid; the map stays a light

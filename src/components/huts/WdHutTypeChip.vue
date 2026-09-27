@@ -89,7 +89,7 @@ body.body--dark .wd-type-chip.bg-primary-100 {
 </style>
 <style scoped>
 .badge {
-  border-radius: 25px;
+  border-radius: 999px;
 }
 </style>
 <template>

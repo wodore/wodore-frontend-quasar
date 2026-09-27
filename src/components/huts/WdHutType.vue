@@ -36,7 +36,7 @@ const openColor = computed(() => {
 </script>
 <style lang="scss" scoped>
 .content {
-  border-radius: 25px;
+  border-radius: 999px;
   max-width: 125px;
   min-width: 125px;
   min-height: 55px;
@@ -44,7 +44,7 @@ const openColor = computed(() => {
   text-wrap: pretty;
 }
 .badge {
-  border-radius: 25px;
+  border-radius: 999px;
 }
 </style>
 <template>

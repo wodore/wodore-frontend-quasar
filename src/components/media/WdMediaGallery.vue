@@ -664,7 +664,7 @@ onUnmounted(() => {
 .thumb-image-wrapper {
   width: 100%;
   height: 100%;
-  border-radius: 6px;
+  border-radius: 4px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.15); // Loading placeholder background
   position: relative;
@@ -681,7 +681,7 @@ onUnmounted(() => {
 .thumb-image {
   width: 100%;
   height: 100%;
-  border-radius: 6px;
+  border-radius: 4px;
   object-fit: cover;
   opacity: 0; // Start hidden
   transition: opacity 0.3s ease;

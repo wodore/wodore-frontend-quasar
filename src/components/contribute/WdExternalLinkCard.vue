@@ -172,7 +172,7 @@ const openAppStore = (event: Event, store: 'google' | 'apple') => {
 
 <style lang="scss" scoped>
 .external-link-card {
-  border-radius: 12px;
+  border-radius: 8px;
   transition: all 0.2s ease;
   border: 1px solid var(--wd-ridge);
   background: var(--wd-surface);
@@ -293,7 +293,7 @@ const openAppStore = (event: Event, store: 'google' | 'apple') => {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
+  border-radius: 4px;
   flex-shrink: 0;
   transition: all 0.2s ease;
   padding: 6px;
@@ -333,7 +333,7 @@ const openAppStore = (event: Event, store: 'google' | 'apple') => {
 
 .store-badge {
   border: 1px solid currentColor;
-  border-radius: 6px;
+  border-radius: 4px;
   padding: 2px 8px;
   font-size: 10px;
   font-weight: 600;

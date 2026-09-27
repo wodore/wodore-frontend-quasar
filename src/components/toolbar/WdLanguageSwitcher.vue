@@ -64,7 +64,7 @@ const activeLocale = computed(() => currentLocale());
   padding: 4px;
 
   &__item {
-    border-radius: 12px;
+    border-radius: 4px;
     min-height: 34px;
 
     &:hover {

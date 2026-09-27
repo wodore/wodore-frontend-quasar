@@ -117,7 +117,7 @@ function toFeedback() {
             {{ t('support.intro_suffix') }}
           </p>
           <div class="q-pt-lg row justify-center">
-            <q-btn-group style="border-radius: 40px; max-width: 400px">
+            <q-btn-group style="border-radius: 999px; max-width: 400px">
               <WdStripeBadge
                 stripe-id="9AQ16S2vn1XV3QcbIO"
                 name="Snickers"

@@ -90,7 +90,7 @@ function onFilterClick(event: Event) {
   align-items: stretch;
   overflow: visible;
   /*
-  border-radius: 100px;
+  border-radius: 999px;
   background: color('icon');
   box-shadow: $button-shadow;
   transition: background-color 0.2s;
@@ -106,7 +106,7 @@ function onFilterClick(event: Event) {
   width: 30px;
   padding: 0;
   margin: 0;
-  border-radius: 100;
+  border-radius: 999px;
   background: transparent;
   transition: color 0.2s;
 
@@ -166,7 +166,7 @@ function onFilterClick(event: Event) {
   width: 22px;
   padding: 0;
   margin: 0;
-  border-radius: 100px;
+  border-radius: 999px;
   background-color: transparent;
   transition:
     color 0.2s,
