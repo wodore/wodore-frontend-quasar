@@ -270,6 +270,14 @@ body.body--light .app-header button.text-icon {
   color: #f2f7f4 !important;
   background: transparent !important;
 }
+
+// Hover wash must outrank the flat-chrome rule above (its (0,4,1)
+// specificity beat the plain .app-header .q-btn:hover and froze hover
+// transparent in Day - the "invisible hover" from the design review)
+body.body--light .app-header .q-btn.text-icon:hover,
+body.body--light .app-header button.text-icon:hover {
+  background: rgba(255, 255, 255, 0.16) !important;
+}
 // Quasar draws button fills on ::before - kill it in the header
 .app-header .q-btn::before {
   background: transparent !important;
