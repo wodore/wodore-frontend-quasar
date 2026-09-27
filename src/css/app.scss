@@ -769,7 +769,9 @@ body.body--light :is(.app-header, .q-drawer, bottom-sheet, .q-dialog__inner) {
     }
   }
 
-  .wd-toolbar-btn:hover {
+  // Header exempt: it sits on the green brand bar where a dark wash is
+  // invisible - .app-header .q-btn:hover carries the white wash instead.
+  :is(.q-drawer, bottom-sheet, .q-dialog__inner) .wd-toolbar-btn:hover {
     background-color: rgba(0, 0, 0, 0.06) !important;
   }
 

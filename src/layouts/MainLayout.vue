@@ -260,7 +260,7 @@ body.body--light .app-header {
 }
 
 .app-header .q-btn:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.16) !important;
 }
 
 body.body--light .app-header .q-btn .q-icon,
