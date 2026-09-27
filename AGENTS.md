@@ -16,6 +16,21 @@ Feature specifications and design guidelines are located in `docs/specs/`:
 - `wd_hut_search.md` - Hut search feature specification
 - Other feature specs as they are added
 
+### Design source of truth
+
+The **authoritative design spec** lives in the separate `wodore-design` repo
+(`/home/tobias/git/wodore/wodore-design/`), maintained with the impeccable
+skill. Two files matter:
+
+- `DESIGN.md` — design tokens (colors, type, spacing, motion), principles
+  and component patterns. Covers BOTH lighting conditions (day/night themes).
+- `PRODUCT.md` — product definition, personas and tone, owner-confirmed.
+
+The frontend repo carries a **read-only copy** at `src/assets/wodore-design/`
+(synced on design changes — never edit the copy, edit the source repo and
+re-copy). When reviewing UI work, `DESIGN.md` is the reference the
+implementation must match.
+
 ## Essential Commands
 
 Use `yarn run` command. Check `package.json` for details.
