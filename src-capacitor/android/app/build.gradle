@@ -16,29 +16,39 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // Dev/preview builds carry a UTC build timestamp instead of a semver
+    // suffix — the next release number is unknown until the tag exists.
+    // Release keeps the versionName synced from tags via release.sh.
+    def buildTs = new Date().format('yyyyMMdd-HHmm', TimeZone.getTimeZone('UTC'))
+
     flavorDimensions 'env'
     productFlavors {
         std {
             dimension 'env'
         }
         stg {
-            // CI builds (assembleStgDebug): com.wodore.stg.dev — the id
-            // mirrors the staging environment baked into the APK.
+            // CI preview builds: com.wodore.stg.dev — the id mirrors
+            // the staging environment baked into the APK.
             dimension 'env'
             applicationId 'com.wodore.stg'
-            versionNameSuffix '-stg'
-            resValue 'string', 'app_name', 'Wodore Stg'
         }
     }
     buildTypes {
         debug {
-            // Debug suffix for all flavors: Studio (std) becomes
-            // com.wodore.app.dev, CI (stg) com.wodore.stg.dev — both
-            // coexist with the release app without signature clashes.
+            // Android Studio builds (std+debug): com.wodore.app.local
+            applicationIdSuffix '.local'
+            versionNameSuffix "-${buildTs}"
+        }
+        dev {
+            // CI dev builds: std+dev = com.wodore.app.dev (production
+            // backend, release-like, debug-signed), stg+dev =
+            // com.wodore.stg.dev (staging backend preview)
+            initWith debug
             applicationIdSuffix '.dev'
-            versionNameSuffix '-dev'
+            matchingFallbacks = ['debug']
         }
         release {
+            // Play Store: com.wodore.app, semver synced from tags
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

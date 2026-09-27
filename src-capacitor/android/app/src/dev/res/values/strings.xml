@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- dev build type (std+dev): CI build against the production
+         backend, release-like but debug-signed -->
+    <string name="app_name">Wodore RC</string>
+</resources>

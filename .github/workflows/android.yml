@@ -120,12 +120,12 @@ jobs:
           WODORE_OICD_CLIENT_ID: ${{ vars.WODORE_OICD_CLIENT_ID }}
         run: yarn build:capacitor
 
-      - name: Build dev APK (stg flavor, com.wodore.stg.dev)
+      - name: Build preview APK (stg flavor, com.wodore.stg.dev)
         if: steps.check-build.outputs.result != 'false'
         run: |
           cd src-capacitor/android
           chmod +x gradlew
-          ./gradlew assembleStgDebug --no-daemon
+          ./gradlew assembleStgDev --no-daemon
 
       - name: Rename APK with version and SHA
         if: steps.check-build.outputs.result != 'false'
@@ -133,16 +133,16 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           SHORT_SHA=${GITHUB_SHA::8}
           OUT=src-capacitor/android/app/build/outputs/apk
-          mv "$OUT/stg/debug/app-stg-debug.apk" \
-            "wodore-stg-v${VERSION}-${SHORT_SHA}.apk"
-          ls -la wodore-stg-*.apk
+          mv "$OUT/stg/dev/app-stg-dev.apk" \
+            "wodore-preview-v${VERSION}-${SHORT_SHA}.apk"
+          ls -la wodore-preview-*.apk
 
       - name: Upload APK artifact
         if: steps.check-build.outputs.result != 'false'
         uses: actions/upload-artifact@v4
         with:
-          name: wodore-android-stg
-          path: wodore-stg-*.apk
+          name: wodore-android-preview
+          path: wodore-preview-*.apk
           retention-days: 30
           if-no-files-found: error
 
@@ -157,7 +157,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           for i in 1 2 3 4 5 6 7 8 9 10; do
-            if gh release upload "$GITHUB_REF_NAME" wodore-stg-*.apk \
+            if gh release upload "$GITHUB_REF_NAME" wodore-preview-*.apk \
               --clobber --repo "$GITHUB_REPOSITORY"; then
               echo "APK attached to release $GITHUB_REF_NAME"
               exit 0
@@ -210,7 +210,7 @@ jobs:
             const marker = '<!-- android-apk -->';
             const body = [
               marker,
-              '### 📱 Android debug APK',
+              '### 📱 Android preview APK',
               '',
               `Built from ${context.sha.slice(0, 8)} — ` +
                 `[artifact download](${url})`,

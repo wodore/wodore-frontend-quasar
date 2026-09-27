@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- stg+dev variant: CI preview build against the staging backend
+         (overrides the dev build type label) -->
+    <string name="app_name">Wodore Preview</string>
+</resources>
