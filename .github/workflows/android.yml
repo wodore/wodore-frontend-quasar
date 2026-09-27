@@ -1,90 +1,150 @@
 name: Build Android
 
-# Builds a debug APK of the Capacitor Android app.
-# - push to main: only builds when the merged PR carried the BUILD:android
-#   label (same gating as the Docker workflow with BUILD:docker)
-# - tags v*.*.*: always builds and attaches the APK to the GitHub release
-# - workflow_dispatch: manual build for testing the pipeline
+# Builds Capacitor Android APKs in two variants:
+# - preview: stg flavor (com.wodore.stg.dev, "Wodore Preview") against the
+#   staging backend — built when a PR with the BUILD:android label merges
+#   to main (same gating as the Docker workflow with BUILD:docker)
+# - rc: std flavor + dev build type (com.wodore.app.dev, "Wodore RC")
+#   against the production backend, release-like but debug-signed — built
+#   while a BUILD:android-labeled PR is still OPEN (release candidate for
+#   testing) and on v*.*.* tags (attached to the GitHub release)
+# - workflow_dispatch: manual build of either variant
 #
-# Gate logic: steps.check-build.outputs.result is only set for pushes to
-# main ('true'/'false'); tags and manual dispatch skip the check, so the
-# short guard `result != 'false'` lets those builds proceed.
+# steps.resolve computes mode/build; every later step gates on
+# steps.resolve.outputs.build == 'true'.
 on:
   push:
     branches:
       - main
     tags:
       - 'v*.*.*'
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - labeled
   workflow_dispatch:
+    inputs:
+      variant:
+        description: 'Which variant to build'
+        type: choice
+        options: [preview, rc]
+        default: preview
 
 concurrency:
   group: android-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  build-debug-apk:
+  build-apk:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # attach APK to release on tags
-      pull-requests: write # find merged PR, post the APK link comment
+      contents: write # attach APK to release on tags, push QR to gh-pages
+      pull-requests: write # label check + APK link comment
     steps:
       - name: Check out
         uses: actions/checkout@v4
         with:
-          submodules: recursive # src/assets/wodore-design (logo/brand assets)
-          fetch-depth: 0 # Need full history to find PR for merged commits
+          submodules: recursive # src/assets/wodore-design (brand assets)
+          fetch-depth: 0 # full history to find PRs for merged commits
 
-      - name: Check for BUILD:android label on main branch
-        id: check-build
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - name: Resolve variant and build gate
+        id: resolve
         uses: actions/github-script@v7
         with:
           script: |
-            const commit = context.sha;
-            // Find PRs that were merged with this commit
+            const ev = context.eventName;
+            if (ev === 'workflow_dispatch') {
+              core.setOutput('mode', context.payload.inputs.variant);
+              core.setOutput('build', 'true');
+              return;
+            }
+            if (ev === 'pull_request') {
+              const labels = context.payload.pull_request.labels
+                .map(l => l.name);
+              core.setOutput('mode', 'rc');
+              core.setOutput('build', String(labels.includes(
+                'BUILD:android'
+              )));
+              return;
+            }
+            if (context.ref.startsWith('refs/tags/')) {
+              core.setOutput('mode', 'rc');
+              core.setOutput('build', 'true');
+              return;
+            }
+            // push to main: build only if the merged PR carried the label
             const prs = await github.rest.repos
               .listPullRequestsAssociatedWithCommit({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                commit_sha: commit
+                commit_sha: context.sha
               })
               .then(r => r.data);
-
-            // Check if any of the PRs have the BUILD:android label
-            const hasBuildLabel = prs.some(pr =>
-              pr.labels.some(label => label.name === 'BUILD:android')
+            const has = prs.some(pr =>
+              pr.labels.some(l => l.name === 'BUILD:android')
             );
+            console.log(`Found ${prs.length} PR(s), labeled: ${has}`);
+            core.setOutput('mode', 'preview');
+            core.setOutput('build', String(has));
 
-            console.log(`Found ${prs.length} PR(s) for commit ${commit}`);
-            console.log(`Has BUILD:android label: ${hasBuildLabel}`);
+      - name: Exit if build not requested
+        if: steps.resolve.outputs.build != 'true'
+        run: echo "Skipping build (no BUILD:android label / not applicable)"
 
-            return hasBuildLabel;
-          result-encoding: string
-
-      - name: Exit if no BUILD:android label on main
-        if: steps.check-build.outputs.result == 'false'
+      - name: Set backend environment for the variant
+        # rc bakes production hosts, preview the staging ones (overridable
+        # via repository variables). Env values land in GITHUB_ENV.
+        if: steps.resolve.outputs.build == 'true'
+        env:
+          PROD_API: ${{ vars.WODORE_API_HOST_PROD || 'https://api.wodore.com' }}
+          PROD_TILES: >-
+            ${{ vars.WODORE_TILE_SERVER_URL_PROD ||
+            'https://tiles.wodore.com' }}
+          PROD_IMAGOR: >-
+            ${{ vars.WODORE_IMAGOR_URL_PROD || 'https://img.wodore.com' }}
+          STG_API: ${{ vars.WODORE_API_HOST || 'https://hub.stg.wodore.com' }}
+          STG_TILES: >-
+            ${{ vars.WODORE_TILE_SERVER_URL || 'https://tiles.stg.wodore.com' }}
+          STG_IMAGOR: ${{ vars.WODORE_IMAGOR_URL }}
         run: |
-          echo "Skipping build: No BUILD:android label found on merged PR"
-          exit 0
+          if [ "${{ steps.resolve.outputs.mode }}" = "rc" ]; then
+            {
+              echo "WODORE_ENV=production"
+              echo "WODORE_URL=https://wodore.com"
+              echo "WODORE_DOMAIN=wodore.com"
+              echo "WODORE_API_HOST=$PROD_API"
+              echo "WODORE_TILE_SERVER_URL=$PROD_TILES"
+              echo "WODORE_IMAGOR_URL=$PROD_IMAGOR"
+            } >> "$GITHUB_ENV"
+          else
+            {
+              echo "WODORE_ENV=staging"
+              echo "WODORE_API_HOST=$STG_API"
+              echo "WODORE_TILE_SERVER_URL=$STG_TILES"
+              echo "WODORE_IMAGOR_URL=$STG_IMAGOR"
+            } >> "$GITHUB_ENV"
+          fi
 
       - name: Enable Corepack
-        if: steps.check-build.outputs.result != 'false'
+        if: steps.resolve.outputs.build == 'true'
         run: corepack enable
 
       - name: Read Node.js version from .nvmrc
         id: nvmrc
-        if: steps.check-build.outputs.result != 'false'
+        if: steps.resolve.outputs.build == 'true'
         run: echo "NODE_VERSION=$(cat .nvmrc)" >> "$GITHUB_OUTPUT"
 
       - name: Setup Node.js
-        if: steps.check-build.outputs.result != 'false'
+        if: steps.resolve.outputs.build == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: ${{ steps.nvmrc.outputs.NODE_VERSION }}
           cache: yarn
 
       - name: Setup Java (Capacitor 7 / Gradle 8.11)
-        if: steps.check-build.outputs.result != 'false'
+        if: steps.resolve.outputs.build == 'true'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -92,27 +152,20 @@ jobs:
           cache: gradle
 
       - name: Install dependencies
-        if: steps.check-build.outputs.result != 'false'
+        if: steps.resolve.outputs.build == 'true'
         run: |
           yarn install --frozen-lockfile
           yarn install --frozen-lockfile --cwd src-capacitor
 
       - name: Build web assets (Quasar capacitor mode)
-        # Env values are baked into the APK at build time (no runtime
-        # replacement like the Docker image). Staging defaults mirror
-        # preview.yml; overridable via repository variables.
-        if: steps.check-build.outputs.result != 'false'
+        # Backend hosts come from GITHUB_ENV (variant-specific); the rest
+        # is shared. Values are baked into the APK at build time.
+        if: steps.resolve.outputs.build == 'true'
         env:
-          WODORE_ENV: staging
           WODORE_APP_NAME: Wodore
-          WODORE_API_HOST: >-
-            ${{ vars.WODORE_API_HOST || 'https://hub.stg.wodore.com' }}
           WODORE_API_VERSION: v1
           WODORE_OFFICIAL_URL: https://wodo.re
-          WODORE_TILE_SERVER_URL: >-
-            ${{ vars.WODORE_TILE_SERVER_URL || 'https://tiles.stg.wodore.com' }}
           WODORE_MAPTILER_API_KEY: ${{ secrets.WODORE_MAPTILER_API_KEY }}
-          WODORE_IMAGOR_URL: ${{ vars.WODORE_IMAGOR_URL }}
           WODORE_IMAGOR_KEY: ${{ secrets.WODORE_IMAGOR_KEY }}
           WODORE_IMAGOR_REPLACE_API_HOST_MEDIA: >-
             ${{ vars.WODORE_IMAGOR_REPLACE_API_HOST_MEDIA }}
@@ -120,44 +173,51 @@ jobs:
           WODORE_OICD_CLIENT_ID: ${{ vars.WODORE_OICD_CLIENT_ID }}
         run: yarn build:capacitor
 
-      - name: Build preview APK (stg flavor, com.wodore.stg.dev)
-        if: steps.check-build.outputs.result != 'false'
+      - name: Build APK (variant-dependent flavor/type)
+        if: steps.resolve.outputs.build == 'true'
         run: |
-          cd src-capacitor/android
-          chmod +x gradlew
-          ./gradlew assembleStgDev --no-daemon
-
-      - name: Rename APK with version and SHA
-        if: steps.check-build.outputs.result != 'false'
-        run: |
+          MODE=${{ steps.resolve.outputs.mode }}
+          OUT=src-capacitor/android/app/build/outputs/apk
           VERSION=$(node -p "require('./package.json').version")
           SHORT_SHA=${GITHUB_SHA::8}
-          OUT=src-capacitor/android/app/build/outputs/apk
-          mv "$OUT/stg/dev/app-stg-dev.apk" \
-            "wodore-preview-v${VERSION}-${SHORT_SHA}.apk"
-          ls -la wodore-preview-*.apk
+          cd src-capacitor/android
+          chmod +x gradlew
+          if [ "$MODE" = "rc" ]; then
+            ./gradlew assembleStdDev --no-daemon
+            APK="$OUT/std/dev/app-std-dev.apk"
+            NAME="wodore-rc"
+          else
+            ./gradlew assembleStgDev --no-daemon
+            APK="$OUT/stg/dev/app-stg-dev.apk"
+            NAME="wodore-preview"
+          fi
+          cd - >/dev/null
+          mv "$APK" "${NAME}-v${VERSION}-${SHORT_SHA}.apk"
+          ls -la ${NAME}-*.apk
+          echo "APK_GLOB=${NAME}-*.apk" >> "$GITHUB_ENV"
 
       - name: Upload APK artifact
-        if: steps.check-build.outputs.result != 'false'
+        if: steps.resolve.outputs.build == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: wodore-android-preview
-          path: wodore-preview-*.apk
+          name: wodore-android-${{ steps.resolve.outputs.mode }}
+          path: ${{ env.APK_GLOB }}
           retention-days: 30
           if-no-files-found: error
 
       - name: Attach APK to GitHub release
-        # The release workflow may still be creating the release for this
-        # tag — retry for a few minutes before giving up (artifact stays
-        # available on the workflow run).
+        # RC on tags. The release workflow may still be creating the
+        # release — retry for a few minutes before giving up (the
+        # artifact stays available on the workflow run).
         if: >-
           github.event_name == 'push' &&
-          startsWith(github.ref, 'refs/tags/v')
+          startsWith(github.ref, 'refs/tags/v') &&
+          steps.resolve.outputs.build == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           for i in 1 2 3 4 5 6 7 8 9 10; do
-            if gh release upload "$GITHUB_REF_NAME" wodore-preview-*.apk \
+            if gh release upload "$GITHUB_REF_NAME" ${{ env.APK_GLOB }} \
               --clobber --repo "$GITHUB_REPOSITORY"; then
               echo "APK attached to release $GITHUB_REF_NAME"
               exit 0
@@ -172,7 +232,7 @@ jobs:
         # Encodes the run's artifact page so a phone can scan straight to
         # the APK download (GitHub login required on the phone). The PNG
         # is published to gh-pages and embedded in the PR comment.
-        if: steps.check-build.outputs.result != 'false'
+        if: steps.resolve.outputs.build == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -185,7 +245,7 @@ jobs:
             -o /tmp/apk-qr.png "$URL"
 
       - name: Check out gh-pages
-        if: steps.check-build.outputs.result != 'false'
+        if: steps.resolve.outputs.build == 'true'
         uses: actions/checkout@v4
         with:
           ref: gh-pages
@@ -194,7 +254,7 @@ jobs:
       - name: Publish QR image to gh-pages
         # Same pattern as the Allure history push; tiny PNGs (<2 KB),
         # only the 20 newest are kept.
-        if: steps.check-build.outputs.result != 'false'
+        if: steps.resolve.outputs.build == 'true'
         run: |
           cd gh-pages
           mkdir -p android-qr
@@ -213,25 +273,36 @@ jobs:
 
       - name: Comment APK artifact link on the PR
         # Upserts a single comment per PR (marker-based, like the preview
-        # workflow) with the artifact link and a scannable QR code.
+        # workflow) with the artifact link and a scannable QR image.
+        # On pull_request events comments on that PR (RC builds); on
+        # main pushes finds the merged PR (preview builds).
         if: >-
-          github.event_name == 'push' &&
-          github.ref == 'refs/heads/main' &&
-          steps.check-build.outputs.result == 'true'
+          steps.resolve.outputs.build == 'true' &&
+          (github.event_name == 'pull_request' ||
+            (github.event_name == 'push' &&
+              github.ref == 'refs/heads/main'))
         uses: actions/github-script@v7
         with:
           script: |
-            const { data: prs } = await github.rest.repos
-              .listPullRequestsAssociatedWithCommit({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                commit_sha: context.sha
-              });
-            const pr = prs.find(p => p.state === 'open' || p.merged_at);
-            if (!pr) {
-              console.log('No associated PR — skipping comment');
-              return;
+            let number = null;
+            if (context.eventName === 'pull_request') {
+              number = context.payload.pull_request.number;
+            } else {
+              const { data: prs } = await github.rest.repos
+                .listPullRequestsAssociatedWithCommit({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  commit_sha: context.sha
+                });
+              const pr = prs.find(p => p.state === 'open' || p.merged_at);
+              if (!pr) {
+                console.log('No associated PR — skipping comment');
+                return;
+              }
+              number = pr.number;
             }
+            const mode = '${{ steps.resolve.outputs.mode }}';
+            const title = mode === 'rc' ? 'Wodore RC' : 'Wodore preview';
             const url = process.env.URL;
             const qrUrl = [
               'https://wodore.github.io/wodore-frontend-quasar/',
@@ -240,7 +311,7 @@ jobs:
             const marker = '<!-- android-apk -->';
             const body = [
               marker,
-              '### 📱 Android preview APK',
+              `### 📱 Android ${title} APK`,
               '',
               `Built from ${context.sha.slice(0, 8)} — ` +
                 `[artifact download](${url})`,
@@ -257,7 +328,7 @@ jobs:
               .listComments({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: pr.number,
+                issue_number: number,
                 per_page: 100
               });
             const existing = comments.find(
@@ -275,7 +346,7 @@ jobs:
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: pr.number,
+                issue_number: number,
                 body
               });
             }

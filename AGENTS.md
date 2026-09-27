@@ -107,10 +107,11 @@ DevTools via `chrome://inspect` on desktop Chrome. App id: `com.wodore.app`
 (`src-capacitor/capacitor.config.json`). Android variants (flavors `std`/`stg` × build types
 `debug`/`dev`/`release`, all coexisting on one device): release `std+release` = `com.wodore.app`
 ("Wodore", Play Store, semver from tags via `release.sh`); CI staging preview `stg+dev` =
-`com.wodore.stg.dev` ("Wodore Preview", `assembleStgDev`); CI production-backend dev build
-`std+dev` = `com.wodore.app.dev` ("Wodore RC", `assembleStdDev`); Android Studio `std+debug` =
-`com.wodore.app.local` ("Wodore Dev"). Dev/preview builds carry a UTC build timestamp as
-versionName suffix instead of a semver guess. Launcher icons & splash screens are generated from the design
+`com.wodore.stg.dev` ("Wodore Preview", `assembleStgDev`, built when a `BUILD:android`-labeled
+PR merges); CI release candidate `std+dev` = `com.wodore.app.dev` ("Wodore RC", `assembleStdDev`,
+production backend, built while a `BUILD:android`-labeled PR is still open and on version tags);
+Android Studio `std+debug` = `com.wodore.app.local` ("Wodore Dev"). Dev/preview/RC versionNames
+carry `yyyyMMdd.HHmm.<commit>` (UTC timestamp + hash) instead of a semver guess. Launcher icons & splash screens are generated from the design
 submodule via icongenie profiles (`src/assets/icongenie/icongenie-capacitor-*.json`), included in `yarn gen:favs`.
 Note: OIDC (`auth.burgdev.local.gd` →
 127.0.0.1) does not work on device — the hostname resolves to the phone itself.

@@ -16,10 +16,11 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
-    // Dev/preview builds carry a UTC build timestamp instead of a semver
-    // suffix — the next release number is unknown until the tag exists.
+    // Dev/preview builds carry a UTC timestamp + commit hash instead of
+    // a semver — the next release number is unknown until the tag exists.
     // Release keeps the versionName synced from tags via release.sh.
-    def buildTs = new Date().format('yyyyMMdd-HHmm', TimeZone.getTimeZone('UTC'))
+    def buildTs = new Date().format('yyyyMMdd.HHmm', TimeZone.getTimeZone('UTC'))
+    def gitSha = 'git rev-parse --short=7 HEAD'.execute().text.trim()
 
     flavorDimensions 'env'
     productFlavors {
@@ -37,7 +38,6 @@ android {
         debug {
             // Android Studio builds (std+debug): com.wodore.app.local
             applicationIdSuffix '.local'
-            versionNameSuffix "-${buildTs}"
         }
         dev {
             // CI dev builds: std+dev = com.wodore.app.dev (production
@@ -51,6 +51,15 @@ android {
             // Play Store: com.wodore.app, semver synced from tags
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    applicationVariants.all { variant ->
+        if (variant.buildType.name != 'release') {
+            // e.g. 20260927.0628.5e020dd (timestamp.commit)
+            variant.outputs.all { output ->
+                output.versionNameOverride = "${buildTs}.${gitSha}"
+            }
         }
     }
 }
