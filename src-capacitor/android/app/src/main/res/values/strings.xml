@@ -1,7 +1,8 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <!-- app_name is provided per build type via resValue in
-         build.gradle (Wodore / Wodore Dev / Wodore Local) -->
+    <!-- Default app name (std flavor incl. release); the stg flavor
+         overrides it via resValue in build.gradle (Wodore Stg) -->
+    <string name="app_name">Wodore</string>
     <string name="title_activity_main">Wodore</string>
     <string name="package_name">com.wodore.app</string>
     <string name="custom_url_scheme">com.wodore.app</string>

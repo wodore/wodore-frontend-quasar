@@ -105,9 +105,9 @@ app). Debug the WebView with
 `~/Android/Sdk/platform-tools/adb logcat -s Capacitor chromium Console` or full
 DevTools via `chrome://inspect` on desktop Chrome. App id: `com.wodore.app`
 (`src-capacitor/capacitor.config.json`). Android package ids per source: release = `com.wodore.app`
-(Play Store), GitHub CI builds the `ci` variant = `com.wodore.stg.dev` (`assembleCi`, the id mirrors
-the staging env baked into the APK), Android
-Studio debug builds = `com.wodore.app.local` — all three coexist on one device without
+(Play Store), GitHub CI builds the `stg` flavor = `com.wodore.stg.dev` (`assembleStgDebug` — the id
+mirrors the staging env baked into the APK), Android
+Studio debug builds = `com.wodore.app.dev` — all three coexist on one device without
 signature conflicts. Launcher icons & splash screens are generated from the design
 submodule via icongenie profiles (`src/assets/icongenie/icongenie-capacitor-*.json`), included in `yarn gen:favs`.
 Note: OIDC (`auth.burgdev.local.gd` →

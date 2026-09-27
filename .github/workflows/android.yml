@@ -120,19 +120,20 @@ jobs:
           WODORE_OICD_CLIENT_ID: ${{ vars.WODORE_OICD_CLIENT_ID }}
         run: yarn build:capacitor
 
-      - name: Build dev APK (ci variant, com.wodore.stg.dev)
+      - name: Build dev APK (stg flavor, com.wodore.stg.dev)
         if: steps.check-build.outputs.result != 'false'
         run: |
           cd src-capacitor/android
           chmod +x gradlew
-          ./gradlew assembleCi --no-daemon
+          ./gradlew assembleStgDebug --no-daemon
 
       - name: Rename APK with version and SHA
         if: steps.check-build.outputs.result != 'false'
         run: |
           VERSION=$(node -p "require('./package.json').version")
           SHORT_SHA=${GITHUB_SHA::8}
-          mv src-capacitor/android/app/build/outputs/apk/ci/app-ci.apk \
+          OUT=src-capacitor/android/app/build/outputs/apk
+          mv "$OUT/stg/debug/app-stg-debug.apk" \
             "wodore-stg-v${VERSION}-${SHORT_SHA}.apk"
           ls -la wodore-stg-*.apk
 
