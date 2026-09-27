@@ -233,6 +233,12 @@ jobs:
 
       - name: Build APK (variant-dependent flavor/type)
         if: steps.resolve.outputs.build == 'true'
+        env:
+          WODORE_ANDROID_DEV_KEYSTORE_PASSWORD: >-
+            ${{ secrets.WODORE_ANDROID_DEV_KEYSTORE_PASSWORD }}
+          WODORE_ANDROID_DEV_KEY_ALIAS: ${{ secrets.WODORE_ANDROID_DEV_KEY_ALIAS }}
+          WODORE_ANDROID_DEV_KEY_PASSWORD: >-
+            ${{ secrets.WODORE_ANDROID_DEV_KEY_PASSWORD }}
         run: |
           MODE=${{ steps.resolve.outputs.mode }}
           OUT=src-capacitor/android/app/build/outputs
