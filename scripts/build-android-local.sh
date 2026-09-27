@@ -74,11 +74,24 @@ mv "$ENV_LOCAL" "$STASH"
 restore_env() { mv "$STASH" "$ENV_LOCAL"; }
 trap restore_env EXIT
 
+BUILD_START=$(date +%s)
+# quasar build:capacitor: web build + cap copy (assets land in the
+# android project), then capacitor's gradle update for its library
+# modules — which fails vital lint with the Android Studio JBR
+# (AndroidLintWorkAction '25.0.3'; passes on CI's Temurin JDK). The
+# failure happens AFTER the asset copy, so tolerate it and verify the
+# packaged assets are fresh instead.
 env "${ENVVARS[@]}" WODORE_MAPTILER_API_KEY="$MAPTILER_KEY" \
-  yarn build:capacitor
+  yarn build:capacitor || echo "(quasar exit tolerated — see note above)"
 
 restore_env
 trap - EXIT
+
+if ! find src-capacitor/android/app/src/main/assets/public -newermt "@$BUILD_START" \
+  -print -quit 2>/dev/null | grep -q .; then
+  echo "Packaged assets were not refreshed — the web build failed." >&2
+  exit 1
+fi
 
 (cd src-capacitor/android && ./gradlew "$GRADLE_TASK" --no-daemon)
 
