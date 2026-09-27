@@ -243,6 +243,10 @@ onMounted(() => {
 .app-header {
   backdrop-filter: blur(10px);
   position: relative;
+  // Night (default here): pine bar, paper text. Day gets the lighter bar
+  // via the body--light override below.
+  color: $white;
+  background-color: rgba(17, 33, 25, 0.88) !important;
 }
 
 // API progress bar pinned to the bottom edge of the header toolbar —
@@ -253,11 +257,6 @@ onMounted(() => {
   left: 0;
   right: 0;
   z-index: 1;
-}
-  // Night (default here): pine bar, paper text. Day gets the lighter bar
-  // via the body--light override below.
-  color: $white;
-  background-color: rgba(17, 33, 25, 0.88) !important;
 }
 
 // Day: the incumbent wodore.com sage-pine toolbar (dark-200, lighter than
