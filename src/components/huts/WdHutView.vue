@@ -340,7 +340,7 @@ const { images: nearbyImages, loading: imagesLoading } = useHutImages(computed((
           <!-- used to add shadow to header -->
           <h2
             :style="($q.screen.gt.sm ? 'margin-top: -3px; ' : '') + 'text-wrap: wrap;'"
-            class="text-subtitle1 wd-gold-text q-ma-none q-mb-sm"
+            class="wd-section-title q-ma-none q-mb-sm"
           >
             <span v-intersection="addHeaderShadow" />
             {{ hut.owner?.name }}
@@ -422,7 +422,7 @@ const { images: nearbyImages, loading: imagesLoading } = useHutImages(computed((
             :elevation="hut.elevation ?? undefined"
           />
           <!--LOCATION-->
-          <div class="text-subtitle1 wd-gold-text">{{ $t('location') }}</div>
+          <div class="wd-section-title">{{ $t('location') }}</div>
           <q-list dense>
             <q-item v-if="hut.location">
               <q-item-section side>

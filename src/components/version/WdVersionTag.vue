@@ -55,10 +55,14 @@ const isStaging = computed(() => appEnv === 'staging' || appEnv === 'preview');
         <span v-else>v{{ version || '—' }}</span>
       </span>
       <span class="text-weight-light">
-        (<a v-if="isStaging" target="_blank" :href="`${url}/commit/${props.hash}`">{{
-          shortHash
-        }}</a>
-        <span v-else>{{ shortHash }}</span
+        (<a
+          v-if="isStaging"
+          target="_blank"
+          class="wd-version-hash"
+          :href="`${url}/commit/${props.hash}`"
+          >{{ shortHash }}</a
+        >
+        <span v-else class="wd-version-hash">{{ shortHash }}</span
         >)
       </span>
     </span>
