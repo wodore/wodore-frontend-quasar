@@ -337,11 +337,6 @@ body {
 // Quasar >= 2.11 draws LIGHT (white) shadows in dark mode by default,
 // which reads as glow on pine surfaces. Kill component elevation in dark;
 // separation comes from tonal steps and ridge borders instead.
-:root {
-  // Toolbar sits on the deep brand green in BOTH themes -> one hover wash
-  --wd-chrome-btn-hover: rgba(255, 255, 255, 0.16);
-}
-
 body.body--dark {
   --q-dark-shadow-color: transparent;
   --wd-chrome-btn-bg: #112119;
@@ -368,8 +363,12 @@ body.body--dark {
     color 0.2s ease;
 }
 
+// The map toolbar sits on the deep brand green in BOTH themes - the
+// chrome-chip hover var (dark wash for white chips) is invisible there,
+// so the toolbar pins its own white wash. Light-surface toolbar pills
+// override this below with their dark wash.
 .wd-toolbar-btn:hover {
-  background-color: var(--wd-chrome-btn-hover) !important;
+  background-color: rgba(255, 255, 255, 0.16) !important;
 }
 
 // Active/selected: gold icon, no fill (user rule: no icon bg in any state)
