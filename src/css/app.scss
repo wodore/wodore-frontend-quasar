@@ -756,9 +756,13 @@ body.body--dark {
   color: #bfab25 !important;
 }
 
-// Light surfaces (header, menu drawer, bottom sheet, dialogs): in Day the
-// toolbar pills go flat with readable info-teal icons instead of pine.
-body.body--light :is(.app-header, .q-drawer, bottom-sheet, .q-dialog__inner) {
+// Light surfaces (menu drawer, bottom sheet, dialogs - NOT the header):
+// in Day the toolbar pills go flat with readable info-teal icons instead
+// of pine. The header is exempt entirely: it sits on the green brand bar
+// and governs itself via .app-header rules in MainLayout (flat chrome +
+// white hover wash); this scope's dark wash and teal icons are for true
+// light surfaces only.
+body.body--light :is(.q-drawer, bottom-sheet, .q-dialog__inner) {
   .wd-toolbar-btn {
     background-color: transparent !important;
     border-color: transparent !important;
@@ -769,9 +773,7 @@ body.body--light :is(.app-header, .q-drawer, bottom-sheet, .q-dialog__inner) {
     }
   }
 
-  // Header exempt: it sits on the green brand bar where a dark wash is
-  // invisible - .app-header .q-btn:hover carries the white wash instead.
-  :is(.q-drawer, bottom-sheet, .q-dialog__inner) .wd-toolbar-btn:hover {
+  .wd-toolbar-btn:hover {
     background-color: rgba(0, 0, 0, 0.06) !important;
   }
 
