@@ -170,7 +170,8 @@ jobs:
 
       - name: Generate QR code for the artifact download
         # Encodes the run's artifact page so a phone can scan straight to
-        # the APK download (GitHub login required on the phone).
+        # the APK download (GitHub login required on the phone). The PNG
+        # is published to gh-pages and embedded in the PR comment.
         if: steps.check-build.outputs.result != 'false'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -180,8 +181,35 @@ jobs:
           BASE="https://github.com/${GITHUB_REPOSITORY}/actions/runs"
           export URL="${BASE}/${GITHUB_RUN_ID}/artifacts/${ART_ID}"
           echo "URL=$URL" >> "$GITHUB_ENV"
-          npx --yes --package qrcode qrcode -t utf8 -q 2 \
-            -o /tmp/apk-qr.txt "$URL"
+          npx --yes --package qrcode qrcode -t png -w 300 \
+            -o /tmp/apk-qr.png "$URL"
+
+      - name: Check out gh-pages
+        if: steps.check-build.outputs.result != 'false'
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Publish QR image to gh-pages
+        # Same pattern as the Allure history push; tiny PNGs (<2 KB),
+        # only the 20 newest are kept.
+        if: steps.check-build.outputs.result != 'false'
+        run: |
+          cd gh-pages
+          mkdir -p android-qr
+          cp /tmp/apk-qr.png "android-qr/${GITHUB_RUN_ID}.png"
+          ls android-qr/*.png 2>/dev/null | sort -r | tail -n +21 \
+            | xargs -r git rm -q --
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "android-qr/${GITHUB_RUN_ID}.png"
+          if git diff --cached --quiet; then
+            echo "QR image unchanged - nothing to commit"
+          else
+            git commit -m "Android APK QR (run ${GITHUB_RUN_NUMBER})"
+            git push origin HEAD:gh-pages
+          fi
 
       - name: Comment APK artifact link on the PR
         # Upserts a single comment per PR (marker-based, like the preview
@@ -193,7 +221,6 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const fs = require('fs');
             const { data: prs } = await github.rest.repos
               .listPullRequestsAssociatedWithCommit({
                 owner: context.repo.owner,
@@ -205,8 +232,11 @@ jobs:
               console.log('No associated PR — skipping comment');
               return;
             }
-            const qr = fs.readFileSync('/tmp/apk-qr.txt', 'utf8');
             const url = process.env.URL;
+            const qrUrl = [
+              'https://wodore.github.io/wodore-frontend-quasar/',
+              `android-qr/${context.runId}.png`
+            ].join('');
             const marker = '<!-- android-apk -->';
             const body = [
               marker,
@@ -218,9 +248,7 @@ jobs:
               'Scan to open the download on your phone ' +
                 '(GitHub login required):',
               '',
-              '```',
-              qr.trim(),
-              '```',
+              `![QR code to the artifact download](${qrUrl})`,
               '',
               'Download, unzip, and install the `.apk` ' +
                 '(allow "unknown sources" if prompted).'
