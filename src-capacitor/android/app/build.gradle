@@ -62,8 +62,12 @@ android {
             matchingFallbacks = ['debug']
         }
         release {
-            // Play Store: com.wodore.app, semver synced from tags
-            signingConfig signingConfigs.upload
+            // Play Store: com.wodore.app, semver synced from tags.
+            // Only attach the signing config when the CI keystore env
+            // exists — an empty config breaks release packaging.
+            if (signingConfigs.upload.storeFile != null) {
+                signingConfig signingConfigs.upload
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

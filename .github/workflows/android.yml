@@ -196,6 +196,8 @@ jobs:
           WODORE_APP_NAME: Wodore
           WODORE_API_VERSION: v1
           WODORE_OFFICIAL_URL: https://wodo.re
+          WODORE_IMAGOR_REPLACE_API_HOST_MEDIA: >-
+            ${{ vars.WODORE_IMAGOR_REPLACE_API_HOST_MEDIA }}
         run: yarn build:capacitor
 
       - name: Decode release keystore (if configured)
