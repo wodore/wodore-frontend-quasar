@@ -111,8 +111,21 @@ DevTools via `chrome://inspect` on desktop Chrome. App id: `com.wodore.app`
 PR merges); CI release candidate `std+dev` = `com.wodore.app.dev` ("Wodore RC", `assembleStdDev`,
 production backend, built while a `BUILD:android`-labeled PR is still open and on version tags);
 Android Studio `std+debug` = `com.wodore.app.local` ("Wodore Dev"). Dev/preview/RC versionNames
-carry `yyyyMMdd.HHmm.<commit>` (UTC timestamp + hash) instead of a semver guess. Launcher icons & splash screens are generated from the design
+carry `yyyyMMddHHmmss-commit` (UTC timestamp + hash) instead of a semver guess. Launcher icons & splash screens are generated from the design
 submodule via icongenie profiles (`src/assets/icongenie/icongenie-capacitor-*.json`), included in `yarn gen:favs`.
+
+**Local Android builds** (no CI round-trip): `scripts/build-android-local.sh stg --install`
+(preview variant) or `std` (RC variant). Requirements: `JAVA_HOME` must be a full JDK — the
+script uses Android Studio's JBR (`/snap/android-studio/current/jbr`); new worktrees need
+`src-capacitor/android/local.properties` (`sdk.dir=/home/tobias/Android/Sdk`) and a `yarn install`
+inside `src-capacitor`. The script stashes `.env.local` while baking the variant env (CI parity)
+and restores it after. Known env gaps: the staging API sends no CORS header for the Capacitor
+origin (`https://localhost`) — preview builds stay data-less until the backend allows it;
+`api.wodore.com` is IPv6-only, unreachable from IPv4 networks/emulators. Emulator testing:
+`avdmanager create avd -n wd-test -k "system-images;android-35;google_apis;x86_64" -d pixel_6`,
+headless boot `emulator -avd wd-test -no-window -gpu swiftshader_indirect`; MapLibre may freeze
+the WebView render loop under software GL when the map style fails to load — prefer real devices
+for map-state screenshots.
 Note: OIDC (`auth.burgdev.local.gd` →
 127.0.0.1) does not work on device — the hostname resolves to the phone itself.
 
