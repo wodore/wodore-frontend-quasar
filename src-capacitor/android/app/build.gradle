@@ -16,10 +16,69 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // Dev/preview builds carry a UTC timestamp + commit hash instead of
+    // a semver — the next release number is unknown until the tag exists.
+    // Release keeps the versionName synced from tags via release.sh.
+    def buildTs = new Date().format('yyyyMMddHHmmss', TimeZone.getTimeZone('UTC'))
+    def gitSha = 'git rev-parse --short=7 HEAD'.execute().text.trim()
+
+    flavorDimensions 'env'
+    productFlavors {
+        std {
+            dimension 'env'
+        }
+        stg {
+            // CI preview builds: com.wodore.stg.dev — the id mirrors
+            // the staging environment baked into the APK.
+            dimension 'env'
+            applicationId 'com.wodore.stg'
+        }
+    }
+    signingConfigs {
+        upload {
+            // Release signing from CI (keystore decoded + passwords from
+            // secrets in .github/workflows/android.yml); the release
+            // build stays unsigned when the env vars are absent.
+            def ksPath = System.getenv('WODORE_ANDROID_KEYSTORE_FILE')
+            if (ksPath != null && file(ksPath).exists()) {
+                storeFile file(ksPath)
+                storePassword System.getenv('WODORE_ANDROID_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('WODORE_ANDROID_KEY_ALIAS')
+                keyPassword System.getenv('WODORE_ANDROID_KEY_PASSWORD')
+            }
+        }
+    }
     buildTypes {
+        debug {
+            // Android Studio builds (std+debug): com.wodore.app.local
+            applicationIdSuffix '.local'
+        }
+        dev {
+            // CI dev builds: std+dev = com.wodore.app.dev (production
+            // backend, release-like, debug-signed), stg+dev =
+            // com.wodore.stg.dev (staging backend preview)
+            initWith debug
+            applicationIdSuffix '.dev'
+            matchingFallbacks = ['debug']
+        }
         release {
+            // Play Store: com.wodore.app, semver synced from tags.
+            // Only attach the signing config when the CI keystore env
+            // exists — an empty config breaks release packaging.
+            if (signingConfigs.upload.storeFile != null) {
+                signingConfig signingConfigs.upload
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    applicationVariants.all { variant ->
+        if (variant.buildType.name != 'release') {
+            // e.g. 20260927070300-45858db (timestamp-commit)
+            variant.outputs.all { output ->
+                output.versionNameOverride = "${buildTs}-${gitSha}"
+            }
         }
     }
 }
