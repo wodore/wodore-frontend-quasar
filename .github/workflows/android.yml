@@ -238,9 +238,10 @@ jobs:
             NAME="wodore-preview"
           fi
           cd - >/dev/null
-          mv "$PKG" "${NAME}-v${VERSION}-${SHORT_SHA}.*"
-          ls -la ${NAME}-*
-          echo "APK_GLOB=${NAME}-*" >> "$GITHUB_ENV"
+          EXT="${PKG##*.}"
+          mv "$PKG" "${NAME}-v${VERSION}-${SHORT_SHA}.${EXT}"
+          ls -la ${NAME}-*.${EXT}
+          echo "APK_GLOB=${NAME}-*.${EXT}" >> "$GITHUB_ENV"
 
       - name: Upload APK artifact
         if: steps.resolve.outputs.build == 'true'
