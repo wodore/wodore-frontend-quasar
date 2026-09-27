@@ -19,7 +19,7 @@ android {
     // Dev/preview builds carry a UTC timestamp + commit hash instead of
     // a semver — the next release number is unknown until the tag exists.
     // Release keeps the versionName synced from tags via release.sh.
-    def buildTs = new Date().format('yyyyMMdd.HHmm', TimeZone.getTimeZone('UTC'))
+    def buildTs = new Date().format('yyyyMMddHHmmss', TimeZone.getTimeZone('UTC'))
     def gitSha = 'git rev-parse --short=7 HEAD'.execute().text.trim()
 
     flavorDimensions 'env'
@@ -56,9 +56,9 @@ android {
 
     applicationVariants.all { variant ->
         if (variant.buildType.name != 'release') {
-            // e.g. 20260927.0628.5e020dd (timestamp.commit)
+            // e.g. 20260927070300-45858db (timestamp-commit)
             variant.outputs.all { output ->
-                output.versionNameOverride = "${buildTs}.${gitSha}"
+                output.versionNameOverride = "${buildTs}-${gitSha}"
             }
         }
     }
