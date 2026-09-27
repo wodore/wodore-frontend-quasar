@@ -34,6 +34,20 @@ android {
             applicationId 'com.wodore.stg'
         }
     }
+    signingConfigs {
+        upload {
+            // Release signing from CI (keystore decoded + passwords from
+            // secrets in .github/workflows/android.yml); the release
+            // build stays unsigned when the env vars are absent.
+            def ksPath = System.getenv('WODORE_ANDROID_KEYSTORE_FILE')
+            if (ksPath != null && file(ksPath).exists()) {
+                storeFile file(ksPath)
+                storePassword System.getenv('WODORE_ANDROID_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('WODORE_ANDROID_KEY_ALIAS')
+                keyPassword System.getenv('WODORE_ANDROID_KEY_PASSWORD')
+            }
+        }
+    }
     buildTypes {
         debug {
             // Android Studio builds (std+debug): com.wodore.app.local
@@ -49,6 +63,7 @@ android {
         }
         release {
             // Play Store: com.wodore.app, semver synced from tags
+            signingConfig signingConfigs.upload
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
