@@ -104,23 +104,25 @@
   }
 }
 
-// Selected/active day: tonal fill + inset gold ring - IDENTICAL to the
+// Selected day: tonal fill + inset gold ring - IDENTICAL to the
 // weather stripe's selected tile. Inset shadow, not border: no geometry
-// change inside the day grid. Selected wins over today (higher
-// specificity later in the cascade + the ring is the strong mark).
+// change inside the day grid. Selected wins over today (later in the
+// cascade at equal specificity; the ring is the strong mark).
+// NOTE: Quasar 2.33 marks the picked day with bg-accent/text-white
+// classes (not q-btn--active) - the old --active selector never matched.
 .body--light .q-card.dialog-radius .q-btn--outline,
-.body--light .q-card.dialog-radius .q-date__calendar-item .q-btn--active,
+.body--light .q-card.dialog-radius .q-date .q-btn.bg-accent,
 .body--dark .q-card.dialog-radius .q-btn--outline,
-.body--dark .q-card.dialog-radius .q-date__calendar-item .q-btn--active {
+.body--dark .q-card.dialog-radius .q-date .q-btn.bg-accent {
   background: rgba(var(--wd-ink-rgb), 0.06) !important;
   color: var(--wd-ink) !important;
   font-weight: 500;
   box-shadow: inset 0 0 0 1px var(--wd-gold-text) !important;
 }
 
-// Today + selected: the gold ring must survive on the active today cell
-.body--light .q-card.dialog-radius .q-date .q-date__today.q-btn--active,
-.body--dark .q-card.dialog-radius .q-date .q-date__today.q-btn--active {
+// Today + selected: the gold ring must survive on the picked today cell
+.body--light .q-card.dialog-radius .q-date .q-date__today.bg-accent,
+.body--dark .q-card.dialog-radius .q-date .q-date__today.bg-accent {
   box-shadow: inset 0 0 0 1px var(--wd-gold-text) !important;
 }
 
