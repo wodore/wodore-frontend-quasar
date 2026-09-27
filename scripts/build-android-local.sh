@@ -23,15 +23,16 @@ cd "$(dirname "$0")/.."
 
 VARIANT="${1:-stg}"
 INSTALL="${2:-}"
-JBR="/snap/android-studio/current/jbr"
-ENV_LOCAL=".env.local"
-STASH="/tmp/wodore-env-local.$$"
-
-if [ ! -d "$JBR" ]; then
-  echo "Android Studio JBR not found at $JBR — adjust JAVA_HOME manually." >&2
+# Full JDK 21 required (Gradle 8.11 caps at Java 23; the snap JBR is
+# Java 25 since the Android Studio refresh and breaks Groovy/lint).
+JDK_HOME="${JAVA_HOME:-$HOME/jdks/jdk-21.0.12.1+1}"
+if ! "$JDK_HOME/bin/javac" -version >/dev/null 2>&1; then
+  echo "No full JDK at $JDK_HOME (javac missing). Install Temurin 21 to ~/jdks." >&2
   exit 1
 fi
-export JAVA_HOME="$JBR"
+export JAVA_HOME="$JDK_HOME"
+ENV_LOCAL=".env.local"
+STASH="/tmp/wodore-env-local.$$"
 
 MAPTILER_KEY="$(grep -E '^WODORE_MAPTILER_API_KEY=' "$ENV_LOCAL" | cut -d= -f2 | tr -d '\r')"
 if [ -z "$MAPTILER_KEY" ]; then

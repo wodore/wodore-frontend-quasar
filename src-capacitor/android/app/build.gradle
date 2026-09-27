@@ -47,11 +47,27 @@ android {
                 keyPassword System.getenv('WODORE_ANDROID_KEY_PASSWORD')
             }
         }
+        ciDev {
+            // Stable CI signing for preview/RC builds (WODORE_ANDROID_DEV_*
+            // secrets): runner debug keystores rotate, which forced a
+            // uninstall before every update. Absent locally (Studio) —
+            // builds then use the standard debug keystore.
+            def ksPath = System.getenv('WODORE_ANDROID_DEV_KEYSTORE_FILE')
+            if (ksPath != null && file(ksPath).exists()) {
+                storeFile file(ksPath)
+                storePassword System.getenv('WODORE_ANDROID_DEV_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('WODORE_ANDROID_DEV_KEY_ALIAS')
+                keyPassword System.getenv('WODORE_ANDROID_DEV_KEY_PASSWORD')
+            }
+        }
     }
     buildTypes {
         debug {
             // Android Studio builds (std+debug): com.wodore.app.local
             applicationIdSuffix '.local'
+            if (signingConfigs.ciDev.storeFile != null) {
+                signingConfig signingConfigs.ciDev
+            }
         }
         dev {
             // CI dev builds: std+dev = com.wodore.app.dev (production

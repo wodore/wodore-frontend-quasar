@@ -25,6 +25,15 @@ const loadingMiddleware: Middleware = {
 
     requestStop();
   },
+  onError({ request }) {
+    // Network-level failures never reach onResponse — decrement here
+    // too or the progress counter leaks and the bar sticks visible
+    if (request.url.includes('/geo/places/search') || request.url.includes('/availability/')) {
+      return;
+    }
+
+    requestStop();
+  },
 };
 
 const authMiddleware: Middleware = {

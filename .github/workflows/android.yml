@@ -215,6 +215,22 @@ jobs:
           echo "WODORE_ANDROID_KEYSTORE_FILE=$HOME/wodore-upload.jks" \
             >> "$GITHUB_ENV"
 
+      - name: Decode dev keystore (if configured)
+        # Stable CI signing for preview/RC builds so devices can update
+        # over previous installs (runner debug keystores rotate). No-op
+        # without the secrets — falls back to the runner debug key.
+        if: steps.resolve.outputs.build == 'true'
+        env:
+          KS_B64: ${{ secrets.WODORE_ANDROID_DEV_KEYSTORE }}
+        run: |
+          if [ -z "$KS_B64" ]; then
+            echo "No dev signing secret — using runner debug key"
+            exit 0
+          fi
+          echo "$KS_B64" | base64 -d > "$HOME/wodore-ci-dev.jks"
+          echo "WODORE_ANDROID_DEV_KEYSTORE_FILE=$HOME/wodore-ci-dev.jks" \
+            >> "$GITHUB_ENV"
+
       - name: Build APK (variant-dependent flavor/type)
         if: steps.resolve.outputs.build == 'true'
         run: |

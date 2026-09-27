@@ -242,7 +242,6 @@ onMounted(() => {
 }
 .app-header {
   backdrop-filter: blur(10px);
-  position: relative;
   // Night (default here): pine bar, paper text. Day gets the lighter bar
   // via the body--light override below.
   color: $white;
