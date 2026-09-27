@@ -89,14 +89,16 @@
 
 // Today (unselected): quiet tonal fill + regular ink - IDENTICAL to the
 // weather stripe's today tile (owner: one today/selected language across
-// availability and weather; selected outranks today)
-.body--light .q-card.dialog-radius .q-date__calendar-item--today,
-.body--dark .q-card.dialog-radius .q-date__calendar-item--today {
-  .q-btn {
-    color: var(--wd-ink) !important;
-    font-weight: 500;
-    background: rgba(var(--wd-ink-rgb), 0.06) !important;
-  }
+// availability and weather; selected outranks today).
+// NOTE: Quasar 2.33 marks today on the day BUTTON (.q-date__today), not
+// on the calendar-item wrapper - the previous wrapper selectors were
+// dead code and today was never marked at all.
+.body--light .q-card.dialog-radius .q-date .q-date__today:not(.q-btn--active),
+.body--dark .q-card.dialog-radius .q-date .q-date__today:not(.q-btn--active) {
+  color: var(--wd-ink) !important;
+  font-weight: 500;
+  background: rgba(var(--wd-ink-rgb), 0.06) !important;
+
   .q-btn__layer {
     background: transparent !important;
   }
@@ -117,8 +119,8 @@
 }
 
 // Today + selected: the gold ring must survive on the active today cell
-.body--light .q-card.dialog-radius .q-date__calendar-item--today .q-btn--active,
-.body--dark .q-card.dialog-radius .q-date__calendar-item--today .q-btn--active {
+.body--light .q-card.dialog-radius .q-date .q-date__today.q-btn--active,
+.body--dark .q-card.dialog-radius .q-date .q-date__today.q-btn--active {
   box-shadow: inset 0 0 0 1px var(--wd-gold-text) !important;
 }
 

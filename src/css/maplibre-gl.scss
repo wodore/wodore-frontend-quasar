@@ -49,7 +49,7 @@
 // Attribution: one compact instrument chip instead of a wrapping text
 // block - solid light surface (map chrome stays light in both themes),
 // 4px control radius, single line with ellipsis, halo over imagery.
-.maplibregl-ctrl-attrib.maplibregl-compact {
+.maplibregl-ctrl-attrib {
   background: rgba(253, 254, 253, 0.92);
   border-radius: 4px;
   padding: 1px 8px;
@@ -66,9 +66,10 @@
     text-shadow: 0 0 4px rgba(253, 254, 253, 0.85); // halo
   }
 
-  button.maplibregl-ctrl-attrib-button {
-    border-radius: 4px;
-  }
+}
+
+.maplibregl-ctrl-attrib button.maplibregl-ctrl-attrib-button {
+  border-radius: 4px;
 }
 
 // Mobile: keep the chip from fighting the scale bar - lift it 2px and
