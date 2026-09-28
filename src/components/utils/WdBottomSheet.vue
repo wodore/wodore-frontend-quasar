@@ -92,7 +92,10 @@ let detachContentScroll: (() => void) | null = null;
 
 function onContentScroll(event: Event): void {
   const target = event.target as { scrollTop?: number } | null;
-  const scrolled = (target?.scrollTop ?? 0) > 2;
+  // Tolerance 10px: the snap animation and subpixel rounding can leave
+  // a few px of scrollTop on a fresh open - the line must not show
+  // before the user actually scrolled (owner report)
+  const scrolled = (target?.scrollTop ?? 0) > 10;
   if (scrolled === contentScrolled.value) return;
   contentScrolled.value = scrolled;
   sheetElement.value?.toggleAttribute('data-content-scrolled', scrolled);
@@ -119,7 +122,7 @@ function attachContentScrollListener(sheet: BottomSheet): void {
   };
   sheet.toggleAttribute(
     'data-content-scrolled',
-    targets.some((t) => t.scrollTop > 2)
+    targets.some((t) => t.scrollTop > 10)
   );
 }
 

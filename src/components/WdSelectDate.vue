@@ -362,14 +362,14 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
               </q-item-section> -->
               <!-- NAME - EMAIL -->
               <q-item-section v-if="!showCalendarError">
-                <q-item-label class="text-h6 text-accent">{{ selectedDateDay }}</q-item-label>
+                <q-item-label class="text-h6 wd-ink-text">{{ selectedDateDay }}</q-item-label>
                 <q-item-label class="text-body2 text-primary-100">{{
                   selectedDateLongName
                 }}</q-item-label>
               </q-item-section>
               <!-- ERROR MESSAGE HEADER -->
               <q-item-section v-else>
-                <q-item-label class="text-h6 text-accent">
+                <q-item-label class="text-h6 wd-ink-text">
                   {{ t('select_date.not_available') }}
                 </q-item-label>
               </q-item-section>
@@ -497,7 +497,7 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
                 flat
                 :disable="todayDisabled"
                 @click="gotoToday"
-                class="q-mr-md text-accent"
+                class="q-mr-md wd-info-text"
                 :class="{ 'text-dark-200': todayDisabled }"
                 >{{ t('today') }}</q-btn
               >
