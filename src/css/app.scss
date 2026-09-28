@@ -1183,11 +1183,21 @@ body.capacitor {
   // min-height inline to calc(var(--q-safe-area-inset-top) + 50px).
   // Adding padding on top of that doubles the inset.
 
-  // Drawer toolbars are NOT covered by Quasar's inline rule — pad them
-  // so the colored toolbar extends under the status bar (green to the
-  // top, like the main header) and the buttons sit below the system bar
-  .menu-drawer .q-toolbar {
-    padding-top: env(safe-area-inset-top, 0px);
+  // Drawer toolbar: Quasar pads the drawer CONTENT wrapper by the
+  // status inset (its inline style is re-applied dynamically, so a
+  // stylesheet override loses). Instead of fighting it, paint the bar
+  // zone with the toolbar color via a pseudo element on the drawer and
+  // keep the toolbar itself compact - visually identical to the header
+  // (color to the very top, toolbar row right below the status bar).
+  .menu-drawer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: env(safe-area-inset-top, 0px);
+    background: rgb(42, 91, 70); // bg-primary-600
+    z-index: 1;
   }
 
   // Maximized dialogs: full-bleed surface (color/image reaches the
