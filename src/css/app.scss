@@ -1384,6 +1384,23 @@ a.wd-accommodation-day {
 // bar zones. All env() insets evaluate to 0 in the PWA — no changes there.
 // ---------------------------------------------------------------------------
 body.capacitor {
+  // ── Native feel ──
+  // No rubber-band overscroll bounce (native apps don't scroll past
+  // their content); no long-press text selection or copy dialog on UI
+  // elements (logos, buttons, labels). Inputs and selectable text
+  // opt back in below.
+  overscroll-behavior-y: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+
+  // Re-enable selection where it makes sense
+  input, textarea, [contenteditable], .selectable-text {
+    -webkit-user-select: auto;
+    user-select: auto;
+    -webkit-touch-callout: default;
+  }
+
   // NOTE: NO safe-area padding on HEADER toolbars here — Quasar
   // (>= 2.33) handles those natively by setting the QHeader toolbar's
   // min-height inline to calc(var(--q-safe-area-inset-top) + 50px).

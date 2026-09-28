@@ -321,12 +321,17 @@ let basemapFallbackDone = false;
 function isTileAuthFailure(errorObj: Record<string, unknown> | undefined): boolean {
   const status = errorObj?.status as number | undefined;
   const message = (errorObj?.message?.toString() ?? '').toLowerCase();
+  // Only match TILE source auth failures — glyph 403s are non-critical
+  // (MapLibre falls back to local font rendering). Checking for
+  // "tile" in the error message distinguishes the two.
+  const isTileError = message.includes('tile') || !message;
   return (
-    status === 403 ||
-    status === 401 ||
-    message.includes('403') ||
-    message.includes('forbidden') ||
-    message.includes('unauthorized')
+    isTileError &&
+    (status === 403 ||
+      status === 401 ||
+      message.includes('403') ||
+      message.includes('forbidden') ||
+      message.includes('unauthorized'))
   );
 }
 

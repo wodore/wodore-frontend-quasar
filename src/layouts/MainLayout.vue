@@ -346,6 +346,12 @@ body.body--dark .app-header .text-icon {
   pointer-events: none;
 }
 
+// Native app: the ribbon sits lower so it clears the status bar safe
+// area and doesn't interfere with the edge-to-edge header
+body.capacitor .preview-badge {
+  top: calc(12px + var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px)));
+}
+
 // Critical CSS for nested QLayout in container mode (inside drawer)
 // Without this, the layout wrappers collapse to 0 height
 .q-layout-container > div > div {
