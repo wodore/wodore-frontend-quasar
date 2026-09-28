@@ -112,10 +112,12 @@ function attachContentScrollListener(sheet: BottomSheet): void {
   const slottedScroller = sheet.querySelector<HTMLElement>(
     '.q-scrollarea__container, .q-drawer__content, .overlay-scroll'
   );
-  // The HOST itself can be the scroller (mobile hut pages: the sheet
-  // wrapper CSS makes the host element overflow - observed live).
-  const host = sheet as unknown as HTMLElement;
-  const targets = [element, slottedScroller, host].filter(Boolean) as HTMLElement[];
+  // NEVER use the host's own scrollTop as the signal: on this sheet the
+  // host scroll IS the snap position (330px at the peek snap, max when
+  // expanded - measured live), so host-based detection showed the line
+  // on every fresh open. Content scroll happens in .sheet-content
+  // (nested-scroll mode) or the slotted scroller only.
+  const targets = [element, slottedScroller].filter(Boolean) as HTMLElement[];
   for (const t of targets) t.addEventListener('scroll', onContentScroll, { passive: true });
   detachContentScroll = () => {
     for (const t of targets) t.removeEventListener('scroll', onContentScroll);
