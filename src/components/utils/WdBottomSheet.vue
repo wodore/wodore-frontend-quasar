@@ -279,22 +279,6 @@ bottom-sheet[data-sheet-state='expanded'] {
  * otherwise later-painted content (the photo gallery) covers the shadow.
  * The attribute is toggled by the component's content scroll listener.
  */
-bottom-sheet::part(header) {
-  border-bottom: 1px solid transparent;
-  transition:
-    border-color 0.15s ease,
-    background-color 0.15s ease;
-}
-
-// Scrolled: same treatment as the desktop drawer header (owner
-// 2026-09-28): surface-deep + a 16%-ink line - content slides UNDER
-// the header. The old drop shadow was invisible on pine.
-bottom-sheet[data-content-scrolled]::part(header) {
-  background: var(--wd-surface-deep);
-  border-bottom-color: rgba(var(--wd-ink-rgb), 0.16);
-  box-shadow: none;
-  z-index: 10;
-}
 
 /*
  * Slotted app content inherits box-sizing through the flattened (shadow)
@@ -304,6 +288,28 @@ bottom-sheet[data-content-scrolled]::part(header) {
  */
 bottom-sheet * {
   box-sizing: border-box;
+}
+</style>
+<style>
+/*
+ * Scrolled sheet header - UNSCOPED on purpose: the scoped data-v
+ * attribute never lands on the custom-element host, so the previous
+ * ::part(header) rules (shadow, then line) were dead CSS - the header
+ * treatment literally never rendered. Same language as the desktop
+ * drawer header: surface-deep + 16%-ink line when scrolled.
+ */
+bottom-sheet::part(header) {
+  border-bottom: 1px solid transparent;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+bottom-sheet[data-content-scrolled]::part(header) {
+  background: var(--wd-surface-deep);
+  border-bottom-color: rgba(var(--wd-ink-rgb), 0.16);
+  box-shadow: none;
+  z-index: 10;
 }
 </style>
 
