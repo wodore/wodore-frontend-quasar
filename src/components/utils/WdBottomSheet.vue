@@ -99,11 +99,23 @@ function onContentScroll(event: Event): void {
 }
 
 function attachContentScrollListener(sheet: BottomSheet): void {
+  // The sheet's own content element...
   const element = sheet.shadowRoot?.querySelector('.sheet-content');
-  if (!element) return;
-  element.addEventListener('scroll', onContentScroll, { passive: true });
-  detachContentScroll = () => element.removeEventListener('scroll', onContentScroll);
-  sheet.toggleAttribute('data-content-scrolled', element.scrollTop > 2);
+  // ...AND the slotted app content's scroller: on hut pages the real
+  // scrolling happens inside the slot (q-scrollarea), not in
+  // .sheet-content - without this listener the scrolled header state
+  // never fires on mobile (owner report: header line "still barely
+  // visible" - it literally never appeared).
+  const slottedScroller = sheet.querySelector<HTMLElement>(
+    '.q-scrollarea__container, .q-drawer__content, .overlay-scroll'
+  );
+  if (!element && !slottedScroller) return;
+  const targets = [element, slottedScroller].filter(Boolean) as HTMLElement[];
+  for (const t of targets) t.addEventListener('scroll', onContentScroll, { passive: true });
+  detachContentScroll = () => {
+    for (const t of targets) t.removeEventListener('scroll', onContentScroll);
+  };
+  sheet.toggleAttribute('data-content-scrolled', (element?.scrollTop ?? 0) > 2 || (slottedScroller?.scrollTop ?? 0) > 2);
 }
 
 /**
