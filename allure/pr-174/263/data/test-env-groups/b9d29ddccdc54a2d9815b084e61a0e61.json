@@ -1,0 +1,1 @@
+{"id":"b9d29ddccdc54a2d9815b084e61a0e61","fullName":"wodore:tests/unit/sanitize-html.spec.ts#sanitizeHtml removes javascript: URLs","name":"removes javascript: URLs","status":"passed","testResultsByEnv":{"default":"4418b7b3ec845daa2d1a51c5a1515d1e"}}
