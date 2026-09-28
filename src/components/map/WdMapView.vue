@@ -1091,25 +1091,25 @@ body.capacitor .map-footer-shade {
   );
 }
 
-// System dark: dark gradient (helps white nav icons stand out)
+// System dark: strong dark gradient (white nav icons readable)
 @media (prefers-color-scheme: dark) {
   body.capacitor .map-footer-shade {
     background: linear-gradient(
       to top,
-      rgba(0, 0, 0, 0.4),
-      rgba(0, 0, 0, 0.15) 60%,
+      rgba(0, 0, 0, 0.7),
+      rgba(0, 0, 0, 0.3) 50%,
       transparent
     );
   }
 }
 
-// System light: light gradient (helps dark nav icons stand out)
+// System light: bright light gradient (dark nav icons readable)
 @media (prefers-color-scheme: light) {
   body.capacitor .map-footer-shade {
     background: linear-gradient(
       to top,
-      rgba(255, 255, 255, 0.4),
-      rgba(255, 255, 255, 0.15) 60%,
+      rgba(255, 255, 255, 0.7),
+      rgba(255, 255, 255, 0.3) 50%,
       transparent
     );
   }
