@@ -399,6 +399,15 @@ body {
   color: rgba(242, 247, 244, 0.7);
 }
 
+// ── Tooltips: explicit pine/ink pair ───────────────────────────────────
+// The default tooltip measured 4.41:1 in the contrast gate (marginal
+// fail). Pin the night-pine / paper-white pair: on-brand and ~13:1 in
+// both themes.
+.q-tooltip {
+  background: rgba(10, 20, 15, 0.95) !important;
+  color: #f2f7f4 !important;
+}
+
 // ── Search result rows: tonal hover lift ───────────────────────────────
 .wd-search-card .q-item:hover {
   background: rgba(var(--wd-ink-rgb), 0.04);
