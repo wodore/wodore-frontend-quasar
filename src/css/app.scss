@@ -354,6 +354,33 @@ body {
   }
 }
 
+// ── Review-status badge: anchored tonal pill ───────────────────────────
+// "ungeprüft" & siblings floated as bare colored text with a shadow
+// (round-2 finding) - panel-on-panel chrome gets no shadow. Tonal pill
+// with ridge border; the status keeps its semantic text color.
+.review-badge {
+  border-radius: 999px !important;
+  border: 1px solid var(--wd-ridge) !important;
+  background: rgba(var(--wd-ink-rgb), 0.04) !important;
+  box-shadow: none !important;
+  font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif;
+  font-size: 10px !important;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 1px 8px !important;
+}
+
+// ── Night muted weather text: lift off the 2.5:1 floor ────────────────
+// Round-2 contrast finding: precip and min-temp values measured ~2.5:1
+// on #112119. Same alpha reads darker on pine than on day panels - the
+// night variant gets its own floor.
+.body--dark .wd-weather-day__rain,
+.body--dark .wd-weather-day__snow,
+.body--dark .wd-weather-day__temp-min,
+.body--dark .wd-weather-day__temp-empty {
+  color: rgba(242, 247, 244, 0.7);
+}
+
 // ── Place title voice ──────────────────────────────────────────────────
 // Desktop (text-h5) rendered weight 400 while mobile (text-h6) rendered
 // 500 - the same name spoke in two voices. Unify on the spec Title
