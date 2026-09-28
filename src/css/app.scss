@@ -1200,19 +1200,11 @@ body.capacitor {
     z-index: 1;
   }
 
-  // Maximized dialogs: full-bleed surface (color/image reaches the
-  // very top AND bottom) while the content stays clear of the system
-  // bars. Padding insets the content; the negative margins pull the
-  // card back to the screen edges so no map bleeds through.
-  .q-dialog__inner--maximized > div {
-    padding-top: var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px));
-    margin-top: calc(-1 * var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px)));
-    padding-bottom: var(--q-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
-    margin-bottom: calc(-1 * var(--q-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
-  }
-
-  // Maximized dialogs: content out of the system bars while the dialog
-  // surface (color/image) stays full-bleed behind them
+  // Maximized dialogs: the card fills the viewport edge-to-edge (color/
+  // image behind the system bars), the CONTENT gets safe-area padding
+  // so interactive elements and text clear the bars. No negative
+  // margins — Quasar centers the card with absolute positioning and
+  // negative margins cause double-offsets on Samsung devices.
   .q-dialog__inner--maximized > div {
     padding-top: var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px));
     padding-bottom: var(--q-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
@@ -1227,9 +1219,14 @@ body.capacitor {
   }
 
   // Bottom-positioned map controls rendered as q-page-sticky elements
-  // (basemap switch): margin shifts them clear of the nav bar without
-  // fighting the sticky's inline transform
+  // (basemap switch): q-page-sticky sets an inline transform for
+  // positioning — !important is needed to win over it (the inline value
+  // is just a no-op offset)
   .wd-map-bottom-ctrl {
-    margin-bottom: calc(10px + var(--q-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+    transform: translateY(
+      calc(
+        -10px - var(--q-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))
+      )
+    ) !important;
   }
 }
