@@ -3,6 +3,7 @@ import { ref, inject, watchEffect, watch, onErrorCaptured, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router';
 import { useResizeObserver, useDebounceFn, useThrottleFn, useEventListener } from '@vueuse/core';
 import { useQuasar } from 'quasar';
+import { useI18n } from 'vue-i18n';
 import { useBasemapStore } from '@stores/map/basemap-store';
 import { useLocalPropertiesStore } from '@stores/local-properties-store';
 import { showErrorDialogPersistent, ErrorCode } from '@components/error';
@@ -113,6 +114,7 @@ function getDangerMargin(): number {
 // ============================================================================
 
 const $q = useQuasar();
+const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 const basemapStore = useBasemapStore();
@@ -272,11 +274,13 @@ function onMapLoad(e: MglEvent<'load'>) {
 function onMapError(e: unknown) {
   console.error('[onMapError] Map error occurred:', e);
 
-  // Check if it's a WebGL error
-  const event = e as { error?: unknown; type?: string };
-  if (event.error && typeof event.error === 'object') {
-    const errorObj = event.error as Record<string, unknown>;
+  // vue-maplibre-gl wraps the native event: the MapLibre error lives at
+  // e.event.error (bare e.error is undefined)
+  const raw = e as { error?: unknown; event?: { error?: unknown } };
+  const errorObj = (raw.error ?? raw.event?.error) as Record<string, unknown> | undefined;
 
+  // Check if it's a WebGL error
+  if (errorObj && typeof errorObj === 'object') {
     if (
       errorObj.type === 'webglcontextcreationerror' ||
       errorObj.message?.toString().includes('WebGL')
@@ -287,9 +291,48 @@ function onMapError(e: unknown) {
     }
   }
 
+  // Basemap fallback: a 403 from the tile/style host (e.g. a suspended or
+  // rotated MapTiler key) would otherwise leave a blank, broken map. Switch
+  // once to the keyless Swisstopo raster and tell the user.
+  if (!basemapFallbackDone && isTileAuthFailure(errorObj) && activeBasemapUsesMapTiler()) {
+    basemapFallbackDone = true;
+    const fallback = basemapStore.basemaps.find(b => b.name === 'ch-swisstopo-full');
+    if (fallback) {
+      console.warn('[onMapError] Tile host rejected requests - falling back to Swisstopo raster');
+      void basemapStore.setBasemap(fallback, true);
+      $q.notify({
+        type: 'warning',
+        message: t('map.basemap_fallback'),
+        timeout: 6000,
+        position: 'bottom',
+      });
+    }
+    return;
+  }
+
   // For other errors, show generic map error
   //console.error('[onMapError] Generic map error:', event.error);
   //showErrorDialog({ errorCode: ErrorCode.MAP_ERROR });
+}
+
+let basemapFallbackDone = false;
+
+function isTileAuthFailure(errorObj: Record<string, unknown> | undefined): boolean {
+  const status = errorObj?.status as number | undefined;
+  const message = errorObj?.message?.toString() ?? '';
+  return status === 403 || message.includes('403') || message.toLowerCase().includes('forbidden');
+}
+
+function activeBasemapUsesMapTiler(): boolean {
+  const active = basemapStore.getBasemap();
+  if (!active) return false;
+  const style = active.style as string | { sources?: Record<string, { tiles?: string[] }> };
+  if (typeof style === 'string') {
+    return style.includes('api.maptiler.com');
+  }
+  return Object.values(style.sources ?? {}).some(source =>
+    (source.tiles ?? []).some(url => url.includes('api.maptiler.com'))
+  );
 }
 
 /**
