@@ -325,7 +325,8 @@ body {
   background: rgba(255, 255, 255, 0.07);
 
   > * + * {
-    border-left: 1px dashed rgba(255, 255, 255, 0.24);
+    // slightly stronger than the outer frame so the segment breaks read
+    border-left: 1px dashed rgba(255, 255, 255, 0.34);
   }
 
   // Segments lose their individual frames (family rules above)
