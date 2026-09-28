@@ -1178,11 +1178,28 @@ a.wd-accommodation-day {
 // bar zones. All env() insets evaluate to 0 in the PWA — no changes there.
 // ---------------------------------------------------------------------------
 body.capacitor {
-  // NOTE: NO safe-area padding on toolbars/headers here — Quasar
-  // (>= 2.33) handles it natively by setting every QToolbar's
+  // NOTE: NO safe-area padding on HEADER toolbars here — Quasar
+  // (>= 2.33) handles those natively by setting the QHeader toolbar's
   // min-height inline to calc(var(--q-safe-area-inset-top) + 50px).
-  // Adding padding on top of that doubles the inset (was the "too much
-  // header space" + overlapping drawer menu that swallowed taps).
+  // Adding padding on top of that doubles the inset.
+
+  // Drawer toolbars are NOT covered by Quasar's inline rule — pad them
+  // so the colored toolbar extends under the status bar (green to the
+  // top, like the main header) and the buttons sit below the system bar
+  .menu-drawer .q-toolbar {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  // Maximized dialogs: full-bleed surface (color/image reaches the
+  // very top AND bottom) while the content stays clear of the system
+  // bars. Padding insets the content; the negative margins pull the
+  // card back to the screen edges so no map bleeds through.
+  .q-dialog__inner--maximized > div {
+    padding-top: env(safe-area-inset-top, 0px);
+    margin-top: calc(-1 * env(safe-area-inset-top, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    margin-bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
+  }
 
   // Maximized dialogs: content out of the system bars while the dialog
   // surface (color/image) stays full-bleed behind them

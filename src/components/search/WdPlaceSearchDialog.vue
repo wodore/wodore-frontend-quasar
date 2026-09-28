@@ -44,7 +44,12 @@ function onSearchClose() {
         <!-- Close button (top right corner) -->
         <div
           class="q-ma-xs z-top text-icon"
-          style="position: absolute; top: 6px; right: 6px; z-index: 200"
+          style="
+            position: absolute;
+            top: calc(6px + env(safe-area-inset-top, 0px));
+            right: 6px;
+            z-index: 200;
+          "
         >
           <q-btn dense round flat v-close-popup color="accent-700" icon="wd-close">
             <q-tooltip :delay="2000">{{ $t('close') }}</q-tooltip>
