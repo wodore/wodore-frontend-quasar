@@ -608,6 +608,21 @@ export const useBasemapStore = defineStore('basemap', () => {
           background: { before: undefined },
         },
       },
+      {
+        // Keyless OpenFreeMap vector basemap (openfreemap.org). Hidden
+        // from the picker - it is the automatic fallback when the
+        // MapTiler-based basemaps are rejected (suspended/rotated key).
+        name: 'openfreemap-bright',
+        label: 'OpenFreeMap Bright',
+        show: false,
+        active: false,
+        img: getImageUrl('outdoor-v2.png'),
+        style: 'https://tiles.openfreemap.org/styles/bright',
+        layers: {
+          ways: { before: undefined },
+          background: { before: undefined },
+        },
+      },
     ];
 
     // Add all items to the reactive array

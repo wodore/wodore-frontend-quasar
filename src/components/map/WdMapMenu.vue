@@ -54,9 +54,12 @@ function handleOverlayConfigClose() {
   /* anchor to the drawer's real box (not 100vh math, which lies on
   mobile browsers with dynamic URL bars): flush top under the header,
   flush bottom - the version footer lands exactly at the drawer bottom
-  on desktop emulation AND real phones */
+  on desktop emulation AND real phones. The toolbar carries the
+  status-bar safe-area padding in the native app, so it must be added
+  here too - a fixed 51px leaves the content overlapping the (taller)
+  toolbar and swallowing its taps. */
   position: absolute;
-  top: 51px;
+  top: calc(51px + env(safe-area-inset-top, 0px));
   left: 0;
   right: 0;
   bottom: 0;
@@ -78,7 +81,7 @@ function handleOverlayConfigClose() {
   >
     <!-- DEFAULT MENU -->
     <div v-if="menuStore.menuType === 'default'">
-      <div class="text-center q-pa-xl">
+      <div class="flex flex-center" style="min-height: 32vh">
         <q-icon size="80px">
           <IconNotoV1Construction />
         </q-icon>

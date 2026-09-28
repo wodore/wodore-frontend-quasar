@@ -291,14 +291,15 @@ function onMapError(e: unknown) {
     }
   }
 
-  // Basemap fallback: a 403 from the tile/style host (e.g. a suspended or
-  // rotated MapTiler key) would otherwise leave a blank, broken map. Switch
-  // once to the keyless Swisstopo raster and tell the user.
+  // Basemap fallback: an auth failure from the tile/style host (e.g. a
+  // suspended or rotated MapTiler key) would otherwise leave a blank,
+  // broken map. Switch once to the keyless OpenFreeMap bright style and
+  // tell the user.
   if (!basemapFallbackDone && isTileAuthFailure(errorObj) && activeBasemapUsesMapTiler()) {
     basemapFallbackDone = true;
-    const fallback = basemapStore.basemaps.find(b => b.name === 'ch-swisstopo-full');
+    const fallback = basemapStore.basemaps.find(b => b.name === 'openfreemap-bright');
     if (fallback) {
-      console.warn('[onMapError] Tile host rejected requests - falling back to Swisstopo raster');
+      console.warn('[onMapError] Tile host rejected requests - falling back to OpenFreeMap');
       void basemapStore.setBasemap(fallback, true);
       $q.notify({
         type: 'warning',
@@ -319,8 +320,14 @@ let basemapFallbackDone = false;
 
 function isTileAuthFailure(errorObj: Record<string, unknown> | undefined): boolean {
   const status = errorObj?.status as number | undefined;
-  const message = errorObj?.message?.toString() ?? '';
-  return status === 403 || message.includes('403') || message.toLowerCase().includes('forbidden');
+  const message = (errorObj?.message?.toString() ?? '').toLowerCase();
+  return (
+    status === 403 ||
+    status === 401 ||
+    message.includes('403') ||
+    message.includes('forbidden') ||
+    message.includes('unauthorized')
+  );
 }
 
 function activeBasemapUsesMapTiler(): boolean {
@@ -1076,7 +1083,7 @@ body.capacitor .map-footer-shade {
   bottom: 0;
   z-index: 1; // below the map controls (z-5)
   pointer-events: none;
-  height: calc(env(safe-area-inset-bottom, 0px) + 48px);
+  height: calc(env(safe-area-inset-bottom, 0px) + 28px);
   background: linear-gradient(
     to top,
     rgba(0, 0, 0, 0.2),

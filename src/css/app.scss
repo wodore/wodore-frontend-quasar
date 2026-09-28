@@ -1210,6 +1210,6 @@ body.capacitor {
   // (basemap switch): margin shifts them clear of the nav bar without
   // fighting the sticky's inline transform
   .wd-map-bottom-ctrl {
-    margin-bottom: env(safe-area-inset-bottom, 0px);
+    margin-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
   }
 }

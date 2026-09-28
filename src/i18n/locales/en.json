@@ -72,7 +72,7 @@
       "generic_message": "An error occurred while loading the map",
       "reload": "Reload Page"
     },
-    "basemap_fallback": "Basemap unavailable - switched to Swisstopo raster"
+    "basemap_fallback": "Basemap unavailable - switched to OpenFreeMap"
   },
   "layers": "Layers",
   "maps": "Maps",
