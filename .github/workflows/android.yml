@@ -293,8 +293,8 @@ jobs:
           cd - >/dev/null
           EXT="${PKG##*.}"
           # Per-commit previews: timestamp filename (the package.json
-          // version lags behind — the next version isn't known yet).
-          // RC and release: keep the semver in the filename.
+          # version lags behind — the next version isn't known yet).
+          # RC and release: keep the semver in the filename.
           if [ "${{ steps.resolve.outputs.mode }}" = "preview" ]; then
             STAMP=$(date -u +%Y%m%d%H%M%S)
             mv "$PKG" "${NAME}-${STAMP}-${SHORT_SHA}.${EXT}"
