@@ -374,10 +374,12 @@ body {
 // Round-2 contrast finding: precip and min-temp values measured ~2.5:1
 // on #112119. Same alpha reads darker on pine than on day panels - the
 // night variant gets its own floor.
-.body--dark .wd-weather-day__rain,
-.body--dark .wd-weather-day__snow,
-.body--dark .wd-weather-day__temp-min,
-.body--dark .wd-weather-day__temp-empty {
+// (extra .wd-weather-day hop: the scoped component styles load after
+// app.scss and won the equal-specificity cascade)
+.body--dark .wd-weather-day .wd-weather-day__rain,
+.body--dark .wd-weather-day .wd-weather-day__snow,
+.body--dark .wd-weather-day .wd-weather-day__temp-min,
+.body--dark .wd-weather-day .wd-weather-day__temp-empty {
   color: rgba(242, 247, 244, 0.7);
 }
 
