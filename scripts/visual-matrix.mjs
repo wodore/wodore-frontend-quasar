@@ -34,7 +34,21 @@ const ARGS = Object.fromEntries(
 // Boolean flags (no value): --sheet generates optional human contact sheets
 const FLAGS = { sheet: process.argv.includes('--sheet') };
 const BASE = process.env.VISUAL_BASE_URL || 'http://localhost:9000';
-const HUT = '/hut/laemmeren?date=26.09.26#p=12/46.43749/7.08606';
+// Deployed previews run the router in hash mode; the dev server uses
+// history mode. A history-mode path on a hash build hits the gh-pages
+// 404 (page never loads) - this made every hut state fail on previews.
+const HASH_MODE = /github\.io/.test(BASE);
+const HUT_PATH = '/hut/laemmeren?date=26.09.26';
+const HUT = HASH_MODE
+  ? `#${HUT_PATH}`
+  : `${HUT_PATH}#p=12/46.43749/7.08606`;
+
+/** Wait until the app shell is interactive (cold CDN loads race the
+ *  old fixed 2.5s sleeps - the first config paid for every chunk). */
+const appReady = async p => {
+  await p.waitForSelector('header, .q-header', { timeout: 20000 });
+  await p.waitForSelector('.maplibregl-canvas', { timeout: 20000 }).catch(() => {});
+};
 const TS = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
 const OUT = `.visual-tests/${TS}`;
 mkdirSync(OUT, { recursive: true });
@@ -124,31 +138,36 @@ const STATES = [
     id: 'hut',
     run: async p => {
       await p.goto(BASE + HUT, { waitUntil: 'load' });
-      // staging latency after the backend redeploy: 3.5s raced the API
-      await p.waitForTimeout(12000);
+      // wait for the hut DATA (staging API latency varies 2-15s)
+      await p
+        .waitForSelector('text=/Aarbiwak|mmerenh/i', { timeout: 25000 })
+        .catch(() => {});
+      await p.waitForTimeout(800);
     },
-    assert: 'text=/Aarbiwak|Lämmern|lammeren/i',
+    assert: 'text=/Aarbiwak|mmerenh/i',
   },
   {
     id: 'hut-expanded',
     run: async p => {
       await p.goto(BASE + HUT, { waitUntil: 'load' });
-      // staging latency after the backend redeploy: 3.5s raced the API
-      await p.waitForTimeout(12000);
+      await p
+        .waitForSelector('text=/Aarbiwak|mmerenh/i', { timeout: 25000 })
+        .catch(() => {});
       await softClick(
         p,
         '[aria-label*="expand" i], [aria-label*="maximi" i], button:has(i[class*="expand"]), button:has(i[class*="resize"])'
       );
       await p.waitForTimeout(800);
     },
-    assert: 'text=/Aarbiwak|Lämmern|lammeren/i',
+    assert: 'text=/Aarbiwak|mmerenh/i',
   },
   {
     id: 'hut-bottom',
     run: async p => {
       await p.goto(BASE + HUT, { waitUntil: 'load' });
-      // staging latency after the backend redeploy: 3.5s raced the API
-      await p.waitForTimeout(12000);
+      await p
+        .waitForSelector('text=/Aarbiwak|mmerenh/i', { timeout: 25000 })
+        .catch(() => {});
       await p.evaluate(() => {
         const els = [...document.querySelectorAll('*')].filter(
           e =>
@@ -161,13 +180,13 @@ const STATES = [
       });
       await p.waitForTimeout(600);
     },
-    assert: 'text=/Aarbiwak|Lämmern|lammeren/i',
+    assert: 'text=/Aarbiwak|mmerenh/i',
   },
   {
     id: 'menu-open',
     run: async p => {
       await p.goto(BASE + '/', { waitUntil: 'load' });
-      await p.waitForTimeout(2500);
+      await appReady(p);
       await softClick(p, 'header button');
       await p.waitForTimeout(700);
     },
@@ -177,7 +196,7 @@ const STATES = [
     id: 'account-sheet-open',
     run: async p => {
       await p.goto(BASE + '/', { waitUntil: 'load' });
-      await p.waitForTimeout(2500);
+      await appReady(p);
       await softClick(p, 'header button');
       await p.waitForTimeout(700);
       // if a drawer opened, look for the account/user entry inside it
@@ -193,7 +212,7 @@ const STATES = [
     id: 'calendar-open',
     run: async p => {
       await p.goto(BASE + '/', { waitUntil: 'load' });
-      await p.waitForTimeout(2500);
+      await appReady(p);
       await softClick(p, '.wd-date-field, header .q-field, header input[readonly]');
       await p.waitForTimeout(900);
     },
@@ -203,7 +222,7 @@ const STATES = [
     id: 'search-open',
     run: async p => {
       await p.goto(BASE + '/', { waitUntil: 'load' });
-      await p.waitForTimeout(2500);
+      await appReady(p);
       await softClick(p, 'header input, header .q-field');
       await p.waitForTimeout(900);
     },
@@ -213,7 +232,7 @@ const STATES = [
     id: 'search-results',
     run: async p => {
       await p.goto(BASE + '/', { waitUntil: 'load' });
-      await p.waitForTimeout(2500);
+      await appReady(p);
       await softClick(p, 'header input, header .q-field');
       await p.waitForTimeout(600);
       const inp = p.locator('.q-menu input, header input, [class*="search"] input').first();
