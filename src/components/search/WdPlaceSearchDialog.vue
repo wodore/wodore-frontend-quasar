@@ -40,7 +40,19 @@ function onSearchClose() {
       transition-show="slide-up"
       transition-hide="slide-down"
     >
-      <div style="position: relative; height: 100vh; height: 100dvh; width: 100vw">
+      <div
+        style="
+          position: relative;
+          height: 100vh;
+          height: 100dvh;
+          width: 100vw;
+          padding-top: var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px));
+          padding-bottom: var(
+            --q-safe-area-inset-bottom,
+            env(safe-area-inset-bottom, 0px)
+          );
+        "
+      >
         <!-- Close button (top right corner) -->
         <div
           class="q-ma-xs z-top text-icon"
