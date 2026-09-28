@@ -423,7 +423,7 @@ body.body--dark .app-header .text-icon {
       :side="isMobile ? 'right' : 'left'"
       :width="300"
       :breakpoint="610"
-      class="shadow-2"
+      class="wd-menu-drawer"
       style="max-width: 80vw"
     >
       <!-- TOOLBAR mobile -->

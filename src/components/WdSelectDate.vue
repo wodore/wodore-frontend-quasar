@@ -531,7 +531,7 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
       >
     </q-btn> -->
     <!-- DESKTOP - textfiled -->
-    <div class="row no-wrap items-start" style="gap: 4px">
+    <div class="wd-date-stepper row no-wrap items-start">
       <div
         v-if="!isMobile"
         @click="decrementDate"

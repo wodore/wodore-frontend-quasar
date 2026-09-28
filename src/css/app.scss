@@ -315,6 +315,44 @@ body {
   font-size: 12.5px;
 }
 
+// ── Date stepper: one segmented control ───────────────────────────────
+// The < > arrows, the date field and the calendar icon read as three
+// loose chips; the group now carries the family frame and the segments
+// separate with dashed dividers instead of their own borders.
+.wd-date-stepper {
+  border: 1px dashed rgba(255, 255, 255, 0.24);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.07);
+
+  > * + * {
+    border-left: 1px dashed rgba(255, 255, 255, 0.24);
+  }
+
+  // Segments lose their individual frames (family rules above)
+  .wd-input-button .q-field__control,
+  .wd-date-field .q-field__control {
+    background: transparent !important;
+    padding: 0 8px !important;
+  }
+
+  .wd-input-button .q-field__control::before,
+  .wd-date-field .q-field__control::before {
+    background: transparent !important;
+    border: none !important;
+  }
+}
+
+// ── Menu drawer: tonal edge, no shadow (panel-on-page) ────────────────
+.wd-menu-drawer {
+  box-shadow: none !important;
+  border-right: 1px solid var(--wd-ridge);
+
+  @media (max-width: 609px) {
+    border-right: none;
+    border-left: 1px solid var(--wd-ridge);
+  }
+}
+
 // ── Section titles (instrument labels) ────────────────────────────────
 // De-golded 2026-09-27: content section headers were gold TEXT in both
 // themes (decoration, not beam). Now: ink/ice voice + short gold tick.

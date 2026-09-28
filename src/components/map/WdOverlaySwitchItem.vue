@@ -196,12 +196,14 @@ function onFilterClick(event: Event) {
 
 .filter-badge {
   position: absolute;
-  top: 3px;
-  right: 2px;
-  width: 6px;
-  height: 6px;
+  top: 4px;
+  right: 3px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background: var(--q-primary);
+  // Active filter = selected state -> turquoise (orientation), not brand green
+  background: #2673bf;
+  box-shadow: 0 0 0 2px #fdfefd; // ring in the chip surface color
 }
 </style>
 
