@@ -260,7 +260,7 @@ body.body--light .app-header {
 }
 
 .app-header .q-btn:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.16) !important;
 }
 
 body.body--light .app-header .q-btn .q-icon,
@@ -269,6 +269,14 @@ body.body--light .app-header .q-btn.text-icon,
 body.body--light .app-header button.text-icon {
   color: #f2f7f4 !important;
   background: transparent !important;
+}
+
+// Hover wash must outrank the flat-chrome rule above (its (0,4,1)
+// specificity beat the plain .app-header .q-btn:hover and froze hover
+// transparent in Day - the "invisible hover" from the design review)
+body.body--light .app-header .q-btn.text-icon:hover,
+body.body--light .app-header button.text-icon:hover {
+  background: rgba(255, 255, 255, 0.16) !important;
 }
 // Quasar draws button fills on ::before - kill it in the header
 .app-header .q-btn::before {
@@ -350,15 +358,20 @@ body.body--dark .app-header .text-icon {
   background: var(--wd-surface);
   color: var(--wd-ink);
 
-  // Drawer header elevation: drop shadow once the content is scrolled
-  // (mirrors the mobile sheet header shadow). The header area is backed by
-  // the layout's grey background, so the shadow reads cleanly.
+  // Drawer header scrolled state (owner 2026-09-28): a separation line
+  // plus a solid surface - content visibly slides UNDER the header. The
+  // old drop shadow was both rule-violating (panel-on-panel) and hard
+  // to see against the pine tones.
   .q-header {
-    transition: box-shadow 0.2s ease;
+    border-bottom: 1px solid transparent;
+    transition:
+      border-color 0.15s ease,
+      background-color 0.15s ease;
   }
 
   .q-header.content-drawer-header-scrolled {
-    box-shadow: 0 4px 10px -4px rgba(0, 0, 0, 0.35);
+    background: var(--wd-surface-deep);
+    border-bottom-color: rgba(var(--wd-ink-rgb), 0.16);
   }
 }
 </style>
@@ -415,7 +428,7 @@ body.body--dark .app-header .text-icon {
       :side="isMobile ? 'right' : 'left'"
       :width="300"
       :breakpoint="610"
-      class="shadow-2"
+      class="wd-menu-drawer"
       style="max-width: 80vw"
     >
       <!-- TOOLBAR mobile -->

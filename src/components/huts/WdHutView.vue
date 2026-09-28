@@ -229,7 +229,7 @@ const { images: nearbyImages, loading: imagesLoading } = useHutImages(computed((
 }
 
 .hut-image {
-  border-radius: 25px !important;
+  border-radius: 8px !important;
   max-width: 300px;
   min-width: 200px;
 }
@@ -268,7 +268,7 @@ const { images: nearbyImages, loading: imagesLoading } = useHutImages(computed((
   font-size: x-small;
   color: rgb(171, 171, 171);
   padding: 6px 20px 6px 10px;
-  border-radius: 10px 0 0 0;
+  border-radius: 8px 0 0 0;
 }
 
 .img-link :deep(a:active),
@@ -340,7 +340,7 @@ const { images: nearbyImages, loading: imagesLoading } = useHutImages(computed((
           <!-- used to add shadow to header -->
           <h2
             :style="($q.screen.gt.sm ? 'margin-top: -3px; ' : '') + 'text-wrap: wrap;'"
-            class="text-subtitle1 wd-gold-text q-ma-none q-mb-sm"
+            class="wd-section-title q-ma-none q-mb-sm"
           >
             <span v-intersection="addHeaderShadow" />
             {{ hut.owner?.name }}
@@ -422,7 +422,7 @@ const { images: nearbyImages, loading: imagesLoading } = useHutImages(computed((
             :elevation="hut.elevation ?? undefined"
           />
           <!--LOCATION-->
-          <div class="text-subtitle1 wd-gold-text">{{ $t('location') }}</div>
+          <div class="wd-section-title">{{ $t('location') }}</div>
           <q-list dense>
             <q-item v-if="hut.location">
               <q-item-section side>

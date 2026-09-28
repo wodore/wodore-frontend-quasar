@@ -213,7 +213,7 @@ const barColorLight = computed(() => {
   width: 100%;
   height: 100%;
   padding: 4px;
-  border-radius: 10px;
+  border-radius: 8px;
   border: 2px solid rgba(0, 0, 0, 0.16);
   box-sizing: border-box;
   display: flex;

@@ -263,7 +263,8 @@
     "error_dismiss": "Dommage, peut-être une autre fois...",
     "alternative": "Alternativement :",
     "or": "ou",
-    "not_available": "Actuellement indisponible"
+    "not_available": "Actuellement indisponible",
+    "placeholder_short": "Date"
   },
   "overlay_config": {
     "reset_done": "Paramètres réinitialisés",

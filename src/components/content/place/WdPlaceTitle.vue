@@ -30,7 +30,7 @@ const { place } = usePlace(computed(() => props.slug));
       <div class="wd-place-title__text col self-center">
         <!-- Overline: elevation + weather -->
         <div
-          class="wd-place-title__overline text-caption wd-gold-text"
+          class="wd-place-title__overline text-caption wd-ink-soft-text"
           :class="{ invisible: !place.elevation && !place.location }"
         >
           <template v-if="place.elevation || place.location">

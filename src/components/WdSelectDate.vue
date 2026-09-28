@@ -350,7 +350,7 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
             class="q-ma-xs z-top text-icon wd-close-btn"
             style="position: absolute; width: 32px; top: 6px; right: 6px"
           >
-            <q-btn dense round v-close-popup color="accent-700" icon="wd-close"></q-btn>
+            <q-btn dense round flat v-close-popup class="wd-close-chip" icon="wd-close"></q-btn>
           </div>
           <!-- HEADER: same slight bg as the footer -->
           <q-list padding class="wd-surface-deep">
@@ -362,14 +362,14 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
               </q-item-section> -->
               <!-- NAME - EMAIL -->
               <q-item-section v-if="!showCalendarError">
-                <q-item-label class="text-h6 text-accent">{{ selectedDateDay }}</q-item-label>
+                <q-item-label class="text-h6 wd-ink-text">{{ selectedDateDay }}</q-item-label>
                 <q-item-label class="text-body2 text-primary-100">{{
                   selectedDateLongName
                 }}</q-item-label>
               </q-item-section>
               <!-- ERROR MESSAGE HEADER -->
               <q-item-section v-else>
-                <q-item-label class="text-h6 text-accent">
+                <q-item-label class="text-h6 wd-ink-text">
                   {{ t('select_date.not_available') }}
                 </q-item-label>
               </q-item-section>
@@ -497,7 +497,7 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
                 flat
                 :disable="todayDisabled"
                 @click="gotoToday"
-                class="q-mr-md text-accent"
+                class="q-mr-md wd-info-text"
                 :class="{ 'text-dark-200': todayDisabled }"
                 >{{ t('today') }}</q-btn
               >
@@ -531,7 +531,7 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
       >
     </q-btn> -->
     <!-- DESKTOP - textfiled -->
-    <div class="row no-wrap items-start" style="gap: 4px">
+    <div class="wd-date-stepper row no-wrap items-start">
       <div
         v-if="!isMobile"
         @click="decrementDate"
@@ -563,7 +563,7 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
           :model-value="selectedDateDisplay"
           dense
           class="toolbar-font wd-date-field"
-          :placeholder="selectedDateDisplay || t('select_date.placeholder')"
+          :placeholder="selectedDateDisplay || t(isMobile ? 'select_date.placeholder_short' : 'select_date.placeholder')"
           @click="showMenu = true"
         >
           <!-- </q-input>:rules="[

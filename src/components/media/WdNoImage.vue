@@ -99,7 +99,7 @@ const handleKeydown = (event: KeyboardEvent) => {
     var(--wd-surface, #fdfefd) 0%,
     var(--wd-surface-deep, #e9ecef) 100%
   );
-  border-radius: 16px;
+  border-radius: 8px;
   overflow: hidden;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
   // Ensure border-box for consistent sizing

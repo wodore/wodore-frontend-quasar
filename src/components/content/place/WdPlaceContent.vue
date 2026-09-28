@@ -292,7 +292,7 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
       </div>
 
       <!-- Location -->
-      <div class="text-subtitle1 wd-gold-text q-mt-md">{{ $t('location') }}</div>
+      <div class="wd-section-title q-mt-md">{{ $t('location') }}</div>
       <q-list dense>
         <q-item v-if="place.location">
           <q-item-section side>
