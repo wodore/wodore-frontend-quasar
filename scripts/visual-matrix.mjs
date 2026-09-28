@@ -124,7 +124,8 @@ const STATES = [
     id: 'hut',
     run: async p => {
       await p.goto(BASE + HUT, { waitUntil: 'load' });
-      await p.waitForTimeout(3500);
+      // staging latency after the backend redeploy: 3.5s raced the API
+      await p.waitForTimeout(12000);
     },
     assert: 'text=/Aarbiwak|Lämmern|lammeren/i',
   },
@@ -132,7 +133,8 @@ const STATES = [
     id: 'hut-expanded',
     run: async p => {
       await p.goto(BASE + HUT, { waitUntil: 'load' });
-      await p.waitForTimeout(3500);
+      // staging latency after the backend redeploy: 3.5s raced the API
+      await p.waitForTimeout(12000);
       await softClick(
         p,
         '[aria-label*="expand" i], [aria-label*="maximi" i], button:has(i[class*="expand"]), button:has(i[class*="resize"])'
@@ -145,7 +147,8 @@ const STATES = [
     id: 'hut-bottom',
     run: async p => {
       await p.goto(BASE + HUT, { waitUntil: 'load' });
-      await p.waitForTimeout(3500);
+      // staging latency after the backend redeploy: 3.5s raced the API
+      await p.waitForTimeout(12000);
       await p.evaluate(() => {
         const els = [...document.querySelectorAll('*')].filter(
           e =>
