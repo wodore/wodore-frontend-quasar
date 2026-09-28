@@ -263,11 +263,19 @@ bottom-sheet[data-sheet-state='expanded'] {
  * The attribute is toggled by the component's content scroll listener.
  */
 bottom-sheet::part(header) {
-  transition: box-shadow 0.2s ease;
+  border-bottom: 1px solid transparent;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
 }
 
+// Scrolled: same treatment as the desktop drawer header (owner
+// 2026-09-28): surface-deep + a 16%-ink line - content slides UNDER
+// the header. The old drop shadow was invisible on pine.
 bottom-sheet[data-content-scrolled]::part(header) {
-  box-shadow: 0 4px 10px -4px rgba(0, 0, 0, 0.35);
+  background: var(--wd-surface-deep);
+  border-bottom-color: rgba(var(--wd-ink-rgb), 0.16);
+  box-shadow: none;
   z-index: 10;
 }
 
