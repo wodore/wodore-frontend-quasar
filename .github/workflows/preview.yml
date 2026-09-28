@@ -1,7 +1,8 @@
 name: PR Preview
 
-# Static GitHub Pages previews for pull requests carrying the 'preview'
-# label. Read-only (no login): Zitadel redirect URIs are exact-match, so
+# Static GitHub Pages previews for pull requests carrying the
+# 'PREVIEW:web' label. Read-only (no login): Zitadel redirect URIs are
+# exact-match, so
 # previews cannot authenticate; API access is read-only against the
 # staging API by default (overridable via WODORE_API_HOST).
 # Complex scenarios (login, writes) belong on the docker staging env.
@@ -40,8 +41,11 @@ jobs:
               'sha7',
               (context.payload.pull_request.head.sha || context.sha).slice(0, 7)
             );
+            // Label set renamed 'PREVIEW' -> 'PREVIEW:web' / 'PREVIEW:android'
+            // (the android APK preview has its own workflow/label). This web
+            // preview deploys on PREVIEW:web only.
             const isPreviewLabel = (name) =>
-              (name || '').toLowerCase() === 'preview';
+              (name || '').toLowerCase() === 'preview:web';
             const wasUnlabeled =
               context.action === 'unlabeled' &&
               isPreviewLabel(context.payload.label?.name);

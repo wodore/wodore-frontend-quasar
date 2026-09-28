@@ -225,7 +225,8 @@ function stackedClass(monthIndex: number) {
   flex: 1;
   text-align: center;
   font-size: 0.5rem;
-  color: #aaa;
+  /* #aaa failed WCAG AA (2.3:1) - muted ink floor instead */
+  color: rgba(var(--wd-ink-rgb), 0.7);
   line-height: 1;
   padding-bottom: 1px;
 
