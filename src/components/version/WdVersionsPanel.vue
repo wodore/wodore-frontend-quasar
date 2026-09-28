@@ -46,7 +46,8 @@ onMounted(fetchBackendVersion);
 </style>
 
 <template>
-  <div class="column q-gutter-y-xs q-pb-xl q-px-sm q-mt-md">
+  <div class="wd-versions column q-gutter-y-xs q-pb-xl q-px-sm q-mt-md">
+    <div class="wd-versions__label wd-ink-soft-text">Build</div>
     <WdVersionTag type="frontend" :version="frontendVersion" :hash="frontendHash"> </WdVersionTag>
     <WdVersionTag
       type="backend"

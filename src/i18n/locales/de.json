@@ -264,7 +264,8 @@
     "error_dismiss": "Schade, dann halt nicht...",
     "alternative": "Alternativ:",
     "or": "oder",
-    "not_available": "Im Moment nicht verfügbar"
+    "not_available": "Im Moment nicht verfügbar",
+    "placeholder_short": "Datum"
   },
   "overlay_config": {
     "reset_done": "Einstellungen zurückgesetzt",

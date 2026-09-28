@@ -7,7 +7,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "lint": "eslint --ext .js,.ts,.vue ./",
+    "lint": "eslint --ext .js,.ts,.vue ./ && node scripts/check-radius.mjs",
     "lint:fix": "eslint --fix --ext .js,.ts,.vue ./",
     "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\"",
     "test": "yarn test:unit",

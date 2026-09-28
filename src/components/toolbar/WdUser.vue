@@ -109,7 +109,7 @@ const showMenu = ref(false);
           class="q-ma-xs z-top text-icon"
           style="position: absolute; width: 32px; top: 6px; right: 6px"
         >
-          <q-btn dense round v-close-popup color="accent-700" icon="wd-close"></q-btn>
+          <q-btn dense round flat v-close-popup class="wd-close-chip" icon="wd-close"></q-btn>
           <q-btn
             flat
             dense

@@ -233,7 +233,8 @@ const tooltipLines = computed(() => {
   min-width: 68px;
   max-width: 68px;
   padding: 6px 2px 8px;
-  border-radius: 10px;
+  border-radius: 4px;
+  border: 1px solid transparent;
   text-decoration: none;
   color: inherit;
   cursor: pointer;
@@ -252,8 +253,12 @@ const tooltipLines = computed(() => {
   opacity: 0.55;
 }
 
+// Unified day language (owner 2026-09-28): selected = tonal fill +
+// gold ridge - identical to the weather stripe and the calendar. The
+// old gold wash read as a sunken olive card.
 .wd-accommodation-day--selected {
-  background: rgba(color('accent'), 0.12);
+  background: rgba(var(--wd-ink-rgb), 0.06);
+  border-color: var(--wd-gold-text);
 }
 
 // Badge row at bottom: color strip + icon + total (or ? for unknown)

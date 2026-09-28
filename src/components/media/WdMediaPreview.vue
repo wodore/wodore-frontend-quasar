@@ -959,7 +959,7 @@ const thumbnailContainerStyle = computed(() => {
     height: var(--thumbnail-size) !important;
     opacity: 0.5;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border-radius: 6px;
+    border-radius: 4px;
     overflow: hidden;
     cursor: pointer;
     flex-shrink: 0;
@@ -991,7 +991,7 @@ const thumbnailContainerStyle = computed(() => {
 
 .thumb-content-wrapper {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border-radius: 6px;
+  border-radius: 4px;
   overflow: hidden;
   position: relative;
   width: 100%;
@@ -1009,7 +1009,7 @@ const thumbnailContainerStyle = computed(() => {
 .thumb-image-inline {
   width: 100%;
   height: 100%;
-  border-radius: 6px;
+  border-radius: 4px;
   border: 1px solid rgba(255, 255, 255, 0.4);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   position: relative;
@@ -1081,7 +1081,7 @@ const thumbnailContainerStyle = computed(() => {
   color: white;
   font-size: 0.75rem;
   padding: 5px 8px;
-  border-radius: 6px;
+  border-radius: 4px;
   pointer-events: none;
   font-weight: 500;
   letter-spacing: 0.25px;

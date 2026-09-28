@@ -120,13 +120,13 @@ function getUnknownIcon(): string {
 </script>
 <style scoped>
 .monthly {
-  border-radius: 5px;
+  border-radius: 4px;
 }
 </style>
 <template>
   <div v-if="props.open_monthly">
     <!-- <pre>{{ $props.open_monthly }}</pre> -->
-    <div class="text-subtitle1 wd-gold-text q-mb-sm">{{ $t('hut_type') }}</div>
+    <div class="wd-section-title q-mb-sm">{{ $t('hut_type') }}</div>
 
     <div class="row monthly overflow-hidden" v-if="!$q.platform.is.mobile">
       <div v-for="m in monthList" :key="m" class="col-md-2 col-sm-1 col-2">

@@ -356,7 +356,7 @@ function handleSwipeDown() {
       :style="
         isMobile
           ? 'position: fixed; top: 88px; left: 0; right: 0; bottom: 0; height: auto;'
-          : 'height: 400px; max-height: 600px'
+          : 'height: auto; max-height: 600px'
       "
     >
       <q-list v-if="searchResults.length > 0" class="wd-surface" :class="{ 'q-mt-sm': !isMobile }">

@@ -322,6 +322,13 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   background: black;
+  // Native app: pad content away from the system bars (the black bg
+  // stays full-bleed behind them)
+  padding-top: var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px));
+  padding-bottom: var(
+    --q-safe-area-inset-bottom,
+    env(safe-area-inset-bottom, 0px)
+  );
   transition: all 0.3s ease;
 }
 
@@ -664,7 +671,7 @@ onUnmounted(() => {
 .thumb-image-wrapper {
   width: 100%;
   height: 100%;
-  border-radius: 6px;
+  border-radius: 4px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.15); // Loading placeholder background
   position: relative;
@@ -681,7 +688,7 @@ onUnmounted(() => {
 .thumb-image {
   width: 100%;
   height: 100%;
-  border-radius: 6px;
+  border-radius: 4px;
   object-fit: cover;
   opacity: 0; // Start hidden
   transition: opacity 0.3s ease;

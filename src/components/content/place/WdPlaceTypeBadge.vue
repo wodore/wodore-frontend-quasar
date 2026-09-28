@@ -48,7 +48,7 @@ const bgStyle = computed(() => {
   padding: 4px 4px 4px 6px;
   border: 1px solid rgba(0, 0, 0, 0.07);
   border-left: 6px solid;
-  border-radius: 6px;
+  border-radius: 4px;
 }
 
 .wd-info-badge__icon {

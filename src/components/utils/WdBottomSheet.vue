@@ -99,18 +99,40 @@ let detachContentScroll: (() => void) | null = null;
 
 function onContentScroll(event: Event): void {
   const target = event.target as { scrollTop?: number } | null;
-  const scrolled = (target?.scrollTop ?? 0) > 2;
+  // Tolerance 10px: the snap animation and subpixel rounding can leave
+  // a few px of scrollTop on a fresh open - the line must not show
+  // before the user actually scrolled (owner report)
+  const scrolled = (target?.scrollTop ?? 0) > 10;
   if (scrolled === contentScrolled.value) return;
   contentScrolled.value = scrolled;
   sheetElement.value?.toggleAttribute('data-content-scrolled', scrolled);
 }
 
 function attachContentScrollListener(sheet: BottomSheet): void {
+  // The sheet's own content element...
   const element = sheet.shadowRoot?.querySelector('.sheet-content');
-  if (!element) return;
-  element.addEventListener('scroll', onContentScroll, { passive: true });
-  detachContentScroll = () => element.removeEventListener('scroll', onContentScroll);
-  sheet.toggleAttribute('data-content-scrolled', element.scrollTop > 2);
+  // ...AND the slotted app content's scroller: on hut pages the real
+  // scrolling happens inside the slot (q-scrollarea), not in
+  // .sheet-content - without this listener the scrolled header state
+  // never fires on mobile (owner report: header line "still barely
+  // visible" - it literally never appeared).
+  const slottedScroller = sheet.querySelector<HTMLElement>(
+    '.q-scrollarea__container, .q-drawer__content, .overlay-scroll'
+  );
+  // NEVER use the host's own scrollTop as the signal: on this sheet the
+  // host scroll IS the snap position (330px at the peek snap, max when
+  // expanded - measured live), so host-based detection showed the line
+  // on every fresh open. Content scroll happens in .sheet-content
+  // (nested-scroll mode) or the slotted scroller only.
+  const targets = [element, slottedScroller].filter(Boolean) as HTMLElement[];
+  for (const t of targets) t.addEventListener('scroll', onContentScroll, { passive: true });
+  detachContentScroll = () => {
+    for (const t of targets) t.removeEventListener('scroll', onContentScroll);
+  };
+  sheet.toggleAttribute(
+    'data-content-scrolled',
+    targets.some((t) => t.scrollTop > 10)
+  );
 }
 
 /**
@@ -269,14 +291,6 @@ bottom-sheet[data-sheet-state='expanded'] {
  * otherwise later-painted content (the photo gallery) covers the shadow.
  * The attribute is toggled by the component's content scroll listener.
  */
-bottom-sheet::part(header) {
-  transition: box-shadow 0.2s ease;
-}
-
-bottom-sheet[data-content-scrolled]::part(header) {
-  box-shadow: 0 4px 10px -4px rgba(0, 0, 0, 0.35);
-  z-index: 10;
-}
 
 /*
  * Slotted app content inherits box-sizing through the flattened (shadow)
@@ -295,6 +309,28 @@ bottom-sheet * {
  */
 body.capacitor bottom-sheet::part(footer) {
   padding-bottom: var(--q-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+}
+</style>
+<style>
+/*
+ * Scrolled sheet header - UNSCOPED on purpose: the scoped data-v
+ * attribute never lands on the custom-element host, so the previous
+ * ::part(header) rules (shadow, then line) were dead CSS - the header
+ * treatment literally never rendered. Same language as the desktop
+ * drawer header: surface-deep + 16%-ink line when scrolled.
+ */
+bottom-sheet::part(header) {
+  border-bottom: 1px solid transparent;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+bottom-sheet[data-content-scrolled]::part(header) {
+  background: var(--wd-surface-deep);
+  border-bottom-color: rgba(var(--wd-ink-rgb), 0.16);
+  box-shadow: none;
+  z-index: 10;
 }
 </style>
 

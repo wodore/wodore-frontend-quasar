@@ -87,25 +87,43 @@
   color: var(--wd-ink) !important;
 }
 
-// Today: forest with paper text
-.body--light .q-card.dialog-radius .q-date__calendar-item--today,
-.body--dark .q-card.dialog-radius .q-date__calendar-item--today {
-  .q-btn {
-    color: #bfab25 !important;
-    font-weight: 600;
-  }
+// Today (unselected): quiet tonal fill + regular ink - IDENTICAL to the
+// weather stripe's today tile (owner: one today/selected language across
+// availability and weather; selected outranks today).
+// NOTE: Quasar 2.33 marks today on the day BUTTON (.q-date__today), not
+// on the calendar-item wrapper - the previous wrapper selectors were
+// dead code and today was never marked at all.
+.body--light .q-card.dialog-radius .q-date .q-date__today:not(.q-btn--active),
+.body--dark .q-card.dialog-radius .q-date .q-date__today:not(.q-btn--active) {
+  color: var(--wd-ink) !important;
+  font-weight: 600;
+  background: rgba(var(--wd-ink-rgb), 0.12) !important;
+
   .q-btn__layer {
     background: transparent !important;
   }
 }
 
-// Selected/active day: forest fill with paper text
+// Selected day: tonal fill + inset gold ring - IDENTICAL to the
+// weather stripe's selected tile. Inset shadow, not border: no geometry
+// change inside the day grid. Selected wins over today (later in the
+// cascade at equal specificity; the ring is the strong mark).
+// NOTE: Quasar 2.33 marks the picked day with bg-accent/text-white
+// classes (not q-btn--active) - the old --active selector never matched.
 .body--light .q-card.dialog-radius .q-btn--outline,
-.body--light .q-card.dialog-radius .q-date__calendar-item .q-btn--active,
+.body--light .q-card.dialog-radius .q-date .q-btn.bg-accent,
 .body--dark .q-card.dialog-radius .q-btn--outline,
-.body--dark .q-card.dialog-radius .q-date__calendar-item .q-btn--active {
-  background: #346751 !important;
-  color: #f2f7f4 !important;
+.body--dark .q-card.dialog-radius .q-date .q-btn.bg-accent {
+  background: rgba(var(--wd-ink-rgb), 0.06) !important;
+  color: var(--wd-ink) !important;
+  font-weight: 500;
+  box-shadow: inset 0 0 0 1px var(--wd-gold-text) !important;
+}
+
+// Today + selected: the gold ring must survive on the picked today cell
+.body--light .q-card.dialog-radius .q-date .q-date__today.bg-accent,
+.body--dark .q-card.dialog-radius .q-date .q-date__today.bg-accent {
+  box-shadow: inset 0 0 0 1px var(--wd-gold-text) !important;
 }
 
 // Disabled / out-of-month days: faded but READABLE per theme (the old
@@ -171,12 +189,30 @@
   opacity: 0.7;
 }
 
-// Light mode: close button is flat (no fill, no shadow, ink icon).
-// Dark mode keeps the accent-700 (orange) fill via the color prop.
-.body--light .q-card.dialog-radius .wd-close-btn .q-btn {
+// ── Close-button standard (all dialogs/sheets, both themes) ────────────
+// A close affordance is a dismissal control, not a brand action: flat
+// tonal chip, ink glyph, never gold, no border, no shadow anywhere -
+// including Quasar's ::before fill layer. Toolbar/over-imagery closes
+// keep their local chrome instead (wd-toolbar-btn etc).
+.body--light .q-card.dialog-radius .wd-close-btn .q-btn,
+.body--dark .q-card.dialog-radius .wd-close-btn .q-btn,
+.wd-close-chip {
+  background: rgba(var(--wd-ink-rgb), 0.06) !important;
+  box-shadow: none !important;
+  border: none !important;
+  color: var(--wd-ink) !important;
+  opacity: 1 !important;
+}
+
+.wd-close-chip::before,
+.wd-close-chip .q-btn__layer,
+.q-card.dialog-radius .wd-close-btn .q-btn::before {
   background: transparent !important;
   box-shadow: none !important;
-  color: var(--wd-ink) !important;
+}
+
+.wd-close-chip:hover {
+  background: rgba(var(--wd-ink-rgb), 0.1) !important;
 }
 
 // QFab open animation: newer Quasar scales each action from the child's
@@ -277,6 +313,168 @@ body {
   }
 }
 
+// ── Toolbar control labels (instrument voice) ─────────────────────────
+// Date field + search placeholder speak as controls: Barlow Semi
+// Condensed uppercase with tracking (Instrument Label Rule). Typed search
+// text stays sentence-case content.
+.wd-date-field .q-field__native,
+.wd-date-field .q-field__prefix {
+  font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 13px;
+}
+
+.wd-search-field .q-field__native::placeholder,
+.wd-search-field .q-placeholder::placeholder {
+  font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 12.5px;
+}
+
+// ── Date stepper: one segmented control ───────────────────────────────
+// The < > arrows, the date field and the calendar icon read as three
+// loose chips; the group now carries the family frame and the segments
+// separate with dashed dividers instead of their own borders.
+.wd-date-stepper {
+  border: 1px dashed rgba(255, 255, 255, 0.24);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.07);
+
+  > * + * {
+    // slightly stronger than the outer frame so the segment breaks read
+    border-left: 1px dashed rgba(255, 255, 255, 0.34);
+  }
+
+  // Segments lose their individual frames (family rules above)
+  .wd-input-button .q-field__control,
+  .wd-date-field .q-field__control {
+    background: transparent !important;
+    padding: 0 8px !important;
+  }
+
+  .wd-input-button .q-field__control::before,
+  .wd-date-field .q-field__control::before {
+    background: transparent !important;
+    border: none !important;
+  }
+}
+
+// ── Menu drawer: floats over map imagery ───────────────────────────────
+// The codified hybrid exception applies (one soft shadow over map
+// imagery); the hairline ridge read broken over terrain in Day
+// (owner report 2026-09-28)
+.wd-menu-drawer {
+  box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2) !important;
+  border: none !important;
+}
+
+// ── Review-status badge: anchored tonal pill ───────────────────────────
+// "ungeprüft" & siblings floated as bare colored text with a shadow
+// (round-2 finding) - panel-on-panel chrome gets no shadow. Tonal pill
+// with ridge border; the status keeps its semantic text color.
+.review-badge {
+  border-radius: 999px !important;
+  border: 1px solid var(--wd-ridge) !important;
+  background: rgba(var(--wd-ink-rgb), 0.04) !important;
+  box-shadow: none !important;
+  font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif;
+  font-size: 10px !important;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 1px 8px !important;
+}
+
+// ── Night muted weather text: lift off the 2.5:1 floor ────────────────
+// Round-2 contrast finding: precip and min-temp values measured ~2.5:1
+// on #112119. Same alpha reads darker on pine than on day panels - the
+// night variant gets its own floor.
+// (extra .wd-weather-day hop: the scoped component styles load after
+// app.scss and won the equal-specificity cascade)
+.body--dark .wd-weather-day .wd-weather-day__rain,
+.body--dark .wd-weather-day .wd-weather-day__snow,
+.body--dark .wd-weather-day .wd-weather-day__temp-min,
+.body--dark .wd-weather-day .wd-weather-day__temp-empty {
+  color: rgba(242, 247, 244, 0.7);
+}
+
+// ── Tooltips: explicit pine/ink pair ───────────────────────────────────
+// The default tooltip measured 4.41:1 in the contrast gate (marginal
+// fail). Pin the night-pine / paper-white pair: on-brand and ~13:1 in
+// both themes.
+.q-tooltip {
+  background: rgba(10, 20, 15, 0.95) !important;
+  color: #f2f7f4 !important;
+}
+
+// ── Search result rows: tonal hover lift ───────────────────────────────
+.wd-search-card .q-item:hover {
+  background: rgba(var(--wd-ink-rgb), 0.04);
+}
+
+// ── Place title voice ──────────────────────────────────────────────────
+// Desktop (text-h5) rendered weight 400 while mobile (text-h6) rendered
+// 500 - the same name spoke in two voices. Unify on the spec Title
+// weight (500, +0.01em tracking); size still steps down on mobile.
+.wd-place-title__name {
+  font-weight: 500 !important;
+  letter-spacing: 0.01em;
+}
+
+// ── Section titles (instrument labels) ────────────────────────────────
+// De-golded 2026-09-27: content section headers were gold TEXT in both
+// themes (decoration, not beam). Now: ink/ice voice + short gold tick.
+// Used via .wd-section-title in place of text-subtitle1 wd-gold-text.
+.wd-section-title {
+  font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  color: var(--wd-ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 4px;
+
+  &::before {
+    content: '';
+    width: 3px;
+    height: 14px;
+    border-radius: 1px;
+    flex: none;
+    background: var(--wd-gold-text);
+  }
+}
+
+// Version footer: BUILD micro-label + quiet links (hashes no longer
+// spend the gold accent; underline only on hover)
+.wd-versions__label {
+  font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  line-height: 1;
+  opacity: 0.7;
+}
+
+.wd-versions a {
+  color: inherit;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.wd-version-hash {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  font-size: 0.9em;
+}
+
 // months colors
 @import './months.scss';
 
@@ -288,7 +486,7 @@ body.body--dark {
   --q-dark-shadow-color: transparent;
   --wd-chrome-btn-bg: #112119;
   --wd-chrome-btn-ink: #a9f0d2;
-  --wd-chrome-btn-hover: rgba(255, 255, 255, 0.1);
+  --wd-chrome-btn-hover: rgba(255, 255, 255, 0.16);
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -310,8 +508,12 @@ body.body--dark {
     color 0.2s ease;
 }
 
+// The map toolbar sits on the deep brand green in BOTH themes - the
+// chrome-chip hover var (dark wash for white chips) is invisible there,
+// so the toolbar pins its own white wash. Light-surface toolbar pills
+// override this below with their dark wash.
 .wd-toolbar-btn:hover {
-  background-color: var(--wd-chrome-btn-hover) !important;
+  background-color: rgba(255, 255, 255, 0.16) !important;
 }
 
 // Active/selected: gold icon, no fill (user rule: no icon bg in any state)
@@ -498,7 +700,7 @@ body.body--dark {
 .wd-input-button.q-field--standout .q-field__control {
   background: rgba(255, 255, 255, 0.07) !important;
   border: none !important;
-  border-radius: 6px !important;
+  border-radius: 4px !important;
   padding: 0 12px !important;
 }
 
@@ -510,7 +712,7 @@ body.body--dark {
 .wd-input-button.q-field--standout .q-field__control::before {
   background: rgba(255, 255, 255, 0.07) !important;
   border: 1px dashed rgba(255, 255, 255, 0.24) !important;
-  border-radius: 6px !important;
+  border-radius: 4px !important;
 }
 
 // Dashed frame is a header-toolbar signature only: inside the search
@@ -699,9 +901,13 @@ body.body--dark {
   color: #bfab25 !important;
 }
 
-// Light surfaces (header, menu drawer, bottom sheet, dialogs): in Day the
-// toolbar pills go flat with readable info-teal icons instead of pine.
-body.body--light :is(.app-header, .q-drawer, bottom-sheet, .q-dialog__inner) {
+// Light surfaces (menu drawer, bottom sheet, dialogs - NOT the header):
+// in Day the toolbar pills go flat with readable info-teal icons instead
+// of pine. The header is exempt entirely: it sits on the green brand bar
+// and governs itself via .app-header rules in MainLayout (flat chrome +
+// white hover wash); this scope's dark wash and teal icons are for true
+// light surfaces only.
+body.body--light :is(.q-drawer, bottom-sheet, .q-dialog__inner) {
   .wd-toolbar-btn {
     background-color: transparent !important;
     border-color: transparent !important;
@@ -939,7 +1145,7 @@ body .q-toolbar.bg-primary-600 .q-btn::before {
 }
 // Input field: rounded corners inside the search card
 .wd-search-card .q-field__control {
-  border-radius: 6px !important;
+  border-radius: 4px !important;
 }
 
 // Search input INSIDE the search card: light outline on the card surface,
@@ -947,7 +1153,7 @@ body .q-toolbar.bg-primary-600 .q-btn::before {
 .wd-search-card .wd-search-field .q-field__control {
   background: var(--wd-surface-deep) !important;
   border: 1px solid var(--wd-ridge) !important;
-  border-radius: 6px !important;
+  border-radius: 4px !important;
   padding: 0 12px !important;
 }
 .wd-search-card .wd-search-field input {
@@ -1189,7 +1395,7 @@ body.capacitor {
   // zone with the toolbar color via a pseudo element on the drawer and
   // keep the toolbar itself compact - visually identical to the header
   // (color to the very top, toolbar row right below the status bar).
-  .menu-drawer::before {
+  .wd-menu-drawer::before {
     content: '';
     position: absolute;
     top: 0;
@@ -1200,32 +1406,31 @@ body.capacitor {
     z-index: 1;
   }
 
-  // Maximized dialogs: the card fills the viewport edge-to-edge (color/
-  // image behind the system bars), the CONTENT gets safe-area padding
-  // so interactive elements and text clear the bars. No negative
-  // margins — Quasar centers the card with absolute positioning and
-  // negative margins cause double-offsets on Samsung devices.
-  .q-dialog__inner--maximized > div {
-    padding-top: var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px));
-    padding-bottom: var(--q-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
-  }
+  // NOTE: maximized dialog safe-area padding is handled per-component
+  // (inline on WdPlaceSearchDialog, CSS on WdMediaGallery) — a global
+  // rule on .q-dialog__inner--maximized > div causes the card to be
+  // offset from the viewport edge on Samsung devices.
 
-  // MapLibre bottom controls (attribution, scale): lift above the
-  // Android navigation bar; the translucent map footer shade keeps them
-  // readable over the map
+  // MapLibre bottom controls (attribution, scale): just above the
+  // navigation bar — no extra clearance, only the safe-area inset
   .maplibregl-ctrl-bottom-left .maplibregl-ctrl,
   .maplibregl-ctrl-bottom-right .maplibregl-ctrl {
-    margin-bottom: calc(10px + var(--q-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+    margin-bottom: var(
+      --q-safe-area-inset-bottom,
+      env(safe-area-inset-bottom, 0px)
+    );
   }
 
   // Bottom-positioned map controls rendered as q-page-sticky elements
-  // (basemap switch): q-page-sticky sets an inline transform for
-  // positioning — !important is needed to win over it (the inline value
-  // is just a no-op offset)
+  // (basemap switch): just above the navigation bar. q-page-sticky sets
+  // an inline transform — !important wins over it.
   .wd-map-bottom-ctrl {
     transform: translateY(
       calc(
-        -10px - var(--q-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))
+        0px - var(
+          --q-safe-area-inset-bottom,
+          env(safe-area-inset-bottom, 0px)
+        )
       )
     ) !important;
   }

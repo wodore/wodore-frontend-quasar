@@ -232,7 +232,8 @@ const tooltipContent = computed(() => {
   min-width: 68px;
   max-width: 68px;
   padding: 6px 4px 5px;
-  border-radius: 10px;
+  border-radius: 4px;
+  border: 1px solid transparent;
   user-select: none;
   box-sizing: border-box;
   transition: background-color 0.2s ease;
@@ -242,12 +243,19 @@ const tooltipContent = computed(() => {
   opacity: 0.6;
 }
 
+// Today (unselected): quiet tonal fill - same language as the calendar's
+// today cell (owner: unified today/selected across availability+weather)
 .wd-weather-day--today {
   opacity: 1;
+  background: rgba(var(--wd-ink-rgb), 0.06);
 }
 
+// Selected: tonal fill + thin gold ridge (de-golded 2026-09-27:
+// the old gold wash violated the head-torch rule; selection accent
+// now is the ridge only)
 .wd-weather-day--selected {
-  background: rgba(color('accent'), 0.12);
+  background: rgba(var(--wd-ink-rgb), 0.06);
+  border-color: var(--wd-gold-text);
 }
 
 .wd-weather-day__icon {
@@ -289,7 +297,7 @@ const tooltipContent = computed(() => {
 }
 
 .wd-weather-day__temp-min {
-  color: rgba(var(--wd-ink-rgb), 0.45);
+  color: rgba(var(--wd-ink-rgb), 0.55);
   font-weight: 400;
 }
 
@@ -329,6 +337,6 @@ const tooltipContent = computed(() => {
 }
 
 .wd-weather-day__snow {
-  color: rgba(var(--wd-ink-rgb), 0.45);
+  color: rgba(var(--wd-ink-rgb), 0.55);
 }
 </style>

@@ -264,7 +264,8 @@
     "error_dismiss": "Too bad, maybe next time...",
     "alternative": "Alternatively:",
     "or": "or",
-    "not_available": "Currently unavailable"
+    "not_available": "Currently unavailable",
+    "placeholder_short": "Date"
   },
   "overlay_config": {
     "reset_done": "Settings reset",
