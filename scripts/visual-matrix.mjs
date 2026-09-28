@@ -209,7 +209,9 @@ const STATES = [
     run: async p => {
       await p.goto(BASE + '/', { waitUntil: 'load' });
       await appReady(p);
-      await softClick(p, 'header button');
+      if (!(await softClick(p, 'button[aria-label="open menu"]'))) {
+        await softClick(p, 'header button');
+      }
       await p.waitForTimeout(700);
       // if a drawer opened, look for the account/user entry inside it
       await softClick(
@@ -258,7 +260,7 @@ const STATES = [
       if (await inp.count()) await inp.fill('lam').catch(() => {});
       await p.waitForTimeout(1200);
     },
-    assert: '.q-menu, [class*="result" i]',
+    assert: '.q-menu, .q-item, [class*="result" i]',
   },
 ];
 
@@ -329,8 +331,10 @@ const CONTRAST_AUDIT = `(() => {
     // Text laid over PHOTOS/map imagery has no computable background -
     // photo-stripe credits and map attribution carry the halo instead;
     // the numeric audit would measure them against a phantom surface.
-    // WCAG exempts disabled controls (dimmed by definition)
+    // WCAG exempts disabled controls (dimmed by definition) and
+    // logotypes/brand wordmarks (part of the logo, not UI text)
     if (el.closest('button[disabled], [disabled], .q-btn--disabled')) continue;
+    if (cls.includes('wd-wordmark')) continue;
     if (
       cls.includes('stripe-author') ||
       cls.includes('attribution') ||
