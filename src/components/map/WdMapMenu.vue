@@ -59,7 +59,7 @@ function handleOverlayConfigClose() {
   here too - a fixed 51px leaves the content overlapping the (taller)
   toolbar and swallowing its taps. */
   position: absolute;
-  top: calc(51px + env(safe-area-inset-top, 0px));
+  top: calc(51px + var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px)));
   left: 0;
   right: 0;
   bottom: 0;

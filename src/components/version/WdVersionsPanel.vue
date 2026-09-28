@@ -41,7 +41,7 @@ onMounted(fetchBackendVersion);
 /* real phones: keep clear of the gesture bar */
 :deep(.q-pb-xl),
 .column {
-  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(1.5rem + var(--q-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
 }
 </style>
 

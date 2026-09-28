@@ -1083,7 +1083,7 @@ body.capacitor .map-footer-shade {
   bottom: 0;
   z-index: 1; // below the map controls (z-5)
   pointer-events: none;
-  height: calc(env(safe-area-inset-bottom, 0px) + 28px);
+  height: calc(var(--q-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 28px);
   background: linear-gradient(
     to top,
     rgba(0, 0, 0, 0.2),

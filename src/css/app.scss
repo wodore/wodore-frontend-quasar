@@ -1195,7 +1195,7 @@ body.capacitor {
     top: 0;
     left: 0;
     right: 0;
-    height: env(safe-area-inset-top, 0px);
+    height: var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px));
     background: rgb(42, 91, 70); // bg-primary-600
     z-index: 1;
   }
@@ -1205,17 +1205,17 @@ body.capacitor {
   // bars. Padding insets the content; the negative margins pull the
   // card back to the screen edges so no map bleeds through.
   .q-dialog__inner--maximized > div {
-    padding-top: env(safe-area-inset-top, 0px);
-    margin-top: calc(-1 * env(safe-area-inset-top, 0px));
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-    margin-bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
+    padding-top: var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px));
+    margin-top: calc(-1 * var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px)));
+    padding-bottom: var(--q-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+    margin-bottom: calc(-1 * var(--q-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
   }
 
   // Maximized dialogs: content out of the system bars while the dialog
   // surface (color/image) stays full-bleed behind them
   .q-dialog__inner--maximized > div {
-    padding-top: env(safe-area-inset-top, 0px);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-top: var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px));
+    padding-bottom: var(--q-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
   }
 
   // MapLibre bottom controls (attribution, scale): lift above the
@@ -1223,13 +1223,13 @@ body.capacitor {
   // readable over the map
   .maplibregl-ctrl-bottom-left .maplibregl-ctrl,
   .maplibregl-ctrl-bottom-right .maplibregl-ctrl {
-    margin-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    margin-bottom: calc(10px + var(--q-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
   }
 
   // Bottom-positioned map controls rendered as q-page-sticky elements
   // (basemap switch): margin shifts them clear of the nav bar without
   // fighting the sticky's inline transform
   .wd-map-bottom-ctrl {
-    margin-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    margin-bottom: calc(10px + var(--q-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
   }
 }

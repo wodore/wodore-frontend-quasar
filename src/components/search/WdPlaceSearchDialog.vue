@@ -46,7 +46,7 @@ function onSearchClose() {
           class="q-ma-xs z-top text-icon"
           style="
             position: absolute;
-            top: calc(6px + env(safe-area-inset-top, 0px));
+            top: calc(6px + var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px)));
             right: 6px;
             z-index: 200;
           "

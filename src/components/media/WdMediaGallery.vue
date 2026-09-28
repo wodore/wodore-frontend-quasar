@@ -327,7 +327,7 @@ onUnmounted(() => {
 
 .close-btn {
   position: absolute;
-  top: calc(16px + env(safe-area-inset-top, 0px));
+  top: calc(16px + var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px)));
   right: 16px;
   z-index: 1000;
   color: white;

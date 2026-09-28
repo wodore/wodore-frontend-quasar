@@ -1,6 +1,6 @@
 name: PR Preview
 
-# Static GitHub Pages previews for pull requests carrying the 'preview'
+# Static GitHub Pages previews for pull requests carrying the 'PREVIEW:web'
 # label. Read-only (no login): Zitadel redirect URIs are exact-match, so
 # previews cannot authenticate; API access is read-only against the
 # staging API by default (overridable via WODORE_API_HOST).
@@ -41,7 +41,7 @@ jobs:
               (context.payload.pull_request.head.sha || context.sha).slice(0, 7)
             );
             const isPreviewLabel = (name) =>
-              (name || '').toLowerCase() === 'preview';
+              (name || '').toLowerCase() === 'preview:web';
             const wasUnlabeled =
               context.action === 'unlabeled' &&
               isPreviewLabel(context.payload.label?.name);

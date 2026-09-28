@@ -2,8 +2,8 @@ name: Build Android
 
 # Builds Capacitor Android APKs in two variants:
 # - preview: stg flavor (com.wodore.stg.dev, "Wodore Preview") against the
-#   staging backend — built when a PR with the BUILD:android label merges
-#   to main (same gating as the Docker workflow with BUILD:docker)
+#   staging backend — per-commit builds on PRs carrying PREVIEW:android
+#   (artifacts deleted after merge) and merge builds via BUILD:android
 # - rc: std flavor + dev build type (com.wodore.app.dev, "Wodore RC")
 #   against the production backend, release-like but debug-signed — built
 #   while a BUILD:android-labeled PR is still OPEN (release candidate for
@@ -24,6 +24,7 @@ on:
       - synchronize
       - reopened
       - labeled
+      - closed
   workflow_dispatch:
     inputs:
       variant:
@@ -63,9 +64,16 @@ jobs:
             if (ev === 'pull_request') {
               const labels = context.payload.pull_request.labels
                 .map(l => l.name);
-              core.setOutput('mode', 'rc');
+              // Closed PRs clean up their preview artifacts (see the
+              // cleanup step below) instead of building
+              if (context.payload.action === 'closed') {
+                core.setOutput('mode', 'cleanup');
+                core.setOutput('build', 'false');
+                return;
+              }
+              core.setOutput('mode', 'preview');
               core.setOutput('build', String(labels.includes(
-                'BUILD:android'
+                'PREVIEW:android'
               )));
               return;
             }
@@ -89,9 +97,31 @@ jobs:
             core.setOutput('mode', 'preview');
             core.setOutput('build', String(has));
 
+      - name: Clean up preview artifacts (PR closed)
+        # Previews are per-commit and disposable: once the PR merges or
+        # closes, delete its wodore-android-preview artifacts.
+        if: steps.resolve.outputs.mode == 'cleanup'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          BRANCH="${{ github.event.pull_request.head.ref }}"
+          echo "Deleting preview artifacts of branch $BRANCH"
+          gh api --paginate \
+            "repos/${GITHUB_REPOSITORY}/actions/artifacts" \
+            --jq ".artifacts[] | \
+              select(.name == \"wodore-android-preview\") | \
+              select(.workflow_run.head_branch == \"$BRANCH\") | .id" \
+            | while read -r id; do
+                [ -n "$id" ] && gh api --method DELETE \
+                  "repos/${GITHUB_REPOSITORY}/actions/artifacts/$id" \
+                  && echo "deleted artifact $id"
+              done
+
       - name: Exit if build not requested
-        if: steps.resolve.outputs.build != 'true'
-        run: echo "Skipping build (no BUILD:android label / not applicable)"
+        if: >-
+          steps.resolve.outputs.build != 'true' &&
+          steps.resolve.outputs.mode != 'cleanup'
+        run: echo Skipping build (no PREVIEW:android label / not applicable)
 
       - name: Set backend environment for the variant
         # rc bakes the production backend (hosts, OIDC, analytics), preview
