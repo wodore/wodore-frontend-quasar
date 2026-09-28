@@ -1178,18 +1178,11 @@ a.wd-accommodation-day {
 // bar zones. All env() insets evaluate to 0 in the PWA — no changes there.
 // ---------------------------------------------------------------------------
 body.capacitor {
-  // App header: toolbar below the status bar, header surface extends
-  // under it (the blurred pine bar shows through the bar zone)
-  .app-header {
-    padding-top: env(safe-area-inset-top, 0px);
-  }
-
-  // Mobile menu drawer toolbar: the colored toolbar must extend under
-  // the status bar (fixes the see-through gap) and its buttons must sit
-  // below the system-tap zone (fixes flaky drawer button taps)
-  .menu-drawer .q-toolbar {
-    padding-top: env(safe-area-inset-top, 0px);
-  }
+  // NOTE: NO safe-area padding on toolbars/headers here — Quasar
+  // (>= 2.33) handles it natively by setting every QToolbar's
+  // min-height inline to calc(var(--q-safe-area-inset-top) + 50px).
+  // Adding padding on top of that doubles the inset (was the "too much
+  // header space" + overlapping drawer menu that swallowed taps).
 
   // Maximized dialogs: content out of the system bars while the dialog
   // surface (color/image) stays full-bleed behind them
