@@ -334,10 +334,10 @@ const tooltipContent = computed(() => {
 }
 
 .wd-weather-day__rain {
-  color: rgba(var(--wd-ink-rgb), 0.55);
+  color: rgba(var(--wd-ink-rgb), 0.72);
 }
 
 .wd-weather-day__snow {
-  color: rgba(var(--wd-ink-rgb), 0.55);
+  color: rgba(var(--wd-ink-rgb), 0.72);
 }
 </style>

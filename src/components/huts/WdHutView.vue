@@ -294,13 +294,14 @@ const { images: nearbyImages, loading: imagesLoading } = useHutImages(computed((
 .attr_link :deep(a:hover),
 .attr_link :deep(a:link),
 .attr_link :deep(a) {
-  color: rgb(171, 171, 171);
+  /* fixed grey failed AA on pine - muted ink floor instead */
+  color: rgba(var(--wd-ink-rgb), 0.7);
   text-decoration: underline dotted;
-  text-decoration-color: rgb(132, 132, 132);
+  text-decoration-color: rgba(var(--wd-ink-rgb), 0.45);
 }
 
 .attr_link :deep(a:hover) {
-  color: rgb(81, 81, 81);
+  color: rgba(var(--wd-ink-rgb), 0.95);
 }
 
 .attr_link {

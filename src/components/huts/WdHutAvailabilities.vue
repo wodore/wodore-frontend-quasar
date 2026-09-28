@@ -608,7 +608,7 @@ const upcomingMonthClass = computed(() => {
   margin-left: auto;
   overflow: hidden;
   border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--wd-ridge);
 }
 
 .month-chip-wrap {
@@ -633,6 +633,8 @@ const upcomingMonthClass = computed(() => {
   line-height: 1;
   padding: 1px 4px;
   min-height: 16px;
+  /* Quasar's button default (#333) is 1.8:1 on pine at night */
+  color: var(--wd-ink);
 }
 
 .month-nav {

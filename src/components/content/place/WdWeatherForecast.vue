@@ -286,7 +286,8 @@ watchEffect(async () => {
 .wd-weather-forecast__attribution {
   text-align: right;
   font-size: 10px;
-  color: rgba(var(--wd-ink-rgb), 0.5);
+  /* 0.5 alpha failed WCAG AA - muted floor */
+  color: rgba(var(--wd-ink-rgb), 0.7);
 }
 
 .wd-weather-forecast__attribution a {
@@ -299,7 +300,8 @@ watchEffect(async () => {
 }
 
 .wd-weather-forecast__disclaimer {
-  color: rgba(var(--wd-ink-rgb), 0.35);
+  /* 0.35 alpha failed WCAG AA - muted floor like other captions */
+  color: rgba(var(--wd-ink-rgb), 0.7);
 }
 
 .wd-weather-forecast__swiper {

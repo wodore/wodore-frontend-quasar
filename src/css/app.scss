@@ -399,6 +399,20 @@ body {
   color: rgba(242, 247, 244, 0.7);
 }
 
+// Year-stripe active month at night: forest 500 is 2.6:1 on pine -
+// ice shade per the Shade-Role table (global: scoped :global() never
+// compiled in the component)
+.body--dark .wd-year-stripe__month-label--active {
+  color: #8fd6b7;
+}
+
+// ── Night text-primary: ice shade (Shade-Role table) ──────────────────
+// forest-green-500 as text is 2.6:1 on pine panels - night text picks
+// the ice shade per spec (links, coordinates, active labels).
+.body--dark .text-primary {
+  color: #8fd6b7 !important;
+}
+
 // ── Tooltips: explicit pine/ink pair ───────────────────────────────────
 // The default tooltip measured 4.41:1 in the contrast gate (marginal
 // fail). Pin the night-pine / paper-white pair: on-brand and ~13:1 in
