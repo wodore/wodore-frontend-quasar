@@ -377,7 +377,8 @@
     "satellite": "Satellit",
     "outdoor": "Outdoor OSM",
     "austria_vector": "Österreich Topo Vector",
-    "austria_raster": "Österreich Topo Raster"
+    "austria_raster": "Österreich Topo Raster",
+    "europe_topo": "Europa Topo"
   },
   "multi_select": {
     "select_all": "Alle auswählen",

@@ -12,6 +12,8 @@ interface getRasterStyleArgs {
   maxZoom?: number;
   suffix?: string;
   cdn?: boolean;
+  /** [minX, minY, maxX, maxY] — MapLibre skips tile requests outside these bounds. */
+  bounds?: [number, number, number, number];
 }
 export function getRasterStyle({
   name,
@@ -23,6 +25,7 @@ export function getRasterStyle({
   maxZoom = 22,
   suffix = 'wd-',
   cdn = false,
+  bounds,
 }: getRasterStyleArgs): StyleSpecification {
   layers = layers === undefined ? [name] : typeof layers === 'string' ? [layers] : layers;
   const style: StyleSpecification = {
@@ -30,9 +33,7 @@ export function getRasterStyle({
     name: name,
     sources: {},
     //glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
-    glyphs:
-      'https://api.maptiler.com/fonts/{fontstack}/{range}.pbf?key=' +
-      process.env.WODORE_MAPTILER_API_KEY,
+    glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
     //sprite: { id: 'default', url: 'http://localhost:9000/huts/sprite' },
     layers: [],
   };
@@ -56,10 +57,70 @@ export function getRasterStyle({
       ),
       tileSize: tileSize,
       attribution: attribution,
+      ...(bounds ? { bounds } : {}),
     };
   }
 
   return style;
+}
+
+interface getCompositeRasterStyleArgs {
+  name: string;
+  /**
+   * Sub-styles to merge, e.g. built with getRasterStyle().
+   * Array order = paint order: the FIRST style renders at the BOTTOM
+   * (use it for the world fallback), later styles cover it where they
+   * have data (national maps with source `bounds`).
+   */
+  styles: StyleSpecification[];
+  /** Single glyphs URL for the merged style (defaults to the first sub-style that has one). */
+  glyphs?: string;
+}
+
+/**
+ * Merge multiple raster styles into one basemap style.
+ * Source and layer IDs are namespaced with the sub-style's `name` to
+ * avoid collisions; per-source attribution is preserved so the combined
+ * attribution shown by MapLibre stays license-correct.
+ */
+export function getCompositeRasterStyle({
+  name,
+  styles,
+  glyphs,
+}: getCompositeRasterStyleArgs): StyleSpecification {
+  const seen = new Set<string>();
+  const sources: StyleSpecification['sources'] = {};
+  const layers: StyleSpecification['layers'] = [];
+
+  for (const style of styles) {
+    const ns = style.name ?? `style${layers.length}`;
+    const idMap = new Map<string, string>();
+    for (const [srcId, src] of Object.entries(style.sources ?? {})) {
+      const newId = `${ns}:${srcId}`;
+      if (!seen.has(newId)) {
+        seen.add(newId);
+        sources[newId] = src;
+        idMap.set(srcId, newId);
+      }
+    }
+    for (const layer of style.layers ?? []) {
+      const srcId = 'source' in layer ? layer.source : undefined;
+      const mapped = srcId !== undefined ? idMap.get(srcId) : undefined;
+      layers.push(
+        mapped !== undefined
+          ? ({ ...layer, id: `${ns}:${layer.id}`, source: mapped } as typeof layer)
+          : layer
+      );
+    }
+  }
+
+  return {
+    version: 8,
+    name: name,
+    glyphs: glyphs ?? styles.find(s => s.glyphs)?.glyphs,
+    sources: sources,
+    layers: layers,
+  };
 }
 
 interface getSwisstopoOverlayArgs {
