@@ -195,8 +195,11 @@ const STATES = [
       await p.goto(BASE + '/', { waitUntil: 'load' });
       await appReady(p);
       // the first header button is label-less on mobile (a no-op chip) -
-      // target the menu control explicitly
-      await softClick(p, 'button[aria-label="open menu"], header button');
+      // a combined selector still resolves to it via .first(); try the
+      // explicit control first, fall back to any header button
+      if (!(await softClick(p, 'button[aria-label="open menu"]'))) {
+        await softClick(p, 'header button');
+      }
       await p.waitForTimeout(700);
     },
     assert: '.q-drawer--mobile, .q-drawer, .q-menu',
@@ -326,11 +329,13 @@ const CONTRAST_AUDIT = `(() => {
     // Text laid over PHOTOS/map imagery has no computable background -
     // photo-stripe credits and map attribution carry the halo instead;
     // the numeric audit would measure them against a phantom surface.
+    // WCAG exempts disabled controls (dimmed by definition)
+    if (el.closest('button[disabled], [disabled], .q-btn--disabled')) continue;
     if (
       cls.includes('stripe-author') ||
       cls.includes('attribution') ||
       el.closest(
-        '.maplibregl-ctrl-attrib, [class*="media-stripe"], [class*="stripe-author"], [class*="license-badge"]'
+        '.maplibregl-ctrl-attrib, [class*="media-stripe"], [class*="stripe-author"], [class*="license-badge"], .attr_link, [class*="attribution"]'
       )
     )
       continue;

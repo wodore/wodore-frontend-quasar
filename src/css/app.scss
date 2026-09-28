@@ -402,7 +402,7 @@ body {
 // Year-stripe active month at night: forest 500 is 2.6:1 on pine -
 // ice shade per the Shade-Role table (global: scoped :global() never
 // compiled in the component)
-.body--dark .wd-year-stripe__month-label--active {
+.body--dark .wd-year-stripe .wd-year-stripe__month-label--active {
   color: #8fd6b7;
 }
 
