@@ -109,13 +109,18 @@ function attachContentScrollListener(sheet: BottomSheet): void {
   const slottedScroller = sheet.querySelector<HTMLElement>(
     '.q-scrollarea__container, .q-drawer__content, .overlay-scroll'
   );
-  if (!element && !slottedScroller) return;
-  const targets = [element, slottedScroller].filter(Boolean) as HTMLElement[];
+  // The HOST itself can be the scroller (mobile hut pages: the sheet
+  // wrapper CSS makes the host element overflow - observed live).
+  const host = sheet as unknown as HTMLElement;
+  const targets = [element, slottedScroller, host].filter(Boolean) as HTMLElement[];
   for (const t of targets) t.addEventListener('scroll', onContentScroll, { passive: true });
   detachContentScroll = () => {
     for (const t of targets) t.removeEventListener('scroll', onContentScroll);
   };
-  sheet.toggleAttribute('data-content-scrolled', (element?.scrollTop ?? 0) > 2 || (slottedScroller?.scrollTop ?? 0) > 2);
+  sheet.toggleAttribute(
+    'data-content-scrolled',
+    targets.some((t) => t.scrollTop > 2)
+  );
 }
 
 /**
