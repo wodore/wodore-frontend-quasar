@@ -32,6 +32,7 @@ android {
             // the staging environment baked into the APK.
             dimension 'env'
             applicationId 'com.wodore.stg'
+            resValue 'string', 'app_name', 'Wodore Preview'
         }
     }
     signingConfigs {
@@ -65,6 +66,7 @@ android {
         debug {
             // Android Studio builds (std+debug): com.wodore.app.local
             applicationIdSuffix '.local'
+            resValue 'string', 'app_name', 'Wodore Dev'
             if (signingConfigs.ciDev.storeFile != null) {
                 signingConfig signingConfigs.ciDev
             }
@@ -95,6 +97,14 @@ android {
             variant.outputs.all { output ->
                 output.versionNameOverride = "${buildTs}-${gitSha}"
             }
+        }
+        // Per-variant launcher names:
+        // - stg+* = "Wodore Preview" (set via flavor resValue)
+        // - std+debug = "Wodore Dev" (set via buildType resValue)
+        // - std+dev = "Wodore Beta" (RC — production backend, not release)
+        // - std+release = "Wodore" (from strings.xml, the default)
+        if (variant.flavorName == 'std' && variant.buildType.name == 'dev') {
+            variant.resValue 'string', 'app_name', 'Wodore Beta'
         }
     }
 }

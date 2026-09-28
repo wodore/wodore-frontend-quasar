@@ -1072,14 +1072,12 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
 </template>
 
 <style lang="scss">
-// Translucent map footer (native app only): a soft 20% tint over the
-// map behind the attribution / basemap controls and the Android nav
-// bar, so the map stays visible through it while the controls read
-// cleanly. Theme aware: black tint in dark mode, white in light mode.
-.map-footer-shade {
-  display: none;
-}
-
+// Native app navigation bar zone overlay: a subtle gradient that
+// helps the nav bar icons read over any map content. Uses the SYSTEM
+// dark mode (prefers-color-scheme), NOT the in-app theme toggle —
+// the nav bar icons follow the system theme, so the overlay must too.
+// Dark system: transparent black fading upward. Light system: transparent
+// white fading upward.
 body.capacitor .map-footer-shade {
   display: block;
   position: absolute;
@@ -1088,21 +1086,32 @@ body.capacitor .map-footer-shade {
   bottom: 0;
   z-index: 1; // below the map controls (z-5)
   pointer-events: none;
-  height: calc(var(--q-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 28px);
-  background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 0.2),
-    rgba(0, 0, 0, 0.2) calc(100% - 24px),
-    transparent
+  height: calc(
+    var(--q-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 12px
   );
 }
 
-body.capacitor.body--light .map-footer-shade {
-  background: linear-gradient(
-    to top,
-    rgba(255, 255, 255, 0.2),
-    rgba(255, 255, 255, 0.2) calc(100% - 24px),
-    transparent
-  );
+// System dark: dark gradient (helps white nav icons stand out)
+@media (prefers-color-scheme: dark) {
+  body.capacitor .map-footer-shade {
+    background: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.4),
+      rgba(0, 0, 0, 0.15) 60%,
+      transparent
+    );
+  }
+}
+
+// System light: light gradient (helps dark nav icons stand out)
+@media (prefers-color-scheme: light) {
+  body.capacitor .map-footer-shade {
+    background: linear-gradient(
+      to top,
+      rgba(255, 255, 255, 0.4),
+      rgba(255, 255, 255, 0.15) 60%,
+      transparent
+    );
+  }
 }
 </style>

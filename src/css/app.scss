@@ -1383,12 +1383,34 @@ a.wd-accommodation-day {
 // Surfaces stay full-bleed; these rules push controls out of the system
 // bar zones. All env() insets evaluate to 0 in the PWA — no changes there.
 // ---------------------------------------------------------------------------
+// Native app feel for BOTH Capacitor and web/PWA: no rubber-band
+// overscroll bounce, no long-press text selection on UI chrome.
+// Text CONTENT (hut descriptions, comments) stays selectable; inputs
+// keep their default behavior. Icons, logos, buttons, and labels do
+// not show the copy dialog.
+body.capacitor,
+body:not(.capacitor) .q-page-container {
+  overscroll-behavior-y: none;
+}
+
+// User-select: none on the app shell (all platforms — native feel).
+// Re-enable on content areas that should be copyable.
+.q-header,
+.q-footer,
+.q-toolbar,
+.q-drawer,
+button,
+.q-btn,
+nav,
+.wd-wordmark-wo,
+img:not([class*=content]):not([class*=gallery]):not([class*=media]) {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
 body.capacitor {
-  // ── Native feel ──
-  // No rubber-band overscroll bounce (native apps don't scroll past
-  // their content); no long-press text selection or copy dialog on UI
-  // elements (logos, buttons, labels). Inputs and selectable text
-  // opt back in below.
+  // Native app: extend the no-select to the full body (stricter)
   overscroll-behavior-y: none;
   -webkit-user-select: none;
   user-select: none;
@@ -1451,4 +1473,17 @@ body.capacitor {
       )
     ) !important;
   }
+}
+
+// Kill pull-down bounce globally (all platforms) — the page container
+// must not rubber-band past its content. This covers the header area
+// that sits inside the scrollable layout.
+.q-page-container {
+  overscroll-behavior-y: contain;
+}
+
+// The HTML/body must also be locked to prevent the browser-level
+// bounce that happens before the inner container takes over
+html, body {
+  overscroll-behavior: none;
 }
