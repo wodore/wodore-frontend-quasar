@@ -383,6 +383,11 @@ body {
   color: rgba(242, 247, 244, 0.7);
 }
 
+// ── Search result rows: tonal hover lift ───────────────────────────────
+.wd-search-card .q-item:hover {
+  background: rgba(var(--wd-ink-rgb), 0.04);
+}
+
 // ── Place title voice ──────────────────────────────────────────────────
 // Desktop (text-h5) rendered weight 400 while mobile (text-h6) rendered
 // 500 - the same name spoke in two voices. Unify on the spec Title

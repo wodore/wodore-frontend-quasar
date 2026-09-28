@@ -358,15 +358,20 @@ body.body--dark .app-header .text-icon {
   background: var(--wd-surface);
   color: var(--wd-ink);
 
-  // Drawer header elevation: drop shadow once the content is scrolled
-  // (mirrors the mobile sheet header shadow). The header area is backed by
-  // the layout's grey background, so the shadow reads cleanly.
+  // Drawer header scrolled state (owner 2026-09-28): a separation line
+  // plus a solid surface - content visibly slides UNDER the header. The
+  // old drop shadow was both rule-violating (panel-on-panel) and hard
+  // to see against the pine tones.
   .q-header {
-    transition: box-shadow 0.2s ease;
+    border-bottom: 1px solid transparent;
+    transition:
+      border-color 0.15s ease,
+      background-color 0.15s ease;
   }
 
   .q-header.content-drawer-header-scrolled {
-    box-shadow: 0 4px 10px -4px rgba(0, 0, 0, 0.35);
+    background: var(--wd-surface);
+    border-bottom-color: var(--wd-ridge);
   }
 }
 </style>
