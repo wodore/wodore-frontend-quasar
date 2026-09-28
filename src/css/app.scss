@@ -354,6 +354,15 @@ body {
   }
 }
 
+// ── Place title voice ──────────────────────────────────────────────────
+// Desktop (text-h5) rendered weight 400 while mobile (text-h6) rendered
+// 500 - the same name spoke in two voices. Unify on the spec Title
+// weight (500, +0.01em tracking); size still steps down on mobile.
+.wd-place-title__name {
+  font-weight: 500 !important;
+  letter-spacing: 0.01em;
+}
+
 // ── Section titles (instrument labels) ────────────────────────────────
 // De-golded 2026-09-27: content section headers were gold TEXT in both
 // themes (decoration, not beam). Now: ink/ice voice + short gold tick.
