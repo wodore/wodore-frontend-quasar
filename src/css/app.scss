@@ -96,8 +96,8 @@
 .body--light .q-card.dialog-radius .q-date .q-date__today:not(.q-btn--active),
 .body--dark .q-card.dialog-radius .q-date .q-date__today:not(.q-btn--active) {
   color: var(--wd-ink) !important;
-  font-weight: 500;
-  background: rgba(var(--wd-ink-rgb), 0.06) !important;
+  font-weight: 600;
+  background: rgba(var(--wd-ink-rgb), 0.12) !important;
 
   .q-btn__layer {
     background: transparent !important;
@@ -189,12 +189,30 @@
   opacity: 0.7;
 }
 
-// Light mode: close button is flat (no fill, no shadow, ink icon).
-// Dark mode keeps the accent-700 (orange) fill via the color prop.
-.body--light .q-card.dialog-radius .wd-close-btn .q-btn {
+// ── Close-button standard (all dialogs/sheets, both themes) ────────────
+// A close affordance is a dismissal control, not a brand action: flat
+// tonal chip, ink glyph, never gold, no border, no shadow anywhere -
+// including Quasar's ::before fill layer. Toolbar/over-imagery closes
+// keep their local chrome instead (wd-toolbar-btn etc).
+.body--light .q-card.dialog-radius .wd-close-btn .q-btn,
+.body--dark .q-card.dialog-radius .wd-close-btn .q-btn,
+.wd-close-chip {
+  background: rgba(var(--wd-ink-rgb), 0.06) !important;
+  box-shadow: none !important;
+  border: none !important;
+  color: var(--wd-ink) !important;
+  opacity: 1 !important;
+}
+
+.wd-close-chip::before,
+.wd-close-chip .q-btn__layer,
+.q-card.dialog-radius .wd-close-btn .q-btn::before {
   background: transparent !important;
   box-shadow: none !important;
-  color: var(--wd-ink) !important;
+}
+
+.wd-close-chip:hover {
+  background: rgba(var(--wd-ink-rgb), 0.1) !important;
 }
 
 // QFab open animation: newer Quasar scales each action from the child's
@@ -343,15 +361,13 @@ body {
   }
 }
 
-// ── Menu drawer: tonal edge, no shadow (panel-on-page) ────────────────
+// ── Menu drawer: floats over map imagery ───────────────────────────────
+// The codified hybrid exception applies (one soft shadow over map
+// imagery); the hairline ridge read broken over terrain in Day
+// (owner report 2026-09-28)
 .wd-menu-drawer {
-  box-shadow: none !important;
-  border-right: 1px solid var(--wd-ridge);
-
-  @media (max-width: 609px) {
-    border-right: none;
-    border-left: 1px solid var(--wd-ridge);
-  }
+  box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2) !important;
+  border: none !important;
 }
 
 // ── Review-status badge: anchored tonal pill ───────────────────────────

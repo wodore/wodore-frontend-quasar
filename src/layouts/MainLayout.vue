@@ -370,8 +370,8 @@ body.body--dark .app-header .text-icon {
   }
 
   .q-header.content-drawer-header-scrolled {
-    background: var(--wd-surface);
-    border-bottom-color: var(--wd-ridge);
+    background: var(--wd-surface-deep);
+    border-bottom-color: rgba(var(--wd-ink-rgb), 0.16);
   }
 }
 </style>
