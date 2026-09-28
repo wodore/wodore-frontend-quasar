@@ -1,1 +1,0 @@
-import{b as o}from"./index-DUBATacu.js";import{u as n}from"./useAuthService-DeYNdU6a.js";import"./auth-store-5_xn0v5S.js";const r=o(async()=>{n().signinSilent().then().catch(t=>console.warn("Could not silent login",t))});export{r as default};
