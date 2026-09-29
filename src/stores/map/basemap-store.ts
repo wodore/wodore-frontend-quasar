@@ -877,11 +877,14 @@ export const useBasemapStore = defineStore('basemap', () => {
     // Raster version of the same idea, but border-MERGED server-side by
     // the MapProxy stack (docker/mapproxy-eu-topo) — polygon-cut national
     // raster maps in one tile source. Single source of tiles: the vector
-    // base only serves below z8, from z8 the proxy is the ONLY thing
+    // base only serves below z10, from z10 the proxy is the ONLY thing
     // loading.
     const europeTopoProxyStyle = getCompositeRasterStyle({
       name: 'europe-topo-proxy',
-      styles: [withLayerMaxZoom(ofmBase ?? esriLightGrayStyle, 8), withLayerMinZoom(mapproxyTopoStyle, 8)],
+      styles: [
+        withLayerMaxZoom(ofmBase ?? esriLightGrayStyle, 10),
+        withLayerMinZoom(mapproxyTopoStyle, 10),
+      ],
     });
 
     console.debug(
