@@ -379,11 +379,14 @@ body {
   display: flex;
   align-items: center;
   height: 48px;
-  background: var(--wd-surface, #fdfefd);
-  border: 1px solid var(--wd-ridge, #dde7e0);
+  // map chrome stays LIGHT in both themes (codified rule) - explicit
+  // values, the dark-mode --wd-surface would turn the pill pine
+  background: #fdfefd;
+  border: 1px solid #dde7e0;
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2);
   overflow: hidden;
+  color: #1c1c1c;
 }
 
 .wd-topbar__search {
@@ -486,8 +489,8 @@ body {
 // desktop utility cluster: same chip family as the pill
 @media (min-width: 600px) {
   .wd-topbar__right {
-    background: var(--wd-surface, #fdfefd);
-    border: 1px solid var(--wd-ridge, #dde7e0);
+    background: #fdfefd;
+    border: 1px solid #dde7e0;
     border-radius: 8px;
     box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2);
     height: 48px;
@@ -499,6 +502,17 @@ body {
 // maplibre top-right controls clear the utility pill
 .maplibregl-ctrl-top-right {
   margin-top: 64px;
+}
+
+// pill placeholders stay readable (they carry the affordance)
+.wd-topbar input::placeholder {
+  color: #1c1c1c;
+  opacity: 0.55;
+}
+
+.wd-topbar .wd-search-field .q-field__native,
+.wd-topbar .wd-date-field .q-field__native {
+  color: #1c1c1c;
 }
 
 // ── Map focus mode (r6): hide floating chrome, keep attribution ────────

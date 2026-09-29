@@ -40,6 +40,18 @@
   float: right;
 }
 
+/* Mobile: control buttons meet the 48px target minimum */
+@media (max-width: 899px) {
+  .maplibregl-ctrl-group button {
+    width: 48px;
+    height: 48px;
+  }
+
+  .maplibregl-ctrl-group button .maplibregl-ctrl-icon {
+    background-size: 24px 24px;
+  }
+}
+
 /* MapLibre's sprite icons are mid-grey - darken for the white chips */
 .maplibregl-ctrl button .maplibregl-ctrl-icon {
   filter: brightness(0.3);

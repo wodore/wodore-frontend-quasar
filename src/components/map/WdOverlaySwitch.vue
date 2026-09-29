@@ -342,13 +342,6 @@ function addOverlays() {
 
 mapRef.map?.on('load', addOverlays);
 
-const switchIcon =
-  'img:' +
-  new URL('/src/assets/wodore-design/icons/export/overlay-switch.svg', import.meta.url).href;
-
-const switchCloseIcon =
-  'img:' +
-  new URL('/src/assets/wodore-design/icons/export/overlay-switch-close.svg', import.meta.url).href;
 
 function overlayIcon(name: string) {
   return (
@@ -492,6 +485,27 @@ function overlayIcon(name: string) {
   pointer-events: auto;
 }
 
+.wd-layerctl__rows .overlay-item-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 14px;
+  border-radius: 6px;
+}
+
+.wd-layerctl__rows .overlay-item-container:hover {
+  background: rgba(120, 120, 120, 0.07);
+}
+
+.overlay-item-label {
+  font: 500 14px/1.2 'Barlow Semi Condensed', 'Barlow', sans-serif;
+  color: #1c1c1c;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
 .overlay-item-container {
   margin-bottom: 6px;
   display: flex;
@@ -534,6 +548,7 @@ function overlayIcon(name: string) {
                 @toggle-overlay="toggleOverlay(<OverlaySwitchItem>(item as unknown))"
                 @configure="openConfig(item.name, $event)"
                 :label="item.label"
+                :show-label="true"
                 :icon="overlayIcon(item.icon)"
                 :active="item.active"
                 :tooltip="$q.platform.is.desktop"

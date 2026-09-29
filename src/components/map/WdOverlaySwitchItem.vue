@@ -5,6 +5,8 @@ import { useMapMenuStore } from '@stores/map/map-menu-store';
 
 interface Props {
   label: string;
+  /** Show the label text inline beside the icon (panel rows) */
+  showLabel?: boolean;
   icon: string;
   active?: boolean | undefined;
   tooltip?: boolean | undefined;
@@ -222,6 +224,7 @@ function onFilterClick(event: Event) {
     >
       <q-icon :name="icon" size="24px" />
     </q-btn>
+    <span v-if="showLabel" class="overlay-item-label">{{ label }}</span>
 
     <!-- Side icons (info and filter) -->
     <div v-if="hasInfo || hasFilters" class="overlay-side-icons">
