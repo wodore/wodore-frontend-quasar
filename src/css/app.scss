@@ -569,6 +569,160 @@ body.body--dark {
   opacity: 0.55;
 }
 
+// ── Floating topbar: split search/date pill + utilities ─────────────────
+.wd-topbar {
+  position: fixed;
+  top: calc(10px + env(safe-area-inset-top, 0px));
+  left: calc(12px + env(safe-area-inset-left, 0px));
+  right: calc(12px + env(safe-area-inset-right, 0px));
+  z-index: 2000;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  pointer-events: none;
+}
+
+.wd-topbar > * { pointer-events: auto; }
+
+.wd-topbar__split {
+  flex: 1;
+  min-width: 0;
+  max-width: 560px;
+  display: flex;
+  align-items: center;
+  height: 48px;
+  background: var(--wd-ctl-bg);
+  border: 1px solid var(--wd-ctl-border);
+  border-radius: 8px;
+  box-shadow: var(--wd-ctl-shadow);
+  overflow: hidden;
+  color: var(--wd-ctl-ink);
+}
+
+.wd-topbar__search {
+  flex: 6;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.wd-topbar__date {
+  flex: 4;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  border-left: 1px solid var(--wd-ctl-border);
+  height: 100%;
+  background: var(--wd-ctl-date-bg);
+}
+
+// Kill embedded component margins
+.wd-topbar__search > *,
+.wd-topbar__date > * {
+  margin: 0 !important;
+  width: 100%;
+}
+
+.wd-topbar__search .q-field,
+.wd-topbar__date .q-field { width: 100%; }
+
+// Inputs: transparent inside the pill
+.wd-topbar .wd-search-field .q-field__control,
+.wd-topbar .wd-date-field .q-field__control {
+  background: transparent !important;
+  padding: 0 6px 0 12px !important;
+  box-shadow: none !important;
+}
+
+.wd-topbar .wd-search-field .q-field__control::before,
+.wd-topbar .wd-date-field .q-field__control::before,
+.wd-topbar .wd-search-field .q-field__control::after {
+  background: transparent !important;
+  border: none !important;
+}
+
+.wd-topbar input::placeholder {
+  color: var(--wd-ctl-ink-soft);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 12.5px;
+}
+
+.wd-topbar .wd-search-field .q-field__native,
+.wd-topbar .wd-date-field .q-field__native {
+  color: var(--wd-ctl-ink);
+}
+
+// Mobile search trigger fills the half
+.wd-topbar__search .q-btn {
+  width: 100%;
+  height: 48px;
+  border-radius: 0;
+  justify-content: flex-start;
+  padding: 0 12px;
+  color: var(--wd-ctl-ink-soft);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+// Desktop utility cluster
+@media (min-width: 600px) {
+  .wd-topbar__right {
+    background: var(--wd-ctl-bg);
+    border: 1px solid var(--wd-ctl-border);
+    border-radius: 8px;
+    box-shadow: var(--wd-ctl-shadow);
+    height: 48px;
+    padding: 0 4px;
+    margin-left: auto;
+    display: flex;
+    gap: 2px;
+    align-items: center;
+    color: var(--wd-ctl-ink);
+
+    .q-btn { color: var(--wd-ctl-ink) !important; }
+  }
+}
+
+// Mobile menu chip
+.wd-topbar-menu {
+  position: fixed;
+  top: calc(10px + env(safe-area-inset-top, 0px));
+  right: calc(12px + env(safe-area-inset-right, 0px));
+  z-index: 2001;
+
+  .q-btn {
+    background: var(--wd-ctl-bg) !important;
+    border: 1px solid var(--wd-ctl-border);
+    border-radius: 8px;
+    box-shadow: var(--wd-ctl-shadow);
+    color: var(--wd-ctl-ink) !important;
+  }
+}
+
+// Mobile: pill leaves room for menu chip
+@media (max-width: 599px) {
+  .wd-topbar__split { max-width: calc(100% - 64px); }
+}
+
+// Date stepper chevrons hidden in the pill
+.wd-topbar__date .wd-input-button { display: none; }
+
+// Progress bar under the pill
+.wd-topbar__progress {
+  position: fixed;
+  top: calc(58px + env(safe-area-inset-top, 0px));
+  left: 12px;
+  right: 12px;
+  max-width: 560px;
+  border-radius: 999px;
+  z-index: 2000;
+}
+
 // ── Map control column (bottom-right) ───────────────────────────────────
 .wd-map-ctl-col {
   display: flex;
@@ -579,6 +733,9 @@ body.body--dark {
 
 // ── Map focus mode: fly-out animation ────────────────────────────────────
 body.wd-map-focus {
+  .wd-topbar,
+  .wd-topbar-menu,
+  .wd-topbar__progress {
   .wd-map-ctl-col,
   .wd-topbar,
   .wd-topbar-menu,
