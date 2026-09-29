@@ -290,7 +290,7 @@ jobs:
             const list = [
               entry,
               ...prev.filter((l) => !l.startsWith(`- [${sha}]`)),
-            ].slice(0, 15);
+            ].slice(0, 5);
             const body = [
               marker,
               '## PR Preview',
