@@ -1075,26 +1075,32 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
 </template>
 
 <style lang="scss">
-// Native app navigation bar zone overlay: a subtle gradient that
-// helps the nav bar icons read over any map content. Uses the SYSTEM
-// dark mode (prefers-color-scheme), NOT the in-app theme toggle —
-// the nav bar icons follow the system theme, so the overlay must too.
-// Dark system: transparent black fading upward. Light system: transparent
-// white fading upward.
+// Native app navigation bar zone overlay: a gradient that helps
+// the nav bar icons read over map content. Uses BOTH the system
+// theme media queries AND the app body classes as fallback (Samsung
+// WebView doesn’t reliably support prefers-color-scheme).
 body.capacitor .map-footer-shade {
   display: block;
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 1; // below the map controls (z-5)
+  z-index: 1;
   pointer-events: none;
   height: calc(
     var(--q-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 12px
   );
+  // Fallback: always show a dark gradient (works in both themes,
+  // overridden by the media queries below when they match)
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.6),
+    rgba(0, 0, 0, 0.2) 50%,
+    transparent
+  );
 }
 
-// System dark: strong dark gradient (white nav icons readable)
+// System dark: dark gradient
 @media (prefers-color-scheme: dark) {
   body.capacitor .map-footer-shade {
     background: linear-gradient(
@@ -1106,7 +1112,7 @@ body.capacitor .map-footer-shade {
   }
 }
 
-// System light: bright light gradient (dark nav icons readable)
+// System light: light gradient
 @media (prefers-color-scheme: light) {
   body.capacitor .map-footer-shade {
     background: linear-gradient(

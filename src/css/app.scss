@@ -1410,11 +1410,21 @@ img:not([class*=content]):not([class*=gallery]):not([class*=media]) {
 }
 
 body.capacitor {
-  // NOTE: Quasar's Android safe-area handling is disabled via
-  // `androidSafeAreaPadding: false` in quasar.config.ts (capacitor
-  // section). We manage insets ourselves — component-level padding
-  // keeps dialog content clear of system bars while the card surface
-  // stays full-bleed edge-to-edge.
+  // Maximized dialogs: Quasar adds safe-area padding AND max-height to
+  // .q-dialog__inner via body.q-safe-area-padding with !important.
+  // Both must be overridden for the card to fill the viewport — the
+  // padding creates gaps at top/bottom, the max-height shrinks the card.
+  // NOTE: androidSafeAreaPadding: false doesn’t exist in Quasar 2.33
+  // (it’s an unmerged PR) — CSS override is the only reliable fix.
+  .q-dialog__inner--maximized {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  body.q-safe-area-padding & .q-dialog__inner--maximized > div {
+    max-height: 100dvh !important;
+    max-width: 100vw !important;
+  }
 
   // Native app: extend the no-select to the full body (stricter)
   overscroll-behavior-y: none;
