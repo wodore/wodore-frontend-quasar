@@ -42,7 +42,7 @@
 import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
-import type { StyleSpecification } from 'maplibre-gl';
+import type { LayerSpecification, StyleSpecification } from 'maplibre-gl';
 import { MapLibre } from '@capawesome/capacitor-maplibre';
 import type { PluginListenerHandle } from '@capacitor/core';
 import { useBasemapStore } from '@stores/map/basemap-store';
@@ -51,6 +51,7 @@ import { useLocalPropertiesStore } from '@stores/local-properties-store';
 import { useHutsStore } from '@stores/huts-store';
 import { clientWodore } from '@clients/index';
 import axios from 'axios';
+import openfreemapBrightStyle from '@assets/map-styles/openfreemap-bright.json';
 import type { Feature, FeatureCollection, Point } from 'geojson';
 import WdBasemapSwitch from './WdBasemapSwitch.vue';
 import WdOverlaySwitch from './WdOverlaySwitch.vue';
@@ -71,11 +72,18 @@ const hutsStore = useHutsStore();
 
 const scaleWidth = ref(80);
 const scaleLabel = ref('');
+let scalePollTimer: number | null = null;
 
 const styleEpoch = ref(0); // guards async setStyle races
 const listeners: PluginListenerHandle[] = [];
 
-// Fetched URL styles (OpenFreeMap etc.) — styles are static, cache them
+// Fetched URL styles — cached. The OpenFreeMap bright style is ALSO
+// bundled (src/assets/map-styles/openfreemap-bright.json) as a static
+// copy: some devices' WebViews cannot fetch tiles.openfreemap.org at
+// all (network error even though CORS is fine), while the NATIVE side
+// fetches tiles/sprites/glyphs fine via OkHttp. The bundle removes
+// the WebView from the critical path.
+const OPENFREEMAP_BRIGHT_URL = 'https://tiles.openfreemap.org/styles/bright';
 const remoteStyleCache = new Map<string, StyleSpecification>();
 
 async function resolveBasemapStyle(): Promise<StyleSpecification> {
@@ -89,6 +97,13 @@ async function resolveBasemapStyle(): Promise<StyleSpecification> {
   // URL style (e.g. https://tiles.openfreemap.org/styles/bright)
   let cached = remoteStyleCache.get(style);
   if (!cached) {
+    if (style === OPENFREEMAP_BRIGHT_URL) {
+      // Serve the bundled snapshot directly — no WebView fetch needed
+      cached = openfreemapBrightStyle as unknown as StyleSpecification;
+      console.debug('[WdNativeMapView] Using bundled OpenFreeMap bright style');
+      remoteStyleCache.set(style, cached);
+      return JSON.parse(JSON.stringify(cached));
+    }
     try {
       const res = await axios.get<StyleSpecification>(style, {
         headers: { Accept: 'application/json' },
@@ -101,17 +116,10 @@ async function resolveBasemapStyle(): Promise<StyleSpecification> {
       // (the store's designated fallback), then swisstopo-full raster.
       console.warn(`[WdNativeMapView] Style fetch failed (${style}), falling back`, e);
       const ofm = basemapStore.basemaps.find(b => b.name === 'openfreemap-bright');
-      if (ofm && typeof ofm.style === 'string' && !remoteStyleCache.has(ofm.style)) {
-        try {
-          const res = await axios.get<StyleSpecification>(ofm.style, {
-            headers: { Accept: 'application/json' },
-          });
-          remoteStyleCache.set(ofm.style, res.data);
-          basemapStore.setBasemap(ofm);
-          return JSON.parse(JSON.stringify(res.data));
-        } catch {
-          /* OpenFreeMap unreachable too — try swisstopo-full below */
-        }
+      if (ofm) {
+        // Bundled style — works even when the WebView cannot fetch it
+        basemapStore.setBasemap(ofm);
+        return JSON.parse(JSON.stringify(openfreemapBrightStyle));
       }
       const full = basemapStore.basemaps.find(b => b.name === 'ch-swisstopo-full');
       if (full && typeof full.style !== 'string') {
@@ -153,6 +161,35 @@ async function loadHuts() {
  * Mirrors the web flow (WdOverlaySwitch addSource/addLayer and
  * basemap-store transformStyle) by merging the same style fragments.
  */
+const OPACITY_BY_TYPE: Record<string, string[]> = {
+  fill: ['fill-opacity'],
+  'fill-extrusion': ['fill-extrusion-opacity'],
+  line: ['line-opacity'],
+  circle: ['circle-opacity'],
+  raster: ['raster-opacity'],
+  heatmap: ['heatmap-opacity'],
+  hillshade: ['hillshade-opacity'],
+  symbol: ['icon-opacity', 'text-opacity'],
+};
+const DEFAULT_OVERLAY_OPACITY = ['interpolate', ['linear'], ['zoom'], 8, 0.9, 14, 0.6, 22, 0.5];
+
+/**
+ * Apply the overlay's opacity like the web addOverlayLayer does: the
+ * overlay items carry an opacity expression (zoom-interpolated) that
+ * the web injects into the layer paint at addLayer time. Without this
+ * the raster overlays render fully opaque on native.
+ */
+function applyOverlayOpacity(layer: LayerSpecification, overlay: { opacity?: unknown }) {
+  const props = OPACITY_BY_TYPE[layer.type] ?? [];
+  const paint = (layer.paint ?? {}) as Record<string, unknown>;
+  const hasOwn = props.some(p => paint[p] !== undefined);
+  if (hasOwn || props.length === 0) return;
+  const opacity = (overlay.opacity ?? DEFAULT_OVERLAY_OPACITY) as unknown;
+  const nextPaint: Record<string, unknown> = { ...paint };
+  for (const p of props) nextPaint[p] = opacity;
+  (layer as { paint?: Record<string, unknown> }).paint = nextPaint;
+}
+
 async function composeStyle(): Promise<StyleSpecification> {
   const style = await resolveBasemapStyle();
   style.sources = { ...(style.sources ?? {}) };
@@ -174,7 +211,9 @@ async function composeStyle(): Promise<StyleSpecification> {
       }
     }
     for (const layer of overlay.style.layers) {
-      style.layers!.push(JSON.parse(JSON.stringify(layer)));
+      const cloned: LayerSpecification = JSON.parse(JSON.stringify(layer));
+      applyOverlayOpacity(cloned, overlay);
+      style.layers!.push(cloned);
     }
     const os = overlay.style.sprite;
     if (os) {
@@ -392,7 +431,19 @@ onMounted(async () => {
         }
       }
     }),
-    await MapLibre.addListener('cameraIdle', () => void updateScale())
+    await MapLibre.addListener('cameraMoveStarted', () => {
+      // Live scale: poll the camera while the gesture runs (the plugin
+      // has no continuous move event), stop on cameraIdle
+      if (scalePollTimer !== null) return;
+      scalePollTimer = window.setInterval(() => void updateScale(), 150);
+    }),
+    await MapLibre.addListener('cameraIdle', () => {
+      if (scalePollTimer !== null) {
+        window.clearInterval(scalePollTimer);
+        scalePollTimer = null;
+      }
+      void updateScale();
+    })
   );
 });
 
