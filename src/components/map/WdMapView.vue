@@ -291,16 +291,24 @@ function onMapError(e: unknown) {
 
   // Basemap fallback: an auth failure from the tile/style host (e.g. a
   // suspended or rotated MapTiler key) would otherwise leave a blank,
-  // broken map. Silently switch once to the keyless OpenFreeMap Liberty
-  // vector style (labels included — OpenFreeMap also serves the glyphs);
-  // no user notification — the map simply keeps working.
+  // broken map. Silently switch once to a keyless basemap — OpenFreeMap
+  // Liberty (vector, labels included, glyphs served by OpenFreeMap) when a
+  // MapTiler VECTOR style is active, or the plain OSM raster when a
+  // MapTiler RASTER variant is active (weak-GPU devices stay on raster).
+  // No user notification — the map simply keeps working.
   if (!basemapFallbackDone && isTileAuthFailure(errorObj) && activeBasemapUsesMapTiler()) {
     basemapFallbackDone = true;
-    // Fall back to the keyless OpenFreeMap Liberty vector style
-    // (tiles.openfreemap.org — no API key, serves both tiles and fonts).
-    const fallback = basemapStore.basemaps.find(b => b.name === 'openfreemap-liberty');
+    // MapTiler vector styles are URL strings; raster variants are inline
+    // style objects — pick a keyless fallback of the same kind.
+    const active = basemapStore.getBasemap();
+    const fallbackName =
+      active && typeof active.style === 'string' ? 'openfreemap-liberty' : 'osm-raster';
+    const fallback = basemapStore.basemaps.find(b => b.name === fallbackName);
     if (fallback) {
-      console.warn('[onMapError] Tile host rejected requests - falling back to OpenFreeMap Liberty');
+      console.warn(
+        '[onMapError] Tile host rejected requests - falling back to',
+        fallbackName
+      );
       void basemapStore.setBasemap(fallback, true);
     }
     return;

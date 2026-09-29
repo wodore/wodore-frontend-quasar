@@ -47,6 +47,20 @@ const swissTopoLbmRasterStyle = getRasterStyle({
   tileSize: 512,
 });
 
+// Keyless plain OSM raster (tile.openstreetmap.org) — automatic fallback
+// target when a MapTiler RASTER variant is active and the key is rejected
+// (weak-GPU devices; see WdMapView.vue).
+const osmRasterStyle = getRasterStyle({
+  name: 'osm-raster',
+  tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+  attribution:
+    '<a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
+  suffix: '',
+  // OSM tiles stop at z19 — source maxzoom lets MapLibre overzoom to the
+  // app's z20 cap instead of requesting missing tiles
+  sourceMaxZoom: 19,
+});
+
 const oeLayer: 'geolandbasemap' | 'bmaphidpi' = 'bmaphidpi';
 const oeExt: 'png' | 'jpeg' = 'jpeg';
 const oeTopoRasterStyle = getRasterStyle({
@@ -622,6 +636,22 @@ export const useBasemapStore = defineStore('basemap', () => {
         active: false,
         img: getImageUrl('outdoor-v2.png'),
         style: 'https://tiles.openfreemap.org/styles/liberty',
+        layers: {
+          ways: { before: undefined },
+          background: { before: undefined },
+        },
+      },
+      {
+        // Keyless plain OSM raster (tile.openstreetmap.org). Hidden from the
+        // picker - automatic fallback target when a MapTiler RASTER variant
+        // is active and the key is rejected (weak-GPU devices), so they stay
+        // on a raster map instead of a heavy vector style.
+        name: 'osm-raster',
+        label: 'OSM Raster',
+        show: false,
+        active: false,
+        img: getImageUrl('outdoor-v2.png'),
+        style: osmRasterStyle,
         layers: {
           ways: { before: undefined },
           background: { before: undefined },

@@ -11,6 +11,9 @@ interface getRasterStyleArgs {
   tileSize?: number;
   minZoom?: number;
   maxZoom?: number;
+  /** Source-level maxzoom: the tile server's highest zoom; MapLibre
+   * overzooms from there instead of requesting missing tiles. */
+  sourceMaxZoom?: number;
   suffix?: string;
   cdn?: boolean;
 }
@@ -22,6 +25,7 @@ export function getRasterStyle({
   tileSize = 256,
   minZoom = 0,
   maxZoom = 22,
+  sourceMaxZoom,
   suffix = 'wd-',
   cdn = false,
 }: getRasterStyleArgs): StyleSpecification {
@@ -59,6 +63,7 @@ export function getRasterStyle({
             : '') + v.replace('<NAME>', layerName)
       ),
       tileSize: tileSize,
+      ...(sourceMaxZoom !== undefined ? { maxzoom: sourceMaxZoom } : {}),
       attribution: attribution,
     };
   }
