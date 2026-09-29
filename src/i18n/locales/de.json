@@ -80,7 +80,9 @@
       "reload": "Seite neu laden"
     },
     "layers": "Ebenen",
-    "basemap_fallback": "Basiskarte nicht verfügbar — auf Swisstopo umgestellt"
+    "basemap_fallback": "Basiskarte nicht verfügbar — auf Swisstopo umgestellt",
+    "enter_focus": "Kartensteuerung ausblenden",
+    "exit_focus": "Kartensteuerung einblenden"
   },
   "favorites": "Favoriten",
   "layers": "Layers",

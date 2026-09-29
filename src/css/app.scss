@@ -355,6 +355,34 @@ body {
   }
 }
 
+// ── Map focus mode (r6): hide floating chrome, keep attribution ────────
+body.wd-map-focus {
+  .q-page-sticky:not(.wd-focus-toggle) {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease;
+  }
+
+  .maplibregl-ctrl-group {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease;
+  }
+
+  // the toggle stays and becomes the exit affordance
+  .wd-focus-toggle {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.wd-focus-toggle .q-btn {
+  background: var(--wd-surface, #fdfefd);
+  border: 1px solid var(--wd-ridge, #dde7e0);
+  box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2);
+  color: var(--wd-ink, #1c1c1c);
+}
+
 // ── Menu drawer: floats over map imagery ───────────────────────────────
 // The codified hybrid exception applies (one soft shadow over map
 // imagery); the hairline ridge read broken over terrain in Day

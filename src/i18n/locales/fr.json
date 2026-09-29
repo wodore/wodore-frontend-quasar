@@ -57,7 +57,9 @@
       "reload": "Recharger la page"
     },
     "layers": "Couches",
-    "basemap_fallback": "Fond de carte indisponible — bascule vers Swisstopo"
+    "basemap_fallback": "Fond de carte indisponible — bascule vers Swisstopo",
+    "enter_focus": "Masquer les commandes",
+    "exit_focus": "Afficher les commandes"
   },
   "map_style": "Carte",
   "location": "Lieu",

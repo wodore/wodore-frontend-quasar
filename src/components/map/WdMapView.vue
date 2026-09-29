@@ -967,6 +967,24 @@ function onLayerLeave(e: MapLayerEventType['mouseleave']) {
   }
 }
 
+// ── Focus mode (mockup r6) ─────────────────────────────────────────────
+// Mobile: tapping empty map hides the floating chrome; tap again (or the
+// exit chip) restores. Desktop uses the fullscreen button (no map click).
+const mapFocus = ref(false);
+
+function setMapFocus(on: boolean): void {
+  mapFocus.value = on;
+  document.body.classList.toggle('wd-map-focus', on);
+}
+
+function onMapClick(e: MapLayerEventType['click']): void {
+  if (!isMobileView()) return;
+  // Skip when the tap hit an interactive feature (hut pins set the
+  // grab cursor on hover - that cursor state marks feature clicks)
+  if (e.target.getCanvas().style.cursor === 'pointer') return;
+  setMapFocus(!mapFocus.value);
+}
+
 function onMapStyledata(e: MglEvent<'styledata'>) {
   //$q.loadingBar.start();
   console.debug('[onMapStyledata] Style data changed event', e);
@@ -1005,6 +1023,7 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
         @map:load="onMapLoad"
         @map:error="onMapError"
         @map:styledata="onMapStyledata"
+        @map:click="onMapClick"
         :hash="isHashMode ? false : 'p'"
         :map-style="initialMapStyle"
         :zoom="mapZoom"
@@ -1019,20 +1038,44 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
       >
         <!-- <MglStyleSwitchControl :map-styles="basemapStore.basemaps" /> -->
         <!-- <MglCustomControl position="top-right" class=""> -->
+        <!-- Map control column (bottom-right, mockup r6): basemap fab at
+             the bottom, overlay switch stacked above it, rail opens up.
+             Compass + GPS: bottom-left on mobile, top-right on desktop;
+             zoom desktop-only. -->
         <WdBasemapSwitch
-          :position="$q.platform.is.mobile ? 'bottom-right' : 'top-left'"
-          :direction="$q.platform.is.mobile ? 'left' : 'right'"
-          :offset="[$q.platform.is.mobile ? 12 : 12, $q.platform.is.mobile ? 20 : 14]"
+          position="bottom-right"
+          direction="left"
+          :offset="[12, 20]"
         />
         <WdOverlaySwitch
-          position="top-left"
-          direction="down"
-          :offset="[$q.platform.is.mobile ? 12 : 12, $q.platform.is.mobile ? 12 : 68]"
+          position="bottom-right"
+          direction="up"
+          :offset="[12, 84]"
         />
         <!-- </MglCustomControl> -->
-        <MglGeolocateControl />
-        <!-- <MglNavigationControl :show-zoom="$q.platform.is.desktop" /> -->
-        <MglNavigationControl :show-zoom="false" />
+        <q-page-sticky
+          :position="isMobileView() ? 'bottom-right' : 'top-right'"
+          :offset="[12, isMobileView() ? 20 : 200]"
+          class="wd-focus-toggle"
+          :class="{ 'wd-focus-toggle--active': mapFocus }"
+          style="z-index: 5"
+        >
+          <q-btn
+            v-if="!isMobileView() || mapFocus"
+            round
+            unelevated
+            :icon="mapFocus ? 'mdi-fullscreen-exit' : 'mdi-fullscreen'"
+            :aria-label="mapFocus ? t('map.exit_focus') : t('map.enter_focus')"
+            size="12px"
+            class="wd-chrome-btn"
+            @click="setMapFocus(!mapFocus)"
+          />
+        </q-page-sticky>
+        <MglGeolocateControl :position="isMobileView() ? 'bottom-left' : 'top-right'" />
+        <MglNavigationControl
+          :show-zoom="!isMobileView()"
+          :position="isMobileView() ? 'bottom-left' : 'top-right'"
+        />
         <MglAttributionControl :position="$q.platform.is.mobile ? 'bottom-left' : 'bottom-right'" />
         <MglScaleControl />
         <!-- <MglGeoJsonSource
