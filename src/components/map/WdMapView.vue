@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, inject, watchEffect, watch, onErrorCaptured, computed } from 'vue';
+import { ref, inject, watchEffect, watch, onErrorCaptured, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useResizeObserver, useDebounceFn, useThrottleFn, useEventListener } from '@vueuse/core';
 import { useQuasar } from 'quasar';
