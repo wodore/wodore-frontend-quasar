@@ -53,8 +53,9 @@ sources:
     grid: webmercator
     # clip to the country polygon: everything outside becomes transparent
     # pixels, so OpenTopoMap below shows through with a clean border cut.
-    # ch-boundary.geojson = Natural Earth 10m country polygon (public
-    # domain, ~1km precision); swap in swisstopo swissBOUNDARIES3D for
+    # ch-boundary.geojson = Natural Earth 10m country polygons (public
+    # domain, ~1km precision), Switzerland + Liechtenstein (swisstopo
+    # renders LI too); swap in swisstopo swissBOUNDARIES3D for
     # survey-grade borders.
     coverage:
       datasource: /mapproxy/config/ch-boundary.geojson

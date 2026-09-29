@@ -6,18 +6,27 @@ always shows seams or white no-data strips at borders):
 
 ```
 OpenTopoMap (worldwide fallback, bottom)
-        ▲ clipped by the Austria polygon
+        ▲ clipped to the Austria polygon
 basemap.at geolandbasemap (AT)
-        ▲ clipped by the Switzerland polygon
-swisstopo pixelkarte (CH, top)
+        ▲ clipped to the Switzerland+Liechtenstein polygon
+swisstopo pixelkarte (CH+LI, top)
         = one merged tile — cuts follow the actual borders
 ```
 
-France/Italy/elsewhere stay on OpenTopoMap: **no free current national
-topo raster exists for France** (IGN SCAN25 is a paid product; the open
-Géoplateforme only offers ortho + the BDUNI network layer, which is
-symbology-only). French topo detail = OpenTopoMap here, plus the Plan
-IGN *vector* overlay client-side later.
+## Source matrix (verified against skitourenguru wiki a0027 + live tests)
+
+| Region | Source | Status |
+|---|---|---|
+| Switzerland + Liechtenstein | swisstopo pixelkarte (OGD) | ✅ in |
+| Austria | basemap.at geolandbasemap (CC BY 4.0) | ✅ in |
+| World fallback | OpenTopoMap (CC-BY-SA) | ✅ in |
+| France — IGN Scan25/Scan100 | licence-restricted (geoservices.ign.fr CGU), **no open live tile endpoint** — not in geopf WMTS caps, legacy wxs.ign.fr dead | ❌ stays OTM |
+| France/Italy — Freemap (freemap.sk) | tiles are **Slovakia-only** ("no map data" placeholders abroad — verified); skitourenguru uses it for offline FR/IT under CC-BY 2.0 | ❌ not usable |
+| Bayern — LDBV DTK 25/50/100 (CC BY 4.0) | excellent maps, but **open-data downloads only** — no live tile service | 🔜 future self-host |
+| Slovenia — JGP topo 1:50k (CC BY 4.0) | no live tile endpoint found (known eProstor service = INSPIRE themes only) | 🔜 future |
+| Italy — Kompass | proprietary partnership with skitourenguru | ❌ not allowed |
+
+France therefore stays on OpenTopoMap (as on skitourenguru's online map); French topo detail can later come from the Plan IGN *vector* overlay (free, keyless) client-side.
 
 ## Quickstart
 
@@ -46,6 +55,7 @@ caches it in `cache_data/` — afterwards only the cache is hit.
 - Tiles at the CH/AT and CH/DE borders: national styles on each side of
   the border line, OTM outside both countries, no white areas, no bbox seams
 - Tiles over France/Germany/elsewhere: pure OpenTopoMap
+- Liechtenstein: covered by swisstopo via the CH+LI clip polygon
 - Repeated requests served from cache only
 
 ## Wodore integration
