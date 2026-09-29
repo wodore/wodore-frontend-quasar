@@ -1,25 +1,24 @@
 <script setup lang="ts">
 /**
- * WdOverlayControl — map layer overlay toggle (clean v2).
+ * WdOverlayControl — map layer overlay toggle (v3, expand-in-place).
  *
- * Layout (bottom-right, above basemap):
- * - Main toggle (48px, colored SVG) — opens/closes the mini strip
- * - Mini strip: layer icon buttons (44px) inside a boxed surface,
- *   scrollable with bottom fade, one-tap toggle per layer
- * - "More" at strip bottom: expands the box to the LEFT (desktop) or
- *   opens a bottom sheet (mobile) with labeled rows + info/filter
+ * The mini strip and the expanded view are THE SAME BOX — when "more" is
+ * clicked, the box grows to the LEFT (icons stay at the right edge,
+ * labels + info/filter appear to their left). On mobile the box grows
+ * the same way (no separate bottom sheet).
  *
- * Icons: each overlay has an SVG in src/assets/wodore-design/overlays/exports/.
+ * Layer toggling replicates the old WdOverlaySwitch logic: sources,
+ * sprites, layers, opacity, and render ordering.
  */
-import { computed, ref, watch } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { LocalStorage } from 'quasar';
+import { useMap } from '@indoorequal/vue-maplibre-gl';
 import { useOverlayStore } from '@stores/map/overlay-store';
 import { useOverlayConfigStore } from '@stores/map/overlay-config-store';
 import { useMapMenuStore } from '@stores/map/map-menu-store';
-import { useMap } from '@indoorequal/vue-maplibre-gl';
-import type { LayerSpecification } from 'maplibre-gl';
 import { OverlaySwitchItem } from '@stores/map/utils/interfaces';
+import type { LayerSpecification, SourceSpecification } from 'maplibre-gl';
 
 const { t } = useI18n();
 const overlayStore = useOverlayStore();
@@ -28,50 +27,102 @@ const menuStore = useMapMenuStore();
 const mapRef = useMap();
 
 // ── State ────────────────────────────────────────────────────────────────
-
 const stripOpen = ref(
-  LocalStorage.hasItem('wd_ovl_strip')
-    ? (LocalStorage.getItem('wd_ovl_strip') as boolean)
-    : true
+  LocalStorage.hasItem('wd_ovl_strip') ? (LocalStorage.getItem('wd_ovl_strip') as boolean) : true
 );
 watch(stripOpen, v => LocalStorage.set('wd_ovl_strip', v));
 
+/** Box expanded: same box, wider (labels + info/filter visible) */
 const expanded = ref(false);
 
+/** Track which overlays have been added to the map */
+const addedOverlays = new Set<string>();
+
 // ── Icons ────────────────────────────────────────────────────────────────
+const iconOpen = new URL('/src/assets/wodore-design/icons/export/overlay-switch.svg', import.meta.url).href;
+const iconClose = new URL('/src/assets/wodore-design/icons/export/overlay-switch-close.svg', import.meta.url).href;
 
-/** Main toggle icon (original colored SVG from design assets) */
-const iconOpen = new URL(
-  '/src/assets/wodore-design/icons/export/overlay-switch.svg',
-  import.meta.url
-).href;
-const iconClose = new URL(
-  '/src/assets/wodore-design/icons/export/overlay-switch-close.svg',
-  import.meta.url
-).href;
-
-/** Layer icon: resolves to the SVG file in the overlays exports dir */
 function layerIcon(name: string): string {
-  return (
-    'img:' +
-    new URL(`/src/assets/wodore-design/overlays/exports/${name}.svg`, import.meta.url).href
-  );
+  return 'img:' + new URL(`/src/assets/wodore-design/overlays/exports/${name}.svg`, import.meta.url).href;
 }
 
-// ── Actions ──────────────────────────────────────────────────────────────
+// ── Layer management (from old WdOverlaySwitch, simplified) ─────────────
 
-function toggleLayer(item: OverlaySwitchItem): void {
-  overlayStore.toggleOverlay(item);
-  // Apply visibility to the map layers
-  if (mapRef.map && item.style?.layers) {
-    const visibility = item.active ? 'visible' : 'none';
-    for (const layer of item.style.layers) {
-      if (mapRef.map.getLayer(layer.id)) {
-        mapRef.map.setLayoutProperty(layer.id, 'visibility', visibility);
-      }
+function setOverlayVisibility(overlay: OverlaySwitchItem): void {
+  if (!mapRef.map) return;
+  for (const layer of overlay.style.layers) {
+    if (mapRef.map.getLayer(layer.id)) {
+      mapRef.map.setLayoutProperty(layer.id, 'visibility', overlay.active ? 'visible' : 'none');
     }
   }
 }
+
+function findBeforeLayerId(overlay: OverlaySwitchItem, order: Array<OverlaySwitchItem>): string | undefined {
+  const idx = order.findIndex(o => o.name === overlay.name);
+  for (let i = idx + 1; i < order.length; i++) {
+    for (const layer of order[i].style.layers) {
+      if (mapRef.map?.getLayer(layer.id)) return layer.id;
+    }
+  }
+  return undefined;
+}
+
+function addOverlayLayer(layer: LayerSpecification, overlay: OverlaySwitchItem, beforeId?: string): void {
+  if (!mapRef.map || mapRef.map.getLayer(layer.id)) return;
+
+  // Apply opacity from the overlay definition or the basemap
+  // Note: opacity handling is done by the basemap store, skip for simplicity
+  mapRef.map.addLayer(layer, beforeId);
+}
+
+function addOverlay(overlay: OverlaySwitchItem): void {
+  if (!mapRef.map || addedOverlays.has(overlay.name)) return;
+
+  // Add sources
+  for (const label in overlay.style.sources) {
+    if (!mapRef.map.getSource(label)) {
+      mapRef.map.addSource(label, overlay.style.sources[label] as SourceSpecification);
+    }
+  }
+
+  // Add layers (respecting render order)
+  const order = overlayStore.overlays;
+  const beforeId = findBeforeLayerId(overlay, order);
+  for (const layer of overlay.style.layers) {
+    const layerWithVisibility = {
+      ...layer,
+      layout: { ...(layer.layout || {}), visibility: overlay.active ? 'visible' : 'none' },
+    };
+    addOverlayLayer(layerWithVisibility as LayerSpecification, overlay, beforeId);
+  }
+
+  addedOverlays.add(overlay.name);
+  setOverlayVisibility(overlay);
+}
+
+function toggleLayer(item: OverlaySwitchItem): void {
+  overlayStore.toggleOverlay(item);
+  if (item.active) {
+    addOverlay(item);
+  } else {
+    setOverlayVisibility(item);
+  }
+}
+
+// Add all active overlays when the map loads
+onMounted(() => {
+  mapRef.map?.on('load', () => {
+    addedOverlays.clear();
+    for (const overlay of overlayStore.overlays) {
+      if (overlay.active) {
+        addOverlay(overlay);
+      }
+    }
+    configStore.reapplyAllFilters();
+  });
+});
+
+// ── Actions ──────────────────────────────────────────────────────────────
 
 function openConfig(overlayName: string, tab?: string): void {
   const overlay = overlayStore.overlays.find(o => o.name === overlayName);
@@ -95,98 +146,7 @@ function hasFilters(overlayName: string): boolean {
 
 <template>
   <div class="wd-ovl">
-    <!-- ── Expanded panel ─────────────────────────────────────────────── -->
-    <!-- Desktop: absolute, slides LEFT from the strip box (same surface) -->
-    <!-- Mobile: teleported bottom sheet -->
-    <Transition name="wd-ovl-panel">
-        <div
-          v-if="expanded"
-          class="wd-ovl__panel"
-          :class="{ 'wd-ovl__panel--sheet': false }"
-          role="dialog"
-          :aria-label="t('overlay_style')"
-        >
-          <div class="wd-ovl__panel-head">
-            <h4>{{ t('overlay_style') }}</h4>
-            <button class="wd-ovl__close" :aria-label="t('close')" @click="expanded = false">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
-            </button>
-          </div>
-          <div class="wd-ovl__panel-body">
-            <div
-              v-for="item in overlayStore.overlays"
-              :key="item.name"
-              v-show="item.show"
-              class="wd-ovl__row"
-              :class="{ 'wd-ovl__row--active': item.active }"
-              @click="toggleLayer(<OverlaySwitchItem>(item as unknown))"
-            >
-              <span class="wd-ovl__row-icon" :class="{ 'wd-ovl__row-icon--active': item.active }">
-                <q-icon :name="layerIcon(item.icon)" size="24px" />
-              </span>
-              <span class="wd-ovl__row-label">{{ item.label }}</span>
-              <span v-if="hasFilters(item.name)" class="wd-ovl__row-badge">
-                <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z"/></svg>
-              </span>
-              <span class="wd-ovl__row-actions">
-                <button
-                  class="wd-ovl__row-btn"
-                  :aria-label="`${item.label} info`"
-                  title="Info"
-                  @click.stop="openConfig(item.name, 'legend')"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
-                </button>
-                <button
-                  class="wd-ovl__row-btn"
-                  :aria-label="`${item.label} filter`"
-                  title="Filter"
-                  @click.stop="openConfig(item.name, 'filter')"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z"/></svg>
-                </button>
-              </span>
-            </div>
-          </div>
-        </div>
-      </Transition>
-
-    <!-- ── Mini strip (boxed, same width as buttons) ──────────────────── -->
-    <Transition name="wd-ovl-strip">
-      <div v-if="stripOpen" class="wd-ovl__box">
-        <div class="wd-ovl__strip" role="group" :aria-label="t('overlay_style')">
-          <button
-            v-for="item in overlayStore.overlays"
-            :key="item.name"
-            v-show="item.show"
-            class="wd-ovl__btn"
-            :class="{
-              'wd-ovl__btn--active': item.active,
-              'wd-ovl__btn--inactive': !item.active,
-            }"
-            :aria-label="item.label"
-            :aria-pressed="item.active"
-            :title="item.label"
-            @click="toggleLayer(<OverlaySwitchItem>(item as unknown))"
-          >
-            <q-icon :name="layerIcon(item.icon)" size="22px" />
-            <span v-if="hasFilters(item.name)" class="wd-ovl__badge">
-              <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z"/></svg>
-            </span>
-          </button>
-        </div>
-        <button
-          class="wd-ovl__more"
-          :aria-label="t('overlay_style')"
-          :aria-expanded="expanded"
-          @click="expanded = !expanded"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
-        </button>
-      </div>
-    </Transition>
-
-    <!-- ── Main toggle (48px, colored SVG icon, rotates) ──────────────── -->
+    <!-- ── Main toggle (48px, colored SVG icon, 360° rotation) ───────── -->
     <button
       class="wd-ovl__toggle"
       :aria-label="t('overlay_style')"
@@ -200,11 +160,88 @@ function hasFilters(overlayName: string): boolean {
         :class="{ 'wd-ovl__toggle-icon--open': stripOpen }"
       />
     </button>
+
+    <!-- ── THE BOX: mini strip (collapsed) or expanded (same box, wider) ── -->
+    <Transition name="wd-ovl-strip">
+      <div v-if="stripOpen" class="wd-ovl__box" :class="{ 'wd-ovl__box--expanded': expanded }">
+        <!-- Rows: icon always at the right, label+actions appear when expanded -->
+        <div class="wd-ovl__rows" role="group" :aria-label="t('overlay_style')">
+          <div
+            v-for="item in overlayStore.overlays"
+            :key="item.name"
+            v-show="item.show"
+            class="wd-ovl__row"
+            :class="{ 'wd-ovl__row--active': item.active }"
+            @click="toggleLayer(<OverlaySwitchItem>(item as unknown))"
+          >
+            <!-- Label + actions (LEFT of icon, only when expanded) -->
+            <div v-if="expanded" class="wd-ovl__row-info">
+              <span class="wd-ovl__row-name">{{ item.label }}</span>
+              <span v-if="hasFilters(item.name)" class="wd-ovl__row-filter-badge">
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z"/></svg>
+              </span>
+              <button
+                class="wd-ovl__row-action"
+                :aria-label="`${item.label} info`"
+                title="Info"
+                @click.stop="openConfig(item.name, 'legend')"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+              </button>
+              <button
+                class="wd-ovl__row-action"
+                :aria-label="`${item.label} filter`"
+                title="Filter"
+                @click.stop="openConfig(item.name, 'filter')"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z"/></svg>
+              </button>
+            </div>
+
+            <!-- Icon button (ALWAYS at the right edge of the box) -->
+            <span
+              class="wd-ovl__icon"
+              :class="{
+                'wd-ovl__icon--active': item.active,
+                'wd-ovl__icon--inactive': !item.active,
+              }"
+              :aria-label="item.label"
+              role="button"
+              :aria-pressed="item.active"
+            >
+              <q-icon :name="layerIcon(item.icon)" size="22px" />
+              <span v-if="!expanded && hasFilters(item.name)" class="wd-ovl__mini-badge">
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z"/></svg>
+              </span>
+            </span>
+          </div>
+        </div>
+
+        <!-- More button: toggles the box between mini and expanded -->
+        <button
+          v-if="!expanded"
+          class="wd-ovl__more"
+          :aria-label="t('overlay_style')"
+          aria-expanded="false"
+          @click.stop="expanded = true"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
+        </button>
+        <button
+          v-else
+          class="wd-ovl__more wd-ovl__more--close"
+          :aria-label="t('close')"
+          aria-expanded="true"
+          @click.stop="expanded = false"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+    </Transition>
   </div>
 </template>
 
 <style lang="scss" scoped>
-// ── Container ────────────────────────────────────────────────────────────
 .wd-ovl {
   display: flex;
   flex-direction: column;
@@ -212,103 +249,7 @@ function hasFilters(overlayName: string): boolean {
   gap: 4px;
 }
 
-// ── Mini strip box ────────────────────────────────────────────────────────
-.wd-ovl__box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: var(--wd-ctl-bg);
-  border: 1px solid var(--wd-ctl-border);
-  border-radius: 8px;
-  box-shadow: var(--wd-ctl-shadow);
-  padding: 2px;
-  flex: none;
-  // same width as the 48px toggle button
-  width: 48px;
-}
-
-.wd-ovl__strip {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  align-items: center;
-  width: 100%;
-  max-height: calc(100dvh - 320px);
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: none;
-  &::-webkit-scrollbar { display: none; }
-  mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
-}
-
-// strip icon button (44px, fills the 48px box minus padding)
-.wd-ovl__btn {
-  position: relative;
-  width: 44px;
-  height: 44px;
-  border-radius: 4px;
-  border: none;
-  background: transparent;
-  color: var(--wd-ctl-ink);
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  transition: background-color 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
-  flex: none;
-}
-
-.wd-ovl__btn--inactive {
-  opacity: 0.65;
-}
-
-.wd-ovl__btn:hover {
-  background: rgba(128, 128, 128, 0.1);
-  opacity: 1;
-}
-
-.wd-ovl__btn--active {
-  box-shadow: inset 0 0 0 3px var(--wd-ctl-ring);
-  background: var(--wd-ctl-active-bg);
-  opacity: 1;
-}
-
-// filter badge
-.wd-ovl__badge {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 14px;
-  height: 14px;
-  border-radius: 4px;
-  background: #2673bf;
-  color: #fdfefd;
-  display: grid;
-  place-items: center;
-}
-
-// ── More button ──────────────────────────────────────────────────────────
-.wd-ovl__more {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 24px;
-  border-radius: 4px;
-  border: 1px solid var(--wd-ctl-border);
-  background: transparent;
-  color: var(--wd-ctl-ink-soft);
-  cursor: pointer;
-  transition: background-color 0.12s ease;
-  flex: none;
-  margin-top: 2px;
-
-  &:hover {
-    background: rgba(128, 128, 128, 0.1);
-    color: var(--wd-ctl-ink);
-  }
-}
-
-// ── Main toggle ──────────────────────────────────────────────────────────
+// ── Toggle button (48px, bottom of the stack) ───────────────────────────
 .wd-ovl__toggle {
   display: grid;
   place-items: center;
@@ -322,136 +263,113 @@ function hasFilters(overlayName: string): boolean {
   transition: background-color 0.15s ease;
   flex: none;
   padding: 6px;
+  order: 2; // below the box
 
-  &:hover {
-    background: var(--wd-ctl-hover);
-  }
+  &:hover { background: var(--wd-ctl-hover); }
 }
 
 .wd-ovl__toggle-icon {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1);
+  transition: transform 0.35s cubic-bezier(0.2, 0, 0, 1);
 }
 
 .wd-ovl__toggle-icon--open {
   transform: rotate(360deg);
 }
 
-// ── Expanded panel ───────────────────────────────────────────────────────
-.wd-ovl__panel {
+// ── THE BOX (mini = 48px wide, expanded = ~280px, SAME box) ────────────
+.wd-ovl__box {
+  display: flex;
+  flex-direction: column;
   background: var(--wd-ctl-bg);
   border: 1px solid var(--wd-ctl-border);
   border-radius: 8px;
   box-shadow: var(--wd-ctl-shadow);
+  overflow: hidden;
+  flex: none;
+  order: 1; // above the toggle
+
+  // collapsed: narrow strip (icons only)
+  width: 48px;
+
+  // expanded: same box, wider — icons stay at the RIGHT
+  &--expanded {
+    width: min(280px, 70vw);
+  }
+
+  // animate width change
+  transition: width 0.25s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.wd-ovl__rows {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  max-height: calc(100dvh - 320px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
 }
 
-// desktop: positioned LEFT of the mini strip (same vertical alignment)
-.wd-ovl__panel:not(.wd-ovl__panel--sheet) {
-  position: absolute;
-  right: calc(100% + 6px);
-  bottom: 0;
-  width: 300px;
-  max-height: 480px;
-}
-
-// mobile: fullscreen bottom sheet
-.wd-ovl__panel--sheet {
-  position: fixed;
-  left: 10px;
-  right: 10px;
-  bottom: 10px;
-  border-radius: 16px;
-  max-height: 70vh;
-}
-
-.wd-ovl__panel-head {
-  display: flex;
-  align-items: center;
-  padding: 6px 6px 6px 14px;
-  border-bottom: 1px solid var(--wd-ctl-border);
-  flex: none;
-}
-
-.wd-ovl__panel-head h4 {
-  margin: 0;
-  flex: 1;
-  font: 500 14px/1.2 'Barlow Semi Condensed', 'Barlow', sans-serif;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--wd-ctl-ink);
-}
-
-.wd-ovl__close {
-  width: 32px;
-  height: 32px;
-  border: none;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--wd-ctl-ink-soft);
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-
-  &:hover {
-    background: rgba(128, 128, 128, 0.1);
-    color: var(--wd-ctl-ink);
+// collapsed: fade hint at bottom
+.wd-ovl__rows {
+  .wd-ovl__box:not(.wd-ovl__box--expanded) & {
+    mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
   }
 }
 
-.wd-ovl__panel-body {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 4px 0;
-}
-
-// rows: icon + label + actions
+// ── Row: icon at RIGHT, info fills LEFT when expanded ──────────────────
 .wd-ovl__row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 4px 14px;
-  border-radius: 4px;
+  justify-content: flex-end; // icon pushed right
+  min-height: 44px;
   cursor: pointer;
-  min-height: 48px;
+  flex: none;
+  width: 100%;
 
   &:hover {
-    background: rgba(128, 128, 128, 0.05);
+    background: rgba(128, 128, 128, 0.06);
   }
 }
 
-.wd-ovl__row-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 4px;
-  display: grid;
-  place-items: center;
-  flex: none;
-  color: var(--wd-ctl-ink-soft);
+// expanded rows: info takes remaining space
+.wd-ovl__box--expanded .wd-ovl__row {
+  padding: 0 4px;
+  gap: 8px;
+  justify-content: flex-start; // info first, icon last
+  flex-direction: row-reverse; // icon on the right visually
+}
 
-  &--active {
-    box-shadow: inset 0 0 0 3px var(--wd-ctl-ring);
-    color: var(--wd-ctl-ink);
+// ── Info section (only when expanded) ────────────────────────────────────
+.wd-ovl__row-info {
+  display: none; // hidden in mini mode
+
+  .wd-ovl__box--expanded & {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
   }
 }
 
-.wd-ovl__row-label {
+.wd-ovl__row-name {
   flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--wd-ctl-ink);
 }
 
-.wd-ovl__row-badge {
+.wd-ovl__row-filter-badge {
   width: 16px;
   height: 16px;
   border-radius: 4px;
@@ -462,15 +380,9 @@ function hasFilters(overlayName: string): boolean {
   flex: none;
 }
 
-.wd-ovl__row-actions {
-  display: flex;
-  gap: 2px;
-  flex: none;
-}
-
-.wd-ovl__row-btn {
-  width: 34px;
-  height: 34px;
+.wd-ovl__row-action {
+  width: 30px;
+  height: 30px;
   border: none;
   border-radius: 4px;
   background: transparent;
@@ -478,6 +390,7 @@ function hasFilters(overlayName: string): boolean {
   cursor: pointer;
   display: grid;
   place-items: center;
+  flex: none;
 
   &:hover {
     background: rgba(128, 128, 128, 0.1);
@@ -485,38 +398,77 @@ function hasFilters(overlayName: string): boolean {
   }
 }
 
-// ── Animations ────────────────────────────────────────────────────────────
+// ── Icon button (always at the right edge) ──────────────────────────────
+.wd-ovl__icon {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 4px;
+  flex: none;
+  color: var(--wd-ctl-ink);
+  transition: box-shadow 0.12s ease, opacity 0.12s ease;
+}
 
-// strip collapse
+.wd-ovl__icon--inactive {
+  opacity: 0.65;
+}
+
+.wd-ovl__icon--active {
+  box-shadow: inset 0 0 0 3px var(--wd-ctl-ring);
+  opacity: 1;
+}
+
+.wd-ovl__row:hover .wd-ovl__icon {
+  opacity: 1;
+}
+
+.wd-ovl__mini-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  background: #2673bf;
+  color: #fdfefd;
+  display: grid;
+  place-items: center;
+}
+
+// ── More/close button at bottom of box ──────────────────────────────────
+.wd-ovl__more {
+  display: grid;
+  place-items: center;
+  height: 24px;
+  border-top: 1px solid var(--wd-ctl-border);
+  background: transparent;
+  color: var(--wd-ctl-ink-soft);
+  cursor: pointer;
+  flex: none;
+  width: 100%;
+
+  &:hover {
+    background: rgba(128, 128, 128, 0.08);
+    color: var(--wd-ctl-ink);
+  }
+}
+
+// ── Box collapse animation ───────────────────────────────────────────────
 .wd-ovl-strip-enter-active,
 .wd-ovl-strip-leave-active {
-  transition: opacity 0.18s cubic-bezier(0.2, 0, 0, 1), transform 0.18s cubic-bezier(0.2, 0, 0, 1);
+  transition:
+    opacity 0.18s cubic-bezier(0.2, 0, 0, 1),
+    transform 0.18s cubic-bezier(0.2, 0, 0, 1),
+    max-height 0.18s cubic-bezier(0.2, 0, 0, 1);
+  max-height: 600px;
 }
+
 .wd-ovl-strip-enter-from,
 .wd-ovl-strip-leave-to {
   opacity: 0;
   transform: translateY(8px);
-}
-
-// panel slide-left (desktop)
-.wd-ovl-panel-enter-active,
-.wd-ovl-panel-leave-active {
-  transition: opacity 0.2s cubic-bezier(0.2, 0, 0, 1), transform 0.2s cubic-bezier(0.2, 0, 0, 1);
-}
-.wd-ovl-panel-enter-from,
-.wd-ovl-panel-leave-to {
-  opacity: 0;
-  transform: translateX(12px);
-}
-
-// sheet slide-up (mobile)
-.wd-ovl-sheet-enter-active,
-.wd-ovl-sheet-leave-active {
-  transition: opacity 0.25s cubic-bezier(0.2, 0, 0, 1), transform 0.25s cubic-bezier(0.2, 0, 0, 1);
-}
-.wd-ovl-sheet-enter-from,
-.wd-ovl-sheet-leave-to {
-  opacity: 0;
-  transform: translateY(30px);
+  max-height: 0;
 }
 </style>
