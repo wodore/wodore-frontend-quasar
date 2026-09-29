@@ -31,8 +31,10 @@ const swissTopoRasterStyle = getRasterStyle({
     '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> &#124; <a href="https://www.openstreetmap.org/copyright" target="_blank"> &copy; OpenStreetMap contributors</a> &#124; <a href="https://www.swisstopo.admin.ch/en/home.html" target="_blank">&copy; swisstopo</a>',
   suffix: '',
   tileSize: Platform.is.mobile ? 128 : 156,
-  // no bounds: the swisstopo 3857 tile grid limits coverage naturally,
-  // requests outside it 404 cheaply
+  // tight bounds around Switzerland: swisstopo's 3857 grid RENDERS far
+  // beyond the country (deep into FR/IT/AT), which would overwrite the
+  // other national layers — CH + small border margin only
+  bounds: [5.95, 45.72, 10.65, 47.88],
 });
 
 const swissTopoLbmRasterStyle = getRasterStyle({
@@ -59,9 +61,10 @@ const oeTopoRasterStyle = getRasterStyle({
   ],
   attribution: 'basemap.at',
   tileSize: 512,
-  // no bounds: basemap.at's own tile grid limits coverage naturally.
-  // NOTE: its grid reaches into eastern CH with WHITE no-data tiles —
-  // in composites this style must always paint BELOW swisstopo.
+  // tight bounds around Austria (basemap.at's grid serves WHITE no-data
+  // tiles well beyond its data, e.g. over eastern CH)
+  bounds: [9.4, 46.35, 17.25, 49.05],
+  // NOTE: in composites this style must always paint BELOW swisstopo.
 });
 
 // Clean minimal world fallback for zoomed-out views: the OpenFreeMap
