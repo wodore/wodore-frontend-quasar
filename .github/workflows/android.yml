@@ -266,8 +266,7 @@ jobs:
         env:
           WODORE_ANDROID_DEV_KEYSTORE_PASSWORD: >-
             ${{ secrets.WODORE_ANDROID_DEV_KEYSTORE_PASSWORD }}
-          WODORE_ANDROID_DEV_KEY_ALIAS:
-            ${{ secrets.WODORE_ANDROID_DEV_KEY_ALIAS }}
+          WODORE_ANDROID_DEV_KEY_ALIAS: ${{ secrets.WODORE_ANDROID_DEV_KEY_ALIAS }}
           WODORE_ANDROID_DEV_KEY_PASSWORD: >-
             ${{ secrets.WODORE_ANDROID_DEV_KEY_PASSWORD }}
         run: |

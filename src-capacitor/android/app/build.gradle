@@ -78,6 +78,17 @@ android {
             initWith debug
             applicationIdSuffix '.dev'
             matchingFallbacks = ['debug']
+            // Explicit signing (initWith doesn't reliably copy
+            // conditional signing configs from debug)
+            if (signingConfigs.ciDev.storeFile != null) {
+                signingConfig signingConfigs.ciDev
+            }
+            // Shrink the APK: R8 strips unused code paths from the
+            // Capacitor runtime, AndroidX and plugin dependencies.
+            // classes.dex alone is 8.2MB unminified.
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         release {
             // Play Store: com.wodore.app, semver synced from tags.
