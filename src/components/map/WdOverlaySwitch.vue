@@ -93,14 +93,16 @@ function setOverlayVisibility(overlay: OverlaySwitchItem): boolean {
 function openConfig(overlayName: string, initialTab?: string) {
   console.debug('[WdOverlaySwitch] Opening config for overlay:', overlayName, 'tab:', initialTab);
 
-  // Use the overlay's own (translated, locale-reactive) label as the config
-  // drawer title instead of a hardcoded map
-  // Cast to a simple record: the OverlaySwitchItem's deeply nested style
-  // types cause "type instantiation excessively deep" in the dev checker
-  const overlay = overlayStore.overlays.find(
-    (o: { name: string; label: string }) => o.name === overlayName
-  );
-  const overlayLabel = overlay?.label ?? overlayName;
+  // The overlays array's deeply nested MapLibre style types crash the
+  // dev checker's type inference. Cast to a flat shape for lookups.
+  const items = overlayStore.overlays as unknown as Array<{ name: string; label: string }>;
+  let overlayLabel = overlayName;
+  for (const o of items) {
+    if (o.name === overlayName) {
+      overlayLabel = o.label;
+      break;
+    }
+  }
 
   menuStore.openOverlayConfig(overlayName, initialTab);
   menuStore.menuData.title = overlayLabel;
@@ -112,8 +114,12 @@ function openConfig(overlayName: string, initialTab?: string) {
 }
 
 function hasActiveFilters(overlayName: string): boolean {
-  const overlay = overlayStore.overlays.find(o => o.name === overlayName);
-  const config = overlay?.config;
+  // Same type depth workaround as openConfig
+  const items = overlayStore.overlays as unknown as Array<{
+    name: string;
+    config?: { filters?: Array<{ id: string; defaultValue: unknown; options?: Array<{ value: unknown }> }> };
+  }>;
+  let config = items.find(o => o.name === overlayName)?.config;
 
   if (!config?.filters || config.filters.length === 0) {
     return false;

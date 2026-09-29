@@ -300,7 +300,9 @@ function onMapError(e: unknown) {
     // Fall back to the keyless swisstopo raster (geo.admin.ch tiles —
     // no API key, proven reliable). OpenFreeMap had rendering issues
     // on some Samsung WebViews.
-    const fallback = basemapStore.basemaps.find(b => b.name === 'ch-swisstopo-full');
+    // Same type depth workaround as WdOverlaySwitch
+    const bms = basemapStore.basemaps as unknown as Array<{ name: string; url: string } & Record<string, unknown>>;
+    const fallback = bms.find(b => b.name === 'ch-swisstopo-full') as typeof basemapStore.basemaps[number] | undefined;
     if (fallback) {
       console.warn('[onMapError] Tile host rejected requests - falling back to OpenFreeMap');
       void basemapStore.setBasemap(fallback, true);
