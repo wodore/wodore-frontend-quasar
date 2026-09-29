@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import { getEnv } from '@services/runtimeEnv';
-import { getEnv } from '@services/runtimeEnv';
 
 onMounted(() => {
   if (getEnv('WODORE_UMAMI_WEBSITE_ID')) {

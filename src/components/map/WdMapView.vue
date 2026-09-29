@@ -23,7 +23,6 @@ import {
 import mapDraw from '@services/draw';
 import { currentLocale } from '@services/locale';
 import { clientWodore } from '@clients/index';
-import { getEnv } from '@services/runtimeEnv';
 
 // MapLibre v6 resolves its web worker via import.meta.url, which breaks under
 // Vite's dependency optimization: the rewritten worker URL 404s and vector
