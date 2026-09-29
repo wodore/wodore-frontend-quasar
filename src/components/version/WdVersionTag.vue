@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { getEnv } from '@services/runtimeEnv';
 import { computed } from 'vue';
 
 interface Props {
@@ -32,7 +33,7 @@ const url = computed(() => {
   }
   return undefined;
 });
-const appEnv = process.env.WODORE_ENV || 'production';
+const appEnv = getEnv('WODORE_ENV') || 'production';
 // link the commit hash on staging AND preview (same as logged-in staging)
 const isStaging = computed(() => appEnv === 'staging' || appEnv === 'preview');
 </script>

@@ -1,6 +1,7 @@
 import { StyleSpecification } from 'maplibre-gl';
 
 import { OverlaySwitchItem, LayerNames, OpacitySpecification } from './interfaces';
+import { getEnv } from '@services/runtimeEnv';
 
 interface getRasterStyleArgs {
   name: string;
@@ -51,7 +52,7 @@ export function getRasterStyle({
         v =>
           (cdn
             ? 'https://res.cloudinary.com/' +
-              process.env.WODORE_CLOUDINARY_ENV +
+              getEnv('WODORE_CLOUDINARY_ENV') +
               '/image/fetch/f_auto/q_auto/'
             : '') + v.replace('<NAME>', layerName)
       ),

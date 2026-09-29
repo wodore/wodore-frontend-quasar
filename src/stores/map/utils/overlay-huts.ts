@@ -19,6 +19,7 @@ import { useHutsStore } from '@stores/huts-store';
 const { bookingsGeojson } = storeToRefs(useHutsStore());
 import { useMap } from '@indoorequal/vue-maplibre-gl';
 import { watchEffect } from 'vue';
+import { getEnv } from '@services/runtimeEnv';
 //const { hutTypesRecords } = storeToRefs(useHutTypesStore());
 //import { Platform } from 'quasar';
 //import { useStorage } from '@vueuse/core';
@@ -29,7 +30,7 @@ const mapRef = useMap();
 // Tile server (Martin). Defaults to the public staging server so builds
 // without WODORE_TILE_SERVER_URL (e.g. PR previews) still work; local dev
 // overrides it via .env, CI via the GitHub repository variable.
-const TILE_SERVER_URL = process.env.WODORE_TILE_SERVER_URL || 'https://tiles.stg.wodore.com';
+const TILE_SERVER_URL = getEnv('WODORE_TILE_SERVER_URL') || 'https://tiles.stg.wodore.com';
 //let imageSwitchZoom = 11;
 //if (Platform.is.mobile) {
 //  imageSwitchZoom = 9;

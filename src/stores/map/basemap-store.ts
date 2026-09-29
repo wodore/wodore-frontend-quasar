@@ -10,6 +10,7 @@ import { getGPUTier } from '@pmndrs/detect-gpu';
 import { useOverlayStore } from './overlay-store';
 import { StyleSpecification } from 'maplibre-gl';
 import { i18n, currentLocale } from '@services/locale';
+import { getEnv } from '@services/runtimeEnv';
 
 const t = i18n.global.t;
 
@@ -37,7 +38,7 @@ const swissTopoLbmRasterStyle = getRasterStyle({
   name: 'ch-swisstopo-lbm',
   tiles: [
     'https://api.maptiler.com/maps/ch-swisstopo-lbm/{z}/{x}/{y}.png?key=' +
-      process.env.WODORE_MAPTILER_API_KEY,
+      getEnv('WODORE_MAPTILER_API_KEY'),
   ],
   attribution:
     '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank"> &copy; OpenStreetMap contributors</a> &#124; <a href="https://www.swisstopo.admin.ch/en/home.html" target="_blank">&copy; swisstopo</a>',
@@ -538,7 +539,7 @@ export const useBasemapStore = defineStore('basemap', () => {
         style: useRaster
           ? swissTopoLbmRasterStyle
           : 'https://api.maptiler.com/maps/ch-swisstopo-lbm/style.json?key=' +
-            process.env.WODORE_MAPTILER_API_KEY,
+            getEnv('WODORE_MAPTILER_API_KEY'),
         layers: {
           ways: { before: useRaster ? undefined : 'Other place labels' },
           background: { before: useRaster ? undefined : 'Building line' },
@@ -564,7 +565,7 @@ export const useBasemapStore = defineStore('basemap', () => {
         img: getImageUrl('satellite.png'),
         style:
           'https://api.maptiler.com/maps/hybrid/style.json?key=' +
-          process.env.WODORE_MAPTILER_API_KEY,
+          getEnv('WODORE_MAPTILER_API_KEY'),
         layers: {
           ways: { before: 'Tunnel' },
           background: { before: 'State labels' },
@@ -578,7 +579,7 @@ export const useBasemapStore = defineStore('basemap', () => {
         img: getImageUrl('outdoor-v2.png'),
         style:
           'https://api.maptiler.com/maps/outdoor-v2/style.json?key=' +
-          process.env.WODORE_MAPTILER_API_KEY,
+          getEnv('WODORE_MAPTILER_API_KEY'),
         layers: {
           background: { before: 'Contour index' },
           ways: { before: 'Park' },
