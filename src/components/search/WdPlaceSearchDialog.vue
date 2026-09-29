@@ -2,37 +2,28 @@
 import { ref, watch, nextTick } from 'vue';
 import WdPlaceSearch from './WdPlaceSearch.vue';
 
-// State
 const showDialog = ref(false);
-
-// Refs
 const placeSearchRef = ref<InstanceType<typeof WdPlaceSearch> | null>(null);
 
-// When dialog opens, focus the search input
 watch(showDialog, newVal => {
   if (newVal) {
-    nextTick(() => {
-      placeSearchRef.value?.focus();
-    });
+    nextTick(() => placeSearchRef.value?.focus());
   }
 });
 
-// Handle close from search component (always close on mobile)
 function onSearchClose() {
   showDialog.value = false;
 }
 </script>
 
 <template>
-  <!-- Search icon button trigger -->
   <div>
-    <q-btn flat round dense @click="showDialog = true" class="">
+    <q-btn flat round dense @click="showDialog = true">
       <q-icon size="sm" class="text-icon">
         <IconEvaSearchOutline />
       </q-icon>
     </q-btn>
 
-    <!-- Mobile Full-screen Dialog -->
     <q-dialog
       v-model="showDialog"
       maximized
@@ -40,54 +31,55 @@ function onSearchClose() {
       transition-show="slide-up"
       transition-hide="slide-down"
     >
-      <div
-        style="
-          height: 100dvh;
-          width: 100vw;
-          padding-top: var(
-            --q-safe-area-inset-top,
-            env(safe-area-inset-top, 0px)
-          );
-          padding-bottom: var(
-            --q-safe-area-inset-bottom,
-            env(safe-area-inset-bottom, 0px)
-          );
-          overscroll-behavior-y: none;
-        "
-      >
-        <!-- Close button (top right corner) -->
-        <div
-          class="q-ma-xs z-top text-icon"
-          style="
-            position: absolute;
-            top: calc(
-              6px + var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px))
-            );
-            right: 6px;
-            z-index: 200;
-          "
-        >
+      <!-- Opaque background fills the card; content pads itself
+           clear of system bars (same approach as the header toolbar) -->
+      <div class="search-dialog-root">
+        <div class="search-dialog-close">
           <q-btn
             dense
             round
             flat
             v-close-popup
-            class="wd-close-chip"
             icon="wd-close"
+            class="wd-close-chip"
           >
             <q-tooltip :delay="2000">{{ $t('close') }}</q-tooltip>
           </q-btn>
         </div>
-
-        <!-- Search component (complete card, full screen on mobile) -->
         <WdPlaceSearch
           ref="placeSearchRef"
           mobile
           swipe-to-close
           @close="onSearchClose"
-          style="height: 100%; width: 100%; max-width: 100vw"
+          class="search-dialog-content"
         />
       </div>
     </q-dialog>
   </div>
 </template>
+
+<style scoped>
+.search-dialog-root {
+  background: var(--q-dark, #112119);
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overscroll-behavior-y: none;
+}
+
+.search-dialog-close {
+  position: fixed;
+  top: calc(
+    8px + var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px))
+  );
+  right: 6px;
+  z-index: 200;
+}
+
+.search-dialog-content {
+  flex: 1;
+  overflow: hidden;
+}
+</style>

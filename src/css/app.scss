@@ -1410,21 +1410,11 @@ img:not([class*=content]):not([class*=gallery]):not([class*=media]) {
 }
 
 body.capacitor {
-  // Maximized dialogs: Quasar adds safe-area padding AND max-height to
-  // .q-dialog__inner via body.q-safe-area-padding with !important.
-  // Both must be overridden for the card to fill the viewport — the
-  // padding creates gaps at top/bottom, the max-height shrinks the card.
-  // NOTE: androidSafeAreaPadding: false doesn’t exist in Quasar 2.33
-  // (it’s an unmerged PR) — CSS override is the only reliable fix.
-  .q-dialog__inner--maximized {
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-  }
-
-  body.q-safe-area-padding & .q-dialog__inner--maximized > div {
-    max-height: 100dvh !important;
-    max-width: 100vw !important;
-  }
+  // NOTE: NO dialog inner overrides here — Quasar’s safe-area padding
+  // on .q-dialog__inner is BY DESIGN (keeps content away from system
+  // bars). Each dialog component handles its own background/padding.
+  // The toolbar approach: the card content just pads itself within
+  // the space Quasar provides.
 
   // Native app: extend the no-select to the full body (stricter)
   overscroll-behavior-y: none;
@@ -1502,4 +1492,23 @@ body.capacitor {
 // bounce that happens before the inner container takes over
 html, body {
   overscroll-behavior: none;
+}
+
+// Dialog action buttons (CLOSE/RESET/SEND etc.) sit at the bottom of
+// the card — pad them clear of the Android navigation bar in the
+// native app. Works WITH Quasar's safe-area design (not against it).
+body.capacitor .q-dialog__inner--maximized .q-card-actions {
+  padding-bottom: var(
+    --q-safe-area-inset-bottom,
+    env(safe-area-inset-bottom, 0px)
+  );
+}
+
+// Opaque dialog backdrop in the native app — fills the safe-area gaps
+// above/below maximized dialog cards so no app content bleeds through.
+// Works WITH Quasar's safe-area design (card stays inset, backdrop
+// fills the rest). The dark color matches the app's dark surfaces.
+body.capacitor .q-dialog__backdrop {
+  background: rgba(10, 18, 14, 0.98) !important;
+  backdrop-filter: none !important;
 }
