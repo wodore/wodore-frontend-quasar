@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { getEnv } from '@services/runtimeEnv';
 import { computed } from 'vue';
 
 interface Props {
