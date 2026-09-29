@@ -1,13 +1,13 @@
 <script setup lang="ts">
 //import { Map } from 'maplibre-gl';
-import { QPageStickyProps, QFabProps, useQuasar, LocalStorage } from 'quasar';
+import { QPageStickyProps, useQuasar, LocalStorage } from 'quasar';
 import type { AllPaintProperties } from '@maplibre/maplibre-gl-style-spec';
 import { OpacitySpecification, OverlaySwitchItem } from '@stores/map/utils/interfaces';
 import { useI18n } from 'vue-i18n';
 import { useOverlayStore } from '@stores/map/overlay-store';
 import { useBasemapStore } from '@stores/map/basemap-store';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { LayerNames } from '@stores/map/utils/interfaces';
 import {
   LayerSpecification,
@@ -27,12 +27,7 @@ const basemapStore = useBasemapStore();
 const mapRef = useMap();
 const $q = useQuasar();
 const switcherOpen = ref<boolean>(
-  process.env.MODE === 'capacitor'
-    ? false // native app: keep the FAB collapsed - the expanded list
-    : // would run into the Android navigation bar zone
-      LocalStorage.hasItem('switcherOpen')
-      ? (LocalStorage.getItem('switcherOpen') as boolean)
-      : true
+  LocalStorage.hasItem('switcherOpen') ? (LocalStorage.getItem('switcherOpen') as boolean) : false
 );
 //const switcherLocked = ref<boolean>(true);
 
@@ -49,14 +44,15 @@ watch(switcherOpen, v => {
 
 interface Props {
   position?: QPageStickyProps['position'];
-  direction?: QFabProps['direction'];
   offset?: QPageStickyProps['offset'];
 }
 withDefaults(defineProps<Props>(), {
-  position: 'top-left',
-  direction: 'right',
+  position: 'bottom-right',
   offset: undefined,
 });
+
+/** Panel mode: bottom sheet on mobile, popover above the chip on desktop */
+const panelMode = computed<'sheet' | 'popover'>(() => ($q.screen.xs ? 'sheet' : 'popover'));
 
 function toggleOverlay(s: OverlaySwitchItem): boolean {
   console.debug('[toggleOverlay] toogle', s);
@@ -361,6 +357,116 @@ function overlayIcon(name: string) {
 }
 </script>
 <style lang="scss">
+
+// ── custom layer control (replaces the q-fab, r6 design) ───────────────
+.wd-layerctl {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.wd-layerctl__chip {
+  width: 52px;
+  height: 52px;
+  background: #fdfefd !important;
+  border: 1px solid #dde7e0 !important;
+  box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2) !important;
+  color: #1c1c1c !important;
+}
+
+.wd-layerctl__chip--open {
+  background: #f6f9f7 !important;
+}
+
+.wd-layerctl__panel {
+  background: #fdfefd;
+  border: 1px solid #dde7e0;
+  box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.wd-layerctl__panel--popover {
+  width: 320px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.wd-layerctl__panel--sheet {
+  position: fixed;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  border-radius: 16px;
+  max-height: 62vh;
+}
+
+.wd-layerctl__grab {
+  display: none;
+}
+
+.wd-layerctl__panel--sheet .wd-layerctl__grab {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0 2px;
+  cursor: pointer;
+}
+
+.wd-layerctl__bar {
+  width: 36px;
+  height: 4px;
+  border-radius: 999px;
+  background: #dde7e0;
+}
+
+.wd-layerctl__head {
+  display: flex;
+  align-items: center;
+  padding: 4px 6px 4px 14px;
+  border-bottom: 1px solid #dde7e0;
+}
+
+.wd-layerctl__head h4 {
+  margin: 0;
+  flex: 1;
+  font: 500 15px/1.2 'Barlow Semi Condensed', 'Barlow', sans-serif;
+  color: #1c1c1c;
+}
+
+.wd-layerctl__rows {
+  flex: 1;
+  min-height: 0;
+  max-height: min(430px, 52vh);
+}
+
+.wd-layerctl__panel--sheet .wd-layerctl__rows {
+  max-height: calc(62vh - 90px);
+}
+
+// panel transition: popover rises from the chip, sheet slides up
+.wd-layerctl-panel-enter-active,
+.wd-layerctl-panel-leave-active {
+  transition:
+    opacity 0.22s cubic-bezier(0.2, 0, 0, 1),
+    transform 0.22s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.wd-layerctl-panel-enter-from,
+.wd-layerctl-panel-leave-to {
+  opacity: 0;
+}
+
+.wd-layerctl__panel--popover.wd-layerctl-panel-enter-from,
+.wd-layerctl__panel--popover.wd-layerctl-panel-leave-to {
+  transform: translateY(10px);
+}
+
+.wd-layerctl__panel--sheet.wd-layerctl-panel-enter-from,
+.wd-layerctl__panel--sheet.wd-layerctl-panel-leave-to {
+  transform: translateY(24px);
+}
+
 .overlay-scroll {
   max-height: calc(100vh - 210px);
   overflow-y: auto;
@@ -395,60 +501,67 @@ function overlayIcon(name: string) {
 </style>
 <template>
   <q-page-sticky :position="position" :offset="offset" style="z-index: 5">
-    <q-fab
-      ref="fabStyleRef"
-      push
-      vertical-actions-align="center"
-      :icon="switchIcon"
-      :active-icon="switchCloseIcon"
-      padding="sm"
-      :direction="direction"
-      persistent
-      :stagger="30"
-      :label="t('overlay_style')"
-      class="wd-switcher-fab"
-      :class="{ 'wd-switcher-fab--open': switcherOpen }"
-      :aria-label="t('overlay_style')"
-      v-model="switcherOpen"
-    >
-      <div class="overlay-scroll">
+    <div class="wd-layerctl">
+      <!-- Panel: sheet (mobile) / popover above the chip (desktop).
+           The sheet teleports to body: q-page-sticky positions via
+           transform, which would otherwise contain a position:fixed
+           child to the tiny sticky wrapper. -->
+      <Teleport to="body" :disabled="panelMode !== 'sheet'">
+        <Transition name="wd-layerctl-panel">
         <div
-          v-for="(item, index) in overlayStore.overlays"
-          :key="item.name"
-          v-show="item.show"
-          class="overlay-item-container"
+          v-if="switcherOpen"
+          class="wd-layerctl__panel"
+          :class="`wd-layerctl__panel--${panelMode}`"
+          role="dialog"
+          :aria-label="t('overlay_style')"
         >
-          <WdOverlaySwitchItem
-            :tabindex="index"
-            @toggle-overlay="toggleOverlay(<OverlaySwitchItem>(item as unknown))"
-            @configure="openConfig(item.name, $event)"
-            :label="item.label"
-            :icon="overlayIcon(item.icon)"
-            :style="{ 'padding-left': `${offset?.[0] + 9 || 0}px` }"
-            :active="item.active"
-            :tooltip="$q.platform.is.desktop"
-            :overlay-name="item.name"
-            :show-badge="hasActiveFilters(item.name)"
-          />
+          <div class="wd-layerctl__grab" @click="switcherOpen = false">
+            <span class="wd-layerctl__bar"></span>
+          </div>
+          <div class="wd-layerctl__head">
+            <h4>{{ t('overlay_style') }}</h4>
+            <q-btn flat round dense icon="wd-close" :aria-label="t('close')" @click="switcherOpen = false" />
+          </div>
+          <div class="wd-layerctl__rows overlay-scroll">
+            <div
+              v-for="(item, index) in overlayStore.overlays"
+              :key="item.name"
+              v-show="item.show"
+              class="overlay-item-container"
+            >
+              <WdOverlaySwitchItem
+                :tabindex="index"
+                @toggle-overlay="toggleOverlay(<OverlaySwitchItem>(item as unknown))"
+                @configure="openConfig(item.name, $event)"
+                :label="item.label"
+                :icon="overlayIcon(item.icon)"
+                :active="item.active"
+                :tooltip="$q.platform.is.desktop"
+                :overlay-name="item.name"
+                :show-badge="hasActiveFilters(item.name)"
+              />
+            </div>
+          </div>
         </div>
-        <!-- class="bg-primary" -->
-        <!-- <q-btn
-          v-if="$q.screen.gt.xs"
-          round
-          flat
-          style="padding: 0"
-          :ripple="false"
-          :color="switcherLocked ? 'accent-500' : 'secondary-800'"
-          @click="toggleSwitcherLocked"
-        >
-          <q-icon>
-            <IconEvaLockFill v-if="switcherLocked" />
-            <IconEvaUnlockOutline v-if="!switcherLocked" />
-          </q-icon>
-        </q-btn> -->
-        <!-- </div> -->
-      </div>
-    </q-fab>
+        </Transition>
+      </Teleport>
+
+      <!-- Trigger chip -->
+      <q-btn
+        :aria-label="t('overlay_style')"
+        :aria-expanded="switcherOpen"
+        round
+        unelevated
+        class="wd-layerctl__chip"
+        :class="{ 'wd-layerctl__chip--open': switcherOpen }"
+        @click="switcherOpen = !switcherOpen"
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+          <path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z" />
+          <path d="M9 4v14M15 6v14" />
+        </svg>
+      </q-btn>
+    </div>
   </q-page-sticky>
 
   <!-- Config Dialog -->
