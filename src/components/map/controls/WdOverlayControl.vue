@@ -340,8 +340,7 @@ function hasFilters(overlayName: string): boolean {
 .wd-ovl__box--expanded .wd-ovl__row {
   padding: 0 4px;
   gap: 8px;
-  justify-content: flex-start; // info first, icon last
-  flex-direction: row-reverse; // icon on the right visually
+  justify-content: flex-start; // info on left, icon on right (natural DOM order)
 }
 
 // ── Info section (only when expanded) ────────────────────────────────────
