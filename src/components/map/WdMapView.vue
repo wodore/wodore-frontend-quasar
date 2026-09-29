@@ -1091,16 +1091,17 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
           :offset="[12, 84]"
         />
         <!-- </MglCustomControl> -->
+        <!-- Fullscreen/focus: bottom-left, above GPS, dark chip -->
         <q-page-sticky
-          :position="isMobileView() ? 'bottom-right' : 'top-right'"
-          :offset="[12, isMobileView() ? 20 : 260]"
+          position="bottom-left"
+          :offset="[12, 108]"
           class="wd-focus-toggle"
           :class="{ 'wd-focus-toggle--active': mapFocus }"
           style="z-index: 5"
         >
           <button
-            v-if="!isMobileView() || mapFocus"
-            class="wd-ctl-btn"
+            class="wd-dark-btn"
+            :class="{ 'wd-dark-btn--active': mapFocus }"
             :aria-label="mapFocus ? t('map.exit_focus') : t('map.enter_focus')"
             @click="setMapFocus(!mapFocus)"
           >
