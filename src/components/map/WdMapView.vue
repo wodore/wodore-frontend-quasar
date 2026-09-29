@@ -1072,7 +1072,7 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
             unelevated
             :icon="mapFocus ? 'mdi-fullscreen-exit' : 'mdi-fullscreen'"
             :aria-label="mapFocus ? t('map.exit_focus') : t('map.enter_focus')"
-            size="12px"
+            :size="isMobileView() ? 'md' : '12px'"
             class="wd-chrome-btn"
             @click="setMapFocus(!mapFocus)"
           />
