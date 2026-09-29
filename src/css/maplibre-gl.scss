@@ -57,6 +57,28 @@
   filter: brightness(0.3);
 }
 
+/* Compass + GPS: white chip family matching the layer strip buttons */
+.maplibregl-ctrl-group {
+  border-radius: 8px !important;
+  border: 1px solid #dde7e0 !important;
+  background: #fdfefd !important;
+  box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2) !important;
+  overflow: hidden;
+}
+
+.maplibregl-ctrl-group button {
+  background: #fdfefd !important;
+  border-bottom: 1px solid rgba(221, 231, 224, 0.5);
+}
+
+.maplibregl-ctrl-group button:last-child {
+  border-bottom: none;
+}
+
+.maplibregl-ctrl-group button:hover {
+  background: #f6f9f7 !important;
+}
+
 /* Compass + GPS moved bottom-left (r6 layout): give the column the same
    10px breathing room the right side has */
 .maplibregl-ctrl-bottom-left .maplibregl-ctrl {

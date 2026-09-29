@@ -426,22 +426,18 @@ function overlayIcon(name: string) {
 }
 
 // layers button: opens the full panel
+// layers button: same 48px chip as the strip buttons (consistent family)
 .wd-layerctl__open {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  height: 36px;
-  padding: 0 12px;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
   border-radius: 8px;
   border: 1px solid #dde7e0;
   background: #fdfefd;
   color: #1c1c1c;
   cursor: pointer;
   box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2);
-  font: 500 12px/1 'Barlow Semi Condensed', 'Barlow', sans-serif;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
   transition: background-color 0.15s ease;
   flex: none;
 }
@@ -450,8 +446,9 @@ function overlayIcon(name: string) {
   background: #f6f9f7;
 }
 
-.wd-layerctl__open-label {
-  white-space: nowrap;
+.wd-layerctl__open svg {
+  width: 22px;
+  height: 22px;
 }
 
 // ── full panel ──
@@ -686,11 +683,10 @@ function overlayIcon(name: string) {
         :aria-expanded="switcherOpen"
         @click="switcherOpen = !switcherOpen"
       >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
           <path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/>
           <path d="M9 4v14M15 6v14"/>
         </svg>
-        <span class="wd-layerctl__open-label">{{ t('overlay_style') }}</span>
       </button>
     </div>
   </q-page-sticky>
