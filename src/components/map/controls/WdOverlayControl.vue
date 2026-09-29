@@ -280,6 +280,19 @@ function hasFilters(overlayName: string): boolean {
 }
 
 // ── THE BOX (mini = 48px wide, expanded = ~280px, SAME box) ────────────
+// When expanded, the box covers map area. The container itself is
+// transparent to touches (pointer-events: none) so map gestures pass
+// through — only the interactive rows and buttons capture events.
+.wd-ovl__box--expanded {
+  pointer-events: none;
+
+  // re-enable on interactive children
+  .wd-ovl__row,
+  .wd-ovl__more {
+    pointer-events: auto;
+  }
+}
+
 .wd-ovl__box {
   display: flex;
   flex-direction: column;
