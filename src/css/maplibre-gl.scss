@@ -40,6 +40,11 @@
   float: right;
 }
 
+/* MapLibre's sprite icons are mid-grey - darken for the white chips */
+.maplibregl-ctrl button .maplibregl-ctrl-icon {
+  filter: brightness(0.3);
+}
+
 /* Compass + GPS moved bottom-left (r6 layout): give the column the same
    10px breathing room the right side has */
 .maplibregl-ctrl-bottom-left .maplibregl-ctrl {

@@ -1117,7 +1117,7 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
           :show-zoom="!isMobileView()"
           :position="isMobileView() ? 'bottom-left' : 'top-right'"
         />
-        <MglAttributionControl :position="$q.platform.is.mobile ? 'bottom-left' : 'bottom-right'" />
+        <MglAttributionControl position="bottom-left" />
         <MglScaleControl />
         <!-- <MglGeoJsonSource
       source-id="wd-bookings"

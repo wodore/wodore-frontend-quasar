@@ -355,8 +355,156 @@ body {
   }
 }
 
+// ── Floating top chrome (r6): split search/date pill + utilities ──────
+.wd-topbar {
+  position: fixed;
+  top: calc(10px + env(safe-area-inset-top, 0px));
+  left: calc(12px + env(safe-area-inset-left, 0px));
+  right: calc(12px + env(safe-area-inset-right, 0px));
+  z-index: 2000;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  pointer-events: none; // children re-enable - the map stays draggable between
+}
+
+.wd-topbar > * {
+  pointer-events: auto;
+}
+
+.wd-topbar__split {
+  flex: 1;
+  min-width: 0;
+  max-width: 560px;
+  display: flex;
+  align-items: center;
+  height: 48px;
+  background: var(--wd-surface, #fdfefd);
+  border: 1px solid var(--wd-ridge, #dde7e0);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2);
+  overflow: hidden;
+}
+
+.wd-topbar__search {
+  flex: 6;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.wd-topbar__date {
+  flex: 4;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  border-left: 1px solid var(--wd-ridge, #dde7e0);
+  height: 100%;
+}
+
+// embedded inputs lose their toolbar chrome (wash + dashed frame) inside
+// the pill - they ARE the pill now
+.wd-topbar .wd-search-field .q-field__control,
+.wd-topbar .wd-date-field .q-field__control {
+  background: transparent !important;
+  padding: 0 6px 0 12px !important;
+  box-shadow: none !important;
+}
+
+.wd-topbar .wd-search-field .q-field__control::before,
+.wd-topbar .wd-date-field .q-field__control::before,
+.wd-topbar .wd-search-field .q-field__control::after {
+  background: transparent !important;
+  border: none !important;
+}
+
+.wd-topbar .wd-date-field .q-field__control {
+  padding: 0 8px 0 4px !important;
+}
+
+.wd-topbar .q-field__native {
+  min-width: 0;
+}
+
+// mobile: WdPlaceSearchDialog's trigger becomes the pill's search half
+.wd-topbar__search .q-btn {
+  width: 100%;
+  height: 48px;
+  border-radius: 0;
+  justify-content: flex-start;
+  padding: 0 12px;
+  color: var(--wd-soft, #5c6b63);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.wd-topbar__right {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  margin-left: auto;
+}
+
+.wd-topbar__progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  border-radius: 999px;
+}
+
+// the date stepper chevrons shrink inside the half
+.wd-topbar__date .wd-input-button {
+  display: none; // the pill's date half is tap-to-open only (compact)
+}
+
+// mobile menu chip: top-right, aligned with the pill
+.wd-topbar-menu {
+  position: fixed;
+  top: calc(10px + env(safe-area-inset-top, 0px));
+  right: calc(12px + env(safe-area-inset-right, 0px));
+  z-index: 2001;
+}
+
+// mobile: the pill leaves room for the menu chip
+@media (max-width: 599px) {
+  .wd-topbar__split {
+    max-width: calc(100% - 68px);
+  }
+}
+
+// WdSelectDate brings its own toolbar margins/width - neutralize in the pill
+.wd-topbar__date > div {
+  margin: 0 !important;
+  max-width: none !important;
+  width: 100%;
+  justify-content: flex-end;
+}
+
+// desktop utility cluster: same chip family as the pill
+@media (min-width: 600px) {
+  .wd-topbar__right {
+    background: var(--wd-surface, #fdfefd);
+    border: 1px solid var(--wd-ridge, #dde7e0);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2);
+    height: 48px;
+    padding: 0 4px;
+    margin-left: auto;
+  }
+}
+
+// maplibre top-right controls clear the utility pill
+.maplibregl-ctrl-top-right {
+  margin-top: 64px;
+}
+
 // ── Map focus mode (r6): hide floating chrome, keep attribution ────────
 body.wd-map-focus {
+  .wd-topbar,
+  .wd-topbar-menu,
   .q-page-sticky:not(.wd-focus-toggle) {
     opacity: 0;
     pointer-events: none;
