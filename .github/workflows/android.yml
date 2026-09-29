@@ -121,7 +121,7 @@ jobs:
         if: >-
           steps.resolve.outputs.build != 'true' &&
           steps.resolve.outputs.mode != 'cleanup'
-        run: echo Skipping build (no PREVIEW:android label / not applicable)
+        run: echo 'Skipping build (no PREVIEW:android label / not applicable)'
 
       - name: Set backend environment for the variant
         # rc bakes the production backend (hosts, OIDC, analytics), preview
