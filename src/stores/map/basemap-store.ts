@@ -105,22 +105,27 @@ const esriLightGrayStyle = getRasterStyle({
   bounds: EUROPE_BOUNDS,
 });
 
+// OpenFreeMap vector style used as the zoomed-out base. Options:
+// 'positron' (minimal light), 'liberty' (full OSM look), 'bright'
+// (colorful OSM). https://openfreemap.org/quick_start/
+const OFM_BASE_STYLE = 'liberty';
+
 /**
- * Fetch the OpenFreeMap positron style and lock its sources to Europe.
+ * Fetch the OpenFreeMap base style and lock its sources to Europe.
  * Returns undefined on any failure (network, timeout, bad payload) so
  * callers can fall back to the Esri raster base.
  */
-async function fetchPositronVectorBase(): Promise<StyleSpecification | undefined> {
+async function fetchOfmVectorBase(): Promise<StyleSpecification | undefined> {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 6000);
-    const res = await fetch('https://tiles.openfreemap.org/styles/positron', {
+    const res = await fetch(`https://tiles.openfreemap.org/styles/${OFM_BASE_STYLE}`, {
       signal: controller.signal,
     });
     clearTimeout(timeout);
     if (!res.ok) return undefined;
     const style = (await res.json()) as StyleSpecification;
-    style.name = 'positron';
+    style.name = 'ofm-base';
     for (const source of Object.values(style.sources ?? {})) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (source as any).bounds = EUROPE_BOUNDS;
@@ -591,9 +596,9 @@ export const useBasemapStore = defineStore('basemap', () => {
 
     const useRaster = shouldUseRaster(gpuTier);
 
-    // World fallback base: OpenFreeMap positron vector style (preferred)
+    // World fallback base: OpenFreeMap vector style (preferred)
     // with the Esri light-gray raster as backup.
-    const positronBase = await fetchPositronVectorBase();
+    const ofmBase = await fetchOfmVectorBase();
 
     // Europe topo composite, mirroring skitourenguru's topo mode:
     // clean world base below zoom 8 (positron vector style, Europe-
@@ -606,7 +611,7 @@ export const useBasemapStore = defineStore('basemap', () => {
     const europeTopoStyle = getCompositeRasterStyle({
       name: 'europe-topo',
       styles: [
-        positronBase ?? esriLightGrayStyle,
+        ofmBase ?? esriLightGrayStyle,
         withLayerMinZoom(openTopoStyle, 8),
         withLayerMinZoom(swissTopoRasterStyle, 8),
       ],
