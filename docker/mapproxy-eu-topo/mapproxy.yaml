@@ -35,6 +35,18 @@ sources:
     url: https://b.tile.opentopomap.org/%(z)s/%(x)s/%(y)s.png
     grid: webmercator
 
+  at_geolandbasemap:
+    type: tile
+    # basemap.at classic topo (CC BY 4.0, 256px PNG). NOTE: basemap.at
+    # tile URLs use z/Y/x row-before-column order. The polygon clip also
+    # removes basemap.at's white no-data margin at the grid edges.
+    url: https://mapsneu.wien.gv.at/basemap/geolandbasemap/normal/google3857/%(z)s/%(y)s/%(x)s.png
+    grid: webmercator
+    coverage:
+      datasource: /mapproxy/config/at-boundary.geojson
+      srs: 'EPSG:4326'
+      clip: true
+
   ch_pixelkarte:
     type: tile
     url: https://wmts0.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/%(z)s/%(x)s/%(y)s.jpeg
@@ -54,8 +66,10 @@ caches:
     grids: [webmercator]
     # cache-level merge: multiple sources are merged left (bottom) to
     # right (top) before they are cached — OpenTopoMap everywhere,
-    # swisstopo on top inside the Switzerland polygon
-    sources: [opentopo, ch_pixelkarte]
+    # basemap.at on top inside Austria, swisstopo on top inside the
+    # Switzerland polygon. France/Italy stay on OpenTopoMap (no free
+    # national topo raster exists; IGN SCAN25 is a paid product).
+    sources: [opentopo, at_geolandbasemap, ch_pixelkarte]
 
 layers:
   - name: europe_topo

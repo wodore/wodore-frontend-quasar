@@ -6,13 +6,18 @@ always shows seams or white no-data strips at borders):
 
 ```
 OpenTopoMap (worldwide fallback, bottom)
-        ▲ clipped by the Switzerland polygon (transparent outside)
+        ▲ clipped by the Austria polygon
+basemap.at geolandbasemap (AT)
+        ▲ clipped by the Switzerland polygon
 swisstopo pixelkarte (CH, top)
-        = one merged tile — cut follows the actual border
+        = one merged tile — cuts follow the actual borders
 ```
 
-This is the same technique skitourenguru.ch relies on conceptually, but
-with a real polygon cut instead of trusting upstream coverage.
+France/Italy/elsewhere stay on OpenTopoMap: **no free current national
+topo raster exists for France** (IGN SCAN25 is a paid product; the open
+Géoplateforme only offers ortho + the BDUNI network layer, which is
+symbology-only). French topo detail = OpenTopoMap here, plus the Plan
+IGN *vector* overlay client-side later.
 
 ## Quickstart
 
@@ -36,10 +41,11 @@ caches it in `cache_data/` — afterwards only the cache is hit.
 ## Verified behavior
 
 - Tile deep inside CH (Bern/Fribourg): 100% swisstopo style
-- Tile at the CH/AT border (Rhine valley): swisstopo on the Swiss side,
-  OpenTopoMap on the Austrian side, cut follows the border river, no
-  white/blank areas, no straight bbox seams
-- Tiles over Austria/France/elsewhere: pure OpenTopoMap
+- Tile inside Austria (Tirol): basemap.at style (yellow/orange roads,
+  blue road shields)
+- Tiles at the CH/AT and CH/DE borders: national styles on each side of
+  the border line, OTM outside both countries, no white areas, no bbox seams
+- Tiles over France/Germany/elsewhere: pure OpenTopoMap
 - Repeated requests served from cache only
 
 ## Wodore integration
@@ -51,7 +57,7 @@ OpenFreeMap vector base for zoomed-out views:
 const europeTopoProxy = getRasterStyle({
   name: 'eu-topo-proxy',
   tiles: ['http://192.168.1.50:8090/mapproxy/tiles/europe_topo/webmercator/{z}/{x}/{y}.png'],
-  attribution: '&copy; swisstopo &copy; OpenTopoMap (CC-BY-SA) &copy; OpenStreetMap contributors',
+  attribution: '&copy; swisstopo &copy; basemap.at &copy; OpenTopoMap (CC-BY-SA) &copy; OpenStreetMap contributors',
   suffix: '',
   maxZoom: 17,
 });
@@ -84,10 +90,11 @@ After changing the boundary polygon or source URLs, clear the cache:
 ## Extending
 
 - **More countries**: add a tile source + `coverage` with the country
-  polygon (`at-boundary.geojson` etc.) and append it to
-  `europe_topo_cache.sources` (right = on top). Candidates: basemap.at
-  (CC BY 4.0 — note its white no-data edge, the polygon clip removes it),
-  IGN ortho (étalab, keyless `data.geopf.fr`).
+  polygon (`fr-boundary.geojson` etc.) and append it to
+  `europe_topo_cache.sources` (right = on top). The polygon clip also
+  removes white no-data margins (basemap.at's AT grid, swisstopo's deep
+  overhang into FR/IT). Austria is already in (`at-boundary.geojson`,
+  Natural Earth 10m).
 - **Precise borders**: `ch-boundary.geojson` is Natural Earth 10m
   (~1 km, public domain). For survey-grade, replace with swisstopo
   swissBOUNDARIES3D Landesgebiet (OGD) and re-seed.

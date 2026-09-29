@@ -7,5 +7,6 @@ services:
     volumes:
       - ./mapproxy.yaml:/mapproxy/config/mapproxy.yaml:ro
       - ./ch-boundary.geojson:/mapproxy/config/ch-boundary.geojson:ro
+      - ./at-boundary.geojson:/mapproxy/config/at-boundary.geojson:ro
       - ./cache_data:/mapproxy/config/cache_data
     restart: unless-stopped
