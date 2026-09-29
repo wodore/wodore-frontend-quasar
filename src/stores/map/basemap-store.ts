@@ -89,7 +89,11 @@ export const useBasemapStore = defineStore('basemap', () => {
     return undefined;
   }
 
-  function setBasemap(s: BasemapSwitchItem, force: boolean = false): boolean {
+  /** Select a basemap. `persist=false` switches without saving the
+   * selection — used by the automatic MapTiler-auth fallback so the next
+   * session retries the user's chosen basemap instead of starting on the
+   * fallback. */
+  function setBasemap(s: BasemapSwitchItem, force = false, persist = true): boolean {
     const basemapStyle = getBasemap();
     if (basemapStyle !== undefined && s.name == basemapStyle.name && !force) {
       console.debug('Active baselayer is already set.');
@@ -435,7 +439,9 @@ export const useBasemapStore = defineStore('basemap', () => {
         style.active = false;
       }
     }
-    LocalStorage.set('basemapName', s.name);
+    if (persist) {
+      LocalStorage.set('basemapName', s.name);
+    }
     console.debug('[setBasemap] Map layer is set to ', s.label);
     return true;
   }
@@ -453,6 +459,8 @@ export const useBasemapStore = defineStore('basemap', () => {
     'outdoor-osm': 'basemaps.outdoor',
     'oe-vector': 'basemaps.austria_vector',
     'oe-raster': 'basemaps.austria_raster',
+    'openfreemap-liberty': 'basemaps.openfreemap_liberty',
+    'osm-raster': 'basemaps.osm_raster',
   };
 
   const applyBasemapLabels = () => {
@@ -624,15 +632,16 @@ export const useBasemapStore = defineStore('basemap', () => {
         },
       },
       {
-        // Keyless OpenFreeMap vector basemap (openfreemap.org). Hidden
-        // from the picker - it is the automatic fallback when the
-        // MapTiler-based basemaps are rejected (suspended/rotated key).
+        // Keyless OpenFreeMap vector basemap (openfreemap.org). Automatic
+        // fallback when MapTiler-based vector basemaps are rejected
+        // (suspended/rotated key); also selectable in the picker so a
+        // fallback session shows (and lets the user keep) the active map.
         // Liberty style: full-featured vector cartography with labels;
         // glyphs are served keylessly by OpenFreeMap itself
         // (https://tiles.openfreemap.org/fonts/...).
         name: 'openfreemap-liberty',
-        label: 'OpenFreeMap Liberty',
-        show: false,
+        label: t('basemaps.openfreemap_liberty'),
+        show: true,
         active: false,
         img: getImageUrl('outdoor-v2.png'),
         style: 'https://tiles.openfreemap.org/styles/liberty',
@@ -642,13 +651,14 @@ export const useBasemapStore = defineStore('basemap', () => {
         },
       },
       {
-        // Keyless plain OSM raster (tile.openstreetmap.org). Hidden from the
-        // picker - automatic fallback target when a MapTiler RASTER variant
-        // is active and the key is rejected (weak-GPU devices), so they stay
-        // on a raster map instead of a heavy vector style.
+        // Keyless plain OSM raster (tile.openstreetmap.org). Automatic
+        // fallback when a MapTiler RASTER variant is rejected (weak-GPU
+        // devices stay on raster instead of a heavy vector style);
+        // selectable in the picker so a fallback session shows the active
+        // map.
         name: 'osm-raster',
-        label: 'OSM Raster',
-        show: false,
+        label: t('basemaps.osm_raster'),
+        show: true,
         active: false,
         img: getImageUrl('outdoor-v2.png'),
         style: osmRasterStyle,

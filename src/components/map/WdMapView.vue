@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { useResizeObserver, useDebounceFn, useThrottleFn, useEventListener } from '@vueuse/core';
 import { useQuasar } from 'quasar';
 import { useBasemapStore } from '@stores/map/basemap-store';
+import type { BasemapSwitchItem } from '@stores/map/utils/interfaces';
 import { useLocalPropertiesStore } from '@stores/local-properties-store';
 import { showErrorDialogPersistent, ErrorCode } from '@components/error';
 import type { Map, PaddingOptions } from 'maplibre-gl';
@@ -303,13 +304,18 @@ function onMapError(e: unknown) {
     const active = basemapStore.getBasemap();
     const fallbackName =
       active && typeof active.style === 'string' ? 'openfreemap-liberty' : 'osm-raster';
-    const fallback = basemapStore.basemaps.find(b => b.name === fallbackName);
+    // Typed local: iterating the store array directly makes vue-tsc blow its
+    // type-instantiation depth budget in the dev-server checker
+    const candidates = basemapStore.basemaps as BasemapSwitchItem[];
+    const fallback = candidates.find(b => b.name === fallbackName);
     if (fallback) {
       console.warn(
         '[onMapError] Tile host rejected requests - falling back to',
         fallbackName
       );
-      void basemapStore.setBasemap(fallback, true);
+      // Not persisted: the next session retries the user's chosen basemap
+      // (and the fallback stays visible as selected in the picker)
+      void basemapStore.setBasemap(fallback, true, false);
     }
     return;
   }
