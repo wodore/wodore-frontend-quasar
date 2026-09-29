@@ -259,7 +259,7 @@ function hasFilters(overlayName: string): boolean {
 }
 
 .wd-ovl__btn--inactive {
-  opacity: 0.5;
+  opacity: 0.65;
 }
 
 .wd-ovl__btn:hover {
@@ -268,7 +268,7 @@ function hasFilters(overlayName: string): boolean {
 }
 
 .wd-ovl__btn--active {
-  box-shadow: inset 0 0 0 2px var(--wd-ctl-ring);
+  box-shadow: inset 0 0 0 3px var(--wd-ctl-ring);
   background: var(--wd-ctl-active-bg);
   opacity: 1;
 }
@@ -435,7 +435,7 @@ function hasFilters(overlayName: string): boolean {
   color: var(--wd-ctl-ink-soft);
 
   &--active {
-    box-shadow: inset 0 0 0 2px var(--wd-ctl-ring);
+    box-shadow: inset 0 0 0 3px var(--wd-ctl-ring);
     color: var(--wd-ctl-ink);
   }
 }

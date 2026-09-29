@@ -615,7 +615,7 @@ body.body--dark {
   justify-content: flex-end;
   border-left: 1px solid var(--wd-ctl-border);
   height: 100%;
-  background: var(--wd-ctl-date-bg);
+  /* date half: same surface as search half (owner: no green tint) */
 }
 
 // Kill embedded component margins

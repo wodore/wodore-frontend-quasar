@@ -106,11 +106,11 @@ function selectBasemap(name: string): void {
 }
 
 .wd-bm__btn--inactive {
-  opacity: 0.8;
+  opacity: 0.85;
 }
 
 .wd-bm__btn--active {
-  box-shadow: inset 0 0 0 2px var(--wd-ctl-ring);
+  box-shadow: inset 0 0 0 3px var(--wd-ctl-ring);
   opacity: 1;
 }
 
