@@ -179,7 +179,7 @@ if ($layout === undefined) {
   });
 }
 
-const mapDiv = ref(null);
+const mapDiv = ref<HTMLElement | null>(null);
 const mapResize = useDebounceFn(() => {
   mapRef.map?.resize();
 }, 50);
