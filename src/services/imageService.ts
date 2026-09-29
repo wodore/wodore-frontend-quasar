@@ -1,7 +1,6 @@
 import hmacSHA256 from 'crypto-js/hmac-sha256';
 import Base64 from 'crypto-js/enc-base64';
 import { getEnv } from '@services/runtimeEnv';
-import { getEnv } from '@services/runtimeEnv';
 
 function signPath(path: string, secret: string) {
   return hmacSHA256(path, secret).toString(Base64).replace(/\+/g, '-').replace(/\//g, '_');
