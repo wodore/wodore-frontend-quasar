@@ -1,0 +1,1 @@
+{"id":"8af0f799e569f097cc88b6e355851fd4","fullName":"wodore:tests/unit/image-service.spec.ts#getImageUrl computes the crop stop from size when only cropStart is given","name":"computes the crop stop from size when only cropStart is given","status":"passed","testResultsByEnv":{"default":"de9577f25c0ee7cc8154845a64ec6c78"}}
