@@ -1017,23 +1017,19 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
         :max-tile-cache-size="400"
         :render-world-copies="false"
       >
-        <!-- <MglStyleSwitchControl :map-styles="basemapStore.basemaps" /> -->
-        <!-- <MglCustomControl position="top-right" class=""> -->
-        <WdBasemapSwitch
-          :position="$q.platform.is.mobile ? 'bottom-right' : 'top-left'"
-          :direction="$q.platform.is.mobile ? 'left' : 'right'"
-          :offset="[$q.platform.is.mobile ? 12 : 12, $q.platform.is.mobile ? 20 : 14]"
-        />
-        <WdOverlaySwitch
-          position="top-left"
-          direction="down"
-          :offset="[$q.platform.is.mobile ? 12 : 12, $q.platform.is.mobile ? 12 : 68]"
-        />
-        <!-- </MglCustomControl> -->
-        <MglGeolocateControl />
-        <!-- <MglNavigationControl :show-zoom="$q.platform.is.desktop" /> -->
-        <MglNavigationControl :show-zoom="false" />
-        <MglAttributionControl :position="$q.platform.is.mobile ? 'bottom-left' : 'bottom-right'" />
+        <!-- ── Map controls (clean architecture, v2) ─────────────────── -->
+        <!-- Bottom-right column: overlay strip above basemap strip -->
+        <q-page-sticky position="bottom-right" :offset="[12, 14]" style="z-index: 5">
+          <div class="wd-map-ctl-col">
+            <WdOverlayControl />
+            <WdBasemapControl />
+          </div>
+        </q-page-sticky>
+
+        <!-- Bottom-left: GPS + compass + fullscreen above them -->
+        <MglGeolocateControl position="bottom-left" />
+        <MglNavigationControl :show-zoom="false" position="bottom-left" />
+        <MglAttributionControl position="bottom-left" />
         <MglScaleControl />
         <!-- <MglGeoJsonSource
       source-id="wd-bookings"
