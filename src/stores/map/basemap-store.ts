@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { reactive, watch } from 'vue';
 import { BasemapSwitchItem } from '@stores/map/utils/interfaces';
-import { getCompositeRasterStyle, getRasterStyle } from '@stores/map/utils/raster';
+import { getCompositeRasterStyle, getRasterStyle, withLayerMinZoom } from '@stores/map/utils/raster';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
 import { Platform } from 'quasar';
 //import type { Emitter } from 'mitt';
@@ -31,8 +31,8 @@ const swissTopoRasterStyle = getRasterStyle({
     '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> &#124; <a href="https://www.openstreetmap.org/copyright" target="_blank"> &copy; OpenStreetMap contributors</a> &#124; <a href="https://www.swisstopo.admin.ch/en/home.html" target="_blank">&copy; swisstopo</a>',
   suffix: '',
   tileSize: Platform.is.mobile ? 128 : 156,
-  // swisstopo 3857 tile matrix extent (CH + border strip): requests outside are never made
-  bounds: [5.140242, 45.398181, 11.47757, 48.230651],
+  // no bounds: the swisstopo 3857 tile grid limits coverage naturally,
+  // requests outside it 404 cheaply
 });
 
 const swissTopoLbmRasterStyle = getRasterStyle({
@@ -59,13 +59,14 @@ const oeTopoRasterStyle = getRasterStyle({
   ],
   attribution: 'basemap.at',
   tileSize: 512,
-  // Austria + border strip (basemap.at 3857 grid)
-  bounds: [9.53, 46.41, 17.08, 48.98],
+  // no bounds: basemap.at's own tile grid limits coverage naturally.
+  // NOTE: its grid reaches into eastern CH with WHITE no-data tiles —
+  // in composites this style must always paint BELOW swisstopo.
 });
 
 // Clean minimal world fallback for zoomed-out views: CARTO Positron
-// (free with attribution, no key). The national maps above cover it
-// wherever they have data; outside CH/AT this is what remains visible.
+// (free with attribution, no key). The only bounded source — locked to
+// Europe; the national maps cover it wherever they have data.
 const positronStyle = getRasterStyle({
   name: 'positron',
   tiles: [
@@ -77,14 +78,21 @@ const positronStyle = getRasterStyle({
   attribution:
     '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>',
   suffix: '',
+  bounds: [-11, 34, 32, 71], // Europe only
 });
 
-// Europe topo composite: Positron world base (bottom), swisstopo pixelkarte
-// (CH) and basemap.at (AT) on top. Source `bounds` keep tile requests
-// regional — the fallback only loads where no national map covers.
+// Europe topo composite: Positron world base (bottom, Europe-locked),
+// basemap.at (AT) and swisstopo pixelkarte (CH, topmost so swisstopo
+// wins where both grids deliver data — basemap.at has white no-data
+// tiles over eastern CH). National layers start at zoom 8; below that
+// only the fallback renders.
 const europeTopoStyle = getCompositeRasterStyle({
   name: 'europe-topo',
-  styles: [positronStyle, swissTopoRasterStyle, oeTopoRasterStyle],
+  styles: [
+    positronStyle,
+    withLayerMinZoom(oeTopoRasterStyle, 8),
+    withLayerMinZoom(swissTopoRasterStyle, 8),
+  ],
 });
 function getImageUrl(name: string): string {
   return new URL(`/src/assets/wodore-design/map/switch/${name}`, import.meta.url).href;

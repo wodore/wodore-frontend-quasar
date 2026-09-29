@@ -123,6 +123,21 @@ export function getCompositeRasterStyle({
   };
 }
 
+/**
+ * Clone a style, raising every layer's minzoom so the style (and its
+ * sources — MapLibre stops fetching when no layer is visible at the
+ * current zoom) only renders from the given zoom level upwards.
+ */
+export function withLayerMinZoom(style: StyleSpecification, minZoom: number): StyleSpecification {
+  return {
+    ...style,
+    layers: (style.layers ?? []).map(layer => ({
+      ...layer,
+      minzoom: Math.max(layer.minzoom ?? 0, minZoom),
+    })),
+  };
+}
+
 interface getSwisstopoOverlayArgs {
   name: string;
   layers?: string | Array<string>;
