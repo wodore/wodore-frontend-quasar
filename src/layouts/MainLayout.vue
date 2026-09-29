@@ -400,57 +400,53 @@ body.capacitor .preview-badge {
   <WdAnalytics />
   <q-layout view="hHh LpR fFf" class="overflow-hidden" @scroll="onLayoutScroll">
     <div v-if="isStaging" class="preview-badge">preview</div>
-    <q-header class="app-header" :class="{ 'app-header--scrolled': headerScrolled }">
-      <!-- TOOLBAR -->
-      <q-toolbar>
-        <WdMenuButton desktop v-model="menuDrawerOpen" />
-        <q-toolbar-title>
-          <WodoreLogo
-            class="text-h4"
-            :text="!isMobile"
-            icon
-            :text-color-left="$q.dark.isActive ? 'white' : 'black'"
-          />
-        </q-toolbar-title>
-        <WdPlaceSearchMenu v-if="!isMobile" />
-        <WdSelectDate />
-        <WdPlaceSearchDialog v-if="isMobile" />
-        <WdSupportButton v-if="!authStore.isLoggedIn && !isMobile" class="wd-info-text" />
-        <WdFeedbackButton v-if="!isMobile" size="md" />
-        <WdLanguageSwitcher v-if="!isMobile" size="md" />
-        <WdThemeSwitcher v-if="!isMobile" size="md" />
-
+    <!-- FLOATING TOPBAR: split search/date pill + utility cluster -->
+    <div class="wd-topbar">
+      <div class="wd-topbar__split">
+        <div class="wd-topbar__search">
+          <WdPlaceSearchMenu v-if="!isMobile" />
+          <WdPlaceSearchDialog v-else />
+        </div>
+        <div class="wd-topbar__date">
+          <WdSelectDate />
+        </div>
+      </div>
+      <div v-if="!isMobile" class="wd-topbar__right">
+        <WdSupportButton v-if="!authStore.isLoggedIn" class="wd-info-text" size="sm" />
+        <WdFeedbackButton size="sm" />
+        <WdLanguageSwitcher size="sm" />
+        <WdThemeSwitcher size="sm" />
         <WdUser v-if="authStore.isLoggedIn" />
+        <WdMenuButton desktop v-model="menuDrawerOpen" />
+      </div>
+    </div>
 
-        <!-- MAIN DIALOG -->
-        <q-dialog
-          v-model="showDialog"
-          :maximized="isMobile"
-          backdrop-filter="blur(3px) saturate(180%) grayscale(60%)"
-          class="dialog-radius"
-          @hide="onDialogHide"
-          @escape-key="onDialogHide"
-        >
-          <router-view name="dialog" v-slot="{ Component, route }">
-            <!-- <transition name="fade" mode="out-in"> -->
-            <component :is="Component" :key="route.path" />
-            <!-- </transition> -->
-          </router-view>
-        </q-dialog>
+    <!-- Mobile menu chip -->
+    <div v-if="isMobile" class="wd-topbar-menu">
+      <WdMenuButton mobile function="open" side="right" v-model="menuDrawerOpen" />
+    </div>
 
-        <!-- MENU BUTTON mobile open -->
-        <WdMenuButton mobile function="open" side="right" v-model="menuDrawerOpen" />
-      </q-toolbar>
+    <!-- MAIN DIALOG -->
+    <q-dialog
+      v-model="showDialog"
+      :maximized="isMobile"
+      backdrop-filter="blur(3px) saturate(180%) grayscale(60%)"
+      class="dialog-radius"
+      @hide="onDialogHide"
+      @escape-key="onDialogHide"
+    >
+      <router-view name="dialog" v-slot="{ Component, route }">
+        <component :is="Component" :key="route.path" />
+      </router-view>
+    </q-dialog>
 
-      <!-- API progress bar: pinned to the bottom edge of the toolbar -->
-      <q-linear-progress
-        v-if="progressVisible"
-        indeterminate
-        color="accent-500"
-        size="3px"
-        class="header-progress"
-      />
-    </q-header>
+    <q-linear-progress
+      v-if="progressVisible"
+      indeterminate
+      color="accent-500"
+      size="3px"
+      class="wd-topbar__progress"
+    />
 
     <!-- MENU -->
     <q-drawer
