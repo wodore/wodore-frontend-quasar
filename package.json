@@ -60,6 +60,8 @@
     "gen:realfavs": "real-favicon generate src/assets/realfavgen.json src/assets/realfavgen_result.json public/realfavgen"
   },
   "dependencies": {
+    "@capacitor/core": "^8.5.2",
+    "@capawesome/capacitor-maplibre": "^0.2.0",
     "@fontsource/barlow": "^5.3.0",
     "@fontsource/barlow-semi-condensed": "^5.3.0",
     "@fontsource/roboto-condensed": "^5.3",
