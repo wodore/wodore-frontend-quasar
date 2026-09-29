@@ -29,6 +29,12 @@
     />
 
     <div class="map-footer-shade" aria-hidden="true"></div>
+
+    <!-- Scale bar (DOM overlay — MapLibre Native has no scale widget
+         exposed through the plugin; computed from the camera) -->
+    <div v-if="scaleLabel" class="native-scale" :style="{ width: scaleWidth + 'px' }">
+      <span class="native-scale-label">{{ scaleLabel }}</span>
+    </div>
   </div>
 </template>
 
@@ -42,6 +48,7 @@ import type { PluginListenerHandle } from '@capacitor/core';
 import { useBasemapStore } from '@stores/map/basemap-store';
 import { useOverlayStore } from '@stores/map/overlay-store';
 import { useLocalPropertiesStore } from '@stores/local-properties-store';
+import { useHutsStore } from '@stores/huts-store';
 import { clientWodore } from '@clients/index';
 import axios from 'axios';
 import type { Feature, FeatureCollection, Point } from 'geojson';
@@ -60,6 +67,10 @@ const router = useRouter();
 const basemapStore = useBasemapStore();
 const overlayStore = useOverlayStore();
 const localPropertiesStore = useLocalPropertiesStore();
+const hutsStore = useHutsStore();
+
+const scaleWidth = ref(80);
+const scaleLabel = ref('');
 
 const styleEpoch = ref(0); // guards async setStyle races
 const listeners: PluginListenerHandle[] = [];
@@ -78,10 +89,27 @@ async function resolveBasemapStyle(): Promise<StyleSpecification> {
   // URL style (e.g. https://tiles.openfreemap.org/styles/bright)
   let cached = remoteStyleCache.get(style);
   if (!cached) {
-    const res = await axios.get<StyleSpecification>(style, {
-      headers: { Accept: 'application/json' },
-    });
-    cached = res.data;
+    try {
+      const res = await axios.get<StyleSpecification>(style, {
+        headers: { Accept: 'application/json' },
+      });
+      cached = res.data;
+    } catch (e) {
+      // MapTiler-hosted styles 403 when the API key is suspended —
+      // the web flow falls back via map error events which don't fire
+      // natively. Fall back to the keyless swisstopo-full raster and
+      // keep the picker in sync.
+      console.warn(
+        `[WdNativeMapView] Style fetch failed (${style}), falling back to ch-swisstopo-full`,
+        e
+      );
+      const full = basemapStore.basemaps.find(b => b.name === 'ch-swisstopo-full');
+      if (full && typeof full.style !== 'string') {
+        basemapStore.setBasemap(full);
+        return JSON.parse(JSON.stringify(full.style));
+      }
+      throw e;
+    }
     remoteStyleCache.set(style, cached);
     console.debug(`[WdNativeMapView] Fetched remote style: ${style}`);
   }
@@ -145,6 +173,26 @@ async function composeStyle(): Promise<StyleSpecification> {
     }
   }
   if (sprites.length > 0) style.sprite = sprites;
+
+  // Selection highlight: the plugin bridge has no setFeatureState, so
+  // the selected hut lives in its own GeoJSON source updated via
+  // updateGeoJsonSourceById (no map rebuild needed). Styling mirrors
+  // the web hutsLayerSelectedPaint.
+  style.sources!['wd-selection'] = {
+    type: 'geojson',
+    data: selectionData(),
+  };
+  style.layers!.push({
+    id: 'wd-selection',
+    type: 'circle',
+    source: 'wd-selection',
+    paint: {
+      'circle-color': '#2673bf',
+      'circle-opacity': 0.7,
+      'circle-blur': 0.7,
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 7, 10, 15, 40],
+    },
+  });
 
   // Glyph server: fonts.openmaptiles.org serves BOTH the overlay fonts
   // ("Open Sans Semibold") and the standard Noto families basemaps use
@@ -226,6 +274,26 @@ function hitTestHut(latitude: number, longitude: number, zoom: number): HutFeatu
   return bestD <= threshold ? best : undefined;
 }
 
+function selectionData(): { type: 'FeatureCollection'; features: HutFeature[] } {
+  const hut = selectedHutSlug
+    ? hutFeatures.find(f => f.properties.slug === selectedHutSlug)
+    : undefined;
+  return { type: 'FeatureCollection', features: hut ? [hut] : [] };
+}
+
+async function updateSelectionSource() {
+  if (!mapReady) return;
+  try {
+    await MapLibre.updateGeoJsonSourceById({
+      mapId: MAP_ID,
+      sourceId: 'wd-selection',
+      data: selectionData() as unknown as Record<string, unknown>,
+    });
+  } catch (e) {
+    console.warn('[WdNativeMapView] selection update failed', e);
+  }
+}
+
 async function flyToHut(lng: number, lat: number, currentZoom: number) {
   const targetZoom = currentZoom < MIN_FLY_ZOOM ? SELECT_ZOOM : currentZoom;
   await MapLibre.setCamera({
@@ -265,6 +333,29 @@ onMounted(async () => {
 
   void loadHuts();
 
+  // Scale bar: meters-per-CSS-pixel from the camera (512px tiles),
+  // rounded to a nice 1/2/5×10ⁿ distance that fits ~80px.
+  const updateScale = async () => {
+    try {
+      const { camera } = await MapLibre.getCamera({ mapId: MAP_ID });
+      const lat = (camera.center.latitude * Math.PI) / 180;
+      const mPerPx = (40075016.686 * Math.cos(lat)) / (512 * 2 ** camera.zoom);
+      const target = mPerPx * 80;
+      const pow = 10 ** Math.floor(Math.log10(target));
+      let nice = pow;
+      for (const m of [5, 2, 1]) {
+        if (m * pow <= target * 1.25) {
+          nice = m * pow;
+          break;
+        }
+      }
+      scaleWidth.value = Math.max(24, Math.round(nice / mPerPx));
+      scaleLabel.value = nice >= 1000 ? `${nice / 1000} km` : `${nice} m`;
+    } catch {
+      /* camera not ready */
+    }
+  };
+
   listeners.push(
     await MapLibre.addListener('mapClick', async event => {
       const zoom = await currentZoom();
@@ -275,9 +366,11 @@ onMounted(async () => {
         // Toggle: tapping the selected hut deselects (back to map)
         if (slug === selectedHutSlug || route.params.slug === slug) {
           selectedHutSlug = undefined;
+          void updateSelectionSource();
           router.push({ name: 'map', hash: route.hash, query: route.query });
         } else {
           selectedHutSlug = slug;
+          void updateSelectionSource();
           void flyToHut(hit.geometry.coordinates[0], hit.geometry.coordinates[1], zoom);
           router.push({
             name: 'map-hut',
@@ -287,7 +380,8 @@ onMounted(async () => {
           });
         }
       }
-    })
+    }),
+    await MapLibre.addListener('cameraIdle', () => void updateScale())
   );
 });
 
@@ -322,6 +416,7 @@ watch(
   async slug => {
     if (!slug) {
       selectedHutSlug = undefined;
+      void updateSelectionSource();
       return;
     }
     selectedHutSlug = slug;
@@ -331,10 +426,26 @@ watch(
       if (hutFeatures.length === 0) await loadHuts();
       hut = hutFeatures.find(f => f.properties.slug === slug);
     }
+    void updateSelectionSource();
     if (hut) {
       const [lng, lat] = hut.geometry.coordinates;
       void flyToHut(lng, lat, await currentZoom());
     }
+  }
+);
+
+// Bookings/occupation overlay: the style snapshot carries the data at
+// compose time; between rebuilds push updates through the GeoJSON
+// source API (no map rebuild needed)
+watch(
+  () => hutsStore.bookingsGeojson,
+  data => {
+    if (!mapReady || !data) return;
+    MapLibre.updateGeoJsonSourceById({
+      mapId: MAP_ID,
+      sourceId: 'wd-bookings',
+      data: data as unknown as Record<string, unknown>,
+    }).catch(e => console.warn('[WdNativeMapView] bookings update failed', e));
   }
 );
 </script>
@@ -366,5 +477,31 @@ body.wd-native-map .wd-map-fill {
   position: absolute;
   inset: 0;
   background: transparent;
+}
+
+.native-scale {
+  position: absolute;
+  left: 12px;
+  bottom: calc(64px + var(--q-safe-area-inset-bottom, 0px));
+  height: 4px;
+  border-left: 2px solid rgba(28, 28, 28, 0.85);
+  border-right: 2px solid rgba(28, 28, 28, 0.85);
+  border-bottom: 2px solid rgba(28, 28, 28, 0.85);
+  pointer-events: none;
+}
+
+.native-scale-label {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  line-height: 1;
+  white-space: nowrap;
+  color: rgba(28, 28, 28, 0.9);
+  text-shadow:
+    0 0 3px #fff,
+    0 0 3px #fff,
+    0 0 3px #fff;
 }
 </style>
