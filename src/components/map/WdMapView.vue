@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, inject, watchEffect, watch, onErrorCaptured, computed } from 'vue';
+import { computed, inject, onErrorCaptured, onMounted, ref, watch, watchEffect } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useResizeObserver, useDebounceFn, useThrottleFn, useEventListener } from '@vueuse/core';
 import { useQuasar } from 'quasar';
@@ -179,7 +179,7 @@ if ($layout === undefined) {
   });
 }
 
-const mapDiv = ref(null);
+const mapDiv = ref<HTMLElement | null>(null);
 const mapResize = useDebounceFn(() => {
   mapRef.map?.resize();
 }, 50);
