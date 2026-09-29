@@ -974,10 +974,32 @@ onMounted(() => {
 // Mobile: tapping empty map hides the floating chrome; tap again (or the
 // exit chip) restores. Desktop uses the fullscreen button (no map click).
 const mapFocus = ref(false);
+// Single- vs double-tap disambiguation: a double tap zooms the map and
+// must NOT toggle focus (owner rule). The toggle is armed with a delay;
+// a second tap inside the window cancels it.
+let focusTapTimer: ReturnType<typeof setTimeout> | null = null;
+const FOCUS_TAP_WINDOW_MS = 300;
 
 function setMapFocus(on: boolean): void {
+  if (focusTapTimer) {
+    clearTimeout(focusTapTimer);
+    focusTapTimer = null;
+  }
   mapFocus.value = on;
   document.body.classList.toggle('wd-map-focus', on);
+}
+
+function toggleMapFocusFromTap(): void {
+  if (focusTapTimer) {
+    // second tap inside the window: this is a double tap (zoom) - cancel
+    clearTimeout(focusTapTimer);
+    focusTapTimer = null;
+    return;
+  }
+  focusTapTimer = setTimeout(() => {
+    focusTapTimer = null;
+    setMapFocus(!mapFocus.value);
+  }, FOCUS_TAP_WINDOW_MS);
 }
 
 function onMapContainerClick(ev: MouseEvent): void {
@@ -989,7 +1011,7 @@ function onMapContainerClick(ev: MouseEvent): void {
   // grab cursor on hover - that cursor state marks feature clicks)
   const canvas = mapDiv.value?.querySelector('canvas');
   if (canvas && canvas.style.cursor === 'pointer') return;
-  setMapFocus(!mapFocus.value);
+  toggleMapFocusFromTap();
 }
 
 function onMapStyledata(e: MglEvent<'styledata'>) {
