@@ -1,4 +1,4 @@
-import { ref, watchEffect, type Ref } from 'vue';
+import { ref, watch, type Ref } from 'vue';
 import { clientWodore } from '@clients/index';
 import { currentLocale } from '@services/locale';
 import type { components } from '@clients/wodore_v1.d';
@@ -311,36 +311,52 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
     }
   };
 
-  // Watch for options changes
-  watchEffect(() => {
+  // Fetch when the resolved options (hut slug / coordinates / place) or the
+  // UI language change.
+  //
+  // Deliberately `watch` with the fetch inside the callback, NOT a
+  // `watchEffect`: starting a request runs the API client's progress
+  // middleware, which does `activeCount.value++` (useRequestProgress) — a
+  // reactive read+write. Inside a watchEffect that read made the counter a
+  // dependency of the effect, so every increment re-triggered the effect
+  // and refetched endlessly (continuous /geo/images/hut/... requests and a
+  // gallery that never settled). `watch` only tracks its getter sources;
+  // the callback runs untracked.
+  const resolveOptions = (): MediaImagesOptions | null | undefined => {
     if (!options) {
-      images.value = [];
-      return;
+      return null;
     }
-
     // Handle both Ref and computed
-    const opts = 'value' in options ? options.value : (options as MediaImagesOptions);
+    return 'value' in options ? options.value : (options as MediaImagesOptions);
+  };
 
-    if (!opts) {
-      images.value = [];
-      return;
-    }
+  watch(
+    [resolveOptions, currentLocale],
+    ([opts]) => {
+      if (!opts) {
+        images.value = [];
+        return;
+      }
 
-    // Validate that only one source is provided
-    const sources = [
-      opts.hutSlug ? 'hutSlug' : null,
-      opts.placeName ? 'placeName' : null,
-      opts.lat !== undefined && opts.lon !== undefined ? 'coordinates' : null,
-    ].filter(Boolean);
+      // Validate that only one source is provided
+      const sources = [
+        opts.hutSlug ? 'hutSlug' : null,
+        opts.placeName ? 'placeName' : null,
+        opts.lat !== undefined && opts.lon !== undefined ? 'coordinates' : null,
+      ].filter(Boolean);
 
-    if (sources.length > 1) {
-      console.warn(
-        'useMediaImages: Multiple sources provided. Priority: hutSlug > coordinates > placeName'
-      );
-    }
+      if (sources.length > 1) {
+        console.warn(
+          'useMediaImages: Multiple sources provided. Priority: hutSlug > coordinates > placeName'
+        );
+      }
 
-    fetchImages(opts);
-  });
+      // Fire-and-forget like the previous watchEffect (state updates flow
+      // through the refs above)
+      void fetchImages(opts);
+    },
+    { immediate: true }
+  );
 
   return {
     images,

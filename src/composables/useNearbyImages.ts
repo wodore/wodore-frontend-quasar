@@ -1,4 +1,4 @@
-import { ref, watchEffect, type Ref } from 'vue';
+import { ref, watch, type Ref } from 'vue';
 import { clientWodore } from '@clients/index';
 import { currentLocale } from '@services/locale';
 import { useLatestRequest } from './useLatestRequest';
@@ -131,17 +131,22 @@ export function useNearbyImages(lat?: Ref<number | undefined>, lon?: Ref<number 
     }
   };
 
-  // Watch for location changes and fetch images
-  watchEffect(() => {
-    const latitude = lat?.value;
-    const longitude = lon?.value;
-
-    if (latitude !== undefined && longitude !== undefined) {
-      fetchNearbyImages(latitude, longitude);
-    } else {
-      images.value = [];
-    }
-  });
+  // Watch for location and UI-language changes and fetch images.
+  // Deliberately `watch`, NOT a `watchEffect`: starting a request runs the
+  // API client's progress middleware (reactive read+write of the request
+  // counter), which inside a watchEffect became a self-triggering
+  // dependency and refetched endlessly — see useMediaImages for details.
+  watch(
+    [() => lat?.value, () => lon?.value, currentLocale],
+    ([latitude, longitude]) => {
+      if (latitude !== undefined && longitude !== undefined) {
+        void fetchNearbyImages(latitude, longitude);
+      } else {
+        images.value = [];
+      }
+    },
+    { immediate: true }
+  );
 
   return {
     images,
