@@ -37,6 +37,13 @@ const routes: RouteRecordRaw[] = [
     redirect: to => redirectFix(to, 'map'),
   },
   {
+    // Proof of concept: native MapLibre via @capawesome/capacitor-maplibre.
+    // Standalone (no layout) so only body/#q-app sit above the map.
+    path: '/poc/maplibre',
+    name: 'poc-maplibre',
+    component: () => import('pages/poc/NativeMapPoc.vue'),
+  },
+  {
     path: '/',
     component: () => import('layouts/MainLayout.vue'),
     children: [

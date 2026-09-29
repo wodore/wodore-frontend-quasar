@@ -62,9 +62,22 @@ android {
             }
         }
     }
+    // Native ABI selection: MapLibre Native ships ~24MB of .so per
+    // ABI (vulkan + opengl renderers). Defaults keep preview APKs
+    // lean for phones; override with WD_NATIVE_ABIS (comma-separated)
+    // for emulator or multi-ABI local builds.
+    def nativeAbis = System.getenv('WD_NATIVE_ABIS')
+    def resolveAbis = { defaults ->
+        (nativeAbis != null && !nativeAbis.isEmpty())
+            ? nativeAbis.split(',').toList().collect { it.trim() }
+            : defaults
+    }
+
     buildTypes {
         debug {
-            // Android Studio builds (std+debug): com.wodore.app.local
+            // Android Studio builds (std+debug): com.wodore.app.local.
+            // x86_64 included so the emulator works out of the box.
+            ndk { abiFilters = resolveAbis(['arm64-v8a', 'x86_64']) }
             applicationIdSuffix '.local'
             resValue 'string', 'app_name', 'Wodore Dev'
             if (signingConfigs.ciDev.storeFile != null) {
@@ -74,8 +87,10 @@ android {
         dev {
             // CI dev builds: std+dev = com.wodore.app.dev (production
             // backend, release-like, debug-signed), stg+dev =
-            // com.wodore.stg.dev (staging backend preview)
+            // com.wodore.stg.dev (staging backend preview).
+            // arm64-v8a only: preview APKs go to phones via QR code.
             initWith debug
+            ndk { abiFilters = resolveAbis(['arm64-v8a']) }
             applicationIdSuffix '.dev'
             matchingFallbacks = ['debug']
             // Explicit signing (initWith doesn't reliably copy
@@ -92,6 +107,9 @@ android {
         }
         release {
             // Play Store: com.wodore.app, semver synced from tags.
+            // arm64-v8a: Play's AAB delivery re-splits per device
+            // anyway; this keeps direct APK exports lean.
+            ndk { abiFilters = resolveAbis(['arm64-v8a']) }
             // Only attach the signing config when the CI keystore env
             // exists — an empty config breaks release packaging.
             if (signingConfigs.upload.storeFile != null) {
@@ -99,6 +117,16 @@ android {
             }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    packagingOptions {
+        jniLibs {
+            // Compress native libs inside the APK (legacy packaging):
+            // preview APKs are downloaded over the network via QR
+            // code, where download size dominates. Tradeoff: libs
+            // extract to disk at install and mmap start is slower.
+            useLegacyPackaging = true
         }
     }
 
