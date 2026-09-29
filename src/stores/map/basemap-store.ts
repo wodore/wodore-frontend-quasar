@@ -1,7 +1,12 @@
 import { defineStore } from 'pinia';
 import { reactive, watch } from 'vue';
 import { BasemapSwitchItem } from '@stores/map/utils/interfaces';
-import { getCompositeRasterStyle, getRasterStyle, withLayerMinZoom } from '@stores/map/utils/raster';
+import {
+  getCompositeRasterStyle,
+  getRasterStyle,
+  withLayerMaxZoom,
+  withLayerMinZoom,
+} from '@stores/map/utils/raster';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
 import { Platform } from 'quasar';
 //import type { Emitter } from 'mitt';
@@ -346,10 +351,16 @@ export const useBasemapStore = defineStore('basemap', () => {
      * Use transformStyle to preserve custom layers/sources when switching basemaps
      * @see https://github.com/maplibre/maplibre-gl-js/issues/2587
      * Solution from: https://github.com/maplibre/maplibre-gl-js/issues/2587#issuecomment-1996106037
+     *
+     * diff:false — MapLibre 6.x silently ABORTS style changes in setStyle({diff:true})
+     * between complex composite styles (observed: sprite/layer diffs leave the map
+     * on the old style or blank). Full replacement works reliably; overlays are
+     * still preserved via transformStyle.
      */
+    const applyBasemapStyle = () => {
     //mapRef.map?.style.setState(s.style, {
     mapRef.map?.setStyle(s.style, {
-      diff: true,
+      diff: false,
       transformStyle: (previousStyle, nextStyle) => {
         // Debug input types
         console.debug('[transformStyle] Called with:', {
@@ -637,6 +648,31 @@ export const useBasemapStore = defineStore('basemap', () => {
         return transformedStyle;
       },
     });
+    };
+
+    if (mapRef.map?.loaded()) {
+      applyBasemapStyle();
+    } else {
+      console.debug('[setBasemap] map not loaded yet — deferring style application to load event');
+      mapRef.map?.once('load', applyBasemapStyle);
+    }
+
+    // MapLibre 6.x race: a style applied during a pending transition can be
+    // dropped silently (map left with an empty/old stylesheet, no error
+    // event) — observed intermittently with composite object styles.
+    // Verify after 3s and re-apply once if it did not take.
+    const expectedStyleName = typeof s.style === 'object' ? s.style.name : undefined;
+    setTimeout(() => {
+      if (!mapRef.map || !expectedStyleName) return;
+      const current = mapRef.map.getStyle();
+      // a dropped style can keep its name with ZERO layers — check both
+      const ok = current?.name === expectedStyleName && (current?.layers?.length ?? 0) > 0;
+      if (ok) return;
+      console.warn(
+        `[setBasemap] style '${expectedStyleName}' not active (map has '${current?.name}' with ${current?.layers?.length ?? 0} layers) — re-applying once`
+      );
+      applyBasemapStyle();
+    }, 3000);
 
     // Debug: After setStyle completes, verify the layers/sources are present
     setTimeout(() => {
@@ -798,7 +834,9 @@ export const useBasemapStore = defineStore('basemap', () => {
     const europeTopoStyle = getCompositeRasterStyle({
       name: 'europe-topo',
       styles: [
-        ofmBase ?? esriLightGrayStyle,
+        // base only below z8 — the national raster layers take over at z8
+        // and the base's sources stop fetching (no double loading)
+        withLayerMaxZoom(ofmBase ?? esriLightGrayStyle, 8),
         withLayerMinZoom(openTopoStyle, 8),
         withLayerMinZoom(swissTopoRasterStyle, 8),
       ],
@@ -838,10 +876,12 @@ export const useBasemapStore = defineStore('basemap', () => {
 
     // Raster version of the same idea, but border-MERGED server-side by
     // the MapProxy stack (docker/mapproxy-eu-topo) — polygon-cut national
-    // raster maps in one tile source.
+    // raster maps in one tile source. Single source of tiles: the vector
+    // base only serves below z8, from z8 the proxy is the ONLY thing
+    // loading.
     const europeTopoProxyStyle = getCompositeRasterStyle({
       name: 'europe-topo-proxy',
-      styles: [ofmBase ?? esriLightGrayStyle, withLayerMinZoom(mapproxyTopoStyle, 8)],
+      styles: [withLayerMaxZoom(ofmBase ?? esriLightGrayStyle, 8), withLayerMinZoom(mapproxyTopoStyle, 8)],
     });
 
     console.debug(
@@ -986,13 +1026,16 @@ export const useBasemapStore = defineStore('basemap', () => {
         console.debug('Restoring saved basemap:', savedBasemapName);
       } else {
         console.debug('Saved basemap not found, using default');
+        // default to the keyless Europe Topo composite — the MapTiler-based
+        // first entry breaks the whole session when the API quota is used up
+        // (style/tiles/fonts all 403 and later basemap switches render blank)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        basemapToSet = (basemaps as any[])[0];
+        basemapToSet = getBasemapByName('europe-topo') ?? (basemaps as any[])[0];
       }
     } else {
-      // No saved basemap, use first one as default
+      // No saved basemap: same keyless default
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      basemapToSet = (basemaps as any[])[0];
+      basemapToSet = getBasemapByName('europe-topo') ?? (basemaps as any[])[0];
     }
 
     // Set the active basemap

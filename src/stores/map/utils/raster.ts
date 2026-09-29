@@ -123,7 +123,15 @@ export function getCompositeRasterStyle({
     version: 8,
     name: name,
     glyphs: glyphs ?? styles.find(s => s.glyphs)?.glyphs,
-    sprite: sprite ?? styles.find(s => s.sprite)?.sprite,
+    // always emit the ARRAY sprite form — switching between string- and
+    // array-form sprites in setStyle({diff: true}) aborts the whole style
+    // change silently (old style kept) in MapLibre 6.x
+    sprite:
+      sprite === undefined
+        ? undefined
+        : typeof sprite === 'string'
+          ? [{ id: 'default', url: sprite }]
+          : sprite,
     sources: sources,
     layers: layers,
   };
@@ -140,6 +148,21 @@ export function withLayerMinZoom(style: StyleSpecification, minZoom: number): St
     layers: (style.layers ?? []).map(layer => ({
       ...layer,
       minzoom: Math.max(layer.minzoom ?? 0, minZoom),
+    })),
+  };
+}
+
+/**
+ * Clone a style, lowering every layer's maxzoom so the style (and its
+ * sources — MapLibre stops fetching when no layer is visible at the
+ * current zoom) only renders UP TO the given zoom level.
+ */
+export function withLayerMaxZoom(style: StyleSpecification, maxZoom: number): StyleSpecification {
+  return {
+    ...style,
+    layers: (style.layers ?? []).map(layer => ({
+      ...layer,
+      maxzoom: Math.min(layer.maxzoom ?? 24, maxZoom),
     })),
   };
 }
