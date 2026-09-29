@@ -571,6 +571,38 @@ function overlayIcon(name: string) {
   color: #f2f7f4;
 }
 
+// dark overrides for WdOverlaySwitchItem inside the expanded panel
+.wd-layerctl__expanded .overlay-main-btn {
+  background: rgba(169, 240, 210, 0.1) !important;
+  border-radius: 4px !important;
+
+  &.active {
+    box-shadow: inset 0 0 0 2px #bfab25 !important;
+    background: rgba(191, 171, 37, 0.1) !important;
+  }
+
+  .q-icon {
+    color: #a9f0d2 !important;
+  }
+}
+
+.wd-layerctl__expanded .overlay-icon-btn {
+  color: #a9f0d2 !important;
+
+  &.active {
+    color: #bfab25 !important;
+  }
+}
+
+.wd-layerctl__expanded .overlay-item-container:hover {
+  background: rgba(169, 240, 210, 0.06);
+}
+
+// filter badge
+.wd-layerctl__expanded .filter-badge {
+  background: #2673bf;
+}
+
 .wd-layerctl__expanded .overlay-side-icons {
   flex: none;
 }
