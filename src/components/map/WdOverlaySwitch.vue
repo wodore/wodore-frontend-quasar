@@ -491,7 +491,7 @@ function overlayIcon(name: string) {
   width: 36px;
   height: 4px;
   border-radius: 999px;
-  background: #dde7e0;
+  background: #b0beb6;
 }
 
 .wd-layerctl__head {
@@ -512,6 +512,7 @@ function overlayIcon(name: string) {
   flex: 1;
   min-height: 0;
   max-height: min(430px, 52vh);
+  padding-top: 4px;
 }
 
 .wd-layerctl__panel--sheet .wd-layerctl__rows {
