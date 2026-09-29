@@ -43,11 +43,6 @@
   dependencies:
     tslib "^2.1.0"
 
-"@capacitor/status-bar@^8.0.3":
-  version "8.0.3"
-  resolved "https://registry.yarnpkg.com/@capacitor/status-bar/-/status-bar-8.0.3.tgz#b638524f021cb3147e6f36ad55e7e5171aee4fd6"
-  integrity sha512-csSpfNeN49Hx9JaQBSJEIiEbOLtXg3kcc2IpScq2fu5L520h3AWEvsxoH8Srk1jxfRKepaJ4S4sqSC3foI4AgA==
-
 "@capawesome/capacitor-maplibre@^0.2.0":
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/@capawesome/capacitor-maplibre/-/capacitor-maplibre-0.2.0.tgz#bb3ed32c1f9aafbc88bd43c0f456655e8a01c55f"
