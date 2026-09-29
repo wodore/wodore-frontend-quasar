@@ -57,7 +57,7 @@
       "reload": "Ricarica la pagina"
     },
     "layers": "Livelli",
-    "basemap_fallback": "Mappa base non disponibile — passato a Swisstopo"
+    "basemap_fallback": "Mappa base non disponibile — passato a OpenFreeMap"
   },
   "map_style": "Carta geografica",
   "location": "Posizione",

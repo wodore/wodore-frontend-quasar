@@ -293,16 +293,16 @@ function onMapError(e: unknown) {
 
   // Basemap fallback: an auth failure from the tile/style host (e.g. a
   // suspended or rotated MapTiler key) would otherwise leave a blank,
-  // broken map. Switch once to the keyless OpenFreeMap bright style and
-  // tell the user.
+  // broken map. Switch once to the keyless OpenFreeMap Liberty vector
+  // style (labels included — OpenFreeMap also serves the glyphs) and tell
+  // the user.
   if (!basemapFallbackDone && isTileAuthFailure(errorObj) && activeBasemapUsesMapTiler()) {
     basemapFallbackDone = true;
-    // Fall back to the keyless swisstopo raster (geo.admin.ch tiles —
-    // no API key, proven reliable). OpenFreeMap had rendering issues
-    // on some Samsung WebViews.
-    const fallback = basemapStore.basemaps.find(b => b.name === 'ch-swisstopo-full');
+    // Fall back to the keyless OpenFreeMap Liberty vector style
+    // (tiles.openfreemap.org — no API key, serves both tiles and fonts).
+    const fallback = basemapStore.basemaps.find(b => b.name === 'openfreemap-liberty');
     if (fallback) {
-      console.warn('[onMapError] Tile host rejected requests - falling back to OpenFreeMap');
+      console.warn('[onMapError] Tile host rejected requests - falling back to OpenFreeMap Liberty');
       void basemapStore.setBasemap(fallback, true);
       $q.notify({
         type: 'warning',

@@ -613,12 +613,15 @@ export const useBasemapStore = defineStore('basemap', () => {
         // Keyless OpenFreeMap vector basemap (openfreemap.org). Hidden
         // from the picker - it is the automatic fallback when the
         // MapTiler-based basemaps are rejected (suspended/rotated key).
-        name: 'openfreemap-bright',
-        label: 'OpenFreeMap Bright',
+        // Liberty style: full-featured vector cartography with labels;
+        // glyphs are served keylessly by OpenFreeMap itself
+        // (https://tiles.openfreemap.org/fonts/...).
+        name: 'openfreemap-liberty',
+        label: 'OpenFreeMap Liberty',
         show: false,
         active: false,
         img: getImageUrl('outdoor-v2.png'),
-        style: 'https://tiles.openfreemap.org/styles/bright',
+        style: 'https://tiles.openfreemap.org/styles/liberty',
         layers: {
           ways: { before: undefined },
           background: { before: undefined },

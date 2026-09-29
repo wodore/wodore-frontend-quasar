@@ -30,11 +30,13 @@ export function getRasterStyle({
     version: 8,
     name: name,
     sources: {},
-    // Use OpenMapTiles' free glyph server — MapTiler glyphs 403 when
+    // Use OpenFreeMap's keyless glyph server — MapTiler glyphs 403 when
     // the API key is suspended/quota-exceeded, breaking all raster
-    // basemap labels. OpenMapTiles serves the same font stacks
-    // without a key.
-    glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
+    // basemap labels. OpenFreeMap serves the standard OpenMapTiles font
+    // stacks (Noto Sans family) without a key; it does NOT host the
+    // Open Sans family, so symbol layers must use Noto Sans fontstacks
+    // (see overlay-huts.ts).
+    glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
     //sprite: { id: 'default', url: 'http://localhost:9000/huts/sprite' },
     layers: [],
   };
