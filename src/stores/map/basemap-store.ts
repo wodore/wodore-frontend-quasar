@@ -63,7 +63,7 @@ const oeTopoRasterStyle = getRasterStyle({
   tileSize: 512,
   // tight bounds around Austria (basemap.at's grid serves WHITE no-data
   // tiles well beyond its data, e.g. over eastern CH)
-  bounds: [9.4, 46.35, 17.25, 49.05],
+  bounds: [9.5, 46.36, 17.18, 49.02],
   // NOTE: in composites this style must always paint BELOW swisstopo.
 });
 
