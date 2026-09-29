@@ -100,7 +100,7 @@ async function resolveBasemapStyle(): Promise<StyleSpecification> {
     if (style === OPENFREEMAP_BRIGHT_URL) {
       // Serve the bundled snapshot directly — no WebView fetch needed
       cached = openfreemapBrightStyle as unknown as StyleSpecification;
-      console.debug('[WdNativeMapView] Using bundled OpenFreeMap bright style');
+      console.debug('[WdNativeMapView] resolve: bundled OpenFreeMap bright');
       remoteStyleCache.set(style, cached);
       return JSON.parse(JSON.stringify(cached));
     }
@@ -114,15 +114,17 @@ async function resolveBasemapStyle(): Promise<StyleSpecification> {
       // the web flow falls back via map error events which don't fire
       // natively. Fall back to the keyless OpenFreeMap vector style
       // (the store's designated fallback), then swisstopo-full raster.
-      console.warn(`[WdNativeMapView] Style fetch failed (${style}), falling back`, e);
+      console.warn(`[WdNativeMapView] resolve: fetch failed (${style})`, e);
       const ofm = basemapStore.basemaps.find(b => b.name === 'openfreemap-bright');
       if (ofm) {
         // Bundled style — works even when the WebView cannot fetch it
+        console.debug('[WdNativeMapView] resolve: fallback -> openfreemap-bright (bundled)');
         basemapStore.setBasemap(ofm);
         return JSON.parse(JSON.stringify(openfreemapBrightStyle));
       }
       const full = basemapStore.basemaps.find(b => b.name === 'ch-swisstopo-full');
       if (full && typeof full.style !== 'string') {
+        console.debug('[WdNativeMapView] resolve: fallback -> ch-swisstopo-full');
         basemapStore.setBasemap(full);
         return JSON.parse(JSON.stringify(full.style));
       }
@@ -178,19 +180,33 @@ const DEFAULT_OVERLAY_OPACITY = ['interpolate', ['linear'], ['zoom'], 8, 0.9, 14
  * overlay items carry an opacity expression (zoom-interpolated) that
  * the web injects into the layer paint at addLayer time. Without this
  * the raster overlays render fully opaque on native.
+ *
+ * `zero` (two-phase reveal): force flat 0 opacity while the overlay's
+ * tiles pre-load — a visible layer with opacity 0 still fetches its
+ * tiles, so the ugly stretched parent tile never shows; the final
+ * style pass swaps in the real opacity once tiles are in (~300ms).
  */
-function applyOverlayOpacity(layer: LayerSpecification, overlay: { opacity?: unknown }) {
+function applyOverlayOpacity(
+  layer: LayerSpecification,
+  overlay: { opacity?: unknown },
+  zero = false
+) {
   const props = OPACITY_BY_TYPE[layer.type] ?? [];
+  if (props.length === 0) return;
   const paint = (layer.paint ?? {}) as Record<string, unknown>;
-  const hasOwn = props.some(p => paint[p] !== undefined);
-  if (hasOwn || props.length === 0) return;
-  const opacity = (overlay.opacity ?? DEFAULT_OVERLAY_OPACITY) as unknown;
   const nextPaint: Record<string, unknown> = { ...paint };
-  for (const p of props) nextPaint[p] = opacity;
+  if (zero) {
+    for (const p of props) nextPaint[p] = 0;
+  } else {
+    const hasOwn = props.some(p => paint[p] !== undefined);
+    if (hasOwn) return;
+    const opacity = (overlay.opacity ?? DEFAULT_OVERLAY_OPACITY) as unknown;
+    for (const p of props) nextPaint[p] = opacity;
+  }
   (layer as { paint?: Record<string, unknown> }).paint = nextPaint;
 }
 
-async function composeStyle(): Promise<StyleSpecification> {
+async function composeStyle(revealZero?: Set<string>): Promise<StyleSpecification> {
   const style = await resolveBasemapStyle();
   style.sources = { ...(style.sources ?? {}) };
   style.layers = [...(style.layers ?? [])];
@@ -203,6 +219,19 @@ async function composeStyle(): Promise<StyleSpecification> {
     sprites.push(...style.sprite);
   }
 
+  // Glyphs: keep each basemap style's OWN glyph server — the blanket
+  // fonts.openmaptiles.org override served Noto PBFs that MapLibre
+  // Native cannot parse ("unknown pbf field type" -> every basemap
+  // label dies). OpenFreeMap serves its own Noto fonts which pair
+  // with the style; the swisstopo raster styles use openmaptiles for
+  // the overlay fonts (Open Sans), which parse fine. When composing
+  // over OpenFreeMap, remap overlay fonts it does not serve.
+  const glyphsUrl = typeof style.glyphs === 'string' ? style.glyphs : '';
+  const remapFonts = glyphsUrl.includes('tiles.openfreemap.org');
+  const FONT_REMAP: Record<string, string> = {
+    'Open Sans Semibold': 'Noto Sans Regular',
+  };
+
   for (const overlay of overlayStore.overlays) {
     if (!overlay.active || !overlay.style) continue;
     for (const [id, source] of Object.entries(overlay.style.sources)) {
@@ -212,7 +241,17 @@ async function composeStyle(): Promise<StyleSpecification> {
     }
     for (const layer of overlay.style.layers) {
       const cloned: LayerSpecification = JSON.parse(JSON.stringify(layer));
-      applyOverlayOpacity(cloned, overlay);
+      applyOverlayOpacity(cloned, overlay, revealZero?.has(overlay.name));
+      if (remapFonts) {
+        const layout = (cloned.layout ?? {}) as Record<string, unknown>;
+        const font = layout['text-font'];
+        if (Array.isArray(font)) {
+          layout['text-font'] = font.map(
+            (f: unknown) => (typeof f === 'string' && FONT_REMAP[f]) || f
+          );
+          (cloned as { layout?: Record<string, unknown> }).layout = layout;
+        }
+      }
       style.layers!.push(cloned);
     }
     const os = overlay.style.sprite;
@@ -250,12 +289,6 @@ async function composeStyle(): Promise<StyleSpecification> {
     style.layers!.splice(firstHutIdx, 0, style.layers!.splice(selIdx, 1)[0]);
   }
 
-  // Glyph server: fonts.openmaptiles.org serves BOTH the overlay fonts
-  // ("Open Sans Semibold") and the standard Noto families basemaps use
-  // (OpenFreeMap's own font server 404s on Open Sans and kills symbol
-  // layers natively).
-  style.glyphs = 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf';
-
   // MapLibre Native does not support the icon-overlap/text-overlap
   // layout enums (maplibre-native#251) and drops the layer on parse —
   // strip them; the -allow-overlap booleans carry the same meaning.
@@ -277,11 +310,11 @@ let mapReady = false;
  * reload) is fixed by our patch-package patch (lazy annotation
  * managers — see patches/@capawesome+capacitor-maplibre+0.2.0.patch).
  */
-async function applyStyle() {
+async function applyStyle(revealZero?: Set<string>) {
   const epoch = ++styleEpoch.value;
   let styleJson: string;
   try {
-    styleJson = JSON.stringify(await composeStyle());
+    styleJson = JSON.stringify(await composeStyle(revealZero));
   } catch (e) {
     console.error('[WdNativeMapView] composeStyle failed', e);
     return;
@@ -300,7 +333,9 @@ async function applyStyle() {
         frame: { x: r.x, y: r.y, width: r.width, height: r.height },
       }).catch(() => undefined);
     }
-    console.debug('[WdNativeMapView] style applied');
+    console.debug(
+      `[WdNativeMapView] style applied (name=${(JSON.parse(styleJson) as { name?: string }).name ?? '?'})`
+    );
   } catch (e) {
     console.error('[WdNativeMapView] setStyle failed', e);
   }
@@ -449,6 +484,8 @@ onMounted(async () => {
 
 onUnmounted(async () => {
   document.body.classList.remove('wd-native-map');
+  clearTimeout(revealTimer);
+  if (scalePollTimer !== null) window.clearInterval(scalePollTimer);
   for (const l of listeners) await l.remove();
   listeners.length = 0;
   mapReady = false;
@@ -465,10 +502,32 @@ watch(
   () => void applyStyle()
 );
 
-// Overlay toggles -> recompose + setStyle
+// Overlay toggles -> recompose + setStyle. Newly-enabled overlays get
+// a two-phase reveal: first pass applies them with 0 opacity (the
+// layer is visible -> its tiles pre-load invisibly, skipping the ugly
+// stretched parent tile), then ~300ms later the final style swaps in
+// the real opacity.
+let lastOverlayState = overlayStore.overlays.map(o => `${o.name}:${o.active ? 1 : 0}`).join('|');
+let revealTimer: ReturnType<typeof setTimeout> | undefined;
 watch(
   () => overlayStore.overlays.map(o => `${o.name}:${o.active ? 1 : 0}`).join('|'),
-  () => void applyStyle()
+  next => {
+    const prevState = lastOverlayState;
+    lastOverlayState = next;
+    clearTimeout(revealTimer);
+    const newlyOn = new Set(
+      overlayStore.overlays
+        .filter(o => o.active && !prevState.includes(`${o.name}:1`))
+        .map(o => o.name)
+    );
+    if (newlyOn.size > 0) {
+      void applyStyle(newlyOn).then(() => {
+        revealTimer = setTimeout(() => void applyStyle(), 300);
+      });
+    } else {
+      void applyStyle();
+    }
+  }
 );
 
 // Hut selection via router (search, deep links, bottom-sheet close) —
