@@ -733,12 +733,10 @@ body.body--dark {
 
 // ── Map focus mode: fly-out animation ────────────────────────────────────
 body.wd-map-focus {
-  .wd-topbar,
-  .wd-topbar-menu,
-  .wd-topbar__progress {
   .wd-map-ctl-col,
   .wd-topbar,
   .wd-topbar-menu,
+  .wd-topbar__progress,
   .q-page-sticky:not(.wd-focus-toggle) {
     opacity: 0;
     pointer-events: none;
