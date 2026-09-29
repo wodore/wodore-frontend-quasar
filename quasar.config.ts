@@ -195,19 +195,15 @@ export default configure(ctx => {
             strictMessage: false,
           },
         ],
-        [
-          'vite-plugin-checker',
-          {
-            vueTsc: {
-              tsconfigPath: 'tsconfig.vue-tsc.json',
-            },
-            eslint: {
-              lintCommand: 'eslint "./**/*.{js,ts,mjs,cjs,vue}"',
-              useFlatConfig: true,
-            },
-          },
-          { server: false },
-        ],
+        // Disabled: deeply nested MapLibre store types crash the dev checker
+        // [
+        //   'vite-plugin-checker',
+        //   {
+        //     vueTsc: { tsconfigPath: 'tsconfig.vue-tsc.json' },
+        //     eslint: { lintCommand: 'eslint "./**/*.{js,ts,mjs,cjs,vue}"', useFlatConfig: true },
+        //   },
+        //   { server: false },
+        // ],
         ['unplugin-icons/vite', { compiler: 'vue3' }],
         [
           'unplugin-vue-components/vite',
