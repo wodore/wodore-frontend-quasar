@@ -267,3 +267,23 @@ body.body--light .maplibregl-ctrl button .maplibregl-ctrl-icon {
 body.body--dark .maplibregl-ctrl button .maplibregl-ctrl-icon {
   filter: brightness(1.5) invert(0.85);
 }
+
+/* Force square corners on MapLibre buttons (their CSS uses pill shapes) */
+.maplibregl-ctrl-group,
+.maplibregl-ctrl-group *,
+.maplibregl-ctrl-group button,
+.maplibregl-ctrl-group button * {
+  border-radius: 4px !important;
+}
+
+.maplibregl-ctrl-group button:first-child {
+  border-radius: 8px 8px 0 0 !important;
+}
+
+.maplibregl-ctrl-group button:last-child {
+  border-radius: 0 0 8px 8px !important;
+}
+
+.maplibregl-ctrl-group button:only-child {
+  border-radius: 8px !important;
+}
