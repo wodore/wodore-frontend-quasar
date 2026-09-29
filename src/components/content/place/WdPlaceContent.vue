@@ -133,7 +133,8 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
 }
 
 .attr_link :deep(a) {
-  color: rgb(171, 171, 171);
+  /* fixed grey failed AA on pine - muted ink floor */
+  color: rgba(var(--wd-ink-rgb), 0.7);
   text-decoration: underline dotted;
 }
 </style>

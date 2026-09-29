@@ -40,6 +40,9 @@ jobs:
               'sha7',
               (context.payload.pull_request.head.sha || context.sha).slice(0, 7)
             );
+            // Label set renamed 'PREVIEW' -> 'PREVIEW:web' / 'PREVIEW:android'
+            // (the android APK preview has its own workflow/label). This web
+            // preview deploys on PREVIEW:web only.
             const isPreviewLabel = (name) =>
               (name || '').toLowerCase() === 'preview:web';
             const wasUnlabeled =

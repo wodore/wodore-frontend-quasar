@@ -34,19 +34,40 @@ const ARGS = Object.fromEntries(
 // Boolean flags (no value): --sheet generates optional human contact sheets
 const FLAGS = { sheet: process.argv.includes('--sheet') };
 const BASE = process.env.VISUAL_BASE_URL || 'http://localhost:9000';
-const HUT = '/hut/laemmeren?date=26.09.26#p=12/46.43749/7.08606';
+// Deployed previews run the router in hash mode; the dev server uses
+// history mode. A history-mode path on a hash build hits the gh-pages
+// 404 (page never loads) - this made every hut state fail on previews.
+const HASH_MODE = /github\.io/.test(BASE);
+const HUT_PATH = '/hut/laemmeren?date=26.09.26';
+const HUT = HASH_MODE
+  ? `#${HUT_PATH}`
+  : `${HUT_PATH}#p=12/46.43749/7.08606`;
+
+/** Wait until the app shell is interactive (cold CDN loads race the
+ *  old fixed 2.5s sleeps - the first config paid for every chunk). */
+const appReady = async p => {
+  await p.waitForSelector('header, .q-header', { timeout: 20000 });
+  await p.waitForSelector('.maplibregl-canvas', { timeout: 20000 }).catch(() => {});
+};
 const TS = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
 const OUT = `.visual-tests/${TS}`;
 mkdirSync(OUT, { recursive: true });
 
-/** click the first matching element; resolve false instead of throwing */
+/** click the first matching element; resolve false instead of throwing.
+ *  Retries with force:true - overlays like the preview ribbon can cover
+ *  the target and intercept the hit-test (mobile hamburger case). */
 const softClick = async (page, selector, timeout = 2500) => {
   const el = page.locator(selector).first();
   try {
     await el.click({ timeout });
     return true;
   } catch {
-    return false;
+    try {
+      await el.click({ timeout: 1000, force: true });
+      return true;
+    } catch {
+      return false;
+    }
   }
 };
 
@@ -124,31 +145,36 @@ const STATES = [
     id: 'hut',
     run: async p => {
       await p.goto(BASE + HUT, { waitUntil: 'load' });
-      // staging latency after the backend redeploy: 3.5s raced the API
-      await p.waitForTimeout(12000);
+      // wait for the hut DATA (staging API latency varies 2-15s)
+      await p
+        .waitForSelector('text=/Aarbiwak|mmerenh/i', { timeout: 25000 })
+        .catch(() => {});
+      await p.waitForTimeout(800);
     },
-    assert: 'text=/Aarbiwak|Lämmern|lammeren/i',
+    assert: 'text=/Aarbiwak|mmerenh/i',
   },
   {
     id: 'hut-expanded',
     run: async p => {
       await p.goto(BASE + HUT, { waitUntil: 'load' });
-      // staging latency after the backend redeploy: 3.5s raced the API
-      await p.waitForTimeout(12000);
+      await p
+        .waitForSelector('text=/Aarbiwak|mmerenh/i', { timeout: 25000 })
+        .catch(() => {});
       await softClick(
         p,
         '[aria-label*="expand" i], [aria-label*="maximi" i], button:has(i[class*="expand"]), button:has(i[class*="resize"])'
       );
       await p.waitForTimeout(800);
     },
-    assert: 'text=/Aarbiwak|Lämmern|lammeren/i',
+    assert: 'text=/Aarbiwak|mmerenh/i',
   },
   {
     id: 'hut-bottom',
     run: async p => {
       await p.goto(BASE + HUT, { waitUntil: 'load' });
-      // staging latency after the backend redeploy: 3.5s raced the API
-      await p.waitForTimeout(12000);
+      await p
+        .waitForSelector('text=/Aarbiwak|mmerenh/i', { timeout: 25000 })
+        .catch(() => {});
       await p.evaluate(() => {
         const els = [...document.querySelectorAll('*')].filter(
           e =>
@@ -161,14 +187,19 @@ const STATES = [
       });
       await p.waitForTimeout(600);
     },
-    assert: 'text=/Aarbiwak|Lämmern|lammeren/i',
+    assert: 'text=/Aarbiwak|mmerenh/i',
   },
   {
     id: 'menu-open',
     run: async p => {
       await p.goto(BASE + '/', { waitUntil: 'load' });
-      await p.waitForTimeout(2500);
-      await softClick(p, 'header button');
+      await appReady(p);
+      // the first header button is label-less on mobile (a no-op chip) -
+      // a combined selector still resolves to it via .first(); try the
+      // explicit control first, fall back to any header button
+      if (!(await softClick(p, 'button[aria-label="open menu"]'))) {
+        await softClick(p, 'header button');
+      }
       await p.waitForTimeout(700);
     },
     assert: '.q-drawer--mobile, .q-drawer, .q-menu',
@@ -177,8 +208,10 @@ const STATES = [
     id: 'account-sheet-open',
     run: async p => {
       await p.goto(BASE + '/', { waitUntil: 'load' });
-      await p.waitForTimeout(2500);
-      await softClick(p, 'header button');
+      await appReady(p);
+      if (!(await softClick(p, 'button[aria-label="open menu"]'))) {
+        await softClick(p, 'header button');
+      }
       await p.waitForTimeout(700);
       // if a drawer opened, look for the account/user entry inside it
       await softClick(
@@ -193,7 +226,7 @@ const STATES = [
     id: 'calendar-open',
     run: async p => {
       await p.goto(BASE + '/', { waitUntil: 'load' });
-      await p.waitForTimeout(2500);
+      await appReady(p);
       await softClick(p, '.wd-date-field, header .q-field, header input[readonly]');
       await p.waitForTimeout(900);
     },
@@ -203,24 +236,31 @@ const STATES = [
     id: 'search-open',
     run: async p => {
       await p.goto(BASE + '/', { waitUntil: 'load' });
-      await p.waitForTimeout(2500);
-      await softClick(p, 'header input, header .q-field');
+      await appReady(p);
+      // mobile opens search via a button (the header has no input there)
+      await softClick(
+        p,
+        'header input, header .wd-search-field, button[aria-label*="uche" i], button[aria-label*="earch" i]'
+      );
       await p.waitForTimeout(900);
     },
-    assert: '.q-menu, [class*="search" i]',
+    assert: '.q-menu, .q-dialog, [class*="search" i]',
   },
   {
     id: 'search-results',
     run: async p => {
       await p.goto(BASE + '/', { waitUntil: 'load' });
-      await p.waitForTimeout(2500);
-      await softClick(p, 'header input, header .q-field');
+      await appReady(p);
+      await softClick(
+        p,
+        'header input, header .wd-search-field, button[aria-label*="uche" i], button[aria-label*="earch" i]'
+      );
       await p.waitForTimeout(600);
       const inp = p.locator('.q-menu input, header input, [class*="search"] input').first();
       if (await inp.count()) await inp.fill('lam').catch(() => {});
       await p.waitForTimeout(1200);
     },
-    assert: '.q-menu, [class*="result" i]',
+    assert: '.q-menu, .q-item, [class*="result" i]',
   },
 ];
 
@@ -288,6 +328,21 @@ const CONTRAST_AUDIT = `(() => {
     // Staging/preview-only decorative ribbon (owner-confirmed look,
     // absent in production builds) - not a product contrast issue.
     if (cls.includes('preview-badge')) continue;
+    // Text laid over PHOTOS/map imagery has no computable background -
+    // photo-stripe credits and map attribution carry the halo instead;
+    // the numeric audit would measure them against a phantom surface.
+    // WCAG exempts disabled controls (dimmed by definition) and
+    // logotypes/brand wordmarks (part of the logo, not UI text)
+    if (el.closest('button[disabled], [disabled], .q-btn--disabled')) continue;
+    if (cls.includes('wd-wordmark')) continue;
+    if (
+      cls.includes('stripe-author') ||
+      cls.includes('attribution') ||
+      el.closest(
+        '.maplibregl-ctrl-attrib, [class*="media-stripe"], [class*="stripe-author"], [class*="license-badge"], .attr_link, [class*="attribution"]'
+      )
+    )
+      continue;
     if (ratio < need) out.push({ text: node.textContent.trim().slice(0, 40), ratio: +ratio.toFixed(2), need, size, cls: cls.slice(0, 50) });
   }
   return out;

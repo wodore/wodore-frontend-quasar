@@ -297,7 +297,8 @@ const tooltipContent = computed(() => {
 }
 
 .wd-weather-day__temp-min {
-  color: rgba(var(--wd-ink-rgb), 0.55);
+  /* 0.55 failed WCAG AA (4.5:1) on day panels - muted floor 0.72 */
+  color: rgba(var(--wd-ink-rgb), 0.72);
   font-weight: 400;
 }
 
@@ -333,10 +334,10 @@ const tooltipContent = computed(() => {
 }
 
 .wd-weather-day__rain {
-  color: rgba(var(--wd-ink-rgb), 0.55);
+  color: rgba(var(--wd-ink-rgb), 0.72);
 }
 
 .wd-weather-day__snow {
-  color: rgba(var(--wd-ink-rgb), 0.55);
+  color: rgba(var(--wd-ink-rgb), 0.72);
 }
 </style>
