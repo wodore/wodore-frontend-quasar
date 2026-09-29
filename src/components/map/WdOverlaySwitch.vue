@@ -490,7 +490,7 @@ function overlayIcon(name: string) {
   align-items: center;
   gap: 10px;
   padding: 2px 14px;
-  border-radius: 6px;
+  border-radius: 4px;
 }
 
 .wd-layerctl__rows .overlay-item-container:hover {
