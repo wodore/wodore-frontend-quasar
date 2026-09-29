@@ -20,7 +20,7 @@ import { useOverlayStore } from '@stores/map/overlay-store';
 import { useOverlayConfigStore } from '@stores/map/overlay-config-store';
 import { useMapMenuStore } from '@stores/map/map-menu-store';
 import { OverlaySwitchItem } from '@stores/map/utils/interfaces';
-import WdOverlaySwitchItem from './WdOverlaySwitchItem.vue';
+import WdOverlaySwitchItem from '../WdOverlaySwitchItem.vue';
 
 const { t } = useI18n();
 const overlayStore = useOverlayStore();
