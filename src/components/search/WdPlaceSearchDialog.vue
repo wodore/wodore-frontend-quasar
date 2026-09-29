@@ -71,10 +71,12 @@ function onSearchClose() {
 
 .search-dialog-close {
   position: fixed;
+  /* Align with the search input: the input container has q-pa-md
+     (16px) padding; offset to center on the same visual line */
   top: calc(
-    8px + var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px))
+    14px + var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px))
   );
-  right: 6px;
+  right: 10px;
   z-index: 200;
 }
 
