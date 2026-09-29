@@ -608,6 +608,21 @@ export const useBasemapStore = defineStore('basemap', () => {
           background: { before: undefined },
         },
       },
+      {
+        // Keyless OpenFreeMap vector basemap (openfreemap.org). Hidden
+        // from the picker - it is the automatic fallback when the
+        // MapTiler-based basemaps are rejected (suspended/rotated key).
+        name: 'openfreemap-bright',
+        label: 'OpenFreeMap Bright',
+        show: false,
+        active: false,
+        img: getImageUrl('outdoor-v2.png'),
+        style: 'https://tiles.openfreemap.org/styles/bright',
+        layers: {
+          ways: { before: undefined },
+          background: { before: undefined },
+        },
+      },
     ];
 
     // Add all items to the reactive array
@@ -628,9 +643,14 @@ export const useBasemapStore = defineStore('basemap', () => {
         basemapToSet = (basemaps as any[])[0];
       }
     } else {
-      // No saved basemap, use first one as default
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      basemapToSet = (basemaps as any[])[0];
+      // No saved basemap: default to the keyless swisstopo raster
+      // (geo.admin.ch tiles) — the "light" variant depends on MapTiler
+      // raster tiles which fail when the API key is suspended/quota-
+      // exceeded, leaving a blank map on fresh installs
+      basemapToSet =
+        (basemaps as unknown as Array<BasemapSwitchItem>).find(
+          b => b.name === 'ch-swisstopo-full'
+        ) || (basemaps as unknown as Array<BasemapSwitchItem>)[0];
     }
 
     // Set the active basemap

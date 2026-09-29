@@ -29,10 +29,11 @@ export function getRasterStyle({
     version: 8,
     name: name,
     sources: {},
-    //glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
-    glyphs:
-      'https://api.maptiler.com/fonts/{fontstack}/{range}.pbf?key=' +
-      process.env.WODORE_MAPTILER_API_KEY,
+    // Use OpenMapTiles' free glyph server — MapTiler glyphs 403 when
+    // the API key is suspended/quota-exceeded, breaking all raster
+    // basemap labels. OpenMapTiles serves the same font stacks
+    // without a key.
+    glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
     //sprite: { id: 'default', url: 'http://localhost:9000/huts/sprite' },
     layers: [],
   };

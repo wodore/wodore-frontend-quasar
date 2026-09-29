@@ -18,17 +18,24 @@ const internalOpen = ref(false);
 // Toolbar height (from Quasar toolbar)
 const toolbarHeight = 50;
 
+// Safe area insets (native app: bottom nav bar, status bar). In the PWA
+// these evaluate to 0 and all snap points reduce to their base values.
+const safeBottom = 'var(--q-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))';
+
 // Calculate snap points
 // Index 4 (top): maxSnap
 // Index 3: 70vh
 // Index 2 (initial): defaultSnap
 // Index 1 (header only): 150px
 // Index 0 (collapsed/dismissed): handled by swipe-to-dismiss
-const defaultSnap = '330px';
+const defaultSnap = `calc(330px + ${safeBottom})`;
 
 // Max height: visible viewport minus toolbar (dvh = dynamic viewport, so the
-// sheet stops right at the app toolbar on mobile instead of overshooting it)
-const maxSnap = `calc(100dvh - ${toolbarHeight}px)`;
+// sheet stops right at the app toolbar on mobile instead of overshooting
+// it). In the native app the header sits below the status bar
+// (edge-to-edge), so its safe-area inset must be subtracted too — in the
+// PWA the inset is 0 and the behavior is unchanged.
+const maxSnap = `calc(100dvh - ${toolbarHeight}px - var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px)))`;
 
 // Sync with v-model
 watch(
@@ -294,6 +301,15 @@ bottom-sheet[data-sheet-state='expanded'] {
 bottom-sheet * {
   box-sizing: border-box;
 }
+
+/*
+ * Native app (capacitor): lift the footer toolbar above the Android
+ * navigation bar. The sheet surface fills the bar zone behind it —
+ * empty space in the navigation area, buttons never inside it.
+ */
+body.capacitor bottom-sheet::part(footer) {
+  padding-bottom: var(--q-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+}
 </style>
 <style>
 /*
@@ -329,10 +345,11 @@ bottom-sheet[data-content-scrolled]::part(header) {
     swipe-to-dismiss
     @snap-position-change="handleSnapPositionChange"
   >
-    <!-- Snap points -->
-    <div slot="snap" style="--snap: 70vh"></div>
+    <!-- Snap points (safe-area-inset-bottom keeps content above the
+         Android navigation bar in the native app) -->
+    <div slot="snap" :style="{ '--snap': `calc(70vh + ${safeBottom})` }"></div>
     <div slot="snap" :style="{ '--snap': defaultSnap }" class="initial"></div>
-    <div slot="snap" style="--snap: 150px" class="bottom"></div>
+    <div slot="snap" :style="{ '--snap': `calc(150px + ${safeBottom})` }" class="bottom"></div>
 
     <!-- Header -->
     <div slot="header" v-if="$slots.header">

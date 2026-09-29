@@ -322,12 +322,19 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   background: black;
+  // Native app: pad content away from the system bars (the black bg
+  // stays full-bleed behind them)
+  padding-top: var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px));
+  padding-bottom: var(
+    --q-safe-area-inset-bottom,
+    env(safe-area-inset-bottom, 0px)
+  );
   transition: all 0.3s ease;
 }
 
 .close-btn {
   position: absolute;
-  top: 16px;
+  top: calc(16px + var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px)));
   right: 16px;
   z-index: 1000;
   color: white;

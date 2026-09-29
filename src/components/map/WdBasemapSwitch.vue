@@ -87,7 +87,12 @@ const switchCloseIcon =
 </script>
 
 <template>
-  <q-page-sticky :position="position" :offset="offset" style="z-index: 5">
+  <q-page-sticky
+    :position="position"
+    :offset="offset"
+    class="wd-map-bottom-ctrl"
+    style="z-index: 5"
+  >
     <q-fab
       ref="fabStyleRef"
       push

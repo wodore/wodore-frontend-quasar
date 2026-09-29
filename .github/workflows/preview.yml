@@ -1,8 +1,7 @@
 name: PR Preview
 
-# Static GitHub Pages previews for pull requests carrying the
-# 'PREVIEW:web' label. Read-only (no login): Zitadel redirect URIs are
-# exact-match, so
+# Static GitHub Pages previews for pull requests carrying the 'PREVIEW:web'
+# label. Read-only (no login): Zitadel redirect URIs are exact-match, so
 # previews cannot authenticate; API access is read-only against the
 # staging API by default (overridable via WODORE_API_HOST).
 # Complex scenarios (login, writes) belong on the docker staging env.
@@ -294,7 +293,7 @@ jobs:
             const list = [
               entry,
               ...prev.filter((l) => !l.startsWith(`- [${sha}]`)),
-            ].slice(0, 15);
+            ].slice(0, 5);
             const body = [
               marker,
               '## PR Preview',

@@ -56,7 +56,8 @@
       "generic_message": "Une erreur s'est produite lors du chargement de la carte",
       "reload": "Recharger la page"
     },
-    "layers": "Couches"
+    "layers": "Couches",
+    "basemap_fallback": "Fond de carte indisponible — bascule vers Swisstopo"
   },
   "map_style": "Carte",
   "location": "Lieu",

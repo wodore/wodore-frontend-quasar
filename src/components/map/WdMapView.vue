@@ -3,6 +3,7 @@ import { ref, inject, watchEffect, watch, onErrorCaptured, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router';
 import { useResizeObserver, useDebounceFn, useThrottleFn, useEventListener } from '@vueuse/core';
 import { useQuasar } from 'quasar';
+import { useI18n } from 'vue-i18n';
 import { useBasemapStore } from '@stores/map/basemap-store';
 import { useLocalPropertiesStore } from '@stores/local-properties-store';
 import { showErrorDialogPersistent, ErrorCode } from '@components/error';
@@ -113,6 +114,7 @@ function getDangerMargin(): number {
 // ============================================================================
 
 const $q = useQuasar();
+const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 const basemapStore = useBasemapStore();
@@ -272,11 +274,13 @@ function onMapLoad(e: MglEvent<'load'>) {
 function onMapError(e: unknown) {
   console.error('[onMapError] Map error occurred:', e);
 
-  // Check if it's a WebGL error
-  const event = e as { error?: unknown; type?: string };
-  if (event.error && typeof event.error === 'object') {
-    const errorObj = event.error as Record<string, unknown>;
+  // vue-maplibre-gl wraps the native event: the MapLibre error lives at
+  // e.event.error (bare e.error is undefined)
+  const raw = e as { error?: unknown; event?: { error?: unknown } };
+  const errorObj = (raw.error ?? raw.event?.error) as Record<string, unknown> | undefined;
 
+  // Check if it's a WebGL error
+  if (errorObj && typeof errorObj === 'object') {
     if (
       errorObj.type === 'webglcontextcreationerror' ||
       errorObj.message?.toString().includes('WebGL')
@@ -287,9 +291,63 @@ function onMapError(e: unknown) {
     }
   }
 
+  // Basemap fallback: an auth failure from the tile/style host (e.g. a
+  // suspended or rotated MapTiler key) would otherwise leave a blank,
+  // broken map. Switch once to the keyless OpenFreeMap bright style and
+  // tell the user.
+  if (!basemapFallbackDone && isTileAuthFailure(errorObj) && activeBasemapUsesMapTiler()) {
+    basemapFallbackDone = true;
+    // Fall back to the keyless swisstopo raster (geo.admin.ch tiles —
+    // no API key, proven reliable). OpenFreeMap had rendering issues
+    // on some Samsung WebViews.
+    const fallback = basemapStore.basemaps.find(b => b.name === 'ch-swisstopo-full');
+    if (fallback) {
+      console.warn('[onMapError] Tile host rejected requests - falling back to OpenFreeMap');
+      void basemapStore.setBasemap(fallback, true);
+      $q.notify({
+        type: 'warning',
+        message: t('map.basemap_fallback'),
+        timeout: 6000,
+        position: 'bottom',
+      });
+    }
+    return;
+  }
+
   // For other errors, show generic map error
   //console.error('[onMapError] Generic map error:', event.error);
   //showErrorDialog({ errorCode: ErrorCode.MAP_ERROR });
+}
+
+let basemapFallbackDone = false;
+
+function isTileAuthFailure(errorObj: Record<string, unknown> | undefined): boolean {
+  const status = errorObj?.status as number | undefined;
+  const message = (errorObj?.message?.toString() ?? '').toLowerCase();
+  // Only match TILE source auth failures — glyph 403s are non-critical
+  // (MapLibre falls back to local font rendering). Checking for
+  // "tile" in the error message distinguishes the two.
+  const isTileError = message.includes('tile') || !message;
+  return (
+    isTileError &&
+    (status === 403 ||
+      status === 401 ||
+      message.includes('403') ||
+      message.includes('forbidden') ||
+      message.includes('unauthorized'))
+  );
+}
+
+function activeBasemapUsesMapTiler(): boolean {
+  const active = basemapStore.getBasemap();
+  if (!active) return false;
+  const style = active.style as string | { sources?: Record<string, { tiles?: string[] }> };
+  if (typeof style === 'string') {
+    return style.includes('api.maptiler.com');
+  }
+  return Object.values(style.sources ?? {}).some(source =>
+    (source.tiles ?? []).some(url => url.includes('api.maptiler.com'))
+  );
 }
 
 /**
@@ -1008,6 +1066,61 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
       ></MglSymbolLayer> -->
         <!-- </MglGeoJsonSource> -->
       </MglMap>
+      <!-- Translucent footer shade (native app): keeps the attribution
+           zone readable over the map while the map stays visible
+           through it. Rendered always, hidden outside capacitor via CSS. -->
+      <div class="map-footer-shade" aria-hidden="true"></div>
     </div>
   </q-no-ssr>
 </template>
+
+<style lang="scss">
+// Native app navigation bar zone overlay: a gradient that helps
+// the nav bar icons read over map content. Uses BOTH the system
+// theme media queries AND the app body classes as fallback (Samsung
+// WebView doesn’t reliably support prefers-color-scheme).
+body.capacitor .map-footer-shade {
+  display: block;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  pointer-events: none;
+  height: calc(
+    var(--q-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 12px
+  );
+  // Fallback: always show a dark gradient (works in both themes,
+  // overridden by the media queries below when they match)
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.6),
+    rgba(0, 0, 0, 0.2) 50%,
+    transparent
+  );
+}
+
+// System dark: dark gradient
+@media (prefers-color-scheme: dark) {
+  body.capacitor .map-footer-shade {
+    background: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.7),
+      rgba(0, 0, 0, 0.3) 50%,
+      transparent
+    );
+  }
+}
+
+// System light: light gradient
+@media (prefers-color-scheme: light) {
+  body.capacitor .map-footer-shade {
+    background: linear-gradient(
+      to top,
+      rgba(255, 255, 255, 0.7),
+      rgba(255, 255, 255, 0.3) 50%,
+      transparent
+    );
+  }
+}
+</style>

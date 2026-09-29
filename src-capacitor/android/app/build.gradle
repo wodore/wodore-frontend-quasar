@@ -32,6 +32,7 @@ android {
             // the staging environment baked into the APK.
             dimension 'env'
             applicationId 'com.wodore.stg'
+            resValue 'string', 'app_name', 'Wodore Preview'
         }
     }
     signingConfigs {
@@ -47,11 +48,28 @@ android {
                 keyPassword System.getenv('WODORE_ANDROID_KEY_PASSWORD')
             }
         }
+        ciDev {
+            // Stable CI signing for preview/RC builds (WODORE_ANDROID_DEV_*
+            // secrets): runner debug keystores rotate, which forced a
+            // uninstall before every update. Absent locally (Studio) —
+            // builds then use the standard debug keystore.
+            def ksPath = System.getenv('WODORE_ANDROID_DEV_KEYSTORE_FILE')
+            if (ksPath != null && file(ksPath).exists()) {
+                storeFile file(ksPath)
+                storePassword System.getenv('WODORE_ANDROID_DEV_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('WODORE_ANDROID_DEV_KEY_ALIAS')
+                keyPassword System.getenv('WODORE_ANDROID_DEV_KEY_PASSWORD')
+            }
+        }
     }
     buildTypes {
         debug {
             // Android Studio builds (std+debug): com.wodore.app.local
             applicationIdSuffix '.local'
+            resValue 'string', 'app_name', 'Wodore Dev'
+            if (signingConfigs.ciDev.storeFile != null) {
+                signingConfig signingConfigs.ciDev
+            }
         }
         dev {
             // CI dev builds: std+dev = com.wodore.app.dev (production
@@ -79,6 +97,14 @@ android {
             variant.outputs.all { output ->
                 output.versionNameOverride = "${buildTs}-${gitSha}"
             }
+        }
+        // Per-variant launcher names:
+        // - stg+* = "Wodore Preview" (set via flavor resValue)
+        // - std+debug = "Wodore Dev" (set via buildType resValue)
+        // - std+dev = "Wodore Beta" (RC — production backend, not release)
+        // - std+release = "Wodore" (from strings.xml, the default)
+        if (variant.flavorName == 'std' && variant.buildType.name == 'dev') {
+            variant.resValue 'string', 'app_name', 'Wodore Beta'
         }
     }
 }

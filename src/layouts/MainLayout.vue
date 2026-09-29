@@ -24,6 +24,7 @@ import WodoreLogo from 'components/wodore/WodoreLogo.vue';
 import WdPlaceSearchMenu from 'components/search/WdPlaceSearchMenu.vue';
 import WdPlaceSearchDialog from 'components/search/WdPlaceSearchDialog.vue';
 import WdBottomSheet from '@components/utils/WdBottomSheet.vue';
+import { useRequestProgress } from '@composables/useRequestProgress';
 
 // Initialize stores
 const authStore = useAuthStore();
@@ -43,6 +44,10 @@ const route = useRoute();
 const router = useRouter();
 
 const isMobile = computed(() => $q.screen.lt.md);
+
+// API request progress (bottom of the header toolbar, replaces the
+// viewport-top QAjaxBar)
+const { visible: progressVisible } = useRequestProgress();
 
 // Menu drawer state
 const menuDrawerOpen = computed({
@@ -243,6 +248,16 @@ onMounted(() => {
   background-color: rgba(17, 33, 25, 0.88) !important;
 }
 
+// API progress bar pinned to the bottom edge of the header toolbar —
+// absolutely positioned so it never shifts the layout when appearing
+.header-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+}
+
 // Day: the incumbent wodore.com sage-pine toolbar (dark-200, lighter than
 // Night's pine) with cream text and white-pill buttons.
 body.body--light .app-header {
@@ -329,6 +344,11 @@ body.body--dark .app-header .text-icon {
   color: white;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
   pointer-events: none;
+}
+
+// Native app: ribbon sits a bit lower to clear the header edge
+body.capacitor .preview-badge {
+  top: 8px;
 }
 
 // Critical CSS for nested QLayout in container mode (inside drawer)
@@ -420,6 +440,15 @@ body.body--dark .app-header .text-icon {
         <!-- MENU BUTTON mobile open -->
         <WdMenuButton mobile function="open" side="right" v-model="menuDrawerOpen" />
       </q-toolbar>
+
+      <!-- API progress bar: pinned to the bottom edge of the toolbar -->
+      <q-linear-progress
+        v-if="progressVisible"
+        indeterminate
+        color="accent-500"
+        size="3px"
+        class="header-progress"
+      />
     </q-header>
 
     <!-- MENU -->

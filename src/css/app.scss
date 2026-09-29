@@ -1389,3 +1389,140 @@ a.wd-accommodation-day {
     display: none;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Capacitor (native app): edge-to-edge safe areas
+//
+// Android 15+ draws the app under the status and navigation bars.
+// Surfaces stay full-bleed; these rules push controls out of the system
+// bar zones. All env() insets evaluate to 0 in the PWA — no changes there.
+// ---------------------------------------------------------------------------
+// Native app feel for BOTH Capacitor and web/PWA: no rubber-band
+// overscroll bounce, no long-press text selection on UI chrome.
+// Text CONTENT (hut descriptions, comments) stays selectable; inputs
+// keep their default behavior. Icons, logos, buttons, and labels do
+// not show the copy dialog.
+body.capacitor,
+body:not(.capacitor) .q-page-container {
+  overscroll-behavior-y: none;
+}
+
+// User-select: none on the app shell (all platforms — native feel).
+// Re-enable on content areas that should be copyable.
+.q-header,
+.q-footer,
+.q-toolbar,
+.q-drawer,
+button,
+.q-btn,
+nav,
+.wd-wordmark-wo,
+img:not([class*=content]):not([class*=gallery]):not([class*=media]) {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+body.capacitor {
+  // NOTE: NO dialog inner overrides here — Quasar’s safe-area padding
+  // on .q-dialog__inner is BY DESIGN (keeps content away from system
+  // bars). Each dialog component handles its own background/padding.
+  // The toolbar approach: the card content just pads itself within
+  // the space Quasar provides.
+
+  // Native app: extend the no-select to the full body (stricter)
+  overscroll-behavior-y: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+
+  // Re-enable selection where it makes sense
+  input, textarea, [contenteditable], .selectable-text {
+    -webkit-user-select: auto;
+    user-select: auto;
+    -webkit-touch-callout: default;
+  }
+
+  // NOTE: NO safe-area padding on HEADER toolbars here — Quasar
+  // (>= 2.33) handles those natively by setting the QHeader toolbar's
+  // min-height inline to calc(var(--q-safe-area-inset-top) + 50px).
+  // Adding padding on top of that doubles the inset.
+
+  // Drawer toolbar: Quasar pads the drawer CONTENT wrapper by the
+  // status inset (its inline style is re-applied dynamically, so a
+  // stylesheet override loses). Instead of fighting it, paint the bar
+  // zone with the toolbar color via a pseudo element on the drawer and
+  // keep the toolbar itself compact - visually identical to the header
+  // (color to the very top, toolbar row right below the status bar).
+  .wd-menu-drawer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px));
+    background: rgb(42, 91, 70); // bg-primary-600
+    z-index: 1;
+  }
+
+  // NOTE: maximized dialog safe-area padding is handled per-component
+  // (inline on WdPlaceSearchDialog, CSS on WdMediaGallery) — a global
+  // rule on .q-dialog__inner--maximized > div causes the card to be
+  // offset from the viewport edge on Samsung devices.
+
+  // MapLibre bottom controls (attribution, scale): just above the
+  // navigation bar — no extra clearance, only the safe-area inset
+  .maplibregl-ctrl-bottom-left .maplibregl-ctrl,
+  .maplibregl-ctrl-bottom-right .maplibregl-ctrl {
+    margin-bottom: var(
+      --q-safe-area-inset-bottom,
+      env(safe-area-inset-bottom, 0px)
+    );
+  }
+
+  // Bottom-positioned map controls rendered as q-page-sticky elements
+  // (basemap switch): just above the navigation bar. q-page-sticky sets
+  // an inline transform — !important wins over it.
+  .wd-map-bottom-ctrl {
+    transform: translateY(
+      calc(
+        0px - var(
+          --q-safe-area-inset-bottom,
+          env(safe-area-inset-bottom, 0px)
+        )
+      )
+    ) !important;
+  }
+}
+
+// Kill pull-down bounce globally (all platforms) — the page container
+// must not rubber-band past its content. This covers the header area
+// that sits inside the scrollable layout.
+.q-page-container {
+  overscroll-behavior-y: contain;
+}
+
+// The HTML/body must also be locked to prevent the browser-level
+// bounce that happens before the inner container takes over
+html, body {
+  overscroll-behavior: none;
+}
+
+// Dialog action buttons (CLOSE/RESET/SEND etc.) sit at the bottom of
+// the card — pad them clear of the Android navigation bar in the
+// native app. Works WITH Quasar's safe-area design (not against it).
+body.capacitor .q-dialog__inner--maximized .q-card-actions {
+  padding-bottom: var(
+    --q-safe-area-inset-bottom,
+    env(safe-area-inset-bottom, 0px)
+  );
+}
+
+// Opaque dialog backdrop in the native app — fills the safe-area gaps
+// above/below maximized dialog cards so no app content bleeds through.
+// Works WITH Quasar's safe-area design (card stays inset, backdrop
+// fills the rest). The dark color matches the app's dark surfaces.
+body.capacitor .q-dialog__backdrop {
+  background: rgba(10, 18, 14, 0.98) !important;
+  backdrop-filter: none !important;
+}

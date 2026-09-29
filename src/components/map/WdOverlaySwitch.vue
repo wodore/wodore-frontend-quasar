@@ -27,7 +27,12 @@ const basemapStore = useBasemapStore();
 const mapRef = useMap();
 const $q = useQuasar();
 const switcherOpen = ref<boolean>(
-  LocalStorage.hasItem('switcherOpen') ? (LocalStorage.getItem('switcherOpen') as boolean) : true
+  process.env.MODE === 'capacitor'
+    ? false // native app: keep the FAB collapsed - the expanded list
+    :       // would run into the Android navigation bar zone
+    LocalStorage.hasItem('switcherOpen')
+      ? (LocalStorage.getItem('switcherOpen') as boolean)
+      : true
 );
 //const switcherLocked = ref<boolean>(true);
 
@@ -363,6 +368,13 @@ function overlayIcon(name: string) {
   /* room for the 2px gold selection ring (a box-shadow) - without the
   padding it is clipped at the top/bottom of the scroll viewport */
   padding: 3px 0;
+
+  /* native app: keep the expanded list clear of the Android
+     navigation bar zone */
+  body.capacitor & {
+    max-height: calc(100vh - env(safe-area-inset-bottom, 0px) - 210px);
+    padding-bottom: calc(3px + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 .styleFabGroup {
