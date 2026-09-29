@@ -3,25 +3,37 @@
   <head>
     <title><%= productName %></title>
     <!--
-      Runtime env bootstrap: fetch /env.json synchronously BEFORE any module
-      executes. env.json is unhashed, served no-store, and excluded from the
-      service worker — so env changes (e.g. a renewed MapTiler key) reach
-      cached clients on the very next visit. Falls back silently to the
-      build-time baked values when offline or on static builds (capacitor).
+      Runtime env: baked via EJS at build time. In the docker image the
+      build runs with @@VAR@@ placeholders which replace_vars rewrites at
+      container startup; index.html is served no-store and excluded from
+      the service worker, so env changes (e.g. a renewed MapTiler key)
+      reach every client on the very next visit. Capacitor/local builds
+      bake real values directly. See services/runtimeEnv.ts.
     -->
     <script>
-      (function () {
-        try {
-          var xhr = new XMLHttpRequest();
-          xhr.open('GET', '/env.json', false);
-          xhr.send(null);
-          if (xhr.status === 200) {
-            window.__WODORE_RUNTIME_ENV__ = JSON.parse(xhr.responseText);
-          }
-        } catch (e) {
-          /* offline or env.json missing: baked fallbacks apply */
-        }
-      })();
+      window.__WODORE_RUNTIME_ENV__ = {
+        WODORE_APP_NAME: '<%= process.env.WODORE_APP_NAME %>',
+        WODORE_APP_VERSION: '<%= process.env.WODORE_APP_VERSION %>',
+        WODORE_ENV: '<%= process.env.WODORE_ENV %>',
+        WODORE_DOMAIN: '<%= process.env.WODORE_DOMAIN %>',
+        WODORE_URL: '<%= process.env.WODORE_URL %>',
+        WODORE_OFFICIAL_URL: '<%= process.env.WODORE_OFFICIAL_URL %>',
+        WODORE_API_HOST: '<%= process.env.WODORE_API_HOST %>',
+        WODORE_API_VERSION: '<%= process.env.WODORE_API_VERSION %>',
+        WODORE_TILE_SERVER_URL: '<%= process.env.WODORE_TILE_SERVER_URL %>',
+        WODORE_IMAGOR_KEY: '<%= process.env.WODORE_IMAGOR_KEY %>',
+        WODORE_IMAGOR_URL: '<%= process.env.WODORE_IMAGOR_URL %>',
+        WODORE_IMAGOR_REPLACE_API_HOST_MEDIA: '<%= process.env.WODORE_IMAGOR_REPLACE_API_HOST_MEDIA %>',
+        WODORE_CLOUDINARY_ENV: '<%= process.env.WODORE_CLOUDINARY_ENV %>',
+        WODORE_UMAMI_WEBSITE_ID: '<%= process.env.WODORE_UMAMI_WEBSITE_ID %>',
+        WODORE_UMAMI_WEBSITE_URL: '<%= process.env.WODORE_UMAMI_WEBSITE_URL %>',
+        WODORE_OICD_ISSUER_URL: '<%= process.env.WODORE_OICD_ISSUER_URL %>',
+        WODORE_OICD_CLIENT_ID: '<%= process.env.WODORE_OICD_CLIENT_ID %>',
+        WODORE_OICD_RESOURCE_ID: '<%= process.env.WODORE_OICD_RESOURCE_ID %>',
+        WODORE_MAPTILER_API_KEY: '<%= process.env.WODORE_MAPTILER_API_KEY %>',
+        WODORE_FRONTEND_GITHUB: '<%= process.env.WODORE_FRONTEND_GITHUB %>',
+        WODORE_BACKEND_GITHUB: '<%= process.env.WODORE_BACKEND_GITHUB %>'
+      };
     </script>
     <meta charset="utf-8" />
     <meta name="application-name" content="<%= productName %>" />

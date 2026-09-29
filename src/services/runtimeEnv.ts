@@ -2,16 +2,16 @@
  * Runtime environment accessor.
  *
  * Prefers values from `/env.json` (fetched synchronously in index.html
- * before any module executes), falling back to the build-time Vite-baked
+ * rewritten by replace_vars), falling back to the build-time Vite-baked
  * constants (offline first load, capacitor/static builds).
  *
  * Why this exists: `replace_vars` rewrites `@@VAR@@` placeholders inside
  * hashed JS chunks at container startup WITHOUT changing filenames — the
  * service worker's precache revisions (computed at build time) never
  * notice, so baked values go permanently stale for cached clients
- * (e.g. an exhausted MapTiler key). `env.json` is unhashed, served with
- * `Cache-Control: no-store`, and excluded from the SW precache, so
- * runtime env changes propagate on the very next visit.
+ * (e.g. an exhausted MapTiler key). `index.html` (where the env now lives inline) is unhashed, served with
+ * `Cache-Control: no-store`, excluded from the SW precache, and fetched
+ * on every visit (NetworkFirst), so runtime env changes propagate immediately.
  */
 
 type RuntimeEnv = Record<string, string | undefined>;
