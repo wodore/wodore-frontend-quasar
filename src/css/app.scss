@@ -381,12 +381,12 @@ body {
   height: 48px;
   // map chrome stays LIGHT in both themes (codified rule) - explicit
   // values, the dark-mode --wd-surface would turn the pill pine
-  background: #112119;
-  border: 1px solid #1c3629;
+  background: var(--wd-ctl-bg);
+  border: 1px solid var(--wd-ctl-border);
   border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(10, 20, 15, 0.35);
+  box-shadow: var(--wd-ctl-shadow);
   overflow: hidden;
-  color: #a9f0d2;
+  color: var(--wd-ctl-ink);
 }
 
 .wd-topbar__search {
@@ -506,13 +506,39 @@ body {
 
 // pill placeholders stay readable (they carry the affordance)
 .wd-topbar input::placeholder {
-  color: #a9f0d2;
+  color: var(--wd-ctl-ink);
   opacity: 0.55;
 }
 
 .wd-topbar .wd-search-field .q-field__native,
 .wd-topbar .wd-date-field .q-field__native {
-  color: #a9f0d2;
+  color: var(--wd-ctl-ink);
+}
+
+// ── Theme-aware map control tokens ════════════════════════════════
+:root,
+body.body--light {
+  --wd-ctl-bg: #fdfefd;
+  --wd-ctl-border: #dde7e0;
+  --wd-ctl-ink: #224e3b;
+  --wd-ctl-ink-soft: rgba(34, 78, 59, 0.55);
+  --wd-ctl-hover: #f6f9f7;
+  --wd-ctl-shadow: 0 1px 3px rgba(10, 20, 15, 0.2);
+  --wd-ctl-active-ring: #bfab25;
+  --wd-ctl-active-bg: rgba(191, 171, 37, 0.1);
+  --wd-ctl-date-bg: rgba(52, 103, 81, 0.08);
+}
+
+body.body--dark {
+  --wd-ctl-bg: #112119;
+  --wd-ctl-border: #1c3629;
+  --wd-ctl-ink: #a9f0d2;
+  --wd-ctl-ink-soft: rgba(169, 240, 210, 0.55);
+  --wd-ctl-hover: #1a2f24;
+  --wd-ctl-shadow: 0 2px 6px rgba(10, 20, 15, 0.35);
+  --wd-ctl-active-ring: #bfab25;
+  --wd-ctl-active-bg: rgba(191, 171, 37, 0.15);
+  --wd-ctl-date-bg: rgba(52, 103, 81, 0.25);
 }
 
 // ── Shared map control button (48px square chip) ───────────────────────
@@ -522,12 +548,20 @@ body {
   width: 48px;
   height: 48px;
   border-radius: 8px;
-  border: 1px solid #dde7e0;
-  background: #fdfefd;
-  color: #224e3b;
+  border: 1px solid var(--wd-ctl-border);
+  background: var(--wd-ctl-bg);
+  color: var(--wd-ctl-ink);
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2);
+  box-shadow: var(--wd-ctl-shadow);
   transition: background-color 0.15s ease;
+}
+
+.wd-ctl-btn:hover {
+  background: var(--wd-ctl-hover);
+}
+
+.wd-ctl-btn:active {
+  transform: scale(0.95);
 }
 
 .wd-ctl-btn:hover {
@@ -956,7 +990,7 @@ body.body--dark {
 .wd-search-field .q-icon,
 .wd-date-field .q-icon,
 .wd-input-button .q-icon {
-  color: #a9f0d2 !important;
+  color: var(--wd-ctl-ink) !important;
 }
 
 .wd-search-field input {
@@ -969,7 +1003,7 @@ body.body--dark {
 
 .wd-search-field .q-icon,
 .wd-search-field .q-field__append .q-icon {
-  color: #a9f0d2 !important;
+  color: var(--wd-ctl-ink) !important;
 }
 
 .wd-search-field input::placeholder {

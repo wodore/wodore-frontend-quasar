@@ -374,13 +374,13 @@ function overlayIcon(name: string) {
   gap: 4px;
 }
 
-// shared dark chip: pine panel + ice-mint icons (owner: "we can have dark buttons")
+// shared chip: theme-aware via CSS custom properties
 .wd-layerctl__main,
 .wd-layerctl__box {
-  background: #112119;
-  border: 1px solid #1c3629;
+  background: var(--wd-ctl-bg, #fdfefd);
+  border: 1px solid var(--wd-ctl-border, #dde7e0);
   border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(10, 20, 15, 0.35);
+  box-shadow: var(--wd-ctl-shadow, 0 1px 3px rgba(10, 20, 15, 0.2));
 }
 
 // main toggle: 48px square, original colored SVG icon
@@ -396,7 +396,7 @@ function overlayIcon(name: string) {
 }
 
 .wd-layerctl__main:hover {
-  background: #1a2f24;
+  background: var(--wd-ctl-hover, #f6f9f7);
 }
 
 .wd-layerctl__main-icon {
@@ -445,7 +445,7 @@ function overlayIcon(name: string) {
   border-radius: 4px;
   border: none;
   background: transparent;
-  color: #a9f0d2;
+  color: var(--wd-ctl-ink, #224e3b);
   display: grid;
   place-items: center;
   cursor: pointer;
@@ -459,7 +459,7 @@ function overlayIcon(name: string) {
 }
 
 .wd-layerctl__strip-btn:hover {
-  background: rgba(169, 240, 210, 0.1);
+  background: rgba(var(--wd-ctl-ink, 34) == 34 ? 52 : 169, 0.1);
   opacity: 1;
 }
 
@@ -469,8 +469,8 @@ function overlayIcon(name: string) {
 
 // active: gold ring (not fill - gold is a beam)
 .wd-layerctl__strip-btn--active {
-  box-shadow: inset 0 0 0 2px #bfab25;
-  background: rgba(191, 171, 37, 0.1);
+  box-shadow: inset 0 0 0 2px var(--wd-ctl-active-ring, #bfab25);
+  background: var(--wd-ctl-active-bg, rgba(191, 171, 37, 0.1));
   opacity: 1;
 }
 
@@ -495,9 +495,9 @@ function overlayIcon(name: string) {
   width: 44px;
   height: 24px;
   border-radius: 4px;
-  border: 1px solid #1c3629;
-  background: #0e1b14;
-  color: #a9f0d2;
+  border: 1px solid var(--wd-ctl-border, #dde7e0);
+  background: var(--wd-ctl-hover, #f6f9f7);
+  color: var(--wd-ctl-ink, #224e3b);
   cursor: pointer;
   transition: background-color 0.12s ease;
   flex: none;
@@ -515,10 +515,10 @@ function overlayIcon(name: string) {
   bottom: 0;
   width: 300px;
   max-height: 480px;
-  background: #112119;
-  border: 1px solid #1c3629;
+  background: var(--wd-ctl-bg, #fdfefd);
+  border: 1px solid var(--wd-ctl-border, #dde7e0);
   border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(10, 20, 15, 0.35);
+  box-shadow: var(--wd-ctl-shadow, 0 1px 3px rgba(10, 20, 15, 0.2));
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -528,7 +528,7 @@ function overlayIcon(name: string) {
   display: flex;
   align-items: center;
   padding: 6px 6px 6px 14px;
-  border-bottom: 1px solid #1c3629;
+  border-bottom: 1px solid var(--wd-ctl-border, #dde7e0);
   flex: none;
 }
 
@@ -538,11 +538,11 @@ function overlayIcon(name: string) {
   font: 500 14px/1.2 'Barlow Semi Condensed', 'Barlow', sans-serif;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #a9f0d2;
+  color: var(--wd-ctl-ink, #224e3b);
 }
 
 .wd-layerctl__expanded-close {
-  color: #a9f0d2 !important;
+  color: var(--wd-ctl-ink, #224e3b) !important;
 }
 
 .wd-layerctl__expanded-rows {
@@ -568,7 +568,7 @@ function overlayIcon(name: string) {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: #f2f7f4;
+  color: var(--wd-ctl-ink, #224e3b);
 }
 
 // dark overrides for WdOverlaySwitchItem inside the expanded panel
@@ -582,12 +582,12 @@ function overlayIcon(name: string) {
   }
 
   .q-icon {
-    color: #a9f0d2 !important;
+    color: var(--wd-ctl-ink, #224e3b) !important;
   }
 }
 
 .wd-layerctl__expanded .overlay-icon-btn {
-  color: #a9f0d2 !important;
+  color: var(--wd-ctl-ink, #224e3b) !important;
 
   &.active {
     color: #bfab25 !important;
@@ -595,7 +595,7 @@ function overlayIcon(name: string) {
 }
 
 .wd-layerctl__expanded .overlay-item-container:hover {
-  background: rgba(169, 240, 210, 0.06);
+  background: rgba(0, 0, 0, 0.04);
 }
 
 // filter badge
