@@ -968,6 +968,9 @@ function onLayerLeave(e: MapLayerEventType['mouseleave']) {
 }
 
 // ── Focus mode (mockup r6) ─────────────────────────────────────────────
+onMounted(() => {
+  mapDiv.value?.addEventListener('click', onMapContainerClick);
+});
 // Mobile: tapping empty map hides the floating chrome; tap again (or the
 // exit chip) restores. Desktop uses the fullscreen button (no map click).
 const mapFocus = ref(false);
@@ -977,11 +980,15 @@ function setMapFocus(on: boolean): void {
   document.body.classList.toggle('wd-map-focus', on);
 }
 
-function onMapClick(e: MapLayerEventType['click']): void {
+function onMapContainerClick(ev: MouseEvent): void {
   if (!isMobileView()) return;
+  // Taps on controls, popups or stickies inside the container are not
+  // "empty map" taps
+  if ((ev.target as HTMLElement).closest('.maplibregl-ctrl, .maplibregl-popup, .q-page-sticky')) return;
   // Skip when the tap hit an interactive feature (hut pins set the
   // grab cursor on hover - that cursor state marks feature clicks)
-  if (e.target.getCanvas().style.cursor === 'pointer') return;
+  const canvas = mapDiv.value?.querySelector('canvas');
+  if (canvas && canvas.style.cursor === 'pointer') return;
   setMapFocus(!mapFocus.value);
 }
 
@@ -1023,7 +1030,6 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
         @map:load="onMapLoad"
         @map:error="onMapError"
         @map:styledata="onMapStyledata"
-        @map:click="onMapClick"
         :hash="isHashMode ? false : 'p'"
         :map-style="initialMapStyle"
         :zoom="mapZoom"
