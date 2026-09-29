@@ -86,15 +86,16 @@
 // (ZONES: map-floating controls are solid; the map stays a light
 // basemap at night, so no dark inversion here either)
 .maplibregl-ctrl-group {
-  border-radius: $button-rounded-border-radius;
-  background: #fdfefd;
-  border: 1px solid #c9d4cd;
-  box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2);
+  border-radius: 8px !important;
+  background: var(--wd-ctl-bg, #fdfefd) !important;
+  border: 1px solid var(--wd-ctl-border, #dde7e0) !important;
+  box-shadow: var(--wd-ctl-shadow, 0 1px 3px rgba(10, 20, 15, 0.2)) !important;
   overflow: hidden;
 }
 
-.maplibregl-ctrl-group:not(:empty) {
-  box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2);
+body.body--dark .maplibregl-ctrl-group {
+  background: var(--wd-ctl-bg) !important;
+  border-color: var(--wd-ctl-border) !important;
 }
 //@media (-ms-high-contrast: active) {
 //  .maplibregl-ctrl-group:not(:empty) {
@@ -103,8 +104,8 @@
 //}
 
 .maplibregl-ctrl-group button {
-  height: 40px; // minus 3px from bottom border
-  width: 40px;
+  height: 44px;
+  width: 44px;
   display: block;
   padding: 0;
   outline: none;
@@ -115,7 +116,26 @@
 }
 
 .maplibregl-ctrl-group button + button {
-  border-top: 1px solid #dde7e0;
+  border-top: 1px solid rgba(128, 128, 128, 0.15);
+}
+
+@media (min-width: 900px) {
+  .maplibregl-ctrl-group button {
+    height: 48px;
+    width: 48px;
+  }
+}
+
+.maplibregl-ctrl-group button:hover {
+  background: var(--wd-ctl-hover, rgba(128, 128, 128, 0.08));
+}
+
+body.body--light .maplibregl-ctrl button .maplibregl-ctrl-icon {
+  filter: brightness(0.35);
+}
+
+body.body--dark .maplibregl-ctrl button .maplibregl-ctrl-icon {
+  filter: brightness(1.5) invert(0.85);
 }
 
 .maplibregl-ctrl button .maplibregl-ctrl-icon {
