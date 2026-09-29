@@ -103,14 +103,14 @@ jobs:
         if: steps.resolve.outputs.mode == 'cleanup'
         env:
           GH_TOKEN: ${{ github.token }}
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
-          BRANCH="${{ github.event.pull_request.head.ref }}"
-          echo "Deleting preview artifacts of branch $BRANCH"
+          echo "Deleting preview artifacts of branch $PR_BRANCH"
           gh api --paginate \
             "repos/${GITHUB_REPOSITORY}/actions/artifacts" \
             --jq ".artifacts[] | \
               select(.name | startswith(\"wodore-android-preview\")) | \
-              select(.workflow_run.head_branch == \"$BRANCH\") | .id" \
+              select(.workflow_run.head_branch == \"$PR_BRANCH\") | .id" \
             | while read -r id; do
                 [ -n "$id" ] && gh api --method DELETE \
                   "repos/${GITHUB_REPOSITORY}/actions/artifacts/$id" \
@@ -303,6 +303,8 @@ jobs:
           fi
           ls -la ${NAME}-*.${EXT}
           echo "APK_GLOB=${NAME}-*.${EXT}" >> "$GITHUB_ENV"
+          echo "ARTIFACT_NAME=wodore-android-$MODE-${GITHUB_RUN_NUMBER}" \
+            >> "$GITHUB_ENV"
           ACTUAL=$(ls ${NAME}-*.${EXT} 2>/dev/null | head -1)
           echo "APK_FILE=${ACTUAL:-${NAME}-unknown.${EXT}}" >> "$GITHUB_ENV"
 
@@ -312,8 +314,7 @@ jobs:
         with:
           # Unique name per run so each commit keeps its own artifact
           # (retained until the PR cleanup step deletes them or 30 days)
-          name:
-            wodore-android-${{ steps.resolve.outputs.mode }}-${{ github.run_number }}
+          name: ${{ env.ARTIFACT_NAME }}
           path: ${{ env.APK_GLOB }}
           retention-days: 30
           if-no-files-found: error

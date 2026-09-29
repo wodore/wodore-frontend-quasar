@@ -29,8 +29,8 @@ const $q = useQuasar();
 const switcherOpen = ref<boolean>(
   process.env.MODE === 'capacitor'
     ? false // native app: keep the FAB collapsed - the expanded list
-    :       // would run into the Android navigation bar zone
-    LocalStorage.hasItem('switcherOpen')
+    : // would run into the Android navigation bar zone
+      LocalStorage.hasItem('switcherOpen')
       ? (LocalStorage.getItem('switcherOpen') as boolean)
       : true
 );

@@ -1087,28 +1087,16 @@ body.capacitor .map-footer-shade {
   bottom: 0;
   z-index: 1;
   pointer-events: none;
-  height: calc(
-    var(--q-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 12px
-  );
+  height: calc(var(--q-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 12px);
   // Fallback: always show a dark gradient (works in both themes,
   // overridden by the media queries below when they match)
-  background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 0.6),
-    rgba(0, 0, 0, 0.2) 50%,
-    transparent
-  );
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.2) 50%, transparent);
 }
 
 // System dark: dark gradient
 @media (prefers-color-scheme: dark) {
   body.capacitor .map-footer-shade {
-    background: linear-gradient(
-      to top,
-      rgba(0, 0, 0, 0.7),
-      rgba(0, 0, 0, 0.3) 50%,
-      transparent
-    );
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.3) 50%, transparent);
   }
 }
 
