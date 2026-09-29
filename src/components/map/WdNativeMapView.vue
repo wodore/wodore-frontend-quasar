@@ -86,7 +86,60 @@ const listeners: PluginListenerHandle[] = [];
 const OPENFREEMAP_BRIGHT_URL = 'https://tiles.openfreemap.org/styles/bright';
 const remoteStyleCache = new Map<string, StyleSpecification>();
 
+// MapTiler reachability probe: inline raster styles (e.g.
+// swissTopoLbmRasterStyle on low-GPU tiers) carry api.maptiler.com TILE
+// urls — no style-URL fetch happens, so the URL fallback can't catch a
+// dead key. Probe one tile once per app run; 4xx/network failure means
+// every MapTiler tile will fail -> use the fallback chain.
+let maptilerProbe: Promise<boolean> | undefined;
+function probeMaptiler(): Promise<boolean> {
+  maptilerProbe ??= axios
+    .get('https://api.maptiler.com/maps/ch-swisstopo-lbm/1/1/0.png', {
+      timeout: 8000,
+      responseType: 'arraybuffer',
+      validateStatus: () => true,
+    })
+    .then(res => {
+      const ok = res.status < 400;
+      console.debug(
+        `[WdNativeMapView] MapTiler probe: ${res.status} -> ${ok ? 'usable' : 'dead key'}`
+      );
+      return ok;
+    })
+    .catch(e => {
+      console.debug('[WdNativeMapView] MapTiler probe: network failure', e?.message);
+      return false;
+    });
+  return maptilerProbe;
+}
+
 async function resolveBasemapStyle(): Promise<StyleSpecification> {
+  const resolved = await resolveBasemapStyleInner();
+  // Inline styles can still depend on MapTiler tiles — probe and fall
+  // back the same way as for MapTiler style URLs.
+  if (JSON.stringify(resolved).includes('api.maptiler.com')) {
+    if (!(await probeMaptiler())) {
+      console.warn(
+        '[WdNativeMapView] Basemap uses MapTiler tiles but the key is dead — falling back'
+      );
+      const ofm = basemapStore.basemaps.find(b => b.name === 'openfreemap-bright');
+      if (ofm) {
+        console.debug('[WdNativeMapView] resolve: fallback -> openfreemap-bright (bundled)');
+        basemapStore.setBasemap(ofm);
+        return JSON.parse(JSON.stringify(openfreemapBrightStyle));
+      }
+      const full = basemapStore.basemaps.find(b => b.name === 'ch-swisstopo-full');
+      if (full && typeof full.style !== 'string') {
+        console.debug('[WdNativeMapView] resolve: fallback -> ch-swisstopo-full');
+        basemapStore.setBasemap(full);
+        return JSON.parse(JSON.stringify(full.style));
+      }
+    }
+  }
+  return resolved;
+}
+
+async function resolveBasemapStyleInner(): Promise<StyleSpecification> {
   const basemap = basemapStore.getBasemap();
   const style = basemap?.style as StyleSpecification | string | undefined;
   if (typeof style !== 'string') {
