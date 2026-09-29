@@ -131,7 +131,7 @@ function attachContentScrollListener(sheet: BottomSheet): void {
   };
   sheet.toggleAttribute(
     'data-content-scrolled',
-    targets.some((t) => t.scrollTop > 10)
+    targets.some(t => t.scrollTop > 10)
   );
 }
 

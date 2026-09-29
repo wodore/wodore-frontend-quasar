@@ -129,18 +129,12 @@
 // Disabled / out-of-month days: faded but READABLE per theme (the old
 // paper-30% was near-invisible on the light card)
 .body--light .q-card.dialog-radius .q-date__calendar-item--out .q-btn,
-.body--light
-  .q-card.dialog-radius
-  .q-date__calendar-item[aria-disabled='true']
-  .q-btn {
+.body--light .q-card.dialog-radius .q-date__calendar-item[aria-disabled='true'] .q-btn {
   color: rgba(28, 28, 28, 0.38) !important;
 }
 
 .body--dark .q-card.dialog-radius .q-date__calendar-item--out .q-btn,
-.body--dark
-  .q-card.dialog-radius
-  .q-date__calendar-item[aria-disabled='true']
-  .q-btn {
+.body--dark .q-card.dialog-radius .q-date__calendar-item[aria-disabled='true'] .q-btn {
   color: rgba(242, 247, 244, 0.45) !important;
 }
 
@@ -1417,7 +1411,7 @@ button,
 .q-btn,
 nav,
 .wd-wordmark-wo,
-img:not([class*=content]):not([class*=gallery]):not([class*=media]) {
+img:not([class*='content']):not([class*='gallery']):not([class*='media']) {
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
@@ -1437,7 +1431,10 @@ body.capacitor {
   -webkit-touch-callout: none;
 
   // Re-enable selection where it makes sense
-  input, textarea, [contenteditable], .selectable-text {
+  input,
+  textarea,
+  [contenteditable],
+  .selectable-text {
     -webkit-user-select: auto;
     user-select: auto;
     -webkit-touch-callout: default;
@@ -1474,10 +1471,7 @@ body.capacitor {
   // navigation bar — no extra clearance, only the safe-area inset
   .maplibregl-ctrl-bottom-left .maplibregl-ctrl,
   .maplibregl-ctrl-bottom-right .maplibregl-ctrl {
-    margin-bottom: var(
-      --q-safe-area-inset-bottom,
-      env(safe-area-inset-bottom, 0px)
-    );
+    margin-bottom: var(--q-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
   }
 
   // Bottom-positioned map controls rendered as q-page-sticky elements
@@ -1485,12 +1479,7 @@ body.capacitor {
   // an inline transform — !important wins over it.
   .wd-map-bottom-ctrl {
     transform: translateY(
-      calc(
-        0px - var(
-          --q-safe-area-inset-bottom,
-          env(safe-area-inset-bottom, 0px)
-        )
-      )
+      calc(0px - var(--q-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)))
     ) !important;
   }
 }
@@ -1504,7 +1493,8 @@ body.capacitor {
 
 // The HTML/body must also be locked to prevent the browser-level
 // bounce that happens before the inner container takes over
-html, body {
+html,
+body {
   overscroll-behavior: none;
 }
 
@@ -1512,10 +1502,7 @@ html, body {
 // the card — pad them clear of the Android navigation bar in the
 // native app. Works WITH Quasar's safe-area design (not against it).
 body.capacitor .q-dialog__inner--maximized .q-card-actions {
-  padding-bottom: var(
-    --q-safe-area-inset-bottom,
-    env(safe-area-inset-bottom, 0px)
-  );
+  padding-bottom: var(--q-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
 }
 
 // Opaque dialog backdrop in the native app — fills the safe-area gaps

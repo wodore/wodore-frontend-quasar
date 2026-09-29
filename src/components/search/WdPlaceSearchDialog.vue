@@ -35,14 +35,7 @@ function onSearchClose() {
            clear of system bars (same approach as the header toolbar) -->
       <div class="search-dialog-root">
         <div class="search-dialog-close">
-          <q-btn
-            dense
-            round
-            flat
-            v-close-popup
-            icon="wd-close"
-            class="wd-close-chip"
-          >
+          <q-btn dense round flat v-close-popup icon="wd-close" class="wd-close-chip">
             <q-tooltip :delay="2000">{{ $t('close') }}</q-tooltip>
           </q-btn>
         </div>
@@ -73,9 +66,7 @@ function onSearchClose() {
   position: fixed;
   /* Align with the search input: the input container has q-pa-md
      (16px) padding; offset to center on the same visual line */
-  top: calc(
-    19px + var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px))
-  );
+  top: calc(19px + var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px)));
   right: 10px;
   z-index: 200;
 }
