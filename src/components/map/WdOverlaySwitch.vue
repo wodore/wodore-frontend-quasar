@@ -351,26 +351,110 @@ function overlayIcon(name: string) {
 </script>
 <style lang="scss">
 
-// ── custom layer control (replaces the q-fab, r6 design) ───────────────
+// ── custom layer control (mockup r6: mini strip + panel) ─────────────
 .wd-layerctl {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  gap: 6px;
 }
 
-.wd-layerctl__chip {
-  width: 52px;
-  height: 52px;
-  background: #fdfefd !important;
-  border: 1px solid #dde7e0 !important;
-  box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2) !important;
-  color: #1c1c1c !important;
+// mini strip: vertical column of layer icon buttons
+.wd-layerctl__strip {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  max-height: min(320px, 40vh);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+  padding: 3px;
+  position: relative;
+  /* scroll hint: fade at the bottom edge */
+  mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
 }
 
-.wd-layerctl__chip--open {
-  background: #f6f9f7 !important;
+.wd-layerctl__strip-btn {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  border: 1px solid #dde7e0;
+  background: #fdfefd;
+  color: #224e3b;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2);
+  transition:
+    box-shadow 0.15s ease,
+    background-color 0.15s ease,
+    opacity 0.15s ease;
+  flex: none;
 }
 
+.wd-layerctl__strip-btn:hover {
+  background: #f6f9f7;
+}
+
+.wd-layerctl__strip-btn:active {
+  transform: scale(0.95);
+}
+
+.wd-layerctl__strip-btn--active {
+  box-shadow:
+    inset 0 0 0 2px #bfab25,
+    0 1px 3px rgba(10, 20, 15, 0.2);
+  background: rgba(52, 103, 81, 0.1);
+  color: #224e3b;
+}
+
+.wd-layerctl__strip-btn--filtered .wd-layerctl__strip-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 15px;
+  height: 15px;
+  border-radius: 4px;
+  background: #29626b;
+  color: #fdfefd;
+  display: grid;
+  place-items: center;
+}
+
+// layers button: opens the full panel
+.wd-layerctl__open {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid #dde7e0;
+  background: #fdfefd;
+  color: #1c1c1c;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2);
+  font: 500 12px/1 'Barlow Semi Condensed', 'Barlow', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: background-color 0.15s ease;
+  flex: none;
+}
+
+.wd-layerctl__open:hover {
+  background: #f6f9f7;
+}
+
+.wd-layerctl__open-label {
+  white-space: nowrap;
+}
+
+// ── full panel ──
 .wd-layerctl__panel {
   background: #fdfefd;
   border: 1px solid #dde7e0;
@@ -529,66 +613,85 @@ function overlayIcon(name: string) {
 <template>
   <q-page-sticky :position="position" :offset="offset" style="z-index: 5">
     <div class="wd-layerctl">
-      <!-- Panel: sheet (mobile) / popover above the chip (desktop).
-           The sheet teleports to body: q-page-sticky positions via
-           transform, which would otherwise contain a position:fixed
-           child to the tiny sticky wrapper. -->
+      <!-- Full panel: sheet (mobile) / popover (desktop) -->
       <Teleport to="body" :disabled="panelMode !== 'sheet'">
         <Transition name="wd-layerctl-panel">
-        <div
-          v-if="switcherOpen"
-          class="wd-layerctl__panel"
-          :class="`wd-layerctl__panel--${panelMode}`"
-          role="dialog"
-          :aria-label="t('overlay_style')"
-        >
-          <div class="wd-layerctl__grab" @click="switcherOpen = false">
-            <span class="wd-layerctl__bar"></span>
-          </div>
-          <div class="wd-layerctl__head">
-            <h4>{{ t('overlay_style') }}</h4>
-            <q-btn flat round dense icon="wd-close" :aria-label="t('close')" @click="switcherOpen = false" />
-          </div>
-          <div class="wd-layerctl__rows overlay-scroll">
-            <div
-              v-for="(item, index) in overlayStore.overlays"
-              :key="item.name"
-              v-show="item.show"
-              class="overlay-item-container"
-            >
-              <WdOverlaySwitchItem
-                :tabindex="index"
-                @toggle-overlay="toggleOverlay(<OverlaySwitchItem>(item as unknown))"
-                @configure="openConfig(item.name, $event)"
-                :label="item.label"
-                :show-label="true"
-                :icon="overlayIcon(item.icon)"
-                :active="item.active"
-                :tooltip="$q.platform.is.desktop"
-                :overlay-name="item.name"
-                :show-badge="hasActiveFilters(item.name)"
-              />
+          <div
+            v-if="switcherOpen"
+            class="wd-layerctl__panel"
+            :class="`wd-layerctl__panel--${panelMode}`"
+            role="dialog"
+            :aria-label="t('overlay_style')"
+          >
+            <div class="wd-layerctl__grab" @click="switcherOpen = false">
+              <span class="wd-layerctl__bar"></span>
+            </div>
+            <div class="wd-layerctl__head">
+              <h4>{{ t('overlay_style') }}</h4>
+              <q-btn flat round dense icon="wd-close" :aria-label="t('close')" @click="switcherOpen = false" />
+            </div>
+            <div class="wd-layerctl__rows overlay-scroll">
+              <div
+                v-for="(item, index) in overlayStore.overlays"
+                :key="item.name"
+                v-show="item.show"
+                class="overlay-item-container"
+              >
+                <WdOverlaySwitchItem
+                  :tabindex="index"
+                  @toggle-overlay="toggleOverlay(<OverlaySwitchItem>(item as unknown))"
+                  @configure="openConfig(item.name, $event)"
+                  :label="item.label"
+                  :show-label="true"
+                  :icon="overlayIcon(item.icon)"
+                  :active="item.active"
+                  :tooltip="$q.platform.is.desktop"
+                  :overlay-name="item.name"
+                  :show-badge="hasActiveFilters(item.name)"
+                />
+              </div>
             </div>
           </div>
-        </div>
         </Transition>
       </Teleport>
 
-      <!-- Trigger chip -->
-      <q-btn
+      <!-- Mini strip: always-visible layer icon buttons (one-tap toggle) -->
+      <div class="wd-layerctl__strip" role="group" :aria-label="t('overlay_style')">
+        <div
+          v-for="item in overlayStore.overlays"
+          :key="item.name"
+          v-show="item.show"
+          class="wd-layerctl__strip-item"
+        >
+          <button
+            class="wd-layerctl__strip-btn"
+            :class="{ 'wd-layerctl__strip-btn--active': item.active, 'wd-layerctl__strip-btn--filtered': hasActiveFilters(item.name) }"
+            :aria-label="item.label"
+            :aria-pressed="item.active"
+            :title="item.label"
+            @click="toggleOverlay(<OverlaySwitchItem>(item as unknown))"
+          >
+            <q-icon :name="overlayIcon(item.icon)" size="22px" />
+            <span v-if="hasActiveFilters(item.name)" class="wd-layerctl__strip-badge">
+              <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z"/></svg>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Layers button: opens the full panel -->
+      <button
+        class="wd-layerctl__open"
         :aria-label="t('overlay_style')"
         :aria-expanded="switcherOpen"
-        round
-        unelevated
-        class="wd-layerctl__chip"
-        :class="{ 'wd-layerctl__chip--open': switcherOpen }"
         @click="switcherOpen = !switcherOpen"
       >
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-          <path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z" />
-          <path d="M9 4v14M15 6v14" />
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+          <path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/>
+          <path d="M9 4v14M15 6v14"/>
         </svg>
-      </q-btn>
+        <span class="wd-layerctl__open-label">{{ t('overlay_style') }}</span>
+      </button>
     </div>
   </q-page-sticky>
 
