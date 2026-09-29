@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wodore · Map Controls · Focus Mode (Mobile) &amp; Fullscreen (Desktop) · Day &amp; Night</title>
+<style>
+  /* ── The Alpine Instrument, Day & Night · DESIGN.md tokens ─────────────── */
+  /* NOTE: Barlow / Barlow Semi Condensed stand in via system sans in these mockups. */
+  .theme-day {
+    --page: #f6f9f7; --panel: #fdfefd; --panel-deep: #f6f9f7; --ridge: #dde7e0;
+    --ink: #1c1c1c; --info: #29626b; --info-bright: #153037;
+    --gold: #846a15; --gold-fill: #bfab25;
+    --green: #346751; --green-deep: #224e3b; --green-ice: #8fd6b7;
+    --wash: rgba(0,0,0,0.06);
+  }
+  .theme-night {
+    --page: #0a140f; --panel: #112119; --panel-deep: #0e1b14; --ridge: #1c3629;
+    --ink: #f2f7f4; --info: #9dd9d2; --info-bright: #a9f0d2;
+    --gold: #bfab25; --gold-fill: #bfab25;
+    --green: #346751; --green-deep: #224e3b; --green-ice: #8fd6b7;
+    --wash: rgba(255,255,255,0.10);
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { font: 400 15px/1.5 'Barlow', -apple-system, 'Helvetica Neue', sans-serif; background: #e8eee9; color: #1c1c1c; padding: 24px; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; }
+  .icon { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+  h1 { font: 300 2.125rem/1.2 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: -0.008em; }
+  h1 small { display: block; font: 500 .75rem/1.6 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .16667em; text-transform: uppercase; color: #846a15; }
+  .intro { max-width: 1100px; color: #29626b; margin: 8px 0 24px; }
+
+  .variants { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 1400px; }
+  .row2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; max-width: 1000px; margin-top: 32px; }
+  @media (max-width: 1100px) { .variants, .row2 { grid-template-columns: 1fr; } }
+  .variant > h2 { font: 500 .8rem/1.3 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: #153037; margin-bottom: 10px; }
+  .variant > h2 em { font-style: normal; color: #29626b; }
+  .phones { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 700px; }
+  .theme-tag { font: 500 .62rem/1 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .16667em; text-transform: uppercase; color: #29626b; margin-bottom: 6px; }
+  .phone { position: relative; width: 300px; max-width: 100%; height: 560px; border-radius: 16px; overflow: hidden; border: 1px solid #dde7e0; }
+  .desktop { position: relative; width: 100%; max-width: 660px; height: 420px; border-radius: 12px; overflow: hidden; border: 1px solid #dde7e0; }
+  /* Map placeholder: LIGHT in both themes (Two-Lights Rule exception). */
+  .mapbg { position: absolute; inset: 0; background:
+    radial-gradient(circle at 70% 30%, rgba(41,98,107,.10), transparent 40%),
+    linear-gradient(160deg, #dfe9e2 0%, #cfdccf 45%, #c2d2c4 100%); }
+  .mapbg::before { content: ''; position: absolute; inset: 0; background:
+    repeating-radial-gradient(circle at 30% 60%, transparent 0 26px, rgba(41,98,107,.08) 26px 27px),
+    repeating-radial-gradient(circle at 80% 85%, transparent 0 34px, rgba(52,103,81,.08) 34px 35px); }
+  .mapbg::after { content: 'LIGHT BASEMAP (BOTH THEMES)'; position: absolute; left: 50%; top: 28%; transform: translate(-50%,-50%); font: 500 .58rem/1 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .16667em; color: #29626b; text-shadow: 0 0 4px rgba(242,247,244,.8); white-space: nowrap; }
+  .pin-demo { position: absolute; display: flex; align-items: center; gap: 6px; padding: 5px 8px; background: var(--panel); border: 1px solid var(--ridge); border-radius: 4px; font: 500 .66rem/1 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .04em; color: var(--ink); }
+  .pin-demo .dot { width: 9px; height: 9px; border-radius: 50%; }
+
+  .note { margin-top: 12px; background: #fdfefd; border: 1px solid #dde7e0; border-radius: 8px; padding: 10px 12px; font-size: .82rem; color: #1c1c1c; max-width: 700px; }
+  .note b { font: 500 .66rem/2 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: #29626b; display: block; }
+  .note ul { margin: 4px 0 0 16px; padding: 0; }
+  .note li { margin: 2px 0; }
+  .note .pro { color: #198053; } .note .con { color: #8a4b1b; }
+
+  /* ── mobile chrome (BEFORE state) ─────────────────────────────────────── */
+  .searchbar { position: absolute; left: 12px; right: 76px; top: 12px; display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 0 14px; background: var(--panel); border: 1px solid var(--ridge); border-radius: 999px; box-shadow: 0 1px 3px rgba(10,20,15,.2); color: var(--info); font: 500 .72rem/1 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .1em; text-transform: uppercase; }
+  .stack { position: absolute; right: 12px; bottom: 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .fab { width: 52px; height: 52px; display: grid; place-items: center; background: var(--panel); border: 1px solid var(--ridge); border-radius: 999px; color: var(--info-bright); box-shadow: 0 1px 3px rgba(10,20,15,.2); }
+  .zoom { position: absolute; right: 12px; bottom: 148px; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--ridge); border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(10,20,15,.2); }
+  .zoom button { width: 44px; height: 44px; display: grid; place-items: center; color: var(--info-bright); }
+  .zoom button + button { border-top: 1px solid var(--ridge); }
+  .zoom .icon { width: 18px; height: 18px; }
+
+  /* ── focus mode (AFTER): chrome hidden, one exit button ────────────────── */
+  .focus-exit { position: absolute; right: 12px; bottom: 12px; display: inline-flex; align-items: center; gap: 8px; min-height: 52px; padding: 0 16px; background: var(--green); border: 1px solid var(--green-deep); border-radius: 999px; color: #f2f7f4; box-shadow: 0 1px 3px rgba(10,20,15,.2); font: 500 .72rem/1 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .14em; text-transform: uppercase; }
+  .focus-exit .icon { color: var(--green-ice); }
+  .focus-hint { position: absolute; left: 12px; bottom: 12px; padding: 8px 12px; border-radius: 999px; background: var(--panel); border: 1px solid var(--ridge); box-shadow: 0 1px 3px rgba(10,20,15,.2); font: 500 .62rem/1.3 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .1em; text-transform: uppercase; color: var(--info); max-width: 190px; }
+  .arrow { position: absolute; font: 500 1.4rem/1 sans-serif; color: #846a15; }
+
+  /* ── desktop toolbar ─────────────────────────────────────────────────── */
+  .toolbar { position: absolute; right: 12px; top: 12px; display: flex; flex-direction: column; gap: 6px; background: var(--panel); border: 1px solid var(--ridge); border-radius: 8px; padding: 6px; box-shadow: 0 1px 3px rgba(10,20,15,.2); }
+  .toolbar button { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 4px; color: var(--info-bright); }
+  .toolbar button:hover { background: var(--wash); }
+  .toolbar button.active { background: var(--green); color: var(--green-ice); box-shadow: inset 0 0 0 2px var(--gold-fill); }
+  .toolbar .icon { width: 19px; height: 19px; }
+  .toolbar .sep { height: 1px; margin: 2px 4px; background: var(--ridge); }
+  .dsearch { position: absolute; left: 12px; top: 12px; width: 300px; display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 14px; background: var(--panel); border: 1px solid var(--ridge); border-radius: 8px; box-shadow: 0 1px 3px rgba(10,20,15,.2); color: var(--info); font: 500 .72rem/1 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .1em; text-transform: uppercase; }
+  .fs-btn { position: absolute; right: 12px; bottom: 12px; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; background: var(--panel); border: 1px solid var(--ridge); border-radius: 8px; color: var(--info-bright); box-shadow: 0 1px 3px rgba(10,20,15,.2); font: 500 .7rem/1 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .12em; text-transform: uppercase; }
+  .fs-btn .icon { width: 17px; height: 17px; }
+</style>
+</head>
+<body>
+<h1><small>Map Controls Proposal · 2026-10</small>Focus Mode (mobile) &amp; Fullscreen Button (desktop) — Day &amp; Night</h1>
+<p class="intro">Mobile: tapping empty map hides <b>all</b> floating chrome (search bar, group fab, basemap fab, zoom); only a small exit-focus button stays bottom-right. Tap map or button to restore. Desktop keeps its toolbar and gets a classic <b>fullscreen button</b> instead. Every state shown in Day and Night.</p>
+
+<div class="variants">
+
+  <!-- ═══ MOBILE BEFORE ═══ -->
+  <section class="variant">
+    <h2>MOBILE · <em>BEFORE</em> — full chrome, tap empty map to focus</h2>
+    <div class="phones">
+      <div>
+        <p class="theme-tag">Day</p>
+        <div class="phone theme-day">
+          <div class="mapbg"></div>
+          <span class="pin-demo" style="left:28%;top:56%"><span class="dot" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+          <div class="searchbar"><svg class="icon" style="width:18px;height:18px" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>SEARCH · HUTS, PEAKS…</div>
+          <div class="zoom">
+            <button aria-label="Zoom in"><svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+            <button aria-label="Zoom out"><svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+          </div>
+          <div class="stack">
+            <button class="fab" aria-label="Layer group: Winter"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg></button>
+            <button class="fab" aria-label="Basemap"><svg class="icon" viewBox="0 0 24 24"><path d="m9 20-5.4-2.7c-.4-.2-.6-.5-.6-.9V5.6c0-.7.7-1.2 1.4-.9L9 6.7l6-2.7 5.4 2.7c.4.2.6.5.6.9v10.8c0 .7-.7 1.2-1.4.9L15 17.3l-6 2.7Z"/><path d="M9 6.7v13.6M15 4v13.6"/></svg></button>
+          </div>
+          <span class="arrow" style="right:16px;top:47%">← tap empty map</span>
+        </div>
+      </div>
+      <div>
+        <p class="theme-tag">Night</p>
+        <div class="phone theme-night">
+          <div class="mapbg"></div>
+          <span class="pin-demo" style="left:28%;top:56%"><span class="dot" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+          <div class="searchbar"><svg class="icon" style="width:18px;height:18px" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>SEARCH · HUTS, PEAKS…</div>
+          <div class="zoom">
+            <button aria-label="Zoom in"><svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+            <button aria-label="Zoom out"><svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+          </div>
+          <div class="stack">
+            <button class="fab" aria-label="Layer group: Winter"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg></button>
+            <button class="fab" aria-label="Basemap"><svg class="icon" viewBox="0 0 24 24"><path d="m9 20-5.4-2.7c-.4-.2-.6-.5-.6-.9V5.6c0-.7.7-1.2 1.4-.9L9 6.7l6-2.7 5.4 2.7c.4.2.6.5.6.9v10.8c0 .7-.7 1.2-1.4.9L15 17.3l-6 2.7Z"/><path d="M9 6.7v13.6M15 4v13.6"/></svg></button>
+          </div>
+          <span class="arrow" style="right:16px;top:47%">← tap empty map</span>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <b>Before · Notes</b>
+      <ul>
+        <li class="pro">+ Full instrument: search, layers, basemap, zoom all reachable.</li>
+        <li class="con">− On a 6" screen chrome covers ~25% of the map; photo-taking of the terrain is impossible.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ═══ MOBILE AFTER (FOCUS MODE) ═══ -->
+  <section class="variant">
+    <h2>MOBILE · <em>AFTER — FOCUS MODE</em> — all chrome hidden, exit button bottom-right</h2>
+    <div class="phones">
+      <div>
+        <p class="theme-tag">Day · focus mode (map tap)</p>
+        <div class="phone theme-day">
+          <div class="mapbg"></div>
+          <span class="pin-demo" style="left:28%;top:56%"><span class="dot" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+          <span class="pin-demo" style="left:48%;top:24%"><span class="dot" style="background:#f6ad4b"></span>Turtmannhütte · 6</span>
+          <div class="focus-hint">Focus mode · tap map or button to restore</div>
+          <button class="focus-exit" aria-label="Exit focus mode"><svg class="icon" style="width:18px;height:18px" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>SHOW CONTROLS</button>
+        </div>
+      </div>
+      <div>
+        <p class="theme-tag">Night · focus mode (map tap)</p>
+        <div class="phone theme-night">
+          <div class="mapbg"></div>
+          <span class="pin-demo" style="left:28%;top:56%"><span class="dot" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+          <span class="pin-demo" style="left:48%;top:24%"><span class="dot" style="background:#f6ad4b"></span>Turtmannhütte · 6</span>
+          <div class="focus-hint">Focus mode · tap map or button to restore</div>
+          <button class="focus-exit" aria-label="Exit focus mode"><svg class="icon" style="width:18px;height:18px" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>SHOW CONTROLS</button>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <b>Focus mode · Notes</b>
+      <ul>
+        <li class="pro">+ 100% map; perfect for reading terrain, screenshots, showing friends.</li>
+        <li class="pro">+ Single exit button (forest green, 52&nbsp;px) — unreachable-by-accident but easy to hit deliberately.</li>
+        <li class="con">− Hides pins' context briefly; first-time users may feel lost — the bottom-left hint pill fades after 3&nbsp;s.</li>
+        <li class="con">− Tapping a map PIN must NOT trigger focus mode — only empty map does.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ═══ DESKTOP FULLSCREEN ═══ -->
+  <section class="variant">
+    <h2>DESKTOP · <em>FULLSCREEN BUTTON</em> — toolbar stays; no focus mode on desktop</h2>
+    <div class="phones">
+      <div>
+        <p class="theme-tag">Day</p>
+        <div class="desktop theme-day">
+          <div class="mapbg"></div>
+          <span class="pin-demo" style="left:34%;top:56%"><span class="dot" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+          <div class="dsearch"><svg class="icon" style="width:18px;height:18px" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search huts, peaks, regions…</div>
+          <div class="toolbar">
+            <button aria-label="Search"><svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button>
+            <button class="active" aria-label="Layers: Winter group"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg></button>
+            <button aria-label="Basemap"><svg class="icon" viewBox="0 0 24 24"><path d="m9 20-5.4-2.7c-.4-.2-.6-.5-.6-.9V5.6c0-.7.7-1.2 1.4-.9L9 6.7l6-2.7 5.4 2.7c.4.2.6.5.6.9v10.8c0 .7-.7 1.2-1.4.9L15 17.3l-6 2.7Z"/><path d="M9 6.7v13.6M15 4v13.6"/></svg></button>
+            <div class="sep"></div>
+            <button aria-label="Fullscreen"><svg class="icon" viewBox="0 0 24 24"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg></button>
+          </div>
+          <button class="fs-btn" aria-label="Fullscreen map"><svg class="icon" viewBox="0 0 24 24"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>Fullscreen</button>
+        </div>
+      </div>
+      <div>
+        <p class="theme-tag">Night</p>
+        <div class="desktop theme-night">
+          <div class="mapbg"></div>
+          <span class="pin-demo" style="left:34%;top:56%"><span class="dot" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+          <div class="dsearch"><svg class="icon" style="width:18px;height:18px" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search huts, peaks, regions…</div>
+          <div class="toolbar">
+            <button aria-label="Search"><svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button>
+            <button class="active" aria-label="Layers: Winter group"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg></button>
+            <button aria-label="Basemap"><svg class="icon" viewBox="0 0 24 24"><path d="m9 20-5.4-2.7c-.4-.2-.6-.5-.6-.9V5.6c0-.7.7-1.2 1.4-.9L9 6.7l6-2.7 5.4 2.7c.4.2.6.5.6.9v10.8c0 .7-.7 1.2-1.4.9L15 17.3l-6 2.7Z"/><path d="M9 6.7v13.6M15 4v13.6"/></svg></button>
+            <div class="sep"></div>
+            <button aria-label="Fullscreen"><svg class="icon" viewBox="0 0 24 24"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg></button>
+          </div>
+          <button class="fs-btn" aria-label="Fullscreen map"><svg class="icon" viewBox="0 0 24 24"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>Fullscreen</button>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <b>Desktop · Notes</b>
+      <ul>
+        <li class="pro">+ Toolbar stays — desktop has room; hiding it (mobile pattern) would hurt workflow.</li>
+        <li class="pro">+ Fullscreen is a classic explicit action: toolbar button and/or labeled button bottom-right.</li>
+        <li class="con">− Active layers state shown on the toolbar layers button (gold beam ring + group icon).</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<!-- ═══ TRANSITION ═══ -->
+<div class="row2">
+  <section class="variant">
+    <h2>TRANSITION · <em>CHROME FADE</em> — 140&nbsp;ms ease-out, no layout jump</h2>
+    <div class="phones">
+      <div>
+        <p class="theme-tag">Day · mid-fade (chrome at 40% opacity, sliding out right)</p>
+        <div class="phone theme-day">
+          <div class="mapbg"></div>
+          <span class="pin-demo" style="left:28%;top:56%"><span class="dot" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+          <div class="searchbar" style="opacity:.4;transform:translateY(-8px)"><svg class="icon" style="width:18px;height:18px" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>SEARCH · HUTS, PEAKS…</div>
+          <div class="stack" style="opacity:.4;transform:translateX(20px)">
+            <button class="fab" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg></button>
+            <button class="fab" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="m9 20-5.4-2.7c-.4-.2-.6-.5-.6-.9V5.6c0-.7.7-1.2 1.4-.9L9 6.7l6-2.7 5.4 2.7c.4.2.6.5.6.9v10.8c0 .7-.7 1.2-1.4.9L15 17.3l-6 2.7Z"/></svg></button>
+          </div>
+          <div class="zoom" style="opacity:.4;transform:translateX(20px)">
+            <button aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+            <button aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+          </div>
+          <button class="focus-exit" style="opacity:.7">SHOW CONTROLS</button>
+        </div>
+      </div>
+      <div>
+        <p class="theme-tag">Night · mid-fade</p>
+        <div class="phone theme-night">
+          <div class="mapbg"></div>
+          <span class="pin-demo" style="left:28%;top:56%"><span class="dot" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+          <div class="searchbar" style="opacity:.4;transform:translateY(-8px)"><svg class="icon" style="width:18px;height:18px" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>SEARCH · HUTS, PEAKS…</div>
+          <div class="stack" style="opacity:.4;transform:translateX(20px)">
+            <button class="fab" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg></button>
+            <button class="fab" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="m9 20-5.4-2.7c-.4-.2-.6-.5-.6-.9V5.6c0-.7.7-1.2 1.4-.9L9 6.7l6-2.7 5.4 2.7c.4.2.6.5.6.9v10.8c0 .7-.7 1.2-1.4.9L15 17.3l-6 2.7Z"/></svg></button>
+          </div>
+          <div class="zoom" style="opacity:.4;transform:translateX(20px)">
+            <button aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+            <button aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+          </div>
+          <button class="focus-exit" style="opacity:.7">SHOW CONTROLS</button>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <b>Transition · Notes</b>
+      <ul>
+        <li class="pro">+ 140&nbsp;ms ease-out matches the drawer timing in DESIGN.md; chrome fades AND slides toward its screen edge so the motion reads as "dismissed", not "broken".</li>
+        <li class="pro">+ Exit button fades in last so the eye settles on the map first.</li>
+        <li class="con">− Guard: ignore map taps that land on a pin or start a pan gesture.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="variant">
+    <h2>DESKTOP EDGE CASE · <em>FULLSCREEN EXIT</em> — Esc key + button in fullscreen state</h2>
+    <div class="phones">
+      <div>
+        <p class="theme-tag">Day · fullscreen active (toolbar collapsed to a slim exit strip)</p>
+        <div class="desktop theme-day">
+          <div class="mapbg"></div>
+          <span class="pin-demo" style="left:36%;top:52%"><span class="dot" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+          <span class="pin-demo" style="left:56%;top:26%"><span class="dot" style="background:#c3731f"></span>Topalihütte · 0</span>
+          <div class="focus-exit" style="position:absolute;right:12px;bottom:12px"><svg class="icon" style="width:18px;height:18px" viewBox="0 0 24 24"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>EXIT FULLSCREEN · ESC</div>
+        </div>
+      </div>
+      <div>
+        <p class="theme-tag">Night · fullscreen active</p>
+        <div class="desktop theme-night">
+          <div class="mapbg"></div>
+          <span class="pin-demo" style="left:36%;top:52%"><span class="dot" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+          <span class="pin-demo" style="left:56%;top:26%"><span class="dot" style="background:#c3731f"></span>Topalihütte · 0</span>
+          <div class="focus-exit" style="position:absolute;right:12px;bottom:12px"><svg class="icon" style="width:18px;height:18px" viewBox="0 0 24 24"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>EXIT FULLSCREEN · ESC</div>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <b>Fullscreen exit · Notes</b>
+      <ul>
+        <li class="pro">+ Desktop fullscreen mirrors the mobile focus affordance (single green exit pill) so the two platforms rhyme.</li>
+        <li class="pro">+ Esc key + pill both exit; pill is the discoverable path.</li>
+        <li class="con">− In fullscreen the basemap/light-chrome exception still applies: map stays light in Night.</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+</body>
+</html>

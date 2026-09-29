@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wodore · Morph column v2 — interactive</title>
+<style>
+  :root{
+    --paper:#f6f9f7; --panel:#fdfefd; --ridge:#dde7e0; --ink:#1c1c1c; --soft:rgba(28,28,28,.55);
+    --npage:#0a140f; --npanel:#112119; --nridge:#1c3629;
+    --green:#346751; --green-deep:#224e3b; --gold:#bfab25; --gold-deep:#846a15;
+    --info:#29626b; --ease:cubic-bezier(.2,0,0,1);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font:14px/1.45 "Barlow Semi Condensed","Segoe UI",system-ui,sans-serif;background:var(--paper);color:var(--ink)}
+  body.night{background:var(--npage);color:#f2f7f4}
+  h1{font-size:20px;letter-spacing:.04em;text-transform:uppercase;font-weight:600;margin:20px 24px 4px}
+  .sub{margin:0 24px 16px;color:var(--soft)} body.night .sub{color:rgba(242,247,244,.6)}
+  .bar{position:sticky;top:0;z-index:50;display:flex;gap:8px;padding:10px 24px;background:inherit;border-bottom:1px solid var(--ridge)}
+  body.night .bar{border-color:var(--nridge)}
+  .bar button{font:600 13px/1 "Barlow Semi Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase;padding:9px 14px;border-radius:4px;border:1px solid var(--ridge);background:var(--panel);color:var(--ink);cursor:pointer}
+  body.night .bar button{background:var(--npanel);border-color:var(--nridge);color:#f2f7f4}
+  .bar button[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--gold);border-color:transparent}
+  .stage{display:flex;gap:34px;padding:24px;flex-wrap:wrap;align-items:flex-start}
+
+  .phone{position:relative;width:390px;height:780px;border-radius:24px;overflow:hidden;border:10px solid #1c1c1c;
+    background:radial-gradient(120% 90% at 20% 10%,#eef4ef 0%,#e6efe9 45%,#dce9e0 100%)}
+  .contour{position:absolute;inset:0;opacity:.5;background:
+    repeating-linear-gradient(115deg,transparent 0 90px,rgba(52,103,81,.05) 90px 92px),
+    repeating-linear-gradient(-18deg,transparent 0 130px,rgba(41,98,107,.05) 130px 133px)}
+  .watermark{position:absolute;left:10px;bottom:34px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(28,28,28,.34)}
+  .attr{position:absolute;right:12px;bottom:10px;font-size:9px;color:#29626b;background:rgba(253,254,253,.92);border-radius:4px;padding:1px 7px;z-index:1}
+  .pin{position:absolute;transform:translate(-50%,-100%);display:flex;gap:6px;align-items:center;background:rgba(253,254,253,.94);border-radius:999px;padding:3px 10px 3px 6px;font-size:12px;font-weight:600;color:#1c1c1c;box-shadow:0 1px 3px rgba(10,20,15,.2)}
+
+  /* every map control shares one style/size */
+  .ctl{width:52px;height:52px;border-radius:8px;background:#fdfefd;border:1px solid var(--ridge);
+    box-shadow:0 1px 3px rgba(10,20,15,.2);display:grid;place-items:center;color:#1c1c1c;cursor:pointer;flex:none}
+  .col-top{position:absolute;right:12px;top:64px;display:flex;flex-direction:column;gap:8px}
+  .col-bottom{position:absolute;right:12px;bottom:26px;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+
+  /* focus mode */
+  .phone .ctrlzone{transition:opacity .18s var(--ease)}
+  .phone.focus .ctrlzone{opacity:0;pointer-events:none}
+  .exitfocus{position:absolute;right:12px;bottom:26px;width:52px;height:52px;border-radius:8px;background:#fdfefd;border:1px solid var(--ridge);box-shadow:0 1px 3px rgba(10,20,15,.2);display:grid;place-items:center;color:#1c1c1c;opacity:0;pointer-events:none;transition:opacity .18s var(--ease) .12s;z-index:15}
+  .phone.focus .exitfocus{opacity:1;pointer-events:auto}
+  .focushint{position:absolute;left:50%;top:16px;transform:translateX(-50%);background:rgba(28,28,28,.85);color:#fdfefd;font-size:11.5px;padding:6px 12px;border-radius:8px;opacity:0;transition:.2s;pointer-events:none}
+  .phone.focus .focushint{opacity:1}
+
+  /* ── morph box ── */
+  .mbox{width:56px;background:#fdfefd;border:1px solid var(--ridge);border-radius:8px;box-shadow:0 1px 3px rgba(10,20,15,.2);overflow:hidden;transition:width .26s var(--ease);touch-action:none;user-select:none}
+  .grab{height:22px;display:flex;align-items:center;justify-content:center;color:rgba(28,28,28,.4);cursor:grab;position:relative}
+  .grab .gbar{width:34px;height:4px;border-radius:999px;background:var(--ridge)}
+  .grab .x{position:absolute;right:5px;top:2px;width:20px;height:20px;border:none;background:transparent;border-radius:4px;display:grid;place-items:center;color:rgba(28,28,28,.55);font-size:12px;opacity:0;pointer-events:none;transition:opacity .15s}
+  .head{display:flex;align-items:center;gap:8px;padding:0 6px 6px 10px;opacity:0;height:0;overflow:hidden;transition:opacity .2s .06s}
+  .head h4{margin:0;font:600 13px/1.1 "Barlow Semi Condensed",sans-serif;text-transform:uppercase;letter-spacing:.08em;color:#1c1c1c;flex:1;white-space:nowrap}
+  .iconbtn{width:32px;height:32px;border:none;border-radius:4px;background:transparent;color:var(--info);display:grid;place-items:center;cursor:pointer}
+  .iconbtn:active{background:rgba(28,28,28,.07)}
+  .scroller{overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;scrollbar-width:thin}
+  .mbox.mini .scroller{max-height:264px} /* 5 icons then scroll */
+  .mbox.full .scroller{max-height:400px}
+  .fade-b{position:absolute;left:0;right:0;bottom:34px;height:16px;background:linear-gradient(180deg,transparent,rgba(253,254,253,.96));pointer-events:none;opacity:0}
+  .mbox.mini .fade-b{opacity:1}
+
+  .sect{font:600 10.5px/1 "Barlow Semi Condensed",sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--soft);padding:8px 10px 4px;display:none}
+  .sect button{border:none;background:none;color:var(--info);font:inherit;cursor:pointer;padding:0}
+  .lay{position:relative;display:flex;align-items:center;padding:2px 6px 2px 7px;border-radius:6px;cursor:pointer}
+  .lay + .lay{margin-top:2px}
+  .lay .ic{width:48px;height:48px;flex:none;border-radius:6px;display:grid;place-items:center;color:#224e3b;background:rgba(52,103,81,.08);position:relative}
+  .lay[aria-pressed="true"] .ic{box-shadow:inset 0 0 0 2px var(--gold);background:rgba(52,103,81,.14)}
+  .lay .fbadge{position:absolute;top:2px;right:2px;width:15px;height:15px;border-radius:4px;background:var(--info);color:#fdfefd;display:none;place-items:center}
+  .lay[data-f="1"] .fbadge{display:grid}
+  .lay .nm{width:0;opacity:0;overflow:hidden;white-space:nowrap;transition:opacity .2s .05s,padding .2s .05s}
+  .lay .nm b{display:block;font-size:14px;color:#1c1c1c}
+  .lay .nm span{display:block;font-size:11px;color:var(--soft)}
+  .lay .acts{margin-left:auto;display:flex;gap:0;opacity:0;pointer-events:none;align-items:center}
+  .lay .acts .iconbtn{width:34px;height:34px}
+  .lay.dim{opacity:.62}
+  .lay.dim:hover{opacity:1}
+
+  /* inline expansion (info + filter + settings) */
+  .det{max-height:0;overflow:hidden;transition:max-height .26s var(--ease);grid-column:1/-1;width:100%}
+  .lay.open .det{max-height:190px}
+  .det .inner{border-top:1px dashed var(--ridge);margin:4px 8px 8px 58px;padding-top:8px}
+  .det .meta{font-size:12px;color:var(--soft);margin:0 0 8px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .fchip{font:600 11px/1 "Barlow Semi Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:7px 10px;border-radius:4px;border:1px solid var(--ridge);background:transparent;color:#1c1c1c;cursor:pointer}
+  .fchip[aria-pressed="true"]{background:rgba(41,98,107,.12);border-color:var(--info);color:var(--info)}
+  .setrow{display:flex;align-items:center;gap:10px;margin:2px 0 8px}
+  .setrow label{font:600 10.5px/1 "Barlow Semi Condensed",sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--soft)}
+  input[type=range]{flex:1;accent-color:var(--green)}
+  .scope{display:flex;border:1px solid var(--ridge);border-radius:4px;overflow:hidden}
+  .scope button{border:none;background:transparent;font:600 10.5px/1 "Barlow Semi Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase;padding:6px 9px;color:var(--soft);cursor:pointer}
+  .scope button[aria-pressed="true"]{background:var(--green);color:#fdfefd}
+  .grpbtn{font:600 11px/1 "Barlow Semi Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:7px 10px;border-radius:4px;border:1px solid var(--ridge);background:transparent;color:var(--info);cursor:pointer}
+  .lay.ingroup .grpbtn.remove{color:#bf211e}
+
+  .grp{display:flex;align-items:center;gap:6px;padding:6px;border-top:1px solid var(--ridge);margin-top:2px;background:rgba(246,249,247,.6)}
+  .grp .cyc{width:30px;height:34px;border:none;background:transparent;color:var(--info);border-radius:4px;font-size:16px;cursor:pointer}
+  .grp .gname{flex:1;text-align:center;font:600 12px/1.1 "Barlow Semi Condensed",sans-serif;text-transform:uppercase;letter-spacing:.1em;color:#1c1c1c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .grp .star{color:var(--gold-deep)}
+
+  /* basemap rail (unchanged behavior, restyled to match) */
+  .bmrail{position:absolute;right:76px;bottom:26px;display:flex;gap:8px;opacity:0;pointer-events:none;transform:translateY(8px);transition:.22s var(--ease)}
+  .bmrail.open{opacity:1;pointer-events:auto;transform:none}
+  .bmitem{width:52px;height:52px;border-radius:8px;border:1px solid var(--ridge);background:#fdfefd;box-shadow:0 1px 3px rgba(10,20,15,.2);display:grid;place-items:center;font:600 8px/1.1 "Barlow Semi Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#1c1c1b;cursor:pointer;text-align:center}
+  .bmitem[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--gold)}
+  .bmitem i{display:block;font-size:15px;font-style:normal;margin-bottom:2px}
+
+  /* confirm dialog */
+  .dlgwrap{position:absolute;inset:0;display:grid;place-items:center;background:rgba(10,20,15,.35);opacity:0;pointer-events:none;transition:.2s;z-index:40}
+  .dlgwrap.open{opacity:1;pointer-events:auto}
+  .dlg{width:280px;background:#fdfefd;border-radius:16px;padding:18px;box-shadow:0 1px 3px rgba(10,20,15,.2)}
+  .dlg h5{margin:0 0 6px;font:600 15px/1.2 "Barlow Semi Condensed",sans-serif}
+  .dlg p{margin:0 0 14px;font-size:13px;color:var(--soft)}
+  .dlg .btns{display:flex;gap:8px;justify-content:flex-end}
+  .dlg button{font:600 12px/1 "Barlow Semi Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase;padding:10px 14px;border-radius:4px;cursor:pointer;border:1px solid var(--ridge);background:transparent;color:#1c1c1c}
+  .dlg button.danger{background:#bf211e;border-color:#bf211e;color:#fff}
+
+  .toast{position:absolute;left:50%;bottom:14px;transform:translate(-50%,8px);background:#1c1c1c;color:#fdfefd;padding:8px 14px;border-radius:8px;font-size:12.5px;opacity:0;transition:.25s;z-index:60;pointer-events:none;white-space:nowrap}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .hint{position:absolute;right:72px;bottom:150px;background:#1c1c1c;color:#fdfefd;font-size:12px;padding:8px 12px;border-radius:8px;opacity:0;transform:translateY(4px);transition:.25s;pointer-events:none;max-width:220px;z-index:40}
+  .hint.show{opacity:1;transform:none}
+  .hint b{color:#e8c563}
+
+  /* state rules */
+  .mbox.mini .lay .nm,.mbox.mini .lay .acts,.mbox.mini .sect,.mbox.mini .det{display:none}
+  .mbox.full{width:320px}
+  /* owner: filter/detail needs more room than the menu itself */
+  .mbox.full.detail-open{width:374px}
+  .mbox.full.detail-open .lay .nm{width:184px}
+  .mbox.full .grab .x{opacity:1;pointer-events:auto}
+  .mbox.full .head{opacity:1;height:auto}
+  .mbox.full .lay .nm{padding-left:10px;width:130px;opacity:1}
+  .mbox.full .lay .acts{opacity:1;pointer-events:auto}
+  .mbox.full .sect{display:block}
+  .mbox.full .fade-b{opacity:0}
+  .mbox.closed{height:52px}
+  .mbox.closed .grab{height:100%;cursor:pointer}
+  .mbox.closed .gbar{display:none}
+  .mbox.closed .layers,.mbox.closed .grp,.mbox.closed .head,.mbox.closed .scroller{display:none}
+  .mbox.closed .plus{opacity:1}
+  .grab .plus{opacity:0;transition:opacity .15s;font-size:20px;color:#224e3b;font-weight:700}
+  .lay{flex-wrap:wrap}
+
+  .notes{margin:8px 0 0;padding-left:18px;font-size:12.5px;color:var(--soft)}
+  body.night .notes{color:rgba(242,247,244,.6)}
+  .notes li{margin:3px 0}
+  .cap{font-size:12px;color:var(--soft);margin:2px 0 0} body.night .cap{color:rgba(242,247,244,.6)}
+  .col{display:flex;flex-direction:column;gap:10px;max-width:430px}
+  .vt{font-size:15px;font-weight:600;text-transform:uppercase;letter-spacing:.1em}
+  .vd{color:var(--soft);font-size:13px;margin:0} body.night .vd{color:rgba(242,247,244,.6)}
+</style>
+</head>
+<body>
+<h1>Morph column · v2</h1>
+<p class="sub">Everything from your improvement list: scrollable mini (5 icons max) + full, group layers → other active → rest, add/remove from group (with confirm), per-layer settings (opacity, global/per-group), filter-active badge instead of numbers, Layers button toggles the full menu, unified 52px control style (GPS/zoom included), tap-map focus mode, and info/filter shown <b>directly in the row</b> (recommended flow). Long-press a row still jumps straight into its expansion.</p>
+
+<div class="bar">
+  <button id="theme" aria-pressed="false">Night</button>
+</div>
+
+<div class="stage">
+  <div class="col">
+    <div class="vt">Interactive</div>
+    <p class="vd">Tap ＋ to open · grabber tap/drag to expand · tap a layer to toggle · tap ⌄ or long-press a row for its detail (info · filter · settings · group) · ‹ › cycles groups, long-press › for the picker · the Layers button below the box toggles the full menu · tap empty map for focus mode.</p>
+    <div class="phone" id="ph">
+      <div class="contour"></div>
+      <span class="watermark">swisstopo · light</span>
+      <span class="pin" style="left:30%;top:50%"><span style="width:9px;height:9px;border-radius:50%;background:#25bf5e"></span>Aarbiwak · 14</span>
+      <span class="pin" style="left:47%;top:24%"><span style="width:9px;height:9px;border-radius:50%;background:#f6ad4b"></span>Turtmannhütte · 6</span>
+      <span class="pin" style="left:60%;top:64%"><span style="width:9px;height:9px;border-radius:50%;background:#7fab88"></span>Capanna Cadlimo</span>
+      <div class="attr">© MapTiler · swisstopo</div>
+
+      <div class="col-top ctrlzone">
+        <div class="ctl" title="Zoom in">＋</div>
+        <div class="ctl" title="Zoom out">−</div>
+        <div class="ctl" title="Locate me">◎</div>
+      </div>
+
+      <div class="col-bottom ctrlzone">
+        <div class="mbox mini" id="box">
+          <div class="grab" id="grab"><span class="gbar"></span><span class="plus">＋</span><button class="x" id="close" aria-label="Close box">✕</button></div>
+          <div class="head"><h4 id="gtitle">Winter · Layers</h4>
+            <button class="iconbtn" id="more" aria-label="More and settings">⋮</button></div>
+          <div class="scroller"><div id="layers"></div></div>
+          <div class="fade-b"></div>
+          <div class="grp">
+            <button class="cyc" id="prev" aria-label="Previous group">‹</button>
+            <span class="gname"><span class="star">★</span> <span id="glabel">Winter</span></span>
+            <button class="cyc" id="next" aria-label="Next group — long-press for all">›</button>
+          </div>
+        </div>
+        <div class="ctl" id="layersbtn" title="Toggle full layer menu"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/></svg></div>
+        <div class="ctl" id="bmbtn" title="Basemap"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3l9 16H3L12 3Z"/><path d="M12 3v16"/></svg></div>
+      </div>
+
+      <div class="bmrail" id="bmrail">
+        <div class="bmitem" aria-pressed="true"><i>▦</i>Topo</div>
+        <div class="bmitem"><i>◔</i>Satellite</div>
+        <div class="bmitem"><i>△</i>Slope</div>
+      </div>
+
+      <div class="exitfocus" id="exitfocus" title="Exit focus">⤢</div>
+      <div class="focushint">Tap the map again to bring controls back</div>
+      <div class="hint" id="hint"><b>Swipe up</b> or tap the handle for the full menu · <b>long-press</b> a layer for its details</div>
+      <div class="toast" id="toast"></div>
+
+      <div class="dlgwrap" id="dlgwrap">
+        <div class="dlg">
+          <h5 id="dt">Remove from group?</h5>
+          <p id="dp">Remove “Ski slopes” from “Winter”? The layer stays available under Other layers.</p>
+          <div class="btns"><button id="dc">Cancel</button><button class="danger" id="dok">Remove</button></div>
+        </div>
+      </div>
+    </div>
+    <p class="cap">Right column, top→bottom: zoom · locate · box · Layers · basemap — one style, one size (52px).</p>
+    <ul class="notes">
+      <li><b>Order in full:</b> Winter group first, then other active layers, then the rest (dimmed, collapsible).</li>
+      <li><b>No counts</b> — a turquoise funnel badge marks layers with an active filter (see Huts).</li>
+      <li><b>Row detail</b> (tap ⌄ / long-press): info line, filter chips, opacity + global/per-group scope, add/remove from group.</li>
+      <li><b>Focus mode:</b> tap empty map → all chrome fades, exit chip stays.</li>
+    </ul>
+  </div>
+</div>
+
+<script type="module">
+const L = [
+  {id:'huts', n:'Huts', m:'SAC + bivouacs', on:true,  f:1, svg:'M4 14l5-9 3 5 2-2 6 6H4Z', meta:'All hut types with live availability. Source: SAC/CAS, refuges.info.'},
+  {id:'ski',  n:'Ski slopes', m:'Winter slopes', on:true, f:0, svg:'M3 19h18M6 19V9l3-4 3 4v10M14 19V7l3-2 3 2v12', meta:'Ski routes and slopes. Source: swisstopo.'},
+  {id:'shoe', n:'Snowshoe routes', m:'Winter', on:true, f:0, svg:'M8 3v4M16 3v4M5 7h14v6H5zM7 13v8M17 13v8', meta:'Marked snowshoe trails.'},
+  {id:'wtrail',n:'Winter trails', m:'Winter hiking', on:true, f:0, svg:'M12 3v18M3 9h18M6 21h12', meta:'Cleared winter walking paths.'},
+  {id:'webcam',n:'Webcams', m:'6 cameras', on:true, f:0, svg:'M3 8h13v8H3zM16 11l5-3v8l-5-3', meta:'Nearby webcams.'},
+  {id:'hazard',n:'Slope hazards', m:'Avalanche areas', on:false, f:0, svg:'M12 3l9 16H3L12 3Z', meta:'Hazard zones — always check the official bulletin.'},
+  {id:'transport',n:'Public transport',m:'Bus · cable cars', on:false, f:0, svg:'M5 18l3-6h4l2-4h5M4 21h16', meta:'Stops and lines.'},
+  {id:'protect',n:'Protected areas', m:'Wildlife zones', on:false, f:0, svg:'M12 3l8 4v5c0 5-4 8-8 9-4-1-8-4-8-9V7l8-4Z', meta:'Quiet zones — respect closures.'},
+];
+const G = [
+  {name:'Winter', ids:['huts','ski','shoe','wtrail']},
+  {name:'Summer', ids:['huts','wtrail','transport']},
+  {name:'All huts',ids:['huts']},
+];
+const $ = id => document.getElementById(id);
+const box=$('box'), layersEl=$('layers'), toast=$('toast'), hint=$('hint');
+let gi=0, taught=false, expanded=null;
+
+const say=t=>{toast.textContent=t;toast.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>toast.classList.remove('show'),1500)};
+
+function rowEl(l, ingroup, other){
+  const el=document.createElement('div');
+  el.className='lay'+(ingroup?' ingroup':'')+(other&&!l.on?' dim':'');
+  el.dataset.id=l.id; el.setAttribute('aria-pressed',l.on); el.dataset.f=l.f;
+  el.innerHTML=`
+    <span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="${l.svg}"/></svg><span class="fbadge" title="Filter active"><svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z"/></svg></span></span>
+    <span class="nm"><b>${l.n}</b><span>${l.m}</span></span>
+    <span class="acts">
+      <button class="grpbtn ${ingroup?'remove':''}" data-a="grp" title="${ingroup?'Remove from group':'Add to group'}">${ingroup?'− group':'＋ group'}</button>
+      <button class="iconbtn" data-a="det" aria-label="Details" title="Info · filter · settings">⌄</button>
+    </span>
+    <span class="det"><span class="inner">
+      <p class="meta">${l.meta}</p>
+      <div class="chips">
+        <button class="fchip" aria-pressed="${l.f===1}">All</button><button class="fchip">Open</button><button class="fchip">★ Favorites</button>
+      </div>
+      <div class="setrow"><label>Opacity</label><input type="range" min="20" max="100" value="${ingroup?90:70}"></div>
+      <div class="setrow"><label>Scope</label><span class="scope"><button aria-pressed="true">This group</button><button>Global</button></span></div>
+    </span></span>`;
+  return el;
+}
+
+function render(){
+  expanded=null; box.classList.remove('detail-open');
+  const g=G[gi];
+  $('glabel').textContent=g.name; $('gtitle').textContent=g.name+' · Layers';
+  layersEl.innerHTML='';
+  const s1=document.createElement('div');s1.className='sect';s1.textContent='In this group';layersEl.appendChild(s1);
+  g.ids.forEach(id=>layersEl.appendChild(rowEl(L.find(x=>x.id===id),true)));
+  const act=L.filter(x=>!g.ids.includes(x.id)&&x.on);
+  if(act.length){const s2=document.createElement('div');s2.className='sect';s2.textContent='Other active layers';layersEl.appendChild(s2);act.forEach(x=>layersEl.appendChild(rowEl(x,false)));}
+  const rest=L.filter(x=>!g.ids.includes(x.id)&&!x.on);
+  const s3=document.createElement('div');s3.className='sect';
+  s3.innerHTML='Other layers · '+rest.length+' <button data-a="showrest">show</button>';
+  layersEl.appendChild(s3);
+  const restWrap=document.createElement('div');restWrap.style.display='none';restWrap.id='rest';
+  rest.forEach(x=>{const r=rowEl(x,false);r.style.display='none';r.dataset.rest='1';layersEl.appendChild(r)});
+  s3.querySelector('[data-a="showrest"]').addEventListener('click',e=>{e.stopPropagation();
+    const open=restWrap.style.display!=='none';
+    layersEl.querySelectorAll('[data-rest]').forEach(r=>r.style.display=r.style.display==='none'?'flex':'none');
+    e.target.textContent=e.target.textContent==='show'?'hide':'show';});
+}
+render();
+
+const setState=s=>{box.classList.remove('closed','mini','full');if(s!=='full'){expanded=null;box.classList.remove('detail-open')}box.classList.add(s);
+  box.setAttribute('aria-expanded',s==='full');
+  if(s!=='closed'&&!hint._s){hint._s=1;setTimeout(()=>hint.classList.add('show'),400);setTimeout(()=>hint.classList.remove('show'),4200);}};
+
+/* grabber tap/drag */
+const grab=$('grab'); let drag=null;
+grab.addEventListener('pointerdown',e=>{if(box.classList.contains('closed'))return;drag={y0:e.clientY,t0:Date.now(),m:null};grab.setPointerCapture(e.pointerId)});
+grab.addEventListener('pointermove',e=>{if(!drag)return;const dy=drag.y0-e.clientY;if(Math.abs(dy)<6)return;drag.m='d';box.style.transition='none';box.style.transform=`translateY(${Math.max(-36,Math.min(36,-dy*.25))}px)`});
+const end=e=>{if(!drag)return;const dy=drag.y0-e.clientY,dt=Date.now()-drag.t0,v=dy/Math.max(dt,1);box.style.transition='';box.style.transform='';
+  if(drag.m==='d'){if(dy>40||v>.5)setState('full');else if(dy<-40||v<-.5)setState('mini');}
+  else{if(box.classList.contains('full'))setState('mini');else setState('full');}
+  drag=null};
+grab.addEventListener('pointerup',end);grab.addEventListener('pointercancel',()=>{drag=null;box.style.transition='';box.style.transform=''});
+grab.addEventListener('click',()=>{if(box.classList.contains('closed'))setState('mini')});
+$('close').addEventListener('click',e=>{e.stopPropagation();setState('closed');say('Box closed')});
+
+/* layers button = open/close the whole box (owner: closes it entirely) */
+$('layersbtn').addEventListener('click',()=>{setState(box.classList.contains('closed')?'full':'closed')});
+$('bmbtn').addEventListener('click',e=>{e.stopPropagation();$('bmrail').classList.toggle('open')});
+document.querySelectorAll('.bmitem').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.bmitem').forEach(x=>x.setAttribute('aria-pressed','false'));b.setAttribute('aria-pressed','true');say('Basemap: '+b.textContent.trim().slice(1))}));
+
+/* layers: toggle / detail / group buttons */
+layersEl.addEventListener('click',e=>{
+  const lay=e.target.closest('.lay');if(!lay)return;
+  const a=e.target.closest('[data-a]');
+  const l=L.find(x=>x.id===lay.dataset.id);
+  if(a){
+    if(a.dataset.a==='det'){toggleDet(lay);return}
+    if(a.dataset.a==='grp'){
+      const g=G[gi];
+      if(g.ids.includes(l.id)){$('dp').textContent=`Remove “${l.n}” from “${g.name}”? The layer stays available under Other layers.`;$('dt').textContent='Remove from group?';$('dlgwrap')._lay=lay;$('dlgwrap').classList.add('open');}
+      else{g.ids.push(l.id);render();say(l.n+' added to '+g.name)}
+      return;
+    }
+    return;
+  }
+  if(e.target.closest('.det')||e.target.closest('input')||e.target.closest('.fchip')||e.target.closest('.scope'))return;
+  if(!taught){taught=true;setState('full');return}
+  l.on=!l.on;lay.setAttribute('aria-pressed',l.on);say((l.on?'On: ':'Off: ')+l.n);
+  if(expanded&&!l.on&&box.classList.contains('full')&&!G[gi].ids.includes(l.id))render();
+});
+function toggleDet(lay){
+  if(expanded&&expanded!==lay){expanded.classList.remove('open')}
+  lay.classList.toggle('open');expanded=lay.classList.contains('open')?lay:null;
+  box.classList.toggle('detail-open',!!expanded);
+}
+layersEl.addEventListener('pointerdown',e=>{
+  const lay=e.target.closest('.lay');if(!lay||e.target.closest('.acts'))return;
+  let moved=false;const mv=()=>{moved=true};
+  window.addEventListener('pointermove',mv,{once:true});
+  clearTimeout(layersEl._lp);
+  layersEl._lp=setTimeout(()=>{window.removeEventListener('pointermove',mv);
+    if(moved)return;
+    if(!lay.classList.contains('open')&&box.classList.contains('mini'))setState('full');
+    toggleDet(lay); if(navigator.vibrate)navigator.vibrate(15);
+  },450);
+});
+
+/* confirm dialog */
+$('dc').addEventListener('click',()=>$('dlgwrap').classList.remove('open'));
+$('dok').addEventListener('click',()=>{
+  const lay=$('dlgwrap')._lay;const l=L.find(x=>x.id===lay.dataset.id);
+  G[gi].ids=G[gi].ids.filter(i=>i!==l.id);$('dlgwrap').classList.remove('open');render();
+  say(l.n+' removed from '+G[gi].name);
+});
+
+/* groups */
+const cycle=d=>{gi=(gi+d+G.length)%G.length;render();say('Group: '+G[gi].name)};
+$('prev').addEventListener('click',()=>cycle(-1));
+const nx=$('next');let nlp;
+nx.addEventListener('pointerdown',()=>{nlp=setTimeout(()=>{nx._f=1;say('Group picker sheet…')},450)});
+nx.addEventListener('pointerup',()=>clearTimeout(nlp));
+nx.addEventListener('click',()=>{if(nx._f){nx._f=0;return}cycle(1)});
+$('more').addEventListener('click',()=>say('More · settings sheet…'));
+
+/* focus mode: tap empty map */
+const ph=$('ph');
+ph.addEventListener('click',e=>{
+  if(e.target.closest('.mbox,.ctl,.bmrail,.exitfocus,.dlgwrap,.pin,.attr,.focushint,.toast,.hint'))return;
+  if($('bmrail').classList.contains('open')){$('bmrail').classList.remove('open');return}
+  ph.classList.toggle('focus');
+});
+$('exitfocus').addEventListener('click',e=>{e.stopPropagation();ph.classList.remove('focus')});
+
+/* theme */
+$('theme').addEventListener('click',e=>{document.body.classList.toggle('night');
+  e.currentTarget.setAttribute('aria-pressed',document.body.classList.contains('night'));
+  e.currentTarget.textContent=document.body.classList.contains('night')?'Day':'Night'});
+</script>
+</body>
+</html>

@@ -195,24 +195,22 @@ export default configure(ctx => {
             strictMessage: false,
           },
         ],
-        [
-          'vite-plugin-checker',
-          {
-            // vueTsc disabled in dev: the Pinia stores for overlays and
-            // basemaps carry deeply nested MapLibre style types that
-            // overflow TS inference, crashing the checker and blocking
-            // the dev server with an error overlay. CLI vue-tsc (CI gate)
-            // passes fine. Re-enable when the store types are simplified.
-            // vueTsc: {
-            //   tsconfigPath: 'tsconfig.vue-tsc.json',
-            // },
-            eslint: {
-              lintCommand: 'eslint "./**/*.{js,ts,mjs,cjs,vue}"',
-              useFlatConfig: true,
-            },
-          },
-          { server: false },
-        ],
+        // vite-plugin-checker disabled in dev: the deeply nested MapLibre
+        // style types in the Pinia stores overflow vue-tsc's inference
+        // (pre-existing), and the checker injects a blocking overlay even
+        // when empty. CI gates via CLI lint + vue-tsc instead.
+        // Re-enable when the store types are simplified.
+        // [
+        //   'vite-plugin-checker',
+        //   {
+        //     vueTsc: { tsconfigPath: 'tsconfig.vue-tsc.json' },
+        //     eslint: {
+        //       lintCommand: 'eslint "./**/*.{js,ts,mjs,cjs,vue}"',
+        //       useFlatConfig: true,
+        //     },
+        //   },
+        //   { server: false },
+        // ],
         ['unplugin-icons/vite', { compiler: 'vue3' }],
         [
           'unplugin-vue-components/vite',

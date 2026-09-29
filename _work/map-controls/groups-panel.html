@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wodore · Map Controls · Layer Groups &amp; Panel · Day &amp; Night</title>
+<style>
+  /* ── The Alpine Instrument, Day & Night · DESIGN.md tokens ─────────────── */
+  /* NOTE: Barlow / Barlow Semi Condensed stand in via system sans in these mockups. */
+  .theme-day {
+    --page: #f6f9f7; --panel: #fdfefd; --panel-deep: #f6f9f7; --ridge: #dde7e0;
+    --ink: #1c1c1c; --info: #29626b; --info-bright: #153037;
+    --gold: #846a15; --gold-fill: #bfab25;
+    --green: #346751; --green-deep: #224e3b; --green-ice: #8fd6b7;
+    --wash: rgba(0,0,0,0.06);
+    --halo: rgba(19,52,38,.7);
+  }
+  .theme-night {
+    --page: #0a140f; --panel: #112119; --panel-deep: #0e1b14; --ridge: #1c3629;
+    --ink: #f2f7f4; --info: #9dd9d2; --info-bright: #a9f0d2;
+    --gold: #bfab25; --gold-fill: #bfab25;
+    --green: #346751; --green-deep: #224e3b; --green-ice: #8fd6b7;
+    --wash: rgba(255,255,255,0.10);
+    --halo: rgba(242,247,244,.25);
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { font: 400 15px/1.5 'Barlow', -apple-system, 'Helvetica Neue', sans-serif; background: #e8eee9; color: #1c1c1c; padding: 24px; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; }
+  .icon { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+  h1 { font: 300 2.125rem/1.2 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: -0.008em; }
+  h1 small { display: block; font: 500 .75rem/1.6 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .16667em; text-transform: uppercase; color: #846a15; }
+  .intro { max-width: 1400px; color: #29626b; margin: 8px 0 24px; max-width: 1100px; }
+
+  .variants { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 1400px; }
+  .row2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; max-width: 940px; margin-top: 32px; }
+  @media (max-width: 1100px) { .variants, .row2 { grid-template-columns: 1fr; } }
+  .variant > h2 { font: 500 .8rem/1.3 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: #153037; margin-bottom: 10px; }
+  .variant > h2 em { font-style: normal; color: #29626b; }
+  .fav { display: inline-block; margin-left: 6px; padding: 2px 8px; border-radius: 999px; background: #bfab25; color: #1c1c1c; font: 500 .6rem/1.4 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .14em; }
+  .phones { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 700px; }
+  .theme-tag { font: 500 .62rem/1 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .16667em; text-transform: uppercase; color: #29626b; margin-bottom: 6px; }
+  .phone { position: relative; width: 300px; max-width: 100%; height: 560px; border-radius: 16px; overflow: hidden; border: 1px solid #dde7e0; }
+  /* Map placeholder: LIGHT in both themes (Two-Lights Rule exception — map is terrain). */
+  .mapbg { position: absolute; inset: 0; background:
+    radial-gradient(circle at 70% 30%, rgba(41,98,107,.10), transparent 40%),
+    linear-gradient(160deg, #dfe9e2 0%, #cfdccf 45%, #c2d2c4 100%); }
+  .mapbg::before { content: ''; position: absolute; inset: 0; background:
+    repeating-radial-gradient(circle at 30% 60%, transparent 0 26px, rgba(41,98,107,.08) 26px 27px),
+    repeating-radial-gradient(circle at 80% 85%, transparent 0 34px, rgba(52,103,81,.08) 34px 35px); }
+  .mapbg::after { content: 'LIGHT BASEMAP (BOTH THEMES)'; position: absolute; left: 50%; top: 30%; transform: translate(-50%,-50%); font: 500 .58rem/1 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .16667em; color: #29626b; text-shadow: 0 0 4px rgba(242,247,244,.8); white-space: nowrap; }
+  .pin-demo { position: absolute; display: flex; align-items: center; gap: 6px; padding: 5px 8px; background: var(--panel); border: 1px solid var(--ridge); border-radius: 4px; font: 500 .66rem/1 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .04em; color: var(--ink); }
+  .pin-demo .dot { width: 9px; height: 9px; border-radius: 50%; }
+
+  .note { margin-top: 12px; background: #fdfefd; border: 1px solid #dde7e0; border-radius: 8px; padding: 10px 12px; font-size: .82rem; color: #1c1c1c; max-width: 700px; }
+  .note b { font: 500 .66rem/2 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: #29626b; display: block; }
+  .note ul { margin: 4px 0 0 16px; padding: 0; }
+  .note li { margin: 2px 0; }
+  .note .pro { color: #198053; } .note .con { color: #8a4b1b; }
+
+  /* ── bottom-right control stack (mobile) ─────────────────────────────── */
+  .stack { position: absolute; right: 12px; bottom: 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .fab { width: 52px; height: 52px; display: grid; place-items: center; background: var(--panel); border: 1px solid var(--ridge); border-radius: 999px; color: var(--info-bright); box-shadow: 0 1px 3px rgba(10,20,15,.2); }
+  .fab.group { width: 56px; height: 56px; background: var(--green); border-color: var(--green-deep); color: #f2f7f4; position: relative; }
+  .fab.group .glab { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); font: 500 .52rem/1 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--green-ice); white-space: nowrap; }
+  .fab.group[aria-expanded="true"] { box-shadow: inset 0 0 0 2px var(--gold-fill); }
+
+  /* ── the group panel: opens bottom-to-top above the stack ─────────────── */
+  .gpanel { position: absolute; right: 12px; bottom: 132px; width: 264px; background: var(--panel); border: 1px solid var(--ridge); border-radius: 16px; padding: 12px; }
+  .gpanel .head { display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid var(--ridge); margin-bottom: 10px; }
+  .gpanel .head h3 { font: 500 .7rem/1 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--info); }
+  .gpanel .head h3::after { content: ''; display: block; width: 14px; height: 2px; background: var(--gold-fill); border-radius: 1px; margin-top: 4px; }
+  .gpanel .more { display: flex; align-items: center; gap: 8px; margin-top: 10px; min-height: 48px; padding: 0 12px; border-radius: 8px; background: var(--panel-deep); border: 1px solid var(--ridge); color: var(--info-bright); font: 500 .72rem/1 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .1em; text-transform: uppercase; }
+  .grip { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); width: 36px; height: 4px; border-radius: 999px; background: var(--ridge); }
+
+  /* Variant A — rows with inline info / filter buttons */
+  .lrow { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 4px 6px; border-radius: 8px; }
+  .lrow + .lrow { border-top: 1px solid var(--ridge); }
+  .lrow .sw { width: 40px; height: 26px; border-radius: 999px; border: 1px solid var(--ridge); background: var(--panel-deep); position: relative; flex: none; }
+  .lrow .sw::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: #575757; }
+  .lrow[aria-pressed="true"] .sw { background: var(--green); border-color: var(--green-deep); }
+  .lrow[aria-pressed="true"] .sw::after { left: auto; right: 2px; background: var(--green-ice); }
+  .lrow .t { flex: 1; min-width: 0; }
+  .lrow .t b { display: block; font: 500 .78rem/1.2 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--ink); }
+  .lrow .t span { font-size: .68rem; color: var(--info); }
+  .lrow .mini { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 8px; border: 1px solid var(--ridge); background: var(--panel-deep); color: var(--info-bright); }
+  .lrow .mini .icon { width: 18px; height: 18px; }
+
+  /* Variant B — layer chips + slide-out tray (owner favorite) */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { position: relative; display: inline-flex; align-items: center; gap: 6px; min-height: 48px; padding: 0 10px; border-radius: 999px; background: var(--panel-deep); border: 1px solid var(--ridge); color: var(--ink); font: 500 .7rem/1 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .1em; text-transform: uppercase; }
+  .chip .icon { width: 17px; height: 17px; color: var(--info-bright); }
+  .chip .n { font-variant-numeric: tabular-nums; color: var(--info); font-size: .64rem; }
+  .chip[aria-pressed="true"] { background: var(--green); border-color: var(--green-deep); color: #f2f7f4; box-shadow: inset 0 0 0 2px var(--gold-fill); }
+  .chip[aria-pressed="true"] .icon, .chip[aria-pressed="true"] .n { color: var(--green-ice); }
+  .chip .handle { display: grid; place-items: center; width: 26px; height: 26px; margin: 0 -4px 0 2px; border-radius: 999px; border: 1px solid var(--ridge); background: var(--panel); color: var(--info); }
+  .chip .handle .icon { width: 12px; height: 12px; }
+  /* tray slid out from a chip handle */
+  .tray { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: var(--panel-deep); border: 1px solid var(--ridge); }
+  .tray .who { flex: 1; min-width: 0; }
+  .tray .who b { display: block; font: 500 .72rem/1.2 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .1em; text-transform: uppercase; color: var(--ink); }
+  .tray .who span { font-size: .68rem; color: var(--info); }
+  .tray .mini { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 8px; border: 1px solid var(--ridge); background: var(--panel); color: var(--info-bright); }
+  .tray .mini .icon { width: 18px; height: 18px; }
+
+  /* Variant C — minimal chips, everything else via More */
+  .gpanel.c .chips .chip { min-height: 44px; }
+  .gpanel.c .chips .chip .n, .gpanel.c .chips .chip .handle { display: none; }
+
+  /* ── group cycling / picker / management sheets ──────────────────────── */
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--panel); border-top: 1px solid var(--ridge); border-radius: 16px 16px 0 0; padding: 14px 14px 18px; }
+  .sheet h3 { font: 500 .7rem/1 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--info); margin-bottom: 4px; }
+  .sheet h3::after { content: ''; display: block; width: 14px; height: 2px; background: var(--gold-fill); border-radius: 1px; margin-top: 4px; }
+  .sheet .hint { font-size: .72rem; color: var(--info); margin: 6px 0 10px; }
+  .grow { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 6px 8px; border-radius: 8px; color: var(--ink); }
+  .grow + .grow { border-top: 1px solid var(--ridge); }
+  .grow .gi { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 999px; background: var(--panel-deep); border: 1px solid var(--ridge); color: var(--info-bright); flex: none; }
+  .grow .gt { flex: 1; }
+  .grow .gt b { display: block; font: 500 .8rem/1.2 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+  .grow .gt span { font-size: .68rem; color: var(--info); }
+  .grow[aria-pressed="true"] { background: var(--green); border-color: var(--green-deep); color: #f2f7f4; box-shadow: inset 0 0 0 2px var(--gold-fill); }
+  .grow[aria-pressed="true"] .gi { background: rgba(255,255,255,.12); border-color: var(--green-deep); color: var(--green-ice); }
+  .grow .tag { font: 500 .58rem/1 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .12em; text-transform: uppercase; padding: 4px 8px; border-radius: 999px; border: 1px solid var(--ridge); color: var(--info); }
+  .mgmt { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 6px 8px; border-radius: 8px; color: var(--ink); }
+  .mgmt .mi { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 8px; border: 1px solid var(--ridge); background: var(--panel-deep); color: var(--info-bright); flex: none; }
+  .mgmt + .mgmt { border-top: 1px solid var(--ridge); }
+  .mgmt b { display: block; font: 500 .74rem/1.2 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+  .mgmt span { font-size: .66rem; color: var(--info); }
+  .cycle { position: absolute; left: 12px; bottom: 12px; display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--panel); border: 1px solid var(--ridge); border-radius: 999px; box-shadow: 0 1px 3px rgba(10,20,15,.2); font: 500 .64rem/1.3 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--info); max-width: 200px; }
+  .cycle b { color: var(--ink); }
+</style>
+</head>
+<body>
+<h1><small>Map Controls Proposal · 2026-10 · Mobile</small>Layer Groups &amp; Panel — bottom-right stack, three panel variants, Day &amp; Night</h1>
+<p class="intro">Mobile only, no app toolbar. All floating controls move to the <b>bottom-right</b>, stacked above the basemap fab; the panel opens <b>bottom-to-top</b>. Layer groups are user-defined; one group is active at a time. <b>Short press</b> on the group fab cycles Winter → Summer → All-huts → …; <b>long press</b> opens the full group picker. The panel shows only the active group's layers plus a "More" button (other layers, settings, group management). Sizes: 48–56&nbsp;px touch targets. Barlow Semi Condensed uppercase labels (system sans stand-in here). Map stays a light basemap in both themes.</p>
+
+<div class="variants">
+
+  <!-- ═══ VARIANT A — ROWS ═══ -->
+  <section class="variant">
+    <h2>A · <em>ROW PANEL</em> — toggle rows with inline info &amp; filter buttons</h2>
+    <div class="phones">
+      <div>
+        <p class="theme-tag">Day</p>
+        <div class="phone theme-day">
+          <div class="mapbg"></div>
+          <span class="pin-demo" style="left:30%;top:52%"><span class="dot" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+          <span class="pin-demo" style="left:44%;top:20%"><span class="dot" style="background:#f6ad4b"></span>Turtmannhütte · 6</span>
+          <div class="gpanel">
+            <div class="head"><h3>Winter · Layers</h3>
+              <svg class="icon" style="width:16px;height:16px;color:#29626b" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg></div>
+            <div class="lrow" aria-pressed="true"><span class="sw"></span><span class="t"><b>Ski slopes</b><span>142 km open</span></span>
+              <button class="mini" aria-label="Ski slopes info"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button>
+              <button class="mini" aria-label="Ski slopes filter"><svg class="icon" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z"/></svg></button></div>
+            <div class="lrow" aria-pressed="true"><span class="sw"></span><span class="t"><b>Snowshoe routes</b><span>38 routes</span></span>
+              <button class="mini" aria-label="Snowshoe routes info"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button>
+              <button class="mini" aria-label="Snowshoe routes filter"><svg class="icon" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z"/></svg></button></div>
+            <div class="lrow" aria-pressed="false"><span class="sw"></span><span class="t"><b>Winter trails</b><span>21 trails</span></span>
+              <button class="mini" aria-label="Winter trails info"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button>
+              <button class="mini" aria-label="Winter trails filter"><svg class="icon" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z"/></svg></button></div>
+            <div class="lrow" aria-pressed="false"><span class="sw"></span><span class="t"><b>Slope hazards</b><span>7 warnings</span></span>
+              <button class="mini" aria-label="Slope hazards info"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button>
+              <button class="mini" aria-label="Slope hazards filter"><svg class="icon" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z"/></svg></button></div>
+            <button class="more"><svg class="icon" style="width:18px;height:18px" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>More · layers, settings, groups</button>
+          </div>
+          <div class="stack">
+            <button class="fab group" aria-expanded="true" aria-label="Layer group: Winter. Short press cycles, long press opens picker"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg><span class="glab">WINTER</span></button>
+            <button class="fab" aria-label="Basemap"><svg class="icon" viewBox="0 0 24 24"><path d="m9 20-5.4-2.7c-.4-.2-.6-.5-.6-.9V5.6c0-.7.7-1.2 1.4-.9L9 6.7l6-2.7 5.4 2.7c.4.2.6.5.6.9v10.8c0 .7-.7 1.2-1.4.9L15 17.3l-6 2.7Z"/><path d="M9 6.7v13.6M15 4v13.6"/></svg></button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p class="theme-tag">Night</p>
+        <div class="phone theme-night">
+          <div class="mapbg"></div>
+          <span class="pin-demo" style="left:30%;top:52%"><span class="dot" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+          <span class="pin-demo" style="left:44%;top:20%"><span class="dot" style="background:#f6ad4b"></span>Turtmannhütte · 6</span>
+          <div class="gpanel">
+            <div class="head"><h3>Winter · Layers</h3>
+              <svg class="icon" style="width:16px;height:16px;color:#9dd9d2" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg></div>
+            <div class="lrow" aria-pressed="true"><span class="sw"></span><span class="t"><b>Ski slopes</b><span>142 km open</span></span>
+              <button class="mini" aria-label="Ski slopes info"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button>
+              <button class="mini" aria-label="Ski slopes filter"><svg class="icon" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z"/></svg></button></div>
+            <div class="lrow" aria-pressed="true"><span class="sw"></span><span class="t"><b>Snowshoe routes</b><span>38 routes</span></span>
+              <button class="mini" aria-label="Snowshoe routes info"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button>
+              <button class="mini" aria-label="Snowshoe routes filter"><svg class="icon" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z"/></svg></button></div>
+            <div class="lrow" aria-pressed="false"><span class="sw"></span><span class="t"><b>Winter trails</b><span>21 trails</span></span>
+              <button class="mini" aria-label="Winter trails info"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button>
+              <button class="mini" aria-label="Winter trails filter"><svg class="icon" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z"/></svg></button></div>
+            <div class="lrow" aria-pressed="false"><span class="sw"></span><span class="t"><b>Slope hazards</b><span>7 warnings</span></span>
+              <button class="mini" aria-label="Slope hazards info"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button>
+              <button class="mini" aria-label="Slope hazards filter"><svg class="icon" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z"/></svg></button></div>
+            <button class="more"><svg class="icon" style="width:18px;height:18px" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>More · layers, settings, groups</button>
+          </div>
+          <div class="stack">
+            <button class="fab group" aria-expanded="true" aria-label="Layer group: Winter"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg><span class="glab">WINTER</span></button>
+            <button class="fab" aria-label="Basemap"><svg class="icon" viewBox="0 0 24 24"><path d="m9 20-5.4-2.7c-.4-.2-.6-.5-.6-.9V5.6c0-.7.7-1.2 1.4-.9L9 6.7l6-2.7 5.4 2.7c.4.2.6.5.6.9v10.8c0 .7-.7 1.2-1.4.9L15 17.3l-6 2.7Z"/><path d="M9 6.7v13.6M15 4v13.6"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <b>Variant A · Pros / Cons</b>
+      <ul>
+        <li class="pro">+ Every layer gets a name, meta line and dedicated info + filter buttons — most explicit per-layer access.</li>
+        <li class="pro">+ 44&nbsp;px mini buttons meet target size; scannable hierarchy.</li>
+        <li class="con">− Tallest panel of the three; with 4+ layers it eats the lower map half.</li>
+        <li class="con">− Toggle + two buttons per row = 3 targets per layer, visually busy.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ═══ VARIANT B — CHIPS + TRAY (OWNER FAVORITE) ═══ -->
+    <section class="variant">
+    <h2>B · <em>CHIPS + SLIDE-OUT TRAY</em><span class="fav">OWNER FAVORITE</span> — tap toggles, chip handle slides out info + filter tray</h2>
+    <div class="phones">
+      <div>
+        <p class="theme-tag">Day</p>
+        <div class="phone theme-day">
+          <div class="mapbg"></div>
+          <span class="pin-demo" style="left:26%;top:50%"><span class="dot" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+          <span class="pin-demo" style="left:48%;top:18%"><span class="dot" style="background:#ea9a37"></span>Topalihütte · 0</span>
+          <div class="gpanel">
+            <div class="head"><h3>Winter · Layers</h3>
+              <svg class="icon" style="width:16px;height:16px;color:#29626b" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg></div>
+            <div class="chips">
+              <button class="chip" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24"><path d="m12 3 8 5-8 5-8-5 8-5Z"/><path d="m4 13 8 5 8-5"/></svg>Ski slopes<span class="n">142</span><span class="handle" role="button" aria-label="Open Ski slopes info &amp; filter tray"><svg class="icon" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></span></button>
+              <button class="chip" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24"><circle cx="9" cy="17" r="3"/><circle cx="9" cy="8" r="2.4"/><circle cx="16" cy="13" r="2.4"/></svg>Snowshoe<span class="n">38</span><span class="handle" role="button" aria-label="Open Snowshoe info &amp; filter tray"><svg class="icon" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></span></button>
+              <button class="chip" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24"><path d="M4 20c4-2 4-6 8-8s8-2 8-6"/></svg>Winter trails<span class="n">21</span><span class="handle" role="button" aria-label="Open Winter trails info &amp; filter tray"><svg class="icon" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></span></button>
+              <button class="chip" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3 2 21h20L12 3Z"/><path d="M12 10v5"/></svg>Hazards<span class="n">7</span><span class="handle" role="button" aria-label="Open Hazards info &amp; filter tray"><svg class="icon" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></span></button>
+            </div>
+            <div class="tray">
+              <span class="who"><b>Ski slopes</b><span>142 km · difficulty, lift status, piste info</span></span>
+              <button class="mini" aria-label="Ski slopes details"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button>
+              <button class="mini" aria-label="Filter ski slopes"><svg class="icon" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z"/></svg></button>
+              <button class="mini" aria-label="Close tray"><svg class="icon" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+            </div>
+            <button class="more"><svg class="icon" style="width:18px;height:18px" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>More · layers, settings, groups</button>
+          </div>
+          <div class="stack">
+            <button class="fab group" aria-expanded="true" aria-label="Layer group: Winter"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg><span class="glab">WINTER</span></button>
+            <button class="fab" aria-label="Basemap"><svg class="icon" viewBox="0 0 24 24"><path d="m9 20-5.4-2.7c-.4-.2-.6-.5-.6-.9V5.6c0-.7.7-1.2 1.4-.9L9 6.7l6-2.7 5.4 2.7c.4.2.6.5.6.9v10.8c0 .7-.7 1.2-1.4.9L15 17.3l-6 2.7Z"/><path d="M9 6.7v13.6M15 4v13.6"/></svg></button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p class="theme-tag">Night</p>
+        <div class="phone theme-night">
+          <div class="mapbg"></div>
+          <span class="pin-demo" style="left:26%;top:50%"><span class="dot" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+          <span class="pin-demo" style="left:48%;top:18%"><span class="dot" style="background:#ea9a37"></span>Topalihütte · 0</span>
+          <div class="gpanel">
+            <div class="head"><h3>Winter · Layers</h3>
+              <svg class="icon" style="width:16px;height:16px;color:#9dd9d2" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg></div>
+            <div class="chips">
+              <button class="chip" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24"><path d="m12 3 8 5-8 5-8-5 8-5Z"/><path d="m4 13 8 5 8-5"/></svg>Ski slopes<span class="n">142</span><span class="handle" role="button" aria-label="Open Ski slopes info &amp; filter tray"><svg class="icon" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></span></button>
+              <button class="chip" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24"><circle cx="9" cy="17" r="3"/><circle cx="9" cy="8" r="2.4"/><circle cx="16" cy="13" r="2.4"/></svg>Snowshoe<span class="n">38</span><span class="handle" role="button" aria-label="Open Snowshoe info &amp; filter tray"><svg class="icon" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></span></button>
+              <button class="chip" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24"><path d="M4 20c4-2 4-6 8-8s8-2 8-6"/></svg>Winter trails<span class="n">21</span><span class="handle" role="button" aria-label="Open Winter trails info &amp; filter tray"><svg class="icon" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></span></button>
+              <button class="chip" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3 2 21h20L12 3Z"/><path d="M12 10v5"/></svg>Hazards<span class="n">7</span><span class="handle" role="button" aria-label="Open Hazards info &amp; filter tray"><svg class="icon" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></span></button>
+            </div>
+            <div class="tray">
+              <span class="who"><b>Ski slopes</b><span>142 km · difficulty, lift status, piste info</span></span>
+              <button class="mini" aria-label="Ski slopes details"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button>
+              <button class="mini" aria-label="Filter ski slopes"><svg class="icon" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z"/></svg></button>
+              <button class="mini" aria-label="Close tray"><svg class="icon" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+            </div>
+            <button class="more"><svg class="icon" style="width:18px;height:18px" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>More · layers, settings, groups</button>
+          </div>
+          <div class="stack">
+            <button class="fab group" aria-expanded="true" aria-label="Layer group: Winter"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg><span class="glab">WINTER</span></button>
+            <button class="fab" aria-label="Basemap"><svg class="icon" viewBox="0 0 24 24"><path d="m9 20-5.4-2.7c-.4-.2-.6-.5-.6-.9V5.6c0-.7.7-1.2 1.4-.9L9 6.7l6-2.7 5.4 2.7c.4.2.6.5.6.9v10.8c0 .7-.7 1.2-1.4.9L15 17.3l-6 2.7Z"/><path d="M9 6.7v13.6M15 4v13.6"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <b>Variant B · Pros / Cons</b>
+      <ul>
+        <li class="pro">+ Chip tap toggles the layer in one hit; the small handle (≥26&nbsp;px, expandable to 44&nbsp;px hit area) is the only path to info/filter — clean separation of on/off vs. learn/configure.</li>
+        <li class="pro">+ Tray appears only on demand; compact panel keeps most of the map visible; scales to many layers via wrapping.</li>
+        <li class="pro">+ Active layer = forest-green fill with inset gold beam ring — token-conform.</li>
+        <li class="con">− Two-tier gesture on a chip (tap vs. handle) needs a clear affordance + 44&nbsp;px hit slop on the handle.</li>
+        <li class="con">− No per-layer meta visible at rest (counts only).</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ═══ VARIANT C — MINIMAL + MORE ═══ -->
+  <section class="variant">
+    <h2>C · <em>MINIMAL + MORE</em> — bare chips, everything else behind the More button</h2>
+    <div class="phones">
+      <div>
+        <p class="theme-tag">Day</p>
+        <div class="phone theme-day">
+          <div class="mapbg"></div>
+          <span class="pin-demo" style="left:30%;top:48%"><span class="dot" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+          <div class="gpanel c">
+            <div class="head"><h3>Winter · Layers</h3>
+              <svg class="icon" style="width:16px;height:16px;color:#29626b" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg></div>
+            <div class="chips">
+              <button class="chip" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24"><path d="m12 3 8 5-8 5-8-5 8-5Z"/><path d="m4 13 8 5 8-5"/></svg>Ski slopes</button>
+              <button class="chip" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24"><circle cx="9" cy="17" r="3"/><circle cx="9" cy="8" r="2.4"/><circle cx="16" cy="13" r="2.4"/></svg>Snowshoe</button>
+              <button class="chip" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24"><path d="M4 20c4-2 4-6 8-8s8-2 8-6"/></svg>Winter trails</button>
+              <button class="chip" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3 2 21h20L12 3Z"/><path d="M12 10v5"/></svg>Hazards</button>
+            </div>
+            <button class="more"><svg class="icon" style="width:18px;height:18px" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>More · info, filter, settings, groups</button>
+          </div>
+          <div class="stack">
+            <button class="fab group" aria-expanded="true" aria-label="Layer group: Winter"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg><span class="glab">WINTER</span></button>
+            <button class="fab" aria-label="Basemap"><svg class="icon" viewBox="0 0 24 24"><path d="m9 20-5.4-2.7c-.4-.2-.6-.5-.6-.9V5.6c0-.7.7-1.2 1.4-.9L9 6.7l6-2.7 5.4 2.7c.4.2.6.5.6.9v10.8c0 .7-.7 1.2-1.4.9L15 17.3l-6 2.7Z"/><path d="M9 6.7v13.6M15 4v13.6"/></svg></button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p class="theme-tag">Night</p>
+        <div class="phone theme-night">
+          <div class="mapbg"></div>
+          <span class="pin-demo" style="left:30%;top:48%"><span class="dot" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+          <div class="gpanel c">
+            <div class="head"><h3>Winter · Layers</h3>
+              <svg class="icon" style="width:16px;height:16px;color:#9dd9d2" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg></div>
+            <div class="chips">
+              <button class="chip" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24"><path d="m12 3 8 5-8 5-8-5 8-5Z"/><path d="m4 13 8 5 8-5"/></svg>Ski slopes</button>
+              <button class="chip" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24"><circle cx="9" cy="17" r="3"/><circle cx="9" cy="8" r="2.4"/><circle cx="16" cy="13" r="2.4"/></svg>Snowshoe</button>
+              <button class="chip" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24"><path d="M4 20c4-2 4-6 8-8s8-2 8-6"/></svg>Winter trails</button>
+              <button class="chip" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3 2 21h20L12 3Z"/><path d="M12 10v5"/></svg>Hazards</button>
+            </div>
+            <button class="more"><svg class="icon" style="width:18px;height:18px" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>More · info, filter, settings, groups</button>
+          </div>
+          <div class="stack">
+            <button class="fab group" aria-expanded="true" aria-label="Layer group: Winter"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg><span class="glab">WINTER</span></button>
+            <button class="fab" aria-label="Basemap"><svg class="icon" viewBox="0 0 24 24"><path d="m9 20-5.4-2.7c-.4-.2-.6-.5-.6-.9V5.6c0-.7.7-1.2 1.4-.9L9 6.7l6-2.7 5.4 2.7c.4.2.6.5.6.9v10.8c0 .7-.7 1.2-1.4.9L15 17.3l-6 2.7Z"/><path d="M9 6.7v13.6M15 4v13.6"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <b>Variant C · Pros / Cons</b>
+      <ul>
+        <li class="pro">+ Smallest panel; pure on/off layer switching; nothing competes with the map.</li>
+        <li class="pro">+ One More button collects info, filters, settings — fewest decisions per glance.</li>
+        <li class="con">− Info/filter for a layer costs 3+ taps (More → pick layer → filter) — weak per-layer access.</li>
+        <li class="con">− Power users (check slope hazards details often) will find it slow.</li>
+      </ul>
+    </div>
+  </section>
+  <section class="vd">
+    <h2 style="margin-top:48px">Variant D — Expandable panel with minimized icon strip (the mix)</h2>
+    <p class="intro">Owner proposal: open the full menu for names, trays and More — then <b>minimize to an icon-only strip</b> that keeps the one-tap-per-layer toggling of today's rail. The strip shows only the <b>active group's layers</b> (stacked above the group fab, above the basemap fab), stays open while you work the map, and long-press on any strip icon still slides out the info/filter tray.</p>
+    <div class="phones">
+      <div>
+        <p class="theme-tag">Day — expanded (full menu)</p>
+        <div class="phone theme-day">
+          <div class="mapbg"></div>
+          <span class="pin-demo" style="left:30%;top:52%"><span class="dot" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+          <span class="pin-demo" style="left:44%;top:20%"><span class="dot" style="background:#f6ad4b"></span>Turtmannhütte · 6</span>
+          <div class="gpanel">
+            <div class="head"><h3>Winter · Layers</h3>
+              <button class="mini" aria-label="Minimize to icon strip" title="Minimize"><svg class="icon" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button></div>
+            <div class="chips">
+              <span class="chip fav" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24"><path d="M4 14l5-9 3 5 2-2 6 6H4Z"/></svg><span class="n">Huts</span><span class="tag">14</span></span>
+              <span class="chip fav" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24"><path d="M3 19h18M6 19V9l3-4 3 4v10M14 19V7l3-2 3 2v12"/></svg><span class="n">Ski slopes</span><span class="tag">142</span></span>
+              <span class="chip fav" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24"><path d="M8 3v4M16 3v4M5 7h14v6H5zM7 13v8M17 13v8"/></svg><span class="n">Snowshoe</span><span class="tag">38</span></span>
+              <span class="chip fav" aria-pressed="false" style="opacity:.55"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v18M3 9h18M6 21h12"/></svg><span class="n">Winter trails</span></span>
+              <span class="chip fav" aria-pressed="false" style="opacity:.55"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3l9 16H3L12 3Z"/></svg><span class="n">Slope hazards</span></span>
+              <span class="chip more"><svg class="icon" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg><span class="n">More</span></span>
+            </div>
+          </div>
+        </div>
+        <p class="note">Tap <b>⌄</b> in the header → strip mode</p>
+      </div>
+      <div>
+        <p class="theme-tag">Day — minimized (icon strip)</p>
+        <div class="phone theme-day">
+          <div class="mapbg"></div>
+          <span class="pin-demo" style="left:30%;top:52%"><span class="dot" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+          <span class="pin-demo" style="left:44%;top:20%"><span class="dot" style="background:#f6ad4b"></span>Turtmannhütte · 6</span>
+          <div class="stack" style="gap:6px">
+            <button class="mini" aria-label="Expand menu" style="width:36px;height:24px;background:none;border:1px solid #dde7e0"><svg class="icon" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button>
+            <span class="fab" aria-pressed="true" style="position:relative"><svg class="icon" viewBox="0 0 24 24"><path d="M4 14l5-9 3 5 2-2 6 6H4Z"/></svg><span class="tag" style="position:absolute;top:-4px;right:-4px">14</span></span>
+            <span class="fab" aria-pressed="true" style="position:relative"><svg class="icon" viewBox="0 0 24 24"><path d="M3 19h18M6 19V9l3-4 3 4v10M14 19V7l3-2 3 2v12"/></svg><span class="tag" style="position:absolute;top:-4px;right:-4px">142</span></span>
+            <span class="fab" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24"><path d="M8 3v4M16 3v4M5 7h14v6H5zM7 13v8M17 13v8"/></svg></span>
+            <span class="fab" style="opacity:.55"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v18M3 9h18M6 21h12"/></svg></span>
+            <span class="fab" style="opacity:.55"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3l9 16H3L12 3Z"/></svg></span>
+            <span class="group"><svg class="icon" viewBox="0 0 24 24"><path d="M12 2l2.4 6.9H22l-6 4.4 2.3 6.9-6.3-4.5-6.3 4.5L8 13.3l-6-4.4h7.6L12 2Z"/></svg><span class="glab">Winter</span></span>
+            <span class="fab"><svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14M5 4h14v5l-4 3 4 3v5H5z"/></svg></span>
+          </div>
+          <div class="tray" style="position:absolute;right:76px;top:34%">
+            <span class="who"><b>Ski slopes</b><span>142 km open</span></span>
+            <button class="mini" aria-label="Ski slopes details"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button>
+            <button class="mini" aria-label="Filter ski slopes"><svg class="icon" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z"/></svg></button>
+          </div>
+        </div>
+        <p class="note">One tap = toggle · long-press = info/filter tray · <b>⌃</b> expands the menu again</p>
+      </div>
+      <div>
+        <p class="theme-tag">Night — minimized</p>
+        <div class="phone theme-night">
+          <div class="mapbg"></div>
+          <span class="pin-demo" style="left:30%;top:52%"><span class="dot" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+          <span class="pin-demo" style="left:44%;top:20%"><span class="dot" style="background:#f6ad4b"></span>Turtmannhütte · 6</span>
+          <div class="stack" style="gap:6px">
+            <button class="mini" aria-label="Expand menu" style="width:36px;height:24px;background:none;border:1px solid #1c3629"><svg class="icon" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button>
+            <span class="fab" aria-pressed="true" style="position:relative"><svg class="icon" viewBox="0 0 24 24"><path d="M4 14l5-9 3 5 2-2 6 6H4Z"/></svg><span class="tag" style="position:absolute;top:-4px;right:-4px">14</span></span>
+            <span class="fab" aria-pressed="true" style="position:relative"><svg class="icon" viewBox="0 0 24 24"><path d="M3 19h18M6 19V9l3-4 3 4v10M14 19V7l3-2 3 2v12"/></svg><span class="tag" style="position:absolute;top:-4px;right:-4px">142</span></span>
+            <span class="fab" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24"><path d="M8 3v4M16 3v4M5 7h14v6H5zM7 13v8M17 13v8"/></svg></span>
+            <span class="fab" style="opacity:.55"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v18M3 9h18M6 21h12"/></svg></span>
+            <span class="fab" style="opacity:.55"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3l9 16H3L12 3Z"/></svg></span>
+            <span class="group"><svg class="icon" viewBox="0 0 24 24"><path d="M12 2l2.4 6.9H22l-6 4.4 2.3 6.9-6.3-4.5-6.3 4.5L8 13.3l-6-4.4h7.6L12 2Z"/></svg><span class="glab">Winter</span></span>
+            <span class="fab"><svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14M5 4h14v5l-4 3 4 3v5H5z"/></svg></span>
+          </div>
+        </div>
+        <p class="note">Same strip at night — light map chrome on light tiles, gold ring = active</p>
+      </div>
+    </div>
+    <ul class="note" style="list-style:none;padding:0">
+      <li class="pro">+ Keeps today's one-tap muscle memory (icon per layer) while the full menu carries names, counts, trays and More.</li>
+      <li class="pro">+ Strip shows only the active group's layers — the fastest resting state for map work; cycling groups swaps the strip contents.</li>
+      <li class="pro">+ Collapsed state is still fully functional: toggle, long-press tray, expand.</li>
+      <li class="con">− Two states to learn; the minimize/expand chevron must be obvious (animate height, keep the chevron in the same spot).</li>
+      <li class="con">− Strip can grow tall with big groups — cap at ~5 icons + overflow dot into the menu.</li>
+    </ul>
+  </section>
+<style>
+  /* Variant D scoped fixes: fab strip ring + count badges */
+  .vd .fab[aria-pressed="true"] { box-shadow: inset 0 0 0 2px #bfab25; }
+  .vd .fab .tag { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: #1c1c1c; color: #fdfefd; font-size: 10px; line-height: 18px; text-align: center; font-weight: 600; z-index: 2; overflow: visible; }
+  .vd .fab { overflow: visible; }
+  .vd .group { margin-top: 8px; }
+</style>
+
+  
+</div>
+
+<!-- ═══ BEHAVIOR: cycling + long-press picker + group management ═══ -->
+<div class="row2">
+  <section class="variant">
+    <h2>BEHAVIOR · <em>SHORT PRESS CYCLES</em> — tap group fab: Winter → Summer → All-huts → Winter …</h2>
+    <div class="phones">
+      <div>
+        <p class="theme-tag">Day · after one short press (Summer active, panel closed)</p>
+        <div class="phone theme-day">
+          <div class="mapbg"></div>
+          <span class="pin-demo" style="left:34%;top:40%"><span class="dot" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+          <span class="pin-demo" style="left:50%;top:62%"><span class="dot" style="background:#7fab88"></span>Weisshorn · ?</span>
+          <div class="cycle">Group cycle → <b>Summer</b><br>next: All-huts</div>
+          <div class="stack">
+            <button class="fab group" aria-label="Layer group: Summer. Short press cycles, long press opens picker"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg><span class="glab">SUMMER</span></button>
+            <button class="fab" aria-label="Basemap"><svg class="icon" viewBox="0 0 24 24"><path d="m9 20-5.4-2.7c-.4-.2-.6-.5-.6-.9V5.6c0-.7.7-1.2 1.4-.9L9 6.7l6-2.7 5.4 2.7c.4.2.6.5.6.9v10.8c0 .7-.7 1.2-1.4.9L15 17.3l-6 2.7Z"/><path d="M9 6.7v13.6M15 4v13.6"/></svg></button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p class="theme-tag">Night · after one short press</p>
+        <div class="phone theme-night">
+          <div class="mapbg"></div>
+          <span class="pin-demo" style="left:34%;top:40%"><span class="dot" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+          <span class="pin-demo" style="left:50%;top:62%"><span class="dot" style="background:#7fab88"></span>Weisshorn · ?</span>
+          <div class="cycle">Group cycle → <b>Summer</b><br>next: All-huts</div>
+          <div class="stack">
+            <button class="fab group" aria-label="Layer group: Summer"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg><span class="glab">SUMMER</span></button>
+            <button class="fab" aria-label="Basemap"><svg class="icon" viewBox="0 0 24 24"><path d="m9 20-5.4-2.7c-.4-.2-.6-.5-.6-.9V5.6c0-.7.7-1.2 1.4-.9L9 6.7l6-2.7 5.4 2.7c.4.2.6.5.6.9v10.8c0 .7-.7 1.2-1.4.9L15 17.3l-6 2.7Z"/><path d="M9 6.7v13.6M15 4v13.6"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <b>Cycling · Notes</b>
+      <ul>
+        <li class="pro">+ One-tap season switching — the dominant mobile gesture (gloves-friendly).</li>
+        <li class="pro">+ Cycle order is user-defined group order; a brief toast/nametag confirms the switch.</li>
+        <li class="con">− Needs discoverability: first-run hint on the fab ("hold for groups").</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="variant">
+    <h2>BEHAVIOR · <em>LONG PRESS → GROUP PICKER</em> + group management sheet glimpse</h2>
+    <div class="phones">
+      <div>
+        <p class="theme-tag">Day · group picker sheet (long press)</p>
+        <div class="phone theme-day">
+          <div class="mapbg"></div>
+          <span class="pin-demo" style="left:40%;top:18%"><span class="dot" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+          <div class="sheet">
+            <h3>Layer groups</h3>
+            <p class="hint">One group is active at a time — selecting replaces the active layers.</p>
+            <button class="grow" aria-pressed="false"><span class="gi"><svg class="icon" viewBox="0 0 24 24" style="width:20px;height:20px"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg></span><span class="gt"><b>Winter</b><span>Ski slopes · Snowshoe · Winter trails · Hazards</span></span><span class="tag">4 layers</span></button>
+            <button class="grow" aria-pressed="true"><span class="gi"><svg class="icon" viewBox="0 0 24 24" style="width:20px;height:20px"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg></span><span class="gt"><b>Summer</b><span>Hiking trails · MTB · Via ferrata · Public transport</span></span><span class="tag">4 layers</span></button>
+            <button class="grow" aria-pressed="false"><span class="gi"><svg class="icon" viewBox="0 0 24 24" style="width:20px;height:20px"><path d="M3 20h18M6 20V9m6 11V4m6 16v-7"/></svg></span><span class="gt"><b>All-huts</b><span>Huts · Protected areas · Sheep dogs · Transport</span></span><span class="tag">4 layers</span></button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p class="theme-tag">Night · group management (via More)</p>
+        <div class="phone theme-night">
+          <div class="mapbg"></div>
+          <span class="pin-demo" style="left:40%;top:18%"><span class="dot" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+          <div class="sheet">
+            <h3>Manage groups</h3>
+            <p class="hint">Groups are user-defined — reorder, edit contents, or create new.</p>
+            <button class="mgmt"><span class="mi"><svg class="icon" viewBox="0 0 24 24" style="width:20px;height:20px"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg></span><span><b>Winter</b><span>edit layers · rename · reorder</span></span></button>
+            <button class="mgmt"><span class="mi"><svg class="icon" viewBox="0 0 24 24" style="width:20px;height:20px"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg></span><span><b>Summer</b><span>edit layers · rename · reorder</span></span></button>
+            <button class="mgmt"><span class="mi"><svg class="icon" viewBox="0 0 24 24" style="width:20px;height:20px"><path d="M12 5v14M5 12h14"/></svg></span><span><b>New group</b><span>pick layers from the full catalogue</span></span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <b>Picker &amp; management · Notes</b>
+      <ul>
+        <li class="pro">+ Long press reaches ALL groups without cycling; active group carries the gold beam ring.</li>
+        <li class="pro">+ Management lives behind More → Manage groups: never in the way of map work.</li>
+        <li class="con">− Long press needs haptic feedback + a visual "press-in" state to be discoverable.</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+</body>
+</html>

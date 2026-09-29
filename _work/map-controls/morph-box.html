@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wodore · Morphing layer box — interactive mockups (D1/D2/D3)</title>
+<style>
+  :root{
+    --day-paper:#f6f9f7; --day-panel:#fdfefd; --day-ridge:#dde7e0; --day-ink:#1c1c1c;
+    --night-page:#0a140f; --night-panel:#112119; --night-ridge:#1c3629;
+    --green:#346751; --green-deep:#224e3b; --gold:#bfab25; --gold-deep:#846a15;
+    --info:#29626b; --info-ice:#9dd9d2; --soft:rgba(28,28,28,.55);
+    --radius-c:4px; --radius-p:8px; --radius-d:16px;
+    --ease:cubic-bezier(.2,0,0,1);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  body{margin:0;font:14px/1.45 "Barlow Semi Condensed","Segoe UI",system-ui,sans-serif;background:var(--day-paper);color:var(--day-ink)}
+  body.night{background:var(--night-page);color:#f2f7f4}
+  h1{font-size:20px;letter-spacing:.04em;text-transform:uppercase;font-weight:600;margin:20px 24px 4px}
+  .sub{margin:0 24px 16px;color:var(--soft)}
+  body.night .sub{color:rgba(242,247,244,.6)}
+  .bar{position:sticky;top:0;z-index:50;display:flex;gap:8px;align-items:center;padding:10px 24px;background:inherit;border-bottom:1px solid var(--day-ridge)}
+  body.night .bar{border-color:var(--night-ridge)}
+  .bar button{font:600 13px/1 "Barlow Semi Condensed",sans-serif;letter-spacing:.08em;text-transform:uppercase;padding:9px 14px;border-radius:4px;border:1px solid var(--day-ridge);background:var(--day-panel);color:var(--day-ink);cursor:pointer}
+  body.night .bar button{background:var(--night-panel);border-color:var(--night-ridge);color:#f2f7f4}
+  .bar button[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--gold);border-color:transparent}
+  .bar .sp{flex:1}
+  .stage{display:flex;gap:28px;flex-wrap:wrap;padding:24px;align-items:flex-start}
+  .col{display:flex;flex-direction:column;gap:10px;max-width:430px}
+  .vt{font-size:15px;font-weight:600;text-transform:uppercase;letter-spacing:.1em}
+  .vd{color:var(--soft);font-size:13px;margin:0}
+  body.night .vd{color:rgba(242,247,244,.6)}
+
+  /* phone */
+  .phone{position:relative;width:390px;height:760px;border-radius:24px;overflow:hidden;background:
+    radial-gradient(120% 90% at 20% 10%,#eef4ef 0%,#e6efe9 45%,#dce9e0 100%);border:10px solid #1c1c1c;flex:none}
+  .phone .contour{position:absolute;inset:0;opacity:.5;background:
+    repeating-linear-gradient(115deg,transparent 0 90px,rgba(52,103,81,.05) 90px 92px),
+    repeating-linear-gradient(-18deg,transparent 0 130px,rgba(41,98,107,.05) 130px 133px)}
+  .watermark{position:absolute;left:10px;bottom:34px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(28,28,28,.34)}
+  .pin{position:absolute;transform:translate(-50%,-100%);display:flex;gap:6px;align-items:center;background:rgba(253,254,253,.94);border-radius:999px;padding:3px 10px 3px 6px;font-size:12px;font-weight:600;color:#1c1c1c;box-shadow:0 1px 3px rgba(10,20,15,.2)}
+  .pin .d{width:9px;height:9px;border-radius:50%}
+  .attr{position:absolute;right:10px;bottom:10px;font-size:9px;color:#29626b;background:rgba(253,254,253,.92);border-radius:4px;padding:1px 7px}
+  .zoomcol{position:absolute;right:12px;top:64px;display:flex;flex-direction:column;gap:6px}
+  .zbtn{width:40px;height:40px;border-radius:4px;background:#fdfefd;border:1px solid var(--day-ridge);display:grid;place-items:center;color:#1c1c1c;box-shadow:0 1px 3px rgba(10,20,15,.2);font-weight:700}
+
+  /* basemap fab under the box */
+  .bm{position:absolute;right:12px;bottom:26px;width:52px;height:52px;border-radius:8px;background:#fdfefd;border:1px solid var(--day-ridge);box-shadow:0 1px 3px rgba(10,20,15,.2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#1c1c1c;font-size:8px;letter-spacing:.1em;text-transform:uppercase}
+
+  /* ── THE MORPH BOX ─────────────────────────────────────────────── */
+  .mbox{position:absolute;right:12px;bottom:90px;width:56px;background:#fdfefd;border:1px solid var(--day-ridge);
+    border-radius:8px;box-shadow:0 1px 3px rgba(10,20,15,.2);overflow:hidden;
+    transition:width .26s var(--ease),height .26s var(--ease);touch-action:none;user-select:none}
+  .mbox .grab{height:22px;display:flex;align-items:center;justify-content:center;gap:8px;color:rgba(28,28,28,.4);cursor:grab;position:relative}
+  .mbox .grab .gbar{width:34px;height:4px;border-radius:999px;background:var(--day-ridge)}
+  .mbox .grab .x{position:absolute;right:5px;top:2px;width:20px;height:20px;border-radius:4px;display:grid;place-items:center;color:rgba(28,28,28,.55);font-size:13px;opacity:0;pointer-events:none;transition:opacity .15s}
+  .mbox .head{display:flex;align-items:center;gap:8px;padding:2px 6px 6px 10px;opacity:0;height:0;overflow:hidden;transition:opacity .2s .06s}
+  .mbox .head h4{margin:0;font:600 13px/1.1 "Barlow Semi Condensed",sans-serif;text-transform:uppercase;letter-spacing:.08em;color:#1c1c1c;flex:1;white-space:nowrap}
+  .iconbtn{width:30px;height:30px;border-radius:4px;border:none;background:transparent;color:var(--info);display:grid;place-items:center;cursor:pointer}
+  .iconbtn:active{background:rgba(28,28,28,.06)}
+  .layers{display:flex;flex-direction:column}
+  .lay{position:relative;height:52px;display:flex;align-items:center;gap:0;padding:0 6px 0 7px;border-radius:6px;cursor:pointer}
+  .lay + .lay{margin-top:2px}
+  .lay .ic{width:42px;height:42px;flex:none;border-radius:6px;display:grid;place-items:center;color:#224e3b;background:rgba(52,103,81,.08);position:relative;transition:background .15s}
+  .lay[aria-pressed="true"] .ic{box-shadow:inset 0 0 0 2px var(--gold);background:rgba(52,103,81,.14)}
+  .lay .nm{margin-left:0;padding-left:0;width:0;opacity:0;overflow:hidden;white-space:nowrap;transition:opacity .2s .05s,padding .2s .05s}
+  .lay .nm b{display:block;font-size:14px;color:#1c1c1c}
+  .lay .nm span{display:block;font-size:11px;color:var(--soft)}
+  .lay .ct{position:absolute;top:3px;right:3px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#1c1c1c;color:#fdfefd;font-size:9px;font-weight:700;line-height:16px;text-align:center;opacity:0}
+  .lay[aria-pressed="true"] .ct{opacity:1}
+  .lay .rowact{margin-left:auto;display:flex;gap:2px;opacity:0;pointer-events:none}
+  .lay .rowact .iconbtn{width:34px;height:34px}
+  .scroller{overflow-y:auto;overscroll-behavior:contain;max-height:100%;touch-action:pan-y;scrollbar-width:thin}
+  .glow{position:absolute;left:0;right:0;bottom:0;height:18px;background:linear-gradient(180deg,transparent,rgba(253,254,253,.95));opacity:0;pointer-events:none;transition:opacity .2s}
+
+  /* group row at the bottom */
+  .grp{display:flex;align-items:center;gap:6px;padding:6px;border-top:1px solid var(--day-ridge);margin-top:2px;background:rgba(246,249,247,.6)}
+  .grp .cyc{width:30px;height:34px;border:none;background:transparent;color:var(--info);border-radius:4px;font-size:16px;cursor:pointer}
+  .grp .gname{flex:1;text-align:center;font:600 12px/1.1 "Barlow Semi Condensed",sans-serif;text-transform:uppercase;letter-spacing:.1em;color:#1c1c1c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .grp .star{color:var(--gold-deep)}
+
+  /* tray (long-press) */
+  .tray{position:absolute;right:calc(100% + 8px);top:0;display:flex;align-items:center;gap:2px;background:#fdfefd;border:1px solid var(--day-ridge);border-radius:8px;box-shadow:0 1px 3px rgba(10,20,15,.2);padding:4px;opacity:0;transform:translateX(6px);pointer-events:none;transition:opacity .18s,transform .18s}
+  .tray.open{opacity:1;transform:none;pointer-events:auto}
+  .tray .who{padding:0 8px 0 6px}
+  .tray .who b{display:block;font-size:13px;color:#1c1c1c}
+  .tray .who span{font-size:10px;color:var(--soft)}
+  .tray .iconbtn{width:40px;height:40px}
+
+  /* sheets (more menu / group picker) */
+  .sheet{position:absolute;left:0;right:0;bottom:0;background:#fdfefd;border-radius:16px 16px 0 0;padding:14px 16px 22px;transform:translateY(105%);transition:transform .28s var(--ease);box-shadow:0 -1px 3px rgba(10,20,15,.2);z-index:30;max-height:70%;overflow:auto}
+  .sheet.open{transform:none}
+  .sheet h4{margin:2px 0 10px;font:600 15px/1 "Barlow Semi Condensed",sans-serif;text-transform:uppercase;letter-spacing:.1em}
+  .sheet .row{display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--day-ridge);cursor:pointer}
+  .sheet .row:last-child{border:none}
+  .sheet .row .t{flex:1}
+  .sheet .row .t b{display:block;color:#1c1c1c}
+  .sheet .row .t span{font-size:12px;color:var(--soft)}
+  .sw{width:40px;height:24px;border-radius:999px;background:var(--day-ridge);position:relative;flex:none;transition:background .2s}
+  .sw::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fdfefd;box-shadow:0 1px 2px rgba(10,20,15,.25);transition:left .2s}
+  .row[aria-pressed="true"] .sw{background:var(--green)}
+  .row[aria-pressed="true"] .sw::after{left:19px}
+  .scrim{position:absolute;inset:0;background:rgba(10,20,15,.35);opacity:0;pointer-events:none;transition:opacity .25s;z-index:20}
+  .scrim.on{opacity:1;pointer-events:auto}
+
+  /* teach hint */
+  .hint{position:absolute;right:70px;bottom:120px;background:#1c1c1c;color:#fdfefd;font-size:12px;padding:8px 12px;border-radius:8px;opacity:0;transform:translateY(4px);transition:opacity .25s,transform .25s;pointer-events:none;max-width:210px;z-index:40}
+  .hint.show{opacity:1;transform:none}
+  .hint b{color:#e8c563}
+
+  /* state captions + notes */
+  .cap{font-size:12px;color:var(--soft);margin:2px 0 0}
+  body.night .cap{color:rgba(242,247,244,.6)}
+  .notes{margin:8px 0 0;padding-left:18px;font-size:12.5px;color:var(--soft)}
+  body.night .notes{color:rgba(242,247,244,.6)}
+  .notes li{margin:3px 0}
+
+  /* ── STATE: mini ── */
+  .mbox.mini{width:56px}
+  .mbox.mini .lay .nm,.mbox.mini .lay .rowact{display:none}
+  .mbox.mini .lay{padding:0 6px}
+  /* ── STATE: full ── */
+  .mbox.full{width:300px}
+  .mbox.full .grab .x{opacity:1;pointer-events:auto}
+  .mbox.full .head{opacity:1;height:auto}
+  .mbox.full .lay .nm{padding-left:10px;width:150px;opacity:1}
+  .mbox.full .lay .rowact{opacity:1;pointer-events:auto}
+  /* ── STATE: closed ── */
+  .mbox.closed{width:56px;height:56px}
+  .mbox.closed .grab{height:100%;cursor:pointer}
+  .mbox.closed .grab .gbar{display:none}
+  .mbox.closed .grab .x{display:none}
+  .mbox.closed .grab .plus{opacity:1}
+  .mbox.closed .layers,.mbox.closed .grp,.mbox.closed .head{display:none}
+  .grab .plus{opacity:0;transition:opacity .15s;font-size:20px;color:#224e3b;font-weight:700}
+
+  /* ── D2 docked horizontal ── */
+  .phone.d2p .mbox{right:12px;left:12px;width:auto;bottom:90px;border-radius:12px}
+  .phone.d2p .mbox .layers{flex-direction:row;justify-content:flex-start;gap:4px;padding:0 6px;overflow-x:auto}
+  .phone.d2p .mbox .lay{flex-direction:column;height:64px;width:56px;padding:4px 2px;justify-content:flex-start;gap:3px}
+  .phone.d2p .mbox .lay + .lay{margin:0}
+  .phone.d2p .mbox .lay .nm{width:auto;padding:0;opacity:1;text-align:center}
+  .phone.d2p .mbox .lay .nm b{font-size:9.5px;line-height:1.05}
+  .phone.d2p .mbox .lay .nm span{display:none}
+  .phone.d2p .mbox .lay .rowact{position:absolute;top:-2px;right:-2px;background:#fdfefd;border:1px solid var(--day-ridge);border-radius:6px;padding:1px}
+  .phone.d2p .mbox.full{left:12px;right:12px;width:auto}
+  .phone.d2p .mbox.full .lay{width:auto;height:52px;flex-direction:row;justify-content:flex-start;gap:0}
+  .phone.d2p .mbox.full .lay .nm{width:auto;flex:1;text-align:left}
+  .phone.d2p .mbox.full .lay .nm b{font-size:14px}
+  .phone.d2p .mbox.full .lay .nm span{display:block}
+  .phone.d2p .mbox.closed{left:auto;width:56px}
+  .phone.d2p .mbox.closed .layers{display:none}
+  .phone.d2p .grp{padding:4px 8px}
+  .phone.d2p .mbox .scroller{display:contents}
+
+  /* ── D3 peek ── */
+  .phone.d3p .mbox.full{width:300px}
+  .phone.d3p .mbox.full .scroller{max-height:174px} /* 3 rows + a bit */
+  .phone.d3p .glow{opacity:1}
+
+  .toast{position:absolute;left:50%;bottom:14px;transform:translate(-50%,8px);background:#1c1c1c;color:#fdfefd;padding:8px 14px;border-radius:8px;font-size:12.5px;opacity:0;transition:.25s;z-index:60;pointer-events:none;white-space:nowrap}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+<h1>Morphing layer box — interactive</h1>
+<p class="sub">One box, three states: closed → mini (icons) → full (scrollable). Settings/More on top, group toggle at the bottom, swipe/drag on the grabber, long-press a layer for info &amp; filter. Toggle Day/Night. Nothing is wired to a backend — counts are sample data.</p>
+
+<div class="bar" role="group" aria-label="mockup controls">
+  <button data-v="d1" aria-pressed="true">D1 · Morph column</button>
+  <button data-v="d2" aria-pressed="false">D2 · Docked rail</button>
+  <button data-v="d3" aria-pressed="false">D3 · Peek</button>
+  <span class="sp"></span>
+  <button id="theme" aria-pressed="false">Night</button>
+</div>
+
+<div class="stage" id="stage"></div>
+
+<template id="tpl">
+  <div class="col">
+    <div class="vt" data-vt></div>
+    <p class="vd" data-vd></p>
+    <div class="phone" data-phone>
+      <div class="contour"></div>
+      <span class="watermark">swisstopo · light</span>
+      <span class="pin" style="left:32%;top:52%"><span class="d" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+      <span class="pin" style="left:47%;top:26%"><span class="d" style="background:#f6ad4b"></span>Turtmannhütte · 6</span>
+      <span class="pin" style="left:63%;top:66%"><span class="d" style="background:#7fab88"></span>Capanna Cadlimo · ?</span>
+      <div class="zoomcol"><div class="zbtn">+</div><div class="zbtn">−</div><div class="zbtn">◎</div></div>
+      <div class="attr">© MapTiler · swisstopo</div>
+      <div class="bm"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/></svg><span>Layers</span></div>
+
+      <div class="mbox mini" data-box>
+        <div class="grab" data-grab><span class="gbar"></span><span class="plus">＋</span><button class="x" data-close aria-label="Close box">✕</button></div>
+        <div class="head">
+          <h4 data-gtitle>Winter · Layers</h4>
+          <button class="iconbtn" data-more aria-label="More and settings"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
+        </div>
+        <div class="scroller"><div class="layers" data-layers></div></div>
+        <div class="glow"></div>
+        <div class="grp">
+          <button class="cyc" data-prev aria-label="Previous group">‹</button>
+          <span class="gname" data-gname><span class="star">★</span> <span data-glabel>Winter</span></span>
+          <button class="cyc" data-next aria-label="Next group (long-press for all groups)">›</button>
+        </div>
+        <div class="tray" data-tray>
+          <span class="who"><b data-tname>Ski slopes</b><span data-tmeta>142 km open</span></span>
+          <button class="iconbtn" data-info aria-label="Layer info"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button>
+          <button class="iconbtn" data-filter aria-label="Filter layer"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z"/></svg></button>
+          <button class="iconbtn" data-tclose aria-label="Close tray">✕</button>
+        </div>
+      </div>
+
+      <div class="hint" data-hint><b>Swipe up</b> on the handle to open the full menu · long-press a layer for info &amp; filter</div>
+      <div class="toast" data-toast></div>
+
+      <div class="scrim" data-scrim></div>
+      <div class="sheet" data-more-sheet>
+        <h4>More</h4>
+        <div class="row"><span class="t"><b>All layers</b><span>Every map layer, not just this group</span></span><span style="color:var(--info)">›</span></div>
+        <div class="row"><span class="t"><b>Manage groups</b><span>Create, edit and reorder your layer groups</span></span><span style="color:var(--info)">›</span></div>
+        <div class="row" aria-pressed="true"><span class="t"><b>Remember box state</b><span>Reopen as mini, not closed</span></span><span class="sw"></span></div>
+        <div class="row"><span class="t"><b>Layer legend</b><span>Availability colors and symbols</span></span><span class="sw"></span></div>
+      </div>
+      <div class="sheet" data-group-sheet>
+        <h4>Groups</h4>
+        <div class="row" aria-pressed="true"><span class="t"><b>★ Winter</b><span>Huts · Ski slopes · Snowshoe · Hazards</span></span></div>
+        <div class="row"><span class="t"><b>☀ Summer</b><span>Huts · Hiking · MTB · Via ferrata</span></span></div>
+        <div class="row"><span class="t"><b>🏯 All huts</b><span>Every hut layer at once</span></span></div>
+        <div class="row"><span class="t" style="color:var(--info)"><b>＋ New group…</b></span></div>
+      </div>
+    </div>
+    <p class="cap" data-cap>Tap the ＋ to open · tap the handle to expand · drag it · long-press a layer icon.</p>
+    <ul class="notes" data-notes></ul>
+  </div>
+</template>
+
+<script type="module">
+const LAYERS = [
+  {id:'huts',   n:'Huts',            m:'14 shown',  on:true,  ct:'14', svg:'M4 14l5-9 3 5 2-2 6 6H4Z'},
+  {id:'ski',    n:'Ski slopes',      m:'142 km open',on:true, ct:'142',svg:'M3 19h18M6 19V9l3-4 3 4v10M14 19V7l3-2 3 2v12'},
+  {id:'shoe',   n:'Snowshoe routes', m:'38 routes', on:true,  ct:'38', svg:'M8 3v4M16 3v4M5 7h14v6H5zM7 13v8M17 13v8'},
+  {id:'wtrail', n:'Winter trails',   m:'210 km',    on:false, ct:'',  svg:'M12 3v18M3 9h18M6 21h12'},
+  {id:'hazard', n:'Slope hazards',   m:'3 active',  on:false, ct:'',  svg:'M12 3l9 16H3L12 3Z'},
+  {id:'webcam', n:'Webcams',         m:'6 cams',    on:false, ct:'',  svg:'M3 8h13v8H3zM16 11l5-3v8l-5-3'},
+  {id:'transport',n:'Public transport',m:'2 lines', on:false, ct:'',  svg:'M5 18l3-6h4l2-4h5M4 21h16'},
+  {id:'protect',n:'Protected areas', m:'',          on:false, ct:'',  svg:'M12 3l8 4v5c0 5-4 8-8 9-4-1-8-4-8-9V7l8-4Z'},
+];
+const GROUPS = [
+  {name:'Winter',  ids:['huts','ski','shoe','wtrail','hazard']},
+  {name:'Summer',  ids:['huts','wtrail','transport','protect']},
+  {name:'All huts',ids:['huts']},
+];
+const VARIANTS = {
+  d1:{t:'D1 · Morph column', d:'The pure concept: one box, bottom-right above the basemap fab. Mini = 56px icon strip; full = 300px scrollable panel. Icons are rows — the morph only reveals labels.', notes:['Grabber drag or tap: mini ↔ full','Swipe up anywhere in mini (no scroll there)','Long-press layer → info/filter tray','First strip tap teaches expansion (once)','Closed = the box itself (＋)']},
+  d2:{t:'D2 · Docked rail', d:'Nav-bar reading: mini is a bottom-docked horizontal rail spanning above the basemap row; full rises as a sheet. Best for landscape and wide thumbs-sweeps.', notes:['Horizontal scroll in mini','Group row below the icons stays reachable','Full state = near-full-width sheet','Same gestures as D1']},
+  d3:{t:'D3 · Peek', d:'Column morph, but full caps at ~3 rows with a scroll hint glow — smaller top edge, safer one-handed reach, expansion stays cheap.', notes:['Peek height = 3 rows + glow hint','Scroll inside the peek','Grabber collapse unchanged','Compare: feels lighter, shows less at a glance']},
+};
+
+const stage = document.getElementById('stage');
+const tpl = document.getElementById('tpl');
+
+function build(vk){
+  const v = VARIANTS[vk];
+  const n = tpl.content.firstElementChild.cloneNode(true);
+  n.querySelector('[data-vt]').textContent = v.t;
+  n.querySelector('[data-vd]').textContent = v.d;
+  const notes = n.querySelector('[data-notes]');
+  v.notes.forEach(x=>{const li=document.createElement('li');li.textContent=x;notes.appendChild(li)});
+  const phone = n.querySelector('[data-phone]');
+  if(vk==='d2') phone.classList.add('d2p');
+  if(vk==='d3') phone.classList.add('d3p');
+
+  const box = n.querySelector('[data-box]');
+  const layersEl = n.querySelector('[data-layers]');
+  const glabel = n.querySelector('[data-glabel]');
+  const gtitle = n.querySelector('[data-gtitle]');
+  const toast = n.querySelector('[data-toast]');
+  const hint = n.querySelector('[data-hint]');
+  const tray = n.querySelector('[data-tray]');
+  let gi = 0, taught = false, hintTimer, trayTimer, trayLayer = null;
+
+  const say = t => { toast.textContent = t; toast.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(()=>toast.classList.remove('show'), 1600); };
+
+  function renderGroup(){
+    const g = GROUPS[gi];
+    glabel.textContent = g.name;
+    gtitle.textContent = g.name + ' · Layers';
+    layersEl.innerHTML = '';
+    for(const id of g.ids){
+      const L = LAYERS.find(x=>x.id===id);
+      const el = document.createElement('div');
+      el.className = 'lay'; el.dataset.id = L.id;
+      el.setAttribute('aria-pressed', L.on);
+      el.innerHTML = `<span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="${L.svg}"/></svg>${L.ct?`<span class="ct">${L.ct}</span>`:''}</span><span class="nm"><b>${L.n}</b><span>${L.m||'—'}</span></span><span class="rowact"><button class="iconbtn" data-a="info" aria-label="${L.n} info"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></button><button class="iconbtn" data-a="filter" aria-label="${L.n} filter"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z"/></svg></button></span>`;
+      layersEl.appendChild(el);
+    }
+  }
+  renderGroup();
+
+  const setState = s => {
+    box.classList.remove('closed','mini','full'); box.classList.add(s);
+    box.setAttribute('aria-expanded', s==='full'?'true':'false');
+    if(s!=='closed' && !hint._shown){ hint._shown = true; setTimeout(()=>hint.classList.add('show'),400); setTimeout(()=>hint.classList.remove('show'), 4200); }
+  };
+  const cycleGroup = d => { gi = (gi + d + GROUPS.length) % GROUPS.length; renderGroup(); say('Group: ' + GROUPS[gi].name); };
+
+  // grabber: tap toggles mini<->full; drag with rubber-band
+  const grab = n.querySelector('[data-grab]');
+  const scroller = box.querySelector('.scroller');
+  let drag = null;
+  grab.addEventListener('pointerdown', e => {
+    if(box.classList.contains('closed')) return;
+    drag = {y0:e.clientY, t0:Date.now(), mode:null};
+    grab.setPointerCapture(e.pointerId);
+  });
+  grab.addEventListener('pointermove', e => {
+    if(!drag) return;
+    const dy = drag.y0 - e.clientY;
+    if(Math.abs(dy) < 6) return;
+    drag.mode = 'drag';
+    // visual rubber-band: translate the box content slightly
+    box.style.transition = 'none';
+    box.style.transform = `translateY(${Math.max(-40,Math.min(40, -dy*.25))}px)`;
+  });
+  const endDrag = e => {
+    if(!drag) return;
+    const dy = drag.y0 - e.clientY, dt = Date.now()-drag.t0, v = dy/Math.max(dt,1);
+    box.style.transition=''; box.style.transform='';
+    if(drag.mode === 'drag'){
+      if(dy > 46 || v > .5){ setState('full'); }
+      else if(dy < -46 || v < -.5){ setState('mini'); }
+    } else {
+      // tap on grabber
+      if(box.classList.contains('full')) setState('mini'); else setState('full');
+    }
+    drag = null;
+  };
+  grab.addEventListener('pointerup', endDrag);
+  grab.addEventListener('pointercancel', ()=>{drag=null;box.style.transition='';box.style.transform=''});
+
+  // closed state: whole box is the open toggle
+  grab.addEventListener('click', e => { if(box.classList.contains('closed')) setState('mini'); });
+  n.querySelector('[data-close]').addEventListener('click', e => { e.stopPropagation(); setState('closed'); say('Box closed'); });
+
+  // layers: tap toggles (with one-time teach), long-press opens tray
+  layersEl.addEventListener('pointerdown', e => {
+    const lay = e.target.closest('.lay'); if(!lay) return;
+    const act = e.target.closest('[data-a]');
+    if(act){ say((act.dataset.a==='info'?'Info':'Filter') + ': ' + lay.querySelector('b').textContent); return; }
+    clearTimeout(trayTimer);
+    let moved = false;
+    const mv = () => { moved = true; cleanup(); };
+    const cleanup = () => { clearTimeout(trayTimer); window.removeEventListener('pointermove', mv); };
+    trayTimer = setTimeout(() => {
+      cleanup();
+      if(moved || box.classList.contains('full') && false) return;
+      openTray(lay);
+    }, 450);
+    window.addEventListener('pointermove', mv, {once:true});
+    lay._tap = {moved:()=>moved, cleanup};
+  });
+  layersEl.addEventListener('click', e => {
+    const lay = e.target.closest('.lay'); if(!lay) return;
+    if(e.target.closest('[data-a]')) return;
+    const t = lay._tap; if(t) t.cleanup();
+    if(t && t.moved()) return;
+    if(tray.classList.contains('open') && trayLayer===lay){ closeTray(); return; }
+    if(!taught){ taught = true; setState('full'); return; }   // one-time teach: first tap expands
+    lay.setAttribute('aria-pressed', lay.getAttribute('aria-pressed')!=='true');
+    const L = LAYERS.find(x=>x.id===lay.dataset.id); L.on = lay.getAttribute('aria-pressed')==='true';
+    say((L.on?'On: ':'Off: ') + L.n);
+  });
+
+  function openTray(lay){
+    trayLayer = lay;
+    tray.querySelector('[data-tname]').textContent = lay.querySelector('b').textContent;
+    tray.querySelector('[data-tmeta]').textContent = lay.querySelector('.nm span').textContent;
+    const top = lay.offsetTop + scroller.offsetTop;
+    tray.style.top = Math.max(6, Math.min(top, 300)) + 'px';
+    tray.classList.add('open');
+    if(navigator.vibrate) navigator.vibrate(15);
+  }
+  const closeTray = () => { tray.classList.remove('open'); trayLayer=null; };
+  n.querySelector('[data-tclose]').addEventListener('click', closeTray);
+  n.querySelector('[data-info]').addEventListener('click', ()=>say('Layer info sheet…'));
+  n.querySelector('[data-filter]').addEventListener('click', ()=>say('Layer filter sheet…'));
+
+  // group cycling + long-press picker
+  n.querySelector('[data-prev]').addEventListener('click', ()=>cycleGroup(-1));
+  const nx = n.querySelector('[data-next]');
+  nx.addEventListener('pointerdown', ()=>{ clearTimeout(nx._lp); nx._lp = setTimeout(()=>openSheet('[data-group-sheet]'), 450); });
+  nx.addEventListener('pointerup', ()=>clearTimeout(nx._lp));
+  nx.addEventListener('click', e=>{ if(nx._fired){nx._fired=false;return;} cycleGroup(1); });
+
+  // sheets
+  const scrim = n.querySelector('[data-scrim]');
+  const openSheet = sel => { n.querySelector(sel).classList.add('open'); scrim.classList.add('on'); };
+  const closeSheets = () => { n.querySelectorAll('.sheet').forEach(s=>s.classList.remove('open')); scrim.classList.remove('on'); };
+  n.querySelector('[data-more]').addEventListener('click', ()=>openSheet('[data-more-sheet]'));
+  scrim.addEventListener('click', closeSheets);
+  n.querySelectorAll('.sheet .row').forEach(r=>r.addEventListener('click', ()=>{
+    if(r.querySelector('.sw')) r.setAttribute('aria-pressed', r.getAttribute('aria-pressed')!=='true');
+    else say(r.querySelector('b').textContent + ' …');
+  }));
+
+  stage.appendChild(n);
+}
+build('d1'); build('d2'); build('d3');
+
+document.querySelectorAll('.bar [data-v]').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('.bar [data-v]').forEach(x=>x.setAttribute('aria-pressed','false'));
+    b.setAttribute('aria-pressed','true');
+    document.querySelectorAll('.col').forEach(c=>{ if(c.querySelector('[data-vt]').textContent.startsWith(b.textContent.split(' ·')[0])) c.style.display=''; else c.style.display='none'; });
+  });
+});
+document.getElementById('theme').addEventListener('click', e=>{
+  document.body.classList.toggle('night');
+  e.currentTarget.setAttribute('aria-pressed', document.body.classList.contains('night'));
+  e.currentTarget.textContent = document.body.classList.contains('night')?'Day':'Night';
+});
+</script>
+</body>
+</html>

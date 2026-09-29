@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wodore · Map Controls · Mobile Search + Date Bar (no toolbar) · Day &amp; Night</title>
+<style>
+  /* ── The Alpine Instrument, Day & Night · DESIGN.md tokens ─────────────── */
+  /* NOTE: Barlow / Barlow Semi Condensed stand in via system sans in these mockups. */
+  .theme-day {
+    --page: #f6f9f7; --panel: #fdfefd; --panel-deep: #f6f9f7; --ridge: #dde7e0;
+    --ink: #1c1c1c; --info: #29626b; --info-bright: #153037;
+    --gold: #846a15; --gold-fill: #bfab25;
+    --green: #346751; --green-deep: #224e3b; --green-ice: #8fd6b7;
+    --wash: rgba(0,0,0,0.06);
+  }
+  .theme-night {
+    --page: #0a140f; --panel: #112119; --panel-deep: #0e1b14; --ridge: #1c3629;
+    --ink: #f2f7f4; --info: #9dd9d2; --info-bright: #a9f0d2;
+    --gold: #bfab25; --gold-fill: #bfab25;
+    --green: #346751; --green-deep: #224e3b; --green-ice: #8fd6b7;
+    --wash: rgba(255,255,255,0.10);
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { font: 400 15px/1.5 'Barlow', -apple-system, 'Helvetica Neue', sans-serif; background: #e8eee9; color: #1c1c1c; padding: 24px; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; }
+  .icon { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+  h1 { font: 300 2.125rem/1.2 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: -0.008em; }
+  h1 small { display: block; font: 500 .75rem/1.6 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .16667em; text-transform: uppercase; color: #846a15; }
+  .intro { max-width: 1100px; color: #29626b; margin: 8px 0 24px; }
+
+  .variants { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 1400px; }
+  .row2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; max-width: 700px; margin-top: 32px; }
+  @media (max-width: 1100px) { .variants, .row2 { grid-template-columns: 1fr; } }
+  .variant > h2 { font: 500 .8rem/1.3 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: #153037; margin-bottom: 10px; }
+  .variant > h2 em { font-style: normal; color: #29626b; }
+  .fav { display: inline-block; margin-left: 6px; padding: 2px 8px; border-radius: 999px; background: #bfab25; color: #1c1c1c; font: 500 .6rem/1.4 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .14em; }
+  .phones { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 700px; }
+  .theme-tag { font: 500 .62rem/1 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .16667em; text-transform: uppercase; color: #29626b; margin-bottom: 6px; }
+  .phone { position: relative; width: 300px; max-width: 100%; height: 560px; border-radius: 16px; overflow: hidden; border: 1px solid #dde7e0; }
+  .mapbg { position: absolute; inset: 0; background:
+    radial-gradient(circle at 70% 30%, rgba(41,98,107,.10), transparent 40%),
+    linear-gradient(160deg, #dfe9e2 0%, #cfdccf 45%, #c2d2c4 100%); }
+  .mapbg::before { content: ''; position: absolute; inset: 0; background:
+    repeating-radial-gradient(circle at 30% 60%, transparent 0 26px, rgba(41,98,107,.08) 26px 27px),
+    repeating-radial-gradient(circle at 80% 85%, transparent 0 34px, rgba(52,103,81,.08) 34px 35px); }
+  .mapbg::after { content: 'LIGHT BASEMAP (BOTH THEMES)'; position: absolute; left: 50%; top: 42%; transform: translate(-50%,-50%); font: 500 .58rem/1 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .16667em; color: #29626b; text-shadow: 0 0 4px rgba(242,247,244,.8); white-space: nowrap; }
+  .pin-demo { position: absolute; display: flex; align-items: center; gap: 6px; padding: 5px 8px; background: var(--panel); border: 1px solid var(--ridge); border-radius: 4px; font: 500 .66rem/1 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .04em; color: var(--ink); }
+  .pin-demo .dot { width: 9px; height: 9px; border-radius: 50%; }
+
+  .note { margin-top: 12px; background: #fdfefd; border: 1px solid #dde7e0; border-radius: 8px; padding: 10px 12px; font-size: .82rem; color: #1c1c1c; max-width: 700px; }
+  .note b { font: 500 .66rem/2 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: #29626b; display: block; }
+  .note ul { margin: 4px 0 0 16px; padding: 0; }
+  .note li { margin: 2px 0; }
+  .note .pro { color: #198053; } .note .con { color: #8a4b1b; }
+
+  /* ── shared bar vocabulary ───────────────────────────────────────────── */
+  .searchbar { position: absolute; left: 12px; right: 64px; top: 12px; background: var(--panel); border: 1px solid var(--ridge); border-radius: 999px; box-shadow: 0 1px 3px rgba(10,20,15,.2); overflow: hidden; }
+  .menufab { position: absolute; right: 12px; top: 12px; width: 52px; height: 52px; display: grid; place-items: center; background: var(--panel); border: 1px solid var(--ridge); border-radius: 999px; color: var(--info-bright); box-shadow: 0 1px 3px rgba(10,20,15,.2); }
+  .bar { display: flex; align-items: stretch; min-height: 56px; }
+  .seg { display: flex; align-items: center; gap: 8px; padding: 6px 12px; color: var(--ink); }
+  .seg .icon { width: 19px; height: 19px; color: var(--info-bright); }
+  .seg .txt { min-width: 0; }
+  .seg .txt small { display: block; font: 500 .52rem/1.2 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--info); }
+  .seg .txt b { display: block; font: 500 .78rem/1.25 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .seg.s { flex: 6; border-right: 1px solid var(--ridge); }
+  .seg.d { flex: 4; }
+  .avail { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .stack { position: absolute; right: 12px; bottom: 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .fab { width: 52px; height: 52px; display: grid; place-items: center; background: var(--panel); border: 1px solid var(--ridge); border-radius: 999px; color: var(--info-bright); box-shadow: 0 1px 3px rgba(10,20,15,.2); }
+  .fab.group { width: 56px; height: 56px; background: var(--green); border-color: var(--green-deep); color: #f2f7f4; position: relative; }
+  .fab.group .glab { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); font: 500 .52rem/1 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--green-ice); white-space: nowrap; }
+  /* Variant B/C pieces */
+  .pill { display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 0 14px; background: var(--panel); border: 1px solid var(--ridge); border-radius: 999px; box-shadow: 0 1px 3px rgba(10,20,15,.2); color: var(--ink); }
+  .pill .icon { width: 18px; height: 18px; color: var(--info-bright); }
+  .pill small { display: block; font: 500 .52rem/1.2 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--info); }
+  .pill b { display: block; font: 500 .76rem/1.25 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .06em; text-transform: uppercase; }
+  .pill.date { min-height: 44px; padding: 0 12px; }
+  .profile { width: 52px; height: 52px; border-radius: 50%; border: 1px solid var(--ridge); background: var(--panel); display: grid; place-items: center; color: var(--info-bright); box-shadow: 0 1px 3px rgba(10,20,15,.2); font: 500 .8rem/1 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .08em; }
+  /* menu sheet glimpse */
+  .menu-pop { position: absolute; right: 12px; top: 72px; width: 200px; background: var(--panel); border: 1px solid var(--ridge); border-radius: 16px; padding: 8px; }
+  .menu-pop button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 0 10px; border-radius: 8px; color: var(--ink); font: 500 .72rem/1 'Barlow Semi Condensed', Barlow, sans-serif; letter-spacing: .1em; text-transform: uppercase; text-align: left; }
+  .menu-pop button:hover { background: var(--wash); }
+  .menu-pop button + button { border-top: 1px solid var(--ridge); }
+  .menu-pop .icon { width: 18px; height: 18px; color: var(--info-bright); }
+</style>
+</head>
+<body>
+<h1><small>Map Controls Proposal · 2026-10 · Mobile</small>Mobile Chrome Without a Toolbar — split search + date bar, menu placement, Day &amp; Night</h1>
+<p class="intro">Mobile drops the app toolbar entirely. A large floating bar at the top carries the two things that drive the map: <b>what/where to search</b> and <b>when</b> — the date drives availability, so it shows the selected date plus a small availability state dot. The date value uses the amber ramp for its state dot (data, not brand gold). Menu / profile / theme move into a small menu button (top-right). All variants in Day and Night.</p>
+
+<div class="variants">
+
+  <!-- ═══ VARIANT A — ONE SPLIT PILL ═══ -->
+  <section class="variant">
+    <h2>A · <em>ONE SPLIT PILL 60/40</em><span class="fav">RECOMMENDED</span> — search | date with availability dot</h2>
+    <div class="phones">
+      <div>
+        <p class="theme-tag">Day</p>
+        <div class="phone theme-day">
+          <div class="mapbg"></div>
+          <span class="pin-demo" style="left:26%;top:56%"><span class="dot" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+          <div class="searchbar">
+            <div class="bar">
+              <button class="seg s"><svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span class="txt"><small>Search</small><b>Huts · Region · Peak</b></span></button>
+              <button class="seg d"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg><span class="txt"><small>Sat 14 Feb</small><b style="display:flex;align-items:center;gap:6px"><span class="avail" style="background:#25bf5e"></span>Free beds</b></span></button>
+            </div>
+          </div>
+          <button class="menufab" aria-label="Menu"><svg class="icon" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
+          <div class="stack">
+            <button class="fab group" aria-label="Layer group: Winter"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg><span class="glab">WINTER</span></button>
+            <button class="fab" aria-label="Basemap"><svg class="icon" viewBox="0 0 24 24"><path d="m9 20-5.4-2.7c-.4-.2-.6-.5-.6-.9V5.6c0-.7.7-1.2 1.4-.9L9 6.7l6-2.7 5.4 2.7c.4.2.6.5.6.9v10.8c0 .7-.7 1.2-1.4.9L15 17.3l-6 2.7Z"/><path d="M9 6.7v13.6M15 4v13.6"/></svg></button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p class="theme-tag">Night</p>
+        <div class="phone theme-night">
+          <div class="mapbg"></div>
+          <span class="pin-demo" style="left:26%;top:56%"><span class="dot" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+          <div class="searchbar">
+            <div class="bar">
+              <button class="seg s"><svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span class="txt"><small>Search</small><b>Huts · Region · Peak</b></span></button>
+              <button class="seg d"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg><span class="txt"><small>Sat 14 Feb</small><b style="display:flex;align-items:center;gap:6px"><span class="avail" style="background:#25bf5e"></span>Free beds</b></span></button>
+            </div>
+          </div>
+          <button class="menufab" aria-label="Menu"><svg class="icon" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
+          <div class="stack">
+            <button class="fab group" aria-label="Layer group: Winter"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg><span class="glab">WINTER</span></button>
+            <button class="fab" aria-label="Basemap"><svg class="icon" viewBox="0 0 24 24"><path d="m9 20-5.4-2.7c-.4-.2-.6-.5-.6-.9V5.6c0-.7.7-1.2 1.4-.9L9 6.7l6-2.7 5.4 2.7c.4.2.6.5.6.9v10.8c0 .7-.7 1.2-1.4.9L15 17.3l-6 2.7Z"/><path d="M9 6.7v13.6M15 4v13.6"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <b>Variant A · Pros / Cons</b>
+      <ul>
+        <li class="pro">+ One object, one shadow — cleanest over-map reading; search and date read as one instrument panel.</li>
+        <li class="pro">+ 60/40 split: search keeps room for long queries; date segment carries weekday, date AND availability summary (green = free beds on that date).</li>
+        <li class="pro">+ Ridge hairline (never shadow) separates the segments; each opens its own sheet (search vs. date picker).</li>
+        <li class="con">− Very long place names crowd the 60% segment (ellipsis, as mocked).</li>
+        <li class="con">− Availability dot needs a tooltip/sub-label to never speak by color alone — solved with the "Free beds" text.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ═══ VARIANT B — TWO STACKED PILLS ═══ -->
+  <section class="variant">
+    <h2>B · <em>TWO STACKED PILLS</em> — full-width search, date pill docked below-left</h2>
+    <div class="phones">
+      <div>
+        <p class="theme-tag">Day</p>
+        <div class="phone theme-day">
+          <div class="mapbg"></div>
+          <span class="pin-demo" style="left:44%;top:56%"><span class="dot" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+          <div style="position:absolute;left:12px;right:76px;top:12px;display:flex;flex-direction:column;gap:8px;align-items:flex-start">
+            <button class="pill" style="align-self:stretch"><svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span style="flex:1;text-align:left"><small>Search</small><b>Huts · Region · Peak</b></span></button>
+            <button class="pill date"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg><span style="text-align:left"><small>Sat 14 Feb</small><b style="display:flex;align-items:center;gap:6px"><span class="avail" style="background:#25bf5e"></span>Free beds</b></span></button>
+          </div>
+          <button class="menufab" aria-label="Menu"><svg class="icon" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
+          <div class="stack">
+            <button class="fab group" aria-label="Layer group: Winter"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg><span class="glab">WINTER</span></button>
+            <button class="fab" aria-label="Basemap"><svg class="icon" viewBox="0 0 24 24"><path d="m9 20-5.4-2.7c-.4-.2-.6-.5-.6-.9V5.6c0-.7.7-1.2 1.4-.9L9 6.7l6-2.7 5.4 2.7c.4.2.6.5.6.9v10.8c0 .7-.7 1.2-1.4.9L15 17.3l-6 2.7Z"/><path d="M9 6.7v13.6M15 4v13.6"/></svg></button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p class="theme-tag">Night</p>
+        <div class="phone theme-night">
+          <div class="mapbg"></div>
+          <span class="pin-demo" style="left:44%;top:56%"><span class="dot" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+          <div style="position:absolute;left:12px;right:76px;top:12px;display:flex;flex-direction:column;gap:8px;align-items:flex-start">
+            <button class="pill" style="align-self:stretch"><svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span style="flex:1;text-align:left"><small>Search</small><b>Huts · Region · Peak</b></span></button>
+            <button class="pill date"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg><span style="text-align:left"><small>Sat 14 Feb</small><b style="display:flex;align-items:center;gap:6px"><span class="avail" style="background:#25bf5e"></span>Free beds</b></span></button>
+          </div>
+          <button class="menufab" aria-label="Menu"><svg class="icon" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
+          <div class="stack">
+            <button class="fab group" aria-label="Layer group: Winter"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg><span class="glab">WINTER</span></button>
+            <button class="fab" aria-label="Basemap"><svg class="icon" viewBox="0 0 24 24"><path d="m9 20-5.4-2.7c-.4-.2-.6-.5-.6-.9V5.6c0-.7.7-1.2 1.4-.9L9 6.7l6-2.7 5.4 2.7c.4.2.6.5.6.9v10.8c0 .7-.7 1.2-1.4.9L15 17.3l-6 2.7Z"/><path d="M9 6.7v13.6M15 4v13.6"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <b>Variant B · Pros / Cons</b>
+      <ul>
+        <li class="pro">+ Search gets full width minus menu; roomiest for long queries and recents.</li>
+        <li class="pro">+ Date pill can wrap/truncate independently; two clearly separate actions.</li>
+        <li class="con">− Tallest chrome stack (~104&nbsp;px); eats map at the top — the direction we are trying to reverse.</li>
+        <li class="con">− Two shadows over the map stack up visually.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ═══ VARIANT C — PILL + ATTACHED DATE CHIP ═══ -->
+  <section class="variant">
+    <h2>C · <em>SEARCH PILL + ATTACHED DATE CHIP</em> — date chip hangs below the pill, visually fused</h2>
+    <div class="phones">
+      <div>
+        <p class="theme-tag">Day</p>
+        <div class="phone theme-day">
+          <div class="mapbg"></div>
+          <span class="pin-demo" style="left:40%;top:58%"><span class="dot" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+          <div style="position:absolute;left:12px;right:76px;top:12px">
+            <button class="pill" style="width:100%"><svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span style="flex:1;text-align:left"><small>Search</small><b>Huts · Region · Peak</b></span></button>
+            <button class="pill date" style="margin:6px 0 0 24px;border-radius:8px"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg><span style="text-align:left"><small>Sat 14 Feb</small><b style="display:flex;align-items:center;gap:6px"><span class="avail" style="background:#f6ad4b"></span>Low avail.</b></span></button>
+          </div>
+          <button class="menufab" aria-label="Menu"><svg class="icon" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
+          <div class="stack">
+            <button class="fab group" aria-label="Layer group: Winter"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg><span class="glab">WINTER</span></button>
+            <button class="fab" aria-label="Basemap"><svg class="icon" viewBox="0 0 24 24"><path d="m9 20-5.4-2.7c-.4-.2-.6-.5-.6-.9V5.6c0-.7.7-1.2 1.4-.9L9 6.7l6-2.7 5.4 2.7c.4.2.6.5.6.9v10.8c0 .7-.7 1.2-1.4.9L15 17.3l-6 2.7Z"/><path d="M9 6.7v13.6M15 4v13.6"/></svg></button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p class="theme-tag">Night</p>
+        <div class="phone theme-night">
+          <div class="mapbg"></div>
+          <span class="pin-demo" style="left:40%;top:58%"><span class="dot" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+          <div style="position:absolute;left:12px;right:76px;top:12px">
+            <button class="pill" style="width:100%"><svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span style="flex:1;text-align:left"><small>Search</small><b>Huts · Region · Peak</b></span></button>
+            <button class="pill date" style="margin:6px 0 0 24px;border-radius:8px"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg><span style="text-align:left"><small>Sat 14 Feb</small><b style="display:flex;align-items:center;gap:6px"><span class="avail" style="background:#f6ad4b"></span>Low avail.</b></span></button>
+          </div>
+          <button class="menufab" aria-label="Menu"><svg class="icon" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
+          <div class="stack">
+            <button class="fab group" aria-label="Layer group: Winter"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg><span class="glab">WINTER</span></button>
+            <button class="fab" aria-label="Basemap"><svg class="icon" viewBox="0 0 24 24"><path d="m9 20-5.4-2.7c-.4-.2-.6-.5-.6-.9V5.6c0-.7.7-1.2 1.4-.9L9 6.7l6-2.7 5.4 2.7c.4.2.6.5.6.9v10.8c0 .7-.7 1.2-1.4.9L15 17.3l-6 2.7Z"/><path d="M9 6.7v13.6M15 4v13.6"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <b>Variant C · Pros / Cons</b>
+      <ul>
+        <li class="pro">+ Date chip indents and fuses with the pill — reads as "a property of the search".</li>
+        <li class="pro">+ Chip collapses to a compact state (just date + dot) once the user has interacted with it.</li>
+        <li class="con">− Asymmetric offset can look accidental; two visual objects to align on every screen size.</li>
+        <li class="con">− Amber "Low avail." example shows the state scale (data amber, never brand gold).</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<!-- ═══ MENU / PROFILE / THEME PLACEMENT ═══ -->
+<div class="row2">
+  <section class="variant">
+    <h2>MENU PLACEMENT · <em>TOP-RIGHT MENU FAB</em> — profile, theme, settings, groups</h2>
+    <div class="phones">
+      <div>
+        <p class="theme-tag">Day · menu open</p>
+        <div class="phone theme-day">
+          <div class="mapbg"></div>
+          <span class="pin-demo" style="left:24%;top:60%"><span class="dot" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+          <div class="searchbar" style="right:76px">
+            <div class="bar">
+              <button class="seg s"><svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span class="txt"><small>Search</small><b>Huts · Region · Peak</b></span></button>
+              <button class="seg d"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg><span class="txt"><small>Sat 14 Feb</small><b style="display:flex;align-items:center;gap:6px"><span class="avail" style="background:#25bf5e"></span>Free</b></span></button>
+            </div>
+          </div>
+          <button class="menufab" aria-label="Menu" style="box-shadow:inset 0 0 0 2px var(--gold-fill)"><svg class="icon" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
+          <div class="menu-pop">
+            <button><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>Profile · Tobias</button>
+            <button><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg>Layer groups</button>
+            <button><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg>Theme · Night</button>
+            <button><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.5-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.5 2 1.5a7 7 0 0 0 0 2.4l-2 1.5 2 3.5 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.5-2-1.5c.1-.4.1-.8.1-1.2Z"/></svg>Settings</button>
+          </div>
+          <div class="stack">
+            <button class="fab group" aria-label="Layer group: Winter"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg><span class="glab">WINTER</span></button>
+            <button class="fab" aria-label="Basemap"><svg class="icon" viewBox="0 0 24 24"><path d="m9 20-5.4-2.7c-.4-.2-.6-.5-.6-.9V5.6c0-.7.7-1.2 1.4-.9L9 6.7l6-2.7 5.4 2.7c.4.2.6.5.6.9v10.8c0 .7-.7 1.2-1.4.9L15 17.3l-6 2.7Z"/><path d="M9 6.7v13.6M15 4v13.6"/></svg></button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p class="theme-tag">Night · menu open</p>
+        <div class="phone theme-night">
+          <div class="mapbg"></div>
+          <span class="pin-demo" style="left:24%;top:60%"><span class="dot" style="background:#25bf5e"></span>Aarbiwak · 14</span>
+          <div class="searchbar" style="right:76px">
+            <div class="bar">
+              <button class="seg s"><svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span class="txt"><small>Search</small><b>Huts · Region · Peak</b></span></button>
+              <button class="seg d"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg><span class="txt"><small>Sat 14 Feb</small><b style="display:flex;align-items:center;gap:6px"><span class="avail" style="background:#25bf5e"></span>Free</b></span></button>
+            </div>
+          </div>
+          <button class="menufab" aria-label="Menu" style="box-shadow:inset 0 0 0 2px var(--gold-fill)"><svg class="icon" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
+          <div class="menu-pop">
+            <button><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>Profile · Tobias</button>
+            <button><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg>Layer groups</button>
+            <button><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg>Theme · Night</button>
+            <button><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.5-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.5 2 1.5a7 7 0 0 0 0 2.4l-2 1.5 2 3.5 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.5-2-1.5c.1-.4.1-.8.1-1.2Z"/></svg>Settings</button>
+          </div>
+          <div class="stack">
+            <button class="fab group" aria-label="Layer group: Winter"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg><span class="glab">WINTER</span></button>
+            <button class="fab" aria-label="Basemap"><svg class="icon" viewBox="0 0 24 24"><path d="m9 20-5.4-2.7c-.4-.2-.6-.5-.6-.9V5.6c0-.7.7-1.2 1.4-.9L9 6.7l6-2.7 5.4 2.7c.4.2.6.5.6.9v10.8c0 .7-.7 1.2-1.4.9L15 17.3l-6 2.7Z"/><path d="M9 6.7v13.6M15 4v13.6"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <b>Menu · Notes</b>
+      <ul>
+        <li class="pro">+ One 52&nbsp;px menu fab top-right answers "where do profile/theme/settings go" without a toolbar.</li>
+        <li class="pro">+ Active/open state = inset gold beam ring (only gold on the screen); theme toggle lives one tap deep.</li>
+        <li class="con">− Theme switch is a low-frequency action; keeping it in the menu (not on the map) is deliberate.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="variant">
+    <h2>DATE SEGMENT STATES · <em>AVAILABILITY DOT</em> — data amber, never brand gold</h2>
+    <div class="phones">
+      <div>
+        <p class="theme-tag">Day · date segment: free / low / full</p>
+        <div class="phone theme-day">
+          <div class="mapbg"></div>
+          <div class="searchbar" style="right:76px">
+            <div class="bar" style="flex-direction:column;min-height:0">
+              <button class="seg" style="width:100%;border-bottom:1px solid var(--ridge)"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg><span class="txt"><small>Sat 14 Feb</small><b style="display:flex;align-items:center;gap:6px"><span class="avail" style="background:#25bf5e"></span>Free beds</b></span></button>
+              <button class="seg" style="width:100%;border-bottom:1px solid var(--ridge)"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg><span class="txt"><small>Sun 15 Feb</small><b style="display:flex;align-items:center;gap:6px"><span class="avail" style="background:#f6ad4b"></span>Low availability</b></span></button>
+              <button class="seg" style="width:100%"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg><span class="txt"><small>Mon 16 Feb</small><b style="display:flex;align-items:center;gap:6px"><span class="avail" style="background:#961a17"></span>Fully booked</b></span></button>
+            </div>
+          </div>
+          <button class="menufab" aria-label="Menu"><svg class="icon" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
+          <div class="stack">
+            <button class="fab group" aria-label="Layer group: Winter"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg><span class="glab">WINTER</span></button>
+            <button class="fab" aria-label="Basemap"><svg class="icon" viewBox="0 0 24 24"><path d="m9 20-5.4-2.7c-.4-.2-.6-.5-.6-.9V5.6c0-.7.7-1.2 1.4-.9L9 6.7l6-2.7 5.4 2.7c.4.2.6.5.6.9v10.8c0 .7-.7 1.2-1.4.9L15 17.3l-6 2.7Z"/><path d="M9 6.7v13.6M15 4v13.6"/></svg></button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p class="theme-tag">Night · same states</p>
+        <div class="phone theme-night">
+          <div class="mapbg"></div>
+          <div class="searchbar" style="right:76px">
+            <div class="bar" style="flex-direction:column;min-height:0">
+              <button class="seg" style="width:100%;border-bottom:1px solid var(--ridge)"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg><span class="txt"><small>Sat 14 Feb</small><b style="display:flex;align-items:center;gap:6px"><span class="avail" style="background:#25bf5e"></span>Free beds</b></span></button>
+              <button class="seg" style="width:100%;border-bottom:1px solid var(--ridge)"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg><span class="txt"><small>Sun 15 Feb</small><b style="display:flex;align-items:center;gap:6px"><span class="avail" style="background:#f6ad4b"></span>Low availability</b></span></button>
+              <button class="seg" style="width:100%"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg><span class="txt"><small>Mon 16 Feb</small><b style="display:flex;align-items:center;gap:6px"><span class="avail" style="background:#961a17"></span>Fully booked</b></span></button>
+            </div>
+          </div>
+          <button class="menufab" aria-label="Menu"><svg class="icon" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
+          <div class="stack">
+            <button class="fab group" aria-label="Layer group: Winter"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M4 21h16"/></svg><span class="glab">WINTER</span></button>
+            <button class="fab" aria-label="Basemap"><svg class="icon" viewBox="0 0 24 24"><path d="m9 20-5.4-2.7c-.4-.2-.6-.5-.6-.9V5.6c0-.7.7-1.2 1.4-.9L9 6.7l6-2.7 5.4 2.7c.4.2.6.5.6.9v10.8c0 .7-.7 1.2-1.4.9L15 17.3l-6 2.7Z"/><path d="M9 6.7v13.6M15 4v13.6"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="note">
+      <b>Availability dot · Notes</b>
+      <ul>
+        <li class="pro">+ The dot speaks the availability scale (free green #25bf5e · low amber #f6ad4b · full #961a17) and is ALWAYS paired with a text label — never color alone.</li>
+        <li class="pro">+ Brand gold stays reserved for the beam (active/selected); the date state uses the amber DATA ramp.</li>
+        <li class="con">− Dot alone is too small for AA — it is decorative reinforcement; the label carries the state.</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+</body>
+</html>
