@@ -11,5 +11,11 @@
     "@capacitor/core": "^8.5.2",
     "@capawesome/capacitor-maplibre": "^0.2.0",
     "maplibre-gl": "^6.11.2"
+  },
+  "scripts": {
+    "postinstall": "patch-package"
+  },
+  "devDependencies": {
+    "patch-package": "^8.0.1"
   }
 }

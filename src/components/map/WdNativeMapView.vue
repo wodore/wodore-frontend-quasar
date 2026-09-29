@@ -43,7 +43,7 @@ import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import type { StyleSpecification } from 'maplibre-gl';
-import { MapLibre, type Camera } from '@capawesome/capacitor-maplibre';
+import { MapLibre } from '@capawesome/capacitor-maplibre';
 import type { PluginListenerHandle } from '@capacitor/core';
 import { useBasemapStore } from '@stores/map/basemap-store';
 import { useOverlayStore } from '@stores/map/overlay-store';
@@ -97,12 +97,22 @@ async function resolveBasemapStyle(): Promise<StyleSpecification> {
     } catch (e) {
       // MapTiler-hosted styles 403 when the API key is suspended —
       // the web flow falls back via map error events which don't fire
-      // natively. Fall back to the keyless swisstopo-full raster and
-      // keep the picker in sync.
-      console.warn(
-        `[WdNativeMapView] Style fetch failed (${style}), falling back to ch-swisstopo-full`,
-        e
-      );
+      // natively. Fall back to the keyless OpenFreeMap vector style
+      // (the store's designated fallback), then swisstopo-full raster.
+      console.warn(`[WdNativeMapView] Style fetch failed (${style}), falling back`, e);
+      const ofm = basemapStore.basemaps.find(b => b.name === 'openfreemap-bright');
+      if (ofm && typeof ofm.style === 'string' && !remoteStyleCache.has(ofm.style)) {
+        try {
+          const res = await axios.get<StyleSpecification>(ofm.style, {
+            headers: { Accept: 'application/json' },
+          });
+          remoteStyleCache.set(ofm.style, res.data);
+          basemapStore.setBasemap(ofm);
+          return JSON.parse(JSON.stringify(res.data));
+        } catch {
+          /* OpenFreeMap unreachable too — try swisstopo-full below */
+        }
+      }
       const full = basemapStore.basemaps.find(b => b.name === 'ch-swisstopo-full');
       if (full && typeof full.style !== 'string') {
         basemapStore.setBasemap(full);
@@ -193,6 +203,13 @@ async function composeStyle(): Promise<StyleSpecification> {
       'circle-radius': ['interpolate', ['linear'], ['zoom'], 7, 10, 15, 40],
     },
   });
+  // Selection halo renders BELOW the hut symbols: move it before the
+  // first hut layer instead of leaving it on top.
+  const selIdx = style.layers!.findIndex(l => l.id === 'wd-selection');
+  const firstHutIdx = style.layers!.findIndex(l => (l.id ?? '').startsWith('wd-huts'));
+  if (firstHutIdx !== -1 && firstHutIdx < selIdx) {
+    style.layers!.splice(firstHutIdx, 0, style.layers!.splice(selIdx, 1)[0]);
+  }
 
   // Glyph server: fonts.openmaptiles.org serves BOTH the overlay fonts
   // ("Open Sans Semibold") and the standard Noto families basemaps use
@@ -216,21 +233,13 @@ async function composeStyle(): Promise<StyleSpecification> {
 let mapReady = false;
 
 /**
- * Apply the composed style. setStyle() crashes the app (NPE in the
- * maplibre annotation plugin's DraggableAnnotationController when the
- * style reloads — upstream bug at plugin v0.2.0), so rebuild the map
- * instead: destroy + create with the current camera preserved.
+ * Apply the composed style via setStyle. The upstream crash (NPE in
+ * the annotation plugin's DraggableAnnotationController on style
+ * reload) is fixed by our patch-package patch (lazy annotation
+ * managers — see patches/@capawesome+capacitor-maplibre+0.2.0.patch).
  */
 async function applyStyle() {
   const epoch = ++styleEpoch.value;
-  let camera: Camera | null = null;
-  if (mapReady) {
-    camera = await MapLibre.getCamera({ mapId: MAP_ID })
-      .then(r => r.camera)
-      .catch(() => null);
-    await MapLibre.destroyMap({ mapId: MAP_ID }).catch(() => undefined);
-  }
-  const initial = localPropertiesStore.getInitialLocation();
   let styleJson: string;
   try {
     styleJson = JSON.stringify(await composeStyle());
@@ -239,20 +248,22 @@ async function applyStyle() {
     return;
   }
   try {
-    await MapLibre.createMap({
-      mapId: MAP_ID,
-      elementId: mapElementId,
-      styleJson,
-      center: camera?.center ?? { latitude: initial.lat, longitude: initial.lng },
-      zoom: camera?.zoom ?? initial.zoom,
-      minZoom: 7,
-      maxZoom: 20,
-    });
-    mapReady = true;
+    await MapLibre.setStyle({ mapId: MAP_ID, json: styleJson });
     if (epoch !== styleEpoch.value) return; // superseded
-    console.debug('[WdNativeMapView] map (re)created with composed style');
+    // setStyle leaves the native surface stale (plugin v0.2.0 render
+    // bug: black map until the next layout pass) — re-apply the frame
+    // to force a re-layout. Verified on device: this revives rendering.
+    const el = document.getElementById(mapElementId);
+    if (el) {
+      const r = el.getBoundingClientRect();
+      await MapLibre.setFrame({
+        mapId: MAP_ID,
+        frame: { x: r.x, y: r.y, width: r.width, height: r.height },
+      }).catch(() => undefined);
+    }
+    console.debug('[WdNativeMapView] style applied');
   } catch (e) {
-    console.error('[WdNativeMapView] applyStyle createMap failed', e);
+    console.error('[WdNativeMapView] setStyle failed', e);
   }
 }
 
