@@ -377,9 +377,7 @@
     "satellite": "Satellite",
     "outdoor": "Outdoor OSM",
     "austria_vector": "Austria Topo Vector",
-    "austria_raster": "Austria Topo Raster",
-    "openfreemap_liberty": "OpenFreeMap Liberty",
-    "osm_raster": "OSM Raster"
+    "austria_raster": "Austria Topo Raster"
   },
   "multi_select": {
     "select_all": "Select all",

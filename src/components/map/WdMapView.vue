@@ -291,30 +291,20 @@ function onMapError(e: unknown) {
   }
 
   // Basemap fallback: an auth failure from the tile/style host (e.g. a
-  // suspended or rotated MapTiler key) would otherwise leave a blank,
-  // broken map. Silently switch once to a keyless basemap — OpenFreeMap
-  // Liberty (vector, labels included, glyphs served by OpenFreeMap) when a
-  // MapTiler VECTOR style is active, or the plain OSM raster when a
-  // MapTiler RASTER variant is active (weak-GPU devices stay on raster).
-  // No user notification — the map simply keeps working.
+  // suspended or exhausted MapTiler key) would otherwise leave a blank,
+  // broken map. Silently switch once to the keyless OpenFreeMap Liberty
+  // vector style (labels included — OpenFreeMap also serves the glyphs).
+  // No user notification — the map simply keeps working. Weak-GPU devices
+  // never get here: their raster variant is the keyless OSM raster.
   if (!basemapFallbackDone && isTileAuthFailure(errorObj) && activeBasemapUsesMapTiler()) {
     basemapFallbackDone = true;
-    // MapTiler vector styles are URL strings; raster variants are inline
-    // style objects — pick a keyless fallback of the same kind.
-    const active = basemapStore.getBasemap();
-    const fallbackName =
-      active && typeof active.style === 'string' ? 'openfreemap-liberty' : 'osm-raster';
-    // Typed local: iterating the store array directly makes vue-tsc blow its
-    // type-instantiation depth budget in the dev-server checker
     const candidates = basemapStore.basemaps as BasemapSwitchItem[];
-    const fallback = candidates.find(b => b.name === fallbackName);
+    const fallback = candidates.find(b => b.name === 'openfreemap-liberty');
     if (fallback) {
       console.warn(
-        '[onMapError] Tile host rejected requests - falling back to',
-        fallbackName
+        '[onMapError] Tile host rejected requests - falling back to OpenFreeMap Liberty'
       );
       // Not persisted: the next session retries the user's chosen basemap
-      // (and the fallback stays visible as selected in the picker)
       void basemapStore.setBasemap(fallback, true, false);
     }
     return;

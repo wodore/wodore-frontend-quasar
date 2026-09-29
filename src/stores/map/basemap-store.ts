@@ -34,22 +34,10 @@ const swissTopoRasterStyle = getRasterStyle({
   tileSize: Platform.is.mobile ? 128 : 156,
 });
 
-const swissTopoLbmRasterStyle = getRasterStyle({
-  name: 'ch-swisstopo-lbm',
-  tiles: [
-    'https://api.maptiler.com/maps/ch-swisstopo-lbm/{z}/{x}/{y}.png?key=' +
-      getEnv('WODORE_MAPTILER_API_KEY'),
-  ],
-  attribution:
-    '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank"> &copy; OpenStreetMap contributors</a> &#124; <a href="https://www.swisstopo.admin.ch/en/home.html" target="_blank">&copy; swisstopo</a>',
-  suffix: '',
-  //tileSize: Platform.is.mobile ? 128 : 156,
-  tileSize: 512,
-});
-
-// Keyless plain OSM raster (tile.openstreetmap.org) — automatic fallback
-// target when a MapTiler RASTER variant is active and the key is rejected
-// (weak-GPU devices; see WdMapView.vue).
+// Keyless plain OSM raster (tile.openstreetmap.org) — style for the weak-GPU
+// raster variant of "Switzerland Topo Light". Deliberately NOT MapTiler
+// raster tiles: those are key-metered and exhausted the free quota —
+// weak-GPU devices must never touch MapTiler.
 const osmRasterStyle = getRasterStyle({
   name: 'osm-raster',
   tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
@@ -459,8 +447,6 @@ export const useBasemapStore = defineStore('basemap', () => {
     'outdoor-osm': 'basemaps.outdoor',
     'oe-vector': 'basemaps.austria_vector',
     'oe-raster': 'basemaps.austria_raster',
-    'openfreemap-liberty': 'basemaps.openfreemap_liberty',
-    'osm-raster': 'basemaps.osm_raster',
   };
 
   const applyBasemapLabels = () => {
@@ -558,8 +544,10 @@ export const useBasemapStore = defineStore('basemap', () => {
         show: true,
         active: false,
         img: getImageUrl('swiss-vector.png'),
+        // Weak-GPU raster variant: keyless OSM raster (MapTiler raster tiles
+        // are key-metered and exhausted the free quota)
         style: useRaster
-          ? swissTopoLbmRasterStyle
+          ? osmRasterStyle
           : 'https://api.maptiler.com/maps/ch-swisstopo-lbm/style.json?key=' +
             getEnv('WODORE_MAPTILER_API_KEY'),
         layers: {
@@ -632,36 +620,18 @@ export const useBasemapStore = defineStore('basemap', () => {
         },
       },
       {
-        // Keyless OpenFreeMap vector basemap (openfreemap.org). Automatic
-        // fallback when MapTiler-based vector basemaps are rejected
-        // (suspended/rotated key); also selectable in the picker so a
-        // fallback session shows (and lets the user keep) the active map.
+        // Keyless OpenFreeMap vector basemap (openfreemap.org). Hidden
+        // from the picker — it is the automatic fallback when MapTiler-based
+        // basemaps are rejected (suspended/rotated/exhausted key).
         // Liberty style: full-featured vector cartography with labels;
         // glyphs are served keylessly by OpenFreeMap itself
         // (https://tiles.openfreemap.org/fonts/...).
         name: 'openfreemap-liberty',
-        label: t('basemaps.openfreemap_liberty'),
-        show: true,
+        label: 'OpenFreeMap Liberty',
+        show: false,
         active: false,
         img: getImageUrl('outdoor-v2.png'),
         style: 'https://tiles.openfreemap.org/styles/liberty',
-        layers: {
-          ways: { before: undefined },
-          background: { before: undefined },
-        },
-      },
-      {
-        // Keyless plain OSM raster (tile.openstreetmap.org). Automatic
-        // fallback when a MapTiler RASTER variant is rejected (weak-GPU
-        // devices stay on raster instead of a heavy vector style);
-        // selectable in the picker so a fallback session shows the active
-        // map.
-        name: 'osm-raster',
-        label: t('basemaps.osm_raster'),
-        show: true,
-        active: false,
-        img: getImageUrl('outdoor-v2.png'),
-        style: osmRasterStyle,
         layers: {
           ways: { before: undefined },
           background: { before: undefined },
