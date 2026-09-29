@@ -491,6 +491,19 @@ function overlayIcon(name: string) {
   gap: 10px;
   padding: 2px 14px;
   border-radius: 4px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.wd-layerctl__rows .overlay-item-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wd-layerctl__rows .overlay-side-icons {
+  flex: none;
 }
 
 .wd-layerctl__rows .overlay-item-container:hover {
