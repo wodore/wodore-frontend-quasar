@@ -135,6 +135,191 @@ async function fetchOfmVectorBase(): Promise<StyleSpecification | undefined> {
     return undefined;
   }
 }
+
+// --- National vector layering (swisstopo LBM + Plan IGN over OFM) ---
+// Both services return EMPTY tiles outside their country (verified), so
+// layering them over the OFM world base needs no clipping: the data
+// boundary IS the border. Their schemas are incompatible with OMT — that
+// is fine, one MapLibre style can style many schemas. What must be
+// unified: glyphs (single URL per style → rewrite fonts to OFM's Noto)
+// and sprites (multi-sprite object, icon references namespaced).
+
+const OFM_GLYPHS = 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf';
+
+/** Map any fontstack name onto the Noto stacks served by OpenFreeMap. */
+function toNotoFont(font: string): string {
+  const f = font.toLowerCase();
+  if (f.includes('italic')) return 'Noto Sans Italic';
+  if (f.includes('bold') || f.includes('semibold') || f.includes('medium'))
+    return 'Noto Sans Bold';
+  return 'Noto Sans Regular';
+}
+
+/**
+ * Prefix icon-image references with the style namespace (multi-sprite
+ * keys), expression-aware: only VALUE positions are prefixed (icon
+ * names), never match/case labels, zoom inputs or stop values.
+ */
+
+// operators whose whole expression must stay untouched
+const LEAF_OPS = new Set([
+  'literal',
+  'geometry-type',
+  'zoom',
+  'heatmap-density',
+  'line-progress',
+  'collator',
+  'format',
+  'image',
+  'number',
+]);
+
+function prefixIconExpr(expr: unknown, ns: string): unknown {
+  if (typeof expr === 'string') return `${ns}:${expr}`;
+  if (!Array.isArray(expr)) return expr;
+  const op = expr[0];
+  if (typeof op !== 'string') return expr;
+  switch (op) {
+    // value-producing leaves: wrap the whole lookup with the prefix
+    case 'get':
+    case 'to-string':
+    case 'coalesce':
+      return ['concat', `${ns}:`, expr];
+    case 'concat':
+      return ['concat', `${ns}:`, ...expr.slice(1)];
+    case 'case': {
+      // [case, cond, value, cond, value, ..., fallback]: prefix values+fallback
+      const out = ['case'];
+      for (let i = 1; i < expr.length; i++) {
+        const isValue = i % 2 === 0 || i === expr.length - 1;
+        out.push(isValue ? prefixIconExpr(expr[i], ns) : expr[i]);
+      }
+      return out;
+    }
+    case 'match': {
+      // [match, input, label, value, ..., fallback]: prefix values+fallback
+      const out = ['match', expr[1]];
+      for (let i = 2; i < expr.length; i++) {
+        const isValue = i % 2 === 1 || i === expr.length - 1;
+        out.push(isValue ? prefixIconExpr(expr[i], ns) : expr[i]);
+      }
+      return out;
+    }
+    case 'step': {
+      // [step, input, v0, stop1, v1, ...]: prefix values at even idx >= 2
+      const out = ['step', expr[1], prefixIconExpr(expr[2], ns)];
+      for (let i = 3; i < expr.length; i++) {
+        out.push(i % 2 === 1 ? expr[i] : prefixIconExpr(expr[i], ns));
+      }
+      return out;
+    }
+    case 'interpolate': {
+      // [interpolate, method, input, stop1, v1, ...]: prefix values at odd idx >= 3
+      const out = [expr[0], expr[1], expr[2]];
+      for (let i = 3; i < expr.length; i++) {
+        out.push(i % 2 === 0 ? prefixIconExpr(expr[i], ns) : expr[i]);
+      }
+      return out;
+    }
+    default:
+      if (LEAF_OPS.has(op)) return expr;
+      // unknown operator: prefix via concat unless it uses zoom internally
+      if (JSON.stringify(expr).includes('"zoom"')) return expr;
+      return ['concat', `${ns}:`, expr];
+  }
+}
+
+function prefixIcons(style: StyleSpecification, ns: string): void {
+  for (const layer of style.layers ?? []) {
+    const layout = (layer as { layout?: Record<string, unknown> }).layout;
+    if (!layout) continue;
+    const icon = layout['icon-image'];
+    if (icon === undefined) continue;
+    layout['icon-image'] = prefixIconExpr(icon, ns);
+  }
+}
+
+interface AdaptedNationalStyle {
+  style: StyleSpecification;
+  /** sprite URL of the original style (for the merged multi-sprite) */
+  sprite?: StyleSpecification['sprite'];
+}
+
+/**
+ * Adapt a fetched national vector style for layering: namespace, source
+ * bounds, Noto fonts, namespaced icon references.
+ */
+function adaptNationalVectorStyle(
+  raw: StyleSpecification,
+  ns: string,
+  bounds: [number, number, number, number]
+): AdaptedNationalStyle {
+  const sprite = raw.sprite;
+  raw.name = ns;
+  for (const source of Object.values(raw.sources ?? {})) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (source as any).bounds = bounds;
+  }
+  for (const layer of raw.layers ?? []) {
+    const layout = (layer as { layout?: Record<string, unknown> }).layout;
+    if (!layout) continue;
+    const font = layout['text-font'];
+    if (!Array.isArray(font) || font.length === 0) continue;
+    const FONT_EXPR_OPS = new Set(['match', 'case', 'step', 'interpolate', 'coalesce', 'concat', 'let', 'var']);
+    const isExpression = typeof font[0] === 'string' && FONT_EXPR_OPS.has(font[0]);
+    if (!isExpression) {
+      // literal fontstack list → Noto
+      layout['text-font'] = font.map(f => (typeof f === 'string' ? toNotoFont(f) : f));
+    } else {
+      // conditional font expressions (match/case) would keep referencing
+      // national fontstacks — flatten to Regular instead
+      layout['text-font'] = ['Noto Sans Regular'];
+    }
+  }
+  prefixIcons(raw, ns);
+  return { style: raw, sprite };
+}
+
+/** Fetch a style JSON with a timeout; undefined on any failure. */
+async function fetchJsonStyle(url: string): Promise<StyleSpecification | undefined> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000);
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (!res.ok) return undefined;
+    return (await res.json()) as StyleSpecification;
+  } catch {
+    return undefined;
+  }
+}
+
+/** swisstopo Leichte Basiskarte vector tiles (empty tiles outside CH+border). */
+async function fetchSwisstopoLbm(): Promise<AdaptedNationalStyle | undefined> {
+  const raw = await fetchJsonStyle(
+    'https://vectortiles.geo.admin.ch/styles/ch.swisstopo.lightbasemap.vt/style.json'
+  );
+  return raw ? adaptNationalVectorStyle(raw, 'stg-lbm', [5.85, 45.72, 10.65, 47.9]) : undefined;
+}
+
+/** Plan IGN vector tiles (empty tiles outside France). */
+async function fetchPlanIgn(): Promise<AdaptedNationalStyle | undefined> {
+  const raw = await fetchJsonStyle(
+    'https://data.geopf.fr/annexes/ressources/vectorTiles/styles/PLAN.IGN/standard.json'
+  );
+  return raw ? adaptNationalVectorStyle(raw, 'plan-ign', [-5.2, 41.3, 9.7, 51.2]) : undefined;
+}
+
+// Border-merged raster from the local MapProxy example stack
+// (docker/mapproxy-eu-topo). Demo URL — point it at your VPS in production.
+const mapproxyTopoStyle = getRasterStyle({
+  name: 'mapproxy-topo',
+  tiles: ['http://localhost:8090/mapproxy/tiles/europe_topo/webmercator/{z}/{x}/{y}.png'],
+  attribution:
+    '&copy; swisstopo &copy; basemap.at &copy; OpenTopoMap (CC-BY-SA) &copy; OpenStreetMap contributors',
+  suffix: '',
+  maxZoom: 17,
+});
 function getImageUrl(name: string): string {
   return new URL(`/src/assets/wodore-design/map/switch/${name}`, import.meta.url).href;
 }
@@ -512,6 +697,8 @@ export const useBasemapStore = defineStore('basemap', () => {
     'ch-swisstopo-light': 'basemaps.swiss_light',
     'ch-swisstopo-full': 'basemaps.swiss_raster',
     'europe-topo': 'basemaps.europe_topo',
+    'europe-vector': 'basemaps.europe_vector',
+    'europe-topo-proxy': 'basemaps.europe_topo_proxy',
     'Satellite Hybrid': 'basemaps.satellite',
     'outdoor-osm': 'basemaps.outdoor',
     'oe-vector': 'basemaps.austria_vector',
@@ -617,6 +804,46 @@ export const useBasemapStore = defineStore('basemap', () => {
       ],
     });
 
+    // National vector styles, fetched in parallel
+    const [lbm, planIgn] = await Promise.all([fetchSwisstopoLbm(), fetchPlanIgn()]);
+
+    // Vector composite: OFM world base with swisstopo LBM (CH) and
+    // Plan IGN (FR) layered on top. No clipping needed — both national
+    // services serve EMPTY tiles outside their country (verified); the
+    // data boundary is the border. Heterogeneous schemas are styled in
+    // one style: single glyphs URL (OFM Noto, fonts rewritten) +
+    // multi-sprite object with namespaced icon references.
+    const vectorLayers: StyleSpecification[] = [];
+    const vectorSprites: { id: string; url: string }[] = [];
+    if (ofmBase) {
+      prefixIcons(ofmBase, 'ofm-base');
+      vectorLayers.push(ofmBase);
+      if (typeof ofmBase.sprite === 'string') vectorSprites.push({ id: 'ofm-base', url: ofmBase.sprite });
+    }
+    for (const adapted of [lbm, planIgn]) {
+      if (!adapted) continue;
+      vectorLayers.push(adapted.style);
+      if (typeof adapted.sprite === 'string')
+        vectorSprites.push({ id: adapted.style.name ?? 'ns', url: adapted.sprite });
+    }
+    const europeVectorStyle =
+      vectorLayers.length > 1
+        ? getCompositeRasterStyle({
+            name: 'europe-vector',
+            styles: vectorLayers,
+            glyphs: OFM_GLYPHS,
+            sprite: vectorSprites,
+          })
+        : undefined;
+
+    // Raster version of the same idea, but border-MERGED server-side by
+    // the MapProxy stack (docker/mapproxy-eu-topo) — polygon-cut national
+    // raster maps in one tile source.
+    const europeTopoProxyStyle = getCompositeRasterStyle({
+      name: 'europe-topo-proxy',
+      styles: [ofmBase ?? esriLightGrayStyle, withLayerMinZoom(mapproxyTopoStyle, 8)],
+    });
+
     console.debug(
       'GPU Tier detected:',
       gpuTier.tier,
@@ -662,6 +889,30 @@ export const useBasemapStore = defineStore('basemap', () => {
         active: false,
         img: getImageUrl('swiss-raster.png'),
         style: europeTopoStyle,
+        layers: {
+          ways: { before: undefined },
+          background: { before: undefined },
+        },
+      },
+      {
+        name: 'europe-vector',
+        label: t('basemaps.europe_vector'),
+        show: europeVectorStyle !== undefined,
+        active: false,
+        img: getImageUrl('swiss-vector.png'),
+        style: europeVectorStyle ?? esriLightGrayStyle,
+        layers: {
+          ways: { before: undefined },
+          background: { before: undefined },
+        },
+      },
+      {
+        name: 'europe-topo-proxy',
+        label: t('basemaps.europe_topo_proxy'),
+        show: true,
+        active: false,
+        img: getImageUrl('swiss-raster.png'),
+        style: europeTopoProxyStyle,
         layers: {
           ways: { before: undefined },
           background: { before: undefined },

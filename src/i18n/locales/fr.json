@@ -378,7 +378,9 @@
     "outdoor": "Outdoor OSM",
     "austria_vector": "Autriche Topo Vector",
     "austria_raster": "Autriche Topo Raster",
-    "europe_topo": "Europe Topo"
+    "europe_topo": "Europe Topo",
+    "europe_vector": "Europe Vecteur (CH+FR)",
+    "europe_topo_proxy": "Europe Topo Proxy"
   },
   "multi_select": {
     "select_all": "Tout sélectionner",

@@ -109,11 +109,13 @@ export function getCompositeRasterStyle({
     for (const layer of style.layers ?? []) {
       const srcId = 'source' in layer ? layer.source : undefined;
       const mapped = srcId !== undefined ? idMap.get(srcId) : undefined;
-      layers.push(
-        mapped !== undefined
-          ? ({ ...layer, id: `${ns}:${layer.id}`, source: mapped } as typeof layer)
-          : layer
-      );
+      layers.push({
+        ...layer,
+        // always namespace the id — sourceless layers (e.g. "background")
+        // would otherwise collide across sub-styles
+        id: `${ns}:${layer.id}`,
+        ...(mapped !== undefined ? { source: mapped } : {}),
+      } as typeof layer);
     }
   }
 
