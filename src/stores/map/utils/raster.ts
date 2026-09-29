@@ -75,6 +75,8 @@ interface getCompositeRasterStyleArgs {
   styles: StyleSpecification[];
   /** Single glyphs URL for the merged style (defaults to the first sub-style that has one). */
   glyphs?: string;
+  /** Single sprite for the merged style (defaults to the first sub-style that has one). */
+  sprite?: StyleSpecification['sprite'];
 }
 
 /**
@@ -87,6 +89,7 @@ export function getCompositeRasterStyle({
   name,
   styles,
   glyphs,
+  sprite,
 }: getCompositeRasterStyleArgs): StyleSpecification {
   const seen = new Set<string>();
   const sources: StyleSpecification['sources'] = {};
@@ -118,6 +121,7 @@ export function getCompositeRasterStyle({
     version: 8,
     name: name,
     glyphs: glyphs ?? styles.find(s => s.glyphs)?.glyphs,
+    sprite: sprite ?? styles.find(s => s.sprite)?.sprite,
     sources: sources,
     layers: layers,
   };

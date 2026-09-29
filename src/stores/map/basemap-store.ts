@@ -64,36 +64,50 @@ const oeTopoRasterStyle = getRasterStyle({
   // in composites this style must always paint BELOW swisstopo.
 });
 
-// Clean minimal world fallback for zoomed-out views: CARTO Positron
-// (free with attribution, no key). The only bounded source — locked to
-// Europe; the national maps cover it wherever they have data.
-const positronStyle = getRasterStyle({
-  name: 'positron',
+// Clean minimal world fallback for zoomed-out views: the OpenFreeMap
+// "positron" VECTOR style (free, keyless, unlimited) fetched at basemap
+// init and locked to Europe. Keyless CARTO raster tiles are watermarked
+// ("API KEY REQUIRED") since CARTO started requiring keys, so they are
+// no longer an option.
+const EUROPE_BOUNDS: [number, number, number, number] = [-11, 34, 32, 71];
+
+// Raster backup if the OpenFreeMap style fetch fails (Esri gray zone,
+// same source family skitourenguru uses as its world fallback).
+const esriLightGrayStyle = getRasterStyle({
+  name: 'esri-light-gray',
   tiles: [
-    'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-    'https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-    'https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-    'https://d.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+    'https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
   ],
-  attribution:
-    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>',
+  attribution: 'Esri, HERE, Garmin, &copy; OpenStreetMap contributors, and the GIS User Community',
   suffix: '',
-  bounds: [-11, 34, 32, 71], // Europe only
+  bounds: EUROPE_BOUNDS,
 });
 
-// Europe topo composite: Positron world base (bottom, Europe-locked),
-// basemap.at (AT) and swisstopo pixelkarte (CH, topmost so swisstopo
-// wins where both grids deliver data — basemap.at has white no-data
-// tiles over eastern CH). National layers start at zoom 8; below that
-// only the fallback renders.
-const europeTopoStyle = getCompositeRasterStyle({
-  name: 'europe-topo',
-  styles: [
-    positronStyle,
-    withLayerMinZoom(oeTopoRasterStyle, 8),
-    withLayerMinZoom(swissTopoRasterStyle, 8),
-  ],
-});
+/**
+ * Fetch the OpenFreeMap positron style and lock its sources to Europe.
+ * Returns undefined on any failure (network, timeout, bad payload) so
+ * callers can fall back to the Esri raster base.
+ */
+async function fetchPositronVectorBase(): Promise<StyleSpecification | undefined> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000);
+    const res = await fetch('https://tiles.openfreemap.org/styles/positron', {
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    if (!res.ok) return undefined;
+    const style = (await res.json()) as StyleSpecification;
+    style.name = 'positron';
+    for (const source of Object.values(style.sources ?? {})) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (source as any).bounds = EUROPE_BOUNDS;
+    }
+    return style;
+  } catch {
+    return undefined;
+  }
+}
 function getImageUrl(name: string): string {
   return new URL(`/src/assets/wodore-design/map/switch/${name}`, import.meta.url).href;
 }
@@ -554,6 +568,24 @@ export const useBasemapStore = defineStore('basemap', () => {
     }
 
     const useRaster = shouldUseRaster(gpuTier);
+
+    // World fallback base: OpenFreeMap positron vector style (preferred)
+    // with the Esri light-gray raster as backup.
+    const positronBase = await fetchPositronVectorBase();
+
+    // Europe topo composite: clean world base (bottom, Europe-locked),
+    // basemap.at (AT) and swisstopo pixelkarte (CH, topmost so swisstopo
+    // wins where both grids deliver data — basemap.at has white no-data
+    // tiles over eastern CH). National layers start at zoom 8; below
+    // that only the fallback renders.
+    const europeTopoStyle = getCompositeRasterStyle({
+      name: 'europe-topo',
+      styles: [
+        positronBase ?? esriLightGrayStyle,
+        withLayerMinZoom(oeTopoRasterStyle, 8),
+        withLayerMinZoom(swissTopoRasterStyle, 8),
+      ],
+    });
 
     console.debug(
       'GPU Tier detected:',
