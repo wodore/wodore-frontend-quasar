@@ -1,0 +1,1 @@
+import{b as o}from"./index-Cc2t2Jf1.js";import{u as n}from"./useAuthService-De9ix-Cw.js";import"./auth-store-D8EjHBO0.js";import"./runtimeEnv-rF6Bd-z9.js";const u=o(async()=>{n().signinSilent().then().catch(t=>console.warn("Could not silent login",t))});export{u as default};
