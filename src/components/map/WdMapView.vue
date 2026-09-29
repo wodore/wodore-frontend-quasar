@@ -970,7 +970,16 @@ function onLayerLeave(e: MapLayerEventType['mouseleave']) {
 // ── Focus mode (mockup r6) ─────────────────────────────────────────────
 onMounted(() => {
   mapDiv.value?.addEventListener('click', onMapContainerClick);
-});
+  // MapLibre's double-tap zoom suppresses the second click event, so the
+  // click-pair cancel never fires - the browser's dblclick event still
+  // bubbles and cancels the pending focus toggle.
+  mapDiv.value?.addEventListener('dblclick', () => {
+    if (focusTapTimer) {
+      clearTimeout(focusTapTimer);
+      focusTapTimer = null;
+    }
+  });
+})
 // Mobile: tapping empty map hides the floating chrome; tap again (or the
 // exit chip) restores. Desktop uses the fullscreen button (no map click).
 const mapFocus = ref(false);
