@@ -667,9 +667,39 @@ export const useBasemapStore = defineStore('basemap', () => {
         ) || (basemaps as unknown as Array<BasemapSwitchItem>)[0];
     }
 
-    // Set the active basemap
+    // A MapTiler-based basemap with a rejected key (suspended/exhausted)
+    // would 403 during the FIRST style load — MapLibre then never fires its
+    // 'load' event and the map stays blank; switching styles mid-load
+    // dead-ends too. Probe the style URL up front and start directly on
+    // the keyless fallback when the host rejects it.
+    let sessionFallback = false;
+    if (
+      basemapToSet &&
+      typeof basemapToSet.style === 'string' &&
+      basemapToSet.style.includes('api.maptiler.com')
+    ) {
+      try {
+        const probe = await fetch(basemapToSet.style);
+        if (!probe.ok) {
+          const fallback = getBasemapByName('openfreemap-liberty');
+          if (fallback) {
+            console.warn(
+              `[basemap] Tile host rejected the style (HTTP ${probe.status}) - starting on OpenFreeMap Liberty`
+            );
+            basemapToSet = fallback;
+            sessionFallback = true;
+          }
+        }
+      } catch {
+        // Network error: keep the configured basemap; the onMapError
+        // fallback in WdMapView handles failures once the map is up
+      }
+    }
+
+    // Set the active basemap. A startup fallback is session-only (not
+    // persisted) so the next session retries the user's chosen basemap.
     if (basemapToSet) {
-      setBasemap(basemapToSet);
+      setBasemap(basemapToSet, false, !sessionFallback);
     }
   }
 
