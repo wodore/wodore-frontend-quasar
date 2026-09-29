@@ -7,6 +7,7 @@ import { useAuthStore } from '@stores/auth-store';
 import { useAuthService } from 'src/composables/useAuthService';
 import { LocalStorage } from 'quasar';
 import { useI18n } from 'vue-i18n';
+import { getEnv } from '@services/runtimeEnv';
 
 const { t } = useI18n();
 
@@ -29,39 +30,39 @@ watchEffect(() => {
 
 const adminLinks = computed(() => [
   {
-    url: `${process.env.WODORE_API_HOST}/admin/`,
+    url: `${getEnv('WODORE_API_HOST')}/admin/`,
     name: 'Admin',
     caption: t('user.admin.backend'),
     group: 'admin',
-    avatar: `https://${process.env.WODORE_DOMAIN}/apple-touch-icon.png`,
+    avatar: `https://${getEnv('WODORE_DOMAIN')}/apple-touch-icon.png`,
   },
   {
-    url: `${process.env.WODORE_API_HOST}/v1/docs`,
+    url: `${getEnv('WODORE_API_HOST')}/v1/docs`,
     name: 'API',
     caption: t('user.admin.api_docs'),
     group: 'root',
     avatar: 'https://www.openapis.org/wp-content/uploads/sites/3/2019/06/favicon-140x140.png',
   },
   {
-    url: `https://stats.${process.env.WODORE_DOMAIN}/websites/${process.env.WODORE_UMAMI_WEBSITE_ID}`,
+    url: `https://stats.${getEnv('WODORE_DOMAIN')}/websites/${getEnv('WODORE_UMAMI_WEBSITE_ID')}`,
     name: 'Analytics',
     caption: t('user.admin.analytics'),
     group: 'admin',
-    avatar: `https://stats.${process.env.WODORE_DOMAIN}/apple-touch-icon.png`,
+    avatar: `https://stats.${getEnv('WODORE_DOMAIN')}/apple-touch-icon.png`,
   },
   {
-    url: `${process.env.WODORE_OICD_ISSUER_URL}/ui/console/`,
+    url: `${getEnv('WODORE_OICD_ISSUER_URL')}/ui/console/`,
     name: 'Zitadel',
     caption: t('user.admin.iam'),
     group: 'root',
-    avatar: `${process.env.WODORE_OICD_ISSUER_URL}/ui/console/favicon.ico`,
+    avatar: `${getEnv('WODORE_OICD_ISSUER_URL')}/ui/console/favicon.ico`,
   },
   {
-    url: `https://traefik.${process.env.WODORE_DOMAIN}`,
+    url: `https://traefik.${getEnv('WODORE_DOMAIN')}`,
     name: 'Traefik',
     caption: t('user.admin.traefik'),
     group: 'root',
-    avatar: `https://traefik.${process.env.WODORE_DOMAIN}/dashboard/statics/icons/favicon-96x96.png`,
+    avatar: `https://traefik.${getEnv('WODORE_DOMAIN')}/dashboard/statics/icons/favicon-96x96.png`,
   },
 ]);
 

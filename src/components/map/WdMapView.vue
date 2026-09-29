@@ -23,6 +23,7 @@ import {
 import mapDraw from '@services/draw';
 import { currentLocale } from '@services/locale';
 import { clientWodore } from '@clients/index';
+import { getEnv } from '@services/runtimeEnv';
 
 // MapLibre v6 resolves its web worker via import.meta.url, which breaks under
 // Vite's dependency optimization: the rewritten worker URL 404s and vector
@@ -188,7 +189,7 @@ useResizeObserver(mapDiv, () => {
   mapResize();
 });
 //const hutjson = ref(
-//  `${process.env.WODORE_API_HOST}/${process.env.WODORE_API_VERSION}/huts/huts.geojson?lang=de&limit=5000&embed_all=false&embed_type=true&embed_owner=false&embed_capacity=false&embed_sources=false&include_elevation=false&include_name=true&flat=true`,
+//  `${getEnv('WODORE_API_HOST')}/${getEnv('WODORE_API_VERSION')}/huts/huts.geojson?lang=de&limit=5000&embed_all=false&embed_type=true&embed_owner=false&embed_capacity=false&embed_sources=false&include_elevation=false&include_name=true&flat=true`,
 //);
 
 function onMapLoad(e: MglEvent<'load'>) {

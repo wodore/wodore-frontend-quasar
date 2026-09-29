@@ -4,6 +4,7 @@ import type { components as compWodore } from './wodore_v1';
 import { requestStart, requestStop } from '@composables/useRequestProgress';
 
 import { useAuthStore } from '@stores/auth-store';
+import { getEnv } from '@services/runtimeEnv';
 
 export type schemasWodore = compWodore['schemas'];
 
@@ -60,7 +61,7 @@ const authMiddleware: Middleware = {
 };
 
 export const clientWodore = createClient<pathsWodore>({
-  baseUrl: process.env.WODORE_API_HOST,
+  baseUrl: getEnv('WODORE_API_HOST'),
 });
 
 clientWodore.use(loadingMiddleware);

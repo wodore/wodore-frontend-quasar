@@ -312,6 +312,10 @@ export default configure(ctx => {
           options.globIgnores = [];
         }
         options.globIgnores.push('index.html');
+        // env.json holds the runtime env (rewritten by replace_vars at
+        // container start). It must NEVER be cached by the SW so env
+        // changes propagate on the next visit (see services/runtimeEnv.ts).
+        options.globIgnores.push('env.json');
       },
       // swFilename: 'sw.js',
       // manifestFilename: 'manifest.json'

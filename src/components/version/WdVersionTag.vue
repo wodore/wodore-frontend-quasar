@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { getEnv } from '@services/runtimeEnv';
 
 interface Props {
   type: 'frontend' | 'backend';
@@ -26,13 +27,13 @@ const tooltip = computed(() => {
 });
 const url = computed(() => {
   if (props.type === 'frontend') {
-    return process.env.WODORE_FRONTEND_GITHUB ? process.env.WODORE_FRONTEND_GITHUB : undefined;
+    return getEnv('WODORE_FRONTEND_GITHUB') ? getEnv('WODORE_FRONTEND_GITHUB') : undefined;
   } else if (props.type === 'backend') {
-    return process.env.WODORE_BACKEND_GITHUB ? process.env.WODORE_BACKEND_GITHUB : undefined;
+    return getEnv('WODORE_BACKEND_GITHUB') ? getEnv('WODORE_BACKEND_GITHUB') : undefined;
   }
   return undefined;
 });
-const appEnv = process.env.WODORE_ENV || 'production';
+const appEnv = getEnv('WODORE_ENV') || 'production';
 // link the commit hash on staging AND preview (same as logged-in staging)
 const isStaging = computed(() => appEnv === 'staging' || appEnv === 'preview');
 </script>

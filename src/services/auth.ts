@@ -7,14 +7,15 @@ import {
 } from 'oidc-client-ts';
 
 import { useAuthStore } from '@stores/auth-store';
+import { getEnv } from '@services/runtimeEnv';
 const authStore = useAuthStore();
 export default class AuthService {
   userManager: UserManager;
 
   constructor() {
     const settings: UserManagerSettings = {
-      authority: process.env.WODORE_OICD_ISSUER_URL as string,
-      client_id: process.env.WODORE_OICD_CLIENT_ID as string,
+      authority: getEnv('WODORE_OICD_ISSUER_URL') as string,
+      client_id: getEnv('WODORE_OICD_CLIENT_ID') as string,
       redirect_uri: `${window.location.origin}/auth/signin-callback`,
       silent_redirect_uri: `${window.location.origin}/auth/signin-callback`,
       popup_redirect_uri: `${window.location.origin}/auth/signin-callback`,
@@ -22,7 +23,7 @@ export default class AuthService {
       response_type: 'code',
       scope:
         'openid profile email offline_access' +
-        ` urn:zitadel:iam:org:project:id:${process.env.WODORE_OICD_RESOURCE_ID as string}:aud` +
+        ` urn:zitadel:iam:org:project:id:${getEnv('WODORE_OICD_RESOURCE_ID') as string}:aud` +
         ' urn:zitadel:iam:org:projects:roles',
       //userStore: new WebStorageStateStore(),
       loadUserInfo: true,

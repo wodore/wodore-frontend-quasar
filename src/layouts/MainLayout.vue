@@ -25,6 +25,7 @@ import WdPlaceSearchMenu from 'components/search/WdPlaceSearchMenu.vue';
 import WdPlaceSearchDialog from 'components/search/WdPlaceSearchDialog.vue';
 import WdBottomSheet from '@components/utils/WdBottomSheet.vue';
 import { useRequestProgress } from '@composables/useRequestProgress';
+import { getEnv } from '@services/runtimeEnv';
 
 // Initialize stores
 const authStore = useAuthStore();
@@ -183,9 +184,9 @@ function closeContent() {
   contentStore.close();
 }
 
-const appTitle = process.env.WODORE_APP_NAME || 'Wodore';
-const appEnv = process.env.WODORE_ENV || 'production';
-const officialUrl = process.env.WODORE_OFFICIAL_URL || '';
+const appTitle = getEnv('WODORE_APP_NAME') || 'Wodore';
+const appEnv = getEnv('WODORE_ENV') || 'production';
+const officialUrl = getEnv('WODORE_OFFICIAL_URL') || '';
 const isStaging = computed(() => appEnv === 'staging' || appEnv === 'preview');
 const isNotProduction = computed(() => appEnv !== 'production');
 const metaData = {

@@ -2,9 +2,10 @@
 import { ref, onMounted } from 'vue';
 import { clientWodore } from 'src/clients';
 import WdVersionTag from './WdVersionTag.vue';
+import { getEnv } from '@services/runtimeEnv';
 
-const frontendVersion = process.env.WODORE_APP_VERSION || '';
-const frontendHash = process.env.WODORE_GIT_HASH || '';
+const frontendVersion = getEnv('WODORE_APP_VERSION') || '';
+const frontendHash = getEnv('WODORE_GIT_HASH') || '';
 
 const backendVersion = ref<string>('');
 const backendHash = ref<string>('');

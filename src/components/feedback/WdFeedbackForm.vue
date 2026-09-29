@@ -7,13 +7,14 @@ import { clientWodore } from '@clients/index';
 
 import track from '@services/analytics';
 import { useI18n } from 'vue-i18n';
+import { getEnv } from '@services/runtimeEnv';
 
 const { t } = useI18n();
 
 const $q = useQuasar();
 const router = useRouter();
 
-const anoymDefaultEmail = `anonym@${process.env.WODORE_DOMAIN}`;
+const anoymDefaultEmail = `anonym@${getEnv('WODORE_DOMAIN')}`;
 const message = reactive<{
   email: string;
   subject: string;

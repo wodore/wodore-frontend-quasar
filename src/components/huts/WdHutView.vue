@@ -13,6 +13,7 @@ import { useHutImages } from '@composables/useHutImages';
 import { currentLocale } from '@services/locale';
 import { i18n } from '@services/locale';
 import WdHutImageGallery from './WdHutImageGallery.vue';
+import { getEnv } from '@services/runtimeEnv';
 const { selectedMonth } = storeToRefs(useHutsStore());
 
 const $q = useQuasar();
@@ -110,7 +111,7 @@ const metaDescription = computed(() => {
 });
 
 useMeta(() => ({
-  title: hut.value?.name || process.env.WODORE_APP_NAME || 'Wodore',
+  title: hut.value?.name || getEnv('WODORE_APP_NAME') || 'Wodore',
   meta: {
     description: {
       name: 'description',
