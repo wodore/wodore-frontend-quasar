@@ -53,9 +53,9 @@ const oeExt: 'png' | 'jpeg' = 'jpeg';
 const oeTopoRasterStyle = getRasterStyle({
   name: 'oe-raster',
   tiles: [
-    'https://maps1.wien.gv.at/basemap/' + oeLayer + '/normal/google3857/{z}/{y}/{x}.' + oeExt,
-    'https://maps2.wien.gv.at/basemap/' + oeLayer + '/normal/google3857/{z}/{y}/{x}.' + oeExt,
-    'https://maps3.wien.gv.at/basemap/' + oeLayer + '/normal/google3857/{z}/{y}/{x}.' + oeExt,
+    // basemap.at moved their tile hosts: maps1-3.wien.gv.at no longer resolve,
+    // current host is mapsneu.wien.gv.at (verified, serves the same paths)
+    'https://mapsneu.wien.gv.at/basemap/' + oeLayer + '/normal/google3857/{z}/{y}/{x}.' + oeExt,
   ],
   attribution: 'basemap.at',
   tileSize: 512,
