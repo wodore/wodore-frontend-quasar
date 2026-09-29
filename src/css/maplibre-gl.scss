@@ -216,3 +216,34 @@
     color: #616161;
   }
 }
+
+/* MapLibre controls: theme-aware via CSS custom properties */
+.maplibregl-ctrl-group {
+  border-radius: 8px !important;
+  border: 1px solid var(--wd-ctl-border, #dde7e0) !important;
+  background: var(--wd-ctl-bg, #fdfefd) !important;
+  box-shadow: var(--wd-ctl-shadow, 0 1px 3px rgba(10, 20, 15, 0.2)) !important;
+  overflow: hidden;
+}
+
+.maplibregl-ctrl-group button {
+  background: var(--wd-ctl-bg, #fdfefd) !important;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.15);
+}
+
+.maplibregl-ctrl-group button:last-child {
+  border-bottom: none;
+}
+
+.maplibregl-ctrl-group button:hover {
+  background: var(--wd-ctl-hover, #f6f9f7) !important;
+}
+
+/* MapLibre sprite icons: theme-aware */
+body.body--light .maplibregl-ctrl button .maplibregl-ctrl-icon {
+  filter: brightness(0.35);
+}
+
+body.body--dark .maplibregl-ctrl button .maplibregl-ctrl-icon {
+  filter: brightness(1.5) invert(0.85);
+}

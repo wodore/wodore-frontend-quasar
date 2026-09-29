@@ -967,6 +967,34 @@ function onLayerLeave(e: MapLayerEventType['mouseleave']) {
   }
 }
 
+// ── Focus mode ─────────────────────────────────────────────────────────
+// Mobile: tap empty map to hide floating chrome; desktop: button
+const mapFocus = ref(false);
+let focusTapTimer: ReturnType<typeof setTimeout> | null = null;
+
+function setMapFocus(on: boolean): void {
+  if (focusTapTimer) { clearTimeout(focusTapTimer); focusTapTimer = null; }
+  mapFocus.value = on;
+  document.body.classList.toggle('wd-map-focus', on);
+}
+
+function onMapContainerClick(ev: MouseEvent): void {
+  if (!window.matchMedia('(max-width: 899px)').matches) return;
+  if ((ev.target as HTMLElement).closest('.maplibregl-ctrl, .maplibregl-popup, .q-page-sticky')) return;
+  const canvas = mapDiv.value?.querySelector('canvas');
+  if (canvas && canvas.style.cursor === 'pointer') return;
+  // double-tap = zoom, not focus
+  if (focusTapTimer) { clearTimeout(focusTapTimer); focusTapTimer = null; return; }
+  focusTapTimer = setTimeout(() => { focusTapTimer = null; setMapFocus(!mapFocus.value); }, 300);
+}
+
+onMounted(() => {
+  mapDiv.value?.addEventListener('click', onMapContainerClick);
+  mapDiv.value?.addEventListener('dblclick', () => {
+    if (focusTapTimer) { clearTimeout(focusTapTimer); focusTapTimer = null; }
+  });
+});
+
 function onMapStyledata(e: MglEvent<'styledata'>) {
   //$q.loadingBar.start();
   console.debug('[onMapStyledata] Style data changed event', e);
