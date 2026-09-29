@@ -92,7 +92,7 @@ function selectBasemap(name: string): void {
   position: relative;
   width: 44px;
   height: 44px;
-  border-radius: 8px;
+  border-radius: 4px;
   border: 1px solid var(--wd-ctl-border);
   background: var(--wd-ctl-bg);
   color: var(--wd-ctl-ink);
@@ -106,7 +106,7 @@ function selectBasemap(name: string): void {
 }
 
 .wd-bm__btn--inactive {
-  opacity: 0.55;
+  opacity: 0.8;
 }
 
 .wd-bm__btn--active {
@@ -158,6 +158,6 @@ function selectBasemap(name: string): void {
 .wd-bm-strip-enter-from,
 .wd-bm-strip-leave-to {
   opacity: 0;
-  transform: translateX(8px);
+  transform: translateX(20px);
 }
 </style>

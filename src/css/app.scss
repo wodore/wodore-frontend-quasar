@@ -693,7 +693,7 @@ body.body--dark {
   position: fixed;
   top: calc(10px + env(safe-area-inset-top, 0px));
   right: calc(12px + env(safe-area-inset-right, 0px));
-  z-index: 2001;
+  z-index: 6000;
 
   .q-btn {
     background: var(--wd-ctl-bg) !important;

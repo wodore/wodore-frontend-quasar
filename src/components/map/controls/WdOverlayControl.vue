@@ -17,12 +17,15 @@ import { LocalStorage } from 'quasar';
 import { useOverlayStore } from '@stores/map/overlay-store';
 import { useOverlayConfigStore } from '@stores/map/overlay-config-store';
 import { useMapMenuStore } from '@stores/map/map-menu-store';
+import { useMap } from '@indoorequal/vue-maplibre-gl';
+import type { LayerSpecification } from 'maplibre-gl';
 import { OverlaySwitchItem } from '@stores/map/utils/interfaces';
 
 const { t } = useI18n();
 const overlayStore = useOverlayStore();
 const configStore = useOverlayConfigStore();
 const menuStore = useMapMenuStore();
+const mapRef = useMap();
 
 // ── State ────────────────────────────────────────────────────────────────
 
@@ -34,8 +37,6 @@ const stripOpen = ref(
 watch(stripOpen, v => LocalStorage.set('wd_ovl_strip', v));
 
 const expanded = ref(false);
-
-const isMobile = computed(() => window.matchMedia('(max-width: 899px)').matches);
 
 // ── Icons ────────────────────────────────────────────────────────────────
 
@@ -61,6 +62,15 @@ function layerIcon(name: string): string {
 
 function toggleLayer(item: OverlaySwitchItem): void {
   overlayStore.toggleOverlay(item);
+  // Apply visibility to the map layers
+  if (mapRef.map && item.style?.layers) {
+    const visibility = item.active ? 'visible' : 'none';
+    for (const layer of item.style.layers) {
+      if (mapRef.map.getLayer(layer.id)) {
+        mapRef.map.setLayoutProperty(layer.id, 'visibility', visibility);
+      }
+    }
+  }
 }
 
 function openConfig(overlayName: string, tab?: string): void {
@@ -88,12 +98,11 @@ function hasFilters(overlayName: string): boolean {
     <!-- ── Expanded panel ─────────────────────────────────────────────── -->
     <!-- Desktop: absolute, slides LEFT from the strip box (same surface) -->
     <!-- Mobile: teleported bottom sheet -->
-    <Teleport to="body" :disabled="!isMobile">
-      <Transition :name="isMobile ? 'wd-ovl-sheet' : 'wd-ovl-panel'">
+    <Transition name="wd-ovl-panel">
         <div
           v-if="expanded"
           class="wd-ovl__panel"
-          :class="{ 'wd-ovl__panel--sheet': isMobile }"
+          :class="{ 'wd-ovl__panel--sheet': false }"
           role="dialog"
           :aria-label="t('overlay_style')"
         >
@@ -141,7 +150,6 @@ function hasFilters(overlayName: string): boolean {
           </div>
         </div>
       </Transition>
-    </Teleport>
 
     <!-- ── Mini strip (boxed, same width as buttons) ──────────────────── -->
     <Transition name="wd-ovl-strip">
@@ -225,7 +233,7 @@ function hasFilters(overlayName: string): boolean {
   gap: 0;
   align-items: center;
   width: 100%;
-  max-height: calc(100dvh - 260px);
+  max-height: calc(100dvh - 320px);
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: none;
@@ -328,7 +336,7 @@ function hasFilters(overlayName: string): boolean {
 }
 
 .wd-ovl__toggle-icon--open {
-  transform: rotate(180deg);
+  transform: rotate(360deg);
 }
 
 // ── Expanded panel ───────────────────────────────────────────────────────
