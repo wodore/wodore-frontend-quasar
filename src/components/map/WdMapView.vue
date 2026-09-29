@@ -264,7 +264,7 @@ function onMapLoad(e: MglEvent<'load'>) {
     e.map.addControl(mapDraw);
     // TODO: Add button for routing mode
     if (route.query.draw == 'route') {
-      mapDraw.changeMode('custom_route');
+      (mapDraw as unknown as { changeMode: (m: string) => void })?.changeMode('custom_route');
     }
     // TODO: improve styling of routing, points, drag, delete, etc.
   }
