@@ -1,0 +1,70 @@
+# Wodore "Europe Topo" tile service
+#
+# Merges OpenTopoMap (worldwide fallback, bottom) with swisstopo pixelkarte
+# clipped to the Switzerland boundary polygon (top) — pixel-perfect country
+# cut at the border, no white no-data areas, no bbox seams.
+#
+#   docker compose up -d
+#   demo:  http://localhost:8090/mapproxy/demo/
+#   tiles: http://localhost:8090/mapproxy/tiles/europe_topo/webmercator/{z}/{x}/{y}.png
+#
+# The /tiles endpoint serves plain XYZ order (top-left origin) — usable as
+# a MapLibre raster source without scheme:'tms'.
+#
+# MapProxy 7.0.0 gotchas learned the hard way (verified):
+# - layers must reference a SINGLE cache (multi-cache layer merge is 8.0+);
+#   merging multiple sources works at the CACHE level instead (see below)
+# - do NOT override num_levels on a based grid — startup hangs
+# - mbtiles caches failed to initialize; default file cache works fine
+services:
+  demo:
+  tms:
+    use_grid_names: true
+    # nw origin => the /tiles endpoint serves XYZ order (top-left)
+    origin: 'nw'
+
+grids:
+  webmercator:
+    # GLOBAL_WEBMERCATOR = EPSG:3857 with nw (top-left) origin — the
+    # XYZ convention used by the upstream tile servers
+    base: GLOBAL_WEBMERCATOR
+
+sources:
+  opentopo:
+    type: tile
+    url: https://b.tile.opentopomap.org/%(z)s/%(x)s/%(y)s.png
+    grid: webmercator
+
+  ch_pixelkarte:
+    type: tile
+    url: https://wmts0.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/%(z)s/%(x)s/%(y)s.jpeg
+    grid: webmercator
+    # clip to the country polygon: everything outside becomes transparent
+    # pixels, so OpenTopoMap below shows through with a clean border cut.
+    # ch-boundary.geojson = Natural Earth 10m country polygon (public
+    # domain, ~1km precision); swap in swisstopo swissBOUNDARIES3D for
+    # survey-grade borders.
+    coverage:
+      datasource: /mapproxy/config/ch-boundary.geojson
+      srs: 'EPSG:4326'
+      clip: true
+
+caches:
+  europe_topo_cache:
+    grids: [webmercator]
+    # cache-level merge: multiple sources are merged left (bottom) to
+    # right (top) before they are cached — OpenTopoMap everywhere,
+    # swisstopo on top inside the Switzerland polygon
+    sources: [opentopo, ch_pixelkarte]
+
+layers:
+  - name: europe_topo
+    title: Europe Topo (OpenTopoMap + swisstopo CH)
+    sources: [europe_topo_cache]
+
+globals:
+  cache:
+    # lock files must live in the writable cache_data volume
+    lock_dir: /mapproxy/config/cache_data/lock
+  image:
+    resampling_method: bilinear
