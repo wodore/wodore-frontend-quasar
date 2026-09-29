@@ -643,9 +643,14 @@ export const useBasemapStore = defineStore('basemap', () => {
         basemapToSet = (basemaps as any[])[0];
       }
     } else {
-      // No saved basemap, use first one as default
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      basemapToSet = (basemaps as any[])[0];
+      // No saved basemap: default to the keyless swisstopo raster
+      // (geo.admin.ch tiles) — the "light" variant depends on MapTiler
+      // raster tiles which fail when the API key is suspended/quota-
+      // exceeded, leaving a blank map on fresh installs
+      basemapToSet =
+        (basemaps as unknown as Array<BasemapSwitchItem>).find(
+          b => b.name === 'ch-swisstopo-full'
+        ) || (basemaps as unknown as Array<BasemapSwitchItem>)[0];
     }
 
     // Set the active basemap

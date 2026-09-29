@@ -297,7 +297,10 @@ function onMapError(e: unknown) {
   // tell the user.
   if (!basemapFallbackDone && isTileAuthFailure(errorObj) && activeBasemapUsesMapTiler()) {
     basemapFallbackDone = true;
-    const fallback = basemapStore.basemaps.find(b => b.name === 'openfreemap-bright');
+    // Fall back to the keyless swisstopo raster (geo.admin.ch tiles —
+    // no API key, proven reliable). OpenFreeMap had rendering issues
+    // on some Samsung WebViews.
+    const fallback = basemapStore.basemaps.find(b => b.name === 'ch-swisstopo-full');
     if (fallback) {
       console.warn('[onMapError] Tile host rejected requests - falling back to OpenFreeMap');
       void basemapStore.setBasemap(fallback, true);

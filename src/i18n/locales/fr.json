@@ -57,7 +57,7 @@
       "reload": "Recharger la page"
     },
     "layers": "Couches",
-    "basemap_fallback": "Fond de carte indisponible - bascule vers OpenFreeMap"
+    "basemap_fallback": "Fond de carte indisponible — bascule vers Swisstopo"
   },
   "map_style": "Carte",
   "location": "Lieu",

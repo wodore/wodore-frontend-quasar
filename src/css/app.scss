@@ -1410,15 +1410,11 @@ img:not([class*=content]):not([class*=gallery]):not([class*=media]) {
 }
 
 body.capacitor {
-  // Maximized dialogs: Quasar pads the dialog INNER container by the
-  // safe-area insets (33px top, 48px bottom on Samsung), which pushes
-  // the card down and shrinks it — the card should be full-bleed.
-  // Zero the inner padding; the card content handles its own insets
-  // (inline padding on WdPlaceSearchDialog, CSS on WdMediaGallery).
-  .q-dialog__inner--maximized {
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-  }
+  // NOTE: Quasar's Android safe-area handling is disabled via
+  // `androidSafeAreaPadding: false` in quasar.config.ts (capacitor
+  // section). We manage insets ourselves — component-level padding
+  // keeps dialog content clear of system bars while the card surface
+  // stays full-bleed edge-to-edge.
 
   // Native app: extend the no-select to the full body (stricter)
   overscroll-behavior-y: none;

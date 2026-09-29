@@ -6,10 +6,25 @@ import com.getcapacitor.CapacitorWebView;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 
 public class MainActivity extends BridgeActivity {
+
+  @Override
+  public void onWindowFocusChanged(boolean hasFocus) {
+    super.onWindowFocusChanged(hasFocus);
+    if (hasFocus && bridge != null && bridge.getWebView() != null) {
+      // Kill the pull-down bounce + pull-to-refresh at the WebView
+      // level — CSS overscroll-behavior alone doesn't reach Android's
+      // native scroll gesture layer
+      bridge.getWebView().setOverScrollMode(View.OVER_SCROLL_NEVER);
+      // Disable long-press text selection menus in the WebView
+      bridge.getWebView().setLongClickable(false);
+      bridge.getWebView().setHapticFeedbackEnabled(false);
+    }
+  }
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {

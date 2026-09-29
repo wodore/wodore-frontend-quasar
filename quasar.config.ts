@@ -330,6 +330,12 @@ export default configure(ctx => {
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/developing-capacitor-apps/configuring-capacitor
     capacitor: {
       hideSplashscreen: true,
+      // Disable Quasar's automatic Android safe-area handling — we
+      // manage insets ourselves via CSS variables and component-level
+      // padding. Quasar's default adds !important padding + max-height
+      // to .q-dialog__inner, which breaks maximized dialogs (gaps at
+      // the top/bottom where the app shows through).
+      androidSafeAreaPadding: false,
     },
 
     // IDE / tool binaries. Android Studio is installed as a snap on this

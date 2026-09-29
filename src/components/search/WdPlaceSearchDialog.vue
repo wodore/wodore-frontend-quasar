@@ -42,15 +42,17 @@ function onSearchClose() {
     >
       <div
         style="
-          position: relative;
-          height: 100vh;
           height: 100dvh;
           width: 100vw;
-          padding-top: var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px));
+          padding-top: var(
+            --q-safe-area-inset-top,
+            env(safe-area-inset-top, 0px)
+          );
           padding-bottom: var(
             --q-safe-area-inset-bottom,
             env(safe-area-inset-bottom, 0px)
           );
+          overscroll-behavior-y: none;
         "
       >
         <!-- Close button (top right corner) -->
@@ -58,12 +60,21 @@ function onSearchClose() {
           class="q-ma-xs z-top text-icon"
           style="
             position: absolute;
-            top: calc(6px + var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px)));
+            top: calc(
+              6px + var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px))
+            );
             right: 6px;
             z-index: 200;
           "
         >
-          <q-btn dense round flat v-close-popup class="wd-close-chip" icon="wd-close">
+          <q-btn
+            dense
+            round
+            flat
+            v-close-popup
+            class="wd-close-chip"
+            icon="wd-close"
+          >
             <q-tooltip :delay="2000">{{ $t('close') }}</q-tooltip>
           </q-btn>
         </div>
@@ -74,7 +85,7 @@ function onSearchClose() {
           mobile
           swipe-to-close
           @close="onSearchClose"
-          style="height: 100vh; height: 100dvh; width: 100vw; max-width: 100vw"
+          style="height: 100%; width: 100%; max-width: 100vw"
         />
       </div>
     </q-dialog>

@@ -49,6 +49,7 @@ if [ "$VARIANT" = "stg" ]; then
     WODORE_TILE_SERVER_URL=https://tiles.stg.wodore.com
     WODORE_IMAGOR_URL=https://img.stg.wodore.com
     WODORE_IMAGOR_REPLACE_API_HOST_MEDIA=disabled
+    WODORE_IMAGOR_KEY="${IMAGOR_KEY:-$(grep -oP '(?<=^WODORE_IMAGOR_KEY=).+' .env.local 2>/dev/null || echo '')}"
   )
   APK_PATH="src-capacitor/android/app/build/outputs/apk/stg/dev/app-stg-dev.apk"
 elif [ "$VARIANT" = "std" ]; then
