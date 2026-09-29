@@ -3,7 +3,6 @@ import { ref, inject, watchEffect, watch, onErrorCaptured, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router';
 import { useResizeObserver, useDebounceFn, useThrottleFn, useEventListener } from '@vueuse/core';
 import { useQuasar } from 'quasar';
-import { useI18n } from 'vue-i18n';
 import { useBasemapStore } from '@stores/map/basemap-store';
 import { useLocalPropertiesStore } from '@stores/local-properties-store';
 import { showErrorDialogPersistent, ErrorCode } from '@components/error';
@@ -114,7 +113,6 @@ function getDangerMargin(): number {
 // ============================================================================
 
 const $q = useQuasar();
-const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 const basemapStore = useBasemapStore();
@@ -293,9 +291,9 @@ function onMapError(e: unknown) {
 
   // Basemap fallback: an auth failure from the tile/style host (e.g. a
   // suspended or rotated MapTiler key) would otherwise leave a blank,
-  // broken map. Switch once to the keyless OpenFreeMap Liberty vector
-  // style (labels included — OpenFreeMap also serves the glyphs) and tell
-  // the user.
+  // broken map. Silently switch once to the keyless OpenFreeMap Liberty
+  // vector style (labels included — OpenFreeMap also serves the glyphs);
+  // no user notification — the map simply keeps working.
   if (!basemapFallbackDone && isTileAuthFailure(errorObj) && activeBasemapUsesMapTiler()) {
     basemapFallbackDone = true;
     // Fall back to the keyless OpenFreeMap Liberty vector style
@@ -304,12 +302,6 @@ function onMapError(e: unknown) {
     if (fallback) {
       console.warn('[onMapError] Tile host rejected requests - falling back to OpenFreeMap Liberty');
       void basemapStore.setBasemap(fallback, true);
-      $q.notify({
-        type: 'warning',
-        message: t('map.basemap_fallback'),
-        timeout: 6000,
-        position: 'bottom',
-      });
     }
     return;
   }
