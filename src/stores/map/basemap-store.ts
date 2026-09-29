@@ -33,8 +33,10 @@ const swissTopoRasterStyle = getRasterStyle({
   tileSize: Platform.is.mobile ? 128 : 156,
   // tight bounds around Switzerland: swisstopo's 3857 grid RENDERS far
   // beyond the country (deep into FR/IT/AT), which would overwrite the
-  // other national layers — CH + small border margin only
-  bounds: [5.95, 45.72, 10.65, 47.88],
+  // other layers — CH + small border margin only. East edge 10.55 keeps
+  // the Engadin/Münstertal while minimizing overlap onto Vorarlberg
+  // (covered by OpenTopoMap beneath).
+  bounds: [5.95, 45.72, 10.55, 47.88],
 });
 
 const swissTopoLbmRasterStyle = getRasterStyle({
@@ -73,6 +75,23 @@ const oeTopoRasterStyle = getRasterStyle({
 // ("API KEY REQUIRED") since CARTO started requiring keys, so they are
 // no longer an option.
 const EUROPE_BOUNDS: [number, number, number, number] = [-11, 34, 32, 71];
+
+// OpenTopoMap — zoomed-in topo fallback for everywhere outside CH
+// (same recipe as skitourenguru's TOPO_OTM layer). OSM-based, worldwide,
+// no white edges at borders. Community-hosted: attribution required,
+// self-hosting recommended if traffic grows.
+const openTopoStyle = getRasterStyle({
+  name: 'opentopo',
+  tiles: [
+    'https://a.tile.opentopomap.org/{z}/{x}/{y}.png',
+    'https://b.tile.opentopomap.org/{z}/{x}/{y}.png',
+    'https://c.tile.opentopomap.org/{z}/{x}/{y}.png',
+  ],
+  attribution: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA) &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  suffix: '',
+  maxZoom: 17,
+  bounds: EUROPE_BOUNDS,
+});
 
 // Raster backup if the OpenFreeMap style fetch fails (Esri gray zone,
 // same source family skitourenguru uses as its world fallback).
@@ -576,16 +595,19 @@ export const useBasemapStore = defineStore('basemap', () => {
     // with the Esri light-gray raster as backup.
     const positronBase = await fetchPositronVectorBase();
 
-    // Europe topo composite: clean world base (bottom, Europe-locked),
-    // basemap.at (AT) and swisstopo pixelkarte (CH, topmost so swisstopo
-    // wins where both grids deliver data — basemap.at has white no-data
-    // tiles over eastern CH). National layers start at zoom 8; below
-    // that only the fallback renders.
+    // Europe topo composite, mirroring skitourenguru's topo mode:
+    // clean world base below zoom 8 (positron vector style, Europe-
+    // locked), OpenTopoMap as zoomed-in world fallback (z≥8) and
+    // swisstopo pixelkarte on top within CH. basemap.at is deliberately
+    // NOT part of the composite: its grid serves white no-data tiles
+    // over neighboring countries (it blanked eastern CH and hid the
+    // fallback at AT's edges) — skitourenguru's topo mode has no
+    // basemap.at layer either. Austria is covered by OpenTopoMap.
     const europeTopoStyle = getCompositeRasterStyle({
       name: 'europe-topo',
       styles: [
         positronBase ?? esriLightGrayStyle,
-        withLayerMinZoom(oeTopoRasterStyle, 8),
+        withLayerMinZoom(openTopoStyle, 8),
         withLayerMinZoom(swissTopoRasterStyle, 8),
       ],
     });
