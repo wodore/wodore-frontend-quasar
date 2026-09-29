@@ -733,48 +733,26 @@ body.body--dark {
 
 // ── Map focus mode: fly-out animation ────────────────────────────────────
 body.wd-map-focus {
-  .wd-map-ctl-col,
-  .wd-topbar,
-  .wd-topbar-menu,
-  .wd-topbar__progress,
-  .q-page-sticky:not(.wd-focus-toggle) {
-    opacity: 0;
-    pointer-events: none;
-    // fly toward nearest edge
-    &[style*='bottom-right'] { transform: translateX(60px); }
-    &[style*='bottom-left'] { transform: translateX(-60px); }
-    transform: translateY(-40px);
-    transition:
-      opacity 0.25s cubic-bezier(0.2, 0, 0, 1),
-      transform 0.25s cubic-bezier(0.2, 0, 0, 1);
-  }
-
-  // right column flies right
+  // bottom-right controls fly RIGHT
   .wd-map-ctl-col {
-    transform: translateX(80px);
+    opacity: 0; pointer-events: none; transform: translateX(80px);
+    transition: opacity 0.25s cubic-bezier(0.2,0,0,1), transform 0.25s cubic-bezier(0.2,0,0,1);
   }
-
-  // topbar flies up
-  .wd-topbar,
+  // topbar flies UP
+  .wd-topbar, .wd-topbar__progress {
+    opacity: 0; pointer-events: none; transform: translateY(-60px);
+    transition: opacity 0.25s cubic-bezier(0.2,0,0,1), transform 0.25s cubic-bezier(0.2,0,0,1);
+  }
   .wd-topbar-menu {
-    transform: translateY(-60px);
+    opacity: 0; pointer-events: none; transform: translateY(-60px);
+    transition: opacity 0.25s cubic-bezier(0.2,0,0,1), transform 0.25s cubic-bezier(0.2,0,0,1);
   }
-
-  // MapLibre controls fly left
-  .maplibregl-ctrl-group {
-    opacity: 0;
-    pointer-events: none;
-    transform: translateX(-60px);
-    transition:
-      opacity 0.25s cubic-bezier(0.2, 0, 0, 1),
-      transform 0.25s cubic-bezier(0.2, 0, 0, 1);
+  .maplibregl-ctrl-top-right .maplibregl-ctrl-group {
+    opacity: 0; pointer-events: none; transform: translateY(-60px);
+    transition: opacity 0.25s cubic-bezier(0.2,0,0,1), transform 0.25s cubic-bezier(0.2,0,0,1);
   }
-
-  // the focus toggle stays visible
   .wd-focus-toggle {
-    opacity: 1;
-    pointer-events: auto;
-    transform: none;
+    opacity: 1; pointer-events: auto; transform: none;
   }
 }
 
