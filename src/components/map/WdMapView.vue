@@ -1045,8 +1045,8 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
         :max-tile-cache-size="400"
         :render-world-copies="false"
       >
-        <!-- ── Map controls (clean architecture, v2) ─────────────────── -->
-        <!-- Bottom-right column: overlay strip above basemap strip -->
+        <!-- ── Map controls (v2 clean layout) ──────────────────────────── -->
+        <!-- Bottom-right: overlay strip above basemap (basemap opens LEFT) -->
         <q-page-sticky position="bottom-right" :offset="[12, 14]" style="z-index: 5">
           <div class="wd-map-ctl-col">
             <WdOverlayControl />
@@ -1054,9 +1054,11 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
           </div>
         </q-page-sticky>
 
-        <!-- Bottom-left: GPS + compass + fullscreen above them -->
-        <MglGeolocateControl position="bottom-left" />
-        <MglNavigationControl :show-zoom="false" position="bottom-left" />
+        <!-- Top-right: GPS + compass + fullscreen (desktop zoom too) -->
+        <MglGeolocateControl position="top-right" />
+        <MglNavigationControl :show-zoom="!isMobileView()" position="top-right" />
+
+        <!-- Bottom-left: attribution + scale only -->
         <MglAttributionControl position="bottom-left" />
         <MglScaleControl />
         <!-- <MglGeoJsonSource

@@ -1,69 +1,71 @@
 <script setup lang="ts">
 /**
- * WdOverlayControl — the map layer overlay toggle.
+ * WdOverlayControl — map layer overlay toggle (clean v2).
  *
- * Architecture (mockup r6, owner-approved):
- * - Main toggle button (48px, colored SVG icon) — opens/closes the mini strip
- * - Mini strip: vertical column of layer icon buttons (44px each) inside a
- *   boxed surface, one-tap toggle per layer, scrollable with bottom fade
- * - "More" button at the strip bottom: expands the box to the LEFT with
- *   labeled rows (icon + name + info + filter per layer)
- * - Mobile: the expanded panel becomes a fullscreen bottom sheet
+ * Layout (bottom-right, above basemap):
+ * - Main toggle (48px, colored SVG) — opens/closes the mini strip
+ * - Mini strip: layer icon buttons (44px) inside a boxed surface,
+ *   scrollable with bottom fade, one-tap toggle per layer
+ * - "More" at strip bottom: expands the box to the LEFT (desktop) or
+ *   opens a bottom sheet (mobile) with labeled rows + info/filter
  *
- * Theme: all colors via --wd-ctl-* custom properties (light/dark aware).
- * No q-fab — pure HTML buttons with CSS transitions.
+ * Icons: each overlay has an SVG in src/assets/wodore-design/overlays/exports/.
  */
 import { computed, ref, watch } from 'vue';
-import { LocalStorage } from 'quasar';
 import { useI18n } from 'vue-i18n';
+import { LocalStorage } from 'quasar';
 import { useOverlayStore } from '@stores/map/overlay-store';
 import { useOverlayConfigStore } from '@stores/map/overlay-config-store';
 import { useMapMenuStore } from '@stores/map/map-menu-store';
 import { OverlaySwitchItem } from '@stores/map/utils/interfaces';
-import WdOverlaySwitchItem from '../WdOverlaySwitchItem.vue';
 
 const { t } = useI18n();
 const overlayStore = useOverlayStore();
 const configStore = useOverlayConfigStore();
 const menuStore = useMapMenuStore();
 
-/** Mini strip open/closed (persisted) */
+// ── State ────────────────────────────────────────────────────────────────
+
 const stripOpen = ref(
-  LocalStorage.hasItem('wd_overlayStripOpen')
-    ? (LocalStorage.getItem('wd_overlayStripOpen') as boolean)
+  LocalStorage.hasItem('wd_ovl_strip')
+    ? (LocalStorage.getItem('wd_ovl_strip') as boolean)
     : true
 );
+watch(stripOpen, v => LocalStorage.set('wd_ovl_strip', v));
 
-watch(stripOpen, v => {
-  LocalStorage.set('wd_overlayStripOpen', v);
-});
-
-/** Expanded panel (labels + info/filter) */
 const expanded = ref(false);
 
-/** Mobile detection (reactive via matchMedia) */
 const isMobile = computed(() => window.matchMedia('(max-width: 899px)').matches);
 
-/** Original colored toggle icon */
-const toggleIcon = new URL(
+// ── Icons ────────────────────────────────────────────────────────────────
+
+/** Main toggle icon (original colored SVG from design assets) */
+const iconOpen = new URL(
   '/src/assets/wodore-design/icons/export/overlay-switch.svg',
   import.meta.url
 ).href;
-const toggleIconClose = new URL(
+const iconClose = new URL(
   '/src/assets/wodore-design/icons/export/overlay-switch-close.svg',
   import.meta.url
 ).href;
+
+/** Layer icon: resolves to the SVG file in the overlays exports dir */
+function layerIcon(name: string): string {
+  return (
+    'img:' +
+    new URL(`/src/assets/wodore-design/overlays/exports/${name}.svg`, import.meta.url).href
+  );
+}
 
 // ── Actions ──────────────────────────────────────────────────────────────
 
 function toggleLayer(item: OverlaySwitchItem): void {
   overlayStore.toggleOverlay(item);
-  // visibility is handled by the map event system
 }
 
-function openConfig(overlayName: string, initialTab?: string): void {
+function openConfig(overlayName: string, tab?: string): void {
   const overlay = overlayStore.overlays.find(o => o.name === overlayName);
-  menuStore.openOverlayConfig(overlayName, initialTab);
+  menuStore.openOverlayConfig(overlayName, tab);
   menuStore.menuData.title = overlay?.label ?? overlayName;
 }
 
@@ -74,25 +76,18 @@ function hasFilters(overlayName: string): boolean {
   return config.filters.some(f => {
     const value = configStore.getFilterValue(overlayName, f.id);
     if (Array.isArray(value)) {
-      const all = f.options?.length ?? 0;
-      return value.length > 0 && value.length < all;
+      return value.length > 0 && value.length < (f.options?.length ?? 0);
     }
     return value !== f.defaultValue;
   });
-}
-
-/** Resolve the icon for a layer (from the overlay store's icon field) */
-function layerIcon(icon: string | undefined): string {
-  if (!icon) return 'wd-layers';
-  return icon.startsWith('img:') || icon.startsWith('wd-') ? icon : `img:${icon}`;
 }
 </script>
 
 <template>
   <div class="wd-ovl">
     <!-- ── Expanded panel ─────────────────────────────────────────────── -->
-    <!-- Desktop: slides LEFT from the mini strip box (same surface) -->
-    <!-- Mobile: fullscreen bottom sheet -->
+    <!-- Desktop: absolute, slides LEFT from the strip box (same surface) -->
+    <!-- Mobile: teleported bottom sheet -->
     <Teleport to="body" :disabled="!isMobile">
       <Transition :name="isMobile ? 'wd-ovl-sheet' : 'wd-ovl-panel'">
         <div
@@ -104,10 +99,8 @@ function layerIcon(icon: string | undefined): string {
         >
           <div class="wd-ovl__panel-head">
             <h4>{{ t('overlay_style') }}</h4>
-            <button class="wd-ovl__panel-close" :aria-label="t('close')" @click="expanded = false">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M6 6l12 12M18 6L6 18" />
-              </svg>
+            <button class="wd-ovl__close" :aria-label="t('close')" @click="expanded = false">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
             </button>
           </div>
           <div class="wd-ovl__panel-body">
@@ -115,25 +108,42 @@ function layerIcon(icon: string | undefined): string {
               v-for="item in overlayStore.overlays"
               :key="item.name"
               v-show="item.show"
-              class="wd-ovl__panel-row"
+              class="wd-ovl__row"
+              :class="{ 'wd-ovl__row--active': item.active }"
+              @click="toggleLayer(<OverlaySwitchItem>(item as unknown))"
             >
-              <WdOverlaySwitchItem
-                :label="item.label"
-                :show-label="true"
-                :icon="layerIcon(item.icon)"
-                :active="item.active"
-                :overlay-name="item.name"
-                :show-badge="hasFilters(item.name)"
-                @toggle-overlay="toggleLayer(<OverlaySwitchItem>(item as unknown))"
-                @configure="openConfig(item.name, $event)"
-              />
+              <span class="wd-ovl__row-icon" :class="{ 'wd-ovl__row-icon--active': item.active }">
+                <q-icon :name="layerIcon(item.icon)" size="24px" />
+              </span>
+              <span class="wd-ovl__row-label">{{ item.label }}</span>
+              <span v-if="hasFilters(item.name)" class="wd-ovl__row-badge">
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z"/></svg>
+              </span>
+              <span class="wd-ovl__row-actions">
+                <button
+                  class="wd-ovl__row-btn"
+                  :aria-label="`${item.label} info`"
+                  title="Info"
+                  @click.stop="openConfig(item.name, 'legend')"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+                </button>
+                <button
+                  class="wd-ovl__row-btn"
+                  :aria-label="`${item.label} filter`"
+                  title="Filter"
+                  @click.stop="openConfig(item.name, 'filter')"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z"/></svg>
+                </button>
+              </span>
             </div>
           </div>
         </div>
       </Transition>
     </Teleport>
 
-    <!-- ── Mini strip (boxed, collapsible) ────────────────────────────── -->
+    <!-- ── Mini strip (boxed, same width as buttons) ──────────────────── -->
     <Transition name="wd-ovl-strip">
       <div v-if="stripOpen" class="wd-ovl__box">
         <div class="wd-ovl__strip" role="group" :aria-label="t('overlay_style')">
@@ -141,10 +151,10 @@ function layerIcon(icon: string | undefined): string {
             v-for="item in overlayStore.overlays"
             :key="item.name"
             v-show="item.show"
-            class="wd-map-btn wd-map-btn--sm"
+            class="wd-ovl__btn"
             :class="{
-              'wd-map-btn--active': item.active,
-              'wd-map-btn--inactive': !item.active,
+              'wd-ovl__btn--active': item.active,
+              'wd-ovl__btn--inactive': !item.active,
             }"
             :aria-label="item.label"
             :aria-pressed="item.active"
@@ -157,29 +167,26 @@ function layerIcon(icon: string | undefined): string {
             </span>
           </button>
         </div>
-        <!-- more button: expands the panel -->
         <button
           class="wd-ovl__more"
           :aria-label="t('overlay_style')"
           :aria-expanded="expanded"
           @click="expanded = !expanded"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-            <circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/>
-          </svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
         </button>
       </div>
     </Transition>
 
-    <!-- ── Main toggle (48px, colored icon, 180° rotation) ────────────── -->
+    <!-- ── Main toggle (48px, colored SVG icon, rotates) ──────────────── -->
     <button
-      class="wd-map-btn wd-map-btn--lg wd-ovl__toggle"
+      class="wd-ovl__toggle"
       :aria-label="t('overlay_style')"
       :aria-expanded="stripOpen"
       @click="stripOpen = !stripOpen"
     >
       <img
-        :src="stripOpen ? toggleIconClose : toggleIcon"
+        :src="stripOpen ? iconClose : iconOpen"
         alt=""
         class="wd-ovl__toggle-icon"
         :class="{ 'wd-ovl__toggle-icon--open': stripOpen }"
@@ -206,26 +213,59 @@ function layerIcon(icon: string | undefined): string {
   border: 1px solid var(--wd-ctl-border);
   border-radius: 8px;
   box-shadow: var(--wd-ctl-shadow);
-  padding: 3px;
+  padding: 2px;
   flex: none;
+  // same width as the 48px toggle button
+  width: 48px;
 }
 
 .wd-ovl__strip {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 0;
   align-items: center;
-  max-height: calc(100dvh - 240px);
+  width: 100%;
+  max-height: calc(100dvh - 260px);
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: none;
   &::-webkit-scrollbar { display: none; }
-  // scroll hint: last icons fade out
   mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
   -webkit-mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
 }
 
-// filter badge on strip buttons
+// strip icon button (44px, fills the 48px box minus padding)
+.wd-ovl__btn {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--wd-ctl-ink);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background-color 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+  flex: none;
+}
+
+.wd-ovl__btn--inactive {
+  opacity: 0.5;
+}
+
+.wd-ovl__btn:hover {
+  background: rgba(128, 128, 128, 0.1);
+  opacity: 1;
+}
+
+.wd-ovl__btn--active {
+  box-shadow: inset 0 0 0 2px var(--wd-ctl-ring);
+  background: var(--wd-ctl-active-bg);
+  opacity: 1;
+}
+
+// filter badge
 .wd-ovl__badge {
   position: absolute;
   top: 2px;
@@ -239,7 +279,7 @@ function layerIcon(icon: string | undefined): string {
   place-items: center;
 }
 
-// ── More button (bottom of the box) ──────────────────────────────────────
+// ── More button ──────────────────────────────────────────────────────────
 .wd-ovl__more {
   display: grid;
   place-items: center;
@@ -260,7 +300,26 @@ function layerIcon(icon: string | undefined): string {
   }
 }
 
-// ── Main toggle icon ──────────────────────────────────────────────────────
+// ── Main toggle ──────────────────────────────────────────────────────────
+.wd-ovl__toggle {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  border: 1px solid var(--wd-ctl-border);
+  background: var(--wd-ctl-bg);
+  cursor: pointer;
+  box-shadow: var(--wd-ctl-shadow);
+  transition: background-color 0.15s ease;
+  flex: none;
+  padding: 6px;
+
+  &:hover {
+    background: var(--wd-ctl-hover);
+  }
+}
+
 .wd-ovl__toggle-icon {
   width: 100%;
   height: 100%;
@@ -272,7 +331,7 @@ function layerIcon(icon: string | undefined): string {
   transform: rotate(180deg);
 }
 
-// ── Expanded panel (desktop: slides LEFT from the box) ──────────────────
+// ── Expanded panel ───────────────────────────────────────────────────────
 .wd-ovl__panel {
   background: var(--wd-ctl-bg);
   border: 1px solid var(--wd-ctl-border);
@@ -283,7 +342,7 @@ function layerIcon(icon: string | undefined): string {
   overflow: hidden;
 }
 
-// desktop: positioned to the LEFT of the mini strip
+// desktop: positioned LEFT of the mini strip (same vertical alignment)
 .wd-ovl__panel:not(.wd-ovl__panel--sheet) {
   position: absolute;
   right: calc(100% + 6px);
@@ -319,7 +378,7 @@ function layerIcon(icon: string | undefined): string {
   color: var(--wd-ctl-ink);
 }
 
-.wd-ovl__panel-close {
+.wd-ovl__close {
   width: 32px;
   height: 32px;
   border: none;
@@ -343,15 +402,78 @@ function layerIcon(icon: string | undefined): string {
   padding: 4px 0;
 }
 
-// rows inside the panel
-.wd-ovl__panel-row {
+// rows: icon + label + actions
+.wd-ovl__row {
   display: flex;
   align-items: center;
-  padding: 0 14px;
+  gap: 10px;
+  padding: 4px 14px;
   border-radius: 4px;
+  cursor: pointer;
+  min-height: 48px;
 
   &:hover {
     background: rgba(128, 128, 128, 0.05);
+  }
+}
+
+.wd-ovl__row-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  color: var(--wd-ctl-ink-soft);
+
+  &--active {
+    box-shadow: inset 0 0 0 2px var(--wd-ctl-ring);
+    color: var(--wd-ctl-ink);
+  }
+}
+
+.wd-ovl__row-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--wd-ctl-ink);
+}
+
+.wd-ovl__row-badge {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  background: #2673bf;
+  color: #fdfefd;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+.wd-ovl__row-actions {
+  display: flex;
+  gap: 2px;
+  flex: none;
+}
+
+.wd-ovl__row-btn {
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--wd-ctl-ink-soft);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+
+  &:hover {
+    background: rgba(128, 128, 128, 0.1);
+    color: var(--wd-ctl-ink);
   }
 }
 
@@ -360,11 +482,8 @@ function layerIcon(icon: string | undefined): string {
 // strip collapse
 .wd-ovl-strip-enter-active,
 .wd-ovl-strip-leave-active {
-  transition:
-    opacity 0.18s cubic-bezier(0.2, 0, 0, 1),
-    transform 0.18s cubic-bezier(0.2, 0, 0, 1);
+  transition: opacity 0.18s cubic-bezier(0.2, 0, 0, 1), transform 0.18s cubic-bezier(0.2, 0, 0, 1);
 }
-
 .wd-ovl-strip-enter-from,
 .wd-ovl-strip-leave-to {
   opacity: 0;
@@ -374,11 +493,8 @@ function layerIcon(icon: string | undefined): string {
 // panel slide-left (desktop)
 .wd-ovl-panel-enter-active,
 .wd-ovl-panel-leave-active {
-  transition:
-    opacity 0.2s cubic-bezier(0.2, 0, 0, 1),
-    transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+  transition: opacity 0.2s cubic-bezier(0.2, 0, 0, 1), transform 0.2s cubic-bezier(0.2, 0, 0, 1);
 }
-
 .wd-ovl-panel-enter-from,
 .wd-ovl-panel-leave-to {
   opacity: 0;
@@ -388,11 +504,8 @@ function layerIcon(icon: string | undefined): string {
 // sheet slide-up (mobile)
 .wd-ovl-sheet-enter-active,
 .wd-ovl-sheet-leave-active {
-  transition:
-    opacity 0.25s cubic-bezier(0.2, 0, 0, 1),
-    transform 0.25s cubic-bezier(0.2, 0, 0, 1);
+  transition: opacity 0.25s cubic-bezier(0.2, 0, 0, 1), transform 0.25s cubic-bezier(0.2, 0, 0, 1);
 }
-
 .wd-ovl-sheet-enter-from,
 .wd-ovl-sheet-leave-to {
   opacity: 0;
