@@ -1,0 +1,1 @@
+{"id":"71100e0bac0649f603b5290585147497","fullName":"wodore:tests/unit/meteo-store.spec.ts#meteo store weather-code context fetches once per language/collection context change","name":"fetches once per language/collection context change","status":"passed","testResultsByEnv":{"default":"cfcb047056bae9cf3045cb144a26004b"}}
