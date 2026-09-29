@@ -37,12 +37,13 @@ import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import type { StyleSpecification } from 'maplibre-gl';
-import { MapLibre } from '@capawesome/capacitor-maplibre';
+import { MapLibre, type Camera } from '@capawesome/capacitor-maplibre';
 import type { PluginListenerHandle } from '@capacitor/core';
 import { useBasemapStore } from '@stores/map/basemap-store';
 import { useOverlayStore } from '@stores/map/overlay-store';
 import { useLocalPropertiesStore } from '@stores/local-properties-store';
 import { clientWodore } from '@clients/index';
+import axios from 'axios';
 import type { Feature, FeatureCollection, Point } from 'geojson';
 import WdBasemapSwitch from './WdBasemapSwitch.vue';
 import WdOverlaySwitch from './WdOverlaySwitch.vue';
@@ -62,6 +63,30 @@ const localPropertiesStore = useLocalPropertiesStore();
 
 const styleEpoch = ref(0); // guards async setStyle races
 const listeners: PluginListenerHandle[] = [];
+
+// Fetched URL styles (OpenFreeMap etc.) — styles are static, cache them
+const remoteStyleCache = new Map<string, StyleSpecification>();
+
+async function resolveBasemapStyle(): Promise<StyleSpecification> {
+  const basemap = basemapStore.getBasemap();
+  const style = basemap?.style as StyleSpecification | string | undefined;
+  if (typeof style !== 'string') {
+    // Inline style object — deep-clone: the fragments are reactive
+    // module singletons and setStyle must not see them mutate.
+    return JSON.parse(JSON.stringify(style ?? {}));
+  }
+  // URL style (e.g. https://tiles.openfreemap.org/styles/bright)
+  let cached = remoteStyleCache.get(style);
+  if (!cached) {
+    const res = await axios.get<StyleSpecification>(style, {
+      headers: { Accept: 'application/json' },
+    });
+    cached = res.data;
+    remoteStyleCache.set(style, cached);
+    console.debug(`[WdNativeMapView] Fetched remote style: ${style}`);
+  }
+  return JSON.parse(JSON.stringify(cached));
+}
 
 // Huts for tap hit-testing (native mapClick carries no features)
 type HutFeature = Feature<Point> & { properties: { slug: string; name?: string } };
@@ -90,11 +115,8 @@ async function loadHuts() {
  * Mirrors the web flow (WdOverlaySwitch addSource/addLayer and
  * basemap-store transformStyle) by merging the same style fragments.
  */
-function composeStyle(): StyleSpecification {
-  const basemap = basemapStore.getBasemap();
-  // Deep-clone: the fragments are reactive module singletons; setStyle
-  // serializes them, and we must not mutate the originals.
-  const style: StyleSpecification = JSON.parse(JSON.stringify(basemap?.style ?? {}));
+async function composeStyle(): Promise<StyleSpecification> {
+  const style = await resolveBasemapStyle();
   style.sources = { ...(style.sources ?? {}) };
   style.layers = [...(style.layers ?? [])];
 
@@ -124,6 +146,12 @@ function composeStyle(): StyleSpecification {
   }
   if (sprites.length > 0) style.sprite = sprites;
 
+  // Glyph server: fonts.openmaptiles.org serves BOTH the overlay fonts
+  // ("Open Sans Semibold") and the standard Noto families basemaps use
+  // (OpenFreeMap's own font server 404s on Open Sans and kills symbol
+  // layers natively).
+  style.glyphs = 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf';
+
   // MapLibre Native does not support the icon-overlap/text-overlap
   // layout enums (maplibre-native#251) and drops the layer on parse —
   // strip them; the -allow-overlap booleans carry the same meaning.
@@ -137,15 +165,46 @@ function composeStyle(): StyleSpecification {
   return style;
 }
 
+let mapReady = false;
+
+/**
+ * Apply the composed style. setStyle() crashes the app (NPE in the
+ * maplibre annotation plugin's DraggableAnnotationController when the
+ * style reloads — upstream bug at plugin v0.2.0), so rebuild the map
+ * instead: destroy + create with the current camera preserved.
+ */
 async function applyStyle() {
   const epoch = ++styleEpoch.value;
-  const styleJson = JSON.stringify(composeStyle());
+  let camera: Camera | null = null;
+  if (mapReady) {
+    camera = await MapLibre.getCamera({ mapId: MAP_ID })
+      .then(r => r.camera)
+      .catch(() => null);
+    await MapLibre.destroyMap({ mapId: MAP_ID }).catch(() => undefined);
+  }
+  const initial = localPropertiesStore.getInitialLocation();
+  let styleJson: string;
   try {
-    await MapLibre.setStyle({ mapId: MAP_ID, json: styleJson });
-    if (epoch !== styleEpoch.value) return; // superseded
-    console.debug('[WdNativeMapView] style applied');
+    styleJson = JSON.stringify(await composeStyle());
   } catch (e) {
-    console.error('[WdNativeMapView] setStyle failed', e);
+    console.error('[WdNativeMapView] composeStyle failed', e);
+    return;
+  }
+  try {
+    await MapLibre.createMap({
+      mapId: MAP_ID,
+      elementId: mapElementId,
+      styleJson,
+      center: camera?.center ?? { latitude: initial.lat, longitude: initial.lng },
+      zoom: camera?.zoom ?? initial.zoom,
+      minZoom: 7,
+      maxZoom: 20,
+    });
+    mapReady = true;
+    if (epoch !== styleEpoch.value) return; // superseded
+    console.debug('[WdNativeMapView] map (re)created with composed style');
+  } catch (e) {
+    console.error('[WdNativeMapView] applyStyle createMap failed', e);
   }
 }
 
@@ -192,12 +251,13 @@ onMounted(async () => {
     await MapLibre.createMap({
       mapId: MAP_ID,
       elementId: mapElementId,
-      styleJson: JSON.stringify(composeStyle()),
+      styleJson: JSON.stringify(await composeStyle()),
       center: { latitude: initial.lat, longitude: initial.lng },
       zoom: initial.zoom,
       minZoom: 7,
       maxZoom: 20,
     });
+    mapReady = true;
     console.debug('[WdNativeMapView] map created');
   } catch (e) {
     console.error('[WdNativeMapView] createMap failed', e);
@@ -235,6 +295,7 @@ onUnmounted(async () => {
   document.body.classList.remove('wd-native-map');
   for (const l of listeners) await l.remove();
   listeners.length = 0;
+  mapReady = false;
   try {
     await MapLibre.destroyMap({ mapId: MAP_ID });
   } catch {
