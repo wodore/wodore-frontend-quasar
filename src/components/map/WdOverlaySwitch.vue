@@ -27,8 +27,9 @@ const basemapStore = useBasemapStore();
 const mapRef = useMap();
 const $q = useQuasar();
 const switcherOpen = ref<boolean>(
-  LocalStorage.hasItem('switcherOpen') ? (LocalStorage.getItem('switcherOpen') as boolean) : false
+  LocalStorage.hasItem('switcherOpen') ? (LocalStorage.getItem('switcherOpen') as boolean) : true
 );
+const panelOpen = ref(false);
 //const switcherLocked = ref<boolean>(true);
 
 const configDialogOpen = ref(false);
@@ -94,7 +95,11 @@ function openConfig(overlayName: string, initialTab?: string) {
 
   // Use the overlay's own (translated, locale-reactive) label as the config
   // drawer title instead of a hardcoded map
-  const overlay = overlayStore.overlays.find(o => o.name === overlayName);
+  // Cast to a simple record: the OverlaySwitchItem's deeply nested style
+  // types cause "type instantiation excessively deep" in the dev checker
+  const overlay = overlayStore.overlays.find(
+    (o: { name: string; label: string }) => o.name === overlayName
+  );
   const overlayLabel = overlay?.label ?? overlayName;
 
   menuStore.openOverlayConfig(overlayName, initialTab);
@@ -351,7 +356,7 @@ function overlayIcon(name: string) {
 </script>
 <style lang="scss">
 
-// ── custom layer control (mockup r6: mini strip + panel) ─────────────
+// ── custom layer control (mockup r6: collapsible mini strip + panel) ──
 .wd-layerctl {
   display: flex;
   flex-direction: column;
@@ -359,45 +364,73 @@ function overlayIcon(name: string) {
   gap: 6px;
 }
 
-// mini strip: vertical column of layer icon buttons
-.wd-layerctl__strip {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  align-items: center;
-  max-height: min(320px, 40vh);
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: none;
-  &::-webkit-scrollbar { display: none; }
-  padding: 3px;
-  position: relative;
-  /* scroll hint: fade at the bottom edge */
-  mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
-}
-
-.wd-layerctl__strip-btn {
-  position: relative;
+// main toggle: 48px chip, same icon as the old overlay switch
+.wd-layerctl__main {
+  display: grid;
+  place-items: center;
   width: 48px;
   height: 48px;
   border-radius: 8px;
   border: 1px solid #dde7e0;
   background: #fdfefd;
   color: #224e3b;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2);
+  transition: background-color 0.15s ease;
+  flex: none;
+}
+
+.wd-layerctl__main:hover {
+  background: #f6f9f7;
+}
+
+.wd-layerctl__main--open {
+  background: #f6f9f7;
+}
+
+// box around the mini strip (mockup: one surface)
+.wd-layerctl__box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #fdfefd;
+  border: 1px solid #dde7e0;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2);
+  padding: 4px;
+  gap: 2px;
+}
+
+// strip: layer icon buttons inside the box
+.wd-layerctl__strip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+  max-height: min(280px, 36vh);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+.wd-layerctl__strip-btn {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: #224e3b;
   display: grid;
   place-items: center;
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2);
-  transition:
-    box-shadow 0.15s ease,
-    background-color 0.15s ease,
-    opacity 0.15s ease;
+  transition: background-color 0.12s ease, box-shadow 0.12s ease;
   flex: none;
 }
 
 .wd-layerctl__strip-btn:hover {
-  background: #f6f9f7;
+  background: rgba(52, 103, 81, 0.08);
 }
 
 .wd-layerctl__strip-btn:active {
@@ -405,19 +438,16 @@ function overlayIcon(name: string) {
 }
 
 .wd-layerctl__strip-btn--active {
-  box-shadow:
-    inset 0 0 0 2px #bfab25,
-    0 1px 3px rgba(10, 20, 15, 0.2);
-  background: rgba(52, 103, 81, 0.1);
-  color: #224e3b;
+  box-shadow: inset 0 0 0 2px #bfab25;
+  background: rgba(52, 103, 81, 0.12);
 }
 
 .wd-layerctl__strip-btn--filtered .wd-layerctl__strip-badge {
   position: absolute;
   top: 2px;
   right: 2px;
-  width: 15px;
-  height: 15px;
+  width: 14px;
+  height: 14px;
   border-radius: 4px;
   background: #29626b;
   color: #fdfefd;
@@ -425,30 +455,41 @@ function overlayIcon(name: string) {
   place-items: center;
 }
 
-// layers button: opens the full panel
-// layers button: same 48px chip as the strip buttons (consistent family)
-.wd-layerctl__open {
+// more button: small pill at the bottom of the box
+.wd-layerctl__more {
   display: grid;
   place-items: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
+  width: 44px;
+  height: 28px;
+  border-radius: 4px;
   border: 1px solid #dde7e0;
-  background: #fdfefd;
-  color: #1c1c1c;
+  background: #f6f9f7;
+  color: #29626b;
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2);
-  transition: background-color 0.15s ease;
+  transition: background-color 0.12s ease;
   flex: none;
 }
 
-.wd-layerctl__open:hover {
-  background: #f6f9f7;
+.wd-layerctl__more:hover {
+  background: rgba(41, 98, 107, 0.08);
 }
 
-.wd-layerctl__open svg {
-  width: 22px;
-  height: 22px;
+// strip collapse animation (slides down from the main button)
+.wd-layerctl-strip-enter-active,
+.wd-layerctl-strip-leave-active {
+  transition:
+    opacity 0.2s cubic-bezier(0.2, 0, 0, 1),
+    transform 0.2s cubic-bezier(0.2, 0, 0, 1),
+    max-height 0.2s cubic-bezier(0.2, 0, 0, 1);
+  max-height: 400px;
+  overflow: hidden;
+}
+
+.wd-layerctl-strip-enter-from,
+.wd-layerctl-strip-leave-to {
+  opacity: 0;
+  transform: translateY(12px);
+  max-height: 0;
 }
 
 // ── full panel ──
@@ -519,7 +560,7 @@ function overlayIcon(name: string) {
   max-height: calc(62vh - 90px);
 }
 
-// panel transition: popover rises from the chip, sheet slides up
+// panel transition
 .wd-layerctl-panel-enter-active,
 .wd-layerctl-panel-leave-active {
   transition:
@@ -615,18 +656,18 @@ function overlayIcon(name: string) {
       <Teleport to="body" :disabled="panelMode !== 'sheet'">
         <Transition name="wd-layerctl-panel">
           <div
-            v-if="switcherOpen"
+            v-if="panelOpen"
             class="wd-layerctl__panel"
             :class="`wd-layerctl__panel--${panelMode}`"
             role="dialog"
             :aria-label="t('overlay_style')"
           >
-            <div class="wd-layerctl__grab" @click="switcherOpen = false">
+            <div class="wd-layerctl__grab" @click="panelOpen = false">
               <span class="wd-layerctl__bar"></span>
             </div>
             <div class="wd-layerctl__head">
               <h4>{{ t('overlay_style') }}</h4>
-              <q-btn flat round dense icon="wd-close" :aria-label="t('close')" @click="switcherOpen = false" />
+              <q-btn flat round dense icon="wd-close" :aria-label="t('close')" @click="panelOpen = false" />
             </div>
             <div class="wd-layerctl__rows overlay-scroll">
               <div
@@ -653,33 +694,48 @@ function overlayIcon(name: string) {
         </Transition>
       </Teleport>
 
-      <!-- Mini strip: always-visible layer icon buttons (one-tap toggle) -->
-      <div class="wd-layerctl__strip" role="group" :aria-label="t('overlay_style')">
-        <div
-          v-for="item in overlayStore.overlays"
-          :key="item.name"
-          v-show="item.show"
-          class="wd-layerctl__strip-item"
-        >
+      <!-- Mini strip with a box around it (collapsible) -->
+      <Transition name="wd-layerctl-strip">
+        <div v-if="switcherOpen" class="wd-layerctl__box">
+          <div class="wd-layerctl__strip" role="group" :aria-label="t('overlay_style')">
+            <div
+              v-for="item in overlayStore.overlays"
+              :key="item.name"
+              v-show="item.show"
+              class="wd-layerctl__strip-item"
+            >
+              <button
+                class="wd-layerctl__strip-btn"
+                :class="{ 'wd-layerctl__strip-btn--active': item.active, 'wd-layerctl__strip-btn--filtered': hasActiveFilters(item.name) }"
+                :aria-label="item.label"
+                :aria-pressed="item.active"
+                :title="item.label"
+                @click="toggleOverlay(<OverlaySwitchItem>(item as unknown))"
+              >
+                <q-icon :name="overlayIcon(item.icon)" size="22px" />
+                <span v-if="hasActiveFilters(item.name)" class="wd-layerctl__strip-badge">
+                  <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z"/></svg>
+                </span>
+              </button>
+            </div>
+          </div>
+          <!-- more button: opens the full panel -->
           <button
-            class="wd-layerctl__strip-btn"
-            :class="{ 'wd-layerctl__strip-btn--active': item.active, 'wd-layerctl__strip-btn--filtered': hasActiveFilters(item.name) }"
-            :aria-label="item.label"
-            :aria-pressed="item.active"
-            :title="item.label"
-            @click="toggleOverlay(<OverlaySwitchItem>(item as unknown))"
+            class="wd-layerctl__more"
+            :aria-label="t('overlay_style')"
+            @click="panelOpen = !panelOpen"
           >
-            <q-icon :name="overlayIcon(item.icon)" size="22px" />
-            <span v-if="hasActiveFilters(item.name)" class="wd-layerctl__strip-badge">
-              <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z"/></svg>
-            </span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/>
+            </svg>
           </button>
         </div>
-      </div>
+      </Transition>
 
-      <!-- Layers button: opens the full panel -->
+      <!-- Main toggle: same icon as the old overlay switch fab -->
       <button
-        class="wd-layerctl__open"
+        class="wd-layerctl__main"
+        :class="{ 'wd-layerctl__main--open': switcherOpen }"
         :aria-label="t('overlay_style')"
         :aria-expanded="switcherOpen"
         @click="switcherOpen = !switcherOpen"

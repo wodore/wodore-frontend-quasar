@@ -52,6 +52,13 @@
   }
 }
 
+/* Basemap switcher buttons: square chips (not round) to match the
+   layer strip buttons */
+.wd-basemap-item .q-fab,
+.wd-basemap-item .q-btn {
+  border-radius: 8px !important;
+}
+
 /* MapLibre's sprite icons are mid-grey - darken for the white chips */
 .maplibregl-ctrl button .maplibregl-ctrl-icon {
   filter: brightness(0.3);

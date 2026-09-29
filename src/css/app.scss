@@ -515,6 +515,29 @@ body {
   color: #1c1c1c;
 }
 
+// ── Shared map control button (48px square chip) ───────────────────────
+.wd-ctl-btn {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  border: 1px solid #dde7e0;
+  background: #fdfefd;
+  color: #224e3b;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2);
+  transition: background-color 0.15s ease;
+}
+
+.wd-ctl-btn:hover {
+  background: #f6f9f7;
+}
+
+.wd-ctl-btn:active {
+  transform: scale(0.95);
+}
+
 // ── Map focus mode (r6): hide floating chrome, keep attribution ────────
 body.wd-map-focus {
   .wd-topbar,
@@ -538,18 +561,7 @@ body.wd-map-focus {
   }
 }
 
-// Focus toggle/exit: light map chrome in BOTH themes (map stays light);
-// explicit values beat theme defaults (the raw button rendered as an
-// empty dark pill on device - missing font icon + losing the bg war)
-.wd-focus-toggle .q-btn {
-  background: #fdfefd !important;
-  border: 1px solid #dde7e0 !important;
-  box-shadow: 0 1px 3px rgba(10, 20, 15, 0.2) !important;
-  color: #1c1c1c !important;
-}
-.wd-focus-toggle .q-btn:hover {
-  background: #f6f9f7 !important;
-}
+
 
 // ── Menu drawer: floats over map imagery ───────────────────────────────
 // The codified hybrid exception applies (one soft shadow over map
