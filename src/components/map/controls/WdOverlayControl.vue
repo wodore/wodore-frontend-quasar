@@ -161,6 +161,11 @@ function openConfig(overlayName: string, tab?: string): void {
   menuStore.menuData.title = overlay?.label ?? overlayName;
 }
 
+function hasInfo(overlayName: string): boolean {
+  const overlay = overlayStore.overlays.find(o => o.name === overlayName);
+  return !!(overlay?.config?.legend?.length);
+}
+
 function hasFilters(overlayName: string): boolean {
   const overlay = overlayStore.overlays.find(o => o.name === overlayName);
   const config = overlay?.config;
@@ -209,7 +214,6 @@ function hasFilters(overlayName: string): boolean {
             v-show="item.show"
             class="wd-ovl__row"
             :class="{ 'wd-ovl__row--active': item.active }"
-            @click="toggleLayer(<OverlaySwitchItem>(item as unknown))"
           >
             <!-- Label + actions (LEFT of icon, only when expanded) -->
             <div v-if="expanded" class="wd-ovl__row-info">
@@ -218,6 +222,7 @@ function hasFilters(overlayName: string): boolean {
                 <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z"/></svg>
               </span>
               <button
+                v-if="hasInfo(item.name)"
                 class="wd-ovl__row-action"
                 :aria-label="`${item.label} info`"
                 title="Info"
@@ -226,6 +231,7 @@ function hasFilters(overlayName: string): boolean {
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
               </button>
               <button
+                v-if="hasFilters(item.name) || overlayStore.overlays.find(o => o.name === item.name)?.config?.filters?.length"
                 class="wd-ovl__row-action"
                 :aria-label="`${item.label} filter`"
                 title="Filter"
@@ -245,6 +251,7 @@ function hasFilters(overlayName: string): boolean {
               :aria-label="item.label"
               role="button"
               :aria-pressed="item.active"
+              @click="toggleLayer(<OverlaySwitchItem>(item as unknown))"
             >
               <q-icon :name="layerIcon(item.icon)" size="22px" />
               <span v-if="!expanded && hasFilters(item.name)" class="wd-ovl__mini-badge">
@@ -370,7 +377,8 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
     width: min(240px, 64vw);
     pointer-events: none;
 
-    .wd-ovl__row,
+    .wd-ovl__icon,
+    .wd-ovl__row-action,
     .wd-ovl__more {
       pointer-events: auto;
     }

@@ -3,14 +3,18 @@
  * WdBasemapControl — basemap selector (matches the overlay control box).
  * Opens to the LEFT (same as before, new design without q-fab).
  */
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
+import { LocalStorage } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useBasemapStore } from '@stores/map/basemap-store';
 
 const { t } = useI18n();
 const basemapStore = useBasemapStore();
 
-const open = ref(true);
+const open = ref(
+  LocalStorage.hasItem('wd_bm_open') ? (LocalStorage.getItem('wd_bm_open') as boolean) : false
+);
+watch(open, v => LocalStorage.set('wd_bm_open', v));
 
 const iconOpen = new URL(
   '/src/assets/wodore-design/icons/export/basemap-switch.svg',
