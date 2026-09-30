@@ -406,7 +406,7 @@ body.capacitor .preview-badge {
         <!-- User / menu button (left edge, inside the pill) -->
         <button
           class="wd-topbar__user"
-          :aria-label="t('menu')"
+          :aria-label="$t('menu')"
           @click="menuDrawerOpen = !menuDrawerOpen"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
