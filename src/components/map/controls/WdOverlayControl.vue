@@ -131,10 +131,12 @@ function toggleLayer(item: OverlaySwitchItem): void {
 // Add all active overlays when the map is ready.
 // useMap() may resolve asynchronously AND the map may already be loaded
 // before this component mounts — handle both cases.
-const stopMapWatch = watch(
+let mapWatchDone = false;
+watch(
   () => mapRef.map,
   (map, oldMap) => {
-    if (!map || map === oldMap) return;
+    if (!map || map === oldMap || mapWatchDone) return;
+    mapWatchDone = true;
     const load = () => {
       addedOverlays.clear();
       for (const overlay of overlayStore.overlays) {
@@ -144,13 +146,12 @@ const stopMapWatch = watch(
       }
       configStore.reapplyAllFilters();
     };
-    // If the map is already loaded, add immediately; otherwise wait
+    // If the map is already style-loaded, add immediately; otherwise wait
     if (map.isStyleLoaded()) {
       load();
     } else {
       map.once('load', load);
     }
-    stopMapWatch(); // only run once
   },
   { immediate: true }
 );
