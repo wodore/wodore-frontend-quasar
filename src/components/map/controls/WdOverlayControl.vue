@@ -10,7 +10,7 @@
  * Layer toggling replicates the old WdOverlaySwitch logic: sources,
  * sprites, layers, opacity, and render ordering.
  */
-import { onMounted, ref, watch } from 'vue';
+import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { LocalStorage } from 'quasar';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
@@ -34,6 +34,23 @@ watch(stripOpen, v => LocalStorage.set('wd_ovl_strip', v));
 
 /** Box expanded: same box, wider (labels + info/filter visible) */
 const expanded = ref(false);
+
+/** Swipe left = expand, swipe right = collapse (on the box) */
+let swipeStartX: number | null = null;
+
+function onBoxTouchStart(e: Event): void {
+  swipeStartX = (e as TouchEvent).touches[0]?.clientX ?? null;
+}
+
+function onBoxTouchEnd(e: Event): void {
+  if (swipeStartX === null) return;
+  const endX = (e as TouchEvent).changedTouches[0]?.clientX ?? swipeStartX;
+  const delta = endX - swipeStartX;
+  swipeStartX = null;
+  // swipe left (delta < -30) → expand; swipe right (delta > 30) → collapse
+  if (delta < -30 && !expanded.value) expanded.value = true;
+  else if (delta > 30 && expanded.value) expanded.value = false;
+}
 
 /** Track which overlays have been added to the map */
 const addedOverlays = new Set<string>();
@@ -109,18 +126,32 @@ function toggleLayer(item: OverlaySwitchItem): void {
   }
 }
 
-// Add all active overlays when the map loads
-onMounted(() => {
-  mapRef.map?.on('load', () => {
-    addedOverlays.clear();
-    for (const overlay of overlayStore.overlays) {
-      if (overlay.active) {
-        addOverlay(overlay);
+// Add all active overlays when the map is ready.
+// useMap() may resolve asynchronously AND the map may already be loaded
+// before this component mounts — handle both cases.
+const stopMapWatch = watch(
+  () => mapRef.map,
+  (map, oldMap) => {
+    if (!map || map === oldMap) return;
+    const load = () => {
+      addedOverlays.clear();
+      for (const overlay of overlayStore.overlays) {
+        if (overlay.active) {
+          addOverlay(overlay);
+        }
       }
+      configStore.reapplyAllFilters();
+    };
+    // If the map is already loaded, add immediately; otherwise wait
+    if (map.isStyleLoaded()) {
+      load();
+    } else {
+      map.once('load', load);
     }
-    configStore.reapplyAllFilters();
-  });
-});
+    stopMapWatch(); // only run once
+  },
+  { immediate: true }
+);
 
 // ── Actions ──────────────────────────────────────────────────────────────
 
@@ -163,7 +194,13 @@ function hasFilters(overlayName: string): boolean {
 
     <!-- ── THE BOX: mini strip (collapsed) or expanded (same box, wider) ── -->
     <Transition name="wd-ovl-strip">
-      <div v-if="stripOpen" class="wd-ovl__box" :class="{ 'wd-ovl__box--expanded': expanded }">
+      <div
+        v-if="stripOpen"
+        class="wd-ovl__box"
+        :class="{ 'wd-ovl__box--expanded': expanded }"
+        @touchstart="onBoxTouchStart"
+        @touchend="onBoxTouchEnd"
+      >
         <!-- Rows: icon always at the right, label+actions appear when expanded -->
         <div class="wd-ovl__rows" role="group" :aria-label="t('overlay_style')">
           <div
@@ -330,7 +367,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   transition: width 0.22s $ease;
 
   &--expanded {
-    width: min(280px, 72vw);
+    width: min(240px, 64vw);
     pointer-events: none;
 
     .wd-ovl__row,
@@ -433,9 +470,9 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 }
 
 .wd-ovl__row-action {
-  width: 32px;
-  height: 32px;
-  border: none;
+  width: 34px;
+  height: 34px;
+  border: 1px solid transparent;
   border-radius: 4px;
   background: transparent;
   color: var(--wd-ctl-ink-soft);
@@ -443,15 +480,24 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   display: grid;
   place-items: center;
   flex: none;
-  transition: background-color 0.1s $ease, color 0.1s $ease;
+  transition:
+    background-color 0.1s $ease,
+    border-color 0.1s $ease,
+    color 0.1s $ease;
 
   &:hover {
-    background: rgba(0, 0, 0, 0.06);
-    color: #29626b; // turquoise (info accent)
+    background: rgba(41, 98, 107, 0.08);
+    border-color: rgba(41, 98, 107, 0.2);
+    color: #29626b;
   }
 
   &:active {
+    background: rgba(41, 98, 107, 0.14);
     transform: scale(0.95);
+  }
+
+  &:focus-visible {
+    border-color: #29626b;
   }
 }
 
