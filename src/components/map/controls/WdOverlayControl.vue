@@ -47,9 +47,11 @@ function onBoxTouchEnd(e: Event): void {
   const endX = (e as unknown as { changedTouches: Array<{ clientX: number }> }).changedTouches[0]?.clientX ?? swipeStartX;
   const delta = endX - swipeStartX;
   swipeStartX = null;
-  // swipe left (delta < -30) → expand; swipe right (delta > 30) → collapse
-  if (delta < -30 && !expanded.value) expanded.value = true;
-  else if (delta > 30 && expanded.value) expanded.value = false;
+  // Only treat as swipe if horizontal movement > 30px (otherwise it's a tap,
+  // which the @click handler already covers)
+  if (Math.abs(delta) < 30) return;
+  if (delta < 0 && !expanded.value) expanded.value = true;
+  else if (delta > 0 && expanded.value) expanded.value = false;
 }
 
 /** Track which overlays have been added to the map */
@@ -199,13 +201,7 @@ function hasFilters(overlayName: string): boolean {
 
     <!-- ── THE BOX: mini strip (collapsed) or expanded (same box, wider) ── -->
     <Transition name="wd-ovl-strip">
-      <div
-        v-if="stripOpen"
-        class="wd-ovl__box"
-        :class="{ 'wd-ovl__box--expanded': expanded }"
-        @touchstart="onBoxTouchStart"
-        @touchend="onBoxTouchEnd"
-      >
+      <div v-if="stripOpen" class="wd-ovl__box" :class="{ 'wd-ovl__box--expanded': expanded }">
         <!-- Rows: icon always at the right, label+actions appear when expanded -->
         <div class="wd-ovl__rows" role="group" :aria-label="t('overlay_style')">
           <div
@@ -252,6 +248,8 @@ function hasFilters(overlayName: string): boolean {
               role="button"
               :aria-pressed="item.active"
               @click="toggleLayer(<OverlaySwitchItem>(item as unknown))"
+              @touchstart="onBoxTouchStart"
+              @touchend="onBoxTouchEnd"
             >
               <q-icon :name="layerIcon(item.icon)" size="22px" />
               <span v-if="!expanded && hasFilters(item.name)" class="wd-ovl__mini-badge">
