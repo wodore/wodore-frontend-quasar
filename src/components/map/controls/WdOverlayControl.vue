@@ -571,7 +571,7 @@ body.body--dark .wd-ovl__icon :deep(svg) {
   display: grid;
   place-items: center;
   height: 26px;
-  // no border — the box boundary is the visual edge
+  border: none !important;
   background: var(--wd-ctl-bg);
   color: var(--wd-ctl-ink-soft);
   cursor: pointer;
