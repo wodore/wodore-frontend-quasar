@@ -30,20 +30,51 @@
   float: right;
 }
 
-/* Bottom-left corner: column-reverse so the FIRST control sits at the
-   BOTTOM — mobile: GPS below compass (bottom edge aligned with the
-   basemap toggle); desktop: scale at the bottom, full attribution above. */
+/* Desktop: the focus toggle owns the TOP of the right column — push the
+   MapLibre cluster (GPS/compass/zoom) down below it */
+@media (min-width: 900px) {
+  .maplibregl-ctrl-top-right {
+    margin-top: 58px;
+  }
+}
+
+/* Bottom-left corner.
+   Mobile: normal column — GPS on top, navigator below, merged into ONE
+   chip (no gap, shared borders). Bottom edge aligns with the basemap
+   toggle. Desktop: column-reverse — scale at the bottom, full
+   attribution above it. */
 .maplibregl-ctrl-bottom-left {
   display: flex;
-  flex-direction: column-reverse;
+  flex-direction: column;
   align-items: flex-start;
   margin-left: 12px;
   margin-bottom: 14px; /* aligns bottom edge with the basemap toggle */
 }
 
+@media (min-width: 900px) {
+  .maplibregl-ctrl-bottom-left {
+    flex-direction: column-reverse;
+  }
+}
+
 .maplibregl-ctrl-bottom-left .maplibregl-ctrl {
-  margin: 0 0 4px;
+  margin: 0;
   float: none;
+}
+
+/* Mobile: merge GPS + navigator groups into one chip */
+@media (max-width: 899px) {
+  .maplibregl-ctrl-bottom-left .maplibregl-ctrl-group + .maplibregl-ctrl-group {
+    border-top: none !important;
+    border-radius: 0 0 8px 8px !important;
+    margin-top: -1px; /* collapse the doubled border */
+  }
+  .maplibregl-ctrl-bottom-left .maplibregl-ctrl-group:first-child {
+    border-radius: 8px 8px 0 0 !important;
+  }
+  .maplibregl-ctrl-bottom-left .maplibregl-ctrl-group:only-child {
+    border-radius: 8px !important;
+  }
 }
 
 /* Merge consecutive groups: rounded top on first, bottom on last */
@@ -73,11 +104,13 @@
 }
 
 // Attribution: one compact instrument chip instead of a wrapping text
-// block - solid light surface (map chrome stays light in both themes),
+// block - theme-aware surface (follows the --wd-ctl-* tokens),
 // 4px control radius, single line with ellipsis, halo over imagery.
 .maplibregl-ctrl-bottom-left .maplibregl-ctrl-attrib,
 .maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib {
-  background: rgba(253, 254, 253, 0.92) !important;
+  background: var(--wd-ctl-bg, rgba(253, 254, 253, 0.92)) !important;
+  border: 1px solid var(--wd-ctl-border, transparent) !important;
+  color: var(--wd-ctl-ink, #264c3c) !important;
   border-radius: 4px !important;
   padding: 1px 8px !important;
   max-width: min(46vw, 360px) !important;
@@ -370,4 +403,22 @@ body.body--dark .maplibregl-ctrl button .maplibregl-ctrl-icon {
   padding: 2px 8px;
   font-size: 10px;
   color: #29626b;
+}
+
+/* ── Dark theme fixes ──────────────────────────────────────────────────── */
+body.body--dark {
+  // compass: the south half of the stock glyph is near-black on pine
+  .maplibregl-ctrl button.maplibregl-ctrl-compass .maplibregl-ctrl-icon {
+    filter: brightness(1.6);
+  }
+
+  // attribution ⓘ glyph: light ink
+  .maplibregl-ctrl-attrib .maplibregl-ctrl-attrib-button {
+    filter: brightness(2.2) saturate(0.6);
+  }
+
+  // attribution links readable on the pine chip
+  .maplibregl-ctrl-attrib a {
+    color: #a9f0d2 !important;
+  }
 }

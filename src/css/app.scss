@@ -581,12 +581,8 @@ body.body--dark {
   z-index: 2000;
   display: flex;
   align-items: center;
-  justify-content: center; // mobile: pill centered
+  justify-content: center; // pill centered on ALL viewports
   pointer-events: none;
-
-  @media (min-width: 900px) {
-    justify-content: flex-start; // desktop: pill left
-  }
 }
 
 .wd-topbar > * {
@@ -649,7 +645,7 @@ body.body--dark {
   }
 
   :deep(.q-icon) {
-    color: var(--wd-ctl-ink-soft);
+    color: var(--wd-ctl-ink);
     font-size: 22px;
   }
 }
@@ -659,7 +655,7 @@ body.body--dark {
   :deep(.q-btn) {
     width: 40px;
     height: 40px;
-    color: var(--wd-ctl-ink-soft);
+    color: var(--wd-ctl-ink);
   }
 }
 
@@ -693,11 +689,23 @@ body.body--dark .wd-topbar__date {
 // WdSelectDate inside the pill: transparent field, themed ink, no steppers
 .wd-topbar__date :deep(> div) {
   margin: 0 !important;
+  padding: 0 !important;
   max-width: none !important;
   width: 100%;
   max-height: none !important;
   display: flex;
   align-items: center;
+}
+
+// Kill the dashed field border WdSelectDate draws around the stepper
+.wd-topbar__date :deep(.wd-date-stepper),
+.wd-topbar__date :deep(.q-ml-xs),
+.wd-topbar__date :deep(.q-mr-md),
+.wd-topbar__date :deep(.q-ml-md) {
+  border: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100%;
 }
 
 .wd-topbar__date :deep(.wd-date-stepper) {
@@ -764,7 +772,7 @@ body.body--dark .wd-topbar__date {
   border-radius: 50%;
   border: none;
   background: transparent;
-  color: var(--wd-ctl-ink-soft);
+  color: var(--wd-ctl-ink);
   cursor: pointer;
   flex: none;
   transition: background-color 0.12s ease, color 0.12s ease;
@@ -855,17 +863,21 @@ body.body--dark .wd-topbar__date {
     transform 0.3s cubic-bezier(0.2, 0, 0, 1),
     background-color 0.15s ease;
 
-  // Desktop: always visible, below the top-right GPS/compass/zoom cluster
+  // Desktop: TOP of the right column — the MapLibre cluster is pushed
+  // below it (margin-top on .maplibregl-ctrl-top-right)
   @media (min-width: 900px) {
     opacity: 1;
     pointer-events: auto;
     transform: none;
-    top: 230px;
+    top: 14px;
     right: 14px;
   }
 
-  // Mobile: only visible in focus mode (exit), below where the pill was
+  // Mobile: always visible top-right, just below the pill
   @media (max-width: 899px) {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
     top: calc(66px + env(safe-area-inset-top, 0px));
     right: 12px;
   }
@@ -926,10 +938,6 @@ body.wd-map-focus {
   }
   .wd-focus-toggle {
     opacity: 1; pointer-events: auto; transform: none;
-    // Desktop: slide to where the GPS cluster was (visual anchor)
-    @media (min-width: 900px) {
-      top: 14px;
-    }
   }
 }
 
@@ -1976,4 +1984,41 @@ body.body--dark .wd-topbar .wd-date-field .q-field__prefix {
 
 body.body--dark .wd-topbar input::placeholder {
   color: rgba(169, 240, 210, 0.5);
+}
+
+/* Dark theme: overlay icons + basemap toggle graphic readable on pine */
+body.body--dark .wd-ovl__icon img,
+body.body--dark .wd-bm__toggle-icon {
+  filter: brightness(1.85) saturate(1.35);
+}
+
+/* Dark theme: mute the staging preview ribbon */
+body.body--dark .preview-badge {
+  opacity: 0.75;
+}
+
+/* ── Side panel opens: bottom-right controls + top-right cluster shift
+      left so they stay clear of the drawer (desktop). q-page-sticky uses
+      an inline transform — !important wins. Mobile drawers overlay, no
+      shift needed there. */
+@media (min-width: 900px) {
+  body.wd-sidepanel-open .wd-map-ctl-sticky {
+    transform: translateX(-330px) !important;
+  }
+  body.wd-sidepanel-open .wd-topbar__utils {
+    transform: translateX(-330px);
+  }
+  body.wd-sidepanel-open .maplibregl-ctrl-top-right {
+    margin-right: 330px;
+  }
+  body.wd-sidepanel-open .wd-focus-toggle {
+    transform: translateX(-330px);
+  }
+}
+
+.wd-map-ctl-sticky,
+.wd-topbar__utils,
+.maplibregl-ctrl-top-right,
+.wd-focus-toggle {
+  transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1), margin-right 0.25s cubic-bezier(0.2, 0, 0, 1);
 }

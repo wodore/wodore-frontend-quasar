@@ -64,6 +64,21 @@ function onSwipeEnd(e: Event): void {
   else if (delta > 0) expanded.value = false;
 }
 
+/** Click outside the control collapses the expanded box */
+function onDocClick(ev: Event): void {
+  const target = ev.target as HTMLElement;
+  if (!target.closest('.wd-ovl')) {
+    expanded.value = false;
+  }
+}
+
+watch(expanded, v => {
+  if (v) document.addEventListener('click', onDocClick, { capture: true });
+  else document.removeEventListener('click', onDocClick, { capture: true });
+});
+
+onBeforeUnmount(() => document.removeEventListener('click', onDocClick, { capture: true }));
+
 // ── Icons ─────────────────────────────────────────────────────────────────
 const iconOpen = new URL(
   '/src/assets/wodore-design/icons/export/overlay-switch.svg',
@@ -307,19 +322,16 @@ onBeforeUnmount(() => {
     <!-- ── THE BOX: mini strip (collapsed) or expanded (same box, wider) ── -->
     <Transition name="wd-ovl-strip">
       <div v-if="stripOpen" class="wd-ovl__box" :class="{ 'wd-ovl__box--expanded': expanded }">
-        <!-- Top toolbar (reserved in both states so icons never move) -->
-        <div class="wd-ovl__toolbar">
-          <Transition name="wd-ovl-fade" mode="default">
-            <div v-if="expanded" class="wd-ovl__toolbar-actions" key="actions">
-              <!-- Future: group edit and other layer actions -->
-              <button class="wd-ovl__toolbar-btn" disabled aria-label="Reserved">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />
-                </svg>
-              </button>
-            </div>
-            <div v-else key="spacer" class="wd-ovl__toolbar-spacer" />
-          </Transition>
+        <!-- Top toolbar: EXTENDED only (animates in/out with the box) -->
+        <div v-if="expanded" class="wd-ovl__toolbar">
+          <div class="wd-ovl__toolbar-actions">
+            <!-- Future: group edit and other layer actions -->
+            <button class="wd-ovl__toolbar-btn" disabled aria-label="Reserved">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <!-- Scroll fade: top -->
@@ -360,14 +372,10 @@ onBeforeUnmount(() => {
                 </svg>
               </button>
               <span class="wd-ovl__row-name">{{ item.label }}</span>
-              <span v-if="hasActiveFilters(item.name)" class="wd-ovl__row-filter-badge">
-                <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z" />
-                </svg>
-              </span>
               <button
                 v-if="hasFilterConfig(item.name)"
                 class="wd-ovl__row-action"
+                :class="{ 'wd-ovl__row-action--filtered': hasActiveFilters(item.name) }"
                 :aria-label="`${item.label} filter`"
                 title="Filter"
                 @click.stop="openConfig(item.name, 'filter')"
@@ -390,11 +398,6 @@ onBeforeUnmount(() => {
               :aria-pressed="item.active"
             >
               <q-icon :name="layerIcon(item.icon)" size="20px" />
-              <span v-if="!expanded && hasActiveFilters(item.name)" class="wd-ovl__mini-badge">
-                <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z" />
-                </svg>
-              </span>
             </span>
           </div>
         </div>
@@ -427,7 +430,15 @@ onBeforeUnmount(() => {
       @click="stripOpen = !stripOpen"
     >
       <img
-        :src="stripOpen ? iconClose : iconOpen"
+        v-show="!stripOpen"
+        :src="iconOpen"
+        alt=""
+        class="wd-ovl__toggle-icon wd-ovl__toggle-icon--closed-icon"
+        :class="{ 'wd-ovl__toggle-icon--hidden': stripOpen }"
+      />
+      <img
+        v-show="stripOpen"
+        :src="iconClose"
         alt=""
         class="wd-ovl__toggle-icon"
         :class="{ 'wd-ovl__toggle-icon--open': stripOpen }"
@@ -481,15 +492,34 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   }
 
   .wd-ovl__toggle-icon {
-    width: 100%;
-    height: 100%;
+    position: absolute;
+    inset: 8px;
+    width: calc(100% - 16px);
+    height: calc(100% - 16px);
     object-fit: contain;
-    transition: transform 0.35s $ease;
-    will-change: transform;
+    transition:
+      opacity 0.2s $ease,
+      transform 0.28s $ease;
+    will-change: transform, opacity;
   }
 
+  // Morph: closed icon shrinks out, open icon grows in (no rotation)
   .wd-ovl__toggle-icon--open {
-    transform: rotate(360deg);
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .wd-ovl__toggle-icon--hidden {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+
+  .wd-ovl__toggle-icon--closed-icon {
+    opacity: 1;
+    transform: scale(1);
+    transition:
+      opacity 0.2s $ease 0.06s,
+      transform 0.28s $ease 0.06s;
   }
 }
 
@@ -497,7 +527,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 .wd-ovl__box {
   display: flex;
   flex-direction: column;
-  width: 44px; // mini width (was 48 — slightly narrower per feedback)
+  width: 48px; // matches the basemap toggle width
   max-height: min(60vh, 420px);
   border-radius: 8px;
   border: 1px solid var(--wd-ctl-border);
@@ -513,6 +543,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 
   &--expanded {
     width: 216px; // slightly narrower than before, titles clip
+    animation: wd-ovl-pop 0.28s $ease;
   }
 }
 
@@ -525,10 +556,6 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   padding: 0 8px;
   min-height: 34px;
   border-bottom: 1px solid var(--wd-ctl-border);
-}
-
-.wd-ovl__toolbar-spacer {
-  width: 100%;
 }
 
 .wd-ovl__toolbar-actions {
@@ -676,6 +703,20 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
     color: #2a8a72; // turquoise touch (info = "learn more")
   }
 
+  // Active filter: the button itself turns gold (no extra badge)
+  &--filtered {
+    color: #bfab25;
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 2px;
+      border-radius: 4px;
+      box-shadow: inset 0 0 0 1.5px rgba(191, 171, 37, 0.55);
+      pointer-events: none;
+    }
+  }
+
   body.body--dark & {
     &--info {
       color: #4fd1b5;
@@ -700,9 +741,9 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   position: relative;
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
-  margin: 0 3px;
+  width: 36px;
+  height: 36px;
+  margin: 0 4px;
   border-radius: 4px;
   border: 1px solid var(--wd-ctl-border);
   background: var(--wd-ctl-date-bg);
@@ -730,21 +771,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 // Dark theme: brighten the colored SVGs on the pine chip
 body.body--dark .wd-ovl__icon :deep(img),
 body.body--dark .wd-ovl__icon :deep(svg) {
-  filter: brightness(1.5) saturate(1.25);
-}
-
-.wd-ovl__mini-badge {
-  position: absolute;
-  top: -3px;
-  right: -3px;
-  display: grid;
-  place-items: center;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #bfab25;
-  color: #fdfefd;
-  pointer-events: none;
+  filter: brightness(1.85) saturate(1.35);
 }
 
 // ── More button (chevron, more obvious) ─────────────────────────────────
@@ -767,6 +794,13 @@ body.body--dark .wd-ovl__icon :deep(svg) {
   &:hover {
     background: var(--wd-ctl-hover);
   }
+}
+
+// Open/close feedback: one soft overshoot pop (crafted moment)
+@keyframes wd-ovl-pop {
+  0% { transform: scale(0.985); }
+  55% { transform: scale(1.008); }
+  100% { transform: scale(1); }
 }
 
 // ── Transitions ──────────────────────────────────────────────────────────

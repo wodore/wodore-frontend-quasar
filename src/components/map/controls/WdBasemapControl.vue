@@ -6,20 +6,33 @@
  * image thumbnails. Selecting a basemap closes the rail again (like
  * the old version). Starts closed, state persisted.
  */
-import { ref, watch, computed } from 'vue';
+import { ref, watch, computed, onBeforeUnmount } from 'vue';
 import { LocalStorage } from 'quasar';
 import { useBasemapStore } from '@stores/map/basemap-store';
 
 const basemapStore = useBasemapStore();
 
-// Reactive: track the store's current basemap (also updates after
-// initial style load / persisted state restoration)
-const activeName = computed(() => basemapStore.getBasemap()?.name);
-
 const open = ref(
   LocalStorage.hasItem('wd_bm_open') ? (LocalStorage.getItem('wd_bm_open') as boolean) : false
 );
 watch(open, v => LocalStorage.set('wd_bm_open', v));
+
+// Reactive: track the store's current basemap (also updates after
+// initial style load / persisted state restoration)
+const activeName = computed(() => basemapStore.getBasemap()?.name);
+
+/** Click outside the control closes the rail */
+function onDocClick(ev: Event): void {
+  const target = ev.target as HTMLElement;
+  if (!target.closest('.wd-bm')) open.value = false;
+}
+
+watch(open, v => {
+  if (v) document.addEventListener('click', onDocClick, { capture: true });
+  else document.removeEventListener('click', onDocClick, { capture: true });
+});
+
+onBeforeUnmount(() => document.removeEventListener('click', onDocClick, { capture: true }));
 
 function selectBasemap(bm: { name: string }): void {
   const item = basemapStore.basemaps.find(b => b.name === bm.name);
@@ -37,7 +50,7 @@ const iconClose = new URL('/src/assets/wodore-design/icons/export/basemap-switch
     <Transition name="wd-bm-rail">
       <div v-if="open" class="wd-bm__rail" role="group" aria-label="Basemap">
         <button
-          v-for="bm in basemapStore.basemaps"
+          v-for="bm in basemapStore.basemaps.filter(b => b.show)"
           :key="bm.name"
           class="wd-bm__btn"
           :class="{
@@ -94,13 +107,24 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   background: var(--wd-ctl-bg);
   box-shadow: var(--wd-ctl-shadow);
   pointer-events: auto;
+  // Scrollable when the rail would leave the viewport
+  max-width: calc(100vw - 24px);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  scroll-snap-type: x proximity;
 }
 
 // ── Basemap buttons: full-bleed images, solid (no transparency) ─────────
 .wd-bm__btn {
   position: relative;
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
+  scroll-snap-align: start;
   padding: 0;
   border-radius: 4px;
   border: 2px solid transparent; // reserve space for gold selection

@@ -990,12 +990,12 @@ function onMapContainerClick(ev: MouseEvent): void {
   // Manual double-tap detection — MapLibre's doubleClickZoom swallows the
   // dblclick event on the canvas, so we cannot rely on the DOM dblclick.
   const now = Date.now();
-  if (now - lastMapTapAt < 400) {
+  if (now - lastMapTapAt < 500) {
     // Second tap of a double-tap (zoom intent):
     lastMapTapAt = 0;
     if (focusTapTimer) { clearTimeout(focusTapTimer); focusTapTimer = null; }
     // If focus was JUST turned on by the first tap, undo it
-    if (mapFocus.value && now - lastFocusToggleAt < 700) {
+    if (mapFocus.value && now - lastFocusToggleAt < 900) {
       setMapFocus(false);
     }
     return;
@@ -1005,7 +1005,7 @@ function onMapContainerClick(ev: MouseEvent): void {
   focusTapTimer = setTimeout(() => {
     focusTapTimer = null;
     setMapFocus(!mapFocus.value);
-  }, 400);
+  }, 500);
 }
 
 onMounted(() => {

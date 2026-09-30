@@ -119,6 +119,14 @@ const contentDrawerOpen = computed({
   },
 });
 
+// Side panel (content drawer, desktop): flag on <body> so map controls
+// and the utility cluster can shift left and stay clear of the drawer
+watch(
+  () => contentDrawerOpen.value,
+  open => document.body.classList.toggle('wd-sidepanel-open', !!open),
+  { immediate: true }
+);
+
 // Mobile bottom sheet ref (for programmatic snap control)
 const bottomSheetRef = ref<InstanceType<typeof WdBottomSheet> | null>(null);
 
