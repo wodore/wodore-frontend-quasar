@@ -592,6 +592,7 @@ body.body--dark {
 // ── The pill ────────────────────────────────────────────────────────────
 .wd-topbar__pill {
   flex: none;
+  max-width: calc(100vw - 140px); // leave room for the fullscreen button
   display: flex;
   align-items: center;
   height: 48px;
@@ -660,7 +661,8 @@ body.body--dark {
 
 // ── Date: the highlighted core element ──────────────────────────────────
 .wd-topbar__date {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
+  max-width: 190px;
   min-width: 0;
   display: flex;
   align-items: center;
@@ -844,11 +846,11 @@ body.body--dark .wd-topbar__date {
 // ── Focus (fullscreen) mode toggle button ────────────────────────────────
 .wd-focus-toggle {
   position: absolute;
-  z-index: 10;
+  z-index: 2010; // above the topbar (2000) when fixed-positioned on mobile
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   border-radius: 8px;
   border: 1px solid var(--wd-ctl-border);
   background: var(--wd-ctl-bg);
@@ -873,20 +875,17 @@ body.body--dark .wd-topbar__date {
     right: 14px;
   }
 
-  // Mobile: TOP-RIGHT on the pill's row — clearly discoverable
+  // Mobile: TOP-RIGHT on the pill's row. position: FIXED + z-index above
+  // the topbar — the (content-sized, centered) pill can NEVER cover it.
   @media (max-width: 899px) {
+    position: fixed;
     opacity: 1;
     pointer-events: auto;
     transform: none;
     top: calc(11px + env(safe-area-inset-top, 0px));
     right: 12px;
-    width: 46px;
-    height: 46px;
-  }
-
-  // Very narrow screens: drop below the pill instead of overlapping it
-  @media (max-width: 359px) {
-    top: calc(66px + env(safe-area-inset-top, 0px));
+    width: 48px;
+    height: 48px;
   }
 
   &:active {
@@ -2000,11 +1999,11 @@ body.body--dark .wd-topbar input::placeholder {
   color: #22302a; // currentColor icons match the black silhouettes
 }
 
-body.body--dark .wd-ovl__icon img,
-body.body--dark .wd-ovl__icon .q-icon,
-body.body--dark .wd-bm__toggle-icon {
+body.body--dark .wd-ovl__icon .q-icon {
+  // ONE invert only — on the wrapper <i>. Inverting BOTH the wrapper and
+  // the child <img> double-inverts the glyphs back to black.
   filter: invert(1);
-  color: #000000; // pure black source → clean white after invert
+  color: #000000; // currentColor sources invert to clean white
 }
 
 /* Dark theme: mute the staging preview ribbon */
@@ -2051,8 +2050,11 @@ body.body--dark .preview-badge {
   opacity: 0.9;
 }
 
-/* Dark theme: dim the (light) basemap canvas — DOM markers are unaffected;
-   canvas-drawn hut symbols dim with the tiles but stay visible. */
-body.body--dark .maplibregl-canvas {
-  filter: brightness(0.72) saturate(0.85);
+
+/* Date text clips with ellipsis when the segment narrows */
+.wd-topbar__date .q-field__native,
+.wd-topbar__date input {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

@@ -45,11 +45,8 @@ const selectedDateDay = computed<string>(() => {
 });
 const selectedDateDisplay = computed(() => {
   if (selectedDateObj.value !== undefined && selectedDate.value) {
-    if (!isMobile.value) {
-      const dayShort = formatDate(selectedDateObj.value, 'dd');
-      return `${selectedDate.value} • ${dayShort}`;
-    }
-    return selectedDate.value;
+    const dayShort = formatDate(selectedDateObj.value, 'dd');
+    return `${selectedDate.value} • ${dayShort}`;
   }
   return selectedDate.value || '';
 });

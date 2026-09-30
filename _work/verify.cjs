@@ -136,6 +136,61 @@ async function pinTheme(page, theme) {
         check(`${tag}: GPS+nav merged (same x, stacked)`, layout.gps && layout.nav && Math.abs(layout.gps.x - layout.nav.x) < 2 && Math.abs(layout.nav.y - layout.gps.y - layout.gps.h) < 3, `gps=${JSON.stringify(layout.gps)} nav=${JSON.stringify(layout.nav)}`);
       }
 
+      // ── COMPREHENSIVE CONTROL AUDIT (the old suite compared only two
+      //    elements — this measures EVERY square control) ──
+      const audit = await p.evaluate(mode => {
+        const rect = sel => {
+          const el = document.querySelector(sel);
+          if (!el) return null;
+          const b = el.getBoundingClientRect();
+          return { x: Math.round(b.x), y: Math.round(b.y), w: Math.round(b.width), h: Math.round(b.height), r: Math.round(b.right), b: Math.round(b.bottom) };
+        };
+        return {
+          ovlToggle: rect('.wd-ovl__toggle'),
+          bmToggle: rect('.wd-bm__toggle'),
+          focus: rect('.wd-focus-toggle'),
+          gpsGrp: rect(mode === 'desktop' ? '.maplibregl-ctrl-top-right .maplibregl-ctrl-group' : '.maplibregl-ctrl-bottom-left .maplibregl-ctrl-group'),
+          navGrp: rect('.maplibregl-ctrl-bottom-left .maplibregl-ctrl-group:nth-child(2)'),
+          ovlBox: rect('.wd-ovl__box'),
+          chip: rect('.wd-ovl__icon'),
+          pill: rect('.wd-topbar__pill'),
+          // dark-mode treatments
+          canvasFilter: getComputedStyle(document.querySelector('.maplibregl-canvas')).filter,
+          layerIconFilter: (() => { return document.querySelector('.wd-ovl__icon .q-icon') ? getComputedStyle(document.querySelector('.wd-ovl__icon .q-icon')).filter : 'MISS'; })(),
+          ovlToggleIconFilter: (() => { const i = document.querySelector('.wd-ovl__toggle-icon'); return i ? getComputedStyle(i).filter : 'MISS'; })(),
+          bmToggleIconFilter: (() => { const i = document.querySelector('.wd-bm__toggle-icon'); return i ? getComputedStyle(i).filter : 'MISS'; })(),
+        };
+      }, mode);
+
+      // all standalone square controls: 48px outer (±1 for border rounding)
+      for (const k of ['ovlToggle', 'bmToggle', 'focus', 'gpsGrp']) {
+        const c = audit[k];
+        check(`${tag}: ${k} 48px`, c && Math.abs(c.w - 48) <= 1 && Math.abs(c.h - 48) <= 1, c ? `${c.w}x${c.h}` : 'MISS');
+      }
+      // overlay box width = toggle width; chips 40px inside
+      check(`${tag}: ovlBox 48px`, Math.abs(audit.ovlBox.w - 48) <= 1, String(audit.ovlBox.w));
+      check(`${tag}: chip 40px`, Math.abs(audit.chip.w - 40) <= 1, String(audit.chip.w));
+      // right-edge alignment: ovl toggle, bm toggle, ovl box share the right edge
+      const rEdges = [audit.ovlToggle.r, audit.bmToggle.r, audit.ovlBox.r];
+      check(`${tag}: right edges aligned`, Math.max(...rEdges) - Math.min(...rEdges) <= 2, JSON.stringify(rEdges));
+      // pill never overlaps the focus button
+      check(`${tag}: pill clear of focus`, (audit.pill.r + 6) <= audit.focus.x || audit.pill.y > audit.focus.b, `pill.r=${audit.pill.r} focus.x=${audit.focus.x}`);
+      // focus button actually renders above the topbar
+      const focusZ = await p.evaluate(() => {
+        const el = document.querySelector('.wd-focus-toggle');
+        return el ? parseInt(getComputedStyle(el).zIndex, 10) : -1;
+      });
+      check(`${tag}: focus z-index ≥ 2010`, focusZ >= 2010, String(focusZ));
+
+      if (theme === 'dark') {
+        check(`${tag}: map NOT darkened`, audit.canvasFilter === 'none', audit.canvasFilter);
+        check(`${tag}: layer icons inverted`, audit.layerIconFilter.includes('invert'), audit.layerIconFilter);
+        check(`${tag}: ovl toggle icon NOT inverted`, audit.ovlToggleIconFilter === 'none', audit.ovlToggleIconFilter);
+        check(`${tag}: bm toggle icon NOT inverted`, audit.bmToggleIconFilter === 'none', audit.bmToggleIconFilter);
+      } else {
+        check(`${tag}: map filter none (light)`, audit.canvasFilter === 'none', audit.canvasFilter);
+      }
+
       // ── Close the basemap rail (outside-click design: panels are
       //     mutually exclusive) so box geometry is measured clean ──
       await p.evaluate('document.querySelector(".wd-bm__toggle")?.click()');
