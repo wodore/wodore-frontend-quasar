@@ -751,6 +751,11 @@ body.wd-map-focus {
     opacity: 0; pointer-events: none; transform: translateY(-60px);
     transition: opacity 0.25s cubic-bezier(0.2,0,0,1), transform 0.25s cubic-bezier(0.2,0,0,1);
   }
+  // mobile GPS/compass at bottom-left fly LEFT
+  .maplibregl-ctrl-bottom-left .maplibregl-ctrl-group {
+    opacity: 0; pointer-events: none; transform: translateX(-60px);
+    transition: opacity 0.25s cubic-bezier(0.2,0,0,1), transform 0.25s cubic-bezier(0.2,0,0,1);
+  }
   .wd-focus-toggle {
     opacity: 1; pointer-events: auto; transform: none;
   }
