@@ -1058,9 +1058,11 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
         <MglGeolocateControl :position="isMobileView() ? 'bottom-left' : 'top-right'" />
         <MglNavigationControl :show-zoom="!isMobileView()" :position="isMobileView() ? 'bottom-left' : 'top-right'" />
 
-        <!-- Bottom-left: attribution + scale only -->
-        <MglAttributionControl position="bottom-left" />
-        <MglScaleControl />
+        <!-- Scale: centered at the top edge -->
+        <MglScaleControl position="top-left" />
+
+        <!-- Attribution: compact ⓘ icon, bottom-right (before basemap switch) -->
+        <MglAttributionControl position="bottom-right" :compact="true" />
         <!-- <MglGeoJsonSource
       source-id="wd-bookings"
       :data="hutStore.bookingsGeojson"
