@@ -493,11 +493,15 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   }
 
   .wd-ovl__toggle-icon--closed-icon {
-    opacity: 1;
+    opacity: 0.55; // passive clearly dimmer; hover restores
     transform: scale(1);
     transition:
       opacity 0.2s $ease 0.06s,
       transform 0.28s $ease 0.06s;
+  }
+
+  &:hover .wd-ovl__toggle-icon--closed-icon {
+    opacity: 0.9;
   }
 }
 
@@ -638,7 +642,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 .wd-ovl__scrollthumb {
   position: absolute;
   top: 0;
-  right: 1px;
+  right: -4px; // rides exactly ON the box border (rows padding 3 + border 1)
   width: 3px;
   border-radius: 999px;
   background: rgba(128, 145, 135, 0.5);
@@ -772,7 +776,8 @@ body.body--dark .wd-ovl__row-name {
   body.body--dark &--active {
     // !important escapes the global dark-mode elevation kill
     // (body.body--dark * { box-shadow: none !important })
-    box-shadow: inset 0 0 0 2.5px #d4c23a !important; // brighter beam on pine
+    box-shadow: inset 0 0 0 2px #d4c23a !important; // brighter beam on pine
+    border-color: transparent; // ring IS the border — total edge exactly 2px
   }
 
   &--inactive {

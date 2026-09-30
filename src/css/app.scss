@@ -2151,12 +2151,6 @@ body.body--dark .wd-focus-toggle {
   border-color: rgba(169, 240, 210, 0.16);
 }
 
-/* Overlay main toggle: passive resting state fades slightly — active
-   emphasis comes on hover/press and when the strip is open. */
-.wd-ovl__toggle-icon {
-  opacity: 0.82;
-  transition: opacity 0.15s ease;
-}
 
 .wd-ovl__toggle:hover .wd-ovl__toggle-icon,
 .wd-ovl__toggle-icon--open {

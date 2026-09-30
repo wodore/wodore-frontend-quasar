@@ -1001,7 +1001,12 @@ function onMapPointerDown(ev: MouseEvent): void {
   if (!window.matchMedia('(max-width: 899px)').matches) return;
   const pointerType = (ev as unknown as { pointerType?: string }).pointerType;
   if (pointerType !== 'touch') return; // desktop has the explicit button
-  if ((ev.target as HTMLElement).closest('.maplibregl-ctrl, .maplibregl-popup, .q-page-sticky, .wd-focus-toggle')) return;
+  if (
+    (ev.target as HTMLElement).closest(
+      '.maplibregl-ctrl, .maplibregl-popup, .maplibregl-marker, .q-page-sticky, .wd-focus-toggle'
+    )
+  )
+    return;
   // A tap that CLOSES an open panel (expanded overlay / basemap rail) is
   // consumed — it must not also enter focus mode.
   if (document.querySelector('.wd-ovl__box--expanded, .wd-bm__rail')) {
@@ -1027,10 +1032,31 @@ function onMapPointerMove(ev: MouseEvent): void {
   }
 }
 
+/** True when a hut symbol renders at the point (canvas features — the
+ *  cursor check only helps mouse; touch never hovers). */
+function tapHitsHut(x: number, y: number): boolean {
+  const map = mapRef.map;
+  if (!map) return false;
+  try {
+    const hits = map.queryRenderedFeatures([x, y], {
+      layers: [HUT_LAYER_ID, 'wd-bookings-huts'].filter(id => map.getLayer(id)),
+    });
+    return hits.length > 0;
+  } catch {
+    return false;
+  }
+}
+
 function onMapPointerUp(): void {
   if (!tapDown.active) return;
   tapDown.active = false;
   const now = Date.now();
+  // Taps on hut symbols open the detail — never focus mode
+  if (tapHitsHut(tapDown.x, tapDown.y)) {
+    lastMapTapAt = 0;
+    cancelPendingTap();
+    return;
+  }
   // too slow = long-press, not a tap
   if (now - tapDown.t > 400) { cancelPendingTap(); return; }
 
