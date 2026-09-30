@@ -618,13 +618,13 @@ body.body--dark {
 
 // Desktop menu: collapse the q-input into an icon button
 .wd-topbar__search-menu {
-  :deep(.wd-search-field),
-  :deep(.q-field) {
+  .wd-search-field,
+  .q-field {
     width: 44px;
     min-width: 44px;
   }
 
-  :deep(.q-field__control) {
+  .q-field__control {
     background: transparent !important;
     box-shadow: none !important;
     padding: 0 4px !important;
@@ -632,19 +632,19 @@ body.body--dark {
     min-height: 40px;
   }
 
-  :deep(.q-field__control::before),
-  :deep(.q-field__control::after) {
+  .q-field__control::before,
+  .q-field__control::after {
     background: transparent !important;
     border: none !important;
   }
 
   // hide the text input — icon only
-  :deep(.q-field__native),
-  :deep(input) {
+  .q-field__native,
+  input {
     display: none;
   }
 
-  :deep(.q-icon) {
+  .q-icon {
     color: var(--wd-ctl-ink);
     font-size: 22px;
   }
@@ -652,7 +652,7 @@ body.body--dark {
 
 // Mobile dialog trigger: round icon button, themed ink
 .wd-topbar__search-dialog {
-  :deep(.q-btn) {
+  .q-btn {
     width: 40px;
     height: 40px;
     color: var(--wd-ctl-ink);
@@ -687,7 +687,7 @@ body.body--dark .wd-topbar__date {
 }
 
 // WdSelectDate inside the pill: transparent field, themed ink, no steppers
-.wd-topbar__date :deep(> div) {
+.wd-topbar__date > div {
   margin: 0 !important;
   padding: 0 !important;
   max-width: none !important;
@@ -698,32 +698,32 @@ body.body--dark .wd-topbar__date {
 }
 
 // Kill the dashed field border WdSelectDate draws around the stepper
-.wd-topbar__date :deep(.wd-date-stepper),
-.wd-topbar__date :deep(.q-ml-xs),
-.wd-topbar__date :deep(.q-mr-md),
-.wd-topbar__date :deep(.q-ml-md) {
+.wd-topbar__date .wd-date-stepper,
+.wd-topbar__date .q-ml-xs,
+.wd-topbar__date .q-mr-md,
+.wd-topbar__date .q-ml-md {
   border: none !important;
   margin: 0 !important;
   padding: 0 !important;
   width: 100%;
 }
 
-.wd-topbar__date :deep(.wd-date-stepper) {
+.wd-topbar__date .wd-date-stepper {
   width: 100%;
   flex-wrap: nowrap;
 }
 
-.wd-topbar__date :deep(.wd-input-button) {
+.wd-topbar__date .wd-input-button {
   display: none; // steppers hidden in the pill
 }
 
-.wd-topbar__date :deep(.wd-date-field),
-.wd-topbar__date :deep(.q-field) {
+.wd-topbar__date .wd-date-field,
+.wd-topbar__date .q-field {
   width: 100%;
   cursor: pointer;
 }
 
-.wd-topbar__date :deep(.q-field__control) {
+.wd-topbar__date .q-field__control {
   background: transparent !important;
   box-shadow: none !important;
   padding: 0 8px 0 2px !important;
@@ -731,14 +731,14 @@ body.body--dark .wd-topbar__date {
   height: 42px;
 }
 
-.wd-topbar__date :deep(.q-field__control::before),
-.wd-topbar__date :deep(.q-field__control::after) {
+.wd-topbar__date .q-field__control::before,
+.wd-topbar__date .q-field__control::after {
   background: transparent !important;
   border: none !important;
 }
 
-.wd-topbar__date :deep(.q-field__native),
-.wd-topbar__date :deep(input) {
+.wd-topbar__date .q-field__native,
+.wd-topbar__date input {
   color: var(--wd-ctl-ink);
   font-weight: 600;
   font-size: 14px;
@@ -747,19 +747,19 @@ body.body--dark .wd-topbar__date {
   cursor: pointer;
 }
 
-.wd-topbar__date :deep(.q-field__native::placeholder),
-.wd-topbar__date :deep(input::placeholder) {
+.wd-topbar__date .q-field__native::placeholder,
+.wd-topbar__date input::placeholder {
   color: var(--wd-ctl-ink-soft);
   font-weight: 500;
 }
 
 // Calendar icon (append slot): ink, gold on hover
-.wd-topbar__date :deep(.q-icon) {
+.wd-topbar__date .q-icon {
   color: var(--wd-ctl-ink);
   font-size: 22px;
 }
 
-.wd-topbar__date:hover :deep(.q-icon) {
+.wd-topbar__date:hover .q-icon {
   color: #bfab25;
 }
 
@@ -1986,10 +1986,12 @@ body.body--dark .wd-topbar input::placeholder {
   color: rgba(169, 240, 210, 0.5);
 }
 
-/* Dark theme: overlay icons + basemap toggle graphic readable on pine */
+/* Dark theme: overlay icons + basemap toggle graphic readable on pine.
+   The colored exports are designed for light backgrounds — push them hard. */
 body.body--dark .wd-ovl__icon img,
+body.body--dark .wd-ovl__icon .q-icon,
 body.body--dark .wd-bm__toggle-icon {
-  filter: brightness(1.85) saturate(1.35);
+  filter: brightness(2.4) saturate(1.5);
 }
 
 /* Dark theme: mute the staging preview ribbon */

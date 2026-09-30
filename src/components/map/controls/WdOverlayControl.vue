@@ -470,6 +470,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 
 // ── Toggle button (48px, colored icon) ──────────────────────────────────
 .wd-ovl__toggle {
+  position: relative; // anchor for the stacked absolute morph icons
   display: grid;
   place-items: center;
   width: 48px;
@@ -771,7 +772,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 // Dark theme: brighten the colored SVGs on the pine chip
 body.body--dark .wd-ovl__icon :deep(img),
 body.body--dark .wd-ovl__icon :deep(svg) {
-  filter: brightness(1.85) saturate(1.35);
+  filter: brightness(2.4) saturate(1.5);
 }
 
 // ── More button (chevron, more obvious) ─────────────────────────────────

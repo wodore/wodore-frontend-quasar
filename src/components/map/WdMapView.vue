@@ -981,16 +981,20 @@ function setMapFocus(on: boolean): void {
 
 let lastMapTapAt = 0;
 
-function onMapContainerClick(ev: MouseEvent): void {
+/**
+ * Focus-mode tap detection via pointerdown — instant on touch, unlike
+ * 'click' whose derivation lags and made double-taps register as two
+ * single taps (MapLibre's doubleClickZoom also swallows dblclick).
+ */
+function onMapPointerDown(ev: MouseEvent): void {
+  if (ev.pointerType !== 'touch') return; // desktop has the explicit button
   if (!window.matchMedia('(max-width: 899px)').matches) return;
   if ((ev.target as HTMLElement).closest('.maplibregl-ctrl, .maplibregl-popup, .q-page-sticky, .wd-focus-toggle')) return;
   const canvas = mapDiv.value?.querySelector('canvas');
   if (canvas && canvas.style.cursor === 'pointer') return;
 
-  // Manual double-tap detection — MapLibre's doubleClickZoom swallows the
-  // dblclick event on the canvas, so we cannot rely on the DOM dblclick.
   const now = Date.now();
-  if (now - lastMapTapAt < 500) {
+  if (now - lastMapTapAt < 450) {
     // Second tap of a double-tap (zoom intent):
     lastMapTapAt = 0;
     if (focusTapTimer) { clearTimeout(focusTapTimer); focusTapTimer = null; }
@@ -1009,7 +1013,7 @@ function onMapContainerClick(ev: MouseEvent): void {
 }
 
 onMounted(() => {
-  mapDiv.value?.addEventListener('click', onMapContainerClick);
+  mapDiv.value?.addEventListener('pointerdown', onMapPointerDown);
   // Safety net: if a dblclick DOES arrive, treat it the same way
   mapDiv.value?.addEventListener('dblclick', () => {
     lastMapTapAt = 0;
