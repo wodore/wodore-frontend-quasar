@@ -400,30 +400,39 @@ body.capacitor .preview-badge {
   <WdAnalytics />
   <q-layout view="hHh LpR fFf" class="overflow-hidden" @scroll="onLayoutScroll">
     <div v-if="isStaging" class="preview-badge">preview</div>
-    <!-- FLOATING TOPBAR: split search/date pill + utility cluster -->
+    <!-- FLOATING TOPBAR: one fully-rounded pill with user + search + date -->
     <div class="wd-topbar">
-      <div class="wd-topbar__split">
+      <div class="wd-topbar__pill">
+        <!-- User / menu button (left edge, inside the pill) -->
+        <button
+          class="wd-topbar__user"
+          :aria-label="t('menu')"
+          @click="menuDrawerOpen = !menuDrawerOpen"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+            <circle cx="12" cy="8" r="4"/>
+            <path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/>
+          </svg>
+        </button>
+
+        <!-- Search (subtle, fills the middle) -->
         <div class="wd-topbar__search">
           <WdPlaceSearchMenu v-if="!isMobile" />
           <WdPlaceSearchDialog v-else />
         </div>
+
+        <!-- Date (the visual anchor, right side) -->
         <div class="wd-topbar__date">
           <WdSelectDate />
         </div>
       </div>
-      <div v-if="!isMobile" class="wd-topbar__right">
-        <WdSupportButton v-if="!authStore.isLoggedIn" class="wd-info-text" size="sm" />
+
+      <!-- Desktop-only utilities (separate, compact) -->
+      <div v-if="!isMobile" class="wd-topbar__utils">
         <WdFeedbackButton size="sm" />
         <WdLanguageSwitcher size="sm" />
         <WdThemeSwitcher size="sm" />
-        <WdUser v-if="authStore.isLoggedIn" />
-        <WdMenuButton desktop v-model="menuDrawerOpen" />
       </div>
-    </div>
-
-    <!-- Mobile menu chip -->
-    <div v-if="isMobile" class="wd-topbar-menu">
-      <WdMenuButton mobile function="open" side="right" v-model="menuDrawerOpen" />
     </div>
 
     <!-- MAIN DIALOG -->

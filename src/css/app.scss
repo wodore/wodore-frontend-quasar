@@ -569,7 +569,10 @@ body.body--dark {
   opacity: 0.55;
 }
 
-// ── Floating topbar: split search/date pill + utilities ─────────────────
+// Floating topbar: one fully-rounded pill with user + search + date
+// Layout: [avatar] [search...] [date] - single pill, 999px radius
+// Date is the visual anchor (core feature).
+
 .wd-topbar {
   position: fixed;
   top: calc(10px + env(safe-area-inset-top, 0px));
@@ -577,62 +580,62 @@ body.body--dark {
   right: calc(12px + env(safe-area-inset-right, 0px));
   z-index: 2000;
   display: flex;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
   pointer-events: none;
 }
 
 .wd-topbar > * { pointer-events: auto; }
 
-.wd-topbar__split {
+.wd-topbar__pill {
   flex: 1;
   min-width: 0;
-  max-width: 560px;
   display: flex;
   align-items: center;
   height: 48px;
   background: var(--wd-ctl-bg);
   border: 1px solid var(--wd-ctl-border);
-  border-radius: 8px;
+  border-radius: 999px;
   box-shadow: var(--wd-ctl-shadow);
   overflow: hidden;
   color: var(--wd-ctl-ink);
+  padding: 0 4px;
+}
+
+.wd-topbar__user {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--wd-ctl-ink-soft);
+  cursor: pointer;
+  flex: none;
+  margin-left: 4px;
+  transition: background-color 0.12s ease;
+
+  &:hover { background: rgba(128, 128, 128, 0.12); color: var(--wd-ctl-ink); }
+  &:active { transform: scale(0.95); }
 }
 
 .wd-topbar__search {
-  flex: 6;
+  flex: 1;
   min-width: 0;
   display: flex;
   align-items: center;
   height: 100%;
+  overflow: hidden;
 }
 
-.wd-topbar__date {
-  flex: 4;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  border-left: 1px solid var(--wd-ctl-border);
-  height: 100%;
-  /* date half: same surface as search half (owner: no green tint) */
-}
+.wd-topbar__search > * { margin: 0 !important; width: 100%; }
+.wd-topbar__search .q-field { width: 100%; }
 
-// Kill embedded component margins
-.wd-topbar__search > *,
-.wd-topbar__date > * {
-  margin: 0 !important;
-  width: 100%;
-}
-
-.wd-topbar__search .q-field,
-.wd-topbar__date .q-field { width: 100%; }
-
-// Inputs: transparent inside the pill
 .wd-topbar .wd-search-field .q-field__control,
 .wd-topbar .wd-date-field .q-field__control {
   background: transparent !important;
-  padding: 0 6px 0 12px !important;
+  padding: 0 4px !important;
   box-shadow: none !important;
 }
 
@@ -645,83 +648,80 @@ body.body--dark {
 
 .wd-topbar input::placeholder {
   color: var(--wd-ctl-ink-soft);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-size: 12.5px;
+  font-weight: 400;
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  text-transform: none;
 }
 
-.wd-topbar .wd-search-field .q-field__native,
-.wd-topbar .wd-date-field .q-field__native {
+.wd-topbar .wd-search-field .q-field__native {
   color: var(--wd-ctl-ink);
+  font-size: 13px;
 }
 
-// Mobile search trigger fills the half
 .wd-topbar__search .q-btn {
   width: 100%;
-  height: 48px;
+  height: 100%;
   border-radius: 0;
   justify-content: flex-start;
-  padding: 0 12px;
+  padding: 0 8px;
   color: var(--wd-ctl-ink-soft);
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  min-height: 0 !important;
 }
 
-// Desktop utility cluster
+.wd-topbar__date {
+  flex: none;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  padding-right: 6px;
+  padding-left: 10px;
+  background: rgba(52, 103, 81, 0.06);
+  border-radius: 0 999px 999px 0;
+}
+
+.wd-topbar__date > div { margin: 0 !important; max-width: none !important; width: auto !important; }
+
+.wd-topbar .wd-date-field .q-field__native {
+  color: var(--wd-ctl-ink);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+}
+
+.wd-topbar__date .wd-input-button { display: none; }
+
 @media (min-width: 600px) {
-  .wd-topbar__right {
+  .wd-topbar__utils {
     background: var(--wd-ctl-bg);
     border: 1px solid var(--wd-ctl-border);
-    border-radius: 8px;
+    border-radius: 999px;
     box-shadow: var(--wd-ctl-shadow);
-    height: 48px;
-    padding: 0 4px;
-    margin-left: auto;
+    height: 40px;
+    padding: 0 6px;
     display: flex;
     gap: 2px;
     align-items: center;
     color: var(--wd-ctl-ink);
-
+    flex: none;
     .q-btn { color: var(--wd-ctl-ink) !important; }
   }
 }
 
-// Mobile menu chip
-.wd-topbar-menu {
-  position: fixed;
-  top: calc(10px + env(safe-area-inset-top, 0px));
-  right: calc(12px + env(safe-area-inset-right, 0px));
-  z-index: 2000; // same layer as the topbar, not above
-
-  .q-btn {
-    background: var(--wd-ctl-bg) !important;
-    border: 1px solid var(--wd-ctl-border);
-    border-radius: 8px;
-    box-shadow: var(--wd-ctl-shadow);
-    color: var(--wd-ctl-ink) !important;
-  }
-}
-
-// Mobile: pill leaves room for menu chip
-@media (max-width: 599px) {
-  .wd-topbar__split { max-width: calc(100% - 64px); }
-}
-
-// Date stepper chevrons hidden in the pill
-.wd-topbar__date .wd-input-button { display: none; }
-
-// Progress bar under the pill
 .wd-topbar__progress {
   position: fixed;
-  top: calc(58px + env(safe-area-inset-top, 0px));
-  left: 12px;
-  right: 12px;
-  max-width: 560px;
+  top: calc(62px + env(safe-area-inset-top, 0px));
+  left: 24px;
+  right: 24px;
   border-radius: 999px;
   z-index: 2000;
 }
+
 
 // ── Map control column (bottom-right) ───────────────────────────────────
 .wd-map-ctl-col {
