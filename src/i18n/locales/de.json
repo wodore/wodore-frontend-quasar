@@ -79,8 +79,7 @@
       "generic_message": "Beim Laden der Karte ist ein Fehler aufgetreten",
       "reload": "Seite neu laden"
     },
-    "layers": "Ebenen",
-    "basemap_fallback": "Basiskarte nicht verfügbar — auf Swisstopo umgestellt"
+    "layers": "Ebenen"
   },
   "favorites": "Favoriten",
   "layers": "Layers",
