@@ -111,7 +111,7 @@ async function pinTheme(page, theme) {
           pill: rect('.wd-topbar__pill'),
           focus: rect('.wd-focus-toggle'),
           gps: rect(mode === 'desktop' ? '.maplibregl-ctrl-top-right .maplibregl-ctrl-group' : '.maplibregl-ctrl-bottom-left .maplibregl-ctrl-group'),
-          nav: rect('.maplibregl-ctrl-bottom-left .maplibregl-ctrl-group:nth-child(2)'),
+          nav: rect('.maplibregl-ctrl-bottom-left div.maplibregl-ctrl-group:nth-of-type(2)'),
           ovlToggle: rect('.wd-ovl__toggle'),
           bmToggle: rect('.wd-bm__toggle'),
           bmBtns: document.querySelectorAll('.wd-bm__btn').length,
@@ -130,8 +130,14 @@ async function pinTheme(page, theme) {
         check(`${tag}: GPS below focus`, (layout.gps?.y ?? 0) > 70, `gps.y=${layout.gps?.y}`);
       } else {
         check(`${tag}: pill centered`, Math.abs((layout.pill.x) - (390 - layout.pill.x - layout.pill.w)) < 12, `x=${layout.pill?.x} w=${layout.pill?.w}`);
+        if (mode === 'mobile') {
+        // Mobile: hidden in normal view (enter via map tap), exit-only
+        const focusOp = await p.evaluate('getComputedStyle(document.querySelector(".wd-focus-toggle")).opacity');
+        check(`${tag}: focus hidden on mobile (normal)`, focusOp === '0', focusOp);
+      } else {
         const pillRow = layout.pill?.y ?? 0;
-      check(`${tag}: focus top-right on pill row`, Math.abs((layout.focus?.y ?? -99) - pillRow) < 14 && (layout.focus?.x ?? 0) > 320, JSON.stringify(layout.focus));
+        check(`${tag}: focus top-right on desktop`, Math.abs((layout.focus?.y ?? -99) - pillRow) < 14 && (layout.focus?.x ?? 0) > 1300, JSON.stringify(layout.focus));
+      }
         check(`${tag}: GPS above nav`, (layout.gps?.y ?? 999) < (layout.nav?.y ?? 0), `gps=${layout.gps?.y} nav=${layout.nav?.y}`);
         check(`${tag}: GPS+nav merged (same x, stacked)`, layout.gps && layout.nav && Math.abs(layout.gps.x - layout.nav.x) < 2 && Math.abs(layout.nav.y - layout.gps.y - layout.gps.h) < 3, `gps=${JSON.stringify(layout.gps)} nav=${JSON.stringify(layout.nav)}`);
       }
@@ -150,7 +156,7 @@ async function pinTheme(page, theme) {
           bmToggle: rect('.wd-bm__toggle'),
           focus: rect('.wd-focus-toggle'),
           gpsGrp: rect(mode === 'desktop' ? '.maplibregl-ctrl-top-right .maplibregl-ctrl-group' : '.maplibregl-ctrl-bottom-left .maplibregl-ctrl-group'),
-          navGrp: rect('.maplibregl-ctrl-bottom-left .maplibregl-ctrl-group:nth-child(2)'),
+          navGrp: rect('.maplibregl-ctrl-bottom-left div.maplibregl-ctrl-group:nth-of-type(2)'),
           ovlBox: rect('.wd-ovl__box'),
           chip: rect('.wd-ovl__icon'),
           pill: rect('.wd-topbar__pill'),
@@ -190,6 +196,109 @@ async function pinTheme(page, theme) {
       } else {
         check(`${tag}: map filter none (light)`, audit.canvasFilter === 'none', audit.canvasFilter);
       }
+
+      // ── INTERACTION: expanded box STAYS OPEN when selecting a layer ──
+      await p.evaluate('document.querySelector(".wd-ovl__more")?.click()');
+      await p.waitForTimeout(600);
+      await p.evaluate('document.querySelector(".wd-ovl__icon")?.click()');
+      await p.waitForTimeout(600);
+      const stillExpanded = await p.evaluate('!!document.querySelector(".wd-ovl__box--expanded")');
+      check(`${tag}: expanded stays open on select`, stillExpanded === true);
+
+      // ── INTERACTION: tap that closes the expanded box does NOT focus ──
+      // (synthetic pointer events — works on non-touch contexts; the logic
+      //  under test is pointerdown/move/up based)
+      if (mode === 'mobile') {
+        await p.touchscreen.tap(60, 400);
+      } else {
+        await p.evaluate(() => {
+          const el = document.querySelector('.maplibregl-map');
+          const o = { bubbles: true, pointerType: 'touch', isPrimary: true };
+          el.dispatchEvent(new PointerEvent('pointerdown', { ...o, clientX: 60, clientY: 400, pointerId: 1 }));
+          el.dispatchEvent(new PointerEvent('pointerup', { ...o, clientX: 60, clientY: 400, pointerId: 1 }));
+          const target = document.elementFromPoint(60, 400);
+          target?.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 60, clientY: 400 }));
+        });
+      }
+      await p.waitForTimeout(1000);
+      const closedAndNoFocus = await p.evaluate(() => ({
+        closed: !document.querySelector('.wd-ovl__box--expanded'),
+        focus: document.body.classList.contains('wd-map-focus'),
+      }));
+      check(`${tag}: closing-tap collapses, no focus`, closedAndNoFocus.closed === true && closedAndNoFocus.focus === false, JSON.stringify(closedAndNoFocus));
+      if (closedAndNoFocus.focus) await p.evaluate('document.querySelector(".wd-focus-toggle")?.click()');
+
+      // ── Rail height = 48 (matches the toggle) ──
+      const railH = await p.evaluate(() => {
+        document.querySelector('.wd-bm__toggle')?.click();
+        return new Promise(r => setTimeout(() => {
+          const rail = document.querySelector('.wd-bm__rail');
+          r(rail ? Math.round(rail.getBoundingClientRect().height) : -1);
+        }, 400));
+      });
+      check(`${tag}: basemap rail 48px`, Math.abs(railH - 48) <= 1, String(railH));
+
+      // ── Attribution toggle: ⓘ expands on click (mobile) ──
+      if (mode === 'mobile') {
+        const attribToggles = await p.evaluate(() => {
+          const btn = document.querySelector('.maplibregl-ctrl-bottom-left .maplibregl-ctrl-attrib-button');
+          if (!btn) return 'missing';
+          btn.click();
+          return new Promise(r => setTimeout(() => {
+            r(document.querySelector('.maplibregl-ctrl-bottom-left .maplibregl-ctrl-attrib')?.classList.contains('maplibregl-compact-show') ?? false);
+          }, 300));
+        });
+        check(`${tag}: attribution ⓘ toggles open`, attribToggles === true, String(attribToggles));
+        await p.evaluate('document.querySelector(".maplibregl-ctrl-bottom-left .maplibregl-ctrl-attrib-button")?.click()');
+      }
+
+      // ── Date segment: plain button, 2 lines, NO q-field rectangle ──
+      const dateSeg = await p.evaluate(() => {
+        const seg = document.querySelector('.wd-topbar__date');
+        if (!seg) return 'MISS';
+        const btn = seg.querySelector('.wd-date-btn');
+        const day = seg.querySelector('.wd-date-btn__day');
+        const date = seg.querySelector('.wd-date-btn__date');
+        return {
+          isButton: !!btn && btn.tagName === 'BUTTON',
+          hasField: [...seg.querySelectorAll('.q-field, .q-input')].some(el => el.offsetParent !== null),
+          twoLines: !!(day && date),
+          dayText: day?.textContent?.slice(0, 14),
+          dateText: date?.textContent?.slice(0, 14),
+        };
+      });
+      check(`${tag}: date = button + 2 lines, no input`, dateSeg.isButton === true && dateSeg.hasField === false && dateSeg.twoLines === true, JSON.stringify(dateSeg));
+
+      // ── No gold pixels along the expanded box left edge (filtered ring gone) ──
+      await p.evaluate('document.querySelector(".wd-ovl__more")?.click()');
+      await p.waitForTimeout(600);
+      const goldEdge = await p.evaluate(async () => {
+        const b = document.querySelector('.wd-ovl__box--expanded')?.getBoundingClientRect();
+        if (!b) return -1;
+        return 'probe-pending';
+      });
+      // pixel check via clip + in-page scan
+      const goldPx = await (async () => {
+        const rect = await p.evaluate('(() => { const b = document.querySelector(".wd-ovl__box--expanded")?.getBoundingClientRect(); return b ? { x: b.x, y: b.y, w: b.width, h: b.height } : null; })()');
+        if (!rect) return -1;
+        const buf = await p.screenshot({ clip: { x: rect.x + 1, y: rect.y, width: 8, height: Math.min(rect.h, 300) } }); // INSIDE the border — map content must not be sampled
+        return await p.evaluate(async b64 => {
+          return await new Promise(res => {
+            const im = new Image(); im.onload = () => {
+              const c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
+              const x = c.getContext('2d'); x.drawImage(im, 0, 0);
+              const d = x.getImageData(0, 0, c.width, c.height).data;
+              let gold = 0;
+              for (let px = 0; px < d.length; px += 4) if (d[px] > 150 && d[px + 1] > 130 && d[px + 2] < 100) gold++;
+              res(gold);
+            };
+            im.src = 'data:image/png;base64,' + b64;
+          });
+        }, buf.toString('base64'));
+      })();
+      check(`${tag}: no gold edge on expanded box`, goldPx === 0, String(goldPx) + ' gold px');
+      await p.evaluate('document.querySelector(".wd-ovl__more")?.click()');
+      await p.waitForTimeout(400);
 
       // ── Close the basemap rail (outside-click design: panels are
       //     mutually exclusive) so box geometry is measured clean ──

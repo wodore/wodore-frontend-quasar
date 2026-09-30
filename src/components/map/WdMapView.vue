@@ -191,6 +191,7 @@ useResizeObserver(mapDiv, () => {
 //);
 
 function onMapLoad(e: MglEvent<'load'>) {
+  collapseAutoExpandedAttribution();
   console.debug(`[onMapLoad] Maplibre version ${e.map.version} loaded`);
 
   // Dev-only handle for debugging and e2e tests (map.project for exact
@@ -1001,6 +1002,13 @@ function onMapPointerDown(ev: MouseEvent): void {
   const pointerType = (ev as unknown as { pointerType?: string }).pointerType;
   if (pointerType !== 'touch') return; // desktop has the explicit button
   if ((ev.target as HTMLElement).closest('.maplibregl-ctrl, .maplibregl-popup, .q-page-sticky, .wd-focus-toggle')) return;
+  // A tap that CLOSES an open panel (expanded overlay / basemap rail) is
+  // consumed — it must not also enter focus mode.
+  if (document.querySelector('.wd-ovl__box--expanded, .wd-bm__rail')) {
+    cancelPendingTap();
+    lastMapTapAt = 0;
+    return;
+  }
   const canvas = mapDiv.value?.querySelector('canvas');
   if (canvas && canvas.style.cursor === 'pointer') return;
 
@@ -1060,6 +1068,16 @@ onMounted(() => {
     }
   });
 });
+
+/** MapLibre auto-adds 'maplibregl-compact-show' on load (full text shown);
+ *  strip it once so the ⓘ starts collapsed — tapping it then works. */
+function collapseAutoExpandedAttribution(): void {
+  window.setTimeout(() => {
+    document
+      .querySelectorAll('.maplibregl-ctrl-attrib.maplibregl-compact-show')
+      .forEach(el => el.classList.remove('maplibregl-compact-show'));
+  }, 800);
+}
 
 function onMapStyledata(e: MglEvent<'styledata'>) {
   //$q.loadingBar.start();
@@ -1146,10 +1164,11 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
         <!-- Scale: mobile top-center, desktop bottom-left -->
         <MglScaleControl :position="isMobileView() ? 'top-left' : 'bottom-left'" />
 
-        <!-- Attribution: mobile compact ⓘ bottom-right; desktop full bottom-left -->
+        <!-- Attribution: mobile compact ⓘ bottom-left above the GPS cluster;
+             desktop full text bottom-left above the scale -->
         <MglAttributionControl
           v-if="isMobileView()"
-          position="bottom-right"
+          position="bottom-left"
           :compact="true"
         />
         <MglAttributionControl v-else position="bottom-left" :compact="false" />

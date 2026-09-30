@@ -399,6 +399,15 @@ onBeforeUnmount(() => {
               @touchend.passive="onSwipeEnd"
             >
               <q-icon :name="layerIcon(item.icon)" size="20px" />
+              <span
+                v-if="hasActiveFilters(item.name)"
+                class="wd-ovl__chip-filter"
+                :aria-label="`${item.label}: filter active`"
+              >
+                <svg width="7" height="7" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z" />
+                </svg>
+              </span>
             </span>
           </div>
         </div>
@@ -600,24 +609,30 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   position: absolute;
   left: 0;
   right: 0;
-  height: 22px;
+  height: 12px; // small hint, not a wall
+  opacity: 0.85;
   pointer-events: none;
   transition: opacity 0.25s $ease;
   z-index: 2;
 
   &--top {
-    top: 28px; // below the toolbar
-    background: linear-gradient(to bottom, var(--wd-ctl-bg) 78%, transparent);
+    top: 0; // mini: rows start at the box top
+    background: linear-gradient(to bottom, var(--wd-ctl-bg), transparent);
   }
 
   &--bottom {
     bottom: 27px; // above the more button
-    background: linear-gradient(to top, var(--wd-ctl-bg) 78%, transparent);
+    background: linear-gradient(to top, var(--wd-ctl-bg), transparent);
   }
 
   &--hidden {
     opacity: 0;
   }
+}
+
+// Expanded: the toolbar occupies the top — fade sits below it
+.wd-ovl__box--expanded .wd-ovl__fade--top {
+  top: 28px;
 }
 
 // ── Rows (scrollable) ────────────────────────────────────────────────────
@@ -633,10 +648,21 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   display: flex;
   flex-direction: column;
   padding: 2px 3px 20px 3px;
-  scrollbar-width: none; // fades indicate scrollability
-  -ms-overflow-style: none;
+  // thin hairline scrollbar: visible hint, quiet against the chip bg
+  scrollbar-width: thin;
+  scrollbar-color: rgba(128, 145, 135, 0.35) transparent;
+
   &::-webkit-scrollbar {
-    display: none;
+    width: 3px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(128, 145, 135, 0.35);
+    border-radius: 999px;
   }
 }
 
@@ -713,18 +739,6 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
     color: #1f7a63; // turquoise touch (info = "learn more")
   }
 
-  // Active filter: subtle gold ring only — icon keeps its ink (a full
-  // gold treatment read as an error state on dark pine)
-  &--filtered {
-    &::after {
-      content: '';
-      position: absolute;
-      inset: 2px;
-      border-radius: 4px;
-      box-shadow: inset 0 0 0 1.5px rgba(191, 171, 37, 0.7);
-      pointer-events: none;
-    }
-  }
 
   body.body--dark &--info {
     color: #7fe3c8;
@@ -766,6 +780,12 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
     opacity: 1;
   }
 
+  body.body--dark &--active {
+    // !important escapes the global dark-mode elevation kill
+    // (body.body--dark * { box-shadow: none !important })
+    box-shadow: inset 0 0 0 2.5px #d4c23a !important; // brighter beam on pine
+  }
+
   &--inactive {
     opacity: 0.85;
   }
@@ -777,6 +797,22 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 }
 
 // Dark theme icon inversion lives in app.scss (global invert treatment)
+
+// Filter-active indicator ON the chip (gold dot, top-right)
+.wd-ovl__chip-filter {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  display: grid;
+  place-items: center;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #bfab25;
+  color: #fdfefd;
+  pointer-events: none;
+  z-index: 1;
+}
 
 // ── More button (chevron, more obvious) ─────────────────────────────────
 .wd-ovl__more {

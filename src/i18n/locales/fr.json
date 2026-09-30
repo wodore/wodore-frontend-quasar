@@ -264,7 +264,10 @@
     "alternative": "Alternativement :",
     "or": "ou",
     "not_available": "Actuellement indisponible",
-    "placeholder_short": "Disponibilité"
+    "placeholder_short": "Disponibilité",
+    "today": "Aujourd'hui",
+    "tomorrow": "Demain",
+    "choose_hint": "Choisir une date"
   },
   "overlay_config": {
     "reset_done": "Paramètres réinitialisés",

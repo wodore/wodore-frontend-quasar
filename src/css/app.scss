@@ -510,7 +510,7 @@ body.body--dark {
   --wd-ctl-shadow: 0 2px 6px rgba(10, 20, 15, 0.35);
   --wd-ctl-ring: #bfab25;
   --wd-ctl-active-bg: rgba(191, 171, 37, 0.15);
-  --wd-ctl-date-bg: rgba(52, 103, 81, 0.25);
+  --wd-ctl-date-bg: rgba(169, 240, 210, 0.06); // dark: mint whisper, not teal
 }
 
 // Shared button reset — every map control uses this base
@@ -644,125 +644,152 @@ body.body--dark {
     display: none;
   }
 
-  .q-icon {
-    color: var(--wd-ctl-ink);
+  .q-icon,
+  .text-icon {
+    color: #1c1c1c !important; // neutral day-ink (.text-icon utility is brand green)
     font-size: 22px;
   }
 }
 
-// Mobile dialog trigger: round icon button, themed ink
+body.body--dark .wd-topbar__search-menu .q-icon,
+body.body--dark .wd-topbar__search-menu .text-icon {
+  color: #f2f7f4 !important;
+}
+
+// Mobile dialog trigger: round icon button, neutral ink
 .wd-topbar__search-dialog {
-  .q-btn {
+  .q-btn,
+  .q-btn .text-icon {
     width: 40px;
     height: 40px;
-    color: var(--wd-ctl-ink);
+    color: #1c1c1c !important;
   }
+}
+
+body.body--dark .wd-topbar__search-dialog .q-btn,
+body.body--dark .wd-topbar__search-dialog .q-btn .text-icon {
+  color: #f2f7f4 !important;
 }
 
 // ── Date: the highlighted core element ──────────────────────────────────
+// ── Date segment: plain 2-line BUTTON (no input field) ───────────────────
+// Design: Alpine Instrument — inset block, wash + hairline, dashed when
+// empty; line 1 day name (15/600/uppercase), line 2 date (12/400).
 .wd-topbar__date {
   flex: 0 1 auto;
-  max-width: 190px;
+  max-width: 200px;
   min-width: 0;
+  height: 40px; // 4px inset in the 48px pill
+  margin: 0 2px;
+  align-self: center;
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+.wd-date-seg {
   display: flex;
   align-items: center;
-  height: 42px;
-  padding-left: 10px;
-  margin: 0 2px;
-  background: rgba(52, 103, 81, 0.13); // green wash (light)
-  border-radius: 999px;
-  transition: background-color 0.2s ease;
-  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
 
-  &:hover {
-    background: rgba(52, 103, 81, 0.18);
+/* Steppers (desktop prev/next) stay hidden in the pill */
+.wd-topbar__date .wd-input-button {
+  display: none !important;
+}
+
+.wd-date-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  padding: 0 12px 0 12px;
+  border: 1px solid var(--wd-ctl-border);
+  border-radius: 4px;
+  background: rgba(17, 33, 25, 0.06); // light: pine wash
+  cursor: pointer;
+  transition: background-color 0.12s ease-out;
+  -webkit-tap-highlight-color: transparent;
+
+  &:active {
+    background: rgba(17, 33, 25, 0.12);
   }
 }
 
-body.body--dark .wd-topbar__date {
+body.body--dark .wd-date-btn {
   background: rgba(169, 240, 210, 0.08);
-  box-shadow: inset 0 0 0 1px rgba(169, 240, 210, 0.16);
 
-  &:hover {
+  &:active {
     background: rgba(169, 240, 210, 0.14);
   }
 }
 
-// WdSelectDate inside the pill: transparent field, themed ink, no steppers
-.wd-topbar__date > div {
-  margin: 0 !important;
-  padding: 0 !important;
-  max-width: none !important;
-  width: 100%;
-  max-height: none !important;
+.wd-date-btn__lines {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  line-height: 1.1;
+  text-align: left;
 }
 
-// Kill the dashed field border WdSelectDate draws around the stepper
-.wd-topbar__date .wd-date-stepper,
-.wd-topbar__date .q-ml-xs,
-.wd-topbar__date .q-mr-md,
-.wd-topbar__date .q-ml-md {
-  border: none !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  width: 100%;
-}
-
-.wd-topbar__date .wd-date-stepper {
-  width: 100%;
-  flex-wrap: nowrap;
-}
-
-.wd-topbar__date .wd-input-button {
-  display: none; // steppers hidden in the pill
-}
-
-.wd-topbar__date .wd-date-field,
-.wd-topbar__date .q-field {
-  width: 100%;
-  cursor: pointer;
-}
-
-.wd-topbar__date .q-field__control {
-  background: transparent !important;
-  box-shadow: none !important;
-  padding: 0 8px 0 2px !important;
-  min-height: 42px;
-  height: 42px;
-}
-
-.wd-topbar__date .q-field__control::before,
-.wd-topbar__date .q-field__control::after {
-  background: transparent !important;
-  border: none !important;
-}
-
-.wd-topbar__date .q-field__native,
-.wd-topbar__date input {
-  color: var(--wd-ctl-ink);
+.wd-date-btn__day {
+  font-size: 15px;
   font-weight: 600;
-  font-size: 14px;
-  letter-spacing: 0.02em;
-  padding: 0;
-  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #1c1c1c; // day-ink
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &--empty {
+    opacity: 0.6;
+  }
 }
 
-.wd-topbar__date .q-field__native::placeholder,
-.wd-topbar__date input::placeholder {
-  color: var(--wd-ctl-ink-soft);
-  font-weight: 500;
+.wd-date-btn__date {
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  color: #1c1c1c;
+  opacity: 0.7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &--empty {
+    opacity: 0.45;
+  }
 }
 
-// Calendar icon (append slot): ink, gold on hover
-.wd-topbar__date .q-icon {
-  color: var(--wd-ctl-ink);
-  font-size: 22px;
+body.body--dark .wd-date-btn__day {
+  color: #f2f7f4; // paper white
 }
 
-.wd-topbar__date:hover .q-icon {
-  color: #bfab25;
+body.body--dark .wd-date-btn__date {
+  color: #f2f7f4;
+}
+
+.wd-date-btn__icon {
+  flex: none;
+  color: #1c1c1c;
+
+  &--empty {
+    opacity: 0.5;
+  }
+}
+
+body.body--dark .wd-date-btn__icon {
+  color: #a9f0d2;
+}
+
+// Empty state: dashed hairline reads "unfilled"
+.wd-date-btn:has(.wd-date-btn__day--empty) {
+  border-style: dashed;
 }
 
 // ── Avatar / menu button (right edge) ───────────────────────────────────
@@ -774,7 +801,7 @@ body.body--dark .wd-topbar__date {
   border-radius: 50%;
   border: none;
   background: transparent;
-  color: var(--wd-ctl-ink);
+  color: #1c1c1c;
   cursor: pointer;
   flex: none;
   transition: background-color 0.12s ease, color 0.12s ease;
@@ -830,6 +857,7 @@ body.body--dark .wd-topbar__date {
 // zoom) pass through every empty pixel, including behind the expanded
 // overlay box. Without this the wrapper DIVs swallow the gestures.
 .wd-map-ctl-sticky,
+.wd-map-ctl-sticky > div, /* Quasar's classless inner wrapper — was swallowing gestures */
 .wd-map-ctl-col {
   pointer-events: none;
   background: transparent;
@@ -875,13 +903,11 @@ body.body--dark .wd-topbar__date {
     right: 14px;
   }
 
-  // Mobile: TOP-RIGHT on the pill's row. position: FIXED + z-index above
-  // the topbar — the (content-sized, centered) pill can NEVER cover it.
+  // Mobile: HIDDEN in normal view (focus is entered by tapping the map);
+  // visible ONLY as the exit button in focus mode. position: FIXED +
+  // z-index above the topbar so nothing covers it.
   @media (max-width: 899px) {
     position: fixed;
-    opacity: 1;
-    pointer-events: auto;
-    transform: none;
     top: calc(11px + env(safe-area-inset-top, 0px));
     right: 12px;
     width: 48px;
@@ -2057,4 +2083,8 @@ body.body--dark .preview-badge {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+body.body--dark .wd-topbar__user {
+  color: #f2f7f4;
 }

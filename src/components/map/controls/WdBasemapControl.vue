@@ -37,7 +37,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick, { captur
 function selectBasemap(bm: { name: string }): void {
   const item = basemapStore.basemaps.find(b => b.name === bm.name);
   if (item) basemapStore.setBasemap(item);
-  open.value = false; // close after selection (previous behavior)
+  // stays open — the owner closes it via outside-click or the toggle
 }
 
 const iconOpen = new URL('/src/assets/wodore-design/icons/export/basemap-switch.svg', import.meta.url).href;
@@ -114,7 +114,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   flex-direction: row;
   align-items: center;
   gap: 6px;
-  padding: 4px;
+  padding: 0; // 46px buttons + 2px border = 48px, matching the toggle
   border-radius: 8px;
   border: 1px solid var(--wd-ctl-border); // same border width as overlay toggle
   background: var(--wd-ctl-bg);
@@ -135,8 +135,8 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 // ── Basemap buttons: full-bleed images, solid (no transparency) ─────────
 .wd-bm__btn {
   position: relative;
-  width: 48px;
-  height: 48px;
+  width: 46px; // + 2px shared border = 48px outer, same as the toggle
+  height: 46px;
   scroll-snap-align: start;
   padding: 0;
   border-radius: 4px;
