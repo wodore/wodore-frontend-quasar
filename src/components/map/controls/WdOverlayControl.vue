@@ -210,6 +210,7 @@ function hasFilters(overlayName: string): boolean {
             v-show="item.show"
             class="wd-ovl__row"
             :class="{ 'wd-ovl__row--active': item.active }"
+            @click="toggleLayer(<OverlaySwitchItem>(item as unknown))"
           >
             <!-- Label + actions (LEFT of icon, only when expanded) -->
             <div v-if="expanded" class="wd-ovl__row-info">
@@ -375,8 +376,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
     width: min(240px, 64vw);
     pointer-events: none;
 
-    .wd-ovl__icon,
-    .wd-ovl__row-action,
+    .wd-ovl__row,
     .wd-ovl__more {
       pointer-events: auto;
     }
