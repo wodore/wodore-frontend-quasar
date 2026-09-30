@@ -248,7 +248,6 @@ function hasFilters(overlayName: string): boolean {
               :aria-label="item.label"
               role="button"
               :aria-pressed="item.active"
-              @click="toggleLayer(<OverlaySwitchItem>(item as unknown))"
               @touchstart="onBoxTouchStart"
               @touchend="onBoxTouchEnd"
             >
