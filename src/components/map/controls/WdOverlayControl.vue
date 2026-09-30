@@ -304,7 +304,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 3px;
+  gap: 2px;
 }
 
 // ── Toggle button (48px, colored icon) ──────────────────────────────────
@@ -529,7 +529,7 @@ body.body--dark .wd-ovl__icon :deep(svg) {
 
 // inactive: quiet — the icon recedes
 .wd-ovl__icon--inactive {
-  opacity: 0.5;
+  opacity: 0.55;
 }
 
 // active: gold inset ring (the beam — one gold accent per view)
