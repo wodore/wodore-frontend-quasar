@@ -987,7 +987,8 @@ let lastMapTapAt = 0;
  * single taps (MapLibre's doubleClickZoom also swallows dblclick).
  */
 function onMapPointerDown(ev: MouseEvent): void {
-  if (ev.pointerType !== 'touch') return; // desktop has the explicit button
+  const pointerType = (ev as unknown as { pointerType?: string }).pointerType;
+  if (pointerType !== 'touch') return; // desktop has the explicit button
   if (!window.matchMedia('(max-width: 899px)').matches) return;
   if ((ev.target as HTMLElement).closest('.maplibregl-ctrl, .maplibregl-popup, .q-page-sticky, .wd-focus-toggle')) return;
   const canvas = mapDiv.value?.querySelector('canvas');
