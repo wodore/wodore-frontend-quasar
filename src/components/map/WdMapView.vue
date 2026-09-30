@@ -971,11 +971,13 @@ function onLayerLeave(e: MapLayerEventType['mouseleave']) {
 // Mobile: tap empty map to hide floating chrome; desktop: button
 const mapFocus = ref(false);
 let focusTapTimer: ReturnType<typeof setTimeout> | null = null;
+let lastFocusToggleAt = 0;
 
 function setMapFocus(on: boolean): void {
   if (focusTapTimer) { clearTimeout(focusTapTimer); focusTapTimer = null; }
   mapFocus.value = on;
   document.body.classList.toggle('wd-map-focus', on);
+  if (on) lastFocusToggleAt = Date.now();
 }
 
 function onMapContainerClick(ev: MouseEvent): void {
@@ -983,15 +985,25 @@ function onMapContainerClick(ev: MouseEvent): void {
   if ((ev.target as HTMLElement).closest('.maplibregl-ctrl, .maplibregl-popup, .q-page-sticky')) return;
   const canvas = mapDiv.value?.querySelector('canvas');
   if (canvas && canvas.style.cursor === 'pointer') return;
-  // double-tap = zoom, not focus
+  // second tap inside the window = double-tap (zoom), cancel the pending toggle
   if (focusTapTimer) { clearTimeout(focusTapTimer); focusTapTimer = null; return; }
-  focusTapTimer = setTimeout(() => { focusTapTimer = null; setMapFocus(!mapFocus.value); }, 300);
+  // wider window (350ms) — the dblclick handler below catches edge cases
+  focusTapTimer = setTimeout(() => {
+    focusTapTimer = null;
+    setMapFocus(!mapFocus.value);
+  }, 350);
 }
 
 onMounted(() => {
   mapDiv.value?.addEventListener('click', onMapContainerClick);
   mapDiv.value?.addEventListener('dblclick', () => {
+    // Cancel any pending toggle
     if (focusTapTimer) { clearTimeout(focusTapTimer); focusTapTimer = null; }
+    // If focus was JUST turned on (within 500ms) by what was actually
+    // the first tap of a double-tap, undo it — the user meant to zoom
+    if (mapFocus.value && Date.now() - lastFocusToggleAt < 500) {
+      setMapFocus(false);
+    }
   });
 });
 
