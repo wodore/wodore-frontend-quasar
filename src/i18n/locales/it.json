@@ -56,8 +56,7 @@
       "generic_message": "Si è verificato un errore durante il caricamento della mappa",
       "reload": "Ricarica la pagina"
     },
-    "layers": "Livelli",
-    "basemap_fallback": "Mappa base non disponibile — passato a Swisstopo"
+    "layers": "Livelli"
   },
   "map_style": "Carta geografica",
   "location": "Posizione",

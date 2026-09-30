@@ -3,8 +3,8 @@ import { ref, inject, watchEffect, watch, onErrorCaptured, computed, onMounted }
 import { useRouter, useRoute } from 'vue-router';
 import { useResizeObserver, useDebounceFn, useThrottleFn, useEventListener } from '@vueuse/core';
 import { useQuasar } from 'quasar';
-import { useI18n } from 'vue-i18n';
 import { useBasemapStore } from '@stores/map/basemap-store';
+import type { BasemapSwitchItem } from '@stores/map/utils/interfaces';
 import { useLocalPropertiesStore } from '@stores/local-properties-store';
 import { showErrorDialogPersistent, ErrorCode } from '@components/error';
 import type { Map, PaddingOptions } from 'maplibre-gl';
@@ -114,7 +114,6 @@ function getDangerMargin(): number {
 // ============================================================================
 
 const $q = useQuasar();
-const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 const basemapStore = useBasemapStore();
@@ -292,24 +291,26 @@ function onMapError(e: unknown) {
   }
 
   // Basemap fallback: an auth failure from the tile/style host (e.g. a
-  // suspended or rotated MapTiler key) would otherwise leave a blank,
-  // broken map. Switch once to the keyless OpenFreeMap bright style and
-  // tell the user.
-  if (!basemapFallbackDone && isTileAuthFailure(errorObj) && activeBasemapUsesMapTiler()) {
-    basemapFallbackDone = true;
-    // Fall back to the keyless swisstopo raster (geo.admin.ch tiles —
-    // no API key, proven reliable). OpenFreeMap had rendering issues
-    // on some Samsung WebViews.
-    const fallback = basemapStore.basemaps.find(b => b.name === 'ch-swisstopo-full');
+  // suspended or exhausted MapTiler key) would otherwise leave a blank,
+  // broken map. Silently switch once to the keyless OpenFreeMap Liberty
+  // vector style (labels included — OpenFreeMap also serves the glyphs).
+  // No user notification — the map simply keeps working. Weak-GPU devices
+  // never get here: their raster variant is the keyless OSM raster.
+  // `activeBasemapUsesMapTiler()` is the re-trigger guard: after a switch
+  // the active basemap is the keyless Liberty (or OSM raster) style, so its
+  // errors cannot re-arm the fallback. A previously used one-shot flag made
+  // every LATER selection of a MapTiler basemap fail silently into "no
+  // change" — the user must always be able to re-select and get the
+  // graceful keyless fallback again.
+  if (isTileAuthFailure(errorObj) && activeBasemapUsesMapTiler()) {
+    const candidates = basemapStore.basemaps as BasemapSwitchItem[];
+    const fallback = candidates.find(b => b.name === 'openfreemap-liberty');
     if (fallback) {
-      console.warn('[onMapError] Tile host rejected requests - falling back to OpenFreeMap');
-      void basemapStore.setBasemap(fallback, true);
-      $q.notify({
-        type: 'warning',
-        message: t('map.basemap_fallback'),
-        timeout: 6000,
-        position: 'bottom',
-      });
+      console.warn(
+        '[onMapError] Tile host rejected requests - falling back to OpenFreeMap Liberty'
+      );
+      // Not persisted: the next session retries the user's chosen basemap
+      void basemapStore.setBasemap(fallback, true, false);
     }
     return;
   }
@@ -318,8 +319,6 @@ function onMapError(e: unknown) {
   //console.error('[onMapError] Generic map error:', event.error);
   //showErrorDialog({ errorCode: ErrorCode.MAP_ERROR });
 }
-
-let basemapFallbackDone = false;
 
 function isTileAuthFailure(errorObj: Record<string, unknown> | undefined): boolean {
   const status = errorObj?.status as number | undefined;
