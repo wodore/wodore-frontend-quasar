@@ -1,49 +1,44 @@
 <script setup lang="ts">
 /**
- * WdBasemapControl — basemap selector (matches the overlay control box).
- * Opens to the LEFT (same as before, new design without q-fab).
+ * WdBasemapControl — basemap picker (v2, opens LEFT).
+ *
+ * A compact 48px toggle; the rail opens to the LEFT with full-bleed
+ * image thumbnails. Selecting a basemap closes the rail again (like
+ * the old version). Starts closed, state persisted.
  */
-import { computed, ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { LocalStorage } from 'quasar';
-import { useI18n } from 'vue-i18n';
 import { useBasemapStore } from '@stores/map/basemap-store';
 
-const { t } = useI18n();
 const basemapStore = useBasemapStore();
+
+// Reactive: track the store's current basemap (also updates after
+// initial style load / persisted state restoration)
+const activeName = computed(() => basemapStore.getBasemap()?.name);
 
 const open = ref(
   LocalStorage.hasItem('wd_bm_open') ? (LocalStorage.getItem('wd_bm_open') as boolean) : false
 );
 watch(open, v => LocalStorage.set('wd_bm_open', v));
 
-const iconOpen = new URL(
-  '/src/assets/wodore-design/icons/export/basemap-switch.svg',
-  import.meta.url
-).href;
-const iconClose = new URL(
-  '/src/assets/wodore-design/icons/export/basemap-switch-close.svg',
-  import.meta.url
-).href;
-
-const activeName = computed(() => basemapStore.getBasemap()?.name);
-
-function selectBasemap(name: string): void {
-  const bm = basemapStore.basemaps.find(b => b.name === name);
-  if (bm) {
-    basemapStore.setBasemap(bm);
-  }
+function selectBasemap(bm: { name: string }): void {
+  const item = basemapStore.basemaps.find(b => b.name === bm.name);
+  if (item) basemapStore.setBasemap(item);
+  open.value = false; // close after selection (previous behavior)
 }
+
+const iconOpen = new URL('/src/assets/wodore-design/icons/export/basemap-switch.svg', import.meta.url).href;
+const iconClose = new URL('/src/assets/wodore-design/icons/export/basemap-switch-close.svg', import.meta.url).href;
 </script>
 
 <template>
   <div class="wd-bm">
-    <!-- Mini strip: opens to the LEFT of the toggle (horizontal on desktop) -->
-    <Transition name="wd-bm-strip">
-      <div v-if="open" class="wd-bm__rail">
+    <!-- Rail: opens to the LEFT of the toggle -->
+    <Transition name="wd-bm-rail">
+      <div v-if="open" class="wd-bm__rail" role="group" aria-label="Basemap">
         <button
           v-for="bm in basemapStore.basemaps"
           :key="bm.name"
-          v-show="bm.show"
           class="wd-bm__btn"
           :class="{
             'wd-bm__btn--active': activeName === bm.name,
@@ -51,19 +46,17 @@ function selectBasemap(name: string): void {
           }"
           :aria-label="bm.label"
           :aria-pressed="activeName === bm.name"
-          :title="bm.label"
-          @click="selectBasemap(bm.name)"
+          @click="selectBasemap(bm)"
         >
-          <img v-if="bm.img" :src="bm.img" :alt="bm.label" class="wd-bm__thumb" />
-          <q-icon v-else name="wd-layers" size="22px" />
+          <img :src="bm.img" :alt="bm.label" class="wd-bm__thumb" />
         </button>
       </div>
     </Transition>
 
-    <!-- Toggle (48px, same width as overlay toggle) -->
+    <!-- Toggle -->
     <button
       class="wd-bm__toggle"
-      :aria-label="t('basemap')"
+      :aria-label="'Basemap'"
       :aria-expanded="open"
       @click="open = !open"
     >
@@ -78,58 +71,82 @@ function selectBasemap(name: string): void {
 </template>
 
 <style lang="scss" scoped>
+$ease: cubic-bezier(0.2, 0, 0, 1);
+
 .wd-bm {
   display: flex;
-  align-items: flex-end;
-  gap: 4px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  pointer-events: none; // map gestures pass through
 }
 
-// rail: horizontal strip that extends LEFT from the toggle
+// ── Rail (opens LEFT) ────────────────────────────────────────────────────
 .wd-bm__rail {
   display: flex;
-  gap: 4px;
+  flex-direction: row;
   align-items: center;
-  flex-direction: row-reverse; // rightmost = first (closest to toggle)
+  gap: 6px;
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid var(--wd-ctl-border); // same border width as overlay toggle
+  background: var(--wd-ctl-bg);
+  box-shadow: var(--wd-ctl-shadow);
+  pointer-events: auto;
 }
 
+// ── Basemap buttons: full-bleed images, solid (no transparency) ─────────
 .wd-bm__btn {
   position: relative;
   width: 44px;
   height: 44px;
+  padding: 0;
   border-radius: 4px;
-  border: 1px solid var(--wd-ctl-border);
+  border: 2px solid transparent; // reserve space for gold selection
   background: var(--wd-ctl-bg);
-  color: var(--wd-ctl-ink);
   cursor: pointer;
-  box-shadow: var(--wd-ctl-shadow);
   display: grid;
   place-items: center;
   overflow: hidden;
-  transition: box-shadow 0.12s ease, opacity 0.12s ease;
+  transition:
+    border-color 0.15s $ease,
+    transform 0.1s $ease;
   flex: none;
-}
 
-// dark theme: brighten thumbnails on pine chips
-body.body--dark .wd-bm__thumb {
-  filter: brightness(1.2);
-}
+  &:active {
+    transform: scale(0.95);
+  }
 
-.wd-bm__btn--inactive {
-  opacity: 0.85;
-}
+  &--active {
+    border-color: #bfab25; // gold selection beam
+  }
 
-.wd-bm__btn--active {
-  box-shadow: inset 0 0 0 3px var(--wd-ctl-ring);
-  opacity: 1;
+  &--inactive {
+    border-color: var(--wd-ctl-border);
+  }
 }
 
 .wd-bm__thumb {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 4px; // inside the 2px border
+  display: block;
 }
 
+.wd-bm__thumb--empty {
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  color: var(--wd-ctl-ink-soft);
+}
+
+// Dark theme: brighten thumbnails
+body.body--dark .wd-bm__thumb {
+  filter: brightness(1.15) saturate(1.1);
+}
+
+// ── Toggle (matches overlay toggle: 48px, 1px border) ───────────────────
 .wd-bm__toggle {
   display: grid;
   place-items: center;
@@ -140,12 +157,16 @@ body.body--dark .wd-bm__thumb {
   background: var(--wd-ctl-bg);
   cursor: pointer;
   box-shadow: var(--wd-ctl-shadow);
-  transition: background-color 0.15s ease;
+  transition:
+    background-color 0.15s $ease,
+    transform 0.1s $ease;
   flex: none;
-  padding: 6px;
+  padding: 8px;
+  outline: none;
+  pointer-events: auto;
 
-  &:hover {
-    background: var(--wd-ctl-hover);
+  &:active {
+    transform: scale(0.96);
   }
 }
 
@@ -153,21 +174,24 @@ body.body--dark .wd-bm__thumb {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1);
+  transition: transform 0.35s $ease;
 }
 
 .wd-bm__toggle-icon--open {
-  transform: rotate(180deg);
+  transform: rotate(360deg);
 }
 
-// collapse animation (slides in from the right)
-.wd-bm-strip-enter-active,
-.wd-bm-strip-leave-active {
-  transition: opacity 0.18s cubic-bezier(0.2, 0, 0, 1), transform 0.18s cubic-bezier(0.2, 0, 0, 1);
+// ── Rail transition: slide in from the right (opening LEFT) ─────────────
+.wd-bm-rail-enter-active,
+.wd-bm-rail-leave-active {
+  transition:
+    opacity 0.22s $ease,
+    transform 0.22s $ease;
 }
-.wd-bm-strip-enter-from,
-.wd-bm-strip-leave-to {
+
+.wd-bm-rail-enter-from,
+.wd-bm-rail-leave-to {
   opacity: 0;
-  transform: translateX(20px);
+  transform: translateX(8px);
 }
 </style>

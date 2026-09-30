@@ -979,43 +979,46 @@ function setMapFocus(on: boolean): void {
   if (on) lastFocusToggleAt = Date.now();
 }
 
+let lastMapTapAt = 0;
+
 function onMapContainerClick(ev: MouseEvent): void {
   if (!window.matchMedia('(max-width: 899px)').matches) return;
-  if ((ev.target as HTMLElement).closest('.maplibregl-ctrl, .maplibregl-popup, .q-page-sticky')) return;
+  if ((ev.target as HTMLElement).closest('.maplibregl-ctrl, .maplibregl-popup, .q-page-sticky, .wd-focus-toggle')) return;
   const canvas = mapDiv.value?.querySelector('canvas');
   if (canvas && canvas.style.cursor === 'pointer') return;
-  // second tap inside the window = double-tap (zoom), cancel the pending toggle
-  if (focusTapTimer) { clearTimeout(focusTapTimer); focusTapTimer = null; return; }
-  // wider window (350ms) — the dblclick handler below catches edge cases
+
+  // Manual double-tap detection — MapLibre's doubleClickZoom swallows the
+  // dblclick event on the canvas, so we cannot rely on the DOM dblclick.
+  const now = Date.now();
+  if (now - lastMapTapAt < 400) {
+    // Second tap of a double-tap (zoom intent):
+    lastMapTapAt = 0;
+    if (focusTapTimer) { clearTimeout(focusTapTimer); focusTapTimer = null; }
+    // If focus was JUST turned on by the first tap, undo it
+    if (mapFocus.value && now - lastFocusToggleAt < 700) {
+      setMapFocus(false);
+    }
+    return;
+  }
+  lastMapTapAt = now;
+  if (focusTapTimer) { clearTimeout(focusTapTimer); focusTapTimer = null; }
   focusTapTimer = setTimeout(() => {
     focusTapTimer = null;
     setMapFocus(!mapFocus.value);
-  }, 350);
+  }, 400);
 }
 
 onMounted(() => {
   mapDiv.value?.addEventListener('click', onMapContainerClick);
+  // Safety net: if a dblclick DOES arrive, treat it the same way
   mapDiv.value?.addEventListener('dblclick', () => {
-    // Cancel any pending toggle
+    lastMapTapAt = 0;
     if (focusTapTimer) { clearTimeout(focusTapTimer); focusTapTimer = null; }
-    // If focus was JUST turned on (within 500ms) by what was actually
-    // the first tap of a double-tap, undo it — the user meant to zoom
-    if (mapFocus.value && Date.now() - lastFocusToggleAt < 500) {
+    if (mapFocus.value && Date.now() - lastFocusToggleAt < 700) {
       setMapFocus(false);
     }
   });
 });
-
-/** Handle overlay toggle from the control component */
-function onOverlayToggle(item: unknown): void {
-  const overlay = item as { name: string; active: boolean; style: { layers: Array<{ id: string }> } };
-  if (!mapRef.map) return;
-  for (const layer of overlay.style?.layers || []) {
-    if (mapRef.map.getLayer(layer.id)) {
-      mapRef.map.setLayoutProperty(layer.id, 'visibility', overlay.active ? 'visible' : 'none');
-    }
-  }
-}
 
 function onMapStyledata(e: MglEvent<'styledata'>) {
   //$q.loadingBar.start();
@@ -1068,23 +1071,47 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
         :render-world-copies="false"
       >
         <!-- ── Map controls (v2 clean layout) ──────────────────────────── -->
-        <!-- Bottom-right: overlay strip above basemap (basemap opens LEFT) -->
-        <q-page-sticky position="bottom-right" :offset="[12, 14]" style="z-index: 5">
+        <!-- Bottom-right: overlay strip above basemap (basemap opens LEFT).
+             pointer-events: none on the wrapper — interactive elements
+             inside the controls opt back in, so map gestures pass through
+             every empty pixel. -->
+        <q-page-sticky position="bottom-right" :offset="[12, 14]" class="wd-map-ctl-sticky">
           <div class="wd-map-ctl-col">
-            <WdOverlayControl @toggle-layer="onOverlayToggle" />
+            <WdOverlayControl />
             <WdBasemapControl />
           </div>
         </q-page-sticky>
 
-        <!-- Top-right: GPS + compass + fullscreen (desktop zoom too) -->
+        <!-- Focus (fullscreen) toggle: desktop always visible below the
+             top-right nav cluster; mobile only visible IN focus mode -->
+        <button
+          class="wd-focus-toggle"
+          :class="{ 'wd-focus-toggle--active': mapFocus }"
+          :aria-label="mapFocus ? 'Exit focus mode' : 'Focus mode'"
+          @click.stop="setMapFocus(!mapFocus)"
+        >
+          <svg v-if="!mapFocus" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+          </svg>
+          <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+
+        <!-- Top-right: GPS + compass (desktop zoom too) -->
         <MglGeolocateControl :position="isMobileView() ? 'bottom-left' : 'top-right'" />
         <MglNavigationControl :show-zoom="!isMobileView()" :position="isMobileView() ? 'bottom-left' : 'top-right'" />
 
-        <!-- Scale: centered at the top edge -->
-        <MglScaleControl position="top-left" />
+        <!-- Scale: mobile top-center, desktop bottom-left -->
+        <MglScaleControl :position="isMobileView() ? 'top-left' : 'bottom-left'" />
 
-        <!-- Attribution: compact ⓘ icon, bottom-right (before basemap switch) -->
-        <MglAttributionControl position="bottom-right" :compact="true" />
+        <!-- Attribution: mobile compact ⓘ bottom-right; desktop full bottom-left -->
+        <MglAttributionControl
+          v-if="isMobileView()"
+          position="bottom-right"
+          :compact="true"
+        />
+        <MglAttributionControl v-else position="bottom-left" :compact="false" />
         <!-- <MglGeoJsonSource
       source-id="wd-bookings"
       :data="hutStore.bookingsGeojson"

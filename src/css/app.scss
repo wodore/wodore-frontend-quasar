@@ -569,9 +569,9 @@ body.body--dark {
   opacity: 0.55;
 }
 
-// Floating topbar: one fully-rounded pill with user + search + date
-// Layout: [avatar] [search...] [date] - single pill, 999px radius
-// Date is the visual anchor (core feature).
+// Floating topbar: search | date (highlight) | avatar ─────────────────────
+// One fully-rounded pill (999px). The DATE segment carries the visual
+// weight (green wash); search is icon-only; avatar opens the menu.
 
 .wd-topbar {
   position: fixed;
@@ -580,16 +580,22 @@ body.body--dark {
   right: calc(12px + env(safe-area-inset-right, 0px));
   z-index: 2000;
   display: flex;
-  gap: 6px;
   align-items: center;
+  justify-content: center; // mobile: pill centered
   pointer-events: none;
+
+  @media (min-width: 900px) {
+    justify-content: flex-start; // desktop: pill left
+  }
 }
 
-.wd-topbar > * { pointer-events: auto; }
+.wd-topbar > * {
+  pointer-events: auto;
+}
 
+// ── The pill ────────────────────────────────────────────────────────────
 .wd-topbar__pill {
-  flex: none; // NOT full width — compact pill
-  min-width: 0;
+  flex: none;
   display: flex;
   align-items: center;
   height: 48px;
@@ -597,11 +603,159 @@ body.body--dark {
   border: 1px solid var(--wd-ctl-border);
   border-radius: 999px;
   box-shadow: var(--wd-ctl-shadow);
-  overflow: hidden;
   color: var(--wd-ctl-ink);
-  padding: 0 4px;
+  padding-left: 4px;
+  padding-right: 5px;
+  gap: 2px;
 }
 
+// ── Search: icon-only (44px zone) ───────────────────────────────────────
+.wd-topbar__search {
+  flex: none;
+  width: 44px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 2px;
+}
+
+// Desktop menu: collapse the q-input into an icon button
+.wd-topbar__search-menu {
+  :deep(.wd-search-field),
+  :deep(.q-field) {
+    width: 44px;
+    min-width: 44px;
+  }
+
+  :deep(.q-field__control) {
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 4px !important;
+    height: 40px;
+    min-height: 40px;
+  }
+
+  :deep(.q-field__control::before),
+  :deep(.q-field__control::after) {
+    background: transparent !important;
+    border: none !important;
+  }
+
+  // hide the text input — icon only
+  :deep(.q-field__native),
+  :deep(input) {
+    display: none;
+  }
+
+  :deep(.q-icon) {
+    color: var(--wd-ctl-ink-soft);
+    font-size: 22px;
+  }
+}
+
+// Mobile dialog trigger: round icon button, themed ink
+.wd-topbar__search-dialog {
+  :deep(.q-btn) {
+    width: 40px;
+    height: 40px;
+    color: var(--wd-ctl-ink-soft);
+  }
+}
+
+// ── Date: the highlighted core element ──────────────────────────────────
+.wd-topbar__date {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  height: 42px;
+  padding-left: 10px;
+  margin: 0 2px;
+  background: rgba(52, 103, 81, 0.13); // green wash (light)
+  border-radius: 999px;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(52, 103, 81, 0.18);
+  }
+}
+
+body.body--dark .wd-topbar__date {
+  background: rgba(52, 103, 81, 0.28);
+
+  &:hover {
+    background: rgba(52, 103, 81, 0.4);
+  }
+}
+
+// WdSelectDate inside the pill: transparent field, themed ink, no steppers
+.wd-topbar__date :deep(> div) {
+  margin: 0 !important;
+  max-width: none !important;
+  width: 100%;
+  max-height: none !important;
+  display: flex;
+  align-items: center;
+}
+
+.wd-topbar__date :deep(.wd-date-stepper) {
+  width: 100%;
+  flex-wrap: nowrap;
+}
+
+.wd-topbar__date :deep(.wd-input-button) {
+  display: none; // steppers hidden in the pill
+}
+
+.wd-topbar__date :deep(.wd-date-field),
+.wd-topbar__date :deep(.q-field) {
+  width: 100%;
+  cursor: pointer;
+}
+
+.wd-topbar__date :deep(.q-field__control) {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 8px 0 2px !important;
+  min-height: 42px;
+  height: 42px;
+}
+
+.wd-topbar__date :deep(.q-field__control::before),
+.wd-topbar__date :deep(.q-field__control::after) {
+  background: transparent !important;
+  border: none !important;
+}
+
+.wd-topbar__date :deep(.q-field__native),
+.wd-topbar__date :deep(input) {
+  color: var(--wd-ctl-ink);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  padding: 0;
+  cursor: pointer;
+}
+
+.wd-topbar__date :deep(.q-field__native::placeholder),
+.wd-topbar__date :deep(input::placeholder) {
+  color: var(--wd-ctl-ink-soft);
+  font-weight: 500;
+}
+
+// Calendar icon (append slot): ink, gold on hover
+.wd-topbar__date :deep(.q-icon) {
+  color: var(--wd-ctl-ink);
+  font-size: 22px;
+}
+
+.wd-topbar__date:hover :deep(.q-icon) {
+  color: #bfab25;
+}
+
+// ── Avatar / menu button (right edge) ───────────────────────────────────
 .wd-topbar__user {
   display: grid;
   place-items: center;
@@ -613,107 +767,43 @@ body.body--dark {
   color: var(--wd-ctl-ink-soft);
   cursor: pointer;
   flex: none;
-  margin-left: 4px;
-  transition: background-color 0.12s ease;
+  transition: background-color 0.12s ease, color 0.12s ease;
 
-  &:hover { background: rgba(128, 128, 128, 0.12); color: var(--wd-ctl-ink); }
-  &:active { transform: scale(0.95); }
+  &:hover {
+    background: rgba(128, 128, 128, 0.14);
+    color: var(--wd-ctl-ink);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
 }
 
-.wd-topbar__search {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  height: 100%;
-  overflow: hidden;
-}
-
-.wd-topbar__search > * { margin: 0 !important; width: 100%; }
-.wd-topbar__search .q-field { width: 100%; }
-
-.wd-topbar .wd-search-field .q-field__control,
-.wd-topbar .wd-date-field .q-field__control {
-  background: transparent !important;
-  padding: 0 4px !important;
-  box-shadow: none !important;
-}
-
-.wd-topbar .wd-search-field .q-field__control::before,
-.wd-topbar .wd-date-field .q-field__control::before,
-.wd-topbar .wd-search-field .q-field__control::after {
-  background: transparent !important;
-  border: none !important;
-}
-
-.wd-topbar input::placeholder {
-  color: var(--wd-ctl-ink-soft);
-  font-weight: 400;
-  font-size: 12px;
-  letter-spacing: 0.03em;
-  text-transform: none;
-}
-
-.wd-topbar .wd-search-field .q-field__native {
-  color: var(--wd-ctl-ink);
-  font-size: 13px;
-}
-
-.wd-topbar__search .q-btn {
-  width: 100%;
-  height: 100%;
-  border-radius: 0;
-  justify-content: flex-start;
-  padding: 0 8px;
-  color: var(--wd-ctl-ink-soft);
-  font-size: 12px;
-  text-transform: none;
-  letter-spacing: 0.02em;
-  min-height: 0 !important;
-}
-
-.wd-topbar__date {
-  flex: none;
-  min-width: 100px; // give date room
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  height: 100%;
-  padding-right: 6px;
-  padding-left: 10px;
-  background: rgba(52, 103, 81, 0.06);
-  border-radius: 0 999px 999px 0;
-}
-
-.wd-topbar__date > div { margin: 0 !important; max-width: none !important; width: auto !important; }
-
-.wd-topbar .wd-date-field .q-field__native {
-  color: var(--wd-ctl-ink);
-  font-weight: 600;
-  font-size: 14px;
-  letter-spacing: 0.02em;
-}
-
-.wd-topbar__date .wd-input-button { display: none; }
-
-@media (min-width: 600px) {
+// ── Desktop utilities: top-right chip cluster (8px radius) ──────────────
+@media (min-width: 900px) {
   .wd-topbar__utils {
+    position: absolute;
+    top: calc(2px + env(safe-area-inset-top, 0px));
+    right: calc(12px + env(safe-area-inset-right, 0px));
     background: var(--wd-ctl-bg);
     border: 1px solid var(--wd-ctl-border);
-    border-radius: 999px;
+    border-radius: 8px;
     box-shadow: var(--wd-ctl-shadow);
-    height: 40px;
+    height: 44px;
     padding: 0 6px;
     display: flex;
     gap: 2px;
     align-items: center;
     color: var(--wd-ctl-ink);
     flex: none;
-    .q-btn { color: var(--wd-ctl-ink) !important; }
+
+    .q-btn {
+      color: var(--wd-ctl-ink) !important;
+    }
   }
 }
 
+// ── Progress bar rides below the pill ───────────────────────────────────
 .wd-topbar__progress {
   position: fixed;
   top: calc(62px + env(safe-area-inset-top, 0px));
@@ -725,6 +815,17 @@ body.body--dark {
 
 
 // ── Map control column (bottom-right) ───────────────────────────────────
+// pointer-events: none on ALL wrappers — interactive elements inside the
+// controls opt back in with pointer-events: auto, so map gestures (pan,
+// zoom) pass through every empty pixel, including behind the expanded
+// overlay box. Without this the wrapper DIVs swallow the gestures.
+.wd-map-ctl-sticky,
+.wd-map-ctl-col {
+  pointer-events: none;
+  background: transparent;
+  box-shadow: none;
+}
+
 .wd-map-ctl-col {
   display: flex;
   flex-direction: column;
@@ -732,33 +833,80 @@ body.body--dark {
   gap: 4px;
 }
 
-// ── Map focus mode: fly-out animation ────────────────────────────────────
+// ── Focus (fullscreen) mode toggle button ────────────────────────────────
+.wd-focus-toggle {
+  position: absolute;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  border: 1px solid var(--wd-ctl-border);
+  background: var(--wd-ctl-bg);
+  color: var(--wd-ctl-ink);
+  box-shadow: var(--wd-ctl-shadow);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px);
+  transition:
+    opacity 0.3s cubic-bezier(0.2, 0, 0, 1),
+    transform 0.3s cubic-bezier(0.2, 0, 0, 1),
+    background-color 0.15s ease;
+
+  // Desktop: always visible, below the top-right GPS/compass/zoom cluster
+  @media (min-width: 900px) {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+    top: 230px;
+    right: 14px;
+  }
+
+  // Mobile: only visible in focus mode (exit), below where the pill was
+  @media (max-width: 899px) {
+    top: calc(66px + env(safe-area-inset-top, 0px));
+    right: 12px;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  &--active {
+    color: #bfab25;
+  }
+}
+
 // ── Focus mode slide-out / slide-in ──────────────────────────
 // Transitions on the DEFAULT state so elements animate back IN.
 
+.wd-map-ctl-sticky,
 .wd-map-ctl-col,
 .wd-topbar,
 .wd-topbar__progress,
-.wd-topbar-menu,
 .maplibregl-ctrl-top-right .maplibregl-ctrl-group,
 .maplibregl-ctrl-bottom-left .maplibregl-ctrl-group {
   opacity: 1;
   transform: none;
-  transition: opacity 0.3s cubic-bezier(0.2,0,0,1), transform 0.3s cubic-bezier(0.2,0,0,1);
+  transition: opacity 0.3s cubic-bezier(0.2, 0, 0, 1), transform 0.3s cubic-bezier(0.2, 0, 0, 1);
 }
 
 .maplibregl-ctrl-top-left .maplibregl-ctrl-scale {
-  transition: top 0.3s cubic-bezier(0.2,0,0,1);
+  transition: top 0.3s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib {
+  transition: opacity 0.3s cubic-bezier(0.2, 0, 0, 1);
 }
 
 body.wd-map-focus {
+  .wd-map-ctl-sticky,
   .wd-map-ctl-col {
     opacity: 0; pointer-events: none; transform: translateX(80px);
   }
   .wd-topbar, .wd-topbar__progress {
-    opacity: 0; pointer-events: none; transform: translateY(-60px);
-  }
-  .wd-topbar-menu {
     opacity: 0; pointer-events: none; transform: translateY(-60px);
   }
   .maplibregl-ctrl-top-right .maplibregl-ctrl-group {
@@ -770,8 +918,18 @@ body.wd-map-focus {
   .maplibregl-ctrl-top-left .maplibregl-ctrl-scale {
     top: calc(12px + env(safe-area-inset-top, 0px));
   }
+  // Mobile: hide the compact attribution in focus mode (desktop keeps it)
+  @media (max-width: 899px) {
+    .maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib {
+      opacity: 0; pointer-events: none;
+    }
+  }
   .wd-focus-toggle {
     opacity: 1; pointer-events: auto; transform: none;
+    // Desktop: slide to where the GPS cluster was (visual anchor)
+    @media (min-width: 900px) {
+      top: 14px;
+    }
   }
 }
 

@@ -30,15 +30,20 @@
   float: right;
 }
 
-/* GPS + compass: combined chip, proper spacing */
-.maplibregl-ctrl-bottom-left .maplibregl-ctrl {
-  margin: 0;
-  float: left;
+/* Bottom-left corner: column-reverse so the FIRST control sits at the
+   BOTTOM — mobile: GPS below compass (bottom edge aligned with the
+   basemap toggle); desktop: scale at the bottom, full attribution above. */
+.maplibregl-ctrl-bottom-left {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-start;
+  margin-left: 12px;
+  margin-bottom: 14px; /* aligns bottom edge with the basemap toggle */
 }
 
-.maplibregl-ctrl-bottom-left {
-  margin-left: 12px;
-  margin-bottom: 28px;
+.maplibregl-ctrl-bottom-left .maplibregl-ctrl {
+  margin: 0 0 4px;
+  float: none;
 }
 
 /* Merge consecutive groups: rounded top on first, bottom on last */
@@ -319,14 +324,43 @@ body.body--dark .maplibregl-ctrl button .maplibregl-ctrl-icon {
   transform: translateX(-50%);
 }
 
-/* ── Attribution: compact ⓘ icon, bottom-right before basemap ─────────── */
-.maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib {
-  margin-right: 60px; /* clear the basemap toggle */
-  margin-bottom: 4px;
+/* ── Attribution ──────────────────────────────────────────────────────────
+   Mobile: compact round ⓘ chip, bottom-right, lifted clear of the
+   basemap toggle. Desktop: full text chip, bottom-left, above the scale. */
+@media (max-width: 899px) {
+  .maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib {
+    margin-right: 62px; /* clear of the basemap toggle */
+    margin-bottom: 70px; /* above the basemap toggle, not glued to it */
+    min-height: 26px;
+    border-radius: 999px !important; /* round ⓘ */
+    padding: 0 4px !important;
+    min-width: 26px;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    cursor: pointer;
+  }
+
+  /* Mobile: ⓘ ONLY (round chip) — MapLibre auto-shows the full text on
+     load (maplibregl-compact-show); force it back to the collapsed icon. */
+  .maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib .maplibregl-ctrl-attrib-inner {
+    display: none !important;
+  }
+
+  .maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib .maplibregl-ctrl-attrib-button {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+  }
 }
 
-.maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib.maplibregl-compact {
-  min-height: 24px;
+@media (min-width: 900px) {
+  .maplibregl-ctrl-bottom-left .maplibregl-ctrl-attrib {
+    margin: 0;
+  }
+  .maplibregl-ctrl-bottom-left .maplibregl-ctrl-scale {
+    margin: 0 !important;
+  }
 }
 
 .maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib.maplibregl-compact-show {

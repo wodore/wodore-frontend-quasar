@@ -400,10 +400,21 @@ body.capacitor .preview-badge {
   <WdAnalytics />
   <q-layout view="hHh LpR fFf" class="overflow-hidden" @scroll="onLayoutScroll">
     <div v-if="isStaging" class="preview-badge">preview</div>
-    <!-- FLOATING TOPBAR: one fully-rounded pill with user + search + date -->
+    <!-- FLOATING TOPBAR: search | date (highlight) | avatar ──────────── -->
     <div class="wd-topbar">
       <div class="wd-topbar__pill">
-        <!-- User / menu button (left edge, inside the pill) -->
+        <!-- Search (icon-only, opens search) -->
+        <div class="wd-topbar__search">
+          <WdPlaceSearchMenu v-if="!isMobile" class="wd-topbar__search-menu" />
+          <WdPlaceSearchDialog v-else class="wd-topbar__search-dialog" />
+        </div>
+
+        <!-- Date (the highlighted core element — main pill width) -->
+        <div class="wd-topbar__date">
+          <WdSelectDate />
+        </div>
+
+        <!-- User / menu button (right edge, inside the pill) -->
         <button
           class="wd-topbar__user"
           :aria-label="$t('menu')"
@@ -414,20 +425,9 @@ body.capacitor .preview-badge {
             <path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/>
           </svg>
         </button>
-
-        <!-- Search (subtle, fills the middle) -->
-        <div class="wd-topbar__search">
-          <WdPlaceSearchMenu v-if="!isMobile" />
-          <WdPlaceSearchDialog v-else />
-        </div>
-
-        <!-- Date (the visual anchor, right side) -->
-        <div class="wd-topbar__date">
-          <WdSelectDate />
-        </div>
       </div>
 
-      <!-- Desktop-only utilities (separate, compact) -->
+      <!-- Desktop-only utilities: top-right chip cluster (8px radius) -->
       <div v-if="!isMobile" class="wd-topbar__utils">
         <WdFeedbackButton size="sm" />
         <WdLanguageSwitcher size="sm" />
@@ -464,7 +464,7 @@ body.capacitor .preview-badge {
       :width="300"
       :breakpoint="610"
       class="wd-menu-drawer"
-      style="max-width: 80vw"
+      style="max-width: 80vw; z-index: 3000"
     >
       <!-- TOOLBAR mobile -->
       <q-toolbar v-if="isMobile" class="bg-primary-600 shadow-6">
