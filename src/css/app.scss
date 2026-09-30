@@ -333,26 +333,26 @@ body {
 // separate with dashed dividers instead of their own borders.
 .wd-date-stepper {
   border: 1px dashed rgba(255, 255, 255, 0.24);
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.07);
-
-  > * + * {
-    // slightly stronger than the outer frame so the segment breaks read
-    border-left: 1px dashed rgba(255, 255, 255, 0.34);
-  }
-
-  // Segments lose their individual frames (family rules above)
-  .wd-input-button .q-field__control,
-  .wd-date-field .q-field__control {
-    background: transparent !important;
-    padding: 0 8px !important;
-  }
-
-  .wd-input-button .q-field__control::before,
-  .wd-date-field .q-field__control::before {
-    background: transparent !important;
-    border: none !important;
-  }
+//  border-radius: 4px;
+//  background: rgba(255, 255, 255, 0.07);
+//
+//  > * + * {
+//    // slightly stronger than the outer frame so the segment breaks read
+//    border-left: 1px dashed rgba(255, 255, 255, 0.34);
+//  }
+//
+//  // Segments lose their individual frames (family rules above)
+//  .wd-input-button .q-field__control,
+//  .wd-date-field .q-field__control {
+//    background: transparent !important;
+//    padding: 0 8px !important;
+//  }
+//
+//  .wd-input-button .q-field__control::before,
+//  .wd-date-field .q-field__control::before {
+//    background: transparent !important;
+//    border: none !important;
+//  }
 }
 
 // ── Menu drawer: floats over map imagery ───────────────────────────────
@@ -616,6 +616,7 @@ body.body--dark {
   justify-content: center;
 }
 
+
 // Desktop menu: collapse the q-input into an icon button
 .wd-topbar__search-menu {
   .wd-search-field,
@@ -670,7 +671,25 @@ body.body--dark .wd-topbar__search-dialog .q-btn,
 body.body--dark .wd-topbar__search-dialog .q-btn .text-icon {
   color: #f2f7f4 !important;
 }
+// ── Menu: right element ──────────────────────────────────
+.wd-topbar__menu {
+  flex: none;
+  width: 44px; // matches the avatar zone — the pair reads as bookends
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
+  .q-icon,
+  .q-icon .text-icon {
+    color: #1c1c1c !important; // neutral day-ink (.text-icon utility is brand green)
+    font-size: 19px; // optical match for the avatar's 20px stroke-2 glyph
+  }
+}
+body.body--dark .wd-topbar__menu .q-icon,
+body.body--dark .wd-topbar__menu .text-icon {
+  color: #f2f7f4 !important;
+}
 // ── Date: the highlighted core element ──────────────────────────────────
 // ── Date segment: plain 2-line BUTTON (no input field) ───────────────────
 // Design: Alpine Instrument — inset block, wash + hairline, dashed when
@@ -687,6 +706,7 @@ body.body--dark .wd-topbar__search-dialog .q-btn .text-icon {
   padding: 0;
   background: transparent;
   border: none;
+  border-radius: 999px;
 }
 
 .wd-date-seg {
@@ -712,12 +732,13 @@ body.body--dark .wd-topbar__search-dialog .q-btn .text-icon {
 .wd-date-btn {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  //justify-content: space-between;
   gap: 10px;
-  width: 100%;
-  height: 100%;
+  width: 180px;
+  height: 44px;
+
   padding: 0 16px 0 16px;
-  border: none;
+  border: 1px;
   border-radius: 999px; // second full-radius panel
   background: rgba(17, 33, 25, 0.07); // light: pine wash
   cursor: pointer;
@@ -726,6 +747,10 @@ body.body--dark .wd-topbar__search-dialog .q-btn .text-icon {
 
   &:active {
     background: rgba(17, 33, 25, 0.14);
+  }
+
+  .text-icon {
+    color: #1c1c1c !important; // neutral day-ink (.text-icon utility is brand green)
   }
 }
 
@@ -740,6 +765,9 @@ body.body--dark .wd-date-btn {
 
   &:active {
     background: #20472f;
+  }
+  .text-icon {
+    color: #f2f7f4 !important;
   }
 }
 
@@ -843,8 +871,8 @@ body.body--dark .wd-date-btn__icon {
 @media (min-width: 900px) {
   .wd-topbar__utils {
     position: absolute;
-    top: calc(2px + env(safe-area-inset-top, 0px));
-    right: calc(12px + env(safe-area-inset-right, 0px));
+    top: calc(6px + env(safe-area-inset-top, 0px));
+    right: calc(62px + env(safe-area-inset-right, 0px));
     background: var(--wd-ctl-bg);
     border: 1px solid var(--wd-ctl-border);
     border-radius: 8px;
@@ -1228,13 +1256,13 @@ body.body--dark {
 // The visible "frame" lives on the ::before pseudo (Quasar standout
 // convention): 1px dashed white 24% + wash bg, identical on all family
 // members (stg.wodore.com look)
-.wd-search-field .q-field__control::before,
-.wd-date-field .q-field__control::before,
-.wd-input-button.q-field--standout .q-field__control::before {
-  background: rgba(255, 255, 255, 0.07) !important;
-  border: 1px dashed rgba(255, 255, 255, 0.24) !important;
-  border-radius: 4px !important;
-}
+//.wd-search-field .q-field__control::before,
+//.wd-date-field .q-field__control::before,
+//.wd-input-button.q-field--standout .q-field__control::before {
+//  background: rgba(255, 255, 255, 0.07) !important;
+//  border: 1px dashed rgba(255, 255, 255, 0.24) !important;
+//  border-radius: 4px !important;
+//}
 
 // Dashed frame is a header-toolbar signature only: inside the search
 // dialog the input uses its solid ridge border instead
