@@ -826,7 +826,7 @@ body.body--dark .wd-date-btn__date {
   color: #d9f0e4;
 
   &--empty {
-    opacity: 0.72;
+    opacity: 0.75; // mint at ~70-75% — readable, still placeholder
   }
 }
 
@@ -2094,16 +2094,16 @@ body.body--dark .preview-badge {
       shift needed there. */
 @media (min-width: 900px) {
   body.wd-sidepanel-open .wd-map-ctl-sticky {
-    transform: translateX(-330px) !important;
+    transform: translateX(calc(-1 * var(--wd-drawer-w, 0px))) !important;
   }
   body.wd-sidepanel-open .wd-topbar__utils {
-    transform: translateX(-330px);
+    transform: translateX(calc(-1 * var(--wd-drawer-w, 0px)));
   }
   body.wd-sidepanel-open .maplibregl-ctrl-top-right {
-    transform: translateX(-330px); // transform, not margin (no layout thrash)
+    transform: translateX(calc(-1 * var(--wd-drawer-w, 0px)));
   }
   body.wd-sidepanel-open .wd-focus-toggle {
-    transform: translateX(-330px);
+    transform: translateX(calc(-1 * var(--wd-drawer-w, 0px)));
   }
 }
 
@@ -2149,4 +2149,21 @@ body.body--dark .wd-bm__toggle,
 body.body--dark .wd-bm__rail,
 body.body--dark .wd-focus-toggle {
   border-color: rgba(169, 240, 210, 0.16);
+}
+
+/* Overlay main toggle: passive resting state fades slightly — active
+   emphasis comes on hover/press and when the strip is open. */
+.wd-ovl__toggle-icon {
+  opacity: 0.82;
+  transition: opacity 0.15s ease;
+}
+
+.wd-ovl__toggle:hover .wd-ovl__toggle-icon,
+.wd-ovl__toggle-icon--open {
+  opacity: 1;
+}
+
+/* Search glyph optical baseline — sits 1px low next to the wd-menu glyph */
+.wd-topbar__search .q-icon {
+  transform: translateY(-1px);
 }

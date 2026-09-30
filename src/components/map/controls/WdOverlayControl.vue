@@ -47,7 +47,16 @@ function onRowsScroll(e: Event): void {
   const el = e.target as HTMLElement;
   scrollAtTop.value = el.scrollTop <= 2;
   scrollAtBottom.value = el.scrollTop + el.clientHeight >= el.scrollHeight - 2;
+  // custom overlay thumb (native scrollbar removed — it squeezed the
+  // 48px mini box and cut the chips on desktop)
+  const ratio = el.clientHeight / el.scrollHeight;
+  thumbH.value = Math.max(24, Math.round(ratio * el.clientHeight));
+  const maxTop = el.clientHeight - thumbH.value;
+  thumbTop.value = Math.round((el.scrollTop / (el.scrollHeight - el.clientHeight)) * maxTop);
 }
+
+const thumbTop = ref(0);
+const thumbH = ref(0);
 
 /** Swipe left = expand, swipe right = collapse (on rows and toggle) */
 let swipeStartX: number | null = null;
@@ -344,6 +353,9 @@ onBeforeUnmount(() => {
 
         <!-- Rows: icon always at the right, label+actions appear when expanded -->
         <div class="wd-ovl__rows" role="group" :aria-label="t('overlay_style')" @scroll.passive="onRowsScroll">
+          <!-- custom scrollbar thumb (overlay — never squeezes the rows) -->
+          <div v-if="thumbH > 0 && !scrollAtBottom" class="wd-ovl__scrollthumb"
+            :style="{ top: thumbTop + 'px', height: thumbH + 'px' }" />
           <div v-for="item in overlayStore.overlays" :key="item.name" v-show="item.show" class="wd-ovl__row" :class="{
             'wd-ovl__row--active': item.active,
             'wd-ovl__row--passive': !item.active,
@@ -611,22 +623,27 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   display: flex;
   flex-direction: column;
   padding: 2px 3px 4px 3px;
-  // thin hairline scrollbar: visible hint, quiet against the chip bg
-  scrollbar-width: thin;
-  scrollbar-color: rgba(128, 145, 135, 0.35) transparent;
+  position: relative;
+  // native scrollbar REMOVED — it took layout space and squeezed the
+  // 48px mini box (chips cut off on desktop). Custom overlay thumb above.
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 
   &::-webkit-scrollbar {
-    width: 3px;
+    display: none;
   }
+}
 
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: rgba(128, 145, 135, 0.35);
-    border-radius: 999px;
-  }
+// custom overlay thumb: 3px, rides the rows' right edge
+.wd-ovl__scrollthumb {
+  position: absolute;
+  top: 0;
+  right: 1px;
+  width: 3px;
+  border-radius: 999px;
+  background: rgba(128, 145, 135, 0.5);
+  pointer-events: none;
+  z-index: 3;
 }
 
 .wd-ovl__row {

@@ -68,7 +68,7 @@ async function pinTheme(page, theme) {
       const colors = await p.evaluate(() => {
         const q = s => document.querySelector(s);
         const bg = s => (q(s) ? getComputedStyle(q(s)).backgroundColor : 'MISSING');
-        const color = s => (q(s) ? getComputedStyle(q(s)).color : 'MISSING');
+        const color = s => (q(s) ? getComputedStyle(q(s)).color : (q('.wd-topbar__menu .q-icon') ? getComputedStyle(q('.wd-topbar__menu .q-icon')).color : 'MISSING'));
         return {
           pillBg: bg('.wd-topbar__pill'),
           ovlBoxBg: bg('.wd-ovl__box'),
@@ -77,7 +77,7 @@ async function pinTheme(page, theme) {
           focusBg: bg('.wd-focus-toggle'),
           attribBg: bg('.maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib, .maplibregl-ctrl-bottom-left .maplibregl-ctrl-attrib'),
           dateBg: bg('.wd-topbar__date'),
-          pillInk: color('.wd-topbar__user'),
+          pillInk: color('.wd-topbar__user') !== 'MISS' ? color('.wd-topbar__user') : color('.wd-topbar__menu .q-icon'),
         };
       });
       const isDarkChip = c => c !== 'MISSING' && /rgb\(1[0-9], |rgb\(2[0-5], 2[0-5]|#11/.test(c) ? true : c.startsWith('rgb(17') || c.startsWith('rgb(1');

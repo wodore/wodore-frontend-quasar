@@ -123,7 +123,15 @@ const contentDrawerOpen = computed({
 // and the utility cluster can shift left and stay clear of the drawer
 watch(
   () => contentDrawerOpen.value,
-  open => document.body.classList.toggle('wd-sidepanel-open', !!open),
+  open => {
+    document.body.classList.toggle('wd-sidepanel-open', !!open);
+    // Actual drawer width — the control shift follows the real panel,
+    // not a hardcoded 330px that mismatched the 380/460px drawers
+    document.body.style.setProperty(
+      '--wd-drawer-w',
+      open ? `${$q.screen.gt.md ? 460 : 380}px` : '0px'
+    );
+  },
   { immediate: true }
 );
 
