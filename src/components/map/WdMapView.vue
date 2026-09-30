@@ -1007,6 +1007,17 @@ onMounted(() => {
   });
 });
 
+/** Handle overlay toggle from the control component */
+function onOverlayToggle(item: unknown): void {
+  const overlay = item as { name: string; active: boolean; style: { layers: Array<{ id: string }> } };
+  if (!mapRef.map) return;
+  for (const layer of overlay.style?.layers || []) {
+    if (mapRef.map.getLayer(layer.id)) {
+      mapRef.map.setLayoutProperty(layer.id, 'visibility', overlay.active ? 'visible' : 'none');
+    }
+  }
+}
+
 function onMapStyledata(e: MglEvent<'styledata'>) {
   //$q.loadingBar.start();
   console.debug('[onMapStyledata] Style data changed event', e);
@@ -1061,7 +1072,7 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
         <!-- Bottom-right: overlay strip above basemap (basemap opens LEFT) -->
         <q-page-sticky position="bottom-right" :offset="[12, 14]" style="z-index: 5">
           <div class="wd-map-ctl-col">
-            <WdOverlayControl />
+            <WdOverlayControl @toggle-layer="onOverlayToggle" />
             <WdBasemapControl />
           </div>
         </q-page-sticky>

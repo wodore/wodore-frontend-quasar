@@ -119,13 +119,13 @@ function addOverlay(overlay: OverlaySwitchItem): void {
   setOverlayVisibility(overlay);
 }
 
+const emit = defineEmits<{
+  toggleLayer: [item: OverlaySwitchItem];
+}>();
+
 function toggleLayer(item: OverlaySwitchItem): void {
   overlayStore.toggleOverlay(item);
-  if (item.active) {
-    addOverlay(item);
-  } else {
-    setOverlayVisibility(item);
-  }
+  emit('toggleLayer', item);
 }
 
 // Add all active overlays when the map is ready.
@@ -212,6 +212,8 @@ function hasFilters(overlayName: string): boolean {
             class="wd-ovl__row"
             :class="{ 'wd-ovl__row--active': item.active }"
             @click="toggleLayer(<OverlaySwitchItem>(item as unknown))"
+            @touchstart="onBoxTouchStart"
+            @touchend="onBoxTouchEnd"
           >
             <!-- Label + actions (LEFT of icon, only when expanded) -->
             <div v-if="expanded" class="wd-ovl__row-info">
@@ -313,6 +315,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   place-items: center;
   width: 48px;
   height: 48px;
+  contain: size; // prevent size change during icon rotation
   border-radius: 8px;
   border: 1px solid var(--wd-ctl-border);
   background: var(--wd-ctl-bg);
@@ -510,8 +513,9 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 // ── Icon (always at the right edge) ────────────────────────────────────
 .wd-ovl__icon {
   position: relative;
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
+  margin: 2px;
   display: grid;
   place-items: center;
   border-radius: 4px;
@@ -567,7 +571,7 @@ body.body--dark .wd-ovl__icon :deep(svg) {
   display: grid;
   place-items: center;
   height: 26px;
-  border-top: 1px solid var(--wd-ctl-border);
+  // no border — the box boundary is the visual edge
   background: var(--wd-ctl-bg);
   color: var(--wd-ctl-ink-soft);
   cursor: pointer;

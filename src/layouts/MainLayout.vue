@@ -28,7 +28,7 @@ import { useRequestProgress } from '@composables/useRequestProgress';
 import { getEnv } from '@services/runtimeEnv';
 
 // Initialize stores
-const authStore = useAuthStore();
+const _authStore = useAuthStore();
 const menuStore = useMapMenuStore();
 const contentStore = useMapContentStore();
 

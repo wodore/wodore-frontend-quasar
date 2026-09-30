@@ -127,6 +127,7 @@ body.body--dark .wd-bm__thumb {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: 4px; // inside the 2px border
 }
 
 .wd-bm__toggle {

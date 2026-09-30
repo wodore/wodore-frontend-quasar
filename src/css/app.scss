@@ -588,7 +588,7 @@ body.body--dark {
 .wd-topbar > * { pointer-events: auto; }
 
 .wd-topbar__pill {
-  flex: 1;
+  flex: none; // NOT full width — compact pill
   min-width: 0;
   display: flex;
   align-items: center;
@@ -674,6 +674,7 @@ body.body--dark {
 
 .wd-topbar__date {
   flex: none;
+  min-width: 100px; // give date room
   min-width: 0;
   display: flex;
   align-items: center;
@@ -1803,4 +1804,18 @@ body.capacitor .q-dialog__inner--maximized .q-card-actions {
 body.capacitor .q-dialog__backdrop {
   background: rgba(10, 18, 14, 0.98) !important;
   backdrop-filter: none !important;
+}
+
+/* Dark theme: date field in the pill needs light text */
+body.body--dark .wd-topbar__date {
+  background: rgba(52, 103, 81, 0.2);
+}
+
+body.body--dark .wd-topbar .wd-date-field .q-field__native,
+body.body--dark .wd-topbar .wd-date-field .q-field__prefix {
+  color: #a9f0d2 !important;
+}
+
+body.body--dark .wd-topbar input::placeholder {
+  color: rgba(169, 240, 210, 0.5);
 }
