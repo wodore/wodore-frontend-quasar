@@ -339,6 +339,12 @@ onBeforeUnmount(() => {
         <!-- Scroll fade: top -->
         <div class="wd-ovl__fade wd-ovl__fade--top" :class="{ 'wd-ovl__fade--hidden': scrollAtTop }" />
 
+        <!-- Scroll fade: bottom (subtle hint directly above the more button) -->
+        <div
+          class="wd-ovl__fade wd-ovl__fade--bottom"
+          :class="{ 'wd-ovl__fade--hidden': scrollAtBottom }"
+        />
+
         <!-- Rows: icon always at the right, label+actions appear when expanded -->
         <div
           class="wd-ovl__rows"
@@ -613,15 +619,14 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   }
 }
 
-// ── Scroll fade (top only) ────────────────────────────────────────────────
-// The bottom needs NO fade: rows clip mid-row directly above the more
-// button (natural scroll affordance) and a previous bottom band read as
-// a gap between the list and the chevron.
+// ── Scroll fades (top + bottom) ───────────────────────────────────────────
+// Tight 10px hints anchored to the box; they kiss the clipped row —
+// not a dead band. Hidden when the respective end is reached.
 .wd-ovl__fade {
   position: absolute;
   left: 0;
   right: 0;
-  height: 14px; // small hint, not a wall
+  height: 10px; // tight kiss, not a band
   opacity: 0.9;
   pointer-events: none;
   transition: opacity 0.25s $ease;
@@ -630,6 +635,11 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   &--top {
     top: 0; // mini: rows start at the box top
     background: linear-gradient(to bottom, var(--wd-ctl-bg), transparent);
+  }
+
+  &--bottom {
+    bottom: 27px; // directly above the more button
+    background: linear-gradient(to top, var(--wd-ctl-bg) 60%, transparent);
   }
 
   &--hidden {

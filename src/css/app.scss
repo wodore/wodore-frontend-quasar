@@ -592,10 +592,10 @@ body.body--dark {
 // ── The pill ────────────────────────────────────────────────────────────
 .wd-topbar__pill {
   flex: none;
-  max-width: calc(100vw - 140px); // leave room for the fullscreen button
+  max-width: calc(100vw - 24px); // fullscreen button is hidden in normal view
   display: flex;
   align-items: center;
-  height: 48px;
+  height: 52px; // taller pill — the date hero needs presence
   background: var(--wd-ctl-bg);
   border: 1px solid var(--wd-ctl-border);
   border-radius: 999px;
@@ -609,8 +609,8 @@ body.body--dark {
 // ── Search: icon-only (44px zone) ───────────────────────────────────────
 .wd-topbar__search {
   flex: none;
-  width: 40px; // matches the avatar zone — the pair reads as bookends
-  height: 40px;
+  width: 44px; // matches the avatar zone — the pair reads as bookends
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -628,8 +628,8 @@ body.body--dark {
     background: transparent !important;
     box-shadow: none !important;
     padding: 0 4px !important;
-    height: 40px;
-    min-height: 40px;
+    height: 44px;
+    min-height: 44px;
   }
 
   .q-field__control::before,
@@ -660,8 +660,8 @@ body.body--dark .wd-topbar__search-menu .text-icon {
 .wd-topbar__search-dialog {
   .q-btn,
   .q-btn .text-icon {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     color: #1c1c1c !important;
   }
 }
@@ -680,9 +680,8 @@ body.body--dark .wd-topbar__search-dialog .q-btn .text-icon {
 // 4px inset, 999px radius, tonal wash. No borders — the wash IS the shape.
 .wd-topbar__date {
   flex: 1 1 auto; // fills the pill between the icon bookends
-  max-width: 240px;
   min-width: 0;
-  height: 44px; // near full pill height (2px inset)
+  height: 46px; // 3px inset in the 52px pill
   margin: 0 2px;
   align-self: center;
   padding: 0;
@@ -697,9 +696,17 @@ body.body--dark .wd-topbar__search-dialog .q-btn .text-icon {
   height: 100%;
 }
 
-/* Steppers (desktop prev/next) stay hidden in the pill */
+/* Steppers (desktop prev/next) stay hidden in the pill; kill the dashed
+   field border WdSelectDate draws on its stepper wrapper */
 .wd-topbar__date .wd-input-button {
   display: none !important;
+}
+
+.wd-topbar__date .wd-date-stepper,
+.wd-topbar__date .wd-date-seg,
+.wd-topbar__date .wd-date-seg > div {
+  border: none !important;
+  outline: none !important;
 }
 
 .wd-date-btn {
@@ -728,15 +735,16 @@ body.body--dark .wd-topbar__search-dialog .q-btn .text-icon {
 }
 
 body.body--dark .wd-date-btn {
-  background: rgba(169, 240, 210, 0.14);
+  // crisp tonal step (solid pine lift) — alpha washes read as murk
+  background: #1a3a2b;
 
   &:active {
-    background: rgba(169, 240, 210, 0.2);
+    background: #20472f;
   }
 }
 
 body.body--dark .wd-date-btn:has(.wd-date-btn__day--empty) {
-  background: rgba(169, 240, 210, 0.09);
+  background: #163024;
 }
 
 .wd-date-btn__lines {
@@ -787,7 +795,7 @@ body.body--dark .wd-date-btn__day {
 }
 
 body.body--dark .wd-date-btn__date {
-  color: #dcf3e8;
+  color: #d9f0e4;
 
   &--empty {
     opacity: 0.72;
@@ -804,15 +812,15 @@ body.body--dark .wd-date-btn__date {
 }
 
 body.body--dark .wd-date-btn__icon {
-  color: #dcf3e8;
+  color: #ffffff; // match the avatar icon brightness
 }
 
 // ── Avatar / menu button (right edge) ───────────────────────────────────
 .wd-topbar__user {
   display: grid;
   place-items: center;
-  width: 40px; // same zone as the search icon — symmetric bookends
-  height: 40px;
+  width: 44px; // same zone as the search icon — symmetric bookends
+  height: 44px;
   border-radius: 50%;
   border: none;
   background: transparent;
@@ -858,7 +866,7 @@ body.body--dark .wd-date-btn__icon {
 // ── Progress bar rides below the pill ───────────────────────────────────
 .wd-topbar__progress {
   position: fixed;
-  top: calc(62px + env(safe-area-inset-top, 0px));
+  top: calc(66px + env(safe-area-inset-top, 0px));
   left: 24px;
   right: 24px;
   border-radius: 999px;

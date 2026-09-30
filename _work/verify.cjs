@@ -179,8 +179,11 @@ async function pinTheme(page, theme) {
       // right-edge alignment: ovl toggle, bm toggle, ovl box share the right edge
       const rEdges = [audit.ovlToggle.r, audit.bmToggle.r, audit.ovlBox.r];
       check(`${tag}: right edges aligned`, Math.max(...rEdges) - Math.min(...rEdges) <= 2, JSON.stringify(rEdges));
-      // pill never overlaps the focus button
-      check(`${tag}: pill clear of focus`, (audit.pill.r + 6) <= audit.focus.x || audit.pill.y > audit.focus.b, `pill.r=${audit.pill.r} focus.x=${audit.focus.x}`);
+      // pill never overlaps a VISIBLE focus button (mobile: hidden in
+      // normal view; in focus mode the pill is hidden — no co-existence)
+      if (mode === 'desktop') {
+        check(`${tag}: pill clear of focus`, (audit.pill.r + 6) <= audit.focus.x || audit.pill.y > audit.focus.b, `pill.r=${audit.pill.r} focus.x=${audit.focus.x}`);
+      }
       // focus button actually renders above the topbar
       const focusZ = await p.evaluate(() => {
         const el = document.querySelector('.wd-focus-toggle');
