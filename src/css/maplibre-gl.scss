@@ -310,16 +310,13 @@ body.body--dark .maplibregl-ctrl button .maplibregl-ctrl-icon {
 }
 
 /* ── Scale bar: centered at the top edge ──────────────────────────────── */
+/* Scale bar: centered at the top edge — position only, the original
+   gradient styling (line ~213) handles the visual appearance */
 .maplibregl-ctrl-top-left .maplibregl-ctrl-scale {
   position: fixed;
   top: calc(66px + env(safe-area-inset-top, 0px));
   left: 50%;
   transform: translateX(-50%);
-  border-color: rgba(28, 28, 28, 0.5) !important;
-  color: #1c1c1c;
-  font-size: 10px;
-  background: rgba(253, 254, 253, 0.7);
-  border-radius: 2px 2px 0 0;
 }
 
 /* ── Attribution: compact ⓘ icon, bottom-right before basemap ─────────── */
