@@ -74,7 +74,15 @@ const iconClose = new URL('/src/assets/wodore-design/icons/export/basemap-switch
       @click="open = !open"
     >
       <img
-        :src="open ? iconClose : iconOpen"
+        v-show="!open"
+        :src="iconOpen"
+        alt=""
+        class="wd-bm__toggle-icon wd-bm__toggle-icon--closed-icon"
+        :class="{ 'wd-bm__toggle-icon--hidden': open }"
+      />
+      <img
+        v-show="open"
+        :src="iconClose"
         alt=""
         class="wd-bm__toggle-icon"
         :class="{ 'wd-bm__toggle-icon--open': open }"
@@ -93,6 +101,11 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   justify-content: flex-end;
   gap: 6px;
   pointer-events: none; // map gestures pass through
+  -webkit-tap-highlight-color: transparent;
+
+  *:focus {
+    outline: none;
+  }
 }
 
 // ── Rail (opens LEFT) ────────────────────────────────────────────────────
@@ -172,6 +185,7 @@ body.body--dark .wd-bm__thumb {
 
 // ── Toggle (matches overlay toggle: 48px, 1px border) ───────────────────
 .wd-bm__toggle {
+  position: relative; // anchor for the stacked morph icons
   display: grid;
   place-items: center;
   width: 48px;
@@ -195,14 +209,33 @@ body.body--dark .wd-bm__thumb {
 }
 
 .wd-bm__toggle-icon {
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  inset: 8px;
+  width: calc(100% - 16px);
+  height: calc(100% - 16px);
   object-fit: contain;
-  transition: transform 0.35s $ease;
+  transition:
+    opacity 0.2s $ease,
+    transform 0.28s $ease;
 }
 
+// Morph: crossfade + scale (no rotation)
 .wd-bm__toggle-icon--open {
-  transform: rotate(360deg);
+  opacity: 1;
+  transform: scale(1);
+}
+
+.wd-bm__toggle-icon--hidden {
+  opacity: 0;
+  transform: scale(0.6);
+}
+
+.wd-bm__toggle-icon--closed-icon {
+  opacity: 1;
+  transform: scale(1);
+  transition:
+    opacity 0.2s $ease 0.06s,
+    transform 0.28s $ease 0.06s;
 }
 
 // ── Rail transition: slide in from the right (opening LEFT) ─────────────

@@ -254,7 +254,7 @@
     "one_man_project_term": "one-man project"
   },
   "select_date": {
-    "placeholder": "Select date",
+    "placeholder": "Availability",
     "error_title": "Oh no, nothing works anymore!",
     "error_restricted": "The SAC has restricted access!",
     "error_contact": "Feel free to",
@@ -264,7 +264,7 @@
     "alternative": "Alternatively:",
     "or": "or",
     "not_available": "Currently unavailable",
-    "placeholder_short": "Date"
+    "placeholder_short": "Availability"
   },
   "overlay_config": {
     "reset_done": "Settings reset",

@@ -135,13 +135,46 @@ async function pinTheme(page, theme) {
         check(`${tag}: GPS+nav merged (same x, stacked)`, layout.gps && layout.nav && Math.abs(layout.gps.x - layout.nav.x) < 2 && Math.abs(layout.nav.y - layout.gps.y - layout.gps.h) < 3, `gps=${JSON.stringify(layout.gps)} nav=${JSON.stringify(layout.nav)}`);
       }
 
-      // ── Screenshots for vision round ──
-      await p.screenshot({ path: `/tmp/v2-${tag}-base.png` });
+      // ── Close the basemap rail (outside-click design: panels are
+      //     mutually exclusive) so box geometry is measured clean ──
+      await p.evaluate('document.querySelector(".wd-bm__toggle")?.click()');
+      await p.waitForTimeout(500);
+
+      // ── Chip geometry (MINI state): equal gutters inside the 48px box ──
+      const geomMini = await p.evaluate(() => {
+        const box = document.querySelector('.wd-ovl__box')?.getBoundingClientRect();
+        const icon = document.querySelector('.wd-ovl__icon')?.getBoundingClientRect();
+        return { r: Math.round(box.right - icon.right), l: Math.round(icon.left - box.left), w: Math.round(icon.width) };
+      });
+      check(`${tag}: chip gutters equal (${geomMini.l}/${geomMini.r})`, geomMini.l === geomMini.r && geomMini.l <= 8, JSON.stringify(geomMini));
+
+      // ── Icons stay when expanding (box grows UP) ──
+      const iconYBefore = await p.evaluate('Math.round(document.querySelector(".wd-ovl__icon")?.getBoundingClientRect().y ?? -1)');
+      const iconXBefore = await p.evaluate('Math.round(document.querySelector(".wd-ovl__icon")?.getBoundingClientRect().x ?? -1)');
       await p.evaluate('document.querySelector(".wd-ovl__more")?.click()');
       await p.waitForTimeout(700);
+      const iconYAfter = await p.evaluate('Math.round(document.querySelector(".wd-ovl__icon")?.getBoundingClientRect().y ?? -1)');
+      const iconXAfter = await p.evaluate('Math.round(document.querySelector(".wd-ovl__icon")?.getBoundingClientRect().x ?? -1)');
+      check(`${tag}: icons stay on expand (y ${iconYBefore}→${iconYAfter})`, iconYBefore === iconYAfter && iconXBefore === iconXAfter);
+      // ── Screenshots for vision round ──
+      await p.screenshot({ path: `/tmp/v2-${tag}-base.png` });
       await p.screenshot({ path: `/tmp/v2-${tag}-expanded.png` });
       await p.evaluate('document.querySelector(".wd-bm__toggle")?.click()');
       await p.waitForTimeout(600);
+      const bmRot = await p.evaluate(() => {
+        const icons = [...document.querySelectorAll('.wd-bm__toggle-icon')];
+        if (!icons.length) return 'missing';
+        // rotation present iff matrix has non-zero b/c or a≠d (pure scale keeps them 0/equal)
+        return icons.some(i => {
+          const t = getComputedStyle(i).transform;
+          if (t === 'none') return false;
+          const m = t.match(/matrix\(([^)]+)\)/);
+          if (!m) return false;
+          const [a, b, c, d] = m[1].split(',').map(Number);
+          return Math.abs(b) > 0.001 || Math.abs(c) > 0.001 || Math.abs(a - d) > 0.001;
+        });
+      });
+      check(`${tag}: basemap toggle no rotation`, bmRot === false, String(bmRot));
       await p.screenshot({ path: `/tmp/v2-${tag}-basemap.png` });
       await p.evaluate('document.querySelector(".wd-focus-toggle")?.click()');
       await p.waitForTimeout(900);
@@ -172,6 +205,32 @@ async function pinTheme(page, theme) {
     await p.waitForTimeout(900);
     const focusAfterDoubleTap = await p.evaluate(() => document.body.classList.contains('wd-map-focus'));
     check('double-tap does NOT enter focus', focusAfterDoubleTap === false, String(focusAfterDoubleTap));
+
+    // PAN (drag): must NOT enter focus — synthetic touch pointer sequence
+    await p.evaluate(() => {
+      const el = document.querySelector('.wd-map-view') || document.querySelector('.maplibregl-map');
+      const opts = { bubbles: true, pointerType: 'touch', isPrimary: true };
+      el.dispatchEvent(new PointerEvent('pointerdown', { ...opts, clientX: 195, clientY: 420, pointerId: 1 }));
+      el.dispatchEvent(new PointerEvent('pointermove', { ...opts, clientX: 195, clientY: 380, pointerId: 1 }));
+      el.dispatchEvent(new PointerEvent('pointermove', { ...opts, clientX: 200, clientY: 300, pointerId: 1 }));
+      el.dispatchEvent(new PointerEvent('pointerup', { ...opts, clientX: 200, clientY: 300, pointerId: 1 }));
+    });
+    await p.waitForTimeout(900);
+    const focusAfterPan = await p.evaluate(() => document.body.classList.contains('wd-map-focus'));
+    check('pan does NOT enter focus', focusAfterPan === false, String(focusAfterPan));
+
+    // PINCH: second finger cancels
+    await p.evaluate(() => {
+      const el = document.querySelector('.wd-map-view') || document.querySelector('.maplibregl-map');
+      const opts = { bubbles: true, pointerType: 'touch', isPrimary: true };
+      el.dispatchEvent(new PointerEvent('pointerdown', { ...opts, clientX: 150, clientY: 400, pointerId: 1 }));
+      el.dispatchEvent(new PointerEvent('pointerdown', { ...opts, clientX: 240, clientY: 400, pointerId: 2 }));
+      el.dispatchEvent(new PointerEvent('pointerup', { ...opts, clientX: 150, clientY: 400, pointerId: 1 }));
+      el.dispatchEvent(new PointerEvent('pointerup', { ...opts, clientX: 240, clientY: 400, pointerId: 2 }));
+    });
+    await p.waitForTimeout(900);
+    const focusAfterPinch = await p.evaluate(() => document.body.classList.contains('wd-map-focus'));
+    check('pinch does NOT enter focus', focusAfterPinch === false, String(focusAfterPinch));
     // single tap: focus after 500ms
     await p.touchscreen.tap(195, 420);
     await p.waitForTimeout(900);

@@ -600,20 +600,19 @@ body.body--dark {
   border-radius: 999px;
   box-shadow: var(--wd-ctl-shadow);
   color: var(--wd-ctl-ink);
-  padding-left: 4px;
-  padding-right: 5px;
+  padding-left: 6px;
+  padding-right: 6px;
   gap: 2px;
 }
 
 // ── Search: icon-only (44px zone) ───────────────────────────────────────
 .wd-topbar__search {
   flex: none;
-  width: 44px;
+  width: 42px;
   height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-left: 2px;
 }
 
 // Desktop menu: collapse the q-input into an icon button

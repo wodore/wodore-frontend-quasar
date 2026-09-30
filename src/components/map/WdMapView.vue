@@ -982,24 +982,54 @@ function setMapFocus(on: boolean): void {
 let lastMapTapAt = 0;
 
 /**
- * Focus-mode tap detection via pointerdown — instant on touch, unlike
- * 'click' whose derivation lags and made double-taps register as two
- * single taps (MapLibre's doubleClickZoom also swallows dblclick).
+ * Focus-mode activation: a DELIBERATE single tap on empty map only.
+ *  - pan/drag: movement over 10px between down and up cancels
+ *  - pinch-zoom: a second pointer or wheel cancels
+ *  - taps on huts/markers/controls: ignored (cursor check + closest())
+ *  - double-tap (zoom): the second tap inside 450ms cancels
+ * The 500ms timer keeps the double-tap guard after a clean tap.
  */
+const tapDown = { x: 0, y: 0, t: 0, active: false };
+
+function cancelPendingTap(): void {
+  tapDown.active = false;
+  if (focusTapTimer) { clearTimeout(focusTapTimer); focusTapTimer = null; }
+}
+
 function onMapPointerDown(ev: MouseEvent): void {
+  if (!window.matchMedia('(max-width: 899px)').matches) return;
   const pointerType = (ev as unknown as { pointerType?: string }).pointerType;
   if (pointerType !== 'touch') return; // desktop has the explicit button
-  if (!window.matchMedia('(max-width: 899px)').matches) return;
   if ((ev.target as HTMLElement).closest('.maplibregl-ctrl, .maplibregl-popup, .q-page-sticky, .wd-focus-toggle')) return;
   const canvas = mapDiv.value?.querySelector('canvas');
   if (canvas && canvas.style.cursor === 'pointer') return;
 
+  // second finger = pinch, not a tap
+  if (tapDown.active) { cancelPendingTap(); return; }
+  tapDown.x = ev.clientX;
+  tapDown.y = ev.clientY;
+  tapDown.t = Date.now();
+  tapDown.active = true;
+}
+
+function onMapPointerMove(ev: MouseEvent): void {
+  if (!tapDown.active) return;
+  if (Math.hypot(ev.clientX - tapDown.x, ev.clientY - tapDown.y) > 10) {
+    cancelPendingTap(); // it's a pan
+  }
+}
+
+function onMapPointerUp(): void {
+  if (!tapDown.active) return;
+  tapDown.active = false;
   const now = Date.now();
+  // too slow = long-press, not a tap
+  if (now - tapDown.t > 400) { cancelPendingTap(); return; }
+
   if (now - lastMapTapAt < 450) {
     // Second tap of a double-tap (zoom intent):
     lastMapTapAt = 0;
-    if (focusTapTimer) { clearTimeout(focusTapTimer); focusTapTimer = null; }
-    // If focus was JUST turned on by the first tap, undo it
+    cancelPendingTap();
     if (mapFocus.value && now - lastFocusToggleAt < 900) {
       setMapFocus(false);
     }
@@ -1014,12 +1044,18 @@ function onMapPointerDown(ev: MouseEvent): void {
 }
 
 onMounted(() => {
-  mapDiv.value?.addEventListener('pointerdown', onMapPointerDown);
+  const el = mapDiv.value;
+  if (!el) return;
+  el.addEventListener('pointerdown', onMapPointerDown);
+  el.addEventListener('pointermove', onMapPointerMove);
+  el.addEventListener('pointerup', onMapPointerUp);
+  el.addEventListener('pointercancel', cancelPendingTap);
+  el.addEventListener('wheel', cancelPendingTap, { passive: true });
   // Safety net: if a dblclick DOES arrive, treat it the same way
-  mapDiv.value?.addEventListener('dblclick', () => {
+  el.addEventListener('dblclick', () => {
     lastMapTapAt = 0;
-    if (focusTapTimer) { clearTimeout(focusTapTimer); focusTapTimer = null; }
-    if (mapFocus.value && Date.now() - lastFocusToggleAt < 700) {
+    cancelPendingTap();
+    if (mapFocus.value && Date.now() - lastFocusToggleAt < 900) {
       setMapFocus(false);
     }
   });

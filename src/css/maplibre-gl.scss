@@ -163,8 +163,8 @@ body.body--dark .maplibregl-ctrl-group {
 //}
 
 .maplibregl-ctrl-group button {
-  height: 44px;
-  width: 44px;
+  height: 46px; /* 46 + 2px group border = 48px outer, matching the toggles */
+  width: 46px;
   display: block;
   padding: 0;
   outline: none;
@@ -180,8 +180,8 @@ body.body--dark .maplibregl-ctrl-group {
 
 @media (min-width: 900px) {
   .maplibregl-ctrl-group button {
-    height: 48px;
-    width: 48px;
+    height: 46px; /* keep 48px outer everywhere */
+    width: 46px;
   }
 }
 

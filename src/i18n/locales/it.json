@@ -254,7 +254,7 @@
     "one_man_project_term": "progetto di una sola persona"
   },
   "select_date": {
-    "placeholder": "Seleziona una data",
+    "placeholder": "Disponibilità",
     "error_title": "Ah cavolo, non funziona più nulla!",
     "error_restricted": "La CAS ha limitato l’accesso!",
     "error_contact": "Non esitare a",
@@ -264,7 +264,7 @@
     "alternative": "In alternativa:",
     "or": "o",
     "not_available": "Attualmente non disponibile",
-    "placeholder_short": "Data"
+    "placeholder_short": "Disponibilità"
   },
   "overlay_config": {
     "reset_done": "Impostazioni ripristinate",

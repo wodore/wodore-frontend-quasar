@@ -322,7 +322,8 @@ onBeforeUnmount(() => {
     <!-- ── THE BOX: mini strip (collapsed) or expanded (same box, wider) ── -->
     <Transition name="wd-ovl-strip">
       <div v-if="stripOpen" class="wd-ovl__box" :class="{ 'wd-ovl__box--expanded': expanded }">
-        <!-- Top toolbar: EXTENDED only (animates in/out with the box) -->
+        <!-- Top toolbar: EXTENDED only. The box grows UP by this height
+             (max-height compensates) so the icon rows NEVER move. -->
         <div v-if="expanded" class="wd-ovl__toolbar">
           <div class="wd-ovl__toolbar-actions">
             <!-- Future: group edit and other layer actions -->
@@ -343,8 +344,6 @@ onBeforeUnmount(() => {
           role="group"
           :aria-label="t('overlay_style')"
           @scroll.passive="onRowsScroll"
-          @touchstart.passive="onSwipeStart"
-          @touchend.passive="onSwipeEnd"
         >
           <div
             v-for="item in overlayStore.overlays"
@@ -355,7 +354,6 @@ onBeforeUnmount(() => {
               'wd-ovl__row--active': item.active,
               'wd-ovl__row--passive': !item.active,
             }"
-            @click="toggleLayer(<OverlaySwitchItem>(item as unknown))"
           >
             <!-- Label + actions (LEFT of icon, only when expanded) -->
             <div v-if="expanded" class="wd-ovl__row-info">
@@ -396,6 +394,9 @@ onBeforeUnmount(() => {
               :aria-label="item.label"
               role="button"
               :aria-pressed="item.active"
+              @click="toggleLayer(<OverlaySwitchItem>(item as unknown))"
+              @touchstart.passive="onSwipeStart"
+              @touchend.passive="onSwipeEnd"
             >
               <q-icon :name="layerIcon(item.icon)" size="20px" />
             </span>
@@ -466,6 +467,11 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   align-items: flex-end;
   gap: 2px;
   pointer-events: none; // map gestures pass through empty space
+  -webkit-tap-highlight-color: transparent;
+
+  *:focus {
+    outline: none;
+  }
 }
 
 // ── Toggle button (48px, colored icon) ──────────────────────────────────
@@ -529,7 +535,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   display: flex;
   flex-direction: column;
   width: 48px; // matches the basemap toggle width
-  max-height: min(60vh, 420px);
+  max-height: calc(min(60vh, 394px) + 26px); // rows + more button
   border-radius: 8px;
   border: 1px solid var(--wd-ctl-border);
   background: var(--wd-ctl-bg);
@@ -544,6 +550,9 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 
   &--expanded {
     width: 216px; // slightly narrower than before, titles clip
+    // Grow UP by the header height: the rows area keeps its exact size,
+    // so the icon chips stay pixel-fixed while the header appears above.
+    max-height: calc(min(60vh, 394px) + 26px + 28px);
     animation: wd-ovl-pop 0.28s $ease;
   }
 }
@@ -551,11 +560,11 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 // ── Top toolbar (space reserved in BOTH states — icons never move) ───────
 .wd-ovl__toolbar {
   flex: none;
-  height: 34px;
+  height: 28px;
   display: flex;
   align-items: center;
   padding: 0 8px;
-  min-height: 34px;
+  min-height: 28px;
   border-bottom: 1px solid var(--wd-ctl-border);
 }
 
@@ -597,7 +606,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   z-index: 2;
 
   &--top {
-    top: 34px; // below the toolbar
+    top: 28px; // below the toolbar
     background: linear-gradient(to bottom, var(--wd-ctl-bg) 78%, transparent);
   }
 
@@ -612,15 +621,18 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 }
 
 // ── Rows (scrollable) ────────────────────────────────────────────────────
+// FIXED height: identical in mini and expanded — the box grows UP by the
+// header height when expanding, so the icon chips never move a pixel.
 .wd-ovl__rows {
-  flex: 1;
+  flex: none;
+  height: calc(min(60vh, 394px));
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
   touch-action: pan-y;
   display: flex;
   flex-direction: column;
-  padding: 3px 3px 20px 3px;
+  padding: 2px 3px 20px 3px;
   scrollbar-width: none; // fades indicate scrollability
   -ms-overflow-style: none;
   &::-webkit-scrollbar {
@@ -635,18 +647,15 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   justify-content: flex-end;
   min-height: 40px;
   border-radius: 4px;
-  cursor: pointer;
-  pointer-events: auto; // rows are interactive
+  // Map gestures pass through the whole row EXCEPT the interactive chip
+  // and the action buttons — panning from a label works.
+  pointer-events: none;
   transition: background-color 0.12s $ease;
   flex: none;
   margin: 1px 0;
 
-  &:hover {
+  &:has(.wd-ovl__icon:hover) {
     background: var(--wd-ctl-hover);
-  }
-
-  &:active {
-    background: var(--wd-ctl-active-bg);
   }
 }
 
@@ -742,9 +751,9 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   position: relative;
   display: grid;
   place-items: center;
-  width: 36px;
+  width: 40px;
   height: 36px;
-  margin: 0 4px;
+  margin: 0;
   border-radius: 4px;
   border: 1px solid var(--wd-ctl-border);
   background: var(--wd-ctl-date-bg);
@@ -752,7 +761,8 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   transition:
     box-shadow 0.15s $ease,
     opacity 0.15s $ease;
-  pointer-events: none; // the ROW handles the click (avoid double-fire)
+  pointer-events: auto; // the CHIP is the toggle target
+  cursor: pointer;
 
   &--active {
     box-shadow: inset 0 0 0 2px var(--wd-ctl-ring);
