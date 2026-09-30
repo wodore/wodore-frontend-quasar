@@ -325,6 +325,7 @@ onBeforeUnmount(() => {
         <!-- Top toolbar: EXTENDED only. The box grows UP by this height
              (max-height compensates) so the icon rows NEVER move. -->
         <div v-if="expanded" class="wd-ovl__toolbar">
+          <span class="wd-ovl__toolbar-title">{{ t('overlay_style') }}</span>
           <div class="wd-ovl__toolbar-actions">
             <!-- Future: group edit and other layer actions -->
             <button class="wd-ovl__toolbar-btn" disabled aria-label="Reserved">
@@ -411,9 +412,6 @@ onBeforeUnmount(() => {
             </span>
           </div>
         </div>
-
-        <!-- Scroll fade: bottom -->
-        <div class="wd-ovl__fade wd-ovl__fade--bottom" :class="{ 'wd-ovl__fade--hidden': scrollAtBottom }" />
 
         <!-- More button: toggles the box between mini and expanded -->
         <button
@@ -577,10 +575,23 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   border-bottom: 1px solid var(--wd-ctl-border);
 }
 
+.wd-ovl__toolbar-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--wd-ctl-ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .wd-ovl__toolbar-actions {
   display: flex;
   gap: 4px;
-  width: 100%;
+  flex: none;
   pointer-events: auto;
 }
 
@@ -602,9 +613,10 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   }
 }
 
-// ── Scroll fades (absolute overlays on the rows viewport) ────────────────
-// Anchored to the box: below the toolbar (34px), above the more button
-// (27px). Absolute so they NEVER cover the more button or toolbar.
+// ── Scroll fade (top only) ────────────────────────────────────────────────
+// The bottom needs NO fade: rows clip mid-row directly above the more
+// button (natural scroll affordance) and a previous bottom band read as
+// a gap between the list and the chevron.
 .wd-ovl__fade {
   position: absolute;
   left: 0;
@@ -618,11 +630,6 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   &--top {
     top: 0; // mini: rows start at the box top
     background: linear-gradient(to bottom, var(--wd-ctl-bg), transparent);
-  }
-
-  &--bottom {
-    bottom: 27px; // above the more button
-    background: linear-gradient(to top, var(--wd-ctl-bg), transparent);
   }
 
   &--hidden {
@@ -715,6 +722,10 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   pointer-events: none;
   transition: color 0.15s $ease, font-weight 0.15s $ease;
 }
+body.body--dark .wd-ovl__row-name {
+  color: #cfe8dc; // brighter than ink-soft — passive but readable on pine
+}
+
 
 .wd-ovl__row--active .wd-ovl__row-name {
   font-weight: 600;

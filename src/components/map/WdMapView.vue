@@ -1034,7 +1034,7 @@ function onMapPointerUp(): void {
   // too slow = long-press, not a tap
   if (now - tapDown.t > 400) { cancelPendingTap(); return; }
 
-  if (now - lastMapTapAt < 450) {
+  if (now - lastMapTapAt < 400) {
     // Second tap of a double-tap (zoom intent):
     lastMapTapAt = 0;
     cancelPendingTap();
@@ -1048,7 +1048,7 @@ function onMapPointerUp(): void {
   focusTapTimer = setTimeout(() => {
     focusTapTimer = null;
     setMapFocus(!mapFocus.value);
-  }, 500);
+  }, 350);
 }
 
 onMounted(() => {
