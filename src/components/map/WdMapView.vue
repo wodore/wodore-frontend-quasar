@@ -1055,8 +1055,8 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
         </q-page-sticky>
 
         <!-- Top-right: GPS + compass + fullscreen (desktop zoom too) -->
-        <MglGeolocateControl position="top-right" />
-        <MglNavigationControl :show-zoom="!isMobileView()" position="top-right" />
+        <MglGeolocateControl :position="isMobileView() ? 'bottom-left' : 'top-right'" />
+        <MglNavigationControl :show-zoom="!isMobileView()" :position="isMobileView() ? 'bottom-left' : 'top-right'" />
 
         <!-- Bottom-left: attribution + scale only -->
         <MglAttributionControl position="bottom-left" />
