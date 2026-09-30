@@ -296,8 +296,13 @@ function onMapError(e: unknown) {
   // vector style (labels included — OpenFreeMap also serves the glyphs).
   // No user notification — the map simply keeps working. Weak-GPU devices
   // never get here: their raster variant is the keyless OSM raster.
-  if (!basemapFallbackDone && isTileAuthFailure(errorObj) && activeBasemapUsesMapTiler()) {
-    basemapFallbackDone = true;
+  // `activeBasemapUsesMapTiler()` is the re-trigger guard: after a switch
+  // the active basemap is the keyless Liberty (or OSM raster) style, so its
+  // errors cannot re-arm the fallback. A previously used one-shot flag made
+  // every LATER selection of a MapTiler basemap fail silently into "no
+  // change" — the user must always be able to re-select and get the
+  // graceful keyless fallback again.
+  if (isTileAuthFailure(errorObj) && activeBasemapUsesMapTiler()) {
     const candidates = basemapStore.basemaps as BasemapSwitchItem[];
     const fallback = candidates.find(b => b.name === 'openfreemap-liberty');
     if (fallback) {
@@ -314,8 +319,6 @@ function onMapError(e: unknown) {
   //console.error('[onMapError] Generic map error:', event.error);
   //showErrorDialog({ errorCode: ErrorCode.MAP_ERROR });
 }
-
-let basemapFallbackDone = false;
 
 function isTileAuthFailure(errorObj: Record<string, unknown> | undefined): boolean {
   const status = errorObj?.status as number | undefined;
