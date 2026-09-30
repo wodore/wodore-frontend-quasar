@@ -354,6 +354,7 @@ onBeforeUnmount(() => {
               'wd-ovl__row--active': item.active,
               'wd-ovl__row--passive': !item.active,
             }"
+            @click="toggleLayer(<OverlaySwitchItem>(item as unknown))"
           >
             <!-- Label + actions (LEFT of icon, only when expanded) -->
             <div v-if="expanded" class="wd-ovl__row-info">
@@ -394,7 +395,6 @@ onBeforeUnmount(() => {
               :aria-label="item.label"
               role="button"
               :aria-pressed="item.active"
-              @click="toggleLayer(<OverlaySwitchItem>(item as unknown))"
               @touchstart.passive="onSwipeStart"
               @touchend.passive="onSwipeEnd"
             >
@@ -609,8 +609,8 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   position: absolute;
   left: 0;
   right: 0;
-  height: 12px; // small hint, not a wall
-  opacity: 0.85;
+  height: 14px; // small hint, not a wall
+  opacity: 0.9;
   pointer-events: none;
   transition: opacity 0.25s $ease;
   z-index: 2;
@@ -647,7 +647,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   touch-action: pan-y;
   display: flex;
   flex-direction: column;
-  padding: 2px 3px 20px 3px;
+  padding: 2px 3px 4px 3px;
   // thin hairline scrollbar: visible hint, quiet against the chip bg
   scrollbar-width: thin;
   scrollbar-color: rgba(128, 145, 135, 0.35) transparent;
@@ -673,15 +673,20 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   justify-content: flex-end;
   min-height: 40px;
   border-radius: 4px;
-  // Map gestures pass through the whole row EXCEPT the interactive chip
-  // and the action buttons — panning from a label works.
-  pointer-events: none;
+  // The row is part of the PANEL — gestures inside the box scroll/toggle,
+  // they do not pan the map (the box wrapper still passes around itself).
+  pointer-events: auto;
+  cursor: pointer;
   transition: background-color 0.12s $ease;
   flex: none;
   margin: 1px 0;
 
-  &:has(.wd-ovl__icon:hover) {
+  &:hover {
     background: var(--wd-ctl-hover);
+  }
+
+  &:active {
+    background: var(--wd-ctl-active-bg);
   }
 }
 
@@ -772,8 +777,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   transition:
     box-shadow 0.15s $ease,
     opacity 0.15s $ease;
-  pointer-events: auto; // the CHIP is the toggle target
-  cursor: pointer;
+  pointer-events: none; // the ROW handles the click (single handler)
 
   &--active {
     box-shadow: inset 0 0 0 2px var(--wd-ctl-ring);
@@ -822,7 +826,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   min-height: 26px;
   border: none;
   border-top: 1px solid var(--wd-ctl-border);
-  background: var(--wd-ctl-date-bg);
+  background: transparent; // no tonal band against the rows above
   color: var(--wd-ctl-ink);
   cursor: pointer;
   flex: none;

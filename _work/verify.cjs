@@ -200,7 +200,7 @@ async function pinTheme(page, theme) {
       // ── INTERACTION: expanded box STAYS OPEN when selecting a layer ──
       await p.evaluate('document.querySelector(".wd-ovl__more")?.click()');
       await p.waitForTimeout(600);
-      await p.evaluate('document.querySelector(".wd-ovl__icon")?.click()');
+      await p.evaluate('document.querySelector(".wd-ovl__row")?.click()');
       await p.waitForTimeout(600);
       const stillExpanded = await p.evaluate('!!document.querySelector(".wd-ovl__box--expanded")');
       check(`${tag}: expanded stays open on select`, stillExpanded === true);

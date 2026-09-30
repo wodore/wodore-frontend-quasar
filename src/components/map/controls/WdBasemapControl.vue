@@ -135,12 +135,12 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 // ── Basemap buttons: full-bleed images, solid (no transparency) ─────────
 .wd-bm__btn {
   position: relative;
-  width: 46px; // + 2px shared border = 48px outer, same as the toggle
+  width: 46px; // + 2px border = 48px outer, same as the toggle
   height: 46px;
   scroll-snap-align: start;
   padding: 0;
-  border-radius: 4px;
-  border: 2px solid transparent; // reserve space for gold selection
+  border-radius: 8px; // matches the control radius ramp
+  border: 2px solid var(--wd-ctl-border); // defined edge in both themes
   background: var(--wd-ctl-bg);
   cursor: pointer;
   display: grid;
@@ -157,10 +157,6 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 
   &--active {
     border-color: #bfab25; // gold selection beam
-  }
-
-  &--inactive {
-    border-color: var(--wd-ctl-border);
   }
 }
 

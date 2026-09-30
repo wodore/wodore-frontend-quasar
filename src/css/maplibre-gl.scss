@@ -424,4 +424,9 @@ body.body--dark {
   .wd-bm__thumb {
     filter: brightness(0.72) saturate(0.9);
   }
+
+  // inactive thumbs: a hair more edge in dark
+  .wd-bm__btn--inactive {
+    border-color: rgba(169, 240, 210, 0.22);
+  }
 }

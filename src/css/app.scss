@@ -601,15 +601,15 @@ body.body--dark {
   border-radius: 999px;
   box-shadow: var(--wd-ctl-shadow);
   color: var(--wd-ctl-ink);
-  padding-left: 6px;
-  padding-right: 6px;
+  padding-left: 4px;
+  padding-right: 4px;
   gap: 2px;
 }
 
 // ── Search: icon-only (44px zone) ───────────────────────────────────────
 .wd-topbar__search {
   flex: none;
-  width: 42px;
+  width: 40px; // matches the avatar zone — the pair reads as bookends
   height: 40px;
   display: flex;
   align-items: center;
@@ -647,7 +647,7 @@ body.body--dark {
   .q-icon,
   .text-icon {
     color: #1c1c1c !important; // neutral day-ink (.text-icon utility is brand green)
-    font-size: 22px;
+    font-size: 19px; // optical match for the avatar's 20px stroke-2 glyph
   }
 }
 
@@ -675,9 +675,12 @@ body.body--dark .wd-topbar__search-dialog .q-btn .text-icon {
 // ── Date segment: plain 2-line BUTTON (no input field) ───────────────────
 // Design: Alpine Instrument — inset block, wash + hairline, dashed when
 // empty; line 1 day name (15/600/uppercase), line 2 date (12/400).
+// ── Date segment: full-radius sub-pill ON the main pill ──────────────────
+// The calendar sits as a second stadium-shaped panel inside the capsule:
+// 4px inset, 999px radius, tonal wash. No borders — the wash IS the shape.
 .wd-topbar__date {
   flex: 0 1 auto;
-  max-width: 200px;
+  max-width: 172px;
   min-width: 0;
   height: 40px; // 4px inset in the 48px pill
   margin: 0 2px;
@@ -703,28 +706,37 @@ body.body--dark .wd-topbar__search-dialog .q-btn .text-icon {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
   height: 100%;
-  padding: 0 12px 0 12px;
-  border: 1px solid var(--wd-ctl-border);
-  border-radius: 4px;
-  background: rgba(17, 33, 25, 0.06); // light: pine wash
+  padding: 0 14px 0 14px;
+  border: none;
+  border-radius: 999px; // second full-radius panel
+  background: rgba(17, 33, 25, 0.07); // light: pine wash
   cursor: pointer;
   transition: background-color 0.12s ease-out;
   -webkit-tap-highlight-color: transparent;
 
   &:active {
-    background: rgba(17, 33, 25, 0.12);
+    background: rgba(17, 33, 25, 0.14);
   }
 }
 
+// Empty state: whisper wash (no dashed outline — reads unfinished)
+.wd-date-btn:has(.wd-date-btn__day--empty) {
+  background: rgba(17, 33, 25, 0.045);
+}
+
 body.body--dark .wd-date-btn {
-  background: rgba(169, 240, 210, 0.08);
+  background: rgba(169, 240, 210, 0.1);
 
   &:active {
-    background: rgba(169, 240, 210, 0.14);
+    background: rgba(169, 240, 210, 0.16);
   }
+}
+
+body.body--dark .wd-date-btn:has(.wd-date-btn__day--empty) {
+  background: rgba(169, 240, 210, 0.06);
 }
 
 .wd-date-btn__lines {
@@ -732,22 +744,22 @@ body.body--dark .wd-date-btn {
   flex-direction: column;
   justify-content: center;
   min-width: 0;
-  line-height: 1.1;
+  line-height: 1.12;
   text-align: left;
 }
 
 .wd-date-btn__day {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #1c1c1c; // day-ink
+  letter-spacing: 0.07em;
+  color: #1c1c1c;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 
   &--empty {
-    opacity: 0.6;
+    opacity: 0.62;
   }
 }
 
@@ -756,22 +768,26 @@ body.body--dark .wd-date-btn {
   font-weight: 400;
   letter-spacing: 0.03em;
   color: #1c1c1c;
-  opacity: 0.7;
+  opacity: 0.66;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 
   &--empty {
-    opacity: 0.45;
+    opacity: 0.42;
   }
 }
 
 body.body--dark .wd-date-btn__day {
-  color: #f2f7f4; // paper white
+  color: #eef7f2;
 }
 
 body.body--dark .wd-date-btn__date {
-  color: #f2f7f4;
+  color: #eef7f2;
+
+  &--empty {
+    opacity: 0.6; // was 0.42 — too close to the wash floor in dark
+  }
 }
 
 .wd-date-btn__icon {
@@ -784,20 +800,15 @@ body.body--dark .wd-date-btn__date {
 }
 
 body.body--dark .wd-date-btn__icon {
-  color: #a9f0d2;
-}
-
-// Empty state: dashed hairline reads "unfilled"
-.wd-date-btn:has(.wd-date-btn__day--empty) {
-  border-style: dashed;
+  color: #cdeee0;
 }
 
 // ── Avatar / menu button (right edge) ───────────────────────────────────
 .wd-topbar__user {
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
+  width: 40px; // same zone as the search icon — symmetric bookends
+  height: 40px;
   border-radius: 50%;
   border: none;
   background: transparent;
@@ -2049,7 +2060,7 @@ body.body--dark .preview-badge {
     transform: translateX(-330px);
   }
   body.wd-sidepanel-open .maplibregl-ctrl-top-right {
-    margin-right: 330px;
+    transform: translateX(-330px); // transform, not margin (no layout thrash)
   }
   body.wd-sidepanel-open .wd-focus-toggle {
     transform: translateX(-330px);
@@ -2060,7 +2071,7 @@ body.body--dark .preview-badge {
 .wd-topbar__utils,
 .maplibregl-ctrl-top-right,
 .wd-focus-toggle {
-  transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1), margin-right 0.25s cubic-bezier(0.2, 0, 0, 1);
+  transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1);
 }
 
 /* Dark: focus toggle gets a light hairline so it never blends away */
@@ -2087,4 +2098,15 @@ body.body--dark .preview-badge {
 
 body.body--dark .wd-topbar__user {
   color: #f2f7f4;
+}
+
+/* Dark: the elevation kill strips shadows — give the pill and map chips a
+   mint ridge so they separate from the pale basemap. */
+body.body--dark .wd-topbar__pill,
+body.body--dark .wd-ovl__box,
+body.body--dark .wd-ovl__toggle,
+body.body--dark .wd-bm__toggle,
+body.body--dark .wd-bm__rail,
+body.body--dark .wd-focus-toggle {
+  border-color: rgba(169, 240, 210, 0.16);
 }
