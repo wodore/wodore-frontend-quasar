@@ -242,14 +242,29 @@ function hasFilters(overlayName: string): boolean {
 </template>
 
 <style lang="scss" scoped>
+// ══════════════════════════════════════════════════════════════════════
+// WdOverlayControl — polished per the Alpine Instrument design system
+//
+// Craft notes:
+// - Typography: Barlow Semi Condensed for labels, uppercase + tracking
+// - Color: gold = beam (active ring only), turquoise = info, muted ink
+// - Radius: 8px box / 4px controls (the canonical ramp)
+// - Shadow: one soft shadow (hybrid exception for chrome over map)
+// - Motion: cubic-bezier(0.2, 0, 0, 1) everywhere, 220–350ms
+// - Touch: 44px targets, press scale(0.96)
+// ══════════════════════════════════════════════════════════════════════
+
+$ease: cubic-bezier(0.2, 0, 0, 1);
+
+// ── Container ────────────────────────────────────────────────────────────
 .wd-ovl {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 4px;
+  gap: 3px;
 }
 
-// ── Toggle button (48px, bottom of the stack) ───────────────────────────
+// ── Toggle button (48px, colored icon) ──────────────────────────────────
 .wd-ovl__toggle {
   display: grid;
   place-items: center;
@@ -260,38 +275,45 @@ function hasFilters(overlayName: string): boolean {
   background: var(--wd-ctl-bg);
   cursor: pointer;
   box-shadow: var(--wd-ctl-shadow);
-  transition: background-color 0.15s ease;
+  transition:
+    background-color 0.15s $ease,
+    transform 0.1s $ease;
   flex: none;
-  padding: 6px;
-  order: 2; // below the box
+  order: 2;
+  padding: 8px;
+  outline: none;
 
-  &:hover { background: var(--wd-ctl-hover); }
+  &:hover {
+    background: var(--wd-ctl-hover);
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+
+  &:focus-visible {
+    box-shadow:
+      var(--wd-ctl-shadow),
+      0 0 0 2px var(--wd-ctl-ring);
+  }
 }
 
 .wd-ovl__toggle-icon {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  transition: transform 0.35s cubic-bezier(0.2, 0, 0, 1);
+  transition: transform 0.35s $ease;
 }
 
 .wd-ovl__toggle-icon--open {
   transform: rotate(360deg);
 }
 
-// ── THE BOX (mini = 48px wide, expanded = ~280px, SAME box) ────────────
-// When expanded, the box covers map area. The container itself is
-// transparent to touches (pointer-events: none) so map gestures pass
-// through — only the interactive rows and buttons capture events.
-.wd-ovl__box--expanded {
-  pointer-events: none;
-
-  // re-enable on interactive children
-  .wd-ovl__row,
-  .wd-ovl__more {
-    pointer-events: auto;
-  }
-}
+// ── THE BOX ──────────────────────────────────────────────────────────────
+// One surface for mini and expanded modes. The box grows LEFT (wider)
+// when expanded — icons stay at the right edge.
+// pointer-events: none on the expanded container lets map gestures pass
+// through the empty space; rows and buttons re-enable them.
 
 .wd-ovl__box {
   display: flex;
@@ -302,20 +324,23 @@ function hasFilters(overlayName: string): boolean {
   box-shadow: var(--wd-ctl-shadow);
   overflow: hidden;
   flex: none;
-  order: 1; // above the toggle
-
-  // collapsed: narrow strip (icons only)
+  order: 1;
   width: 48px;
 
-  // expanded: same box, wider — icons stay at the RIGHT
-  &--expanded {
-    width: min(280px, 70vw);
-  }
+  transition: width 0.22s $ease;
 
-  // animate width change
-  transition: width 0.25s cubic-bezier(0.2, 0, 0, 1);
+  &--expanded {
+    width: min(280px, 72vw);
+    pointer-events: none;
+
+    .wd-ovl__row,
+    .wd-ovl__more {
+      pointer-events: auto;
+    }
+  }
 }
 
+// ── Rows container ───────────────────────────────────────────────────────
 .wd-ovl__rows {
   display: flex;
   flex-direction: column;
@@ -324,50 +349,64 @@ function hasFilters(overlayName: string): boolean {
   overflow-x: hidden;
   scrollbar-width: none;
   &::-webkit-scrollbar { display: none; }
-}
 
-// collapsed: fade hint at bottom
-.wd-ovl__rows {
+  // scroll hint fades the last visible icon (mini mode only)
   .wd-ovl__box:not(.wd-ovl__box--expanded) & {
-    mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 88%, transparent 98%);
+    -webkit-mask-image: linear-gradient(to bottom, black 88%, transparent 98%);
   }
 }
 
-// ── Row: icon at RIGHT, info fills LEFT when expanded ──────────────────
+// ── Row: icon at RIGHT, info at LEFT when expanded ─────────────────────
 .wd-ovl__row {
   display: flex;
   align-items: center;
-  justify-content: flex-end; // icon pushed right
+  justify-content: flex-end;
   min-height: 44px;
   cursor: pointer;
   flex: none;
   width: 100%;
+  border-radius: 4px;
+  margin: 0 1px;
+  transition: background-color 0.12s $ease;
 
   &:hover {
-    background: rgba(128, 128, 128, 0.06);
+    background: rgba(0, 0, 0, 0.04);
+
+    .wd-ovl__icon { opacity: 1; }
+  }
+
+  &:active {
+    background: rgba(0, 0, 0, 0.06);
   }
 }
 
-// expanded rows: info takes remaining space
+// expanded rows: label first (left), icon last (right)
 .wd-ovl__box--expanded .wd-ovl__row {
-  padding: 0 4px;
-  gap: 8px;
-  justify-content: flex-start; // info on left, icon on right (natural DOM order)
+  padding: 0 2px 0 10px;
+  gap: 6px;
+  justify-content: flex-start;
 }
 
-// ── Info section (only when expanded) ────────────────────────────────────
+// ── Info section (label + actions, only when expanded) ─────────────────
 .wd-ovl__row-info {
-  display: none; // hidden in mini mode
+  display: none;
 
   .wd-ovl__box--expanded & {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     flex: 1;
     min-width: 0;
     overflow: hidden;
+    // stagger the reveal — labels fade in slightly after the box widens
+    animation: wd-ovl-info-in 0.2s $ease 0.08s both;
   }
+}
+
+@keyframes wd-ovl-info-in {
+  from { opacity: 0; transform: translateX(-6px); }
+  to   { opacity: 1; transform: none; }
 }
 
 .wd-ovl__row-name {
@@ -376,11 +415,12 @@ function hasFilters(overlayName: string): boolean {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 13px;
-  font-weight: 500;
+  font: 500 13px/1.3 'Barlow Semi Condensed', 'Barlow', sans-serif;
+  letter-spacing: 0.02em;
   color: var(--wd-ctl-ink);
 }
 
+// filter badge (turquoise, not gold — gold is the active beam only)
 .wd-ovl__row-filter-badge {
   width: 16px;
   height: 16px;
@@ -393,8 +433,8 @@ function hasFilters(overlayName: string): boolean {
 }
 
 .wd-ovl__row-action {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border: none;
   border-radius: 4px;
   background: transparent;
@@ -403,14 +443,19 @@ function hasFilters(overlayName: string): boolean {
   display: grid;
   place-items: center;
   flex: none;
+  transition: background-color 0.1s $ease, color 0.1s $ease;
 
   &:hover {
-    background: rgba(128, 128, 128, 0.1);
-    color: var(--wd-ctl-ink);
+    background: rgba(0, 0, 0, 0.06);
+    color: #29626b; // turquoise (info accent)
+  }
+
+  &:active {
+    transform: scale(0.95);
   }
 }
 
-// ── Icon button (always at the right edge) ──────────────────────────────
+// ── Icon (always at the right edge) ────────────────────────────────────
 .wd-ovl__icon {
   position: relative;
   width: 44px;
@@ -420,67 +465,89 @@ function hasFilters(overlayName: string): boolean {
   border-radius: 4px;
   flex: none;
   color: var(--wd-ctl-ink);
-  transition: box-shadow 0.12s ease, opacity 0.12s ease;
+  transition: box-shadow 0.15s $ease, opacity 0.15s $ease;
 }
 
+// inactive: quiet — the icon recedes
 .wd-ovl__icon--inactive {
-  opacity: 0.65;
+  opacity: 0.5;
 }
 
+// active: gold inset ring (the beam — one gold accent per view)
 .wd-ovl__icon--active {
-  box-shadow: inset 0 0 0 3px var(--wd-ctl-ring);
+  box-shadow: inset 0 0 0 2px var(--wd-ctl-ring);
   opacity: 1;
 }
 
+// hover lifts the icon out of the inactive fade
 .wd-ovl__row:hover .wd-ovl__icon {
+  opacity: 0.85;
+}
+
+.wd-ovl__row:hover .wd-ovl__icon--active {
   opacity: 1;
 }
 
+// mini filter badge (top-right corner of the icon)
 .wd-ovl__mini-badge {
   position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 14px;
-  height: 14px;
-  border-radius: 4px;
+  top: 3px;
+  right: 3px;
+  width: 13px;
+  height: 13px;
+  border-radius: 3px;
   background: #2673bf;
   color: #fdfefd;
   display: grid;
   place-items: center;
+  font-size: 7px;
 }
 
-// ── More/close button at bottom of box ──────────────────────────────────
+// ── More / close button ────────────────────────────────────────────────
 .wd-ovl__more {
   display: grid;
   place-items: center;
-  height: 24px;
+  height: 26px;
   border-top: 1px solid var(--wd-ctl-border);
-  background: transparent;
+  background: var(--wd-ctl-bg);
   color: var(--wd-ctl-ink-soft);
   cursor: pointer;
   flex: none;
   width: 100%;
+  border-radius: 0 0 8px 8px; // match box bottom corners
+  transition: background-color 0.12s $ease, color 0.12s $ease;
 
   &:hover {
-    background: rgba(128, 128, 128, 0.08);
+    background: var(--wd-ctl-hover);
     color: var(--wd-ctl-ink);
+  }
+
+  &:active {
+    background: rgba(0, 0, 0, 0.06);
   }
 }
 
-// ── Box collapse animation ───────────────────────────────────────────────
-.wd-ovl-strip-enter-active,
+// ── Collapse animation (box slides down toward the toggle) ─────────────
+.wd-ovl-strip-enter-active {
+  transition:
+    opacity 0.2s $ease,
+    transform 0.2s $ease,
+    max-height 0.2s $ease;
+  max-height: 600px;
+}
+
 .wd-ovl-strip-leave-active {
   transition:
-    opacity 0.18s cubic-bezier(0.2, 0, 0, 1),
-    transform 0.18s cubic-bezier(0.2, 0, 0, 1),
-    max-height 0.18s cubic-bezier(0.2, 0, 0, 1);
+    opacity 0.15s $ease,
+    transform 0.15s $ease,
+    max-height 0.15s $ease;
   max-height: 600px;
 }
 
 .wd-ovl-strip-enter-from,
 .wd-ovl-strip-leave-to {
   opacity: 0;
-  transform: translateY(8px);
+  transform: translateY(6px);
   max-height: 0;
 }
 </style>
