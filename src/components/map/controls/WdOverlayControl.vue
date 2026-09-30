@@ -585,7 +585,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   background: transparent;
   color: var(--wd-ctl-ink-soft);
   cursor: pointer;
-  opacity: 0.55; // reserved placeholder
+  opacity: 0.8; // reserved placeholder
   pointer-events: none; // disabled until functionality lands
 
   &:hover:not(:disabled) {
@@ -710,27 +710,24 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   }
 
   &--info {
-    color: #2a8a72; // turquoise touch (info = "learn more")
+    color: #1f7a63; // turquoise touch (info = "learn more")
   }
 
-  // Active filter: the button itself turns gold (no extra badge)
+  // Active filter: subtle gold ring only — icon keeps its ink (a full
+  // gold treatment read as an error state on dark pine)
   &--filtered {
-    color: #bfab25;
-
     &::after {
       content: '';
       position: absolute;
       inset: 2px;
       border-radius: 4px;
-      box-shadow: inset 0 0 0 1.5px rgba(191, 171, 37, 0.55);
+      box-shadow: inset 0 0 0 1.5px rgba(191, 171, 37, 0.7);
       pointer-events: none;
     }
   }
 
-  body.body--dark & {
-    &--info {
-      color: #4fd1b5;
-    }
+  body.body--dark &--info {
+    color: #7fe3c8;
   }
 }
 
@@ -779,11 +776,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   }
 }
 
-// Dark theme: brighten the colored SVGs on the pine chip
-body.body--dark .wd-ovl__icon :deep(img),
-body.body--dark .wd-ovl__icon :deep(svg) {
-  filter: brightness(2.4) saturate(1.5);
-}
+// Dark theme icon inversion lives in app.scss (global invert treatment)
 
 // ── More button (chevron, more obvious) ─────────────────────────────────
 .wd-ovl__more {

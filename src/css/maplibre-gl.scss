@@ -194,7 +194,7 @@ body.body--light .maplibregl-ctrl button .maplibregl-ctrl-icon {
 }
 
 body.body--dark .maplibregl-ctrl button .maplibregl-ctrl-icon {
-  filter: brightness(1.5) invert(0.85);
+  filter: invert(1);
 }
 
 .maplibregl-ctrl button .maplibregl-ctrl-icon {
@@ -324,7 +324,7 @@ body.body--light .maplibregl-ctrl button .maplibregl-ctrl-icon {
 }
 
 body.body--dark .maplibregl-ctrl button .maplibregl-ctrl-icon {
-  filter: brightness(1.5) invert(0.85);
+  filter: invert(1);
 }
 
 /* Force square corners on MapLibre buttons (their CSS uses pill shapes) */
@@ -407,18 +407,23 @@ body.body--dark .maplibregl-ctrl button .maplibregl-ctrl-icon {
 
 /* ── Dark theme fixes ──────────────────────────────────────────────────── */
 body.body--dark {
-  // compass: the south half of the stock glyph is near-black on pine
-  .maplibregl-ctrl button.maplibregl-ctrl-compass .maplibregl-ctrl-icon {
-    filter: brightness(1.6);
+  // MapLibre stock glyphs are dark SVGs — invert to white on pine
+  .maplibregl-ctrl-icon {
+    filter: invert(1);
   }
 
   // attribution ⓘ glyph: light ink
   .maplibregl-ctrl-attrib .maplibregl-ctrl-attrib-button {
-    filter: brightness(2.2) saturate(0.6);
+    filter: invert(1);
   }
 
   // attribution links readable on the pine chip
   .maplibregl-ctrl-attrib a {
     color: #a9f0d2 !important;
+  }
+
+  // basemap thumbnails: dim the light map previews
+  .wd-bm__thumb {
+    filter: brightness(0.72) saturate(0.9);
   }
 }

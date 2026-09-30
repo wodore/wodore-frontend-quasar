@@ -178,10 +178,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   color: var(--wd-ctl-ink-soft);
 }
 
-// Dark theme: brighten thumbnails
-body.body--dark .wd-bm__thumb {
-  filter: brightness(1.15) saturate(1.1);
-}
+// Dark theme: thumbnails dimmed (global rule in maplibre-gl.scss)
 
 // ── Toggle (matches overlay toggle: 48px, 1px border) ───────────────────
 .wd-bm__toggle {

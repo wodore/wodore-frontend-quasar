@@ -678,10 +678,11 @@ body.body--dark {
 }
 
 body.body--dark .wd-topbar__date {
-  background: rgba(52, 103, 81, 0.28);
+  background: rgba(169, 240, 210, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(169, 240, 210, 0.16);
 
   &:hover {
-    background: rgba(52, 103, 81, 0.4);
+    background: rgba(169, 240, 210, 0.14);
   }
 }
 
@@ -872,13 +873,20 @@ body.body--dark .wd-topbar__date {
     right: 14px;
   }
 
-  // Mobile: always visible top-right, just below the pill
+  // Mobile: TOP-RIGHT on the pill's row — clearly discoverable
   @media (max-width: 899px) {
     opacity: 1;
     pointer-events: auto;
     transform: none;
-    top: calc(66px + env(safe-area-inset-top, 0px));
+    top: calc(11px + env(safe-area-inset-top, 0px));
     right: 12px;
+    width: 46px;
+    height: 46px;
+  }
+
+  // Very narrow screens: drop below the pill instead of overlapping it
+  @media (max-width: 359px) {
+    top: calc(66px + env(safe-area-inset-top, 0px));
   }
 
   &:active {
@@ -1982,15 +1990,21 @@ body.body--dark .wd-topbar .wd-date-field .q-field__prefix {
 }
 
 body.body--dark .wd-topbar input::placeholder {
-  color: rgba(169, 240, 210, 0.5);
+  color: rgba(169, 240, 210, 0.85);
 }
 
-/* Dark theme: overlay icons + basemap toggle graphic readable on pine.
-   The colored exports are designed for light backgrounds — push them hard. */
+/* Overlay icons are silhouette SVGs (black default fill / currentColor).
+   Light: dark ink on white chips. Dark: INVERTED to white — brightness
+   alone cannot lift pure black. Mono treatment keeps the set consistent. */
+.wd-ovl__icon .q-icon {
+  color: #22302a; // currentColor icons match the black silhouettes
+}
+
 body.body--dark .wd-ovl__icon img,
 body.body--dark .wd-ovl__icon .q-icon,
 body.body--dark .wd-bm__toggle-icon {
-  filter: brightness(2.4) saturate(1.5);
+  filter: invert(1);
+  color: #000000; // pure black source → clean white after invert
 }
 
 /* Dark theme: mute the staging preview ribbon */
@@ -2022,4 +2036,23 @@ body.body--dark .preview-badge {
 .maplibregl-ctrl-top-right,
 .wd-focus-toggle {
   transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1), margin-right 0.25s cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Dark: focus toggle gets a light hairline so it never blends away */
+body.body--dark .wd-focus-toggle {
+  border-color: rgba(169, 240, 210, 0.28);
+}
+
+/* Preview badge: dark-mode variant (was tan/gold, illegible) */
+body.body--dark .preview-badge {
+  background: rgba(17, 33, 25, 0.9);
+  color: #a9f0d2;
+  border: 1px solid rgba(169, 240, 210, 0.3);
+  opacity: 0.9;
+}
+
+/* Dark theme: dim the (light) basemap canvas — DOM markers are unaffected;
+   canvas-drawn hut symbols dim with the tiles but stay visible. */
+body.body--dark .maplibregl-canvas {
+  filter: brightness(0.72) saturate(0.85);
 }

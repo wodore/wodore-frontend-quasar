@@ -130,7 +130,8 @@ async function pinTheme(page, theme) {
         check(`${tag}: GPS below focus`, (layout.gps?.y ?? 0) > 70, `gps.y=${layout.gps?.y}`);
       } else {
         check(`${tag}: pill centered`, Math.abs((layout.pill.x) - (390 - layout.pill.x - layout.pill.w)) < 12, `x=${layout.pill?.x} w=${layout.pill?.w}`);
-        check(`${tag}: focus top-right below pill`, layout.focus?.y >= 60 && layout.focus?.x > 320, JSON.stringify(layout.focus));
+        const pillRow = layout.pill?.y ?? 0;
+      check(`${tag}: focus top-right on pill row`, Math.abs((layout.focus?.y ?? -99) - pillRow) < 14 && (layout.focus?.x ?? 0) > 320, JSON.stringify(layout.focus));
         check(`${tag}: GPS above nav`, (layout.gps?.y ?? 999) < (layout.nav?.y ?? 0), `gps=${layout.gps?.y} nav=${layout.nav?.y}`);
         check(`${tag}: GPS+nav merged (same x, stacked)`, layout.gps && layout.nav && Math.abs(layout.gps.x - layout.nav.x) < 2 && Math.abs(layout.nav.y - layout.gps.y - layout.gps.h) < 3, `gps=${JSON.stringify(layout.gps)} nav=${JSON.stringify(layout.nav)}`);
       }
