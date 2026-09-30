@@ -39,12 +39,12 @@ const expanded = ref(false);
 let swipeStartX: number | null = null;
 
 function onBoxTouchStart(e: Event): void {
-  swipeStartX = (e as TouchEvent).touches[0]?.clientX ?? null;
+  swipeStartX = (e as unknown as { touches: Array<{ clientX: number }> }).touches[0]?.clientX ?? null;
 }
 
 function onBoxTouchEnd(e: Event): void {
   if (swipeStartX === null) return;
-  const endX = (e as TouchEvent).changedTouches[0]?.clientX ?? swipeStartX;
+  const endX = (e as unknown as { changedTouches: Array<{ clientX: number }> }).changedTouches[0]?.clientX ?? swipeStartX;
   const delta = endX - swipeStartX;
   swipeStartX = null;
   // swipe left (delta < -30) → expand; swipe right (delta > 30) → collapse
@@ -163,7 +163,7 @@ function openConfig(overlayName: string, tab?: string): void {
 
 function hasInfo(overlayName: string): boolean {
   const overlay = overlayStore.overlays.find(o => o.name === overlayName);
-  return !!(overlay?.config?.legend?.length);
+  return !!(overlay?.config?.legend?.sections?.length);
 }
 
 function hasFilters(overlayName: string): boolean {
@@ -520,6 +520,13 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   flex: none;
   color: var(--wd-ctl-ink);
   transition: box-shadow 0.15s $ease, opacity 0.15s $ease;
+}
+
+// dark theme: the SVG icons are drawn for light surfaces — brighten
+// them on the pine chip so they stay readable against the bright map
+body.body--dark .wd-ovl__icon :deep(img),
+body.body--dark .wd-ovl__icon :deep(svg) {
+  filter: brightness(1.4) saturate(1.2);
 }
 
 // inactive: quiet — the icon recedes

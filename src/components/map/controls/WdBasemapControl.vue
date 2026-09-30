@@ -109,6 +109,11 @@ function selectBasemap(name: string): void {
   flex: none;
 }
 
+// dark theme: brighten thumbnails on pine chips
+body.body--dark .wd-bm__thumb {
+  filter: brightness(1.2);
+}
+
 .wd-bm__btn--inactive {
   opacity: 0.85;
 }
