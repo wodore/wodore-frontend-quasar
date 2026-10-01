@@ -102,7 +102,7 @@ onBeforeUnmount(() => {
       @pointerdown.stop
     >
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
-        <path d="M6 14l6-6 6 6" />
+        <path d="M12 5v14M5 12h14" />
       </svg>
     </button>
 
@@ -117,7 +117,7 @@ onBeforeUnmount(() => {
       @pointerdown.stop
     >
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
-        <path d="M6 10l6 6 6-6" />
+        <path d="M5 12h14" />
       </svg>
     </button>
     </div>
@@ -140,8 +140,8 @@ onBeforeUnmount(() => {
   flex-direction: column;
   align-items: flex-end;
   justify-content: center;
-  width: 48px; // touch zone = mini-button width; the visual pill is slimmer
-  min-height: 264px; // touch zone ≥ 2x the visual pill height
+  width: 44px; // touch zone; the visual pill is slimmer
+  min-height: 220px; // generous vertical grab zone
   padding: 0;
   background: transparent;
   cursor: grab;
@@ -163,8 +163,8 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 20px;
-  padding: 4px 0;
+  width: 18px;
+  padding: 3px 0;
   border: 1px solid var(--wd-ctl-border);
   border-right: none; // flush to the screen edge
   border-radius: 999px 0 0 999px;
@@ -200,7 +200,7 @@ body.body--dark .wd-zoom__pill {
   position: relative;
   width: 100%;
   flex: 1;
-  min-height: 56px;
+  min-height: 42px;
   margin: 2px 0;
   pointer-events: none; // the pill handles the drag
 }

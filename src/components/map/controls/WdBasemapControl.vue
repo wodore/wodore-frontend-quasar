@@ -136,21 +136,22 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 // Overlay-mini chip style: 4px radius, 1px hairline border, tonal bg;
 // the ACTIVE state is a gold inset RING (the selection beam) — same
 // visual language as the overlay chips.
+// Owner spec: gray hairline by default, GOLD border when selected,
+// padding inside so the image breathes.
 .wd-bm__btn {
   position: relative;
   width: 46px;
   height: 46px;
   scroll-snap-align: start;
-  padding: 0;
+  padding: 3px; // image breathes inside the border
   border-radius: 4px;
-  border: 1px solid transparent; // overlay-chip look: no hard border
-  background: var(--wd-ctl-date-bg);
+  border: 1px solid var(--wd-ctl-border); // gray hairline
+  background: var(--wd-ctl-bg);
   cursor: pointer;
   display: grid;
   place-items: center;
   overflow: hidden;
   transition:
-    box-shadow 0.15s $ease,
     border-color 0.15s $ease,
     transform 0.1s $ease;
   flex: none;
@@ -160,15 +161,13 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   }
 
   &--active {
-    box-shadow: inset 0 0 0 2px #bfab25; // gold selection beam
-    border-color: transparent;
+    border: 2px solid #bfab25; // gold selection border
+    padding: 2px; // keep the image size stable
   }
 }
 
 body.body--dark .wd-bm__btn--active {
-  box-shadow: inset 0 0 0 2px #d4c23a !important; // escapes the dark elevation kill
-  border-color: transparent;
-  border-width: 0;
+  border-color: #d4c23a; // brighter gold on pine
 }
 
 .wd-bm__thumb {

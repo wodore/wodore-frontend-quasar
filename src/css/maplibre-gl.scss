@@ -464,3 +464,11 @@ body.body--dark {
 .maplibregl-ctrl-attrib .maplibregl-ctrl-attrib-button:focus-visible {
   outline: none;
 }
+
+/* Mobile: MapLibre's own attribution is hidden INSTANTLY (the JS swap at
+   map-load showed it expanded at the wrong spot, then it "jumped") */
+@media (max-width: 899px) {
+  .maplibregl-control-container .maplibregl-ctrl-attrib {
+    display: none !important;
+  }
+}

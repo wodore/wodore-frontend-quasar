@@ -2174,15 +2174,18 @@ body.wd-map-focus .wd-zoom {
   display: flex !important;
 }
 
+/* Desktop focus mode shows the slider TOO now (owner request) — the
+   classic zoom buttons are hidden with the rest of the chrome. */
 @media (min-width: 900px) {
   body.wd-map-focus .wd-zoom {
-    display: none !important; // desktop keeps the classic zoom buttons
+    display: flex !important;
   }
 }
 
 /* ── Mobile attribution: fully owned chip (MapLibre's markup is hidden —
       hit-testing inside the PE-none control container never worked) ── */
 .wd-attrib {
+  animation: wd-attrib-in 0.25s ease-out; /* fade in when ready */
   position: fixed;
   left: calc(68px + env(safe-area-inset-left, 0px)); /* beside the GPS cluster */
   bottom: calc(12px + env(safe-area-inset-bottom, 0px));
@@ -2257,4 +2260,25 @@ body.wd-map-focus .wd-zoom {
 body.wd-map-focus .wd-attrib {
   left: calc(12px + env(safe-area-inset-left, 0px));
   bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+}
+
+@keyframes wd-attrib-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Open mode: the "i" becomes a BIG round close button (taps were
+   hitting links — the target was tiny) */
+.wd-attrib--open .wd-attrib__i {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 999px;
+  background: rgba(128, 145, 135, 0.14);
 }

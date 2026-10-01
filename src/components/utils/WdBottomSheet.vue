@@ -210,7 +210,16 @@ defineExpose({ onContentChanged });
 
 <style scoped>
 bottom-sheet {
-  z-index: 10;
+  /* On top of ALL floating map chrome (topbar 2000, attribution/zoom/
+     focus chips 2010) — the sheet is the primary surface when open */
+  z-index: 3000;
+}
+
+/* Sheet TOP edge: fine hairline against the map — without it the sheet
+   surface merges with the content behind (owner report). */
+bottom-sheet::part(content) {
+  border-top: 1px solid rgba(128, 145, 135, 0.22);
+  box-shadow: 0 -4px 14px rgba(10, 20, 15, 0.08);
 }
 
 bottom-sheet::part(footer) {
