@@ -143,7 +143,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   width: 46px;
   height: 46px;
   scroll-snap-align: start;
-  padding: 3px; // image breathes inside the border
+  padding: 5px; // overlay-chip rhythm — image breathes inside the border
   border-radius: 4px;
   border: 1px solid var(--wd-ctl-border); // gray hairline
   background: var(--wd-ctl-bg);
@@ -162,7 +162,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 
   &--active {
     border: 2px solid #bfab25; // gold selection border
-    padding: 2px; // keep the image size stable
+    padding: 4px; // keep the image size stable
   }
 }
 

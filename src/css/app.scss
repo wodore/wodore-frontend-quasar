@@ -2207,13 +2207,18 @@ body.wd-map-focus .wd-zoom {
     outline: none;
   }
 
-  // plain italic serif "i" — the chip IS the circle
+  // plain italic serif "i" — the chip IS the circle. When OPEN the
+  // glyph swaps to a close ✕ (tapping closes).
   .wd-attrib__i {
     font-family: Georgia, 'Times New Roman', serif;
     font-style: italic;
     font-size: 16px;
     font-weight: 600;
     line-height: 1;
+
+    .wd-attrib__close {
+      display: none;
+    }
   }
 
   .wd-attrib__text {
@@ -2281,4 +2286,12 @@ body.wd-map-focus .wd-attrib {
   flex: none;
   border-radius: 999px;
   background: rgba(128, 145, 135, 0.14);
+
+  .wd-attrib__info {
+    display: none;
+  }
+
+  .wd-attrib__close {
+    display: block;
+  }
 }
