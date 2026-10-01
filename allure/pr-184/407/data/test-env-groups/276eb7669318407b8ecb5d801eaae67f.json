@@ -1,0 +1,1 @@
+{"id":"276eb7669318407b8ecb5d801eaae67f","fullName":"wodore:tests/unit/local-properties-store.spec.ts#local-properties-store force-saves immediately without waiting for the debounce","name":"force-saves immediately without waiting for the debounce","status":"passed","testResultsByEnv":{"default":"a9650a73e3d9b4ad60c2e10b1c64233a"}}
