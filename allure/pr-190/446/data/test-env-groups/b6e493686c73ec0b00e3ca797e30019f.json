@@ -1,0 +1,1 @@
+{"id":"b6e493686c73ec0b00e3ca797e30019f","fullName":"wodore:tests/unit/thumbhash.spec.ts#thumbhashDataUrl returns null for missing or malformed hashes","name":"returns null for missing or malformed hashes","status":"passed","testResultsByEnv":{"default":"f74dec9e76058ca4dffe5399a4ee9024"}}
