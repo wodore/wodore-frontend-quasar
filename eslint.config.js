@@ -8,7 +8,7 @@ import prettier from 'eslint-config-prettier';
 export default [
   // Ignore patterns (replaces .eslintignore)
   {
-    ignores: ['_work/**', 
+    ignores: ['_work/**', 'scripts/interaction-suite.cjs', 
       '**/dist/**',
       '**/src-capacitor/**',
       '**/src-cordova/**',

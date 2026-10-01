@@ -1,5 +1,9 @@
-// Floating topbar: search | date (highlight) | avatar ─────────────────────
-// One fully-rounded pill (999px). The DATE segment carries the visual
+// ══════════════════════════════════════════════════════════════════════
+// TOPBAR — floating search/date/menu pill
+// GLOBAL because: targets MainLayout DOM + injected WdPlaceSearchMenu
+// (Quasar q-fields inside the pill) + WdSelectDate's button — three
+// components' DOM from one visual surface.
+// ══════════════════════════════════════════════════════════════════════
 // weight (green wash); search is icon-only; avatar opens the menu.
 
 .wd-topbar {

@@ -1,3 +1,10 @@
+// ══════════════════════════════════════════════════════════════════════
+// LAYOUT — control column wrapper, focus toggle, focus-mode choreography
+// GLOBAL because: the focus-mode rules fly out elements across MULTIPLE
+// components (topbar, overlay box, MapLibre corners) from one body class.
+// ══════════════════════════════════════════════════════════════════════
+@use 'chip' as chip;
+
 // ── Map control column (bottom-right) ───────────────────────────────────
 // pointer-events: none on ALL wrappers — interactive elements inside the
 // controls opt back in with pointer-events: auto, so map gestures (pan,
@@ -20,18 +27,10 @@
 
 // ── Focus (fullscreen) mode toggle button ────────────────────────────────
 .wd-focus-toggle {
-  position: absolute;
+  @include chip.control;
+  position: absolute; // OVERRIDES the mixin's relative (this floats over the map)
   z-index: 2010; // above the topbar (2000) when fixed-positioned on mobile
-  display: grid;
-  place-items: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
-  border: 1px solid var(--wd-ctl-border);
-  background: var(--wd-ctl-bg);
   color: var(--wd-ctl-ink);
-  box-shadow: var(--wd-ctl-shadow);
-  cursor: pointer;
   opacity: 0;
   pointer-events: none;
   transform: translateY(-6px);

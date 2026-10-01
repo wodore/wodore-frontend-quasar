@@ -1,3 +1,9 @@
+// ══════════════════════════════════════════════════════════════════════
+// DARK overrides — theme-specific rules for ALL map chrome at once
+// GLOBAL because: one `body.body--dark` block styles elements across
+// every control component; splitting it per-component would scatter
+// the theming logic.
+// ══════════════════════════════════════════════════════════════════════
 /* Dark theme: date field in the pill needs light text */
 body.body--dark .wd-topbar__date {
   background: rgba(52, 103, 81, 0.2);

@@ -511,6 +511,7 @@ onBeforeUnmount(() => {
 </template>
 
 <style lang="scss" scoped>
+@use '../../../css/map-controls/chip' as chip;
 // ══════════════════════════════════════════════════════════════════════
 // WdOverlayControl v4 — Alpine Instrument polish
 //
@@ -538,27 +539,9 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 
 // ── Toggle button (48px, colored icon) ──────────────────────────────────
 .wd-ovl__toggle {
-  position: relative; // anchor for the stacked absolute morph icons
-  display: grid;
-  place-items: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
-  border: 1px solid var(--wd-ctl-border);
-  background: var(--wd-ctl-bg);
-  cursor: pointer;
-  box-shadow: var(--wd-ctl-shadow);
-  transition:
-    background-color 0.15s $ease,
-    transform 0.1s $ease;
-  flex: none;
+  @include chip.control; // 48px recipe — single source in _chip.scss
   padding: 8px;
-  outline: none;
   pointer-events: auto;
-
-  &:active {
-    transform: scale(0.96);
-  }
 
   .wd-ovl__toggle-icon {
     position: absolute;

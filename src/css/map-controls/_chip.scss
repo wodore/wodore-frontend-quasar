@@ -1,0 +1,57 @@
+// Shared chip recipe for map controls — the ONE place the 48px/40px
+// instrument language is defined. Consumed by WdOverlayControl,
+// WdBasemapControl, WdMapView (focus toggle), WdZoomSlider.
+//
+// Usage in a component's <style lang="scss" scoped>:
+//   @use '../../../css/map-controls/chip' as chip;
+//   .my-toggle { @include chip.control(48px); }
+
+// ── Control chip: 48px square toggle button (overlay, basemap, focus) ───
+@mixin control($size: 48px) {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: $size;
+  height: $size;
+  border-radius: 8px;
+  border: 1px solid var(--wd-ctl-border);
+  background: var(--wd-ctl-bg);
+  cursor: pointer;
+  box-shadow: var(--wd-ctl-shadow);
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  flex: none;
+  transition:
+    background-color 0.15s cubic-bezier(0.2, 0, 0, 1),
+    transform 0.1s cubic-bezier(0.2, 0, 0, 1);
+
+  &:active {
+    transform: scale(0.96);
+  }
+
+  *:focus {
+    outline: none;
+  }
+}
+
+// ── Inner chip: 40px layer icon inside a control box ────────────────────
+@mixin inner($size: 40px) {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: $size;
+  height: 36px;
+  border-radius: 4px;
+  border: 1px solid var(--wd-ctl-border);
+  background: var(--wd-ctl-date-bg);
+  flex: none;
+  transition:
+    box-shadow 0.15s cubic-bezier(0.2, 0, 0, 1),
+    opacity 0.15s cubic-bezier(0.2, 0, 0, 1);
+  pointer-events: none; // the ROW handles the click
+}
+
+// ── Dark ridge: the elevation kill strips shadows — borders separate ────
+@mixin dark-ridge($alpha: 0.16) {
+  border-color: rgba(169, 240, 210, $alpha);
+}

@@ -92,6 +92,7 @@ const iconClose = new URL('/src/assets/wodore-design/icons/export/basemap-switch
 </template>
 
 <style lang="scss" scoped>
+@use '../../../css/map-controls/chip' as chip;
 $ease: cubic-bezier(0.2, 0, 0, 1);
 
 .wd-bm {
@@ -188,27 +189,9 @@ body.body--dark .wd-bm__btn--active {
 
 // ── Toggle (matches overlay toggle: 48px, 1px border) ───────────────────
 .wd-bm__toggle {
-  position: relative; // anchor for the stacked morph icons
-  display: grid;
-  place-items: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
-  border: 1px solid var(--wd-ctl-border);
-  background: var(--wd-ctl-bg);
-  cursor: pointer;
-  box-shadow: var(--wd-ctl-shadow);
-  transition:
-    background-color 0.15s $ease,
-    transform 0.1s $ease;
-  flex: none;
+  @include chip.control; // 48px recipe — single source in _chip.scss
   padding: 8px;
-  outline: none;
   pointer-events: auto;
-
-  &:active {
-    transform: scale(0.96);
-  }
 }
 
 .wd-bm__toggle-icon {
