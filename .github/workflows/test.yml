@@ -118,8 +118,9 @@ jobs:
               > allure-results/history/history.json
           fi
 
-      # allure@3 (Allure Report 3): the allure-action reads the v3 summary
-      # format; the v2 allure-commandline report is not parseable by it
+      # allure-commandline v2: produces a static HTML report with DIRECT
+      # file links to attachments — works on GitHub Pages sub-paths.
+      # (allure@3 SPA falls back to blob: URLs on GH Pages → broken screenshots)
       - name: Generate Allure report (unit + interaction/e2e)
         if: always()
         run: |
@@ -127,7 +128,7 @@ jobs:
           mkdir -p allure-results/merged
           if [ -d allure-results/unit ]; then cp -R allure-results/unit/. allure-results/merged/; fi
           if [ -d allure-results/e2e ]; then cp -R allure-results/e2e/. allure-results/merged/; fi
-          npx -y allure@3 generate allure-results/merged
+          npx -y allure-commandline generate allure-results/merged --clean
 
       - name: Upload Playwright artifacts (traces + failure screenshots)
         if: always()
