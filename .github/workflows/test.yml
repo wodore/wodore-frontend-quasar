@@ -75,6 +75,17 @@ jobs:
       - name: Run unit tests
         run: rm -rf allure-results && yarn test:unit
 
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Wait for dev server
+        run: |
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:9000/ > /dev/null && break
+            sleep 5
+          done
+          curl -sf http://localhost:9000/ > /dev/null || (echo "Dev server not ready" && exit 1)
+
       - name: Run interaction tests (map controls)
         run: |
           yarn playwright test tests/interaction/ --project=interaction
