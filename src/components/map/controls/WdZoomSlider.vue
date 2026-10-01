@@ -190,19 +190,6 @@ body.body--dark .wd-zoom {
   pointer-events: none; // the pill handles the drag
 }
 
-// hairline track line
-.wd-zoom__track::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 8%;
-  bottom: 8%;
-  width: 2px;
-  transform: translateX(-50%);
-  border-radius: 999px;
-  background: var(--wd-ctl-border);
-}
-
 .wd-zoom__thumb {
   position: absolute;
   left: 50%;
@@ -210,11 +197,11 @@ body.body--dark .wd-zoom {
   height: 10px;
   transform: translate(-50%, -50%);
   border-radius: 999px;
-  background: #bfab25; // gold beam — the active/selection accent
+  background: rgba(191, 171, 37, 0.72); // gold beam, slightly translucent
   box-shadow: 0 0 0 2px var(--wd-ctl-bg);
 }
 
 body.body--dark .wd-zoom__thumb {
-  background: #d4c23a; // brighter gold on pine
+  background: rgba(212, 194, 58, 0.78); // brighter gold on pine
 }
 </style>

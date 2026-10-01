@@ -1013,18 +1013,6 @@ body.wd-map-focus {
   .maplibregl-ctrl-top-left .maplibregl-ctrl-scale {
     top: calc(12px + env(safe-area-inset-top, 0px));
   }
-  // Mobile: attribution moves to the RIGHT border in focus mode
-  // (the bottom-left corner belongs to the zoom slider)
-  @media (max-width: 899px) {
-    .maplibregl-ctrl-bottom-left .maplibregl-ctrl-attrib {
-      position: fixed; // viewport anchor — the corner container is tiny
-      left: calc(12px + env(safe-area-inset-left, 0px));
-      right: auto;
-      top: auto;
-      bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-      transform: none;
-    }
-  }
   .wd-focus-toggle {
     opacity: 1; pointer-events: auto; transform: none;
     // Mobile: the exit lives bottom-right (where the overlay toggle
