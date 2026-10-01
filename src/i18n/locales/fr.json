@@ -466,5 +466,8 @@
   "api_version_unsupported_native": "Cette version de l'application n'est plus prise en charge par le serveur. Veuillez mettre à jour l'application.",
   "api_version_unsupported_web": "Cette version n'est plus prise en charge par le serveur. Veuillez recharger la page.",
   "api_version_reload": "Recharger",
-  "api_version_update": "Mettre à jour l'appli"
+  "api_version_update": "Mettre à jour l'appli",
+  "app_update_ready": "Une nouvelle version de l'application a été téléchargée et est prête.",
+  "app_update_restart": "Redémarrer maintenant",
+  "app_update_stale_banner": "Cette version de l'application est très en retard — veuillez mettre à jour l'application."
 }
