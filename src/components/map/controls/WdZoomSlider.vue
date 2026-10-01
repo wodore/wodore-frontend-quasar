@@ -80,6 +80,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+  <!-- outer div = 44px touch zone; the inner pill is the slim visual -->
   <div
     class="wd-zoom"
     :class="{ 'wd-zoom--dragging': dragging }"
@@ -93,6 +94,7 @@ onBeforeUnmount(() => {
     @pointerup="onPointerUp"
     @pointercancel="onPointerUp"
   >
+    <div class="wd-zoom__pill">
     <button
       class="wd-zoom__step"
       aria-label="Zoom in"
@@ -118,6 +120,7 @@ onBeforeUnmount(() => {
         <path d="M6 10l6 6 6-6" />
       </svg>
     </button>
+    </div>
   </div>
 </template>
 
@@ -135,14 +138,10 @@ onBeforeUnmount(() => {
   z-index: 2010;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  width: 44px; // full grab zone
-  padding: 4px 0;
-  border: 1px solid var(--wd-ctl-border);
-  border-right: none; // docked flush to the screen edge
-  border-radius: 999px 0 0 999px; // pill protruding from the right
-  background: var(--wd-ctl-bg);
-  color: var(--wd-ctl-ink);
+  align-items: flex-end;
+  width: 44px; // generous TOUCH zone — the visual pill is slimmer
+  padding: 0;
+  background: transparent;
   cursor: grab;
   touch-action: none; // we own the gesture
   user-select: none;
@@ -157,8 +156,22 @@ onBeforeUnmount(() => {
   }
 }
 
+// slim translucent visual pill docked to the edge
+.wd-zoom__pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 26px;
+  padding: 4px 0;
+  border: 1px solid var(--wd-ctl-border);
+  border-right: none; // flush to the screen edge
+  border-radius: 999px 0 0 999px;
+  background: color-mix(in srgb, var(--wd-ctl-bg) 82%, transparent);
+  color: var(--wd-ctl-ink);
+}
+
 // Dark: mint ridge (the elevation kill strips shadows)
-body.body--dark .wd-zoom {
+body.body--dark .wd-zoom__pill {
   border-color: rgba(169, 240, 210, 0.28);
 }
 

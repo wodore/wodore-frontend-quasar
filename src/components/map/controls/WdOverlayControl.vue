@@ -749,7 +749,14 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 
 @media (min-width: 900px) {
   .wd-ovl__scrollthumb {
-    width: 2px; // hairline always visible on desktop
+    width: 1.5px; // hairline always visible on desktop
+  }
+}
+
+/* Mobile: no scrollbar — the fades carry the affordance */
+@media (max-width: 899px) {
+  .wd-ovl__scrollthumb {
+    display: none;
   }
 }
 

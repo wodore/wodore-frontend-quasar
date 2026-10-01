@@ -972,12 +972,25 @@ function onLayerLeave(e: MapLayerEventType['mouseleave']) {
 const mapFocus = ref(false);
 let focusTapTimer: ReturnType<typeof setTimeout> | null = null;
 let lastFocusToggleAt = 0;
+/** State before the current rapid-toggle pair — a double-tap reverts to it */
+let focusPairOrigin: boolean | null = null;
 
 function setMapFocus(on: boolean): void {
   if (focusTapTimer) { clearTimeout(focusTapTimer); focusTapTimer = null; }
+  const now = Date.now();
+  // Rapid pair (double-tap): the second toggle reverts to the ORIGINAL
+  // state instead of flickering exit→enter (or enter→exit).
+  if (now - lastFocusToggleAt < 700 && focusPairOrigin !== null && focusPairOrigin !== on) {
+    mapFocus.value = focusPairOrigin;
+    document.body.classList.toggle('wd-map-focus', focusPairOrigin);
+    focusPairOrigin = null;
+    lastFocusToggleAt = 0;
+    return;
+  }
+  focusPairOrigin = mapFocus.value;
   mapFocus.value = on;
   document.body.classList.toggle('wd-map-focus', on);
-  if (on) lastFocusToggleAt = Date.now();
+  lastFocusToggleAt = now;
 }
 
 let lastMapTapAt = 0;
@@ -1099,9 +1112,15 @@ onMounted(() => {
  *  strip it once so the ⓘ starts collapsed — tapping it then works. */
 function collapseAutoExpandedAttribution(): void {
   window.setTimeout(() => {
-    document
-      .querySelectorAll('.maplibregl-ctrl-attrib.maplibregl-compact-show')
-      .forEach(el => el.classList.remove('maplibregl-compact-show'));
+    document.querySelectorAll('.maplibregl-ctrl-attrib').forEach(el => {
+      el.classList.remove('maplibregl-compact-show');
+      // Wire a ROBUST toggle: stop the tap from reaching the map (it was
+      // falling through and triggering focus mode) and flip the state.
+      // NOTE: no stopPropagation here — capture-phase blocking killed the
+      // native <summary> toggle (open/close). Taps on the attribution are
+      // already excluded from focus mode by the .maplibregl-ctrl guard in
+      // onMapPointerDown (the event bubbles, but the guard matches).
+    });
   }, 800);
 }
 

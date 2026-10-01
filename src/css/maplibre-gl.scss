@@ -356,13 +356,18 @@ body.body--dark .maplibregl-ctrl button .maplibregl-ctrl-icon {
    Mobile: compact round ⓘ chip, bottom-right, lifted clear of the
    basemap toggle. Desktop: full text chip, bottom-left, above the scale. */
 @media (max-width: 899px) {
-  /* Mobile attribution: DEFAULT MapLibre compact behavior (ⓘ chip,
-     tap to expand) — only the theme colors are adapted (rules above).
-     It renders LOWEST in the corner stack (DOM order puts it first),
-     same low position in normal and focus mode. */
+  /* Mobile attribution: DEFAULT MapLibre compact look (ⓘ chip, tap to
+     expand — toggle wired in WdMapView). Sits BESIDE the GPS/nav cluster
+     on the bottom row: the corner becomes a row wrapper for it. */
   .maplibregl-ctrl-bottom-left .maplibregl-ctrl-attrib {
-    order: 10;
-    margin-top: 8px;
+    position: absolute;
+    left: 56px; /* 12px corner + 48px cluster + 8px gap */
+    bottom: 0;
+    top: auto;
+    order: 0;
+    margin: 0;
+    pointer-events: auto; /* taps must never fall through to the map */
+    z-index: 2;
   }
 }
 @media (min-width: 900px) {
