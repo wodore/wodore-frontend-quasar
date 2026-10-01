@@ -164,6 +164,10 @@ export default configure(ctx => {
         // condition in index.html (the docker image must NOT set it: it
         // decides per-environment in entrypoint.sh).
         WODORE_SEO_NOINDEX: process.env.WODORE_SEO_NOINDEX || '',
+        // Build flag, not a runtime value: opts the PWA build into the
+        // external /env.js (docker) — read by the EJS condition in
+        // index.html.
+        WODORE_EXTERNAL_ENV: process.env.WODORE_EXTERNAL_ENV || '',
       },
       // rawDefine: {}
       // ignorePublicFolder: true,
@@ -309,11 +313,14 @@ export default configure(ctx => {
       // Exclude index.html from precache to ensure fresh version via NetworkFirst
       extendInjectManifestOptions(options) {
         // Ignore index.html so it's not added to the precache manifest
-        // This allows the NavigationRoute with NetworkFirst to handle it
+        // This allows the NavigationRoute with NetworkFirst to handle it.
+        // Same for env.js (runtime env, rewritten at container start):
+        // a precached env.js would serve stale env values to offline/PWA
+        // clients — it must always come from the network (no-store).
         if (!options.globIgnores) {
           options.globIgnores = [];
         }
-        options.globIgnores.push('index.html');
+        options.globIgnores.push('index.html', 'env.js');
       },
       // swFilename: 'sw.js',
       // manifestFilename: 'manifest.json'
