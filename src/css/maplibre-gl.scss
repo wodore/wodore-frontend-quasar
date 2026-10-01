@@ -361,20 +361,30 @@ body.body--dark .maplibregl-ctrl button .maplibregl-ctrl-icon {
    Mobile: compact round ⓘ chip, bottom-right, lifted clear of the
    basemap toggle. Desktop: full text chip, bottom-left, above the scale. */
 @media (max-width: 899px) {
-  /* Mobile: round ⓘ chip ABOVE the GPS cluster (bottom-left corner).
-     Collapsed = small circle; tapping expands to full text (max-width). */
+  /* Mobile: round ⓘ chip BESIDE the GPS/nav cluster (bottom-left) —
+     vertically centered on the stack, 8px to its right. Collapsed =
+     small circle; tapping expands to full text (no clipping). */
   .maplibregl-ctrl-bottom-left .maplibregl-ctrl-attrib {
-    order: -1; /* above the GPS/nav groups in the flex column */
-    margin: 0 0 8px;
+    position: absolute;
+    left: 56px; /* 12px corner + 48px cluster + 8px gap */
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0;
     min-height: 24px;
     border-radius: 999px !important; /* round ⓘ */
     padding: 0 4px !important;
     min-width: 24px;
-    max-width: min(70vw, 280px);
     display: flex;
     align-items: center;
-    overflow: hidden;
     cursor: pointer;
+    z-index: 1;
+  }
+
+  /* Expanded: full text, ellipsized — never clipped by the circle */
+  .maplibregl-ctrl-bottom-left .maplibregl-ctrl-attrib.maplibregl-compact-show {
+    max-width: min(56vw, 300px);
+    padding: 0 10px !important;
+    border-radius: 999px !important;
   }
 
   .maplibregl-ctrl-bottom-left .maplibregl-ctrl-attrib .maplibregl-ctrl-attrib-button {

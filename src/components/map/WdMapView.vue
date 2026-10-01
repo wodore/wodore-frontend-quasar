@@ -1167,6 +1167,9 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
           </div>
         </q-page-sticky>
 
+        <!-- Zoom slider: focus mode only on mobile (left edge) -->
+        <WdZoomSlider />
+
         <!-- Focus (fullscreen) toggle: desktop always visible below the
              top-right nav cluster; mobile only visible IN focus mode -->
         <button

@@ -1013,10 +1013,15 @@ body.wd-map-focus {
   .maplibregl-ctrl-top-left .maplibregl-ctrl-scale {
     top: calc(12px + env(safe-area-inset-top, 0px));
   }
-  // Mobile: hide the compact attribution in focus mode (desktop keeps it)
+  // Mobile: attribution moves to the RIGHT border in focus mode
+  // (the bottom-left corner belongs to the zoom slider)
   @media (max-width: 899px) {
-    .maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib {
-      opacity: 0; pointer-events: none;
+    .maplibregl-ctrl-bottom-left .maplibregl-ctrl-attrib {
+      left: auto;
+      right: calc(12px + env(safe-area-inset-right, 0px));
+      top: auto;
+      bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+      transform: none;
     }
   }
   .wd-focus-toggle {
@@ -2168,4 +2173,19 @@ body.body--dark .wd-focus-toggle {
 /* Search glyph optical baseline — sits 1px low next to the wd-menu glyph */
 .wd-topbar__search .q-icon {
   transform: translateY(-1px);
+}
+
+/* ── Zoom slider: visible ONLY in focus mode on mobile ─────────────────── */
+.wd-zoom {
+  display: none;
+}
+
+body.wd-map-focus .wd-zoom {
+  display: flex;
+}
+
+@media (min-width: 900px) {
+  body.wd-map-focus .wd-zoom {
+    display: none; // desktop keeps the classic zoom buttons
+  }
 }

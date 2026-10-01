@@ -108,6 +108,7 @@ declare module 'vue' {
     WdWeatherForecast: typeof import('./src/components/content/place/WdWeatherForecast.vue')['default']
     WdWeatherSelect: typeof import('./src/components/huts/WdWeatherSelect.vue')['default']
     WdYearStripe: typeof import('./src/components/content/place/WdYearStripe.vue')['default']
+    WdZoomSlider: typeof import('./src/components/map/controls/WdZoomSlider.vue')['default']
     WodoreLogo: typeof import('./src/components/wodore/WodoreLogo.vue')['default']
   }
 }
