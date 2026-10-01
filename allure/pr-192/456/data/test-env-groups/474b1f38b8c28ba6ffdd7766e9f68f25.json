@@ -1,0 +1,1 @@
+{"id":"474b1f38b8c28ba6ffdd7766e9f68f25","fullName":"wodore:tests/unit/app-update.spec.ts#triggerNativeAppUpdate does nothing more when the user cancels the immediate update","name":"does nothing more when the user cancels the immediate update","status":"passed","testResultsByEnv":{"default":"d6b1274bf38450374a1ea1411d8a9d53"}}

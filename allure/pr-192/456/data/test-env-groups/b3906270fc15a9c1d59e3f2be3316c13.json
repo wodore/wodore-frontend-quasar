@@ -1,0 +1,1 @@
+{"id":"b3906270fc15a9c1d59e3f2be3316c13","fullName":"wodore:tests/unit/app-update.spec.ts#triggerNativeAppUpdate still reports store when opening the store itself fails","name":"still reports store when opening the store itself fails","status":"passed","testResultsByEnv":{"default":"4a6ab4ee9cc4bdc2481dedcb4f51841e"}}

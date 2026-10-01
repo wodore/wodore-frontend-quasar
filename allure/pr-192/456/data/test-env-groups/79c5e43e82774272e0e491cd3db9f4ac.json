@@ -1,0 +1,1 @@
+{"id":"79c5e43e82774272e0e491cd3db9f4ac","fullName":"wodore:tests/unit/app-update.spec.ts#triggerNativeAppUpdate opens the store when no update is available (side-loaded builds)","name":"opens the store when no update is available (side-loaded builds)","status":"passed","testResultsByEnv":{"default":"05fd7e6880fe07ea2725f0bd4405aab5"}}

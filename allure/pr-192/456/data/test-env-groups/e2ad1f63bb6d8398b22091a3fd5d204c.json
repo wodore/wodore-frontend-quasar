@@ -1,0 +1,1 @@
+{"id":"e2ad1f63bb6d8398b22091a3fd5d204c","fullName":"wodore:tests/unit/app-update.spec.ts#triggerNativeAppUpdate opens the store when Play services are unavailable","name":"opens the store when Play services are unavailable","status":"passed","testResultsByEnv":{"default":"4dbe686613fd55ad6f309a642a56c3a8"}}

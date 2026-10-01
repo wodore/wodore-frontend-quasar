@@ -1,0 +1,1 @@
+{"id":"0a4e022f38359b5482c4f2ed48804b73","fullName":"wodore:tests/unit/app-update.spec.ts#triggerNativeAppUpdate opens the store when an update exists but immediate is not allowed","name":"opens the store when an update exists but immediate is not allowed","status":"passed","testResultsByEnv":{"default":"d41db9c9b0c9e6d5ce4bb01c77eb025e"}}
