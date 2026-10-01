@@ -721,9 +721,9 @@ export interface paths {
         };
         /**
          * Get Version
-         * @description Get version information including git short hash, full hash, package version, build timestamp, and environment.
+         * @description Get version information including git short hash, full hash, package version, build timestamp, environment, and supported API versions.
          */
-        get: operations["server_apps_utils_api_get_version"];
+        get: operations["get_version"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2967,6 +2967,47 @@ export interface components {
             /** Get Updates */
             get_updates: boolean;
         };
+        /** ApiVersionEntry */
+        ApiVersionEntry: {
+            /**
+             * Version
+             * @description API contract version (YYYY-MM-DD)
+             * @example 2026-10-01
+             */
+            version: string;
+            /**
+             * Status
+             * @description Lifecycle: current, default, deprecated or sunset
+             * @example deprecated
+             */
+            status: string;
+            /**
+             * Sunset
+             * @description Sunset date (YYYY-MM-DD) of deprecated versions; after this date the version answers 410.
+             * @example 2027-04-01
+             */
+            sunset?: string | null;
+        };
+        /** ApiVersionsBlock */
+        ApiVersionsBlock: {
+            /**
+             * Current
+             * @description Newest registered API version
+             * @example 2026-10-01
+             */
+            current: string;
+            /**
+             * Default
+             * @description Version served when a client pins nothing
+             * @example 2026-10-01
+             */
+            default: string;
+            /**
+             * Supported
+             * @description All registered API versions with lifecycle status
+             */
+            supported: components["schemas"]["ApiVersionEntry"][];
+        };
         /** VersionSchema */
         VersionSchema: {
             /**
@@ -2999,6 +3040,8 @@ export interface components {
              * @example production
              */
             environment: string;
+            /** @description API contract versions (see the Api-Version header) */
+            api: components["schemas"]["ApiVersionsBlock"];
         };
     };
     responses: never;
@@ -4022,7 +4065,7 @@ export interface operations {
             };
         };
     };
-    server_apps_utils_api_get_version: {
+    get_version: {
         parameters: {
             query?: never;
             header?: never;
