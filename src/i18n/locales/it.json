@@ -465,5 +465,6 @@
   "api_version_deprecated_web": "È disponibile una nuova versione: ricarica la pagina. Il supporto per questa versione termina il:",
   "api_version_unsupported_native": "Questa versione dell'app non è più supportata dal server. Aggiorna l'app.",
   "api_version_unsupported_web": "Questa versione non è più supportata dal server. Ricarica la pagina.",
-  "api_version_reload": "Ricarica"
+  "api_version_reload": "Ricarica",
+  "api_version_update": "Aggiorna l'app"
 }
