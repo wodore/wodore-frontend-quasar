@@ -32,13 +32,13 @@
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition:
-    width 0.25s cubic-bezier(0.2, 0, 0, 1),
-    height 0.25s cubic-bezier(0.2, 0, 0, 1),
-    min-width 0.25s cubic-bezier(0.2, 0, 0, 1),
-    border-radius 0.25s cubic-bezier(0.2, 0, 0, 1),
-    background-color 0.25s cubic-bezier(0.2, 0, 0, 1),
-    padding 0.25s cubic-bezier(0.2, 0, 0, 1),
-    opacity 0.2s ease;
+    width 0.15s cubic-bezier(0.2, 0, 0, 1),
+    height 0.15s cubic-bezier(0.2, 0, 0, 1),
+    min-width 0.15s cubic-bezier(0.2, 0, 0, 1),
+    border-radius 0.15s cubic-bezier(0.2, 0, 0, 1),
+    background-color 0.15s cubic-bezier(0.2, 0, 0, 1),
+    padding 0.15s cubic-bezier(0.2, 0, 0, 1),
+    opacity 0.15s ease;
   overflow: hidden; /* clip during the size morph */
 
   *:focus {
@@ -89,7 +89,7 @@
     flex: none;
     border-radius: 999px;
     background: rgba(128, 145, 135, 0.14);
-    animation: wd-attrib-btn-in 0.2s ease-out 0.1s both; /* after the morph */
+    animation: wd-attrib-btn-in 0.12s ease-out 0.06s both; /* after the morph */
 
     .wd-attrib__info {
       display: none;
@@ -109,7 +109,7 @@
     line-height: 1.5;
     white-space: normal;
     color: var(--wd-ctl-ink);
-    animation: wd-attrib-text-in 0.2s ease-out 0.05s both; /* slight delay */
+    animation: wd-attrib-text-in 0.15s ease-out 0.04s both; /* slight delay */
 
     a {
       color: var(--wd-ctl-ink);
