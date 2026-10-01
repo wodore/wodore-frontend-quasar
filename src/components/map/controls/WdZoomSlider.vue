@@ -139,7 +139,7 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  width: 44px; // generous TOUCH zone — the visual pill is slimmer
+  width: 48px; // touch zone = mini-button width; the visual pill is slimmer
   padding: 0;
   background: transparent;
   cursor: grab;
@@ -161,7 +161,7 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 26px;
+  width: 20px;
   padding: 4px 0;
   border: 1px solid var(--wd-ctl-border);
   border-right: none; // flush to the screen edge
@@ -210,11 +210,8 @@ body.body--dark .wd-zoom__pill {
   height: 10px;
   transform: translate(-50%, -50%);
   border-radius: 999px;
-  background: rgba(191, 171, 37, 0.72); // gold beam, slightly translucent
+  background: var(--wd-ctl-ink); // neutral ink — gold is reserved for selection
+  opacity: 0.78;
   box-shadow: 0 0 0 2px var(--wd-ctl-bg);
-}
-
-body.body--dark .wd-zoom__thumb {
-  background: rgba(212, 194, 58, 0.78); // brighter gold on pine
 }
 </style>

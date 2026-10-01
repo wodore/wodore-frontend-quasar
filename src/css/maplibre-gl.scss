@@ -62,17 +62,19 @@
   float: none;
 }
 
-/* Mobile: merge GPS + navigator groups into one chip */
+/* Mobile: merge GPS + navigator groups into one chip. NOTE: the
+   attribution <details> sits FIRST in the corner DOM — use
+   :first-of-type on DIVs so the merge rounding lands correctly. */
 @media (max-width: 899px) {
-  .maplibregl-ctrl-bottom-left .maplibregl-ctrl-group + .maplibregl-ctrl-group {
+  .maplibregl-ctrl-bottom-left div.maplibregl-ctrl-group + div.maplibregl-ctrl-group {
     border-top: none !important;
     border-radius: 0 0 8px 8px !important;
     margin-top: -1px; /* collapse the doubled border */
   }
-  .maplibregl-ctrl-bottom-left .maplibregl-ctrl-group:first-child {
+  .maplibregl-ctrl-bottom-left div.maplibregl-ctrl-group:first-of-type {
     border-radius: 8px 8px 0 0 !important;
   }
-  .maplibregl-ctrl-bottom-left .maplibregl-ctrl-group:only-child {
+  .maplibregl-ctrl-bottom-left div.maplibregl-ctrl-group:only-of-type {
     border-radius: 8px !important;
   }
 }
@@ -357,8 +359,8 @@ body.body--dark .maplibregl-ctrl button .maplibregl-ctrl-icon {
    basemap toggle. Desktop: full text chip, bottom-left, above the scale. */
 @media (max-width: 899px) {
   /* Mobile attribution: DEFAULT MapLibre compact look (ⓘ chip, tap to
-     expand — toggle wired in WdMapView). Sits BESIDE the GPS/nav cluster
-     on the bottom row: the corner becomes a row wrapper for it. */
+     expand — toggle is MapLibre's own). Sits BESIDE the GPS/nav cluster
+     on the bottom row; fully-left in the corner in focus mode. */
   .maplibregl-ctrl-bottom-left .maplibregl-ctrl-attrib {
     position: absolute;
     left: 56px; /* 12px corner + 48px cluster + 8px gap */
@@ -368,7 +370,42 @@ body.body--dark .maplibregl-ctrl button .maplibregl-ctrl-icon {
     margin: 0;
     pointer-events: auto; /* taps must never fall through to the map */
     z-index: 2;
+    border-radius: 999px !important; /* round ⓘ chip */
+    background: color-mix(in srgb, var(--wd-ctl-bg, #fdfefd) 80%, transparent) !important;
+    padding: 0 4px !important;
+    min-height: 24px;
   }
+
+  /* Expanded: WRAPPING text (never a clipped single line), grows as
+     needed up to the max width, transparent chip */
+  .maplibregl-ctrl-bottom-left .maplibregl-ctrl-attrib.maplibregl-compact-show {
+    left: 56px;
+    max-width: min(66vw, 320px);
+    min-width: 190px; // wrap into balanced lines, not a narrow column
+    white-space: normal !important;
+    border-radius: 8px !important;
+    padding: 6px 10px !important;
+    background: color-mix(in srgb, var(--wd-ctl-bg, #fdfefd) 88%, transparent) !important;
+  }
+
+  .maplibregl-ctrl-bottom-left .maplibregl-ctrl-attrib .maplibregl-ctrl-attrib-inner {
+    max-width: none !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    display: block;
+  }
+}
+
+/* Focus mode: attribution fully to the LEFT corner (left:0 is relative
+   to the corner container, which already sits 12px in) */
+body.wd-map-focus .maplibregl-ctrl-bottom-left .maplibregl-ctrl-attrib {
+  left: 0;
+  bottom: calc(2px + env(safe-area-inset-bottom, 0px));
+}
+
+body.wd-map-focus .maplibregl-ctrl-bottom-left .maplibregl-ctrl-attrib.maplibregl-compact-show {
+  left: 0;
 }
 @media (min-width: 900px) {
   .maplibregl-ctrl-bottom-left .maplibregl-ctrl-attrib {
@@ -414,4 +451,10 @@ body.body--dark {
   .wd-bm__btn--inactive {
     border-color: rgba(169, 240, 210, 0.22);
   }
+}
+
+/* Attribution ⓘ: no focus ring after tap (mobile browsers outline it) */
+.maplibregl-ctrl-attrib .maplibregl-ctrl-attrib-button:focus,
+.maplibregl-ctrl-attrib .maplibregl-ctrl-attrib-button:focus-visible {
+  outline: none;
 }

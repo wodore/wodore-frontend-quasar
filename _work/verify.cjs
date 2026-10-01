@@ -81,7 +81,12 @@ async function pinTheme(page, theme) {
         };
       });
       const isDarkChip = c => c !== 'MISSING' && /rgb\(1[0-9], |rgb\(2[0-5], 2[0-5]|#11/.test(c) ? true : c.startsWith('rgb(17') || c.startsWith('rgb(1');
-      const rgb = v => (v.match(/\d+/g) || []).map(Number);
+      const rgb = v => {
+        // handles rgb(...) and color(srgb r g b / a)
+        const m = v.match(/color\(srgb ([\d.]+) ([\d.]+) ([\d.]+)/);
+        if (m) return [Number(m[1]) * 255, Number(m[2]) * 255, Number(m[3]) * 255].map(Math.round);
+        return (v.match(/\d+/g) || []).map(Number);
+      };
       for (const [k, v] of Object.entries(colors)) {
         if (v === 'MISSING') { if (k !== 'attribBg') check(`${tag}: ${k} exists`, false); continue; }
         const m = rgb(v);
