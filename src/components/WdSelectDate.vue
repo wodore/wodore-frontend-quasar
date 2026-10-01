@@ -43,13 +43,6 @@ const selectedDateDay = computed<string>(() => {
   }
   return t('select_date.placeholder');
 });
-const selectedDateDisplay = computed(() => {
-  if (selectedDateObj.value !== undefined && selectedDate.value) {
-    const dayShort = formatDate(selectedDateObj.value, 'dd');
-    return `${selectedDate.value} • ${dayShort}`;
-  }
-  return selectedDate.value || '';
-});
 
 /** Line 1: relative day name (Today/Tomorrow/weekday), placeholder when empty */
 const dateDayLabel = computed(() => {

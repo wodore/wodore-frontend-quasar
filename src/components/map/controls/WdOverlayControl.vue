@@ -65,6 +65,74 @@ const thumbAbsTop = computed(() => {
   return offset + thumbTop.value;
 });
 
+/** Initial thumb measurement (before any scroll) */
+function measureThumb(): void {
+  const rows = document.querySelector('.wd-ovl__rows') as HTMLElement | null;
+  if (!rows || rows.scrollHeight <= rows.clientHeight) {
+    thumbH.value = 0;
+    return;
+  }
+  const ratio = rows.clientHeight / rows.scrollHeight;
+  thumbH.value = Math.max(24, Math.round(ratio * rows.clientHeight));
+  const maxTop = rows.clientHeight - thumbH.value;
+  thumbTop.value = Math.round((rows.scrollTop / (rows.scrollHeight - rows.clientHeight)) * maxTop);
+  scrollAtTop.value = rows.scrollTop <= 2;
+  scrollAtBottom.value = rows.scrollTop + rows.clientHeight >= rows.scrollHeight - 2;
+}
+
+onMounted(() => {
+  // measure once the list rendered; re-measure when it resizes
+  setTimeout(measureThumb, 400);
+  rowsResizeObserve();
+});
+
+function rowsResizeObserve(): void {
+  const rows = document.querySelector('.wd-ovl__rows') as HTMLElement | null;
+  if (!rows) return;
+  const RO = (window as unknown as { ResizeObserver?: new (cb: () => void) => { observe: (el: HTMLElement) => void } }).ResizeObserver;
+  if (!RO) return;
+  new RO(() => measureThumb()).observe(rows);
+}
+
+// ── 2. Pan-to-scroll (mouse): drag scrolls, small moves still click ──
+const panned = ref(false);
+let panStartY = 0;
+let panStartScroll = 0;
+let panActive = false;
+
+function onRowsPointerDown(e: MouseEvent): void {
+  // mouse only — touch uses native scroll (touch-action: pan-y)
+  if ((e as unknown as { pointerType?: string }).pointerType === 'touch') return;
+  panActive = true;
+  panned.value = false;
+  panStartY = e.clientY;
+  panStartScroll = (e.currentTarget as HTMLElement).scrollTop;
+}
+
+function onRowsPointerMove(e: MouseEvent): void {
+  if (!panActive) return;
+  const dy = e.clientY - panStartY;
+  if (!panned.value && Math.abs(dy) > 4) panned.value = true; // it's a pan
+  if (panned.value) {
+    (e.currentTarget as HTMLElement).scrollTop = panStartScroll - dy;
+  }
+}
+
+function onRowsPointerUp(): void {
+  panActive = false;
+  // keep panned=true through the click that follows the pointerup,
+  // then reset so stray clicks (without a preceding pan) pass
+  window.setTimeout(() => {
+    panned.value = false;
+  }, 50);
+}
+
+/** Rows click guard: a pan must not toggle the layer */
+function onRowClick(item: OverlaySwitchItem): void {
+  if (panned.value) return;
+  toggleLayer(item);
+}
+
 /** Swipe left = expand, swipe right = collapse (on rows and toggle) */
 let swipeStartX: number | null = null;
 function onSwipeStart(e: Event): void {
@@ -359,11 +427,20 @@ onBeforeUnmount(() => {
         <div class="wd-ovl__fade wd-ovl__fade--bottom" :class="{ 'wd-ovl__fade--hidden': scrollAtBottom }" />
 
         <!-- Rows: icon always at the right, label+actions appear when expanded -->
-        <div class="wd-ovl__rows" role="group" :aria-label="t('overlay_style')" @scroll.passive="onRowsScroll">
+        <div
+          class="wd-ovl__rows"
+          role="group"
+          :aria-label="t('overlay_style')"
+          @scroll.passive="onRowsScroll"
+          @pointerdown="onRowsPointerDown"
+          @pointermove="onRowsPointerMove"
+          @pointerup="onRowsPointerUp"
+          @pointerleave="onRowsPointerUp"
+        >
           <div v-for="item in overlayStore.overlays" :key="item.name" v-show="item.show" class="wd-ovl__row" :class="{
             'wd-ovl__row--active': item.active,
             'wd-ovl__row--passive': !item.active,
-          }" @click="toggleLayer(<OverlaySwitchItem>(item as unknown))">
+          }" @click="onRowClick(<OverlaySwitchItem>(item as unknown))">
             <!-- Label + actions (LEFT of icon, only when expanded) -->
             <div v-if="expanded" class="wd-ovl__row-info">
               <button v-if="hasInfo(item.name)" class="wd-ovl__row-action wd-ovl__row-action--info"
@@ -398,10 +475,12 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- Scroll thumb at BOX level (the rows scroll-clip ate it inside);
-             rides exactly on the box's right border -->
+             rides exactly on the box's right border. Always visible while
+             the list overflows — 2px on desktop (media query below). -->
         <div
-          v-if="thumbH > 0 && !scrollAtBottom"
+          v-if="thumbH > 0"
           class="wd-ovl__scrollthumb"
+          :class="{ 'wd-ovl__scrollthumb--end': scrollAtBottom }"
           :style="{ top: thumbAbsTop + 'px', height: thumbH + 'px' }"
         />
 
@@ -650,8 +729,8 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   }
 }
 
-// custom overlay thumb: 3px, ON the box's right border (box-level so the
-// rows' scroll clip cannot eat it)
+// custom overlay thumb: ON the box's right border (box-level so the
+// rows' scroll clip cannot eat it). Mobile 3px; desktop 2px always-on.
 .wd-ovl__scrollthumb {
   position: absolute;
   right: 0; // flush on the inner edge of the 1px box border
@@ -660,6 +739,29 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   background: rgba(128, 145, 135, 0.55);
   pointer-events: none;
   z-index: 3;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+
+  &--end {
+    opacity: 0.4; // reached the end — still visible, quieter
+  }
+}
+
+@media (min-width: 900px) {
+  .wd-ovl__scrollthumb {
+    width: 2px; // hairline always visible on desktop
+  }
+}
+
+// Mouse pan affordance: grab cursor over the list (desktop)
+@media (min-width: 900px) and (pointer: fine) {
+  .wd-ovl__rows {
+    cursor: grab;
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
 }
 
 .wd-ovl__row {
