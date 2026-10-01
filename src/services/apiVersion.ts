@@ -7,13 +7,15 @@
  * → `api` block (never version-validated server-side, so it stays reachable
  * even when the pinned version has been retired).
  *
- * Bump the pin ONLY when deliberately absorbing a breaking API change —
- * see the backend's `CHANGELOG_API.md` for what each version change means.
- * Additive backend changes (new endpoints, optional fields) need no bump.
+ * The pin is GENERATED: `yarn gen:api` (latest) or `yarn gen:api-version
+ * 2026-10-01` (frozen snapshot for that version) writes both the typed
+ * client and the pin (`src/clients/apiVersion.ts`) from the same schema,
+ * so types and pin cannot drift. Generating with latest after a new API
+ * version was released absorbs it — types and pin bump together in the
+ * diff. Additive backend changes never bump the pin.
  */
 
-/** Contract version this app is built and tested against (YYYY-MM-DD). */
-export const PINNED_API_VERSION = '2026-10-01';
+export { PINNED_API_VERSION } from '@clients/apiVersion';
 
 /** Lifecycle status of an API version, as reported by `/v1/version`. */
 export type ApiVersionStatus = 'current' | 'deprecated' | 'sunset';
