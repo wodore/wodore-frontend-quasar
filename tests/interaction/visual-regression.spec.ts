@@ -16,6 +16,7 @@ import { allure } from 'allure-playwright';
 import { loadMap, pinTheme, tagTest } from './helpers';
 
 const STATES = [
+  // Mobile
   { id: 'overlay-strip', theme: 'light', mode: 'mobile' },
   { id: 'overlay-expanded', theme: 'light', mode: 'mobile' },
   { id: 'basemap-rail', theme: 'light', mode: 'mobile' },
@@ -25,6 +26,13 @@ const STATES = [
   { id: 'overlay-expanded', theme: 'dark', mode: 'mobile' },
   { id: 'topbar', theme: 'light', mode: 'mobile' },
   { id: 'topbar', theme: 'dark', mode: 'mobile' },
+  // Desktop
+  { id: 'overlay-strip', theme: 'light', mode: 'desktop' },
+  { id: 'overlay-expanded', theme: 'light', mode: 'desktop' },
+  { id: 'focus-mode', theme: 'light', mode: 'desktop' },
+  { id: 'overlay-strip', theme: 'dark', mode: 'desktop' },
+  { id: 'overlay-expanded', theme: 'dark', mode: 'desktop' },
+  { id: 'topbar', theme: 'light', mode: 'desktop' },
 ] as const;
 
 test.describe('visual regression', () => {
@@ -33,7 +41,9 @@ test.describe('visual regression', () => {
       tagTest(theme, mode, `visual-regression-${id}`);
       test.setTimeout(90_000);
 
-      await page.setViewportSize({ width: 390, height: 844 });
+      await page.setViewportSize(
+        mode === 'mobile' ? { width: 390, height: 844 } : { width: 1440, height: 900 }
+      );
       await loadMap(page);
       await pinTheme(page, theme);
 
@@ -66,9 +76,11 @@ test.describe('visual regression', () => {
 
       // Full viewport for most states; topbar clips to the pill area
       const clip =
-        id === 'topbar'
+        id === 'topbar' && mode === 'mobile'
           ? { x: 0, y: 0, width: 390, height: 80 }
-          : undefined; // full page — the controls' context matters
+          : id === 'topbar' && mode === 'desktop'
+            ? { x: 0, y: 0, width: 1440, height: 90 }
+            : undefined; // full page — the controls' context matters
 
       await expect(page).toHaveScreenshot(`${id}-${theme}-${mode}.png`, {
         ...(clip ? { clip } : {}),
