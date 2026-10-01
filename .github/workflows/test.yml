@@ -107,9 +107,25 @@ jobs:
 
       # allure@3 (Allure Report 3): the allure-action reads the v3 summary
       # format; the v2 allure-commandline report is not parseable by it
-      - name: Generate Allure report
+      - name: Generate Allure report (unit + interaction/e2e)
         if: always()
-        run: npx -y allure@3 generate allure-results/unit
+        run: |
+          # merge all result dirs into one the report can consume
+          mkdir -p allure-results/merged
+          if [ -d allure-results/unit ]; then cp -R allure-results/unit/. allure-results/merged/; fi
+          if [ -d allure-results/e2e ]; then cp -R allure-results/e2e/. allure-results/merged/; fi
+          npx -y allure@3 generate allure-results/merged
+
+      - name: Upload Playwright artifacts (traces + failure screenshots)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
+          if-no-files-found: ignore
 
       - name: Publish report to GitHub Pages
         if: always()
