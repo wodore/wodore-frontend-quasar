@@ -1,0 +1,1 @@
+{"id":"64aad283f2570d7a5ef091dd80b9b65b","fullName":"wodore:tests/unit/meteo-store.spec.ts#meteo store weather-code context runs the fetch context exactly once per store init (no effect re-runs)","name":"runs the fetch context exactly once per store init (no effect re-runs)","status":"passed","testResultsByEnv":{"default":"054ae24f16e6cab9187974a781019625"}}
