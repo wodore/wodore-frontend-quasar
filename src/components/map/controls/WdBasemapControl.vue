@@ -114,8 +114,8 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 6px;
-  padding: 6px; // inner padding — thumbnails never touch the rail border
+  gap: 4px;
+  padding: 3px; // 3px + 1px border + 40px thumb + 1px border + 3px = 48px
   border-radius: 8px;
   border: 1px solid var(--wd-ctl-border); // same border width as overlay toggle
   background: var(--wd-ctl-bg);
@@ -141,10 +141,10 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 // padding inside so the image breathes.
 .wd-bm__btn {
   position: relative;
-  width: 46px;
-  height: 46px;
+  width: 40px;
+  height: 40px;
   scroll-snap-align: start;
-  padding: 7px; // generous — the overlay chips have ~20% inset; match
+  padding: 0; // images fill edge-to-edge — the rail provides the spacing
   border-radius: 4px;
   border: 1px solid var(--wd-ctl-border); // gray hairline
   background: var(--wd-ctl-bg);
@@ -163,7 +163,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 
   &--active {
     border: 2px solid $wd-gold; // gold selection border
-    padding: 6px; // keep the image size stable
+    padding: 0; // images still fill — the border eats 1px more per side
   }
 }
 

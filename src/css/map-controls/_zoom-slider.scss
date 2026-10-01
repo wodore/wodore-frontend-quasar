@@ -1,19 +1,20 @@
 // ══════════════════════════════════════════════════════════════════════
 // ZOOM SLIDER — visibility gating
-// GLOBAL because: `body.wd-map-focus` is set by WdMapView; the component
-// cannot scope to an ancestor body class from its own scoped styles.
+// GLOBAL because: visibility depends on body classes and overlay state
+// that the component cannot scope to from its own scoped styles.
 //
-// Mobile: always visible (owner request — also when the overlay strip
-// is closed). Desktop: visible in focus mode only (the classic zoom
-// buttons serve otherwise).
+// Mobile: visible when the overlay strip is CLOSED (they interfere).
+// Desktop: visible in focus mode only (classic zoom buttons serve
+// otherwise).
 // ══════════════════════════════════════════════════════════════════════
 .wd-zoom {
   display: none !important;
 }
 
-// Mobile: always show
+// Mobile: visible when overlays are NOT open (the strip/box and the zoom
+// handle occupy the same right edge — showing both is cluttered)
 @media (max-width: 899px) {
-  .wd-zoom {
+  body:not(.wd-ovl-strip-open) .wd-zoom {
     display: flex !important;
   }
 }

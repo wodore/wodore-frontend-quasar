@@ -244,7 +244,7 @@ async function pinTheme(page, theme) {
           r(rail ? Math.round(rail.getBoundingClientRect().height) : -1);
         }, 400));
       });
-      check(`${tag}: basemap rail 60px (46+6+6+2)`, Math.abs(railH - 60) <= 1, String(railH));
+      check(`${tag}: basemap rail 48px`, Math.abs(railH - 48) <= 1, String(railH));
 
       // ── Attribution toggle: ⓘ expands on click (mobile) ──
       if (mode === 'mobile') {
