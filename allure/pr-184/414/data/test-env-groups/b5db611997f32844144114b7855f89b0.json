@@ -1,1 +1,0 @@
-{"id":"b5db611997f32844144114b7855f89b0","fullName":"wodore:tests/unit/sanitize-html.spec.ts#sanitizeHtml strips script tags and event handlers","name":"strips script tags and event handlers","status":"passed","testResultsByEnv":{"default":"d8e4e39ee68400b2f29e3d0a4d518130"}}
