@@ -1,0 +1,1 @@
+{"id":"6a74f93263880e2f29502fe6f388d84d","fullName":"wodore:tests/unit/locale.spec.ts#locale service reads the persisted locale from the user settings store","name":"reads the persisted locale from the user settings store","status":"passed","testResultsByEnv":{"default":"540f197fd42540bd1d518d050f090e86"}}
