@@ -57,7 +57,10 @@ it (pin + types bump together in the diff). To stay on / adopt a specific
 contract: `yarn gen:api-version 2026-10-01` (frozen snapshot for that date,
 works only while the backend still supports it). The pin is sent as
 `Api-Version` header on every API request; `WdApiVersionBanner` surfaces
-deprecation/retirement to the user.
+deprecation/retirement to the user (web/PWA: reload button incl. service
+worker activation; native: Play in-app update via
+`@capawesome/capacitor-app-update`, store entry fallback — see
+`src/services/appUpdate.ts`).
 
 # Development server (default: PWA mode on port 9000)
 yarn dev              # or yarn dev:pwa
