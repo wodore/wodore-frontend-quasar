@@ -38,6 +38,7 @@ declare module 'vue' {
     WdAccommodationDay: typeof import('./src/components/huts/WdAccommodationDay.vue')['default']
     WdAnalytics: typeof import('./src/components/utils/WdAnalytics.vue')['default']
     WdAttributionContent: typeof import('./src/components/utils/WdAttributionContent.vue')['default']
+    WdBasemapControl: typeof import('./src/components/map/controls/WdBasemapControl.vue')['default']
     WdBasemapSwitch: typeof import('./src/components/map/WdBasemapSwitch.vue')['default']
     WdBasemapSwitchItem: typeof import('./src/components/map/WdBasemapSwitchItem.vue')['default']
     WdBeta: typeof import('./src/components/utils/WdBeta.vue')['default']
@@ -78,6 +79,7 @@ declare module 'vue' {
     WdOverlayConfigFilter: typeof import('./src/components/map/overlay-config/WdOverlayConfigFilter.vue')['default']
     WdOverlayConfigLinks: typeof import('./src/components/map/overlay-config/WdOverlayConfigLinks.vue')['default']
     WdOverlayConfigPanels: typeof import('./src/components/map/overlay-config/WdOverlayConfigPanels.vue')['default']
+    WdOverlayControl: typeof import('./src/components/map/controls/WdOverlayControl.vue')['default']
     WdOverlaySwitch: typeof import('./src/components/map/WdOverlaySwitch.vue')['default']
     WdOverlaySwitchItem: typeof import('./src/components/map/WdOverlaySwitchItem.vue')['default']
     WdPlaceActions: typeof import('./src/components/content/place/WdPlaceActions.vue')['default']
@@ -106,6 +108,7 @@ declare module 'vue' {
     WdWeatherForecast: typeof import('./src/components/content/place/WdWeatherForecast.vue')['default']
     WdWeatherSelect: typeof import('./src/components/huts/WdWeatherSelect.vue')['default']
     WdYearStripe: typeof import('./src/components/content/place/WdYearStripe.vue')['default']
+    WdZoomSlider: typeof import('./src/components/map/controls/WdZoomSlider.vue')['default']
     WodoreLogo: typeof import('./src/components/wodore/WodoreLogo.vue')['default']
   }
 }

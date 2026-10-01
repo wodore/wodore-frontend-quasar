@@ -28,7 +28,7 @@ import { useRequestProgress } from '@composables/useRequestProgress';
 import { getEnv } from '@services/runtimeEnv';
 
 // Initialize stores
-const authStore = useAuthStore();
+const _authStore = useAuthStore();
 const menuStore = useMapMenuStore();
 const contentStore = useMapContentStore();
 
@@ -118,6 +118,22 @@ const contentDrawerOpen = computed({
     }
   },
 });
+
+// Side panel (content drawer, desktop): flag on <body> so map controls
+// and the utility cluster can shift left and stay clear of the drawer
+watch(
+  () => contentDrawerOpen.value,
+  open => {
+    document.body.classList.toggle('wd-sidepanel-open', !!open);
+    // Actual drawer width — the control shift follows the real panel,
+    // not a hardcoded 330px that mismatched the 380/460px drawers
+    document.body.style.setProperty(
+      '--wd-drawer-w',
+      open ? `${$q.screen.gt.md ? 460 : 380}px` : '0px'
+    );
+  },
+  { immediate: true }
+);
 
 // Mobile bottom sheet ref (for programmatic snap control)
 const bottomSheetRef = ref<InstanceType<typeof WdBottomSheet> | null>(null);
@@ -238,9 +254,11 @@ onMounted(() => {
 .wd-surface {
   background: var(--wd-surface) !important;
 }
+
 .wd-ink-soft-text {
   color: var(--wd-ink-soft) !important;
 }
+
 .app-header {
   backdrop-filter: blur(10px);
   // Night (default here): pine bar, paper text. Day gets the lighter bar
@@ -294,6 +312,7 @@ body.body--light .app-header .q-btn.text-icon:hover,
 body.body--light .app-header button.text-icon:hover {
   background: rgba(255, 255, 255, 0.16) !important;
 }
+
 // Quasar draws button fills on ::before - kill it in the header
 .app-header .q-btn::before {
   background: transparent !important;
@@ -335,13 +354,11 @@ body.body--dark .app-header .text-icon {
   text-transform: none;
   padding: 2px 32px 2px 26px;
   transform: rotate(-20deg);
-  background-image: repeating-linear-gradient(
-    -45deg,
-    color('accent', 900),
-    color('accent', 900) 6px,
-    color('accent', 800) 6px,
-    color('accent', 800) 12px
-  );
+  background-image: repeating-linear-gradient(-45deg,
+      color('accent', 900),
+      color('accent', 900) 6px,
+      color('accent', 800) 6px,
+      color('accent', 800) 12px);
   color: white;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
   pointer-events: none;
@@ -354,7 +371,7 @@ body.capacitor .preview-badge {
 
 // Critical CSS for nested QLayout in container mode (inside drawer)
 // Without this, the layout wrappers collapse to 0 height
-.q-layout-container > div > div {
+.q-layout-container>div>div {
   min-height: 0;
   max-height: 100%;
   height: 100%;
@@ -400,75 +417,59 @@ body.capacitor .preview-badge {
   <WdAnalytics />
   <q-layout view="hHh LpR fFf" class="overflow-hidden" @scroll="onLayoutScroll">
     <div v-if="isStaging" class="preview-badge">preview</div>
-    <q-header class="app-header" :class="{ 'app-header--scrolled': headerScrolled }">
-      <!-- TOOLBAR -->
-      <q-toolbar>
-        <WdMenuButton desktop v-model="menuDrawerOpen" />
-        <q-toolbar-title>
-          <WodoreLogo
-            class="text-h4"
-            :text="!isMobile"
-            icon
-            :text-color-left="$q.dark.isActive ? 'white' : 'black'"
-          />
-        </q-toolbar-title>
-        <WdPlaceSearchMenu v-if="!isMobile" />
-        <WdSelectDate />
-        <WdPlaceSearchDialog v-if="isMobile" />
-        <WdSupportButton v-if="!authStore.isLoggedIn && !isMobile" class="wd-info-text" />
-        <WdFeedbackButton v-if="!isMobile" size="md" />
-        <WdLanguageSwitcher v-if="!isMobile" size="md" />
-        <WdThemeSwitcher v-if="!isMobile" size="md" />
+    <!-- FLOATING TOPBAR: search | date (highlight) | avatar ──────────── -->
+    <div class="wd-topbar">
+      <div class="wd-topbar__pill">
+        <!-- Search (icon-only, opens search) -->
+        <div class="wd-topbar__search">
+          <WdPlaceSearchMenu v-if="!isMobile" class="wd-topbar__search-menu" />
+          <WdPlaceSearchDialog v-else class="wd-topbar__search-dialog" />
+        </div>
 
-        <WdUser v-if="authStore.isLoggedIn" />
+        <!-- Date (the highlighted core element — main pill width) -->
+        <div class="wd-topbar__date">
+          <WdSelectDate />
+        </div>
 
-        <!-- MAIN DIALOG -->
-        <q-dialog
-          v-model="showDialog"
-          :maximized="isMobile"
-          backdrop-filter="blur(3px) saturate(180%) grayscale(60%)"
-          class="dialog-radius"
-          @hide="onDialogHide"
-          @escape-key="onDialogHide"
-        >
-          <router-view name="dialog" v-slot="{ Component, route }">
-            <!-- <transition name="fade" mode="out-in"> -->
-            <component :is="Component" :key="route.path" />
-            <!-- </transition> -->
-          </router-view>
-        </q-dialog>
+        <!-- User / menu button (right edge, inside the pill) -->
+        <!--<button class="text-icon" :aria-label="$t('menu')" @click="menuDrawerOpen = !menuDrawerOpen">-->
+        <div class="wd-topbar__menu">
+          <q-btn flat round :aria-label="$t('menu')" @click="menuDrawerOpen = !menuDrawerOpen">
+            <q-icon size="sm" class="text-icon" name="wd-menu" />
+          </q-btn>
+        </div>
+        <!-- <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"> -->
+        <!--   <circle cx="12" cy="8" r="4" /> -->
+        <!--   <path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6" /> -->
+        <!-- </svg> -->
+        <!--</button>-->
+      </div>
 
-        <!-- MENU BUTTON mobile open -->
-        <WdMenuButton mobile function="open" side="right" v-model="menuDrawerOpen" />
-      </q-toolbar>
+      <!-- Desktop-only utilities: top-right chip cluster (8px radius) -->
+      <div v-if="!isMobile" class="wd-topbar__utils">
+        <WdFeedbackButton size="sm" />
+        <WdLanguageSwitcher size="sm" />
+        <WdThemeSwitcher size="sm" />
+      </div>
+    </div>
 
-      <!-- API progress bar: pinned to the bottom edge of the toolbar -->
-      <q-linear-progress
-        v-if="progressVisible"
-        indeterminate
-        color="accent-500"
-        size="3px"
-        class="header-progress"
-      />
-    </q-header>
+    <!-- MAIN DIALOG -->
+    <q-dialog v-model="showDialog" :maximized="isMobile" backdrop-filter="blur(3px) saturate(180%) grayscale(60%)"
+      class="dialog-radius" @hide="onDialogHide" @escape-key="onDialogHide">
+      <router-view name="dialog" v-slot="{ Component, route }">
+        <component :is="Component" :key="route.path" />
+      </router-view>
+    </q-dialog>
+
+    <q-linear-progress v-if="progressVisible" indeterminate color="accent-500" size="3px" class="wd-topbar__progress" />
 
     <!-- MENU -->
-    <q-drawer
-      v-model="menuDrawerOpen"
-      :side="isMobile ? 'right' : 'left'"
-      :width="300"
-      :breakpoint="610"
-      class="wd-menu-drawer"
-      style="max-width: 80vw"
-    >
+    <q-drawer v-model="menuDrawerOpen" :side="isMobile ? 'right' : 'left'" :width="300" :breakpoint="610"
+      class="wd-menu-drawer" style="max-width: 80vw; z-index: 3000">
       <!-- TOOLBAR mobile -->
       <q-toolbar v-if="isMobile" class="bg-primary-600 shadow-6">
         <q-toolbar-title>
-          <WodoreLogo
-            text
-            class="text-h5"
-            :text-color-left="$q.dark.isActive ? 'white' : 'black'"
-          />
+          <WodoreLogo text class="text-h5" :text-color-left="$q.dark.isActive ? 'white' : 'black'" />
         </q-toolbar-title>
 
         <WdLanguageSwitcher size="md" />
@@ -489,70 +490,34 @@ body.capacitor .preview-badge {
     </q-page-container>
 
     <!-- Content Drawer (Desktop) -->
-    <q-drawer
-      v-if="!isMobile"
-      v-model="contentDrawerOpen"
-      side="right"
-      :width="$q.screen.gt.md ? 460 : 380"
-      :breakpoint="0"
-      class="shadow-2 content-drawer"
-    >
-      <q-layout
-        view="lhh LpR lff"
-        container
-        class="no-background wd-surface overflow-hidden"
-        style="height: 100%"
-      >
+    <q-drawer v-if="!isMobile" v-model="contentDrawerOpen" side="right" :width="$q.screen.gt.md ? 460 : 380"
+      :breakpoint="0" class="shadow-2 content-drawer">
+      <q-layout view="lhh LpR lff" container class="no-background wd-surface overflow-hidden" style="height: 100%">
         <!-- Close button (top-LEFT, gold chip - reference design; the
              top-right corner belongs to the 3-dot actions menu) -->
         <div class="absolute z-max" style="top: 10px; left: 10px; pointer-events: none">
-          <q-btn
-            round
-            dense
-            icon="wd-close"
-            @click="closeContent"
-            class="wd-drawer-close"
-            size="md"
-            style="pointer-events: auto"
-          />
+          <q-btn round dense icon="wd-close" @click="closeContent" class="wd-drawer-close" size="md"
+            style="pointer-events: auto" />
         </div>
 
         <!-- Sticky Header (Actions + Title) -->
-        <q-header
-          class="wd-drawer-header"
-          :class="{ 'content-drawer-header-scrolled': drawerContentScrolled }"
-        >
+        <q-header class="wd-drawer-header" :class="{ 'content-drawer-header-scrolled': drawerContentScrolled }">
           <!-- Actions Toolbar (Desktop only) -->
-          <component
-            v-if="contentActionsComponent && $q.screen.gt.sm"
-            :is="contentActionsComponent"
-            :slug="contentStore.contentSlug"
-          />
+          <component v-if="contentActionsComponent && $q.screen.gt.sm" :is="contentActionsComponent"
+            :slug="contentStore.contentSlug" />
           <!-- Title -->
-          <component
-            v-if="contentTitleComponent"
-            :is="contentTitleComponent"
-            :slug="contentStore.contentSlug"
-          />
+          <component v-if="contentTitleComponent" :is="contentTitleComponent" :slug="contentStore.contentSlug" />
         </q-header>
 
         <!-- Scrollable Content -->
         <q-page-container class="fit" style="height: 100%">
-          <q-scroll-area
-            visible
-            @scroll="onDrawerScroll"
-            :thumb-style="{
-              width: '6px',
-              backgroundColor: '#998019',
-              opacity: '0.5',
-              borderRadius: '8px 0 0 8px',
-            }"
-            class="fit"
-          >
-            <q-page
-              class="q-px-md"
-              :style="{ height: '100%', maxWidth: ($q.screen.gt.md ? 460 : 380) + 'px' }"
-            >
+          <q-scroll-area visible @scroll="onDrawerScroll" :thumb-style="{
+            width: '6px',
+            backgroundColor: '#998019',
+            opacity: '0.5',
+            borderRadius: '8px 0 0 8px',
+          }" class="fit">
+            <q-page class="q-px-md" :style="{ height: '100%', maxWidth: ($q.screen.gt.md ? 460 : 380) + 'px' }">
               <router-view name="content" v-slot="{ Component, route: contentRoute }">
                 <transition name="fade" mode="out-in">
                   <component :is="Component" :key="contentRoute.path" />
@@ -571,33 +536,16 @@ body.capacitor .preview-badge {
   </q-layout>
 
   <!-- Mobile Bottom Sheet (OUTSIDE QLayout, only on mobile) -->
-  <WdBottomSheet
-    v-if="isMobile"
-    ref="bottomSheetRef"
-    v-model="contentDrawerOpen"
-    @close="closeContent"
-  >
+  <WdBottomSheet v-if="isMobile" ref="bottomSheetRef" v-model="contentDrawerOpen" @close="closeContent">
     <!-- Close button (top-right corner) -->
     <div class="absolute" style="top: 10px; right: 10px; z-index: 1000">
-      <q-btn
-        round
-        dense
-        flat
-        icon="wd-close"
-        @click="closeContent"
-        class="wd-ink-soft-text"
-        size="md"
-      />
+      <q-btn round dense flat icon="wd-close" @click="closeContent" class="wd-ink-soft-text" size="md" />
     </div>
 
     <!-- Header slot -->
     <template #header>
       <div class="sheet-header-row q-px-md q-pt-sm q-pb-xs" style="padding-right: 50px">
-        <component
-          v-if="contentTitleComponent"
-          :is="contentTitleComponent"
-          :slug="contentStore.contentSlug"
-        />
+        <component v-if="contentTitleComponent" :is="contentTitleComponent" :slug="contentStore.contentSlug" />
       </div>
     </template>
 
@@ -612,11 +560,7 @@ body.capacitor .preview-badge {
 
     <!-- Footer slot -->
     <template #footer>
-      <component
-        v-if="contentActionsComponent"
-        :is="contentActionsComponent"
-        :slug="contentStore.contentSlug"
-      />
+      <component v-if="contentActionsComponent" :is="contentActionsComponent" :slug="contentStore.contentSlug" />
     </template>
   </WdBottomSheet>
 </template>

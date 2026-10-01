@@ -708,7 +708,11 @@ onUnmounted(() => {
   color: rgba(255, 255, 255, 0.4); // Subtle, lighter than background
   user-select: none;
   pointer-events: none;
-}
+
+  background: #46543f; /* solid — alpha scrims read as no-bg in the audit */
+  color: #fdfefd;
+  padding: 2px 7px;
+  border-radius: 999px;}
 
 .thumb-error-icon {
   position: absolute;

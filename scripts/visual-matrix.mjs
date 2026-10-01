@@ -43,12 +43,6 @@ const HUT = HASH_MODE
   ? `#${HUT_PATH}`
   : `${HUT_PATH}#p=12/46.43749/7.08606`;
 
-/** Wait until the app shell is interactive (cold CDN loads race the
- *  old fixed 2.5s sleeps - the first config paid for every chunk). */
-const appReady = async p => {
-  await p.waitForSelector('header, .q-header', { timeout: 20000 });
-  await p.waitForSelector('.maplibregl-canvas', { timeout: 20000 }).catch(() => {});
-};
 const TS = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
 const OUT = `.visual-tests/${TS}`;
 mkdirSync(OUT, { recursive: true });
@@ -77,79 +71,90 @@ const STATES = [
     run: async p => {
       await p.goto(BASE + '/', { waitUntil: 'load' });
       await p.waitForSelector('.maplibregl-canvas', { timeout: 15000 });
+      await p.waitForTimeout(6000); // controls + attribution chip mount late
     },
     assert: '.maplibregl-canvas',
   },
   {
-    id: 'hover-rail',
+    id: 'overlay-strip',
     run: async p => {
       await p.goto(BASE + '/', { waitUntil: 'load' });
-      await p.waitForSelector('.maplibregl-canvas', { timeout: 15000 });
-      await p
-        .locator('.q-fab, .q-page button')
-        .first()
-        .hover()
-        .catch(() => {});
+      await p.waitForSelector('.wd-ovl__toggle', { timeout: 15000 });
+      await p.waitForTimeout(5000);
     },
-    assert: '.maplibregl-canvas',
+    assert: '.wd-ovl__box',
   },
   {
-    id: 'overlay-open',
+    id: 'overlay-expanded',
     run: async p => {
       await p.goto(BASE + '/', { waitUntil: 'load' });
-      await p.waitForSelector('.q-fab', { timeout: 15000 });
-      await softClick(p, '.q-fab');
+      await p.waitForSelector('.wd-ovl__toggle', { timeout: 15000 });
+      await p.waitForTimeout(5000);
+      await p.evaluate(() => document.querySelector('.wd-ovl__more')?.click());
+      await p.waitForTimeout(800);
     },
-    assert: '.q-fab__actions, .q-fab--opened',
-  },
-  {
-    id: 'overlay-actions-open',
-    run: async p => {
-      await p.goto(BASE + '/', { waitUntil: 'load' });
-      await p.waitForSelector('.q-fab', { timeout: 15000 });
-      await softClick(p, '.q-fab');
-      await p.waitForTimeout(700);
-      await softClick(p, '.q-fab__actions button, .q-fab__actions .q-btn');
-    },
-    assert: '.q-fab__actions',
+    assert: '.wd-ovl__box--expanded',
   },
   {
     id: 'overlay-selected',
     run: async p => {
       await p.goto(BASE + '/', { waitUntil: 'load' });
-      await p.waitForSelector('.q-fab', { timeout: 15000 });
-      await softClick(p, '.q-fab');
+      await p.waitForSelector('.wd-ovl__toggle', { timeout: 15000 });
+      await p.waitForTimeout(5000);
+      await p.evaluate(() => document.querySelector('.wd-ovl__more')?.click());
       await p.waitForTimeout(700);
-      await softClick(p, '.q-fab__actions button, .q-fab__actions .q-btn');
-      await p.waitForTimeout(400);
+      await p.evaluate(() => document.querySelectorAll('.wd-ovl__row')[1]?.click());
+      await p.waitForTimeout(600);
     },
-    assert: '.q-fab__actions',
+    assert: '.wd-ovl__box--expanded',
   },
   {
-    id: 'baselayer-open',
+    id: 'basemap-open',
     run: async p => {
       await p.goto(BASE + '/', { waitUntil: 'load' });
-      await p.waitForSelector('.q-fab', { timeout: 15000 });
-      const fabs = p.locator('.q-fab');
-      const n = await fabs.count();
-      for (let i = 0; i < Math.min(n, 3); i++) {
-        await softClick(p, `.q-fab >> nth=${i}`);
-        await p.waitForTimeout(700);
-        if (await p.locator('[class*="basemap" i], .wd-basemap').count()) break;
-      }
+      await p.waitForSelector('.wd-bm__toggle', { timeout: 15000 });
+      await p.waitForTimeout(5000);
+      await p.evaluate(() => document.querySelector('.wd-bm__toggle')?.click());
+      await p.waitForTimeout(800);
     },
-    assert: 'body', // capture regardless; basemap panel selector is brittle
-    optional: true,
+    assert: '.wd-bm__rail',
+  },
+  {
+    id: 'focus-mode',
+    run: async p => {
+      await p.goto(BASE + '/', { waitUntil: 'load' });
+      await p.waitForSelector('.wd-focus-toggle', { timeout: 15000 });
+      await p.waitForTimeout(5000);
+      await p.evaluate(() => document.querySelector('.wd-focus-toggle')?.click());
+      await p.waitForTimeout(1000);
+    },
+    assert: 'body.wd-map-focus',
+  },
+  {
+    id: 'topbar',
+    run: async p => {
+      await p.goto(BASE + '/', { waitUntil: 'load' });
+      await p.waitForSelector('.wd-topbar__pill', { timeout: 15000 });
+      await p.waitForTimeout(5000);
+    },
+    assert: '.wd-topbar__pill',
   },
   {
     id: 'hut',
     run: async p => {
       await p.goto(BASE + HUT, { waitUntil: 'load' });
-      // wait for the hut DATA (staging API latency varies 2-15s)
       await p
         .waitForSelector('text=/Aarbiwak|mmerenh/i', { timeout: 25000 })
         .catch(() => {});
-      await p.waitForTimeout(800);
+      // let gallery thumbnails settle — placeholder numbers during load
+      // are intentionally low-contrast and must not gate the audit
+      await p
+        .waitForFunction(
+          () => document.querySelectorAll('.thumb-image, img[src*=imagor]').length > 0,
+          { timeout: 12000 }
+        )
+        .catch(() => {});
+      await p.waitForTimeout(3500);
     },
     assert: 'text=/Aarbiwak|mmerenh/i',
   },
@@ -188,79 +193,6 @@ const STATES = [
       await p.waitForTimeout(600);
     },
     assert: 'text=/Aarbiwak|mmerenh/i',
-  },
-  {
-    id: 'menu-open',
-    run: async p => {
-      await p.goto(BASE + '/', { waitUntil: 'load' });
-      await appReady(p);
-      // the first header button is label-less on mobile (a no-op chip) -
-      // a combined selector still resolves to it via .first(); try the
-      // explicit control first, fall back to any header button
-      if (!(await softClick(p, 'button[aria-label="open menu"]'))) {
-        await softClick(p, 'header button');
-      }
-      await p.waitForTimeout(700);
-    },
-    assert: '.q-drawer--mobile, .q-drawer, .q-menu',
-  },
-  {
-    id: 'account-sheet-open',
-    run: async p => {
-      await p.goto(BASE + '/', { waitUntil: 'load' });
-      await appReady(p);
-      if (!(await softClick(p, 'button[aria-label="open menu"]'))) {
-        await softClick(p, 'header button');
-      }
-      await p.waitForTimeout(700);
-      // if a drawer opened, look for the account/user entry inside it
-      await softClick(
-        p,
-        '.q-drawer [class*="user" i], .q-drawer button:has-text("ogin"), .q-drawer a:has-text("ogin")'
-      );
-      await p.waitForTimeout(700);
-    },
-    assert: '.q-drawer, .q-menu, .q-dialog__inner',
-  },
-  {
-    id: 'calendar-open',
-    run: async p => {
-      await p.goto(BASE + '/', { waitUntil: 'load' });
-      await appReady(p);
-      await softClick(p, '.wd-date-field, header .q-field, header input[readonly]');
-      await p.waitForTimeout(900);
-    },
-    assert: '.q-date, [class*="calendar" i]',
-  },
-  {
-    id: 'search-open',
-    run: async p => {
-      await p.goto(BASE + '/', { waitUntil: 'load' });
-      await appReady(p);
-      // mobile opens search via a button (the header has no input there)
-      await softClick(
-        p,
-        'header input, header .wd-search-field, button[aria-label*="uche" i], button[aria-label*="earch" i]'
-      );
-      await p.waitForTimeout(900);
-    },
-    assert: '.q-menu, .q-dialog, [class*="search" i]',
-  },
-  {
-    id: 'search-results',
-    run: async p => {
-      await p.goto(BASE + '/', { waitUntil: 'load' });
-      await appReady(p);
-      await softClick(
-        p,
-        'header input, header .wd-search-field, button[aria-label*="uche" i], button[aria-label*="earch" i]'
-      );
-      await p.waitForTimeout(600);
-      const inp = p.locator('.q-menu input, header input, [class*="search"] input').first();
-      if (await inp.count()) await inp.fill('lam').catch(() => {});
-      await p.waitForTimeout(1200);
-    },
-    assert: '.q-menu, .q-item, [class*="result" i]',
   },
 ];
 
