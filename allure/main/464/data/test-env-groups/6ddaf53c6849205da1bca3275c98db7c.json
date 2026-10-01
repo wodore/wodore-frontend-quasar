@@ -1,0 +1,1 @@
+{"id":"6ddaf53c6849205da1bca3275c98db7c","fullName":"wodore:tests/unit/api-version.spec.ts#useApiVersionStore fails soft on fetch errors (state error, no throw)","name":"fails soft on fetch errors (state error, no throw)","status":"passed","testResultsByEnv":{"default":"8e3a0e262d95c109c6f1d5415e5a27a6"}}
