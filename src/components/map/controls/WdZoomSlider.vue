@@ -210,11 +210,11 @@ body.body--dark .wd-zoom {
   height: 10px;
   transform: translate(-50%, -50%);
   border-radius: 999px;
-  background: var(--wd-ctl-ink);
+  background: #bfab25; // gold beam — the active/selection accent
   box-shadow: 0 0 0 2px var(--wd-ctl-bg);
 }
 
 body.body--dark .wd-zoom__thumb {
-  background: #d4c23a; // gold beam — the active/selection accent
+  background: #d4c23a; // brighter gold on pine
 }
 </style>
