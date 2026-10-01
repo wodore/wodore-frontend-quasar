@@ -173,34 +173,19 @@ jobs:
             fi
           fi
 
-      # allure@3 does NOT write history back into the report; rebuild the
-      # next run's history.json from this report's per-test data. Capped at
-      # 2000 entries (63 tests here) to bound the gh-pages file size.
+      # allure-commandline v2 writes history into the report directly
+      # (allure-report/history/history.json). Copy it to the results dir
+      # for the next run's "Fetch Allure history" step.
       - name: Build next-run history
         if: always()
         run: |
-          cat > /tmp/build-history.js <<'EOF'
-          const fs = require('fs');
-          const h = {};
-          const d = 'allure-report/data/test-results';
-          for (const f of fs.readdirSync(d)) {
-            const j = JSON.parse(fs.readFileSync(d + '/' + f));
-            h[j.historyId] = {
-              status: j.status,
-              statusDetails: j.statusDetails || {},
-              trace: '',
-              stop: j.stop,
-            };
-          }
-          const capped = {};
-          for (const k of Object.keys(h).slice(0, 2000)) capped[k] = h[k];
-          fs.mkdirSync('allure-results/history', { recursive: true });
-          fs.writeFileSync(
-            'allure-results/history/history.json',
-            JSON.stringify(capped),
-          );
-          EOF
-          node /tmp/build-history.js
+          mkdir -p allure-results/history
+          if [ -f allure-report/history/history.json ]; then
+            cp allure-report/history/history.json allure-results/history/
+            echo "Copied v2 history for next run"
+          else
+            echo "No history file in report (first run?) — tolerated"
+          fi
 
       # Persist the history via plain git — a second peaceiris publish in
       # the same job deadlocks on `checkout --orphan gh-pages` (branch
