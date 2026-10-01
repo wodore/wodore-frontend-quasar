@@ -1,0 +1,125 @@
+// ── Map control column (bottom-right) ───────────────────────────────────
+// pointer-events: none on ALL wrappers — interactive elements inside the
+// controls opt back in with pointer-events: auto, so map gestures (pan,
+// zoom) pass through every empty pixel, including behind the expanded
+// overlay box. Without this the wrapper DIVs swallow the gestures.
+.wd-map-ctl-sticky,
+.wd-map-ctl-sticky > div, /* Quasar's classless inner wrapper — was swallowing gestures */
+.wd-map-ctl-col {
+  pointer-events: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.wd-map-ctl-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+// ── Focus (fullscreen) mode toggle button ────────────────────────────────
+.wd-focus-toggle {
+  position: absolute;
+  z-index: 2010; // above the topbar (2000) when fixed-positioned on mobile
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  border: 1px solid var(--wd-ctl-border);
+  background: var(--wd-ctl-bg);
+  color: var(--wd-ctl-ink);
+  box-shadow: var(--wd-ctl-shadow);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px);
+  transition:
+    opacity 0.3s cubic-bezier(0.2, 0, 0, 1),
+    transform 0.3s cubic-bezier(0.2, 0, 0, 1),
+    background-color 0.15s ease;
+
+  // Desktop: TOP of the right column — the MapLibre cluster is pushed
+  // below it (margin-top on .maplibregl-ctrl-top-right)
+  @media (min-width: 900px) {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+    top: 14px;
+    right: 14px;
+  }
+
+  // Mobile: HIDDEN in normal view (focus is entered by tapping the map);
+  // visible ONLY as the exit button in focus mode. position: FIXED +
+  // z-index above the topbar so nothing covers it.
+  @media (max-width: 899px) {
+    position: fixed;
+    top: calc(11px + env(safe-area-inset-top, 0px));
+    right: 12px;
+    width: 48px;
+    height: 48px;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  &--active {
+    color: var(--wd-ctl-ink); // neutral ink — gold on white read weak
+  }
+}
+
+// ── Focus mode slide-out / slide-in ──────────────────────────
+// Transitions on the DEFAULT state so elements animate back IN.
+
+.wd-map-ctl-sticky,
+.wd-map-ctl-col,
+.wd-topbar,
+.wd-topbar__progress,
+.maplibregl-ctrl-top-right .maplibregl-ctrl-group,
+.maplibregl-ctrl-bottom-left .maplibregl-ctrl-group {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.3s cubic-bezier(0.2, 0, 0, 1), transform 0.3s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.maplibregl-ctrl-top-left .maplibregl-ctrl-scale {
+  transition: top 0.3s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib {
+  transition: opacity 0.3s cubic-bezier(0.2, 0, 0, 1);
+}
+
+body.wd-map-focus {
+  .wd-map-ctl-sticky,
+  .wd-map-ctl-col {
+    opacity: 0; pointer-events: none; transform: translateX(80px);
+  }
+  .wd-topbar, .wd-topbar__progress {
+    opacity: 0; pointer-events: none; transform: translateY(-60px);
+  }
+  .maplibregl-ctrl-top-right .maplibregl-ctrl-group {
+    opacity: 0; pointer-events: none; transform: translateY(-60px);
+  }
+  .maplibregl-ctrl-bottom-left .maplibregl-ctrl-group {
+    opacity: 0; pointer-events: none; transform: translateX(-60px);
+  }
+  .maplibregl-ctrl-top-left .maplibregl-ctrl-scale {
+    top: calc(12px + env(safe-area-inset-top, 0px));
+  }
+  .wd-focus-toggle {
+    opacity: 1; pointer-events: auto; transform: none;
+    // Mobile: the exit lives bottom-right (where the overlay toggle
+    // normally sits) — top-right belongs to nothing in focus mode
+    @media (max-width: 899px) {
+      position: fixed;
+      top: auto;
+      bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+      right: 12px;
+    }
+  }
+}
+
+// months colors

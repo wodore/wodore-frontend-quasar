@@ -161,13 +161,13 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   }
 
   &--active {
-    border: 2px solid #bfab25; // gold selection border
+    border: 2px solid $wd-gold; // gold selection border
     padding: 4px; // keep the image size stable
   }
 }
 
 body.body--dark .wd-bm__btn--active {
-  border-color: #d4c23a; // brighter gold on pine
+  border-color: $wd-gold-bright; // brighter gold on pine
 }
 
 .wd-bm__thumb {

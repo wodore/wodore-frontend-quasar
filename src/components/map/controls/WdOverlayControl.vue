@@ -869,7 +869,7 @@ body.body--dark .wd-ovl__row-name {
   height: 18px;
   flex: none;
   border-radius: 50%;
-  background: #bfab25; // gold
+  background: $wd-gold; // gold
   color: #fdfefd;
   pointer-events: none;
 }
@@ -900,7 +900,7 @@ body.body--dark .wd-ovl__row-name {
     // !important escapes the global dark-mode elevation kill
     // (body.body--dark * { box-shadow: none !important }). The ring is
     // the ONLY edge (no border reservation) — reads exactly 2px.
-    box-shadow: inset 0 0 0 2px #d4c23a !important;
+    box-shadow: inset 0 0 0 2px $wd-gold-bright !important;
     border-color: transparent;
     border-width: 0;
   }
@@ -927,7 +927,7 @@ body.body--dark .wd-ovl__row-name {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #bfab25;
+  background: $wd-gold;
   color: #fdfefd;
   pointer-events: none;
   z-index: 1;

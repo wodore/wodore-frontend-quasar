@@ -1,0 +1,102 @@
+/* ── Zoom slider: visible ONLY in focus mode on mobile ───────────────────
+   (!important — the component's scoped display:flex is more specific) */
+.wd-zoom {
+  display: none !important;
+}
+
+body.wd-map-focus .wd-zoom {
+  display: flex !important;
+}
+
+/* Desktop focus mode shows the slider TOO now (owner request) — the
+   classic zoom buttons are hidden with the rest of the chrome. */
+@media (min-width: 900px) {
+  body.wd-map-focus .wd-zoom {
+    display: flex !important;
+  }
+}
+
+/* ── Mobile attribution: fully owned chip (MapLibre's markup is hidden —
+      hit-testing inside the PE-none control container never worked) ── */
+.wd-attrib {
+  animation: wd-attrib-in 0.25s ease-out; /* fade in when ready */
+  position: fixed;
+  left: calc(68px + env(safe-area-inset-left, 0px)); /* beside the GPS cluster */
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  z-index: 2010;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--wd-ctl-border);
+  border-radius: 999px; /* round ⓘ */
+  background: color-mix(in srgb, var(--wd-ctl-bg) 88%, transparent);
+  color: var(--wd-ctl-ink);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  *:focus {
+    outline: none;
+  }
+
+  // plain italic serif "i" — the chip IS the circle. When OPEN the
+  // glyph swaps to a close ✕ (tapping closes).
+  .wd-attrib__i {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-style: italic;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1;
+
+    .wd-attrib__close {
+      display: none;
+    }
+  }
+
+  .wd-attrib__text {
+    display: none;
+  }
+
+  &:active {
+    background: color-mix(in srgb, var(--wd-ctl-bg) 95%, transparent);
+  }
+}
+
+/* Expanded: wrapping text, transparent chip */
+.wd-attrib--open {
+  width: auto;
+  max-width: min(66vw, 320px);
+  min-width: 190px;
+  height: auto;
+  padding: 7px 12px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--wd-ctl-bg) 92%, transparent);
+
+  justify-content: flex-start;
+  gap: 8px;
+
+  .wd-attrib__text {
+    display: block;
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+    font-size: 10px;
+    line-height: 1.5;
+    white-space: normal;
+    color: var(--wd-ctl-ink);
+
+    a {
+      color: var(--wd-ctl-ink);
+      text-decoration: underline;
+      opacity: 0.8;
+    }
+  }
+}
+
+/* Focus mode: fully to the left, AT the bottom */
+body.wd-map-focus .wd-attrib {
+  left: calc(12px + env(safe-area-inset-left, 0px));
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+}

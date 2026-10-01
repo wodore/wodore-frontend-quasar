@@ -1,0 +1,330 @@
+// Floating topbar: search | date (highlight) | avatar ─────────────────────
+// One fully-rounded pill (999px). The DATE segment carries the visual
+// weight (green wash); search is icon-only; avatar opens the menu.
+
+.wd-topbar {
+  position: fixed;
+  top: calc(10px + env(safe-area-inset-top, 0px));
+  left: calc(12px + env(safe-area-inset-left, 0px));
+  right: calc(12px + env(safe-area-inset-right, 0px));
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center; // pill centered on ALL viewports
+  pointer-events: none;
+}
+
+.wd-topbar > * {
+  pointer-events: auto;
+}
+
+// ── The pill ────────────────────────────────────────────────────────────
+.wd-topbar__pill {
+  flex: none;
+  max-width: calc(100vw - 24px); // fullscreen button is hidden in normal view
+  display: flex;
+  align-items: center;
+  height: 52px; // taller pill — the date hero needs presence
+  background: var(--wd-ctl-bg);
+  border: 1px solid var(--wd-ctl-border);
+  border-radius: 999px;
+  box-shadow: var(--wd-ctl-shadow);
+  color: var(--wd-ctl-ink);
+  padding-left: 4px;
+  padding-right: 4px;
+  gap: 2px;
+}
+
+// ── Search: icon-only (44px zone) ───────────────────────────────────────
+.wd-topbar__search {
+  flex: none;
+  width: 44px; // matches the avatar zone — the pair reads as bookends
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// Desktop menu: collapse the q-input into an icon button
+.wd-topbar__search-menu {
+  .wd-search-field,
+  .q-field {
+    width: 44px;
+    min-width: 44px;
+  }
+
+  .q-field__control {
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 4px !important;
+    height: 44px;
+    min-height: 44px;
+  }
+
+  .q-field__control::before,
+  .q-field__control::after {
+    background: transparent !important;
+    border: none !important;
+  }
+
+  // hide the text input — icon only
+  .q-field__native,
+  input {
+    display: none;
+  }
+
+  .q-icon,
+  .text-icon {
+    color: $wd-day-ink !important; // neutral day-ink (.text-icon utility is brand green)
+    font-size: 19px; // optical match for the avatar's 20px stroke-2 glyph
+  }
+}
+
+body.body--dark .wd-topbar__search-menu .q-icon,
+body.body--dark .wd-topbar__search-menu .text-icon {
+  color: $wd-paper !important;
+}
+
+// Mobile dialog trigger: round icon button, neutral ink
+.wd-topbar__search-dialog {
+  .q-btn,
+  .q-btn .text-icon {
+    width: 44px;
+    height: 44px;
+    color: $wd-day-ink !important;
+  }
+}
+
+body.body--dark .wd-topbar__search-dialog .q-btn,
+body.body--dark .wd-topbar__search-dialog .q-btn .text-icon {
+  color: $wd-paper !important;
+}
+// ── Menu: right element ──────────────────────────────────
+.wd-topbar__menu {
+  flex: none;
+  width: 44px; // matches the avatar zone — the pair reads as bookends
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .q-icon,
+  .q-icon .text-icon {
+    color: $wd-day-ink !important; // neutral day-ink (.text-icon utility is brand green)
+    font-size: 19px; // optical match for the avatar's 20px stroke-2 glyph
+  }
+}
+body.body--dark .wd-topbar__menu .q-icon,
+body.body--dark .wd-topbar__menu .text-icon {
+  color: $wd-paper !important;
+}
+// ── Date: the highlighted core element ──────────────────────────────────
+// ── Date segment: plain 2-line BUTTON (no input field) ───────────────────
+// Design: Alpine Instrument — inset block, wash + hairline, dashed when
+// empty; line 1 day name (15/600/uppercase), line 2 date (12/400).
+// ── Date segment: full-radius sub-pill ON the main pill ──────────────────
+// The calendar sits as a second stadium-shaped panel inside the capsule:
+// 4px inset, 999px radius, tonal wash. No borders — the wash IS the shape.
+.wd-topbar__date {
+  flex: 1 1 auto; // fills the pill between the icon bookends
+  min-width: 0;
+  height: 46px; // 3px inset in the 52px pill
+  margin: 0 2px;
+  align-self: center;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+}
+
+.wd-date-seg {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* Steppers (desktop prev/next) stay hidden in the pill; kill the dashed
+   field border WdSelectDate draws on its stepper wrapper */
+.wd-topbar__date .wd-input-button {
+  display: none !important;
+}
+
+.wd-topbar__date .wd-date-stepper,
+.wd-topbar__date .wd-date-seg,
+.wd-topbar__date .wd-date-seg > div {
+  border: none !important;
+  outline: none !important;
+}
+
+.wd-date-btn {
+  display: flex;
+  align-items: center;
+  //justify-content: space-between;
+  gap: 10px;
+  width: 180px;
+  height: 44px;
+
+  padding: 0 16px 0 16px;
+  border: 1px;
+  border-radius: 999px; // second full-radius panel
+  background: rgba(17, 33, 25, 0.07); // light: pine wash
+  cursor: pointer;
+  transition: background-color 0.12s ease-out;
+  -webkit-tap-highlight-color: transparent;
+
+  &:active {
+    background: rgba(17, 33, 25, 0.14);
+  }
+
+  .text-icon {
+    color: $wd-day-ink !important; // neutral day-ink (.text-icon utility is brand green)
+  }
+}
+
+// Empty state: whisper wash (no dashed outline — reads unfinished)
+.wd-date-btn:has(.wd-date-btn__day--empty) {
+  background: rgba(17, 33, 25, 0.045);
+}
+
+body.body--dark .wd-date-btn {
+  // crisp tonal step (solid pine lift) — alpha washes read as murk
+  background: #1a3a2b;
+
+  &:active {
+    background: #20472f;
+  }
+  .text-icon {
+    color: $wd-paper !important;
+  }
+}
+
+body.body--dark .wd-date-btn:has(.wd-date-btn__day--empty) {
+  background: #163024;
+}
+
+.wd-date-btn__lines {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  line-height: 1.12;
+  text-align: left;
+}
+
+.wd-date-btn__day {
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: $wd-day-ink;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &--empty {
+    opacity: 0.72;
+  }
+}
+
+.wd-date-btn__date {
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  color: $wd-day-ink;
+  opacity: 0.66;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &--empty {
+    opacity: 0.58;
+  }
+}
+
+body.body--dark .wd-date-btn__day {
+  color: #ffffff;
+
+  &--empty {
+    opacity: 0.78;
+  }
+}
+
+body.body--dark .wd-date-btn__date {
+  color: #d9f0e4;
+
+  &--empty {
+    opacity: 0.75; // mint at ~70-75% — readable, still placeholder
+  }
+}
+
+.wd-date-btn__icon {
+  flex: none;
+  color: $wd-day-ink;
+
+  &--empty {
+    opacity: 0.5;
+  }
+}
+
+body.body--dark .wd-date-btn__icon {
+  color: #ffffff; // match the avatar icon brightness
+}
+
+// ── Avatar / menu button (right edge) ───────────────────────────────────
+.wd-topbar__user {
+  display: grid;
+  place-items: center;
+  width: 44px; // same zone as the search icon — symmetric bookends
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: $wd-day-ink;
+  cursor: pointer;
+  flex: none;
+  transition: background-color 0.12s ease, color 0.12s ease;
+
+  &:hover {
+    background: rgba(128, 128, 128, 0.14);
+    color: var(--wd-ctl-ink);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+// ── Desktop utilities: top-right chip cluster (8px radius) ──────────────
+@media (min-width: 900px) {
+  .wd-topbar__utils {
+    position: absolute;
+    top: calc(6px + env(safe-area-inset-top, 0px));
+    right: calc(62px + env(safe-area-inset-right, 0px));
+    background: var(--wd-ctl-bg);
+    border: 1px solid var(--wd-ctl-border);
+    border-radius: 8px;
+    box-shadow: var(--wd-ctl-shadow);
+    height: 44px;
+    padding: 0 6px;
+    display: flex;
+    gap: 2px;
+    align-items: center;
+    color: var(--wd-ctl-ink);
+    flex: none;
+
+    .q-btn {
+      color: var(--wd-ctl-ink) !important;
+    }
+  }
+}
+
+// ── Progress bar rides below the pill ───────────────────────────────────
+.wd-topbar__progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  border-radius: 0;
+  z-index: 2100;
+}
