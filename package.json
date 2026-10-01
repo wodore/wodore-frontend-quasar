@@ -14,7 +14,7 @@
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
     "test:visual": "node scripts/visual-matrix.mjs",
-    "test:interaction": "node scripts/interaction-suite.cjs",
+    "test:interaction": "playwright test tests/interaction/ --project=interaction && node scripts/link-allure-attachments.mjs",
     "test:unit:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "allure:generate": "rm -rf allure-results/merged && mkdir -p allure-results/merged && cp -R allure-results/unit/. allure-results/merged/ && if [ -d allure-results/e2e ]; then cp -R allure-results/e2e/. allure-results/merged/; fi; rm -rf allure-report && allure generate allure-results/merged",
