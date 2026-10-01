@@ -21,7 +21,7 @@ export function useNearbyImages(lat?: Ref<number | undefined>, lon?: Ref<number 
   const transformResponse = (response: NearbyImagesResponse): HutImage[] => {
     return response.features.map((feature: NearbyImageFeature) => ({
       ...feature.properties,
-      id: `${feature.properties.provider}_${feature.properties.source_id}`,
+      id: `${feature.properties.provider.slug}_${feature.properties.source_id}`,
     }));
   };
 
