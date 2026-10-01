@@ -75,7 +75,7 @@ async function pinTheme(page, theme) {
           ovlToggleBg: bg('.wd-ovl__toggle'),
           bmToggleBg: bg('.wd-bm__toggle'),
           focusBg: bg('.wd-focus-toggle'),
-          attribBg: bg('.maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib, .maplibregl-ctrl-bottom-left .maplibregl-ctrl-attrib'),
+          attribBg: bg('.wd-attrib'),
           dateBg: bg('.wd-topbar__date'),
           pillInk: color('.wd-topbar__user') !== 'MISS' ? color('.wd-topbar__user') : color('.wd-topbar__menu .q-icon'),
         };

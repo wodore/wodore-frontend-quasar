@@ -1108,18 +1108,44 @@ onMounted(() => {
   });
 });
 
-/** MapLibre auto-adds 'maplibregl-compact-show' on load (full text shown);
- *  strip it once so the ⓘ starts collapsed — tapping it then works. */
+/** MapLibre mixes the <details> `open` ATTRIBUTE with its
+ *  `maplibregl-compact-show` class — they desync (starts expanded, close
+ *  taps stop working). We own the state: sync BOTH on every toggle.
+ *  Taps never reach focus mode (the .maplibregl-ctrl guard matches). */
 function collapseAutoExpandedAttribution(): void {
   window.setTimeout(() => {
     document.querySelectorAll('.maplibregl-ctrl-attrib').forEach(el => {
+      const details = el as unknown as { open: boolean; removeAttribute: (n: string) => void; dataset: Record<string, string> };
+      // collapsed start — clear BOTH signals
+      details.open = false;
+      details.removeAttribute('open');
       el.classList.remove('maplibregl-compact-show');
-      // Wire a ROBUST toggle: stop the tap from reaching the map (it was
-      // falling through and triggering focus mode) and flip the state.
-      // NOTE: no stopPropagation here — capture-phase blocking killed the
-      // native <summary> toggle (open/close). Taps on the attribution are
-      // already excluded from focus mode by the .maplibregl-ctrl guard in
-      // onMapPointerDown (the event bubbles, but the guard matches).
+      el.classList.remove('wd-attrib--open');
+
+      if (details.dataset.wdWired) return;
+      details.dataset.wdWired = '1';
+
+      // Mobile: MapLibre's attribution markup is unreachable — the
+      // PE-none control container skips fixed children in hit-testing and
+      // its own CSS fights ours. Replace it with a fully owned chip.
+      if (window.matchMedia('(max-width: 899px)').matches && !document.querySelector('.wd-attrib')) {
+        (el as HTMLElement).style.display = 'none';
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'wd-attrib';
+        chip.setAttribute('aria-label', 'Attribution');
+        chip.innerHTML =
+          '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>' +
+          '<span class="wd-attrib__text">' +
+          (el.querySelector('.maplibregl-ctrl-attrib-inner')?.innerHTML ?? '') +
+          '</span>';
+        chip.addEventListener('click', ev => {
+          ev.stopPropagation();
+          chip.classList.toggle('wd-attrib--open');
+        });
+        // keep the original in sync (MapLibre updates it on style changes)
+        document.body.appendChild(chip);
+      }
     });
   }, 800);
 }
