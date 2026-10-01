@@ -9,6 +9,10 @@
 //
 // njs runs a conservative ES6 subset: plain functions, promises, no
 // optional chaining, no replaceAll.
+//
+// __WODORE_SEO_PAGE_TTL__ is a placeholder substituted by the
+// entrypoint (docker/entrypoint.sh) — keep it declared for ESLint.
+/* global __WODORE_SEO_PAGE_TTL__ */
 
 const SHELL_URI = '/_seo/shell';
 
