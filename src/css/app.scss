@@ -894,11 +894,11 @@ body.body--dark .wd-date-btn__icon {
 // ── Progress bar rides below the pill ───────────────────────────────────
 .wd-topbar__progress {
   position: fixed;
-  top: calc(66px + env(safe-area-inset-top, 0px));
-  left: 24px;
-  right: 24px;
-  border-radius: 999px;
-  z-index: 2000;
+  top: 0;
+  left: 0;
+  right: 0;
+  border-radius: 0;
+  z-index: 2100;
 }
 
 
@@ -1021,6 +1021,14 @@ body.wd-map-focus {
   }
   .wd-focus-toggle {
     opacity: 1; pointer-events: auto; transform: none;
+    // Mobile: the exit lives bottom-right (where the overlay toggle
+    // normally sits) — top-right belongs to nothing in focus mode
+    @media (max-width: 899px) {
+      position: fixed;
+      top: auto;
+      bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+      right: 12px;
+    }
   }
 }
 

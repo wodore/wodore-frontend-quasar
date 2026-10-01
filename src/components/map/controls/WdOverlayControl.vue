@@ -11,7 +11,7 @@
  * ordering, and re-adding all active overlays on every style load
  * (basemap switches create a new style → layers must be re-added).
  */
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
+import { ref, watch, onMounted, onBeforeUnmount, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { LocalStorage } from 'quasar';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
@@ -57,6 +57,13 @@ function onRowsScroll(e: Event): void {
 
 const thumbTop = ref(0);
 const thumbH = ref(0);
+
+/** Thumb position relative to the BOX (rows may sit below the toolbar) */
+const thumbAbsTop = computed(() => {
+  const rows = document.querySelector('.wd-ovl__rows') as HTMLElement | null;
+  const offset = rows ? rows.offsetTop : 0;
+  return offset + thumbTop.value;
+});
 
 /** Swipe left = expand, swipe right = collapse (on rows and toggle) */
 let swipeStartX: number | null = null;
@@ -353,9 +360,6 @@ onBeforeUnmount(() => {
 
         <!-- Rows: icon always at the right, label+actions appear when expanded -->
         <div class="wd-ovl__rows" role="group" :aria-label="t('overlay_style')" @scroll.passive="onRowsScroll">
-          <!-- custom scrollbar thumb (overlay — never squeezes the rows) -->
-          <div v-if="thumbH > 0 && !scrollAtBottom" class="wd-ovl__scrollthumb"
-            :style="{ top: thumbTop + 'px', height: thumbH + 'px' }" />
           <div v-for="item in overlayStore.overlays" :key="item.name" v-show="item.show" class="wd-ovl__row" :class="{
             'wd-ovl__row--active': item.active,
             'wd-ovl__row--passive': !item.active,
@@ -392,6 +396,14 @@ onBeforeUnmount(() => {
             </span>
           </div>
         </div>
+
+        <!-- Scroll thumb at BOX level (the rows scroll-clip ate it inside);
+             rides exactly on the box's right border -->
+        <div
+          v-if="thumbH > 0 && !scrollAtBottom"
+          class="wd-ovl__scrollthumb"
+          :style="{ top: thumbAbsTop + 'px', height: thumbH + 'px' }"
+        />
 
         <!-- More button: toggles the box between mini and expanded -->
         <button class="wd-ovl__more" :aria-label="expanded ? t('close') : t('overlay_style')" :aria-expanded="expanded"
@@ -638,14 +650,14 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   }
 }
 
-// custom overlay thumb: 3px, rides the rows' right edge
+// custom overlay thumb: 3px, ON the box's right border (box-level so the
+// rows' scroll clip cannot eat it)
 .wd-ovl__scrollthumb {
   position: absolute;
-  top: 0;
-  right: -4px; // rides exactly ON the box border (rows padding 3 + border 1)
+  right: 0; // flush on the inner edge of the 1px box border
   width: 3px;
   border-radius: 999px;
-  background: rgba(128, 145, 135, 0.5);
+  background: rgba(128, 145, 135, 0.55);
   pointer-events: none;
   z-index: 3;
 }
@@ -775,13 +787,15 @@ body.body--dark .wd-ovl__row-name {
 
   body.body--dark &--active {
     // !important escapes the global dark-mode elevation kill
-    // (body.body--dark * { box-shadow: none !important })
-    box-shadow: inset 0 0 0 2px #d4c23a !important; // brighter beam on pine
-    border-color: transparent; // ring IS the border — total edge exactly 2px
+    // (body.body--dark * { box-shadow: none !important }). The ring is
+    // the ONLY edge (no border reservation) — reads exactly 2px.
+    box-shadow: inset 0 0 0 2px #d4c23a !important;
+    border-color: transparent;
+    border-width: 0;
   }
 
   &--inactive {
-    opacity: 0.85;
+    opacity: 0.55; // clearly dimmer than active — instant read
   }
 
   :deep(img),
