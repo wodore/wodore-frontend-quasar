@@ -92,6 +92,7 @@ const iconClose = new URL('/src/assets/wodore-design/icons/export/basemap-switch
 </template>
 
 <style lang="scss" scoped>
+@use '../../../css/map-controls/chip' as chip;
 $ease: cubic-bezier(0.2, 0, 0, 1);
 
 .wd-bm {
@@ -113,8 +114,8 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 6px;
-  padding: 0; // 46px buttons + 2px border = 48px, matching the toggle
+  gap: 4px;
+  padding: 3px; // 3px + 1px border + 40px thumb + 1px border + 3px = 48px
   border-radius: 8px;
   border: 1px solid var(--wd-ctl-border); // same border width as overlay toggle
   background: var(--wd-ctl-bg);
@@ -140,10 +141,10 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 // padding inside so the image breathes.
 .wd-bm__btn {
   position: relative;
-  width: 46px;
-  height: 46px;
+  width: 40px;
+  height: 40px;
   scroll-snap-align: start;
-  padding: 5px; // overlay-chip rhythm — image breathes inside the border
+  padding: 0; // images fill edge-to-edge — the rail provides the spacing
   border-radius: 4px;
   border: 1px solid var(--wd-ctl-border); // gray hairline
   background: var(--wd-ctl-bg);
@@ -161,13 +162,13 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   }
 
   &--active {
-    border: 2px solid #bfab25; // gold selection border
-    padding: 4px; // keep the image size stable
+    border: 2px solid $wd-gold; // gold selection border
+    padding: 0; // images still fill — the border eats 1px more per side
   }
 }
 
 body.body--dark .wd-bm__btn--active {
-  border-color: #d4c23a; // brighter gold on pine
+  border-color: $wd-gold-bright; // brighter gold on pine
 }
 
 .wd-bm__thumb {
@@ -188,27 +189,9 @@ body.body--dark .wd-bm__btn--active {
 
 // ── Toggle (matches overlay toggle: 48px, 1px border) ───────────────────
 .wd-bm__toggle {
-  position: relative; // anchor for the stacked morph icons
-  display: grid;
-  place-items: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
-  border: 1px solid var(--wd-ctl-border);
-  background: var(--wd-ctl-bg);
-  cursor: pointer;
-  box-shadow: var(--wd-ctl-shadow);
-  transition:
-    background-color 0.15s $ease,
-    transform 0.1s $ease;
-  flex: none;
+  @include chip.control; // 48px recipe — single source in _chip.scss
   padding: 8px;
-  outline: none;
   pointer-events: auto;
-
-  &:active {
-    transform: scale(0.96);
-  }
 }
 
 .wd-bm__toggle-icon {

@@ -34,7 +34,11 @@ const mapRef = useMap();
 const stripOpen = ref(
   LocalStorage.hasItem('wd_ovl_strip') ? (LocalStorage.getItem('wd_ovl_strip') as boolean) : true
 );
-watch(stripOpen, v => LocalStorage.set('wd_ovl_strip', v));
+watch(stripOpen, v => {
+  LocalStorage.set('wd_ovl_strip', v);
+  // flag on <body> — the zoom slider hides while the strip is open
+  document.body.classList.toggle('wd-ovl-strip-open', v);
+});
 
 /** Box expanded: same box, wider (labels + info/filter visible) */
 const expanded = ref(false);
@@ -511,6 +515,7 @@ onBeforeUnmount(() => {
 </template>
 
 <style lang="scss" scoped>
+@use '../../../css/map-controls/chip' as chip;
 // ══════════════════════════════════════════════════════════════════════
 // WdOverlayControl v4 — Alpine Instrument polish
 //
@@ -538,27 +543,9 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 
 // ── Toggle button (48px, colored icon) ──────────────────────────────────
 .wd-ovl__toggle {
-  position: relative; // anchor for the stacked absolute morph icons
-  display: grid;
-  place-items: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
-  border: 1px solid var(--wd-ctl-border);
-  background: var(--wd-ctl-bg);
-  cursor: pointer;
-  box-shadow: var(--wd-ctl-shadow);
-  transition:
-    background-color 0.15s $ease,
-    transform 0.1s $ease;
-  flex: none;
+  @include chip.control; // 48px recipe — single source in _chip.scss
   padding: 8px;
-  outline: none;
   pointer-events: auto;
-
-  &:active {
-    transform: scale(0.96);
-  }
 
   .wd-ovl__toggle-icon {
     position: absolute;
@@ -869,7 +856,7 @@ body.body--dark .wd-ovl__row-name {
   height: 18px;
   flex: none;
   border-radius: 50%;
-  background: #bfab25; // gold
+  background: $wd-gold; // gold
   color: #fdfefd;
   pointer-events: none;
 }
@@ -900,7 +887,7 @@ body.body--dark .wd-ovl__row-name {
     // !important escapes the global dark-mode elevation kill
     // (body.body--dark * { box-shadow: none !important }). The ring is
     // the ONLY edge (no border reservation) — reads exactly 2px.
-    box-shadow: inset 0 0 0 2px #d4c23a !important;
+    box-shadow: inset 0 0 0 2px $wd-gold-bright !important;
     border-color: transparent;
     border-width: 0;
   }
@@ -927,7 +914,7 @@ body.body--dark .wd-ovl__row-name {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #bfab25;
+  background: $wd-gold;
   color: #fdfefd;
   pointer-events: none;
   z-index: 1;
