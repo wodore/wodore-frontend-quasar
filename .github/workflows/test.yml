@@ -67,8 +67,18 @@ jobs:
 
       # NOTE: e2e (Playwright) is intentionally NOT run in CI — it requires a
       # real dev server + backend and stays a local-only suite for now.
+      - name: Start dev server for interaction tests
+        run: yarn dev -p 9000 &
+        env:
+          WODORE_API_HOST: ${{ vars.WODORE_API_HOST || 'https://hub.stg.wodore.com' }}
+
       - name: Run unit tests
         run: rm -rf allure-results && yarn test:unit
+
+      - name: Run interaction tests (map controls)
+        run: yarn test:interaction
+        env:
+          INTERACTION_BASE_URL: http://localhost:9000
 
       - name: Cache Allure (npm)
         uses: actions/cache@v4
