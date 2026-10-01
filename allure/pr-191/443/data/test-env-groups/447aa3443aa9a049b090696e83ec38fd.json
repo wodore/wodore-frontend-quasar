@@ -1,1 +1,0 @@
-{"id":"447aa3443aa9a049b090696e83ec38fd","fullName":"wodore:tests/unit/image-service.spec.ts#getImageUrl strips the API media host prefix when replacement is enabled","name":"strips the API media host prefix when replacement is enabled","status":"passed","testResultsByEnv":{"default":"dd87d77f9b810be7ad6d9200c1bfd96e"}}
