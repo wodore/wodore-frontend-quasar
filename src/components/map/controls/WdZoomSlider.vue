@@ -129,7 +129,7 @@ onBeforeUnmount(() => {
 
 .wd-zoom {
   position: fixed;
-  left: 0;
+  right: 0;
   top: 50%;
   transform: translateY(-50%);
   z-index: 2010;
@@ -139,8 +139,8 @@ onBeforeUnmount(() => {
   width: 44px; // full grab zone
   padding: 4px 0;
   border: 1px solid var(--wd-ctl-border);
-  border-left: none; // docked flush to the screen edge
-  border-radius: 0 999px 999px 0; // pill protruding from the left
+  border-right: none; // docked flush to the screen edge
+  border-radius: 999px 0 0 999px; // pill protruding from the right
   background: var(--wd-ctl-bg);
   color: var(--wd-ctl-ink);
   cursor: grab;
