@@ -24,6 +24,12 @@ LABEL org.opencontainers.image.licenses=MIT
 
 WORKDIR /app
 
+# Opt the PWA build into the external /env.js (placeholders rewritten by
+# replace_vars at container start): keeps the HTML shell free of volatile
+# values so the SEO edge can cache hut pages. Non-docker builds (dev,
+# Capacitor, Pages previews) keep the inline env — see index.html.
+ENV WODORE_EXTERNAL_ENV=1
+
 # Set build arguments
 ARG GIT_HASH
 ENV GIT_HASH=${GIT_HASH}
@@ -64,32 +70,38 @@ RUN --mount=type=cache,target=/app/.quasar --mount=type=cache,target=/app/node_m
   echo "Package version: $PACKAGE_VERSION" && \
   export $(grep -v '^#' .env | xargs) && quasar build -m pwa
 ################################################################################
-## Stage 2: Serve with optimized Nginx                                        ##
+## Stage 2: Serve with Alpine nginx + njs                                    ##
 ################################################################################
-FROM nginx:stable-alpine-slim AS serve
+# Alpine's own nginx package — NOT the official nginx image: only Alpine's
+# nginx can load Alpine's nginx-mod-http-js (njs) module. The official
+# image builds nginx from source and apk refuses the version-pinned module
+# (verified ABI conflict: "breaks: nginx-mod-http-js-...[nginx=...]").
+# njs powers the SEO edge injection (docker/seo.js).
+FROM alpine:3.24 AS serve
 
-# Upgrade base system for security patches
-RUN apk --no-cache upgrade \
-  && rm -rf /var/cache/apk/*
-
-# Remove default config and use a custom secure one
-RUN rm -rf /etc/nginx/conf.d/default.conf
+# Upgrade base system for security patches, then install nginx + njs.
+# /var/cache/nginx/seo is the on-disk cache for hut metadata subrequests
+# (mount a volume there to persist it across restarts).
+RUN apk --no-cache add nginx nginx-mod-http-js \
+  && apk --no-cache upgrade \
+  && rm -rf /var/cache/apk/* \
+  && rm -f /etc/nginx/http.d/default.conf \
+  && mkdir -p /var/cache/nginx/seo /etc/nginx/conf.d \
+  && chown -R nginx:nginx /var/cache/nginx
 
 # Copy built PWA files from Quasar stage
 COPY --from=build-quasar /app/dist/pwa /usr/share/nginx/html
 
-# Set proper ownership and permissions for nginx
-#RUN chown -R nginx:nginx /usr/share/nginx/html \
-#    && chmod -R 755 /usr/share/nginx/html \
-#    && find /usr/share/nginx/html -type f -exec chmod 644 {} \;
-
 # Copy compiled Go binary from build stage
 COPY --from=build-replace-vars /replace_vars /usr/local/bin/replace_vars
 
-# Copy nginx configurations
+# Copy nginx configurations and the njs SEO script (js_import'ed by
+# nginx-default.conf; load_module is injected into nginx.conf by the
+# entrypoint — load_module is a main-context directive).
 COPY docker/nginx-default.conf /etc/nginx/http.d/default.conf.not_used
 COPY docker/nginx-proxy.conf /etc/nginx/http.d/proxy.conf.not_used
 COPY docker/nginx-local.conf /etc/nginx/http.d/local.conf.not_used
+COPY docker/seo.js /etc/nginx/seo.js
 COPY ./.env /dot_env_defaults
 
 # Copy entrypoint script
