@@ -14,15 +14,11 @@ name: Build Android
 # steps.resolve.outputs.build == 'true'.
 on:
   push:
-    needs: check-draft
-    if: needs.check-draft.outputs.draft != 'true'
     branches:
       - main
     tags:
       - 'v*.*.*'
   pull_request:
-    needs: check-draft
-    if: needs.check-draft.outputs.draft != 'true'
     types:
       - opened
       - synchronize
@@ -30,8 +26,6 @@ on:
       - labeled
       - closed
   workflow_dispatch:
-    needs: check-draft
-    if: needs.check-draft.outputs.draft != 'true'
     inputs:
       variant:
         description: 'Which variant to build'
@@ -44,12 +38,12 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Skip ALL jobs when the PR is a draft (no tests, no preview, no APK)
   check-draft:
     runs-on: ubuntu-latest
     steps:
       - id: is_draft
-        run: echo "draft=${ github.event.pull_request.draft || false }" >> "$GITHUB_OUTPUT"
+        run: echo "draft=${{ github.event.pull_request.draft || false }}" >> "$GITHUB_OUTPUT"
+  # Skip ALL jobs when the PR is a draft (no tests, no preview, no APK)
   build-apk:
     needs: check-draft
     if: needs.check-draft.outputs.draft != 'true'

@@ -6,20 +6,20 @@
  *   - compares against the reference on subsequent runs
  *   - produces a diff image on failure
  *
- * Update references: npx playwright test tests/interaction/visual-regression.spec.ts --update-snapshots
+ * Update references: yarn test:snapshots-update
  *
- * Only captures DETERMINISTIC states (the map controls without live tile
- * data behind them) — hut/home states render staging data and vary run-to-run.
+ * Captures the FULL viewport width — the controls live at the right edge
+ * but their visual context (what's beside them, the map margin) matters.
  */
 import { test, expect } from '@playwright/test';
 import { allure } from 'allure-playwright';
 import { loadMap, pinTheme, tagTest } from './helpers';
 
-// Only the most stable states — the map behind is cropped out where possible
 const STATES = [
   { id: 'overlay-strip', theme: 'light', mode: 'mobile' },
   { id: 'overlay-expanded', theme: 'light', mode: 'mobile' },
   { id: 'basemap-rail', theme: 'light', mode: 'mobile' },
+  { id: 'zoom-only', theme: 'light', mode: 'mobile' },
   { id: 'focus-mode', theme: 'light', mode: 'mobile' },
   { id: 'overlay-strip', theme: 'dark', mode: 'mobile' },
   { id: 'overlay-expanded', theme: 'dark', mode: 'mobile' },
@@ -40,7 +40,7 @@ test.describe('visual regression', () => {
       // Navigate to the state
       switch (id) {
         case 'overlay-strip':
-          // default state — strip is open
+          // default state — strip is open, zoom hidden
           break;
         case 'overlay-expanded':
           await page.evaluate('document.querySelector(".wd-ovl__more")?.click()');
@@ -50,28 +50,31 @@ test.describe('visual regression', () => {
           await page.evaluate('document.querySelector(".wd-bm__toggle")?.click()');
           await page.waitForTimeout(700);
           break;
+        case 'zoom-only':
+          // close the overlay strip — zoom handle becomes visible
+          await page.evaluate('document.querySelector(".wd-ovl__toggle")?.click()');
+          await page.waitForTimeout(500);
+          break;
         case 'focus-mode':
           await page.evaluate('document.querySelector(".wd-focus-toggle")?.click()');
           await page.waitForTimeout(900);
           break;
         case 'topbar':
-          // just capture the top area
+          // just the top area
           break;
       }
 
-      // Capture only the CONTROL AREA (right edge, bottom) — not the full page
-      // which includes variable map tiles
+      // Full viewport for most states; topbar clips to the pill area
       const clip =
         id === 'topbar'
           ? { x: 0, y: 0, width: 390, height: 80 }
-          : id === 'focus-mode'
-            ? { x: 200, y: 200, width: 190, height: 644 }
-            : { x: 200, y: 300, width: 190, height: 544 };
+          : undefined; // full page — the controls' context matters
 
       await expect(page).toHaveScreenshot(`${id}-${theme}-${mode}.png`, {
-        clip,
-        maxDiffPixels: 100, // tolerate antialiasing
+        ...(clip ? { clip } : {}),
+        maxDiffPixels: 200, // tolerate antialiasing + map tile edges
         animations: 'disabled',
+        caret: 'hide',
       });
     });
   }
