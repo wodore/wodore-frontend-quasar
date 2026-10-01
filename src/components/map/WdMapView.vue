@@ -1134,8 +1134,9 @@ function collapseAutoExpandedAttribution(): void {
         chip.type = 'button';
         chip.className = 'wd-attrib';
         chip.setAttribute('aria-label', 'Attribution');
+        // Icon: a plain italic "i" — the circle is the chip itself (CSS)
         chip.innerHTML =
-          '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>' +
+          '<span class="wd-attrib__i">i</span>' +
           '<span class="wd-attrib__text">' +
           (el.querySelector('.maplibregl-ctrl-attrib-inner')?.innerHTML ?? '') +
           '</span>';

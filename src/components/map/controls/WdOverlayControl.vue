@@ -584,7 +584,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   }
 
   .wd-ovl__toggle-icon--closed-icon {
-    opacity: 0.55; // passive clearly dimmer; hover restores
+    opacity: 0.72; // passive dimmer — subtle, never ghosted
     transform: scale(1);
     transition:
       opacity 0.2s $ease 0.06s,

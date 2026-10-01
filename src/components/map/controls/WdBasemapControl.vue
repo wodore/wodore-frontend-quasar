@@ -138,12 +138,12 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 // visual language as the overlay chips.
 .wd-bm__btn {
   position: relative;
-  width: 46px; // + 2px border = 48px outer, same as the toggle
+  width: 46px;
   height: 46px;
   scroll-snap-align: start;
   padding: 0;
   border-radius: 4px;
-  border: 1px solid var(--wd-ctl-border);
+  border: 1px solid transparent; // overlay-chip look: no hard border
   background: var(--wd-ctl-date-bg);
   cursor: pointer;
   display: grid;

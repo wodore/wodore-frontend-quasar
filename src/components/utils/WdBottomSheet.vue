@@ -215,6 +215,10 @@ bottom-sheet {
 
 bottom-sheet::part(footer) {
   z-index: 100;
+  /* Fine separation from the sheet content — without it the toolbar
+     merges into the white sheet (owner report). */
+  border-top: 1px solid rgba(128, 145, 135, 0.22);
+  box-shadow: 0 -2px 8px rgba(10, 20, 15, 0.06);
 }
 </style>
 

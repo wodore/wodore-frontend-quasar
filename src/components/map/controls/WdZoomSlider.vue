@@ -139,7 +139,9 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  justify-content: center;
   width: 48px; // touch zone = mini-button width; the visual pill is slimmer
+  min-height: 264px; // touch zone ≥ 2x the visual pill height
   padding: 0;
   background: transparent;
   cursor: grab;
