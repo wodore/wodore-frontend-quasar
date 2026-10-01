@@ -158,6 +158,12 @@ export default configure(ctx => {
         WODORE_MAPTILER_API_KEY: process.env.WODORE_MAPTILER_API_KEY,
         WODORE_TILE_SERVER_URL: process.env.WODORE_TILE_SERVER_URL,
         WODORE_OFFICIAL_URL: process.env.WODORE_OFFICIAL_URL,
+        // Build flag, not a runtime value: bakes a robots noindex meta into
+        // index.html for static deployments that cannot decide at runtime —
+        // set by preview.yml for GitHub Pages PR previews. Read by the EJS
+        // condition in index.html (the docker image must NOT set it: it
+        // decides per-environment in entrypoint.sh).
+        WODORE_SEO_NOINDEX: process.env.WODORE_SEO_NOINDEX || '',
       },
       // rawDefine: {}
       // ignorePublicFolder: true,
