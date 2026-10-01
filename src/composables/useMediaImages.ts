@@ -70,7 +70,7 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
           author: props.author || { name: undefined, url: null },
           urls: props.urls,
           sizes: props.sizes,
-          thumbhashes: props.thumbhashes ?? null,
+          thumbhashes: props.thumbhashes,
           is_portrait: props.is_portrait,
           captured_at: props.captured_at,
           distance_m: props.distance_m,

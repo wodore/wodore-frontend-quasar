@@ -111,9 +111,11 @@ describe('thumbhashFor', () => {
     expect(thumbhashFor({ ...image, is_portrait: true }, 'orientation', 'focal')).toBe('c');
   });
 
-  it('returns null when the image has no hashes', () => {
-    expect(thumbhashFor(makeImage(), 'square', 'focal')).toBeNull();
-    expect(thumbhashFor({ is_portrait: false }, 'square', 'focal')).toBeNull();
+  it('returns an empty string when the image carries no hashes', () => {
+    // The API always fills all six hashes (gray gradient placeholder);
+    // an absent hashes object degrades gracefully to '' instead of crashing
+    expect(thumbhashFor(makeImage(), 'square', 'focal')).toBe('');
+    expect(thumbhashFor({ is_portrait: false }, 'square', 'focal')).toBe('');
   });
 });
 
@@ -126,11 +128,11 @@ describe('thumbhashStyleForSize', () => {
     const image = makeImage({
       thumbhashes: {
         thumb_square: redHash,
-        thumb_landscape: null,
-        thumb_portrait: null,
-        preview_square: null,
-        preview_landscape: null,
-        preview_portrait: null,
+        thumb_landscape: redHash,
+        thumb_portrait: redHash,
+        preview_square: redHash,
+        preview_landscape: redHash,
+        preview_portrait: redHash,
       },
     });
 
@@ -139,18 +141,7 @@ describe('thumbhashStyleForSize', () => {
     expect(style?.backgroundSize).toBe('cover');
   });
 
-  it('returns undefined when the matching hash is null', () => {
-    const image = makeImage({
-      thumbhashes: {
-        thumb_square: null,
-        thumb_landscape: null,
-        thumb_portrait: null,
-        preview_square: null,
-        preview_landscape: null,
-        preview_portrait: null,
-      },
-    });
-
-    expect(thumbhashStyleForSize(image, 'square', 'xs')).toBeUndefined();
+  it('returns undefined when the image has no thumbhashes at all', () => {
+    expect(thumbhashStyleForSize(makeImage(), 'square', 'xs')).toBeUndefined();
   });
 });

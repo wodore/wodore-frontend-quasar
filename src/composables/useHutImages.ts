@@ -33,8 +33,8 @@ export interface HutImage {
   urls: ImageUrls;
   /** Pixel dimensions per size key (raw, xs, sm, md, lg, xl) for the image's own orientation. */
   sizes?: Record<string, ImageDimensions>;
-  /** ThumbHash placeholders (six variants; individual hashes may be null). */
-  thumbhashes?: ImageThumbhashes | null;
+  /** ThumbHash placeholders (six variants, always filled — gray gradient when unassessed). */
+  thumbhashes?: ImageThumbhashes;
   is_portrait?: boolean | null;
   captured_at?: string | null;
   distance_m?: number;

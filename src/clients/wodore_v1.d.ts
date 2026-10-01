@@ -1065,39 +1065,42 @@ export interface components {
          *     `thumb_*` = focal-cropped (matches xs/sm URLs);
          *     `preview_*` = curated crop (matches md+ URLs).
          *     Decode with https://evanw.github.io/thumbhash/ for instant blurred
-         *     previews. Individual hashes are null when not yet assessed.
+         *     previews.
+         *
+         *     Unassessed images carry a neutral gray gradient placeholder with the
+         *     correct aspect ratio — the real hash replaces it after assessment.
          */
         ImageThumbhashesSchema: {
             /**
              * Thumb Square
              * @description Square (1:1) focal-cropped
              */
-            thumb_square?: string | null;
+            thumb_square: string;
             /**
              * Thumb Landscape
              * @description Landscape (3:2) focal-cropped
              */
-            thumb_landscape?: string | null;
+            thumb_landscape: string;
             /**
              * Thumb Portrait
              * @description Portrait (2:3) focal-cropped
              */
-            thumb_portrait?: string | null;
+            thumb_portrait: string;
             /**
              * Preview Square
              * @description Square (1:1) curated crop
              */
-            preview_square?: string | null;
+            preview_square: string;
             /**
              * Preview Landscape
              * @description Landscape (3:2) curated crop
              */
-            preview_landscape?: string | null;
+            preview_landscape: string;
             /**
              * Preview Portrait
              * @description Portrait (2:3) curated crop
              */
-            preview_portrait?: string | null;
+            preview_portrait: string;
         };
         /**
          * ImageUrlsSchema

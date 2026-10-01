@@ -60,24 +60,22 @@ export type ThumbhashCrop = 'focal' | 'curated';
  * The ThumbHash placeholder matching a rendering context:
  * `focal` hashes match xs/sm URLs (zoomed crop), `curated` ones match md+
  * URLs. `aspect: 'orientation'` picks landscape/portrait via `is_portrait`.
- * Returns null when the image has no hash for that context yet.
+ * The API always fills all six (gray gradient placeholder when unassessed).
  */
 export function thumbhashFor(
   image: Pick<HutImage, 'thumbhashes' | 'is_portrait'>,
   aspect: ThumbhashAspect,
   crop: ThumbhashCrop
-): string | null {
-  const hashes = image.thumbhashes;
-  if (!hashes) return null;
+): string {
   const group = aspect === 'orientation' ? (image.is_portrait ? 'portrait' : 'landscape') : aspect;
   const key = `${crop === 'focal' ? 'thumb' : 'preview'}_${group}` as keyof ImageThumbhashes;
-  return hashes[key] ?? null;
+  return image.thumbhashes?.[key] ?? '';
 }
 
 /**
  * Inline CSS style placing the decoded ThumbHash as an instant blurred
  * background behind the image (covered by the image once it loads).
- * Returns undefined when no placeholder is available.
+ * Returns undefined only when the hash fails to decode.
  */
 export function thumbhashStyle(
   image: Pick<HutImage, 'thumbhashes' | 'is_portrait'>,

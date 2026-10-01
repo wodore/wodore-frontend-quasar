@@ -41,22 +41,23 @@ export interface ImageUrls {
 
 /**
  * ThumbHash placeholder per rendering context.
- * Two crop styles × three aspect groups = six hashes; individual hashes are
- * null when not yet assessed. Decode with `@/utils/thumbhash`.
+ * Two crop styles × three aspect groups = six hashes — always present.
+ * Unassessed images carry an aspect-correct neutral gray gradient; the real
+ * hash replaces it after assessment. Decode with `@/utils/thumbhash`.
  */
 export interface ImageThumbhashes {
   /** Square (1:1) focal-cropped — matches square xs/sm URLs. */
-  thumb_square: string | null;
+  thumb_square: string;
   /** Landscape (3:2) focal-cropped — matches landscape xs/sm URLs. */
-  thumb_landscape: string | null;
+  thumb_landscape: string;
   /** Portrait (2:3) focal-cropped — matches portrait xs/sm URLs. */
-  thumb_portrait: string | null;
+  thumb_portrait: string;
   /** Square (1:1) curated crop — matches square md+ URLs. */
-  preview_square: string | null;
+  preview_square: string;
   /** Landscape (3:2) curated crop — matches landscape md+ URLs. */
-  preview_landscape: string | null;
+  preview_landscape: string;
   /** Portrait (2:3) curated crop — matches portrait md+ URLs. */
-  preview_portrait: string | null;
+  preview_portrait: string;
 }
 
 /** Pixel dimensions of one image variant. */
@@ -121,7 +122,7 @@ export interface NearbyImageProperties {
   place: ImagePlace | null;
   /** Display order — higher appears first. */
   score: number;
-  /** Always present in API responses; individual hashes may be null when not yet assessed. */
+  /** Always present in API responses; values are never null (gray gradient placeholder when unassessed). */
   thumbhashes?: ImageThumbhashes;
 }
 

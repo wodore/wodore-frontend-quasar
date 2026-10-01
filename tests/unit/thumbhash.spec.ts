@@ -11,6 +11,12 @@ import {
 const RED_SQUARE_16 = '1fsDBwBnaix4iHdyeJiHeIeIgMB3CHwH'; // solid red 16x16
 const BLUE_LANDSCAPE_24x16 = 'FQACBYBNSW+Hh4iIiId4h/SJCQAA'; // solid blue 24x16
 
+// Backend default placeholder hashes (unassessed images) — gray gradient,
+// aspect-correct per group (server/apps/geometries/schemas/_images.py)
+const GRAY_SQUARE = 'IQgGBwB4eIiPiId4iJiIeIh4BwAAAAAA';
+const GRAY_LANDSCAPE = 'IQgGBYB4eHiPiIeIiJiIdwAAAAAA';
+const GRAY_PORTRAIT = 'IQgGBQB4eI+HeIiIh4eIdwAAAAAA';
+
 const bytes = (hash: string): Uint8Array => {
   const binary = atob(hash);
   const out = new Uint8Array(binary.length);
@@ -61,5 +67,24 @@ describe('thumbhashDataUrl', () => {
     expect(thumbhashDataUrl(undefined)).toBeNull();
     expect(thumbhashDataUrl('')).toBeNull();
     expect(thumbhashDataUrl('!!!not-base64!!!')).toBeNull();
+  });
+});
+
+describe('backend default placeholder hashes', () => {
+  it('decode to aspect-correct gray gradients', () => {
+    const square = thumbHashToRGBA(bytes(GRAY_SQUARE));
+    expect(square.w).toBe(32);
+    expect(square.h).toBe(32);
+
+    const landscape = thumbHashToRGBA(bytes(GRAY_LANDSCAPE));
+    expect(landscape.w / landscape.h).toBeGreaterThan(1.3);
+
+    const portrait = thumbHashToRGBA(bytes(GRAY_PORTRAIT));
+    expect(portrait.w / portrait.h).toBeLessThan(0.75);
+
+    // All three produce valid data URLs (used directly as loading backgrounds)
+    for (const hash of [GRAY_SQUARE, GRAY_LANDSCAPE, GRAY_PORTRAIT]) {
+      expect(thumbhashDataUrl(hash)).toMatch(/^data:image\/png;base64,/);
+    }
   });
 });
