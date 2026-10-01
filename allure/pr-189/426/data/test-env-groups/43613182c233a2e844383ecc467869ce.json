@@ -1,0 +1,1 @@
+{"id":"43613182c233a2e844383ecc467869ce","fullName":"wodore:tests/unit/overlays.spec.ts#opacityLevels uses identical main opacity at zoom 11 and 15 when zoomMain = 0.8 (no visual jump)","name":"uses identical main opacity at zoom 11 and 15 when zoomMain = 0.8 (no visual jump)","status":"passed","testResultsByEnv":{"default":"2c76666a8a8d3e6d9580d7884706ba2e"}}
