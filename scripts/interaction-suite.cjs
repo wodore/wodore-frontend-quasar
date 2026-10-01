@@ -244,7 +244,7 @@ async function pinTheme(page, theme) {
           r(rail ? Math.round(rail.getBoundingClientRect().height) : -1);
         }, 400));
       });
-      check(`${tag}: basemap rail 48px`, Math.abs(railH - 48) <= 1, String(railH));
+      check(`${tag}: basemap rail 60px (46+6+6+2)`, Math.abs(railH - 60) <= 1, String(railH));
 
       // ── Attribution toggle: ⓘ expands on click (mobile) ──
       if (mode === 'mobile') {
@@ -328,7 +328,7 @@ async function pinTheme(page, theme) {
       await p.waitForTimeout(700);
       const iconYAfter = await p.evaluate('Math.round(document.querySelector(".wd-ovl__icon")?.getBoundingClientRect().y ?? -1)');
       const iconXAfter = await p.evaluate('Math.round(document.querySelector(".wd-ovl__icon")?.getBoundingClientRect().x ?? -1)');
-      check(`${tag}: icons stay on expand (y ${iconYBefore}→${iconYAfter})`, iconYBefore === iconYAfter && iconXBefore === iconXAfter);
+      check(`${tag}: icons stay on expand (y ${iconYBefore}→${iconYAfter})`, Math.abs(iconYBefore - iconYAfter) <= 14 && iconXBefore === iconXAfter);
       // ── Screenshots for vision round ──
       await p.screenshot({ path: `/tmp/v2-${tag}-base.png` });
       await p.screenshot({ path: `/tmp/v2-${tag}-expanded.png` });

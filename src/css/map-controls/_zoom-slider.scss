@@ -1,20 +1,24 @@
 // ══════════════════════════════════════════════════════════════════════
-// ZOOM SLIDER — visibility gating (focus mode only on mobile)
+// ZOOM SLIDER — visibility gating
 // GLOBAL because: `body.wd-map-focus` is set by WdMapView; the component
 // cannot scope to an ancestor body class from its own scoped styles.
+//
+// Mobile: always visible (owner request — also when the overlay strip
+// is closed). Desktop: visible in focus mode only (the classic zoom
+// buttons serve otherwise).
 // ══════════════════════════════════════════════════════════════════════
-/* ── Zoom slider: visible ONLY in focus mode on mobile ───────────────────
-   (!important — the component's scoped display:flex is more specific) */
 .wd-zoom {
   display: none !important;
 }
 
-body.wd-map-focus .wd-zoom {
-  display: flex !important;
+// Mobile: always show
+@media (max-width: 899px) {
+  .wd-zoom {
+    display: flex !important;
+  }
 }
 
-/* Desktop focus mode shows the slider TOO now (owner request) — the
-   classic zoom buttons are hidden with the rest of the chrome. */
+// Desktop: focus mode only (classic zoom buttons serve otherwise)
 @media (min-width: 900px) {
   body.wd-map-focus .wd-zoom {
     display: flex !important;

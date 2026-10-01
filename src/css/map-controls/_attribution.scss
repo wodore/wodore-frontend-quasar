@@ -12,26 +12,7 @@
   }
 }
 
-/* Open mode: the "i" becomes a BIG round close button (taps were
-   hitting links — the target was tiny) */
-.wd-attrib--open .wd-attrib__i {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  flex: none;
-  border-radius: 999px;
-  background: rgba(128, 145, 135, 0.14);
-
-  .wd-attrib__info {
-    display: none;
-  }
-
-  .wd-attrib__close {
-    display: block;
-  }
-}
-
+// ── Collapsed: round ⓘ chip beside the GPS cluster ──────────────────────
 .wd-attrib {
   animation: wd-attrib-in 0.25s ease-out; /* fade in when ready */
   position: fixed;
@@ -50,13 +31,22 @@
   color: var(--wd-ctl-ink);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  transition:
+    width 0.2s ease,
+    height 0.2s ease,
+    border-radius 0.2s ease,
+    background-color 0.2s ease,
+    opacity 0.2s ease;
 
   *:focus {
     outline: none;
   }
 
-  // plain italic serif "i" — the chip IS the circle. When OPEN the
-  // glyph swaps to a close ✕ (tapping closes).
+  &:active {
+    background: color-mix(in srgb, var(--wd-ctl-bg) 95%, transparent);
+  }
+
+  // plain italic serif "i" — the chip IS the circle
   .wd-attrib__i {
     font-family: Georgia, 'Times New Roman', serif;
     font-style: italic;
@@ -72,13 +62,10 @@
   .wd-attrib__text {
     display: none;
   }
-
-  &:active {
-    background: color-mix(in srgb, var(--wd-ctl-bg) 95%, transparent);
-  }
 }
 
-/* Expanded: wrapping text, transparent chip */
+// ── Expanded: wrapping text chip with a BIG close button ─────────────────
+// (AFTER the base block — wins the cascade for the glyph swap)
 .wd-attrib--open {
   width: auto;
   max-width: min(66vw, 320px);
@@ -87,9 +74,27 @@
   padding: 7px 12px;
   border-radius: 8px;
   background: color-mix(in srgb, var(--wd-ctl-bg) 92%, transparent);
-
   justify-content: flex-start;
   gap: 8px;
+
+  // the "i" becomes a 32px round close button (taps were hitting links)
+  .wd-attrib__i {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    flex: none;
+    border-radius: 999px;
+    background: rgba(128, 145, 135, 0.14);
+
+    .wd-attrib__info {
+      display: none;
+    }
+
+    .wd-attrib__close {
+      display: block;
+    }
+  }
 
   .wd-attrib__text {
     display: block;
@@ -100,6 +105,7 @@
     line-height: 1.5;
     white-space: normal;
     color: var(--wd-ctl-ink);
+    animation: wd-attrib-text-in 0.2s ease-out 0.05s both; /* slight delay */
 
     a {
       color: var(--wd-ctl-ink);
@@ -109,8 +115,19 @@
   }
 }
 
-/* Focus mode: fully to the left, AT the bottom */
+// ── Focus mode: fully to the left, AT the bottom ─────────────────────────
 body.wd-map-focus .wd-attrib {
   left: calc(12px + env(safe-area-inset-left, 0px));
   bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+}
+
+@keyframes wd-attrib-text-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

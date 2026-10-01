@@ -115,7 +115,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   flex-direction: row;
   align-items: center;
   gap: 6px;
-  padding: 0; // 46px buttons + 2px border = 48px, matching the toggle
+  padding: 6px; // inner padding — thumbnails never touch the rail border
   border-radius: 8px;
   border: 1px solid var(--wd-ctl-border); // same border width as overlay toggle
   background: var(--wd-ctl-bg);
@@ -144,7 +144,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   width: 46px;
   height: 46px;
   scroll-snap-align: start;
-  padding: 5px; // overlay-chip rhythm — image breathes inside the border
+  padding: 7px; // generous — the overlay chips have ~20% inset; match
   border-radius: 4px;
   border: 1px solid var(--wd-ctl-border); // gray hairline
   background: var(--wd-ctl-bg);
@@ -163,7 +163,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 
   &--active {
     border: 2px solid $wd-gold; // gold selection border
-    padding: 4px; // keep the image size stable
+    padding: 6px; // keep the image size stable
   }
 }
 
