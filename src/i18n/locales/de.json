@@ -460,5 +460,11 @@
     "dark": "Dunkel"
   },
   "basemap_lock": "Basiskarte fixieren",
-  "basemap_unlock": "Basiskarte lösen"
+  "basemap_unlock": "Basiskarte lösen",
+  "api_version_deprecated_native": "Eine neuere App-Version ist verfügbar – bitte aktualisiere die App. Unterstützung für diese Version läuft ab:",
+  "api_version_deprecated_web": "Eine neuere Version ist verfügbar – bitte lade die Seite neu. Unterstützung für diese Version läuft ab:",
+  "api_version_unsupported_native": "Diese App-Version wird vom Server nicht mehr unterstützt. Bitte aktualisiere die App.",
+  "api_version_unsupported_web": "Diese Version wird vom Server nicht mehr unterstützt. Bitte lade die Seite neu.",
+  "api_version_reload": "Neu laden",
+  "api_version_update": "App aktualisieren"
 }

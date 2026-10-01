@@ -460,5 +460,11 @@
     "dark": "Dark"
   },
   "basemap_lock": "Lock basemap switcher",
-  "basemap_unlock": "Unlock basemap switcher"
+  "basemap_unlock": "Unlock basemap switcher",
+  "api_version_deprecated_native": "A newer app version is available — please update the app. Support for this version ends:",
+  "api_version_deprecated_web": "A newer version is available — please reload the page. Support for this version ends:",
+  "api_version_unsupported_native": "This app version is no longer supported by the server. Please update the app.",
+  "api_version_unsupported_web": "This version is no longer supported by the server. Please reload the page.",
+  "api_version_reload": "Reload",
+  "api_version_update": "Update app"
 }

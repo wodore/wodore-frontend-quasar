@@ -417,6 +417,7 @@ body.capacitor .preview-badge {
   <WdAnalytics />
   <q-layout view="hHh LpR fFf" class="overflow-hidden" @scroll="onLayoutScroll">
     <div v-if="isStaging" class="preview-badge">preview</div>
+    <WdApiVersionBanner />
     <!-- FLOATING TOPBAR: search | date (highlight) | avatar ──────────── -->
     <div class="wd-topbar">
       <div class="wd-topbar__pill">
