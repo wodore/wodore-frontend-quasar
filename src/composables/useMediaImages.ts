@@ -1,4 +1,4 @@
-import { ref, watchEffect, type Ref } from 'vue';
+import { ref, watch, type Ref } from 'vue';
 import { clientWodore } from '@clients/index';
 import { currentLocale } from '@services/locale';
 import type { components } from '@clients/wodore_v1.d';
@@ -6,7 +6,17 @@ import type { HutImage } from './useHutImages';
 import { useLatestRequest } from './useLatestRequest';
 
 // Type shortcuts from OpenAPI generated types
-type ImageCollectionResponse = components['schemas']['ImageCollectionResponse'];
+type ImageProperties = components['schemas']['ImagePropertiesSchema'];
+
+/**
+ * Minimal structural payload all image endpoints' responses satisfy — the
+ * generated response types differ slightly in GeoJSON envelope fields we
+ * never read (e.g. bbox tuple widths), so only pin what transformResponse
+ * actually consumes.
+ */
+type ImagesPayload = {
+  features: ReadonlyArray<{ properties: ImageProperties | null }>;
+};
 
 /**
  * Generic image loading options
@@ -39,15 +49,12 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
   /**
    * Transform API response to HutImage array
    */
-  const transformResponse = (response: ImageCollectionResponse): HutImage[] => {
+  const transformResponse = (response: ImagesPayload): HutImage[] => {
     return response.features
       .filter(feature => feature.properties !== null)
       .map(feature => {
         // SAFETY: filtered for non-null properties directly above
         const props = feature.properties!;
-        // SAFETY: the mapped literal is a superset of HutImage's optional
-        // fields; the double cast below bridges the local HutImage interface
-        // (which the generated client types don't match structurally).
         return {
           id: `${props.provider.slug}_${props.source_id}`,
           provider: {
@@ -57,21 +64,20 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
             icon: props.provider.icon || null,
           },
           source_id: props.source_id,
+          source_url: props.source_url,
           attribution: props.attribution || { short: '', full: '' },
           license: props.license || { name: '', slug: '', url: null },
           author: props.author || { name: undefined, url: null },
           urls: props.urls,
+          sizes: props.sizes,
+          thumbhashes: props.thumbhashes,
           is_portrait: props.is_portrait,
           captured_at: props.captured_at,
-          width: props.width,
-          height: props.height,
           distance_m: props.distance_m,
           image_type: props.image_type,
-          focal: props.focal,
-          crop: props.crop,
           place: props.place,
           score: props.score,
-        } as unknown as HutImage;
+        } as HutImage;
       });
   };
 
@@ -116,9 +122,9 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
           images.value = [];
         }
       } else if (data) {
-        // SAFETY: generated OpenAPI response type does not carry the geojson
-        // feature shape; the runtime payload matches ImageCollectionResponse
-        images.value = transformResponse(data as unknown as ImageCollectionResponse);
+        // The regenerated client types this endpoint's geojson response
+        // directly (ImageCollectionResponse with typed feature properties)
+        images.value = transformResponse(data);
       } else {
         images.value = [];
       }
@@ -202,8 +208,7 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
             } else if (data) {
               // A newer request superseded this one - do not merge stale images
               if (!latest.isLatest(token)) return;
-              // SAFETY: same generated-type gap as fetchByHutSlug
-              const wodoreImages = transformResponse(data as unknown as ImageCollectionResponse);
+              const wodoreImages = transformResponse(data);
               images.value = mergeImages(images.value, wodoreImages);
             }
           })
@@ -223,8 +228,7 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
           console.error('Error fetching all images:', allErr);
           error.value = 'Failed to load images';
         } else if (allData) {
-          // SAFETY: same generated-type gap as fetchByHutSlug
-          const allImages = transformResponse(allData as unknown as ImageCollectionResponse);
+          const allImages = transformResponse(allData);
           images.value = mergeImages(images.value, allImages);
         }
       } catch (err) {
@@ -260,8 +264,7 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
           console.error('Error fetching nearby images:', err);
           error.value = 'Failed to load images';
         } else if (data) {
-          // SAFETY: same generated-type gap as fetchByHutSlug
-          images.value = transformResponse(data as unknown as ImageCollectionResponse);
+          images.value = transformResponse(data);
         }
       } catch (err) {
         if (!latest.isLatest(token)) return;
@@ -311,36 +314,52 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
     }
   };
 
-  // Watch for options changes
-  watchEffect(() => {
+  // Fetch when the resolved options (hut slug / coordinates / place) or the
+  // UI language change.
+  //
+  // Deliberately `watch` with the fetch inside the callback, NOT a
+  // `watchEffect`: starting a request runs the API client's progress
+  // middleware, which does `activeCount.value++` (useRequestProgress) — a
+  // reactive read+write. Inside a watchEffect that read made the counter a
+  // dependency of the effect, so every increment re-triggered the effect
+  // and refetched endlessly (continuous /geo/images/hut/... requests and a
+  // gallery that never settled). `watch` only tracks its getter sources;
+  // the callback runs untracked.
+  const resolveOptions = (): MediaImagesOptions | null | undefined => {
     if (!options) {
-      images.value = [];
-      return;
+      return null;
     }
-
     // Handle both Ref and computed
-    const opts = 'value' in options ? options.value : (options as MediaImagesOptions);
+    return 'value' in options ? options.value : (options as MediaImagesOptions);
+  };
 
-    if (!opts) {
-      images.value = [];
-      return;
-    }
+  watch(
+    [resolveOptions, currentLocale],
+    ([opts]) => {
+      if (!opts) {
+        images.value = [];
+        return;
+      }
 
-    // Validate that only one source is provided
-    const sources = [
-      opts.hutSlug ? 'hutSlug' : null,
-      opts.placeName ? 'placeName' : null,
-      opts.lat !== undefined && opts.lon !== undefined ? 'coordinates' : null,
-    ].filter(Boolean);
+      // Validate that only one source is provided
+      const sources = [
+        opts.hutSlug ? 'hutSlug' : null,
+        opts.placeName ? 'placeName' : null,
+        opts.lat !== undefined && opts.lon !== undefined ? 'coordinates' : null,
+      ].filter(Boolean);
 
-    if (sources.length > 1) {
-      console.warn(
-        'useMediaImages: Multiple sources provided. Priority: hutSlug > coordinates > placeName'
-      );
-    }
+      if (sources.length > 1) {
+        console.warn(
+          'useMediaImages: Multiple sources provided. Priority: hutSlug > coordinates > placeName'
+        );
+      }
 
-    fetchImages(opts);
-  });
+      // Fire-and-forget like the previous watchEffect (state updates flow
+      // through the refs above)
+      void fetchImages(opts);
+    },
+    { immediate: true }
+  );
 
   return {
     images,

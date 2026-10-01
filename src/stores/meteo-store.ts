@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref, shallowRef, watchEffect, watch } from 'vue';
+import { ref, shallowRef, watch } from 'vue';
 import { fetchWeatherApi } from 'openmeteo';
 import { date } from 'quasar';
 import { clientWodore } from '@clients/index';
@@ -375,29 +375,46 @@ export const useMeteoStore = defineStore('meteo', () => {
     setWeatherCodesContext(lang);
   });
 
-  watchEffect(() => {
-    const key = `weather_codes:${weatherCodesLang.value}:${weatherCodesCollection.value}`;
-    const cached =
-      weatherCodesCache.value[key] ??
-      (() => {
-        const stored = localStorage.getItem(key);
-        if (!stored) {
-          return null;
-        }
-        return parseCachedWeatherCodes(stored)?.data ?? null;
-      })();
-    if (cached) {
-      weatherCodesCache.value[key] = cached;
-      weatherCodes.value = cached;
-    }
-    if (weatherCodesLastFetchKey.value === key) {
-      return;
-    }
-    weatherCodesLastFetchKey.value = key;
-    void getWeatherCodes(weatherCodesLang.value, {
-      collection: weatherCodesCollection.value,
-    }).catch(() => {});
-  });
+  // Fetch weather-code descriptions when the language or symbol collection
+  // context changes (the descriptions are language-dependent — the backend
+  // translates per lang param).
+  //
+  // Deliberately `watch`, NOT a `watchEffect`: `getWeatherCodes` starts a
+  // request, which runs the API client's progress middleware — a reactive
+  // read+write of the request counter (useRequestProgress). Inside a
+  // watchEffect that read made the counter (and the cache refs touched
+  // here) tracked dependencies, so every increment re-triggered the effect;
+  // the lastFetchKey guard below kept it from refetching endlessly, but the
+  // effect still re-ran several wasted times per fetch. `watch` tracks only
+  // its sources; the callback runs untracked. (Same pattern as the image
+  // composables — see useMediaImages.)
+  watch(
+    [weatherCodesLang, weatherCodesCollection],
+    () => {
+      const key = `weather_codes:${weatherCodesLang.value}:${weatherCodesCollection.value}`;
+      const cached =
+        weatherCodesCache.value[key] ??
+        (() => {
+          const stored = localStorage.getItem(key);
+          if (!stored) {
+            return null;
+          }
+          return parseCachedWeatherCodes(stored)?.data ?? null;
+        })();
+      if (cached) {
+        weatherCodesCache.value[key] = cached;
+        weatherCodes.value = cached;
+      }
+      if (weatherCodesLastFetchKey.value === key) {
+        return;
+      }
+      weatherCodesLastFetchKey.value = key;
+      void getWeatherCodes(weatherCodesLang.value, {
+        collection: weatherCodesCollection.value,
+      }).catch(() => {});
+    },
+    { immediate: true }
+  );
 
   const fetchHourly = async ({
     latitude,
