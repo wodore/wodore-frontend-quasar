@@ -6,7 +6,9 @@ export default defineConfig({
   testDir: './tests',
   timeout: 90_000,
   retries: process.env.CI ? 1 : 0,
-  workers: 1, // sheet/map timing is order-sensitive; keep runs deterministic
+  // e2e specs (bottom sheet, navigation) share app state — serial.
+  // Interaction specs are independent browser contexts — parallel.
+  workers: process.env.CI ? 4 : 2,
   use: {
     baseURL: BASE_URL,
     screenshot: 'only-on-failure',
@@ -17,6 +19,7 @@ export default defineConfig({
     {
       name: 'mobile-chrome',
       testDir: './tests/e2e',
+      workers: 1, // e2e: sheet/map timing is order-sensitive
       use: {
         viewport: { width: 390, height: 844 },
         isMobile: true,

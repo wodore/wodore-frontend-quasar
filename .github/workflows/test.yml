@@ -2,9 +2,13 @@ name: Tests
 
 on:
   push:
+    needs: check-draft
+    if: needs.check-draft.outputs.draft != 'true'
     branches:
       - main
   pull_request:
+    needs: check-draft
+    if: needs.check-draft.outputs.draft != 'true'
     types: [opened, synchronize, reopened, ready_for_review, closed]
 
 permissions:
@@ -21,7 +25,15 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Skip ALL jobs when the PR is a draft (no tests, no preview, no APK)
+  check-draft:
+    runs-on: ubuntu-latest
+    steps:
+      - id: is_draft
+        run: echo "draft=${ github.event.pull_request.draft || false }" >> "$GITHUB_OUTPUT"
   unit-tests:
+    needs: check-draft
+    if: needs.check-draft.outputs.draft != 'true'
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request' || github.event.action != 'closed'
 
@@ -285,6 +297,8 @@ jobs:
   # Remove the PR's whole report directory (all runs + history) when it
   # closes, so gh-pages does not accumulate stale reports.
   cleanup:
+    needs: check-draft
+    if: needs.check-draft.outputs.draft != 'true'
     name: Remove PR reports
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
