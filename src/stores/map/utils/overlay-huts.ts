@@ -42,7 +42,9 @@ const hutsLayerLayout: SymbolLayerSpecification['layout'] = {
   'text-field': ['case', ['>', ['get', 'type_standard_order'], 25], ['get', 'name'], ''],
   'text-size': ['interpolate', ['linear'], ['zoom'], 7, 7, 9, 10, 22, 16],
   //'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
-  'text-font': ['Open Sans Semibold'],
+  // OpenFreeMap's glyph server does not host the Open Sans family —
+  // use a Noto Sans stack it serves (see raster.ts glyphs note).
+  'text-font': ['Noto Sans Bold'],
   'text-anchor': 'bottom',
   'icon-allow-overlap': true,
   'text-allow-overlap': false,
@@ -153,7 +155,9 @@ function getHutsOccupationDayLayout(day: number) {
     ],
     'text-size': ['interpolate', ['linear'], ['zoom'], 12, 7, 14, 10],
     //'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
-    'text-font': ['Open Sans Semibold'],
+    // OpenFreeMap's glyph server does not host the Open Sans family —
+    // use a Noto Sans stack it serves (see raster.ts glyphs note).
+    'text-font': ['Noto Sans Bold'],
     'icon-allow-overlap': true,
     'text-allow-overlap': true,
     'icon-image': [

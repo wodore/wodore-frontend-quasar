@@ -306,48 +306,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/huts/bookings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get hut bookings (deprecated)
-         * @deprecated
-         * @description **DEPRECATED**: Use `/huts/availability.geojson` instead. This endpoint will be removed in a future version.
-         */
-        get: operations["get_hut_bookings"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/huts/bookings.geojson": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get hut bookings as GeoJSON (deprecated)
-         * @deprecated
-         * @description **DEPRECATED**: Use `/huts/availability.geojson` instead. This endpoint will be removed in a future version.
-         */
-        get: operations["get_hut_bookings_geojson"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/huts/availability/{date}.geojson": {
         parameters: {
             query?: never;
@@ -400,6 +358,48 @@ export interface paths {
          * @description Get historical availability trend data showing how availability changed over time for a specific date.
          */
         get: operations["get_hut_availability_trend"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/huts/bookings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get hut bookings (deprecated)
+         * @deprecated
+         * @description **DEPRECATED**: Use `/huts/availability.geojson` instead. This endpoint will be removed in a future version.
+         */
+        get: operations["get_hut_bookings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/huts/bookings.geojson": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get hut bookings as GeoJSON (deprecated)
+         * @deprecated
+         * @description **DEPRECATED**: Use `/huts/availability.geojson` instead. This endpoint will be removed in a future version.
+         */
+        get: operations["get_hut_bookings_geojson"];
         put?: never;
         post?: never;
         delete?: never;
@@ -721,9 +721,9 @@ export interface paths {
         };
         /**
          * Get Version
-         * @description Get version information including git short hash, full hash, package version, build timestamp, and environment.
+         * @description Get version information including git short hash, full hash, package version, build timestamp, environment, and supported API versions.
          */
-        get: operations["server_apps_utils_api_get_version"];
+        get: operations["get_version"];
         put?: never;
         post?: never;
         delete?: never;
@@ -764,43 +764,43 @@ export interface components {
         };
         /**
          * ImageAttributionSchema
-         * @description Comprehensive attribution information for an image.
+         * @description Ready-to-display attribution.
          */
         ImageAttributionSchema: {
             /**
              * Short
-             * @description Short HTML attribution with license icon, license link, and provider link
+             * @description Short HTML attribution (license icon + links)
              */
             short: string;
             /**
              * Full
-             * @description Full attribution string (e.g., 'CC BY-SA 4.0, Author Name on Wodore')
+             * @description Full attribution text (e.g., 'CC BY-SA 4.0, Author Name')
              */
             full: string;
             /**
              * License Icon
-             * @description URL to license icon image
+             * @description URL to the license icon
              */
             license_icon?: string | null;
             /**
              * License Short
-             * @description Short license name with link
+             * @description Short license name
              */
             license_short: string;
             /**
              * License Full
-             * @description Full license name with link
+             * @description Full license name
              */
             license_full: string;
             /**
              * Author
-             * @description Author name with provider link (e.g., 'Name on Wodore')
+             * @description Author with provider (e.g., 'Name on Wikimedia')
              */
             author: string;
         };
         /**
          * ImageAuthorSchema
-         * @description Author information for an image.
+         * @description Photographer/author of the image.
          */
         ImageAuthorSchema: {
             /**
@@ -815,23 +815,55 @@ export interface components {
             url?: string | null;
         };
         /**
+         * ImageCenterSchema
+         * @description Query center point.
+         */
+        ImageCenterSchema: {
+            /**
+             * Lat
+             * @description Latitude
+             */
+            lat: number;
+            /**
+             * Lon
+             * @description Longitude
+             */
+            lon: number;
+        };
+        /**
          * ImageCollectionResponse
-         * @description Complete response for nearby_images endpoint including metadata.
+         * @description Response for the image endpoints.
          */
         ImageCollectionResponse: {
             /**
              * Type
-             * @description GeoJSON type
              * @default FeatureCollection
+             * @constant
              */
-            type: string;
+            type: "FeatureCollection";
             /**
              * Features
-             * @description List of image features as GeoJSON
+             * @description Image features, ordered by score (descending)
              */
             features: components["schemas"]["Feature_Point_ImagePropertiesSchema_"][];
-            /** @description Metadata about the image collection */
+            /** @description Query metadata */
             metadata: components["schemas"]["ImageMetadataSchema"];
+        };
+        /**
+         * ImageDimensionsSchema
+         * @description Pixel dimensions of one variant.
+         */
+        ImageDimensionsSchema: {
+            /**
+             * Width
+             * @description Width in pixels
+             */
+            width: number;
+            /**
+             * Height
+             * @description Height in pixels
+             */
+            height: number;
         };
         /**
          * ImageLicenseSchema
@@ -840,7 +872,7 @@ export interface components {
         ImageLicenseSchema: {
             /**
              * Slug
-             * @description License slug (e.g., 'cc-by-sa-4.0', 'cc0')
+             * @description License slug (e.g., 'cc-by-sa-4-0', 'cc0')
              */
             slug: string;
             /**
@@ -850,56 +882,67 @@ export interface components {
             name: string;
             /**
              * Url
-             * @description Link to license text
+             * @description Link to the license text
              */
             url?: string | null;
             /**
              * Icon
-             * @description URL to license icon image
+             * @description URL to a license icon
              */
             icon?: string | null;
         };
         /**
          * ImageMetadataSchema
-         * @description Metadata for the image collection response.
+         * @description Query metadata.
          */
         ImageMetadataSchema: {
             /**
              * Total
-             * @description Total number of images returned in the collection
+             * @description Number of images returned
              */
             total: number;
             /**
              * Sources Queried
-             * @description List of provider sources that were queried
+             * @description Provider sources that were queried
              */
             sources_queried: string[];
             /**
              * Query Radius M
-             * @description Search radius used for the query in meters
+             * @description Search radius in meters
              */
             query_radius_m: number;
-            /**
-             * Center
-             * @description Center point of the query as {lat, lon}
-             */
-            center: {
-                [key: string]: number;
-            };
+            /** @description Query center point */
+            center: components["schemas"]["ImageCenterSchema"];
             /**
              * Geoplaces Found
-             * @description Number of GeoPlaces found within search radius
+             * @description GeoPlaces found within the search radius
              */
             geoplaces_found: number;
             /**
              * Huts Found
-             * @description Number of Huts found within search radius
+             * @description Huts found within the search radius
              */
             huts_found: number;
         };
         /**
+         * ImageOriginalUrlsSchema
+         * @description Untransformed source URLs.
+         */
+        ImageOriginalUrlsSchema: {
+            /**
+             * Raw
+             * @description Direct URL to the source image (for Wikimedia, a bounded thumb — never the true original)
+             */
+            raw: string;
+            /**
+             * Proxy
+             * @description Full-size image served through imagor (JPEG — browsers cannot render TIFF)
+             */
+            proxy: string;
+        };
+        /**
          * ImagePlaceReferenceSchema
-         * @description Brief reference to a GeoPlace or Hut associated with an image.
+         * @description The GeoPlace or Hut this image is pinned to.
          */
         ImagePlaceReferenceSchema: {
             /**
@@ -909,7 +952,7 @@ export interface components {
             id?: number | null;
             /**
              * Slug
-             * @description Place slug identifier
+             * @description Place slug
              */
             slug: string;
             /**
@@ -923,156 +966,200 @@ export interface components {
         /**
          * ImagePropertiesSchema
          * @description Properties for an image GeoJSON feature.
-         *     Follows the pattern from HutAvailabilityPropertiesSchema.
          */
         ImagePropertiesSchema: {
-            /** @description Provider/organization information */
+            /** @description Provider that sourced the image */
             provider: components["schemas"]["ImageProviderSchema"];
             /**
              * Source Id
-             * @description Original ID in the source system
+             * @description Unique ID in the source system (e.g., 'File:Example.jpg' for Wikimedia)
              */
             source_id: string;
             /**
              * Source Url
-             * @description Deep link back to the source
+             * @description Deep link to the source page (attribution/provenance)
              */
             source_url?: string | null;
             /**
              * Image Type
-             * @description Image type: 'flat' or '360'
+             * @description 'flat' (standard photo) or '360' (panorama)
+             * @enum {string}
              */
-            image_type: string;
+            image_type: "flat" | "360";
             /**
              * Captured At
-             * @description When the photo was taken
+             * @description When the photo was taken (EXIF or provider metadata)
              */
             captured_at?: string | null;
             /**
              * Distance M
-             * @description Distance from query coordinate in meters
+             * @description Distance from the query coordinate in meters
              */
             distance_m: number;
-            /** @description Comprehensive attribution information */
+            /** @description Ready-to-display attribution */
             attribution: components["schemas"]["ImageAttributionSchema"];
-            /** @description Image author details */
+            /** @description Image author/photographer */
             author?: components["schemas"]["ImageAuthorSchema"] | null;
-            /** @description Image license information */
+            /** @description License information */
             license: components["schemas"]["ImageLicenseSchema"];
-            /** @description Image URLs for different sizes */
+            /** @description Image URLs for all sizes, grouped by aspect ratio (square/landscape/portrait) */
             urls: components["schemas"]["ImageUrlsSchema"];
             /**
-             * Score
-             * @description Metadata quality score (0-100)
-             * @default 0
+             * Sizes
+             * @description Pixel dimensions per size key (raw, xs, sm, md, lg, xl) for the image's own orientation. Square variants are always width == height; derive from sizes.raw constrained to a square.
              */
-            score: number;
-            /**
-             * Width
-             * @description Image width in pixels
-             */
-            width?: number | null;
-            /**
-             * Height
-             * @description Image height in pixels
-             */
-            height?: number | null;
+            sizes: {
+                [key: string]: components["schemas"]["ImageDimensionsSchema"];
+            };
             /**
              * Is Portrait
-             * @description True if image is portrait-oriented (height > width)
+             * @description True if the original is portrait (height > width). Pick urls.portrait when true, urls.landscape when false.
              */
             is_portrait?: boolean | null;
-            /**
-             * Focal
-             * @description Focal point area coordinates (x1, y1, x2, y2) for smart cropping
-             */
-            focal?: {
-                [key: string]: number;
-            } | null;
-            /**
-             * Crop
-             * @description Crop area coordinates (x1, y1, x2, y2) for specific region extraction
-             */
-            crop?: {
-                [key: string]: number;
-            } | null;
-            /**
-             * Source Found
-             * @description Sources where this image was found (e.g., ['osm', 'wikidata'])
-             */
-            source_found?: string[] | null;
-            /** @description Associated GeoPlace or Hut reference */
+            /** @description The place this image is pinned to (if any) */
             place?: components["schemas"]["ImagePlaceReferenceSchema"] | null;
+            /**
+             * Score
+             * @description Display order — higher appears first. Admin-adjustable curation position.
+             */
+            score: number;
+            /** @description ThumbHash placeholder per rendering context (6 variants: thumb/preview × square/landscape/portrait). Individual hashes are null when not yet assessed. */
+            thumbhashes?: components["schemas"]["ImageThumbhashesSchema"];
         };
         /**
          * ImageProviderSchema
-         * @description Provider/organization information for an image.
+         * @description Provider that sourced the image.
          */
         ImageProviderSchema: {
             /**
              * Slug
-             * @description Provider/organization slug
+             * @description Provider slug (e.g., 'wikicommons', 'camptocamp', 'wodore')
              */
             slug: string;
             /**
              * Name
-             * @description Provider/organization name
+             * @description Provider display name
              */
             name: string;
             /**
              * Url
-             * @description Provider/organization website URL
+             * @description Provider website URL
              */
             url?: string | null;
             /**
              * Icon
-             * @description Provider/organization icon/logo URL
+             * @description Provider icon (128x128 via imagor)
              */
             icon?: string | null;
             /**
              * Description
-             * @description Provider/organization description
+             * @description Short provider description
              */
             description?: string | null;
         };
         /**
+         * ImageThumbhashesSchema
+         * @description ThumbHash placeholder per rendering context.
+         *
+         *     Two crop styles × three aspect groups = six hashes.
+         *     `thumb_*` = focal-cropped (matches xs/sm URLs);
+         *     `preview_*` = curated crop (matches md+ URLs).
+         *     Decode with https://evanw.github.io/thumbhash/ for instant blurred
+         *     previews.
+         *
+         *     Unassessed images carry a neutral gray gradient placeholder with the
+         *     correct aspect ratio — the real hash replaces it after assessment.
+         */
+        ImageThumbhashesSchema: {
+            /**
+             * Thumb Square
+             * @description Square (1:1) focal-cropped
+             */
+            thumb_square: string;
+            /**
+             * Thumb Landscape
+             * @description Landscape (3:2) focal-cropped
+             */
+            thumb_landscape: string;
+            /**
+             * Thumb Portrait
+             * @description Portrait (2:3) focal-cropped
+             */
+            thumb_portrait: string;
+            /**
+             * Preview Square
+             * @description Square (1:1) curated crop
+             */
+            preview_square: string;
+            /**
+             * Preview Landscape
+             * @description Landscape (3:2) curated crop
+             */
+            preview_landscape: string;
+            /**
+             * Preview Portrait
+             * @description Portrait (2:3) curated crop
+             */
+            preview_portrait: string;
+        };
+        /**
          * ImageUrlsSchema
-         * @description Image URLs for different sizes and orientations.
+         * @description Image URLs grouped by aspect ratio.
+         *
+         *     Pick the group via `is_portrait`; each group has xs–xl sizes.
+         *     Square variants are always width == height.
          */
         ImageUrlsSchema: {
+            /** @description Untransformed source URLs (raw + imagor proxy) */
+            original: components["schemas"]["ImageOriginalUrlsSchema"];
+            /** @description Square (1:1) variants — for cards and thumbnails */
+            square: components["schemas"]["ImageVariantUrlsSchema"];
+            /** @description Landscape (3:2) variants — use when `is_portrait` is false */
+            landscape: components["schemas"]["ImageVariantUrlsSchema"];
+            /** @description Portrait (2:3) variants — use when `is_portrait` is true */
+            portrait: components["schemas"]["ImageVariantUrlsSchema"];
+        };
+        /**
+         * ImageVariantUrlsSchema
+         * @description URLs for one aspect group, sized xs through xl.
+         *
+         *     | Key | ~Size (long edge) | Crop |
+         *     |-----|-------------------|------|
+         *     | xs  | ~200px            | focal area |
+         *     | sm  | ~400px            | focal area |
+         *     | md  | ~1200px           | curated crop |
+         *     | lg  | ~2000px           | curated crop |
+         *     | xl  | ~4000px           | curated crop |
+         *
+         *     For retina, use the next size up: `sizes[min(i + (dpr > 1), 4)]`.
+         *     Use `thumbhashes` for loading placeholders.
+         */
+        ImageVariantUrlsSchema: {
             /**
-             * Original
-             * @description Original image URLs (raw, proxy)
+             * Xs
+             * @description Extra small (~200px) — cards, thumbnails. Focal-cropped.
              */
-            original: {
-                [key: string]: string;
-            };
+            xs: string;
             /**
-             * Square
-             * @description Square-cropped image URLs (avatar, thumb, preview, placeholder, medium, large with @2x variants)
+             * Sm
+             * @description Small (~400px) — previews, 2x thumbnails. Focal-cropped.
              */
-            square?: {
-                [key: string]: string;
-            } | null;
+            sm: string;
             /**
-             * Portrait
-             * @description Portrait-oriented image URLs (thumb, preview, placeholder, medium, large with @2x variants)
+             * Md
+             * @description Medium (~1200px) — gallery, 2x previews
              */
-            portrait?: {
-                [key: string]: string;
-            } | null;
+            md: string;
             /**
-             * Landscape
-             * @description Landscape-oriented image URLs (thumb, preview, placeholder, medium, large with @2x variants)
+             * Lg
+             * @description Large (~2000px) — hero images, 2x gallery
              */
-            landscape?: {
-                [key: string]: string;
-            } | null;
+            lg: string;
             /**
-             * Preferred
-             * @description Preferred orientation URL based on image dimensions
+             * Xl
+             * @description Extra large (~4000px) — fullscreen, 2x heroes
              */
-            preferred?: string | null;
+            xl: string;
         };
         /**
          * LocationSchema
@@ -1432,175 +1519,6 @@ export interface components {
          * @enum {string}
          */
         SymbolVariantEnum: "detailed" | "simple" | "mono";
-        /** HutBookingsQuery */
-        HutBookingsQuery: {
-            /**
-             * Slugs
-             * @description Comma separated list with slugs to use, per default all.
-             */
-            slugs?: string | null;
-            /**
-             * Days
-             * @description Show bookings for this many days.
-             * @default 1
-             */
-            days: number;
-            /**
-             * Date
-             * @description Date to start with bookings (yyyy-mm-dd, 'now' or 'weekend').
-             * @default now
-             */
-            date: string | ("now" | "weekend");
-            /**
-             * Request interval
-             * @description Time in seconds to wait between requests to the booking service for each hut. If not set uses recommanded default value.
-             */
-            request_interval?: number | null;
-        };
-        /** HutBookingSchema */
-        HutBookingSchema: {
-            /** Link */
-            link?: string | null;
-            /**
-             * Date
-             * Format: date
-             */
-            date: string;
-            reservation_status: components["schemas"]["ReservationStatusEnum"];
-            /** Free */
-            free?: number | null;
-            /** Total */
-            total?: number | null;
-            /** Occupancy Percent */
-            occupancy_percent?: number | null;
-            /** Occupancy Steps */
-            occupancy_steps?: number | null;
-            occupancy_status: components["schemas"]["OccupancyStatusEnum"];
-            /**
-             * Hut Type
-             * @default unknown
-             */
-            hut_type: string;
-        };
-        /** HutBookingsSchema */
-        HutBookingsSchema: {
-            /** Slug */
-            slug: string;
-            /** Hut Id */
-            hut_id: number;
-            /**
-             * Source Id
-             * @description External source organization's ID for this hut
-             */
-            source_id: string;
-            /**
-             * Source
-             * @description Source slug, e.g. hrs
-             */
-            source: string;
-            /** Days */
-            days: number;
-            /** Link */
-            link: string;
-            /**
-             * Start Date
-             * Format: date
-             */
-            start_date: string;
-            /** Bookings */
-            bookings: components["schemas"]["HutBookingSchema"][];
-            location: components["schemas"]["LocationSchema"];
-        };
-        /**
-         * OccupancyStatusEnum
-         * @description Enum with occupancy status.
-         * @enum {string}
-         */
-        OccupancyStatusEnum: "unknown" | "free_unknown" | "empty" | "low" | "medium" | "high" | "full";
-        /**
-         * ReservationStatusEnum
-         * @description Enum with reservation status.
-         * @enum {string}
-         */
-        ReservationStatusEnum: "unknown" | "possible" | "not_possible" | "not_online";
-        /** Feature[Point, HutBookingsProps] */
-        Feature_Point_HutBookingsProps_: {
-            /** Bbox */
-            bbox?: [
-                number,
-                number,
-                number,
-                number
-            ] | [
-                number,
-                number,
-                number,
-                number,
-                number,
-                number
-            ] | null;
-            /**
-             * Type
-             * @constant
-             */
-            type: "Feature";
-            geometry: components["schemas"]["Point"] | null;
-            properties: components["schemas"]["HutBookingsProps"] | null;
-            /** Id */
-            id?: number | string | null;
-        };
-        /** HutBookingsFeatureCollection */
-        HutBookingsFeatureCollection: {
-            /** Bbox */
-            bbox?: [
-                number,
-                number,
-                number,
-                number
-            ] | [
-                number,
-                number,
-                number,
-                number,
-                number,
-                number
-            ] | null;
-            /**
-             * Type
-             * @constant
-             */
-            type: "FeatureCollection";
-            /** Features */
-            features: components["schemas"]["Feature_Point_HutBookingsProps_"][];
-        };
-        /** HutBookingsProps */
-        HutBookingsProps: {
-            /** Slug */
-            slug: string;
-            /** Hut Id */
-            hut_id: number;
-            /**
-             * Source Id
-             * @description External source organization's ID for this hut
-             */
-            source_id: string;
-            /**
-             * Source
-             * @description Source slug, e.g. hrs
-             */
-            source: string;
-            /** Days */
-            days: number;
-            /** Link */
-            link: string;
-            /**
-             * Start Date
-             * Format: date
-             */
-            start_date: string;
-            /** Bookings */
-            bookings: components["schemas"]["HutBookingSchema"][];
-        };
         /**
          * DatePathParam
          * @description Path parameter for date.
@@ -1663,6 +1581,11 @@ export interface components {
              * @description Total number of places (null = not published by source)
              */
             total?: number | null;
+            /**
+             * Free Tolerance
+             * @description Plus/minus uncertainty on free places (0 = exact, null = unknown)
+             */
+            free_tolerance?: number | null;
             /**
              * Occupancy Percent
              * @description Occupancy percentage (0-100), null if not computable
@@ -1843,6 +1766,18 @@ export interface components {
             data: components["schemas"]["AvailabilityDaySchema"][];
         };
         /**
+         * OccupancyStatusEnum
+         * @description Enum with occupancy status.
+         * @enum {string}
+         */
+        OccupancyStatusEnum: "unknown" | "free_unknown" | "empty" | "low" | "medium" | "high" | "full";
+        /**
+         * ReservationStatusEnum
+         * @description Enum with reservation status.
+         * @enum {string}
+         */
+        ReservationStatusEnum: "unknown" | "possible" | "not_possible" | "not_online";
+        /**
          * CurrentAvailabilityQuery
          * @description Query parameters for current availability endpoint.
          */
@@ -1877,6 +1812,11 @@ export interface components {
              * @description Total number of places (null = not published by source)
              */
             total?: number | null;
+            /**
+             * Free Tolerance
+             * @description Plus/minus uncertainty on free places (0 = exact, null = unknown)
+             */
+            free_tolerance?: number | null;
             /**
              * Occupancy Percent
              * @description Occupancy percentage (0-100), null if not computable
@@ -2065,6 +2005,11 @@ export interface components {
              */
             total?: number | null;
             /**
+             * Free Tolerance
+             * @description Plus/minus uncertainty on free places (0 = exact, null = unknown)
+             */
+            free_tolerance?: number | null;
+            /**
              * Occupancy Percent
              * @description Occupancy percentage (0-100), null if not computable
              */
@@ -2130,6 +2075,168 @@ export interface components {
              * @description Historical availability changes, ordered by first_checked (newest first)
              */
             data: components["schemas"]["AvailabilityTrendDaySchema"][];
+        };
+        /** HutBookingsQuery */
+        HutBookingsQuery: {
+            /**
+             * Slugs
+             * @description Comma separated list with slugs to use, per default all.
+             */
+            slugs?: string | null;
+            /**
+             * Days
+             * @description Show bookings for this many days.
+             * @default 1
+             */
+            days: number;
+            /**
+             * Date
+             * @description Date to start with bookings (yyyy-mm-dd, 'now' or 'weekend').
+             * @default now
+             */
+            date: string | ("now" | "weekend");
+            /**
+             * Request interval
+             * @description Time in seconds to wait between requests to the booking service for each hut. If not set uses recommanded default value.
+             */
+            request_interval?: number | null;
+        };
+        /** HutBookingSchema */
+        HutBookingSchema: {
+            /** Link */
+            link?: string | null;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            reservation_status: components["schemas"]["ReservationStatusEnum"];
+            /** Free */
+            free?: number | null;
+            /** Total */
+            total?: number | null;
+            /**
+             * Free Tolerance
+             * @default 0
+             */
+            free_tolerance: number;
+            /** Occupancy Percent */
+            occupancy_percent?: number | null;
+            /** Occupancy Steps */
+            occupancy_steps?: number | null;
+            occupancy_status: components["schemas"]["OccupancyStatusEnum"];
+            /**
+             * Hut Type
+             * @default unknown
+             */
+            hut_type: string;
+        };
+        /** HutBookingsSchema */
+        HutBookingsSchema: {
+            /** Slug */
+            slug: string;
+            /** Hut Id */
+            hut_id: number;
+            /**
+             * Source Id
+             * @description External source organization's ID for this hut
+             */
+            source_id: string;
+            /**
+             * Source
+             * @description Source slug, e.g. hrs
+             */
+            source: string;
+            /** Days */
+            days: number;
+            /** Link */
+            link: string;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** Bookings */
+            bookings: components["schemas"]["HutBookingSchema"][];
+            location: components["schemas"]["LocationSchema"];
+        };
+        /** Feature[Point, HutBookingsProps] */
+        Feature_Point_HutBookingsProps_: {
+            /** Bbox */
+            bbox?: [
+                number,
+                number,
+                number,
+                number
+            ] | [
+                number,
+                number,
+                number,
+                number,
+                number,
+                number
+            ] | null;
+            /**
+             * Type
+             * @constant
+             */
+            type: "Feature";
+            geometry: components["schemas"]["Point"] | null;
+            properties: components["schemas"]["HutBookingsProps"] | null;
+            /** Id */
+            id?: number | string | null;
+        };
+        /** HutBookingsFeatureCollection */
+        HutBookingsFeatureCollection: {
+            /** Bbox */
+            bbox?: [
+                number,
+                number,
+                number,
+                number
+            ] | [
+                number,
+                number,
+                number,
+                number,
+                number,
+                number
+            ] | null;
+            /**
+             * Type
+             * @constant
+             */
+            type: "FeatureCollection";
+            /** Features */
+            features: components["schemas"]["Feature_Point_HutBookingsProps_"][];
+        };
+        /** HutBookingsProps */
+        HutBookingsProps: {
+            /** Slug */
+            slug: string;
+            /** Hut Id */
+            hut_id: number;
+            /**
+             * Source Id
+             * @description External source organization's ID for this hut
+             */
+            source_id: string;
+            /**
+             * Source
+             * @description Source slug, e.g. hrs
+             */
+            source: string;
+            /** Days */
+            days: number;
+            /** Link */
+            link: string;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** Bookings */
+            bookings: components["schemas"]["HutBookingSchema"][];
         };
         /**
          * CapacitySimpleSchema
@@ -2756,7 +2863,7 @@ export interface components {
              */
             is_active: boolean | null;
             /**
-             * Public
+             * Öffentlich
              * @default false
              */
             is_public: boolean | null;
@@ -2860,6 +2967,47 @@ export interface components {
             /** Get Updates */
             get_updates: boolean;
         };
+        /** ApiVersionEntry */
+        ApiVersionEntry: {
+            /**
+             * Version
+             * @description API contract version (YYYY-MM-DD)
+             * @example 2026-10-01
+             */
+            version: string;
+            /**
+             * Status
+             * @description Lifecycle: current, default, deprecated or sunset
+             * @example deprecated
+             */
+            status: string;
+            /**
+             * Sunset
+             * @description Sunset date (YYYY-MM-DD) of deprecated versions; after this date the version answers 410.
+             * @example 2027-04-01
+             */
+            sunset?: string | null;
+        };
+        /** ApiVersionsBlock */
+        ApiVersionsBlock: {
+            /**
+             * Current
+             * @description Newest registered API version
+             * @example 2026-10-01
+             */
+            current: string;
+            /**
+             * Default
+             * @description Version served when a client pins nothing
+             * @example 2026-10-01
+             */
+            default: string;
+            /**
+             * Supported
+             * @description All registered API versions with lifecycle status
+             */
+            supported: components["schemas"]["ApiVersionEntry"][];
+        };
         /** VersionSchema */
         VersionSchema: {
             /**
@@ -2892,6 +3040,8 @@ export interface components {
              * @example production
              */
             environment: string;
+            /** @description API contract versions (see the Api-Version header) */
+            api: components["schemas"]["ApiVersionsBlock"];
         };
     };
     responses: never;
@@ -3304,68 +3454,6 @@ export interface operations {
             };
         };
     };
-    get_hut_bookings: {
-        parameters: {
-            query?: {
-                /** @description Select language code: de, en, fr, it. */
-                lang?: string;
-                /** @description Comma separated list with slugs to use, per default all. */
-                slugs?: string | null;
-                /** @description Show bookings for this many days. */
-                days?: number;
-                /** @description Date to start with bookings (yyyy-mm-dd, 'now' or 'weekend'). */
-                date?: string | ("now" | "weekend");
-                /** @description Time in seconds to wait between requests to the booking service for each hut. If not set uses recommanded default value. */
-                request_interval?: number | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HutBookingsSchema"][];
-                };
-            };
-        };
-    };
-    get_hut_bookings_geojson: {
-        parameters: {
-            query?: {
-                /** @description Select language code: de, en, fr, it. */
-                lang?: string;
-                /** @description Comma separated list with slugs to use, per default all. */
-                slugs?: string | null;
-                /** @description Show bookings for this many days. */
-                days?: number;
-                /** @description Date to start with bookings (yyyy-mm-dd, 'now' or 'weekend'). */
-                date?: string | ("now" | "weekend");
-                /** @description Time in seconds to wait between requests to the booking service for each hut. If not set uses recommanded default value. */
-                request_interval?: number | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HutBookingsFeatureCollection"];
-                };
-            };
-        };
-    };
     get_hut_availability_geojson: {
         parameters: {
             query?: {
@@ -3454,6 +3542,68 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AvailabilityTrendSchema"];
+                };
+            };
+        };
+    };
+    get_hut_bookings: {
+        parameters: {
+            query?: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /** @description Comma separated list with slugs to use, per default all. */
+                slugs?: string | null;
+                /** @description Show bookings for this many days. */
+                days?: number;
+                /** @description Date to start with bookings (yyyy-mm-dd, 'now' or 'weekend'). */
+                date?: string | ("now" | "weekend");
+                /** @description Time in seconds to wait between requests to the booking service for each hut. If not set uses recommanded default value. */
+                request_interval?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HutBookingsSchema"][];
+                };
+            };
+        };
+    };
+    get_hut_bookings_geojson: {
+        parameters: {
+            query?: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /** @description Comma separated list with slugs to use, per default all. */
+                slugs?: string | null;
+                /** @description Show bookings for this many days. */
+                days?: number;
+                /** @description Date to start with bookings (yyyy-mm-dd, 'now' or 'weekend'). */
+                date?: string | ("now" | "weekend");
+                /** @description Time in seconds to wait between requests to the booking service for each hut. If not set uses recommanded default value. */
+                request_interval?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HutBookingsFeatureCollection"];
                 };
             };
         };
@@ -3915,7 +4065,7 @@ export interface operations {
             };
         };
     };
-    server_apps_utils_api_get_version: {
+    get_version: {
         parameters: {
             query?: never;
             header?: never;

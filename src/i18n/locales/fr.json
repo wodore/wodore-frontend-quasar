@@ -56,8 +56,7 @@
       "generic_message": "Une erreur s'est produite lors du chargement de la carte",
       "reload": "Recharger la page"
     },
-    "layers": "Couches",
-    "basemap_fallback": "Fond de carte indisponible — bascule vers Swisstopo"
+    "layers": "Couches"
   },
   "map_style": "Carte",
   "location": "Lieu",
@@ -255,7 +254,7 @@
     "one_man_project_term": "projet d'une seule personne"
   },
   "select_date": {
-    "placeholder": "Choisir une date",
+    "placeholder": "Disponibilité",
     "error_title": "Oh non, plus rien ne fonctionne !",
     "error_restricted": "Le CAS a restreint l'accès !",
     "error_contact": "N'hésitez pas à",
@@ -265,7 +264,10 @@
     "alternative": "Alternativement :",
     "or": "ou",
     "not_available": "Actuellement indisponible",
-    "placeholder_short": "Date"
+    "placeholder_short": "Disponibilité",
+    "today": "Aujourd'hui",
+    "tomorrow": "Demain",
+    "choose_hint": "Choisir une date"
   },
   "overlay_config": {
     "reset_done": "Paramètres réinitialisés",
@@ -458,5 +460,11 @@
     "dark": "Sombre"
   },
   "basemap_lock": "Verrouiller le fond de carte",
-  "basemap_unlock": "Déverrouiller le fond de carte"
+  "basemap_unlock": "Déverrouiller le fond de carte",
+  "api_version_deprecated_native": "Une nouvelle version de l'application est disponible — veuillez la mettre à jour. La prise en charge de cette version prend fin le :",
+  "api_version_deprecated_web": "Une nouvelle version est disponible — veuillez recharger la page. La prise en charge de cette version prend fin le :",
+  "api_version_unsupported_native": "Cette version de l'application n'est plus prise en charge par le serveur. Veuillez mettre à jour l'application.",
+  "api_version_unsupported_web": "Cette version n'est plus prise en charge par le serveur. Veuillez recharger la page.",
+  "api_version_reload": "Recharger",
+  "api_version_update": "Mettre à jour l'appli"
 }

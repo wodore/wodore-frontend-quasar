@@ -1,0 +1,106 @@
+// ══════════════════════════════════════════════════════════════════════
+// DARK overrides — theme-specific rules for ALL map chrome at once
+// GLOBAL because: one `body.body--dark` block styles elements across
+// every control component; splitting it per-component would scatter
+// the theming logic.
+// ══════════════════════════════════════════════════════════════════════
+/* Dark theme: date field in the pill needs light text */
+body.body--dark .wd-topbar__date {
+  background: rgba(52, 103, 81, 0.2);
+}
+
+body.body--dark .wd-topbar input::placeholder {
+  color: rgba(169, 240, 210, 0.85);
+}
+
+/* Overlay icons are silhouette SVGs (black default fill / currentColor).
+   Light: dark ink on white chips. Dark: INVERTED to white — brightness
+   alone cannot lift pure black. Mono treatment keeps the set consistent. */
+.wd-ovl__icon .q-icon {
+  color: #22302a; // currentColor icons match the black silhouettes
+}
+
+body.body--dark .wd-ovl__icon .q-icon {
+  // ONE invert only — on the wrapper <i>. Inverting BOTH the wrapper and
+  // the child <img> double-inverts the glyphs back to black.
+  filter: invert(1);
+  color: #000000; // currentColor sources invert to clean white
+}
+
+/* Dark theme: mute the staging preview ribbon */
+body.body--dark .preview-badge {
+  opacity: 0.75;
+}
+
+/* ── Side panel opens: bottom-right controls + top-right cluster shift
+      left so they stay clear of the drawer (desktop). q-page-sticky uses
+      an inline transform — !important wins. Mobile drawers overlay, no
+      shift needed there. */
+@media (min-width: 900px) {
+  body.wd-sidepanel-open .wd-map-ctl-sticky {
+    transform: translateX(calc(-1 * var(--wd-drawer-w, 0px))) !important;
+  }
+  body.wd-sidepanel-open .wd-topbar__utils {
+    transform: translateX(calc(-1 * var(--wd-drawer-w, 0px)));
+  }
+  body.wd-sidepanel-open .maplibregl-ctrl-top-right {
+    transform: translateX(calc(-1 * var(--wd-drawer-w, 0px)));
+  }
+  body.wd-sidepanel-open .wd-focus-toggle {
+    transform: translateX(calc(-1 * var(--wd-drawer-w, 0px)));
+  }
+}
+
+.wd-map-ctl-sticky,
+.wd-topbar__utils,
+.maplibregl-ctrl-top-right,
+.wd-focus-toggle {
+  transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Dark: focus toggle gets a light hairline so it never blends away */
+body.body--dark .wd-focus-toggle {
+  border-color: rgba(169, 240, 210, 0.34);
+}
+
+/* Preview badge: dark-mode variant (was tan/gold, illegible) */
+body.body--dark .preview-badge {
+  background: rgba(17, 33, 25, 0.9);
+  color: #a9f0d2;
+  border: 1px solid rgba(169, 240, 210, 0.3);
+  opacity: 0.9;
+}
+
+/* Date text clips with ellipsis when the segment narrows */
+.wd-topbar__date .q-field__native,
+.wd-topbar__date input {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.body--dark .wd-topbar__user {
+  color: $wd-paper;
+}
+
+/* Dark: the elevation kill strips shadows — give the pill and map chips a
+   mint ridge so they separate from the pale basemap. */
+body.body--dark .wd-topbar__pill,
+body.body--dark .wd-ovl__box,
+body.body--dark .wd-ovl__toggle,
+body.body--dark .wd-bm__toggle,
+body.body--dark .wd-bm__rail,
+body.body--dark .wd-focus-toggle {
+  border-color: rgba(169, 240, 210, 0.16);
+}
+
+.wd-ovl__toggle:hover .wd-ovl__toggle-icon,
+.wd-ovl__toggle-icon--open {
+  opacity: 1;
+}
+
+/* Search glyph optical baseline — sits 1px low next to the wd-menu glyph */
+.wd-topbar__search .q-icon {
+  transform: translateY(-1px);
+}
+

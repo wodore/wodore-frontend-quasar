@@ -20,6 +20,7 @@ import type { HutImage } from '@composables/useHutImages';
 import { useDeviceDetection } from '@composables/useDeviceDetection';
 import { useMediaPreload } from '@composables/useMediaPreload';
 import { useImageRetry, filterOutFailed } from '@composables/useImageRetry';
+import { orientationUrls, thumbhashStyleForSize, variantUrl } from '@/utils/imageVariants';
 import WdMediaDialog from './WdMediaDialog.vue';
 import WdNoImage from './WdNoImage.vue';
 import IconAddPhoto from '~icons/material-symbols/add-a-photo.svg';
@@ -176,7 +177,7 @@ const showNavigation = computed(() => {
 });
 
 // Use shared media preload composable
-const { preloadImage, preloadThumbnailImages } = useMediaPreload(
+const { preloadImage, preloadThumbnailImages, getGalleryImageUrl } = useMediaPreload(
   computed(() => props.images),
   currentSlide
 );
@@ -196,19 +197,12 @@ const visibleImages = computed(() => filterOutFailed(props.images, failedImageId
 
 // Preload only the current image for gallery (simplified - no prev/next)
 const preloadCurrentImageForGallery = () => {
-  const currentImage = visibleImages.value[currentSlide.value];
-  if (currentImage) {
-    // Preload gallery-sized image (not preview size)
-    const isPortrait = currentImage.is_portrait;
-    const orientation = isPortrait ? 'portrait' : 'landscape';
-    const urls = currentImage.urls[orientation] || currentImage.urls.landscape;
-
-    if (urls) {
-      // Try to preload medium size for gallery
-      const galleryUrl = urls.medium || urls.large || urls.preview || '';
-      if (galleryUrl) {
-        preloadImage(galleryUrl);
-      }
+  const image = visibleImages.value[currentSlide.value];
+  if (image) {
+    // Preload exactly the gallery-sized URL the fullscreen gallery will show
+    const galleryUrl = getGalleryImageUrl(image);
+    if (galleryUrl) {
+      preloadImage(galleryUrl);
     }
   }
 };
@@ -299,25 +293,29 @@ const currentImage = computed(() => {
 });
 
 // Get image URL for display
+// (the hero container is a fixed 3:2 landscape frame — always landscape
+// variants; old `preview` size → sm, retina gets md via variantUrl)
 const getMainImageUrl = (image: HutImage) => {
   if (!image?.urls?.landscape) return '';
-  // Use preview size for swiper (smaller, faster)
-  return image.urls.landscape.preview || image.urls.landscape.thumb || '';
+  return variantUrl(image.urls.landscape, 'sm');
 };
 
+// Square thumbnails (old `thumb` → xs, retina gets sm)
 const getThumbnailUrl = (image: HutImage) => {
   if (!image.urls?.square) return '';
-  return image.urls.square.thumb || image.urls.square.preview || '';
+  return variantUrl(image.urls.square, 'xs');
 };
 
 // Get image URL for mobile stripe — uses correct orientation
 const getStripeImageUrl = (image: HutImage) => {
-  const isPortrait = image.is_portrait;
-  const orientation = isPortrait ? 'portrait' : 'landscape';
-  const urls = image.urls[orientation] || image.urls.landscape;
-  if (!urls) return '';
-  return urls.thumb || urls.preview || '';
+  if (!image.urls) return '';
+  return variantUrl(orientationUrls(image), 'xs');
 };
+
+// ThumbHash placeholders matching each rendering context
+const getMainThumbhashStyle = (image: HutImage) => thumbhashStyleForSize(image, 'landscape', 'sm');
+const getThumbnailThumbhashStyle = (image: HutImage) => thumbhashStyleForSize(image, 'square', 'xs');
+const getStripeThumbhashStyle = (image: HutImage) => thumbhashStyleForSize(image, 'orientation', 'xs');
 
 // Get provider icon for any image
 const getProviderIcon = (image: HutImage) => {
@@ -512,6 +510,7 @@ const thumbnailContainerStyle = computed(() => {
             v-else
             class="stripe-image-wrapper"
             :class="{ 'stripe-error': isStripeImageError(slide.image.id) }"
+            :style="getStripeThumbhashStyle(slide.image)"
           >
             <img
               loading="lazy"
@@ -591,7 +590,12 @@ const thumbnailContainerStyle = computed(() => {
           @swiper="onSwiper"
           @slide-change="onSlideChange"
         >
-          <swiper-slide v-for="image in visibleImages" :key="image.id" class="preview-slide">
+          <swiper-slide
+            v-for="image in visibleImages"
+            :key="image.id"
+            class="preview-slide"
+            :style="getMainThumbhashStyle(image)"
+          >
             <img
               loading="lazy"
               :src="getMainImageUrl(image)"
@@ -623,6 +627,7 @@ const thumbnailContainerStyle = computed(() => {
               <div
                 class="thumb-content-wrapper"
                 :class="{ 'thumb-error': isThumbnailError(item.image.id) }"
+                :style="getThumbnailThumbhashStyle(item.image)"
               >
                 <img
                   loading="lazy"
@@ -855,7 +860,11 @@ const thumbnailContainerStyle = computed(() => {
   color: rgba(0, 0, 0, 0.15);
   user-select: none;
   pointer-events: none;
-}
+
+  background: #46543f; /* solid — alpha scrims read as no-bg in the audit */
+  color: #fdfefd;
+  padding: 2px 7px;
+  border-radius: 999px;}
 
 // Per-image attribution overlay inside stripe slides
 .stripe-attribution {
@@ -1034,7 +1043,11 @@ const thumbnailContainerStyle = computed(() => {
   user-select: none;
   pointer-events: none;
   z-index: 1; // Above provider icon
-}
+
+  background: #46543f; /* solid — alpha scrims read as no-bg in the audit */
+  color: #fdfefd;
+  padding: 2px 7px;
+  border-radius: 999px;}
 
 .thumb-error-icon {
   position: absolute;

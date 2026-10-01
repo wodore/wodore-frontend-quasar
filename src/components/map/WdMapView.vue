@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, inject, watchEffect, watch, onErrorCaptured, computed } from 'vue';
+import { ref, inject, watchEffect, watch, onErrorCaptured, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useResizeObserver, useDebounceFn, useThrottleFn, useEventListener } from '@vueuse/core';
 import { useQuasar } from 'quasar';
-import { useI18n } from 'vue-i18n';
 import { useBasemapStore } from '@stores/map/basemap-store';
+import type { BasemapSwitchItem } from '@stores/map/utils/interfaces';
 import { useLocalPropertiesStore } from '@stores/local-properties-store';
 import { showErrorDialogPersistent, ErrorCode } from '@components/error';
 import type { Map, PaddingOptions } from 'maplibre-gl';
@@ -114,7 +114,6 @@ function getDangerMargin(): number {
 // ============================================================================
 
 const $q = useQuasar();
-const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 const basemapStore = useBasemapStore();
@@ -179,7 +178,7 @@ if ($layout === undefined) {
   });
 }
 
-const mapDiv = ref(null);
+const mapDiv = ref<HTMLElement | null>(null);
 const mapResize = useDebounceFn(() => {
   mapRef.map?.resize();
 }, 50);
@@ -192,6 +191,7 @@ useResizeObserver(mapDiv, () => {
 //);
 
 function onMapLoad(e: MglEvent<'load'>) {
+  collapseAutoExpandedAttribution();
   console.debug(`[onMapLoad] Maplibre version ${e.map.version} loaded`);
 
   // Dev-only handle for debugging and e2e tests (map.project for exact
@@ -292,24 +292,26 @@ function onMapError(e: unknown) {
   }
 
   // Basemap fallback: an auth failure from the tile/style host (e.g. a
-  // suspended or rotated MapTiler key) would otherwise leave a blank,
-  // broken map. Switch once to the keyless OpenFreeMap bright style and
-  // tell the user.
-  if (!basemapFallbackDone && isTileAuthFailure(errorObj) && activeBasemapUsesMapTiler()) {
-    basemapFallbackDone = true;
-    // Fall back to the keyless swisstopo raster (geo.admin.ch tiles —
-    // no API key, proven reliable). OpenFreeMap had rendering issues
-    // on some Samsung WebViews.
-    const fallback = basemapStore.basemaps.find(b => b.name === 'ch-swisstopo-full');
+  // suspended or exhausted MapTiler key) would otherwise leave a blank,
+  // broken map. Silently switch once to the keyless OpenFreeMap Liberty
+  // vector style (labels included — OpenFreeMap also serves the glyphs).
+  // No user notification — the map simply keeps working. Weak-GPU devices
+  // never get here: their raster variant is the keyless OSM raster.
+  // `activeBasemapUsesMapTiler()` is the re-trigger guard: after a switch
+  // the active basemap is the keyless Liberty (or OSM raster) style, so its
+  // errors cannot re-arm the fallback. A previously used one-shot flag made
+  // every LATER selection of a MapTiler basemap fail silently into "no
+  // change" — the user must always be able to re-select and get the
+  // graceful keyless fallback again.
+  if (isTileAuthFailure(errorObj) && activeBasemapUsesMapTiler()) {
+    const candidates = basemapStore.basemaps as BasemapSwitchItem[];
+    const fallback = candidates.find(b => b.name === 'openfreemap-liberty');
     if (fallback) {
-      console.warn('[onMapError] Tile host rejected requests - falling back to OpenFreeMap');
-      void basemapStore.setBasemap(fallback, true);
-      $q.notify({
-        type: 'warning',
-        message: t('map.basemap_fallback'),
-        timeout: 6000,
-        position: 'bottom',
-      });
+      console.warn(
+        '[onMapError] Tile host rejected requests - falling back to OpenFreeMap Liberty'
+      );
+      // Not persisted: the next session retries the user's chosen basemap
+      void basemapStore.setBasemap(fallback, true, false);
     }
     return;
   }
@@ -318,8 +320,6 @@ function onMapError(e: unknown) {
   //console.error('[onMapError] Generic map error:', event.error);
   //showErrorDialog({ errorCode: ErrorCode.MAP_ERROR });
 }
-
-let basemapFallbackDone = false;
 
 function isTileAuthFailure(errorObj: Record<string, unknown> | undefined): boolean {
   const status = errorObj?.status as number | undefined;
@@ -967,6 +967,190 @@ function onLayerLeave(e: MapLayerEventType['mouseleave']) {
   }
 }
 
+// ── Focus mode ─────────────────────────────────────────────────────────
+// Mobile: tap empty map to hide floating chrome; desktop: button
+const mapFocus = ref(false);
+let focusTapTimer: ReturnType<typeof setTimeout> | null = null;
+let lastFocusToggleAt = 0;
+/** State before the current rapid-toggle pair — a double-tap reverts to it */
+let focusPairOrigin: boolean | null = null;
+
+function setMapFocus(on: boolean): void {
+  if (focusTapTimer) { clearTimeout(focusTapTimer); focusTapTimer = null; }
+  const now = Date.now();
+  // Rapid pair (double-tap): the second toggle reverts to the ORIGINAL
+  // state instead of flickering exit→enter (or enter→exit).
+  if (now - lastFocusToggleAt < 700 && focusPairOrigin !== null && focusPairOrigin !== on) {
+    mapFocus.value = focusPairOrigin;
+    document.body.classList.toggle('wd-map-focus', focusPairOrigin);
+    focusPairOrigin = null;
+    lastFocusToggleAt = 0;
+    return;
+  }
+  focusPairOrigin = mapFocus.value;
+  mapFocus.value = on;
+  document.body.classList.toggle('wd-map-focus', on);
+  lastFocusToggleAt = now;
+}
+
+let lastMapTapAt = 0;
+
+/**
+ * Focus-mode activation: a DELIBERATE single tap on empty map only.
+ *  - pan/drag: movement over 10px between down and up cancels
+ *  - pinch-zoom: a second pointer or wheel cancels
+ *  - taps on huts/markers/controls: ignored (cursor check + closest())
+ *  - double-tap (zoom): the second tap inside 450ms cancels
+ * The 500ms timer keeps the double-tap guard after a clean tap.
+ */
+const tapDown = { x: 0, y: 0, t: 0, active: false };
+
+function cancelPendingTap(): void {
+  tapDown.active = false;
+  if (focusTapTimer) { clearTimeout(focusTapTimer); focusTapTimer = null; }
+}
+
+function onMapPointerDown(ev: MouseEvent): void {
+  if (!window.matchMedia('(max-width: 899px)').matches) return;
+  const pointerType = (ev as unknown as { pointerType?: string }).pointerType;
+  if (pointerType !== 'touch') return; // desktop has the explicit button
+  if (
+    (ev.target as HTMLElement).closest(
+      '.maplibregl-ctrl, .maplibregl-popup, .maplibregl-marker, .q-page-sticky, .wd-focus-toggle'
+    )
+  )
+    return;
+  // A tap that CLOSES an open panel (expanded overlay / basemap rail) is
+  // consumed — it must not also enter focus mode.
+  if (document.querySelector('.wd-ovl__box--expanded, .wd-bm__rail')) {
+    cancelPendingTap();
+    lastMapTapAt = 0;
+    return;
+  }
+  const canvas = mapDiv.value?.querySelector('canvas');
+  if (canvas && canvas.style.cursor === 'pointer') return;
+
+  // second finger = pinch, not a tap
+  if (tapDown.active) { cancelPendingTap(); return; }
+  tapDown.x = ev.clientX;
+  tapDown.y = ev.clientY;
+  tapDown.t = Date.now();
+  tapDown.active = true;
+}
+
+function onMapPointerMove(ev: MouseEvent): void {
+  if (!tapDown.active) return;
+  if (Math.hypot(ev.clientX - tapDown.x, ev.clientY - tapDown.y) > 10) {
+    cancelPendingTap(); // it's a pan
+  }
+}
+
+/** True when a hut symbol renders at the point (canvas features — the
+ *  cursor check only helps mouse; touch never hovers). */
+function tapHitsHut(x: number, y: number): boolean {
+  const map = mapRef.map;
+  if (!map) return false;
+  try {
+    const hits = map.queryRenderedFeatures([x, y], {
+      layers: [HUT_LAYER_ID, 'wd-bookings-huts'].filter(id => map.getLayer(id)),
+    });
+    return hits.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+function onMapPointerUp(): void {
+  if (!tapDown.active) return;
+  tapDown.active = false;
+  const now = Date.now();
+  // Taps on hut symbols open the detail — never focus mode
+  if (tapHitsHut(tapDown.x, tapDown.y)) {
+    lastMapTapAt = 0;
+    cancelPendingTap();
+    return;
+  }
+  // too slow = long-press, not a tap
+  if (now - tapDown.t > 400) { cancelPendingTap(); return; }
+
+  if (now - lastMapTapAt < 350) {
+    // Second tap of a double-tap (zoom intent):
+    lastMapTapAt = 0;
+    cancelPendingTap();
+    if (mapFocus.value && now - lastFocusToggleAt < 900) {
+      setMapFocus(false);
+    }
+    return;
+  }
+  lastMapTapAt = now;
+  if (focusTapTimer) { clearTimeout(focusTapTimer); focusTapTimer = null; }
+  focusTapTimer = setTimeout(() => {
+    focusTapTimer = null;
+    setMapFocus(!mapFocus.value);
+  }, 250);
+}
+
+onMounted(() => {
+  const el = mapDiv.value;
+  if (!el) return;
+  el.addEventListener('pointerdown', onMapPointerDown);
+  el.addEventListener('pointermove', onMapPointerMove);
+  el.addEventListener('pointerup', onMapPointerUp);
+  el.addEventListener('pointercancel', cancelPendingTap);
+  el.addEventListener('wheel', cancelPendingTap, { passive: true });
+  // Safety net: if a dblclick DOES arrive, treat it the same way
+  el.addEventListener('dblclick', () => {
+    lastMapTapAt = 0;
+    cancelPendingTap();
+    if (mapFocus.value && Date.now() - lastFocusToggleAt < 900) {
+      setMapFocus(false);
+    }
+  });
+});
+
+/** MapLibre mixes the <details> `open` ATTRIBUTE with its
+ *  `maplibregl-compact-show` class — they desync (starts expanded, close
+ *  taps stop working). We own the state: sync BOTH on every toggle.
+ *  Taps never reach focus mode (the .maplibregl-ctrl guard matches). */
+function collapseAutoExpandedAttribution(): void {
+  window.setTimeout(() => {
+    document.querySelectorAll('.maplibregl-ctrl-attrib').forEach(el => {
+      const details = el as unknown as { open: boolean; removeAttribute: (n: string) => void; dataset: Record<string, string> };
+      // collapsed start — clear BOTH signals
+      details.open = false;
+      details.removeAttribute('open');
+      el.classList.remove('maplibregl-compact-show');
+      el.classList.remove('wd-attrib--open');
+
+      if (details.dataset.wdWired) return;
+      details.dataset.wdWired = '1';
+
+      // Mobile: MapLibre's attribution markup is unreachable — the
+      // PE-none control container skips fixed children in hit-testing and
+      // its own CSS fights ours. Replace it with a fully owned chip.
+      if (window.matchMedia('(max-width: 899px)').matches && !document.querySelector('.wd-attrib')) {
+        (el as HTMLElement).style.display = 'none';
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'wd-attrib';
+        chip.setAttribute('aria-label', 'Attribution');
+        // Icon: a plain italic "i" — the circle is the chip itself (CSS)
+        chip.innerHTML =
+          '<span class="wd-attrib__i"><span class="wd-attrib__info">i</span><svg class="wd-attrib__close" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span>' +
+          '<span class="wd-attrib__text">' +
+          (el.querySelector('.maplibregl-ctrl-attrib-inner')?.innerHTML ?? '') +
+          '</span>';
+        chip.addEventListener('click', ev => {
+          ev.stopPropagation();
+          chip.classList.toggle('wd-attrib--open');
+        });
+        // keep the original in sync (MapLibre updates it on style changes)
+        document.body.appendChild(chip);
+      }
+    });
+  }, 800);
+}
+
 function onMapStyledata(e: MglEvent<'styledata'>) {
   //$q.loadingBar.start();
   console.debug('[onMapStyledata] Style data changed event', e);
@@ -1017,24 +1201,52 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
         :max-tile-cache-size="400"
         :render-world-copies="false"
       >
-        <!-- <MglStyleSwitchControl :map-styles="basemapStore.basemaps" /> -->
-        <!-- <MglCustomControl position="top-right" class=""> -->
-        <WdBasemapSwitch
-          :position="$q.platform.is.mobile ? 'bottom-right' : 'top-left'"
-          :direction="$q.platform.is.mobile ? 'left' : 'right'"
-          :offset="[$q.platform.is.mobile ? 12 : 12, $q.platform.is.mobile ? 20 : 14]"
+        <!-- ── Map controls (v2 clean layout) ──────────────────────────── -->
+        <!-- Bottom-right: overlay strip above basemap (basemap opens LEFT).
+             pointer-events: none on the wrapper — interactive elements
+             inside the controls opt back in, so map gestures pass through
+             every empty pixel. -->
+        <q-page-sticky position="bottom-right" :offset="[12, 14]" class="wd-map-ctl-sticky">
+          <div class="wd-map-ctl-col">
+            <WdOverlayControl />
+            <WdBasemapControl />
+          </div>
+        </q-page-sticky>
+
+        <!-- Zoom slider: focus mode only on mobile (left edge) -->
+        <WdZoomSlider />
+
+        <!-- Focus (fullscreen) toggle: desktop always visible below the
+             top-right nav cluster; mobile only visible IN focus mode -->
+        <button
+          class="wd-focus-toggle"
+          :class="{ 'wd-focus-toggle--active': mapFocus }"
+          :aria-label="mapFocus ? 'Exit focus mode' : 'Focus mode'"
+          @click.stop="setMapFocus(!mapFocus)"
+        >
+          <svg v-if="!mapFocus" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+          </svg>
+          <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+
+        <!-- Top-right: GPS + compass (desktop zoom too) -->
+        <MglGeolocateControl :position="isMobileView() ? 'bottom-left' : 'top-right'" />
+        <MglNavigationControl :show-zoom="!isMobileView()" :position="isMobileView() ? 'bottom-left' : 'top-right'" />
+
+        <!-- Scale: mobile top-center, desktop bottom-left -->
+        <MglScaleControl :position="isMobileView() ? 'top-left' : 'bottom-left'" />
+
+        <!-- Attribution: mobile compact ⓘ bottom-left above the GPS cluster;
+             desktop full text bottom-left above the scale -->
+        <MglAttributionControl
+          v-if="isMobileView()"
+          position="bottom-left"
+          :compact="true"
         />
-        <WdOverlaySwitch
-          position="top-left"
-          direction="down"
-          :offset="[$q.platform.is.mobile ? 12 : 12, $q.platform.is.mobile ? 12 : 68]"
-        />
-        <!-- </MglCustomControl> -->
-        <MglGeolocateControl />
-        <!-- <MglNavigationControl :show-zoom="$q.platform.is.desktop" /> -->
-        <MglNavigationControl :show-zoom="false" />
-        <MglAttributionControl :position="$q.platform.is.mobile ? 'bottom-left' : 'bottom-right'" />
-        <MglScaleControl />
+        <MglAttributionControl v-else position="bottom-left" :compact="false" />
         <!-- <MglGeoJsonSource
       source-id="wd-bookings"
       :data="hutStore.bookingsGeojson"
