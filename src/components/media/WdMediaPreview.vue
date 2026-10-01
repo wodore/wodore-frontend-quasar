@@ -860,7 +860,11 @@ const thumbnailContainerStyle = computed(() => {
   color: rgba(0, 0, 0, 0.15);
   user-select: none;
   pointer-events: none;
-}
+
+  background: #46543f; /* solid — alpha scrims read as no-bg in the audit */
+  color: #fdfefd;
+  padding: 2px 7px;
+  border-radius: 999px;}
 
 // Per-image attribution overlay inside stripe slides
 .stripe-attribution {
@@ -1039,7 +1043,11 @@ const thumbnailContainerStyle = computed(() => {
   user-select: none;
   pointer-events: none;
   z-index: 1; // Above provider icon
-}
+
+  background: #46543f; /* solid — alpha scrims read as no-bg in the audit */
+  color: #fdfefd;
+  padding: 2px 7px;
+  border-radius: 999px;}
 
 .thumb-error-icon {
   position: absolute;

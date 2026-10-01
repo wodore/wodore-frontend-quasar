@@ -254,7 +254,7 @@
     "one_man_project_term": "projet d'une seule personne"
   },
   "select_date": {
-    "placeholder": "Choisir une date",
+    "placeholder": "Disponibilité",
     "error_title": "Oh non, plus rien ne fonctionne !",
     "error_restricted": "Le CAS a restreint l'accès !",
     "error_contact": "N'hésitez pas à",
@@ -264,7 +264,10 @@
     "alternative": "Alternativement :",
     "or": "ou",
     "not_available": "Actuellement indisponible",
-    "placeholder_short": "Date"
+    "placeholder_short": "Disponibilité",
+    "today": "Aujourd'hui",
+    "tomorrow": "Demain",
+    "choose_hint": "Choisir une date"
   },
   "overlay_config": {
     "reset_done": "Paramètres réinitialisés",

@@ -333,26 +333,26 @@ body {
 // separate with dashed dividers instead of their own borders.
 .wd-date-stepper {
   border: 1px dashed rgba(255, 255, 255, 0.24);
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.07);
-
-  > * + * {
-    // slightly stronger than the outer frame so the segment breaks read
-    border-left: 1px dashed rgba(255, 255, 255, 0.34);
-  }
-
-  // Segments lose their individual frames (family rules above)
-  .wd-input-button .q-field__control,
-  .wd-date-field .q-field__control {
-    background: transparent !important;
-    padding: 0 8px !important;
-  }
-
-  .wd-input-button .q-field__control::before,
-  .wd-date-field .q-field__control::before {
-    background: transparent !important;
-    border: none !important;
-  }
+//  border-radius: 4px;
+//  background: rgba(255, 255, 255, 0.07);
+//
+//  > * + * {
+//    // slightly stronger than the outer frame so the segment breaks read
+//    border-left: 1px dashed rgba(255, 255, 255, 0.34);
+//  }
+//
+//  // Segments lose their individual frames (family rules above)
+//  .wd-input-button .q-field__control,
+//  .wd-date-field .q-field__control {
+//    background: transparent !important;
+//    padding: 0 8px !important;
+//  }
+//
+//  .wd-input-button .q-field__control::before,
+//  .wd-date-field .q-field__control::before {
+//    background: transparent !important;
+//    border: none !important;
+//  }
 }
 
 // ── Menu drawer: floats over map imagery ───────────────────────────────
@@ -481,6 +481,549 @@ body {
 .wd-version-hash {
   font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
   font-size: 0.9em;
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// MAP CONTROL THEME TOKENS
+// Every floating map control consumes these — one place to theme all.
+// Light = white chips over the light topo map; Dark = pine chips.
+// ══════════════════════════════════════════════════════════════════════
+:root,
+body.body--light {
+  --wd-ctl-bg: #fdfefd;
+  --wd-ctl-border: #dde7e0;
+  --wd-ctl-ink: #224e3b;
+  --wd-ctl-ink-soft: rgba(34, 78, 59, 0.55);
+  --wd-ctl-hover: #f6f9f7;
+  --wd-ctl-shadow: 0 1px 3px rgba(10, 20, 15, 0.2);
+  --wd-ctl-ring: #bfab25;
+  --wd-ctl-active-bg: rgba(191, 171, 37, 0.1);
+  --wd-ctl-date-bg: rgba(52, 103, 81, 0.08);
+}
+
+body.body--dark {
+  --wd-ctl-bg: #112119;
+  --wd-ctl-border: #1c3629;
+  --wd-ctl-ink: #a9f0d2;
+  --wd-ctl-ink-soft: rgba(169, 240, 210, 0.55);
+  --wd-ctl-hover: #1a2f24;
+  --wd-ctl-shadow: 0 2px 6px rgba(10, 20, 15, 0.35);
+  --wd-ctl-ring: #bfab25;
+  --wd-ctl-active-bg: rgba(191, 171, 37, 0.15);
+  --wd-ctl-date-bg: rgba(169, 240, 210, 0.06); // dark: mint whisper, not teal
+}
+
+// Shared button reset — every map control uses this base
+.wd-map-btn {
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--wd-ctl-border);
+  background: var(--wd-ctl-bg);
+  color: var(--wd-ctl-ink);
+  cursor: pointer;
+  box-shadow: var(--wd-ctl-shadow);
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.15s ease,
+    transform 0.12s ease;
+}
+
+.wd-map-btn:hover {
+  background: var(--wd-ctl-hover);
+}
+
+.wd-map-btn:active {
+  transform: scale(0.95);
+}
+
+// 48px main toggle
+.wd-map-btn--lg {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+}
+
+// 44px strip button (fits inside the box padding)
+.wd-map-btn--sm {
+  width: 44px;
+  height: 44px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.wd-map-btn--sm:hover {
+  background: rgba(128, 128, 128, 0.1);
+}
+
+// active state: gold inset ring
+.wd-map-btn--active {
+  box-shadow: inset 0 0 0 2px var(--wd-ctl-ring);
+  background: var(--wd-ctl-active-bg);
+}
+
+// inactive strip buttons: faded
+.wd-map-btn--inactive {
+  opacity: 0.55;
+}
+
+// Floating topbar: search | date (highlight) | avatar ─────────────────────
+// One fully-rounded pill (999px). The DATE segment carries the visual
+// weight (green wash); search is icon-only; avatar opens the menu.
+
+.wd-topbar {
+  position: fixed;
+  top: calc(10px + env(safe-area-inset-top, 0px));
+  left: calc(12px + env(safe-area-inset-left, 0px));
+  right: calc(12px + env(safe-area-inset-right, 0px));
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center; // pill centered on ALL viewports
+  pointer-events: none;
+}
+
+.wd-topbar > * {
+  pointer-events: auto;
+}
+
+// ── The pill ────────────────────────────────────────────────────────────
+.wd-topbar__pill {
+  flex: none;
+  max-width: calc(100vw - 24px); // fullscreen button is hidden in normal view
+  display: flex;
+  align-items: center;
+  height: 52px; // taller pill — the date hero needs presence
+  background: var(--wd-ctl-bg);
+  border: 1px solid var(--wd-ctl-border);
+  border-radius: 999px;
+  box-shadow: var(--wd-ctl-shadow);
+  color: var(--wd-ctl-ink);
+  padding-left: 4px;
+  padding-right: 4px;
+  gap: 2px;
+}
+
+// ── Search: icon-only (44px zone) ───────────────────────────────────────
+.wd-topbar__search {
+  flex: none;
+  width: 44px; // matches the avatar zone — the pair reads as bookends
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+// Desktop menu: collapse the q-input into an icon button
+.wd-topbar__search-menu {
+  .wd-search-field,
+  .q-field {
+    width: 44px;
+    min-width: 44px;
+  }
+
+  .q-field__control {
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 4px !important;
+    height: 44px;
+    min-height: 44px;
+  }
+
+  .q-field__control::before,
+  .q-field__control::after {
+    background: transparent !important;
+    border: none !important;
+  }
+
+  // hide the text input — icon only
+  .q-field__native,
+  input {
+    display: none;
+  }
+
+  .q-icon,
+  .text-icon {
+    color: #1c1c1c !important; // neutral day-ink (.text-icon utility is brand green)
+    font-size: 19px; // optical match for the avatar's 20px stroke-2 glyph
+  }
+}
+
+body.body--dark .wd-topbar__search-menu .q-icon,
+body.body--dark .wd-topbar__search-menu .text-icon {
+  color: #f2f7f4 !important;
+}
+
+// Mobile dialog trigger: round icon button, neutral ink
+.wd-topbar__search-dialog {
+  .q-btn,
+  .q-btn .text-icon {
+    width: 44px;
+    height: 44px;
+    color: #1c1c1c !important;
+  }
+}
+
+body.body--dark .wd-topbar__search-dialog .q-btn,
+body.body--dark .wd-topbar__search-dialog .q-btn .text-icon {
+  color: #f2f7f4 !important;
+}
+// ── Menu: right element ──────────────────────────────────
+.wd-topbar__menu {
+  flex: none;
+  width: 44px; // matches the avatar zone — the pair reads as bookends
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .q-icon,
+  .q-icon .text-icon {
+    color: #1c1c1c !important; // neutral day-ink (.text-icon utility is brand green)
+    font-size: 19px; // optical match for the avatar's 20px stroke-2 glyph
+  }
+}
+body.body--dark .wd-topbar__menu .q-icon,
+body.body--dark .wd-topbar__menu .text-icon {
+  color: #f2f7f4 !important;
+}
+// ── Date: the highlighted core element ──────────────────────────────────
+// ── Date segment: plain 2-line BUTTON (no input field) ───────────────────
+// Design: Alpine Instrument — inset block, wash + hairline, dashed when
+// empty; line 1 day name (15/600/uppercase), line 2 date (12/400).
+// ── Date segment: full-radius sub-pill ON the main pill ──────────────────
+// The calendar sits as a second stadium-shaped panel inside the capsule:
+// 4px inset, 999px radius, tonal wash. No borders — the wash IS the shape.
+.wd-topbar__date {
+  flex: 1 1 auto; // fills the pill between the icon bookends
+  min-width: 0;
+  height: 46px; // 3px inset in the 52px pill
+  margin: 0 2px;
+  align-self: center;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+}
+
+.wd-date-seg {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* Steppers (desktop prev/next) stay hidden in the pill; kill the dashed
+   field border WdSelectDate draws on its stepper wrapper */
+.wd-topbar__date .wd-input-button {
+  display: none !important;
+}
+
+.wd-topbar__date .wd-date-stepper,
+.wd-topbar__date .wd-date-seg,
+.wd-topbar__date .wd-date-seg > div {
+  border: none !important;
+  outline: none !important;
+}
+
+.wd-date-btn {
+  display: flex;
+  align-items: center;
+  //justify-content: space-between;
+  gap: 10px;
+  width: 180px;
+  height: 44px;
+
+  padding: 0 16px 0 16px;
+  border: 1px;
+  border-radius: 999px; // second full-radius panel
+  background: rgba(17, 33, 25, 0.07); // light: pine wash
+  cursor: pointer;
+  transition: background-color 0.12s ease-out;
+  -webkit-tap-highlight-color: transparent;
+
+  &:active {
+    background: rgba(17, 33, 25, 0.14);
+  }
+
+  .text-icon {
+    color: #1c1c1c !important; // neutral day-ink (.text-icon utility is brand green)
+  }
+}
+
+// Empty state: whisper wash (no dashed outline — reads unfinished)
+.wd-date-btn:has(.wd-date-btn__day--empty) {
+  background: rgba(17, 33, 25, 0.045);
+}
+
+body.body--dark .wd-date-btn {
+  // crisp tonal step (solid pine lift) — alpha washes read as murk
+  background: #1a3a2b;
+
+  &:active {
+    background: #20472f;
+  }
+  .text-icon {
+    color: #f2f7f4 !important;
+  }
+}
+
+body.body--dark .wd-date-btn:has(.wd-date-btn__day--empty) {
+  background: #163024;
+}
+
+.wd-date-btn__lines {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  line-height: 1.12;
+  text-align: left;
+}
+
+.wd-date-btn__day {
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #1c1c1c;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &--empty {
+    opacity: 0.72;
+  }
+}
+
+.wd-date-btn__date {
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  color: #1c1c1c;
+  opacity: 0.66;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &--empty {
+    opacity: 0.58;
+  }
+}
+
+body.body--dark .wd-date-btn__day {
+  color: #ffffff;
+
+  &--empty {
+    opacity: 0.78;
+  }
+}
+
+body.body--dark .wd-date-btn__date {
+  color: #d9f0e4;
+
+  &--empty {
+    opacity: 0.75; // mint at ~70-75% — readable, still placeholder
+  }
+}
+
+.wd-date-btn__icon {
+  flex: none;
+  color: #1c1c1c;
+
+  &--empty {
+    opacity: 0.5;
+  }
+}
+
+body.body--dark .wd-date-btn__icon {
+  color: #ffffff; // match the avatar icon brightness
+}
+
+// ── Avatar / menu button (right edge) ───────────────────────────────────
+.wd-topbar__user {
+  display: grid;
+  place-items: center;
+  width: 44px; // same zone as the search icon — symmetric bookends
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: #1c1c1c;
+  cursor: pointer;
+  flex: none;
+  transition: background-color 0.12s ease, color 0.12s ease;
+
+  &:hover {
+    background: rgba(128, 128, 128, 0.14);
+    color: var(--wd-ctl-ink);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+// ── Desktop utilities: top-right chip cluster (8px radius) ──────────────
+@media (min-width: 900px) {
+  .wd-topbar__utils {
+    position: absolute;
+    top: calc(6px + env(safe-area-inset-top, 0px));
+    right: calc(62px + env(safe-area-inset-right, 0px));
+    background: var(--wd-ctl-bg);
+    border: 1px solid var(--wd-ctl-border);
+    border-radius: 8px;
+    box-shadow: var(--wd-ctl-shadow);
+    height: 44px;
+    padding: 0 6px;
+    display: flex;
+    gap: 2px;
+    align-items: center;
+    color: var(--wd-ctl-ink);
+    flex: none;
+
+    .q-btn {
+      color: var(--wd-ctl-ink) !important;
+    }
+  }
+}
+
+// ── Progress bar rides below the pill ───────────────────────────────────
+.wd-topbar__progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  border-radius: 0;
+  z-index: 2100;
+}
+
+
+// ── Map control column (bottom-right) ───────────────────────────────────
+// pointer-events: none on ALL wrappers — interactive elements inside the
+// controls opt back in with pointer-events: auto, so map gestures (pan,
+// zoom) pass through every empty pixel, including behind the expanded
+// overlay box. Without this the wrapper DIVs swallow the gestures.
+.wd-map-ctl-sticky,
+.wd-map-ctl-sticky > div, /* Quasar's classless inner wrapper — was swallowing gestures */
+.wd-map-ctl-col {
+  pointer-events: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.wd-map-ctl-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+// ── Focus (fullscreen) mode toggle button ────────────────────────────────
+.wd-focus-toggle {
+  position: absolute;
+  z-index: 2010; // above the topbar (2000) when fixed-positioned on mobile
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  border: 1px solid var(--wd-ctl-border);
+  background: var(--wd-ctl-bg);
+  color: var(--wd-ctl-ink);
+  box-shadow: var(--wd-ctl-shadow);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px);
+  transition:
+    opacity 0.3s cubic-bezier(0.2, 0, 0, 1),
+    transform 0.3s cubic-bezier(0.2, 0, 0, 1),
+    background-color 0.15s ease;
+
+  // Desktop: TOP of the right column — the MapLibre cluster is pushed
+  // below it (margin-top on .maplibregl-ctrl-top-right)
+  @media (min-width: 900px) {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+    top: 14px;
+    right: 14px;
+  }
+
+  // Mobile: HIDDEN in normal view (focus is entered by tapping the map);
+  // visible ONLY as the exit button in focus mode. position: FIXED +
+  // z-index above the topbar so nothing covers it.
+  @media (max-width: 899px) {
+    position: fixed;
+    top: calc(11px + env(safe-area-inset-top, 0px));
+    right: 12px;
+    width: 48px;
+    height: 48px;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  &--active {
+    color: var(--wd-ctl-ink); // neutral ink — gold on white read weak
+  }
+}
+
+// ── Focus mode slide-out / slide-in ──────────────────────────
+// Transitions on the DEFAULT state so elements animate back IN.
+
+.wd-map-ctl-sticky,
+.wd-map-ctl-col,
+.wd-topbar,
+.wd-topbar__progress,
+.maplibregl-ctrl-top-right .maplibregl-ctrl-group,
+.maplibregl-ctrl-bottom-left .maplibregl-ctrl-group {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.3s cubic-bezier(0.2, 0, 0, 1), transform 0.3s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.maplibregl-ctrl-top-left .maplibregl-ctrl-scale {
+  transition: top 0.3s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib {
+  transition: opacity 0.3s cubic-bezier(0.2, 0, 0, 1);
+}
+
+body.wd-map-focus {
+  .wd-map-ctl-sticky,
+  .wd-map-ctl-col {
+    opacity: 0; pointer-events: none; transform: translateX(80px);
+  }
+  .wd-topbar, .wd-topbar__progress {
+    opacity: 0; pointer-events: none; transform: translateY(-60px);
+  }
+  .maplibregl-ctrl-top-right .maplibregl-ctrl-group {
+    opacity: 0; pointer-events: none; transform: translateY(-60px);
+  }
+  .maplibregl-ctrl-bottom-left .maplibregl-ctrl-group {
+    opacity: 0; pointer-events: none; transform: translateX(-60px);
+  }
+  .maplibregl-ctrl-top-left .maplibregl-ctrl-scale {
+    top: calc(12px + env(safe-area-inset-top, 0px));
+  }
+  .wd-focus-toggle {
+    opacity: 1; pointer-events: auto; transform: none;
+    // Mobile: the exit lives bottom-right (where the overlay toggle
+    // normally sits) — top-right belongs to nothing in focus mode
+    @media (max-width: 899px) {
+      position: fixed;
+      top: auto;
+      bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+      right: 12px;
+    }
+  }
 }
 
 // months colors
@@ -715,13 +1258,13 @@ body.body--dark {
 // The visible "frame" lives on the ::before pseudo (Quasar standout
 // convention): 1px dashed white 24% + wash bg, identical on all family
 // members (stg.wodore.com look)
-.wd-search-field .q-field__control::before,
-.wd-date-field .q-field__control::before,
-.wd-input-button.q-field--standout .q-field__control::before {
-  background: rgba(255, 255, 255, 0.07) !important;
-  border: 1px dashed rgba(255, 255, 255, 0.24) !important;
-  border-radius: 4px !important;
-}
+//.wd-search-field .q-field__control::before,
+//.wd-date-field .q-field__control::before,
+//.wd-input-button.q-field--standout .q-field__control::before {
+//  background: rgba(255, 255, 255, 0.07) !important;
+//  border: 1px dashed rgba(255, 255, 255, 0.24) !important;
+//  border-radius: 4px !important;
+//}
 
 // Dashed frame is a header-toolbar signature only: inside the search
 // dialog the input uses its solid ridge border instead
@@ -1512,4 +2055,243 @@ body.capacitor .q-dialog__inner--maximized .q-card-actions {
 body.capacitor .q-dialog__backdrop {
   background: rgba(10, 18, 14, 0.98) !important;
   backdrop-filter: none !important;
+}
+
+/* Dark theme: date field in the pill needs light text */
+body.body--dark .wd-topbar__date {
+  background: rgba(52, 103, 81, 0.2);
+}
+
+body.body--dark .wd-topbar .wd-date-field .q-field__native,
+body.body--dark .wd-topbar .wd-date-field .q-field__prefix {
+  color: #a9f0d2 !important;
+}
+
+body.body--dark .wd-topbar input::placeholder {
+  color: rgba(169, 240, 210, 0.85);
+}
+
+/* Overlay icons are silhouette SVGs (black default fill / currentColor).
+   Light: dark ink on white chips. Dark: INVERTED to white — brightness
+   alone cannot lift pure black. Mono treatment keeps the set consistent. */
+.wd-ovl__icon .q-icon {
+  color: #22302a; // currentColor icons match the black silhouettes
+}
+
+body.body--dark .wd-ovl__icon .q-icon {
+  // ONE invert only — on the wrapper <i>. Inverting BOTH the wrapper and
+  // the child <img> double-inverts the glyphs back to black.
+  filter: invert(1);
+  color: #000000; // currentColor sources invert to clean white
+}
+
+/* Dark theme: mute the staging preview ribbon */
+body.body--dark .preview-badge {
+  opacity: 0.75;
+}
+
+/* ── Side panel opens: bottom-right controls + top-right cluster shift
+      left so they stay clear of the drawer (desktop). q-page-sticky uses
+      an inline transform — !important wins. Mobile drawers overlay, no
+      shift needed there. */
+@media (min-width: 900px) {
+  body.wd-sidepanel-open .wd-map-ctl-sticky {
+    transform: translateX(calc(-1 * var(--wd-drawer-w, 0px))) !important;
+  }
+  body.wd-sidepanel-open .wd-topbar__utils {
+    transform: translateX(calc(-1 * var(--wd-drawer-w, 0px)));
+  }
+  body.wd-sidepanel-open .maplibregl-ctrl-top-right {
+    transform: translateX(calc(-1 * var(--wd-drawer-w, 0px)));
+  }
+  body.wd-sidepanel-open .wd-focus-toggle {
+    transform: translateX(calc(-1 * var(--wd-drawer-w, 0px)));
+  }
+}
+
+.wd-map-ctl-sticky,
+.wd-topbar__utils,
+.maplibregl-ctrl-top-right,
+.wd-focus-toggle {
+  transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Dark: focus toggle gets a light hairline so it never blends away */
+body.body--dark .wd-focus-toggle {
+  border-color: rgba(169, 240, 210, 0.34);
+}
+
+/* Preview badge: dark-mode variant (was tan/gold, illegible) */
+body.body--dark .preview-badge {
+  background: rgba(17, 33, 25, 0.9);
+  color: #a9f0d2;
+  border: 1px solid rgba(169, 240, 210, 0.3);
+  opacity: 0.9;
+}
+
+
+/* Date text clips with ellipsis when the segment narrows */
+.wd-topbar__date .q-field__native,
+.wd-topbar__date input {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.body--dark .wd-topbar__user {
+  color: #f2f7f4;
+}
+
+/* Dark: the elevation kill strips shadows — give the pill and map chips a
+   mint ridge so they separate from the pale basemap. */
+body.body--dark .wd-topbar__pill,
+body.body--dark .wd-ovl__box,
+body.body--dark .wd-ovl__toggle,
+body.body--dark .wd-bm__toggle,
+body.body--dark .wd-bm__rail,
+body.body--dark .wd-focus-toggle {
+  border-color: rgba(169, 240, 210, 0.16);
+}
+
+
+.wd-ovl__toggle:hover .wd-ovl__toggle-icon,
+.wd-ovl__toggle-icon--open {
+  opacity: 1;
+}
+
+/* Search glyph optical baseline — sits 1px low next to the wd-menu glyph */
+.wd-topbar__search .q-icon {
+  transform: translateY(-1px);
+}
+
+/* ── Zoom slider: visible ONLY in focus mode on mobile ───────────────────
+   (!important — the component's scoped display:flex is more specific) */
+.wd-zoom {
+  display: none !important;
+}
+
+body.wd-map-focus .wd-zoom {
+  display: flex !important;
+}
+
+/* Desktop focus mode shows the slider TOO now (owner request) — the
+   classic zoom buttons are hidden with the rest of the chrome. */
+@media (min-width: 900px) {
+  body.wd-map-focus .wd-zoom {
+    display: flex !important;
+  }
+}
+
+/* ── Mobile attribution: fully owned chip (MapLibre's markup is hidden —
+      hit-testing inside the PE-none control container never worked) ── */
+.wd-attrib {
+  animation: wd-attrib-in 0.25s ease-out; /* fade in when ready */
+  position: fixed;
+  left: calc(68px + env(safe-area-inset-left, 0px)); /* beside the GPS cluster */
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  z-index: 2010;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--wd-ctl-border);
+  border-radius: 999px; /* round ⓘ */
+  background: color-mix(in srgb, var(--wd-ctl-bg) 88%, transparent);
+  color: var(--wd-ctl-ink);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  *:focus {
+    outline: none;
+  }
+
+  // plain italic serif "i" — the chip IS the circle. When OPEN the
+  // glyph swaps to a close ✕ (tapping closes).
+  .wd-attrib__i {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-style: italic;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1;
+
+    .wd-attrib__close {
+      display: none;
+    }
+  }
+
+  .wd-attrib__text {
+    display: none;
+  }
+
+  &:active {
+    background: color-mix(in srgb, var(--wd-ctl-bg) 95%, transparent);
+  }
+}
+
+/* Expanded: wrapping text, transparent chip */
+.wd-attrib--open {
+  width: auto;
+  max-width: min(66vw, 320px);
+  min-width: 190px;
+  height: auto;
+  padding: 7px 12px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--wd-ctl-bg) 92%, transparent);
+
+  justify-content: flex-start;
+  gap: 8px;
+
+  .wd-attrib__text {
+    display: block;
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+    font-size: 10px;
+    line-height: 1.5;
+    white-space: normal;
+    color: var(--wd-ctl-ink);
+
+    a {
+      color: var(--wd-ctl-ink);
+      text-decoration: underline;
+      opacity: 0.8;
+    }
+  }
+}
+
+/* Focus mode: fully to the left, AT the bottom */
+body.wd-map-focus .wd-attrib {
+  left: calc(12px + env(safe-area-inset-left, 0px));
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+}
+
+@keyframes wd-attrib-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Open mode: the "i" becomes a BIG round close button (taps were
+   hitting links — the target was tiny) */
+.wd-attrib--open .wd-attrib__i {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 999px;
+  background: rgba(128, 145, 135, 0.14);
+
+  .wd-attrib__info {
+    display: none;
+  }
+
+  .wd-attrib__close {
+    display: block;
+  }
 }

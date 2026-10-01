@@ -19,18 +19,10 @@ function onSearchClose() {
 <template>
   <div>
     <q-btn flat round dense @click="showDialog = true">
-      <q-icon size="sm" class="text-icon">
-        <IconEvaSearchOutline />
-      </q-icon>
+      <q-icon size="sm" class="text-icon" name="wd-search-outline" />
     </q-btn>
 
-    <q-dialog
-      v-model="showDialog"
-      maximized
-      square
-      transition-show="slide-up"
-      transition-hide="slide-down"
-    >
+    <q-dialog v-model="showDialog" maximized square transition-show="slide-up" transition-hide="slide-down">
       <!-- Opaque background fills the card; content pads itself
            clear of system bars (same approach as the header toolbar) -->
       <div class="search-dialog-root">
@@ -39,13 +31,8 @@ function onSearchClose() {
             <q-tooltip :delay="2000">{{ $t('close') }}</q-tooltip>
           </q-btn>
         </div>
-        <WdPlaceSearch
-          ref="placeSearchRef"
-          mobile
-          swipe-to-close
-          @close="onSearchClose"
-          class="search-dialog-content"
-        />
+        <WdPlaceSearch ref="placeSearchRef" mobile swipe-to-close @close="onSearchClose"
+          class="search-dialog-content" />
       </div>
     </q-dialog>
   </div>
