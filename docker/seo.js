@@ -119,6 +119,14 @@ function hut(r) {
     r.internalRedirect('/index.html');
     return;
   }
+  // Content negotiation: clients explicitly asking for Markdown (Accept:
+  // text/markdown) get the .md document instead of the HTML shell — same
+  // URL, no suffix needed. The .md location then proxies to the backend.
+  var accept = r.headersIn.Accept || '';
+  if (accept.indexOf('text/markdown') !== -1) {
+    r.internalRedirect('/hut/' + slug + '.md');
+    return;
+  }
   Promise.all([r.subrequest(SHELL_URI), r.subrequest('/_seo/meta/' + slug)])
     .then(function (res) {
       var shellRes = res[0];
