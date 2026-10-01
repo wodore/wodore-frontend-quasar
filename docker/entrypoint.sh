@@ -27,9 +27,16 @@ fi
 # Staging: block search engine indexing
 if [ "${WODORE_ENV}" != "production" ]; then
   printf 'User-agent: *\nDisallow: /\n' > /usr/share/nginx/html/robots.txt
+  # Bake a noindex into the HTML shell for crawlers that do not run JS
+  # (the app sets the same via useMeta client-side, this covers the rest).
+  sed -i 's|<head>|<head><meta name="robots" content="noindex, nofollow">|' /usr/share/nginx/html/index.html
   # Uncomment all directives below "# Staging" sections
   sed -i '/# Staging/{n;s/^    # //}' "/etc/nginx/http.d/${CONFIG_FILE}.conf"
 fi
+
+# SEO proxies: replace the API host placeholder with the runtime API host
+# (same source of truth as the @@WODORE_API_HOST@@ placeholders in index.html).
+sed -i "s|__WODORE_API_HOST__|${WODORE_API_HOST:-http://localhost:8000}|g" "/etc/nginx/http.d/${CONFIG_FILE}.conf"
 
 # Create necessary directories for nginx
 mkdir -p /run/nginx

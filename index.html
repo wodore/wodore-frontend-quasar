@@ -34,9 +34,14 @@
     </script>
     <meta charset="utf-8" />
     <meta name="application-name" content="<%= productName %>" />
-    <meta name="description" content="<%= productDescriptionDe %>" />
-    <meta name="theme-color" media="undefined" content="#1a4231" />
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1a4231" />
+    <meta name="theme-color" content="#1a4231" />
+    <!-- Opt out of indexing for deployments that cannot do it at runtime
+         (GitHub Pages PR previews, set via WODORE_SEO_NOINDEX=1). The
+         Docker image decides per-environment at container start instead
+         (docker/entrypoint.sh) and must NOT bake this flag. -->
+    <% if (process.env.WODORE_SEO_NOINDEX) { %>
+    <meta name="robots" content="noindex, nofollow" />
+    <% } %>
 
     <meta name="format-detection" content="telephone=no" />
     <meta
