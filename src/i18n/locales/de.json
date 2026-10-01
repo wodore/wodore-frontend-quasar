@@ -466,8 +466,5 @@
   "api_version_unsupported_native": "Diese App-Version wird vom Server nicht mehr unterstützt. Bitte aktualisiere die App.",
   "api_version_unsupported_web": "Diese Version wird vom Server nicht mehr unterstützt. Bitte lade die Seite neu.",
   "api_version_reload": "Neu laden",
-  "api_version_update": "App aktualisieren",
-  "app_update_ready": "Eine neue App-Version ist heruntergeladen und bereit.",
-  "app_update_restart": "Jetzt neu starten",
-  "app_update_stale_banner": "Diese App-Version ist stark veraltet – bitte aktualisiere die App."
+  "api_version_update": "App aktualisieren"
 }
