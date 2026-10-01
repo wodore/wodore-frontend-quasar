@@ -76,7 +76,9 @@ jobs:
         run: rm -rf allure-results && yarn test:unit
 
       - name: Run interaction tests (map controls)
-        run: yarn test:interaction
+        run: |
+          yarn playwright test tests/interaction/ --project=interaction
+          node scripts/link-allure-attachments.mjs allure-results/e2e
         env:
           INTERACTION_BASE_URL: http://localhost:9000
 
@@ -137,6 +139,27 @@ jobs:
           keep_files: true
           commit_message: >-
             Allure report for run ${{ github.run_number }}
+
+      # Prune old Allure reports (keep the latest 30 per PR/branch)
+      - name: Prune old reports (>30 runs)
+        if: always()
+        run: |
+          cd $(mktemp -d)
+          git clone --depth 1 --branch gh-pages ${{ github.server_url }}/${{ github.repository }}.git repo
+          cd repo
+          DIR=${{ steps.ctx.outputs.dir }}
+          if [ -d "$DIR" ]; then
+            RUNS=$(ls -1 "$DIR" | sort -n | head -n -30)
+            if [ -n "$RUNS" ]; then
+              echo "Pruning: $RUNS"
+              echo "$RUNS" | xargs -I{} rm -rf "$DIR/{}/"
+              git config user.name 'Allure Bot'
+              git config user.email 'actions@github.com'
+              git add -A
+              git commit -m 'Prune Allure reports older than 30 runs' || true
+              git push
+            fi
+          fi
 
       # allure@3 does NOT write history back into the report; rebuild the
       # next run's history.json from this report's per-test data. Capped at

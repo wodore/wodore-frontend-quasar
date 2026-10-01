@@ -1,22 +1,22 @@
 /**
  * Shared helpers for interaction specs — theme pinning, map access,
- * Allure screenshot attachment.
+ * Allure screenshot attachment via Playwright's native API.
  */
-import type { test } from '@playwright/test';
+import type { test as TestType } from '@playwright/test';
 import { allure } from 'allure-playwright';
+import type { Page, TestInfo } from '@playwright/test';
 
 export const GET_MAP =
   'document.querySelector(".maplibregl-map").__vueParentComponent.exposed.map._value';
 
 export interface ThemeFixture {
-  page: import('@playwright/test').Page;
+  page: Page;
   theme: 'light' | 'dark';
   mode: 'mobile' | 'desktop';
 }
 
 /**
  * Tag a test for Allure: layer + feature + theme/mode labels.
- * Screenshots are attached on both pass and fail.
  */
 export function tagTest(theme: string, mode: string, group: string): void {
   allure.label('layer', 'interaction');
@@ -24,30 +24,54 @@ export function tagTest(theme: string, mode: string, group: string): void {
   allure.label('feature', group);
   allure.label('theme', theme);
   allure.label('viewport', mode);
-  allure.tag('visual'); // all interaction tests are visual-adjacent
+  allure.tag('visual');
 }
 
 /**
- * Attach a screenshot to the Allure report.
+ * Attach a screenshot to the test result AND the Allure report.
+ * Uses Playwright's native testInfo.attach() — the allure-playwright
+ * reporter picks these up automatically (allure.attachment() from a
+ * helper didn't propagate reliably).
  */
 export async function attachScreenshot(
-  page: import('@playwright/test').Page,
+  page: Page,
+  testInfo: TestInfo,
   name: string,
   clip?: { x: number; y: number; width: number; height: number }
 ): Promise<void> {
   const buf = await page.screenshot(clip ? { clip } : undefined);
-  await allure.attachment(name, buf, 'image/png');
+  await testInfo.attach(name, {
+    body: buf,
+    contentType: 'image/png',
+  });
+}
+
+/**
+ * Attach the Playwright trace from a failed test to the Allure report.
+ * Called in afterEach when testInfo.status === 'failed'.
+ */
+export async function attachFailureArtifacts(
+  testInfo: TestInfo
+): Promise<void> {
+  // Playwright stores traces as test-results/<test-id>-trace.zip
+  // The allure-playwright reporter SHOULD pick these up automatically
+  // via its `trace: 'retain-on-failure'` config. This is a safety net:
+  for (const attachment of testInfo.attachments) {
+    if (attachment.path?.endsWith('.zip')) {
+      await testInfo.attach('trace', {
+        path: attachment.path,
+        contentType: 'application/zip',
+      });
+    }
+  }
 }
 
 /**
  * Apply the theme through the app's OWN switcher (data-testid theme-cycle)
  * — the same path the owner uses. Clicks cycle auto → light → dark.
  */
-export async function pinTheme(
-  page: import('@playwright/test').Page,
-  theme: 'light' | 'dark'
-): Promise<void> {
-  if (theme === 'light') return; // default boot state is light/auto→light
+export async function pinTheme(page: Page, theme: 'light' | 'dark'): Promise<void> {
+  if (theme === 'light') return;
   const isMobile = page.viewportSize()!.width < 900;
   if (isMobile) {
     await page.evaluate('document.querySelector(".wd-topbar__user, .wd-topbar__menu .q-btn")?.click()');
@@ -68,19 +92,16 @@ export async function pinTheme(
 /**
  * Navigate to the map and wait for it to settle.
  */
-export async function loadMap(page: import('@playwright/test').Page): Promise<void> {
+export async function loadMap(page: Page): Promise<void> {
   await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 60_000 });
   await page.waitForSelector('.maplibregl-canvas', { timeout: 20_000 });
-  await page.waitForTimeout(14_000); // map tiles + overlays settle
+  await page.waitForTimeout(14_000);
 }
 
 /**
  * Evaluate a function in the page and return the result as typed JSON.
  */
-export async function evalJSON<T>(
-  page: import('@playwright/test').Page,
-  fn: string | (() => T)
-): Promise<T> {
+export async function evalJSON<T>(page: Page, fn: string | (() => T)): Promise<T> {
   return page.evaluate(typeof fn === 'string' ? fn : `(${fn.toString()})()`) as Promise<T>;
 }
 

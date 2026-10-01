@@ -15,7 +15,7 @@ const CONFIGS = [
 
 test.describe('map chrome theming', () => {
   for (const { theme, mode } of CONFIGS) {
-    test(`${theme}-${mode}: chip backgrounds and ink`, async ({ page }) => {
+    test(`${theme}-${mode}: chip backgrounds and ink`, async ({ page }, testInfo) => {
       tagTest(theme, mode, 'theming');
       test.setTimeout(90_000);
 
@@ -42,7 +42,7 @@ test.describe('map chrome theming', () => {
         };
       });
 
-      await attachScreenshot(page, `${theme}-${mode}-chrome`);
+      await attachScreenshot(page, testInfo, `${theme}-${mode}-chrome`);
 
       for (const [name, value] of Object.entries(chips)) {
         if (value === 'MISSING') {
@@ -61,7 +61,7 @@ test.describe('map chrome theming', () => {
       }
     });
 
-    test(`${theme}-${mode}: icon invert treatment`, async ({ page }) => {
+    test(`${theme}-${mode}: icon invert treatment`, async ({ page }, testInfo) => {
       tagTest(theme, mode, 'theming');
       test.setTimeout(90_000);
 

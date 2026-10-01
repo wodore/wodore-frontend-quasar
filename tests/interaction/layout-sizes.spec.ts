@@ -13,7 +13,7 @@ const CONFIGS = [
 
 test.describe('layout and sizing', () => {
   for (const { theme, mode } of CONFIGS) {
-    test(`${theme}-${mode}: 48px control audit + alignment`, async ({ page }) => {
+    test(`${theme}-${mode}: 48px control audit + alignment`, async ({ page }, testInfo) => {
       tagTest(theme, mode, 'layout');
       test.setTimeout(90_000);
 
@@ -52,7 +52,7 @@ test.describe('layout and sizing', () => {
       await page.evaluate('document.querySelector(".wd-bm__toggle")?.click()');
       await page.waitForTimeout(400);
 
-      await attachScreenshot(page, `${theme}-${mode}-layout`);
+      await attachScreenshot(page, testInfo, `${theme}-${mode}-layout`);
 
       // All standalone TOGGLES: 48px × 48px (the box is only width-checked)
       for (const [name, c] of Object.entries(audit)) {
