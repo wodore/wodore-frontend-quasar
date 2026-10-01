@@ -48,4 +48,7 @@ sed -i "s|__WODORE_SEO_PAGE_TTL__|${WODORE_SEO_PAGE_TTL:-0}|g" "/etc/nginx/http.
 
 # Create necessary directories for nginx
 mkdir -p /run/nginx
+# The SEO meta cache must be writable by the nginx worker user — a fresh
+# tmpfs/emptyDir (memory-backed cache) mount is root-owned.
+chown -R nginx:nginx /var/cache/nginx/seo 2>/dev/null || true
 exec /usr/local/bin/replace_vars --template /dot_env_defaults --directory /usr/share/nginx/html --patterns="*.js,*.css,*.html,*.json" --log-level ${REPLACE_VARS_LOG_LEVEL:-info} -- "$@"

@@ -80,8 +80,10 @@ RUN --mount=type=cache,target=/app/.quasar --mount=type=cache,target=/app/node_m
 FROM alpine:3.24 AS serve
 
 # Upgrade base system for security patches, then install nginx + njs.
-# /var/cache/nginx/seo is the on-disk cache for hut metadata subrequests
-# (mount a volume there to persist it across restarts).
+# /var/cache/nginx/seo is the SEO meta cache (~1 KB per hut, capped at
+# 64 MB by nginx): back it with a volume, or with memory via
+# --tmpfs /var/cache/nginx/seo:rw,noexec,nosuid,size=64m (the entrypoint
+# fixes tmpfs ownership either way).
 RUN apk --no-cache add nginx nginx-mod-http-js \
   && apk --no-cache upgrade \
   && rm -rf /var/cache/apk/* \
