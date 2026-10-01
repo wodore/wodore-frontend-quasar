@@ -78,14 +78,29 @@ function inject(shell, m) {
   return html;
 }
 
+// Page cache TTL (seconds), substituted by the entrypoint.
+// 0 (default) = no-store, identical to the index.html policy — safe with
+// any frontend, no CDN required.
+// >0 = opt-in for a shared cache/CDN in front: browsers still revalidate
+// (max-age=0, a hard-cached shell would reference JS chunks that vanish
+// on redeploy) but shared caches may keep the page for PAGE_TTL seconds.
+// Only enable together with a deploy pipeline that PURGES the CDN on
+// release — a stale shell served for 7 d after a redeploy breaks the app
+// for every user behind that edge.
+const PAGE_TTL = __WODORE_SEO_PAGE_TTL__;
+
 function serve(r, body) {
   r.headersOut['Content-Type'] = 'text/html; charset=utf-8';
-  // The shell contains no volatile values (runtime env lives in the
-  // always-fresh /env.js), so shared caches/CDNs may cache this response
-  // for WODORE_SEO_PAGE_TTL. Browsers stay revalidating (max-age=0): a
-  // hard-cached shell would reference JS chunks that vanish on redeploy.
-  r.headersOut['Cache-Control'] =
-    'public, max-age=0, must-revalidate, s-maxage=__WODORE_SEO_PAGE_TTL__';
+  if (PAGE_TTL > 0) {
+    r.headersOut['Cache-Control'] =
+      'public, max-age=0, must-revalidate, s-maxage=' + PAGE_TTL;
+  } else {
+    // The shell contains no volatile values (runtime env lives in the
+    // always-fresh /env.js), but its hashed asset URLs change on every
+    // deploy — so nothing may store it, browsers and CDNs alike.
+    r.headersOut['Cache-Control'] =
+      'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0';
+  }
   r.status = 200;
   r.sendHeader();
   if (r.method !== 'HEAD') {

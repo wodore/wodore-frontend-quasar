@@ -42,7 +42,9 @@ fi
 # /etc/nginx/modules/10_http_js.conf which nginx.conf loads.)
 sed -i "s|__WODORE_API_HOST__|${WODORE_API_HOST:-http://localhost:8000}|g" "/etc/nginx/http.d/${CONFIG_FILE}.conf"
 sed -i "s|__WODORE_SEO_CACHE_TTL__|${WODORE_SEO_CACHE_TTL:-604800}|g" "/etc/nginx/http.d/${CONFIG_FILE}.conf"
-sed -i "s|__WODORE_SEO_PAGE_TTL__|${WODORE_SEO_PAGE_TTL:-604800}|g" "/etc/nginx/http.d/${CONFIG_FILE}.conf" /etc/nginx/seo.js
+# Page cache for /hut/*: 0 (default) = no-store like index.html. Only set
+# >0 when a CDN sits in front AND deploys purge it — see docker/seo.js.
+sed -i "s|__WODORE_SEO_PAGE_TTL__|${WODORE_SEO_PAGE_TTL:-0}|g" "/etc/nginx/http.d/${CONFIG_FILE}.conf" /etc/nginx/seo.js
 
 # Create necessary directories for nginx
 mkdir -p /run/nginx
