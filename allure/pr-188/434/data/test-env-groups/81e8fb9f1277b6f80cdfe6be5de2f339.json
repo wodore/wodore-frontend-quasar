@@ -1,1 +1,0 @@
-{"id":"81e8fb9f1277b6f80cdfe6be5de2f339","fullName":"wodore:tests/unit/image-variants.spec.ts#thumbhashStyleForSize returns undefined when the image has no thumbhashes at all","name":"returns undefined when the image has no thumbhashes at all","status":"passed","testResultsByEnv":{"default":"c5b62ee1e923166f01073ec3936a9d90"}}
