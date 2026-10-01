@@ -9,6 +9,7 @@ import type { HutImage } from 'src/composables/useHutImages';
 import { useDeviceDetection } from '@composables/useDeviceDetection';
 import { useMediaPreload } from '@composables/useMediaPreload';
 import { useImageRetry, filterOutFailed } from '@composables/useImageRetry';
+import { thumbhashStyle, thumbhashStyleForSize } from '@/utils/imageVariants';
 import { useI18n } from 'vue-i18n';
 import IconCloseOutline from '~icons/eva/close-outline';
 import IconDownloadOutline from '~icons/eva/download-outline';
@@ -143,12 +144,17 @@ const closeGallery = () => {
   emit('close');
 };
 
-// Download image (urls.original.raw is a large thumb, not the true original)
+// Download image (urls.original.raw is a bounded thumb for Wikimedia, never the true original)
 const downloadOriginal = () => {
   if (currentImage.value) {
     window.open(currentImage.value.urls.original.raw, '_blank');
   }
 };
+
+// ThumbHash placeholders: curated-crop hashes for the fullscreen main slides
+// (md–xl variants), square hashes for the thumb strip
+const getMainThumbhashStyle = (image: HutImage) => thumbhashStyle(image, 'orientation', 'curated');
+const getThumbThumbhashStyle = (image: HutImage) => thumbhashStyleForSize(image, 'square', 'sm');
 
 // Show navigation only on non-touch devices with multiple images
 const showNavigation = computed(() => {
@@ -228,7 +234,7 @@ onUnmounted(() => {
       @zoom-change="onZoomChange"
     >
       <swiper-slide v-for="image in visibleImages" :key="image.id" class="main-slide">
-        <div class="swiper-zoom-container">
+        <div class="swiper-zoom-container" :style="getMainThumbhashStyle(image)">
           <!-- Wrapper div that matches image dimensions - creates positioning context -->
           <div class="image-wrapper">
             <img
@@ -292,6 +298,7 @@ onUnmounted(() => {
             'thumb-loaded': isImageLoaded(image.id),
             'thumb-error': isImageError(image.id),
           }"
+          :style="getThumbThumbhashStyle(image)"
         >
           <img
             loading="lazy"

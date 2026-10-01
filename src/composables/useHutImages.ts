@@ -1,4 +1,5 @@
 import { computed, type Ref } from 'vue';
+import type { ImageThumbhashes, ImageUrls, ImageDimensions } from 'src/types/geo';
 import { useMediaImages } from './useMediaImages';
 
 /**
@@ -6,7 +7,7 @@ import { useMediaImages } from './useMediaImages';
  * Uses Omit to remove conflicting fields, then makes them required
  */
 export interface HutImage {
-  id: string; // combination of provider and source_id
+  id: string; // combination of provider slug and source_id
   provider: {
     name: string;
     slug: string;
@@ -14,6 +15,7 @@ export interface HutImage {
     icon?: string | null;
   };
   source_id: string;
+  source_url?: string | null;
   attribution: {
     short?: string;
     full?: string;
@@ -24,26 +26,20 @@ export interface HutImage {
     url?: string | null;
   };
   author: {
-    name?: string;
+    name?: string | null;
     url?: string | null;
   };
-  urls: {
-    square: Record<string, string>;
-    landscape: Record<string, string>;
-    portrait?: Record<string, string>;
-    original: {
-      raw: string;
-    };
-  };
-  is_portrait?: boolean;
-  captured_at?: string;
-  width?: number;
-  height?: number;
+  /** URL variants grouped by aspect ratio (square/landscape/portrait), sized xs–xl. */
+  urls: ImageUrls;
+  /** Pixel dimensions per size key (raw, xs, sm, md, lg, xl) for the image's own orientation. */
+  sizes?: Record<string, ImageDimensions>;
+  /** ThumbHash placeholders (six variants, always filled — gray gradient when unassessed). */
+  thumbhashes?: ImageThumbhashes;
+  is_portrait?: boolean | null;
+  captured_at?: string | null;
   distance_m?: number;
   image_type?: string;
-  focal?: Record<string, unknown>;
-  crop?: Record<string, unknown>;
-  place?: Record<string, unknown>;
+  place?: Record<string, unknown> | null;
   score?: number;
 }
 

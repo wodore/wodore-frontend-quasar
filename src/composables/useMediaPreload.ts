@@ -1,6 +1,6 @@
 import { ref, type Ref } from 'vue';
 import type { HutImage } from './useHutImages';
-import type { ImageSizeVariants } from 'src/types/geo';
+import { type ImageSize, orientationUrls, variantUrl } from '@/utils/imageVariants';
 
 /**
  * Retry schedule for transient upstream failures (imagor cache misses can
@@ -18,8 +18,9 @@ export function useMediaPreload(images: Ref<HutImage[]>, currentSlide: Ref<numbe
   const preloadedUrls = ref<Set<string>>(new Set());
 
   // Get optimal image size based on screen size - NEVER upscale
-  const getOptimalImageSize = (): 'large' | 'medium' => {
-    if (typeof window === 'undefined') return 'medium';
+  // (medium → md ~1200px, large → lg ~2000px)
+  const getOptimalImageSize = (): ImageSize => {
+    if (typeof window === 'undefined') return 'md';
 
     const screenWidth = window.innerWidth;
     const screenHeight = window.innerHeight;
@@ -28,68 +29,31 @@ export function useMediaPreload(images: Ref<HutImage[]>, currentSlide: Ref<numbe
     const maxHeight = screenHeight - 140; // Leave room for thumbnails
     const maxWidth = screenWidth >= 1200 ? screenWidth - 80 : screenWidth; // Add margin on large screens
 
-    // Always use at least medium, use large if screen is big enough
+    // Always use at least md, use lg if screen is big enough
     if (maxWidth <= 1600 || maxHeight <= 1200) {
-      return 'medium';
+      return 'md';
     }
-    return 'large';
+    return 'lg';
   };
 
   // Get image URL for main gallery with proper size and orientation
+  // (retina devices get the next size up via variantUrl)
   const getGalleryImageUrl = (image: HutImage): string => {
     if (!image.urls) return '';
-
-    // Use is_portrait to determine orientation, default to landscape
-    const orientation = image.is_portrait ? 'portrait' : 'landscape';
-    const urls = image.urls[orientation] || image.urls.landscape;
-
-    if (!urls) return '';
-
-    const size = getOptimalImageSize();
-
-    // Use @2x version for HiDPI devices
-    const pixelRatio = window.devicePixelRatio || 1;
-    if (pixelRatio >= 1.5) {
-      const size2x = `${size}@2x` as keyof ImageSizeVariants;
-      if (urls[size2x]) {
-        return urls[size2x];
-      }
-    }
-
-    // Fallback to smaller sizes if the chosen size doesn't exist
-    if (urls[size]) {
-      return urls[size];
-    }
-    if (urls.medium) {
-      return urls.medium;
-    }
-    return urls.preview || urls.thumb || '';
+    return variantUrl(orientationUrls(image), getOptimalImageSize());
   };
 
-  // Get thumbnail URL (small square images) with HiDPI support
+  // Get thumbnail URL (small square images) with HiDPI support (xs → sm)
   const getThumbnailUrl = (image: HutImage): string => {
     if (!image.urls?.square) return '';
-
-    const pixelRatio = window.devicePixelRatio || 1;
-    // Use @2x for HiDPI devices
-    if (pixelRatio >= 1.5 && image.urls.square['thumb@2x']) {
-      return image.urls.square['thumb@2x'];
-    }
-    return image.urls.square.thumb || '';
+    return variantUrl(image.urls.square, 'xs');
   };
 
   // Get preview image URL (same as preview component uses) - already cached
+  // (old `preview` size → sm; retina devices get md via variantUrl)
   const getPreviewImageUrl = (image: HutImage): string => {
     if (!image.urls) return '';
-
-    // Use is_portrait to determine orientation, same as preview component
-    const orientation = image.is_portrait ? 'portrait' : 'landscape';
-    const urls = image.urls[orientation] || image.urls.landscape;
-
-    if (!urls) return '';
-
-    // Return preview size (same as preview component uses)
-    return urls.preview || urls.thumb || '';
+    return variantUrl(orientationUrls(image), 'sm');
   };
 
   // Preload single image with retry logic for rate limiting
