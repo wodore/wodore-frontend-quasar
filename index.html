@@ -3,13 +3,19 @@
   <head>
     <title><%= productName %></title>
     <!--
-      Runtime env: baked via EJS at build time. In the docker image the
-      build runs with @@VAR@@ placeholders which replace_vars rewrites at
-      container startup; index.html is served no-store and excluded from
-      the service worker, so env changes (e.g. a renewed MapTiler key)
-      reach every client on the very next visit. Capacitor/local builds
-      bake real values directly. See services/runtimeEnv.ts.
+      Runtime env: dev and Capacitor builds bake values inline via EJS
+      (below). The docker image builds with @@VAR@@ placeholders and
+      loads the env from the external /env.js instead (rewritten by
+      replace_vars at container start, served no-store, excluded from
+      the SW precache) — so the HTML shell carries no volatile values
+      and the SEO edge (docker/seo.js) can cache hut pages. See
+      services/runtimeEnv.ts and public/env.js.
     -->
+    <%
+      const inlineEnv =
+        ctx.dev || ctx.mode.capacitor || ctx.mode.cordova || !process.env.WODORE_EXTERNAL_ENV;
+    %>
+    <% if (inlineEnv) { %>
     <script>
       window.__WODORE_RUNTIME_ENV__ = {
         WODORE_APP_NAME: '<%= process.env.WODORE_APP_NAME %>',
@@ -32,11 +38,19 @@
         WODORE_MAPTILER_API_KEY: '<%= process.env.WODORE_MAPTILER_API_KEY %>',
       };
     </script>
+    <% } else { %>
+    <script src="/env.js"></script>
+    <% } %>
     <meta charset="utf-8" />
     <meta name="application-name" content="<%= productName %>" />
-    <meta name="description" content="<%= productDescriptionDe %>" />
-    <meta name="theme-color" media="undefined" content="#1a4231" />
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1a4231" />
+    <meta name="theme-color" content="#1a4231" />
+    <!-- Opt out of indexing for deployments that cannot do it at runtime
+         (GitHub Pages PR previews, set via WODORE_SEO_NOINDEX=1). The
+         Docker image decides per-environment at container start instead
+         (docker/entrypoint.sh) and must NOT bake this flag. -->
+    <% if (process.env.WODORE_SEO_NOINDEX) { %>
+    <meta name="robots" content="noindex, nofollow" />
+    <% } %>
 
     <meta name="format-detection" content="telephone=no" />
     <meta
