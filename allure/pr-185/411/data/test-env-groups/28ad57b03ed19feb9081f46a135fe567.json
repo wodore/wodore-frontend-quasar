@@ -1,1 +1,0 @@
-{"id":"28ad57b03ed19feb9081f46a135fe567","fullName":"wodore:tests/unit/image-variants.spec.ts#thumbhashFor returns null when the image has no hashes","name":"returns null when the image has no hashes","status":"passed","testResultsByEnv":{"default":"fe808af357cd1bda77ecd5c64176f472"}}
