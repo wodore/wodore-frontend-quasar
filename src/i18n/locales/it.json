@@ -395,7 +395,8 @@
     "edit_unsaved_message": "Hai modifiche non salvate ai tuoi gruppi.",
     "edit_save": "Salva",
     "edit_discard": "Scarta",
-    "group_delete_confirm": "Eliminare «{name}»? I suoi livelli tornano in «Tutti i livelli»."
+    "group_delete_confirm": "Eliminare «{name}»? I suoi livelli tornano in «Tutti i livelli».",
+    "promoted_layers": "Altri livelli attivi"
   },
   "basemap": "Mappa di base",
   "basemaps": {

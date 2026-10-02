@@ -395,7 +395,8 @@
     "edit_unsaved_message": "Es gibt ungespeicherte Änderungen an deinen Gruppen.",
     "edit_save": "Speichern",
     "edit_discard": "Verwerfen",
-    "group_delete_confirm": "\"{name}\" löschen? Die Ebenen kehren zu \"Alle Ebenen\" zurück."
+    "group_delete_confirm": "\"{name}\" löschen? Die Ebenen kehren zu \"Alle Ebenen\" zurück.",
+    "promoted_layers": "Weitere aktive Ebenen"
   },
   "basemap": "Basiskarte",
   "basemaps": {

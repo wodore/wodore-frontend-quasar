@@ -395,7 +395,8 @@
     "edit_unsaved_message": "Vous avez des modifications non enregistrées de vos groupes.",
     "edit_save": "Enregistrer",
     "edit_discard": "Annuler",
-    "group_delete_confirm": "Supprimer « {name} » ? Ses couches reviennent dans « Toutes les couches »."
+    "group_delete_confirm": "Supprimer « {name} » ? Ses couches reviennent dans « Toutes les couches ».",
+    "promoted_layers": "Autres couches actives"
   },
   "basemap": "Fond de carte",
   "basemaps": {

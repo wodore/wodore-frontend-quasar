@@ -792,6 +792,8 @@ onBeforeUnmount(() => {
         :class="{ 'wd-ovl__box--expanded': expanded, 'wd-ovl__box--edit': editMode }"
         :style="{
           '--mini-rows': miniLayers.length,
+          '--prom-count': promotedLayers.length,
+          '--prom-extra': promotedLayers.length > 0 ? '20px' : '0px',
           ...(editMode && editMaxH ? { maxHeight: editMaxH + 'px' } : {}),
         }"
       >
@@ -858,8 +860,9 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- Rows: icon always at the right, label+actions appear when expanded -->
-        <!-- Fades are INSIDE the rows container (they belong to the scroll area,
-             not the box — they must track the rows' visible edges) -->
+        <!-- The WRAP carries the height cap + the fades (absolute, flush
+             with the visible edges, clipped by the rounded corners). -->
+        <div class="wd-ovl__rows-wrap">
         <div
           :key="overlayStore.groupSettings.activeGroupId ?? 'none'"
           ref="rowsEl"
@@ -872,8 +875,6 @@ onBeforeUnmount(() => {
           @pointerup="onRowsPointerUp"
           @pointerleave="onRowsPointerUp"
         >
-          <!-- Top fade: sticky at the scroll viewport's top edge -->
-          <div class="wd-ovl__fade wd-ovl__fade--top" :class="{ 'wd-ovl__fade--hidden': scrollAtTop }" />
           <div v-for="item in miniLayers" :key="item.name" v-show="item.show" class="wd-ovl__row" :class="{
             'wd-ovl__row--active': item.active,
             'wd-ovl__row--passive': !item.active,
@@ -935,6 +936,25 @@ onBeforeUnmount(() => {
               </span>
             </span>
           </div>
+          <!-- Promoted: active layers from other groups — rows in the SAME
+               list, so mini and expanded are pixel-identical. Labels render
+               always; the 48px mini box clips them. -->
+          <template v-if="!editMode && promotedLayers.length > 0">
+            <div class="wd-ovl__promoted-sep">
+              <span class="wd-ovl__promoted-label">{{ t('overlays.promoted_layers') }}</span>
+            </div>
+            <div v-for="item in promotedLayers" :key="`p-${item.name}`" class="wd-ovl__row"
+              :class="{ 'wd-ovl__row--active': item.active }"
+              @click="onRowClick(<OverlaySwitchItem>(item as unknown))">
+              <div class="wd-ovl__row-info">
+                <span class="wd-ovl__row-name">{{ item.label }}</span>
+              </div>
+              <span class="wd-ovl__icon wd-ovl__icon--active" :aria-label="item.label">
+                <q-icon :name="layerIcon(item.icon)" size="20px" />
+              </span>
+            </div>
+          </template>
+
           <!-- All layers section (inside the scrollable rows) -->
         <!-- All layers section (expanded only, below the group layers) -->
         <template v-if="expanded">
@@ -1015,27 +1035,10 @@ onBeforeUnmount(() => {
             </span>
           </div>
         </template>
-          <!-- Bottom fade: LAST child so sticky anchors at the scroll bottom -->
+        </div>
+          <div class="wd-ovl__fade wd-ovl__fade--top" :class="{ 'wd-ovl__fade--hidden': scrollAtTop }" />
           <div class="wd-ovl__fade wd-ovl__fade--bottom" :class="{ 'wd-ovl__fade--hidden': scrollAtBottom }" />
         </div>
-
-        <!-- Promoted layers: active layers from OTHER groups. Rendered in
-             BOTH mini and expanded (below the scroll area, above the group
-             selector) so the box height and icon positions never change
-             when expanding. Hidden in edit mode (All-layers covers them). -->
-        <template v-if="!editMode && promotedLayers.length > 0">
-          <div class="wd-ovl__promoted-sep" />
-          <div v-for="item in promotedLayers" :key="`p-${item.name}`" class="wd-ovl__row"
-            :class="{ 'wd-ovl__row--active': item.active }"
-            @click="onRowClick(<OverlaySwitchItem>(item as unknown))">
-            <div v-if="expanded" class="wd-ovl__row-info">
-              <span class="wd-ovl__row-name">{{ item.label }}</span>
-            </div>
-            <span class="wd-ovl__icon wd-ovl__icon--active" :aria-label="item.label">
-              <q-icon :name="layerIcon(item.icon)" size="20px" />
-            </span>
-          </div>
-        </template>
 
         <!-- Group selector: spans the box width, distinct from layer buttons.
              In edit mode it cycles ALL groups (hidden included). -->
@@ -1299,27 +1302,43 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 // ── Scroll fades (top + bottom) ───────────────────────────────────────
 // INSIDE the rows container — sticky positioned so they stay visible
 // while the content scrolls. They kiss the clipped rows, not the box.
+.wd-ovl__rows-wrap {
+  position: relative; // anchor for the fades
+  overflow: hidden; // clip fades to the rounded corners
+  border-radius: 8px 8px 0 0; // mini top corners (expanded squares them)
+  flex: 0 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto; // wheel/touch must not reach the map
+  // Height cap = full mini content (group + promoted rows + separator).
+  // Identical in mini and expanded → every icon stays pixel-perfect.
+  max-height: calc((var(--mini-rows, 4) + var(--prom-count, 0)) * 42px + 6px + var(--prom-extra, 0px));
+}
+
+.wd-ovl__box--expanded:not(.wd-ovl__box--edit) .wd-ovl__rows-wrap {
+  border-radius: 0; // toolbar floats above and carries the radius
+}
+
 .wd-ovl__fade {
-  // STICKY: absolute children of a scroll container scroll WITH the
-  // content; sticky stays pinned at the scroll viewport's edge.
-  position: sticky;
+  // Absolute on the WRAPPER (outside the scroll container): flush with
+  // the visible edges, radius-clipped. Sticky inside a padded scroller
+  // always sat offset by the padding.
+  position: absolute;
   left: 0;
-  z-index: 5;
-  display: block;
-  flex: none; // never shrink — a collapsed fade keeps its -12px margin and pulls the first row out of view
+  right: 0;
+  z-index: 2;
   height: 12px;
   pointer-events: none;
   transition: opacity 0.25s $ease;
 
   &--top {
     top: 0;
-    margin-bottom: -12px; // no layout space
     background: linear-gradient(to bottom, var(--wd-ctl-bg) 80%, transparent);
   }
 
   &--bottom {
     bottom: 0;
-    margin-top: -12px;
     background: linear-gradient(to top, var(--wd-ctl-bg) 80%, transparent);
   }
 
@@ -1332,11 +1351,9 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 // FIXED height: identical in mini and expanded — the box grows UP by the
 // header height when expanding, so the icon chips never move a pixel.
 .wd-ovl__rows {
-  position: relative; // anchor for the absolute fades
-  flex: 0 1 auto; // auto-grow to content (mini drives the height)
-  // EXACT mini content height: rows pitch 42 + padding 6 + promoted block.
-  // Matching natural height means expanding NEVER shifts the icons.
-  max-height: calc((var(--mini-rows, 4) + var(--prom-count, 0)) * 42px + 6px + var(--prom-extra, 0px));
+  pointer-events: auto; // solid panel area — wheel/touch must NOT reach the map
+  position: relative;
+  flex: 1 1 auto; // fill the wrap — the wrap carries the height cap
   overflow-y: auto;
   min-height: 0;
   overflow-y: auto;
@@ -1616,10 +1633,24 @@ body.body--dark .wd-ovl__row-name {
 
 // ── Promoted layers separator (thin line above promoted rows) ──────────
 .wd-ovl__promoted-sep {
-  height: 1px;
-  background: var(--wd-ctl-border);
-  margin: 2px 6px;
+  display: flex;
+  align-items: center;
   flex: none;
+  margin: 2px 8px 1px;
+  padding-top: 3px;
+  border-top: 1px solid var(--wd-ctl-border);
+}
+
+.wd-ovl__promoted-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--wd-ctl-ink);
+  opacity: 0.7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 // ── "All layers" separator (expanded view) ───────────────────────────────

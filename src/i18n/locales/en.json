@@ -395,7 +395,8 @@
     "edit_unsaved_message": "You have unsaved changes to your groups.",
     "edit_save": "Save",
     "edit_discard": "Discard",
-    "group_delete_confirm": "Delete \"{name}\"? Its layers return to All layers."
+    "group_delete_confirm": "Delete \"{name}\"? Its layers return to All layers.",
+    "promoted_layers": "Also active"
   },
   "basemap": "Basemap",
   "basemaps": {
