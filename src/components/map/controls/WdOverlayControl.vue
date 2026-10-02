@@ -537,6 +537,36 @@ onBeforeUnmount(() => {
           </span>
           <span class="wd-ovl__toolbar-title">{{ overlayStore.activeGroupName(t) }}</span>
           <div class="wd-ovl__toolbar-actions">
+            <template v-if="editMode">
+              <button
+                class="wd-ovl__toolbar-btn"
+                :aria-label="t('overlays.group_rename')"
+                @click.stop="startRename"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />
+                </svg>
+              </button>
+              <button
+                class="wd-ovl__toolbar-btn"
+                :aria-label="t('overlays.group_hide')"
+                @click.stop="hideGroup"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              </button>
+              <button
+                class="wd-ovl__toolbar-btn wd-ovl__toolbar-btn--danger"
+                :aria-label="t('overlays.group_delete')"
+                @click.stop="confirmDeleteGroup"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z" />
+                </svg>
+              </button>
+            </template>
             <button
               class="wd-ovl__toolbar-btn"
               :class="{ 'wd-ovl__toolbar-btn--active': editMode }"
@@ -724,13 +754,12 @@ onBeforeUnmount(() => {
         <!-- More button: toggles the box between mini and expanded -->
         <button class="wd-ovl__more" :aria-label="expanded ? t('close') : t('overlay_style')" :aria-expanded="expanded"
           @click.stop="expanded = !expanded">
-          <svg v-if="!expanded" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2.2" stroke-linecap="round">
-            <path d="M14 6l-6 6 6 6" />
+          <svg v-if="!expanded" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" />
           </svg>
-          <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-            stroke-linecap="round">
-            <path d="M10 6l6 6-6 6" />
+          <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5M11 18l-6-6 6-6" />
           </svg>
         </button>
       </div>
