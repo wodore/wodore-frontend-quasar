@@ -16,6 +16,41 @@
 
 const SHELL_URI = '/_seo/shell';
 
+// Locale-prefixed routes: /en|/fr|/it/... (German, the default, stays
+// at the root — cartoload-style prefix_default_language=False).
+// Language routing (full-prefix model), baked by the entrypoint
+// (docker/entrypoint.sh): __WODORE_LANG_PREFIXES__ lists EVERY
+// language's locale-prefixed route (/en|/de|/fr|/it/...) - those are
+// the indexed, self-canonical URLs. __WODORE_DEFAULT_LANG__ (English)
+// is the language of the bare (unprefixed) URL, which canonicalizes to
+// the default language's prefixed URL; the SPA strips the prefix
+// client-side so users always see the bare URL. Defaults mirror the
+// SPA's i18n config (src/i18n/index.ts).
+var DEFAULT_LANG = '__WODORE_DEFAULT_LANG__';
+var LANG_PREFIXES = '__WODORE_LANG_PREFIXES__'.split(',');
+var ALL_LANGS = LANG_PREFIXES.concat([DEFAULT_LANG]);
+var LANG_RE = new RegExp('^\\/(' + LANG_PREFIXES.join('|') + ')(\\/|$)');
+var COOKIE_RE = /(?:^|;\s*)wodore_lang=/;
+// Search engine + social preview + LLM crawler user agents.
+var CRAWLER_RE = new RegExp(
+  'Googlebot|bingbot|Slurp|DuckDuckBot|Baiduspider|YandexBot|' +
+    'facebookexternalhit|Twitterbot|LinkedInBot|TelegramBot|WhatsApp|' +
+    'Slackbot|Applebot|ia_archiver|GPTBot|ClaudeBot|PerplexityBot',
+  'i'
+);
+
+function parseAcceptLanguage(header) {
+  // Best matching prefix from a simple Accept-Language header
+  // ("fr-CH,fr;q=0.9,en;q=0.8" → fr). null when nothing matches.
+  if (!header) return null;
+  var m = /^\s*([a-z]{2})/i.exec(header);
+  var code = m ? m[1].toLowerCase() : '';
+  if (ALL_LANGS.indexOf(code) !== -1) {
+    return code;
+  }
+  return null;
+}
+
 function esc(s) {
   return String(s)
     .replace(/&/g, '&amp;')
@@ -24,13 +59,33 @@ function esc(s) {
     .replace(/"/g, '&quot;');
 }
 
-function headBlock(m) {
+function headBlock(m, requestPath, host) {
   var parts = [];
-  parts.push('<title>' + esc(m.name) + '</title>');
+  var title = m.title || m.name;
+  parts.push('<title>' + esc(title) + '</title>');
   parts.push('<meta name="description" content="' + esc(m.description) + '">');
-  parts.push('<link rel="canonical" href="' + esc(m.page_url) + '">');
+  // Canonical: prefixed URLs are self-canonical; the bare (user alias)
+  // URL canonicalizes to the default language's prefixed URL.
+  var barePath = requestPath.replace(LANG_RE, '/');
+  var lang = LANG_RE.exec(requestPath);
+  var canonical =
+    'https://' + host + (lang ? requestPath : '/' + DEFAULT_LANG + barePath);
+  parts.push('<link rel="canonical" href="' + esc(canonical) + '">');
+  // hreflang cluster: every language's prefixed URL; x-default points
+  // at the default language's prefixed URL. The bare URL (user alias)
+  // is never an indexing target.
+  var alternates = ALL_LANGS.map(function (code) {
+    var href = 'https://' + host + '/' + code + barePath;
+    return '<link rel="alternate" hreflang="' + code + '" href="' + esc(href) + '">';
+  });
+  alternates.push(
+    '<link rel="alternate" hreflang="x-default" href="' +
+      esc('https://' + host + '/' + DEFAULT_LANG + barePath) +
+      '">'
+  );
+  parts.push(alternates.join(''));
   parts.push('<meta property="og:site_name" content="Wodore">');
-  parts.push('<meta property="og:title" content="' + esc(m.name) + '">');
+  parts.push('<meta property="og:title" content="' + esc(title) + '">');
   parts.push('<meta property="og:description" content="' + esc(m.description) + '">');
   parts.push('<meta property="og:type" content="website">');
   parts.push('<meta property="og:url" content="' + esc(m.page_url) + '">');
@@ -38,7 +93,7 @@ function headBlock(m) {
     parts.push('<meta property="og:image" content="' + esc(m.image) + '">');
   }
   parts.push('<meta name="twitter:card" content="summary_large_image">');
-  parts.push('<meta name="twitter:title" content="' + esc(m.name) + '">');
+  parts.push('<meta name="twitter:title" content="' + esc(title) + '">');
   parts.push('<meta name="twitter:description" content="' + esc(m.description) + '">');
   if (m.image) {
     parts.push('<meta name="twitter:image" content="' + esc(m.image) + '">');
@@ -63,9 +118,9 @@ function stripDefaults(html) {
     .replace(/<link\s[^>]*rel=["']canonical["'][^>]*>/gi, '');
 }
 
-function inject(shell, m) {
+function inject(shell, m, requestPath, host) {
   var html = stripDefaults(shell);
-  var block = '\n    ' + headBlock(m) + '\n  ';
+  var block = '\n    ' + headBlock(m, requestPath, host) + '\n  ';
   if (/<head[^>]*>/i.test(html)) {
     html = html.replace(/<head[^>]*>/i, function (h) {
       return h + block;
@@ -114,10 +169,53 @@ function serve(r, body) {
 }
 
 function hut(r) {
-  var slug = r.uri.replace(/^\/hut\//, '').replace(/\/+$/, '');
-  if (!slug) {
+  // Locale prefix: /en|/de|/fr|/it/hut/{slug} - every language is
+  // prefixed (the indexed, self-canonical URLs). The prefix localizes and becomes the
+  // canonical/hreflang cluster; the SPA reads it as the initial language
+  // hint (stored user preference still wins for display).
+  var requestPath = r.uri;
+  var langMatch = LANG_RE.exec(requestPath);
+  var lang = langMatch ? langMatch[1] : '';
+  var slug = requestPath
+    .replace(LANG_RE, '/')
+    .replace(/^\/hut\//, '')
+    .replace(/\/+$/, '');
+  if (!slug || slug.indexOf('/') !== -1) {
     r.internalRedirect('/index.html');
     return;
+  }
+  // Known crawlers on the BARE URL: consolidate permanently (301) to
+  // the default language's prefixed URL - a directive where the
+  // canonical link is only a hint, so the user-alias URL drops out of
+  // the index entirely instead of lingering as a canonicalized
+  // duplicate. Prefixed URLs serve crawlers normally (self-canonical);
+  // human users never hit this (they keep the bare URL; the SPA
+  // normalizes prefixes away). Markdown negotiation above stays first
+  // so LLM crawlers asking for text/markdown still get the document.
+  if (!lang && CRAWLER_RE.test(r.headersIn['User-Agent'] || '')) {
+    r.status = 301;
+    r.headersOut.Location = '/' + DEFAULT_LANG + requestPath;
+    r.sendHeader();
+    r.finish();
+    return;
+  }
+  // First-visit language redirect (cartoload pattern): a BARE hut URL,
+  // no stored preference (no wodore_lang cookie), and an Accept-Language
+  // in a non-default language → 302 to the prefixed URL. Bots send neither →
+  // served as-is (stable URLs). Returning visitors keep the URL they
+  // navigated to — the SPA display language follows their stored setting.
+  if (!lang) {
+    var cookie = r.headersIn.Cookie || '';
+    if (!COOKIE_RE.test(cookie)) {
+      var preferred = parseAcceptLanguage(r.headersIn['Accept-Language']);
+      if (preferred && preferred !== DEFAULT_LANG) {
+        r.status = 302;
+        r.headersOut.Location = '/' + preferred + requestPath;
+        r.sendHeader();
+        r.finish();
+        return;
+      }
+    }
   }
   // Content negotiation: clients explicitly asking for Markdown (Accept:
   // text/markdown) get the .md document instead of the HTML shell — same
@@ -127,7 +225,16 @@ function hut(r) {
     r.internalRedirect('/hut/' + slug + '.md');
     return;
   }
-  Promise.all([r.subrequest(SHELL_URI), r.subrequest('/_seo/meta/' + slug)])
+  // Meta language: path prefix first, then an explicit ?lang= param.
+  // Whitelisted against the meta endpoint's validated values; unknown
+  // values fall back to the default language.
+  var metaUri = '/_seo/meta/' + slug;
+  var queryLang = r.args ? r.args.lang : '';
+  var effectiveLang = lang || queryLang || DEFAULT_LANG;
+  if (ALL_LANGS.indexOf(effectiveLang) !== -1) {
+    metaUri += '?lang=' + effectiveLang;
+  }
+  Promise.all([r.subrequest(SHELL_URI), r.subrequest(metaUri)])
     .then(function (res) {
       var shellRes = res[0];
       var metaRes = res[1];
@@ -146,7 +253,7 @@ function hut(r) {
       }
       if (meta && meta.slug && meta.name) {
         r.log("seo: injected meta for hut '" + slug + "'");
-        serve(r, inject(shellRes.responseText, meta));
+        serve(r, inject(shellRes.responseText, meta, requestPath, r.headersIn.Host));
       } else {
         r.log(
           "seo: no meta for hut '" + slug + "' (status " + metaRes.status + '), serving shell'
