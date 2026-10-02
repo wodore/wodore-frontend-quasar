@@ -26,7 +26,17 @@ let plugin: PreferencesPlugin | null = null;
 async function getPlugin(): Promise<PreferencesPlugin> {
   if (plugin) return plugin;
   const { Preferences } = await import('@capacitor/preferences');
-  plugin = Preferences as PreferencesPlugin;
+  // Wrap the plugin proxy in a plain object: the proxy exposes a `then`
+  // trap, so returning it from an async function makes the promise
+  // machinery call `then()` on it, which throws
+  // `"Preferences.then()" is not implemented on web` and breaks boot.
+  plugin = {
+    get: (opts: { key: string }) => Preferences.get(opts),
+    set: (opts: { key: string; value: string }) => Preferences.set(opts),
+    remove: (opts: { key: string }) => Preferences.remove(opts),
+    keys: () => Preferences.keys(),
+    clear: () => Preferences.clear(),
+  };
   return plugin;
 }
 
