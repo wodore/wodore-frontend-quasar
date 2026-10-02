@@ -383,7 +383,6 @@
         "name": "Sports d'hiver"
       }
     },
-    "all_layers": "Toutes les couches",
     "group_rename": "Renommer le groupe",
     "group_hide": "Masquer le groupe",
     "group_delete": "Supprimer le groupe",
@@ -396,7 +395,8 @@
     "edit_save": "Enregistrer",
     "edit_discard": "Annuler",
     "group_delete_confirm": "Supprimer « {name} » ? Ses couches reviennent dans « Toutes les couches ».",
-    "promoted_layers": "Autres couches actives"
+    "other_layers": "Autres couches",
+    "group_switch": "Changer de groupe ({name})"
   },
   "basemap": "Fond de carte",
   "basemaps": {

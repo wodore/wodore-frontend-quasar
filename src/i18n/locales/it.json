@@ -383,7 +383,6 @@
         "name": "Sport invernali"
       }
     },
-    "all_layers": "Tutti i livelli",
     "group_rename": "Rinomina gruppo",
     "group_hide": "Nascondi gruppo",
     "group_delete": "Elimina gruppo",
@@ -396,7 +395,8 @@
     "edit_save": "Salva",
     "edit_discard": "Scarta",
     "group_delete_confirm": "Eliminare «{name}»? I suoi livelli tornano in «Tutti i livelli».",
-    "promoted_layers": "Altri livelli attivi"
+    "other_layers": "Altri livelli",
+    "group_switch": "Cambia gruppo ({name})"
   },
   "basemap": "Mappa di base",
   "basemaps": {

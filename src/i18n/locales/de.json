@@ -383,7 +383,6 @@
         "name": "Wintersport"
       }
     },
-    "all_layers": "Alle Ebenen",
     "group_rename": "Gruppe umbenennen",
     "group_hide": "Gruppe ausblenden",
     "group_delete": "Gruppe löschen",
@@ -396,7 +395,8 @@
     "edit_save": "Speichern",
     "edit_discard": "Verwerfen",
     "group_delete_confirm": "\"{name}\" löschen? Die Ebenen kehren zu \"Alle Ebenen\" zurück.",
-    "promoted_layers": "Weitere aktive Ebenen"
+    "other_layers": "Weitere Ebenen",
+    "group_switch": "Gruppe wechseln ({name})"
   },
   "basemap": "Basiskarte",
   "basemaps": {

@@ -383,7 +383,6 @@
         "name": "Snowsport"
       }
     },
-    "all_layers": "All layers",
     "group_rename": "Rename group",
     "group_hide": "Hide group",
     "group_delete": "Delete group",
@@ -396,7 +395,8 @@
     "edit_save": "Save",
     "edit_discard": "Discard",
     "group_delete_confirm": "Delete \"{name}\"? Its layers return to All layers.",
-    "promoted_layers": "Also active"
+    "other_layers": "More layers",
+    "group_switch": "Switch group ({name})"
   },
   "basemap": "Basemap",
   "basemaps": {

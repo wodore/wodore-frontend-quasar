@@ -23,7 +23,7 @@ import { useBasemapStore } from '@stores/map/basemap-store';
 import { useOverlayConfigStore } from '@stores/map/overlay-config-store';
 import { useMapMenuStore } from '@stores/map/map-menu-store';
 import { OpacitySpecification, OverlaySwitchItem } from '@stores/map/utils/interfaces';
-import type { LayerSpecification, PropertyValueSpecification, Map } from 'maplibre-gl';
+import type { LayerSpecification, PropertyValueSpecification, Map as MapLibreMap } from 'maplibre-gl';
 
 const { t } = useI18n();
 const $q = useQuasar();
@@ -96,9 +96,9 @@ function onHandlePointerDown(ev: PointerEvent, slug: string): void {
 
 function hitTarget(ev: PointerEvent): { row?: string; sep?: boolean } {
   const el = document.elementFromPoint(ev.clientX, ev.clientY);
-  const hit = el?.closest('.wd-ovl__row, .wd-ovl__all-sep') as HTMLElement | null;
+  const hit = el?.closest('.wd-ovl__row, .wd-ovl__sep') as HTMLElement | null;
   if (!hit) return {};
-  if (hit.classList.contains('wd-ovl__all-sep')) return { sep: true };
+  if (hit.classList.contains('wd-ovl__sep')) return { sep: true };
   return { row: hit.dataset.slug ?? undefined };
 }
 
@@ -198,6 +198,8 @@ function confirmEdit(): void {
 function toggleEditMode(): void {
   if (!editMode.value) {
     updateEditCap();
+    // Edit mode needs the full list + the toolbar — always expand first
+    expanded.value = true;
     editMode.value = true;
     takeSnapshot();
     hasEdits.value = false;
@@ -535,21 +537,93 @@ const miniLayers = computed(() => {
   return overlayStore.activeGroupLayers();
 });
 
-/** Layers for the expanded view "All layers" section.
- *  Edit mode shows ALL layers — hidden groups stay editable (owner rule). */
-const expandedOtherLayers = computed(() => overlayStore.otherLayers());
+// ── Promoted rows & 6s linger grace ─────────────────────────────────────
+// Layers NOT in the active group live in ONE section under the group rows,
+// selected first. When such a layer is switched OFF it lingers in place for
+// LINGER_MS before dropping away — switch it back on inside the window and
+// it simply stays (no accidental-loss moment, no hunt through the list).
+const LINGER_MS = 6000;
+const lingeringSlugs = ref(new Set<string>());
+const lingerTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
-/** Active layers from OTHER groups — shown in the mini strip below group layers */
-const promotedLayers = computed(() => {
-  const group = overlayStore.groupSettings.groups.find(
-    g => g.id === overlayStore.groupSettings.activeGroupId
-  );
-  const groupSlugs = new Set(group?.layerSlugs ?? []);
-  return (overlayStore.overlays as unknown as Array<{ name: string; show?: boolean; active?: boolean }>)
-    .filter(o => o.show === true && o.active === true && !groupSlugs.has(o.name))
-    .map(o => overlayStore.overlays.find(ov => ov.name === o.name))
-    .filter((o): o is NonNullable<typeof o> => !!o);
+function startLinger(slug: string): void {
+  if (lingeringSlugs.value.has(slug)) return; // already lingering — keep its timer
+  const next = new Set(lingeringSlugs.value);
+  next.add(slug);
+  lingeringSlugs.value = next;
+  lingerTimers.set(slug, setTimeout(() => stopLinger(slug), LINGER_MS));
+}
+
+function stopLinger(slug: string): void {
+  const timer = lingerTimers.get(slug);
+  if (timer) {
+    clearTimeout(timer);
+    lingerTimers.delete(slug);
+  }
+  if (lingeringSlugs.value.has(slug)) {
+    const next = new Set(lingeringSlugs.value);
+    next.delete(slug);
+    lingeringSlugs.value = next;
+  }
+}
+
+/** Reconcile lingering state against every path that flips layers:
+ *  row taps, group switches, resets, edit-mode changes. */
+let prevActive: Map<string, boolean> | null = null;
+watch(
+  () => {
+    const group = overlayStore.groupSettings.groups.find(
+      g => g.id === overlayStore.groupSettings.activeGroupId
+    );
+    const states = (overlayStore.overlays as unknown as Array<{ name: string; active?: boolean }>)
+      .map(o => `${o.name}:${o.active ? 1 : 0}`)
+      .join('|');
+    return `${overlayStore.groupSettings.activeGroupId}#${group?.layerSlugs.join(',') ?? ''}#${states}`;
+  },
+  () => {
+    const group = overlayStore.groupSettings.groups.find(
+      g => g.id === overlayStore.groupSettings.activeGroupId
+    );
+    const groupSlugs = new Set(group?.layerSlugs ?? []);
+    const current = new Map<string, boolean>();
+    for (const o of overlayStore.overlays as unknown as Array<{ name: string; active?: boolean }>) {
+      current.set(o.name, o.active === true);
+    }
+    if (prevActive) {
+      for (const [slug, wasActive] of prevActive) {
+        if (wasActive && !(current.get(slug) ?? false) && !groupSlugs.has(slug)) {
+          startLinger(slug); // freshly disabled non-group layer → grace window
+        }
+      }
+    }
+    for (const slug of [...lingeringSlugs.value]) {
+      if (current.get(slug) || groupSlugs.has(slug)) stopLinger(slug); // back on / absorbed
+    }
+    prevActive = current;
+  },
+  { immediate: true }
+);
+
+/** Non-group layers in render order: selected first, then lingering, then the rest */
+const otherLayersSorted = computed(() => {
+  const others = overlayStore.otherLayers().slice();
+  const inactives = others.filter(o => !o.active);
+  const lingering = inactives.filter(o => lingeringSlugs.value.has(o.name));
+  const rest = inactives.filter(o => !lingeringSlugs.value.has(o.name));
+  return [...others.filter(o => o.active), ...lingering, ...rest];
 });
+
+/** Rows that render: mini shows active + lingering only; expanded/edit show all.
+ *  Same keys and DOM in both states — rows above the fold never shift. */
+const visibleOthers = computed(() => {
+  if (expanded.value || editMode.value) return otherLayersSorted.value;
+  return otherLayersSorted.value.filter(o => o.active || lingeringSlugs.value.has(o.name));
+});
+
+/** Mini height cap: group rows + visible promoted rows (linger included) */
+const cappedPromotedCount = computed(
+  () => overlayStore.otherLayers().filter(o => o.active || lingeringSlugs.value.has(o.name)).length
+);
 
 /** Handle group selector tap */
 function onGroupSelectorTap(): void {
@@ -723,7 +797,7 @@ function toggleLayer(item: OverlaySwitchItem): void {
 // create a new style → sources/layers are wiped). The old switch used
 // map.on('load') the same way.
 let mapLoadBound = false;
-function bindMap(map: Map): void {
+function bindMap(map: MapLibreMap): void {
   if (mapLoadBound) return;
   mapLoadBound = true;
   if (map.isStyleLoaded()) addOverlays();
@@ -779,6 +853,8 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   swipeStartX = null;
+  for (const timer of lingerTimers.values()) clearTimeout(timer);
+  lingerTimers.clear();
 });
 </script>
 
@@ -792,8 +868,8 @@ onBeforeUnmount(() => {
         :class="{ 'wd-ovl__box--expanded': expanded, 'wd-ovl__box--edit': editMode }"
         :style="{
           '--mini-rows': miniLayers.length,
-          '--prom-count': promotedLayers.length,
-          '--prom-extra': promotedLayers.length > 0 ? '20px' : '0px',
+          '--prom-count': cappedPromotedCount,
+          '--prom-extra': cappedPromotedCount > 0 ? '20px' : '0px',
           ...(editMode && editMaxH ? { maxHeight: editMaxH + 'px' } : {}),
         }"
       >
@@ -875,6 +951,7 @@ onBeforeUnmount(() => {
           @pointerup="onRowsPointerUp"
           @pointerleave="onRowsPointerUp"
         >
+          <TransitionGroup name="wd-ovl-row">
           <div v-for="item in miniLayers" :key="item.name" v-show="item.show" class="wd-ovl__row" :class="{
             'wd-ovl__row--active': item.active,
             'wd-ovl__row--passive': !item.active,
@@ -936,46 +1013,36 @@ onBeforeUnmount(() => {
               </span>
             </span>
           </div>
-          <!-- Promoted: active layers from other groups — rows in the SAME
-               list, so mini and expanded are pixel-identical. Labels render
-               always; the 48px mini box clips them. -->
-          <template v-if="!editMode && promotedLayers.length > 0">
-            <div class="wd-ovl__promoted-sep">
-              <span class="wd-ovl__promoted-label">{{ t('overlays.promoted_layers') }}</span>
-            </div>
-            <div v-for="item in promotedLayers" :key="`p-${item.name}`" class="wd-ovl__row"
-              :class="{ 'wd-ovl__row--active': item.active }"
-              @click="onRowClick(<OverlaySwitchItem>(item as unknown))">
-              <div class="wd-ovl__row-info">
-                <span class="wd-ovl__row-name">{{ item.label }}</span>
-              </div>
-              <span class="wd-ovl__icon wd-ovl__icon--active" :aria-label="item.label">
-                <q-icon :name="layerIcon(item.icon)" size="20px" />
-              </span>
-            </div>
-          </template>
-
-          <!-- All layers section (inside the scrollable rows) -->
-        <!-- All layers section (expanded only, below the group layers) -->
-        <template v-if="expanded">
+          <!-- ONE separator under the group rows: the title sits ON the
+               line; the mini box shows the line only (label hidden). -->
           <div
-            class="wd-ovl__all-sep"
-            :class="{ 'wd-ovl__all-sep--drop': dropOnSep }"
+            v-if="visibleOthers.length > 0 || editMode"
+            key="wd-ovl-sep"
+            class="wd-ovl__sep"
+            :class="{ 'wd-ovl__sep--drop': dropOnSep }"
+            role="separator"
+            :aria-label="t('overlays.other_layers')"
           >
-            <span class="wd-ovl__all-label">{{ t('overlays.all_layers') }}</span>
+            <span class="wd-ovl__sep-rule" />
+            <span class="wd-ovl__sep-label">{{ t('overlays.other_layers') }}</span>
+            <span class="wd-ovl__sep-rule" />
           </div>
+
+          <!-- Non-group layers, ONE list: selected first, then lingering
+               (6s grace), then the rest. Same row DOM in mini and expanded —
+               labels just clip in the 48px mini box. -->
           <div
-            v-for="item in expandedOtherLayers"
+            v-for="item in visibleOthers"
             :key="item.name"
-            v-show="item.show"
-            class="wd-ovl__row wd-ovl__row--other"
+            class="wd-ovl__row"
             :class="{
               'wd-ovl__row--active': item.active,
-              'wd-ovl__row--passive': !item.active,
+              'wd-ovl__row--other': !item.active,
+              'wd-ovl__row--lingering': !item.active && lingeringSlugs.has(item.name),
               'wd-ovl__row--dragging': dragSlug === item.name,
             }"
             :data-slug="item.name"
-            @click="toggleLayer(<OverlaySwitchItem>(item as unknown))"
+            @click="onRowClick(<OverlaySwitchItem>(item as unknown))"
           >
             <div class="wd-ovl__row-info">
               <span v-if="editMode" class="wd-ovl__drag-handle" title="Drag into the group"
@@ -993,6 +1060,7 @@ onBeforeUnmount(() => {
                 v-if="hasInfo(item.name)"
                 class="wd-ovl__row-action wd-ovl__row-action--info"
                 :aria-label="`${item.label} info`"
+                title="Info"
                 @click.stop="openConfig(item.name, 'legend')"
               >
                 <q-icon name="wd-info" size="xs" />
@@ -1001,7 +1069,9 @@ onBeforeUnmount(() => {
               <button
                 v-if="hasFilterConfig(item.name)"
                 class="wd-ovl__row-action"
+                :class="{ 'wd-ovl__row-action--filtered': hasActiveFilters(item.name) }"
                 :aria-label="`${item.label} filter`"
+                title="Filter"
                 @click.stop="openConfig(item.name, 'filter')"
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -1032,25 +1102,38 @@ onBeforeUnmount(() => {
               @touchend.passive="onSwipeEnd"
             >
               <q-icon :name="layerIcon(item.icon)" size="20px" />
+              <span v-if="hasActiveFilters(item.name)" class="wd-ovl__chip-filter"
+                :aria-label="`${item.label}: filter active`">
+                <svg width="7" height="7" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z" />
+                </svg>
+              </span>
             </span>
           </div>
-        </template>
+          </TransitionGroup>
+
         </div>
           <div class="wd-ovl__fade wd-ovl__fade--top" :class="{ 'wd-ovl__fade--hidden': scrollAtTop }" />
           <div class="wd-ovl__fade wd-ovl__fade--bottom" :class="{ 'wd-ovl__fade--hidden': scrollAtBottom }" />
         </div>
 
         <!-- Group selector: spans the box width, distinct from layer buttons.
-             In edit mode it cycles ALL groups (hidden included). -->
+             ‹ icon › = cycle through groups. In edit mode it cycles ALL
+             groups (hidden included). -->
         <button
           class="wd-ovl__group-btn"
-          :aria-label="overlayStore.activeGroupName(t)"
-          :title="overlayStore.activeGroupName(t)"
+          :aria-label="t('overlays.group_switch', { name: overlayStore.activeGroupName(t) })"
+          :title="t('overlays.group_switch', { name: overlayStore.activeGroupName(t) })"
           @click.stop="onGroupSelectorTap"
           @wheel.prevent
         >
-          <q-icon :name="layerIcon(overlayStore.activeGroupIcon())" size="20px" />
-          <svg class="wd-ovl__group-arrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <svg class="wd-ovl__group-arrow wd-ovl__group-arrow--prev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 6l-6 6 6 6" />
+          </svg>
+          <Transition name="wd-ovl-gswap" mode="out-in">
+            <q-icon :key="overlayStore.groupSettings.activeGroupId ?? 'g'" :name="layerIcon(overlayStore.activeGroupIcon())" size="20px" />
+          </Transition>
+          <svg class="wd-ovl__group-arrow wd-ovl__group-arrow--next" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 6l6 6-6 6" />
           </svg>
         </button>
@@ -1311,9 +1394,20 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   display: flex;
   flex-direction: column;
   pointer-events: auto; // wheel/touch must not reach the map
-  // Height cap = full mini content (group + promoted rows + separator).
-  // Identical in mini and expanded → every icon stays pixel-perfect.
-  max-height: calc((var(--mini-rows, 4) + var(--prom-count, 0)) * 42px + 6px + var(--prom-extra, 0px));
+  // Height = full mini content (group + promoted rows + separator), FIXED
+  // — identical geometry in mini and expanded → every icon stays
+  // pixel-perfect (a max-height lets the mini box content-shrink and drift).
+  height: calc((var(--mini-rows, 4) + var(--prom-count, 0)) * 42px + 6px + var(--prom-extra, 0px));
+  // Height changes when promoted rows join/leave (linger) — ease the resize
+  transition: height 0.22s $ease;
+}
+
+// Edit mode: the wrap must NOT cap — the measured box cap (editMaxH)
+// governs; the list is content-driven up to that limit
+.wd-ovl__box--edit .wd-ovl__rows-wrap {
+  height: auto;
+  max-height: none;
+  transition: none;
 }
 
 .wd-ovl__box--expanded:not(.wd-ovl__box--edit) .wd-ovl__rows-wrap {
@@ -1328,18 +1422,26 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   left: 0;
   right: 0;
   z-index: 2;
-  height: 12px;
+  height: 8px;
   pointer-events: none;
   transition: opacity 0.25s $ease;
 
   &--top {
     top: 0;
-    background: linear-gradient(to bottom, var(--wd-ctl-bg) 80%, transparent);
+    background: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--wd-ctl-bg) 55%, transparent),
+      transparent
+    );
   }
 
   &--bottom {
     bottom: 0;
-    background: linear-gradient(to top, var(--wd-ctl-bg) 80%, transparent);
+    background: linear-gradient(
+      to top,
+      color-mix(in srgb, var(--wd-ctl-bg) 55%, transparent),
+      transparent
+    );
   }
 
   &--hidden {
@@ -1601,13 +1703,13 @@ body.body--dark .wd-ovl__row-name {
   }
 }
 
-// ── Group selector (fixed at the bottom, above the more button) ─────────
 // ── Group selector: spans the box width, clearly distinct ────────────────
+// ‹ icon › — the flanking chevrons read as "cycle", not "expand"
 .wd-ovl__group-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 3px;
   align-self: stretch;
   height: 34px;
   padding: 0 6px;
@@ -1620,67 +1722,147 @@ body.body--dark .wd-ovl__row-name {
   flex: none;
   pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.12s $ease;
+
+  &:hover {
+    background: var(--wd-ctl-hover);
+
+    .wd-ovl__group-arrow--prev {
+      transform: translateX(-1.5px);
+    }
+
+    .wd-ovl__group-arrow--next {
+      transform: translateX(1.5px);
+    }
+  }
 
   &:active {
-    background: var(--wd-ctl-hover);
+    background: var(--wd-ctl-active-bg);
+    transform: scaleY(0.97);
   }
 
   .wd-ovl__group-arrow {
-    opacity: 0.4;
+    opacity: 0.7;
     flex: none;
+    color: var(--wd-ctl-ink-soft);
+    transition: transform 0.15s $ease, opacity 0.15s $ease;
   }
 }
 
-// ── Promoted layers separator (thin line above promoted rows) ──────────
-.wd-ovl__promoted-sep {
-  display: flex;
-  align-items: center;
-  flex: none;
-  margin: 2px 8px 1px;
-  padding-top: 3px;
-  border-top: 1px solid var(--wd-ctl-border);
+// Group icon swap on cycle: quiet vertical slide
+.wd-ovl-gswap-enter-active,
+.wd-ovl-gswap-leave-active {
+  transition: opacity 0.16s $ease, transform 0.16s $ease;
 }
 
-.wd-ovl__promoted-label {
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--wd-ctl-ink);
-  opacity: 0.7;
-  white-space: nowrap;
+.wd-ovl-gswap-enter-from {
+  opacity: 0;
+  transform: translateY(5px);
+}
+
+.wd-ovl-gswap-leave-to {
+  opacity: 0;
+  transform: translateY(-5px);
+}
+
+// ── ONE separator under the group rows ─────────────────────────
+// Compact: the title sits ON the line (rule — label — rule). The mini box
+// shows the line only — the label is hidden below 48px width.
+.wd-ovl__sep {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: none;
+  min-height: 14px;
+  margin: 2px 8px 2px;
+  pointer-events: auto; // drop target in edit mode (opt back in)
+  transition: background-color 0.12s $ease, box-shadow 0.12s $ease;
+}
+
+.wd-ovl__sep-rule {
+  flex: 1;
+  height: 1px;
+  min-width: 4px;
+  border-radius: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--wd-ctl-border) 18%,
+    var(--wd-ctl-border) 82%,
+    transparent
+  );
+}
+
+.wd-ovl__sep-label {
+  flex: none;
+  max-width: 60%;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-// ── "All layers" separator (expanded view) ───────────────────────────────
-.wd-ovl__all-sep {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 8px 4px;
-  border-top: 1px solid var(--wd-ctl-border);
-  margin-top: 4px;
-  flex: none;
-}
-
-.wd-ovl__all-label {
-  font-size: 11px;
+  white-space: nowrap;
+  font-size: 9.5px;
   font-weight: 600;
+  line-height: 1;
   text-transform: uppercase;
-  letter-spacing: 0.09em;
+  letter-spacing: 0.1em;
   color: var(--wd-ctl-ink);
-  opacity: 0.78;
+  opacity: 0.6;
 }
 
-// Other-group rows: faded
-.wd-ovl__row--other {
-  .wd-ovl__row-name {
-    opacity: 0.6;
-  }
+// Mini view: line only — no title
+.wd-ovl__box:not(.wd-ovl__box--expanded) .wd-ovl__sep {
+  gap: 0;
+  margin: 2px 4px 2px; // same vertical footprint as expanded (pixel-perfect)
+}
+
+.wd-ovl__box:not(.wd-ovl__box--expanded) .wd-ovl__sep-label {
+  display: none;
+}
+
+// Drop zone while dragging (edit mode): ungroup the dragged layer
+.wd-ovl__sep--drop {
+  background: rgba(191, 171, 37, 0.1);
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px rgba(191, 171, 37, 0.45);
+  cursor: alias;
+}
+
+// ── Row list transitions (FLIP): reorder, linger enter/leave ──────────
+.wd-ovl-row-move {
+  transition: transform 0.25s $ease;
+}
+
+.wd-ovl-row-enter-active {
+  transition: opacity 0.2s $ease, transform 0.2s $ease;
+}
+
+.wd-ovl-row-enter-from {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+.wd-ovl-row-leave-active {
+  // Pull out of flow so siblings slide up smoothly underneath
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  transition: opacity 0.22s $ease, transform 0.22s $ease;
+}
+
+.wd-ovl-row-leave-to {
+  opacity: 0;
+  transform: translateX(10px) scale(0.98);
+}
+
+// Lingering rows (switched off, inside the 6s grace window): settle quietly
+.wd-ovl__row--lingering {
   .wd-ovl__icon {
-    opacity: 0.7;
+    opacity: 0.4;
   }
+}
+
+// Row currently dragged (edit mode)
+.wd-ovl__row--dragging {
+  opacity: 0.35;
 }
 
 // Open/close feedback: one soft overshoot pop (crafted moment)
@@ -1835,15 +2017,14 @@ body.body--dark .wd-ovl__row-name {
   box-shadow: inset 0 -2px 0 0 #bfab2d;
 }
 
-// ── Drop zone on "All layers" separator ────────────────────────────────
-.wd-ovl__all-sep {
-  pointer-events: auto; // opt back in — the box is pointer-events:none
-}
-
-.wd-ovl__all-sep--drop {
-  background: rgba(191, 171, 37, 0.12);
-  border-top: 2px dashed rgba(191, 171, 37, 0.5);
-  cursor: alias;
+// ── Other rows: passive dimming (active rows stay full) ──────────────
+.wd-ovl__row--other {
+  .wd-ovl__row-name {
+    opacity: 0.6;
+  }
+  .wd-ovl__icon {
+    opacity: 0.7;
+  }
 }
 
 // ── Footer: cancel (X) + confirm (✓) on ONE line ──────────────────────
@@ -1876,6 +2057,27 @@ body.body--dark .wd-ovl__row-name {
   background: rgba(42, 138, 114, 0.07);
 
   &:hover { background: rgba(42, 138, 114, 0.14); }
+}
+
+// ── Reduced motion: keep state legible, drop spatial movement ─────────
+@media (prefers-reduced-motion: reduce) {
+  .wd-ovl__rows-wrap,
+  .wd-ovl__box {
+    transition: none;
+  }
+
+  .wd-ovl-row-enter-active,
+  .wd-ovl-row-leave-active,
+  .wd-ovl-row-move {
+    transition: opacity 0.12s linear;
+    transform: none;
+  }
+
+  .wd-ovl-gswap-enter-active,
+  .wd-ovl-gswap-leave-active {
+    transition: opacity 0.12s linear;
+    transform: none;
+  }
 }
 
 </style>
