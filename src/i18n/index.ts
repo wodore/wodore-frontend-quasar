@@ -27,15 +27,14 @@ export const SUPPORTED_LOCALES: Locales = ['de', 'en', 'fr', 'it'];
 export const FALLBACK_LOCALE: Locale = 'en';
 
 /**
- * Locale-prefixed routes, derived from the supported locales: the
- * fallback/default language serves the bare (unprefixed) URL, every
- * other language gets a /xx/ path prefix (SEO language routing —
- * mirrors the backend DEFAULT_LANG + prefixed sitemap variants and
- * the njs edge in docker/seo.js).
+ * Locale-prefixed routes (full-prefix model): EVERY supported locale
+ * gets a /xx/ path prefix — those are the indexed, self-canonical SEO
+ * URLs (mirrored by the backend sitemap and the njs edge in
+ * docker/seo.js). The bare (unprefixed) URL is the user-facing alias:
+ * the router strips the prefix after boot, and display language
+ * follows the stored user preference (see boot/i18n.ts).
  */
-export const LANG_PREFIXES: Locales = SUPPORTED_LOCALES.filter(
-  (locale) => locale !== FALLBACK_LOCALE,
-);
+export const LANG_PREFIXES: Locales = [...SUPPORTED_LOCALES];
 
 /**
  * BCP-47 tags used for Intl formatting (month names etc.) per app locale.

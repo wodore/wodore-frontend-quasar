@@ -31,18 +31,6 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
-    // The default language (English) is served unprefixed —
-    // /en/... redirects to bare (the edge does the same for crawlers;
-    // this covers SPA-side navigation). Prefixes come from the i18n
-    // config so this stays in sync with it.
-    path: `/${FALLBACK_LOCALE}/:rest(.*)*`,
-    redirect: to => ({
-      path: to.path.replace(new RegExp(`^/${FALLBACK_LOCALE}`), '') || '/',
-      query: to.query,
-      hash: to.hash,
-    }),
-  },
-  {
     path: '/m/hut/:slug',
     redirect: to => redirectFix(to, 'map-hut'),
   },
@@ -51,11 +39,12 @@ const routes: RouteRecordRaw[] = [
     redirect: to => redirectFix(to, 'map'),
   },
   {
-    // Locale-prefixed public routes (cartoload pattern): English, the
-    // default, stays at the bare path; every other language in the i18n
-    // config gets the optional prefix. The prefix is the initial-language
-    // hint — the stored user preference still wins for display (see
-    // boot/i18n.ts).
+    // Locale-prefixed public routes (full-prefix model): every language
+    // in the i18n config gets an optional prefix — the indexed,
+    // self-canonical SEO URLs. The router strips the prefix after boot
+    // so users always see the bare URL; the prefix is the
+    // initial-language hint, the stored preference still wins for
+    // display (see boot/i18n.ts and router/index.ts).
     path: `/:langPrefix(${LANG_PREFIXES.join('|')})?`,
     component: () => import('layouts/MainLayout.vue'),
     children: [

@@ -50,7 +50,7 @@ sed -i "s|__WODORE_SEO_PAGE_TTL__|${WODORE_SEO_PAGE_TTL:-0}|g" "/etc/nginx/http.
 # i18n config (src/i18n/index.ts: FALLBACK_LOCALE='en', SUPPORTED_LOCALES
 # de/en/fr/it) and the backend's DEFAULT_LANG setting.
 sed -i "s|__WODORE_DEFAULT_LANG__|${WODORE_DEFAULT_LANG:-en}|g" /etc/nginx/seo.js
-sed -i "s|__WODORE_LANG_PREFIXES__|${WODORE_LANG_PREFIXES:-de,fr,it}|g" /etc/nginx/seo.js
+sed -i "s|__WODORE_LANG_PREFIXES__|${WODORE_LANG_PREFIXES:-de,en,fr,it}|g" /etc/nginx/seo.js
 
 # Create necessary directories for nginx
 mkdir -p /run/nginx

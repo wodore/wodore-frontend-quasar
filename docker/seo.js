@@ -18,16 +18,18 @@ const SHELL_URI = '/_seo/shell';
 
 // Locale-prefixed routes: /en|/fr|/it/... (German, the default, stays
 // at the root — cartoload-style prefix_default_language=False).
-// Language routing, baked by the entrypoint (docker/entrypoint.sh):
-// __WODORE_DEFAULT_LANG__ is the language of the bare (unprefixed)
-// URL - English - and __WODORE_LANG_PREFIXES__ the locale-prefixed
-// routes (/de|/fr|/it/...). Defaults mirror the SPA's i18n config
-// (src/i18n/index.ts: FALLBACK_LOCALE + SUPPORTED_LOCALES).
+// Language routing (full-prefix model), baked by the entrypoint
+// (docker/entrypoint.sh): __WODORE_LANG_PREFIXES__ lists EVERY
+// language's locale-prefixed route (/en|/de|/fr|/it/...) - those are
+// the indexed, self-canonical URLs. __WODORE_DEFAULT_LANG__ (English)
+// is the language of the bare (unprefixed) URL, which canonicalizes to
+// the default language's prefixed URL; the SPA strips the prefix
+// client-side so users always see the bare URL. Defaults mirror the
+// SPA's i18n config (src/i18n/index.ts).
 var DEFAULT_LANG = '__WODORE_DEFAULT_LANG__';
 var LANG_PREFIXES = '__WODORE_LANG_PREFIXES__'.split(',');
 var ALL_LANGS = LANG_PREFIXES.concat([DEFAULT_LANG]);
 var LANG_RE = new RegExp('^\\/(' + LANG_PREFIXES.join('|') + ')(\\/|$)');
-var DEFAULT_LANG_RE = new RegExp('^\\/(' + DEFAULT_LANG + ')(\\/|$)');
 var COOKIE_RE = /(?:^|;\s*)wodore_lang=/;
 
 function parseAcceptLanguage(header) {
@@ -55,18 +57,24 @@ function headBlock(m, requestPath, host) {
   var title = m.title || m.name;
   parts.push('<title>' + esc(title) + '</title>');
   parts.push('<meta name="description" content="' + esc(m.description) + '">');
-  // Canonical: the full prefixed URL the crawler requested.
-  var canonical = 'https://' + host + requestPath;
-  parts.push('<link rel="canonical" href="' + esc(canonical) + '">');
-  // hreflang cluster: bare = default language + x-default, prefixed rest.
+  // Canonical: prefixed URLs are self-canonical; the bare (user alias)
+  // URL canonicalizes to the default language's prefixed URL.
   var barePath = requestPath.replace(LANG_RE, '/');
-  var bare = 'https://' + host + barePath;
+  var lang = LANG_RE.exec(requestPath);
+  var canonical =
+    'https://' + host + (lang ? requestPath : '/' + DEFAULT_LANG + barePath);
+  parts.push('<link rel="canonical" href="' + esc(canonical) + '">');
+  // hreflang cluster: every language's prefixed URL; x-default points
+  // at the default language's prefixed URL. The bare URL (user alias)
+  // is never an indexing target.
   var alternates = ALL_LANGS.map(function (code) {
-    var href = code === DEFAULT_LANG ? bare : 'https://' + host + '/' + code + barePath;
+    var href = 'https://' + host + '/' + code + barePath;
     return '<link rel="alternate" hreflang="' + code + '" href="' + esc(href) + '">';
   });
   alternates.push(
-    '<link rel="alternate" hreflang="x-default" href="' + esc(bare) + '">'
+    '<link rel="alternate" hreflang="x-default" href="' +
+      esc('https://' + host + '/' + DEFAULT_LANG + barePath) +
+      '">'
   );
   parts.push(alternates.join(''));
   parts.push('<meta property="og:site_name" content="Wodore">');
@@ -154,20 +162,13 @@ function serve(r, body) {
 }
 
 function hut(r) {
-  // Locale prefix: /de|/fr|/it/hut/{slug} (English, the default, is bare;
-  // /en/ 301s to bare). The prefix localizes the injected meta and becomes the
+  // Locale prefix: /en|/de|/fr|/it/hut/{slug} - every language is
+  // prefixed (the indexed, self-canonical URLs). The prefix localizes and becomes the
   // canonical/hreflang cluster; the SPA reads it as the initial language
   // hint (stored user preference still wins for display).
   var requestPath = r.uri;
   var langMatch = LANG_RE.exec(requestPath);
   var lang = langMatch ? langMatch[1] : '';
-  if (DEFAULT_LANG_RE.test(requestPath)) {
-    r.status = 301;
-    r.headersOut.Location = requestPath.replace(DEFAULT_LANG_RE, '/') || '/';
-    r.sendHeader();
-    r.finish();
-    return;
-  }
   var slug = requestPath
     .replace(LANG_RE, '/')
     .replace(/^\/hut\//, '')
