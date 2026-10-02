@@ -44,7 +44,14 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
       .filter(feature => feature.properties !== null)
       .map(feature => {
         // SAFETY: filtered for non-null properties directly above
-        const props = feature.properties!;
+        // width/height/focal/crop were removed from the API schema
+        // (backend #206); HutImage still declares them optional — bridge.
+        const props = feature.properties! as NonNullable<(typeof feature)['properties']> & {
+          width?: number;
+          height?: number;
+          focal?: unknown;
+          crop?: unknown;
+        };
         // SAFETY: the mapped literal is a superset of HutImage's optional
         // fields; the double cast below bridges the local HutImage interface
         // (which the generated client types don't match structurally).
