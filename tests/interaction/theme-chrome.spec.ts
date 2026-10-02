@@ -14,7 +14,7 @@ const CONFIGS = [
 
 test.describe('map chrome theming', () => {
   for (const { theme, mode } of CONFIGS) {
-    test(`${theme}-${mode}: chip backgrounds and ink`, async ({ page }, _testInfo) => {
+    test(`${theme}-${mode}: chip backgrounds and ink`, async ({ page }, testInfo) => {
       tagTest(theme, mode, 'theming');
       test.setTimeout(90_000);
 
