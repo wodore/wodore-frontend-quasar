@@ -680,13 +680,14 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   display: flex;
   flex-direction: column;
   width: 48px; // matches the basemap toggle width
-  max-height: calc(min(60vh, 394px) + 26px); // rows + more button
+  max-height: calc(100dvh - 220px); // safety cap — never taller than the viewport
   border-radius: 8px;
   border: 1px solid var(--wd-ctl-border);
   background: var(--wd-ctl-bg);
   box-shadow: var(--wd-ctl-shadow);
   overflow: hidden;
   position: relative; // anchor for the absolute scroll fades
+  transition: max-height 0.25s cubic-bezier(0.2, 0, 0, 1); // animate group changes
   pointer-events: none; // map gestures pass through — rows opt back in
   transition:
     width 0.28s $ease,
@@ -695,9 +696,6 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 
   &--expanded {
     width: 216px; // slightly narrower than before, titles clip
-    // Grow UP by the header height: the rows area keeps its exact size,
-    // so the icon chips stay pixel-fixed while the header appears above.
-    max-height: calc(min(60vh, 394px) + 26px + 28px);
     animation: wd-ovl-pop 0.28s $ease;
   }
 }
@@ -789,8 +787,9 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 // FIXED height: identical in mini and expanded — the box grows UP by the
 // header height when expanding, so the icon chips never move a pixel.
 .wd-ovl__rows {
-  flex: none;
-  height: calc(min(60vh, 394px));
+  flex: 0 1 auto; // grow to content, shrink if box is at the cap
+  max-height: calc(100dvh - 320px); // safety scroll cap
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
@@ -1040,7 +1039,7 @@ body.body--dark .wd-ovl__row-name {
   width: 40px;
   height: 36px;
   margin: 2px 4px;
-  flex: none;
+  flex: none; // NEVER shrinks — always visible at the bottom
   pointer-events: auto;
 }
 
