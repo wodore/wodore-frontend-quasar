@@ -69,48 +69,80 @@ function addLayerToGroup(slug: string): void {
   overlayStore.syncGroupSettings();
 }
 
-// ── Drag-and-drop layer ordering (edit mode) ─────────────────────────
+// ── Pointer-based drag ordering (edit mode) ────────────────────────────
+// HTML5 drag-and-drop NEVER fires on touch devices — the owner uses the
+// app on a phone. Pointer events work for touch AND mouse.
 const dragSlug = ref<string | null>(null);
 const dragOverSlug = ref<string | null>(null);
 const dropPos = ref<'above' | 'below'>('below');
+const dropOnSep = ref(false);
+let pendingDrag: { slug: string; startX: number; startY: number } | null = null;
 
-function onDragStart(ev: MouseEvent, slug: string): void {
-  dragSlug.value = slug;
-  // Firefox requires setData to initiate a drag; Chrome/Safari don't.
-  // No type gymnastics — just try it and ignore failures.
+function onHandlePointerDown(ev: PointerEvent, slug: string): void {
+  if (!editMode.value) return;
+  pendingDrag = { slug, startX: ev.clientX, startY: ev.clientY };
+  // capture: all subsequent moves/ups route to the handle, even off-element
   try {
-    const e = ev as unknown as { dataTransfer?: { setData: (t: string, v: string) => void } };
-    e.dataTransfer?.setData?.('text/plain', slug);
+    (ev.currentTarget as HTMLElement).setPointerCapture(ev.pointerId);
   } catch {
-    // non-Firefox browsers
+    // capture unsupported — window-level fallback below still tracks via rows
   }
 }
 
-function onDragOver(ev: MouseEvent, slug: string): void {
-  ev.preventDefault();
-  dragOverSlug.value = slug;
-  // Insertion point: above/below the hovered row, by pointer position
-  const row = (ev.currentTarget as HTMLElement).getBoundingClientRect();
-  dropPos.value = ev.clientY < row.top + row.height / 2 ? 'above' : 'below';
+function hitTarget(ev: PointerEvent): { row?: string; sep?: boolean } {
+  const el = document.elementFromPoint(ev.clientX, ev.clientY);
+  const hit = el?.closest('.wd-ovl__row, .wd-ovl__all-sep') as HTMLElement | null;
+  if (!hit) return {};
+  if (hit.classList.contains('wd-ovl__all-sep')) return { sep: true };
+  return { row: hit.dataset.slug ?? undefined };
 }
 
-function onDrop(ev: MouseEvent, targetSlug: string): void {
-  ev.preventDefault();
-  const sourceSlug = dragSlug.value;
+function onHandlePointerMove(ev: PointerEvent): void {
+  if (!pendingDrag) return;
+  if (!dragSlug.value) {
+    // start dragging after a small threshold (avoid accidental taps)
+    if (Math.hypot(ev.clientX - pendingDrag.startX, ev.clientY - pendingDrag.startY) < 8) return;
+    dragSlug.value = pendingDrag.slug;
+  }
+  const hit = hitTarget(ev);
+  dropOnSep.value = !!hit.sep;
+  if (hit.row && hit.row !== dragSlug.value) {
+    dragOverSlug.value = hit.row;
+    const rowEl = document.querySelector(`.wd-ovl__row[data-slug="${hit.row}"]`);
+    if (rowEl) {
+      const r = rowEl.getBoundingClientRect();
+      dropPos.value = ev.clientY < r.top + r.height / 2 ? 'above' : 'below';
+    }
+  } else {
+    dragOverSlug.value = null;
+  }
+}
+
+function onHandlePointerUp(ev: PointerEvent): void {
+  if (dragSlug.value) {
+    const hit = hitTarget(ev);
+    if (hit.sep) {
+      onDropToAll();
+    } else if (hit.row && hit.row !== dragSlug.value) {
+      performDrop(dragSlug.value, hit.row);
+    }
+  }
+  pendingDrag = null;
   dragSlug.value = null;
   dragOverSlug.value = null;
-  if (!sourceSlug || sourceSlug === targetSlug) return;
+  dropOnSep.value = false;
+}
 
-  // Reorder within the group's layerSlugs
+/** Reorder within the group, or insert a layer dragged in from All layers */
+function performDrop(sourceSlug: string, targetSlug: string): void {
   const group = overlayStore.groupSettings.groups.find(
     g => g.id === overlayStore.groupSettings.activeGroupId
   );
   if (!group) return;
+  if (group.layerSlugs.indexOf(targetSlug) < 0) return; // target must be a group row
 
   const slugs = [...group.layerSlugs];
   const fromIdx = slugs.indexOf(sourceSlug);
-  if (slugs.indexOf(targetSlug) < 0) return; // drop target must be a group row
-
   if (fromIdx >= 0) slugs.splice(fromIdx, 1); // reorder: remove first
   const toIdx = slugs.indexOf(targetSlug);
   slugs.splice(dropPos.value === 'above' ? toIdx : toIdx + 1, 0, sourceSlug);
@@ -121,11 +153,7 @@ function onDrop(ev: MouseEvent, targetSlug: string): void {
 
 function onDropToAll(): void {
   const sourceSlug = dragSlug.value;
-  dragSlug.value = null;
-  dragOverSlug.value = null;
   if (!sourceSlug) return;
-
-  // Remove from the active group
   const group = overlayStore.groupSettings.groups.find(
     g => g.id === overlayStore.groupSettings.activeGroupId
   );
@@ -135,11 +163,6 @@ function onDropToAll(): void {
     overlayStore.syncGroupSettings();
     markEdited();
   }
-}
-
-function onDragEnd(): void {
-  dragSlug.value = null;
-  dragOverSlug.value = null;
 }
 
 // Track unsaved edits — prompt to save or cancel when leaving edit mode
@@ -759,15 +782,15 @@ onBeforeUnmount(() => {
             'wd-ovl__row--drop-above': dragOverSlug === item.name && dragSlug !== item.name && dropPos === 'above',
             'wd-ovl__row--drop-below': dragOverSlug === item.name && dragSlug !== item.name && dropPos === 'below',
           }"
-            :draggable="editMode"
-            @dragstart="onDragStart($event, item.name)"
-            @dragover="onDragOver($event, item.name)"
-            @drop="onDrop($event, item.name)"
-            @dragend="onDragEnd"
+            :data-slug="item.name"
             @click="onRowClick(<OverlaySwitchItem>(item as unknown))">
             <!-- Label + actions (LEFT of icon, only when expanded) -->
             <div v-if="expanded" class="wd-ovl__row-info">
-              <span v-if="editMode" class="wd-ovl__drag-handle" title="Drag to reorder">
+              <span v-if="editMode" class="wd-ovl__drag-handle" title="Drag to reorder"
+                @pointerdown.stop="onHandlePointerDown($event, item.name)"
+                @pointermove="onHandlePointerMove"
+                @pointerup="onHandlePointerUp"
+                @pointercancel="onHandlePointerUp">
                 <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor">
                   <circle cx="2" cy="3" r="1.2" /><circle cx="6" cy="3" r="1.2" />
                   <circle cx="2" cy="8" r="1.2" /><circle cx="6" cy="8" r="1.2" />
@@ -818,9 +841,7 @@ onBeforeUnmount(() => {
         <template v-if="expanded">
           <div
             class="wd-ovl__all-sep"
-            :class="{ 'wd-ovl__all-sep--drop': dragSlug !== null }"
-            @dragover.prevent
-            @drop.prevent="onDropToAll"
+            :class="{ 'wd-ovl__all-sep--drop': dropOnSep }"
           >
             <span class="wd-ovl__all-label">{{ t('overlays.all_layers') }}</span>
           </div>
@@ -834,12 +855,21 @@ onBeforeUnmount(() => {
               'wd-ovl__row--passive': !item.active,
               'wd-ovl__row--dragging': dragSlug === item.name,
             }"
-            :draggable="editMode"
-            @dragstart="onDragStart($event, item.name)"
-            @dragend="onDragEnd"
+            :data-slug="item.name"
             @click="toggleLayer(<OverlaySwitchItem>(item as unknown))"
           >
             <div class="wd-ovl__row-info">
+              <span v-if="editMode" class="wd-ovl__drag-handle" title="Drag into the group"
+                @pointerdown.stop="onHandlePointerDown($event, item.name)"
+                @pointermove="onHandlePointerMove"
+                @pointerup="onHandlePointerUp"
+                @pointercancel="onHandlePointerUp">
+                <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor">
+                  <circle cx="2" cy="3" r="1.2" /><circle cx="6" cy="3" r="1.2" />
+                  <circle cx="2" cy="8" r="1.2" /><circle cx="6" cy="8" r="1.2" />
+                  <circle cx="2" cy="13" r="1.2" /><circle cx="6" cy="13" r="1.2" />
+                </svg>
+              </span>
               <button
                 v-if="hasInfo(item.name)"
                 class="wd-ovl__row-action wd-ovl__row-action--info"
@@ -1638,12 +1668,14 @@ body.body--dark .wd-ovl__row-name {
 .wd-ovl__drag-handle {
   display: grid;
   place-items: center;
-  width: 16px;
+  width: 20px;
+  height: 100%;
   flex: none;
   color: var(--wd-ctl-ink-soft);
   opacity: 0.4;
   cursor: grab;
   pointer-events: auto;
+  touch-action: none; // touch drag must NOT scroll the list
 }
 
 // ── Drop line: gold insertion marker at the exact drop position ────────
@@ -1656,6 +1688,10 @@ body.body--dark .wd-ovl__row-name {
 }
 
 // ── Drop zone on "All layers" separator ────────────────────────────────
+.wd-ovl__all-sep {
+  pointer-events: auto; // opt back in — the box is pointer-events:none
+}
+
 .wd-ovl__all-sep--drop {
   background: rgba(191, 171, 37, 0.12);
   border-top: 2px dashed rgba(191, 171, 37, 0.5);

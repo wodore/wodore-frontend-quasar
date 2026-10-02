@@ -149,7 +149,9 @@ export function mergeGroups(
 
 /** Get the active group (or null if none selected) */
 export function getActiveGroup(settings: OverlayGroupSettings): LayerGroup | null {
-  return settings.groups.find(g => g.id === settings.activeGroupId && !g.hidden && !g.removed) ?? null;
+  // Hidden groups stay ACTIVE in edit mode (they must remain editable);
+  // selectability is decided by getVisibleGroups, not here.
+  return settings.groups.find(g => g.id === settings.activeGroupId && !g.removed) ?? null;
 }
 
 /** Get visible groups for the mini selector cycle (not hidden, not removed) */
