@@ -12,8 +12,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get flat list of categories.
-         * @description Supports dot-notation slugs with max one parent
+         * get_category_list_all — List categories.
+         * @description Returns a flat list. Supports dot-notation slugs with max one parent
          *     (e.g., 'accommodation.hut'). If slug is ambiguous, returns 400
          *     error with available paths. If slug is omitted, returns all
          *     categories. Always excludes the root from results (returns
@@ -36,8 +36,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get category hierarchy as a nested dictionary mapping.
-         * @description Keys are category slugs, values contain category data with
+         * get_category_map_all — Get the category map.
+         * @description Nested dict keyed by slug; keys are category slugs, values contain category data with
          *     nested 'children' dict. Supports dot-notation slugs with max one
          *     parent (e.g., 'accommodation.hut'). If slug is ambiguous, returns
          *     400 error with available paths. Always excludes the root from
@@ -60,7 +60,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Redirect to the SVG icon for a category with explicit parent.
+         * get_category_symbol_svg_with_parent — Redirect to a category SVG (with parent).
          * @description Variant options: detailed, simple, mono
          *     Example: /v1/categories/symbol/detailed/map/transport.svg
          *
@@ -83,7 +83,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Redirect to the SVG icon for a category.
+         * get_category_symbol_svg — Redirect to the SVG icon for a category.
          * @description Variant options: detailed, simple, mono
          *     Slug can be a simple slug (e.g., 'transport') or root category
          *
@@ -106,7 +106,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get category hierarchy as a tree structure.
+         * get_category_tree — Get the category tree.
          * @description Supports dot or slash-notation slugs with max one parent
          *     (e.g., `map/transport`). The parent is optional but if slug is
          *     ambiguous, returns 400 error with available paths. Use `root` to
@@ -131,7 +131,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Submit feedback (stored, optionally mailed to the admins). */
+        /**
+         * create_feedback — Submit feedback.
+         * @description Stored, optionally mailed to the admins.
+         */
         post: operations["create_feedback"];
         delete?: never;
         options?: never;
@@ -147,8 +150,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get images for a specific Hut from multiple sources.
-         * @description Wodore provider uses the hut directly (very fast). External
+         * images_for_hut — Get images for a hut.
+         * @description From multiple sources; Wodore provider uses the hut directly (very fast). External
          *     providers use the hut's coordinates with the given radius.
          *
          *     Returns GeoJSON Point features with full image metadata.
@@ -170,8 +173,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get images near a location from multiple sources as a GeoJSON FeatureCollection.
-         * @description Aggregates internal Wodore database images with external sources
+         * nearby_images — Get nearby images.
+         * @description GeoJSON FeatureCollection from multiple sources. Aggregates internal Wodore database images with external sources
          *     (Wikidata, Flickr, etc.). Returns GeoJSON Point features with full
          *     image metadata.
          */
@@ -192,8 +195,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get images for a specific GeoPlace from multiple sources.
-         * @description Wodore provider uses the place directly (very fast). External
+         * images_for_place — Get images for a place.
+         * @description From multiple sources; Wodore provider uses the place directly (very fast). External
          *     providers use the place's coordinates with the given radius.
          *
          *     Returns GeoJSON Point features with full image metadata.
@@ -215,8 +218,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get detailed information for an amenity place.
-         * @description Returns base GeoPlace fields plus amenity-specific information
+         * get_amenity — Get an amenity place.
+         * @description Returns detailed information base GeoPlace fields plus amenity-specific information
          *     like operating status, opening hours, websites, and phone numbers.
          */
         get: operations["get_amenity"];
@@ -235,7 +238,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Find places near coordinates within a radius, ordered by distance. */
+        /** nearby_geoplaces — Find places near coordinates, ordered by distance. */
         get: operations["nearby_geoplaces"];
         put?: never;
         post?: never;
@@ -253,8 +256,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get available overlay categories for map tile filtering.
-         * @description Returns root-level categories that can be used as overlay filters
+         * get_overlay_categories — List map overlay categories.
+         * @description Usable as overlay filters in vector tile requests; returns root-level categories that can be used as overlay filters
          *     in vector tile requests (via the `categories` parameter).
          */
         get: operations["get_overlay_categories"];
@@ -274,13 +277,33 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Search for geographic places using fuzzy text search.
-         * @description Performance optimizations:
+         * search_geoplaces — Search places.
+         * @description Fuzzy text search across all language fields. Performance optimizations:
          *     - Fast prefix matching using B-tree indexes (very fast)
          *     - Trigram similarity only when needed (slower)
          *     - Early exit if enough prefix matches found
          */
         get: operations["search_geoplaces"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/geo/places/{slug}/meta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * get_place_meta — Get place metadata.
+         * @description Minimal place metadata for HTML meta-tag injection at the edge.
+         */
+        get: operations["get_place_meta"];
         put?: never;
         post?: never;
         delete?: never;
@@ -296,7 +319,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get availability data as GeoJSON FeatureCollection for map visualization. */
+        /** get_hut_availability_geojson — Get availability as GeoJSON for map visualization. */
         get: operations["get_hut_availability_geojson"];
         put?: never;
         post?: never;
@@ -314,7 +337,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get hut bookings (deprecated)
+         * get_hut_bookings — Get hut bookings (deprecated)
          * @deprecated
          * @description **DEPRECATED**: Use `/huts/availability.geojson` instead. This endpoint will be removed in a future version.
          */
@@ -335,7 +358,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get hut bookings as GeoJSON (deprecated)
+         * get_hut_bookings_geojson — Get hut bookings as GeoJSON (deprecated)
          * @deprecated
          * @description **DEPRECATED**: Use `/huts/availability.geojson` instead. This endpoint will be removed in a future version.
          */
@@ -356,7 +379,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get a list with huts.
+         * get_huts — List huts.
          * @description Hut list (ETag-cached).
          */
         get: operations["get_huts"];
@@ -376,7 +399,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get huts as GeoJSON (properties controlled by embed/include).
+         * get_huts_geojson — Get huts as GeoJSON.
          * @description Huts as GeoJSON (ETag-cached).
          */
         get: operations["get_huts_geojson"];
@@ -395,7 +418,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Search for huts using fuzzy text search across all language fields. */
+        /**
+         * search_huts — Search huts.
+         * @description Fuzzy text search across all language fields.
+         */
         get: operations["search_huts"];
         put?: never;
         post?: never;
@@ -413,7 +439,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get a hut by its slug.
+         * get_hut — Get a hut.
          * @description Hut detail (ETag-cached).
          */
         get: operations["get_hut"];
@@ -433,8 +459,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get current availability data for a specific hut.
-         * @description Includes detailed metadata and booking links.
+         * get_hut_availability_current — Get current hut availability.
+         * @description Detailed data for a specific hut; includes detailed metadata and booking links.
          */
         get: operations["get_hut_availability_current"];
         put?: never;
@@ -453,7 +479,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get historical availability trend data.
+         * get_hut_availability_trend — Get historical availability trend data.
          * @description Shows how availability changed over time for a specific date.
          */
         get: operations["get_hut_availability_trend"];
@@ -472,7 +498,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Minimal hut metadata for HTML meta-tag injection at the edge. */
+        /**
+         * get_hut_meta — Get hut meta tags.
+         * @description Minimal hut metadata for HTML meta-tag injection at the edge.
+         */
         get: operations["get_hut_meta"];
         put?: never;
         post?: never;
@@ -490,8 +519,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Redirect to the SVG icon for a weather code from a collection.
-         * @description Collection examples: weather-icons-outlined-mono, weather-icons-filled, meteoswiss-filled
+         * get_weather_code_svg — Redirect to a weather code SVG.
+         * @description From a specific collection. Collection examples: weather-icons-outlined-mono, weather-icons-filled, meteoswiss-filled
          *     Time options: day, night
          *
          *     If the collection doesn't have a symbol for the WMO code, returns 404.
@@ -513,8 +542,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get all weather codes as a dictionary with WMO code as key.
-         * @description Returns weather codes with symbols from the specified collection.
+         * get_weather_codes — List weather codes.
+         * @description Dict keyed by WMO code. Returns weather codes with symbols from the specified collection.
          *     If a WMO code is missing from the collection, an error is raised.
          */
         get: operations["get_weather_codes"];
@@ -533,7 +562,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get a specific weather code by WMO code. */
+        /** get_weather_code — Get a specific weather code by WMO code. */
         get: operations["get_weather_code"];
         put?: never;
         post?: never;
@@ -550,7 +579,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get a list of all organizations used for the huts. */
+        /** get_organizations — List organizations used for the huts. */
         get: operations["get_organizations"];
         put?: never;
         post?: never;
@@ -567,7 +596,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get a single organization by its slug. */
+        /** get_organization — Get a single organization by its slug. */
         get: operations["get_organization"];
         put?: never;
         post?: never;
@@ -584,7 +613,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get a list of all symbols. By default only returns active symbols. */
+        /**
+         * get_symbols — List symbols.
+         * @description By default only returns active symbols.
+         */
         get: operations["get_symbols"];
         put?: never;
         post?: never;
@@ -601,7 +633,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get a single symbol by UUID. */
+        /** get_symbol_by_id — Get a single symbol by UUID. */
         get: operations["get_symbol_by_id"];
         put?: never;
         post?: never;
@@ -619,7 +651,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get all style variants for a symbol by slug.
+         * get_symbols_by_slug — Get all style variants for a symbol by slug.
          * @description By default only returns active symbols.
          */
         get: operations["get_symbols_by_slug"];
@@ -639,7 +671,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get a single symbol by style and slug.
+         * get_symbol_by_style_and_slug — Get a single symbol by style and slug.
          * @description Returns the same schema as the by-id endpoint.
          */
         get: operations["get_symbol_by_style_and_slug"];
@@ -659,8 +691,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Redirect to the SVG file for a symbol by style and slug.
-         * @description Style options: detailed, simple, mono
+         * get_symbol_svg — Redirect to a symbol SVG.
+         * @description By style and slug. Style options: detailed, simple, mono
          *     Example: /v1/symbols/detailed/mountain.svg
          *
          *     If the symbol doesn't exist or has no SVG file, returns 404.
@@ -682,7 +714,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get version information.
+         * get_version — Get version information.
          * @description Includes git short hash, full hash, package version, build
          *     timestamp, environment, and supported API versions.
          */
@@ -1924,6 +1956,11 @@ export interface components {
              */
             name: string;
             /**
+             * Title
+             * @description Meta title: name · owner
+             */
+            title: string;
+            /**
              * Description
              * @description Short meta description (localized)
              */
@@ -2589,6 +2626,12 @@ export interface components {
              * @description Display order — higher appears first. Admin-adjustable curation position.
              */
             score: number;
+            /**
+             * Is Fallback
+             * @description True when this is not a photo but the generated static-map fallback card (only included when the request asked for fallbacks and the entity has no images).
+             * @default false
+             */
+            is_fallback: boolean;
             /** @description ThumbHash placeholder per rendering context (6 variants: thumb/preview × square/landscape/portrait). Individual hashes are null when not yet assessed. */
             thumbhashes?: components["schemas"]["ImageThumbhashesSchema"];
         };
@@ -2732,7 +2775,11 @@ export interface components {
         };
         /**
          * IncludeModeEnum
-         * @description Include mode for search endpoint - controls level of detail.
+         * @description Include mode for nested objects - controls level of detail.
+         *
+         *     Used by search/nearby/detail endpoints for categories, sources,
+         *     symbols, collections: ``no`` excludes the field, ``slug`` returns
+         *     slugs only, ``all`` returns the full nested object.
          * @enum {string}
          */
         IncludeModeEnum: "no" | "slug" | "all";
@@ -3057,6 +3104,75 @@ export interface components {
              * @default null
              */
             label: string | null;
+        };
+        /**
+         * PlaceMetaSchema
+         * @description Minimal place metadata for edge meta-tag injection.
+         */
+        PlaceMetaSchema: {
+            /**
+             * Slug
+             * @description Place slug
+             */
+            slug: string;
+            /**
+             * Name
+             * @description Place name
+             */
+            name: string;
+            /**
+             * Description
+             * @description Short meta description
+             */
+            description: string;
+            /**
+             * Categories
+             * @description Category names
+             */
+            categories?: string[];
+            /**
+             * Elevation
+             * @description Elevation in meters
+             * @default null
+             */
+            elevation: number | null;
+            /**
+             * Latitude
+             * @description WGS84 latitude
+             * @default null
+             */
+            latitude: number | null;
+            /**
+             * Longitude
+             * @description WGS84 longitude
+             * @default null
+             */
+            longitude: number | null;
+            /**
+             * Image
+             * @description Social preview image (absolute URL)
+             * @default null
+             */
+            image: string | null;
+            /**
+             * Page Url
+             * @description Canonical frontend page URL
+             */
+            page_url: string;
+            /**
+             * Jsonld
+             * @description Ready-to-inline schema.org JSON-LD
+             * @default null
+             */
+            jsonld: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Modified
+             * @description Last modification (ISO date)
+             * @default null
+             */
+            modified: string | null;
         };
         /**
          * Point
@@ -3596,6 +3712,23 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
+            /** @description Raised when throttling rate was hit */
+            429: {
+                headers: {
+                    /** @description Indicates how long the user agent should wait before making a follow-up request */
+                    "Retry-After": string;
+                    /** @description The maximum number of requests permitted in the current time window */
+                    "X-RateLimit-Limit": string;
+                    /** @description The number of requests remaining in the current time window */
+                    "X-RateLimit-Remaining": string;
+                    /** @description The number of seconds until the current rate limit window resets */
+                    "X-RateLimit-Reset": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
         };
     };
     images_for_hut: {
@@ -3611,6 +3744,8 @@ export interface operations {
                 limit?: number;
                 /** @description Force cache refresh - bypass cache and update all cached data from providers */
                 update_cache?: boolean;
+                /** @description When the entity has no images, include the generated static-map card as a single feature (is_fallback=true) */
+                fallback?: boolean;
             };
             header?: never;
             path: {
@@ -3747,6 +3882,8 @@ export interface operations {
                 limit?: number;
                 /** @description Force cache refresh - bypass cache and update all cached data from providers */
                 update_cache?: boolean;
+                /** @description When the entity has no images, include the generated static-map card as a single feature (is_fallback=true) */
+                fallback?: boolean;
             };
             header?: never;
             path: {
@@ -4028,6 +4165,66 @@ export interface operations {
             };
             /** @description Raised when request components cannot be parsed */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Raised when provided `Accept` header cannot be satisfied */
+            406: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Raised when returned response does not match the response schema */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+        };
+    };
+    get_place_meta: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Place slug */
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    "Cache-Control": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaceMetaSchema"];
+                };
+            };
+            /** @description Raised when request components cannot be parsed */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Raised when path parameters do not match */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4532,10 +4729,10 @@ export interface operations {
     get_hut: {
         parameters: {
             query?: {
-                /** @description Comma separated list with field names, use `__all__` in order to include every field. */
-                include?: string | null;
-                /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
-                exclude?: string | null;
+                /** @description Sparse fieldsets (JSON:API): `fields[TYPE]=name1,name2` narrows the response to the selected fields (`__all__` = every field). Valid TYPEs: huts, sources, images. */
+                fields?: {
+                    [key: string]: string;
+                } | null;
                 /** @description Select language code: de, en, fr, it. */
                 lang?: string;
             };
@@ -5018,10 +5215,10 @@ export interface operations {
     get_organizations: {
         parameters: {
             query?: {
-                /** @description Comma separated list with field names, use `__all__` in order to include every field. */
-                include?: string | null;
-                /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
-                exclude?: string | null;
+                /** @description Sparse fieldsets (JSON:API): `fields[TYPE]=name1,name2` narrows the response to the selected fields (`__all__` = every field). Valid TYPEs: organizations. */
+                fields?: {
+                    [key: string]: string;
+                } | null;
                 /** @description Select language code: de, en, fr, it. */
                 lang?: string;
                 /** @description Query parameters for the organization list. */
@@ -5076,10 +5273,10 @@ export interface operations {
     get_organization: {
         parameters: {
             query?: {
-                /** @description Comma separated list with field names, use `__all__` in order to include every field. */
-                include?: string | null;
-                /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
-                exclude?: string | null;
+                /** @description Sparse fieldsets (JSON:API): `fields[TYPE]=name1,name2` narrows the response to the selected fields (`__all__` = every field). Valid TYPEs: organizations. */
+                fields?: {
+                    [key: string]: string;
+                } | null;
                 /** @description Select language code: de, en, fr, it. */
                 lang?: string;
             };
@@ -5144,10 +5341,10 @@ export interface operations {
     get_symbols: {
         parameters: {
             query?: {
-                /** @description Comma separated list with field names, use `__all__` in order to include every field. */
-                include?: string | null;
-                /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
-                exclude?: string | null;
+                /** @description Sparse fieldsets (JSON:API): `fields[TYPE]=name1,name2` narrows the response to the selected fields (`__all__` = every field). Valid TYPEs: symbols. */
+                fields?: {
+                    [key: string]: string;
+                } | null;
                 /** @description Select language code: de, en, fr, it. */
                 lang?: string;
                 /** @description Filter by active status (default: True) */
@@ -5202,10 +5399,10 @@ export interface operations {
     get_symbol_by_id: {
         parameters: {
             query?: {
-                /** @description Comma separated list with field names, use `__all__` in order to include every field. */
-                include?: string | null;
-                /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
-                exclude?: string | null;
+                /** @description Sparse fieldsets (JSON:API): `fields[TYPE]=name1,name2` narrows the response to the selected fields (`__all__` = every field). Valid TYPEs: symbols. */
+                fields?: {
+                    [key: string]: string;
+                } | null;
                 /** @description Select language code: de, en, fr, it. */
                 lang?: string;
                 /** @description Filter by active status (default: True) */
@@ -5272,10 +5469,10 @@ export interface operations {
     get_symbols_by_slug: {
         parameters: {
             query?: {
-                /** @description Comma separated list with field names, use `__all__` in order to include every field. */
-                include?: string | null;
-                /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
-                exclude?: string | null;
+                /** @description Sparse fieldsets (JSON:API): `fields[TYPE]=name1,name2` narrows the response to the selected fields (`__all__` = every field). Valid TYPEs: symbols. */
+                fields?: {
+                    [key: string]: string;
+                } | null;
                 /** @description Select language code: de, en, fr, it. */
                 lang?: string;
                 /** @description Filter by active status (default: True) */
@@ -5344,10 +5541,10 @@ export interface operations {
     get_symbol_by_style_and_slug: {
         parameters: {
             query?: {
-                /** @description Comma separated list with field names, use `__all__` in order to include every field. */
-                include?: string | null;
-                /** @description Comma separated list with field names, if set it uses all fields except the excluded ones. */
-                exclude?: string | null;
+                /** @description Sparse fieldsets (JSON:API): `fields[TYPE]=name1,name2` narrows the response to the selected fields (`__all__` = every field). Valid TYPEs: symbols. */
+                fields?: {
+                    [key: string]: string;
+                } | null;
                 /** @description Select language code: de, en, fr, it. */
                 lang?: string;
                 /** @description Filter by active status (default: True) */

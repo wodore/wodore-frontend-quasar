@@ -1,12 +1,19 @@
 import { ref, watch, type Ref } from 'vue';
 import { clientWodore } from '@clients/index';
 import { currentLocale } from '@services/locale';
-import type { components } from '@clients/wodore_v1.d';
+import type { components, paths } from '@clients/wodore_v1.d';
 import type { HutImage } from './useHutImages';
 import { useLatestRequest } from './useLatestRequest';
 
-// Type shortcuts from OpenAPI generated types
-type ImageCollectionResponse = components['schemas']['ImageCollectionResponse'];
+// Structural type from the endpoint response shapes: the image
+// endpoints inline their geojson FeatureCollection with slightly looser
+// bbox typing than the strict ImageCollectionResponse component - so
+// instead of casting, transformResponse accepts just what it reads
+// (features with image properties).
+type NearbyImagesResponse =
+  paths['/v1/geo/images/nearby']['get']['responses']['200']['content']['application/json'];
+type ImageProperties = NonNullable<NearbyImagesResponse['features'][number]['properties']>;
+type ImageCollectionResponse = { features: Array<{ properties: ImageProperties | null }> };
 
 /**
  * Generic image loading options
@@ -125,7 +132,7 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
       } else if (data) {
         // SAFETY: generated OpenAPI response type does not carry the geojson
         // feature shape; the runtime payload matches ImageCollectionResponse
-        images.value = transformResponse(data as unknown as ImageCollectionResponse);
+        images.value = transformResponse(data);
       } else {
         images.value = [];
       }
@@ -210,7 +217,7 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
               // A newer request superseded this one - do not merge stale images
               if (!latest.isLatest(token)) return;
               // SAFETY: same generated-type gap as fetchByHutSlug
-              const wodoreImages = transformResponse(data as unknown as ImageCollectionResponse);
+              const wodoreImages = transformResponse(data);
               images.value = mergeImages(images.value, wodoreImages);
             }
           })
@@ -268,7 +275,7 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
           error.value = 'Failed to load images';
         } else if (data) {
           // SAFETY: same generated-type gap as fetchByHutSlug
-          images.value = transformResponse(data as unknown as ImageCollectionResponse);
+          images.value = transformResponse(data);
         }
       } catch (err) {
         if (!latest.isLatest(token)) return;

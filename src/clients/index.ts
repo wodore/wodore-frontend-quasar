@@ -8,6 +8,21 @@ import { getEnv } from '@services/runtimeEnv';
 
 export type schemasWodore = compWodore['schemas'];
 
+/**
+ * Sparse fieldset projection: the response type an endpoint returns when
+ * the request narrows it via `fields[TYPE]=name1,name2` (JSON:API sparse
+ * fieldsets, API version 2026-10-02). The generated OpenAPI types always
+ * describe the FULL schema (OpenAPI cannot express query-dependent
+ * response shapes) — derive the narrowed view on top of them.
+ *
+ * K is compile-time checked against the real keys of T, so a backend
+ * field rename breaks the frontend build instead of silently mismatching.
+ *
+ * Usage:
+ *   type HutCard = Sparse<schemasWodore['HutSchemaDetails'], 'slug' | 'name' | 'elevation'>;
+ */
+export type Sparse<T, K extends keyof T> = Pick<T, K>;
+
 const loadingMiddleware: Middleware = {
   async onRequest({ request }) {
     // Skip the progress bar for search and availability requests
