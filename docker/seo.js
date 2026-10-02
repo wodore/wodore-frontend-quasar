@@ -43,7 +43,8 @@ function esc(s) {
 
 function headBlock(m, requestPath, host) {
   var parts = [];
-  parts.push('<title>' + esc(m.name) + '</title>');
+  var title = m.title || m.name;
+  parts.push('<title>' + esc(title) + '</title>');
   parts.push('<meta name="description" content="' + esc(m.description) + '">');
   // Canonical: the full prefixed URL the crawler requested.
   var canonical = 'https://' + host + requestPath;
@@ -60,7 +61,7 @@ function headBlock(m, requestPath, host) {
   );
   parts.push(alternates.join(''));
   parts.push('<meta property="og:site_name" content="Wodore">');
-  parts.push('<meta property="og:title" content="' + esc(m.name) + '">');
+  parts.push('<meta property="og:title" content="' + esc(title) + '">');
   parts.push('<meta property="og:description" content="' + esc(m.description) + '">');
   parts.push('<meta property="og:type" content="website">');
   parts.push('<meta property="og:url" content="' + esc(m.page_url) + '">');
@@ -68,7 +69,7 @@ function headBlock(m, requestPath, host) {
     parts.push('<meta property="og:image" content="' + esc(m.image) + '">');
   }
   parts.push('<meta name="twitter:card" content="summary_large_image">');
-  parts.push('<meta name="twitter:title" content="' + esc(m.name) + '">');
+  parts.push('<meta name="twitter:title" content="' + esc(title) + '">');
   parts.push('<meta name="twitter:description" content="' + esc(m.description) + '">');
   if (m.image) {
     parts.push('<meta name="twitter:image" content="' + esc(m.image) + '">');
