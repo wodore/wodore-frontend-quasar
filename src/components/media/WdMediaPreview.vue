@@ -314,8 +314,10 @@ const getStripeImageUrl = (image: HutImage) => {
 
 // ThumbHash placeholders matching each rendering context
 const getMainThumbhashStyle = (image: HutImage) => thumbhashStyleForSize(image, 'landscape', 'sm');
-const getThumbnailThumbhashStyle = (image: HutImage) => thumbhashStyleForSize(image, 'square', 'xs');
-const getStripeThumbhashStyle = (image: HutImage) => thumbhashStyleForSize(image, 'orientation', 'xs');
+const getThumbnailThumbhashStyle = (image: HutImage) =>
+  thumbhashStyleForSize(image, 'square', 'xs');
+const getStripeThumbhashStyle = (image: HutImage) =>
+  thumbhashStyleForSize(image, 'orientation', 'xs');
 
 // Get provider icon for any image
 const getProviderIcon = (image: HutImage) => {
@@ -864,7 +866,8 @@ const thumbnailContainerStyle = computed(() => {
   background: #46543f; /* solid — alpha scrims read as no-bg in the audit */
   color: #fdfefd;
   padding: 2px 7px;
-  border-radius: 999px;}
+  border-radius: 999px;
+}
 
 // Per-image attribution overlay inside stripe slides
 .stripe-attribution {
@@ -1047,7 +1050,8 @@ const thumbnailContainerStyle = computed(() => {
   background: #46543f; /* solid — alpha scrims read as no-bg in the audit */
   color: #fdfefd;
   padding: 2px 7px;
-  border-radius: 999px;}
+  border-radius: 999px;
+}
 
 .thumb-error-icon {
   position: absolute;

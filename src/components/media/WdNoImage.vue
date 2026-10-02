@@ -74,9 +74,9 @@ const handleKeydown = (event: KeyboardEvent) => {
             <span
               class="status-text"
               :class="$q.dark.isActive ? 'text-secondary-200' : 'text-secondary-800'"
-              role="status">{{
-              t('media.no_photos_yet')
-            }}</span>
+              role="status"
+              >{{ t('media.no_photos_yet') }}</span
+            >
             <span class="text-secondary-700 message-text">{{ message }}</span>
           </div>
         </div>
