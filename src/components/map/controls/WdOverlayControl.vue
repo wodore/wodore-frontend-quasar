@@ -933,7 +933,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
     // SAME height as mini — the rows cap at the mini content height
     // (--mini-rows CSS var, set on the box element) and scroll.
     .wd-ovl__rows {
-      max-height: calc(var(--mini-rows, 4) * 42px + 8px);
+      max-height: calc(var(--mini-rows, 4) * 42px + 250px); // allow All layers section
     }
     animation: wd-ovl-pop 0.28s $ease;
   }
@@ -992,7 +992,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 
 .wd-ovl__toolbar-actions {
   display: flex;
-  gap: 4px;
+  gap: 2px;
   flex: none;
   pointer-events: auto;
 }
@@ -1000,7 +1000,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 .wd-ovl__toolbar-btn {
   display: grid;
   place-items: center;
-  width: 44px;
+  width: 32px;
   height: 36px;
   border: 1px solid var(--wd-ctl-border);
   border-radius: 4px;
