@@ -17,6 +17,8 @@
     "test:interaction": "playwright test tests/interaction/ --project=interaction && node scripts/link-allure-attachments.mjs",
     "test:unit:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "test:ci": "yarn test:unit && yarn test:interaction",
+    "test:snapshots-update": "playwright test tests/interaction/visual-regression.spec.ts --project=interaction --update-snapshots",
     "allure:generate": "rm -rf allure-results/merged && mkdir -p allure-results/merged && cp -R allure-results/unit/. allure-results/merged/ && if [ -d allure-results/e2e ]; then cp -R allure-results/e2e/. allure-results/merged/; fi; rm -rf allure-report && allure generate allure-results/merged",
     "allure:open": "allure open allure-report",
     "allure:clean": "rm -rf allure-results allure-report playwright-report test-results",
@@ -62,6 +64,8 @@
     "gen:realfavs": "real-favicon generate src/assets/realfavgen.json src/assets/realfavgen_result.json public/realfavgen"
   },
   "dependencies": {
+    "@capacitor/core": "^7.0.0",
+    "@capawesome/capacitor-app-update": "^7.2.0",
     "@fontsource/barlow": "^5.3.0",
     "@fontsource/barlow-semi-condensed": "^5.3.0",
     "@fontsource/roboto-condensed": "^5.3",
