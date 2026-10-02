@@ -45,6 +45,12 @@ sed -i "s|__WODORE_SEO_CACHE_TTL__|${WODORE_SEO_CACHE_TTL:-604800}|g" "/etc/ngin
 # Page cache for /hut/*: 0 (default) = no-store like index.html. Only set
 # >0 when a CDN sits in front AND deploys purge it — see docker/seo.js.
 sed -i "s|__WODORE_SEO_PAGE_TTL__|${WODORE_SEO_PAGE_TTL:-0}|g" "/etc/nginx/http.d/${CONFIG_FILE}.conf" /etc/nginx/seo.js
+# SEO language routing: the default language serves the bare (unprefixed)
+# URL, every other language a locale prefix. Defaults mirror the SPA's
+# i18n config (src/i18n/index.ts: FALLBACK_LOCALE='en', SUPPORTED_LOCALES
+# de/en/fr/it) and the backend's DEFAULT_LANG setting.
+sed -i "s|__WODORE_DEFAULT_LANG__|${WODORE_DEFAULT_LANG:-en}|g" /etc/nginx/seo.js
+sed -i "s|__WODORE_LANG_PREFIXES__|${WODORE_LANG_PREFIXES:-de,en,fr,it}|g" /etc/nginx/seo.js
 
 # Create necessary directories for nginx
 mkdir -p /run/nginx

@@ -2,6 +2,11 @@
 <html>
   <head>
     <title><%= productName %></title>
+    <!-- LLM hint (comments are stripped by the vite build, hence meta) -->
+    <meta
+      name="llms"
+      content="Wodore serves structured Markdown alongside this app: /llms.txt lists every surface; each hut is available as Markdown at /hut/{slug}.md (Accept: text/markdown or the .md suffix)."
+    />
     <!--
       Runtime env: dev and Capacitor builds bake values inline via EJS
       (below). The docker image builds with @@VAR@@ placeholders and
