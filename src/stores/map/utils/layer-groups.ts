@@ -153,15 +153,18 @@ export function getActiveGroup(settings: OverlayGroupSettings): LayerGroup | nul
 }
 
 /** Get visible groups for the mini selector cycle (not hidden, not removed) */
-export function getVisibleGroups(settings: OverlayGroupSettings): LayerGroup[] {
+export function getVisibleGroups(settings: OverlayGroupSettings, includeHidden = false): LayerGroup[] {
   return settings.groups
-    .filter(g => !g.hidden && !g.removed)
+    .filter(g => !g.removed && (includeHidden || !g.hidden))
     .sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
 /** Cycle to the next visible group */
-export function cycleGroup(settings: OverlayGroupSettings): { group: LayerGroup; settings: OverlayGroupSettings } {
-  const visible = getVisibleGroups(settings);
+export function cycleGroup(
+  settings: OverlayGroupSettings,
+  includeHidden = false,
+): { group: LayerGroup; settings: OverlayGroupSettings } {
+  const visible = getVisibleGroups(settings, includeHidden);
   if (visible.length === 0) return { group: null!, settings };
 
   const currentIdx = visible.findIndex(g => g.id === settings.activeGroupId);

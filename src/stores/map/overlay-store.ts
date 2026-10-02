@@ -100,8 +100,8 @@ export const useOverlayStore = defineStore('overlay', () => {
   }
 
   /** Cycle to the next visible group and restore its active layers */
-  function cycleGroup(): void {
-    const { group, settings } = cycleGroupUtil(groupSettings);
+  function cycleGroup(includeHidden = false): void {
+    const { group, settings } = cycleGroupUtil(groupSettings, includeHidden);
     if (!group) return;
 
     // Save the current group's active layers

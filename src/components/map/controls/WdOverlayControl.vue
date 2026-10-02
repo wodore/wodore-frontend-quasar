@@ -72,6 +72,7 @@ function addLayerToGroup(slug: string): void {
 // ── Drag-and-drop layer ordering (edit mode) ─────────────────────────
 const dragSlug = ref<string | null>(null);
 const dragOverSlug = ref<string | null>(null);
+const dropPos = ref<'above' | 'below'>('below');
 
 function onDragStart(ev: MouseEvent, slug: string): void {
   dragSlug.value = slug;
@@ -88,6 +89,9 @@ function onDragStart(ev: MouseEvent, slug: string): void {
 function onDragOver(ev: MouseEvent, slug: string): void {
   ev.preventDefault();
   dragOverSlug.value = slug;
+  // Insertion point: above/below the hovered row, by pointer position
+  const row = (ev.currentTarget as HTMLElement).getBoundingClientRect();
+  dropPos.value = ev.clientY < row.top + row.height / 2 ? 'above' : 'below';
 }
 
 function onDrop(ev: MouseEvent, targetSlug: string): void {
@@ -105,12 +109,14 @@ function onDrop(ev: MouseEvent, targetSlug: string): void {
 
   const slugs = [...group.layerSlugs];
   const fromIdx = slugs.indexOf(sourceSlug);
-  const toIdx = slugs.indexOf(targetSlug);
-  if (fromIdx < 0 || toIdx < 0) return;
+  if (slugs.indexOf(targetSlug) < 0) return; // drop target must be a group row
 
-  slugs.splice(toIdx, 0, slugs.splice(fromIdx, 1)[0]);
+  if (fromIdx >= 0) slugs.splice(fromIdx, 1); // reorder: remove first
+  const toIdx = slugs.indexOf(targetSlug);
+  slugs.splice(dropPos.value === 'above' ? toIdx : toIdx + 1, 0, sourceSlug);
   group.layerSlugs = slugs;
   overlayStore.syncGroupSettings();
+  markEdited();
 }
 
 function onDropToAll(): void {
@@ -414,24 +420,9 @@ const miniLayers = computed(() => {
   return overlayStore.activeGroupLayers();
 });
 
-/** Layers for the expanded view "All layers" section */
-const expandedOtherLayers = computed(() => {
-  const layers = overlayStore.otherLayers();
-  if (!editMode.value) return layers;
-  // In edit mode, hide layers from hidden groups (owner: "hidden layers still shown")
-  const visibleGroupSlugs = new Set(
-    overlayStore.groupSettings.groups
-      .filter(g => !g.hidden && !g.removed)
-      .flatMap(g => g.layerSlugs)
-  );
-  return layers.filter(l => {
-    // Include if not in ANY group (ungrouped) or in a visible group
-    const inHiddenGroup = overlayStore.groupSettings.groups.some(
-      g => (g.hidden || g.removed) && g.layerSlugs.includes(l.name)
-    );
-    return !inHiddenGroup || visibleGroupSlugs.has(l.name);
-  });
-});
+/** Layers for the expanded view "All layers" section.
+ *  Edit mode shows ALL layers — hidden groups stay editable (owner rule). */
+const expandedOtherLayers = computed(() => overlayStore.otherLayers());
 
 /** Active layers from OTHER groups — shown in the mini strip below group layers */
 const promotedLayers = computed(() => {
@@ -447,7 +438,7 @@ const promotedLayers = computed(() => {
 
 /** Handle group selector tap */
 function onGroupSelectorTap(): void {
-  overlayStore.cycleGroup();
+  overlayStore.cycleGroup(editMode.value);
   // Re-apply visibility for ALL layers (the group switch changed active states)
   for (const item of overlayStore.overlays) {
     setOverlayVisibility(item as OverlaySwitchItem);
@@ -684,7 +675,11 @@ onBeforeUnmount(() => {
         v-if="stripOpen"
         class="wd-ovl__box"
         :class="{ 'wd-ovl__box--expanded': expanded, 'wd-ovl__box--edit': editMode }"
-        :style="{ '--mini-rows': miniLayers.length + promotedLayers.length }"
+        :style="{
+          '--mini-rows': miniLayers.length,
+          '--prom-count': promotedLayers.length,
+          '--prom-extra': promotedLayers.length > 0 ? '5px' : '0px',
+        }"
       >
         <!-- Top toolbar: EXTENDED only. The box grows UP by this height
              (max-height compensates) so the icon rows NEVER move. -->
@@ -761,7 +756,8 @@ onBeforeUnmount(() => {
             'wd-ovl__row--active': item.active,
             'wd-ovl__row--passive': !item.active,
             'wd-ovl__row--dragging': dragSlug === item.name,
-            'wd-ovl__row--drag-over': dragOverSlug === item.name && dragSlug !== item.name,
+            'wd-ovl__row--drop-above': dragOverSlug === item.name && dragSlug !== item.name && dropPos === 'above',
+            'wd-ovl__row--drop-below': dragOverSlug === item.name && dragSlug !== item.name && dropPos === 'below',
           }"
             :draggable="editMode"
             @dragstart="onDragStart($event, item.name)"
@@ -836,7 +832,11 @@ onBeforeUnmount(() => {
             :class="{
               'wd-ovl__row--active': item.active,
               'wd-ovl__row--passive': !item.active,
+              'wd-ovl__row--dragging': dragSlug === item.name,
             }"
+            :draggable="editMode"
+            @dragstart="onDragStart($event, item.name)"
+            @dragend="onDragEnd"
             @click="toggleLayer(<OverlaySwitchItem>(item as unknown))"
           >
             <div class="wd-ovl__row-info">
@@ -906,9 +906,8 @@ onBeforeUnmount(() => {
         </template>
 
         <!-- Group selector: spans the box width, distinct from layer buttons.
-             Hidden in edit mode (cycling groups while editing is a no-op). -->
+             In edit mode it cycles ALL groups (hidden included). -->
         <button
-          v-if="!editMode"
           class="wd-ovl__group-btn"
           :aria-label="overlayStore.activeGroupName(t)"
           :title="overlayStore.activeGroupName(t)"
@@ -1168,6 +1167,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   left: 0;
   z-index: 3;
   display: block;
+  flex: none; // never shrink — a collapsed fade keeps its -12px margin and pulls the first row out of view
   height: 12px;
   pointer-events: none;
   transition: opacity 0.25s $ease;
@@ -1195,7 +1195,9 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 .wd-ovl__rows {
   position: relative; // anchor for the absolute fades
   flex: 0 1 auto; // auto-grow to content (mini drives the height)
-  max-height: calc(var(--mini-rows, 4) * 42px + 8px); // cap at mini content height
+  // EXACT mini content height: rows pitch 42 + padding 6 + promoted block.
+  // Matching natural height means expanding NEVER shifts the icons.
+  max-height: calc((var(--mini-rows, 4) + var(--prom-count, 0)) * 42px + 6px + var(--prom-extra, 0px));
   overflow-y: auto;
   min-height: 0;
   overflow-y: auto;
@@ -1552,9 +1554,8 @@ body.body--dark .wd-ovl__row-name {
 
 // ── EDIT MODE: maximized box ───────────────────────────────────────────
 .wd-ovl__box--edit {
-  // MAXIMIZE: fill available space
+  // As tall as the CONTENT needs, capped below the top map controls
   width: min(320px, calc(100vw - 48px)) !important;
-  height: calc(100dvh - 160px);
   max-height: calc(100dvh - 160px) !important;
 
   // Toolbar + edit bar become IN-FLOW headers (maximized box has room)
@@ -1643,6 +1644,15 @@ body.body--dark .wd-ovl__row-name {
   opacity: 0.4;
   cursor: grab;
   pointer-events: auto;
+}
+
+// ── Drop line: gold insertion marker at the exact drop position ────────
+.wd-ovl__row--drop-above {
+  box-shadow: inset 0 2px 0 0 #bfab2d;
+}
+
+.wd-ovl__row--drop-below {
+  box-shadow: inset 0 -2px 0 0 #bfab2d;
 }
 
 // ── Drop zone on "All layers" separator ────────────────────────────────
