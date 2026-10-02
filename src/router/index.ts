@@ -34,5 +34,20 @@ export default route(function (/* { store, ssrContext } */) {
     history: createHistory(process.env.VUE_ROUTER_BASE),
   });
 
+  // Strip the ?lang= SEO edge-hint from the address bar: the nginx/njs
+  // edge consumed it to localize the injected meta tags of the initial
+  // HTML (boot/i18n also reads it as a fallback language hint). The
+  // canonical never includes the query, so crawlers collapse param URLs
+  // anyway — removing it keeps what users see, copy and share clean.
+  // Runs through the router (not history.replaceState) so it wins over
+  // components re-syncing the URL from their parsed route.
+  let langParamStripped = false;
+  Router.afterEach(to => {
+    if (langParamStripped || !('lang' in to.query)) return;
+    langParamStripped = true;
+    const { lang: _lang, ...query } = to.query;
+    void Router.replace({ query, hash: to.hash });
+  });
+
   return Router;
 });

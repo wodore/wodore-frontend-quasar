@@ -27,6 +27,17 @@ export const SUPPORTED_LOCALES: Locales = ['de', 'en', 'fr', 'it'];
 export const FALLBACK_LOCALE: Locale = 'en';
 
 /**
+ * Locale-prefixed routes, derived from the supported locales: the
+ * fallback/default language serves the bare (unprefixed) URL, every
+ * other language gets a /xx/ path prefix (SEO language routing —
+ * mirrors the backend DEFAULT_LANG + prefixed sitemap variants and
+ * the njs edge in docker/seo.js).
+ */
+export const LANG_PREFIXES: Locales = SUPPORTED_LOCALES.filter(
+  (locale) => locale !== FALLBACK_LOCALE,
+);
+
+/**
  * BCP-47 tags used for Intl formatting (month names etc.) per app locale.
  * Swiss variants where they exist.
  */

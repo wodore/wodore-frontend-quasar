@@ -1,5 +1,7 @@
 import { RouteLocation, RouteLocationRaw, RouteRecordRaw } from 'vue-router';
 
+import { FALLBACK_LOCALE, LANG_PREFIXES } from '@/i18n';
+
 function redirectFix(to: RouteLocation, newRouteName: string): RouteLocationRaw {
   return {
     //path: to.path.replace(oldPath, newPath),
@@ -29,11 +31,16 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
-    // German is the default and stays unprefixed — /de/... 301s to bare
-    // (the edge does the same for crawlers; this covers SPA-side
-    // navigation).
-    path: '/de/:rest(.*)*',
-    redirect: to => ({ path: to.path.replace(/^\/de/, '') || '/', query: to.query, hash: to.hash }),
+    // The default language (English) is served unprefixed —
+    // /en/... redirects to bare (the edge does the same for crawlers;
+    // this covers SPA-side navigation). Prefixes come from the i18n
+    // config so this stays in sync with it.
+    path: `/${FALLBACK_LOCALE}/:rest(.*)*`,
+    redirect: to => ({
+      path: to.path.replace(new RegExp(`^/${FALLBACK_LOCALE}`), '') || '/',
+      query: to.query,
+      hash: to.hash,
+    }),
   },
   {
     path: '/m/hut/:slug',
@@ -44,11 +51,12 @@ const routes: RouteRecordRaw[] = [
     redirect: to => redirectFix(to, 'map'),
   },
   {
-    // Locale-prefixed public routes (cartoload pattern): German, the
-    // default, stays at the bare path; /en|/fr|/it get the optional
-    // prefix. The prefix is the initial-language hint — the stored user
-    // preference still wins for display (see boot/i18n.ts).
-    path: '/:langPrefix(en|fr|it)?',
+    // Locale-prefixed public routes (cartoload pattern): English, the
+    // default, stays at the bare path; every other language in the i18n
+    // config gets the optional prefix. The prefix is the initial-language
+    // hint — the stored user preference still wins for display (see
+    // boot/i18n.ts).
+    path: `/:langPrefix(${LANG_PREFIXES.join('|')})?`,
     component: () => import('layouts/MainLayout.vue'),
     children: [
       {
