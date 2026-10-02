@@ -1195,12 +1195,17 @@
   resolved "https://registry.npmjs.org/@bufbuild/protobuf/-/protobuf-2.11.0.tgz"
   integrity sha512-sBXGT13cpmPR5BMgHE6UEEfEaShh5Ror6rfN3yEK5si7QVrtZg8LEPQb0VVhiLRUslD2yLnXtnRzG035J/mZXQ==
 
-"@capacitor/core@^8.5.2":
-  version "8.5.2"
-  resolved "https://registry.yarnpkg.com/@capacitor/core/-/core-8.5.2.tgz#3e347a4d5a0c341995d0a26d4fdce156bf65b330"
-  integrity sha512-agnQbGdhGw/KZFuLf7H9SY2o+oE7upkr/WPQsYaokXP6f9chaE8iVmbKkfN6SVl4w3pmz7oZ3Ur1hbkmy1hx+w==
+"@capacitor/core@^7.0.0":
+  version "7.6.9"
+  resolved "https://registry.yarnpkg.com/@capacitor/core/-/core-7.6.9.tgz#5f33353b06bfa7dbb727046a40ee9fc36f8e7d9c"
+  integrity sha512-4DOh/xySC9S5ryhUIqpOppasIyi2WiTdF0JuZ/2DEs+vf5eunRzHDdNYBp1snA3faHciTw/3SVGXfR+WkYxsMA==
   dependencies:
     tslib "^2.1.0"
+
+"@capawesome/capacitor-app-update@^7.2.0":
+  version "7.2.0"
+  resolved "https://registry.yarnpkg.com/@capawesome/capacitor-app-update/-/capacitor-app-update-7.2.0.tgz#51a70a405d73c62e3f670db22e6fa17c4aebc00c"
+  integrity sha512-fwPxR9tV5qecn3FSgwS5wBwlHDV9JND5dnY1iqIYnqRG2s/Oq0h32u4hV6+/zpDARJFMZycb3pddEfwLwhglEg==
 
 "@capawesome/capacitor-maplibre@^0.2.0":
   version "0.2.0"

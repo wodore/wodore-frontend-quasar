@@ -134,47 +134,21 @@ function closeMenu() {
 </style>
 
 <template>
-  <div class="q-ml-md q-mr-md" style="max-width: 140px; max-height: 40px">
+  <div class="q-ml-md q-mr-md" style="max-width: 140px; max-height: 100%">
     <!-- Readonly input field trigger -->
     <div id="select-place-search-location" style="flex: 1; position: relative">
-      <q-input
-        readonly
-        model-value=""
-        dense
-        :placeholder="$t('search') + ' ...'"
-        class="toolbar-font wd-search-field"
-        @click="showMenu = true"
-      >
-        <template v-slot:prepend>
-          <q-icon @click="showMenu = true" class="text-icon cursor-pointer" size="26px">
-            <IconEvaSearchOutline />
-          </q-icon>
-        </template>
-      </q-input>
+      <button class="wd-topbar__user" :aria-label="$t('search')" @click="showMenu = true">
+        <q-icon size="sm" class="text-icon" name="wd-search-outline" />
+      </button>
     </div>
 
     <!-- Q-menu with draggable content -->
-    <q-menu
-      :offset="[10, 1]"
-      no-parent-event
-      anchor="top start"
-      target="#select-place-search-location"
-      v-model="showMenu"
-      transition-show="jump-down"
-      transition-hide="jump-up"
-      :persistent="isSticky"
-    >
-      <div
-        ref="menuContentRef"
-        :class="{ 'menu-content-sticky': isSticky }"
-        :style="isSticky ? draggableStyle : undefined"
-        style="position: relative"
-      >
+    <q-menu :offset="[10, 10]" no-parent-event anchor="top start" target="#select-place-search-location"
+      v-model="showMenu" transition-show="jump-down" transition-hide="jump-up" :persistent="isSticky">
+      <div ref="menuContentRef" :class="{ 'menu-content-sticky': isSticky }"
+        :style="isSticky ? draggableStyle : undefined" style="position: relative">
         <!-- Control buttons -->
-        <div
-          class="q-ma-xs z-top text-icon row q-gutter-xs"
-          style="position: absolute; top: 6px; right: 6px"
-        >
+        <div class="q-ma-xs z-top text-icon row q-gutter-xs" style="position: absolute; top: 6px; right: 6px">
           <!-- Pin/Drag handle -->
           <q-btn v-if="!isSticky" dense round flat class="wd-toolbar-btn" @click="toggleSticky">
             <q-icon size="sm">
@@ -182,16 +156,8 @@ function closeMenu() {
             </q-icon>
             <q-tooltip :delay="1000">{{ $t('pin_something') }}</q-tooltip>
           </q-btn>
-          <q-btn
-            v-else
-            dense
-            round
-            flat
-            class="wd-toolbar-btn"
-            ref="dragHandleRef"
-            style="cursor: move"
-            @click="handleDragHandleClick"
-          >
+          <q-btn v-else dense round flat class="wd-toolbar-btn" ref="dragHandleRef" style="cursor: move"
+            @click="handleDragHandleClick">
             <q-icon size="sm">
               <IconEvaMoveOutline />
             </q-icon>

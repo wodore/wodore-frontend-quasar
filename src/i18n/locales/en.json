@@ -71,8 +71,7 @@
       "webgl_hint": "This happens when your device or browser doesn't support WebGL.",
       "generic_message": "An error occurred while loading the map",
       "reload": "Reload Page"
-    },
-    "basemap_fallback": "Basemap unavailable — switched to Swisstopo"
+    }
   },
   "layers": "Layers",
   "maps": "Maps",
@@ -255,7 +254,7 @@
     "one_man_project_term": "one-man project"
   },
   "select_date": {
-    "placeholder": "Select date",
+    "placeholder": "Availability",
     "error_title": "Oh no, nothing works anymore!",
     "error_restricted": "The SAC has restricted access!",
     "error_contact": "Feel free to",
@@ -265,7 +264,10 @@
     "alternative": "Alternatively:",
     "or": "or",
     "not_available": "Currently unavailable",
-    "placeholder_short": "Date"
+    "placeholder_short": "Availability",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "choose_hint": "Choose date"
   },
   "overlay_config": {
     "reset_done": "Settings reset",
@@ -369,7 +371,19 @@
       "label": "Mountain bike",
       "desc": "Mountain bike routes from OpenStreetMap, shown via Waymarked Trails",
       "link": "Switzerland mountain bike network"
-    }
+    },
+    "groups": {
+      "hiking": {
+        "name": "Hiking"
+      },
+      "cycling": {
+        "name": "Cycling"
+      },
+      "snowsport": {
+        "name": "Snowsport"
+      }
+    },
+    "all_layers": "All layers"
   },
   "basemap": "Basemap",
   "basemaps": {
@@ -458,5 +472,11 @@
     "dark": "Dark"
   },
   "basemap_lock": "Lock basemap switcher",
-  "basemap_unlock": "Unlock basemap switcher"
+  "basemap_unlock": "Unlock basemap switcher",
+  "api_version_deprecated_native": "A newer app version is available — please update the app. Support for this version ends:",
+  "api_version_deprecated_web": "A newer version is available — please reload the page. Support for this version ends:",
+  "api_version_unsupported_native": "This app version is no longer supported by the server. Please update the app.",
+  "api_version_unsupported_web": "This version is no longer supported by the server. Please reload the page.",
+  "api_version_reload": "Reload",
+  "api_version_update": "Update app"
 }

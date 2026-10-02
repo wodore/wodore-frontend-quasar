@@ -1,5 +1,7 @@
 import { RouteLocation, RouteLocationRaw, RouteRecordRaw } from 'vue-router';
 
+import { FALLBACK_LOCALE, LANG_PREFIXES } from '@/i18n';
+
 function redirectFix(to: RouteLocation, newRouteName: string): RouteLocationRaw {
   return {
     //path: to.path.replace(oldPath, newPath),
@@ -37,14 +39,13 @@ const routes: RouteRecordRaw[] = [
     redirect: to => redirectFix(to, 'map'),
   },
   {
-    // Proof of concept: native MapLibre via @capawesome/capacitor-maplibre.
-    // Standalone (no layout) so only body/#q-app sit above the map.
-    path: '/poc/maplibre',
-    name: 'poc-maplibre',
-    component: () => import('pages/poc/NativeMapPoc.vue'),
-  },
-  {
-    path: '/',
+    // Locale-prefixed public routes (full-prefix model): every language
+    // in the i18n config gets an optional prefix — the indexed,
+    // self-canonical SEO URLs. The router strips the prefix after boot
+    // so users always see the bare URL; the prefix is the
+    // initial-language hint, the stored preference still wins for
+    // display (see boot/i18n.ts and router/index.ts).
+    path: `/:langPrefix(${LANG_PREFIXES.join('|')})?`,
     component: () => import('layouts/MainLayout.vue'),
     children: [
       {

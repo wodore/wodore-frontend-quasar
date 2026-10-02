@@ -1,19 +1,22 @@
 import { ref, watch, type Ref } from 'vue';
 import { clientWodore } from '@clients/index';
 import { currentLocale } from '@services/locale';
-import type { components, paths } from '@clients/wodore_v1.d';
+import type { components } from '@clients/wodore_v1.d';
 import type { HutImage } from './useHutImages';
 import { useLatestRequest } from './useLatestRequest';
 
-// Structural type from the endpoint response shapes: the image
-// endpoints inline their geojson FeatureCollection with slightly looser
-// bbox typing than the strict ImageCollectionResponse component - so
-// instead of casting, transformResponse accepts just what it reads
-// (features with image properties).
-type NearbyImagesResponse =
-  paths['/v1/geo/images/nearby']['get']['responses']['200']['content']['application/json'];
-type ImageProperties = NonNullable<NearbyImagesResponse['features'][number]['properties']>;
-type ImageCollectionResponse = { features: Array<{ properties: ImageProperties | null }> };
+// Type shortcuts from OpenAPI generated types
+type ImageProperties = components['schemas']['ImagePropertiesSchema'];
+
+/**
+ * Minimal structural payload all image endpoints' responses satisfy — the
+ * generated response types differ slightly in GeoJSON envelope fields we
+ * never read (e.g. bbox tuple widths), so only pin what transformResponse
+ * actually consumes.
+ */
+type ImagesPayload = {
+  features: ReadonlyArray<{ properties: ImageProperties | null }>;
+};
 
 /**
  * Generic image loading options
@@ -46,22 +49,12 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
   /**
    * Transform API response to HutImage array
    */
-  const transformResponse = (response: ImageCollectionResponse): HutImage[] => {
+  const transformResponse = (response: ImagesPayload): HutImage[] => {
     return response.features
       .filter(feature => feature.properties !== null)
       .map(feature => {
         // SAFETY: filtered for non-null properties directly above
-        // width/height/focal/crop were removed from the API schema
-        // (backend #206); HutImage still declares them optional — bridge.
-        const props = feature.properties! as NonNullable<(typeof feature)['properties']> & {
-          width?: number;
-          height?: number;
-          focal?: unknown;
-          crop?: unknown;
-        };
-        // SAFETY: the mapped literal is a superset of HutImage's optional
-        // fields; the double cast below bridges the local HutImage interface
-        // (which the generated client types don't match structurally).
+        const props = feature.properties!;
         return {
           id: `${props.provider.slug}_${props.source_id}`,
           provider: {
@@ -71,21 +64,20 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
             icon: props.provider.icon || null,
           },
           source_id: props.source_id,
+          source_url: props.source_url,
           attribution: props.attribution || { short: '', full: '' },
           license: props.license || { name: '', slug: '', url: null },
           author: props.author || { name: undefined, url: null },
           urls: props.urls,
+          sizes: props.sizes,
+          thumbhashes: props.thumbhashes,
           is_portrait: props.is_portrait,
           captured_at: props.captured_at,
-          width: props.width,
-          height: props.height,
           distance_m: props.distance_m,
           image_type: props.image_type,
-          focal: props.focal,
-          crop: props.crop,
           place: props.place,
           score: props.score,
-        } as unknown as HutImage;
+        } as HutImage;
       });
   };
 
@@ -130,8 +122,8 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
           images.value = [];
         }
       } else if (data) {
-        // SAFETY: generated OpenAPI response type does not carry the geojson
-        // feature shape; the runtime payload matches ImageCollectionResponse
+        // The regenerated client types this endpoint's geojson response
+        // directly (ImageCollectionResponse with typed feature properties)
         images.value = transformResponse(data);
       } else {
         images.value = [];
@@ -216,7 +208,6 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
             } else if (data) {
               // A newer request superseded this one - do not merge stale images
               if (!latest.isLatest(token)) return;
-              // SAFETY: same generated-type gap as fetchByHutSlug
               const wodoreImages = transformResponse(data);
               images.value = mergeImages(images.value, wodoreImages);
             }
@@ -237,8 +228,7 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
           console.error('Error fetching all images:', allErr);
           error.value = 'Failed to load images';
         } else if (allData) {
-          // SAFETY: same generated-type gap as fetchByHutSlug
-          const allImages = transformResponse(allData as unknown as ImageCollectionResponse);
+          const allImages = transformResponse(allData);
           images.value = mergeImages(images.value, allImages);
         }
       } catch (err) {
@@ -274,7 +264,6 @@ export function useMediaImages(options?: Ref<MediaImagesOptions> | MediaImagesOp
           console.error('Error fetching nearby images:', err);
           error.value = 'Failed to load images';
         } else if (data) {
-          // SAFETY: same generated-type gap as fetchByHutSlug
           images.value = transformResponse(data);
         }
       } catch (err) {

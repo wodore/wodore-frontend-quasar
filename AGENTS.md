@@ -42,10 +42,25 @@ Use `yarn run` command. Check `package.json` for details.
 yarn
 
 # Generate assets (API client, icons, favicons)
-yarn gen:api          # OpenAPI client from backend
-yarn gen:api-local    # OpenAPI client from local backend
+yarn gen:api          # OpenAPI client from backend (latest) + pins the API version
+yarn gen:api-local    # same, from the local backend (127.0.0.1:8000)
 yarn gen:icons        # Custom wd icons from SVG files
 yarn gen:favs         # Favicons from icongenie
+```
+
+**API version pinning**: `gen:api` generates BOTH the typed client
+(`src/clients/wodore_v1.d.ts`) and the pinned API contract version
+(`src/clients/apiVersion.ts`, re-exported by `src/services/apiVersion.ts`)
+from the same schema — types and pin cannot drift. Default = latest schema
+(`info.version`); after the backend released a new API version this absorbs
+it (pin + types bump together in the diff). To stay on / adopt a specific
+contract: `yarn gen:api-version 2026-10-01` (frozen snapshot for that date,
+works only while the backend still supports it). The pin is sent as
+`Api-Version` header on every API request; `WdApiVersionBanner` surfaces
+deprecation/retirement to the user (web/PWA: reload button incl. service
+worker activation; native: Play in-app update via
+`@capawesome/capacitor-app-update`, store entry fallback — see
+`src/services/appUpdate.ts`).
 
 # Development server (default: PWA mode on port 9000)
 yarn dev              # or yarn dev:pwa
@@ -238,7 +253,7 @@ OpenAPI schema available at:
 Generate TypeScript types from OpenAPI schema:
 
 ```bash
-yarn gen:api        # Production API
+yarn gen:api        # Production API (latest; also updates the API version pin)
 yarn gen:api-local  # Local development API
 ```
 

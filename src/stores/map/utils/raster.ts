@@ -11,6 +11,9 @@ interface getRasterStyleArgs {
   tileSize?: number;
   minZoom?: number;
   maxZoom?: number;
+  /** Source-level maxzoom: the tile server's highest zoom; MapLibre
+   * overzooms from there instead of requesting missing tiles. */
+  sourceMaxZoom?: number;
   suffix?: string;
   cdn?: boolean;
 }
@@ -22,6 +25,7 @@ export function getRasterStyle({
   tileSize = 256,
   minZoom = 0,
   maxZoom = 22,
+  sourceMaxZoom,
   suffix = 'wd-',
   cdn = false,
 }: getRasterStyleArgs): StyleSpecification {
@@ -30,11 +34,13 @@ export function getRasterStyle({
     version: 8,
     name: name,
     sources: {},
-    // Use OpenMapTiles' free glyph server — MapTiler glyphs 403 when
+    // Use OpenFreeMap's keyless glyph server — MapTiler glyphs 403 when
     // the API key is suspended/quota-exceeded, breaking all raster
-    // basemap labels. OpenMapTiles serves the same font stacks
-    // without a key.
-    glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
+    // basemap labels. OpenFreeMap serves the standard OpenMapTiles font
+    // stacks (Noto Sans family) without a key; it does NOT host the
+    // Open Sans family, so symbol layers must use Noto Sans fontstacks
+    // (see overlay-huts.ts).
+    glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
     //sprite: { id: 'default', url: 'http://localhost:9000/huts/sprite' },
     layers: [],
   };
@@ -57,6 +63,7 @@ export function getRasterStyle({
             : '') + v.replace('<NAME>', layerName)
       ),
       tileSize: tileSize,
+      ...(sourceMaxZoom !== undefined ? { maxzoom: sourceMaxZoom } : {}),
       attribution: attribution,
     };
   }

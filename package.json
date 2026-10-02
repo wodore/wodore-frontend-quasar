@@ -14,8 +14,11 @@
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
     "test:visual": "node scripts/visual-matrix.mjs",
+    "test:interaction": "playwright test tests/interaction/ --project=interaction && node scripts/link-allure-attachments.mjs",
     "test:unit:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "test:ci": "yarn test:unit && yarn test:interaction",
+    "test:snapshots-update": "playwright test tests/interaction/visual-regression.spec.ts --project=interaction --update-snapshots",
     "allure:generate": "rm -rf allure-results/merged && mkdir -p allure-results/merged && cp -R allure-results/unit/. allure-results/merged/ && if [ -d allure-results/e2e ]; then cp -R allure-results/e2e/. allure-results/merged/; fi; rm -rf allure-report && allure generate allure-results/merged",
     "allure:open": "allure open allure-report",
     "allure:clean": "rm -rf allure-results allure-report playwright-report test-results",
@@ -48,9 +51,10 @@
     "serve:ssr": "quasar serve --history --port 9000 -H localhost --cors dist/ssr/",
     "serve:pwa": "quasar serve --history --port 9000 -H localhost --cors dist/pwa/",
     "serve": "yarn run serve:pwa",
-    "gen:api": "openapi-typescript https://api.wodore.com/v1/openapi.json -o ./src/clients/wodore_v1.d.ts; yarn run format",
-    "gen:api-local": "openapi-typescript http://127.0.0.1:8000/v1/openapi.json -o ./src/clients/wodore_v1.d.ts; yarn run format",
-    "preicons:fix": "npm exec -c 'rm -rf src/extras/icons/svg/build/fixed/*'",
+    "gen:api": "node scripts/gen-api.mjs",
+    "gen:api-local": "node scripts/gen-api.mjs --local",
+    "gen:api-version": "node scripts/gen-api.mjs --version",
+    "preicons:fix": "npm exec -c 'mkdir -p src/extras/icons/svg/build/fixed && rm -rf src/extras/icons/svg/build/fixed/*'",
     "icons:fix": "yarn run oslllo-svg-fixer -s src/extras/icons/svg/source/ -d src/extras/icons/svg/build/fixed --sp",
     "pregen:icons": "yarn run icons:fix",
     "gen:icons": "fantasticon src/extras/icons/svg/build/fixed -o src/extras/icons/dist -p wd --normalize -t woff woff2",
@@ -60,8 +64,8 @@
     "gen:realfavs": "real-favicon generate src/assets/realfavgen.json src/assets/realfavgen_result.json public/realfavgen"
   },
   "dependencies": {
-    "@capacitor/core": "^8.5.2",
-    "@capawesome/capacitor-maplibre": "^0.2.0",
+    "@capacitor/core": "^7.0.0",
+    "@capawesome/capacitor-app-update": "^7.2.0",
     "@fontsource/barlow": "^5.3.0",
     "@fontsource/barlow-semi-condensed": "^5.3.0",
     "@fontsource/roboto-condensed": "^5.3",
@@ -96,7 +100,8 @@
     "vue-inline-svg": "^4.0.1",
     "vue-router": "^4",
     "vue3-text-clamp": "^0.1.2",
-    "watch": "^1.0.2"
+    "watch": "^1.0.2",
+    "@capawesome/capacitor-maplibre": "^0.2.0"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
