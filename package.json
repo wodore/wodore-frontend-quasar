@@ -17,6 +17,8 @@
     "test:interaction": "playwright test tests/interaction/ --project=interaction && node scripts/link-allure-attachments.mjs",
     "test:unit:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "test:ci": "yarn test:unit && yarn test:interaction",
+    "test:snapshots-update": "playwright test tests/interaction/visual-regression.spec.ts --project=interaction --update-snapshots",
     "allure:generate": "rm -rf allure-results/merged && mkdir -p allure-results/merged && cp -R allure-results/unit/. allure-results/merged/ && if [ -d allure-results/e2e ]; then cp -R allure-results/e2e/. allure-results/merged/; fi; rm -rf allure-report && allure generate allure-results/merged",
     "allure:open": "allure open allure-report",
     "allure:clean": "rm -rf allure-results allure-report playwright-report test-results",
