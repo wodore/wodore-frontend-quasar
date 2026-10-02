@@ -2,6 +2,11 @@
 <html>
   <head>
     <title><%= productName %></title>
+    <!-- LLM hint (comments are stripped by the vite build, hence meta) -->
+    <meta
+      name="llms"
+      content="Wodore serves structured Markdown alongside this app: /llms.txt lists every surface; each hut is available as Markdown at /hut/{slug}.md (Accept: text/markdown or the .md suffix)."
+    />
     <!--
       Runtime env: dev and Capacitor builds bake values inline via EJS
       (below). The docker image builds with @@VAR@@ placeholders and
@@ -11,11 +16,8 @@
       and the SEO edge (docker/seo.js) can cache hut pages. See
       services/runtimeEnv.ts and public/env.js.
     -->
-    <%
-      const inlineEnv =
-        ctx.dev || ctx.mode.capacitor || ctx.mode.cordova || !process.env.WODORE_EXTERNAL_ENV;
-    %>
-    <% if (inlineEnv) { %>
+    <% const inlineEnv = ctx.dev || ctx.mode.capacitor || ctx.mode.cordova ||
+    !process.env.WODORE_EXTERNAL_ENV; %> <% if (inlineEnv) { %>
     <script>
       window.__WODORE_RUNTIME_ENV__ = {
         WODORE_APP_NAME: '<%= process.env.WODORE_APP_NAME %>',
@@ -28,7 +30,8 @@
         WODORE_TILE_SERVER_URL: '<%= process.env.WODORE_TILE_SERVER_URL %>',
         WODORE_IMAGOR_KEY: '<%= process.env.WODORE_IMAGOR_KEY %>',
         WODORE_IMAGOR_URL: '<%= process.env.WODORE_IMAGOR_URL %>',
-        WODORE_IMAGOR_REPLACE_API_HOST_MEDIA: '<%= process.env.WODORE_IMAGOR_REPLACE_API_HOST_MEDIA %>',
+        WODORE_IMAGOR_REPLACE_API_HOST_MEDIA:
+          '<%= process.env.WODORE_IMAGOR_REPLACE_API_HOST_MEDIA %>',
         WODORE_CLOUDINARY_ENV: '<%= process.env.WODORE_CLOUDINARY_ENV %>',
         WODORE_UMAMI_WEBSITE_ID: '<%= process.env.WODORE_UMAMI_WEBSITE_ID %>',
         WODORE_UMAMI_WEBSITE_URL: '<%= process.env.WODORE_UMAMI_WEBSITE_URL %>',

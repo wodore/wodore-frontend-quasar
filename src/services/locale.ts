@@ -94,6 +94,12 @@ export function setLocale(locale: Locale): void {
   const resolved = resolveLocale(locale);
   i18n.global.locale.value = resolved;
   applyQuasarLangPack(resolved);
+  // Mirror the choice into a cookie so the SEO edge (nginx/njs) knows a
+  // preference exists and stops doing first-visit Accept-Language
+  // redirects (docker/seo.js). SameSite=Lax, one year.
+  if (typeof document !== 'undefined') {
+    document.cookie = `wodore_lang=${resolved};path=/;max-age=31536000;samesite=lax`;
+  }
   const settings = useUserSettingsStore();
   if (settings.uiSettings.language !== resolved) {
     settings.updateUISetting('language', resolved);
