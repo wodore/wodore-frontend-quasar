@@ -26,3 +26,17 @@ const card = data as unknown as HutCard; // or narrow field-by-field
 
 The keys are compile-time checked — renaming a backend field breaks the
 build here instead of silently mismatching at runtime.
+
+## First consumer: meteo store
+
+The meteo store narrows weather-code responses to symbol slugs only:
+
+```ts
+// Before (include_X):
+const { data } = await clientWodore.GET('/v1/meteo/weather_codes', {
+  params: { query: { include_symbols: 'slug', lang } },
+});
+
+// After (sparse fieldsets — available once the backend harmonizes):
+// Not yet wired; the include_X params still work on the current version.
+```

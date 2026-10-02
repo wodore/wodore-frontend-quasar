@@ -332,10 +332,7 @@ onUnmounted(() => {
   // Native app: pad content away from the system bars (the black bg
   // stays full-bleed behind them)
   padding-top: var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px));
-  padding-bottom: var(
-    --q-safe-area-inset-bottom,
-    env(safe-area-inset-bottom, 0px)
-  );
+  padding-bottom: var(--q-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
   transition: all 0.3s ease;
 }
 
@@ -719,7 +716,8 @@ onUnmounted(() => {
   background: #46543f; /* solid — alpha scrims read as no-bg in the audit */
   color: #fdfefd;
   padding: 2px 7px;
-  border-radius: 999px;}
+  border-radius: 999px;
+}
 
 .thumb-error-icon {
   position: absolute;

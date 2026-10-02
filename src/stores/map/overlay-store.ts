@@ -73,10 +73,13 @@ export const useOverlayStore = defineStore('overlay', () => {
   }
 
   // ── Layer groups ──────────────────────────────────────────────────────
-  const settingsStore = useUserSettingsStore() as unknown as { settings: { map: Record<string, unknown> }, updateMapSetting: (k: string, v: unknown) => void };
+  const settingsStore = useUserSettingsStore() as unknown as {
+    settings: { map: Record<string, unknown> };
+    updateMapSetting: (k: string, v: unknown) => void;
+  };
   const groupSettings = reactive<OverlayGroupSettings>(
-    (settingsStore.settings.map as Record<string, unknown>).overlayGroups as OverlayGroupSettings
-      ?? defaultOverlayGroupSettings()
+    ((settingsStore.settings.map as Record<string, unknown>)
+      .overlayGroups as OverlayGroupSettings) ?? defaultOverlayGroupSettings()
   );
 
   // Keep the settings store in sync

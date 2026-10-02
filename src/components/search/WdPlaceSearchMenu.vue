@@ -143,12 +143,27 @@ function closeMenu() {
     </div>
 
     <!-- Q-menu with draggable content -->
-    <q-menu :offset="[10, 10]" no-parent-event anchor="top start" target="#select-place-search-location"
-      v-model="showMenu" transition-show="jump-down" transition-hide="jump-up" :persistent="isSticky">
-      <div ref="menuContentRef" :class="{ 'menu-content-sticky': isSticky }"
-        :style="isSticky ? draggableStyle : undefined" style="position: relative">
+    <q-menu
+      :offset="[10, 10]"
+      no-parent-event
+      anchor="top start"
+      target="#select-place-search-location"
+      v-model="showMenu"
+      transition-show="jump-down"
+      transition-hide="jump-up"
+      :persistent="isSticky"
+    >
+      <div
+        ref="menuContentRef"
+        :class="{ 'menu-content-sticky': isSticky }"
+        :style="isSticky ? draggableStyle : undefined"
+        style="position: relative"
+      >
         <!-- Control buttons -->
-        <div class="q-ma-xs z-top text-icon row q-gutter-xs" style="position: absolute; top: 6px; right: 6px">
+        <div
+          class="q-ma-xs z-top text-icon row q-gutter-xs"
+          style="position: absolute; top: 6px; right: 6px"
+        >
           <!-- Pin/Drag handle -->
           <q-btn v-if="!isSticky" dense round flat class="wd-toolbar-btn" @click="toggleSticky">
             <q-icon size="sm">
@@ -156,8 +171,16 @@ function closeMenu() {
             </q-icon>
             <q-tooltip :delay="1000">{{ $t('pin_something') }}</q-tooltip>
           </q-btn>
-          <q-btn v-else dense round flat class="wd-toolbar-btn" ref="dragHandleRef" style="cursor: move"
-            @click="handleDragHandleClick">
+          <q-btn
+            v-else
+            dense
+            round
+            flat
+            class="wd-toolbar-btn"
+            ref="dragHandleRef"
+            style="cursor: move"
+            @click="handleDragHandleClick"
+          >
             <q-icon size="sm">
               <IconEvaMoveOutline />
             </q-icon>
