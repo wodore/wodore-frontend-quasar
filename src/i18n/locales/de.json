@@ -371,7 +371,19 @@
       "label": "Mountainbike",
       "desc": "Mountainbike-Routen aus OpenStreetMap, angezeigt über Waymarked Trails",
       "link": "Mountainbikeland Schweiz"
-    }
+    },
+    "groups": {
+      "hiking": {
+        "name": "Wandern"
+      },
+      "cycling": {
+        "name": "Radfahren"
+      },
+      "snowsport": {
+        "name": "Wintersport"
+      }
+    },
+    "all_layers": "Alle Ebenen"
   },
   "basemap": "Basiskarte",
   "basemaps": {

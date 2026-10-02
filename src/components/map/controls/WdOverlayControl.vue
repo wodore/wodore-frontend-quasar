@@ -187,6 +187,26 @@ function layerIcon(name: string): string {
   );
 }
 
+/** Group icon for the selector (from the predefined overlay icons) */
+function groupIcon(iconSlug: string): string {
+  return layerIcon(iconSlug);
+}
+
+/** Layers to show in the mini strip (active group only) */
+const miniLayers = computed(() => {
+  return overlayStore.activeGroupLayers();
+});
+
+/** Layers for the expanded view "All layers" section */
+const expandedOtherLayers = computed(() => {
+  return overlayStore.otherLayers();
+});
+
+/** Handle group selector tap */
+function onGroupSelectorTap(): void {
+  overlayStore.cycleGroup();
+}
+
 // ── Layer management (ported 1:1 from the old WdOverlaySwitch) ────────────
 
 function setOverlayVisibility(overlay: OverlaySwitchItem): boolean {
@@ -445,7 +465,7 @@ onBeforeUnmount(() => {
           @pointerup="onRowsPointerUp"
           @pointerleave="onRowsPointerUp"
         >
-          <div v-for="item in overlayStore.overlays" :key="item.name" v-show="item.show" class="wd-ovl__row" :class="{
+          <div v-for="item in miniLayers" :key="item.name" v-show="item.show" class="wd-ovl__row" :class="{
             'wd-ovl__row--active': item.active,
             'wd-ovl__row--passive': !item.active,
           }" @click="onRowClick(<OverlaySwitchItem>(item as unknown))">
@@ -480,7 +500,75 @@ onBeforeUnmount(() => {
               </span>
             </span>
           </div>
+          <!-- All layers section (inside the scrollable rows) -->
+        <!-- All layers section (expanded only, below the group layers) -->
+        <template v-if="expanded">
+          <div class="wd-ovl__all-sep">
+            <span class="wd-ovl__all-label">{{ t('overlays.all_layers') }}</span>
+          </div>
+          <div
+            v-for="item in expandedOtherLayers"
+            :key="item.name"
+            v-show="item.show"
+            class="wd-ovl__row wd-ovl__row--other"
+            :class="{
+              'wd-ovl__row--active': item.active,
+              'wd-ovl__row--passive': !item.active,
+            }"
+            @click="toggleLayer(<OverlaySwitchItem>(item as unknown))"
+          >
+            <div class="wd-ovl__row-info">
+              <button
+                v-if="hasInfo(item.name)"
+                class="wd-ovl__row-action wd-ovl__row-action--info"
+                :aria-label="`${item.label} info`"
+                @click.stop="openConfig(item.name, 'legend')"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 11v5M12 8h.01" />
+                </svg>
+              </button>
+              <span class="wd-ovl__row-name">{{ item.label }}</span>
+              <button
+                v-if="hasFilterConfig(item.name)"
+                class="wd-ovl__row-action"
+                :aria-label="`${item.label} filter`"
+                @click.stop="openConfig(item.name, 'filter')"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z" />
+                </svg>
+              </button>
+            </div>
+            <span
+              class="wd-ovl__icon"
+              :class="{
+                'wd-ovl__icon--active': item.active,
+                'wd-ovl__icon--inactive': !item.active,
+              }"
+              :aria-label="item.label"
+              role="button"
+              :aria-pressed="item.active"
+              @touchstart.passive="onSwipeStart"
+              @touchend.passive="onSwipeEnd"
+            >
+              <q-icon :name="layerIcon(item.icon)" size="20px" />
+            </span>
+          </div>
+        </template>
         </div>
+
+        <!-- Group selector (fixed at the bottom, above the more button) -->
+        <button
+          class="wd-ovl__group-btn"
+          :aria-label="overlayStore.activeGroupName(t)"
+          :title="overlayStore.activeGroupName(t)"
+          @click.stop="onGroupSelectorTap"
+        >
+          <q-icon :name="layerIcon(overlayStore.activeGroupIcon())" size="20px" />
+        </button>
+
 
         <!-- Scroll thumb at BOX level (the rows scroll-clip ate it inside);
              rides exactly on the box's right border. Always visible while
@@ -943,6 +1031,46 @@ body.body--dark .wd-ovl__row-name {
 
   &:hover {
     background: var(--wd-ctl-hover);
+  }
+}
+
+// ── Group selector (fixed at the bottom, above the more button) ─────────
+.wd-ovl__group-btn {
+  @include chip.control;
+  width: 40px;
+  height: 36px;
+  margin: 2px 4px;
+  flex: none;
+  pointer-events: auto;
+}
+
+// ── "All layers" separator (expanded view) ───────────────────────────────
+.wd-ovl__all-sep {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 4px;
+  border-top: 1px solid var(--wd-ctl-border);
+  margin-top: 4px;
+  flex: none;
+}
+
+.wd-ovl__all-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--wd-ctl-ink);
+  opacity: 0.78;
+}
+
+// Other-group rows: faded
+.wd-ovl__row--other {
+  .wd-ovl__row-name {
+    opacity: 0.6;
+  }
+  .wd-ovl__icon {
+    opacity: 0.7;
   }
 }
 

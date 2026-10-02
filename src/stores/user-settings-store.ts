@@ -37,6 +37,7 @@ export interface UserSettings {
     defaultZoom: number;
     minZoom: number;
     maxZoom: number;
+    overlayGroups?: import('./map/utils/layer-groups').OverlayGroupSettings;
   };
 }
 

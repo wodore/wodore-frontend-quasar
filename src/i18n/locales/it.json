@@ -371,7 +371,19 @@
       "label": "Mountain bike",
       "desc": "Itinerari MTB da OpenStreetMap, mostrati via Waymarked Trails",
       "link": "Rete Svizzera in mountain bike"
-    }
+    },
+    "groups": {
+      "hiking": {
+        "name": "Escursionismo"
+      },
+      "cycling": {
+        "name": "Ciclismo"
+      },
+      "snowsport": {
+        "name": "Sport invernali"
+      }
+    },
+    "all_layers": "Tutti i livelli"
   },
   "basemap": "Mappa di base",
   "basemaps": {
