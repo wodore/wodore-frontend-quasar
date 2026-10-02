@@ -12,6 +12,8 @@
  * (basemap switches create a new style → layers must be re-added).
  */
 import { ref, watch, onMounted, onBeforeUnmount, computed, nextTick } from 'vue';
+import { useQuasar } from 'quasar';
+import { isDefaultGroupSlug, resetGroupToDefault } from '@stores/map/utils/layer-groups';
 import { useI18n } from 'vue-i18n';
 import { LocalStorage } from 'quasar';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
@@ -24,6 +26,7 @@ import { OpacitySpecification, OverlaySwitchItem } from '@stores/map/utils/inter
 import type { LayerSpecification, PropertyValueSpecification, Map } from 'maplibre-gl';
 
 const { t } = useI18n();
+const $q = useQuasar();
 const overlayStore = useOverlayStore();
 const basemapStore = useBasemapStore();
 const configStore = useOverlayConfigStore();
@@ -57,6 +60,7 @@ function removeLayerFromGroup(slug: string): void {
   group.layerSlugs = group.layerSlugs.filter(s => s !== slug);
   group.activeLayerSlugs = group.activeLayerSlugs.filter(s => s !== slug);
   overlayStore.syncGroupSettings();
+  markEdited();
 }
 
 /** Add a layer to the active group */
@@ -67,6 +71,7 @@ function addLayerToGroup(slug: string): void {
   if (!group || group.layerSlugs.includes(slug)) return;
   group.layerSlugs.push(slug);
   overlayStore.syncGroupSettings();
+  markEdited();
 }
 
 // ── Pointer-based drag ordering (edit mode) ────────────────────────────
@@ -191,18 +196,41 @@ function confirmEdit(): void {
 }
 
 function toggleEditMode(): void {
-  if (!editMode.value) updateEditCap();
-  if (editMode.value && hasEdits.value) {
-    const save = window.confirm('Save changes?');
-    if (!save) {
-      // Revert to snapshot
-      overlayStore.groupSettings.groups = JSON.parse(snapshotGroups.value);
-      overlayStore.syncGroupSettings();
-    }
+  if (!editMode.value) {
+    updateEditCap();
+    editMode.value = true;
+    takeSnapshot();
+    hasEdits.value = false;
+    return;
   }
-  editMode.value = !editMode.value;
-  if (editMode.value) takeSnapshot();
-  else hasEdits.value = false;
+  if (hasEdits.value) {
+    // 3-way: Save / Discard / dismiss (esc or backdrop = keep editing)
+    let action: 'save' | 'discard' | null = null;
+    $q.dialog({
+      title: t('overlays.edit_unsaved_title'),
+      message: t('overlays.edit_unsaved_message'),
+      ok: { label: t('overlays.edit_save'), unelevated: true, color: 'positive' },
+      cancel: { label: t('overlays.edit_discard'), flat: true },
+    })
+      .onOk(() => { action = 'save'; })
+      .onCancel(() => { action = 'discard'; })
+      .onDismiss(() => {
+        if (action === 'save') {
+          editMode.value = false;
+          hasEdits.value = false;
+        } else if (action === 'discard') {
+          if (snapshotGroups.value) {
+            overlayStore.groupSettings.groups = JSON.parse(snapshotGroups.value);
+            overlayStore.syncGroupSettings();
+          }
+          editMode.value = false;
+          hasEdits.value = false;
+        }
+        // action === null: dismissed without choice → keep editing
+      });
+    return;
+  }
+  editMode.value = false;
 }
 
 function markEdited(): void {
@@ -211,12 +239,23 @@ function markEdited(): void {
 
 /** Add a new group */
 function addNewGroup(): void {
-  const name = window.prompt('New group name');
-  if (!name || !name.trim()) return;
+  $q.dialog({
+    title: t('overlays.group_add'),
+    prompt: { model: '', type: 'text', outlined: true, label: t('overlays.group_name') },
+    cancel: true,
+    persistent: false,
+  }).onOk((name: string | number | null) => {
+    const n = String(name ?? '').trim();
+    if (!n) return;
+    addGroupWithName(n);
+  });
+}
+
+function addGroupWithName(name: string): void {
   const group = {
     id: typeof window !== 'undefined' && window.crypto?.randomUUID ? window.crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-    slug: name.trim().toLowerCase().replace(/\s+/g, '-'),
-    name: name.trim(),
+    slug: name.toLowerCase().replace(/\s+/g, '-'),
+    name,
     icon: 'hiking',
     layerSlugs: [],
     activeLayerSlugs: [],
@@ -229,6 +268,7 @@ function addNewGroup(): void {
   overlayStore.groupSettings.activeGroupId = group.id;
   overlayStore.syncGroupSettings();
   markEdited();
+  markEdited();
 }
 
 /** Rename the active group (prompt) */
@@ -237,10 +277,38 @@ function startRename(): void {
     g => g.id === overlayStore.groupSettings.activeGroupId
   );
   if (!group) return;
-  const newName = window.prompt('Group name', overlayStore.activeGroupName(t));
-  if (newName && newName.trim()) {
-    group.name = newName.trim();
+  $q.dialog({
+    title: t('overlays.group_rename'),
+    prompt: { model: overlayStore.activeGroupName(t), type: 'text', outlined: true, label: t('overlays.group_name') },
+    cancel: true,
+    persistent: false,
+  }).onOk((name: string | number | null) => {
+    const n = String(name ?? '').trim();
+    if (n) {
+      group.name = n;
+      overlayStore.syncGroupSettings();
+      markEdited();
+    }
+  });
+}
+
+/** Is the active group one of the predefined (resettable) groups? */
+const isDefaultGroup = computed(() => {
+  const g = overlayStore.groupSettings.groups.find(
+    x => x.id === overlayStore.groupSettings.activeGroupId
+  );
+  return g ? isDefaultGroupSlug(g.slug) : false;
+});
+
+/** Reset the active group to its predefined definition */
+function resetGroup(): void {
+  const group = overlayStore.groupSettings.groups.find(
+    g => g.id === overlayStore.groupSettings.activeGroupId
+  );
+  if (!group) return;
+  if (resetGroupToDefault(group)) {
     overlayStore.syncGroupSettings();
+    markEdited();
   }
 }
 
@@ -252,6 +320,7 @@ function hideGroup(): void {
   if (!group) return;
   group.hidden = true;
   overlayStore.syncGroupSettings();
+  markEdited();
   // Cycle to the next visible group
   overlayStore.cycleGroup();
 }
@@ -262,10 +331,21 @@ function confirmDeleteGroup(): void {
     g => g.id === overlayStore.groupSettings.activeGroupId
   );
   if (!group) return;
-  const confirmed = window.confirm(
-    `Delete "${overlayStore.activeGroupName(t)}"? Layers will be moved to "All layers".`
+  $q
+    .dialog({
+      title: t('overlays.group_delete'),
+      message: t('overlays.group_delete_confirm', { name: overlayStore.activeGroupName(t) }),
+      cancel: true,
+      ok: { label: t('overlays.group_delete'), unelevated: true, color: 'negative' },
+    })
+    .onOk(() => deleteActiveGroup());
+}
+
+function deleteActiveGroup(): void {
+  const group = overlayStore.groupSettings.groups.find(
+    g => g.id === overlayStore.groupSettings.activeGroupId
   );
-  if (!confirmed) return;
+  if (!group) return;
   group.removed = true;
   markEdited();
   // Removed group's layers return to ungrouped (they stay in the flat
@@ -758,6 +838,14 @@ onBeforeUnmount(() => {
             @click.stop="confirmDeleteGroup">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
               <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z" />
+            </svg>
+          </button>
+          <button v-if="isDefaultGroup" class="wd-ovl__edit-btn" :aria-label="t('overlays.group_reset')" :title="t('overlays.group_reset')"
+            @click.stop="resetGroup">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12a9 9 0 1 0 2.6-6.4" />
+              <path d="M3 4v4h4" />
+              <path d="M12 8v4l3 2" />
             </svg>
           </button>
           <span class="wd-ovl__edit-sep" />

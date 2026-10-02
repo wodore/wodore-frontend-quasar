@@ -388,7 +388,14 @@
     "group_hide": "Hide group",
     "group_delete": "Delete group",
     "group_add": "Add group",
-    "edit_cancel": "Cancel"
+    "edit_cancel": "Cancel",
+    "group_reset": "Reset to default",
+    "group_name": "Group name",
+    "edit_unsaved_title": "Save changes?",
+    "edit_unsaved_message": "You have unsaved changes to your groups.",
+    "edit_save": "Save",
+    "edit_discard": "Discard",
+    "group_delete_confirm": "Delete \"{name}\"? Its layers return to All layers."
   },
   "basemap": "Basemap",
   "basemaps": {

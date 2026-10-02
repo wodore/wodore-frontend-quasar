@@ -89,6 +89,25 @@ export function createDefaultGroups(): LayerGroup[] {
   return groups.map(g => ({ ...g, id: uid() }));
 }
 
+/** Whether a group slug belongs to the predefined (resettable) groups */
+export function isDefaultGroupSlug(slug: string): boolean {
+  return createDefaultGroups().some(g => g.slug === slug);
+}
+
+/** Reset a user group to its predefined definition (layers, name, icon,
+ *  un-hide). Defaults are recomputed on every call — app updates that
+ *  change the predefined groups flow into resets automatically. */
+export function resetGroupToDefault(group: LayerGroup): boolean {
+  const def = createDefaultGroups().find(g => g.slug === group.slug);
+  if (!def) return false;
+  group.layerSlugs = [...def.layerSlugs];
+  group.activeLayerSlugs = [...def.activeLayerSlugs];
+  group.name = def.name;
+  group.icon = def.icon;
+  group.hidden = false;
+  return true;
+}
+
 export function defaultOverlayGroupSettings(): OverlayGroupSettings {
   const groups = createDefaultGroups();
   return {

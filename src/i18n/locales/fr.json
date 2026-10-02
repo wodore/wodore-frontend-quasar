@@ -388,7 +388,14 @@
     "group_hide": "Masquer le groupe",
     "group_delete": "Supprimer le groupe",
     "group_add": "Ajouter un groupe",
-    "edit_cancel": "Annuler"
+    "edit_cancel": "Annuler",
+    "group_reset": "Réinitialiser",
+    "group_name": "Nom du groupe",
+    "edit_unsaved_title": "Enregistrer les modifications ?",
+    "edit_unsaved_message": "Vous avez des modifications non enregistrées de vos groupes.",
+    "edit_save": "Enregistrer",
+    "edit_discard": "Annuler",
+    "group_delete_confirm": "Supprimer « {name} » ? Ses couches reviennent dans « Toutes les couches »."
   },
   "basemap": "Fond de carte",
   "basemaps": {

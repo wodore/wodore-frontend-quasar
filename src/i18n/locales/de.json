@@ -388,7 +388,14 @@
     "group_hide": "Gruppe ausblenden",
     "group_delete": "Gruppe löschen",
     "group_add": "Gruppe hinzufügen",
-    "edit_cancel": "Abbrechen"
+    "edit_cancel": "Abbrechen",
+    "group_reset": "Zurücksetzen",
+    "group_name": "Gruppenname",
+    "edit_unsaved_title": "Änderungen speichern?",
+    "edit_unsaved_message": "Es gibt ungespeicherte Änderungen an deinen Gruppen.",
+    "edit_save": "Speichern",
+    "edit_discard": "Verwerfen",
+    "group_delete_confirm": "\"{name}\" löschen? Die Ebenen kehren zu \"Alle Ebenen\" zurück."
   },
   "basemap": "Basiskarte",
   "basemaps": {
