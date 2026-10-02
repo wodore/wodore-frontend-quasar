@@ -16,6 +16,23 @@
 
 const SHELL_URI = '/_seo/shell';
 
+// Locale-prefixed routes: /en|/fr|/it/... (German, the default, stays
+// at the root — cartoload-style prefix_default_language=False).
+var LANG_RE = /^\/(en|fr|it)(\/|$)/;
+var COOKIE_RE = /(?:^|;\s*)wodore_lang=/;
+
+function parseAcceptLanguage(header) {
+  // Best matching prefix from a simple Accept-Language header
+  // ("fr-CH,fr;q=0.9,en;q=0.8" → fr). null when nothing matches.
+  if (!header) return null;
+  var m = /^\s*([a-z]{2})/i.exec(header);
+  var code = m ? m[1].toLowerCase() : '';
+  if (code === 'de' || code === 'en' || code === 'fr' || code === 'it') {
+    return code;
+  }
+  return null;
+}
+
 function esc(s) {
   return String(s)
     .replace(/&/g, '&amp;')
@@ -24,11 +41,24 @@ function esc(s) {
     .replace(/"/g, '&quot;');
 }
 
-function headBlock(m) {
+function headBlock(m, requestPath, host) {
   var parts = [];
   parts.push('<title>' + esc(m.name) + '</title>');
   parts.push('<meta name="description" content="' + esc(m.description) + '">');
-  parts.push('<link rel="canonical" href="' + esc(m.page_url) + '">');
+  // Canonical: the full prefixed URL the crawler requested.
+  var canonical = 'https://' + host + requestPath;
+  parts.push('<link rel="canonical" href="' + esc(canonical) + '">');
+  // hreflang cluster: bare = de + x-default, prefixed for the rest.
+  var barePath = requestPath.replace(LANG_RE, '/');
+  var bare = 'https://' + host + barePath;
+  var alternates = ['de', 'en', 'fr', 'it'].map(function (code) {
+    var href = code === 'de' ? bare : 'https://' + host + '/' + code + barePath;
+    return '<link rel="alternate" hreflang="' + code + '" href="' + esc(href) + '">';
+  });
+  alternates.push(
+    '<link rel="alternate" hreflang="x-default" href="' + esc(bare) + '">'
+  );
+  parts.push(alternates.join(''));
   parts.push('<meta property="og:site_name" content="Wodore">');
   parts.push('<meta property="og:title" content="' + esc(m.name) + '">');
   parts.push('<meta property="og:description" content="' + esc(m.description) + '">');
@@ -63,9 +93,9 @@ function stripDefaults(html) {
     .replace(/<link\s[^>]*rel=["']canonical["'][^>]*>/gi, '');
 }
 
-function inject(shell, m) {
+function inject(shell, m, requestPath, host) {
   var html = stripDefaults(shell);
-  var block = '\n    ' + headBlock(m) + '\n  ';
+  var block = '\n    ' + headBlock(m, requestPath, host) + '\n  ';
   if (/<head[^>]*>/i.test(html)) {
     html = html.replace(/<head[^>]*>/i, function (h) {
       return h + block;
@@ -114,10 +144,45 @@ function serve(r, body) {
 }
 
 function hut(r) {
-  var slug = r.uri.replace(/^\/hut\//, '').replace(/\/+$/, '');
-  if (!slug) {
+  // Locale prefix: /en|/fr|/it/hut/{slug} (German = bare, /de/ 301s to
+  // bare). The prefix localizes the injected meta and becomes the
+  // canonical/hreflang cluster; the SPA reads it as the initial language
+  // hint (stored user preference still wins for display).
+  var requestPath = r.uri;
+  var langMatch = LANG_RE.exec(requestPath);
+  var lang = langMatch ? langMatch[1] : '';
+  if (requestPath.indexOf('/de/') === 0 || requestPath === '/de') {
+    r.status = 301;
+    r.headersOut.Location = requestPath.replace(/^\/de/, '') || '/';
+    r.sendHeader();
+    r.finish();
+    return;
+  }
+  var slug = requestPath
+    .replace(/^\/(en|fr|it)\/hut\//, '/hut/')
+    .replace(/^\/hut\//, '')
+    .replace(/\/+$/, '');
+  if (!slug || slug.indexOf('/') !== -1) {
     r.internalRedirect('/index.html');
     return;
+  }
+  // First-visit language redirect (cartoload pattern): a BARE hut URL,
+  // no stored preference (no wodore_lang cookie), and an Accept-Language
+  // matching en/fr/it → 302 to the prefixed URL. Bots send neither →
+  // served as-is (stable URLs). Returning visitors keep the URL they
+  // navigated to — the SPA display language follows their stored setting.
+  if (!lang) {
+    var cookie = r.headersIn.Cookie || '';
+    if (!COOKIE_RE.test(cookie)) {
+      var preferred = parseAcceptLanguage(r.headersIn['Accept-Language']);
+      if (preferred && preferred !== 'de') {
+        r.status = 302;
+        r.headersOut.Location = '/' + preferred + requestPath;
+        r.sendHeader();
+        r.finish();
+        return;
+      }
+    }
   }
   // Content negotiation: clients explicitly asking for Markdown (Accept:
   // text/markdown) get the .md document instead of the HTML shell — same
@@ -127,16 +192,14 @@ function hut(r) {
     r.internalRedirect('/hut/' + slug + '.md');
     return;
   }
-  // Language: an explicit ?lang=de|en|fr|it localizes the injected meta
-  // (title/description/og:*) in that language. The whitelist matches the
-  // meta endpoint's validated lang parameter; unknown values fall back to
-  // the endpoint default (de). Deliberately NOT using Accept-Language: the
-  // meta cache keys on the request URI, so header-based negotiation would
-  // serve one language's cache entry to everyone.
+  // Meta language: path prefix first, then an explicit ?lang= param.
+  // Whitelisted against the meta endpoint's validated values; unknown
+  // values fall back to the endpoint default (de).
   var metaUri = '/_seo/meta/' + slug;
-  var lang = r.args ? r.args.lang : '';
-  if (lang === 'de' || lang === 'en' || lang === 'fr' || lang === 'it') {
-    metaUri += '?lang=' + lang;
+  var queryLang = r.args ? r.args.lang : '';
+  var effectiveLang = lang || queryLang;
+  if (effectiveLang === 'de' || effectiveLang === 'en' || effectiveLang === 'fr' || effectiveLang === 'it') {
+    metaUri += '?lang=' + effectiveLang;
   }
   Promise.all([r.subrequest(SHELL_URI), r.subrequest(metaUri)])
     .then(function (res) {
@@ -157,7 +220,7 @@ function hut(r) {
       }
       if (meta && meta.slug && meta.name) {
         r.log("seo: injected meta for hut '" + slug + "'");
-        serve(r, inject(shellRes.responseText, meta));
+        serve(r, inject(shellRes.responseText, meta, requestPath, r.headersIn.Host));
       } else {
         r.log(
           "seo: no meta for hut '" + slug + "' (status " + metaRes.status + '), serving shell'

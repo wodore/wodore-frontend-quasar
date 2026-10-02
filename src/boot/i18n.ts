@@ -41,13 +41,20 @@ export default boot(({ app, store }) => {
   // boot files — so read the global property instead to bind the instance
   // for lang-pack switching.
   bindQuasarForLocale(app.config.globalProperties.$q as QVueGlobals);
-  // Initialize from the persisted user setting (localStorage-backed); the
-  // language is intentionally never read from or written to the URL.
-  // First visit: detect the system language (English fallback) and persist
-  // it as the initial choice — a later manual selection always wins.
+  // Initial language, in precedence order (user preference wins):
+  // 1. persisted user setting (localStorage-backed) — the source of truth;
+  // 2. the URL's locale prefix (/en|/fr|/it) — first visit via a shared
+  //    language link or the edge's Accept-Language redirect;
+  // 3. detected system language (English fallback) — first bare visit.
+  // The language is persisted on first choice; a manual selection always
+  // wins. In-app navigation normalizes to bare URLs — the prefix is an
+  // entry-point hint (shares, crawlers), display follows the setting.
   const settings = useUserSettingsStore(store);
+  const pathLang = typeof window !== 'undefined' ? window.location.pathname.match(/^\/(en|fr|it)(?:\/|$)/)?.[1] : undefined;
   if (settings.hasStoredSettings) {
     initLocale(getStoredLocale(store));
+  } else if (pathLang) {
+    setLocale(pathLang as 'en' | 'fr' | 'it');
   } else {
     setLocale(detectSystemLocale());
   }

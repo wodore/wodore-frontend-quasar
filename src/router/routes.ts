@@ -29,6 +29,13 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
+    // German is the default and stays unprefixed — /de/... 301s to bare
+    // (the edge does the same for crawlers; this covers SPA-side
+    // navigation).
+    path: '/de/:rest(.*)*',
+    redirect: to => ({ path: to.path.replace(/^\/de/, '') || '/', query: to.query, hash: to.hash }),
+  },
+  {
     path: '/m/hut/:slug',
     redirect: to => redirectFix(to, 'map-hut'),
   },
@@ -37,7 +44,11 @@ const routes: RouteRecordRaw[] = [
     redirect: to => redirectFix(to, 'map'),
   },
   {
-    path: '/',
+    // Locale-prefixed public routes (cartoload pattern): German, the
+    // default, stays at the bare path; /en|/fr|/it get the optional
+    // prefix. The prefix is the initial-language hint — the stored user
+    // preference still wins for display (see boot/i18n.ts).
+    path: '/:langPrefix(en|fr|it)?',
     component: () => import('layouts/MainLayout.vue'),
     children: [
       {
