@@ -14,7 +14,7 @@ const CONFIGS = [
 
 test.describe('overlay interactions', () => {
   for (const { theme, mode } of CONFIGS) {
-    test(`${theme}-${mode}: expanded stays open on select`, async ({ page }, testInfo) => {
+    test(`${theme}-${mode}: expanded stays open on select`, async ({ page }, _testInfo) => {
       tagTest(theme, mode, 'overlay');
       test.setTimeout(90_000);
 
@@ -36,7 +36,7 @@ test.describe('overlay interactions', () => {
       expect(stillExpanded).toBe(true);
     });
 
-    test(`${theme}-${mode}: closing-tap collapses, no focus`, async ({ page }, testInfo) => {
+    test(`${theme}-${mode}: closing-tap collapses, no focus`, async ({ page }, _testInfo) => {
       tagTest(theme, mode, 'overlay');
       test.setTimeout(90_000);
 
@@ -77,7 +77,7 @@ test.describe('overlay interactions', () => {
 });
 
 test.describe('attribution', () => {
-  test('light-mobile: open shows close glyph, tap closes', async ({ page }, testInfo) => {
+  test('light-mobile: open shows close glyph, tap closes', async ({ page }, _testInfo) => {
     tagTest('light', 'mobile', 'attribution');
     test.setTimeout(90_000);
 
@@ -123,12 +123,12 @@ test.describe('attribution', () => {
 });
 
 test.describe('gesture disambiguation', () => {
-  test.beforeEach(async ({ page }, testInfo) => {
+  test.beforeEach(async ({ page }, _testInfo) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await loadMap(page);
   });
 
-  test('double-tap does NOT enter focus', async ({ page }, testInfo) => {
+  test('double-tap does NOT enter focus', async ({ page }, _testInfo) => {
     tagTest('light', 'mobile', 'gestures');
     await page.touchscreen.tap(195, 420);
     await page.waitForTimeout(180);
@@ -140,7 +140,7 @@ test.describe('gesture disambiguation', () => {
     expect(focus).toBe(false);
   });
 
-  test('pan does NOT enter focus', async ({ page }, testInfo) => {
+  test('pan does NOT enter focus', async ({ page }, _testInfo) => {
     tagTest('light', 'mobile', 'gestures');
     await page.evaluate(`(() => {
       const el = document.querySelector('.maplibregl-map');
@@ -156,7 +156,7 @@ test.describe('gesture disambiguation', () => {
     expect(focus).toBe(false);
   });
 
-  test('pinch does NOT enter focus', async ({ page }, testInfo) => {
+  test('pinch does NOT enter focus', async ({ page }, _testInfo) => {
     tagTest('light', 'mobile', 'gestures');
     await page.evaluate(`(() => {
       const el = document.querySelector('.maplibregl-map');
@@ -172,7 +172,7 @@ test.describe('gesture disambiguation', () => {
     expect(focus).toBe(false);
   });
 
-  test('single tap enters focus', async ({ page }, testInfo) => {
+  test('single tap enters focus', async ({ page }, _testInfo) => {
     tagTest('light', 'mobile', 'gestures');
     await page.touchscreen.tap(195, 420);
     await page.waitForTimeout(900);

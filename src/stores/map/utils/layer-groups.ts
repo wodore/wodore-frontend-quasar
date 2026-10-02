@@ -2,7 +2,6 @@
  * Overlay layer groups — data model, defaults, merge logic.
  * See openspec/changes/overlay-layer-groups/ for the full spec.
  */
-import { createHuts, createPublicTransportStops, createHiking, createMtb, createCycling, createHillslope, createSkitouren, createSnowshoes, createSkislopes, createProtectedNature, createSheepdogs } from './overlays';
 import type { OverlaySwitchItem } from './interfaces';
 
 // ─── Types ────────────────────────────────────────────────────────────────

@@ -268,9 +268,8 @@ function confirmDeleteGroup(): void {
   if (!confirmed) return;
   group.removed = true;
   markEdited();
-  group.layerSlugs.forEach(slug => {
-    // Layers go back to ungrouped
-  });
+  // Removed group's layers return to ungrouped (they stay in the flat
+  // All-layers list automatically once no group references them).
   overlayStore.syncGroupSettings();
   overlayStore.cycleGroup();
 }
@@ -424,11 +423,6 @@ function layerIcon(name: string): string {
   return (
     'img:' + new URL(`/src/assets/wodore-design/overlays/exports/${name}.svg`, import.meta.url).href
   );
-}
-
-/** Group icon for the selector (from the predefined overlay icons) */
-function groupIcon(iconSlug: string): string {
-  return layerIcon(iconSlug);
 }
 
 /** Layers to show in the mini strip (active group only) */

@@ -10,7 +10,6 @@ import {
   groupDisplayName,
   mergeGroups,
   type LayerGroup,
-  type OverlayGroupSettings,
 } from '@stores/map/utils/layer-groups';
 import type { OverlaySwitchItem } from '@stores/map/utils/interfaces';
 

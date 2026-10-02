@@ -2,7 +2,6 @@
  * Shared helpers for interaction specs — theme pinning, map access,
  * Allure screenshot attachment via Playwright's native API.
  */
-import type { test as TestType } from '@playwright/test';
 import { allure } from 'allure-playwright';
 import type { Page, TestInfo } from '@playwright/test';
 

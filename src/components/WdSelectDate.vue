@@ -64,7 +64,7 @@ const dateValueLabel = computed(() => {
   if (selectedDateObj.value === undefined) return t('select_date.choose_hint');
   return formatDate(selectedDateObj.value, 'DD.MM.YYYY');
 });
-const isMobile = computed(() => {
+const _isMobile = computed(() => {
   return $q.screen.xs;
 });
 const showMenu = ref(false);
