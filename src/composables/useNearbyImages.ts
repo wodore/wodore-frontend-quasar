@@ -31,16 +31,10 @@ export function useNearbyImages(lat?: Ref<number | undefined>, lon?: Ref<number 
   const transformResponse = (response: NearbyEndpointResponse): HutImage[] => {
     return response.features
       .filter(feature => feature.properties !== null)
-      .map(
-        feature =>
-          ({
-            ...feature.properties!,
-            id: `${feature.properties!.provider.slug}_${feature.properties!.source_id}`,
-            // SAFETY: HutImage is the app-facing view type (types/geo.ts);
-            // its hand-maintained mirror predates the generated OpenAPI
-            // types - single boundary cast until it is rebased onto them.
-          }) as unknown as HutImage
-      );
+      .map(feature => ({
+        ...feature.properties!,
+        id: `${feature.properties!.provider.slug}_${feature.properties!.source_id}`,
+      }));
   };
 
   /**
