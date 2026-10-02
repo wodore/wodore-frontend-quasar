@@ -29,9 +29,8 @@ jobs:
   # Skip ALL jobs when the PR is a draft (no tests, no preview, no APK)
   unit-tests:
     needs: check-draft
-    if: needs.check-draft.outputs.draft != 'true'
+    if: needs.check-draft.outputs.draft != 'true' && (github.event_name != 'pull_request' || github.event.action != 'closed')
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' || github.event.action != 'closed'
 
     steps:
       - name: Check out
