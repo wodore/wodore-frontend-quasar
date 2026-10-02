@@ -14,25 +14,18 @@ import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Platform } from 'quasar';
 import { useApiVersionStore } from '@stores/api-version-store';
+import { triggerNativeAppUpdate } from '@services/appUpdate';
 
 const { t, d } = useI18n();
 const store = useApiVersionStore();
 const dismissed = ref(false);
 const isNative = Platform.is.nativeMobile;
 
-// Play listing of the production app (com.wodore.app). Preview/RC builds
-// are side-loaded; the page still shows the production app's Update button.
-// Plain external link — the WebView hands external URLs to the system
-// browser / Play Store. Follow-up: @capawesome/capacitor-app-update for the
-// in-app update flow with this as the fallback.
-const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.wodore.app';
-
-function openAppStore(): void {
-  // window.open covers web/PWA; on Android WebView external URLs go to the
-  // system browser regardless — popup-blocked falls back to navigation.
-  if (!window.open(PLAY_STORE_URL, '_blank', 'noopener')) {
-    window.location.href = PLAY_STORE_URL;
-  }
+// Native remedy: Play in-app update when available, store entry otherwise
+// (see src/services/appUpdate.ts); a canceled native flow does nothing more.
+// The store button is native-only — web/PWA gets the reload button.
+function onUpdateTap(): void {
+  void triggerNativeAppUpdate();
 }
 
 onMounted(() => {
@@ -103,7 +96,7 @@ async function hardReload(): Promise<void> {
         size="sm"
         :label="t('api_version_update')"
         class="q-ml-sm"
-        @click="openAppStore"
+        @click="onUpdateTap"
       />
       <q-btn
         v-else
