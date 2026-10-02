@@ -69,6 +69,52 @@ function addLayerToGroup(slug: string): void {
   overlayStore.syncGroupSettings();
 }
 
+// ── Drag-and-drop layer ordering (edit mode) ─────────────────────────
+const dragSlug = ref<string | null>(null);
+const dragOverSlug = ref<string | null>(null);
+
+function onDragStart(ev: MouseEvent, slug: string): void {
+  dragSlug.value = slug;
+  const dt = (ev as unknown as { dataTransfer?: { effectAllowed: string; setData: (type: string; value: string) => void } }).dataTransfer;
+  if (dt) {
+    dt.effectAllowed = 'move';
+    dt.setData('text/plain', slug);
+  }
+}
+
+function onDragOver(ev: MouseEvent, slug: string): void {
+  ev.preventDefault();
+  dragOverSlug.value = slug;
+}
+
+function onDrop(ev: MouseEvent, targetSlug: string): void {
+  ev.preventDefault();
+  const sourceSlug = dragSlug.value;
+  dragSlug.value = null;
+  dragOverSlug.value = null;
+  if (!sourceSlug || sourceSlug === targetSlug) return;
+
+  // Reorder within the group's layerSlugs
+  const group = overlayStore.groupSettings.groups.find(
+    g => g.id === overlayStore.groupSettings.activeGroupId
+  );
+  if (!group) return;
+
+  const slugs = [...group.layerSlugs];
+  const fromIdx = slugs.indexOf(sourceSlug);
+  const toIdx = slugs.indexOf(targetSlug);
+  if (fromIdx < 0 || toIdx < 0) return;
+
+  slugs.splice(toIdx, 0, slugs.splice(fromIdx, 1)[0]);
+  group.layerSlugs = slugs;
+  overlayStore.syncGroupSettings();
+}
+
+function onDragEnd(): void {
+  dragSlug.value = null;
+  dragOverSlug.value = null;
+}
+
 /** Rename the active group (prompt) */
 function startRename(): void {
   const group = overlayStore.groupSettings.groups.find(
@@ -583,13 +629,9 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <!-- Scroll fade: top -->
-        <div class="wd-ovl__fade wd-ovl__fade--top" :class="{ 'wd-ovl__fade--hidden': scrollAtTop }" />
-
-        <!-- Scroll fade: bottom (subtle hint directly above the more button) -->
-        <div class="wd-ovl__fade wd-ovl__fade--bottom" :class="{ 'wd-ovl__fade--hidden': scrollAtBottom }" />
-
         <!-- Rows: icon always at the right, label+actions appear when expanded -->
+        <!-- Fades are INSIDE the rows container (they belong to the scroll area,
+             not the box — they must track the rows' visible edges) -->
         <div
           :key="overlayStore.groupSettings.activeGroupId ?? 'none'"
           class="wd-ovl__rows"
@@ -601,12 +643,30 @@ onBeforeUnmount(() => {
           @pointerup="onRowsPointerUp"
           @pointerleave="onRowsPointerUp"
         >
+          <!-- Fades INSIDE the scroll container — they track the rows' edges -->
+          <div class="wd-ovl__fade wd-ovl__fade--top" :class="{ 'wd-ovl__fade--hidden': scrollAtTop }" />
+          <div class="wd-ovl__fade wd-ovl__fade--bottom" :class="{ 'wd-ovl__fade--hidden': scrollAtBottom }" />
           <div v-for="item in miniLayers" :key="item.name" v-show="item.show" class="wd-ovl__row" :class="{
             'wd-ovl__row--active': item.active,
             'wd-ovl__row--passive': !item.active,
-          }" @click="onRowClick(<OverlaySwitchItem>(item as unknown))">
+            'wd-ovl__row--dragging': dragSlug === item.name,
+            'wd-ovl__row--drag-over': dragOverSlug === item.name && dragSlug !== item.name,
+          }"
+            :draggable="editMode"
+            @dragstart="onDragStart($event, item.name)"
+            @dragover="onDragOver($event, item.name)"
+            @drop="onDrop($event, item.name)"
+            @dragend="onDragEnd"
+            @click="onRowClick(<OverlaySwitchItem>(item as unknown))">
             <!-- Label + actions (LEFT of icon, only when expanded) -->
             <div v-if="expanded" class="wd-ovl__row-info">
+              <span v-if="editMode" class="wd-ovl__drag-handle" title="Drag to reorder">
+                <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor">
+                  <circle cx="2" cy="3" r="1.2" /><circle cx="6" cy="3" r="1.2" />
+                  <circle cx="2" cy="8" r="1.2" /><circle cx="6" cy="8" r="1.2" />
+                  <circle cx="2" cy="13" r="1.2" /><circle cx="6" cy="13" r="1.2" />
+                </svg>
+              </span>
               <button v-if="hasInfo(item.name)" class="wd-ovl__row-action wd-ovl__row-action--info"
                 :aria-label="`${item.label} info`" title="Info" @click.stop="openConfig(item.name, 'legend')">
                 <q-icon name="wd-info" size="xs" />
@@ -759,7 +819,7 @@ onBeforeUnmount(() => {
           </svg>
           <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
-            <path d="M19 12H5M11 18l-6-6 6-6" />
+            <path d="M5 12h14M13 6l6 6-6 6" />
           </svg>
         </button>
       </div>
@@ -959,37 +1019,33 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   }
 }
 
-// ── Scroll fades (top + bottom) ───────────────────────────────────────────
-// Tight 10px hints anchored to the box; they kiss the clipped row —
-// not a dead band. Hidden when the respective end is reached.
+// ── Scroll fades (top + bottom) ───────────────────────────────────────
+// INSIDE the rows container — sticky positioned so they stay visible
+// while the content scrolls. They kiss the clipped rows, not the box.
 .wd-ovl__fade {
-  position: absolute;
+  position: sticky;
   left: 0;
   right: 0;
-  height: 10px; // tight kiss, not a band
-  opacity: 0.9;
+  height: 10px;
   pointer-events: none;
   transition: opacity 0.25s $ease;
   z-index: 2;
 
   &--top {
-    top: 0; // mini: rows start at the box top
+    top: 0;
+    margin-bottom: -10px;
     background: linear-gradient(to bottom, var(--wd-ctl-bg), transparent);
   }
 
   &--bottom {
-    bottom: 24px; // directly above the more button
+    bottom: 0;
+    margin-top: -10px;
     background: linear-gradient(to top, var(--wd-ctl-bg) 10%, transparent);
   }
 
   &--hidden {
     opacity: 0;
   }
-}
-
-// Expanded: the toolbar occupies the top — fade sits below it
-.wd-ovl__box--expanded .wd-ovl__fade--top {
-  top: 28px;
 }
 
 // ── Rows (scrollable) ────────────────────────────────────────────────────
@@ -1092,7 +1148,9 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   padding: 0 2px 0 8px;
   min-width: 0; // allow label to clip
   flex: 1;
-  pointer-events: none; // container only; buttons opt back in
+  // In expanded mode the whole row is interactive (it's a panel).
+  // In mini mode only the buttons need to be clickable.
+  pointer-events: auto;
 }
 
 .wd-ovl__row-name {
@@ -1388,8 +1446,8 @@ body.body--dark .wd-ovl__row-name {
 
 // ── Edit mode: expanded box with more space ─────────────────────────────
 .wd-ovl__box--edit {
-  width: min(280px, calc(100vw - 48px));
-  max-height: calc(100dvh - 200px);
+  width: min(280px, calc(100vw - 48px)) !important;
+  max-height: calc(100dvh - 200px) !important;
 }
 
 .wd-ovl__toolbar-btn--danger {
@@ -1398,4 +1456,29 @@ body.body--dark .wd-ovl__row-name {
     background: rgba(196, 78, 59, 0.08);
     color: #a93d2c;
   }
+}
+
+// ── Drag-and-drop styling (edit mode) ──────────────────────────────────
+.wd-ovl__drag-handle {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  flex: none;
+  color: var(--wd-ctl-ink-soft);
+  opacity: 0.4;
+  cursor: grab;
+  pointer-events: auto;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.wd-ovl__row--dragging {
+  opacity: 0.3;
+}
+
+.wd-ovl__row--drag-over {
+  border-top: 2px solid $wd-gold;
+  margin-top: -2px;
 }
