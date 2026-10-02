@@ -316,6 +316,24 @@ function onMapError(e: unknown) {
     return;
   }
 
+  // Maptoolkit fallback: the default outdoor basemap rides on the
+  // Community-License tile service (best effort, fair-use limits). If
+  // its tiles are rejected or throttled, silently switch to our own
+  // keyless OpenFreeMap outdoor style — visually as close as possible.
+  // Same re-trigger guard idea as above: once on outdoor-osm, its own
+  // errors cannot re-arm this path.
+  if (isMtkTileFailure(errorObj) && activeBasemapIsMtkOutdoor()) {
+    const candidates = basemapStore.basemaps as BasemapSwitchItem[];
+    const fallback = candidates.find(b => b.name === 'outdoor-osm');
+    if (fallback) {
+      console.warn(
+        '[onMapError] Maptoolkit tiles unavailable - falling back to OpenFreeMap outdoor'
+      );
+      void basemapStore.setBasemap(fallback, true, false);
+    }
+    return;
+  }
+
   // For other errors, show generic map error
   //console.error('[onMapError] Generic map error:', event.error);
   //showErrorDialog({ errorCode: ErrorCode.MAP_ERROR });
@@ -348,6 +366,25 @@ function activeBasemapUsesMapTiler(): boolean {
   return Object.values(style.sources ?? {}).some(source =>
     (source.tiles ?? []).some(url => url.includes('api.maptiler.com'))
   );
+}
+
+/** Maptoolkit Community-License failures: rejected (401/403) or throttled (429). */
+function isMtkTileFailure(errorObj: Record<string, unknown> | undefined): boolean {
+  const status = errorObj?.status as number | undefined;
+  const message = (errorObj?.message?.toString() ?? '').toLowerCase();
+  const isTileError = message.includes('tile') || !message;
+  return (
+    isTileError &&
+    (status === 401 ||
+      status === 403 ||
+      status === 429 ||
+      message.includes('too many requests') ||
+      message.includes('rate limit'))
+  );
+}
+
+function activeBasemapIsMtkOutdoor(): boolean {
+  return basemapStore.getBasemap()?.name === 'outdoor-mtk';
 }
 
 /**
@@ -1199,6 +1236,7 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
         :max-zoom="20"
         :max-bounds="[3.6, 43, 18.7, 49.7]"
         :max-tile-cache-size="400"
+        :max-parallel-image-requests="32"
         :render-world-copies="false"
       >
         <!-- ── Map controls (v2 clean layout) ──────────────────────────── -->

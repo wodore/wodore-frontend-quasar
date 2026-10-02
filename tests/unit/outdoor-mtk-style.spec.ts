@@ -1,0 +1,109 @@
+import { describe, it, expect } from 'vitest';
+import * as allure from 'allure-js-commons';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { validateStyleMin } from '@maplibre/maplibre-gl-style-spec';
+import type { StyleSpecification } from 'maplibre-gl';
+
+const STYLE_DIR = resolve(process.cwd(), 'public/styles/outdoor-mtk');
+const STYLE_PATH = resolve(STYLE_DIR, 'style.json');
+
+/**
+ * Guards for the Maptoolkit-based default outdoor basemap
+ * (scripts/style/build-mtk-style.mjs). Community License: attribution
+ * via TileJSON, logo overlay required in the app, no pre-fetch/offline/
+ * print use (OFM fallback covers those).
+ */
+describe('outdoor-mtk basemap style', () => {
+  const style: StyleSpecification = JSON.parse(readFileSync(STYLE_PATH, 'utf8'));
+  const layerIds = style.layers.map(l => l.id);
+
+  it('validates against the MapLibre style spec', () => {
+    allure.label('feature', 'basemap-styles');
+    allure.severity('critical');
+    expect(validateStyleMin(style)).toEqual([]);
+  });
+
+  it('is the Wodore fork of the Maptoolkit hiking style', () => {
+    expect(style.name).toBe('Wodore Outdoor (Maptoolkit)');
+  });
+
+  it('uses the mtk tiles and the server-side contour tileset', () => {
+    expect(style.sources['mtk']).toMatchObject({
+      type: 'vector',
+      url: expect.stringContaining('tiles.maptoolkit.org'),
+    });
+    expect(style.sources['contours']).toMatchObject({
+      type: 'vector',
+      url: expect.stringContaining('tiles.maptoolkit.org'),
+    });
+  });
+
+  it('carries the terrain stack: contours, rock drawing, hillshade', () => {
+    for (const id of [
+      'relief_contour_multicolored', // server contours (ele/divisor/terrain_type)
+      'relief_hillshade_ao_min', // ambient-occlusion hillshade
+      'road_path_alpine', // alpine paths incl. via ferrata (dashed)
+    ]) {
+      expect(layerIds, `missing layer ${id}`).toContain(id);
+    }
+    // rock drawing ships as raster + vector textures
+    expect(Object.keys(style.sources)).toContain('rocks');
+  });
+
+  it('renders NO routes — the hiking overlay owns them', () => {
+    for (const id of [
+      'road_hiking',
+      'road_hiking_label',
+      'road_hiking_shield',
+      'road_hiking_node_shield',
+      'road_path_scale_label',
+    ]) {
+      expect(layerIds, `layer ${id} must not exist`).not.toContain(id);
+    }
+  });
+
+  it('keeps huts anonymous: no hut POI layer', () => {
+    expect(layerIds, 'poi_hut_label must not exist (hut overlay owns huts)').not.toContain(
+      'poi_hut_label'
+    );
+  });
+
+  it('ships one style per app locale with localized name fields', () => {
+    for (const loc of ['de', 'en', 'fr', 'it']) {
+      const path = resolve(STYLE_DIR, `style.${loc}.json`);
+      const localized: StyleSpecification = JSON.parse(readFileSync(path, 'utf8'));
+      const tf = JSON.stringify(localized.layers.find(l => l.id === 'place_point_label_rank_1'));
+      expect(tf, `style.${loc}.json uses name_${loc}`).toContain(`"name_${loc}"`);
+    }
+  });
+
+  it('renders no accommodation POIs (lodging + hut layers gone)', () => {
+    for (const l of style.layers.filter(l => l.id.startsWith('poi_generic_label'))) {
+      expect(JSON.stringify(l.filter), `${l.id} excludes lodging`).toContain('lodging');
+    }
+  });
+
+  it('adds settlement dots and stronger country borders', () => {
+    expect(layerIds).toContain('wd-place-dot-big');
+    expect(layerIds).toContain('wd-place-dot-small');
+    const border = style.layers.find(l => l.id === 'border_admin_country');
+    expect(JSON.stringify(border?.paint)).toContain('hsla(306, 30%, 40%, 1)');
+  });
+
+  it('declutters generic POIs (rank 4/5 pushed to later zooms)', () => {
+    const r4 = style.layers.find(l => l.id === 'poi_generic_label_rank_4');
+    const r5 = style.layers.find(l => l.id === 'poi_generic_label_rank_5');
+    expect(r4?.minzoom).toBeGreaterThanOrEqual(14);
+    expect(r5?.minzoom).toBeGreaterThanOrEqual(15.5);
+  });
+
+  it('has unique layer ids and every layer source exists', () => {
+    expect(new Set(layerIds).size).toBe(layerIds.length);
+    for (const l of style.layers) {
+      if ('source' in l && l.source) {
+        expect(Object.keys(style.sources), `layer ${l.id}`).toContain(l.source);
+      }
+    }
+  });
+});

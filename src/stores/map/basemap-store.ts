@@ -11,6 +11,27 @@ import { useOverlayStore } from './overlay-store';
 import { StyleSpecification } from 'maplibre-gl';
 import { i18n, currentLocale } from '@services/locale';
 import { getEnv } from '@services/runtimeEnv';
+import { OUTDOOR_STYLE_PATH, isOutdoorStyle, setupOutdoorContours } from '@services/outdoorContours';
+
+function mtkStylePath(): string {
+  return `styles/outdoor-mtk/style.${currentLocale() || 'en'}.json`;
+}
+
+/** Static Maptoolkit endpoints (immutable, CDN-cached) — prefetched at
+ * boot so the first map load doesn't pay ~8 serial round-trips. */
+const MTK_STATIC_URLS = [
+  'https://tiles.maptoolkit.org/mtk.json',
+  'https://tiles.maptoolkit.org/contours.json',
+  'https://tiles.maptoolkit.org/raster_bathymetry.json',
+  'https://tiles.maptoolkit.org/terrainrgb.json',
+  'https://tiles.maptoolkit.org/naturalearth.json',
+  'https://tiles.maptoolkit.org/rocks.json',
+];
+
+function prewarmOutdoorMtk(): void {
+  void fetch(mtkStylePath()).catch(() => undefined);
+  for (const u of MTK_STATIC_URLS) void fetch(u, { mode: 'cors' }).catch(() => undefined);
+}
 
 const t = i18n.global.t;
 
@@ -86,6 +107,19 @@ export const useBasemapStore = defineStore('basemap', () => {
     if (basemapStyle !== undefined && s.name == basemapStyle.name && !force) {
       console.debug('Active baselayer is already set.');
       return false;
+    }
+    // The outdoor basemap needs the dem-contour:// protocol registered
+    // before MapLibre starts requesting contour tiles.
+    if (isOutdoorStyle(s.style)) {
+      setupOutdoorContours();
+    }
+    // Weak GPUs: drop the second ambient-occlusion pass after the style
+    // loads (the heavy ao_max/dramatic passes are already removed from
+    // the built style for everyone).
+    if (s.name === 'outdoor-mtk' && weakGpu) {
+      mapRef.map?.once('style.load', () => {
+        mapRef.map?.setLayoutProperty('relief_hillshade_ao_med', 'visibility', 'none');
+      });
     }
     /*
      * Use transformStyle to preserve custom layers/sources when switching basemaps
@@ -444,7 +478,8 @@ export const useBasemapStore = defineStore('basemap', () => {
     'ch-swisstopo-light': 'basemaps.swiss_light',
     'ch-swisstopo-full': 'basemaps.swiss_raster',
     'Satellite Hybrid': 'basemaps.satellite',
-    'outdoor-osm': 'basemaps.outdoor',
+    'outdoor-mtk': 'basemaps.outdoor',
+    'outdoor-osm': 'basemaps.outdoor_ofm',
     'oe-vector': 'basemaps.austria_vector',
     'oe-raster': 'basemaps.austria_raster',
   };
@@ -458,7 +493,18 @@ export const useBasemapStore = defineStore('basemap', () => {
     }
   };
 
-  watch(currentLocale, applyBasemapLabels);
+  watch(currentLocale, () => {
+  applyBasemapLabels();
+  // The mtk basemap is language-aware (per-locale style files): re-apply
+  // it when active so labels switch language.
+  const active = getBasemap();
+  if (active?.name === 'outdoor-mtk' && mapRef.map) {
+    void Promise.resolve(setBasemap(active, true)).catch(() => undefined);
+  }
+});
+
+  // Weak-GPU flag for style-level degradation (set during init)
+  let weakGpu = false;
 
   // Cached initialization promise - concurrent callers share one init run,
   // and a failed run resets the cache so the next call can retry
@@ -526,6 +572,10 @@ export const useBasemapStore = defineStore('basemap', () => {
     }
 
     const useRaster = shouldUseRaster(gpuTier);
+    weakGpu = useRaster;
+
+    // Warm the HTTP cache for the default basemap's static assets
+    prewarmOutdoorMtk();
 
     console.debug(
       'GPU Tier detected:',
@@ -541,7 +591,7 @@ export const useBasemapStore = defineStore('basemap', () => {
       {
         name: 'ch-swisstopo-light',
         label: t('basemaps.swiss_light'),
-        show: true,
+        show: false, // picker: only outdoor default (kept as fallback/code)
         active: false,
         img: getImageUrl('swiss-vector.png'),
         // Weak-GPU raster variant: keyless OSM raster (MapTiler raster tiles
@@ -558,7 +608,7 @@ export const useBasemapStore = defineStore('basemap', () => {
       {
         name: 'ch-swisstopo-full',
         label: t('basemaps.swiss_raster'),
-        show: true,
+        show: false, // picker: only outdoor default (kept as fallback/code)
         active: false,
         img: getImageUrl('swiss-raster.png'),
         style: swissTopoRasterStyle,
@@ -570,7 +620,7 @@ export const useBasemapStore = defineStore('basemap', () => {
       {
         name: 'Satellite Hybrid',
         label: t('basemaps.satellite'),
-        show: true,
+        show: false, // picker: only outdoor default (kept as fallback/code)
         active: false,
         img: getImageUrl('satellite.png'),
         style:
@@ -582,17 +632,40 @@ export const useBasemapStore = defineStore('basemap', () => {
         },
       },
       {
-        name: 'outdoor-osm',
+        // DEFAULT outdoor basemap: Maptoolkit hiking style fork
+        // (routes + shields, sac_scale/via ferrata, rock drawing, server
+        // contours, bathymetry, AO hillshade). Community License: <= EUR 1M
+        // revenue & < 10 FTE — attribution + logo required, no
+        // pre-fetch/offline/print use (that's the OFM fallback's job).
+        // Built by scripts/style/build-mtk-style.mjs.
+        name: 'outdoor-mtk',
         label: t('basemaps.outdoor'),
-        show: false,
+        show: true,
         active: false,
         img: getImageUrl('outdoor-v2.png'),
-        style:
-          'https://api.maptiler.com/maps/outdoor-v2/style.json?key=' +
-          getEnv('WODORE_MAPTILER_API_KEY'),
+        get style() {
+          return mtkStylePath();
+        },
         layers: {
-          background: { before: 'Contour index' },
-          ways: { before: 'Park' },
+          ways: { before: undefined },
+          background: { before: undefined },
+        },
+      },
+      {
+        // Keyless OpenFreeMap outdoor style — the unrestricted fallback
+        // (auto-selected when Maptoolkit tiles fail; also the right tiles
+        // for any future offline/print feature). Built by
+        // scripts/style/build-outdoor-style.mjs — fine-tune in Maputnik
+        // and port changes back to the build script.
+        name: 'outdoor-osm',
+        label: t('basemaps.outdoor_ofm'),
+        show: false, // picker: only outdoor default (kept as hidden OFM fallback)
+        active: false,
+        img: getImageUrl('outdoor-v2.png'),
+        style: OUTDOOR_STYLE_PATH,
+        layers: {
+          ways: { before: undefined },
+          background: { before: undefined },
         },
       },
       {
@@ -653,17 +726,18 @@ export const useBasemapStore = defineStore('basemap', () => {
         console.debug('Restoring saved basemap:', savedBasemapName);
       } else {
         console.debug('Saved basemap not found, using default');
+        // Saved name unknown (e.g. renamed basemap) — use the fresh-install
+        // default too, not the first array entry (which needs a MapTiler key)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        basemapToSet = (basemaps as any[])[0];
+        basemapToSet = (basemaps as any[]).find(b => b.name === 'outdoor-mtk');
       }
     } else {
-      // No saved basemap: default to the keyless swisstopo raster
-      // (geo.admin.ch tiles) — the "light" variant depends on MapTiler
-      // raster tiles which fail when the API key is suspended/quota-
-      // exceeded, leaving a blank map on fresh installs
+      // No saved basemap: default to the Maptoolkit-based outdoor style
+      // (routes/sac/rock/contours). The keyless OpenFreeMap style is the
+      // hidden fallback for when Maptoolkit tiles are unreachable.
       basemapToSet =
         (basemaps as unknown as Array<BasemapSwitchItem>).find(
-          b => b.name === 'ch-swisstopo-full'
+          b => b.name === 'outdoor-mtk'
         ) || (basemaps as unknown as Array<BasemapSwitchItem>)[0];
     }
 
