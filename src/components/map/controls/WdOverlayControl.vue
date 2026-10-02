@@ -1054,7 +1054,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   border: 1px solid var(--wd-ctl-border);
   background: var(--wd-ctl-bg);
   box-shadow: var(--wd-ctl-shadow);
-  overflow: hidden;
+  overflow: visible; // toolbar floats above (absolute) — must not clip
   position: relative; // anchor for the absolute scroll fades
   transition: max-height 0.25s cubic-bezier(0.2, 0, 0, 1); // animate group changes
   pointer-events: none; // map gestures pass through — rows opt back in
@@ -1089,7 +1089,6 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   border: 1px solid var(--wd-ctl-border);
   border-bottom: none;
   border-radius: 8px 8px 0 0;
-  z-index: -1;
 }
 
 .wd-ovl__toolbar-icon {
@@ -1646,7 +1645,6 @@ body.body--dark .wd-ovl__row-name {
   border: 1px solid var(--wd-ctl-border);
   border-bottom: none;
   border-radius: 8px 8px 0 0;
-  z-index: -2;
 }
 
 .wd-ovl__edit-btn {
