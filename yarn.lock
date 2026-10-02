@@ -1207,6 +1207,11 @@
   resolved "https://registry.yarnpkg.com/@capawesome/capacitor-app-update/-/capacitor-app-update-7.2.0.tgz#51a70a405d73c62e3f670db22e6fa17c4aebc00c"
   integrity sha512-fwPxR9tV5qecn3FSgwS5wBwlHDV9JND5dnY1iqIYnqRG2s/Oq0h32u4hV6+/zpDARJFMZycb3pddEfwLwhglEg==
 
+"@capawesome/capacitor-maplibre@^0.2.0":
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/@capawesome/capacitor-maplibre/-/capacitor-maplibre-0.2.0.tgz#bb3ed32c1f9aafbc88bd43c0f456655e8a01c55f"
+  integrity sha512-Xvc6KsDiteLvLlS3l0ox+SLKo2S3cDtjH1x5jBlce5LEzYt0GKIHrs0WqQvd6kVxdUJbavF364qzSy8qfgL8pA==
+
 "@codemirror/commands@^6.7.1":
   version "6.10.3"
   resolved "https://registry.yarnpkg.com/@codemirror/commands/-/commands-6.10.3.tgz#01877060befdec352e8300dec1f185489c300635"
