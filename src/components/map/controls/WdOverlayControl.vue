@@ -45,6 +45,37 @@ watch(
 );
 
 /** Box expanded: same box, wider (labels + info/filter visible) */
+/** Edit mode: unlocks group CRUD (add/remove layers, rename, etc.) */
+const editMode = ref(false);
+
+/** Remove a layer from the active group */
+function removeLayerFromGroup(slug: string): void {
+  const group = overlayStore.groupSettings.groups.find(
+    g => g.id === overlayStore.groupSettings.activeGroupId
+  );
+  if (!group) return;
+  group.layerSlugs = group.layerSlugs.filter(s => s !== slug);
+  group.activeLayerSlugs = group.activeLayerSlugs.filter(s => s !== slug);
+  overlayStore.syncGroupSettings();
+}
+
+/** Add a layer to the active group */
+function addLayerToGroup(slug: string): void {
+  const group = overlayStore.groupSettings.groups.find(
+    g => g.id === overlayStore.groupSettings.activeGroupId
+  );
+  if (!group || group.layerSlugs.includes(slug)) return;
+  group.layerSlugs.push(slug);
+  overlayStore.syncGroupSettings();
+}
+
+/** Check if a layer is in the active group */
+function isInActiveGroup(slug: string): boolean {
+  const group = overlayStore.groupSettings.groups.find(
+    g => g.id === overlayStore.groupSettings.activeGroupId
+  );
+  return group?.layerSlugs.includes(slug) ?? false;
+}
 const expanded = ref(false);
 
 /** Scroll fades: hide when the respective edge is reached */
@@ -439,10 +470,17 @@ onBeforeUnmount(() => {
         <div v-if="expanded" class="wd-ovl__toolbar">
           <span class="wd-ovl__toolbar-title">{{ t('overlay_style') }}</span>
           <div class="wd-ovl__toolbar-actions">
-            <!-- Future: group edit and other layer actions -->
-            <button class="wd-ovl__toolbar-btn" disabled aria-label="Reserved">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <button
+              class="wd-ovl__toolbar-btn"
+              :class="{ 'wd-ovl__toolbar-btn--active': editMode }"
+              :aria-label="editMode ? t('overlays.edit_done') : t('overlays.edit_groups')"
+              @click.stop="editMode = !editMode"
+            >
+              <svg v-if="!editMode" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                 <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />
+              </svg>
+              <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                <path d="M5 13l4 4L19 7" />
               </svg>
             </button>
           </div>
@@ -481,6 +519,16 @@ onBeforeUnmount(() => {
                 :aria-label="`${item.label} filter`" title="Filter" @click.stop="openConfig(item.name, 'filter')">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                   <path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z" />
+                </svg>
+              </button>
+              <button
+                v-if="editMode"
+                class="wd-ovl__row-action wd-ovl__row-action--remove"
+                :aria-label="`${item.label} remove from group`" title="Remove from group"
+                @click.stop="removeLayerFromGroup(item.name)"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                  <path d="M5 12h14" />
                 </svg>
               </button>
             </div>
@@ -530,6 +578,16 @@ onBeforeUnmount(() => {
                 </svg>
               </button>
               <span class="wd-ovl__row-name">{{ item.label }}</span>
+              <button
+                v-if="editMode && !isInActiveGroup(item.name)"
+                class="wd-ovl__row-action wd-ovl__row-action--add"
+                :aria-label="`${item.label} add to group`"
+                @click.stop="addLayerToGroup(item.name)"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              </button>
               <button
                 v-if="hasFilterConfig(item.name)"
                 class="wd-ovl__row-action"
@@ -1112,3 +1170,21 @@ body.body--dark .wd-ovl__row-name {
   opacity: 0;
 }
 </style>
+
+// ── Edit mode buttons ─────────────────────────────────────────────────────
+.wd-ovl__row-action--remove {
+  color: #c44e3b;
+  opacity: 0.8;
+  &:hover { opacity: 1; }
+}
+
+.wd-ovl__row-action--add {
+  color: #2a8a72;
+  opacity: 0.8;
+  &:hover { opacity: 1; }
+}
+
+.wd-ovl__toolbar-btn--active {
+  color: var(--wd-ctl-ink);
+  opacity: 1;
+}

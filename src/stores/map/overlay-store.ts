@@ -162,6 +162,7 @@ export const useOverlayStore = defineStore('overlay', () => {
     activeGroupIcon,
     visibleGroups,
     mergeLayerGroups,
+    syncGroupSettings,
     //setBasemap,
     //getBasemap,
     //setEmitter,
