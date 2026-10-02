@@ -11,7 +11,7 @@
  * ordering, and re-adding all active overlays on every style load
  * (basemap switches create a new style → layers must be re-added).
  */
-import { ref, watch, onMounted, onBeforeUnmount, computed } from 'vue';
+import { ref, watch, onMounted, onBeforeUnmount, computed, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { LocalStorage } from 'quasar';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
@@ -402,6 +402,14 @@ function groupIcon(iconSlug: string): string {
 }
 
 /** Layers to show in the mini strip (active group only) */
+// Reset rows scroll when entering expanded (group layers must show first)
+const rowsEl = ref<HTMLElement | null>(null);
+watch([expanded, editMode], ([exp, edit], [prevExp, prevEdit]) => {
+  if ((exp && !prevExp) || (!edit && prevEdit)) {
+    nextTick(() => rowsEl.value?.scrollTo({ top: 0 }));
+  }
+});
+
 const miniLayers = computed(() => {
   return overlayStore.activeGroupLayers();
 });
@@ -702,48 +710,33 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <!-- Edit toolbar (second row, edit mode only) -->
+        <!-- Edit actions: icon-only, one compact row (edit mode only) -->
         <div v-if="editMode" class="wd-ovl__edit-bar">
-          <button
-            class="wd-ovl__edit-btn"
-            :aria-label="t('overlays.group_rename')"
-            @click.stop="startRename"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <button class="wd-ovl__edit-btn" :aria-label="t('overlays.group_rename')" :title="t('overlays.group_rename')"
+            @click.stop="startRename">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
               <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />
             </svg>
-            <span>{{ t('overlays.group_rename') }}</span>
           </button>
-          <button
-            class="wd-ovl__edit-btn"
-            :aria-label="t('overlays.group_hide')"
-            @click.stop="hideGroup"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <button class="wd-ovl__edit-btn" :aria-label="t('overlays.group_hide')" :title="t('overlays.group_hide')"
+            @click.stop="hideGroup">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
               <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
               <circle cx="12" cy="12" r="3" />
             </svg>
-            <span>{{ t('overlays.group_hide') }}</span>
           </button>
-          <button
-            class="wd-ovl__edit-btn wd-ovl__edit-btn--danger"
-            :aria-label="t('overlays.group_delete')"
-            @click.stop="confirmDeleteGroup"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <button class="wd-ovl__edit-btn wd-ovl__edit-btn--danger" :aria-label="t('overlays.group_delete')" :title="t('overlays.group_delete')"
+            @click.stop="confirmDeleteGroup">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
               <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z" />
             </svg>
-            <span>{{ t('overlays.group_delete') }}</span>
           </button>
-          <button
-            class="wd-ovl__edit-btn wd-ovl__edit-btn--add"
-            :aria-label="t('overlays.group_add')"
-            @click.stop="addNewGroup"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <span class="wd-ovl__edit-sep" />
+          <button class="wd-ovl__edit-btn wd-ovl__edit-btn--add" :aria-label="t('overlays.group_add')" :title="t('overlays.group_add')"
+            @click.stop="addNewGroup">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
               <path d="M12 5v14M5 12h14" />
             </svg>
-            <span>{{ t('overlays.group_add') }}</span>
           </button>
         </div>
 
@@ -752,6 +745,7 @@ onBeforeUnmount(() => {
              not the box — they must track the rows' visible edges) -->
         <div
           :key="overlayStore.groupSettings.activeGroupId ?? 'none'"
+          ref="rowsEl"
           class="wd-ovl__rows"
           role="group"
           :aria-label="t('overlay_style')"
@@ -761,9 +755,8 @@ onBeforeUnmount(() => {
           @pointerup="onRowsPointerUp"
           @pointerleave="onRowsPointerUp"
         >
-          <!-- Fades INSIDE the scroll container — they track the rows' edges -->
+          <!-- Top fade: sticky at the scroll viewport's top edge -->
           <div class="wd-ovl__fade wd-ovl__fade--top" :class="{ 'wd-ovl__fade--hidden': scrollAtTop }" />
-          <div class="wd-ovl__fade wd-ovl__fade--bottom" :class="{ 'wd-ovl__fade--hidden': scrollAtBottom }" />
           <div v-for="item in miniLayers" :key="item.name" v-show="item.show" class="wd-ovl__row" :class="{
             'wd-ovl__row--active': item.active,
             'wd-ovl__row--passive': !item.active,
@@ -860,16 +853,6 @@ onBeforeUnmount(() => {
               </button>
               <span class="wd-ovl__row-name">{{ item.label }}</span>
               <button
-                v-if="editMode && !isInActiveGroup(item.name)"
-                class="wd-ovl__row-action wd-ovl__row-action--add"
-                :aria-label="`${item.label} add to group`"
-                @click.stop="addLayerToGroup(item.name)"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                  <path d="M12 5v14M5 12h14" />
-                </svg>
-              </button>
-              <button
                 v-if="hasFilterConfig(item.name)"
                 class="wd-ovl__row-action"
                 :aria-label="`${item.label} filter`"
@@ -877,6 +860,16 @@ onBeforeUnmount(() => {
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                   <path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z" />
+                </svg>
+              </button>
+              <button
+                v-if="editMode && !isInActiveGroup(item.name)"
+                class="wd-ovl__row-action wd-ovl__row-action--add"
+                :aria-label="`${item.label} add to group`"
+                @click.stop="addLayerToGroup(item.name)"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                  <path d="M12 5v14M5 12h14" />
                 </svg>
               </button>
             </div>
@@ -896,6 +889,8 @@ onBeforeUnmount(() => {
             </span>
           </div>
         </template>
+          <!-- Bottom fade: LAST child so sticky anchors at the scroll bottom -->
+          <div class="wd-ovl__fade wd-ovl__fade--bottom" :class="{ 'wd-ovl__fade--hidden': scrollAtBottom }" />
         </div>
 
         <!-- Promoted layers: active layers from OTHER groups (mini strip only) -->
@@ -910,8 +905,10 @@ onBeforeUnmount(() => {
           </div>
         </template>
 
-        <!-- Group selector: spans the box width, distinct from layer buttons -->
+        <!-- Group selector: spans the box width, distinct from layer buttons.
+             Hidden in edit mode (cycling groups while editing is a no-op). -->
         <button
+          v-if="!editMode"
           class="wd-ovl__group-btn"
           :aria-label="overlayStore.activeGroupName(t)"
           :title="overlayStore.activeGroupName(t)"
@@ -1165,21 +1162,25 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 // INSIDE the rows container — sticky positioned so they stay visible
 // while the content scrolls. They kiss the clipped rows, not the box.
 .wd-ovl__fade {
-  position: absolute;
+  // STICKY: absolute children of a scroll container scroll WITH the
+  // content; sticky stays pinned at the scroll viewport's edge.
+  position: sticky;
   left: 0;
-  right: 0;
+  z-index: 3;
+  display: block;
   height: 12px;
   pointer-events: none;
   transition: opacity 0.25s $ease;
-  z-index: 3;
 
   &--top {
     top: 0;
+    margin-bottom: -12px; // no layout space
     background: linear-gradient(to bottom, var(--wd-ctl-bg) 80%, transparent);
   }
 
   &--bottom {
     bottom: 0;
+    margin-top: -12px;
     background: linear-gradient(to top, var(--wd-ctl-bg) 80%, transparent);
   }
 
@@ -1548,117 +1549,56 @@ body.body--dark .wd-ovl__row-name {
 .wd-ovl-fade-leave-to {
   opacity: 0;
 }
-</style>
 
-// ── Edit mode buttons ─────────────────────────────────────────────────────
-.wd-ovl__row-action--remove {
-  color: #c44e3b;
-  opacity: 0.8;
-  &:hover { opacity: 1; }
-}
-
-.wd-ovl__row-action--add {
-  color: #2a8a72;
-  opacity: 0.8;
-  &:hover { opacity: 1; }
-}
-
-.wd-ovl__toolbar-btn--active {
-  color: $wd-gold;
-  border-color: $wd-gold;
-  background: rgba(191, 171, 37, 0.08);
-}
-
-// ── Group switch animation: rows slide in from the right ────────────────
-@keyframes wd-ovl-rows-enter {
-  from {
-    opacity: 0;
-    transform: translateX(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-.wd-ovl__rows {
-  animation: wd-ovl-rows-enter 0.18s ease-out;
-}
-
-// ── Edit mode: expanded box with more space ─────────────────────────────
+// ── EDIT MODE: maximized box ───────────────────────────────────────────
 .wd-ovl__box--edit {
-  width: min(280px, calc(100vw - 48px)) !important;
+  // MAXIMIZE: fill available space
+  width: min(320px, calc(100vw - 48px)) !important;
+  height: calc(100dvh - 160px);
   max-height: calc(100dvh - 160px) !important;
 
-  // In edit mode, rows expand to fill the available space
+  // Toolbar + edit bar become IN-FLOW headers (maximized box has room)
+  .wd-ovl__toolbar {
+    position: static;
+    flex: none;
+    border: none;
+    border-bottom: 1px solid var(--wd-ctl-border);
+    border-radius: 8px 8px 0 0;
+  }
+
+  .wd-ovl__edit-bar {
+    position: static;
+    flex: none;
+    border-bottom: 1px solid var(--wd-ctl-border);
+  }
+
+  // Rows fill the remaining space
   .wd-ovl__rows {
     max-height: none !important;
     flex: 1 1 auto;
-    min-height: calc(var(--mini-rows, 4) * 42px + 8px);
+    min-height: 120px;
   }
 }
 
-.wd-ovl__toolbar-btn--danger {
-  color: #c44e3b;
-  &:hover {
-    background: rgba(196, 78, 59, 0.08);
-    color: #a93d2c;
-  }
-}
-
-// ── Drag-and-drop styling (edit mode) ──────────────────────────────────
-.wd-ovl__drag-handle {
-  display: grid;
-  place-items: center;
-  width: 16px;
-  flex: none;
-  color: var(--wd-ctl-ink-soft);
-  opacity: 0.4;
-  cursor: grab;
-  pointer-events: auto;
-
-  &:active {
-    cursor: grabbing;
-  }
-}
-
-.wd-ovl__row--dragging {
-  opacity: 0.3;
-}
-
-.wd-ovl__row--drag-over {
-  border-top: 2px solid $wd-gold;
-  margin-top: -2px;
-}
-
-// ── Edit toolbar (second row) ────────────────────────────────────────────
+// ── Edit action bar: icon-only, one row ────────────────────────────────
 .wd-ovl__edit-bar {
-  position: absolute;
-  bottom: calc(100% + 42px); // above the toolbar
-  left: 0;
-  right: 0;
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  padding: 4px 8px;
-  background: var(--wd-ctl-bg);
-  border: 1px solid var(--wd-ctl-border);
-  border-bottom: none;
-  border-radius: 8px 8px 0 0;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px;
 }
 
 .wd-ovl__edit-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  border: 1px solid var(--wd-ctl-border);
-  border-radius: 4px;
-  background: var(--wd-ctl-date-bg);
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 30px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
   color: var(--wd-ctl-ink-soft);
-  font-size: 11px;
-  font-weight: 500;
   cursor: pointer;
+  transition: background-color 0.12s $ease, color 0.12s $ease;
   pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
 
@@ -1678,33 +1618,70 @@ body.body--dark .wd-ovl__row-name {
   }
 }
 
-// ── Drop zone on "All layers" separator ─────────────────────────────────
+.wd-ovl__edit-sep {
+  flex: 1;
+}
+
+// ── Row actions (edit mode): add/remove from group ────────────────────
+.wd-ovl__row-action--remove {
+  color: #c44e3b;
+  &:hover { background: rgba(196, 78, 59, 0.08); }
+}
+
+.wd-ovl__row-action--add {
+  color: #2a8a72;
+  &:hover { background: rgba(42, 138, 114, 0.08); }
+}
+
+// ── Drag handle (6-dot grip) ───────────────────────────────────────────
+.wd-ovl__drag-handle {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  flex: none;
+  color: var(--wd-ctl-ink-soft);
+  opacity: 0.4;
+  cursor: grab;
+  pointer-events: auto;
+}
+
+// ── Drop zone on "All layers" separator ────────────────────────────────
 .wd-ovl__all-sep--drop {
   background: rgba(191, 171, 37, 0.12);
   border-top: 2px dashed rgba(191, 171, 37, 0.5);
   cursor: alias;
 }
 
-// ── Cancel / Confirm button group (edit mode) ──────────────────────────
+// ── Footer: cancel (X) + confirm (✓) on ONE line ──────────────────────
 .wd-ovl__more-group {
   display: flex;
-  align-items: center;
-  gap: 4px;
   width: 100%;
   flex: none;
+  border-top: 1px solid var(--wd-ctl-border);
   pointer-events: auto;
-  padding: 0 4px;
-  height: 30px;
 }
 
-.wd-ovl__more--cancel {
-  color: #c44e3b;
-  border-radius: 4px;
+.wd-ovl__more-group .wd-ovl__more {
   flex: 1;
+  height: 38px;
+  border-radius: 0;
+  border-top: none;
 }
 
-.wd-ovl__more--confirm {
+.wd-ovl__more-group .wd-ovl__more--cancel {
+  border-bottom-left-radius: 8px;
+  border-right: 1px solid var(--wd-ctl-border);
+  color: var(--wd-ctl-ink-soft);
+
+  &:hover { background: var(--wd-ctl-hover); }
+}
+
+.wd-ovl__more-group .wd-ovl__more--confirm {
+  border-bottom-right-radius: 8px;
   color: #2a8a72;
-  border-radius: 4px;
-  flex: 1;
+  background: rgba(42, 138, 114, 0.07);
+
+  &:hover { background: rgba(42, 138, 114, 0.14); }
 }
+
+</style>
