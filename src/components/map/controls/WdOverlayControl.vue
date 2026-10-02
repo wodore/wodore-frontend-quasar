@@ -191,6 +191,7 @@ function confirmEdit(): void {
 }
 
 function toggleEditMode(): void {
+  if (!editMode.value) updateEditCap();
   if (editMode.value && hasEdits.value) {
     const save = window.confirm('Save changes?');
     if (!save) {
@@ -431,6 +432,23 @@ function groupIcon(iconSlug: string): string {
 }
 
 /** Layers to show in the mini strip (active group only) */
+// Edit-mode height cap: stay 1 button-height below the top-right map
+// controls (desktop: geolocate/nav cluster y≈58-274) and below the topbar.
+// Measured live — CSS alone can't know the control cluster's height.
+const editMaxH = ref<number | null>(null);
+function updateEditCap(): void {
+  const boxEl = document.querySelector('.wd-ovl__box');
+  if (!boxEl) return;
+  const boxBottom = boxEl.getBoundingClientRect().bottom;
+  let limit = 0;
+  const topbar = document.querySelector('.wd-topbar');
+  if (topbar) limit = Math.max(limit, topbar.getBoundingClientRect().bottom);
+  const ctrls = document.querySelector('.maplibregl-ctrl-top-right');
+  if (ctrls) limit = Math.max(limit, ctrls.getBoundingClientRect().bottom);
+  editMaxH.value = Math.max(220, Math.round(boxBottom - limit - 48));
+}
+window.addEventListener('resize', () => { if (editMode.value) updateEditCap(); });
+
 // Reset rows scroll when entering expanded (group layers must show first)
 const rowsEl = ref<HTMLElement | null>(null);
 watch([expanded, editMode], ([exp, edit], [prevExp, prevEdit]) => {
@@ -700,13 +718,12 @@ onBeforeUnmount(() => {
         :class="{ 'wd-ovl__box--expanded': expanded, 'wd-ovl__box--edit': editMode }"
         :style="{
           '--mini-rows': miniLayers.length,
-          '--prom-count': promotedLayers.length,
-          '--prom-extra': promotedLayers.length > 0 ? '5px' : '0px',
+          ...(editMode && editMaxH ? { maxHeight: editMaxH + 'px' } : {}),
         }"
       >
         <!-- Top toolbar: EXTENDED only. The box grows UP by this height
              (max-height compensates) so the icon rows NEVER move. -->
-        <div v-if="expanded" class="wd-ovl__toolbar">
+        <div v-if="expanded" class="wd-ovl__toolbar" @wheel.prevent>
           <span class="wd-ovl__toolbar-icon">
             <q-icon :name="layerIcon(overlayStore.activeGroupIcon())" size="16px" />
           </span>
@@ -729,7 +746,7 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- Edit actions: icon-only, one compact row (edit mode only) -->
-        <div v-if="editMode" class="wd-ovl__edit-bar">
+        <div v-if="editMode" class="wd-ovl__edit-bar" @wheel.prevent>
           <button class="wd-ovl__edit-btn" :aria-label="t('overlays.group_rename')" :title="t('overlays.group_rename')"
             @click.stop="startRename">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -876,10 +893,7 @@ onBeforeUnmount(() => {
                 :aria-label="`${item.label} info`"
                 @click.stop="openConfig(item.name, 'legend')"
               >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <circle cx="12" cy="12" r="9" />
-                  <path d="M12 11v5M12 8h.01" />
-                </svg>
+                <q-icon name="wd-info" size="xs" />
               </button>
               <span class="wd-ovl__row-name">{{ item.label }}</span>
               <button
@@ -923,12 +937,18 @@ onBeforeUnmount(() => {
           <div class="wd-ovl__fade wd-ovl__fade--bottom" :class="{ 'wd-ovl__fade--hidden': scrollAtBottom }" />
         </div>
 
-        <!-- Promoted layers: active layers from OTHER groups (mini strip only) -->
-        <template v-if="!expanded && promotedLayers.length > 0">
+        <!-- Promoted layers: active layers from OTHER groups. Rendered in
+             BOTH mini and expanded (below the scroll area, above the group
+             selector) so the box height and icon positions never change
+             when expanding. Hidden in edit mode (All-layers covers them). -->
+        <template v-if="!editMode && promotedLayers.length > 0">
           <div class="wd-ovl__promoted-sep" />
           <div v-for="item in promotedLayers" :key="`p-${item.name}`" class="wd-ovl__row"
             :class="{ 'wd-ovl__row--active': item.active }"
             @click="onRowClick(<OverlaySwitchItem>(item as unknown))">
+            <div v-if="expanded" class="wd-ovl__row-info">
+              <span class="wd-ovl__row-name">{{ item.label }}</span>
+            </div>
             <span class="wd-ovl__icon wd-ovl__icon--active" :aria-label="item.label">
               <q-icon :name="layerIcon(item.icon)" size="20px" />
             </span>
@@ -942,6 +962,7 @@ onBeforeUnmount(() => {
           :aria-label="overlayStore.activeGroupName(t)"
           :title="overlayStore.activeGroupName(t)"
           @click.stop="onGroupSelectorTap"
+          @wheel.prevent
         >
           <q-icon :name="layerIcon(overlayStore.activeGroupIcon())" size="20px" />
           <svg class="wd-ovl__group-arrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
@@ -962,7 +983,7 @@ onBeforeUnmount(() => {
 
         <!-- More button: toggles the box between mini and expanded -->
         <!-- In edit mode: cancel (X) and confirm (✓) replace the more button -->
-        <div v-if="editMode" class="wd-ovl__more-group">
+        <div v-if="editMode" class="wd-ovl__more-group" @wheel.prevent>
           <button class="wd-ovl__more wd-ovl__more--cancel" :aria-label="t('overlays.edit_cancel')"
             @click.stop="cancelEdit">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
@@ -1070,6 +1091,11 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 }
 
 // ── THE BOX ──────────────────────────────────────────────────────────────
+.wd-ovl {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 .wd-ovl__box {
   display: flex;
   flex-direction: column;
@@ -1100,6 +1126,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 
 // ── Top toolbar (space reserved in BOTH states — icons never move) ───────
 .wd-ovl__toolbar {
+  pointer-events: auto; // wheel/interaction over the header must not reach the map
   // ABSOLUTE above the box — the rows start at the same Y as in mini.
   // The box grows UP (bottom-anchored sticky) — the toolbar is the growth.
   position: absolute;
@@ -1195,7 +1222,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   // content; sticky stays pinned at the scroll viewport's edge.
   position: sticky;
   left: 0;
-  z-index: 3;
+  z-index: 5;
   display: block;
   flex: none; // never shrink — a collapsed fade keeps its -12px margin and pulls the first row out of view
   height: 12px;
@@ -1583,10 +1610,17 @@ body.body--dark .wd-ovl__row-name {
 }
 
 // ── EDIT MODE: maximized box ───────────────────────────────────────────
+.wd-ovl__box--expanded:not(.wd-ovl__box--edit) {
+  // The toolbar floats directly above — IT carries the top radius.
+  // A rounded box top under a rounded toolbar reads as two stacked cards.
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
 .wd-ovl__box--edit {
   // As tall as the CONTENT needs, capped below the top map controls
-  width: min(320px, calc(100vw - 48px)) !important;
-  max-height: calc(100dvh - 160px) !important;
+  width: min(320px, calc(100vw - 48px));
+  max-height: calc(100dvh - 160px); // fallback — inline style (measured) wins
 
   // Toolbar + edit bar become IN-FLOW headers (maximized box has room)
   .wd-ovl__toolbar {
@@ -1613,6 +1647,7 @@ body.body--dark .wd-ovl__row-name {
 
 // ── Edit action bar: icon-only, one row ────────────────────────────────
 .wd-ovl__edit-bar {
+  pointer-events: auto; // wheel/interaction must not reach the map
   display: flex;
   align-items: center;
   gap: 2px;
