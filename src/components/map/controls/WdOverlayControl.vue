@@ -515,7 +515,7 @@ onBeforeUnmount(() => {
 
         <!-- Rows: icon always at the right, label+actions appear when expanded -->
         <div
-          :key="overlayStore.groupSettings.activeGroupId"
+          :key="overlayStore.groupSettings.activeGroupId ?? 'none'"
           class="wd-ovl__rows"
           role="group"
           :aria-label="t('overlay_style')"
