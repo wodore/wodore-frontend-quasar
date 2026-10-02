@@ -28,7 +28,6 @@ Before writing CSS, check whether Quasar already provides it:
 ## Parity gate for refactors
 
 `yarn test:visual` captures 40 state-asserted screenshots (2 schemes × 2 viewports × 10 states) with a WCAG contrast audit. For zero-visual-change refactors: capture a baseline on main, refactor, re-capture — all deterministic chrome states must be pixel-identical (hut/home states render live staging data and vary run-to-run; compare those by eye, not bytes).
-<<<<<<< HEAD
 
 
 ## Decision: SFC-scoped vs global (2026-10-01)
@@ -69,5 +68,3 @@ Before writing CSS, check whether Quasar already provides it:
 2. **Parallelize interaction tests** — currently `workers: 1` for the e2e suite; interaction specs are independent and could use `workers: 2+`
 3. **Composite `test:ci`** — `yarn test:unit && yarn test:interaction && yarn test:visual` as a single command
 4. **Playwright HTML reporter** alongside Allure for local debugging (`npx playwright show-report`)
-=======
->>>>>>> origin/main

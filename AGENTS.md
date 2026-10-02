@@ -63,30 +63,36 @@ worker activation; native: Play in-app update via
 `src/services/appUpdate.ts`).
 
 # Development server (default: PWA mode on port 9000)
-yarn dev              # or yarn dev:pwa
-yarn dev:spa          # SPA mode
-yarn dev:ssr          # SSR mode
+
+yarn dev # or yarn dev:pwa
+yarn dev:spa # SPA mode
+yarn dev:ssr # SSR mode
 
 # Build for production
-yarn build            # or yarn build:pwa
-yarn build:spa        # SPA build
-yarn build:ssr        # SSR build
+
+yarn build # or yarn build:pwa
+yarn build:spa # SPA build
+yarn build:ssr # SSR build
 
 # Serve production build locally
-yarn serve            # or yarn serve:pwa
+
+yarn serve # or yarn serve:pwa
 yarn serve:spa
 yarn serve:ssr
 
 # Code quality
-yarn lint             # Check code
-yarn lint:fix         # Fix linting issues
-yarn format           # Format with Prettier
+
+yarn lint # Check code
+yarn lint:fix # Fix linting issues
+yarn format # Format with Prettier
 
 # Component development (Histoire)
-yarn story:dev        # Start Histoire dev server
-yarn story:build      # Build static Histoire site
-yarn story:preview    # Preview built Histoire site
-```
+
+yarn story:dev # Start Histoire dev server
+yarn story:build # Build static Histoire site
+yarn story:preview # Preview built Histoire site
+
+````
 
 ### Testing
 
@@ -104,7 +110,7 @@ yarn test:e2e             # 2. run the suite (mobile-chrome project)
 yarn allure:generate      # merge unit + e2e results, generate report
 yarn allure:open          # open the generated report in a browser
 yarn allure:clean         # remove all results and reports
-```
+````
 
 **Test structure**: `tests/unit/` (Vitest, node env; store specs use happy-dom via a
 `// @vitest-environment happy-dom` docblock) and `tests/e2e/` (Playwright).

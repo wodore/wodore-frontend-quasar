@@ -16,11 +16,8 @@
       and the SEO edge (docker/seo.js) can cache hut pages. See
       services/runtimeEnv.ts and public/env.js.
     -->
-    <%
-      const inlineEnv =
-        ctx.dev || ctx.mode.capacitor || ctx.mode.cordova || !process.env.WODORE_EXTERNAL_ENV;
-    %>
-    <% if (inlineEnv) { %>
+    <% const inlineEnv = ctx.dev || ctx.mode.capacitor || ctx.mode.cordova ||
+    !process.env.WODORE_EXTERNAL_ENV; %> <% if (inlineEnv) { %>
     <script>
       window.__WODORE_RUNTIME_ENV__ = {
         WODORE_APP_NAME: '<%= process.env.WODORE_APP_NAME %>',
