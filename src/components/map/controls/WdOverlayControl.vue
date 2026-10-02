@@ -145,6 +145,22 @@ function takeSnapshot(): void {
   hasEdits.value = false;
 }
 
+function cancelEdit(): void {
+  // Revert to snapshot and exit edit mode
+  if (hasEdits.value && snapshotGroups.value) {
+    overlayStore.groupSettings.groups = JSON.parse(snapshotGroups.value);
+    overlayStore.syncGroupSettings();
+  }
+  editMode.value = false;
+  hasEdits.value = false;
+}
+
+function confirmEdit(): void {
+  // Keep changes and exit edit mode
+  editMode.value = false;
+  hasEdits.value = false;
+}
+
 function toggleEditMode(): void {
   if (editMode.value && hasEdits.value) {
     const save = window.confirm('Save changes?');
@@ -919,7 +935,22 @@ onBeforeUnmount(() => {
         />
 
         <!-- More button: toggles the box between mini and expanded -->
-        <button class="wd-ovl__more" :aria-label="expanded ? t('close') : t('overlay_style')" :aria-expanded="expanded"
+        <!-- In edit mode: cancel (X) and confirm (✓) replace the more button -->
+        <div v-if="editMode" class="wd-ovl__more-group">
+          <button class="wd-ovl__more wd-ovl__more--cancel" :aria-label="t('overlays.edit_cancel')"
+            @click.stop="cancelEdit">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+          <button class="wd-ovl__more wd-ovl__more--confirm" :aria-label="t('overlays.edit_done')"
+            @click.stop="confirmEdit">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+              <path d="M5 13l4 4L19 7" />
+            </svg>
+          </button>
+        </div>
+        <button v-else class="wd-ovl__more" :aria-label="expanded ? t('close') : t('overlay_style')" :aria-expanded="expanded"
           @click.stop="expanded = !expanded">
           <svg v-if="!expanded" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
             <circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" />
@@ -1016,9 +1047,9 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 .wd-ovl__box {
   display: flex;
   flex-direction: column;
-  width: 48px; // matches the basemap toggle width
-  max-height: calc(100dvh - 220px); // safety cap
-  transition: width 0.25s cubic-bezier(0.2, 0, 0, 1); // animate expand/collapse
+  width: 48px;
+  max-height: calc(100dvh - 220px);
+  transition: width 0.25s cubic-bezier(0.2, 0, 0, 1);
   border-radius: 8px;
   border: 1px solid var(--wd-ctl-border);
   background: var(--wd-ctl-bg);
@@ -1036,26 +1067,29 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
     width: 216px;
     // SAME height as mini — the rows cap at the mini content height
     // (--mini-rows CSS var, set on the box element) and scroll.
-    // EXACT same height as mini: the toolbar eats into the rows area
-    // (rows shrink to compensate), the All layers section scrolls within
-    .wd-ovl__rows {
-      max-height: calc(var(--mini-rows, 4) * 42px + 8px - 44px); // minus toolbar height
-    }
+
     animation: wd-ovl-pop 0.28s $ease;
   }
 }
 
 // ── Top toolbar (space reserved in BOTH states — icons never move) ───────
 .wd-ovl__toolbar {
-  flex: none;
-  height: 44px;
+  // ABSOLUTE above the box — the rows start at the same Y as in mini.
+  // The box grows UP (bottom-anchored sticky) — the toolbar is the growth.
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  height: 42px;
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 0 10px;
-  border-bottom: 1px solid var(--wd-ctl-border);
-  background: var(--wd-ctl-date-bg);
+  background: var(--wd-ctl-bg);
+  border: 1px solid var(--wd-ctl-border);
+  border-bottom: none;
   border-radius: 8px 8px 0 0;
+  z-index: -1;
 }
 
 .wd-ovl__toolbar-icon {
@@ -1132,24 +1166,22 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 // INSIDE the rows container — sticky positioned so they stay visible
 // while the content scrolls. They kiss the clipped rows, not the box.
 .wd-ovl__fade {
-  position: sticky;
+  position: absolute;
   left: 0;
   right: 0;
-  height: 10px;
+  height: 12px;
   pointer-events: none;
   transition: opacity 0.25s $ease;
-  z-index: 2;
+  z-index: 3;
 
   &--top {
     top: 0;
-    margin-bottom: -10px;
-    background: linear-gradient(to bottom, var(--wd-ctl-bg), transparent);
+    background: linear-gradient(to bottom, var(--wd-ctl-bg) 80%, transparent);
   }
 
   &--bottom {
     bottom: 0;
-    margin-top: -10px;
-    background: linear-gradient(to top, var(--wd-ctl-bg) 10%, transparent);
+    background: linear-gradient(to top, var(--wd-ctl-bg) 80%, transparent);
   }
 
   &--hidden {
@@ -1161,9 +1193,10 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 // FIXED height: identical in mini and expanded — the box grows UP by the
 // header height when expanding, so the icon chips never move a pixel.
 .wd-ovl__rows {
+  position: relative; // anchor for the absolute fades
   flex: 0 1 auto; // auto-grow to content (mini drives the height)
+  max-height: calc(var(--mini-rows, 4) * 42px + 8px); // cap at mini content height
   overflow-y: auto;
-  max-height: calc(100dvh - 320px); // safety scroll cap
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
@@ -1601,13 +1634,19 @@ body.body--dark .wd-ovl__row-name {
 
 // ── Edit toolbar (second row) ────────────────────────────────────────────
 .wd-ovl__edit-bar {
-  flex: none;
+  position: absolute;
+  bottom: calc(100% + 42px); // above the toolbar
+  left: 0;
+  right: 0;
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
   padding: 4px 8px;
-  border-bottom: 1px solid var(--wd-ctl-border);
   background: var(--wd-ctl-bg);
+  border: 1px solid var(--wd-ctl-border);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  z-index: -2;
 }
 
 .wd-ovl__edit-btn {
@@ -1646,4 +1685,28 @@ body.body--dark .wd-ovl__row-name {
   background: rgba(191, 171, 37, 0.12);
   border-top: 2px dashed rgba(191, 171, 37, 0.5);
   cursor: alias;
+}
+
+// ── Cancel / Confirm button group (edit mode) ──────────────────────────
+.wd-ovl__more-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  flex: none;
+  pointer-events: auto;
+  padding: 0 4px;
+  height: 30px;
+}
+
+.wd-ovl__more--cancel {
+  color: #c44e3b;
+  border-radius: 4px;
+  flex: 1;
+}
+
+.wd-ovl__more--confirm {
+  color: #2a8a72;
+  border-radius: 4px;
+  flex: 1;
 }

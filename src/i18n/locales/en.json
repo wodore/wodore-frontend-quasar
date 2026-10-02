@@ -387,7 +387,8 @@
     "group_rename": "Rename group",
     "group_hide": "Hide group",
     "group_delete": "Delete group",
-    "group_add": "Add group"
+    "group_add": "Add group",
+    "edit_cancel": "Cancel"
   },
   "basemap": "Basemap",
   "basemaps": {
