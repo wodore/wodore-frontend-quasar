@@ -127,7 +127,18 @@ function hut(r) {
     r.internalRedirect('/hut/' + slug + '.md');
     return;
   }
-  Promise.all([r.subrequest(SHELL_URI), r.subrequest('/_seo/meta/' + slug)])
+  // Language: an explicit ?lang=de|en|fr|it localizes the injected meta
+  // (title/description/og:*) in that language. The whitelist matches the
+  // meta endpoint's validated lang parameter; unknown values fall back to
+  // the endpoint default (de). Deliberately NOT using Accept-Language: the
+  // meta cache keys on the request URI, so header-based negotiation would
+  // serve one language's cache entry to everyone.
+  var metaUri = '/_seo/meta/' + slug;
+  var lang = r.args ? r.args.lang : '';
+  if (lang === 'de' || lang === 'en' || lang === 'fr' || lang === 'it') {
+    metaUri += '?lang=' + lang;
+  }
+  Promise.all([r.subrequest(SHELL_URI), r.subrequest(metaUri)])
     .then(function (res) {
       var shellRes = res[0];
       var metaRes = res[1];
