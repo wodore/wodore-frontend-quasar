@@ -293,10 +293,9 @@ jobs:
   # closes, so gh-pages does not accumulate stale reports.
   cleanup:
     needs: check-draft
-    if: needs.check-draft.outputs.draft != 'true'
+    if: needs.check-draft.outputs.draft != 'true' && github.event_name == 'pull_request' && github.event.action == 'closed'
     name: Remove PR reports
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && github.event.action == 'closed'
 
     steps:
       - name: Check out gh-pages
