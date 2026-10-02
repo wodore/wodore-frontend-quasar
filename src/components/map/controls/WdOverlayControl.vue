@@ -1654,7 +1654,7 @@ body.body--dark .wd-ovl__row-name {
   width: 34px;
   height: 30px;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   background: transparent;
   color: var(--wd-ctl-ink-soft);
   cursor: pointer;
