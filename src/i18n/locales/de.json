@@ -383,7 +383,10 @@
         "name": "Wintersport"
       }
     },
-    "all_layers": "Alle Ebenen"
+    "all_layers": "Alle Ebenen",
+    "group_rename": "Gruppe umbenennen",
+    "group_hide": "Gruppe ausblenden",
+    "group_delete": "Gruppe löschen"
   },
   "basemap": "Basiskarte",
   "basemaps": {

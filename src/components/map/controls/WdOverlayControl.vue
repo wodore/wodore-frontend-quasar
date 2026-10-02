@@ -69,6 +69,49 @@ function addLayerToGroup(slug: string): void {
   overlayStore.syncGroupSettings();
 }
 
+/** Rename the active group (prompt) */
+function startRename(): void {
+  const group = overlayStore.groupSettings.groups.find(
+    g => g.id === overlayStore.groupSettings.activeGroupId
+  );
+  if (!group) return;
+  const newName = window.prompt('Group name', overlayStore.activeGroupName(t));
+  if (newName && newName.trim()) {
+    group.name = newName.trim();
+    overlayStore.syncGroupSettings();
+  }
+}
+
+/** Hide the active group (only in edit mode) */
+function hideGroup(): void {
+  const group = overlayStore.groupSettings.groups.find(
+    g => g.id === overlayStore.groupSettings.activeGroupId
+  );
+  if (!group) return;
+  group.hidden = true;
+  overlayStore.syncGroupSettings();
+  // Cycle to the next visible group
+  overlayStore.cycleGroup();
+}
+
+/** Delete the active group (confirm) */
+function confirmDeleteGroup(): void {
+  const group = overlayStore.groupSettings.groups.find(
+    g => g.id === overlayStore.groupSettings.activeGroupId
+  );
+  if (!group) return;
+  const confirmed = window.confirm(
+    `Delete "${overlayStore.activeGroupName(t)}"? Layers will be moved to "All layers".`
+  );
+  if (!confirmed) return;
+  group.removed = true;
+  group.layerSlugs.forEach(slug => {
+    // Layers go back to ungrouped
+  });
+  overlayStore.syncGroupSettings();
+  overlayStore.cycleGroup();
+}
+
 /** Check if a layer is in the active group */
 function isInActiveGroup(slug: string): boolean {
   const group = overlayStore.groupSettings.groups.find(
@@ -483,7 +526,7 @@ onBeforeUnmount(() => {
       <div
         v-if="stripOpen"
         class="wd-ovl__box"
-        :class="{ 'wd-ovl__box--expanded': expanded }"
+        :class="{ 'wd-ovl__box--expanded': expanded, 'wd-ovl__box--edit': editMode }"
         :style="{ '--mini-rows': miniLayers.length + promotedLayers.length }"
       >
         <!-- Top toolbar: EXTENDED only. The box grows UP by this height
@@ -831,13 +874,28 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 .wd-ovl__toolbar-title {
   flex: 1;
   min-width: 0;
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: $wd-gold; // gold accent — the group is the hero
+  font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--wd-ctl-ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  // Small gold tick before the text — same pattern as wd-section-title
+  &::before {
+    content: '';
+    width: 3px;
+    height: 14px;
+    border-radius: 1px;
+    flex: none;
+    background: $wd-gold;
+  }
 }
 
 .wd-ovl__toolbar-actions {
@@ -1297,4 +1355,18 @@ body.body--dark .wd-ovl__row-name {
 
 .wd-ovl__rows {
   animation: wd-ovl-rows-enter 0.18s ease-out;
+}
+
+// ── Edit mode: expanded box with more space ─────────────────────────────
+.wd-ovl__box--edit {
+  width: min(280px, calc(100vw - 48px));
+  max-height: calc(100dvh - 200px);
+}
+
+.wd-ovl__toolbar-btn--danger {
+  color: #c44e3b;
+  &:hover {
+    background: rgba(196, 78, 59, 0.08);
+    color: #a93d2c;
+  }
 }
