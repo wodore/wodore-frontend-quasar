@@ -489,6 +489,9 @@ onBeforeUnmount(() => {
         <!-- Top toolbar: EXTENDED only. The box grows UP by this height
              (max-height compensates) so the icon rows NEVER move. -->
         <div v-if="expanded" class="wd-ovl__toolbar">
+          <span class="wd-ovl__toolbar-icon">
+            <q-icon :name="layerIcon(overlayStore.activeGroupIcon())" size="16px" />
+          </span>
           <span class="wd-ovl__toolbar-title">{{ overlayStore.activeGroupName(t) }}</span>
           <div class="wd-ovl__toolbar-actions">
             <button
@@ -804,23 +807,34 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 // ── Top toolbar (space reserved in BOTH states — icons never move) ───────
 .wd-ovl__toolbar {
   flex: none;
-  height: 34px;
+  height: 44px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 8px;
+  gap: 8px;
+  padding: 0 10px;
   border-bottom: 1px solid var(--wd-ctl-border);
+  background: var(--wd-ctl-date-bg);
+  border-radius: 8px 8px 0 0;
+}
+
+.wd-ovl__toolbar-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  background: var(--wd-ctl-bg);
+  border: 1px solid var(--wd-ctl-border);
 }
 
 .wd-ovl__toolbar-title {
   flex: 1;
   min-width: 0;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
-  color: var(--wd-ctl-ink);
-  opacity: 0.78;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: $wd-gold; // gold accent — the group is the hero
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -836,18 +850,25 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 .wd-ovl__toolbar-btn {
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
-  border: none;
+  width: 44px;
+  height: 36px;
+  border: 1px solid var(--wd-ctl-border);
   border-radius: 4px;
-  background: transparent;
+  background: var(--wd-ctl-bg);
   color: var(--wd-ctl-ink-soft);
   cursor: pointer;
-  opacity: 0.8; // reserved placeholder
-  pointer-events: none; // disabled until functionality lands
+  pointer-events: auto;
+  flex: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 
-  &:hover:not(:disabled) {
+  &:hover {
     background: var(--wd-ctl-hover);
+    color: var(--wd-ctl-ink);
+  }
+
+  &:active {
+    transform: scale(0.95);
   }
 }
 
@@ -1257,8 +1278,9 @@ body.body--dark .wd-ovl__row-name {
 }
 
 .wd-ovl__toolbar-btn--active {
-  color: var(--wd-ctl-ink);
-  opacity: 1;
+  color: $wd-gold;
+  border-color: $wd-gold;
+  background: rgba(191, 171, 37, 0.08);
 }
 
 // ── Group switch animation: rows slide in from the right ────────────────
