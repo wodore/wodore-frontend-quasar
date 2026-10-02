@@ -21,7 +21,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  check-draft:
+    runs-on: ubuntu-latest
+    steps:
+      - id: is_draft
+        run: echo "draft=${{ github.event.pull_request.draft || false }}" >> "$GITHUB_OUTPUT"
+  # Skip ALL jobs when the PR is a draft (no tests, no preview, no APK)
   preview:
+    needs: check-draft
+    if: needs.check-draft.outputs.draft != 'true'
     name: Deploy / cleanup preview
     runs-on: ubuntu-latest
     steps:

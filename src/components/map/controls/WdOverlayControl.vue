@@ -34,11 +34,15 @@ const mapRef = useMap();
 const stripOpen = ref(
   LocalStorage.hasItem('wd_ovl_strip') ? (LocalStorage.getItem('wd_ovl_strip') as boolean) : true
 );
-watch(stripOpen, v => {
-  LocalStorage.set('wd_ovl_strip', v);
-  // flag on <body> — the zoom slider hides while the strip is open
-  document.body.classList.toggle('wd-ovl-strip-open', v);
-});
+watch(
+  stripOpen,
+  v => {
+    LocalStorage.set('wd_ovl_strip', v);
+    // flag on <body> — the zoom slider hides while the strip is open
+    document.body.classList.toggle('wd-ovl-strip-open', v);
+  },
+  { immediate: true } // set on mount too — the strip defaults to open
+);
 
 /** Box expanded: same box, wider (labels + info/filter visible) */
 const expanded = ref(false);

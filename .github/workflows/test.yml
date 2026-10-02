@@ -21,9 +21,16 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  unit-tests:
+  check-draft:
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' || github.event.action != 'closed'
+    steps:
+      - id: is_draft
+        run: echo "draft=${{ github.event.pull_request.draft || false }}" >> "$GITHUB_OUTPUT"
+  # Skip ALL jobs when the PR is a draft (no tests, no preview, no APK)
+  unit-tests:
+    needs: check-draft
+    if: needs.check-draft.outputs.draft != 'true' && (github.event_name != 'pull_request' || github.event.action != 'closed')
+    runs-on: ubuntu-latest
 
     steps:
       - name: Check out
@@ -88,7 +95,10 @@ jobs:
 
       - name: Run interaction tests (map controls)
         run: |
-          yarn playwright test tests/interaction/ --project=interaction
+          # Exclude visual-regression: reference screenshots are
+          # environment-specific (fonts, GPU, antialiasing differ between
+          # local and CI) — run locally with: yarn test:interaction
+          yarn playwright test tests/interaction/ --project=interaction --grep-invert "visual regression"
           node scripts/link-allure-attachments.mjs allure-results/e2e
         env:
           INTERACTION_BASE_URL: http://localhost:9000
@@ -285,9 +295,10 @@ jobs:
   # Remove the PR's whole report directory (all runs + history) when it
   # closes, so gh-pages does not accumulate stale reports.
   cleanup:
+    needs: check-draft
+    if: needs.check-draft.outputs.draft != 'true' && github.event_name == 'pull_request' && github.event.action == 'closed'
     name: Remove PR reports
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && github.event.action == 'closed'
 
     steps:
       - name: Check out gh-pages
