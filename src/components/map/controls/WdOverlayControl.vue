@@ -233,9 +233,25 @@ const expandedOtherLayers = computed(() => {
   return overlayStore.otherLayers();
 });
 
+/** Active layers from OTHER groups — shown in the mini strip below group layers */
+const promotedLayers = computed(() => {
+  const group = overlayStore.groupSettings.groups.find(
+    g => g.id === overlayStore.groupSettings.activeGroupId
+  );
+  const groupSlugs = new Set(group?.layerSlugs ?? []);
+  return (overlayStore.overlays as unknown as Array<{ name: string; show?: boolean; active?: boolean }>)
+    .filter(o => o.show === true && o.active === true && !groupSlugs.has(o.name))
+    .map(o => overlayStore.overlays.find(ov => ov.name === o.name))
+    .filter((o): o is NonNullable<typeof o> => !!o);
+});
+
 /** Handle group selector tap */
 function onGroupSelectorTap(): void {
   overlayStore.cycleGroup();
+  // Re-apply visibility for ALL layers (the group switch changed active states)
+  for (const item of overlayStore.overlays) {
+    setOverlayVisibility(item as OverlaySwitchItem);
+  }
 }
 
 // ── Layer management (ported 1:1 from the old WdOverlaySwitch) ────────────
@@ -464,11 +480,16 @@ onBeforeUnmount(() => {
   <div class="wd-ovl">
     <!-- ── THE BOX: mini strip (collapsed) or expanded (same box, wider) ── -->
     <Transition name="wd-ovl-strip">
-      <div v-if="stripOpen" class="wd-ovl__box" :class="{ 'wd-ovl__box--expanded': expanded }">
+      <div
+        v-if="stripOpen"
+        class="wd-ovl__box"
+        :class="{ 'wd-ovl__box--expanded': expanded }"
+        :style="{ '--mini-rows': miniLayers.length + promotedLayers.length }"
+      >
         <!-- Top toolbar: EXTENDED only. The box grows UP by this height
              (max-height compensates) so the icon rows NEVER move. -->
         <div v-if="expanded" class="wd-ovl__toolbar">
-          <span class="wd-ovl__toolbar-title">{{ t('overlay_style') }}</span>
+          <span class="wd-ovl__toolbar-title">{{ overlayStore.activeGroupName(t) }}</span>
           <div class="wd-ovl__toolbar-actions">
             <button
               class="wd-ovl__toolbar-btn"
@@ -494,6 +515,7 @@ onBeforeUnmount(() => {
 
         <!-- Rows: icon always at the right, label+actions appear when expanded -->
         <div
+          :key="overlayStore.groupSettings.activeGroupId"
           class="wd-ovl__rows"
           role="group"
           :aria-label="t('overlay_style')"
@@ -617,7 +639,19 @@ onBeforeUnmount(() => {
         </template>
         </div>
 
-        <!-- Group selector (fixed at the bottom, above the more button) -->
+        <!-- Promoted layers: active layers from OTHER groups (mini strip only) -->
+        <template v-if="!expanded && promotedLayers.length > 0">
+          <div class="wd-ovl__promoted-sep" />
+          <div v-for="item in promotedLayers" :key="`p-${item.name}`" class="wd-ovl__row"
+            :class="{ 'wd-ovl__row--active': item.active }"
+            @click="onRowClick(<OverlaySwitchItem>(item as unknown))">
+            <span class="wd-ovl__icon wd-ovl__icon--active" :aria-label="item.label">
+              <q-icon :name="layerIcon(item.icon)" size="20px" />
+            </span>
+          </div>
+        </template>
+
+        <!-- Group selector: spans the box width, distinct from layer buttons -->
         <button
           class="wd-ovl__group-btn"
           :aria-label="overlayStore.activeGroupName(t)"
@@ -625,6 +659,9 @@ onBeforeUnmount(() => {
           @click.stop="onGroupSelectorTap"
         >
           <q-icon :name="layerIcon(overlayStore.activeGroupIcon())" size="20px" />
+          <svg class="wd-ovl__group-arrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <path d="M9 6l6 6-6 6" />
+          </svg>
         </button>
 
 
@@ -738,7 +775,8 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   display: flex;
   flex-direction: column;
   width: 48px; // matches the basemap toggle width
-  max-height: calc(100dvh - 220px); // safety cap — never taller than the viewport
+  max-height: calc(100dvh - 220px); // safety cap
+  transition: width 0.25s cubic-bezier(0.2, 0, 0, 1); // animate expand/collapse
   border-radius: 8px;
   border: 1px solid var(--wd-ctl-border);
   background: var(--wd-ctl-bg);
@@ -753,7 +791,12 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   contain: layout;
 
   &--expanded {
-    width: 216px; // slightly narrower than before, titles clip
+    width: 216px;
+    // SAME height as mini — the rows cap at the mini content height
+    // (--mini-rows CSS var, set on the box element) and scroll.
+    .wd-ovl__rows {
+      max-height: calc(var(--mini-rows, 4) * 42px + 8px);
+    }
     animation: wd-ovl-pop 0.28s $ease;
   }
 }
@@ -761,11 +804,11 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 // ── Top toolbar (space reserved in BOTH states — icons never move) ───────
 .wd-ovl__toolbar {
   flex: none;
-  height: 28px;
+  height: 34px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 0 8px;
-  min-height: 28px;
   border-bottom: 1px solid var(--wd-ctl-border);
 }
 
@@ -845,7 +888,8 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 // FIXED height: identical in mini and expanded — the box grows UP by the
 // header height when expanding, so the icon chips never move a pixel.
 .wd-ovl__rows {
-  flex: 0 1 auto; // grow to content, shrink if box is at the cap
+  flex: 0 1 auto; // auto-grow to content (mini drives the height)
+  overflow-y: auto;
   max-height: calc(100dvh - 320px); // safety scroll cap
   min-height: 0;
   overflow-y: auto;
@@ -1092,13 +1136,41 @@ body.body--dark .wd-ovl__row-name {
 }
 
 // ── Group selector (fixed at the bottom, above the more button) ─────────
+// ── Group selector: spans the box width, clearly distinct ────────────────
 .wd-ovl__group-btn {
-  @include chip.control;
-  width: 40px;
-  height: 36px;
-  margin: 2px 4px;
-  flex: none; // NEVER shrinks — always visible at the bottom
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  align-self: stretch;
+  height: 34px;
+  padding: 0 6px;
+  border: none;
+  border-top: 1px solid var(--wd-ctl-border);
+  border-radius: 0 0 8px 8px;
+  background: var(--wd-ctl-date-bg);
+  color: var(--wd-ctl-ink);
+  cursor: pointer;
+  flex: none;
   pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+
+  &:active {
+    background: var(--wd-ctl-hover);
+  }
+
+  .wd-ovl__group-arrow {
+    opacity: 0.4;
+    flex: none;
+  }
+}
+
+// ── Promoted layers separator (thin line above promoted rows) ──────────
+.wd-ovl__promoted-sep {
+  height: 1px;
+  background: var(--wd-ctl-border);
+  margin: 2px 6px;
+  flex: none;
 }
 
 // ── "All layers" separator (expanded view) ───────────────────────────────
@@ -1187,4 +1259,20 @@ body.body--dark .wd-ovl__row-name {
 .wd-ovl__toolbar-btn--active {
   color: var(--wd-ctl-ink);
   opacity: 1;
+}
+
+// ── Group switch animation: rows slide in from the right ────────────────
+@keyframes wd-ovl-rows-enter {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.wd-ovl__rows {
+  animation: wd-ovl-rows-enter 0.18s ease-out;
 }
