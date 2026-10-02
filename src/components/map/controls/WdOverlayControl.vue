@@ -75,11 +75,10 @@ const dragOverSlug = ref<string | null>(null);
 
 function onDragStart(ev: MouseEvent, slug: string): void {
   dragSlug.value = slug;
-  const dt = (ev as unknown as { dataTransfer?: { effectAllowed: string; setData: (type: string; value: string) => void } }).dataTransfer;
-  if (dt) {
-    dt.effectAllowed = 'move';
-    dt.setData('text/plain', slug);
-  }
+  // Structural cast: DragEvent's dataTransfer isn't in the DOM lib types
+  const dt = (ev as unknown as { dataTransfer: { effectAllowed: string; setData: (t: string, v: string) => void } }).dataTransfer;
+  dt.effectAllowed = 'move';
+  dt.setData('text/plain', slug);
 }
 
 function onDragOver(ev: MouseEvent, slug: string): void {
