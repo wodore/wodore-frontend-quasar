@@ -1,19 +1,23 @@
 /**
  * Runtime environment accessor.
  *
- * Prefers values from the inline `window.__WODORE_RUNTIME_ENV__` (baked
- * via EJS in index.html, rewritten by replace_vars at container start),
- * falling back to `process.env` (build-time Vite constants in the browser,
- * dynamic Node.js env in dev/test).
+ * Prefers values from `window.__WODORE_RUNTIME_ENV__` — set either inline
+ * in index.html (dev/Capacitor builds, EJS-baked) or by the external
+ * `/env.js` (docker: @@VAR@@ placeholders rewritten by replace_vars at
+ * container start, served no-store) — falling back to `process.env`
+ * (build-time Vite constants in the browser, dynamic Node.js env in
+ * dev/test).
  *
  * Why this exists: `replace_vars` rewrites `@@VAR@@` placeholders inside
  * hashed JS chunks at container startup WITHOUT changing filenames — the
  * service worker's precache revisions (computed at build time) never
  * notice, so baked values go permanently stale for cached clients
- * (e.g. an exhausted MapTiler key). `index.html` (where the env lives
- * inline) is unhashed, served `Cache-Control: no-store`, excluded from
- * the SW precache, and fetched on every visit (NetworkFirst), so runtime
- * env changes propagate immediately.
+ * (e.g. an exhausted MapTiler key). The env therefore lives in
+ * unhashed, no-store documents: `/env.js` (and index.html where it is
+ * still inline), both excluded from the SW precache and fetched on
+ * every visit, so runtime env changes propagate immediately. Keeping
+ * the env out of the HTML shell also lets the SEO edge (docker/seo.js)
+ * cache hut pages for shared caches.
  */
 
 type RuntimeEnv = Record<string, string | undefined>;
