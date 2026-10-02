@@ -371,19 +371,7 @@
       "label": "VTT",
       "desc": "Itinéraires VTT d’OpenStreetMap, affichés via Waymarked Trails",
       "link": "Réseau Suisse à VTT"
-    },
-    "groups": {
-      "hiking": {
-        "name": "Randonnée"
-      },
-      "cycling": {
-        "name": "Vélo"
-      },
-      "snowsport": {
-        "name": "Sports d'hiver"
-      }
-    },
-    "all_layers": "Toutes les couches"
+    }
   },
   "basemap": "Fond de carte",
   "basemaps": {

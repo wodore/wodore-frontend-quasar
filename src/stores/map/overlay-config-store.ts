@@ -7,7 +7,7 @@
 
 import { defineStore } from 'pinia';
 import { ref, computed, watch } from 'vue';
-import { LocalStorage } from 'quasar';
+import { storageGet, storageSet, storageHas } from '@services/storage';
 import { useDebounceFn } from '@vueuse/core';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
 import type { ExpressionSpecification } from 'maplibre-gl';
@@ -36,7 +36,7 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
   // State
   // =====
 
-  const preferences = ref<OverlayPreferences>(LocalStorage.getItem(PREFERENCES_KEY) || {});
+  const preferences = ref<OverlayPreferences>(storageGet(PREFERENCES_KEY) || {});
 
   // Generic category cache: Map<categorySlug, CategoryItem[]>
   const categoryCache = ref<Map<string, CategoryItem[]>>(new Map());
@@ -337,7 +337,7 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
     preferences.value[overlayName].filters![filterId] = value;
 
     // Save to LocalStorage
-    LocalStorage.set(PREFERENCES_KEY, preferences.value);
+    storageSet(PREFERENCES_KEY, preferences.value);
 
     console.debug(
       `[OverlayConfigStore] Filter '${filterId}' set to:`,
@@ -463,7 +463,7 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
     preferences.value[overlayName].settings![settingId] = value;
 
     // Save to LocalStorage
-    LocalStorage.set(PREFERENCES_KEY, preferences.value);
+    storageSet(PREFERENCES_KEY, preferences.value);
 
     console.debug(
       `[OverlayConfigStore] Setting '${settingId}' set to:`,
@@ -497,7 +497,7 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
 
     if (preferences.value[overlayName]) {
       delete preferences.value[overlayName];
-      LocalStorage.set(PREFERENCES_KEY, preferences.value);
+      storageSet(PREFERENCES_KEY, preferences.value);
     }
 
     // Reapply default filters/settings
@@ -509,7 +509,7 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
     console.debug('[OverlayConfigStore] Resetting all overlay preferences');
 
     preferences.value = {};
-    LocalStorage.set(PREFERENCES_KEY, preferences.value);
+    storageSet(PREFERENCES_KEY, preferences.value);
 
     // Reapply defaults
     reapplyAllFilters();

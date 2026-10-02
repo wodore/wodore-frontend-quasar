@@ -67,6 +67,7 @@ export default configure(ctx => {
     /// axios
     boot: [
       'i18n',
+      'storage',
       'theme',
       'icons',
       { server: false, path: 'auth' },
