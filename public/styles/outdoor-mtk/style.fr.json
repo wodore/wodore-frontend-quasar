@@ -12666,35 +12666,9 @@
       "paint": {
         "circle-color": "#FFFFFF",
         "circle-stroke-color": "#6B665A",
-        "circle-stroke-width": 1.5,
+        "circle-stroke-width": 1.2,
         "circle-pitch-alignment": "map"
       }
-    },
-    {
-      "id": "wd-place-dot-small",
-      "type": "circle",
-      "source": "mtk",
-      "source-layer": "place_label",
-      "minzoom": 6,
-      "filter": [
-        "match",
-        [
-          "get",
-          "category"
-        ],
-        [
-          "small_place"
-        ],
-        true,
-        false
-      ],
-      "paint": {
-        "circle-color": "#FFFFFF",
-        "circle-stroke-color": "#6B665A",
-        "circle-stroke-width": 1,
-        "circle-pitch-alignment": "map"
-      },
-      "maxzoom": 7.5
     },
     {
       "id": "wd-park-label",

@@ -608,7 +608,7 @@ export const useBasemapStore = defineStore('basemap', () => {
       {
         name: 'ch-swisstopo-full',
         label: t('basemaps.swiss_raster'),
-        show: false, // picker: only outdoor default (kept as fallback/code)
+        show: true, // raster topo stays selectable alongside the outdoor default
         active: false,
         img: getImageUrl('swiss-raster.png'),
         style: swissTopoRasterStyle,
@@ -620,7 +620,7 @@ export const useBasemapStore = defineStore('basemap', () => {
       {
         name: 'Satellite Hybrid',
         label: t('basemaps.satellite'),
-        show: false, // picker: only outdoor default (kept as fallback/code)
+        show: true, // raster topo stays selectable alongside the outdoor default
         active: false,
         img: getImageUrl('satellite.png'),
         style:

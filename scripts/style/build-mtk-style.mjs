@@ -191,29 +191,18 @@ base.layers.splice(
   firstPlaceIdx === -1 ? base.layers.length : firstPlaceIdx,
   0,
   {
-    // Dots from z7.5 and stay as long as the labels do — mtk keeps place
-    // labels through z22, so no fade-out (the earlier overview-only
-    // fade-out was backwards for on-map orientation).
+    // Dots only for labeled places (capitals / big places — their labels
+    // start around z7.5 and live through z22, so the dot does too).
+    // Kept small at the zoomed-out end: big dots on a country view read
+    // as noise.
     ...dot('wd-place-dot-big', ['capital', 'big_place'], 7.5, [
       'interpolate', ['linear'], ['zoom'],
-      7.5, 3, 10, 4.2, 12, 5.2, 14, 6,
+      7.5, 1.8, 10, 3.2, 12, 4.2, 14, 5.2,
     ]),
     paint: {
       ...dotPaint(),
-      'circle-stroke-width': 1.5,
+      'circle-stroke-width': 1.2,
     },
-  },
-  {
-    // Village dots are the classic overview "dot field": visible on
-    // far-out views (below z7.5, where villages have no labels yet) and
-    // hidden once you zoom past — labels take over. Important places
-    // keep their dot for as long as their label lives.
-    ...dot('wd-place-dot-small', ['small_place'], 6, [
-      'interpolate', ['linear'], ['zoom'],
-      6, 1.1, 7.5, 1.5,
-    ]),
-    maxzoom: 7.5,
-    paint: dotPaint(),
   },
   parkLabel,
 );
