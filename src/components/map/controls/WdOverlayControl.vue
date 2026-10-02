@@ -75,10 +75,14 @@ const dragOverSlug = ref<string | null>(null);
 
 function onDragStart(ev: MouseEvent, slug: string): void {
   dragSlug.value = slug;
-  // Structural cast: DragEvent's dataTransfer isn't in the DOM lib types
-  const dt = (ev as unknown as { dataTransfer: { effectAllowed: string; setData: (t: string, v: string) => void } }).dataTransfer;
-  dt.effectAllowed = 'move';
-  dt.setData('text/plain', slug);
+  // Firefox requires setData to initiate a drag; Chrome/Safari don't.
+  // No type gymnastics — just try it and ignore failures.
+  try {
+    const e = ev as unknown as { dataTransfer?: { setData: (t: string, v: string) => void } };
+    e.dataTransfer?.setData?.('text/plain', slug);
+  } catch {
+    // non-Firefox browsers
+  }
 }
 
 function onDragOver(ev: MouseEvent, slug: string): void {
