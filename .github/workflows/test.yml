@@ -31,6 +31,13 @@ jobs:
     needs: check-draft
     if: needs.check-draft.outputs.draft != 'true' && (github.event_name != 'pull_request' || github.event.action != 'closed')
     runs-on: ubuntu-latest
+    # gh-pages is shared with the Preview workflow's deploy — serialize
+    # every push to it or the two race and one loses ('failed to push
+    # some refs'). The workflow-level allure-<ref> group only serializes
+    # Allure against itself.
+    concurrency:
+      group: gh-pages-push
+      cancel-in-progress: false
 
     steps:
       - name: Check out
