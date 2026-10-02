@@ -2,6 +2,19 @@ import { defineStore } from 'pinia';
 import { reactive } from 'vue';
 import { OverlaySwitchItem } from '@stores/map/utils/interfaces';
 import { overlayFactories } from '@stores/map/utils/overlays';
+import {
+  getActiveGroup,
+  getVisibleGroups,
+  getGroupLayers,
+  getOtherLayers,
+  cycleGroup as cycleGroupUtil,
+  groupDisplayName,
+  defaultOverlayGroupSettings,
+  mergeGroups,
+  type LayerGroup,
+  type OverlayGroupSettings,
+} from '@stores/map/utils/layer-groups';
+import { useUserSettingsStore } from '@stores/user-settings-store';
 //import { useMap } from '@indoorequal/vue-maplibre-gl';
 //import type { Emitter } from 'mitt';
 import { LocalStorage } from 'quasar';
@@ -59,10 +72,96 @@ export const useOverlayStore = defineStore('overlay', () => {
     }
   }
 
+  // ── Layer groups ──────────────────────────────────────────────────────
+  const settingsStore = useUserSettingsStore() as unknown as { settings: { map: Record<string, unknown> }, updateMapSetting: (k: string, v: unknown) => void };
+  const groupSettings = reactive<OverlayGroupSettings>(
+    (settingsStore.settings.map as Record<string, unknown>).overlayGroups as OverlayGroupSettings
+      ?? defaultOverlayGroupSettings()
+  );
+
+  // Keep the settings store in sync
+  function syncGroupSettings(): void {
+    (settingsStore.settings.map as Record<string, unknown>).overlayGroups = groupSettings;
+    settingsStore.updateMapSetting('overlayGroups', groupSettings);
+  }
+
+  /** Layers of the active group (for the mini strip) */
+  function activeGroupLayers(): OverlaySwitchItem[] {
+    const group = getActiveGroup(groupSettings);
+    const list = overlays as unknown as Array<{ name: string; show?: boolean; active?: boolean }>;
+    if (!group) return (overlays as unknown as OverlaySwitchItem[]).filter(o => o.show);
+    return getGroupLayers(group, list as unknown as OverlaySwitchItem[]);
+  }
+
+  /** All layers NOT in the active group (for the expanded "All layers" section) */
+  function otherLayers(): OverlaySwitchItem[] {
+    const group = getActiveGroup(groupSettings);
+    return getOtherLayers(group, overlays as unknown as OverlaySwitchItem[]);
+  }
+
+  /** Cycle to the next visible group and restore its active layers */
+  function cycleGroup(): void {
+    const { group, settings } = cycleGroupUtil(groupSettings);
+    if (!group) return;
+
+    // Save the current group's active layers
+    const currentGroup = getActiveGroup(groupSettings);
+    if (currentGroup) {
+      const flat = overlays as unknown as Array<{ name: string; active?: boolean }>;
+      currentGroup.activeLayerSlugs = flat
+        .filter(o => o.active && currentGroup.layerSlugs.includes(o.name))
+        .map(o => o.name);
+    }
+
+    // Apply the next group's active layers
+    Object.assign(groupSettings, settings);
+    for (const o of overlays) {
+      const inGroup = group.layerSlugs.includes(o.name);
+      if (inGroup) {
+        o.active = group.activeLayerSlugs.includes(o.name);
+      }
+    }
+    LocalStorage.set('overlays', overlays);
+    syncGroupSettings();
+  }
+
+  /** Get the active group's display name */
+  function activeGroupName(t: (key: string) => string): string {
+    const group = getActiveGroup(groupSettings);
+    return group ? groupDisplayName(group.name, t) : t('overlay_style');
+  }
+
+  /** Get the active group's icon slug */
+  function activeGroupIcon(): string {
+    const group = getActiveGroup(groupSettings);
+    return group?.icon ?? 'hiking';
+  }
+
+  /** All visible groups for the selector */
+  function visibleGroups(): LayerGroup[] {
+    return getVisibleGroups(groupSettings);
+  }
+
+  /** Merge groups when the layer list changes */
+  function mergeLayerGroups(): void {
+    const allSlugs = (overlays as unknown as Array<{ name: string }>).map(o => o.name);
+    Object.assign(groupSettings, mergeGroups(groupSettings, allSlugs));
+    syncGroupSettings();
+  }
+
   return {
     overlays,
     toggleOverlay,
     rebuildOverlays,
+    // Layer groups
+    groupSettings,
+    activeGroupLayers,
+    otherLayers,
+    cycleGroup,
+    activeGroupName,
+    activeGroupIcon,
+    visibleGroups,
+    mergeLayerGroups,
     //setBasemap,
     //getBasemap,
     //setEmitter,
