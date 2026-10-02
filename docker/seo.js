@@ -31,6 +31,13 @@ var LANG_PREFIXES = '__WODORE_LANG_PREFIXES__'.split(',');
 var ALL_LANGS = LANG_PREFIXES.concat([DEFAULT_LANG]);
 var LANG_RE = new RegExp('^\\/(' + LANG_PREFIXES.join('|') + ')(\\/|$)');
 var COOKIE_RE = /(?:^|;\s*)wodore_lang=/;
+// Search engine + social preview + LLM crawler user agents.
+var CRAWLER_RE = new RegExp(
+  'Googlebot|bingbot|Slurp|DuckDuckBot|Baiduspider|YandexBot|' +
+    'facebookexternalhit|Twitterbot|LinkedInBot|TelegramBot|WhatsApp|' +
+    'Slackbot|Applebot|ia_archiver|GPTBot|ClaudeBot|PerplexityBot',
+  'i'
+);
 
 function parseAcceptLanguage(header) {
   // Best matching prefix from a simple Accept-Language header
@@ -175,6 +182,21 @@ function hut(r) {
     .replace(/\/+$/, '');
   if (!slug || slug.indexOf('/') !== -1) {
     r.internalRedirect('/index.html');
+    return;
+  }
+  // Known crawlers on the BARE URL: consolidate permanently (301) to
+  // the default language's prefixed URL - a directive where the
+  // canonical link is only a hint, so the user-alias URL drops out of
+  // the index entirely instead of lingering as a canonicalized
+  // duplicate. Prefixed URLs serve crawlers normally (self-canonical);
+  // human users never hit this (they keep the bare URL; the SPA
+  // normalizes prefixes away). Markdown negotiation above stays first
+  // so LLM crawlers asking for text/markdown still get the document.
+  if (!lang && CRAWLER_RE.test(r.headersIn['User-Agent'] || '')) {
+    r.status = 301;
+    r.headersOut.Location = '/' + DEFAULT_LANG + requestPath;
+    r.sendHeader();
+    r.finish();
     return;
   }
   // First-visit language redirect (cartoload pattern): a BARE hut URL,
