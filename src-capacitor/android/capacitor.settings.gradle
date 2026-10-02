@@ -5,5 +5,10 @@ project(':capacitor-android').projectDir = new File('../node_modules/@capacitor/
 include ':capacitor-app'
 project(':capacitor-app').projectDir = new File('../node_modules/@capacitor/app/android')
 
+<<<<<<< HEAD
+include ':capawesome-capacitor-maplibre'
+project(':capawesome-capacitor-maplibre').projectDir = new File('../node_modules/@capawesome/capacitor-maplibre/android')
+=======
 include ':capawesome-capacitor-app-update'
 project(':capawesome-capacitor-app-update').projectDir = new File('../node_modules/@capawesome/capacitor-app-update/android')
+>>>>>>> origin/main
