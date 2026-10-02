@@ -32,6 +32,7 @@ const STATES = [
   { id: 'focus-mode', theme: 'light', mode: 'desktop' },
   { id: 'overlay-strip', theme: 'dark', mode: 'desktop' },
   { id: 'overlay-expanded', theme: 'dark', mode: 'desktop' },
+  { id: 'basemap-rail', theme: 'light', mode: 'desktop' },
   { id: 'topbar', theme: 'light', mode: 'desktop' },
 ] as const;
 
@@ -80,11 +81,14 @@ test.describe('visual regression', () => {
           ? { x: 0, y: 0, width: 390, height: 80 }
           : id === 'topbar' && mode === 'desktop'
             ? { x: 0, y: 0, width: 1440, height: 90 }
-            : undefined; // full page — the controls' context matters
+            : mode === 'desktop'
+              ? { x: 900, y: 400, width: 540, height: 500 } // right-bottom quadrant (controls)
+              : undefined; // mobile: full page
 
       await expect(page).toHaveScreenshot(`${id}-${theme}-${mode}.png`, {
         ...(clip ? { clip } : {}),
         maxDiffPixels: 200, // tolerate antialiasing + map tile edges
+        scale: 'css', // capture at CSS resolution — ~4x smaller than device pixels
         animations: 'disabled',
         caret: 'hide',
       });
