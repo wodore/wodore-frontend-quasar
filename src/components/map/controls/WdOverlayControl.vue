@@ -113,9 +113,76 @@ function onDrop(ev: MouseEvent, targetSlug: string): void {
   overlayStore.syncGroupSettings();
 }
 
+function onDropToAll(): void {
+  const sourceSlug = dragSlug.value;
+  dragSlug.value = null;
+  dragOverSlug.value = null;
+  if (!sourceSlug) return;
+
+  // Remove from the active group
+  const group = overlayStore.groupSettings.groups.find(
+    g => g.id === overlayStore.groupSettings.activeGroupId
+  );
+  if (group) {
+    group.layerSlugs = group.layerSlugs.filter(s => s !== sourceSlug);
+    group.activeLayerSlugs = group.activeLayerSlugs.filter(s => s !== sourceSlug);
+    overlayStore.syncGroupSettings();
+    markEdited();
+  }
+}
+
 function onDragEnd(): void {
   dragSlug.value = null;
   dragOverSlug.value = null;
+}
+
+// Track unsaved edits — prompt to save or cancel when leaving edit mode
+const hasEdits = ref(false);
+const snapshotGroups = ref<string>('');
+
+function takeSnapshot(): void {
+  snapshotGroups.value = JSON.stringify(overlayStore.groupSettings.groups);
+  hasEdits.value = false;
+}
+
+function toggleEditMode(): void {
+  if (editMode.value && hasEdits.value) {
+    const save = window.confirm('Save changes?');
+    if (!save) {
+      // Revert to snapshot
+      overlayStore.groupSettings.groups = JSON.parse(snapshotGroups.value);
+      overlayStore.syncGroupSettings();
+    }
+  }
+  editMode.value = !editMode.value;
+  if (editMode.value) takeSnapshot();
+  else hasEdits.value = false;
+}
+
+function markEdited(): void {
+  if (editMode.value) hasEdits.value = JSON.stringify(overlayStore.groupSettings.groups) !== snapshotGroups.value;
+}
+
+/** Add a new group */
+function addNewGroup(): void {
+  const name = window.prompt('New group name');
+  if (!name || !name.trim()) return;
+  const group = {
+    id: typeof window !== 'undefined' && window.crypto?.randomUUID ? window.crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    slug: name.trim().toLowerCase().replace(/\s+/g, '-'),
+    name: name.trim(),
+    icon: 'hiking',
+    layerSlugs: [],
+    activeLayerSlugs: [],
+    hidden: false,
+    removed: false,
+    locked: false,
+    sortOrder: overlayStore.groupSettings.groups.length,
+  };
+  overlayStore.groupSettings.groups.push(group);
+  overlayStore.groupSettings.activeGroupId = group.id;
+  overlayStore.syncGroupSettings();
+  markEdited();
 }
 
 /** Rename the active group (prompt) */
@@ -154,6 +221,7 @@ function confirmDeleteGroup(): void {
   );
   if (!confirmed) return;
   group.removed = true;
+  markEdited();
   group.layerSlugs.forEach(slug => {
     // Layers go back to ungrouped
   });
@@ -283,6 +351,8 @@ function onSwipeEnd(e: Event): void {
 function onDocClick(ev: Event): void {
   const target = ev.target as HTMLElement;
   if (!target.closest('.wd-ovl')) {
+    // In edit mode, never auto-close — the user must explicitly exit
+    if (editMode.value) return;
     expanded.value = false;
   }
 }
@@ -322,7 +392,21 @@ const miniLayers = computed(() => {
 
 /** Layers for the expanded view "All layers" section */
 const expandedOtherLayers = computed(() => {
-  return overlayStore.otherLayers();
+  const layers = overlayStore.otherLayers();
+  if (!editMode.value) return layers;
+  // In edit mode, hide layers from hidden groups (owner: "hidden layers still shown")
+  const visibleGroupSlugs = new Set(
+    overlayStore.groupSettings.groups
+      .filter(g => !g.hidden && !g.removed)
+      .flatMap(g => g.layerSlugs)
+  );
+  return layers.filter(l => {
+    // Include if not in ANY group (ungrouped) or in a visible group
+    const inHiddenGroup = overlayStore.groupSettings.groups.some(
+      g => (g.hidden || g.removed) && g.layerSlugs.includes(l.name)
+    );
+    return !inHiddenGroup || visibleGroupSlugs.has(l.name);
+  });
 });
 
 /** Active layers from OTHER groups — shown in the mini strip below group layers */
@@ -586,41 +670,11 @@ onBeforeUnmount(() => {
           </span>
           <span class="wd-ovl__toolbar-title">{{ overlayStore.activeGroupName(t) }}</span>
           <div class="wd-ovl__toolbar-actions">
-            <template v-if="editMode">
-              <button
-                class="wd-ovl__toolbar-btn"
-                :aria-label="t('overlays.group_rename')"
-                @click.stop="startRename"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />
-                </svg>
-              </button>
-              <button
-                class="wd-ovl__toolbar-btn"
-                :aria-label="t('overlays.group_hide')"
-                @click.stop="hideGroup"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-              </button>
-              <button
-                class="wd-ovl__toolbar-btn wd-ovl__toolbar-btn--danger"
-                :aria-label="t('overlays.group_delete')"
-                @click.stop="confirmDeleteGroup"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z" />
-                </svg>
-              </button>
-            </template>
             <button
               class="wd-ovl__toolbar-btn"
               :class="{ 'wd-ovl__toolbar-btn--active': editMode }"
               :aria-label="editMode ? t('overlays.edit_done') : t('overlays.edit_groups')"
-              @click.stop="editMode = !editMode"
+              @click.stop="toggleEditMode"
             >
               <svg v-if="!editMode" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                 <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />
@@ -630,6 +684,51 @@ onBeforeUnmount(() => {
               </svg>
             </button>
           </div>
+        </div>
+
+        <!-- Edit toolbar (second row, edit mode only) -->
+        <div v-if="editMode" class="wd-ovl__edit-bar">
+          <button
+            class="wd-ovl__edit-btn"
+            :aria-label="t('overlays.group_rename')"
+            @click.stop="startRename"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />
+            </svg>
+            <span>{{ t('overlays.group_rename') }}</span>
+          </button>
+          <button
+            class="wd-ovl__edit-btn"
+            :aria-label="t('overlays.group_hide')"
+            @click.stop="hideGroup"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+            <span>{{ t('overlays.group_hide') }}</span>
+          </button>
+          <button
+            class="wd-ovl__edit-btn wd-ovl__edit-btn--danger"
+            :aria-label="t('overlays.group_delete')"
+            @click.stop="confirmDeleteGroup"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z" />
+            </svg>
+            <span>{{ t('overlays.group_delete') }}</span>
+          </button>
+          <button
+            class="wd-ovl__edit-btn wd-ovl__edit-btn--add"
+            :aria-label="t('overlays.group_add')"
+            @click.stop="addNewGroup"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            <span>{{ t('overlays.group_add') }}</span>
+          </button>
         </div>
 
         <!-- Rows: icon always at the right, label+actions appear when expanded -->
@@ -712,7 +811,12 @@ onBeforeUnmount(() => {
           <!-- All layers section (inside the scrollable rows) -->
         <!-- All layers section (expanded only, below the group layers) -->
         <template v-if="expanded">
-          <div class="wd-ovl__all-sep">
+          <div
+            class="wd-ovl__all-sep"
+            :class="{ 'wd-ovl__all-sep--drop': dragSlug !== null }"
+            @dragover.prevent
+            @drop.prevent="onDropToAll"
+          >
             <span class="wd-ovl__all-label">{{ t('overlays.all_layers') }}</span>
           </div>
           <div
@@ -932,8 +1036,10 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
     width: 216px;
     // SAME height as mini — the rows cap at the mini content height
     // (--mini-rows CSS var, set on the box element) and scroll.
+    // EXACT same height as mini: the toolbar eats into the rows area
+    // (rows shrink to compensate), the All layers section scrolls within
     .wd-ovl__rows {
-      max-height: calc(var(--mini-rows, 4) * 42px + 250px); // allow All layers section
+      max-height: calc(var(--mini-rows, 4) * 42px + 8px - 44px); // minus toolbar height
     }
     animation: wd-ovl-pop 0.28s $ease;
   }
@@ -1450,7 +1556,14 @@ body.body--dark .wd-ovl__row-name {
 // ── Edit mode: expanded box with more space ─────────────────────────────
 .wd-ovl__box--edit {
   width: min(280px, calc(100vw - 48px)) !important;
-  max-height: calc(100dvh - 200px) !important;
+  max-height: calc(100dvh - 160px) !important;
+
+  // In edit mode, rows expand to fill the available space
+  .wd-ovl__rows {
+    max-height: none !important;
+    flex: 1 1 auto;
+    min-height: calc(var(--mini-rows, 4) * 42px + 8px);
+  }
 }
 
 .wd-ovl__toolbar-btn--danger {
@@ -1484,4 +1597,53 @@ body.body--dark .wd-ovl__row-name {
 .wd-ovl__row--drag-over {
   border-top: 2px solid $wd-gold;
   margin-top: -2px;
+}
+
+// ── Edit toolbar (second row) ────────────────────────────────────────────
+.wd-ovl__edit-bar {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--wd-ctl-border);
+  background: var(--wd-ctl-bg);
+}
+
+.wd-ovl__edit-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: 1px solid var(--wd-ctl-border);
+  border-radius: 4px;
+  background: var(--wd-ctl-date-bg);
+  color: var(--wd-ctl-ink-soft);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+
+  &:hover {
+    background: var(--wd-ctl-hover);
+    color: var(--wd-ctl-ink);
+  }
+
+  &--danger {
+    color: #c44e3b;
+    &:hover { background: rgba(196, 78, 59, 0.08); }
+  }
+
+  &--add {
+    color: #2a8a72;
+    &:hover { background: rgba(42, 138, 114, 0.08); }
+  }
+}
+
+// ── Drop zone on "All layers" separator ─────────────────────────────────
+.wd-ovl__all-sep--drop {
+  background: rgba(191, 171, 37, 0.12);
+  border-top: 2px dashed rgba(191, 171, 37, 0.5);
+  cursor: alias;
 }

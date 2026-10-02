@@ -386,7 +386,8 @@
     "all_layers": "Toutes les couches",
     "group_rename": "Renommer le groupe",
     "group_hide": "Masquer le groupe",
-    "group_delete": "Supprimer le groupe"
+    "group_delete": "Supprimer le groupe",
+    "group_add": "Ajouter un groupe"
   },
   "basemap": "Fond de carte",
   "basemaps": {

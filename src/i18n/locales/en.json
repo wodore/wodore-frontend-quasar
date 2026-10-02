@@ -386,7 +386,8 @@
     "all_layers": "All layers",
     "group_rename": "Rename group",
     "group_hide": "Hide group",
-    "group_delete": "Delete group"
+    "group_delete": "Delete group",
+    "group_add": "Add group"
   },
   "basemap": "Basemap",
   "basemaps": {
