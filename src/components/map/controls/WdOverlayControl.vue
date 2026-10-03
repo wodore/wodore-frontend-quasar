@@ -280,6 +280,23 @@ function ensureVisibleActiveGroup(): void {
   }
 }
 
+/** Footer: revert to the snapshot and exit edit mode */
+function cancelEdit(): void {
+  if (hasEdits.value && snapshotGroups.value) {
+    overlayStore.groupSettings.groups = JSON.parse(snapshotGroups.value);
+    overlayStore.syncGroupSettings();
+  }
+  editMode.value = false;
+  hasEdits.value = false;
+  ensureVisibleActiveGroup();
+}
+
+/** Footer: keep the changes and exit edit mode */
+function confirmEdit(): void {
+  editMode.value = false;
+  hasEdits.value = false;
+}
+
 function toggleEditMode(): void {
   if (!editMode.value) {
     updateBoxCap();
@@ -553,6 +570,19 @@ function onRowsPointerUp(): void {
 function onRowClick(item: OverlaySwitchItem): void {
   if (panned.value) return;
   toggleLayer(item);
+  pulseChip(item.name);
+}
+
+// Toggle feedback: a quick chip pulse acknowledges the flip
+const toggledSlug = ref<string | null>(null);
+let togglePulseTimer: ReturnType<typeof setTimeout> | null = null;
+
+function pulseChip(slug: string): void {
+  toggledSlug.value = slug;
+  if (togglePulseTimer) clearTimeout(togglePulseTimer);
+  togglePulseTimer = setTimeout(() => {
+    toggledSlug.value = null;
+  }, 280);
 }
 
 /** Swipe left = expand, swipe right = collapse (on rows and toggle) */
@@ -1585,6 +1615,7 @@ onBeforeUnmount(() => {
             <span class="wd-ovl__icon" :class="{
               'wd-ovl__icon--active': item.active,
               'wd-ovl__icon--inactive': !item.active,
+              'wd-ovl__icon--pulse': toggledSlug === item.name,
             }" :aria-label="item.label" role="button" :aria-pressed="item.active" @touchstart.passive="onSwipeStart"
               @touchend.passive="onSwipeEnd">
               <q-icon :name="layerIcon(item.icon)" size="20px" />
@@ -1677,6 +1708,7 @@ onBeforeUnmount(() => {
               :class="{
                 'wd-ovl__icon--active': item.active,
                 'wd-ovl__icon--inactive': !item.active,
+                'wd-ovl__icon--pulse': toggledSlug === item.name,
               }"
               :aria-label="item.label"
               role="button"
@@ -1719,19 +1751,7 @@ onBeforeUnmount(() => {
           @click.stop="onGroupSelectorTap"
           @wheel.prevent
         >
-          <!-- Expanded: the chevrons are hit targets — ‹ previous, › next.
-               Mini: the whole button cycles forward (no room for two). -->
-          <button
-            v-if="expanded"
-            class="wd-ovl__group-hit wd-ovl__group-hit--prev"
-            :aria-label="t('overlays.group_prev', { name: overlayStore.activeGroupName(t) })"
-            @click.stop="onGroupStepTap(-1)"
-          >
-            <svg class="wd-ovl__group-arrow wd-ovl__group-arrow--prev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M15 6l-6 6 6 6" />
-            </svg>
-          </button>
-          <svg v-else class="wd-ovl__group-arrow wd-ovl__group-arrow--prev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="wd-ovl__group-arrow wd-ovl__group-arrow--prev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M15 6l-6 6 6 6" />
           </svg>
           <Transition :name="`wd-ovl-gswap-${groupSwapDir}`" mode="out-in">
@@ -1740,19 +1760,23 @@ onBeforeUnmount(() => {
               <q-icon v-else :name="groupIcon(overlayStore.activeGroupIcon())" size="20px" />
             </span>
           </Transition>
-          <button
-            v-if="expanded"
-            class="wd-ovl__group-hit wd-ovl__group-hit--next"
-            :aria-label="t('overlays.group_next', { name: overlayStore.activeGroupName(t) })"
-            @click.stop="onGroupStepTap(1)"
-          >
-            <svg class="wd-ovl__group-arrow wd-ovl__group-arrow--next" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 6l6 6-6 6" />
-            </svg>
-          </button>
-          <svg v-else class="wd-ovl__group-arrow wd-ovl__group-arrow--next" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="wd-ovl__group-arrow wd-ovl__group-arrow--next" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 6l6 6-6 6" />
           </svg>
+          <!-- Expanded: the FULL halves are hit zones — left = previous,
+               right = next (divs: the outer element is already a button) -->
+          <div
+            v-if="expanded"
+            class="wd-ovl__group-half wd-ovl__group-half--prev"
+            :title="t('overlays.group_prev', { name: overlayStore.activeGroupName(t) })"
+            @click.stop="onGroupStepTap(-1)"
+          />
+          <div
+            v-if="expanded"
+            class="wd-ovl__group-half wd-ovl__group-half--next"
+            :title="t('overlays.group_next', { name: overlayStore.activeGroupName(t) })"
+            @click.stop="onGroupStepTap(1)"
+          />
         </button>
 
 
@@ -1766,10 +1790,23 @@ onBeforeUnmount(() => {
           :style="{ top: thumbAbsTop + 'px', height: thumbH + 'px' }"
         />
 
-        <!-- More button: toggles the box between mini and expanded.
-             In edit mode there is no footer — the header ✓ is the single
-             exit (Save / Discard prompt when dirty). -->
-        <button v-if="!editMode" class="wd-ovl__more" :aria-label="expanded ? t('close') : t('overlay_style')" :aria-expanded="expanded"
+        <!-- Edit mode: cancel (X) / confirm (✓) footer (restored — the
+             header ✓ stays as the keyboard/discoverable exit). -->
+        <div v-if="editMode" class="wd-ovl__more-group" @wheel.prevent>
+          <button class="wd-ovl__more wd-ovl__more--cancel" :aria-label="t('overlays.edit_cancel')"
+            @click.stop="cancelEdit">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+          <button class="wd-ovl__more wd-ovl__more--confirm" :aria-label="t('overlays.edit_done')"
+            @click.stop="confirmEdit">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+              <path d="M5 13l4 4L19 7" />
+            </svg>
+          </button>
+        </div>
+        <button v-else class="wd-ovl__more" :aria-label="expanded ? t('close') : t('overlay_style')" :aria-expanded="expanded"
           @click.stop="expanded = !expanded">
           <svg v-if="!expanded" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
             <circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" />
@@ -2379,6 +2416,26 @@ body.body--dark .wd-ovl__row-name {
   pointer-events: none;
 }
 
+// Toggle feedback: a quick pulse acknowledges the flip (impeccable:
+// 100–150 ms acknowledge; this is the row's authored moment)
+.wd-ovl__icon--pulse {
+  animation: wd-ovl-chip-pulse 0.26s $ease;
+}
+
+@keyframes wd-ovl-chip-pulse {
+  0% {
+    transform: scale(1);
+  }
+
+  45% {
+    transform: scale(0.88);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
 // ── Icon button (ALWAYS at the right edge; bordered chip look) ───────────
 .wd-ovl__icon {
   position: relative;
@@ -2472,6 +2529,7 @@ body.body--dark .wd-ovl__row-name {
 // ── Group selector: spans the box width, clearly distinct ────────────────
 // ‹ icon › — the flanking chevrons read as "cycle", not "expand"
 .wd-ovl__group-btn {
+  position: relative; // anchor for the half hit zones
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2510,30 +2568,6 @@ body.body--dark .wd-ovl__row-name {
     transform: scaleY(0.97);
   }
 
-  // Expanded: chevron hit targets (‹ previous / › next)
-  .wd-ovl__group-hit {
-    display: grid;
-    place-items: center;
-    width: 34px;
-    height: 100%;
-    margin: -6px 0;
-    padding: 0 8px;
-    border: none;
-    background: transparent;
-    color: inherit;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    border-radius: 4px;
-
-    &:hover {
-      background: var(--wd-ctl-hover);
-    }
-
-    &:active {
-      transform: scale(0.94);
-    }
-  }
-
   .wd-ovl__group-arrow {
     opacity: 0.7;
     flex: none;
@@ -2542,19 +2576,40 @@ body.body--dark .wd-ovl__row-name {
   }
 }
 
-// Edit mode has no footer — the group button carries the box's bottom
-// rounding (the scrollthumb is absolutely positioned, it doesn't count)
-.wd-ovl__box--edit .wd-ovl__group-btn {
-  border-radius: 0 0 8px 8px;
-}
-
-// Edit + single group (button hidden via --btnless): the rows area is the
-// bottom element and rounds with the box
-.wd-ovl__box--edit.wd-ovl__box--btnless .wd-ovl__rows-wrap {
-  border-radius: 8px;
-}
-
 // Group icon swap on cycle: quiet vertical slide
+// Expanded: the FULL halves of the group button are hit zones —
+// left = previous, right = next. The visuals sit above but are
+// pointer-inert, so every click lands on a half.
+.wd-ovl__group-half {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  cursor: pointer;
+  z-index: 0;
+  transition: background-color 0.12s $ease;
+
+  &--prev {
+    left: 0;
+    border-radius: 0;
+  }
+
+  &--next {
+    right: 0;
+  }
+
+  &:hover {
+    background: var(--wd-ctl-hover);
+  }
+}
+
+.wd-ovl__box--expanded .wd-ovl__group-btn > svg,
+.wd-ovl__box--expanded .wd-ovl__group-btn > .wd-ovl__gswap-item {
+  pointer-events: none;
+  position: relative;
+  z-index: 1;
+}
+
 // Horizontal, direction-aware: 'next' pushes left, 'previous' pushes right
 .wd-ovl-gswap-fwd-enter-active,
 .wd-ovl-gswap-fwd-leave-active,
@@ -2967,6 +3022,38 @@ body.body--dark .wd-ovl__empty-hint {
 }
 
 // ── Footer: cancel (X) + confirm (✓) on ONE line ──────────────────────
+// ── Footer: cancel (X) + confirm (✓) on ONE line (edit mode) ──────────
+.wd-ovl__more-group {
+  display: flex;
+  width: 100%;
+  flex: none;
+  border-top: 1px solid var(--wd-ctl-border);
+  pointer-events: auto;
+}
+
+.wd-ovl__more-group .wd-ovl__more {
+  flex: 1;
+  height: 38px;
+  border-radius: 0;
+  border-top: none;
+}
+
+.wd-ovl__more-group .wd-ovl__more--cancel {
+  border-bottom-left-radius: 8px;
+  border-right: 1px solid var(--wd-ctl-border);
+  color: var(--wd-ctl-ink-soft);
+
+  &:hover { background: var(--wd-ctl-hover); }
+}
+
+.wd-ovl__more-group .wd-ovl__more--confirm {
+  border-bottom-right-radius: 8px;
+  color: #2a8a72;
+  background: rgba(42, 138, 114, 0.07);
+
+  &:hover { background: rgba(42, 138, 114, 0.14); }
+}
+
 // ── Reduced motion: keep state legible, drop spatial movement ─────────
 @media (prefers-reduced-motion: reduce) {
   .wd-ovl__rows-wrap,
@@ -2987,7 +3074,8 @@ body.body--dark .wd-ovl__empty-hint {
     transform: none;
   }
 
-  .wd-ovl__dropline {
+  .wd-ovl__dropline,
+  .wd-ovl__icon--pulse {
     animation: none;
   }
 }
