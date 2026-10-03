@@ -798,8 +798,11 @@ async function runIconSearch(query: string): Promise<void> {
   iconSearching.value = true;
   iconSearchError.value = false;
   try {
+    // License policy (see .claude/agents/iconify.md): permissive sets only —
+    // no attribution-required collections in the results
+    const SAFE_PREFIXES = 'tabler,mdi,lucide,ph,fluent,icon-park';
     const res = await window.fetch(
-      `https://api.iconify.design/search?query=${encodeURIComponent(q)}&limit=32`
+      `https://api.iconify.design/search?query=${encodeURIComponent(q)}&limit=32&prefixes=${SAFE_PREFIXES}`
     );
     if (!res.ok) throw new Error(`search ${res.status}`);
     const data = (await res.json()) as { icons?: string[] };
@@ -1564,7 +1567,7 @@ onBeforeUnmount(() => {
           :placeholder="t('overlays.icon_search')"
           :loading="iconSearching"
         >
-          <template #prepend><q-icon name="search-outline" size="16px" /></template>
+          <template #prepend><q-icon name="wd-search-outline" size="16px" /></template>
         </q-input>
         <!-- Search results (Iconify, loads at runtime) -->
         <template v-if="iconQuery && iconQuery.trim().length >= 2">
