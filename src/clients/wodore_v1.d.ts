@@ -4124,6 +4124,8 @@ export interface operations {
     search_geoplaces: {
         parameters: {
             query: {
+                /** @description Filter to features intersecting the box, formatted as minLon,minLat,maxLon,maxLat (WGS84 decimal degrees). */
+                bbox?: string | null;
                 /** @description Sparse fieldsets (JSON:API): `fields[TYPE]=name1,name2` narrows the response to the selected fields (`__all__` = every field). Valid TYPEs: places, categories, sources. */
                 fields?: {
                     [key: string]: string;
@@ -4257,6 +4259,8 @@ export interface operations {
     get_hut_availability_geojson: {
         parameters: {
             query?: {
+                /** @description Filter to features intersecting the box, formatted as minLon,minLat,maxLon,maxLat (WGS84 decimal degrees). */
+                bbox?: string | null;
                 /** @description Select language code: de, en, fr, it. */
                 lang?: string;
                 /** @description Comma-separated list of hut slugs to filter (e.g., 'aarbiwak,almageller'). If not set, returns all huts. */
@@ -4486,6 +4490,8 @@ export interface operations {
     get_huts: {
         parameters: {
             query?: {
+                /** @description Filter to features intersecting the box, formatted as minLon,minLat,maxLon,maxLat (WGS84 decimal degrees). */
+                bbox?: string | null;
                 /** @description Select language code: de, en, fr, it. */
                 lang?: string;
                 /** @description Pagination offset */
@@ -4569,6 +4575,8 @@ export interface operations {
     get_huts_geojson: {
         parameters: {
             query?: {
+                /** @description Filter to features intersecting the box, formatted as minLon,minLat,maxLon,maxLat (WGS84 decimal degrees). */
+                bbox?: string | null;
                 /** @description Select language code: de, en, fr, it. */
                 lang?: string;
                 /** @description Pagination offset */
@@ -4664,6 +4672,8 @@ export interface operations {
     search_huts: {
         parameters: {
             query: {
+                /** @description Filter to features intersecting the box, formatted as minLon,minLat,maxLon,maxLat (WGS84 decimal degrees). */
+                bbox?: string | null;
                 /** @description Sparse fieldsets (JSON:API): `fields[TYPE]=name1,name2` narrows the response to the selected fields (`__all__` = every field). Valid TYPEs: huts, hut_types, sources. */
                 fields?: {
                     [key: string]: string;
