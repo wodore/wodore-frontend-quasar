@@ -158,8 +158,14 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
+      # The push races with OTHER PRs' publishers (branches without the
+      # gh-pages-push concurrency group still push unlocked). Tolerate one
+      # rejected push: wait out the racer, then a fresh attempt clones the
+      # updated branch and lands.
       - name: Publish report to GitHub Pages
+        id: allure_publish
         if: always()
+        continue-on-error: true
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -168,6 +174,21 @@ jobs:
           keep_files: true
           commit_message: >-
             Allure report for run ${{ github.run_number }}
+
+      - name: Wait out gh-pages racer
+        if: always() && steps.allure_publish.outcome == 'failure'
+        run: sleep 75
+
+      - name: Publish report to GitHub Pages (retry)
+        if: always() && steps.allure_publish.outcome == 'failure'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./allure-report
+          destination_dir: ${{ steps.ctx.outputs.dir }}/${{ github.run_number }}
+          keep_files: true
+          commit_message: >-
+            Allure report for run ${{ github.run_number }} (retry)
 
       # Prune old Allure reports (keep the latest 30 per PR/branch)
       - name: Prune old reports (>30 runs)
