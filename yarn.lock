@@ -1202,6 +1202,11 @@
   dependencies:
     tslib "^2.1.0"
 
+"@capacitor/preferences@^8.0.1":
+  version "8.0.1"
+  resolved "https://registry.yarnpkg.com/@capacitor/preferences/-/preferences-8.0.1.tgz#9924997d694242a5f378e9ddba9711ad1ca611dc"
+  integrity sha512-T6no3ebi79XJCk91U3Jp/liJUwgBdvHR+s6vhvPkPxSuch7z3zx5Rv1bdWM6sWruNx+pViuEGqZvbfCdyBvcHQ==
+
 "@capawesome/capacitor-app-update@^7.2.0":
   version "7.2.0"
   resolved "https://registry.yarnpkg.com/@capawesome/capacitor-app-update/-/capacitor-app-update-7.2.0.tgz#51a70a405d73c62e3f670db22e6fa17c4aebc00c"

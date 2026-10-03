@@ -5,6 +5,7 @@ import { LocalStorage } from 'quasar';
 
 import { resolveLocale } from '@/i18n';
 import type { Locale } from '@/i18n';
+import { mirrorDurableSettings } from '@services/durableSettings';
 
 /**
  * User Settings Store
@@ -137,9 +138,12 @@ export const useUserSettingsStore = defineStore('userSettings', () => {
   // Reactive state
   const settings = ref<UserSettings>(loadSettings());
 
-  // Save to localStorage (debounced)
+  // Save to localStorage (debounced) — mirrored to the durable native
+  // store (Capacitor Preferences) so a WebView cache/data clear cannot
+  // lose the settings (incl. custom group icons)
   const saveSettings = useDebounceFn(() => {
     LocalStorage.set(STORAGE_KEY, settings.value);
+    mirrorDurableSettings(settings.value);
   }, 500);
 
   // Watch for changes and save
@@ -148,6 +152,7 @@ export const useUserSettingsStore = defineStore('userSettings', () => {
   // Save immediately on initialization to ensure key exists
   if (!LocalStorage.hasItem(STORAGE_KEY)) {
     LocalStorage.set(STORAGE_KEY, settings.value);
+    mirrorDurableSettings(settings.value);
   }
 
   // Track which settings need server sync (prepare for future)

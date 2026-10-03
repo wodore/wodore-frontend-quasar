@@ -766,6 +766,13 @@ function isIconifyIcon(name: string): boolean {
   return name.includes(':');
 }
 
+/** Multi-color sets keep their own palette — the dark-mode invert would
+ *  wreck them, so they render untinted. */
+const COLOR_PREFIXES = ['fluent-emoji', 'fluent-color', 'icon-park'];
+function isColoredIcon(name: string): boolean {
+  return COLOR_PREFIXES.some(p => name.startsWith(`${p}:`));
+}
+
 /** Group icons render from three sources: overlay layer icons (img),
  *  wd symbols (iconify font) and iconify runtime icons — one resolver
  *  for the q-icon path, isIconifyIcon() for the <Icon> branch. */
@@ -799,14 +806,25 @@ async function runIconSearch(query: string): Promise<void> {
   iconSearchError.value = false;
   try {
     // License policy (see .claude/agents/iconify.md): permissive sets only —
-    // no attribution-required collections in the results
-    const SAFE_PREFIXES = 'tabler,mdi,lucide,ph,fluent,icon-park';
-    const res = await window.fetch(
-      `https://api.iconify.design/search?query=${encodeURIComponent(q)}&limit=32&prefixes=${SAFE_PREFIXES}`
-    );
-    if (!res.ok) throw new Error(`search ${res.status}`);
-    const data = (await res.json()) as { icons?: string[] };
-    iconResults.value = data.icons ?? [];
+    // no attribution-required collections in the results. Includes COLOR
+    // sets (fluent-emoji / fluent-color: MIT, icon-park: Apache 2.0).
+    const SAFE_PREFIXES =
+      'tabler,mdi,lucide,ph,fluent,fluent-emoji,fluent-color,icon-park';
+    const search = async (query: string): Promise<string[]> => {
+      const res = await window.fetch(
+        `https://api.iconify.design/search?query=${encodeURIComponent(query)}&limit=32&prefixes=${SAFE_PREFIXES}`
+      );
+      if (!res.ok) throw new Error(`search ${res.status}`);
+      const data = (await res.json()) as { icons?: string[] };
+      return data.icons ?? [];
+    };
+    let icons = await search(q);
+    // The keyword index is stem-based ("skier" matches nothing, "ski"
+    // matches 32) — retry with shorter stems before giving up
+    for (let end = q.length - 1; icons.length === 0 && end >= Math.max(3, q.length - 2); end -= 1) {
+      icons = await search(q.slice(0, end));
+    }
+    iconResults.value = icons;
   } catch {
     iconResults.value = [];
     iconSearchError.value = true;
@@ -1139,7 +1157,7 @@ onBeforeUnmount(() => {
             :disabled="!editMode"
             @click.stop="editMode && (showIconPicker = true)"
           >
-            <IconifyIcon v-if="isIconifyIcon(overlayStore.activeGroupIcon())" :icon="overlayStore.activeGroupIcon()" :height="16" :width="16" class="wd-ovl__ifg" />
+            <IconifyIcon v-if="isIconifyIcon(overlayStore.activeGroupIcon())" :icon="overlayStore.activeGroupIcon()" :height="16" :width="16" class="wd-ovl__ifg" :class="{ 'wd-ovl__ifg--multi': isColoredIcon(overlayStore.activeGroupIcon()) }" />
             <q-icon v-else :name="groupIcon(overlayStore.activeGroupIcon())" size="16px" />
           </button>
           <!-- Group NAME = quick switch dropdown (expanded + edit).
@@ -1166,7 +1184,7 @@ onBeforeUnmount(() => {
                   @click="onGroupMenuSelect(g.id)"
                 >
                   <q-item-section avatar>
-                    <IconifyIcon v-if="isIconifyIcon(g.icon)" :icon="g.icon" :height="16" :width="16" class="wd-ovl__ifg" />
+                    <IconifyIcon v-if="isIconifyIcon(g.icon)" :icon="g.icon" :height="16" :width="16" class="wd-ovl__ifg" :class="{ 'wd-ovl__ifg--multi': isColoredIcon(g.icon) }" />
                     <q-icon v-else :name="groupIcon(g.icon)" size="16px" />
                   </q-item-section>
                   <q-item-section>{{ groupDisplayName(g.name, t) }}</q-item-section>
@@ -1496,7 +1514,7 @@ onBeforeUnmount(() => {
           </svg>
           <Transition name="wd-ovl-gswap" mode="out-in">
             <span :key="overlayStore.groupSettings.activeGroupId ?? 'g'" class="wd-ovl__gswap-item">
-              <IconifyIcon v-if="isIconifyIcon(overlayStore.activeGroupIcon())" :icon="overlayStore.activeGroupIcon()" :height="20" :width="20" class="wd-ovl__ifg" />
+              <IconifyIcon v-if="isIconifyIcon(overlayStore.activeGroupIcon())" :icon="overlayStore.activeGroupIcon()" :height="20" :width="20" class="wd-ovl__ifg" :class="{ 'wd-ovl__ifg--multi': isColoredIcon(overlayStore.activeGroupIcon()) }" />
               <q-icon v-else :name="groupIcon(overlayStore.activeGroupIcon())" size="20px" />
             </span>
           </Transition>
@@ -1583,7 +1601,7 @@ onBeforeUnmount(() => {
               :title="name"
               @click.stop="applyGroupIcon(name)"
             >
-              <IconifyIcon :icon="name" :height="26" :width="26" class="wd-ovl__ifg" />
+              <IconifyIcon :icon="name" :height="26" :width="26" class="wd-ovl__ifg" :class="{ 'wd-ovl__ifg--multi': isColoredIcon(name) }" />
             </button>
           </div>
         </template>
@@ -2619,6 +2637,14 @@ body.body--dark .wd-ovl__empty-hint {
   text-transform: uppercase;
   color: var(--wd-ctl-ink);
   margin-bottom: 12px;
+}
+
+.wd-ovl__ifg--multi {
+  color: inherit;
+}
+
+.wd-ovl__ifg--multi svg {
+  filter: none;
 }
 
 .wd-ovl__icon-grid {

@@ -37,6 +37,10 @@ body.body--dark .wd-ovl__ifg {
   color: #000000;
 }
 
+body.body--dark .wd-ovl__ifg--multi {
+  filter: none; // multi-color sets keep their palette
+}
+
 body.body--dark .wd-ovl__group-menu .q-item__section--avatar .q-icon {
   // ONE invert only — on the wrapper <i>. Inverting BOTH the wrapper and
   // the child <img> double-inverts the glyphs back to black.
