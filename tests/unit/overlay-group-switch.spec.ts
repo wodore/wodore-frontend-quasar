@@ -88,49 +88,95 @@ describe('overlay group switching (store state)', () => {
     }
   });
 
-  it('toggling a layer records the state in every owning group', () => {
-    // Pick a layer owned by a NON-active group (promoted-row scenario)
+  it('toggling records ONLY in the active group — other owners keep their state', () => {
     const active = groups().find(g => g.id === store.groupSettings.activeGroupId)!;
-    const owners = groups().filter(g => g.id !== active.id);
-    const shared = owners.flatMap(g => g.layerSlugs).find(slug => !active.layerSlugs.includes(slug));
-    expect(shared).toBeTruthy();
+    // A layer owned by the active group AND at least one other group
+    const other = groups().find(g => g.id !== active.id);
+    const shared = active.layerSlugs.find(slug => other!.layerSlugs.includes(slug));
+    // Fallback: if no layer is shared, any active-group member proves the
+    // active-group recording; the “other keeps state” part is covered by
+    // the promoted test below.
+    const slug = shared ?? active.layerSlugs[0];
 
-    const item = overlay(shared!) as unknown as { name: string; active: boolean };
+    const item = overlay(slug) as unknown as { name: string; active: boolean };
     const wasActive = item.active;
+    // Snapshot the OTHER owning groups' saved states — the toggle must not
+    // touch them (their state is whatever they saved, independent of the
+    // current global flag)
+    const otherBefore = new Map(
+      groups()
+        .filter(g => g.id !== active.id && g.layerSlugs.includes(slug))
+        .map(g => [g.slug, g.activeLayerSlugs.includes(slug)] as const)
+    );
     store.toggleOverlay(item as never);
     expect(item.active).toBe(!wasActive);
 
-    for (const g of groups().filter(g => g.layerSlugs.includes(shared!))) {
-      expect(
-        g.activeLayerSlugs.includes(shared!),
-        `${g.slug} activeLayerSlugs must record the toggle`
-      ).toBe(!wasActive);
+    const activeG = groups().find(g => g.id === active.id)!;
+    expect(activeG.activeLayerSlugs.includes(slug), 'active group records the toggle').toBe(
+      !wasActive
+    );
+
+    if (shared) {
+      for (const g of groups().filter(g => g.id !== active.id && g.layerSlugs.includes(slug))) {
+        expect(
+          g.activeLayerSlugs.includes(slug),
+          `${g.slug} must KEEP its own state (no cross-group leak)`
+        ).toBe(otherBefore.get(g.slug)!);
+      }
     }
   });
 
-  it('a layer toggled off while promoted stays off when its group returns', () => {
+  it('a layer toggled off while promoted is RESTORED when its group returns', () => {
     const activeId = store.groupSettings.activeGroupId;
     const others = groups().filter(g => g.id !== activeId);
     const owner = others.find(g => g.layerSlugs.length > 0)!;
     const slug = owner.layerSlugs.find(s => overlay(s))!;
 
-    // Cycle until the owner group is active
+    // Cycle until the owner group is active, make sure the layer is ON
     for (let i = 0; i < groups().length + 1; i++) {
       if (store.groupSettings.activeGroupId === owner.id) break;
       store.cycleGroup();
     }
-    expect(store.groupSettings.activeGroupId).toBe(owner.id);
-
-    // Toggle its layer off
     const item = overlay(slug) as unknown as { name: string; active: boolean };
+    if (!item.active) {
+      store.toggleOverlay(item as never);
+      expect(item.active).toBe(true);
+    }
+    expect(owner.activeLayerSlugs.includes(slug)).toBe(true);
+
+    // Cycle AWAY (layer not a member there) and toggle it off — promoted
+    // toggle: global only, the owner's saved state must NOT change
+    store.cycleGroup();
+    expect(store.groupSettings.activeGroupId).not.toBe(owner.id);
     if (item.active) store.toggleOverlay(item as never);
     expect(item.active).toBe(false);
+    expect(owner.activeLayerSlugs.includes(slug), 'owner keeps its saved state').toBe(true);
 
-    // Cycle away and back — the layer must STAY off
-    store.cycleGroup();
-    store.cycleGroup();
+    // Back on the owner group: its state wins — the layer is active again
     while (store.groupSettings.activeGroupId !== owner.id) store.cycleGroup();
-    expect(overlay(slug)?.active, 'toggled-off layer resurrected by group cycle').toBe(false);
-    expect(owner.activeLayerSlugs.includes(slug)).toBe(false);
+    expect(overlay(slug)?.active, 'owning group restores its layer state').toBe(true);
+  });
+
+  it('setActiveGroup switches directly and applies the target group’s states', () => {
+    const from = groups().find(g => g.id === store.groupSettings.activeGroupId)!;
+    const target = groups().find(g => g.id !== from.id && !g.hidden && g.layerSlugs.length > 0)!;
+    target.activeLayerSlugs = [target.layerSlugs[0]];
+
+    store.setActiveGroup(target.id);
+    expect(store.groupSettings.activeGroupId).toBe(target.id);
+    for (const slug of target.layerSlugs) {
+      expect(overlay(slug)?.active).toBe(slug === target.layerSlugs[0]);
+    }
+
+    // Hidden groups are not directly selectable (edit mode passes
+    // includeHidden — covered by the component dropdown)
+    const hidden = groups().find(g => g.hidden && g.id !== target.id);
+    if (hidden) {
+      const before = store.groupSettings.activeGroupId;
+      store.setActiveGroup(hidden.id);
+      expect(store.groupSettings.activeGroupId).toBe(before);
+      store.setActiveGroup(hidden.id, true);
+      expect(store.groupSettings.activeGroupId).toBe(hidden.id);
+    }
   });
 });

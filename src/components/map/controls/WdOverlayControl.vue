@@ -13,7 +13,12 @@
  */
 import { ref, watch, onMounted, onBeforeUnmount, computed, nextTick } from 'vue';
 import { useQuasar } from 'quasar';
-import { isDefaultGroupSlug, resetGroupToDefault } from '@stores/map/utils/layer-groups';
+import {
+  isDefaultGroupSlug,
+  resetGroupToDefault,
+  groupDisplayName,
+  type LayerGroup,
+} from '@stores/map/utils/layer-groups';
 import { useI18n } from 'vue-i18n';
 import { LocalStorage } from 'quasar';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
@@ -770,13 +775,18 @@ const groupCycleable = computed(() => {
   return pool.some(g => g.id !== activeId);
 });
 
-/** Handle group selector tap */
-function onGroupSelectorTap(): void {
-  overlayStore.cycleGroup(editMode.value);
-  // The group switch changed active states — the MAP must follow: layers
-  // that just became active but were never added (e.g. a group with layers
-  // untouched since load) get ADDED, everything else gets its visibility
-  // re-applied. Toggling visibility alone leaves new layers invisible.
+/** Groups for the title dropdown: quick switch. Edit mode lists hidden
+ *  groups too (they stay editable/manageable there). */
+const groupMenuChoices = computed<LayerGroup[]>(() =>
+  editMode.value
+    ? overlayStore.groupSettings.groups.filter(g => !g.removed)
+    : overlayStore.visibleGroups()
+);
+
+/** The map must follow every group change: newly-active layers that were
+ *  never added get ADDED (a group's saved actives from a previous session
+ *  were never added this session); the rest get visibility re-applied. */
+function applyGroupStateToMap(): void {
   const order = getOverlaysInRenderOrder();
   for (const item of overlayStore.overlays as unknown as OverlaySwitchItem[]) {
     if (item.active && !addedOverlays.has(item.name)) {
@@ -785,6 +795,18 @@ function onGroupSelectorTap(): void {
       setOverlayVisibility(item);
     }
   }
+}
+
+/** Title dropdown: switch directly to a group */
+function onGroupMenuSelect(groupId: string): void {
+  overlayStore.setActiveGroup(groupId, editMode.value);
+  applyGroupStateToMap();
+}
+
+/** Handle group selector tap */
+function onGroupSelectorTap(): void {
+  overlayStore.cycleGroup(editMode.value);
+  applyGroupStateToMap();
 }
 
 // ── Layer management (ported 1:1 from the old WdOverlaySwitch) ────────────
@@ -1042,7 +1064,46 @@ onBeforeUnmount(() => {
           >
             <q-icon :name="layerIcon(overlayStore.activeGroupIcon())" size="16px" />
           </button>
-          <span class="wd-ovl__toolbar-title">{{ overlayStore.activeGroupName(t) }}</span>
+          <!-- Group NAME = quick switch dropdown (expanded + edit).
+               Icon → change icon (edit); name → switch group. -->
+          <button
+            v-if="groupMenuChoices.length > 0"
+            class="wd-ovl__toolbar-title wd-ovl__toolbar-title--menu"
+            :aria-label="t('overlays.group_switch', { name: overlayStore.activeGroupName(t) })"
+            :title="t('overlays.group_switch', { name: overlayStore.activeGroupName(t) })"
+            @click.stop
+          >
+            <span class="wd-ovl__toolbar-title-text">{{ overlayStore.activeGroupName(t) }}</span>
+            <svg class="wd-ovl__toolbar-title-caret" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+            <q-menu anchor="bottom start" self="top start" class="wd-ovl__menu wd-ovl__group-menu">
+              <q-list dense style="min-width: 170px">
+                <q-item
+                  v-for="g in groupMenuChoices"
+                  :key="g.id"
+                  clickable
+                  v-close-popup
+                  :class="{ 'wd-ovl__group-menu-item--active': g.id === overlayStore.groupSettings.activeGroupId }"
+                  @click="onGroupMenuSelect(g.id)"
+                >
+                  <q-item-section avatar>
+                    <q-icon :name="layerIcon(g.icon)" size="16px" />
+                  </q-item-section>
+                  <q-item-section>{{ groupDisplayName(g.name, t) }}</q-item-section>
+                  <!-- Hidden marker (edit mode lists hidden groups too) -->
+                  <q-item-section v-if="g.hidden" side>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+                      <circle cx="12" cy="12" r="3" />
+                      <path d="M4 4l16 16" stroke-linecap="round" />
+                    </svg>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
+          </button>
+          <span v-else class="wd-ovl__toolbar-title">{{ overlayStore.activeGroupName(t) }}</span>
           <div class="wd-ovl__toolbar-actions">
             <!-- Hidden group: one-tap unhide, right in the header -->
             <button
@@ -1611,6 +1672,39 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
     border-radius: 1px;
     flex: none;
     background: $wd-gold;
+  }
+}
+
+// Title as a quick-switch DROPDOWN (expanded + edit): same look, plus a
+// caret and a hover affordance
+.wd-ovl__toolbar-title--menu {
+  border: none;
+  background: transparent;
+  padding: 4px 6px 4px 0;
+  margin-left: -6px;
+  border-radius: 4px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.12s $ease;
+
+  &:hover {
+    background: var(--wd-ctl-hover);
+  }
+
+  .wd-ovl__toolbar-title-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .wd-ovl__toolbar-title-caret {
+    flex: none;
+    opacity: 0.5;
+    transition: transform 0.15s $ease, opacity 0.15s $ease;
+  }
+
+  &:hover .wd-ovl__toolbar-title-caret {
+    opacity: 0.85;
   }
 }
 
@@ -2490,6 +2584,25 @@ body.body--dark .wd-ovl__menu .q-item {
   color: #cfe8dc;
 }
 
+/* Group quick-switch dropdown (title): active item + hidden marker */
+.wd-ovl__group-menu .q-item__section--avatar .q-icon img {
+  border-radius: 2px;
+}
+
+.wd-ovl__group-menu-item--active {
+  font-weight: 600;
+  background: var(--wd-ctl-hover);
+
+  .q-item__section--avatar {
+    color: var(--wd-ctl-ink);
+  }
+}
+
+.wd-ovl__group-menu .q-item__section--side {
+  color: var(--wd-ctl-ink-soft);
+  opacity: 0.7;
+}
+
 .wd-ovl__menu-item--danger {
   color: #c44e3b !important;
 
@@ -2509,5 +2622,24 @@ body.body--dark .wd-ovl__menu .q-item {
 }
 body.body--dark .wd-ovl__menu .q-item {
   color: #cfe8dc;
+}
+
+/* Group quick-switch dropdown (title): active item + hidden marker */
+.wd-ovl__group-menu .q-item__section--avatar .q-icon img {
+  border-radius: 2px;
+}
+
+.wd-ovl__group-menu-item--active {
+  font-weight: 600;
+  background: var(--wd-ctl-hover);
+
+  .q-item__section--avatar {
+    color: var(--wd-ctl-ink);
+  }
+}
+
+.wd-ovl__group-menu .q-item__section--side {
+  color: var(--wd-ctl-ink-soft);
+  opacity: 0.7;
 }
 </style>

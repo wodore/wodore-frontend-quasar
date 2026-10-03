@@ -114,4 +114,47 @@ test.describe('group switching updates the map', () => {
     expect(sawSeededMemberActive, 'the seeded next-group member became active on its group (exercising the add path)').toBe(true);
     expect(seedCount, 'returned with the seeded group layers active').toBeGreaterThan(0);
   });
+
+  test('light-mobile: title dropdown switches groups, map stays in sync', async ({ page }, testInfo) => {
+    tagTest('light', 'mobile', 'group-switch');
+    test.setTimeout(90_000);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await loadMap(page);
+    await page.evaluate('document.querySelector(".wd-ovl__more")?.click()');
+    await page.waitForTimeout(700);
+
+    // Open the title dropdown and pick a DIFFERENT group
+    const picked = await page.evaluate(() => {
+      const btn = document.querySelector('.wd-ovl__toolbar-title--menu');
+      if (!btn) return null;
+      btn.click();
+      return true;
+    });
+    expect(picked, 'title dropdown button exists (expanded)').toBe(true);
+    await page.waitForTimeout(500);
+    const switched = await page.evaluate(() => {
+      const pinia = document.querySelector('#q-app').__vue_app__.config.globalProperties.$pinia;
+      const store = pinia._s.get('overlay');
+      const current = store.groupSettings.activeGroupId;
+      const items = [...document.querySelectorAll('.wd-ovl__group-menu .q-item')];
+      const target = items.find(i => !i.classList.contains('wd-ovl__group-menu-item--active'));
+      if (!target) return false;
+      target.click();
+      window.__prevGroup = current;
+      return true;
+    });
+    expect(switched, 'dropdown lists other groups').toBe(true);
+    await page.waitForTimeout(900);
+
+    const changed = await page.evaluate(() => {
+      const pinia = document.querySelector('#q-app').__vue_app__.config.globalProperties.$pinia;
+      return pinia._s.get('overlay').groupSettings.activeGroupId !== window.__prevGroup;
+    });
+    expect(changed, 'active group changed via dropdown').toBe(true);
+
+    const state = await evalJSON<{ mismatches: string[] }>(page, OVERLAY_STATE_VS_MAP);
+    await attachScreenshot(page, testInfo, 'light-mobile-dropdown-switch');
+    expect(state.mismatches, 'map matches store after dropdown switch').toEqual([]);
+  });
 });
