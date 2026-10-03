@@ -405,7 +405,9 @@
     "icon_search": "Rechercher des icônes …",
     "icon_none": "Aucune icône trouvée.",
     "icon_search_error": "Recherche d'icônes indisponible pour le moment.",
-    "icon_more": "Afficher plus"
+    "icon_more": "Afficher plus",
+    "group_prev": "Groupe précédent ({name})",
+    "group_next": "Groupe suivant ({name})"
   },
   "basemap": "Fond de carte",
   "basemaps": {

@@ -177,6 +177,26 @@ describe('overlay group switching (store state)', () => {
     expect(overlay(slug)?.active, 'promoted layer lost by the round trip').toBe(true);
   });
 
+  it('stepGroup walks backwards and forwards through the visible groups', () => {
+    const visible = groups().filter(g => !g.hidden);
+    if (visible.length < 2) return;
+    const startIdx = visible.findIndex(g => g.id === store.groupSettings.activeGroupId);
+    const before = visible[startIdx].slug;
+
+    store.stepGroup(1);
+    expect(store.groupSettings.activeGroupId).toBe(visible[(startIdx + 1) % visible.length].id);
+
+    store.stepGroup(-1);
+    expect(store.groupSettings.activeGroupId).toBe(visible[startIdx].id);
+    const back = groups().find(g => g.id === store.groupSettings.activeGroupId)?.slug;
+    expect(back).toBe(before);
+
+    // wraps: step(-1) from the first lands on the last
+    store.setActiveGroup(visible[0].id);
+    store.stepGroup(-1);
+    expect(store.groupSettings.activeGroupId).toBe(visible[visible.length - 1].id);
+  });
+
   it('setActiveGroup switches directly and applies the target group’s states', () => {
     const from = groups().find(g => g.id === store.groupSettings.activeGroupId)!;
     const target = groups().find(g => g.id !== from.id && !g.hidden && g.layerSlugs.length > 0)!;

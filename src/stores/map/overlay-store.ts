@@ -147,6 +147,17 @@ export const useOverlayStore = defineStore('overlay', () => {
     switchToGroup(group);
   }
 
+  /** Step by N through the visible groups (expanded view: ‹ previous,
+   *  › next). Step −1 walks backwards; wraps around like cycleGroup. */
+  function stepGroup(step: number, includeHidden = false): void {
+    const visible = getVisibleGroups(groupSettings, includeHidden);
+    if (visible.length === 0) return;
+    const idx = visible.findIndex(g => g.id === groupSettings.activeGroupId);
+    const next = visible[(idx + step + visible.length * 2) % visible.length];
+    if (!next || next.id === groupSettings.activeGroupId) return;
+    switchToGroup(next);
+  }
+
   /** Switch DIRECTLY to a group (title dropdown) — same semantics as
    *  cycling: save current, activate target, apply its layer states. */
   function setActiveGroup(groupId: string, includeHidden = false): void {
@@ -185,6 +196,7 @@ export const useOverlayStore = defineStore('overlay', () => {
     overlays,
     toggleOverlay,
     setActiveGroup,
+    stepGroup,
     rebuildOverlays,
     // Layer groups
     groupSettings,

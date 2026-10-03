@@ -1098,8 +1098,18 @@ function onGroupMenuSelect(groupId: string): void {
   applyGroupStateToMap();
 }
 
+/** Icon swap slides horizontally, direction-aware */
+const groupSwapDir = ref<'fwd' | 'back'>('fwd');
+
+function onGroupStepTap(step: -1 | 1): void {
+  groupSwapDir.value = step > 0 ? 'fwd' : 'back';
+  overlayStore.stepGroup(step, editMode.value);
+  applyGroupStateToMap();
+}
+
 /** Handle group selector tap */
 function onGroupSelectorTap(): void {
+  groupSwapDir.value = 'fwd';
   overlayStore.cycleGroup(editMode.value);
   applyGroupStateToMap();
 }
@@ -1709,16 +1719,38 @@ onBeforeUnmount(() => {
           @click.stop="onGroupSelectorTap"
           @wheel.prevent
         >
-          <svg class="wd-ovl__group-arrow wd-ovl__group-arrow--prev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <!-- Expanded: the chevrons are hit targets — ‹ previous, › next.
+               Mini: the whole button cycles forward (no room for two). -->
+          <button
+            v-if="expanded"
+            class="wd-ovl__group-hit wd-ovl__group-hit--prev"
+            :aria-label="t('overlays.group_prev', { name: overlayStore.activeGroupName(t) })"
+            @click.stop="onGroupStepTap(-1)"
+          >
+            <svg class="wd-ovl__group-arrow wd-ovl__group-arrow--prev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 6l-6 6 6 6" />
+            </svg>
+          </button>
+          <svg v-else class="wd-ovl__group-arrow wd-ovl__group-arrow--prev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M15 6l-6 6 6 6" />
           </svg>
-          <Transition name="wd-ovl-gswap" mode="out-in">
+          <Transition :name="`wd-ovl-gswap-${groupSwapDir}`" mode="out-in">
             <span :key="overlayStore.groupSettings.activeGroupId ?? 'g'" class="wd-ovl__gswap-item">
               <IconifyIcon v-if="isIconifyIcon(overlayStore.activeGroupIcon())" :icon="overlayStore.activeGroupIcon()" :height="20" :width="20" class="wd-ovl__ifg" :class="{ 'wd-ovl__ifg--multi': isColoredIcon(overlayStore.activeGroupIcon()) }" />
               <q-icon v-else :name="groupIcon(overlayStore.activeGroupIcon())" size="20px" />
             </span>
           </Transition>
-          <svg class="wd-ovl__group-arrow wd-ovl__group-arrow--next" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <button
+            v-if="expanded"
+            class="wd-ovl__group-hit wd-ovl__group-hit--next"
+            :aria-label="t('overlays.group_next', { name: overlayStore.activeGroupName(t) })"
+            @click.stop="onGroupStepTap(1)"
+          >
+            <svg class="wd-ovl__group-arrow wd-ovl__group-arrow--next" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 6l6 6-6 6" />
+            </svg>
+          </button>
+          <svg v-else class="wd-ovl__group-arrow wd-ovl__group-arrow--next" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 6l6 6-6 6" />
           </svg>
         </button>
@@ -1931,8 +1963,8 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
     width: 216px;
     // SAME height as mini — the rows cap at the mini content height
     // (--mini-rows CSS var, set on the box element) and scroll.
-
-    animation: wd-ovl-pop 0.28s $ease;
+    // NOTE: no pop animation here — re-firing a scale on every expand
+    // made the rows visibly wobble (the "something moves" effect).
   }
 }
 
@@ -2478,6 +2510,30 @@ body.body--dark .wd-ovl__row-name {
     transform: scaleY(0.97);
   }
 
+  // Expanded: chevron hit targets (‹ previous / › next)
+  .wd-ovl__group-hit {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 100%;
+    margin: -6px 0;
+    padding: 0 8px;
+    border: none;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    border-radius: 4px;
+
+    &:hover {
+      background: var(--wd-ctl-hover);
+    }
+
+    &:active {
+      transform: scale(0.94);
+    }
+  }
+
   .wd-ovl__group-arrow {
     opacity: 0.7;
     flex: none;
@@ -2499,19 +2555,32 @@ body.body--dark .wd-ovl__row-name {
 }
 
 // Group icon swap on cycle: quiet vertical slide
-.wd-ovl-gswap-enter-active,
-.wd-ovl-gswap-leave-active {
+// Horizontal, direction-aware: 'next' pushes left, 'previous' pushes right
+.wd-ovl-gswap-fwd-enter-active,
+.wd-ovl-gswap-fwd-leave-active,
+.wd-ovl-gswap-back-enter-active,
+.wd-ovl-gswap-back-leave-active {
   transition: opacity 0.16s $ease, transform 0.16s $ease;
 }
 
-.wd-ovl-gswap-enter-from {
+.wd-ovl-gswap-fwd-enter-from {
   opacity: 0;
-  transform: translateY(5px);
+  transform: translateX(14px);
 }
 
-.wd-ovl-gswap-leave-to {
+.wd-ovl-gswap-fwd-leave-to {
   opacity: 0;
-  transform: translateY(-5px);
+  transform: translateX(-14px);
+}
+
+.wd-ovl-gswap-back-enter-from {
+  opacity: 0;
+  transform: translateX(-14px);
+}
+
+.wd-ovl-gswap-back-leave-to {
+  opacity: 0;
+  transform: translateX(14px);
 }
 
 // ── ONE separator under the group rows ─────────────────────────

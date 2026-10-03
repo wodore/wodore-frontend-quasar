@@ -405,7 +405,9 @@
     "icon_search": "Search icons …",
     "icon_none": "No icons found.",
     "icon_search_error": "Icon search is currently unavailable.",
-    "icon_more": "Show more"
+    "icon_more": "Show more",
+    "group_prev": "Previous group ({name})",
+    "group_next": "Next group ({name})"
   },
   "basemap": "Basemap",
   "basemaps": {

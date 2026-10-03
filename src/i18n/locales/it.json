@@ -405,7 +405,9 @@
     "icon_search": "Cerca icone …",
     "icon_none": "Nessuna icona trovata.",
     "icon_search_error": "Ricerca icone non disponibile al momento.",
-    "icon_more": "Mostra altro"
+    "icon_more": "Mostra altro",
+    "group_prev": "Gruppo precedente ({name})",
+    "group_next": "Gruppo successivo ({name})"
   },
   "basemap": "Mappa di base",
   "basemaps": {

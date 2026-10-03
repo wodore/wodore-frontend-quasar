@@ -405,7 +405,9 @@
     "icon_search": "Symbol suchen …",
     "icon_none": "Keine Symbole gefunden.",
     "icon_search_error": "Symbolsuche derzeit nicht verfügbar.",
-    "icon_more": "Mehr anzeigen"
+    "icon_more": "Mehr anzeigen",
+    "group_prev": "Vorherige Gruppe ({name})",
+    "group_next": "Nächste Gruppe ({name})"
   },
   "basemap": "Basiskarte",
   "basemaps": {
