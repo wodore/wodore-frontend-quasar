@@ -400,7 +400,8 @@
     "group_show": "Afficher le groupe",
     "group_more": "Plus d'actions",
     "group_reset_confirm": "Réinitialiser « {name} » avec ses couches par défaut ? Vos modifications de ce groupe seront perdues.",
-    "icon_change": "Changer d'icône"
+    "icon_change": "Changer d'icône",
+    "group_empty_hint": "Pas encore de couches dans ce groupe — ajoutez-les avec + ci-dessous."
   },
   "basemap": "Fond de carte",
   "basemaps": {

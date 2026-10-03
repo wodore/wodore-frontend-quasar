@@ -249,28 +249,13 @@ function onDropToAll(): void {
   markEdited();
 }
 
-// Track unsaved edits — prompt to save or cancel when leaving edit mode
+// Track unsaved edits — the header ✓ exits edit mode; when dirty it
+// asks Save / Discard (esc keeps editing). One exit path, no footer pair.
 const hasEdits = ref(false);
 const snapshotGroups = ref<string>('');
 
 function takeSnapshot(): void {
   snapshotGroups.value = JSON.stringify(overlayStore.groupSettings.groups);
-  hasEdits.value = false;
-}
-
-function cancelEdit(): void {
-  // Revert to snapshot and exit edit mode
-  if (hasEdits.value && snapshotGroups.value) {
-    overlayStore.groupSettings.groups = JSON.parse(snapshotGroups.value);
-    overlayStore.syncGroupSettings();
-  }
-  editMode.value = false;
-  hasEdits.value = false;
-}
-
-function confirmEdit(): void {
-  // Keep changes and exit edit mode
-  editMode.value = false;
   hasEdits.value = false;
 }
 
@@ -775,6 +760,16 @@ function applyGroupIcon(icon: string): void {
   showIconPicker.value = false;
 }
 
+/** Group cycling only makes sense with more than one group to cycle to.
+ *  Edit mode cycles hidden groups too — count those there. */
+const groupCycleable = computed(() => {
+  const activeId = overlayStore.groupSettings.activeGroupId;
+  const pool = editMode.value
+    ? overlayStore.groupSettings.groups.filter(g => !g.removed)
+    : overlayStore.visibleGroups();
+  return pool.some(g => g.id !== activeId);
+});
+
 /** Handle group selector tap */
 function onGroupSelectorTap(): void {
   overlayStore.cycleGroup(editMode.value);
@@ -1158,6 +1153,10 @@ onBeforeUnmount(() => {
           @pointerup="onRowsPointerUp"
           @pointerleave="onRowsPointerUp"
         >
+          <!-- Empty group (edit mode): a quiet pointer to the + buttons below -->
+          <div v-if="editMode && miniLayers.length === 0" class="wd-ovl__empty-hint">
+            {{ t('overlays.group_empty_hint') }}
+          </div>
           <TransitionGroup name="wd-ovl-row">
           <div v-for="item in miniLayers" :key="item.name" v-show="item.show" class="wd-ovl__row" :class="{
             'wd-ovl__row--active': item.active,
@@ -1336,6 +1335,7 @@ onBeforeUnmount(() => {
              ‹ icon › = cycle through groups. In edit mode it cycles ALL
              groups (hidden included). -->
         <button
+          v-if="groupCycleable"
           class="wd-ovl__group-btn"
           :aria-label="t('overlays.group_switch', { name: overlayStore.activeGroupName(t) })"
           :title="t('overlays.group_switch', { name: overlayStore.activeGroupName(t) })"
@@ -1364,23 +1364,10 @@ onBeforeUnmount(() => {
           :style="{ top: thumbAbsTop + 'px', height: thumbH + 'px' }"
         />
 
-        <!-- More button: toggles the box between mini and expanded -->
-        <!-- In edit mode: cancel (X) and confirm (✓) replace the more button -->
-        <div v-if="editMode" class="wd-ovl__more-group" @wheel.prevent>
-          <button class="wd-ovl__more wd-ovl__more--cancel" :aria-label="t('overlays.edit_cancel')"
-            @click.stop="cancelEdit">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
-              <path d="M6 6l12 12M18 6L6 18" />
-            </svg>
-          </button>
-          <button class="wd-ovl__more wd-ovl__more--confirm" :aria-label="t('overlays.edit_done')"
-            @click.stop="confirmEdit">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
-              <path d="M5 13l4 4L19 7" />
-            </svg>
-          </button>
-        </div>
-        <button v-else class="wd-ovl__more" :aria-label="expanded ? t('close') : t('overlay_style')" :aria-expanded="expanded"
+        <!-- More button: toggles the box between mini and expanded.
+             In edit mode there is no footer — the header ✓ is the single
+             exit (Save / Discard prompt when dirty). -->
+        <button v-if="!editMode" class="wd-ovl__more" :aria-label="expanded ? t('close') : t('overlay_style')" :aria-expanded="expanded"
           @click.stop="expanded = !expanded">
           <svg v-if="!expanded" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
             <circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" />
@@ -1649,6 +1636,24 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   &:active {
     transform: scale(0.95);
   }
+
+  // Edit mode: the ✓ IS the single exit — it reads as the confirm action
+  &--active {
+    color: #1f6b58;
+    border-color: rgba(42, 138, 114, 0.45);
+    background: rgba(42, 138, 114, 0.08);
+
+    &:hover {
+      background: rgba(42, 138, 114, 0.15);
+      color: #17513f;
+    }
+  }
+}
+
+body.body--dark .wd-ovl__toolbar-btn--active {
+  color: #7fe3c8;
+  border-color: rgba(127, 227, 200, 0.4);
+  background: rgba(127, 227, 200, 0.08);
 }
 
 // ── Scroll fades (top + bottom) ───────────────────────────────────────
@@ -2339,7 +2344,9 @@ body.body--dark .wd-ovl__row-name {
   }
 }
 
-// Header buttons: accents for the hidden-eye and add-group actions
+// Header buttons: the ✓ (edit exit) is the ONLY tinted action — the +
+// and ⋮ stay neutral so the confirm reads unambiguous. The crossed eye
+// (group hidden) carries the gold status color.
 .wd-ovl__toolbar-btn--warn {
   color: #8a7a1e;
 
@@ -2348,20 +2355,36 @@ body.body--dark .wd-ovl__row-name {
   }
 }
 
-.wd-ovl__toolbar-btn--add {
-  color: #2a8a72;
-
-  &:hover {
-    color: #1f6b58;
-  }
-}
-
 body.body--dark .wd-ovl__toolbar-btn--warn {
   color: $wd-gold-bright;
 }
 
+.wd-ovl__toolbar-btn--add {
+  color: var(--wd-ctl-ink-soft);
+}
+
 body.body--dark .wd-ovl__toolbar-btn--add {
-  color: #7fe3c8;
+  color: inherit;
+}
+
+// ── Empty-group hint (edit mode, no layers in the group yet) ───────────
+.wd-ovl__empty-hint {
+  flex: none;
+  padding: 10px 10px 6px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--wd-ctl-ink-soft);
+  opacity: 0.85;
+}
+
+body.body--dark .wd-ovl__empty-hint {
+  color: #9fc3b2;
+}
+
+// When the rows area is the LAST element (no group button, no footer)
+// its bottom corners round with the box
+.wd-ovl__rows-wrap:last-child {
+  border-radius: 8px;
 }
 
 
@@ -2404,37 +2427,6 @@ body.body--dark .wd-ovl__toolbar-btn--add {
 }
 
 // ── Footer: cancel (X) + confirm (✓) on ONE line ──────────────────────
-.wd-ovl__more-group {
-  display: flex;
-  width: 100%;
-  flex: none;
-  border-top: 1px solid var(--wd-ctl-border);
-  pointer-events: auto;
-}
-
-.wd-ovl__more-group .wd-ovl__more {
-  flex: 1;
-  height: 38px;
-  border-radius: 0;
-  border-top: none;
-}
-
-.wd-ovl__more-group .wd-ovl__more--cancel {
-  border-bottom-left-radius: 8px;
-  border-right: 1px solid var(--wd-ctl-border);
-  color: var(--wd-ctl-ink-soft);
-
-  &:hover { background: var(--wd-ctl-hover); }
-}
-
-.wd-ovl__more-group .wd-ovl__more--confirm {
-  border-bottom-right-radius: 8px;
-  color: #2a8a72;
-  background: rgba(42, 138, 114, 0.07);
-
-  &:hover { background: rgba(42, 138, 114, 0.14); }
-}
-
 // ── Reduced motion: keep state legible, drop spatial movement ─────────
 @media (prefers-reduced-motion: reduce) {
   .wd-ovl__rows-wrap,

@@ -400,7 +400,8 @@
     "group_show": "Gruppe einblenden",
     "group_more": "Weitere Aktionen",
     "group_reset_confirm": "\"{name}\" auf die Standard-Ebenen zurücksetzen? Deine Änderungen an dieser Gruppe werden verworfen.",
-    "icon_change": "Symbol ändern"
+    "icon_change": "Symbol ändern",
+    "group_empty_hint": "Noch keine Ebenen in dieser Gruppe — füge unten mit + hinzu."
   },
   "basemap": "Basiskarte",
   "basemaps": {

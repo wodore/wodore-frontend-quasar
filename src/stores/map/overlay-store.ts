@@ -23,6 +23,20 @@ export const useOverlayStore = defineStore('overlay', () => {
   function toggleOverlay(s: OverlaySwitchItem): boolean {
     s.active = s.active ? false : true;
     LocalStorage.set('overlays', overlays);
+    // The active state BELONGS to the group(s) that own the layer: record
+    // it immediately so cycling groups never resurrects a toggled-off
+    // layer (or forgets a toggled-on one). Ungrouped layers stay global.
+    const owning = groupSettings.groups.filter(
+      g => !g.removed && g.layerSlugs.includes(s.name)
+    );
+    for (const g of owning) {
+      const has = g.activeLayerSlugs.includes(s.name);
+      if (s.active && !has) g.activeLayerSlugs.push(s.name);
+      else if (!s.active && has) {
+        g.activeLayerSlugs = g.activeLayerSlugs.filter(x => x !== s.name);
+      }
+    }
+    if (owning.length > 0) syncGroupSettings();
     return s.active;
   }
   const overlays = reactive<Array<OverlaySwitchItem>>(overlayFactories.map(factory => factory()));

@@ -400,7 +400,8 @@
     "group_show": "Show group",
     "group_more": "More actions",
     "group_reset_confirm": "Reset \"{name}\" to its default layers? Your changes to this group will be discarded.",
-    "icon_change": "Change icon"
+    "icon_change": "Change icon",
+    "group_empty_hint": "No layers in this group yet — add them with + below."
   },
   "basemap": "Basemap",
   "basemaps": {

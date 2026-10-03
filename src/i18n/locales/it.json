@@ -400,7 +400,8 @@
     "group_show": "Mostra gruppo",
     "group_more": "Altre azioni",
     "group_reset_confirm": "Ripristinare «{name}» ai livelli predefiniti? Le tue modifiche a questo gruppo andranno perse.",
-    "icon_change": "Cambia icona"
+    "icon_change": "Cambia icona",
+    "group_empty_hint": "Nessun livello in questo gruppo — aggiungili con + qui sotto."
   },
   "basemap": "Mappa di base",
   "basemaps": {
