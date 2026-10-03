@@ -22,7 +22,8 @@ body.body--dark .wd-topbar input::placeholder {
 .wd-ovl__toolbar-icon .q-icon,
 .wd-ovl__group-btn .q-icon,
 .wd-ovl__icon-cell .q-icon,
-.wd-ovl__dragghost .q-icon {
+.wd-ovl__dragghost .q-icon,
+.wd-ovl__group-menu .q-item__section--avatar .q-icon {
   color: #22302a; // currentColor icons match the black silhouettes
 }
 
@@ -30,7 +31,8 @@ body.body--dark .wd-ovl__icon .q-icon,
 body.body--dark .wd-ovl__toolbar-icon .q-icon,
 body.body--dark .wd-ovl__group-btn .q-icon,
 body.body--dark .wd-ovl__icon-cell .q-icon,
-body.body--dark .wd-ovl__dragghost .q-icon {
+body.body--dark .wd-ovl__dragghost .q-icon,
+body.body--dark .wd-ovl__group-menu .q-item__section--avatar .q-icon {
   // ONE invert only — on the wrapper <i>. Inverting BOTH the wrapper and
   // the child <img> double-inverts the glyphs back to black.
   filter: invert(1);

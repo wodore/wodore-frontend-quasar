@@ -157,6 +157,26 @@ describe('overlay group switching (store state)', () => {
     expect(overlay(slug)?.active, 'owning group restores its layer state').toBe(true);
   });
 
+  it('a promoted layer toggled ON survives switching away and back', () => {
+    const startId = store.groupSettings.activeGroupId;
+    const startGroup = groups().find(g => g.id === startId)!;
+    // Pick a NOT-member layer (promoted row material)
+    const slug = (store.overlays as unknown as Array<{ name: string; show?: boolean }>)
+      .find(o => o.show !== false && !startGroup.layerSlugs.includes(o.name))!.name;
+
+    const item = overlay(slug) as unknown as { name: string; active: boolean };
+    if (!item.active) store.toggleOverlay(item as never);
+    expect(item.active).toBe(true);
+    expect(startGroup.activeLayerSlugs.includes(slug), 'recorded in the active group’s view').toBe(true);
+
+    // Away and back — the promoted layer must STILL be active in this view
+    store.cycleGroup();
+    expect(store.groupSettings.activeGroupId).not.toBe(startId);
+    store.cycleGroup();
+    while (store.groupSettings.activeGroupId !== startId) store.cycleGroup();
+    expect(overlay(slug)?.active, 'promoted layer lost by the round trip').toBe(true);
+  });
+
   it('setActiveGroup switches directly and applies the target group’s states', () => {
     const from = groups().find(g => g.id === store.groupSettings.activeGroupId)!;
     const target = groups().find(g => g.id !== from.id && !g.hidden && g.layerSlugs.length > 0)!;
