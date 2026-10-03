@@ -773,9 +773,17 @@ const groupCycleable = computed(() => {
 /** Handle group selector tap */
 function onGroupSelectorTap(): void {
   overlayStore.cycleGroup(editMode.value);
-  // Re-apply visibility for ALL layers (the group switch changed active states)
-  for (const item of overlayStore.overlays) {
-    setOverlayVisibility(item as OverlaySwitchItem);
+  // The group switch changed active states — the MAP must follow: layers
+  // that just became active but were never added (e.g. a group with layers
+  // untouched since load) get ADDED, everything else gets its visibility
+  // re-applied. Toggling visibility alone leaves new layers invisible.
+  const order = getOverlaysInRenderOrder();
+  for (const item of overlayStore.overlays as unknown as OverlaySwitchItem[]) {
+    if (item.active && !addedOverlays.has(item.name)) {
+      addOverlay(item, order);
+    } else {
+      setOverlayVisibility(item);
+    }
   }
 }
 
