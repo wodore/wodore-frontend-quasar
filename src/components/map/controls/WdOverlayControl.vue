@@ -81,6 +81,8 @@ const dragSlug = ref<string | null>(null);
 const dragOverSlug = ref<string | null>(null);
 const dropPos = ref<'above' | 'below'>('below');
 const dropOnSep = ref(false);
+/** Insertion line position (px, inside the rows scroller) — null = hidden */
+const dropLineTop = ref<number | null>(null);
 let pendingDrag: { slug: string; startX: number; startY: number } | null = null;
 
 function onHandlePointerDown(ev: PointerEvent, slug: string): void {
@@ -102,13 +104,10 @@ function hitTarget(ev: PointerEvent): { row?: string; sep?: boolean } {
   return { row: hit.dataset.slug ?? undefined };
 }
 
-function onHandlePointerMove(ev: PointerEvent): void {
-  if (!pendingDrag) return;
-  if (!dragSlug.value) {
-    // start dragging after a small threshold (avoid accidental taps)
-    if (Math.hypot(ev.clientX - pendingDrag.startX, ev.clientY - pendingDrag.startY) < 8) return;
-    dragSlug.value = pendingDrag.slug;
-  }
+/** Update the drop marker from the pointer position (also re-run while
+ *  auto-scrolling — content moves under a stationary pointer). */
+let lastDragEv: PointerEvent | null = null;
+function updateDropTarget(ev: PointerEvent): void {
   const hit = hitTarget(ev);
   dropOnSep.value = !!hit.sep;
   if (hit.row && hit.row !== dragSlug.value) {
@@ -117,10 +116,63 @@ function onHandlePointerMove(ev: PointerEvent): void {
     if (rowEl) {
       const r = rowEl.getBoundingClientRect();
       dropPos.value = ev.clientY < r.top + r.height / 2 ? 'above' : 'below';
+      // Insertion LINE: a real element, dashed, no radius — pinned to the
+      // row's boundary in CONTENT coordinates (scrolls with the list)
+      const rowBox = rowEl as HTMLElement;
+      dropLineTop.value =
+        dropPos.value === 'above'
+          ? rowBox.offsetTop - 1
+          : rowBox.offsetTop + rowBox.offsetHeight - 1;
+      return;
     }
-  } else {
-    dragOverSlug.value = null;
   }
+  dragOverSlug.value = null;
+  dropLineTop.value = null;
+}
+
+// ── Edge auto-scroll while dragging (long lists) ─────────────────────
+const EDGE = 40; // px from the scroller edge that triggers scrolling
+const SCROLL_VEL = 9; // px per frame
+let dragScrollVel = 0;
+let dragScrollRaf = 0;
+
+function dragScrollLoop(): void {
+  const rows = rowsEl.value;
+  if (dragSlug.value && rows && dragScrollVel !== 0) {
+    rows.scrollTop += dragScrollVel;
+    if (lastDragEv) updateDropTarget(lastDragEv);
+    dragScrollRaf = window.requestAnimationFrame(dragScrollLoop);
+  } else {
+    dragScrollRaf = 0;
+  }
+}
+
+function updateDragScroll(ev: PointerEvent): void {
+  const rows = rowsEl.value;
+  if (!rows || !dragSlug.value) {
+    dragScrollVel = 0;
+    return;
+  }
+  const r = rows.getBoundingClientRect();
+  const inTop = ev.clientY >= r.top && ev.clientY < r.top + EDGE;
+  const inBottom = ev.clientY <= r.bottom && ev.clientY > r.bottom - EDGE;
+  const vel = inTop ? -SCROLL_VEL : inBottom ? SCROLL_VEL : 0;
+  if (vel !== dragScrollVel) {
+    dragScrollVel = vel;
+    if (vel !== 0 && !dragScrollRaf) dragScrollRaf = window.requestAnimationFrame(dragScrollLoop);
+  }
+}
+
+function onHandlePointerMove(ev: PointerEvent): void {
+  if (!pendingDrag) return;
+  if (!dragSlug.value) {
+    // start dragging after a small threshold (avoid accidental taps)
+    if (Math.hypot(ev.clientX - pendingDrag.startX, ev.clientY - pendingDrag.startY) < 8) return;
+    dragSlug.value = pendingDrag.slug;
+  }
+  lastDragEv = ev;
+  updateDropTarget(ev);
+  updateDragScroll(ev);
 }
 
 function onHandlePointerUp(ev: PointerEvent): void {
@@ -136,6 +188,9 @@ function onHandlePointerUp(ev: PointerEvent): void {
   dragSlug.value = null;
   dragOverSlug.value = null;
   dropOnSep.value = false;
+  dropLineTop.value = null;
+  lastDragEv = null;
+  dragScrollVel = 0; // loop exits on its own next frame
 }
 
 /** Reorder within the group, or insert a layer dragged in from All layers */
@@ -926,6 +981,7 @@ onBeforeUnmount(() => {
   swipeStartX = null;
   for (const timer of lingerTimers.values()) clearTimeout(timer);
   lingerTimers.clear();
+  if (dragScrollRaf) window.cancelAnimationFrame(dragScrollRaf);
 });
 </script>
 
@@ -1217,6 +1273,14 @@ onBeforeUnmount(() => {
             </span>
           </div>
           </TransitionGroup>
+          <!-- Insertion marker: a real dashed line pinned to the target
+               row's boundary — no radius, scrolls with the content. -->
+          <div
+            v-if="dropLineTop !== null"
+            class="wd-ovl__dropline"
+            :style="{ top: dropLineTop + 'px' }"
+            aria-hidden="true"
+          />
 
         </div>
           <div class="wd-ovl__fade wd-ovl__fade--top" :class="{ 'wd-ovl__fade--hidden': scrollAtTop }" />
@@ -1974,11 +2038,13 @@ body.body--dark .wd-ovl__row-name {
   display: none;
 }
 
-// Drop zone while dragging (edit mode): ungroup the dragged layer
+// Drop zone while dragging (edit mode): ungroup the dragged layer —
+// dashed ring, same marker language as the insertion line
 .wd-ovl__sep--drop {
-  background: rgba(191, 171, 37, 0.1);
+  background: color-mix(in srgb, var(--wd-gold-text, #846a15) 7%, transparent);
   border-radius: 4px;
-  box-shadow: inset 0 0 0 1px rgba(191, 171, 37, 0.45);
+  outline: 1px dashed color-mix(in srgb, var(--wd-gold-text, #846a15) 65%, transparent);
+  outline-offset: -1px;
   cursor: alias;
 }
 
@@ -2016,9 +2082,10 @@ body.body--dark .wd-ovl__row-name {
   }
 }
 
-// Row currently dragged (edit mode)
+// Row currently dragged (edit mode): quiet ghost, slightly contracted
 .wd-ovl__row--dragging {
-  opacity: 0.35;
+  opacity: 0.4;
+  transform: scale(0.985);
 }
 
 // Open/close feedback: one soft overshoot pop (crafted moment)
@@ -2162,15 +2229,45 @@ body.body--dark .wd-ovl__row-name {
   cursor: grab;
   pointer-events: auto;
   touch-action: none; // touch drag must NOT scroll the list
+  transition: opacity 0.12s $ease, color 0.12s $ease;
+
+  &:hover {
+    opacity: 0.85;
+    color: var(--wd-ctl-ink);
+  }
 }
 
-// ── Drop line: gold insertion marker at the exact drop position ────────
-.wd-ovl__row--drop-above {
-  box-shadow: inset 0 2px 0 0 #bfab2d;
-}
-
+// ── Drop marker: dashed insertion line + soft landing tint ────────────
+// The LINE is a real element (.wd-ovl__dropline in the template) — no
+// radius, no border trickery. Deep readable gold (theme token) so the
+// marker stays crisp on the bright panel. The row classes carry the tint.
+.wd-ovl__row--drop-above,
 .wd-ovl__row--drop-below {
-  box-shadow: inset 0 -2px 0 0 #bfab2d;
+  background: rgba(191, 171, 37, 0.08);
+}
+
+.wd-ovl__dropline {
+  position: absolute;
+  left: 7px;
+  right: 7px;
+  height: 0;
+  border-top: 2px dashed var(--wd-gold-text, #846a15);
+  pointer-events: none;
+  z-index: 4;
+  transform-origin: left center;
+  animation: wd-ovl-dropline-in 0.14s $ease;
+}
+
+@keyframes wd-ovl-dropline-in {
+  from {
+    opacity: 0;
+    transform: scaleX(0.55);
+  }
+
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
 }
 
 // ── Other rows: passive dimming (active rows stay full) ──────────────
@@ -2309,6 +2406,10 @@ body.body--dark .wd-ovl__menu .q-item {
   .wd-ovl-gswap-leave-active {
     transition: opacity 0.12s linear;
     transform: none;
+  }
+
+  .wd-ovl__dropline {
+    animation: none;
   }
 }
 
