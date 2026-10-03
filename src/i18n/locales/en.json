@@ -394,9 +394,13 @@
     "edit_unsaved_message": "You have unsaved changes to your groups.",
     "edit_save": "Save",
     "edit_discard": "Discard",
-    "group_delete_confirm": "Delete \"{name}\"? Its layers return to All layers.",
+    "group_delete_confirm": "Delete \"{name}\"? Its layers return to More layers.",
     "other_layers": "More layers",
-    "group_switch": "Switch group ({name})"
+    "group_switch": "Switch group ({name})",
+    "group_show": "Show group",
+    "group_more": "More actions",
+    "group_reset_confirm": "Reset \"{name}\" to its default layers? Your changes to this group will be discarded.",
+    "icon_change": "Change icon"
   },
   "basemap": "Basemap",
   "basemaps": {

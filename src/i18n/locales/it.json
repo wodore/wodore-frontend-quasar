@@ -394,9 +394,13 @@
     "edit_unsaved_message": "Hai modifiche non salvate ai tuoi gruppi.",
     "edit_save": "Salva",
     "edit_discard": "Scarta",
-    "group_delete_confirm": "Eliminare «{name}»? I suoi livelli tornano in «Tutti i livelli».",
+    "group_delete_confirm": "Eliminare «{name}»? I suoi livelli tornano in «Altri livelli».",
     "other_layers": "Altri livelli",
-    "group_switch": "Cambia gruppo ({name})"
+    "group_switch": "Cambia gruppo ({name})",
+    "group_show": "Mostra gruppo",
+    "group_more": "Altre azioni",
+    "group_reset_confirm": "Ripristinare «{name}» ai livelli predefiniti? Le tue modifiche a questo gruppo andranno perse.",
+    "icon_change": "Cambia icona"
   },
   "basemap": "Mappa di base",
   "basemaps": {

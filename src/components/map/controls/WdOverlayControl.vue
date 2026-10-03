@@ -197,7 +197,7 @@ function confirmEdit(): void {
 
 function toggleEditMode(): void {
   if (!editMode.value) {
-    updateEditCap();
+    updateBoxCap();
     // Edit mode needs the full list + the toolbar — always expand first
     expanded.value = true;
     editMode.value = true;
@@ -314,18 +314,25 @@ function resetGroup(): void {
   }
 }
 
-/** Hide the active group (only in edit mode) */
-function hideGroup(): void {
+/** Toggle the active group's hidden flag (edit mode). The group STAYS
+ *  selected — the crossed eye shows the state — and non-edit cycling
+ *  skips it (it only truly disappears outside edit mode). */
+function toggleGroupHidden(): void {
   const group = overlayStore.groupSettings.groups.find(
     g => g.id === overlayStore.groupSettings.activeGroupId
   );
   if (!group) return;
-  group.hidden = true;
+  group.hidden = !group.hidden;
   overlayStore.syncGroupSettings();
   markEdited();
-  // Cycle to the next visible group
-  overlayStore.cycleGroup();
 }
+
+const isGroupHidden = computed(() => {
+  const group = overlayStore.groupSettings.groups.find(
+    g => g.id === overlayStore.groupSettings.activeGroupId
+  );
+  return group?.hidden ?? false;
+});
 
 /** Delete the active group (confirm) */
 function confirmDeleteGroup(): void {
@@ -409,6 +416,7 @@ function measureThumb(): void {
 onMounted(() => {
   // measure once the list rendered; re-measure when it resizes
   setTimeout(measureThumb, 400);
+  setTimeout(updateBoxCap, 450); // box cap needs the laid-out controls
   rowsResizeObserve();
 });
 
@@ -508,11 +516,13 @@ function layerIcon(name: string): string {
 }
 
 /** Layers to show in the mini strip (active group only) */
-// Edit-mode height cap: stay 1 button-height below the top-right map
-// controls (desktop: geolocate/nav cluster y≈58-274) and below the topbar.
-// Measured live — CSS alone can't know the control cluster's height.
-const editMaxH = ref<number | null>(null);
-function updateEditCap(): void {
+/** Box height cap (ALL modes): stay 1 button-height below the top-right
+ *  map controls (desktop: geolocate/nav cluster y≈58-274) and below the
+ *  topbar — same rule that made edit mode feel right. Measured live —
+ *  CSS alone can't know the control cluster's height. The box bottom is
+ *  anchored, so the measurement is stable whatever the current height. */
+const boxMaxH = ref<number | null>(null);
+function updateBoxCap(): void {
   const boxEl = document.querySelector('.wd-ovl__box');
   if (!boxEl) return;
   const boxBottom = boxEl.getBoundingClientRect().bottom;
@@ -521,9 +531,15 @@ function updateEditCap(): void {
   if (topbar) limit = Math.max(limit, topbar.getBoundingClientRect().bottom);
   const ctrls = document.querySelector('.maplibregl-ctrl-top-right');
   if (ctrls) limit = Math.max(limit, ctrls.getBoundingClientRect().bottom);
-  editMaxH.value = Math.max(220, Math.round(boxBottom - limit - 48));
+  boxMaxH.value = Math.max(220, Math.round(boxBottom - limit - 48));
 }
-window.addEventListener('resize', () => { if (editMode.value) updateEditCap(); });
+window.addEventListener('resize', () => updateBoxCap());
+
+// The box bottom is anchored, but re-measure on state changes anyway —
+// cheap, and covers strip reopen / layout shifts from the topbar.
+watch([stripOpen, expanded, () => overlayStore.groupSettings.activeGroupId], () => {
+  nextTick(() => updateBoxCap());
+});
 
 // Reset rows scroll when entering expanded (group layers must show first)
 const rowsEl = ref<HTMLElement | null>(null);
@@ -604,13 +620,22 @@ watch(
   { immediate: true }
 );
 
-/** Non-group layers in render order: selected first, then lingering, then the rest */
+/** Non-group layers in render order: selected first, then the rest.
+ *  Lingering rows keep their GLOBAL overlay-order slot (interleaved with
+ *  the actives) — a switched-off layer does not move for LINGER_MS. */
 const otherLayersSorted = computed(() => {
-  const others = overlayStore.otherLayers().slice();
-  const inactives = others.filter(o => !o.active);
-  const lingering = inactives.filter(o => lingeringSlugs.value.has(o.name));
-  const rest = inactives.filter(o => !lingeringSlugs.value.has(o.name));
-  return [...others.filter(o => o.active), ...lingering, ...rest];
+  const orderOf = new Map(
+    (overlayStore.overlays as unknown as Array<{ name: string }>).map((o, i) => [o.name, i] as const)
+  );
+  const isRest = (o: OverlaySwitchItem): boolean =>
+    !o.active && !lingeringSlugs.value.has(o.name);
+  return overlayStore
+    .otherLayers()
+    .slice()
+    .sort((a, b) => {
+      const r = Number(isRest(a)) - Number(isRest(b));
+      return r !== 0 ? r : (orderOf.get(a.name) ?? 999) - (orderOf.get(b.name) ?? 999);
+    });
 });
 
 /** Rows that render: mini shows active + lingering only; expanded/edit show all.
@@ -624,6 +649,52 @@ const visibleOthers = computed(() => {
 const cappedPromotedCount = computed(
   () => overlayStore.otherLayers().filter(o => o.active || lingeringSlugs.value.has(o.name)).length
 );
+
+/** Reset the active group to its predefined definition — behind a
+ *  confirm (it discards the user's customization of the group). */
+function confirmResetGroup(): void {
+  const group = overlayStore.groupSettings.groups.find(
+    g => g.id === overlayStore.groupSettings.activeGroupId
+  );
+  if (!group) return;
+  $q
+    .dialog({
+      title: t('overlays.group_reset'),
+      message: t('overlays.group_reset_confirm', { name: overlayStore.activeGroupName(t) }),
+      cancel: true,
+      ok: { label: t('overlays.group_reset'), unelevated: true },
+    })
+    .onOk(() => resetGroup());
+}
+
+// ── Group icon picker (edit mode) ────────────────────────────────────────
+const showIconPicker = ref(false);
+
+/** Predefined icon choices: the overlay layer icon set (unique) */
+const groupIconChoices = computed(() => {
+  const icons = (overlayStore.overlays as unknown as Array<{ icon: string; show?: boolean }>)
+    .filter(o => o.show !== false && !!o.icon)
+    .map(o => o.icon);
+  return [...new Set(icons)];
+});
+
+const activeGroupIconName = computed(() => {
+  const group = overlayStore.groupSettings.groups.find(
+    g => g.id === overlayStore.groupSettings.activeGroupId
+  );
+  return group?.icon ?? '';
+});
+
+function applyGroupIcon(icon: string): void {
+  const group = overlayStore.groupSettings.groups.find(
+    g => g.id === overlayStore.groupSettings.activeGroupId
+  );
+  if (!group) return;
+  group.icon = icon;
+  overlayStore.syncGroupSettings();
+  markEdited();
+  showIconPicker.value = false;
+}
 
 /** Handle group selector tap */
 function onGroupSelectorTap(): void {
@@ -870,15 +941,22 @@ onBeforeUnmount(() => {
           '--mini-rows': miniLayers.length,
           '--prom-count': cappedPromotedCount,
           '--prom-extra': cappedPromotedCount > 0 ? '20px' : '0px',
-          ...(editMode && editMaxH ? { maxHeight: editMaxH + 'px' } : {}),
+          ...(boxMaxH ? { maxHeight: boxMaxH + 'px' } : {}),
         }"
       >
         <!-- Top toolbar: EXTENDED only. The box grows UP by this height
              (max-height compensates) so the icon rows NEVER move. -->
         <div v-if="expanded" class="wd-ovl__toolbar" @wheel.prevent>
-          <span class="wd-ovl__toolbar-icon">
+          <button
+            class="wd-ovl__toolbar-icon"
+            :class="{ 'wd-ovl__toolbar-icon--pick': editMode }"
+            :aria-label="editMode ? t('overlays.icon_change') : overlayStore.activeGroupName(t)"
+            :title="editMode ? t('overlays.icon_change') : undefined"
+            :disabled="!editMode"
+            @click.stop="editMode && (showIconPicker = true)"
+          >
             <q-icon :name="layerIcon(overlayStore.activeGroupIcon())" size="16px" />
-          </span>
+          </button>
           <span class="wd-ovl__toolbar-title">{{ overlayStore.activeGroupName(t) }}</span>
           <div class="wd-ovl__toolbar-actions">
             <button
@@ -897,7 +975,8 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <!-- Edit actions: icon-only, one compact row (edit mode only) -->
+        <!-- Edit actions: rename + hide stay as buttons; rarely-used and
+             destructive actions live behind the 3-dot menu (with labels). -->
         <div v-if="editMode" class="wd-ovl__edit-bar" @wheel.prevent>
           <button class="wd-ovl__edit-btn" :aria-label="t('overlays.group_rename')" :title="t('overlays.group_rename')"
             @click.stop="startRename">
@@ -905,28 +984,55 @@ onBeforeUnmount(() => {
               <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />
             </svg>
           </button>
-          <button class="wd-ovl__edit-btn" :aria-label="t('overlays.group_hide')" :title="t('overlays.group_hide')"
-            @click.stop="hideGroup">
+          <button class="wd-ovl__edit-btn" :class="{ 'wd-ovl__edit-btn--on': isGroupHidden }"
+            :aria-label="isGroupHidden ? t('overlays.group_show') : t('overlays.group_hide')"
+            :title="isGroupHidden ? t('overlays.group_show') : t('overlays.group_hide')"
+            @click.stop="toggleGroupHidden">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
               <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
               <circle cx="12" cy="12" r="3" />
-            </svg>
-          </button>
-          <button class="wd-ovl__edit-btn wd-ovl__edit-btn--danger" :aria-label="t('overlays.group_delete')" :title="t('overlays.group_delete')"
-            @click.stop="confirmDeleteGroup">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-              <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z" />
-            </svg>
-          </button>
-          <button v-if="isDefaultGroup" class="wd-ovl__edit-btn" :aria-label="t('overlays.group_reset')" :title="t('overlays.group_reset')"
-            @click.stop="resetGroup">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 12a9 9 0 1 0 2.6-6.4" />
-              <path d="M3 4v4h4" />
-              <path d="M12 8v4l3 2" />
+              <path v-if="isGroupHidden" d="M4 4l16 16" stroke-width="1.8" stroke-linecap="round" />
             </svg>
           </button>
           <span class="wd-ovl__edit-sep" />
+          <button class="wd-ovl__edit-btn" :aria-label="t('overlays.group_more')" :title="t('overlays.group_more')"
+            @click.stop>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="5" cy="12" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="19" cy="12" r="1.7" />
+            </svg>
+            <q-menu anchor="bottom right" self="top right" class="wd-ovl__menu">
+              <q-list dense style="min-width: 190px">
+                <q-item clickable v-close-popup @click="showIconPicker = true">
+                  <q-item-section avatar>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                      <rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" />
+                      <rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" />
+                    </svg>
+                  </q-item-section>
+                  <q-item-section>{{ t('overlays.icon_change') }}</q-item-section>
+                </q-item>
+                <q-item v-if="isDefaultGroup" clickable v-close-popup @click="confirmResetGroup">
+                  <q-item-section avatar>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M3 12a9 9 0 1 0 2.6-6.4" />
+                      <path d="M3 4v4h4" />
+                      <path d="M12 8v4l3 2" />
+                    </svg>
+                  </q-item-section>
+                  <q-item-section>{{ t('overlays.group_reset') }}</q-item-section>
+                </q-item>
+                <q-separator />
+                <q-item clickable v-close-popup class="wd-ovl__menu-item--danger" @click="confirmDeleteGroup">
+                  <q-item-section avatar>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                      <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z" />
+                    </svg>
+                  </q-item-section>
+                  <q-item-section>{{ t('overlays.group_delete') }}</q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
+          </button>
           <button class="wd-ovl__edit-btn wd-ovl__edit-btn--add" :aria-label="t('overlays.group_add')" :title="t('overlays.group_add')"
             @click.stop="addNewGroup">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -1024,7 +1130,7 @@ onBeforeUnmount(() => {
             :aria-label="t('overlays.other_layers')"
           >
             <span class="wd-ovl__sep-rule" />
-            <span class="wd-ovl__sep-label">{{ t('overlays.other_layers') }}</span>
+            <span v-if="visibleOthers.length > 0" class="wd-ovl__sep-label">{{ t('overlays.other_layers') }}</span>
             <span class="wd-ovl__sep-rule" />
           </div>
 
@@ -1044,7 +1150,7 @@ onBeforeUnmount(() => {
             :data-slug="item.name"
             @click="onRowClick(<OverlaySwitchItem>(item as unknown))"
           >
-            <div class="wd-ovl__row-info">
+            <div v-if="expanded" class="wd-ovl__row-info">
               <span v-if="editMode" class="wd-ovl__drag-handle" title="Drag into the group"
                 @pointerdown.stop="onHandlePointerDown($event, item.name)"
                 @pointermove="onHandlePointerMove"
@@ -1186,6 +1292,25 @@ onBeforeUnmount(() => {
       <img v-show="stripOpen" :src="iconClose" alt="" class="wd-ovl__toggle-icon"
         :class="{ 'wd-ovl__toggle-icon--open': stripOpen }" />
     </button>
+
+    <!-- ── Group icon picker (edit mode) ──────────────────────────────── -->
+    <q-dialog v-model="showIconPicker">
+      <div class="wd-ovl__icon-picker">
+        <div class="wd-ovl__icon-picker-title">{{ t('overlays.icon_change') }}</div>
+        <div class="wd-ovl__icon-grid">
+          <button
+            v-for="name in groupIconChoices"
+            :key="name"
+            class="wd-ovl__icon-cell"
+            :class="{ 'wd-ovl__icon-cell--active': name === activeGroupIconName }"
+            :aria-label="name"
+            @click.stop="applyGroupIcon(name)"
+          >
+            <q-icon :name="layerIcon(name)" size="26px" />
+          </button>
+        </div>
+      </div>
+    </q-dialog>
   </div>
 </template>
 
@@ -1318,9 +1443,29 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   place-items: center;
   width: 28px;
   height: 28px;
+  padding: 0;
   border-radius: 4px;
   background: var(--wd-ctl-bg);
   border: 1px solid var(--wd-ctl-border);
+  color: var(--wd-ctl-ink);
+
+  // Edit mode: tapping the group icon opens the icon picker
+  &--pick {
+    cursor: pointer;
+    transition: background-color 0.12s $ease, border-color 0.12s $ease;
+
+    &:hover {
+      background: var(--wd-ctl-hover);
+    }
+
+    &::after {
+      content: '▾';
+      font-size: 8px;
+      line-height: 1;
+      margin-left: 1px;
+      opacity: 0.55;
+    }
+  }
 }
 
 .wd-ovl__toolbar-title {
@@ -1402,7 +1547,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   transition: height 0.22s $ease;
 }
 
-// Edit mode: the wrap must NOT cap — the measured box cap (editMaxH)
+// Edit mode: the wrap must NOT cap — the measured box cap (boxMaxH)
 // governs; the list is content-driven up to that limit
 .wd-ovl__box--edit .wd-ovl__rows-wrap {
   height: auto;
@@ -1500,10 +1645,12 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   }
 }
 
-/* Mobile: no scrollbar — the fades carry the affordance */
+/* Mobile: the overlay thumb IS the scroll affordance (fades alone were
+   too subtle in the expanded view) — it stays visible, slightly stronger */
 @media (max-width: 899px) {
   .wd-ovl__scrollthumb {
-    display: none;
+    width: 2.5px;
+    background: rgba(128, 145, 135, 0.7);
   }
 }
 
@@ -1700,6 +1847,15 @@ body.body--dark .wd-ovl__row-name {
 
   &:hover {
     background: var(--wd-ctl-hover);
+  }
+}
+
+// More button: taller on mobile — the primary expand affordance needs
+// a proper touch target
+@media (max-width: 899px) {
+  .wd-ovl__more {
+    height: 32px;
+    min-height: 32px;
   }
 }
 
@@ -2024,6 +2180,82 @@ body.body--dark .wd-ovl__row-name {
   }
   .wd-ovl__icon {
     opacity: 0.7;
+  }
+}
+
+// Eye button while the group is hidden (crossed): stays "on"
+.wd-ovl__edit-btn--on {
+  color: var(--wd-ctl-ink);
+  background: var(--wd-ctl-hover);
+}
+
+// ── 3-dot menu (edit bar): Quasar menu, quiet panel look ───────────────
+.wd-ovl__menu {
+  .q-item {
+    min-height: 38px;
+    font-size: 13.5px;
+    color: var(--wd-ctl-ink);
+  }
+
+  .q-item__section--avatar {
+    min-width: 26px;
+    color: var(--wd-ctl-ink-soft);
+  }
+}
+
+body.body--dark .wd-ovl__menu .q-item {
+  color: #cfe8dc;
+}
+
+.wd-ovl__menu-item--danger {
+  color: #c44e3b !important;
+
+  .q-item__section--avatar {
+    color: #c44e3b;
+  }
+}
+
+// ── Group icon picker dialog ─────────────────────────────────────────────
+.wd-ovl__icon-picker {
+  padding: 16px;
+  max-width: 320px;
+}
+
+.wd-ovl__icon-picker-title {
+  font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--wd-ctl-ink);
+  margin-bottom: 12px;
+}
+
+.wd-ovl__icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  gap: 6px;
+  max-height: 50dvh;
+  overflow-y: auto;
+}
+
+.wd-ovl__icon-cell {
+  display: grid;
+  place-items: center;
+  height: 48px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 0.12s $ease, border-color 0.12s $ease;
+
+  &:hover {
+    background: var(--wd-ctl-hover);
+  }
+
+  &--active {
+    border-color: var(--wd-ctl-ring);
+    background: var(--wd-ctl-date-bg);
   }
 }
 

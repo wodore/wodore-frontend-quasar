@@ -394,9 +394,13 @@
     "edit_unsaved_message": "Vous avez des modifications non enregistrées de vos groupes.",
     "edit_save": "Enregistrer",
     "edit_discard": "Annuler",
-    "group_delete_confirm": "Supprimer « {name} » ? Ses couches reviennent dans « Toutes les couches ».",
+    "group_delete_confirm": "Supprimer « {name} » ? Ses couches reviennent dans « Autres couches ».",
     "other_layers": "Autres couches",
-    "group_switch": "Changer de groupe ({name})"
+    "group_switch": "Changer de groupe ({name})",
+    "group_show": "Afficher le groupe",
+    "group_more": "Plus d'actions",
+    "group_reset_confirm": "Réinitialiser « {name} » avec ses couches par défaut ? Vos modifications de ce groupe seront perdues.",
+    "icon_change": "Changer d'icône"
   },
   "basemap": "Fond de carte",
   "basemaps": {

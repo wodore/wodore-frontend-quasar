@@ -394,9 +394,13 @@
     "edit_unsaved_message": "Es gibt ungespeicherte Änderungen an deinen Gruppen.",
     "edit_save": "Speichern",
     "edit_discard": "Verwerfen",
-    "group_delete_confirm": "\"{name}\" löschen? Die Ebenen kehren zu \"Alle Ebenen\" zurück.",
+    "group_delete_confirm": "\"{name}\" löschen? Die Ebenen kehren zu \"Weitere Ebenen\" zurück.",
     "other_layers": "Weitere Ebenen",
-    "group_switch": "Gruppe wechseln ({name})"
+    "group_switch": "Gruppe wechseln ({name})",
+    "group_show": "Gruppe einblenden",
+    "group_more": "Weitere Aktionen",
+    "group_reset_confirm": "\"{name}\" auf die Standard-Ebenen zurücksetzen? Deine Änderungen an dieser Gruppe werden verworfen.",
+    "icon_change": "Symbol ändern"
   },
   "basemap": "Basiskarte",
   "basemaps": {
