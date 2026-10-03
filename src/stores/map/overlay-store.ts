@@ -17,18 +17,18 @@ import {
 import { useUserSettingsStore } from '@stores/user-settings-store';
 //import { useMap } from '@indoorequal/vue-maplibre-gl';
 //import type { Emitter } from 'mitt';
-import { LocalStorage } from 'quasar';
+import { storageGet, storageSet, storageHas } from '@services/storage';
 
 export const useOverlayStore = defineStore('overlay', () => {
   function toggleOverlay(s: OverlaySwitchItem): boolean {
     s.active = s.active ? false : true;
-    LocalStorage.set('overlays', overlays);
+    storageSet('overlays', overlays);
     return s.active;
   }
   const overlays = reactive<Array<OverlaySwitchItem>>(overlayFactories.map(factory => factory()));
 
-  const savedOverlays: Array<OverlaySwitchItem> = LocalStorage.hasItem('overlays')
-    ? (LocalStorage.getItem('overlays') as Array<OverlaySwitchItem>)
+  const savedOverlays: Array<OverlaySwitchItem> = storageHas('overlays')
+    ? (storageGet('overlays') as Array<OverlaySwitchItem>)
     : [];
   const savedOverlaysRecord = savedOverlays.reduce(
     (acc: Record<string, OverlaySwitchItem>, obj: OverlaySwitchItem) => {
@@ -124,7 +124,7 @@ export const useOverlayStore = defineStore('overlay', () => {
         o.active = group.activeLayerSlugs.includes(o.name);
       }
     }
-    LocalStorage.set('overlays', overlays);
+    storageSet('overlays', overlays);
     syncGroupSettings();
   }
 
