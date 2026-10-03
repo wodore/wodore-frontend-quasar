@@ -120,3 +120,4 @@ export const clientWodore = createClient<pathsWodore>({
 clientWodore.use(loadingMiddleware);
 clientWodore.use(authMiddleware);
 clientWodore.use(apiVersionMiddleware);
+// trigger
