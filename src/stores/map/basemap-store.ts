@@ -5,7 +5,7 @@ import { getRasterStyle } from '@stores/map/utils/raster';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
 import { Platform } from 'quasar';
 //import type { Emitter } from 'mitt';
-import { LocalStorage } from 'quasar';
+import { storageGet, storageSet, storageHas } from '@services/storage';
 import { getGPUTier } from '@pmndrs/detect-gpu';
 import { useOverlayStore } from './overlay-store';
 import { StyleSpecification } from 'maplibre-gl';
@@ -463,7 +463,7 @@ export const useBasemapStore = defineStore('basemap', () => {
       }
     }
     if (persist) {
-      LocalStorage.set('basemapName', s.name);
+      storageSet('basemapName', s.name);
     }
     console.debug('[setBasemap] Map layer is set to ', s.label);
     return true;
@@ -506,7 +506,7 @@ export const useBasemapStore = defineStore('basemap', () => {
   let basemapInitPromise: Promise<void> | null = null;
 
   // Get saved basemap name from localStorage (not the full object)
-  const savedBasemapName = LocalStorage.getItem('basemapName') as string | null;
+  const savedBasemapName = storageGet('basemapName') as string | null;
 
   // Helper to get basemap by name
   function getBasemapByName(name: string): BasemapSwitchItem | undefined {
@@ -546,8 +546,8 @@ export const useBasemapStore = defineStore('basemap', () => {
   // Async function to initialize basemaps based on GPU tier
   async function runBasemapInit() {
     // Check if we have a cached GPU tier result (valid for 2 days)
-    const cachedGpuTier = LocalStorage.getItem('gpuTier');
-    const cachedGpuTierTime = LocalStorage.getItem('gpuTierTime') as number | null;
+    const cachedGpuTier = storageGet('gpuTier');
+    const cachedGpuTierTime = storageGet('gpuTierTime') as number | null;
     const twoDaysInMs = 2 * 24 * 60 * 60 * 1000;
     const now = Date.now();
 
@@ -561,8 +561,8 @@ export const useBasemapStore = defineStore('basemap', () => {
       // Run GPU detection
       gpuTier = await getGPUTier();
       // Cache the result
-      LocalStorage.set('gpuTier', gpuTier);
-      LocalStorage.set('gpuTierTime', now);
+      storageSet('gpuTier', gpuTier);
+      storageSet('gpuTierTime', now);
       console.debug('Detected and cached GPU tier:', gpuTier.tier);
     }
 

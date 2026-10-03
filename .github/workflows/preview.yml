@@ -172,7 +172,7 @@ jobs:
           WODORE_ENV: preview
           # Static Pages deployment — indexing must be opt-out at build time
           # (the Docker entrypoint handles this at runtime for server deploys).
-          WODORE_SEO_NOINDEX: "1"
+          WODORE_SEO_NOINDEX: '1'
           # Per-commit path: every build lives at pr-N/<sha7>/ - a fresh
           # URL per push that the Pages CDN has never cached, and all
           # builds stay comparable until the PR closes

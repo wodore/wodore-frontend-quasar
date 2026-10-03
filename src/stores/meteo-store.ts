@@ -55,9 +55,23 @@ interface CacheEntry {
   hourly: HourlyData;
 }
 
+import { Sparse } from '@clients/index';
+
+/** The narrowed view the meteo store actually requests (Sparse<T, K> proves the correlation). */
+interface WeatherCodeFields {
+  code: number;
+  slug: string;
+  description_day: string | null;
+  description_night: string | null;
+  symbol_day: { slug: string; url: string | null } | null;
+  symbol_night: { slug: string; url: string | null } | null;
+}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type NarrowedWeatherCode = Sparse<WeatherCodeFields, 'code' | 'slug' | 'description_day' | 'description_night' | 'symbol_day' | 'symbol_night'>;
+
 interface WeatherCodeEntry {
-  symbol_day?: string;
-  symbol_night?: string;
+  symbol_day?: { slug: string; url: string | null } | null;
+  symbol_night?: { slug: string; url: string | null } | null;
   [key: string]: unknown;
 }
 
@@ -257,9 +271,7 @@ export const useMeteoStore = defineStore('meteo', () => {
         query: {
           lang,
           collection,
-          include_symbols: 'all',
-          include_category: 'no',
-          include_collection: 'no',
+          fields: { weather_codes: 'code,slug,description_day,description_night,symbol_day,symbol_night' },
         },
       },
     });

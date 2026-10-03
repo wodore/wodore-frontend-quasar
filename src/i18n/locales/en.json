@@ -371,19 +371,7 @@
       "label": "Mountain bike",
       "desc": "Mountain bike routes from OpenStreetMap, shown via Waymarked Trails",
       "link": "Switzerland mountain bike network"
-    },
-    "groups": {
-      "hiking": {
-        "name": "Hiking"
-      },
-      "cycling": {
-        "name": "Cycling"
-      },
-      "snowsport": {
-        "name": "Snowsport"
-      }
-    },
-    "all_layers": "All layers"
+    }
   },
   "basemap": "Basemap",
   "basemaps": {

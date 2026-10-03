@@ -39,9 +39,7 @@ const BASE = process.env.VISUAL_BASE_URL || 'http://localhost:9000';
 // 404 (page never loads) - this made every hut state fail on previews.
 const HASH_MODE = /github\.io/.test(BASE);
 const HUT_PATH = '/hut/laemmeren?date=26.09.26';
-const HUT = HASH_MODE
-  ? `#${HUT_PATH}`
-  : `${HUT_PATH}#p=12/46.43749/7.08606`;
+const HUT = HASH_MODE ? `#${HUT_PATH}` : `${HUT_PATH}#p=12/46.43749/7.08606`;
 
 const TS = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
 const OUT = `.visual-tests/${TS}`;
@@ -143,9 +141,7 @@ const STATES = [
     id: 'hut',
     run: async p => {
       await p.goto(BASE + HUT, { waitUntil: 'load' });
-      await p
-        .waitForSelector('text=/Aarbiwak|mmerenh/i', { timeout: 25000 })
-        .catch(() => {});
+      await p.waitForSelector('text=/Aarbiwak|mmerenh/i', { timeout: 25000 }).catch(() => {});
       // let gallery thumbnails settle — placeholder numbers during load
       // are intentionally low-contrast and must not gate the audit
       await p
@@ -162,9 +158,7 @@ const STATES = [
     id: 'hut-expanded',
     run: async p => {
       await p.goto(BASE + HUT, { waitUntil: 'load' });
-      await p
-        .waitForSelector('text=/Aarbiwak|mmerenh/i', { timeout: 25000 })
-        .catch(() => {});
+      await p.waitForSelector('text=/Aarbiwak|mmerenh/i', { timeout: 25000 }).catch(() => {});
       await softClick(
         p,
         '[aria-label*="expand" i], [aria-label*="maximi" i], button:has(i[class*="expand"]), button:has(i[class*="resize"])'
@@ -177,9 +171,7 @@ const STATES = [
     id: 'hut-bottom',
     run: async p => {
       await p.goto(BASE + HUT, { waitUntil: 'load' });
-      await p
-        .waitForSelector('text=/Aarbiwak|mmerenh/i', { timeout: 25000 })
-        .catch(() => {});
+      await p.waitForSelector('text=/Aarbiwak|mmerenh/i', { timeout: 25000 }).catch(() => {});
       await p.evaluate(() => {
         const els = [...document.querySelectorAll('*')].filter(
           e =>
