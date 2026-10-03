@@ -150,7 +150,14 @@ const byCategory = (capital, big, small) => [
 const dotLayers = () =>
   base.layers
     .filter(l => /^place_point_label_rank_\d$/.test(l.id))
-    .map(l => ({
+    .map(l => {
+      // villages (small_place) only get dots once their labels genuinely
+      // populate (rank_4 z10+); the early bands would paint a dot field
+      const early = Number(l.id.match(/rank_(\d)$/)[1]) <= 3;
+      const cats = early
+        ? ['capital', 'big_place']
+        : ['capital', 'big_place', 'small_place'];
+      return ({
       id: `wd-place-dot-${l.id.match(/rank_(\d)$/)[1]}`,
       type: 'circle',
       source: 'mtk',
@@ -160,7 +167,7 @@ const dotLayers = () =>
       filter: [
         'all',
         l.filter,
-        ['match', ['get', 'category'], ['capital', 'big_place', 'small_place'], true, false],
+        ['match', ['get', 'category'], cats, true, false],
       ],
       paint: {
         'circle-color': SW_DOT_GREY,
@@ -184,7 +191,200 @@ const dotLayers = () =>
           12, byCategory(6, 6, 5),
         ],
       },
-    }));
+      });
+    });
+// ── Pastel paper: swisstopo's light-basemap ground ────────────────────
+// swisstopo's country/regional views are near-white paper (measured
+// mean 243,245,245, saturation ~4) with grey relief and pale water —
+// no loud landcover. mtk ships saturated greens/cyans; remap the HSLA
+// prefixes (keeping every zoom/alpha stop) toward pastel equivalents
+// measured from ch.swisstopo.lightbasemap.vt screenshots.
+const PASTEL = {
+  // background + general land tint
+  'hsla(81, 47%, 95%,': 'hsla(0, 0%, 98%,',
+  'hsla(81, 23%, 95%,': 'hsla(0, 0%, 98%,',
+  'hsla(81, 60%, 90%,': 'hsla(75, 8%, 93%,',
+  'hsla(81, 60%, 87%,': 'hsla(90, 11%, 91%,',
+  // nature_natural z5 lightness stops
+  'hsla(92.25, 50%, 85%,': 'hsla(90, 22%, 86%,',
+  'hsla(58.5, 70%, 90%,': 'hsla(55, 13%, 92%,',
+  'hsla(103.25, 55%, 90%,': 'hsla(100, 10%, 91%,',
+  'hsla(69.75, 8%, 93%,': 'hsla(70, 6%, 93%,',
+  'hsla(36, 75%, 90%,': 'hsla(45, 15%, 92%,',
+  'hsla(86.63, 50%, 85%,': 'hsla(85, 12%, 89%,',
+  'hsla(69.75, 60%, 87%,': 'hsla(70, 10%, 90%,',
+  'hsla(182.25, 80%, 98%,': 'hsla(201, 62%, 88%,',
+  'hsla(182.25, 65%, 98%,': 'hsla(201, 55%, 90%,',
+  // nature_natural z12 darker stops
+  'hsla(92.25, 50%, 82%,': 'hsla(90, 22%, 84%,',
+  'hsla(58.5, 70%, 87%,': 'hsla(55, 14%, 91%,',
+  'hsla(103.25, 55%, 87%,': 'hsla(100, 11%, 90%,',
+  'hsla(69.75, 8%, 90%,': 'hsla(70, 6%, 91%,',
+  'hsla(36, 75%, 87%,': 'hsla(45, 16%, 91%,',
+  'hsla(86.63, 50%, 82%,': 'hsla(85, 13%, 87%,',
+  'hsla(69.75, 60%, 84%,': 'hsla(70, 11%, 89%,',
+  'hsla(182.25, 80%, 95%,': 'hsla(201, 60%, 86%,',
+  'hsla(182.25, 65%, 95%,': 'hsla(201, 55%, 88%,',
+  // nature_landuse
+  'hsla(24.75, 8%, 93%,': 'hsla(35, 6%, 92%,',
+  'hsla(81, 55%, 93%,': 'hsla(100, 14%, 91%,',
+  'hsla(47.25, 70%, 90%,': 'hsla(45, 15%, 92%,',
+  'hsla(36, 75%, 97%,': 'hsla(45, 12%, 96%,',
+  'hsla(137.25, 70%, 90%,': 'hsla(120, 15%, 90%,',
+  'hsla(47.25, 90%, 97%,': 'hsla(45, 15%, 96%,',
+  'hsla(24.75, 8%, 90%,': 'hsla(35, 6%, 91%,',
+  'hsla(81, 55%, 90%,': 'hsla(100, 15%, 90%,',
+  'hsla(47.25, 70%, 87%,': 'hsla(45, 16%, 91%,',
+  'hsla(36, 75%, 94%,': 'hsla(45, 13%, 95%,',
+  'hsla(137.25, 70%, 87%,': 'hsla(120, 16%, 89%,',
+  'hsla(47.25, 90%, 94%,': 'hsla(45, 16%, 95%,',
+  // water: saturated cyan -> pale blue
+  'hsla(182, 65%, 80%, 1)': 'hsla(207, 45%, 87%, 1)',
+  'hsla(182, 65%, 85%, 1)': 'hsla(207, 40%, 90%, 1)',
+  'hsla(182, 65%, 80%, 0.7)': 'hsla(207, 40%, 90%, 0.7)',
+  'hsla(182, 65%, 96%, 1)': 'hsla(207, 30%, 94%, 1)',
+};
+const pastel = (paint, key) => {
+  let json = JSON.stringify(paint[key]);
+  for (const [from, to] of Object.entries(PASTEL)) {
+    json = json.replaceAll(JSON.stringify(from).slice(1, -1), to);
+  }
+  paint[key] = JSON.parse(json);
+};
+for (const id of [
+  'background', 'nature_natural_land', 'nature_natural', 'nature_landuse',
+  'water_area_inland', 'water_area_ocean', 'water_area_lagoon',
+  'water_intermittent',
+]) {
+  const l = layer(id);
+  const key = l.type === 'background' ? 'background-color' : 'fill-color';
+  pastel(l.paint, key);
+}
+// Landcover stays near-invisible at country zoom (swisstopo's country
+// views are bare paper) and fades in only from z8: rewrite the
+// [z4: a0, z5: a1, z12: a1] ramp into [z4: a0, z8: a25, z11: a1] and
+// keep the darker z12 stop.
+{
+  const l = layer('nature_natural');
+  const expr = l.paint['fill-color'];
+  const a0 = expr[4]; // alpha-0 match (z4 stop)
+  const a30 = JSON.parse(
+    JSON.stringify(a0).replaceAll(', 0)"', ', 0.3)"')
+  );
+  const a70 = JSON.parse(
+    JSON.stringify(a0).replaceAll(', 0)"', ', 0.7)"')
+  );
+  const a1 = JSON.parse(
+    JSON.stringify(expr[6])
+      .replaceAll(', 1)"', ', 1)"')
+      // farm/scrub classes stay near-paper: swisstopo renders vineyards
+      // as subtle patterns, never as full color fills (measured: our town
+      // views were 40% warm pixels vs their 2.5%)
+      .replaceAll('hsla(55, 13%, 92%, 1)', 'hsla(55, 13%, 92%, 0.22)')
+      .replaceAll('hsla(85, 12%, 89%, 1)', 'hsla(85, 12%, 89%, 0.45)')
+      .replaceAll('hsla(70, 10%, 90%, 1)', 'hsla(70, 10%, 90%, 0.45)')
+  ); // full-alpha match at z13, farm classes faded
+  l.paint['fill-color'] = [
+    'interpolate', ['linear'], ['zoom'],
+    4, a0, 9, a30, 11, a70, 13, a1,
+  ];
+}
+// Bathymetry: mtk paints depth in saturated cyan (dark Med at 65% L).
+// swisstopo water is flat pale blue — remap the relief ramp to gentle
+// pale blues with only lightness variation by depth.
+{
+  const b = layer('water_bathymetry');
+  const ramp = [
+    [-12000, 'hsla(207, 45%, 78%, 1)'],
+    [-1000, 'hsla(207, 45%, 82%, 1)'],
+    [-500, 'hsla(207, 44%, 83%, 1)'],
+    [-250, 'hsla(207, 42%, 84%, 1)'],
+    [-100, 'hsla(207, 40%, 86%, 1)'],
+    [-30, 'hsla(207, 38%, 88%, 1)'],
+    [-0.1, 'hsla(207, 36%, 90%, 1)'],
+    [0, 'hsla(207, 36%, 90%, 0)'],
+  ];
+  b.paint['color-relief-color'] = [
+    'interpolate', ['linear'], ['elevation'],
+    ...ramp.map(([e, c]) => [e, c]).flat(),
+  ];
+}
+// swisstopo fills buildings uniform blue-grey (rendered ~200,200,208)
+// from z13 — override mtk's base AND the warm multicolored footprints
+{
+  const b = layer('building_base');
+  b.paint['fill-color'] = 'hsla(220, 8%, 82%, 1)';
+  b.paint['fill-outline-color'] = 'hsla(220, 10%, 74%, 1)';
+  const bf = layer('building_footprint_multicolored');
+  bf.paint['fill-color'] = 'hsla(220, 8%, 82%, 0.55)';
+}
+// The natural-earth landcover raster drags a uniform dark tint over
+// everything at low zooms (0.1 opacity at z7 measured) — swisstopo's
+// country views are clean paper. Fade it fully out by z5.
+{
+  const l = layer('nature_naturalearth');
+  l.paint['raster-opacity'] = ['interpolate', ['linear'], ['zoom'], 3, 0.7, 5, 0];
+}
+// Hillshade: greyer + gentler (swisstopo relief reads as light grey)
+for (const id of ['relief_hillshade_ao_min', 'relief_hillshade_ao_med']) {
+  const p = layer(id).paint;
+  p['hillshade-shadow-color'] = p['hillshade-shadow-color']
+    .toString()
+    .replace('hsla(-9, 0%, 0%,', 'hsla(205, 10%, 55%,')
+    .replace('0%, 30%,', '0%, 30%,')
+    .replace(', 0.3)', ', 0.12)');
+  // swisstopo's relief only shades real mountain slopes (~20% of a
+  // country view); AO shades every slope — keep it faint until the
+  // mid zooms where terrain detail starts to matter
+  p['hillshade-exaggeration'] = [
+    'interpolate', ['linear'], ['zoom'],
+    5, 0.04, 9, 0.12, 12, 0.3, 16, 0.3,
+  ];
+}
+// Landcover textures (forest floor, tree rows, quarries…) painted the
+// whole town view warm (40% warm pixels vs swisstopo's 2.5% — their
+// patterns only appear subtly from z13). Fade the textures in gently.
+const TEXTURE_RAMP = ['interpolate', ['linear'], ['zoom'], 13, 0, 15, 0.4];
+for (const id of [
+  'nature_natural_texture',
+  'nature_landuse_quarry_texture',
+  'nature_landuse_flowerbed_texture',
+  'nature_natural_tidalflat_texture',
+]) {
+  layer(id).paint['fill-opacity'] = [...TEXTURE_RAMP];
+}
+layer('nature_natural_tree_row_texture').paint['line-opacity'] = [...TEXTURE_RAMP];
+
+// Contours, swisstopo-flavored: they start at z13 in a light tan
+// (rgb 191,138,64) with 0.4 blur; mtk opens at z11 in dark brown
+for (const id of ['relief_contour_multicolored', 'relief_contour_shadow']) {
+  const l = layer(id);
+  l.minzoom = 13;
+  if (l.paint['line-color']) {
+    const json = JSON.stringify(l.paint['line-color']);
+    l.paint['line-color'] = JSON.parse(
+      json
+        .replaceAll('hsla(24.75, 40%, 45%, 0.7)', 'hsla(30, 49%, 50%, 0.85)')
+        .replaceAll('hsla(24.75, 40%, 45%, 0.6)', 'hsla(30, 49%, 55%, 0.75)')
+    );
+  }
+  l.paint['line-blur'] = 0.4;
+}
+layer('relief_contour_multicolored_label').minzoom = 14;
+
+// Place labels: swisstopo keeps them consistently dark — flatten mtk's
+// rank-based lightening (rank 1 = 20% grey ... rank 25 = 40% grey)
+const DARK_LABEL = 'hsla(-9, 0%, 25%, 1)';
+for (const l of base.layers) {
+  if (l.type !== 'symbol' || !l['source-layer'] || l['source-layer'] !== 'place_label') continue;
+  const tf = l.paint?.['text-color'];
+  if (!tf) continue;
+  const json = JSON.stringify(tf);
+  if (json.includes('["get","rank"]')) {
+    l.paint['text-color'] = DARK_LABEL;
+  }
+}
+
 // Park labels: mtk ranks parks like top places (r5-r10), so the generic
 // rank bands show them from z1. Exclude them there and render via a
 // dedicated layer that only appears once you zoom in.

@@ -2250,9 +2250,9 @@
             "zoom"
           ],
           11,
-          "hsla(81, 47%, 95%, 1)",
+          "hsla(0, 0%, 98%, 1)",
           14,
-          "hsla(81, 23%, 95%, 1)"
+          "hsla(0, 0%, 98%, 1)"
         ]
       },
       "metadata": {
@@ -2280,9 +2280,9 @@
             "zoom"
           ],
           3,
-          0.8,
+          0.7,
           5,
-          0.1
+          0
         ],
         "raster-saturation": [
           "interpolate",
@@ -2326,7 +2326,7 @@
         "visibility": "visible"
       },
       "paint": {
-        "fill-color": "hsla(182, 65%, 85%, 1)"
+        "fill-color": "hsla(207, 40%, 90%, 1)"
       },
       "metadata": {
         "maptoolkit:legend": {
@@ -2355,21 +2355,21 @@
             "elevation"
           ],
           -12000,
-          "hsla(182, 65%, 40%, 1)",
+          "hsla(207, 45%, 78%, 1)",
           -1000,
-          "hsla(182, 65%, 59%, 1)",
+          "hsla(207, 45%, 82%, 1)",
           -500,
-          "hsla(182, 65%, 61%, 1)",
+          "hsla(207, 44%, 83%, 1)",
           -250,
-          "hsla(182, 65%, 63%, 1)",
+          "hsla(207, 42%, 84%, 1)",
           -100,
-          "hsla(182, 65%, 65%, 1)",
+          "hsla(207, 40%, 86%, 1)",
           -30,
-          "hsla(182, 65%, 71%, 1)",
+          "hsla(207, 38%, 88%, 1)",
           -0.1,
-          "hsla(182, 65%, 85%, 1)",
+          "hsla(207, 36%, 90%, 1)",
           0,
-          "hsla(182, 65%, 85%, 0)"
+          "hsla(207, 36%, 90%, 0)"
         ]
       },
       "metadata": {
@@ -2406,13 +2406,13 @@
             "zoom"
           ],
           4,
-          "hsla(81, 47%, 95%, 0)",
+          "hsla(0, 0%, 98%, 0)",
           5,
-          "hsla(81, 47%, 95%, 1)",
+          "hsla(0, 0%, 98%, 1)",
           11,
-          "hsla(81, 47%, 95%, 1)",
+          "hsla(0, 0%, 98%, 1)",
           14,
-          "hsla(81, 23%, 95%, 1)"
+          "hsla(0, 0%, 98%, 1)"
         ]
       },
       "metadata": {
@@ -2449,23 +2449,23 @@
               "type"
             ],
             "quarry",
-            "hsla(24.75, 8%, 93%, 0)",
+            "hsla(35, 6%, 92%, 0)",
             [
               "park",
               "cemetery"
             ],
-            "hsla(81, 55%, 93%, 0)",
+            "hsla(100, 14%, 91%, 0)",
             "parking",
-            "hsla(47.25, 70%, 90%, 0)",
+            "hsla(45, 15%, 92%, 0)",
             [
               "school",
               "hospital"
             ],
-            "hsla(36, 75%, 97%, 0)",
+            "hsla(45, 12%, 96%, 0)",
             "pitch",
-            "hsla(137.25, 70%, 90%, 0)",
+            "hsla(120, 15%, 90%, 0)",
             "flowerbed",
-            "hsla(47.25, 90%, 97%, 0)",
+            "hsla(45, 15%, 96%, 0)",
             "hsla(36, 5%, 92%, 0)"
           ],
           5,
@@ -2476,23 +2476,23 @@
               "type"
             ],
             "quarry",
-            "hsla(24.75, 8%, 93%, 1)",
+            "hsla(35, 6%, 92%, 1)",
             [
               "park",
               "cemetery"
             ],
-            "hsla(81, 55%, 93%, 1)",
+            "hsla(100, 14%, 91%, 1)",
             "parking",
-            "hsla(47.25, 70%, 90%, 1)",
+            "hsla(45, 15%, 92%, 1)",
             [
               "school",
               "hospital"
             ],
-            "hsla(36, 75%, 97%, 1)",
+            "hsla(45, 12%, 96%, 1)",
             "pitch",
-            "hsla(137.25, 70%, 90%, 1)",
+            "hsla(120, 15%, 90%, 1)",
             "flowerbed",
-            "hsla(47.25, 90%, 97%, 1)",
+            "hsla(45, 15%, 96%, 1)",
             "hsla(36, 5%, 92%, 1)"
           ],
           14.5,
@@ -2503,23 +2503,23 @@
               "type"
             ],
             "quarry",
-            "hsla(24.75, 8%, 90%, 1)",
+            "hsla(35, 6%, 91%, 1)",
             [
               "park",
               "cemetery"
             ],
-            "hsla(81, 55%, 90%, 1)",
+            "hsla(100, 15%, 90%, 1)",
             "parking",
-            "hsla(47.25, 70%, 87%, 1)",
+            "hsla(45, 16%, 91%, 1)",
             [
               "school",
               "hospital"
             ],
-            "hsla(36, 75%, 94%, 1)",
+            "hsla(45, 13%, 95%, 1)",
             "pitch",
-            "hsla(137.25, 70%, 87%, 1)",
+            "hsla(120, 16%, 89%, 1)",
             "flowerbed",
-            "hsla(47.25, 90%, 94%, 1)",
+            "hsla(45, 16%, 95%, 1)",
             "hsla(36, 5%, 97%, 1)"
           ]
         ],
@@ -2706,29 +2706,29 @@
               "type"
             ],
             "wood",
-            "hsla(92.25, 50%, 85%, 0)",
+            "hsla(90, 22%, 86%, 0)",
             "farmland",
-            "hsla(58.5, 70%, 90%, 0)",
+            "hsla(55, 13%, 92%, 0)",
             [
               "wetland",
               "tidalflat"
             ],
-            "hsla(103.25, 55%, 90%, 0)",
+            "hsla(100, 10%, 91%, 0)",
             "rock",
-            "hsla(69.75, 8%, 93%, 0)",
+            "hsla(70, 6%, 93%, 0)",
             "sand",
-            "hsla(36, 75%, 90%, 0)",
+            "hsla(45, 15%, 92%, 0)",
             "scrub",
-            "hsla(86.63, 50%, 85%, 0)",
+            "hsla(85, 12%, 89%, 0)",
             "fell",
-            "hsla(69.75, 60%, 87%, 0)",
+            "hsla(70, 10%, 90%, 0)",
             "ice",
-            "hsla(182.25, 80%, 98%, 0)",
+            "hsla(201, 62%, 88%, 0)",
             "salt_desert",
-            "hsla(182.25, 65%, 98%, 0)",
-            "hsla(81, 60%, 90%, 0)"
+            "hsla(201, 55%, 90%, 0)",
+            "hsla(75, 8%, 93%, 0)"
           ],
-          5,
+          9,
           [
             "match",
             [
@@ -2736,29 +2736,29 @@
               "type"
             ],
             "wood",
-            "hsla(92.25, 50%, 85%, 1)",
+            "hsla(90, 22%, 86%, 0.3)",
             "farmland",
-            "hsla(58.5, 70%, 90%, 1)",
+            "hsla(55, 13%, 92%, 0.3)",
             [
               "wetland",
               "tidalflat"
             ],
-            "hsla(103.25, 55%, 90%, 1)",
+            "hsla(100, 10%, 91%, 0.3)",
             "rock",
-            "hsla(69.75, 8%, 93%, 1)",
+            "hsla(70, 6%, 93%, 0.3)",
             "sand",
-            "hsla(36, 75%, 90%, 1)",
+            "hsla(45, 15%, 92%, 0.3)",
             "scrub",
-            "hsla(86.63, 50%, 85%, 1)",
+            "hsla(85, 12%, 89%, 0.3)",
             "fell",
-            "hsla(69.75, 60%, 87%, 1)",
+            "hsla(70, 10%, 90%, 0.3)",
             "ice",
-            "hsla(182.25, 80%, 98%, 1)",
+            "hsla(201, 62%, 88%, 0.3)",
             "salt_desert",
-            "hsla(182.25, 65%, 98%, 1)",
-            "hsla(81, 60%, 90%, 1)"
+            "hsla(201, 55%, 90%, 0.3)",
+            "hsla(75, 8%, 93%, 0.3)"
           ],
-          12,
+          11,
           [
             "match",
             [
@@ -2766,27 +2766,57 @@
               "type"
             ],
             "wood",
-            "hsla(92.25, 50%, 82%, 1)",
+            "hsla(90, 22%, 86%, 0.7)",
             "farmland",
-            "hsla(58.5, 70%, 87%, 1)",
+            "hsla(55, 13%, 92%, 0.7)",
             [
               "wetland",
               "tidalflat"
             ],
-            "hsla(103.25, 55%, 87%, 1)",
+            "hsla(100, 10%, 91%, 0.7)",
             "rock",
-            "hsla(69.75, 8%, 90%, 1)",
+            "hsla(70, 6%, 93%, 0.7)",
             "sand",
-            "hsla(36, 75%, 87%, 1)",
+            "hsla(45, 15%, 92%, 0.7)",
             "scrub",
-            "hsla(86.63, 50%, 82%, 1)",
+            "hsla(85, 12%, 89%, 0.7)",
             "fell",
-            "hsla(69.75, 60%, 84%, 1)",
+            "hsla(70, 10%, 90%, 0.7)",
             "ice",
-            "hsla(182.25, 80%, 95%, 1)",
+            "hsla(201, 62%, 88%, 0.7)",
             "salt_desert",
-            "hsla(182.25, 65%, 95%, 1)",
-            "hsla(81, 60%, 87%, 1)"
+            "hsla(201, 55%, 90%, 0.7)",
+            "hsla(75, 8%, 93%, 0.7)"
+          ],
+          13,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            "wood",
+            "hsla(90, 22%, 86%, 1)",
+            "farmland",
+            "hsla(55, 13%, 92%, 0.22)",
+            [
+              "wetland",
+              "tidalflat"
+            ],
+            "hsla(100, 10%, 91%, 1)",
+            "rock",
+            "hsla(70, 6%, 93%, 1)",
+            "sand",
+            "hsla(45, 15%, 92%, 1)",
+            "scrub",
+            "hsla(85, 12%, 89%, 0.45)",
+            "fell",
+            "hsla(70, 10%, 90%, 0.45)",
+            "ice",
+            "hsla(201, 62%, 88%, 1)",
+            "salt_desert",
+            "hsla(201, 55%, 90%, 1)",
+            "hsla(75, 8%, 93%, 1)"
           ]
         ]
       },
@@ -2833,7 +2863,7 @@
         "visibility": "visible"
       },
       "paint": {
-        "fill-color": "hsla(182, 65%, 80%, 0.7)"
+        "fill-color": "hsla(207, 40%, 90%, 0.7)"
       },
       "metadata": {
         "maptoolkit:legend": {
@@ -2908,14 +2938,10 @@
           [
             "zoom"
           ],
-          12,
-          0.4,
-          14.99,
-          0.8,
+          13,
+          0,
           15,
-          0.5,
-          22,
-          0.7
+          0.4
         ]
       },
       "metadata": {
@@ -2964,14 +2990,10 @@
           [
             "zoom"
           ],
-          12,
-          0.4,
-          14.99,
-          0.8,
+          13,
+          0,
           15,
-          0.5,
-          22,
-          0.7
+          0.4
         ]
       },
       "metadata": {
@@ -2996,10 +3018,10 @@
           [
             "zoom"
           ],
+          13,
+          0,
           15,
-          0.2,
-          22,
-          0.7
+          0.4
         ],
         "fill-pattern": "nature:flowerbed"
       },
@@ -3114,12 +3136,10 @@
           [
             "zoom"
           ],
+          13,
+          0,
           15,
-          0.2,
-          16.5,
-          0.7,
-          22,
-          0.8
+          0.4
         ]
       },
       "metadata": {
@@ -3183,7 +3203,7 @@
         ],
         0
       ],
-      "minzoom": 12,
+      "minzoom": 13,
       "maxzoom": 23,
       "layout": {
         "line-cap": "round",
@@ -3419,7 +3439,8 @@
             0.43,
             0
           ]
-        ]
+        ],
+        "line-blur": 0.4
       },
       "metadata": {
         "maptoolkit:legend": {
@@ -3444,7 +3465,7 @@
         ],
         0
       ],
-      "minzoom": 11,
+      "minzoom": 13,
       "maxzoom": 23,
       "layout": {
         "line-cap": "round",
@@ -3462,7 +3483,7 @@
             ],
             "normal"
           ],
-          "hsla(24.75, 40%, 45%, 0.7)",
+          "hsla(30, 49%, 50%, 0.85)",
           [
             "==",
             [
@@ -3587,7 +3608,8 @@
             0.78,
             0
           ]
-        ]
+        ],
+        "line-blur": 0.4
       },
       "metadata": {
         "maptoolkit:legend": {
@@ -3610,11 +3632,15 @@
             "zoom"
           ],
           5,
-          0.2,
+          0.04,
+          9,
+          0.12,
+          12,
+          0.3,
           16,
           0.3
         ],
-        "hillshade-shadow-color": "hsla(-9, 0%, 0%, 0.3)",
+        "hillshade-shadow-color": "hsla(205, 10%, 55%, 0.12)",
         "hillshade-accent-color": "hsla(-9, 0%, 0%, 0)",
         "hillshade-highlight-color": "hsla(192, 100%, 85%, 0)"
       },
@@ -3643,11 +3669,15 @@
             "zoom"
           ],
           5,
-          0.2,
+          0.04,
+          9,
+          0.12,
+          12,
+          0.3,
           16,
           0.3
         ],
-        "hillshade-shadow-color": "hsla(-9, 0%, 30%, 0.3)",
+        "hillshade-shadow-color": "hsla(-9, 0%, 30%, 0.12)",
         "hillshade-accent-color": "hsla(-9, 0%, 0%, 0)",
         "hillshade-highlight-color": "hsla(192, 100%, 85%, 0)"
       },
@@ -4021,7 +4051,7 @@
         "visibility": "visible"
       },
       "paint": {
-        "fill-color": "hsla(182, 65%, 96%, 1)"
+        "fill-color": "hsla(207, 30%, 94%, 1)"
       },
       "metadata": {
         "maptoolkit:legend": {
@@ -4137,7 +4167,7 @@
         "visibility": "visible"
       },
       "paint": {
-        "fill-color": "hsla(182, 65%, 80%, 1)"
+        "fill-color": "hsla(207, 45%, 87%, 1)"
       },
       "metadata": {
         "maptoolkit:legend": {
@@ -4251,14 +4281,10 @@
           [
             "zoom"
           ],
-          7,
-          0.5,
-          14.99,
-          0.8,
+          13,
+          0,
           15,
-          0.5,
-          22,
-          0.7
+          0.4
         ]
       },
       "metadata": {
@@ -5200,7 +5226,8 @@
         "visibility": "visible"
       },
       "paint": {
-        "fill-color": "hsla(36, 5%, 97%, 1)"
+        "fill-color": "hsla(220, 8%, 82%, 1)",
+        "fill-outline-color": "hsla(220, 10%, 74%, 1)"
       },
       "metadata": {
         "maptoolkit:legend": {
@@ -9388,30 +9415,7 @@
         "visibility": "visible"
       },
       "paint": {
-        "fill-color": [
-          "case",
-          [
-            "has",
-            "colour_index"
-          ],
-          [
-            "interpolate",
-            [
-              "linear"
-            ],
-            [
-              "get",
-              "colour_index"
-            ],
-            0,
-            "hsla(36, 37%, 88%, 0.5)",
-            5,
-            "hsla(36, 18%, 92%, 0.5)",
-            10,
-            "hsla(36, 22%, 85%, 0.5)"
-          ],
-          "hsla(36, 18%, 92%, 0.5)"
-        ],
+        "fill-color": "hsla(220, 8%, 82%, 0.55)",
         "fill-outline-color": "hsla(36, 5%, 77%, 0.5)"
       },
       "metadata": {
@@ -12549,7 +12553,7 @@
           ]
         ]
       ],
-      "minzoom": 11,
+      "minzoom": 14,
       "maxzoom": 23,
       "layout": {
         "symbol-placement": "line",
@@ -14485,8 +14489,7 @@
           ],
           [
             "capital",
-            "big_place",
-            "small_place"
+            "big_place"
           ],
           true,
           false
@@ -14701,8 +14704,7 @@
           ],
           [
             "capital",
-            "big_place",
-            "small_place"
+            "big_place"
           ],
           true,
           false
@@ -14909,8 +14911,7 @@
           ],
           [
             "capital",
-            "big_place",
-            "small_place"
+            "big_place"
           ],
           true,
           false
@@ -15286,20 +15287,7 @@
         ]
       },
       "paint": {
-        "text-color": [
-          "interpolate",
-          [
-            "linear"
-          ],
-          [
-            "get",
-            "rank"
-          ],
-          1,
-          "hsla(-9, 0%, 0%, 1)",
-          25,
-          "hsla(-9, 0%, 20%, 1)"
-        ],
+        "text-color": "hsla(-9, 0%, 25%, 1)",
         "text-halo-color": [
           "interpolate",
           [
@@ -15637,37 +15625,7 @@
         "text-anchor": "left"
       },
       "paint": {
-        "text-color": [
-          "match",
-          [
-            "get",
-            "category"
-          ],
-          [
-            "national_park",
-            "protected_area",
-            "park"
-          ],
-          "hsla(126, 60%, 35%, 1)",
-          "military",
-          "hsla(-9, 50%, 60%, 1)",
-          "aboriginal_lands",
-          "hsla(41.5, 80%, 43%, 1)",
-          [
-            "interpolate",
-            [
-              "linear"
-            ],
-            [
-              "get",
-              "rank"
-            ],
-            1,
-            "hsla(-9, 0%, 0%, 1)",
-            25,
-            "hsla(-9, 0%, 20%, 1)"
-          ]
-        ],
+        "text-color": "hsla(-9, 0%, 25%, 1)",
         "text-halo-color": [
           "interpolate",
           [
@@ -16939,20 +16897,7 @@
         ]
       },
       "paint": {
-        "text-color": [
-          "interpolate",
-          [
-            "linear"
-          ],
-          [
-            "get",
-            "rank"
-          ],
-          1,
-          "hsla(-9, 0%, 0%, 1)",
-          25,
-          "hsla(-9, 0%, 20%, 1)"
-        ],
+        "text-color": "hsla(-9, 0%, 25%, 1)",
         "text-halo-color": [
           "interpolate",
           [
@@ -17298,79 +17243,7 @@
         "text-anchor": "left"
       },
       "paint": {
-        "text-color": [
-          "interpolate",
-          [
-            "linear"
-          ],
-          [
-            "zoom"
-          ],
-          1,
-          [
-            "match",
-            [
-              "get",
-              "category"
-            ],
-            [
-              "national_park",
-              "protected_area",
-              "park"
-            ],
-            "hsla(126, 60%, 35%, 1)",
-            "military",
-            "hsla(-9, 50%, 60%, 1)",
-            "aboriginal_lands",
-            "hsla(41.5, 80%, 43%, 1)",
-            [
-              "interpolate",
-              [
-                "linear"
-              ],
-              [
-                "get",
-                "rank"
-              ],
-              1,
-              "hsla(-9, 0%, 20%, 1)",
-              25,
-              "hsla(-9, 0%, 40%, 1)"
-            ]
-          ],
-          13,
-          [
-            "match",
-            [
-              "get",
-              "category"
-            ],
-            [
-              "national_park",
-              "protected_area",
-              "park"
-            ],
-            "hsla(126, 60%, 35%, 1)",
-            "military",
-            "hsla(-9, 50%, 60%, 1)",
-            "aboriginal_lands",
-            "hsla(41.5, 80%, 43%, 1)",
-            [
-              "interpolate",
-              [
-                "linear"
-              ],
-              [
-                "get",
-                "rank"
-              ],
-              1,
-              "hsla(-9, 0%, 0%, 1)",
-              25,
-              "hsla(-9, 0%, 20%, 1)"
-            ]
-          ]
-        ],
+        "text-color": "hsla(-9, 0%, 25%, 1)",
         "text-halo-color": [
           "interpolate",
           [
@@ -18933,45 +18806,7 @@
         ]
       },
       "paint": {
-        "text-color": [
-          "interpolate",
-          [
-            "linear"
-          ],
-          [
-            "zoom"
-          ],
-          1,
-          [
-            "interpolate",
-            [
-              "linear"
-            ],
-            [
-              "get",
-              "rank"
-            ],
-            1,
-            "hsla(-9, 0%, 20%, 1)",
-            25,
-            "hsla(-9, 0%, 40%, 1)"
-          ],
-          13,
-          [
-            "interpolate",
-            [
-              "linear"
-            ],
-            [
-              "get",
-              "rank"
-            ],
-            1,
-            "hsla(-9, 0%, 0%, 1)",
-            25,
-            "hsla(-9, 0%, 20%, 1)"
-          ]
-        ],
+        "text-color": "hsla(-9, 0%, 25%, 1)",
         "text-halo-color": [
           "interpolate",
           [
@@ -19329,79 +19164,7 @@
         "text-anchor": "left"
       },
       "paint": {
-        "text-color": [
-          "interpolate",
-          [
-            "linear"
-          ],
-          [
-            "zoom"
-          ],
-          1,
-          [
-            "match",
-            [
-              "get",
-              "category"
-            ],
-            [
-              "national_park",
-              "protected_area",
-              "park"
-            ],
-            "hsla(126, 60%, 35%, 1)",
-            "military",
-            "hsla(-9, 50%, 60%, 1)",
-            "aboriginal_lands",
-            "hsla(41.5, 80%, 43%, 1)",
-            [
-              "interpolate",
-              [
-                "linear"
-              ],
-              [
-                "get",
-                "rank"
-              ],
-              1,
-              "hsla(-9, 0%, 20%, 1)",
-              25,
-              "hsla(-9, 0%, 40%, 1)"
-            ]
-          ],
-          13,
-          [
-            "match",
-            [
-              "get",
-              "category"
-            ],
-            [
-              "national_park",
-              "protected_area",
-              "park"
-            ],
-            "hsla(126, 60%, 35%, 1)",
-            "military",
-            "hsla(-9, 50%, 60%, 1)",
-            "aboriginal_lands",
-            "hsla(41.5, 80%, 43%, 1)",
-            [
-              "interpolate",
-              [
-                "linear"
-              ],
-              [
-                "get",
-                "rank"
-              ],
-              1,
-              "hsla(-9, 0%, 0%, 1)",
-              25,
-              "hsla(-9, 0%, 20%, 1)"
-            ]
-          ]
-        ],
+        "text-color": "hsla(-9, 0%, 25%, 1)",
         "text-halo-color": [
           "interpolate",
           [
@@ -20674,45 +20437,7 @@
         ]
       },
       "paint": {
-        "text-color": [
-          "interpolate",
-          [
-            "linear"
-          ],
-          [
-            "zoom"
-          ],
-          1,
-          [
-            "interpolate",
-            [
-              "linear"
-            ],
-            [
-              "get",
-              "rank"
-            ],
-            1,
-            "hsla(-9, 0%, 20%, 1)",
-            25,
-            "hsla(-9, 0%, 40%, 1)"
-          ],
-          13,
-          [
-            "interpolate",
-            [
-              "linear"
-            ],
-            [
-              "get",
-              "rank"
-            ],
-            1,
-            "hsla(-9, 0%, 0%, 1)",
-            25,
-            "hsla(-9, 0%, 20%, 1)"
-          ]
-        ],
+        "text-color": "hsla(-9, 0%, 25%, 1)",
         "text-halo-color": [
           "interpolate",
           [
@@ -21070,79 +20795,7 @@
         "text-anchor": "left"
       },
       "paint": {
-        "text-color": [
-          "interpolate",
-          [
-            "linear"
-          ],
-          [
-            "zoom"
-          ],
-          1,
-          [
-            "match",
-            [
-              "get",
-              "category"
-            ],
-            [
-              "national_park",
-              "protected_area",
-              "park"
-            ],
-            "hsla(126, 60%, 35%, 1)",
-            "military",
-            "hsla(-9, 50%, 60%, 1)",
-            "aboriginal_lands",
-            "hsla(41.5, 80%, 43%, 1)",
-            [
-              "interpolate",
-              [
-                "linear"
-              ],
-              [
-                "get",
-                "rank"
-              ],
-              1,
-              "hsla(-9, 0%, 20%, 1)",
-              25,
-              "hsla(-9, 0%, 40%, 1)"
-            ]
-          ],
-          13,
-          [
-            "match",
-            [
-              "get",
-              "category"
-            ],
-            [
-              "national_park",
-              "protected_area",
-              "park"
-            ],
-            "hsla(126, 60%, 35%, 1)",
-            "military",
-            "hsla(-9, 50%, 60%, 1)",
-            "aboriginal_lands",
-            "hsla(41.5, 80%, 43%, 1)",
-            [
-              "interpolate",
-              [
-                "linear"
-              ],
-              [
-                "get",
-                "rank"
-              ],
-              1,
-              "hsla(-9, 0%, 0%, 1)",
-              25,
-              "hsla(-9, 0%, 20%, 1)"
-            ]
-          ]
-        ],
+        "text-color": "hsla(-9, 0%, 25%, 1)",
         "text-halo-color": [
           "interpolate",
           [
@@ -22036,45 +21689,7 @@
         ]
       },
       "paint": {
-        "text-color": [
-          "interpolate",
-          [
-            "linear"
-          ],
-          [
-            "zoom"
-          ],
-          1,
-          [
-            "interpolate",
-            [
-              "linear"
-            ],
-            [
-              "get",
-              "rank"
-            ],
-            1,
-            "hsla(-9, 0%, 20%, 1)",
-            25,
-            "hsla(-9, 0%, 40%, 1)"
-          ],
-          13,
-          [
-            "interpolate",
-            [
-              "linear"
-            ],
-            [
-              "get",
-              "rank"
-            ],
-            1,
-            "hsla(-9, 0%, 0%, 1)",
-            25,
-            "hsla(-9, 0%, 20%, 1)"
-          ]
-        ],
+        "text-color": "hsla(-9, 0%, 25%, 1)",
         "text-halo-color": [
           "interpolate",
           [
@@ -22482,79 +22097,7 @@
         "text-anchor": "left"
       },
       "paint": {
-        "text-color": [
-          "interpolate",
-          [
-            "linear"
-          ],
-          [
-            "zoom"
-          ],
-          1,
-          [
-            "match",
-            [
-              "get",
-              "category"
-            ],
-            [
-              "national_park",
-              "protected_area",
-              "park"
-            ],
-            "hsla(126, 60%, 35%, 1)",
-            "military",
-            "hsla(-9, 50%, 60%, 1)",
-            "aboriginal_lands",
-            "hsla(41.5, 80%, 43%, 1)",
-            [
-              "interpolate",
-              [
-                "linear"
-              ],
-              [
-                "get",
-                "rank"
-              ],
-              1,
-              "hsla(-9, 0%, 20%, 1)",
-              25,
-              "hsla(-9, 0%, 40%, 1)"
-            ]
-          ],
-          13,
-          [
-            "match",
-            [
-              "get",
-              "category"
-            ],
-            [
-              "national_park",
-              "protected_area",
-              "park"
-            ],
-            "hsla(126, 60%, 35%, 1)",
-            "military",
-            "hsla(-9, 50%, 60%, 1)",
-            "aboriginal_lands",
-            "hsla(41.5, 80%, 43%, 1)",
-            [
-              "interpolate",
-              [
-                "linear"
-              ],
-              [
-                "get",
-                "rank"
-              ],
-              1,
-              "hsla(-9, 0%, 0%, 1)",
-              25,
-              "hsla(-9, 0%, 20%, 1)"
-            ]
-          ]
-        ],
+        "text-color": "hsla(-9, 0%, 25%, 1)",
         "text-halo-color": [
           "interpolate",
           [

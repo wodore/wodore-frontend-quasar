@@ -584,17 +584,19 @@ export const useBasemapStore = defineStore('basemap', () => {
     // Populate basemaps array (labels resolved via i18n — see applyBasemapLabels)
     const basemapItems: BasemapSwitchItem[] = [
       {
+        // Official free swisstopo Light Base Map (vector) — the visual
+        // reference for our outdoor style; also handy as a comparison
+        // basemap. No API key, CORS-open tiles/fonts/sprite.
         name: 'ch-swisstopo-light',
         label: t('basemaps.swiss_light'),
-        show: false, // picker: only outdoor default (kept as fallback/code)
+        show: true,
         active: false,
         img: getImageUrl('swiss-vector.png'),
-        // Weak-GPU raster variant: keyless OSM raster (MapTiler raster tiles
-        // are key-metered and exhausted the free quota)
+        // Weak-GPU raster variant: keyless OSM raster (the vector style
+        // needs WebGL anyway; raster fallback keeps weak devices usable)
         style: useRaster
           ? osmRasterStyle
-          : 'https://api.maptiler.com/maps/ch-swisstopo-lbm/style.json?key=' +
-            getEnv('WODORE_MAPTILER_API_KEY'),
+          : 'https://vectortiles.geo.admin.ch/styles/ch.swisstopo.lightbasemap.vt/style.json',
         layers: {
           ways: { before: useRaster ? undefined : 'Other place labels' },
           background: { before: useRaster ? undefined : 'Building line' },
