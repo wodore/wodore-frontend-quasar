@@ -3945,10 +3945,12 @@ export interface operations {
     get_amenity: {
         parameters: {
             query?: {
+                /** @description Sparse fieldsets (JSON:API): `fields[TYPE]=name1,name2` narrows the response to the selected fields (`__all__` = every field). Valid TYPEs: places, categories, sources. */
+                fields?: {
+                    [key: string]: string;
+                } | null;
                 /** @description Select language code: de, en, fr, it. */
                 lang?: string;
-                /** @description Include data sources: 'no' excludes field, 'slug' returns source slugs only, all returns full source details with name and logo */
-                include_sources?: components["schemas"]["IncludeModeEnum"];
             };
             header?: never;
             path: {
@@ -4010,16 +4012,16 @@ export interface operations {
     nearby_geoplaces: {
         parameters: {
             query: {
+                /** @description Sparse fieldsets (JSON:API): `fields[TYPE]=name1,name2` narrows the response to the selected fields (`__all__` = every field). Valid TYPEs: places, categories, sources. */
+                fields?: {
+                    [key: string]: string;
+                } | null;
                 /** @description Select language code: de, en, fr, it. */
                 lang?: string;
                 /** @description Filter by category slugs (e.g., 'peak', 'pass', 'lake'). Use 'parent.child' format for child categories. */
                 types?: string[] | null;
                 /** @description Filter by parent category slugs (e.g., 'terrain', 'transport') */
                 categories?: string[] | null;
-                /** @description Include categories information: 'no' excludes field, 'slug' returns category slugs only, 'all' returns full category details with name and description */
-                include_categories?: components["schemas"]["IncludeModeEnum"];
-                /** @description Include data sources: 'no' excludes field, 'slug' returns source slugs only, all returns full source details with name and logo */
-                include_sources?: components["schemas"]["IncludeModeEnum"];
                 /** @description Latitude coordinate */
                 lat: number;
                 /** @description Longitude coordinate */
@@ -4122,18 +4124,16 @@ export interface operations {
     search_geoplaces: {
         parameters: {
             query: {
-                /** @description Filter to features intersecting the box, formatted as minLon,minLat,maxLon,maxLat (WGS84 decimal degrees). */
-                bbox?: string | null;
+                /** @description Sparse fieldsets (JSON:API): `fields[TYPE]=name1,name2` narrows the response to the selected fields (`__all__` = every field). Valid TYPEs: places, categories, sources. */
+                fields?: {
+                    [key: string]: string;
+                } | null;
                 /** @description Select language code: de, en, fr, it. */
                 lang?: string;
                 /** @description Filter by category slugs (e.g., 'peak', 'pass', 'lake'). Use 'parent.child' format for child categories. */
                 types?: string[] | null;
                 /** @description Filter by parent category slugs (e.g., 'terrain', 'transport') */
                 categories?: string[] | null;
-                /** @description Include categories information: 'no' excludes field, 'slug' returns category slugs only, 'all' returns full category details with name and description */
-                include_categories?: components["schemas"]["IncludeModeEnum"];
-                /** @description Include data sources: 'no' excludes field, 'slug' returns source slugs only, all returns full source details with name and logo */
-                include_sources?: components["schemas"]["IncludeModeEnum"];
                 /** @description Search query string to match against place names in all languages */
                 q: string;
                 /** @description Maximum number of results to return */
@@ -4257,8 +4257,6 @@ export interface operations {
     get_hut_availability_geojson: {
         parameters: {
             query?: {
-                /** @description Filter to features intersecting the box, formatted as minLon,minLat,maxLon,maxLat (WGS84 decimal degrees). */
-                bbox?: string | null;
                 /** @description Select language code: de, en, fr, it. */
                 lang?: string;
                 /** @description Comma-separated list of hut slugs to filter (e.g., 'aarbiwak,almageller'). If not set, returns all huts. */
@@ -4488,8 +4486,6 @@ export interface operations {
     get_huts: {
         parameters: {
             query?: {
-                /** @description Filter to features intersecting the box, formatted as minLon,minLat,maxLon,maxLat (WGS84 decimal degrees). */
-                bbox?: string | null;
                 /** @description Select language code: de, en, fr, it. */
                 lang?: string;
                 /** @description Pagination offset */
@@ -4573,8 +4569,6 @@ export interface operations {
     get_huts_geojson: {
         parameters: {
             query?: {
-                /** @description Filter to features intersecting the box, formatted as minLon,minLat,maxLon,maxLat (WGS84 decimal degrees). */
-                bbox?: string | null;
                 /** @description Select language code: de, en, fr, it. */
                 lang?: string;
                 /** @description Pagination offset */
@@ -4670,8 +4664,10 @@ export interface operations {
     search_huts: {
         parameters: {
             query: {
-                /** @description Filter to features intersecting the box, formatted as minLon,minLat,maxLon,maxLat (WGS84 decimal degrees). */
-                bbox?: string | null;
+                /** @description Sparse fieldsets (JSON:API): `fields[TYPE]=name1,name2` narrows the response to the selected fields (`__all__` = every field). Valid TYPEs: huts, hut_types, sources. */
+                fields?: {
+                    [key: string]: string;
+                } | null;
                 /** @description Select language code: de, en, fr, it. */
                 lang?: string;
                 /** @description Search query string to match against hut names in all languages */
@@ -4682,12 +4678,6 @@ export interface operations {
                 limit?: number | null;
                 /** @description Minimum similarity score (0.0-1.0). Lower values return more results but with lower relevance. Recommended: 0.1 for fuzzy matching, 0.3 for stricter matching. */
                 threshold?: number;
-                /** @description Include hut type information: 'no' excludes field, 'slug' returns type slugs only, all returns full type details with icons */
-                include_hut_type?: components["schemas"]["IncludeModeEnum"];
-                /** @description Include data sources: 'no' excludes field, 'slug' returns source slugs only, all returns full source details with logos */
-                include_sources?: components["schemas"]["IncludeModeEnum"];
-                /** @description Include avatar/primary photo URL in results */
-                include_avatar?: boolean;
             };
             header?: never;
             path?: never;

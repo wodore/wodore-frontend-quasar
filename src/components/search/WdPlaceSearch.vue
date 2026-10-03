@@ -69,10 +69,7 @@ async function performSearchInternal(newSearchText: string) {
           offset: 0,
           limit: 14,
           threshold: 0.25,
-          //include_hut_type: 'all',
-          include_place_type: 'all',
-          include_sources: 'slug',
-          //include_avatar: true,
+          fields: { places: 'name,slug,country_code,id,elevation,importance,location,score,categories,sources', sources: 'slug' },
         },
       },
     });
