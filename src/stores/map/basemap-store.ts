@@ -14,7 +14,8 @@ import { getEnv } from '@services/runtimeEnv';
 import { OUTDOOR_STYLE_PATH, isOutdoorStyle, setupOutdoorContours } from '@services/outdoorContours';
 
 function mtkStylePath(): string {
-  return `styles/outdoor-mtk/style.${currentLocale() || 'en'}.json`;
+  // single style, local names only (a localized variant can return later)
+  return 'styles/outdoor-mtk/style.json';
 }
 
 /** Static Maptoolkit endpoints (immutable, CDN-cached) — prefetched at
@@ -495,12 +496,6 @@ export const useBasemapStore = defineStore('basemap', () => {
 
   watch(currentLocale, () => {
   applyBasemapLabels();
-  // The mtk basemap is language-aware (per-locale style files): re-apply
-  // it when active so labels switch language.
-  const active = getBasemap();
-  if (active?.name === 'outdoor-mtk' && mapRef.map) {
-    void Promise.resolve(setBasemap(active, true)).catch(() => undefined);
-  }
 });
 
   // Weak-GPU flag for style-level degradation (set during init)

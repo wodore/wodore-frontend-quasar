@@ -4,9 +4,9 @@
  * (Community License, see README).
  *
  * Adaptations on top of the subtractive base (routes/hut POIs removed):
- *   - LANGUAGE-AWARE: one style per app locale (de/fr/it/en). Labels
- *     prefer the localized name field (name_de/name_fr/name_it/name_en)
- *     with the local endonym as fallback — no more stacked languages.
+ *   - LOCAL NAMES ONLY: one single style, mtk's own name fields
+ *     (local endonym; non-latin names keep mtk's latin second line).
+ *     A localized fallback chain can be added later if wanted.
  *   - Country labels smaller
  *   - Mountain names more prominent (x1.3)
  *   - Country borders more obvious (darker + wider)
@@ -244,10 +244,14 @@ for (const l of base.layers) {
 
 // ── Streets, ported 1:1 from swisstopo's lightbasemap ─────────────────
 // White fills with soft-orange motorways/trunk; casings in near-black
-// grey (gold-brown under motorways/trunk) that read as the crisp thin
-// second line. Width ladders follow swisstopo's exponential-base-2
-// stops: only motorway/trunk exist at z8-9, the full class ladder
-// starts at z10. The casing blur is swisstopo's low-zoom glow.
+// grey (gold-brown under motorways) as the crisp thin second line.
+// mtk splits fills by class across three layers (dark = motorway/
+// trunk/primary, medium = secondary/tertiary, minor = minor/service/
+// track) while the casings span whole classes — so the swisstopo width
+// ladders are distributed accordingly, including the _bridge/_tunnel
+// sibling layers (mtk renders those as separate layers) and the
+// motorway ramp thinning swisstopo applies.
+const rampOr = (rampW, mainW) => ['match', ['get', 'ramp'], 1, rampW, mainW];
 const byType = (motorway, trunk, primary, secondary, tertiary, minor, rest) => [
   'match', ['get', 'type'],
   ['motorway'], motorway,
@@ -258,58 +262,116 @@ const byType = (motorway, trunk, primary, secondary, tertiary, minor, rest) => [
   ['minor', 'service'], minor,
   rest,
 ];
-const roadFill = layer('road_major_dark');
-roadFill.paint['line-color'] = [
+const paintOnto = (id, paint) => {
+  const l = layer(id);
+  l.paint = { ...l.paint, ...paint };
+};
+const clonePaint = (ids, paint) => ids.forEach(id => paintOnto(id, paint));
+
+// Fill colors: white everywhere, soft orange on motorway/trunk
+const FILL_WHITE = [
   'interpolate', ['linear'], ['zoom'],
   4, 'hsla(45, 100%, 82%, 0)',
   6, byType('#FFE6A0', '#FFE6A0', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF'),
   15, byType('#FFE08A', '#FFE08A', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF'),
 ];
-roadFill.paint['line-width'] = [
+const FILL_MEDIUM_COLOR = [
+  'interpolate', ['linear'], ['zoom'],
+  8, 'hsla(45, 100%, 82%, 0)',
+  10, '#FFFFFF',
+];
+const FILL_MINOR_COLOR = [
+  'interpolate', ['linear'], ['zoom'],
+  9, 'hsla(45, 100%, 82%, 0)',
+  10.5, '#FFFFFF',
+];
+const FILL_BLUR = ['interpolate', ['linear'], ['zoom'], 8, 0.4, 14, 0.1];
+
+// Fill widths (swisstopo stops, split by mtk's layer coverage)
+const FILL_DARK_WIDTH = [
   'interpolate', ['exponential', 2], ['zoom'],
   6, 0,
-  8, byType(2, 2, 0, 0, 0, 0, 0),
-  9, byType(2.25, 2.25, 0, 0, 0, 0, 0),
-  10, byType(2.75, 2.75, 2.5, 2.5, 2, 1.5, 0),
-  12, byType(3.75, 3.75, 4, 3.5, 3, 2, 2),
-  15, byType(5.5, 5.5, 5.5, 5, 4, 3, 2.5),
-  19, byType(8, 8, 8, 7, 5.5, 4, 3),
+  8, byType(rampOr(0.5, 2), 2, 0, 0, 0, 0, 0),
+  9, byType(rampOr(0.75, 2.25), 2.25, 0, 0, 0, 0, 0),
+  10, byType(rampOr(0.75, 2.75), 2.75, 2.5, 0, 0, 0, 0),
+  12, byType(rampOr(1.5, 3.75), 3.75, 4, 0, 0, 0, 0),
+  15, byType(rampOr(2.75, 5.5), 5.5, 5.5, 0, 0, 0, 0),
+  19, byType(rampOr(5, 8), 8, 8, 0, 0, 0, 0),
 ];
-roadFill.paint['line-blur'] = [
-  'interpolate', ['linear'], ['zoom'],
-  8, 0.4, 14, 0.1,
+const FILL_MEDIUM_WIDTH = [
+  'interpolate', ['exponential', 2], ['zoom'],
+  9, 0,
+  10, byType(0, 0, 0, 2.5, 2, 0, 0),
+  12, byType(0, 0, 0, 3.5, 3, 0, 0),
+  15, byType(0, 0, 0, 5, 4, 0, 0),
+  19, byType(0, 0, 0, 7, 5.5, 0, 0),
 ];
-const roadCasing = layer('road_major_casing');
-roadCasing.paint['line-color'] = [
+const FILL_MINOR_WIDTH = [
+  'interpolate', ['exponential', 2], ['zoom'],
+  10, ['match', ['get', 'type'], ['minor', 'service'], 1.5, 1],
+  12, ['match', ['get', 'type'], ['minor', 'service'], 2, 1.4],
+  15, ['match', ['get', 'type'], ['minor', 'service'], 3, 1.9],
+  19, ['match', ['get', 'type'], ['minor', 'service'], 4, 2.6],
+];
+
+clonePaint(['road_major_dark', 'road_major_dark_bridge'], {
+  'line-color': FILL_WHITE,
+  'line-width': FILL_DARK_WIDTH,
+  'line-blur': FILL_BLUR,
+});
+clonePaint(['road_major_medium', 'road_major_medium_bridge'], {
+  'line-color': FILL_MEDIUM_COLOR,
+  'line-width': FILL_MEDIUM_WIDTH,
+  'line-blur': FILL_BLUR,
+});
+clonePaint(['road_minor', 'road_minor_bridge'], {
+  'line-color': FILL_MINOR_COLOR,
+  'line-width': FILL_MINOR_WIDTH,
+  'line-blur': FILL_BLUR,
+});
+
+// Casings: swisstopo's near-black grey (gold-brown under motorway/trunk)
+const CASING_COLOR = [
   'interpolate', ['linear'], ['zoom'],
   5, 'hsla(40, 8%, 32%, 0)',
   9, byType('#AA881E', '#AA881E', '#505050', '#505050', '#505050', '#505050', '#505050'),
   15, byType('#8B6B3F', '#8B6B3F', '#5A5A5A', '#5A5A5A', '#5A5A5A', '#5A5A5A', '#5A5A5A'),
 ];
-roadCasing.paint['line-width'] = [
+const CASING_WIDTH = [
   'interpolate', ['exponential', 2], ['zoom'],
   6, 0,
-  8, byType(3, 3, 0, 0, 0, 0, 0),
-  9, byType(3.5, 3.5, 0, 0, 0, 0, 0),
-  10, byType(4, 4, 3.5, 3.5, 3, 2.5, 0),
-  12, byType(6.5, 6.5, 6, 5, 4, 3, 2.5),
-  15, byType(10, 10, 8, 6.5, 5.5, 4, 3),
-  19, byType(13, 13, 10.5, 8.5, 7, 5.5, 4),
+  8, byType(rampOr(1.5, 3), 3, 0, 0, 0, 0, 0),
+  9, byType(rampOr(2, 3.5), 3.5, 0, 0, 0, 0, 0),
+  10, byType(rampOr(2, 4), 4, 3.5, 3.5, 3, 2.5, 0),
+  12, byType(rampOr(3, 6.5), 6.5, 6, 5, 4, 3, 2.5),
+  15, byType(rampOr(5, 10), 10, 8, 6.5, 5.5, 4, 3),
+  19, byType(rampOr(6.5, 13), 13, 10.5, 8.5, 7, 5.5, 4),
 ];
-roadCasing.paint['line-opacity'] = 1;
-roadCasing.paint['line-blur'] = [
-  'interpolate', ['linear'], ['zoom'],
-  7, 3, 8, 0.4,
-];
-const minorCasing = layer('road_minor_casing');
-minorCasing.paint['line-color'] = [
+const CASING_BLUR = ['interpolate', ['linear'], ['zoom'], 7, 3, 8, 0.4];
+clonePaint(
+  ['road_major_casing', 'road_major_casing_bridge', 'road_major_casing_tunnel'],
+  {
+    'line-color': CASING_COLOR,
+    'line-width': CASING_WIDTH,
+    'line-opacity': 1,
+    'line-blur': CASING_BLUR,
+  }
+);
+const MINOR_CASING_COLOR = [
   'interpolate', ['linear'], ['zoom'],
   13, 'hsla(40, 8%, 32%, 0)', 15, '#5A5A5A',
 ];
-minorCasing.paint['line-width'] = [
+const MINOR_CASING_WIDTH = [
   'interpolate', ['exponential', 2], ['zoom'],
   13, 2, 15, 3.2, 19, 7,
 ];
+clonePaint(
+  ['road_minor_casing', 'road_minor_casing_bridge', 'road_minor_casing_tunnel'],
+  {
+    'line-color': MINOR_CASING_COLOR,
+    'line-width': MINOR_CASING_WIDTH,
+  }
+);
 
 // ── Parks: strong at overview zooms, receding when zoomed in; visible
 // borders (mtk's protected-area lines are nearly invisible).
@@ -361,40 +423,11 @@ for (const l of base.layers) {
 }
 
 /* ------------------------------------------------------------------ *
- * 3) Per-locale variants: localized name field preferred               *
+ * 3) Output: one style, local names only                              *
  * ------------------------------------------------------------------ */
-const LOCALES = {
-  de: 'name_de',
-  fr: 'name_fr',
-  it: 'name_it',
-  en: 'name_en',
-};
-
-/** Replace `["get","name"]` with a localized coalesce in every text-field. */
-function localizeTextField(expr, field) {
-  const json = JSON.stringify(expr);
-  const next = json.replaceAll(
-    '["get","name"]',
-    JSON.stringify(['coalesce', ['get', field], ['get', 'name']])
-  );
-  return json === next ? expr : JSON.parse(next);
-}
-
 fs.mkdirSync(OUT_DIR, { recursive: true });
-for (const [locale, field] of Object.entries(LOCALES)) {
-  const style = JSON.parse(JSON.stringify(base));
-  for (const l of style.layers) {
-    if (l.type === 'symbol' && l.layout?.['text-field']) {
-      l.layout['text-field'] = localizeTextField(l.layout['text-field'], field);
-    }
-  }
-  const out = path.join(OUT_DIR, `style.${locale}.json`);
-  fs.writeFileSync(out, JSON.stringify(style, null, 2) + '\n');
-  console.log(`wrote ${out}`);
-}
-// generic default = English
 fs.writeFileSync(
   path.join(OUT_DIR, 'style.json'),
-  fs.readFileSync(path.join(OUT_DIR, 'style.en.json'))
+  JSON.stringify(base, null, 2) + '\n'
 );
-console.log('wrote default (en) style.json');
+console.log('wrote style.json (single style, local names)');

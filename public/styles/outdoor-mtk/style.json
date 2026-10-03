@@ -6159,10 +6159,10 @@
           [
             "zoom"
           ],
-          11,
-          "hsla(216, 25%, 50%, 0.2)",
-          14,
-          "hsla(216, 25%, 50%, 0.7)"
+          13,
+          "hsla(40, 8%, 32%, 0)",
+          15,
+          "#5A5A5A"
         ],
         "line-gap-width": [
           "interpolate",
@@ -6200,15 +6200,17 @@
           "interpolate",
           [
             "exponential",
-            1.6
+            2
           ],
           [
             "zoom"
           ],
-          6,
-          0.65,
+          13,
+          2,
+          15,
+          3.2,
           19,
-          1.21
+          7
         ]
       },
       "metadata": {
@@ -6276,10 +6278,76 @@
           [
             "zoom"
           ],
-          10,
-          "hsla(216, 25%, 50%, 0.2)",
-          13,
-          "hsla(216, 25%, 50%, 0.7)"
+          5,
+          "hsla(40, 8%, 32%, 0)",
+          9,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            "#AA881E",
+            [
+              "trunk"
+            ],
+            "#AA881E",
+            [
+              "primary"
+            ],
+            "#505050",
+            [
+              "secondary"
+            ],
+            "#505050",
+            [
+              "tertiary"
+            ],
+            "#505050",
+            [
+              "minor",
+              "service"
+            ],
+            "#505050",
+            "#505050"
+          ],
+          15,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            "#8B6B3F",
+            [
+              "trunk"
+            ],
+            "#8B6B3F",
+            [
+              "primary"
+            ],
+            "#5A5A5A",
+            [
+              "secondary"
+            ],
+            "#5A5A5A",
+            [
+              "tertiary"
+            ],
+            "#5A5A5A",
+            [
+              "minor",
+              "service"
+            ],
+            "#5A5A5A",
+            "#5A5A5A"
+          ]
         ],
         "line-gap-width": [
           "interpolate",
@@ -6353,15 +6421,285 @@
           "interpolate",
           [
             "exponential",
-            1.6
+            2
           ],
           [
             "zoom"
           ],
           6,
-          0.69,
+          0,
+          8,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            [
+              "match",
+              [
+                "get",
+                "ramp"
+              ],
+              1,
+              1.5,
+              3
+            ],
+            [
+              "trunk"
+            ],
+            3,
+            [
+              "primary"
+            ],
+            0,
+            [
+              "secondary"
+            ],
+            0,
+            [
+              "tertiary"
+            ],
+            0,
+            [
+              "minor",
+              "service"
+            ],
+            0,
+            0
+          ],
+          9,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            [
+              "match",
+              [
+                "get",
+                "ramp"
+              ],
+              1,
+              2,
+              3.5
+            ],
+            [
+              "trunk"
+            ],
+            3.5,
+            [
+              "primary"
+            ],
+            0,
+            [
+              "secondary"
+            ],
+            0,
+            [
+              "tertiary"
+            ],
+            0,
+            [
+              "minor",
+              "service"
+            ],
+            0,
+            0
+          ],
+          10,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            [
+              "match",
+              [
+                "get",
+                "ramp"
+              ],
+              1,
+              2,
+              4
+            ],
+            [
+              "trunk"
+            ],
+            4,
+            [
+              "primary"
+            ],
+            3.5,
+            [
+              "secondary"
+            ],
+            3.5,
+            [
+              "tertiary"
+            ],
+            3,
+            [
+              "minor",
+              "service"
+            ],
+            2.5,
+            0
+          ],
+          12,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            [
+              "match",
+              [
+                "get",
+                "ramp"
+              ],
+              1,
+              3,
+              6.5
+            ],
+            [
+              "trunk"
+            ],
+            6.5,
+            [
+              "primary"
+            ],
+            6,
+            [
+              "secondary"
+            ],
+            5,
+            [
+              "tertiary"
+            ],
+            4,
+            [
+              "minor",
+              "service"
+            ],
+            3,
+            2.5
+          ],
+          15,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            [
+              "match",
+              [
+                "get",
+                "ramp"
+              ],
+              1,
+              5,
+              10
+            ],
+            [
+              "trunk"
+            ],
+            10,
+            [
+              "primary"
+            ],
+            8,
+            [
+              "secondary"
+            ],
+            6.5,
+            [
+              "tertiary"
+            ],
+            5.5,
+            [
+              "minor",
+              "service"
+            ],
+            4,
+            3
+          ],
           19,
-          1.29
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            [
+              "match",
+              [
+                "get",
+                "ramp"
+              ],
+              1,
+              6.5,
+              13
+            ],
+            [
+              "trunk"
+            ],
+            13,
+            [
+              "primary"
+            ],
+            10.5,
+            [
+              "secondary"
+            ],
+            8.5,
+            [
+              "tertiary"
+            ],
+            7,
+            [
+              "minor",
+              "service"
+            ],
+            5.5,
+            4
+          ]
+        ],
+        "line-opacity": 1,
+        "line-blur": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          7,
+          3,
+          8,
+          0.4
         ]
       },
       "metadata": {
@@ -7046,7 +7384,16 @@
             [
               "motorway"
             ],
-            3,
+            [
+              "match",
+              [
+                "get",
+                "ramp"
+              ],
+              1,
+              1.5,
+              3
+            ],
             [
               "trunk"
             ],
@@ -7080,7 +7427,16 @@
             [
               "motorway"
             ],
-            3.5,
+            [
+              "match",
+              [
+                "get",
+                "ramp"
+              ],
+              1,
+              2,
+              3.5
+            ],
             [
               "trunk"
             ],
@@ -7114,7 +7470,16 @@
             [
               "motorway"
             ],
-            4,
+            [
+              "match",
+              [
+                "get",
+                "ramp"
+              ],
+              1,
+              2,
+              4
+            ],
             [
               "trunk"
             ],
@@ -7148,7 +7513,16 @@
             [
               "motorway"
             ],
-            6.5,
+            [
+              "match",
+              [
+                "get",
+                "ramp"
+              ],
+              1,
+              3,
+              6.5
+            ],
             [
               "trunk"
             ],
@@ -7182,7 +7556,16 @@
             [
               "motorway"
             ],
-            10,
+            [
+              "match",
+              [
+                "get",
+                "ramp"
+              ],
+              1,
+              5,
+              10
+            ],
             [
               "trunk"
             ],
@@ -7216,7 +7599,16 @@
             [
               "motorway"
             ],
-            13,
+            [
+              "match",
+              [
+                "get",
+                "ramp"
+              ],
+              1,
+              6.5,
+              13
+            ],
             [
               "trunk"
             ],
@@ -7839,119 +8231,89 @@
           [
             "zoom"
           ],
-          10,
-          "hsla(216, 25%, 100%, 0)",
-          11,
-          [
-            "case",
-            [
-              "==",
-              [
-                "get",
-                "subtype"
-              ],
-              "runway"
-            ],
-            "hsla(216, 25%, 100%, 1)",
-            "hsla(216, 25%, 100%, 0)"
-          ],
-          12,
-          [
-            "case",
-            [
-              "in",
-              [
-                "get",
-                "subtype"
-              ],
-              [
-                "literal",
-                [
-                  "pedestrian",
-                  "living_street"
-                ]
-              ]
-            ],
-            "hsla(36, 85%, 90%, 1)",
-            [
-              "in",
-              [
-                "get",
-                "type"
-              ],
-              [
-                "literal",
-                [
-                  "minor",
-                  "service",
-                  "raceway",
-                  "aeroway"
-                ]
-              ]
-            ],
-            "hsla(216, 25%, 100%, 1)",
-            "hsla(216, 25%, 100%, 0.7)"
-          ]
+          9,
+          "hsla(45, 100%, 82%, 0)",
+          10.5,
+          "#FFFFFF"
         ],
         "line-width": [
           "interpolate",
           [
             "exponential",
-            1.6
+            2
           ],
           [
             "zoom"
           ],
-          6,
+          10,
           [
-            "case",
+            "match",
             [
-              "any",
-              [
-                "==",
-                [
-                  "get",
-                  "type"
-                ],
-                "minor"
-              ],
-              [
-                "==",
-                [
-                  "get",
-                  "subtype"
-                ],
-                "runway"
-              ]
+              "get",
+              "type"
             ],
-            0.38,
-            0.22
+            [
+              "minor",
+              "service"
+            ],
+            1.5,
+            1
+          ],
+          12,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "minor",
+              "service"
+            ],
+            2,
+            1.4
+          ],
+          15,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "minor",
+              "service"
+            ],
+            3,
+            1.9
           ],
           19,
           [
-            "case",
+            "match",
             [
-              "any",
-              [
-                "==",
-                [
-                  "get",
-                  "type"
-                ],
-                "minor"
-              ],
-              [
-                "==",
-                [
-                  "get",
-                  "subtype"
-                ],
-                "runway"
-              ]
+              "get",
+              "type"
             ],
-            24.73,
-            14
+            [
+              "minor",
+              "service"
+            ],
+            4,
+            2.6
           ]
+        ],
+        "line-blur": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          8,
+          0.4,
+          14,
+          0.1
         ]
       },
       "metadata": {
@@ -8033,31 +8395,10 @@
           [
             "zoom"
           ],
-          16,
-          0,
-          19,
-          [
-            "case",
-            [
-              "==",
-              [
-                "get",
-                "ramp"
-              ],
-              1
-            ],
-            0,
-            [
-              "match",
-              [
-                "get",
-                "type"
-              ],
-              "tertiary",
-              0,
-              0
-            ]
-          ]
+          8,
+          0.4,
+          14,
+          0.1
         ],
         "line-color": [
           "interpolate",
@@ -8067,76 +8408,157 @@
           [
             "zoom"
           ],
+          8,
+          "hsla(45, 100%, 82%, 0)",
+          10,
+          "#FFFFFF"
+        ],
+        "line-width": [
+          "interpolate",
+          [
+            "exponential",
+            2
+          ],
+          [
+            "zoom"
+          ],
           9,
-          "hsla(216, 25%, 100%, 0)",
-          9.5,
+          0,
+          10,
           [
             "match",
             [
               "get",
               "type"
             ],
-            "secondary",
-            "hsla(216, 30%, 100%, 1)",
-            "hsla(216, 25%, 100%, 0)"
-          ],
-          10.5,
-          "hsla(216, 30%, 100%, 1)"
-        ],
-        "line-width": [
-          "interpolate",
-          [
-            "exponential",
-            1.6
-          ],
-          [
-            "zoom"
-          ],
-          6,
-          [
-            "case",
             [
-              "==",
-              [
-                "get",
-                "ramp"
-              ],
-              1
+              "motorway"
             ],
-            0.38,
+            0,
             [
-              "match",
-              [
-                "get",
-                "type"
-              ],
-              "tertiary",
-              0.49,
-              0.53
-            ]
+              "trunk"
+            ],
+            0,
+            [
+              "primary"
+            ],
+            0,
+            [
+              "secondary"
+            ],
+            2.5,
+            [
+              "tertiary"
+            ],
+            2,
+            [
+              "minor",
+              "service"
+            ],
+            0,
+            0
+          ],
+          12,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            0,
+            [
+              "trunk"
+            ],
+            0,
+            [
+              "primary"
+            ],
+            0,
+            [
+              "secondary"
+            ],
+            3.5,
+            [
+              "tertiary"
+            ],
+            3,
+            [
+              "minor",
+              "service"
+            ],
+            0,
+            0
+          ],
+          15,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            0,
+            [
+              "trunk"
+            ],
+            0,
+            [
+              "primary"
+            ],
+            0,
+            [
+              "secondary"
+            ],
+            5,
+            [
+              "tertiary"
+            ],
+            4,
+            [
+              "minor",
+              "service"
+            ],
+            0,
+            0
           ],
           19,
           [
-            "case",
+            "match",
             [
-              "==",
-              [
-                "get",
-                "ramp"
-              ],
-              1
+              "get",
+              "type"
             ],
-            24.73,
             [
-              "match",
-              [
-                "get",
-                "type"
-              ],
-              "tertiary",
-              31.73,
-              34.53
-            ]
+              "motorway"
+            ],
+            0,
+            [
+              "trunk"
+            ],
+            0,
+            [
+              "primary"
+            ],
+            0,
+            [
+              "secondary"
+            ],
+            7,
+            [
+              "tertiary"
+            ],
+            5.5,
+            [
+              "minor",
+              "service"
+            ],
+            0,
+            0
           ]
         ]
       },
@@ -8307,7 +8729,16 @@
             [
               "motorway"
             ],
-            2,
+            [
+              "match",
+              [
+                "get",
+                "ramp"
+              ],
+              1,
+              0.5,
+              2
+            ],
             [
               "trunk"
             ],
@@ -8341,7 +8772,16 @@
             [
               "motorway"
             ],
-            2.25,
+            [
+              "match",
+              [
+                "get",
+                "ramp"
+              ],
+              1,
+              0.75,
+              2.25
+            ],
             [
               "trunk"
             ],
@@ -8375,7 +8815,16 @@
             [
               "motorway"
             ],
-            2.75,
+            [
+              "match",
+              [
+                "get",
+                "ramp"
+              ],
+              1,
+              0.75,
+              2.75
+            ],
             [
               "trunk"
             ],
@@ -8387,16 +8836,16 @@
             [
               "secondary"
             ],
-            2.5,
+            0,
             [
               "tertiary"
             ],
-            2,
+            0,
             [
               "minor",
               "service"
             ],
-            1.5,
+            0,
             0
           ],
           12,
@@ -8409,7 +8858,16 @@
             [
               "motorway"
             ],
-            3.75,
+            [
+              "match",
+              [
+                "get",
+                "ramp"
+              ],
+              1,
+              1.5,
+              3.75
+            ],
             [
               "trunk"
             ],
@@ -8421,17 +8879,17 @@
             [
               "secondary"
             ],
-            3.5,
+            0,
             [
               "tertiary"
             ],
-            3,
+            0,
             [
               "minor",
               "service"
             ],
-            2,
-            2
+            0,
+            0
           ],
           15,
           [
@@ -8443,7 +8901,16 @@
             [
               "motorway"
             ],
-            5.5,
+            [
+              "match",
+              [
+                "get",
+                "ramp"
+              ],
+              1,
+              2.75,
+              5.5
+            ],
             [
               "trunk"
             ],
@@ -8455,17 +8922,17 @@
             [
               "secondary"
             ],
-            5,
+            0,
             [
               "tertiary"
             ],
-            4,
+            0,
             [
               "minor",
               "service"
             ],
-            3,
-            2.5
+            0,
+            0
           ],
           19,
           [
@@ -8477,7 +8944,16 @@
             [
               "motorway"
             ],
-            8,
+            [
+              "match",
+              [
+                "get",
+                "ramp"
+              ],
+              1,
+              5,
+              8
+            ],
             [
               "trunk"
             ],
@@ -8489,17 +8965,17 @@
             [
               "secondary"
             ],
-            7,
+            0,
             [
               "tertiary"
             ],
-            5.5,
+            0,
             [
               "minor",
               "service"
             ],
-            4,
-            3
+            0,
+            0
           ]
         ]
       },
@@ -9493,11 +9969,9 @@
             "zoom"
           ],
           13,
-          "hsla(216, 25%, 65%, 0)",
+          "hsla(40, 8%, 32%, 0)",
           15,
-          "hsla(216, 25%, 65%, 0.3)",
-          16,
-          "hsla(216, 25%, 50%, 1)"
+          "#5A5A5A"
         ],
         "line-gap-width": [
           "interpolate",
@@ -9535,33 +10009,17 @@
           "interpolate",
           [
             "exponential",
-            1.6
+            2
           ],
           [
             "zoom"
           ],
-          6,
-          [
-            "match",
-            [
-              "get",
-              "type"
-            ],
-            "minor",
-            0.65,
-            0.6
-          ],
+          13,
+          2,
+          15,
+          3.2,
           19,
-          [
-            "match",
-            [
-              "get",
-              "type"
-            ],
-            "minor",
-            1.21,
-            1.11
-          ]
+          7
         ]
       },
       "metadata": {
@@ -9625,8 +10083,8 @@
           [
             "zoom"
           ],
-          7,
-          "hsla(216, 25%, 65%, 0.3)",
+          5,
+          "hsla(40, 8%, 32%, 0)",
           9,
           [
             "match",
@@ -9634,16 +10092,34 @@
               "get",
               "type"
             ],
-            "motorway",
-            "hsla(216, 25%, 65%, 1)",
             [
-              "trunk",
+              "motorway"
+            ],
+            "#AA881E",
+            [
+              "trunk"
+            ],
+            "#AA881E",
+            [
               "primary"
             ],
-            "hsla(216, 25%, 65%, 0.7)",
-            "hsla(216, 25%, 65%, 0)"
+            "#505050",
+            [
+              "secondary"
+            ],
+            "#505050",
+            [
+              "tertiary"
+            ],
+            "#505050",
+            [
+              "minor",
+              "service"
+            ],
+            "#505050",
+            "#505050"
           ],
-          10,
+          15,
           [
             "match",
             [
@@ -9651,46 +10127,32 @@
               "type"
             ],
             [
-              "motorway",
-              "trunk",
+              "motorway"
+            ],
+            "#8B6B3F",
+            [
+              "trunk"
+            ],
+            "#8B6B3F",
+            [
               "primary"
             ],
-            "hsla(216, 25%, 65%, 1)",
-            "hsla(216, 25%, 65%, 0)"
-          ],
-          13,
-          [
-            "case",
+            "#5A5A5A",
             [
-              "any",
-              [
-                "==",
-                [
-                  "get",
-                  "ramp"
-                ],
-                1
-              ],
-              [
-                "in",
-                [
-                  "get",
-                  "type"
-                ],
-                [
-                  "literal",
-                  [
-                    "secondary",
-                    "tertiary"
-                  ]
-                ]
-              ]
+              "secondary"
             ],
-            "hsla(216, 25%, 65%, 1)",
-            "hsla(216, 25%, 65%, 1)"
-          ],
-          16,
-          "hsla(216, 25%, 50%, 1)"
+            "#5A5A5A",
+            [
+              "tertiary"
+            ],
+            "#5A5A5A",
+            [
+              "minor",
+              "service"
+            ],
+            "#5A5A5A",
+            "#5A5A5A"
+          ]
         ],
         "line-gap-width": [
           "interpolate",
@@ -9764,69 +10226,285 @@
           "interpolate",
           [
             "exponential",
-            1.6
+            2
           ],
           [
             "zoom"
           ],
           6,
+          0,
+          8,
           [
-            "case",
+            "match",
             [
-              "==",
-              [
-                "get",
-                "ramp"
-              ],
-              1
+              "get",
+              "type"
             ],
-            0.65,
+            [
+              "motorway"
+            ],
             [
               "match",
               [
                 "get",
-                "type"
+                "ramp"
               ],
-              "tertiary",
-              0.67,
-              "secondary",
-              0.68,
-              "primary",
-              0.69,
-              "trunk",
-              0.7,
-              0.71
-            ]
+              1,
+              1.5,
+              3
+            ],
+            [
+              "trunk"
+            ],
+            3,
+            [
+              "primary"
+            ],
+            0,
+            [
+              "secondary"
+            ],
+            0,
+            [
+              "tertiary"
+            ],
+            0,
+            [
+              "minor",
+              "service"
+            ],
+            0,
+            0
+          ],
+          9,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            [
+              "match",
+              [
+                "get",
+                "ramp"
+              ],
+              1,
+              2,
+              3.5
+            ],
+            [
+              "trunk"
+            ],
+            3.5,
+            [
+              "primary"
+            ],
+            0,
+            [
+              "secondary"
+            ],
+            0,
+            [
+              "tertiary"
+            ],
+            0,
+            [
+              "minor",
+              "service"
+            ],
+            0,
+            0
+          ],
+          10,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            [
+              "match",
+              [
+                "get",
+                "ramp"
+              ],
+              1,
+              2,
+              4
+            ],
+            [
+              "trunk"
+            ],
+            4,
+            [
+              "primary"
+            ],
+            3.5,
+            [
+              "secondary"
+            ],
+            3.5,
+            [
+              "tertiary"
+            ],
+            3,
+            [
+              "minor",
+              "service"
+            ],
+            2.5,
+            0
+          ],
+          12,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            [
+              "match",
+              [
+                "get",
+                "ramp"
+              ],
+              1,
+              3,
+              6.5
+            ],
+            [
+              "trunk"
+            ],
+            6.5,
+            [
+              "primary"
+            ],
+            6,
+            [
+              "secondary"
+            ],
+            5,
+            [
+              "tertiary"
+            ],
+            4,
+            [
+              "minor",
+              "service"
+            ],
+            3,
+            2.5
+          ],
+          15,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            [
+              "match",
+              [
+                "get",
+                "ramp"
+              ],
+              1,
+              5,
+              10
+            ],
+            [
+              "trunk"
+            ],
+            10,
+            [
+              "primary"
+            ],
+            8,
+            [
+              "secondary"
+            ],
+            6.5,
+            [
+              "tertiary"
+            ],
+            5.5,
+            [
+              "minor",
+              "service"
+            ],
+            4,
+            3
           ],
           19,
           [
-            "case",
+            "match",
             [
-              "==",
-              [
-                "get",
-                "ramp"
-              ],
-              1
+              "get",
+              "type"
             ],
-            1.21,
+            [
+              "motorway"
+            ],
             [
               "match",
               [
                 "get",
-                "type"
+                "ramp"
               ],
-              "tertiary",
-              1.26,
-              "secondary",
-              1.28,
-              "primary",
-              1.29,
-              "trunk",
-              1.31,
-              1.33
-            ]
+              1,
+              6.5,
+              13
+            ],
+            [
+              "trunk"
+            ],
+            13,
+            [
+              "primary"
+            ],
+            10.5,
+            [
+              "secondary"
+            ],
+            8.5,
+            [
+              "tertiary"
+            ],
+            7,
+            [
+              "minor",
+              "service"
+            ],
+            5.5,
+            4
           ]
+        ],
+        "line-opacity": 1,
+        "line-blur": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          7,
+          3,
+          8,
+          0.4
         ]
       },
       "metadata": {
@@ -10105,119 +10783,89 @@
           [
             "zoom"
           ],
-          10,
-          "hsla(216, 25%, 100%, 0)",
-          11,
-          [
-            "case",
-            [
-              "==",
-              [
-                "get",
-                "subtype"
-              ],
-              "runway"
-            ],
-            "hsla(216, 25%, 100%, 1)",
-            "hsla(216, 25%, 100%, 0)"
-          ],
-          12,
-          [
-            "case",
-            [
-              "in",
-              [
-                "get",
-                "subtype"
-              ],
-              [
-                "literal",
-                [
-                  "pedestrian",
-                  "living_street"
-                ]
-              ]
-            ],
-            "hsla(36, 85%, 90%, 1)",
-            [
-              "in",
-              [
-                "get",
-                "type"
-              ],
-              [
-                "literal",
-                [
-                  "minor",
-                  "service",
-                  "raceway",
-                  "aeroway"
-                ]
-              ]
-            ],
-            "hsla(216, 25%, 100%, 1)",
-            "hsla(216, 25%, 100%, 0.7)"
-          ]
+          9,
+          "hsla(45, 100%, 82%, 0)",
+          10.5,
+          "#FFFFFF"
         ],
         "line-width": [
           "interpolate",
           [
             "exponential",
-            1.6
+            2
           ],
           [
             "zoom"
           ],
-          6,
+          10,
           [
-            "case",
+            "match",
             [
-              "any",
-              [
-                "==",
-                [
-                  "get",
-                  "type"
-                ],
-                "minor"
-              ],
-              [
-                "==",
-                [
-                  "get",
-                  "subtype"
-                ],
-                "runway"
-              ]
+              "get",
+              "type"
             ],
-            0.38,
-            0.22
+            [
+              "minor",
+              "service"
+            ],
+            1.5,
+            1
+          ],
+          12,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "minor",
+              "service"
+            ],
+            2,
+            1.4
+          ],
+          15,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "minor",
+              "service"
+            ],
+            3,
+            1.9
           ],
           19,
           [
-            "case",
+            "match",
             [
-              "any",
-              [
-                "==",
-                [
-                  "get",
-                  "type"
-                ],
-                "minor"
-              ],
-              [
-                "==",
-                [
-                  "get",
-                  "subtype"
-                ],
-                "runway"
-              ]
+              "get",
+              "type"
             ],
-            24.73,
-            14
+            [
+              "minor",
+              "service"
+            ],
+            4,
+            2.6
           ]
+        ],
+        "line-blur": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          8,
+          0.4,
+          14,
+          0.1
         ]
       },
       "metadata": {
@@ -10301,31 +10949,10 @@
           [
             "zoom"
           ],
-          16,
-          0,
-          19,
-          [
-            "case",
-            [
-              "==",
-              [
-                "get",
-                "ramp"
-              ],
-              1
-            ],
-            0,
-            [
-              "match",
-              [
-                "get",
-                "type"
-              ],
-              "tertiary",
-              0,
-              0
-            ]
-          ]
+          8,
+          0.4,
+          14,
+          0.1
         ],
         "line-color": [
           "interpolate",
@@ -10335,76 +10962,157 @@
           [
             "zoom"
           ],
+          8,
+          "hsla(45, 100%, 82%, 0)",
+          10,
+          "#FFFFFF"
+        ],
+        "line-width": [
+          "interpolate",
+          [
+            "exponential",
+            2
+          ],
+          [
+            "zoom"
+          ],
           9,
-          "hsla(216, 25%, 100%, 0)",
-          9.5,
+          0,
+          10,
           [
             "match",
             [
               "get",
               "type"
             ],
-            "secondary",
-            "hsla(216, 30%, 100%, 1)",
-            "hsla(216, 25%, 100%, 0)"
-          ],
-          10.5,
-          "hsla(216, 30%, 100%, 1)"
-        ],
-        "line-width": [
-          "interpolate",
-          [
-            "exponential",
-            1.6
-          ],
-          [
-            "zoom"
-          ],
-          6,
-          [
-            "case",
             [
-              "==",
-              [
-                "get",
-                "ramp"
-              ],
-              1
+              "motorway"
             ],
-            0.38,
+            0,
             [
-              "match",
-              [
-                "get",
-                "type"
-              ],
-              "tertiary",
-              0.49,
-              0.53
-            ]
+              "trunk"
+            ],
+            0,
+            [
+              "primary"
+            ],
+            0,
+            [
+              "secondary"
+            ],
+            2.5,
+            [
+              "tertiary"
+            ],
+            2,
+            [
+              "minor",
+              "service"
+            ],
+            0,
+            0
+          ],
+          12,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            0,
+            [
+              "trunk"
+            ],
+            0,
+            [
+              "primary"
+            ],
+            0,
+            [
+              "secondary"
+            ],
+            3.5,
+            [
+              "tertiary"
+            ],
+            3,
+            [
+              "minor",
+              "service"
+            ],
+            0,
+            0
+          ],
+          15,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            0,
+            [
+              "trunk"
+            ],
+            0,
+            [
+              "primary"
+            ],
+            0,
+            [
+              "secondary"
+            ],
+            5,
+            [
+              "tertiary"
+            ],
+            4,
+            [
+              "minor",
+              "service"
+            ],
+            0,
+            0
           ],
           19,
           [
-            "case",
+            "match",
             [
-              "==",
-              [
-                "get",
-                "ramp"
-              ],
-              1
+              "get",
+              "type"
             ],
-            24.73,
             [
-              "match",
-              [
-                "get",
-                "type"
-              ],
-              "tertiary",
-              31.73,
-              34.53
-            ]
+              "motorway"
+            ],
+            0,
+            [
+              "trunk"
+            ],
+            0,
+            [
+              "primary"
+            ],
+            0,
+            [
+              "secondary"
+            ],
+            7,
+            [
+              "tertiary"
+            ],
+            5.5,
+            [
+              "minor",
+              "service"
+            ],
+            0,
+            0
           ]
         ]
       },
@@ -10472,21 +11180,10 @@
           [
             "zoom"
           ],
-          16,
-          0,
-          19,
-          [
-            "match",
-            [
-              "get",
-              "type"
-            ],
-            "primary",
-            0,
-            "trunk",
-            0,
-            0
-          ]
+          8,
+          0.4,
+          14,
+          0.1
         ],
         "line-color": [
           "interpolate",
@@ -10497,7 +11194,7 @@
             "zoom"
           ],
           4,
-          "hsla(216, 25%, 100%, 0)",
+          "hsla(45, 100%, 82%, 0)",
           6,
           [
             "match",
@@ -10506,36 +11203,292 @@
               "type"
             ],
             [
-              "primary",
+              "motorway"
+            ],
+            "#FFE6A0",
+            [
               "trunk"
             ],
-            "hsla(216, 25%, 100%, 0)",
-            "hsla(216, 35%, 100%, 1)"
+            "#FFE6A0",
+            [
+              "primary"
+            ],
+            "#FFFFFF",
+            [
+              "secondary"
+            ],
+            "#FFFFFF",
+            [
+              "tertiary"
+            ],
+            "#FFFFFF",
+            [
+              "minor",
+              "service"
+            ],
+            "#FFFFFF",
+            "#FFFFFF"
           ],
-          7.5,
-          "hsla(216, 35%, 100%, 1)"
+          15,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            "#FFE08A",
+            [
+              "trunk"
+            ],
+            "#FFE08A",
+            [
+              "primary"
+            ],
+            "#FFFFFF",
+            [
+              "secondary"
+            ],
+            "#FFFFFF",
+            [
+              "tertiary"
+            ],
+            "#FFFFFF",
+            [
+              "minor",
+              "service"
+            ],
+            "#FFFFFF",
+            "#FFFFFF"
+          ]
         ],
         "line-width": [
           "interpolate",
           [
             "exponential",
-            1.6
+            2
           ],
           [
             "zoom"
           ],
           6,
+          0,
+          8,
           [
             "match",
             [
               "get",
               "type"
             ],
-            "primary",
-            0.57,
-            "trunk",
-            0.64,
-            0.72
+            [
+              "motorway"
+            ],
+            [
+              "match",
+              [
+                "get",
+                "ramp"
+              ],
+              1,
+              0.5,
+              2
+            ],
+            [
+              "trunk"
+            ],
+            2,
+            [
+              "primary"
+            ],
+            0,
+            [
+              "secondary"
+            ],
+            0,
+            [
+              "tertiary"
+            ],
+            0,
+            [
+              "minor",
+              "service"
+            ],
+            0,
+            0
+          ],
+          9,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            [
+              "match",
+              [
+                "get",
+                "ramp"
+              ],
+              1,
+              0.75,
+              2.25
+            ],
+            [
+              "trunk"
+            ],
+            2.25,
+            [
+              "primary"
+            ],
+            0,
+            [
+              "secondary"
+            ],
+            0,
+            [
+              "tertiary"
+            ],
+            0,
+            [
+              "minor",
+              "service"
+            ],
+            0,
+            0
+          ],
+          10,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            [
+              "match",
+              [
+                "get",
+                "ramp"
+              ],
+              1,
+              0.75,
+              2.75
+            ],
+            [
+              "trunk"
+            ],
+            2.75,
+            [
+              "primary"
+            ],
+            2.5,
+            [
+              "secondary"
+            ],
+            0,
+            [
+              "tertiary"
+            ],
+            0,
+            [
+              "minor",
+              "service"
+            ],
+            0,
+            0
+          ],
+          12,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            [
+              "match",
+              [
+                "get",
+                "ramp"
+              ],
+              1,
+              1.5,
+              3.75
+            ],
+            [
+              "trunk"
+            ],
+            3.75,
+            [
+              "primary"
+            ],
+            4,
+            [
+              "secondary"
+            ],
+            0,
+            [
+              "tertiary"
+            ],
+            0,
+            [
+              "minor",
+              "service"
+            ],
+            0,
+            0
+          ],
+          15,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            [
+              "match",
+              [
+                "get",
+                "ramp"
+              ],
+              1,
+              2.75,
+              5.5
+            ],
+            [
+              "trunk"
+            ],
+            5.5,
+            [
+              "primary"
+            ],
+            5.5,
+            [
+              "secondary"
+            ],
+            0,
+            [
+              "tertiary"
+            ],
+            0,
+            [
+              "minor",
+              "service"
+            ],
+            0,
+            0
           ],
           19,
           [
@@ -10544,11 +11497,41 @@
               "get",
               "type"
             ],
-            "primary",
-            36.86,
-            "trunk",
-            41.52,
-            46.66
+            [
+              "motorway"
+            ],
+            [
+              "match",
+              [
+                "get",
+                "ramp"
+              ],
+              1,
+              5,
+              8
+            ],
+            [
+              "trunk"
+            ],
+            8,
+            [
+              "primary"
+            ],
+            8,
+            [
+              "secondary"
+            ],
+            0,
+            [
+              "tertiary"
+            ],
+            0,
+            [
+              "minor",
+              "service"
+            ],
+            0,
+            0
           ]
         ]
       },
@@ -11753,28 +12736,14 @@
             ]
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ],
           [
             "concat",
             [
-              "coalesce",
-              [
-                "get",
-                "name_en"
-              ],
-              [
-                "get",
-                "name"
-              ]
+              "get",
+              "name"
             ],
             "\n",
             [
@@ -12124,26 +13093,12 @@
             "name"
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ]
         ],
         "text-font": [
@@ -12254,26 +13209,12 @@
             "name"
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ]
         ],
         "text-font": [
@@ -12386,26 +13327,12 @@
             "name"
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ]
         ],
         "text-font": [
@@ -12508,26 +13435,12 @@
             "name"
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ]
         ],
         "text-font": [
@@ -12637,26 +13550,12 @@
             "name"
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ]
         ],
         "text-font": [
@@ -12786,28 +13685,14 @@
             ]
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ],
           [
             "concat",
             [
-              "coalesce",
-              [
-                "get",
-                "name_en"
-              ],
-              [
-                "get",
-                "name"
-              ]
+              "get",
+              "name"
             ],
             "\n",
             [
@@ -12958,28 +13843,14 @@
             ]
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ],
           [
             "concat",
             [
-              "coalesce",
-              [
-                "get",
-                "name_en"
-              ],
-              [
-                "get",
-                "name"
-              ]
+              "get",
+              "name"
             ],
             "\n",
             [
@@ -14215,15 +15086,8 @@
       ],
       "layout": {
         "text-field": [
-          "coalesce",
-          [
-            "get",
-            "name_en"
-          ],
-          [
-            "get",
-            "name"
-          ]
+          "get",
+          "name"
         ],
         "text-font": [
           "Ysabeau Italic"
@@ -14325,28 +15189,14 @@
             ]
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ],
           [
             "concat",
             [
-              "coalesce",
-              [
-                "get",
-                "name_en"
-              ],
-              [
-                "get",
-                "name"
-              ]
+              "get",
+              "name"
             ],
             "\n",
             [
@@ -14536,28 +15386,14 @@
             ]
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ],
           [
             "concat",
             [
-              "coalesce",
-              [
-                "get",
-                "name_en"
-              ],
-              [
-                "get",
-                "name"
-              ]
+              "get",
+              "name"
             ],
             "\n",
             [
@@ -15017,28 +15853,14 @@
             ]
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ],
           [
             "concat",
             [
-              "coalesce",
-              [
-                "get",
-                "name_en"
-              ],
-              [
-                "get",
-                "name"
-              ]
+              "get",
+              "name"
             ],
             "\n",
             [
@@ -15420,26 +16242,12 @@
             "name"
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ]
         ],
         "text-font": [
@@ -15577,28 +16385,14 @@
             ]
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ],
           [
             "concat",
             [
-              "coalesce",
-              [
-                "get",
-                "name_en"
-              ],
-              [
-                "get",
-                "name"
-              ]
+              "get",
+              "name"
             ],
             "\n",
             [
@@ -15783,28 +16577,14 @@
             ]
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ],
           [
             "concat",
             [
-              "coalesce",
-              [
-                "get",
-                "name_en"
-              ],
-              [
-                "get",
-                "name"
-              ]
+              "get",
+              "name"
             ],
             "\n",
             [
@@ -16036,28 +16816,14 @@
             ]
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ],
           [
             "concat",
             [
-              "coalesce",
-              [
-                "get",
-                "name_en"
-              ],
-              [
-                "get",
-                "name"
-              ]
+              "get",
+              "name"
             ],
             "\n",
             [
@@ -16281,28 +17047,14 @@
             ]
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ],
           [
             "concat",
             [
-              "coalesce",
-              [
-                "get",
-                "name_en"
-              ],
-              [
-                "get",
-                "name"
-              ]
+              "get",
+              "name"
             ],
             "\n",
             [
@@ -16762,28 +17514,14 @@
             ]
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ],
           [
             "concat",
             [
-              "coalesce",
-              [
-                "get",
-                "name_en"
-              ],
-              [
-                "get",
-                "name"
-              ]
+              "get",
+              "name"
             ],
             "\n",
             [
@@ -17046,28 +17784,14 @@
             ]
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ],
           [
             "concat",
             [
-              "coalesce",
-              [
-                "get",
-                "name_en"
-              ],
-              [
-                "get",
-                "name"
-              ]
+              "get",
+              "name"
             ],
             "\n",
             [
@@ -17453,28 +18177,14 @@
             ]
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ],
           [
             "concat",
             [
-              "coalesce",
-              [
-                "get",
-                "name_en"
-              ],
-              [
-                "get",
-                "name"
-              ]
+              "get",
+              "name"
             ],
             "\n",
             [
@@ -17659,28 +18369,14 @@
             ]
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ],
           [
             "concat",
             [
-              "coalesce",
-              [
-                "get",
-                "name_en"
-              ],
-              [
-                "get",
-                "name"
-              ]
+              "get",
+              "name"
             ],
             "\n",
             [
@@ -17889,15 +18585,8 @@
           [
             "concat",
             [
-              "coalesce",
-              [
-                "get",
-                "name_en"
-              ],
-              [
-                "get",
-                "name"
-              ]
+              "get",
+              "name"
             ],
             "\n",
             [
@@ -17908,15 +18597,8 @@
           [
             "concat",
             [
-              "coalesce",
-              [
-                "get",
-                "name_en"
-              ],
-              [
-                "get",
-                "name"
-              ]
+              "get",
+              "name"
             ],
             "\n",
             [
@@ -18128,28 +18810,14 @@
             ]
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ],
           [
             "concat",
             [
-              "coalesce",
-              [
-                "get",
-                "name_en"
-              ],
-              [
-                "get",
-                "name"
-              ]
+              "get",
+              "name"
             ],
             "\n",
             [
@@ -18410,28 +19078,14 @@
             ]
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ],
           [
             "concat",
             [
-              "coalesce",
-              [
-                "get",
-                "name_en"
-              ],
-              [
-                "get",
-                "name"
-              ]
+              "get",
+              "name"
             ],
             "\n",
             [
@@ -18871,28 +19525,14 @@
             ]
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ],
           [
             "concat",
             [
-              "coalesce",
-              [
-                "get",
-                "name_en"
-              ],
-              [
-                "get",
-                "name"
-              ]
+              "get",
+              "name"
             ],
             "\n",
             [
@@ -19278,28 +19918,14 @@
             ]
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ],
           [
             "concat",
             [
-              "coalesce",
-              [
-                "get",
-                "name_en"
-              ],
-              [
-                "get",
-                "name"
-              ]
+              "get",
+              "name"
             ],
             "\n",
             [
@@ -19484,28 +20110,14 @@
             ]
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ],
           [
             "concat",
             [
-              "coalesce",
-              [
-                "get",
-                "name_en"
-              ],
-              [
-                "get",
-                "name"
-              ]
+              "get",
+              "name"
             ],
             "\n",
             [
@@ -19714,15 +20326,8 @@
           [
             "concat",
             [
-              "coalesce",
-              [
-                "get",
-                "name_en"
-              ],
-              [
-                "get",
-                "name"
-              ]
+              "get",
+              "name"
             ],
             "\n",
             [
@@ -19733,15 +20338,8 @@
           [
             "concat",
             [
-              "coalesce",
-              [
-                "get",
-                "name_en"
-              ],
-              [
-                "get",
-                "name"
-              ]
+              "get",
+              "name"
             ],
             "\n",
             [
@@ -19953,28 +20551,14 @@
             ]
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ],
           [
             "concat",
             [
-              "coalesce",
-              [
-                "get",
-                "name_en"
-              ],
-              [
-                "get",
-                "name"
-              ]
+              "get",
+              "name"
             ],
             "\n",
             [
@@ -20235,28 +20819,14 @@
             ]
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ],
           [
             "concat",
             [
-              "coalesce",
-              [
-                "get",
-                "name_en"
-              ],
-              [
-                "get",
-                "name"
-              ]
+              "get",
+              "name"
             ],
             "\n",
             [
@@ -20676,28 +21246,14 @@
             ]
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ],
           [
             "concat",
             [
-              "coalesce",
-              [
-                "get",
-                "name_en"
-              ],
-              [
-                "get",
-                "name"
-              ]
+              "get",
+              "name"
             ],
             "\n",
             [
@@ -20874,28 +21430,14 @@
             ]
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ],
           [
             "concat",
             [
-              "coalesce",
-              [
-                "get",
-                "name_en"
-              ],
-              [
-                "get",
-                "name"
-              ]
+              "get",
+              "name"
             ],
             "\n",
             [
@@ -21096,15 +21638,8 @@
           [
             "concat",
             [
-              "coalesce",
-              [
-                "get",
-                "name_en"
-              ],
-              [
-                "get",
-                "name"
-              ]
+              "get",
+              "name"
             ],
             "\n",
             [
@@ -21115,15 +21650,8 @@
           [
             "concat",
             [
-              "coalesce",
-              [
-                "get",
-                "name_en"
-              ],
-              [
-                "get",
-                "name"
-              ]
+              "get",
+              "name"
             ],
             "\n",
             [
@@ -21327,28 +21855,14 @@
             ]
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ],
           [
             "concat",
             [
-              "coalesce",
-              [
-                "get",
-                "name_en"
-              ],
-              [
-                "get",
-                "name"
-              ]
+              "get",
+              "name"
             ],
             "\n",
             [
@@ -21659,28 +22173,14 @@
             ]
           ],
           [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name"
-            ]
+            "get",
+            "name"
           ],
           [
             "concat",
             [
-              "coalesce",
-              [
-                "get",
-                "name_en"
-              ],
-              [
-                "get",
-                "name"
-              ]
+              "get",
+              "name"
             ],
             "\n",
             [

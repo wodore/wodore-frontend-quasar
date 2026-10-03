@@ -55,7 +55,7 @@ Useful tile attributes (verified in OFM planet tiles): `transportation.class`
   (`switch-to-layer`, bathymetry color-relief) that Maputnik's engine
   does not support ("sprite string expected, array found"). Use the
   preview harness instead (full fidelity, incl. live contours):
-  `http://localhost:8330/scripts/style/preview/index.html?style=/public/styles/outdoor-mtk/style.de.json&lon=9.1&lat=46.7&z=13`
+  `http://localhost:8330/scripts/style/preview/index.html?style=/public/styles/outdoor-mtk/style.json&lon=9.1&lat=46.7&z=13`
   and edit via `build-mtk-style.mjs`.
 - **`outdoor-osm` works in Maputnik v1.7 CLI** (single sprite, standard
   types). The CLI requires a style `id` to auto-load the file (both

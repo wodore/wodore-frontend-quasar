@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as allure from 'allure-js-commons';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { validateStyleMin } from '@maplibre/maplibre-gl-style-spec';
 import type { StyleSpecification } from 'maplibre-gl';
@@ -69,13 +69,18 @@ describe('outdoor-mtk basemap style', () => {
     );
   });
 
-  it('ships one style per app locale with localized name fields', () => {
+  it('ships a single style with local names only', () => {
+    // no per-locale variants — one style, mtk's local name fields
     for (const loc of ['de', 'en', 'fr', 'it']) {
-      const path = resolve(STYLE_DIR, `style.${loc}.json`);
-      const localized: StyleSpecification = JSON.parse(readFileSync(path, 'utf8'));
-      const tf = JSON.stringify(localized.layers.find(l => l.id === 'place_point_label_rank_1'));
-      expect(tf, `style.${loc}.json uses name_${loc}`).toContain(`"name_${loc}"`);
+      expect(existsSync(resolve(STYLE_DIR, `style.${loc}.json`)), `style.${loc}.json`).toBe(false);
     }
+    const tf = JSON.stringify(style.layers.find(l => l.id === 'place_point_label_rank_1'));
+    // primary name is the local one (mtk's own nonlatin latin-second-line
+    // ladder may still reference name_en/name_fr/… — that stays)
+    for (const loc of ['de', 'fr', 'it', 'en']) {
+      expect(tf).not.toContain(`["get","name_${loc}"],["get","name"]`);
+    }
+    expect(tf).toContain('["get","name"]');
   });
 
   it('renders no accommodation POIs (lodging + hut layers gone)', () => {
