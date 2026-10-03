@@ -9831,6 +9831,11 @@ mapbox-gl@*:
     supercluster "^8.0.1"
     tinyqueue "^3.0.0"
 
+maplibre-contour@^0.1.1:
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/maplibre-contour/-/maplibre-contour-0.1.1.tgz#d8aa3e3b62c8d097fc4eacb3d849635a0b662ede"
+  integrity sha512-0m267124bx+LJ5zM1mpB23uvO4sCrgOb4dWgwbUbGWGsDsWNA4g93XTXPoRQga6GAD6TDI7tzyowBzdADSPusg==
+
 maplibre-gl@^6:
   version "6.11.0"
   resolved "https://registry.yarnpkg.com/maplibre-gl/-/maplibre-gl-6.11.0.tgz#f16c9998c3a14d57d1b3b1421f5f18145c2bcecf"

@@ -368,23 +368,31 @@ watch(
 // ── Actions ───────────────────────────────────────────────────────────────
 
 function openConfig(overlayName: string, tab?: string): void {
-  const overlay = overlayStore.overlays.find(o => o.name === overlayName);
+  const overlay = (overlayStore.overlays as unknown as OverlaySwitchItem[]).find(
+    (o: OverlaySwitchItem) => o.name === overlayName
+  );
   menuStore.openOverlayConfig(overlayName, tab);
   menuStore.menuData.title = overlay?.label ?? overlayName;
 }
 
 function hasInfo(overlayName: string): boolean {
-  const overlay = overlayStore.overlays.find(o => o.name === overlayName);
+  const overlay = (overlayStore.overlays as unknown as OverlaySwitchItem[]).find(
+    (o: OverlaySwitchItem) => o.name === overlayName
+  );
   return !!(overlay?.config?.legend?.sections?.length);
 }
 
 function hasFilterConfig(overlayName: string): boolean {
-  const overlay = overlayStore.overlays.find(o => o.name === overlayName);
+  const overlay = (overlayStore.overlays as unknown as OverlaySwitchItem[]).find(
+    (o: OverlaySwitchItem) => o.name === overlayName
+  );
   return !!(overlay?.config?.filters?.length);
 }
 
 function hasActiveFilters(overlayName: string): boolean {
-  const overlay = overlayStore.overlays.find(o => o.name === overlayName);
+  const overlay = (overlayStore.overlays as unknown as OverlaySwitchItem[]).find(
+    (o: OverlaySwitchItem) => o.name === overlayName
+  );
   const config = overlay?.config;
   if (!config?.filters?.length) return false;
   return config.filters.some(f => {
