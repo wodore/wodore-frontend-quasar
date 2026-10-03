@@ -976,7 +976,10 @@ let lastFocusToggleAt = 0;
 let focusPairOrigin: boolean | null = null;
 
 function setMapFocus(on: boolean): void {
-  if (focusTapTimer) { clearTimeout(focusTapTimer); focusTapTimer = null; }
+  if (focusTapTimer) {
+    clearTimeout(focusTapTimer);
+    focusTapTimer = null;
+  }
   const now = Date.now();
   // Rapid pair (double-tap): the second toggle reverts to the ORIGINAL
   // state instead of flickering exit→enter (or enter→exit).
@@ -1007,7 +1010,10 @@ const tapDown = { x: 0, y: 0, t: 0, active: false };
 
 function cancelPendingTap(): void {
   tapDown.active = false;
-  if (focusTapTimer) { clearTimeout(focusTapTimer); focusTapTimer = null; }
+  if (focusTapTimer) {
+    clearTimeout(focusTapTimer);
+    focusTapTimer = null;
+  }
 }
 
 function onMapPointerDown(ev: MouseEvent): void {
@@ -1031,7 +1037,10 @@ function onMapPointerDown(ev: MouseEvent): void {
   if (canvas && canvas.style.cursor === 'pointer') return;
 
   // second finger = pinch, not a tap
-  if (tapDown.active) { cancelPendingTap(); return; }
+  if (tapDown.active) {
+    cancelPendingTap();
+    return;
+  }
   tapDown.x = ev.clientX;
   tapDown.y = ev.clientY;
   tapDown.t = Date.now();
@@ -1071,7 +1080,10 @@ function onMapPointerUp(): void {
     return;
   }
   // too slow = long-press, not a tap
-  if (now - tapDown.t > 400) { cancelPendingTap(); return; }
+  if (now - tapDown.t > 400) {
+    cancelPendingTap();
+    return;
+  }
 
   if (now - lastMapTapAt < 350) {
     // Second tap of a double-tap (zoom intent):
@@ -1083,7 +1095,10 @@ function onMapPointerUp(): void {
     return;
   }
   lastMapTapAt = now;
-  if (focusTapTimer) { clearTimeout(focusTapTimer); focusTapTimer = null; }
+  if (focusTapTimer) {
+    clearTimeout(focusTapTimer);
+    focusTapTimer = null;
+  }
   focusTapTimer = setTimeout(() => {
     focusTapTimer = null;
     setMapFocus(!mapFocus.value);
@@ -1115,7 +1130,11 @@ onMounted(() => {
 function collapseAutoExpandedAttribution(): void {
   window.setTimeout(() => {
     document.querySelectorAll('.maplibregl-ctrl-attrib').forEach(el => {
-      const details = el as unknown as { open: boolean; removeAttribute: (n: string) => void; dataset: Record<string, string> };
+      const details = el as unknown as {
+        open: boolean;
+        removeAttribute: (n: string) => void;
+        dataset: Record<string, string>;
+      };
       // collapsed start — clear BOTH signals
       details.open = false;
       details.removeAttribute('open');
@@ -1128,7 +1147,10 @@ function collapseAutoExpandedAttribution(): void {
       // Mobile: MapLibre's attribution markup is unreachable — the
       // PE-none control container skips fixed children in hit-testing and
       // its own CSS fights ours. Replace it with a fully owned chip.
-      if (window.matchMedia('(max-width: 899px)').matches && !document.querySelector('.wd-attrib')) {
+      if (
+        window.matchMedia('(max-width: 899px)').matches &&
+        !document.querySelector('.wd-attrib')
+      ) {
         (el as HTMLElement).style.display = 'none';
         const chip = document.createElement('button');
         chip.type = 'button';
@@ -1224,28 +1246,45 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
           :aria-label="mapFocus ? 'Exit focus mode' : 'Focus mode'"
           @click.stop="setMapFocus(!mapFocus)"
         >
-          <svg v-if="!mapFocus" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <svg
+            v-if="!mapFocus"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          >
             <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
           </svg>
-          <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+          <svg
+            v-else
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.4"
+            stroke-linecap="round"
+          >
             <path d="M6 6l12 12M18 6L6 18" />
           </svg>
         </button>
 
         <!-- Top-right: GPS + compass (desktop zoom too) -->
         <MglGeolocateControl :position="isMobileView() ? 'bottom-left' : 'top-right'" />
-        <MglNavigationControl :show-zoom="!isMobileView()" :position="isMobileView() ? 'bottom-left' : 'top-right'" />
+        <MglNavigationControl
+          :show-zoom="!isMobileView()"
+          :position="isMobileView() ? 'bottom-left' : 'top-right'"
+        />
 
         <!-- Scale: mobile top-center, desktop bottom-left -->
         <MglScaleControl :position="isMobileView() ? 'top-left' : 'bottom-left'" />
 
         <!-- Attribution: mobile compact ⓘ bottom-left above the GPS cluster;
              desktop full text bottom-left above the scale -->
-        <MglAttributionControl
-          v-if="isMobileView()"
-          position="bottom-left"
-          :compact="true"
-        />
+        <MglAttributionControl v-if="isMobileView()" position="bottom-left" :compact="true" />
         <MglAttributionControl v-else position="bottom-left" :compact="false" />
         <!-- <MglGeoJsonSource
       source-id="wd-bookings"
