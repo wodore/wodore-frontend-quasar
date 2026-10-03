@@ -407,7 +407,8 @@
     "icon_search_error": "Recherche d'icônes indisponible pour le moment.",
     "icon_more": "Afficher plus",
     "group_prev": "Groupe précédent ({name})",
-    "group_next": "Groupe suivant ({name})"
+    "group_next": "Groupe suivant ({name})",
+    "edit_keep_editing": "Continuer la modification"
   },
   "basemap": "Fond de carte",
   "basemaps": {

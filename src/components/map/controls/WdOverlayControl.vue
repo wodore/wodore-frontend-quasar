@@ -280,21 +280,48 @@ function ensureVisibleActiveGroup(): void {
   }
 }
 
-/** Footer: revert to the snapshot and exit edit mode */
+/** Footer: revert to the snapshot and exit edit mode — behind a
+ *  confirm (discarding is destructive on a mobile footer tap) */
 function cancelEdit(): void {
-  if (hasEdits.value && snapshotGroups.value) {
-    overlayStore.groupSettings.groups = JSON.parse(snapshotGroups.value);
-    overlayStore.syncGroupSettings();
+  if (!hasEdits.value) {
+    editMode.value = false;
+    return;
   }
-  editMode.value = false;
-  hasEdits.value = false;
-  ensureVisibleActiveGroup();
+  $q
+    .dialog({
+      title: t('overlays.edit_unsaved_title'),
+      message: t('overlays.edit_unsaved_message'),
+      ok: { label: t('overlays.edit_discard'), unelevated: true, color: 'negative' },
+      cancel: { label: t('overlays.edit_keep_editing'), flat: true },
+    })
+    .onOk(() => {
+      if (snapshotGroups.value) {
+        overlayStore.groupSettings.groups = JSON.parse(snapshotGroups.value);
+        overlayStore.syncGroupSettings();
+      }
+      editMode.value = false;
+      hasEdits.value = false;
+      ensureVisibleActiveGroup();
+    });
 }
 
-/** Footer: keep the changes and exit edit mode */
+/** Footer: keep the changes and exit edit mode — behind a confirm */
 function confirmEdit(): void {
-  editMode.value = false;
-  hasEdits.value = false;
+  if (!hasEdits.value) {
+    editMode.value = false;
+    return;
+  }
+  $q
+    .dialog({
+      title: t('overlays.edit_unsaved_title'),
+      message: t('overlays.edit_unsaved_message'),
+      ok: { label: t('overlays.edit_save'), unelevated: true, color: 'positive' },
+      cancel: { label: t('overlays.edit_keep_editing'), flat: true },
+    })
+    .onOk(() => {
+      editMode.value = false;
+      hasEdits.value = false;
+    });
 }
 
 function toggleEditMode(): void {
@@ -2419,7 +2446,7 @@ body.body--dark .wd-ovl__row-name {
 // Toggle feedback: a quick pulse acknowledges the flip (impeccable:
 // 100–150 ms acknowledge; this is the row's authored moment)
 .wd-ovl__icon--pulse {
-  animation: wd-ovl-chip-pulse 0.26s $ease;
+  animation: wd-ovl-chip-pulse 0.32s $ease;
 }
 
 @keyframes wd-ovl-chip-pulse {
@@ -2427,8 +2454,11 @@ body.body--dark .wd-ovl__row-name {
     transform: scale(1);
   }
 
-  45% {
-    transform: scale(0.88);
+  40% {
+    transform: scale(0.78);
+    // Gold flash — background-color survives the dark-mode shadow kill,
+    // unlike a box-shadow halo
+    background-color: rgba(191, 171, 37, 0.35);
   }
 
   100% {

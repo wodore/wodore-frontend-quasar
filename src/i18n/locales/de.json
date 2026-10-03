@@ -407,7 +407,8 @@
     "icon_search_error": "Symbolsuche derzeit nicht verfügbar.",
     "icon_more": "Mehr anzeigen",
     "group_prev": "Vorherige Gruppe ({name})",
-    "group_next": "Nächste Gruppe ({name})"
+    "group_next": "Nächste Gruppe ({name})",
+    "edit_keep_editing": "Weiter bearbeiten"
   },
   "basemap": "Basiskarte",
   "basemaps": {
