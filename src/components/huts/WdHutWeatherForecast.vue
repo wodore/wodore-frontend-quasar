@@ -26,8 +26,8 @@ interface WeatherDay {
 }
 
 interface LocalWeatherCodeEntry {
-  symbol_day?: string;
-  symbol_night?: string;
+  symbol_day?: { slug: string; url: string | null } | null;
+  symbol_night?: { slug: string; url: string | null } | null;
   description_day?: string;
   description_night?: string;
   description?: string;
@@ -183,7 +183,8 @@ const getIconUrl = (day: WeatherDay) => {
     return null;
   }
   const isDay = day.is_day_majority ?? true;
-  return (isDay ? entry.symbol_day : entry.symbol_night) ?? null;
+  const symbol = isDay ? entry.symbol_day : entry.symbol_night;
+  return symbol?.url ?? symbol?.slug ?? null;
 };
 
 const getIconLabel = (day: WeatherDay) => {

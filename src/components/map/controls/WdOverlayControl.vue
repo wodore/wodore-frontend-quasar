@@ -97,7 +97,11 @@ onMounted(() => {
 function rowsResizeObserve(): void {
   const rows = document.querySelector('.wd-ovl__rows') as HTMLElement | null;
   if (!rows) return;
-  const RO = (window as unknown as { ResizeObserver?: new (cb: () => void) => { observe: (el: HTMLElement) => void } }).ResizeObserver;
+  const RO = (
+    window as unknown as {
+      ResizeObserver?: new (cb: () => void) => { observe: (el: HTMLElement) => void };
+    }
+  ).ResizeObserver;
   if (!RO) return;
   new RO(() => measureThumb()).observe(rows);
 }
@@ -144,11 +148,14 @@ function onRowClick(item: OverlaySwitchItem): void {
 /** Swipe left = expand, swipe right = collapse (on rows and toggle) */
 let swipeStartX: number | null = null;
 function onSwipeStart(e: Event): void {
-  swipeStartX = (e as unknown as { touches: Array<{ clientX: number }> }).touches[0]?.clientX ?? null;
+  swipeStartX =
+    (e as unknown as { touches: Array<{ clientX: number }> }).touches[0]?.clientX ?? null;
 }
 function onSwipeEnd(e: Event): void {
   if (swipeStartX === null) return;
-  const endX = (e as unknown as { changedTouches: Array<{ clientX: number }> }).changedTouches[0]?.clientX ?? swipeStartX;
+  const endX =
+    (e as unknown as { changedTouches: Array<{ clientX: number }> }).changedTouches[0]?.clientX ??
+    swipeStartX;
   const delta = endX - swipeStartX;
   swipeStartX = null;
   if (Math.abs(delta) < 30) return;
@@ -375,12 +382,12 @@ function openConfig(overlayName: string, tab?: string): void {
 
 function hasInfo(overlayName: string): boolean {
   const overlay = overlayStore.overlays.find(o => o.name === overlayName);
-  return !!(overlay?.config?.legend?.sections?.length);
+  return !!overlay?.config?.legend?.sections?.length;
 }
 
 function hasFilterConfig(overlayName: string): boolean {
   const overlay = overlayStore.overlays.find(o => o.name === overlayName);
-  return !!(overlay?.config?.filters?.length);
+  return !!overlay?.config?.filters?.length;
 }
 
 function hasActiveFilters(overlayName: string): boolean {
@@ -421,7 +428,14 @@ onBeforeUnmount(() => {
           <div class="wd-ovl__toolbar-actions">
             <!-- Future: group edit and other layer actions -->
             <button class="wd-ovl__toolbar-btn" disabled aria-label="Reserved">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+              >
                 <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />
               </svg>
             </button>
@@ -429,10 +443,16 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- Scroll fade: top -->
-        <div class="wd-ovl__fade wd-ovl__fade--top" :class="{ 'wd-ovl__fade--hidden': scrollAtTop }" />
+        <div
+          class="wd-ovl__fade wd-ovl__fade--top"
+          :class="{ 'wd-ovl__fade--hidden': scrollAtTop }"
+        />
 
         <!-- Scroll fade: bottom (subtle hint directly above the more button) -->
-        <div class="wd-ovl__fade wd-ovl__fade--bottom" :class="{ 'wd-ovl__fade--hidden': scrollAtBottom }" />
+        <div
+          class="wd-ovl__fade wd-ovl__fade--bottom"
+          :class="{ 'wd-ovl__fade--hidden': scrollAtBottom }"
+        />
 
         <!-- Rows: icon always at the right, label+actions appear when expanded -->
         <div
@@ -445,35 +465,69 @@ onBeforeUnmount(() => {
           @pointerup="onRowsPointerUp"
           @pointerleave="onRowsPointerUp"
         >
-          <div v-for="item in overlayStore.overlays" :key="item.name" v-show="item.show" class="wd-ovl__row" :class="{
-            'wd-ovl__row--active': item.active,
-            'wd-ovl__row--passive': !item.active,
-          }" @click="onRowClick(<OverlaySwitchItem>(item as unknown))">
+          <div
+            v-for="item in overlayStore.overlays"
+            :key="item.name"
+            v-show="item.show"
+            class="wd-ovl__row"
+            :class="{
+              'wd-ovl__row--active': item.active,
+              'wd-ovl__row--passive': !item.active,
+            }"
+            @click="onRowClick(<OverlaySwitchItem>(item as unknown))"
+          >
             <!-- Label + actions (LEFT of icon, only when expanded) -->
             <div v-if="expanded" class="wd-ovl__row-info">
-              <button v-if="hasInfo(item.name)" class="wd-ovl__row-action wd-ovl__row-action--info"
-                :aria-label="`${item.label} info`" title="Info" @click.stop="openConfig(item.name, 'legend')">
+              <button
+                v-if="hasInfo(item.name)"
+                class="wd-ovl__row-action wd-ovl__row-action--info"
+                :aria-label="`${item.label} info`"
+                title="Info"
+                @click.stop="openConfig(item.name, 'legend')"
+              >
                 <q-icon name="wd-info" size="xs" />
               </button>
               <span class="wd-ovl__row-name">{{ item.label }}</span>
-              <button v-if="hasFilterConfig(item.name)" class="wd-ovl__row-action"
+              <button
+                v-if="hasFilterConfig(item.name)"
+                class="wd-ovl__row-action"
                 :class="{ 'wd-ovl__row-action--filtered': hasActiveFilters(item.name) }"
-                :aria-label="`${item.label} filter`" title="Filter" @click.stop="openConfig(item.name, 'filter')">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                :aria-label="`${item.label} filter`"
+                title="Filter"
+                @click.stop="openConfig(item.name, 'filter')"
+              >
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                >
                   <path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z" />
                 </svg>
               </button>
             </div>
 
             <!-- Icon button (ALWAYS at the right edge of the box) -->
-            <span class="wd-ovl__icon" :class="{
-              'wd-ovl__icon--active': item.active,
-              'wd-ovl__icon--inactive': !item.active,
-            }" :aria-label="item.label" role="button" :aria-pressed="item.active" @touchstart.passive="onSwipeStart"
-              @touchend.passive="onSwipeEnd">
+            <span
+              class="wd-ovl__icon"
+              :class="{
+                'wd-ovl__icon--active': item.active,
+                'wd-ovl__icon--inactive': !item.active,
+              }"
+              :aria-label="item.label"
+              role="button"
+              :aria-pressed="item.active"
+              @touchstart.passive="onSwipeStart"
+              @touchend.passive="onSwipeEnd"
+            >
               <q-icon :name="layerIcon(item.icon)" size="20px" />
-              <span v-if="hasActiveFilters(item.name)" class="wd-ovl__chip-filter"
-                :aria-label="`${item.label}: filter active`">
+              <span
+                v-if="hasActiveFilters(item.name)"
+                class="wd-ovl__chip-filter"
+                :aria-label="`${item.label}: filter active`"
+              >
                 <svg width="7" height="7" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z" />
                 </svg>
@@ -493,14 +547,34 @@ onBeforeUnmount(() => {
         />
 
         <!-- More button: toggles the box between mini and expanded -->
-        <button class="wd-ovl__more" :aria-label="expanded ? t('close') : t('overlay_style')" :aria-expanded="expanded"
-          @click.stop="expanded = !expanded">
-          <svg v-if="!expanded" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="2.2" stroke-linecap="round">
+        <button
+          class="wd-ovl__more"
+          :aria-label="expanded ? t('close') : t('overlay_style')"
+          :aria-expanded="expanded"
+          @click.stop="expanded = !expanded"
+        >
+          <svg
+            v-if="!expanded"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+          >
             <path d="M14 6l-6 6 6 6" />
           </svg>
-          <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-            stroke-linecap="round">
+          <svg
+            v-else
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+          >
             <path d="M10 6l6 6-6 6" />
           </svg>
         </button>
@@ -508,12 +582,26 @@ onBeforeUnmount(() => {
     </Transition>
 
     <!-- ── Main toggle (48px, colored SVG icon, 360° rotation) ───────── -->
-    <button class="wd-ovl__toggle" :aria-label="t('overlay_style')" :aria-expanded="stripOpen"
-      @click="stripOpen = !stripOpen">
-      <img v-show="!stripOpen" :src="iconOpen" alt="" class="wd-ovl__toggle-icon wd-ovl__toggle-icon--closed-icon"
-        :class="{ 'wd-ovl__toggle-icon--hidden': stripOpen }" />
-      <img v-show="stripOpen" :src="iconClose" alt="" class="wd-ovl__toggle-icon"
-        :class="{ 'wd-ovl__toggle-icon--open': stripOpen }" />
+    <button
+      class="wd-ovl__toggle"
+      :aria-label="t('overlay_style')"
+      :aria-expanded="stripOpen"
+      @click="stripOpen = !stripOpen"
+    >
+      <img
+        v-show="!stripOpen"
+        :src="iconOpen"
+        alt=""
+        class="wd-ovl__toggle-icon wd-ovl__toggle-icon--closed-icon"
+        :class="{ 'wd-ovl__toggle-icon--hidden': stripOpen }"
+      />
+      <img
+        v-show="stripOpen"
+        :src="iconClose"
+        alt=""
+        class="wd-ovl__toggle-icon"
+        :class="{ 'wd-ovl__toggle-icon--open': stripOpen }"
+      />
     </button>
   </div>
 </template>
@@ -811,13 +899,14 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   opacity: 0.82;
   line-height: 1.2;
   pointer-events: none;
-  transition: color 0.15s $ease, font-weight 0.15s $ease;
+  transition:
+    color 0.15s $ease,
+    font-weight 0.15s $ease;
 }
 
 body.body--dark .wd-ovl__row-name {
   color: #cfe8dc; // brighter than ink-soft — passive but readable on pine
 }
-
 
 .wd-ovl__row--active .wd-ovl__row-name {
   font-weight: 600;
@@ -836,7 +925,9 @@ body.body--dark .wd-ovl__row-name {
   color: var(--wd-ctl-ink-soft);
   cursor: pointer;
   pointer-events: auto;
-  transition: background-color 0.12s $ease, color 0.12s $ease;
+  transition:
+    background-color 0.12s $ease,
+    color 0.12s $ease;
 
   &:hover {
     background: var(--wd-ctl-hover);
@@ -846,7 +937,6 @@ body.body--dark .wd-ovl__row-name {
   &--info {
     color: #1f7a63; // turquoise touch (info = "learn more")
   }
-
 
   body.body--dark &--info {
     color: #7fe3c8;
@@ -938,7 +1028,9 @@ body.body--dark .wd-ovl__row-name {
   flex: none;
   width: 100%;
   border-radius: 0 0 8px 8px;
-  transition: background-color 0.12s $ease, color 0.12s $ease;
+  transition:
+    background-color 0.12s $ease,
+    color 0.12s $ease;
   pointer-events: auto;
 
   &:hover {
