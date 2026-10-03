@@ -764,6 +764,8 @@ const showIconPicker = ref(false);
  *  search (same set). Older saved icons (wd-*, layer, other prefixes)
  *  keep rendering. */
 const FLUENT_FLAT = 'fluent-emoji-flat';
+/** Secondary set: Noto Emoji (Google, Apache-2.0) — same emoji slugs. */
+const NOTO = 'noto';
 const COMMON_FLUENT_ICONS = [
   'hiking-boot',
   'tent',
@@ -795,7 +797,7 @@ function isIconifyIcon(name: string): boolean {
 
 /** Multi-color sets keep their own palette — the dark-mode invert would
  *  wreck them, so they render untinted. */
-const COLOR_PREFIXES = [FLUENT_FLAT, 'fluent-emoji', 'fluent-color', 'icon-park'];
+const COLOR_PREFIXES = [FLUENT_FLAT, NOTO, 'fluent-emoji', 'fluent-color', 'icon-park'];
 function isColoredIcon(name: string): boolean {
   return COLOR_PREFIXES.some(p => name.startsWith(`${p}:`));
 }
@@ -834,9 +836,10 @@ async function runIconSearch(query: string): Promise<void> {
     // License policy (see .claude/agents/iconify.md): permissive sets only —
     // no attribution-required collections in the results. Includes COLOR
     // sets (fluent-emoji / fluent-color: MIT, icon-park: Apache 2.0).
-    // One coherent set: Fluent Emoji (Flat). Older prefixes keep
-    // rendering, but search offers flat only.
-    const SAFE_PREFIXES = FLUENT_FLAT;
+    // Primary: Fluent Emoji (Flat, MIT). Secondary: Noto Emoji
+    // (Apache-2.0) — same slugs, more choice. Older prefixes keep
+    // rendering, but search offers these only.
+    const SAFE_PREFIXES = `${FLUENT_FLAT},${NOTO}`;
     const search = async (term: string): Promise<string[]> => {
       const res = await window.fetch(
         `https://api.iconify.design/search?query=${encodeURIComponent(term)}&limit=120&prefixes=${SAFE_PREFIXES}`
@@ -1333,7 +1336,7 @@ onBeforeUnmount(() => {
       <div
         v-if="stripOpen"
         class="wd-ovl__box"
-        :class="{ 'wd-ovl__box--expanded': expanded, 'wd-ovl__box--edit': editMode }"
+        :class="{ 'wd-ovl__box--expanded': expanded, 'wd-ovl__box--edit': editMode, 'wd-ovl__box--btnless': !groupCycleable }"
         :style="{
           '--mini-rows': miniLayers.length,
           '--prom-count': cappedPromotedCount,
@@ -2446,7 +2449,10 @@ body.body--dark .wd-ovl__row-name {
   padding: 0 6px;
   border: none;
   border-top: 1px solid var(--wd-ctl-border);
-  border-radius: 0 0 8px 8px;
+  // NO bottom radius here — the expand bar follows below in mini/expanded;
+  // rounding mid-box shows tonal corners. The button rounds only when it
+  // is the box's last element (edit mode has no footer).
+  border-radius: 0;
   background: var(--wd-ctl-date-bg);
   color: var(--wd-ctl-ink);
   cursor: pointer;
@@ -2478,6 +2484,18 @@ body.body--dark .wd-ovl__row-name {
     color: var(--wd-ctl-ink-soft);
     transition: transform 0.15s $ease, opacity 0.15s $ease;
   }
+}
+
+// Edit mode has no footer — the group button carries the box's bottom
+// rounding (the scrollthumb is absolutely positioned, it doesn't count)
+.wd-ovl__box--edit .wd-ovl__group-btn {
+  border-radius: 0 0 8px 8px;
+}
+
+// Edit + single group (button hidden via --btnless): the rows area is the
+// bottom element and rounds with the box
+.wd-ovl__box--edit.wd-ovl__box--btnless .wd-ovl__rows-wrap {
+  border-radius: 8px;
 }
 
 // Group icon swap on cycle: quiet vertical slide
@@ -2825,12 +2843,6 @@ body.body--dark .wd-ovl__toolbar-btn--add {
 
 body.body--dark .wd-ovl__empty-hint {
   color: #9fc3b2;
-}
-
-// When the rows area is the LAST element (no group button, no footer)
-// its bottom corners round with the box
-.wd-ovl__rows-wrap:last-child {
-  border-radius: 8px;
 }
 
 
