@@ -9832,9 +9832,9 @@ mapbox-gl@*:
     tinyqueue "^3.0.0"
 
 maplibre-gl@^6:
-  version "6.11.0"
-  resolved "https://registry.yarnpkg.com/maplibre-gl/-/maplibre-gl-6.11.0.tgz#f16c9998c3a14d57d1b3b1421f5f18145c2bcecf"
-  integrity sha512-BWf1V0eKEK7NpIyjVSFrTWjF2CE9zhVvS0JLvyAS19lR0HnHtvPFRS5M9QVJeLcoMT1WyCU0Sm9vj53BBxtWYg==
+  version "6.11.2"
+  resolved "https://registry.yarnpkg.com/maplibre-gl/-/maplibre-gl-6.11.2.tgz#25f1266666c16f6b935cabccba554c238a3cf394"
+  integrity sha512-Xh06pxoipjX/Ad1sUPGhiNh9go9naCNGZZ1IJm3sIeqK1kYGuMaMDSTIGDQ2igOLfVyukJU7kvEOA089VO7Z7g==
   dependencies:
     "@mapbox/point-geometry" "^1.1.0"
     "@mapbox/tiny-sdf" "^2.2.0"
