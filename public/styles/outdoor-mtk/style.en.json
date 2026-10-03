@@ -6774,9 +6774,9 @@
             "zoom"
           ],
           13,
-          "hsla(40, 8%, 72%, 0)",
+          "hsla(40, 8%, 32%, 0)",
           15,
-          "#B8B2A4"
+          "#5A5A5A"
         ],
         "line-gap-width": [
           "interpolate",
@@ -6814,17 +6814,17 @@
           "interpolate",
           [
             "exponential",
-            1.6
+            2
           ],
           [
             "zoom"
           ],
           13,
-          1.4,
-          15,
           2,
+          15,
+          3.2,
           19,
-          6
+          7
         ]
       },
       "metadata": {
@@ -6887,9 +6887,75 @@
             "zoom"
           ],
           5,
-          "hsla(40, 8%, 72%, 0)",
+          "hsla(40, 8%, 32%, 0)",
           9,
-          "#B8B2A4"
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            "#AA881E",
+            [
+              "trunk"
+            ],
+            "#AA881E",
+            [
+              "primary"
+            ],
+            "#505050",
+            [
+              "secondary"
+            ],
+            "#505050",
+            [
+              "tertiary"
+            ],
+            "#505050",
+            [
+              "minor",
+              "service"
+            ],
+            "#505050",
+            "#505050"
+          ],
+          15,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            "#8B6B3F",
+            [
+              "trunk"
+            ],
+            "#8B6B3F",
+            [
+              "primary"
+            ],
+            "#5A5A5A",
+            [
+              "secondary"
+            ],
+            "#5A5A5A",
+            [
+              "tertiary"
+            ],
+            "#5A5A5A",
+            [
+              "minor",
+              "service"
+            ],
+            "#5A5A5A",
+            "#5A5A5A"
+          ]
         ],
         "line-gap-width": [
           "interpolate",
@@ -6963,21 +7029,231 @@
           "interpolate",
           [
             "exponential",
-            1.6
+            2
           ],
           [
             "zoom"
           ],
           6,
-          0.9,
+          0,
+          8,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            3,
+            [
+              "trunk"
+            ],
+            3,
+            [
+              "primary"
+            ],
+            0,
+            [
+              "secondary"
+            ],
+            0,
+            [
+              "tertiary"
+            ],
+            0,
+            [
+              "minor",
+              "service"
+            ],
+            0,
+            0
+          ],
           9,
-          1.8,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            3.5,
+            [
+              "trunk"
+            ],
+            3.5,
+            [
+              "primary"
+            ],
+            0,
+            [
+              "secondary"
+            ],
+            0,
+            [
+              "tertiary"
+            ],
+            0,
+            [
+              "minor",
+              "service"
+            ],
+            0,
+            0
+          ],
+          10,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            4,
+            [
+              "trunk"
+            ],
+            4,
+            [
+              "primary"
+            ],
+            3.5,
+            [
+              "secondary"
+            ],
+            3.5,
+            [
+              "tertiary"
+            ],
+            3,
+            [
+              "minor",
+              "service"
+            ],
+            2.5,
+            0
+          ],
           12,
-          2.8,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            6.5,
+            [
+              "trunk"
+            ],
+            6.5,
+            [
+              "primary"
+            ],
+            6,
+            [
+              "secondary"
+            ],
+            5,
+            [
+              "tertiary"
+            ],
+            4,
+            [
+              "minor",
+              "service"
+            ],
+            3,
+            2.5
+          ],
           15,
-          4,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            10,
+            [
+              "trunk"
+            ],
+            10,
+            [
+              "primary"
+            ],
+            8,
+            [
+              "secondary"
+            ],
+            6.5,
+            [
+              "tertiary"
+            ],
+            5.5,
+            [
+              "minor",
+              "service"
+            ],
+            4,
+            3
+          ],
           19,
-          8
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            13,
+            [
+              "trunk"
+            ],
+            13,
+            [
+              "primary"
+            ],
+            10.5,
+            [
+              "secondary"
+            ],
+            8.5,
+            [
+              "tertiary"
+            ],
+            7,
+            [
+              "minor",
+              "service"
+            ],
+            5.5,
+            4
+          ]
+        ],
+        "line-opacity": 1,
+        "line-blur": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          7,
+          3,
+          8,
+          0.4
         ]
       },
       "metadata": {
@@ -7926,21 +8202,10 @@
           [
             "zoom"
           ],
-          16,
-          0,
-          19,
-          [
-            "match",
-            [
-              "get",
-              "type"
-            ],
-            "primary",
-            0,
-            "trunk",
-            0,
-            0
-          ]
+          8,
+          0.4,
+          14,
+          0.1
         ],
         "line-color": [
           "interpolate",
@@ -7960,13 +8225,33 @@
               "type"
             ],
             [
-              "motorway",
+              "motorway"
+            ],
+            "#FFE6A0",
+            [
               "trunk"
             ],
-            "#FFDD8A",
+            "#FFE6A0",
+            [
+              "primary"
+            ],
+            "#FFFFFF",
+            [
+              "secondary"
+            ],
+            "#FFFFFF",
+            [
+              "tertiary"
+            ],
+            "#FFFFFF",
+            [
+              "minor",
+              "service"
+            ],
+            "#FFFFFF",
             "#FFFFFF"
           ],
-          7.5,
+          15,
           [
             "match",
             [
@@ -7974,10 +8259,30 @@
               "type"
             ],
             [
-              "motorway",
+              "motorway"
+            ],
+            "#FFE08A",
+            [
               "trunk"
             ],
-            "#FFDD8A",
+            "#FFE08A",
+            [
+              "primary"
+            ],
+            "#FFFFFF",
+            [
+              "secondary"
+            ],
+            "#FFFFFF",
+            [
+              "tertiary"
+            ],
+            "#FFFFFF",
+            [
+              "minor",
+              "service"
+            ],
+            "#FFFFFF",
             "#FFFFFF"
           ]
         ],
@@ -7985,23 +8290,182 @@
           "interpolate",
           [
             "exponential",
-            1.6
+            2
           ],
           [
             "zoom"
           ],
           6,
+          0,
+          8,
           [
             "match",
             [
               "get",
               "type"
             ],
-            "primary",
-            0.57,
-            "trunk",
-            0.64,
-            0.72
+            [
+              "motorway"
+            ],
+            2,
+            [
+              "trunk"
+            ],
+            2,
+            [
+              "primary"
+            ],
+            0,
+            [
+              "secondary"
+            ],
+            0,
+            [
+              "tertiary"
+            ],
+            0,
+            [
+              "minor",
+              "service"
+            ],
+            0,
+            0
+          ],
+          9,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            2.25,
+            [
+              "trunk"
+            ],
+            2.25,
+            [
+              "primary"
+            ],
+            0,
+            [
+              "secondary"
+            ],
+            0,
+            [
+              "tertiary"
+            ],
+            0,
+            [
+              "minor",
+              "service"
+            ],
+            0,
+            0
+          ],
+          10,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            2.75,
+            [
+              "trunk"
+            ],
+            2.75,
+            [
+              "primary"
+            ],
+            2.5,
+            [
+              "secondary"
+            ],
+            2.5,
+            [
+              "tertiary"
+            ],
+            2,
+            [
+              "minor",
+              "service"
+            ],
+            1.5,
+            0
+          ],
+          12,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            3.75,
+            [
+              "trunk"
+            ],
+            3.75,
+            [
+              "primary"
+            ],
+            4,
+            [
+              "secondary"
+            ],
+            3.5,
+            [
+              "tertiary"
+            ],
+            3,
+            [
+              "minor",
+              "service"
+            ],
+            2,
+            2
+          ],
+          15,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            5.5,
+            [
+              "trunk"
+            ],
+            5.5,
+            [
+              "primary"
+            ],
+            5.5,
+            [
+              "secondary"
+            ],
+            5,
+            [
+              "tertiary"
+            ],
+            4,
+            [
+              "minor",
+              "service"
+            ],
+            3,
+            2.5
           ],
           19,
           [
@@ -8010,11 +8474,32 @@
               "get",
               "type"
             ],
-            "primary",
-            36.86,
-            "trunk",
-            41.52,
-            46.66
+            [
+              "motorway"
+            ],
+            8,
+            [
+              "trunk"
+            ],
+            8,
+            [
+              "primary"
+            ],
+            8,
+            [
+              "secondary"
+            ],
+            7,
+            [
+              "tertiary"
+            ],
+            5.5,
+            [
+              "minor",
+              "service"
+            ],
+            4,
+            3
           ]
         ]
       },
@@ -12645,29 +13130,1067 @@
       }
     },
     {
-      "id": "wd-place-dot-big",
+      "id": "wd-place-dot-5",
       "type": "circle",
       "source": "mtk",
       "source-layer": "place_label",
-      "minzoom": 7.5,
+      "minzoom": 13,
+      "maxzoom": 22,
       "filter": [
-        "match",
+        "all",
         [
-          "get",
-          "category"
+          "all",
+          [
+            "==",
+            [
+              "geometry-type"
+            ],
+            "Point"
+          ],
+          [
+            ">",
+            [
+              "get",
+              "rank"
+            ],
+            21
+          ],
+          [
+            "!",
+            [
+              "in",
+              [
+                "get",
+                "category"
+              ],
+              [
+                "literal",
+                [
+                  "winter_sports",
+                  "national_park",
+                  "protected_area"
+                ]
+              ]
+            ]
+          ]
         ],
         [
-          "capital",
-          "big_place"
-        ],
-        true,
-        false
+          "match",
+          [
+            "get",
+            "category"
+          ],
+          [
+            "capital",
+            "big_place",
+            "small_place"
+          ],
+          true,
+          false
+        ]
       ],
       "paint": {
-        "circle-color": "#FFFFFF",
-        "circle-stroke-color": "#6B665A",
-        "circle-stroke-width": 1.2,
-        "circle-pitch-alignment": "map"
+        "circle-color": "#4B4B4B",
+        "circle-opacity": [
+          "step",
+          [
+            "zoom"
+          ],
+          1,
+          8,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            0,
+            [
+              "big_place"
+            ],
+            1,
+            1
+          ]
+        ],
+        "circle-stroke-color": "#4B4B4B",
+        "circle-stroke-width": [
+          "step",
+          [
+            "zoom"
+          ],
+          0,
+          8,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            1.3,
+            [
+              "big_place"
+            ],
+            0,
+            0
+          ]
+        ],
+        "circle-pitch-alignment": "map",
+        "circle-radius": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          1,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            2.2,
+            [
+              "big_place"
+            ],
+            2.2,
+            1.8
+          ],
+          6,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            3,
+            [
+              "big_place"
+            ],
+            3,
+            2
+          ],
+          8,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            4,
+            [
+              "big_place"
+            ],
+            4,
+            3
+          ],
+          10,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            5,
+            [
+              "big_place"
+            ],
+            5,
+            4
+          ],
+          12,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            6,
+            [
+              "big_place"
+            ],
+            6,
+            5
+          ]
+        ]
+      }
+    },
+    {
+      "id": "wd-place-dot-4",
+      "type": "circle",
+      "source": "mtk",
+      "source-layer": "place_label",
+      "minzoom": 10,
+      "maxzoom": 22,
+      "filter": [
+        "all",
+        [
+          "all",
+          [
+            "==",
+            [
+              "geometry-type"
+            ],
+            "Point"
+          ],
+          [
+            ">",
+            [
+              "get",
+              "rank"
+            ],
+            17
+          ],
+          [
+            "<=",
+            [
+              "get",
+              "rank"
+            ],
+            21
+          ],
+          [
+            "!",
+            [
+              "in",
+              [
+                "get",
+                "category"
+              ],
+              [
+                "literal",
+                [
+                  "winter_sports",
+                  "national_park",
+                  "protected_area"
+                ]
+              ]
+            ]
+          ]
+        ],
+        [
+          "match",
+          [
+            "get",
+            "category"
+          ],
+          [
+            "capital",
+            "big_place",
+            "small_place"
+          ],
+          true,
+          false
+        ]
+      ],
+      "paint": {
+        "circle-color": "#4B4B4B",
+        "circle-opacity": [
+          "step",
+          [
+            "zoom"
+          ],
+          1,
+          8,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            0,
+            [
+              "big_place"
+            ],
+            1,
+            1
+          ]
+        ],
+        "circle-stroke-color": "#4B4B4B",
+        "circle-stroke-width": [
+          "step",
+          [
+            "zoom"
+          ],
+          0,
+          8,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            1.3,
+            [
+              "big_place"
+            ],
+            0,
+            0
+          ]
+        ],
+        "circle-pitch-alignment": "map",
+        "circle-radius": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          1,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            2.2,
+            [
+              "big_place"
+            ],
+            2.2,
+            1.8
+          ],
+          6,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            3,
+            [
+              "big_place"
+            ],
+            3,
+            2
+          ],
+          8,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            4,
+            [
+              "big_place"
+            ],
+            4,
+            3
+          ],
+          10,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            5,
+            [
+              "big_place"
+            ],
+            5,
+            4
+          ],
+          12,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            6,
+            [
+              "big_place"
+            ],
+            6,
+            5
+          ]
+        ]
+      }
+    },
+    {
+      "id": "wd-place-dot-3",
+      "type": "circle",
+      "source": "mtk",
+      "source-layer": "place_label",
+      "minzoom": 6,
+      "maxzoom": 22,
+      "filter": [
+        "all",
+        [
+          "all",
+          [
+            "==",
+            [
+              "geometry-type"
+            ],
+            "Point"
+          ],
+          [
+            ">",
+            [
+              "get",
+              "rank"
+            ],
+            13
+          ],
+          [
+            "<=",
+            [
+              "get",
+              "rank"
+            ],
+            17
+          ],
+          [
+            "!",
+            [
+              "in",
+              [
+                "get",
+                "category"
+              ],
+              [
+                "literal",
+                [
+                  "winter_sports",
+                  "national_park",
+                  "protected_area"
+                ]
+              ]
+            ]
+          ]
+        ],
+        [
+          "match",
+          [
+            "get",
+            "category"
+          ],
+          [
+            "capital",
+            "big_place",
+            "small_place"
+          ],
+          true,
+          false
+        ]
+      ],
+      "paint": {
+        "circle-color": "#4B4B4B",
+        "circle-opacity": [
+          "step",
+          [
+            "zoom"
+          ],
+          1,
+          8,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            0,
+            [
+              "big_place"
+            ],
+            1,
+            1
+          ]
+        ],
+        "circle-stroke-color": "#4B4B4B",
+        "circle-stroke-width": [
+          "step",
+          [
+            "zoom"
+          ],
+          0,
+          8,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            1.3,
+            [
+              "big_place"
+            ],
+            0,
+            0
+          ]
+        ],
+        "circle-pitch-alignment": "map",
+        "circle-radius": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          1,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            2.2,
+            [
+              "big_place"
+            ],
+            2.2,
+            1.8
+          ],
+          6,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            3,
+            [
+              "big_place"
+            ],
+            3,
+            2
+          ],
+          8,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            4,
+            [
+              "big_place"
+            ],
+            4,
+            3
+          ],
+          10,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            5,
+            [
+              "big_place"
+            ],
+            5,
+            4
+          ],
+          12,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            6,
+            [
+              "big_place"
+            ],
+            6,
+            5
+          ]
+        ]
+      }
+    },
+    {
+      "id": "wd-place-dot-2",
+      "type": "circle",
+      "source": "mtk",
+      "source-layer": "place_label",
+      "minzoom": 6,
+      "maxzoom": 22,
+      "filter": [
+        "all",
+        [
+          "all",
+          [
+            "==",
+            [
+              "geometry-type"
+            ],
+            "Point"
+          ],
+          [
+            ">",
+            [
+              "get",
+              "rank"
+            ],
+            10
+          ],
+          [
+            "<=",
+            [
+              "get",
+              "rank"
+            ],
+            13
+          ],
+          [
+            "!",
+            [
+              "in",
+              [
+                "get",
+                "category"
+              ],
+              [
+                "literal",
+                [
+                  "winter_sports",
+                  "national_park",
+                  "protected_area"
+                ]
+              ]
+            ]
+          ]
+        ],
+        [
+          "match",
+          [
+            "get",
+            "category"
+          ],
+          [
+            "capital",
+            "big_place",
+            "small_place"
+          ],
+          true,
+          false
+        ]
+      ],
+      "paint": {
+        "circle-color": "#4B4B4B",
+        "circle-opacity": [
+          "step",
+          [
+            "zoom"
+          ],
+          1,
+          8,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            0,
+            [
+              "big_place"
+            ],
+            1,
+            1
+          ]
+        ],
+        "circle-stroke-color": "#4B4B4B",
+        "circle-stroke-width": [
+          "step",
+          [
+            "zoom"
+          ],
+          0,
+          8,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            1.3,
+            [
+              "big_place"
+            ],
+            0,
+            0
+          ]
+        ],
+        "circle-pitch-alignment": "map",
+        "circle-radius": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          1,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            2.2,
+            [
+              "big_place"
+            ],
+            2.2,
+            1.8
+          ],
+          6,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            3,
+            [
+              "big_place"
+            ],
+            3,
+            2
+          ],
+          8,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            4,
+            [
+              "big_place"
+            ],
+            4,
+            3
+          ],
+          10,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            5,
+            [
+              "big_place"
+            ],
+            5,
+            4
+          ],
+          12,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            6,
+            [
+              "big_place"
+            ],
+            6,
+            5
+          ]
+        ]
+      }
+    },
+    {
+      "id": "wd-place-dot-1",
+      "type": "circle",
+      "source": "mtk",
+      "source-layer": "place_label",
+      "minzoom": 1,
+      "maxzoom": 22,
+      "filter": [
+        "all",
+        [
+          "all",
+          [
+            "==",
+            [
+              "geometry-type"
+            ],
+            "Point"
+          ],
+          [
+            "<=",
+            [
+              "get",
+              "rank"
+            ],
+            10
+          ],
+          [
+            "!",
+            [
+              "in",
+              [
+                "get",
+                "category"
+              ],
+              [
+                "literal",
+                [
+                  "winter_sports",
+                  "national_park",
+                  "protected_area"
+                ]
+              ]
+            ]
+          ]
+        ],
+        [
+          "match",
+          [
+            "get",
+            "category"
+          ],
+          [
+            "capital",
+            "big_place",
+            "small_place"
+          ],
+          true,
+          false
+        ]
+      ],
+      "paint": {
+        "circle-color": "#4B4B4B",
+        "circle-opacity": [
+          "step",
+          [
+            "zoom"
+          ],
+          1,
+          8,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            0,
+            [
+              "big_place"
+            ],
+            1,
+            1
+          ]
+        ],
+        "circle-stroke-color": "#4B4B4B",
+        "circle-stroke-width": [
+          "step",
+          [
+            "zoom"
+          ],
+          0,
+          8,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            1.3,
+            [
+              "big_place"
+            ],
+            0,
+            0
+          ]
+        ],
+        "circle-pitch-alignment": "map",
+        "circle-radius": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          1,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            2.2,
+            [
+              "big_place"
+            ],
+            2.2,
+            1.8
+          ],
+          6,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            3,
+            [
+              "big_place"
+            ],
+            3,
+            2
+          ],
+          8,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            4,
+            [
+              "big_place"
+            ],
+            4,
+            3
+          ],
+          10,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            5,
+            [
+              "big_place"
+            ],
+            5,
+            4
+          ],
+          12,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            6,
+            [
+              "big_place"
+            ],
+            6,
+            5
+          ]
+        ]
       }
     },
     {

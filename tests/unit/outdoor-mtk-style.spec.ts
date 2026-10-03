@@ -84,9 +84,13 @@ describe('outdoor-mtk basemap style', () => {
     }
   });
 
-  it('adds settlement dots only for labeled places, stronger borders', () => {
-    expect(layerIds).toContain('wd-place-dot-big');
-    // unlabeled village dot fields are intentionally gone
+  it('adds swisstopo-style settlement dots mirroring label rank bands', () => {
+    // one dot layer per place-label rank band: a dot appears exactly
+    // when its place label layer becomes active
+    for (const n of ['1', '2', '3', '4', '5']) {
+      expect(layerIds).toContain(`wd-place-dot-${n}`);
+    }
+    expect(layerIds).not.toContain('wd-place-dot-big');
     expect(layerIds).not.toContain('wd-place-dot-small');
     const border = style.layers.find(l => l.id === 'border_admin_country');
     expect(JSON.stringify(border?.paint)).toContain('hsla(306, 30%, 40%, 1)');

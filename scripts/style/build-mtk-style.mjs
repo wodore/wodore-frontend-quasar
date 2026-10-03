@@ -10,8 +10,10 @@
  *   - Country labels smaller
  *   - Mountain names more prominent (x1.3)
  *   - Country borders more obvious (darker + wider)
- *   - Settlement dots (white + grey ring, swisstopo-style) for
- *     big/small places; place labels offset to the right of the dot
+ *   - Settlement dots exactly like swisstopo's lightbasemap: tiny
+ *     dark-grey circles on circle layers that mirror the label rank
+ *     bands (a dot appears exactly when its place label layer does),
+ *     capitals become hollow rings from z8 on
  *   - Accommodation POIs removed (type "lodging"; hut labels were
  *     already gone — the app's hut overlay owns accommodation)
  *
@@ -131,23 +133,58 @@ for (const id of ['border_admin_country', 'border_admin_disputed']) {
   ];
 }
 
-// Settlement dots (swisstopo-style white + grey ring). Inserted before
-// the first place layer so labels draw on top.
-const dotPaint = () => ({
-  'circle-color': '#FFFFFF',
-  'circle-stroke-color': '#6B665A',
-  'circle-stroke-width': 1,
-  'circle-pitch-alignment': 'map',
-});
-const dot = (id, categories, minzoom, radius) => ({
-  id,
-  type: 'circle',
-  source: 'mtk',
-  'source-layer': 'place_label',
-  minzoom,
-  filter: ['match', ['get', 'category'], categories, true, false],
-  paint: { ...dotPaint(), 'circle-radius': radius },
-});
+// Settlement dots, swisstopo lightbasemap style: tiny dark-grey
+// circles. Each dot layer mirrors one place-label rank band (same
+// minzoom, same filter), so a dot appears exactly when its place label
+// layer is active — no dot fields for places that carry no labels.
+// Capitals switch from a solid dot to a hollow ring at z8 (like
+// swisstopo's dot_circle -> circle_circle step), towns/villages stay
+// solid dots at every zoom.
+const SW_DOT_GREY = '#4B4B4B';
+const byCategory = (capital, big, small) => [
+  'match', ['get', 'category'],
+  ['capital'], capital,
+  ['big_place'], big,
+  small,
+];
+const dotLayers = () =>
+  base.layers
+    .filter(l => /^place_point_label_rank_\d$/.test(l.id))
+    .map(l => ({
+      id: `wd-place-dot-${l.id.match(/rank_(\d)$/)[1]}`,
+      type: 'circle',
+      source: 'mtk',
+      'source-layer': 'place_label',
+      minzoom: l.minzoom,
+      maxzoom: l.maxzoom,
+      filter: [
+        'all',
+        l.filter,
+        ['match', ['get', 'category'], ['capital', 'big_place', 'small_place'], true, false],
+      ],
+      paint: {
+        'circle-color': SW_DOT_GREY,
+        // capitals hollow out into rings from z8 on
+        'circle-opacity': [
+          'step', ['zoom'], 1, 8, byCategory(0, 1, 1),
+        ],
+        'circle-stroke-color': SW_DOT_GREY,
+        'circle-stroke-width': [
+          'step', ['zoom'], 0, 8, byCategory(1.3, 0, 0),
+        ],
+        'circle-pitch-alignment': 'map',
+        // swisstopo icon ladder: dot 6 -> 8px, ring 10 -> 12px;
+        // villages 4 -> 6 -> 8 -> 10px (radii = half diameter)
+        'circle-radius': [
+          'interpolate', ['linear'], ['zoom'],
+          1, byCategory(2.2, 2.2, 1.8),
+          6, byCategory(3, 3, 2),
+          8, byCategory(4, 4, 3),
+          10, byCategory(5, 5, 4),
+          12, byCategory(6, 6, 5),
+        ],
+      },
+    }));
 // Park labels: mtk ranks parks like top places (r5-r10), so the generic
 // rank bands show them from z1. Exclude them there and render via a
 // dedicated layer that only appears once you zoom in.
@@ -190,20 +227,7 @@ const firstPlaceIdx = base.layers.findIndex(l => l.id.startsWith('place_'));
 base.layers.splice(
   firstPlaceIdx === -1 ? base.layers.length : firstPlaceIdx,
   0,
-  {
-    // Dots only for labeled places (capitals / big places — their labels
-    // start around z7.5 and live through z22, so the dot does too).
-    // Kept small at the zoomed-out end: big dots on a country view read
-    // as noise.
-    ...dot('wd-place-dot-big', ['capital', 'big_place'], 7.5, [
-      'interpolate', ['linear'], ['zoom'],
-      7.5, 1.8, 10, 3.2, 12, 4.2, 14, 5.2,
-    ]),
-    paint: {
-      ...dotPaint(),
-      'circle-stroke-width': 1.2,
-    },
-  },
+  ...dotLayers(),
   parkLabel,
 );
 // Place labels sit to the right of their dot (point layers only)
@@ -218,34 +242,73 @@ for (const l of base.layers) {
   }
 }
 
-// ── Streets, swisstopo-style (same recipe as the OFM style) ────────────
-// Motorway/trunk get the soft orange fill, everything else white; casings
-// become the visible "2nd line" (mtk's are sub-pixel and cool-grey).
+// ── Streets, ported 1:1 from swisstopo's lightbasemap ─────────────────
+// White fills with soft-orange motorways/trunk; casings in near-black
+// grey (gold-brown under motorways/trunk) that read as the crisp thin
+// second line. Width ladders follow swisstopo's exponential-base-2
+// stops: only motorway/trunk exist at z8-9, the full class ladder
+// starts at z10. The casing blur is swisstopo's low-zoom glow.
+const byType = (motorway, trunk, primary, secondary, tertiary, minor, rest) => [
+  'match', ['get', 'type'],
+  ['motorway'], motorway,
+  ['trunk'], trunk,
+  ['primary'], primary,
+  ['secondary'], secondary,
+  ['tertiary'], tertiary,
+  ['minor', 'service'], minor,
+  rest,
+];
 const roadFill = layer('road_major_dark');
 roadFill.paint['line-color'] = [
   'interpolate', ['linear'], ['zoom'],
   4, 'hsla(45, 100%, 82%, 0)',
-  6, ['match', ['get', 'type'], ['motorway', 'trunk'], '#FFDD8A', '#FFFFFF'],
-  7.5, ['match', ['get', 'type'], ['motorway', 'trunk'], '#FFDD8A', '#FFFFFF'],
+  6, byType('#FFE6A0', '#FFE6A0', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF'),
+  15, byType('#FFE08A', '#FFE08A', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF'),
+];
+roadFill.paint['line-width'] = [
+  'interpolate', ['exponential', 2], ['zoom'],
+  6, 0,
+  8, byType(2, 2, 0, 0, 0, 0, 0),
+  9, byType(2.25, 2.25, 0, 0, 0, 0, 0),
+  10, byType(2.75, 2.75, 2.5, 2.5, 2, 1.5, 0),
+  12, byType(3.75, 3.75, 4, 3.5, 3, 2, 2),
+  15, byType(5.5, 5.5, 5.5, 5, 4, 3, 2.5),
+  19, byType(8, 8, 8, 7, 5.5, 4, 3),
+];
+roadFill.paint['line-blur'] = [
+  'interpolate', ['linear'], ['zoom'],
+  8, 0.4, 14, 0.1,
 ];
 const roadCasing = layer('road_major_casing');
 roadCasing.paint['line-color'] = [
   'interpolate', ['linear'], ['zoom'],
-  5, 'hsla(40, 8%, 72%, 0)',
-  9, '#B8B2A4',
+  5, 'hsla(40, 8%, 32%, 0)',
+  9, byType('#AA881E', '#AA881E', '#505050', '#505050', '#505050', '#505050', '#505050'),
+  15, byType('#8B6B3F', '#8B6B3F', '#5A5A5A', '#5A5A5A', '#5A5A5A', '#5A5A5A', '#5A5A5A'),
 ];
 roadCasing.paint['line-width'] = [
-  'interpolate', ['exponential', 1.6], ['zoom'],
-  6, 0.9, 9, 1.8, 12, 2.8, 15, 4, 19, 8,
+  'interpolate', ['exponential', 2], ['zoom'],
+  6, 0,
+  8, byType(3, 3, 0, 0, 0, 0, 0),
+  9, byType(3.5, 3.5, 0, 0, 0, 0, 0),
+  10, byType(4, 4, 3.5, 3.5, 3, 2.5, 0),
+  12, byType(6.5, 6.5, 6, 5, 4, 3, 2.5),
+  15, byType(10, 10, 8, 6.5, 5.5, 4, 3),
+  19, byType(13, 13, 10.5, 8.5, 7, 5.5, 4),
+];
+roadCasing.paint['line-opacity'] = 1;
+roadCasing.paint['line-blur'] = [
+  'interpolate', ['linear'], ['zoom'],
+  7, 3, 8, 0.4,
 ];
 const minorCasing = layer('road_minor_casing');
 minorCasing.paint['line-color'] = [
   'interpolate', ['linear'], ['zoom'],
-  13, 'hsla(40, 8%, 72%, 0)', 15, '#B8B2A4',
+  13, 'hsla(40, 8%, 32%, 0)', 15, '#5A5A5A',
 ];
 minorCasing.paint['line-width'] = [
-  'interpolate', ['exponential', 1.6], ['zoom'],
-  13, 1.4, 15, 2, 19, 6,
+  'interpolate', ['exponential', 2], ['zoom'],
+  13, 2, 15, 3.2, 19, 7,
 ];
 
 // ── Parks: strong at overview zooms, receding when zoomed in; visible
