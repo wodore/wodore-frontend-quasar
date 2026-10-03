@@ -107,3 +107,5 @@ Thresholds (meters, `zoom*minor*major`): `11*200*1000 ~ 12*100*500 ~
   [font-maker](https://github.com/maplibre/font-maker) into `public/fonts/`.
 - **MTB emphasis**: `mtb_scale` exists in the tiles; reserved for the
   dedicated cycling/MTB overlays (not the basemap).
+
+<!-- ci probe -->
