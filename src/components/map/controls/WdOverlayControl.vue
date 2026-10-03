@@ -264,6 +264,19 @@ function takeSnapshot(): void {
   hasEdits.value = false;
 }
 
+/** Outside edit mode a hidden group must never stay active (cycling
+ *  skips hidden ones — the group button would offer a switch to itself).
+ *  Leaving edit mode always lands on a visible group. */
+function ensureVisibleActiveGroup(): void {
+  const active = overlayStore.groupSettings.groups.find(
+    g => g.id === overlayStore.groupSettings.activeGroupId
+  );
+  if (!active || active.hidden || active.removed) {
+    overlayStore.cycleGroup(false);
+    applyGroupStateToMap();
+  }
+}
+
 function toggleEditMode(): void {
   if (!editMode.value) {
     updateBoxCap();
@@ -289,6 +302,7 @@ function toggleEditMode(): void {
         if (action === 'save') {
           editMode.value = false;
           hasEdits.value = false;
+          ensureVisibleActiveGroup();
         } else if (action === 'discard') {
           if (snapshotGroups.value) {
             overlayStore.groupSettings.groups = JSON.parse(snapshotGroups.value);
@@ -296,12 +310,14 @@ function toggleEditMode(): void {
           }
           editMode.value = false;
           hasEdits.value = false;
+          ensureVisibleActiveGroup();
         }
         // action === null: dismissed without choice → keep editing
       });
     return;
   }
   editMode.value = false;
+  ensureVisibleActiveGroup();
 }
 
 function markEdited(): void {
@@ -1715,20 +1731,23 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   pointer-events: auto;
 }
 
+// Header action buttons are BORDERLESS icon hits — the toolbar already
+// carries the box; bordered buttons inside read as boxes-in-a-box. The
+// group icon keeps its bordered CHIP look (it mirrors the row icons).
 .wd-ovl__toolbar-btn {
   display: grid;
   place-items: center;
   width: 32px;
   height: 36px;
-  border: 1px solid var(--wd-ctl-border);
+  border: none;
   border-radius: 4px;
-  background: var(--wd-ctl-bg);
+  background: transparent;
   color: var(--wd-ctl-ink-soft);
   cursor: pointer;
   pointer-events: auto;
   flex: none;
   -webkit-tap-highlight-color: transparent;
-  transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  transition: background-color 0.12s ease, color 0.12s ease;
 
   &:hover {
     background: var(--wd-ctl-hover);
@@ -1742,14 +1761,19 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   // Edit mode: the ✓ IS the single exit — it reads as the confirm action
   &--active {
     color: #1f6b58;
-    border-color: rgba(42, 138, 114, 0.45);
-    background: rgba(42, 138, 114, 0.08);
+    background: rgba(42, 138, 114, 0.1);
 
     &:hover {
-      background: rgba(42, 138, 114, 0.15);
+      background: rgba(42, 138, 114, 0.16);
       color: #17513f;
     }
   }
+}
+
+body.body--dark .wd-ovl__toolbar-btn {
+  // borderless icons sit on a dark panel — rest slightly brighter so the
+  // actions stay discoverable without borders
+  color: rgba(169, 240, 210, 0.75);
 }
 
 body.body--dark .wd-ovl__toolbar-btn--active {
