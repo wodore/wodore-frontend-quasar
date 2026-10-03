@@ -15,6 +15,7 @@ import { ref, watch, onMounted, onBeforeUnmount, computed, nextTick } from 'vue'
 import { useQuasar } from 'quasar';
 import { Icon as IconifyIcon } from '@iconify/vue';
 import { useDebounceFn } from '@vueuse/core';
+import { currentLocale } from '@services/locale';
 import {
   isDefaultGroupSlug,
   resetGroupToDefault,
@@ -792,11 +793,15 @@ const groupIconChoices = computed(() => {
 // ── Iconify search (custom icons beyond the common set) ──────────────
 const iconQuery = ref('');
 const iconResults = ref<string[]>([]);
+/** Lazy reveal: fetches up to 120, renders in chunks of 32 */
+const iconVisibleCount = ref(32);
 const iconSearching = ref(false);
 const iconSearchError = ref(false);
+const visibleIconResults = computed(() => iconResults.value.slice(0, iconVisibleCount.value));
 
 async function runIconSearch(query: string): Promise<void> {
   const q = query.trim();
+  iconVisibleCount.value = 32;
   if (q.length < 2) {
     iconResults.value = [];
     iconSearchError.value = false;
@@ -810,21 +815,26 @@ async function runIconSearch(query: string): Promise<void> {
     // sets (fluent-emoji / fluent-color: MIT, icon-park: Apache 2.0).
     const SAFE_PREFIXES =
       'tabler,mdi,lucide,ph,fluent,fluent-emoji,fluent-color,icon-park';
-    const search = async (query: string): Promise<string[]> => {
+    const search = async (term: string): Promise<string[]> => {
       const res = await window.fetch(
-        `https://api.iconify.design/search?query=${encodeURIComponent(query)}&limit=32&prefixes=${SAFE_PREFIXES}`
+        `https://api.iconify.design/search?query=${encodeURIComponent(term)}&limit=120&prefixes=${SAFE_PREFIXES}`
       );
       if (!res.ok) throw new Error(`search ${res.status}`);
       const data = (await res.json()) as { icons?: string[] };
       return data.icons ?? [];
     };
     let icons = await search(q);
-    // The keyword index is stem-based ("skier" matches nothing, "ski"
-    // matches 32) — retry with shorter stems before giving up
+    // The keyword index is stem-based ("skier" matched nothing, "ski"
+    // matched 32) — retry shorter stems before giving up
     for (let end = q.length - 1; icons.length === 0 && end >= Math.max(3, q.length - 2); end -= 1) {
       icons = await search(q.slice(0, end));
     }
-    iconResults.value = icons;
+    // Multilingual (de/fr/it): localized emoji keywords → fluent-emoji
+    const localized = await searchLocalizedEmoji(q);
+    // Fuzzy: typos still find something (montain → mountain)
+    let fuzzy: string[] = [];
+    if (icons.length + localized.length < 8) fuzzy = fuzzyIconNames(q);
+    iconResults.value = [...new Set([...localized, ...icons, ...fuzzy])];
   } catch {
     iconResults.value = [];
     iconSearchError.value = true;
@@ -833,10 +843,154 @@ async function runIconSearch(query: string): Promise<void> {
   }
 }
 
+// ── Multilingual search via localized emoji keywords ───────────────────
+// emojibase-data (MIT) ships labels+keywords per locale (~95 KB, lazy,
+// localStorage-cached); the English labels map to fluent-emoji slugs,
+// validated against iconify's collection listing. One-time load.
+interface EmojiBaseEntry {
+  label: string;
+  hexcode: string;
+  tags?: string[];
+}
+const EMOJIBASE_VERSION = '16';
+const EMOJIBASE_LOCALES = ['de', 'en', 'fr', 'it'];
+let emojiLocaleEntries: EmojiBaseEntry[] | null = null;
+let emojiSlugByHex: Map<string, string> | null = null;
+let fluentEmojiNames: Set<string> | null = null;
+/** Locale the keyword pack was loaded for (mid-session language switches
+ *  reload it on the next search). */
+let emojiLocaleLoadedFor = '';
+/** Shared in-flight promise — concurrent callers (warm-up + search) must
+ *  not trigger parallel duplicate fetches. */
+let emojiDataPromise: Promise<boolean> | null = null;
+
+async function ensureEmojiData(): Promise<boolean> {
+  const wantLocale = EMOJIBASE_LOCALES.includes(currentLocale()) ? currentLocale() : 'en';
+  if (emojiLocaleEntries && emojiSlugByHex && fluentEmojiNames && emojiLocaleLoadedFor === wantLocale) {
+    return true;
+  }
+  if (emojiDataPromise) return emojiDataPromise;
+  emojiDataPromise = (async () => {
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const locale = wantLocale;
+      const cacheNs = `wd:iconSearch:${EMOJIBASE_VERSION}`;
+      const [loc, en, coll] = await Promise.all([
+        fetchJsonCached<EmojiBaseEntry[]>(
+          `https://cdn.jsdelivr.net/npm/emojibase-data@${EMOJIBASE_VERSION}/${locale}/data.json`,
+          `${cacheNs}:emoji:${locale}`
+        ),
+        fetchJsonCached<EmojiBaseEntry[]>(
+          `https://cdn.jsdelivr.net/npm/emojibase-data@${EMOJIBASE_VERSION}/en/data.json`,
+          `${cacheNs}:emoji:en`
+        ),
+        fetchJsonCached<Record<string, string[] | number[]>>(
+          'https://api.iconify.design/collection?prefix=fluent-emoji',
+          `${cacheNs}:fluentNames`
+        ),
+      ]);
+      if (loc && en && coll) {
+        emojiLocaleEntries = loc;
+        emojiSlugByHex = new Map(
+          en.map(e => {
+            const slug = fold(e.label).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+            return [e.hexcode, slug];
+          })
+        );
+        fluentEmojiNames = new Set(Object.values(coll).flat().map(String));
+        emojiLocaleLoadedFor = locale;
+        return true;
+      }
+    }
+    return false;
+  })();
+  try {
+    return await emojiDataPromise;
+  } finally {
+    // allow a later retry if this load failed
+    if (!(emojiLocaleEntries && emojiSlugByHex && fluentEmojiNames)) emojiDataPromise = null;
+  }
+}
+
+function fold(s: string): string {
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+async function fetchJsonCached<T>(url: string, cacheKey: string): Promise<T | null> {
+  try {
+    const cached = window.localStorage.getItem(cacheKey);
+    if (cached) return JSON.parse(cached) as T;
+    const res = await window.fetch(url);
+    if (!res.ok) return null;
+    const data = (await res.json()) as T;
+    try {
+      window.localStorage.setItem(cacheKey, JSON.stringify(data));
+    } catch {
+      // storage full — session works without cache
+    }
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+/** Query in the UI language (or English) → fluent-emoji icon names */
+async function searchLocalizedEmoji(q: string): Promise<string[]> {
+  const ok = await ensureEmojiData();
+  if (!ok || !emojiLocaleEntries || !emojiSlugByHex || !fluentEmojiNames) return [];
+  const needle = fold(q);
+  if (needle.length < 2) return [];
+  const hits: string[] = [];
+   
+  for (const entry of emojiLocaleEntries) {
+    const haystack = [entry.label, ...(entry.tags ?? [])].map(fold);
+    if (haystack.some(h => h.includes(needle) || needle.includes(h) && h.length >= 3)) {
+      const slug = emojiSlugByHex.get(entry.hexcode);
+      if (slug && fluentEmojiNames.has(slug)) hits.push(`fluent-emoji:${slug}`);
+      if (hits.length >= 24) break;
+    }
+  }
+  return hits;
+}
+
+// ── Fuzzy fallback: typos against the known name pool ────────────────
+function levenshtein(a: string, b: string): number {
+  if (Math.abs(a.length - b.length) > 2) return 3;
+  const row = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i += 1) {
+    let prev = row[0];
+    row[0] = i;
+    for (let j = 1; j <= b.length; j += 1) {
+      const tmp = row[j];
+      row[j] = Math.min(row[j] + 1, row[j - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1));
+      prev = tmp;
+    }
+  }
+  return row[b.length];
+}
+
+function fuzzyIconNames(q: string): string[] {
+  const needle = fold(q.trim());
+  if (needle.length < 3) return [];
+  const pool: string[] = [...(WD_GROUP_SYMBOLS as readonly string[]), ...(fluentEmojiNames ? [...fluentEmojiNames].map(n => `fluent-emoji:${n}`) : [])];
+  const hits: string[] = [];
+  for (const name of pool) {
+    const words = name.split(/[:-]/).filter(w => w.length >= Math.max(3, needle.length - 2));
+    if (words.some(w => levenshtein(needle, w) <= (needle.length > 5 ? 2 : 1))) {
+      hits.push(name);
+      if (hits.length >= 12) break;
+    }
+  }
+  return hits;
+}
+
 const searchIconsDebounced = useDebounceFn((q: string) => runIconSearch(q), 350);
 watch(iconQuery, q => searchIconsDebounced(q));
 watch(showIconPicker, open => {
-  if (!open) {
+  if (open) {
+    // Warm the localized-keyword data while the user decides to type —
+    // the first search then matches immediately (cold CDN load ~1-2s)
+    void ensureEmojiData();
+  } else {
     iconQuery.value = '';
     iconResults.value = [];
   }
@@ -1593,7 +1747,7 @@ onBeforeUnmount(() => {
           <div v-else-if="!iconSearching && iconResults.length === 0" class="wd-ovl__icon-note">{{ t('overlays.icon_none') }}</div>
           <div v-else class="wd-ovl__icon-grid">
             <button
-              v-for="name in iconResults"
+              v-for="name in visibleIconResults"
               :key="name"
               class="wd-ovl__icon-cell"
               :class="{ 'wd-ovl__icon-cell--active': name === activeGroupIconName }"
@@ -1602,6 +1756,13 @@ onBeforeUnmount(() => {
               @click.stop="applyGroupIcon(name)"
             >
               <IconifyIcon :icon="name" :height="26" :width="26" class="wd-ovl__ifg" :class="{ 'wd-ovl__ifg--multi': isColoredIcon(name) }" />
+            </button>
+            <button
+              v-if="iconVisibleCount < iconResults.length"
+              class="wd-ovl__icon-more"
+              @click.stop="iconVisibleCount += 32"
+            >
+              {{ t('overlays.icon_more') }}
             </button>
           </div>
         </template>
@@ -2645,6 +2806,21 @@ body.body--dark .wd-ovl__empty-hint {
 
 .wd-ovl__ifg--multi svg {
   filter: none;
+}
+
+.wd-ovl__icon-more {
+  grid-column: 1 / -1;
+  height: 36px;
+  border: none;
+  border-radius: 4px;
+  background: var(--wd-ctl-date-bg);
+  color: var(--wd-ctl-ink);
+  font-size: 12.5px;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--wd-ctl-hover);
+  }
 }
 
 .wd-ovl__icon-grid {

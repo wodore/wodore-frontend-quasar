@@ -404,7 +404,8 @@
     "group_empty_hint": "Noch keine Ebenen in dieser Gruppe — füge unten mit + hinzu.",
     "icon_search": "Symbol suchen …",
     "icon_none": "Keine Symbole gefunden.",
-    "icon_search_error": "Symbolsuche derzeit nicht verfügbar."
+    "icon_search_error": "Symbolsuche derzeit nicht verfügbar.",
+    "icon_more": "Mehr anzeigen"
   },
   "basemap": "Basiskarte",
   "basemaps": {

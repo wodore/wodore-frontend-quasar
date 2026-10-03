@@ -404,7 +404,8 @@
     "group_empty_hint": "Nessun livello in questo gruppo — aggiungili con + qui sotto.",
     "icon_search": "Cerca icone …",
     "icon_none": "Nessuna icona trovata.",
-    "icon_search_error": "Ricerca icone non disponibile al momento."
+    "icon_search_error": "Ricerca icone non disponibile al momento.",
+    "icon_more": "Mostra altro"
   },
   "basemap": "Mappa di base",
   "basemaps": {

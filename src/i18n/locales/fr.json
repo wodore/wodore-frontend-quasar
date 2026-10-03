@@ -404,7 +404,8 @@
     "group_empty_hint": "Pas encore de couches dans ce groupe — ajoutez-les avec + ci-dessous.",
     "icon_search": "Rechercher des icônes …",
     "icon_none": "Aucune icône trouvée.",
-    "icon_search_error": "Recherche d'icônes indisponible pour le moment."
+    "icon_search_error": "Recherche d'icônes indisponible pour le moment.",
+    "icon_more": "Afficher plus"
   },
   "basemap": "Fond de carte",
   "basemaps": {

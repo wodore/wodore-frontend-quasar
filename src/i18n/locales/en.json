@@ -404,7 +404,8 @@
     "group_empty_hint": "No layers in this group yet — add them with + below.",
     "icon_search": "Search icons …",
     "icon_none": "No icons found.",
-    "icon_search_error": "Icon search is currently unavailable."
+    "icon_search_error": "Icon search is currently unavailable.",
+    "icon_more": "Show more"
   },
   "basemap": "Basemap",
   "basemaps": {
