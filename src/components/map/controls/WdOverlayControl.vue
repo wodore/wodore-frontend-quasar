@@ -83,6 +83,11 @@ const dropPos = ref<'above' | 'below'>('below');
 const dropOnSep = ref(false);
 /** Insertion line position (px, inside the rows scroller) — null = hidden */
 const dropLineTop = ref<number | null>(null);
+/** Pointer position while dragging — drives the floating ghost chip */
+const dragPointer = ref<{ x: number; y: number } | null>(null);
+const draggedItem = computed(() =>
+  dragSlug.value ? overlayStore.overlays.find(o => o.name === dragSlug.value) ?? null : null
+);
 let pendingDrag: { slug: string; startX: number; startY: number } | null = null;
 
 function onHandlePointerDown(ev: PointerEvent, slug: string): void {
@@ -100,7 +105,11 @@ function hitTarget(ev: PointerEvent): { row?: string; sep?: boolean } {
   const el = document.elementFromPoint(ev.clientX, ev.clientY);
   const hit = el?.closest('.wd-ovl__row, .wd-ovl__sep') as HTMLElement | null;
   if (!hit) return {};
-  if (hit.classList.contains('wd-ovl__sep')) return { sep: true };
+  // The whole More-layers section is the UNGROUP zone: the separator
+  // AND its rows (they have no user order — no insertion there)
+  if (hit.classList.contains('wd-ovl__sep') || hit.classList.contains('wd-ovl__row--other')) {
+    return { sep: true };
+  }
   return { row: hit.dataset.slug ?? undefined };
 }
 
@@ -171,12 +180,26 @@ function onHandlePointerMove(ev: PointerEvent): void {
     dragSlug.value = pendingDrag.slug;
   }
   lastDragEv = ev;
+  dragPointer.value = { x: ev.clientX, y: ev.clientY };
   updateDropTarget(ev);
   updateDragScroll(ev);
 }
 
+/** Capture-phase click interceptor right after a drag: the pointer-up is
+ *  followed by a CLICK on whatever sits under the pointer — row buttons
+ *  (info/filter/add) must never fire as a drag after-shock. */
+function suppressClickOnce(): void {
+  const swallow = (e: Event) => {
+    e.stopPropagation();
+    e.preventDefault();
+  };
+  window.addEventListener('click', swallow, { capture: true, once: true });
+  window.setTimeout(() => window.removeEventListener('click', swallow, true), 200);
+}
+
 function onHandlePointerUp(ev: PointerEvent): void {
   if (dragSlug.value) {
+    suppressClickOnce();
     const hit = hitTarget(ev);
     if (hit.sep) {
       onDropToAll();
@@ -190,6 +213,7 @@ function onHandlePointerUp(ev: PointerEvent): void {
   dropOnSep.value = false;
   dropLineTop.value = null;
   lastDragEv = null;
+  dragPointer.value = null;
   dragScrollVel = 0; // loop exits on its own next frame
 }
 
@@ -217,12 +241,12 @@ function onDropToAll(): void {
   const group = overlayStore.groupSettings.groups.find(
     g => g.id === overlayStore.groupSettings.activeGroupId
   );
-  if (group) {
-    group.layerSlugs = group.layerSlugs.filter(s => s !== sourceSlug);
-    group.activeLayerSlugs = group.activeLayerSlugs.filter(s => s !== sourceSlug);
-    overlayStore.syncGroupSettings();
-    markEdited();
-  }
+  // Not in the active group → nothing to ungroup (others-row on others-row)
+  if (!group || !group.layerSlugs.includes(sourceSlug)) return;
+  group.layerSlugs = group.layerSlugs.filter(s => s !== sourceSlug);
+  group.activeLayerSlugs = group.activeLayerSlugs.filter(s => s !== sourceSlug);
+  overlayStore.syncGroupSettings();
+  markEdited();
 }
 
 // Track unsaved edits — prompt to save or cancel when leaving edit mode
@@ -1001,7 +1025,9 @@ onBeforeUnmount(() => {
         }"
       >
         <!-- Top toolbar: EXTENDED only. The box grows UP by this height
-             (max-height compensates) so the icon rows NEVER move. -->
+             (max-height compensates) so the icon rows NEVER move.
+             EDIT MODE lives entirely in this one header line — no second
+             bar: [icon] title … [eye-show when hidden] [+] [⋮] [✓] -->
         <div v-if="expanded" class="wd-ovl__toolbar" @wheel.prevent>
           <button
             class="wd-ovl__toolbar-icon"
@@ -1015,6 +1041,91 @@ onBeforeUnmount(() => {
           </button>
           <span class="wd-ovl__toolbar-title">{{ overlayStore.activeGroupName(t) }}</span>
           <div class="wd-ovl__toolbar-actions">
+            <!-- Hidden group: one-tap unhide, right in the header -->
+            <button
+              v-if="editMode && isGroupHidden"
+              class="wd-ovl__toolbar-btn wd-ovl__toolbar-btn--warn"
+              :aria-label="t('overlays.group_show')"
+              :title="t('overlays.group_show')"
+              @click.stop="toggleGroupHidden"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+                <circle cx="12" cy="12" r="3" />
+                <path d="M4 4l16 16" stroke-linecap="round" />
+              </svg>
+            </button>
+            <button
+              v-if="editMode"
+              class="wd-ovl__toolbar-btn wd-ovl__toolbar-btn--add"
+              :aria-label="t('overlays.group_add')"
+              :title="t('overlays.group_add')"
+              @click.stop="addNewGroup"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </button>
+            <button
+              v-if="editMode"
+              class="wd-ovl__toolbar-btn"
+              :aria-label="t('overlays.group_more')"
+              :title="t('overlays.group_more')"
+              @click.stop
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" />
+              </svg>
+              <q-menu anchor="bottom right" self="top right" class="wd-ovl__menu">
+                <q-list dense style="min-width: 200px">
+                  <q-item clickable v-close-popup @click="startRename">
+                    <q-item-section avatar>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />
+                      </svg>
+                    </q-item-section>
+                    <q-item-section>{{ t('overlays.group_rename') }}</q-item-section>
+                  </q-item>
+                  <q-item clickable v-close-popup @click="showIconPicker = true">
+                    <q-item-section avatar>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" />
+                        <rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" />
+                      </svg>
+                    </q-item-section>
+                    <q-item-section>{{ t('overlays.icon_change') }}</q-item-section>
+                  </q-item>
+                  <q-item v-if="!isGroupHidden" clickable v-close-popup @click="toggleGroupHidden">
+                    <q-item-section avatar>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    </q-item-section>
+                    <q-item-section>{{ t('overlays.group_hide') }}</q-item-section>
+                  </q-item>
+                  <q-item v-if="isDefaultGroup" clickable v-close-popup @click="confirmResetGroup">
+                    <q-item-section avatar>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 12a9 9 0 1 0 2.6-6.4" />
+                        <path d="M3 4v4h4" />
+                        <path d="M12 8v4l3 2" />
+                      </svg>
+                    </q-item-section>
+                    <q-item-section>{{ t('overlays.group_reset') }}</q-item-section>
+                  </q-item>
+                  <q-separator />
+                  <q-item clickable v-close-popup class="wd-ovl__menu-item--danger" @click="confirmDeleteGroup">
+                    <q-item-section avatar>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z" />
+                      </svg>
+                    </q-item-section>
+                    <q-item-section>{{ t('overlays.group_delete') }}</q-item-section>
+                  </q-item>
+                </q-list>
+              </q-menu>
+            </button>
             <button
               class="wd-ovl__toolbar-btn"
               :class="{ 'wd-ovl__toolbar-btn--active': editMode }"
@@ -1029,72 +1140,6 @@ onBeforeUnmount(() => {
               </svg>
             </button>
           </div>
-        </div>
-
-        <!-- Edit actions: rename + hide stay as buttons; rarely-used and
-             destructive actions live behind the 3-dot menu (with labels). -->
-        <div v-if="editMode" class="wd-ovl__edit-bar" @wheel.prevent>
-          <button class="wd-ovl__edit-btn" :aria-label="t('overlays.group_rename')" :title="t('overlays.group_rename')"
-            @click.stop="startRename">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-              <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />
-            </svg>
-          </button>
-          <button class="wd-ovl__edit-btn" :class="{ 'wd-ovl__edit-btn--on': isGroupHidden }"
-            :aria-label="isGroupHidden ? t('overlays.group_show') : t('overlays.group_hide')"
-            :title="isGroupHidden ? t('overlays.group_show') : t('overlays.group_hide')"
-            @click.stop="toggleGroupHidden">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-              <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
-              <circle cx="12" cy="12" r="3" />
-              <path v-if="isGroupHidden" d="M4 4l16 16" stroke-width="1.8" stroke-linecap="round" />
-            </svg>
-          </button>
-          <span class="wd-ovl__edit-sep" />
-          <button class="wd-ovl__edit-btn" :aria-label="t('overlays.group_more')" :title="t('overlays.group_more')"
-            @click.stop>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-              <circle cx="5" cy="12" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="19" cy="12" r="1.7" />
-            </svg>
-            <q-menu anchor="bottom right" self="top right" class="wd-ovl__menu">
-              <q-list dense style="min-width: 190px">
-                <q-item clickable v-close-popup @click="showIconPicker = true">
-                  <q-item-section avatar>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                      <rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" />
-                      <rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" />
-                    </svg>
-                  </q-item-section>
-                  <q-item-section>{{ t('overlays.icon_change') }}</q-item-section>
-                </q-item>
-                <q-item v-if="isDefaultGroup" clickable v-close-popup @click="confirmResetGroup">
-                  <q-item-section avatar>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M3 12a9 9 0 1 0 2.6-6.4" />
-                      <path d="M3 4v4h4" />
-                      <path d="M12 8v4l3 2" />
-                    </svg>
-                  </q-item-section>
-                  <q-item-section>{{ t('overlays.group_reset') }}</q-item-section>
-                </q-item>
-                <q-separator />
-                <q-item clickable v-close-popup class="wd-ovl__menu-item--danger" @click="confirmDeleteGroup">
-                  <q-item-section avatar>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                      <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z" />
-                    </svg>
-                  </q-item-section>
-                  <q-item-section>{{ t('overlays.group_delete') }}</q-item-section>
-                </q-item>
-              </q-list>
-            </q-menu>
-          </button>
-          <button class="wd-ovl__edit-btn wd-ovl__edit-btn--add" :aria-label="t('overlays.group_add')" :title="t('overlays.group_add')"
-            @click.stop="addNewGroup">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-          </button>
         </div>
 
         <!-- Rows: icon always at the right, label+actions appear when expanded -->
@@ -1356,6 +1401,21 @@ onBeforeUnmount(() => {
       <img v-show="stripOpen" :src="iconClose" alt="" class="wd-ovl__toggle-icon"
         :class="{ 'wd-ovl__toggle-icon--open': stripOpen }" />
     </button>
+
+    <!-- ── Floating drag ghost: the row follows the cursor ──────────── -->
+    <Teleport to="body">
+      <div
+        v-if="dragSlug && dragPointer && draggedItem"
+        class="wd-ovl__dragghost"
+        :style="{ left: dragPointer.x + 'px', top: dragPointer.y + 'px' }"
+        aria-hidden="true"
+      >
+        <span class="wd-ovl__dragghost-chip">
+          <q-icon :name="layerIcon(draggedItem.icon)" size="18px" />
+        </span>
+        <span class="wd-ovl__dragghost-label">{{ draggedItem.label }}</span>
+      </div>
+    </Teleport>
 
     <!-- ── Group icon picker (edit mode) ──────────────────────────────── -->
     <q-dialog v-model="showIconPicker">
@@ -1896,8 +1956,8 @@ body.body--dark .wd-ovl__row-name {
 .wd-ovl__more {
   display: grid;
   place-items: center;
-  height: 26px;
-  min-height: 26px;
+  height: 30px;
+  min-height: 30px;
   border: none;
   border-top: 1px solid var(--wd-ctl-border);
   background: transparent; // no tonal band against the rows above
@@ -1918,8 +1978,8 @@ body.body--dark .wd-ovl__row-name {
 // a proper touch target
 @media (max-width: 899px) {
   .wd-ovl__more {
-    height: 32px;
-    min-height: 32px;
+    height: 36px;
+    min-height: 36px;
   }
 }
 
@@ -2140,7 +2200,7 @@ body.body--dark .wd-ovl__row-name {
   width: min(320px, calc(100vw - 48px));
   max-height: calc(100dvh - 160px); // fallback — inline style (measured) wins
 
-  // Toolbar + edit bar become IN-FLOW headers (maximized box has room)
+  // Toolbar becomes an IN-FLOW header (the maximized box has room)
   .wd-ovl__toolbar {
     position: static;
     flex: none;
@@ -2149,61 +2209,12 @@ body.body--dark .wd-ovl__row-name {
     border-radius: 8px 8px 0 0;
   }
 
-  .wd-ovl__edit-bar {
-    position: static;
-    flex: none;
-    border-bottom: 1px solid var(--wd-ctl-border);
-  }
-
   // Rows fill the remaining space
   .wd-ovl__rows {
     max-height: none !important;
     flex: 1 1 auto;
     min-height: 120px;
   }
-}
-
-// ── Edit action bar: icon-only, one row ────────────────────────────────
-.wd-ovl__edit-bar {
-  pointer-events: auto; // wheel/interaction must not reach the map
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 4px 6px;
-}
-
-.wd-ovl__edit-btn {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 30px;
-  border: none;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--wd-ctl-ink-soft);
-  cursor: pointer;
-  transition: background-color 0.12s $ease, color 0.12s $ease;
-  pointer-events: auto;
-  -webkit-tap-highlight-color: transparent;
-
-  &:hover {
-    background: var(--wd-ctl-hover);
-    color: var(--wd-ctl-ink);
-  }
-
-  &--danger {
-    color: #c44e3b;
-    &:hover { background: rgba(196, 78, 59, 0.08); }
-  }
-
-  &--add {
-    color: #2a8a72;
-    &:hover { background: rgba(42, 138, 114, 0.08); }
-  }
-}
-
-.wd-ovl__edit-sep {
-  flex: 1;
 }
 
 // ── Row actions (edit mode): add/remove from group ────────────────────
@@ -2280,43 +2291,79 @@ body.body--dark .wd-ovl__row-name {
   }
 }
 
-// Eye button while the group is hidden (crossed): stays "on"
-.wd-ovl__edit-btn--on {
+// ── Floating drag ghost ─────────────────────────────────────────────────
+.wd-ovl__dragghost {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 4px 4px;
+  border: 1px solid var(--wd-ctl-border);
+  border-radius: 6px;
+  background: var(--wd-ctl-bg);
+  box-shadow: 0 8px 22px rgba(10, 20, 15, 0.26), 0 2px 5px rgba(10, 20, 15, 0.16) !important;
+  pointer-events: none;
+  z-index: 2100;
+  // Hover just above the pointer — the insertion line stays visible
+  transform: translate(-50%, calc(-50% - 16px));
+  animation: wd-ovl-ghost-in 0.12s $ease;
+}
+
+.wd-ovl__dragghost-chip {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: 1px solid var(--wd-ctl-border);
+  background: var(--wd-ctl-date-bg);
+}
+
+.wd-ovl__dragghost-label {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   color: var(--wd-ctl-ink);
-  background: var(--wd-ctl-hover);
+  white-space: nowrap;
 }
 
-// ── 3-dot menu (edit bar): Quasar menu, quiet panel look ───────────────
-.wd-ovl__menu {
-  .q-item {
-    min-height: 38px;
-    font-size: 13.5px;
-    color: var(--wd-ctl-ink);
+@keyframes wd-ovl-ghost-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% - 10px)) scale(0.88);
   }
 
-  .q-item__section--avatar {
-    min-width: 26px;
-    color: var(--wd-ctl-ink-soft);
+  to {
+    opacity: 1;
+    transform: translate(-50%, calc(-50% - 16px)) scale(1);
   }
 }
 
-body.body--dark .wd-ovl__menu .q-item {
-  color: #cfe8dc;
-}
+// Header buttons: accents for the hidden-eye and add-group actions
+.wd-ovl__toolbar-btn--warn {
+  color: #8a7a1e;
 
-.wd-ovl__menu-item--danger {
-  color: #c44e3b !important;
-
-  .q-item__section--avatar {
-    color: #c44e3b;
+  &:hover {
+    color: #6d5f14;
   }
 }
 
-// ── Group icon picker dialog ─────────────────────────────────────────────
-.wd-ovl__icon-picker {
-  padding: 16px;
-  max-width: 320px;
+.wd-ovl__toolbar-btn--add {
+  color: #2a8a72;
+
+  &:hover {
+    color: #1f6b58;
+  }
 }
+
+body.body--dark .wd-ovl__toolbar-btn--warn {
+  color: $wd-gold-bright;
+}
+
+body.body--dark .wd-ovl__toolbar-btn--add {
+  color: #7fe3c8;
+}
+
 
 .wd-ovl__icon-picker-title {
   font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif;
@@ -2413,4 +2460,54 @@ body.body--dark .wd-ovl__menu .q-item {
   }
 }
 
+</style>
+
+<style lang="scss">
+/* q-menu / q-dialog TELEPORT to <body> — scoped selectors never match.
+   These panels need global styles. */
+// ── 3-dot menu (header): opaque quiet panel ───────────────────────────
+.wd-ovl__menu {
+  background: var(--wd-ctl-bg) !important; // opaque panel — never transparent
+  border: 1px solid var(--wd-ctl-border);
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(10, 20, 15, 0.18) !important; // dark-mode elevation kill escape
+  padding: 4px;
+
+  .q-item {
+    min-height: 38px;
+    font-size: 13.5px;
+    color: var(--wd-ctl-ink);
+    border-radius: 4px;
+  }
+
+  .q-item__section--avatar {
+    min-width: 26px;
+    color: var(--wd-ctl-ink-soft);
+  }
+}
+
+body.body--dark .wd-ovl__menu .q-item {
+  color: #cfe8dc;
+}
+
+.wd-ovl__menu-item--danger {
+  color: #c44e3b !important;
+
+  .q-item__section--avatar {
+    color: #c44e3b;
+  }
+}
+
+// ── Group icon picker dialog ─────────────────────────────────────────────
+.wd-ovl__icon-picker {
+  padding: 16px;
+  max-width: 320px;
+  background: var(--wd-ctl-bg) !important; // opaque panel
+  border: 1px solid var(--wd-ctl-border);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(10, 20, 15, 0.24) !important;
+}
+body.body--dark .wd-ovl__menu .q-item {
+  color: #cfe8dc;
+}
 </style>
