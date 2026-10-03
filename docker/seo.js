@@ -31,11 +31,25 @@ var LANG_PREFIXES = '__WODORE_LANG_PREFIXES__'.split(',');
 var ALL_LANGS = LANG_PREFIXES.concat([DEFAULT_LANG]);
 var LANG_RE = new RegExp('^\\/(' + LANG_PREFIXES.join('|') + ')(\\/|$)');
 var COOKIE_RE = /(?:^|;\s*)wodore_lang=/;
-// Search engine + social preview + LLM crawler user agents.
-var CRAWLER_RE = new RegExp(
+// Search engine + LLM crawler user agents (index builders). The bare
+// URL consolidates permanently (301) into the default language's
+// prefixed URL — a FIXED target, deliberately not negotiated from the
+// crawler's Accept-Language: a redirect that varies per request cannot
+// be cached safely.
+var SEARCHBOT_RE = new RegExp(
   'Googlebot|bingbot|Slurp|DuckDuckBot|Baiduspider|YandexBot|' +
-    'facebookexternalhit|Twitterbot|LinkedInBot|TelegramBot|WhatsApp|' +
-    'Slackbot|Applebot|ia_archiver|GPTBot|ClaudeBot|PerplexityBot',
+    'ia_archiver|GPTBot|ClaudeBot|PerplexityBot',
+  'i'
+);
+// Social preview bots (link unfurlers). They only want the og:*/twitter:*
+// tags, and several follow redirects poorly or not at all — on the BARE
+// URL they are served inline (never redirected), with the meta localized
+// from the bot's Accept-Language: that is the language of the user whose
+// client is unfurling the link (Telegram and WhatsApp forward it;
+// Facebook does not and gets the default language).
+var PREVIEWBOT_RE = new RegExp(
+  'facebookexternalhit|Twitterbot|LinkedInBot|TelegramBot|WhatsApp|' +
+    'Slackbot|Discordbot|Applebot',
   'i'
 );
 
@@ -148,9 +162,12 @@ function inject(shell, m, requestPath, host) {
 // for every user behind that edge.
 const PAGE_TTL = __WODORE_SEO_PAGE_TTL__;
 
-function serve(r, body) {
+function serve(r, body, noStore) {
   r.headersOut['Content-Type'] = 'text/html; charset=utf-8';
-  if (PAGE_TTL > 0) {
+  // noStore forces the no-store policy for per-request negotiated
+  // responses (preview bots): a shared cache must not pin one
+  // language's HTML to the bare URL for everyone else.
+  if (PAGE_TTL > 0 && !noStore) {
     r.headersOut['Cache-Control'] =
       'public, max-age=0, must-revalidate, s-maxage=' + PAGE_TTL;
   } else {
@@ -184,15 +201,26 @@ function hut(r) {
     r.internalRedirect('/index.html');
     return;
   }
-  // Known crawlers on the BARE URL: consolidate permanently (301) to
-  // the default language's prefixed URL - a directive where the
+  // Content negotiation: clients explicitly asking for Markdown (Accept:
+  // text/markdown) get the .md document instead of the HTML shell — same
+  // URL, no suffix needed. The .md location then proxies to the backend.
+  // Checked before any redirect so it wins for every UA, crawler or not.
+  var accept = r.headersIn.Accept || '';
+  if (accept.indexOf('text/markdown') !== -1) {
+    r.internalRedirect('/hut/' + slug + '.md');
+    return;
+  }
+  var ua = r.headersIn['User-Agent'] || '';
+  // Social preview bots on the BARE URL: served inline, see
+  // PREVIEWBOT_RE above. Prefixed URLs and human users are unaffected.
+  var isPreviewBot = !lang && PREVIEWBOT_RE.test(ua);
+  // Known search/LLM crawlers on the BARE URL: consolidate permanently
+  // (301) to the default language's prefixed URL - a directive where the
   // canonical link is only a hint, so the user-alias URL drops out of
   // the index entirely instead of lingering as a canonicalized
-  // duplicate. Prefixed URLs serve crawlers normally (self-canonical);
-  // human users never hit this (they keep the bare URL; the SPA
-  // normalizes prefixes away). Markdown negotiation above stays first
-  // so LLM crawlers asking for text/markdown still get the document.
-  if (!lang && CRAWLER_RE.test(r.headersIn['User-Agent'] || '')) {
+  // duplicate. Human users never hit this (they keep the bare URL; the
+  // SPA normalizes prefixes away).
+  if (!lang && !isPreviewBot && SEARCHBOT_RE.test(ua)) {
     r.status = 301;
     r.headersOut.Location = '/' + DEFAULT_LANG + requestPath;
     r.sendHeader();
@@ -204,7 +232,7 @@ function hut(r) {
   // in a non-default language → 302 to the prefixed URL. Bots send neither →
   // served as-is (stable URLs). Returning visitors keep the URL they
   // navigated to — the SPA display language follows their stored setting.
-  if (!lang) {
+  if (!lang && !isPreviewBot) {
     var cookie = r.headersIn.Cookie || '';
     if (!COOKIE_RE.test(cookie)) {
       var preferred = parseAcceptLanguage(r.headersIn['Accept-Language']);
@@ -217,20 +245,20 @@ function hut(r) {
       }
     }
   }
-  // Content negotiation: clients explicitly asking for Markdown (Accept:
-  // text/markdown) get the .md document instead of the HTML shell — same
-  // URL, no suffix needed. The .md location then proxies to the backend.
-  var accept = r.headersIn.Accept || '';
-  if (accept.indexOf('text/markdown') !== -1) {
-    r.internalRedirect('/hut/' + slug + '.md');
-    return;
-  }
-  // Meta language: path prefix first, then an explicit ?lang= param.
-  // Whitelisted against the meta endpoint's validated values; unknown
-  // values fall back to the default language.
+  // Meta language: path prefix first, then an explicit ?lang= param,
+  // then (preview bots only) the bot's Accept-Language — the language of
+  // the user whose client is unfurling the link. Whitelisted against
+  // the meta endpoint's validated values; unknown values fall back to
+  // the default language.
   var metaUri = '/_seo/meta/' + slug;
   var queryLang = r.args ? r.args.lang : '';
-  var effectiveLang = lang || queryLang || DEFAULT_LANG;
+  var effectiveLang = lang || queryLang;
+  if (!effectiveLang && isPreviewBot) {
+    effectiveLang = parseAcceptLanguage(r.headersIn['Accept-Language']);
+  }
+  if (!effectiveLang) {
+    effectiveLang = DEFAULT_LANG;
+  }
   if (ALL_LANGS.indexOf(effectiveLang) !== -1) {
     metaUri += '?lang=' + effectiveLang;
   }
@@ -253,12 +281,12 @@ function hut(r) {
       }
       if (meta && meta.slug && meta.name) {
         r.log("seo: injected meta for hut '" + slug + "'");
-        serve(r, inject(shellRes.responseText, meta, requestPath, r.headersIn.Host));
+        serve(r, inject(shellRes.responseText, meta, requestPath, r.headersIn.Host), isPreviewBot);
       } else {
         r.log(
           "seo: no meta for hut '" + slug + "' (status " + metaRes.status + '), serving shell'
         );
-        serve(r, shellRes.responseText);
+        serve(r, shellRes.responseText, isPreviewBot);
       }
     })
     .catch(function (e) {
