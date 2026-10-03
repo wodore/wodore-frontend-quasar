@@ -3632,15 +3632,15 @@
             "zoom"
           ],
           5,
-          0.04,
-          9,
-          0.12,
+          0.05,
+          8.5,
+          0.18,
           12,
-          0.3,
+          0.38,
           16,
-          0.3
+          0.35
         ],
-        "hillshade-shadow-color": "hsla(205, 10%, 55%, 0.12)",
+        "hillshade-shadow-color": "hsla(205, 10%, 55%, 0.14)",
         "hillshade-accent-color": "hsla(-9, 0%, 0%, 0)",
         "hillshade-highlight-color": "hsla(192, 100%, 85%, 0)"
       },
@@ -3669,15 +3669,15 @@
             "zoom"
           ],
           5,
-          0.04,
-          9,
-          0.12,
+          0.05,
+          8.5,
+          0.18,
           12,
-          0.3,
+          0.38,
           16,
-          0.3
+          0.35
         ],
-        "hillshade-shadow-color": "hsla(-9, 0%, 30%, 0.12)",
+        "hillshade-shadow-color": "hsla(-9, 0%, 30%, 0.14)",
         "hillshade-accent-color": "hsla(-9, 0%, 0%, 0)",
         "hillshade-highlight-color": "hsla(192, 100%, 85%, 0)"
       },

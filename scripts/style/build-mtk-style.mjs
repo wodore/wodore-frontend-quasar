@@ -332,13 +332,13 @@ for (const id of ['relief_hillshade_ao_min', 'relief_hillshade_ao_med']) {
     .toString()
     .replace('hsla(-9, 0%, 0%,', 'hsla(205, 10%, 55%,')
     .replace('0%, 30%,', '0%, 30%,')
-    .replace(', 0.3)', ', 0.12)');
+    .replace(', 0.3)', ', 0.14)');
   // swisstopo's relief only shades real mountain slopes (~20% of a
   // country view); AO shades every slope — keep it faint until the
   // mid zooms where terrain detail starts to matter
   p['hillshade-exaggeration'] = [
     'interpolate', ['linear'], ['zoom'],
-    5, 0.04, 9, 0.12, 12, 0.3, 16, 0.3,
+    5, 0.05, 8.5, 0.18, 12, 0.38, 16, 0.35,
   ];
 }
 // Landcover textures (forest floor, tree rows, quarries…) painted the
