@@ -32,6 +32,11 @@ body.body--dark .wd-ovl__toolbar-icon .q-icon,
 body.body--dark .wd-ovl__group-btn .q-icon,
 body.body--dark .wd-ovl__icon-cell .q-icon,
 body.body--dark .wd-ovl__dragghost .q-icon,
+body.body--dark .wd-ovl__ifg {
+  filter: invert(1);
+  color: #000000;
+}
+
 body.body--dark .wd-ovl__group-menu .q-item__section--avatar .q-icon {
   // ONE invert only — on the wrapper <i>. Inverting BOTH the wrapper and
   // the child <img> double-inverts the glyphs back to black.

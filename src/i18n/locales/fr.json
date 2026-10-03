@@ -401,7 +401,10 @@
     "group_more": "Plus d'actions",
     "group_reset_confirm": "Réinitialiser « {name} » avec ses couches par défaut ? Vos modifications de ce groupe seront perdues.",
     "icon_change": "Changer d'icône",
-    "group_empty_hint": "Pas encore de couches dans ce groupe — ajoutez-les avec + ci-dessous."
+    "group_empty_hint": "Pas encore de couches dans ce groupe — ajoutez-les avec + ci-dessous.",
+    "icon_search": "Rechercher des icônes …",
+    "icon_none": "Aucune icône trouvée.",
+    "icon_search_error": "Recherche d'icônes indisponible pour le moment."
   },
   "basemap": "Fond de carte",
   "basemaps": {

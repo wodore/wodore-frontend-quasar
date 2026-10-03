@@ -13,6 +13,8 @@
  */
 import { ref, watch, onMounted, onBeforeUnmount, computed, nextTick } from 'vue';
 import { useQuasar } from 'quasar';
+import { Icon as IconifyIcon } from '@iconify/vue';
+import { useDebounceFn } from '@vueuse/core';
 import {
   isDefaultGroupSlug,
   resetGroupToDefault,
@@ -755,12 +757,68 @@ function confirmResetGroup(): void {
 // ── Group icon picker (edit mode) ────────────────────────────────────────
 const showIconPicker = ref(false);
 
-/** Predefined icon choices: the overlay layer icon set (unique) */
+/** Group icon symbols from the wd icon set (activity glyphs) — the
+ *  picker offers these IN ADDITION to the overlay layer icons. */
+const WD_GROUP_SYMBOLS = ['sun', 'snow', 'ski', 'bike', 'mountain', 'tent'] as const;
+
+/** Iconify names (“prefix:name”) load at runtime via @iconify/vue */
+function isIconifyIcon(name: string): boolean {
+  return name.includes(':');
+}
+
+/** Group icons render from three sources: overlay layer icons (img),
+ *  wd symbols (iconify font) and iconify runtime icons — one resolver
+ *  for the q-icon path, isIconifyIcon() for the <Icon> branch. */
+function groupIcon(name: string): string {
+  if (isIconifyIcon(name)) return name; // rendered via <Icon>, not q-icon
+  return (WD_GROUP_SYMBOLS as readonly string[]).includes(name) ? `wd-${name}` : layerIcon(name);
+}
+
+/** Common set: overlay layer icons + activity symbols (always offline) */
 const groupIconChoices = computed(() => {
   const icons = (overlayStore.overlays as unknown as Array<{ icon: string; show?: boolean }>)
     .filter(o => o.show !== false && !!o.icon)
     .map(o => o.icon);
-  return [...new Set(icons)];
+  return [...new Set([...icons, ...WD_GROUP_SYMBOLS])];
+});
+
+// ── Iconify search (custom icons beyond the common set) ──────────────
+const iconQuery = ref('');
+const iconResults = ref<string[]>([]);
+const iconSearching = ref(false);
+const iconSearchError = ref(false);
+
+async function runIconSearch(query: string): Promise<void> {
+  const q = query.trim();
+  if (q.length < 2) {
+    iconResults.value = [];
+    iconSearchError.value = false;
+    return;
+  }
+  iconSearching.value = true;
+  iconSearchError.value = false;
+  try {
+    const res = await window.fetch(
+      `https://api.iconify.design/search?query=${encodeURIComponent(q)}&limit=32`
+    );
+    if (!res.ok) throw new Error(`search ${res.status}`);
+    const data = (await res.json()) as { icons?: string[] };
+    iconResults.value = data.icons ?? [];
+  } catch {
+    iconResults.value = [];
+    iconSearchError.value = true;
+  } finally {
+    iconSearching.value = false;
+  }
+}
+
+const searchIconsDebounced = useDebounceFn((q: string) => runIconSearch(q), 350);
+watch(iconQuery, q => searchIconsDebounced(q));
+watch(showIconPicker, open => {
+  if (!open) {
+    iconQuery.value = '';
+    iconResults.value = [];
+  }
 });
 
 const activeGroupIconName = computed(() => {
@@ -1078,7 +1136,8 @@ onBeforeUnmount(() => {
             :disabled="!editMode"
             @click.stop="editMode && (showIconPicker = true)"
           >
-            <q-icon :name="layerIcon(overlayStore.activeGroupIcon())" size="16px" />
+            <IconifyIcon v-if="isIconifyIcon(overlayStore.activeGroupIcon())" :icon="overlayStore.activeGroupIcon()" :height="16" :width="16" class="wd-ovl__ifg" />
+            <q-icon v-else :name="groupIcon(overlayStore.activeGroupIcon())" size="16px" />
           </button>
           <!-- Group NAME = quick switch dropdown (expanded + edit).
                Icon → change icon (edit); name → switch group. -->
@@ -1104,7 +1163,8 @@ onBeforeUnmount(() => {
                   @click="onGroupMenuSelect(g.id)"
                 >
                   <q-item-section avatar>
-                    <q-icon :name="layerIcon(g.icon)" size="16px" />
+                    <IconifyIcon v-if="isIconifyIcon(g.icon)" :icon="g.icon" :height="16" :width="16" class="wd-ovl__ifg" />
+                    <q-icon v-else :name="groupIcon(g.icon)" size="16px" />
                   </q-item-section>
                   <q-item-section>{{ groupDisplayName(g.name, t) }}</q-item-section>
                   <!-- Hidden marker (edit mode lists hidden groups too) -->
@@ -1175,14 +1235,15 @@ onBeforeUnmount(() => {
                     </q-item-section>
                     <q-item-section>{{ t('overlays.icon_change') }}</q-item-section>
                   </q-item>
-                  <q-item v-if="!isGroupHidden" clickable v-close-popup @click="toggleGroupHidden">
+                  <q-item clickable v-close-popup @click="toggleGroupHidden">
                     <q-item-section avatar>
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                         <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
                         <circle cx="12" cy="12" r="3" />
+                        <path v-if="isGroupHidden" d="M4 4l16 16" stroke-linecap="round" />
                       </svg>
                     </q-item-section>
-                    <q-item-section>{{ t('overlays.group_hide') }}</q-item-section>
+                    <q-item-section>{{ isGroupHidden ? t('overlays.group_show') : t('overlays.group_hide') }}</q-item-section>
                   </q-item>
                   <q-item v-if="isDefaultGroup" clickable v-close-popup @click="confirmResetGroup">
                     <q-item-section avatar>
@@ -1431,7 +1492,10 @@ onBeforeUnmount(() => {
             <path d="M15 6l-6 6 6 6" />
           </svg>
           <Transition name="wd-ovl-gswap" mode="out-in">
-            <q-icon :key="overlayStore.groupSettings.activeGroupId ?? 'g'" :name="layerIcon(overlayStore.activeGroupIcon())" size="20px" />
+            <span :key="overlayStore.groupSettings.activeGroupId ?? 'g'" class="wd-ovl__gswap-item">
+              <IconifyIcon v-if="isIconifyIcon(overlayStore.activeGroupIcon())" :icon="overlayStore.activeGroupIcon()" :height="20" :width="20" class="wd-ovl__ifg" />
+              <q-icon v-else :name="groupIcon(overlayStore.activeGroupIcon())" size="20px" />
+            </span>
           </Transition>
           <svg class="wd-ovl__group-arrow wd-ovl__group-arrow--next" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 6l6 6-6 6" />
@@ -1493,18 +1557,48 @@ onBeforeUnmount(() => {
     <q-dialog v-model="showIconPicker">
       <div class="wd-ovl__icon-picker">
         <div class="wd-ovl__icon-picker-title">{{ t('overlays.icon_change') }}</div>
-        <div class="wd-ovl__icon-grid">
-          <button
-            v-for="name in groupIconChoices"
-            :key="name"
-            class="wd-ovl__icon-cell"
-            :class="{ 'wd-ovl__icon-cell--active': name === activeGroupIconName }"
-            :aria-label="name"
-            @click.stop="applyGroupIcon(name)"
-          >
-            <q-icon :name="layerIcon(name)" size="26px" />
-          </button>
-        </div>
+        <q-input
+          v-model="iconQuery"
+          dense outlined clearable
+          class="wd-ovl__icon-search"
+          :placeholder="t('overlays.icon_search')"
+          :loading="iconSearching"
+        >
+          <template #prepend><q-icon name="search-outline" size="16px" /></template>
+        </q-input>
+        <!-- Search results (Iconify, loads at runtime) -->
+        <template v-if="iconQuery && iconQuery.trim().length >= 2">
+          <div v-if="iconSearchError" class="wd-ovl__icon-note">{{ t('overlays.icon_search_error') }}</div>
+          <div v-else-if="!iconSearching && iconResults.length === 0" class="wd-ovl__icon-note">{{ t('overlays.icon_none') }}</div>
+          <div v-else class="wd-ovl__icon-grid">
+            <button
+              v-for="name in iconResults"
+              :key="name"
+              class="wd-ovl__icon-cell"
+              :class="{ 'wd-ovl__icon-cell--active': name === activeGroupIconName }"
+              :aria-label="name"
+              :title="name"
+              @click.stop="applyGroupIcon(name)"
+            >
+              <IconifyIcon :icon="name" :height="26" :width="26" class="wd-ovl__ifg" />
+            </button>
+          </div>
+        </template>
+        <!-- Common set (always offline) -->
+        <template v-else>
+          <div class="wd-ovl__icon-grid">
+            <button
+              v-for="name in groupIconChoices"
+              :key="name"
+              class="wd-ovl__icon-cell"
+              :class="{ 'wd-ovl__icon-cell--active': name === activeGroupIconName }"
+              :aria-label="name"
+              @click.stop="applyGroupIcon(name)"
+            >
+              <q-icon :name="groupIcon(name)" size="26px" />
+            </button>
+          </div>
+        </template>
       </div>
     </q-dialog>
   </div>
@@ -2608,6 +2702,25 @@ body.body--dark .wd-ovl__menu .q-item {
   color: #cfe8dc;
 }
 
+/* Icon picker search + runtime iconify glyphs (dialog teleports to body) */
+.wd-ovl__icon-search {
+  margin-bottom: 12px;
+}
+
+.wd-ovl__icon-note {
+  padding: 14px 4px;
+  font-size: 12.5px;
+  color: var(--wd-ctl-ink-soft);
+}
+
+// Runtime iconify glyphs: same ink treatment as the wd silhouettes
+.wd-ovl__ifg {
+  color: #22302a;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+
 /* Group quick-switch dropdown (title): active item + hidden marker */
 .wd-ovl__group-menu .q-item__section--avatar .q-icon img {
   border-radius: 2px;
@@ -2647,6 +2760,25 @@ body.body--dark .wd-ovl__menu .q-item {
 body.body--dark .wd-ovl__menu .q-item {
   color: #cfe8dc;
 }
+
+/* Icon picker search + runtime iconify glyphs (dialog teleports to body) */
+.wd-ovl__icon-search {
+  margin-bottom: 12px;
+}
+
+.wd-ovl__icon-note {
+  padding: 14px 4px;
+  font-size: 12.5px;
+  color: var(--wd-ctl-ink-soft);
+}
+
+// Runtime iconify glyphs: same ink treatment as the wd silhouettes
+.wd-ovl__ifg {
+  color: #22302a;
+  display: inline-block;
+  vertical-align: middle;
+}
+
 
 /* Group quick-switch dropdown (title): active item + hidden marker */
 .wd-ovl__group-menu .q-item__section--avatar .q-icon img {

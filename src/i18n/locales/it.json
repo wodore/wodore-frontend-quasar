@@ -401,7 +401,10 @@
     "group_more": "Altre azioni",
     "group_reset_confirm": "Ripristinare «{name}» ai livelli predefiniti? Le tue modifiche a questo gruppo andranno perse.",
     "icon_change": "Cambia icona",
-    "group_empty_hint": "Nessun livello in questo gruppo — aggiungili con + qui sotto."
+    "group_empty_hint": "Nessun livello in questo gruppo — aggiungili con + qui sotto.",
+    "icon_search": "Cerca icone …",
+    "icon_none": "Nessuna icona trovata.",
+    "icon_search_error": "Ricerca icone non disponibile al momento."
   },
   "basemap": "Mappa di base",
   "basemaps": {

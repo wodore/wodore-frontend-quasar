@@ -401,7 +401,10 @@
     "group_more": "Weitere Aktionen",
     "group_reset_confirm": "\"{name}\" auf die Standard-Ebenen zurücksetzen? Deine Änderungen an dieser Gruppe werden verworfen.",
     "icon_change": "Symbol ändern",
-    "group_empty_hint": "Noch keine Ebenen in dieser Gruppe — füge unten mit + hinzu."
+    "group_empty_hint": "Noch keine Ebenen in dieser Gruppe — füge unten mit + hinzu.",
+    "icon_search": "Symbol suchen …",
+    "icon_none": "Keine Symbole gefunden.",
+    "icon_search_error": "Symbolsuche derzeit nicht verfügbar."
   },
   "basemap": "Basiskarte",
   "basemaps": {
