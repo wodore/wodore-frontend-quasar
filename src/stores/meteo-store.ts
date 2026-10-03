@@ -257,9 +257,7 @@ export const useMeteoStore = defineStore('meteo', () => {
         query: {
           lang,
           collection,
-          include_symbols: 'all',
-          include_category: 'no',
-          include_collection: 'no',
+          fields: { weather_codes: 'code,slug,description_day,description_night,symbol_day,symbol_night' },
         },
       },
     });
