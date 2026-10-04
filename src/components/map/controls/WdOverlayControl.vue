@@ -16,6 +16,7 @@ import { useQuasar } from 'quasar';
 import { Icon as IconifyIcon } from '@iconify/vue';
 import { useDebounceFn } from '@vueuse/core';
 import { currentLocale } from '@services/locale';
+import { useConfirmPopover } from '@composables/useConfirmPopover';
 import {
   isDefaultGroupSlug,
   resetGroupToDefault,
@@ -280,32 +281,7 @@ function ensureVisibleActiveGroup(): void {
   }
 }
 
-// Pointer-anchored confirm popover (desktop: at the pointer, not a
-// centered modal; mobile: at the tap point)
-const footerConfirm = ref<{
-  message: string;
-  okLabel: string;
-  okClass: string;
-  onOk: () => void;
-  x: number;
-  y: number;
-} | null>(null);
-
-let lastPointer = { x: 0, y: 0 };
-function onWindowPointerDown(ev: PointerEvent): void {
-  lastPointer = { x: ev.clientX, y: ev.clientY };
-}
-window.addEventListener('pointerdown', onWindowPointerDown, { passive: true });
-
-function confirmAtPointer(okLabel: string, okClass: string, message: string, onOk: () => void): void {
-  footerConfirm.value = { message, okLabel, okClass, onOk, x: lastPointer.x, y: lastPointer.y };
-}
-
-function runFooterConfirm(ok: boolean): void {
-  const current = footerConfirm.value;
-  footerConfirm.value = null;
-  if (ok && current) current.onOk();
-}
+const { confirmAt } = useConfirmPopover();
 
 /** Footer: revert to the snapshot and exit edit mode — behind a
  *  confirm (discarding is destructive on a mobile footer tap) */
@@ -314,14 +290,19 @@ function cancelEdit(): void {
     editMode.value = false;
     return;
   }
-  confirmAtPointer(t('overlays.edit_discard'), 'wd-ovl__confirm-ok--danger', t('overlays.edit_unsaved_message'), () => {
+  confirmAt({
+    okLabel: t('overlays.edit_discard'),
+    okVariant: 'danger',
+    message: t('overlays.edit_unsaved_message'),
+    onOk: () => {
     if (snapshotGroups.value) {
       overlayStore.groupSettings.groups = JSON.parse(snapshotGroups.value);
       overlayStore.syncGroupSettings();
     }
-    editMode.value = false;
-    hasEdits.value = false;
-    ensureVisibleActiveGroup();
+      editMode.value = false;
+      hasEdits.value = false;
+      ensureVisibleActiveGroup();
+    },
   });
 }
 
@@ -331,9 +312,15 @@ function confirmEdit(): void {
     editMode.value = false;
     return;
   }
-  confirmAtPointer(t('overlays.edit_save'), 'wd-ovl__confirm-ok--go', t('overlays.edit_unsaved_message'), () => {
-    editMode.value = false;
-    hasEdits.value = false;
+  confirmAt({
+    okLabel: t('overlays.edit_save'),
+    okVariant: 'go',
+    message: t('overlays.edit_unsaved_message'),
+    cancelLabel: t('overlays.edit_keep_editing'),
+    onOk: () => {
+      editMode.value = false;
+      hasEdits.value = false;
+    },
   });
 }
 
@@ -348,35 +335,30 @@ function toggleEditMode(): void {
     return;
   }
   if (hasEdits.value) {
-    // 3-way: Save / Discard / dismiss (esc or backdrop = keep editing)
-    let action: 'save' | 'discard' | null = null;
-    $q.dialog({
-      title: t('overlays.edit_unsaved_title'),
+    // Pointer-anchored 3-way: Save / Discard / keep editing
+    confirmAt({
       message: t('overlays.edit_unsaved_message'),
-      ok: { label: t('overlays.edit_save'), unelevated: true, color: 'positive' },
-      cancel: { label: t('overlays.edit_discard'), flat: true },
-    })
-      .onOk(() => { action = 'save'; })
-      .onCancel(() => { action = 'discard'; })
-      .onDismiss(() => {
-        if (action === 'save') {
-          editMode.value = false;
-          hasEdits.value = false;
-          ensureVisibleActiveGroup();
-        } else if (action === 'discard') {
-          if (snapshotGroups.value) {
-            overlayStore.groupSettings.groups = JSON.parse(snapshotGroups.value);
-            overlayStore.syncGroupSettings();
-          }
-          editMode.value = false;
-          hasEdits.value = false;
-          ensureVisibleActiveGroup();
+      okLabel: t('overlays.edit_save'),
+      okVariant: 'go',
+      dangerLabel: t('overlays.edit_discard'),
+      cancelLabel: t('overlays.edit_keep_editing'),
+      onOk: () => {
+        editMode.value = false;
+        hasEdits.value = false;
+      },
+      onDanger: () => {
+        if (snapshotGroups.value) {
+          overlayStore.groupSettings.groups = JSON.parse(snapshotGroups.value);
+          overlayStore.syncGroupSettings();
         }
-        // action === null: dismissed without choice → keep editing
-      });
+        editMode.value = false;
+        hasEdits.value = false;
+        ensureVisibleActiveGroup();
+      },
+    });
     return;
   }
-  editMode.value = false;
+    editMode.value = false;
   ensureVisibleActiveGroup();
 }
 
@@ -498,20 +480,18 @@ const isGroupHidden = computed(() => {
   return group?.hidden ?? false;
 });
 
-/** Delete the active group (confirm) */
+/** Delete the active group (pointer-anchored confirm) */
 function confirmDeleteGroup(): void {
   const group = overlayStore.groupSettings.groups.find(
     g => g.id === overlayStore.groupSettings.activeGroupId
   );
   if (!group) return;
-  $q
-    .dialog({
-      title: t('overlays.group_delete'),
-      message: t('overlays.group_delete_confirm', { name: overlayStore.activeGroupName(t) }),
-      cancel: true,
-      ok: { label: t('overlays.group_delete'), unelevated: true, color: 'negative' },
-    })
-    .onOk(() => deleteActiveGroup());
+  confirmAt({
+    message: t('overlays.group_delete_confirm', { name: overlayStore.activeGroupName(t) }),
+    okLabel: t('overlays.group_delete'),
+    okVariant: 'danger',
+    onOk: () => deleteActiveGroup(),
+  });
 }
 
 function deleteActiveGroup(): void {
@@ -1439,7 +1419,6 @@ onBeforeUnmount(() => {
   for (const timer of lingerTimers.values()) clearTimeout(timer);
   lingerTimers.clear();
   if (dragScrollRaf) window.cancelAnimationFrame(dragScrollRaf);
-  window.removeEventListener('pointerdown', onWindowPointerDown);
 });
 </script>
 
@@ -1901,36 +1880,6 @@ onBeforeUnmount(() => {
       <img v-show="stripOpen" :src="iconClose" alt="" class="wd-ovl__toggle-icon"
         :class="{ 'wd-ovl__toggle-icon--open': stripOpen }" />
     </button>
-
-    <!-- ── Pointer-anchored confirm popover (edit footer) ─────────── -->
-    <Teleport to="body">
-      <div
-        v-if="footerConfirm"
-        class="wd-ovl__confirm-backdrop"
-        @click="runFooterConfirm(false)"
-      />
-      <div
-        v-if="footerConfirm"
-        class="wd-ovl__confirm"
-        :style="{ left: footerConfirm.x + 'px', top: footerConfirm.y + 'px' }"
-        role="dialog"
-        :aria-label="footerConfirm.message"
-      >
-        <div class="wd-ovl__confirm-msg">{{ footerConfirm.message }}</div>
-        <div class="wd-ovl__confirm-actions">
-          <button class="wd-ovl__confirm-btn" @click.stop="runFooterConfirm(false)">
-            {{ t('overlays.edit_keep_editing') }}
-          </button>
-          <button
-            class="wd-ovl__confirm-btn wd-ovl__confirm-ok"
-            :class="footerConfirm.okClass"
-            @click.stop="runFooterConfirm(true)"
-          >
-            {{ footerConfirm.okLabel }}
-          </button>
-        </div>
-      </div>
-    </Teleport>
 
     <!-- ── Floating drag ghost: the row follows the cursor ──────────── -->
     <Teleport to="body">
@@ -3211,76 +3160,6 @@ body.body--dark .wd-ovl__empty-hint {
     min-width: 26px;
     color: var(--wd-ctl-ink-soft);
   }
-}
-
-/* Pointer-anchored confirm popover (teleported) */
-.wd-ovl__confirm-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 2090;
-}
-
-.wd-ovl__confirm {
-  position: fixed;
-  z-index: 2095;
-  min-width: 230px;
-  max-width: 300px;
-  padding: 12px 14px;
-  transform: translate(-50%, calc(-100% - 14px));
-  background: var(--wd-ctl-bg) !important;
-  border: 1px solid var(--wd-ctl-border);
-  border-radius: 8px;
-  box-shadow: 0 10px 28px rgba(10, 20, 15, 0.24) !important;
-}
-
-.wd-ovl__confirm-msg {
-  font-size: 13px;
-  line-height: 1.45;
-  color: var(--wd-ctl-ink);
-}
-
-body.body--dark .wd-ovl__confirm-msg {
-  color: #cfe8dc;
-}
-
-.wd-ovl__confirm-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 6px;
-  margin-top: 10px;
-}
-
-.wd-ovl__confirm-btn {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--wd-ctl-ink-soft);
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.wd-ovl__confirm-btn:hover {
-  background: var(--wd-ctl-hover);
-}
-
-.wd-ovl__confirm-ok {
-  color: var(--wd-ctl-ink);
-  background: var(--wd-ctl-date-bg);
-}
-
-.wd-ovl__confirm-ok--danger {
-  color: #c44e3b !important;
-  background: rgba(196, 78, 59, 0.1) !important;
-}
-
-.wd-ovl__confirm-ok--go {
-  color: #1f6b58 !important;
-  background: rgba(42, 138, 114, 0.12) !important;
-}
-
-body.body--dark .wd-ovl__confirm-ok--go {
-  color: #7fe3c8 !important;
 }
 
 body.body--dark .wd-ovl__menu .q-item {
