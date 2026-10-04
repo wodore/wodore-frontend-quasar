@@ -140,7 +140,7 @@ for (const id of ['border_admin_country', 'border_admin_disputed']) {
 // Capitals switch from a solid dot to a hollow ring at z8 (like
 // swisstopo's dot_circle -> circle_circle step), towns/villages stay
 // solid dots at every zoom.
-const SW_DOT_GREY = '#4B4B4B';
+const SW_DOT_GREY = '#5C5C5C';
 const byCategory = (capital, big, small) => [
   'match', ['get', 'category'],
   ['capital'], capital,
@@ -172,13 +172,14 @@ const dotLayers = () =>
       paint: {
         'circle-color': SW_DOT_GREY,
         // capitals hollow out into rings from z8 on
+        // swisstopo's town/village symbols are HOLLOW rings at every
+        // zoom (circle_dark_grey); only cities run solid dots below z8
+        // before switching to their big ring
         'circle-opacity': [
-          'step', ['zoom'], 1, 8, byCategory(0, 1, 1),
+          'step', ['zoom'], 1, 8, byCategory(0, 0, 0),
         ],
         'circle-stroke-color': SW_DOT_GREY,
-        'circle-stroke-width': [
-          'step', ['zoom'], 0, 8, byCategory(1.3, 0, 0),
-        ],
+        'circle-stroke-width': byCategory(1.5, 1.1, 1),
         'circle-pitch-alignment': 'map',
         // swisstopo icon ladder: dot 6 -> 8px, ring 10 -> 12px;
         // villages 4 -> 6 -> 8 -> 10px (radii = half diameter)
@@ -540,12 +541,12 @@ const CASING_COLOR = [
 const CASING_WIDTH = [
   'interpolate', ['exponential', 2], ['zoom'],
   6, 0,
-  8, byType(rampOr(1.5, 3), 3, 0, 0, 0, 0, 0),
-  9, byType(rampOr(2, 3.5), 3.5, 0, 0, 0, 0, 0),
-  10, byType(rampOr(2, 4), 4, 3.5, 3.5, 3, 2.5, 0),
-  12, byType(rampOr(3, 6.5), 6.5, 6, 5, 4, 3, 2.5),
-  15, byType(rampOr(5, 10), 10, 8, 6.5, 5.5, 4, 3),
-  19, byType(rampOr(6.5, 13), 13, 10.5, 8.5, 7, 5.5, 4),
+  8, byType(rampOr(0.4, 0.8), 0.8, 0, 0, 0, 0, 0),
+  9, byType(rampOr(0.5, 1), 1, 0, 0, 0, 0, 0),
+  10, byType(rampOr(0.6, 1.2), 1.2, 1, 1, 0.9, 0.7, 0),
+  12, byType(rampOr(0.9, 1.8), 1.8, 1.5, 1.4, 1.2, 1, 0.7),
+  15, byType(rampOr(1.3, 2.6), 2.6, 2.2, 2, 1.8, 1.5, 1),
+  19, byType(rampOr(2, 4), 4, 3.5, 3.2, 2.8, 2.5, 1.6),
 ];
 const CASING_BLUR = ['interpolate', ['linear'], ['zoom'], 7, 3, 8, 0.4];
 clonePaint(
@@ -563,7 +564,7 @@ const MINOR_CASING_COLOR = [
 ];
 const MINOR_CASING_WIDTH = [
   'interpolate', ['exponential', 2], ['zoom'],
-  13, 2, 15, 3.2, 19, 7,
+  13, 0.7, 15, 1.2, 19, 2.5,
 ];
 clonePaint(
   ['road_minor_casing', 'road_minor_casing_bridge', 'road_minor_casing_tunnel'],
