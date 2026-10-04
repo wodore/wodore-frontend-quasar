@@ -12,7 +12,6 @@
  * but their visual context (what's beside them, the map margin) matters.
  */
 import { test, expect } from '@playwright/test';
-import { allure } from 'allure-playwright';
 import { loadMap, pinTheme, tagTest } from './helpers';
 
 const STATES = [

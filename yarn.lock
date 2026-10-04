@@ -1943,6 +1943,13 @@
     "@iconify/types" "^2.0.0"
     mlly "^1.8.0"
 
+"@iconify/vue@^5.0.3":
+  version "5.0.3"
+  resolved "https://registry.yarnpkg.com/@iconify/vue/-/vue-5.0.3.tgz#1e8f927a46d35f3a42dadf5e4e429e0307e04d26"
+  integrity sha512-e9x6QZe2/HyeHUog0jzZJSZts7m/YntPYp/p4OqtZEXpHznxWnQpcX30YpuaUH43h69l3YeR1FCJ8V1t3qd7qA==
+  dependencies:
+    "@iconify/types" "^2.0.0"
+
 "@indoorequal/vue-maplibre-gl@^9.0.1":
   version "9.0.1"
   resolved "https://registry.yarnpkg.com/@indoorequal/vue-maplibre-gl/-/vue-maplibre-gl-9.0.1.tgz#44646ca3cbbdd340903a61bbfdb9b990c2b8ec92"

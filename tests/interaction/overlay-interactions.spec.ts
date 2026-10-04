@@ -123,7 +123,7 @@ test.describe('attribution', () => {
 });
 
 test.describe('gesture disambiguation', () => {
-  test.beforeEach(async ({ page }, testInfo) => {
+  test.beforeEach(async ({ page }, _testInfo) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await loadMap(page);
   });
@@ -140,7 +140,7 @@ test.describe('gesture disambiguation', () => {
     expect(focus).toBe(false);
   });
 
-  test('pan does NOT enter focus', async ({ page }, testInfo) => {
+  test('pan does NOT enter focus', async ({ page }, _testInfo) => {
     tagTest('light', 'mobile', 'gestures');
     await page.evaluate(`(() => {
       const el = document.querySelector('.maplibregl-map');
@@ -156,7 +156,7 @@ test.describe('gesture disambiguation', () => {
     expect(focus).toBe(false);
   });
 
-  test('pinch does NOT enter focus', async ({ page }, testInfo) => {
+  test('pinch does NOT enter focus', async ({ page }, _testInfo) => {
     tagTest('light', 'mobile', 'gestures');
     await page.evaluate(`(() => {
       const el = document.querySelector('.maplibregl-map');

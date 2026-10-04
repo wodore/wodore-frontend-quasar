@@ -136,7 +136,9 @@ export const useUserSettingsStore = defineStore('userSettings', () => {
   // Reactive state
   const settings = ref<UserSettings>(loadSettings());
 
-  // Save to localStorage (debounced)
+  // Save to localStorage (debounced) — mirrored to the durable native
+  // store (Capacitor Preferences) so a WebView cache/data clear cannot
+  // lose the settings (incl. custom group icons)
   const saveSettings = useDebounceFn(() => {
     storageSet(STORAGE_KEY, settings.value);
   }, 500);
