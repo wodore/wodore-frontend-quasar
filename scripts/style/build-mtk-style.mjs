@@ -448,7 +448,7 @@ for (const id of ['relief_hillshade_ao_min', 'relief_hillshade_ao_med']) {
   // mid zooms where terrain detail starts to matter
   p['hillshade-exaggeration'] = [
     'interpolate', ['linear'], ['zoom'],
-    5, 0.05, 8.5, 0.18, 12, 0.38, 16, 0.35,
+    5, 0.16, 8.5, 0.28, 12, 0.38, 16, 0.35,
   ];
 }
 // Landcover textures (forest floor, tree rows, quarries…) painted the
