@@ -382,6 +382,52 @@ const trackLayer = {
   base.layers.splice(idx === -1 ? base.layers.length : idx, 0, trackLayer);
 }
 
+// Paths in neutral grey (swisstopo rgb(115,115,115)) at our own,
+// clearly visible widths; T5/T6 + via ferrata become dotted
+for (const id of ['road_path', 'road_path_mountain', 'road_path_alpine']) {
+  const l = layer(id);
+  let json = JSON.stringify(l.paint['line-color']);
+  json = json
+    .replaceAll('hsla(225, 15%, 40%', 'hsla(0, 0%, 45%')
+    .replaceAll('hsla(225, 5%, 30%', 'hsla(0, 0%, 38%');
+  l.paint['line-color'] = JSON.parse(json);
+}
+for (const id of ['road_path_urban', 'road_path_steps']) {
+  const l = layer(id);
+  let json = JSON.stringify(l.paint['line-color']);
+  json = json.replaceAll('hsla(216, 15%, 70%', 'hsla(0, 0%, 62%');
+  l.paint['line-color'] = JSON.parse(json);
+}
+// alpine layer keeps only T4 (dashed); T5/T6 + via ferrata get dots
+{
+  const alpine = layer('road_path_alpine');
+  alpine.filter = [
+    'all',
+    ['has', 'sac_scale'],
+    ['in', ['get', 'sac_scale'], ['literal', ['T4']]],
+  ];
+  const dots = {
+    id: 'wd-path-extreme',
+    type: 'line',
+    source: 'mtk',
+    'source-layer': 'road',
+    minzoom: alpine.minzoom,
+    maxzoom: alpine.maxzoom,
+    filter: [
+      'any',
+      ['in', ['get', 'sac_scale'], ['literal', ['T5', 'T6']]],
+      ['==', ['get', 'type'], 'via_ferrata'],
+    ],
+    layout: { ...alpine.layout, 'line-cap': 'round', 'line-join': 'round' },
+    paint: {
+      ...alpine.paint,
+      'line-dasharray': [0.1, 1.6],
+    },
+  };
+  const idx = base.layers.findIndex(l => l.id === 'road_path_alpine');
+  base.layers.splice(idx + 1, 0, dots);
+}
+
 // The natural-earth landcover raster drags a uniform dark tint over
 // everything at low zooms (0.1 opacity at z7 measured) — swisstopo's
 // country views are clean paper. Fade it fully out by z5.
@@ -595,11 +641,13 @@ clonePaint(['road_minor', 'road_minor_bridge'], {
 });
 
 // Casings: swisstopo's near-black grey (gold-brown under motorway/trunk)
+// user call: lighter than the first dark port, closer to swisstopo's
+// faint rendered hairline (their gold halo measures ~rgb(205,178,97))
 const CASING_COLOR = [
   'interpolate', ['linear'], ['zoom'],
-  5, 'hsla(40, 8%, 32%, 0)',
-  9, byType('#AA881E', '#AA881E', '#505050', '#505050', '#505050', '#505050', '#505050'),
-  15, byType('#8B6B3F', '#8B6B3F', '#5A5A5A', '#5A5A5A', '#5A5A5A', '#5A5A5A', '#5A5A5A'),
+  5, 'hsla(0, 0%, 60%, 0)',
+  9, byType('#BE9A50', '#BE9A50', '#8C8C8C', '#8C8C8C', '#8C8C8C', '#8C8C8C', '#8C8C8C'),
+  15, byType('#B08A44', '#B08A44', '#969696', '#969696', '#969696', '#969696', '#969696'),
 ];
 const CASING_WIDTH = [
   'interpolate', ['exponential', 2], ['zoom'],
@@ -623,7 +671,7 @@ clonePaint(
 );
 const MINOR_CASING_COLOR = [
   'interpolate', ['linear'], ['zoom'],
-  13, 'hsla(40, 8%, 32%, 0)', 15, '#5A5A5A',
+  13, 'hsla(0, 0%, 60%, 0)', 15, '#969696',
 ];
 const MINOR_CASING_WIDTH = [
   'interpolate', ['exponential', 2], ['zoom'],

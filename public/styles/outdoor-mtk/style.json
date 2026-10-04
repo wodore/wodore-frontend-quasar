@@ -6187,9 +6187,9 @@
             "zoom"
           ],
           13,
-          "hsla(40, 8%, 32%, 0)",
+          "hsla(0, 0%, 60%, 0)",
           15,
-          "#5A5A5A"
+          "#969696"
         ],
         "line-gap-width": [
           "interpolate",
@@ -6306,7 +6306,7 @@
             "zoom"
           ],
           5,
-          "hsla(40, 8%, 32%, 0)",
+          "hsla(0, 0%, 60%, 0)",
           9,
           [
             "match",
@@ -6317,29 +6317,29 @@
             [
               "motorway"
             ],
-            "#AA881E",
+            "#BE9A50",
             [
               "trunk"
             ],
-            "#AA881E",
+            "#BE9A50",
             [
               "primary"
             ],
-            "#505050",
+            "#8C8C8C",
             [
               "secondary"
             ],
-            "#505050",
+            "#8C8C8C",
             [
               "tertiary"
             ],
-            "#505050",
+            "#8C8C8C",
             [
               "minor",
               "service"
             ],
-            "#505050",
-            "#505050"
+            "#8C8C8C",
+            "#8C8C8C"
           ],
           15,
           [
@@ -6351,29 +6351,29 @@
             [
               "motorway"
             ],
-            "#8B6B3F",
+            "#B08A44",
             [
               "trunk"
             ],
-            "#8B6B3F",
+            "#B08A44",
             [
               "primary"
             ],
-            "#5A5A5A",
+            "#969696",
             [
               "secondary"
             ],
-            "#5A5A5A",
+            "#969696",
             [
               "tertiary"
             ],
-            "#5A5A5A",
+            "#969696",
             [
               "minor",
               "service"
             ],
-            "#5A5A5A",
-            "#5A5A5A"
+            "#969696",
+            "#969696"
           ]
         ],
         "line-gap-width": [
@@ -7138,9 +7138,9 @@
             "zoom"
           ],
           13,
-          "hsla(40, 8%, 32%, 0)",
+          "hsla(0, 0%, 60%, 0)",
           15,
-          "#5A5A5A"
+          "#969696"
         ],
         "line-gap-width": [
           "interpolate",
@@ -7251,7 +7251,7 @@
             "zoom"
           ],
           5,
-          "hsla(40, 8%, 32%, 0)",
+          "hsla(0, 0%, 60%, 0)",
           9,
           [
             "match",
@@ -7262,29 +7262,29 @@
             [
               "motorway"
             ],
-            "#AA881E",
+            "#BE9A50",
             [
               "trunk"
             ],
-            "#AA881E",
+            "#BE9A50",
             [
               "primary"
             ],
-            "#505050",
+            "#8C8C8C",
             [
               "secondary"
             ],
-            "#505050",
+            "#8C8C8C",
             [
               "tertiary"
             ],
-            "#505050",
+            "#8C8C8C",
             [
               "minor",
               "service"
             ],
-            "#505050",
-            "#505050"
+            "#8C8C8C",
+            "#8C8C8C"
           ],
           15,
           [
@@ -7296,29 +7296,29 @@
             [
               "motorway"
             ],
-            "#8B6B3F",
+            "#B08A44",
             [
               "trunk"
             ],
-            "#8B6B3F",
+            "#B08A44",
             [
               "primary"
             ],
-            "#5A5A5A",
+            "#969696",
             [
               "secondary"
             ],
-            "#5A5A5A",
+            "#969696",
             [
               "tertiary"
             ],
-            "#5A5A5A",
+            "#969696",
             [
               "minor",
               "service"
             ],
-            "#5A5A5A",
-            "#5A5A5A"
+            "#969696",
+            "#969696"
           ]
         ],
         "line-gap-width": [
@@ -7778,7 +7778,7 @@
             "zoom"
           ],
           13,
-          "hsla(216, 15%, 70%, 0)",
+          "hsla(0, 0%, 62%, 0)",
           14,
           [
             "case",
@@ -7786,7 +7786,7 @@
               "has",
               "urban"
             ],
-            "hsla(216, 15%, 70%, 1)",
+            "hsla(0, 0%, 62%, 1)",
             "hsla(216, 5%, 45%, 1)"
           ]
         ],
@@ -7870,11 +7870,11 @@
             "zoom"
           ],
           12,
-          "hsla(225, 15%, 40%, 0)",
+          "hsla(0, 0%, 45%, 0)",
           13,
-          "hsla(225, 15%, 40%, 1)",
+          "hsla(0, 0%, 45%, 1)",
           14,
-          "hsla(225, 5%, 30%, 1)"
+          "hsla(0, 0%, 38%, 1)"
         ],
         "line-dasharray": [
           6,
@@ -7909,36 +7909,23 @@
       "source-layer": "road",
       "type": "line",
       "filter": [
-        "any",
+        "all",
         [
-          "all",
+          "has",
+          "sac_scale"
+        ],
+        [
+          "in",
           [
-            "has",
+            "get",
             "sac_scale"
           ],
           [
-            "in",
+            "literal",
             [
-              "get",
-              "sac_scale"
-            ],
-            [
-              "literal",
-              [
-                "T4",
-                "T5",
-                "T6"
-              ]
+              "T4"
             ]
           ]
-        ],
-        [
-          "==",
-          [
-            "get",
-            "type"
-          ],
-          "via_ferrata"
         ]
       ],
       "minzoom": 12,
@@ -7957,11 +7944,11 @@
             "zoom"
           ],
           12,
-          "hsla(225, 15%, 40%, 0)",
+          "hsla(0, 0%, 45%, 0)",
           13,
-          "hsla(225, 15%, 40%, 1)",
+          "hsla(0, 0%, 45%, 1)",
           14,
-          "hsla(225, 5%, 30%, 1)"
+          "hsla(0, 0%, 38%, 1)"
         ],
         "line-dasharray": [
           2,
@@ -7988,6 +7975,79 @@
           "group": "road",
           "key": "path_alpine"
         }
+      }
+    },
+    {
+      "id": "wd-path-extreme",
+      "type": "line",
+      "source": "mtk",
+      "source-layer": "road",
+      "minzoom": 12,
+      "maxzoom": 23,
+      "filter": [
+        "any",
+        [
+          "in",
+          [
+            "get",
+            "sac_scale"
+          ],
+          [
+            "literal",
+            [
+              "T5",
+              "T6"
+            ]
+          ]
+        ],
+        [
+          "==",
+          [
+            "get",
+            "type"
+          ],
+          "via_ferrata"
+        ]
+      ],
+      "layout": {
+        "line-join": "round",
+        "visibility": "visible",
+        "line-cap": "round"
+      },
+      "paint": {
+        "line-color": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          12,
+          "hsla(0, 0%, 45%, 0)",
+          13,
+          "hsla(0, 0%, 45%, 1)",
+          14,
+          "hsla(0, 0%, 38%, 1)"
+        ],
+        "line-dasharray": [
+          0.1,
+          1.6
+        ],
+        "line-width": [
+          "interpolate",
+          [
+            "exponential",
+            1.4
+          ],
+          [
+            "zoom"
+          ],
+          6,
+          0.15,
+          19,
+          3.69
+        ]
       }
     },
     {
@@ -8046,11 +8106,11 @@
             "zoom"
           ],
           12,
-          "hsla(225, 15%, 40%, 0)",
+          "hsla(0, 0%, 45%, 0)",
           13,
-          "hsla(225, 15%, 40%, 1)",
+          "hsla(0, 0%, 45%, 1)",
           14,
-          "hsla(225, 5%, 30%, 1)"
+          "hsla(0, 0%, 38%, 1)"
         ],
         "line-width": [
           "interpolate",
@@ -8175,9 +8235,9 @@
             "zoom"
           ],
           13,
-          "hsla(216, 15%, 70%, 0)",
+          "hsla(0, 0%, 62%, 0)",
           14,
-          "hsla(216, 15%, 70%, 1)"
+          "hsla(0, 0%, 62%, 1)"
         ],
         "line-width": [
           "interpolate",
@@ -10031,9 +10091,9 @@
             "zoom"
           ],
           13,
-          "hsla(40, 8%, 32%, 0)",
+          "hsla(0, 0%, 60%, 0)",
           15,
-          "#5A5A5A"
+          "#969696"
         ],
         "line-gap-width": [
           "interpolate",
@@ -10146,7 +10206,7 @@
             "zoom"
           ],
           5,
-          "hsla(40, 8%, 32%, 0)",
+          "hsla(0, 0%, 60%, 0)",
           9,
           [
             "match",
@@ -10157,29 +10217,29 @@
             [
               "motorway"
             ],
-            "#AA881E",
+            "#BE9A50",
             [
               "trunk"
             ],
-            "#AA881E",
+            "#BE9A50",
             [
               "primary"
             ],
-            "#505050",
+            "#8C8C8C",
             [
               "secondary"
             ],
-            "#505050",
+            "#8C8C8C",
             [
               "tertiary"
             ],
-            "#505050",
+            "#8C8C8C",
             [
               "minor",
               "service"
             ],
-            "#505050",
-            "#505050"
+            "#8C8C8C",
+            "#8C8C8C"
           ],
           15,
           [
@@ -10191,29 +10251,29 @@
             [
               "motorway"
             ],
-            "#8B6B3F",
+            "#B08A44",
             [
               "trunk"
             ],
-            "#8B6B3F",
+            "#B08A44",
             [
               "primary"
             ],
-            "#5A5A5A",
+            "#969696",
             [
               "secondary"
             ],
-            "#5A5A5A",
+            "#969696",
             [
               "tertiary"
             ],
-            "#5A5A5A",
+            "#969696",
             [
               "minor",
               "service"
             ],
-            "#5A5A5A",
-            "#5A5A5A"
+            "#969696",
+            "#969696"
           ]
         ],
         "line-gap-width": [
