@@ -817,20 +817,18 @@ const cappedPromotedCount = computed(
 );
 
 /** Reset the active group to its predefined definition — behind a
- *  confirm (it discards the user's customization of the group). */
+ *  pointer-anchored confirm (it discards the user's customization) */
 function confirmResetGroup(): void {
   const group = overlayStore.groupSettings.groups.find(
     g => g.id === overlayStore.groupSettings.activeGroupId
   );
   if (!group) return;
-  $q
-    .dialog({
-      title: t('overlays.group_reset'),
-      message: t('overlays.group_reset_confirm', { name: overlayStore.activeGroupName(t) }),
-      cancel: true,
-      ok: { label: t('overlays.group_reset'), unelevated: true },
-    })
-    .onOk(() => resetGroup());
+  confirmAt({
+    message: t('overlays.group_reset_confirm', { name: overlayStore.activeGroupName(t) }),
+    okLabel: t('overlays.group_reset'),
+    okVariant: 'go',
+    onOk: () => resetGroup(),
+  });
 }
 
 // ── Group icon picker (edit mode) ────────────────────────────────────────

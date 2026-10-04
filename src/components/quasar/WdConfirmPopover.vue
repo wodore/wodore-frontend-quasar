@@ -107,13 +107,17 @@ onBeforeUnmount(() => {
 .wd-confirm {
   position: fixed;
   z-index: 2095;
-  min-width: 230px;
+  min-width: 240px;
   max-width: 320px;
-  padding: 12px 14px;
+  padding: 14px 16px;
   background: var(--wd-ctl-bg) !important;
   border: 1px solid var(--wd-ctl-border);
-  border-radius: 8px;
-  box-shadow: 0 10px 28px rgba(10, 20, 15, 0.24) !important;
+  border-radius: 10px;
+  // Layered elevation: tight contact shadow + soft ambient — reads as
+  // floating paper, not a flat sticker
+  box-shadow:
+    0 2px 6px rgba(10, 20, 15, 0.16),
+    0 14px 34px rgba(10, 20, 15, 0.26) !important;
 }
 
 .wd-confirm--wide {
@@ -122,6 +126,7 @@ onBeforeUnmount(() => {
 
 .wd-confirm__msg {
   font-size: 13px;
+  font-weight: 500;
   line-height: 1.45;
   color: var(--wd-ctl-ink);
 }
@@ -134,18 +139,21 @@ body.body--dark .wd-confirm__msg {
   display: flex;
   justify-content: flex-end;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 10px;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .wd-confirm__btn {
-  padding: 6px 12px;
+  padding: 7px 14px;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   background: transparent;
   color: var(--wd-ctl-ink-soft);
   font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
   cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
 }
 
 .wd-confirm__btn:hover {
@@ -154,10 +162,11 @@ body.body--dark .wd-confirm__msg {
 
 .wd-confirm__btn--danger {
   color: #c44e3b !important;
-}
 
-.wd-confirm__btn--danger:hover {
-  background: rgba(196, 78, 59, 0.1);
+  &:hover {
+    color: #a93d2c !important;
+    background: rgba(196, 78, 59, 0.12);
+  }
 }
 
 .wd-confirm__ok {
@@ -166,13 +175,21 @@ body.body--dark .wd-confirm__msg {
 }
 
 .wd-confirm__ok--danger {
-  color: #c44e3b !important;
-  background: rgba(196, 78, 59, 0.1) !important;
+  color: #b23e2d !important;
+  background: rgba(196, 78, 59, 0.16) !important;
+
+  &:hover {
+    background: rgba(196, 78, 59, 0.24) !important;
+  }
 }
 
 .wd-confirm__ok--go {
-  color: #1f6b58 !important;
-  background: rgba(42, 138, 114, 0.12) !important;
+  color: #17513f !important;
+  background: rgba(42, 138, 114, 0.18) !important;
+
+  &:hover {
+    background: rgba(42, 138, 114, 0.26) !important;
+  }
 }
 
 body.body--dark .wd-confirm__ok--go {
