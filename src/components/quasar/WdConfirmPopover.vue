@@ -112,7 +112,7 @@ onBeforeUnmount(() => {
   padding: 14px 16px;
   background: var(--wd-ctl-bg) !important;
   border: 1px solid var(--wd-ctl-border);
-  border-radius: 10px;
+  border-radius: 8px;
   // Layered elevation: tight contact shadow + soft ambient — reads as
   // floating paper, not a flat sticker
   box-shadow:
@@ -146,7 +146,7 @@ body.body--dark .wd-confirm__msg {
 .wd-confirm__btn {
   padding: 7px 14px;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   background: transparent;
   color: var(--wd-ctl-ink-soft);
   font-size: 13px;

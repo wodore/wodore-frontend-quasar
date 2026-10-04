@@ -2946,7 +2946,7 @@ body.body--dark .wd-ovl__row-name {
   gap: 8px;
   padding: 4px 12px 4px 4px;
   border: 1px solid var(--wd-ctl-border);
-  border-radius: 6px;
+  border-radius: 4px;
   background: var(--wd-ctl-bg);
   box-shadow: 0 8px 22px rgba(10, 20, 15, 0.26), 0 2px 5px rgba(10, 20, 15, 0.16) !important;
   pointer-events: none;

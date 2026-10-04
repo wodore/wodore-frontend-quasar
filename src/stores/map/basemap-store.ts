@@ -5,7 +5,7 @@ import { getRasterStyle } from '@stores/map/utils/raster';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
 import { Platform } from 'quasar';
 //import type { Emitter } from 'mitt';
-import { storageGet, storageSet, storageHas } from '@services/storage';
+import { storageGet, storageSet } from '@services/storage';
 import { getGPUTier } from '@pmndrs/detect-gpu';
 import { useOverlayStore } from './overlay-store';
 import { StyleSpecification } from 'maplibre-gl';
