@@ -171,15 +171,30 @@ const dotLayers = () =>
         ['match', ['get', 'category'], cats, true, false],
       ],
       paint: {
-        'circle-color': SW_DOT_GREY,
-        // swisstopo semantics: towns and villages are hollow rings at
-        // every zoom (their place_town_village icons are rings from z6 —
-        // subtle but visible zoomed out); only capitals run a solid dot
-        // below z8 before switching to their big ring
+        // swisstopo semantics, straight from their style: the rings are
+        // WHITE-FILLED with a dark grey stroke (their sprites carry a
+        // white center), and every icon fades out as you zoom in —
+        // cities at z11, towns at z12, villages at z13 (icon-opacity
+        // steps) so street-level views carry no symbols. Capitals run
+        // a solid dark dot below z8 (their dot_circle) before the ring.
+        'circle-color': [
+          'step', ['zoom'],
+          byCategory(SW_DOT_GREY, '#FFFFFF', '#FFFFFF'),
+          8, '#FFFFFF',
+        ],
         'circle-opacity': [
-          'step', ['zoom'], byCategory(1, 0, 0), 8, byCategory(0, 0, 0),
+          'step', ['zoom'], 1,
+          11, byCategory(0, 1, 1),
+          12, byCategory(0, 0, 1),
+          13, byCategory(0, 0, 0),
         ],
         'circle-stroke-color': SW_DOT_GREY,
+        'circle-stroke-opacity': [
+          'step', ['zoom'], 1,
+          11, byCategory(0, 1, 1),
+          12, byCategory(0, 0, 1),
+          13, byCategory(0, 0, 0),
+        ],
         'circle-stroke-width': byCategory(1.5, 1.1, 1),
         'circle-pitch-alignment': 'map',
         // swisstopo icon ladder: dot 6 -> 8px, ring 10 -> 12px;

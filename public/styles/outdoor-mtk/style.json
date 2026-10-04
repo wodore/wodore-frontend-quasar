@@ -14064,8 +14064,7 @@
         ]
       ],
       "paint": {
-        "circle-color": "#4B4B4B",
-        "circle-opacity": [
+        "circle-color": [
           "step",
           [
             "zoom"
@@ -14079,14 +14078,57 @@
             [
               "capital"
             ],
+            "#4B4B4B",
+            [
+              "big_place"
+            ],
+            "#FFFFFF",
+            "#FFFFFF"
+          ],
+          8,
+          "#FFFFFF"
+        ],
+        "circle-opacity": [
+          "step",
+          [
+            "zoom"
+          ],
+          1,
+          11,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            0,
+            [
+              "big_place"
+            ],
             1,
+            1
+          ],
+          12,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            0,
             [
               "big_place"
             ],
             0,
-            0
+            1
           ],
-          8,
+          13,
           [
             "match",
             [
@@ -14105,6 +14147,64 @@
           ]
         ],
         "circle-stroke-color": "#4B4B4B",
+        "circle-stroke-opacity": [
+          "step",
+          [
+            "zoom"
+          ],
+          1,
+          11,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            0,
+            [
+              "big_place"
+            ],
+            1,
+            1
+          ],
+          12,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            0,
+            [
+              "big_place"
+            ],
+            0,
+            1
+          ],
+          13,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            0,
+            [
+              "big_place"
+            ],
+            0,
+            0
+          ]
+        ],
         "circle-stroke-width": [
           "match",
           [
@@ -14286,8 +14386,7 @@
         ]
       ],
       "paint": {
-        "circle-color": "#4B4B4B",
-        "circle-opacity": [
+        "circle-color": [
           "step",
           [
             "zoom"
@@ -14301,14 +14400,57 @@
             [
               "capital"
             ],
+            "#4B4B4B",
+            [
+              "big_place"
+            ],
+            "#FFFFFF",
+            "#FFFFFF"
+          ],
+          8,
+          "#FFFFFF"
+        ],
+        "circle-opacity": [
+          "step",
+          [
+            "zoom"
+          ],
+          1,
+          11,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            0,
+            [
+              "big_place"
+            ],
             1,
+            1
+          ],
+          12,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            0,
             [
               "big_place"
             ],
             0,
-            0
+            1
           ],
-          8,
+          13,
           [
             "match",
             [
@@ -14327,6 +14469,64 @@
           ]
         ],
         "circle-stroke-color": "#4B4B4B",
+        "circle-stroke-opacity": [
+          "step",
+          [
+            "zoom"
+          ],
+          1,
+          11,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            0,
+            [
+              "big_place"
+            ],
+            1,
+            1
+          ],
+          12,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            0,
+            [
+              "big_place"
+            ],
+            0,
+            1
+          ],
+          13,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            0,
+            [
+              "big_place"
+            ],
+            0,
+            0
+          ]
+        ],
         "circle-stroke-width": [
           "match",
           [
@@ -14508,8 +14708,7 @@
         ]
       ],
       "paint": {
-        "circle-color": "#4B4B4B",
-        "circle-opacity": [
+        "circle-color": [
           "step",
           [
             "zoom"
@@ -14523,14 +14722,57 @@
             [
               "capital"
             ],
+            "#4B4B4B",
+            [
+              "big_place"
+            ],
+            "#FFFFFF",
+            "#FFFFFF"
+          ],
+          8,
+          "#FFFFFF"
+        ],
+        "circle-opacity": [
+          "step",
+          [
+            "zoom"
+          ],
+          1,
+          11,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            0,
+            [
+              "big_place"
+            ],
             1,
+            1
+          ],
+          12,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            0,
             [
               "big_place"
             ],
             0,
-            0
+            1
           ],
-          8,
+          13,
           [
             "match",
             [
@@ -14549,6 +14791,64 @@
           ]
         ],
         "circle-stroke-color": "#4B4B4B",
+        "circle-stroke-opacity": [
+          "step",
+          [
+            "zoom"
+          ],
+          1,
+          11,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            0,
+            [
+              "big_place"
+            ],
+            1,
+            1
+          ],
+          12,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            0,
+            [
+              "big_place"
+            ],
+            0,
+            1
+          ],
+          13,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            0,
+            [
+              "big_place"
+            ],
+            0,
+            0
+          ]
+        ],
         "circle-stroke-width": [
           "match",
           [
@@ -14731,8 +15031,7 @@
         ]
       ],
       "paint": {
-        "circle-color": "#4B4B4B",
-        "circle-opacity": [
+        "circle-color": [
           "step",
           [
             "zoom"
@@ -14746,14 +15045,57 @@
             [
               "capital"
             ],
+            "#4B4B4B",
+            [
+              "big_place"
+            ],
+            "#FFFFFF",
+            "#FFFFFF"
+          ],
+          8,
+          "#FFFFFF"
+        ],
+        "circle-opacity": [
+          "step",
+          [
+            "zoom"
+          ],
+          1,
+          11,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            0,
+            [
+              "big_place"
+            ],
             1,
+            1
+          ],
+          12,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            0,
             [
               "big_place"
             ],
             0,
-            0
+            1
           ],
-          8,
+          13,
           [
             "match",
             [
@@ -14772,6 +15114,64 @@
           ]
         ],
         "circle-stroke-color": "#4B4B4B",
+        "circle-stroke-opacity": [
+          "step",
+          [
+            "zoom"
+          ],
+          1,
+          11,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            0,
+            [
+              "big_place"
+            ],
+            1,
+            1
+          ],
+          12,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            0,
+            [
+              "big_place"
+            ],
+            0,
+            1
+          ],
+          13,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            0,
+            [
+              "big_place"
+            ],
+            0,
+            0
+          ]
+        ],
         "circle-stroke-width": [
           "match",
           [
@@ -14946,8 +15346,7 @@
         ]
       ],
       "paint": {
-        "circle-color": "#4B4B4B",
-        "circle-opacity": [
+        "circle-color": [
           "step",
           [
             "zoom"
@@ -14961,14 +15360,57 @@
             [
               "capital"
             ],
+            "#4B4B4B",
+            [
+              "big_place"
+            ],
+            "#FFFFFF",
+            "#FFFFFF"
+          ],
+          8,
+          "#FFFFFF"
+        ],
+        "circle-opacity": [
+          "step",
+          [
+            "zoom"
+          ],
+          1,
+          11,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            0,
+            [
+              "big_place"
+            ],
             1,
+            1
+          ],
+          12,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            0,
             [
               "big_place"
             ],
             0,
-            0
+            1
           ],
-          8,
+          13,
           [
             "match",
             [
@@ -14987,6 +15429,64 @@
           ]
         ],
         "circle-stroke-color": "#4B4B4B",
+        "circle-stroke-opacity": [
+          "step",
+          [
+            "zoom"
+          ],
+          1,
+          11,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            0,
+            [
+              "big_place"
+            ],
+            1,
+            1
+          ],
+          12,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            0,
+            [
+              "big_place"
+            ],
+            0,
+            1
+          ],
+          13,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            0,
+            [
+              "big_place"
+            ],
+            0,
+            0
+          ]
+        ],
         "circle-stroke-width": [
           "match",
           [
