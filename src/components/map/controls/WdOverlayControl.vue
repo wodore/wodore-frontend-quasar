@@ -280,6 +280,33 @@ function ensureVisibleActiveGroup(): void {
   }
 }
 
+// Pointer-anchored confirm popover (desktop: at the pointer, not a
+// centered modal; mobile: at the tap point)
+const footerConfirm = ref<{
+  message: string;
+  okLabel: string;
+  okClass: string;
+  onOk: () => void;
+  x: number;
+  y: number;
+} | null>(null);
+
+let lastPointer = { x: 0, y: 0 };
+function onWindowPointerDown(ev: PointerEvent): void {
+  lastPointer = { x: ev.clientX, y: ev.clientY };
+}
+window.addEventListener('pointerdown', onWindowPointerDown, { passive: true });
+
+function confirmAtPointer(okLabel: string, okClass: string, message: string, onOk: () => void): void {
+  footerConfirm.value = { message, okLabel, okClass, onOk, x: lastPointer.x, y: lastPointer.y };
+}
+
+function runFooterConfirm(ok: boolean): void {
+  const current = footerConfirm.value;
+  footerConfirm.value = null;
+  if (ok && current) current.onOk();
+}
+
 /** Footer: revert to the snapshot and exit edit mode — behind a
  *  confirm (discarding is destructive on a mobile footer tap) */
 function cancelEdit(): void {
@@ -287,22 +314,15 @@ function cancelEdit(): void {
     editMode.value = false;
     return;
   }
-  $q
-    .dialog({
-      title: t('overlays.edit_unsaved_title'),
-      message: t('overlays.edit_unsaved_message'),
-      ok: { label: t('overlays.edit_discard'), unelevated: true, color: 'negative' },
-      cancel: { label: t('overlays.edit_keep_editing'), flat: true },
-    })
-    .onOk(() => {
-      if (snapshotGroups.value) {
-        overlayStore.groupSettings.groups = JSON.parse(snapshotGroups.value);
-        overlayStore.syncGroupSettings();
-      }
-      editMode.value = false;
-      hasEdits.value = false;
-      ensureVisibleActiveGroup();
-    });
+  confirmAtPointer(t('overlays.edit_discard'), 'wd-ovl__confirm-ok--danger', t('overlays.edit_unsaved_message'), () => {
+    if (snapshotGroups.value) {
+      overlayStore.groupSettings.groups = JSON.parse(snapshotGroups.value);
+      overlayStore.syncGroupSettings();
+    }
+    editMode.value = false;
+    hasEdits.value = false;
+    ensureVisibleActiveGroup();
+  });
 }
 
 /** Footer: keep the changes and exit edit mode — behind a confirm */
@@ -311,17 +331,10 @@ function confirmEdit(): void {
     editMode.value = false;
     return;
   }
-  $q
-    .dialog({
-      title: t('overlays.edit_unsaved_title'),
-      message: t('overlays.edit_unsaved_message'),
-      ok: { label: t('overlays.edit_save'), unelevated: true, color: 'positive' },
-      cancel: { label: t('overlays.edit_keep_editing'), flat: true },
-    })
-    .onOk(() => {
-      editMode.value = false;
-      hasEdits.value = false;
-    });
+  confirmAtPointer(t('overlays.edit_save'), 'wd-ovl__confirm-ok--go', t('overlays.edit_unsaved_message'), () => {
+    editMode.value = false;
+    hasEdits.value = false;
+  });
 }
 
 function toggleEditMode(): void {
@@ -385,14 +398,17 @@ function addNewGroup(): void {
   });
 }
 
+const HUTS_SLUG = 'huts';
+
 function addGroupWithName(name: string): void {
   const group = {
     id: typeof window !== 'undefined' && window.crypto?.randomUUID ? window.crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     slug: name.toLowerCase().replace(/\s+/g, '-'),
     name,
     icon: 'hiking',
-    layerSlugs: [],
-    activeLayerSlugs: [],
+    // New groups start with the huts layer, enabled — like the defaults
+    layerSlugs: [HUTS_SLUG],
+    activeLayerSlugs: [HUTS_SLUG],
     hidden: false,
     removed: false,
     locked: false,
@@ -402,6 +418,22 @@ function addGroupWithName(name: string): void {
   overlayStore.groupSettings.activeGroupId = group.id;
   overlayStore.syncGroupSettings();
   markEdited();
+  // Implicit icon: search by the group name, take the first hit
+  // ('Climbing' → fluent-emoji-flat person-climbing)
+  void pickIconForNewGroup(group.id, name);
+}
+
+async function pickIconForNewGroup(groupId: string, name: string): Promise<void> {
+  const hits = await searchIconsDirect(name);
+  if (hits.length === 0) return;
+  const group = overlayStore.groupSettings.groups.find(g => g.id === groupId);
+  if (!group || group.id !== overlayStore.groupSettings.activeGroupId) return;
+  // Prefer a hit whose slug CARRIES the query ('Climbing' →
+  // person-climbing, not iconify's first fuzzy match 'leg')
+  const needle = name.trim().toLowerCase().slice(0, 5);
+  const preferred = hits.find(h => h.split(':').pop()?.includes(needle));
+  group.icon = preferred ?? hits[0];
+  overlayStore.syncGroupSettings();
   markEdited();
 }
 
@@ -552,6 +584,14 @@ onMounted(() => {
   rowsResizeObserve();
 });
 
+// The rows BOX is the same size in mini and expanded (pixel-perfect
+// design) — the ResizeObserver never fires on state changes. Re-measure
+// when the CONTENT changes, or the thumb goes stale (mini after scroll).
+watch(
+  [expanded, () => miniLayers.value.length, () => visibleOthers.value.length, () => cappedPromotedCount.value],
+  () => nextTick(measureThumb)
+);
+
 function rowsResizeObserve(): void {
   const rows = document.querySelector('.wd-ovl__rows') as HTMLElement | null;
   if (!rows) return;
@@ -630,11 +670,12 @@ function onSwipeEnd(e: Event): void {
 /** Click outside the control collapses the expanded box */
 function onDocClick(ev: Event): void {
   const target = ev.target as HTMLElement;
-  if (!target.closest('.wd-ovl')) {
-    // In edit mode, never auto-close — the user must explicitly exit
-    if (editMode.value) return;
-    expanded.value = false;
-  }
+  // q-menu / q-dialog TELEPORT to <body> — their clicks are ours too
+  // (the group dropdown must not collapse the box)
+  if (target.closest('.wd-ovl, .q-menu, .q-dialog')) return;
+  // In edit mode, never auto-close — the user must explicitly exit
+  if (editMode.value) return;
+  expanded.value = false;
 }
 
 watch(expanded, v => {
@@ -879,6 +920,33 @@ const iconSearching = ref(false);
 const iconSearchError = ref(false);
 const visibleIconResults = computed(() => iconResults.value.slice(0, iconVisibleCount.value));
 
+/** Direct icon search (iconify + localized emoji + stems) — no UI state.
+ *  Reused by the picker search and the implicit new-group icon pick. */
+async function searchIconsDirect(query: string): Promise<string[]> {
+  const q = query.trim();
+  if (q.length < 2) return [];
+  // License policy (see .claude/agents/iconify.md): permissive sets only —
+  // Fluent Emoji (Flat, MIT) + Noto Emoji (Apache-2.0)
+  const SAFE_PREFIXES = `${FLUENT_FLAT},${NOTO}`;
+  const search = async (term: string): Promise<string[]> => {
+    const res = await window.fetch(
+      `https://api.iconify.design/search?query=${encodeURIComponent(term)}&limit=120&prefixes=${SAFE_PREFIXES}`
+    );
+    if (!res.ok) throw new Error(`search ${res.status}`);
+    const data = (await res.json()) as { icons?: string[] };
+    return data.icons ?? [];
+  };
+  let icons = await search(q);
+  // The keyword index is stem-based ("skier" matched nothing, "ski"
+  // matched 32) — retry shorter stems before giving up
+  for (let end = q.length - 1; icons.length === 0 && end >= Math.max(3, q.length - 2); end -= 1) {
+    icons = await search(q.slice(0, end));
+  }
+  // Multilingual (de/fr/it): localized emoji keywords → fluent-emoji
+  const localized = await searchLocalizedEmoji(q);
+  return [...new Set([...localized, ...icons])];
+}
+
 async function runIconSearch(query: string): Promise<void> {
   const q = query.trim();
   iconVisibleCount.value = 32;
@@ -890,33 +958,11 @@ async function runIconSearch(query: string): Promise<void> {
   iconSearching.value = true;
   iconSearchError.value = false;
   try {
-    // License policy (see .claude/agents/iconify.md): permissive sets only —
-    // no attribution-required collections in the results. Includes COLOR
-    // sets (fluent-emoji / fluent-color: MIT, icon-park: Apache 2.0).
-    // Primary: Fluent Emoji (Flat, MIT). Secondary: Noto Emoji
-    // (Apache-2.0) — same slugs, more choice. Older prefixes keep
-    // rendering, but search offers these only.
-    const SAFE_PREFIXES = `${FLUENT_FLAT},${NOTO}`;
-    const search = async (term: string): Promise<string[]> => {
-      const res = await window.fetch(
-        `https://api.iconify.design/search?query=${encodeURIComponent(term)}&limit=120&prefixes=${SAFE_PREFIXES}`
-      );
-      if (!res.ok) throw new Error(`search ${res.status}`);
-      const data = (await res.json()) as { icons?: string[] };
-      return data.icons ?? [];
-    };
-    let icons = await search(q);
-    // The keyword index is stem-based ("skier" matched nothing, "ski"
-    // matched 32) — retry shorter stems before giving up
-    for (let end = q.length - 1; icons.length === 0 && end >= Math.max(3, q.length - 2); end -= 1) {
-      icons = await search(q.slice(0, end));
-    }
-    // Multilingual (de/fr/it): localized emoji keywords → fluent-emoji
-    const localized = await searchLocalizedEmoji(q);
+    const results = await searchIconsDirect(q);
     // Fuzzy: typos still find something (montain → mountain)
     let fuzzy: string[] = [];
-    if (icons.length + localized.length < 8) fuzzy = fuzzyIconNames(q);
-    iconResults.value = [...new Set([...localized, ...icons, ...fuzzy])];
+    if (results.length < 8) fuzzy = fuzzyIconNames(q);
+    iconResults.value = [...new Set([...results, ...fuzzy])];
   } catch {
     iconResults.value = [];
     iconSearchError.value = true;
@@ -1393,6 +1439,7 @@ onBeforeUnmount(() => {
   for (const timer of lingerTimers.values()) clearTimeout(timer);
   lingerTimers.clear();
   if (dragScrollRaf) window.cancelAnimationFrame(dragScrollRaf);
+  window.removeEventListener('pointerdown', onWindowPointerDown);
 });
 </script>
 
@@ -1592,7 +1639,7 @@ onBeforeUnmount(() => {
             {{ t('overlays.group_empty_hint') }}
           </div>
           <TransitionGroup name="wd-ovl-row">
-          <div v-for="item in miniLayers" :key="item.name" v-show="item.show" class="wd-ovl__row" :class="{
+          <div v-for="item in miniLayers" :key="`g-${item.name}`" v-show="item.show" class="wd-ovl__row" :class="{
             'wd-ovl__row--active': item.active,
             'wd-ovl__row--passive': !item.active,
             'wd-ovl__row--dragging': dragSlug === item.name,
@@ -1674,7 +1721,7 @@ onBeforeUnmount(() => {
                labels just clip in the 48px mini box. -->
           <div
             v-for="item in visibleOthers"
-            :key="item.name"
+            :key="`o-${item.name}`"
             class="wd-ovl__row"
             :class="{
               'wd-ovl__row--active': item.active,
@@ -1854,6 +1901,36 @@ onBeforeUnmount(() => {
       <img v-show="stripOpen" :src="iconClose" alt="" class="wd-ovl__toggle-icon"
         :class="{ 'wd-ovl__toggle-icon--open': stripOpen }" />
     </button>
+
+    <!-- ── Pointer-anchored confirm popover (edit footer) ─────────── -->
+    <Teleport to="body">
+      <div
+        v-if="footerConfirm"
+        class="wd-ovl__confirm-backdrop"
+        @click="runFooterConfirm(false)"
+      />
+      <div
+        v-if="footerConfirm"
+        class="wd-ovl__confirm"
+        :style="{ left: footerConfirm.x + 'px', top: footerConfirm.y + 'px' }"
+        role="dialog"
+        :aria-label="footerConfirm.message"
+      >
+        <div class="wd-ovl__confirm-msg">{{ footerConfirm.message }}</div>
+        <div class="wd-ovl__confirm-actions">
+          <button class="wd-ovl__confirm-btn" @click.stop="runFooterConfirm(false)">
+            {{ t('overlays.edit_keep_editing') }}
+          </button>
+          <button
+            class="wd-ovl__confirm-btn wd-ovl__confirm-ok"
+            :class="footerConfirm.okClass"
+            @click.stop="runFooterConfirm(true)"
+          >
+            {{ footerConfirm.okLabel }}
+          </button>
+        </div>
+      </div>
+    </Teleport>
 
     <!-- ── Floating drag ghost: the row follows the cursor ──────────── -->
     <Teleport to="body">
@@ -3134,6 +3211,76 @@ body.body--dark .wd-ovl__empty-hint {
     min-width: 26px;
     color: var(--wd-ctl-ink-soft);
   }
+}
+
+/* Pointer-anchored confirm popover (teleported) */
+.wd-ovl__confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2090;
+}
+
+.wd-ovl__confirm {
+  position: fixed;
+  z-index: 2095;
+  min-width: 230px;
+  max-width: 300px;
+  padding: 12px 14px;
+  transform: translate(-50%, calc(-100% - 14px));
+  background: var(--wd-ctl-bg) !important;
+  border: 1px solid var(--wd-ctl-border);
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(10, 20, 15, 0.24) !important;
+}
+
+.wd-ovl__confirm-msg {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--wd-ctl-ink);
+}
+
+body.body--dark .wd-ovl__confirm-msg {
+  color: #cfe8dc;
+}
+
+.wd-ovl__confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.wd-ovl__confirm-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--wd-ctl-ink-soft);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.wd-ovl__confirm-btn:hover {
+  background: var(--wd-ctl-hover);
+}
+
+.wd-ovl__confirm-ok {
+  color: var(--wd-ctl-ink);
+  background: var(--wd-ctl-date-bg);
+}
+
+.wd-ovl__confirm-ok--danger {
+  color: #c44e3b !important;
+  background: rgba(196, 78, 59, 0.1) !important;
+}
+
+.wd-ovl__confirm-ok--go {
+  color: #1f6b58 !important;
+  background: rgba(42, 138, 114, 0.12) !important;
+}
+
+body.body--dark .wd-ovl__confirm-ok--go {
+  color: #7fe3c8 !important;
 }
 
 body.body--dark .wd-ovl__menu .q-item {

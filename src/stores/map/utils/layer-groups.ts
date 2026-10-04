@@ -55,7 +55,8 @@ export function createDefaultGroups(): LayerGroup[] {
     {
       slug: 'hiking',
       name: 'overlays.groups.hiking.name',
-      icon: 'hiking',
+      // Fluent Emoji (Flat) — the app's icon family
+      icon: 'fluent-emoji-flat:hiking-boot',
       layerSlugs: [SLUGS.huts, SLUGS.hiking, SLUGS.nature, SLUGS.transport],
       activeLayerSlugs: [SLUGS.huts],
       hidden: false,
@@ -66,9 +67,10 @@ export function createDefaultGroups(): LayerGroup[] {
     {
       slug: 'cycling',
       name: 'overlays.groups.cycling.name',
-      icon: 'mtb',
-      layerSlugs: [SLUGS.mtb, SLUGS.cycling, SLUGS.huts, SLUGS.transport],
-      activeLayerSlugs: [],
+      icon: 'fluent-emoji-flat:bicycle',
+      // Huts first — every default group leads with the hut layer
+      layerSlugs: [SLUGS.huts, SLUGS.mtb, SLUGS.cycling, SLUGS.transport],
+      activeLayerSlugs: [SLUGS.huts],
       hidden: false,
       removed: false,
       locked: true,
@@ -77,9 +79,9 @@ export function createDefaultGroups(): LayerGroup[] {
     {
       slug: 'snowsport',
       name: 'overlays.groups.snowsport.name',
-      icon: 'skitouren',
-      layerSlugs: [SLUGS.skiTours, SLUGS.snowshoes, SLUGS.skiSlopes, SLUGS.slopeAngle, SLUGS.huts, SLUGS.transport],
-      activeLayerSlugs: [],
+      icon: 'fluent-emoji-flat:snowflake',
+      layerSlugs: [SLUGS.huts, SLUGS.skiTours, SLUGS.snowshoes, SLUGS.skiSlopes, SLUGS.slopeAngle, SLUGS.transport],
+      activeLayerSlugs: [SLUGS.huts],
       hidden: false,
       removed: false,
       locked: true,
