@@ -59,6 +59,7 @@ export default [
         URL: 'readonly',
         Event: 'readonly',
         MouseEvent: 'readonly',
+        PointerEvent: 'readonly',
         KeyboardEvent: 'readonly',
         WheelEvent: 'readonly',
         HTMLElement: 'readonly',

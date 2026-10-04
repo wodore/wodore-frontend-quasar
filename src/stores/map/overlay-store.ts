@@ -23,6 +23,21 @@ export const useOverlayStore = defineStore('overlay', () => {
   function toggleOverlay(s: OverlaySwitchItem): boolean {
     s.active = s.active ? false : true;
     storageSet('overlays', overlays);
+    // Per-group VIEW state: every toggle — member OR promoted row — records
+    // into the ACTIVE group's activeLayerSlugs (= the layers active in this
+    // group's view). Other groups keep their own view untouched, so a
+    // promoted layer toggled here survives the round trip back.
+    const active = groupSettings.groups.find(
+      g => g.id === groupSettings.activeGroupId && !g.removed
+    );
+    if (active) {
+      const has = active.activeLayerSlugs.includes(s.name);
+      if (s.active && !has) active.activeLayerSlugs.push(s.name);
+      else if (!s.active && has) {
+        active.activeLayerSlugs = active.activeLayerSlugs.filter(x => x !== s.name);
+      }
+      syncGroupSettings();
+    }
     return s.active;
   }
   const overlays = reactive<Array<OverlaySwitchItem>>(overlayFactories.map(factory => factory()));
@@ -102,30 +117,58 @@ export const useOverlayStore = defineStore('overlay', () => {
     return getOtherLayers(group, overlays as unknown as OverlaySwitchItem[]);
   }
 
-  /** Cycle to the next visible group and restore its active layers */
-  function cycleGroup(): void {
-    const { group, settings } = cycleGroupUtil(groupSettings);
-    if (!group) return;
-
-    // Save the current group's active layers
+  /** Shared switch core: reconcile the current group's active view, then
+   *  activate the target and apply ITS full view — members AND promoted
+   *  layers. Every overlay flag is set from the target's list: layers the
+   *  target's view doesn't include turn off, ones it includes turn on
+   *  (promoted layers round-trip correctly). */
+  function switchToGroup(group: LayerGroup): void {
     const currentGroup = getActiveGroup(groupSettings);
-    if (currentGroup) {
+    if (currentGroup && currentGroup.id !== group.id) {
+      // cast: reactive array + filter explodes TS instantiation depth
       const flat = overlays as unknown as Array<{ name: string; active?: boolean }>;
       currentGroup.activeLayerSlugs = flat
-        .filter(o => o.active && currentGroup.layerSlugs.includes(o.name))
+        .filter(o => o.active)
         .map(o => o.name);
     }
 
-    // Apply the next group's active layers
-    Object.assign(groupSettings, settings);
+    groupSettings.activeGroupId = group.id;
     for (const o of overlays) {
-      const inGroup = group.layerSlugs.includes(o.name);
-      if (inGroup) {
-        o.active = group.activeLayerSlugs.includes(o.name);
-      }
+      o.active = group.activeLayerSlugs.includes(o.name);
     }
     storageSet('overlays', overlays);
     syncGroupSettings();
+  }
+
+  /** Cycle to the next visible group and restore its active layers */
+  function cycleGroup(includeHidden = false): void {
+    const { group, settings } = cycleGroupUtil(groupSettings, includeHidden);
+    if (!group) return;
+    // cycleGroupUtil returns patched settings (next activeGroupId) — apply
+    // them, then run the shared save/apply core.
+    Object.assign(groupSettings, settings);
+    switchToGroup(group);
+  }
+
+  /** Step by N through the visible groups (expanded view: ‹ previous,
+   *  › next). Step −1 walks backwards; wraps around like cycleGroup. */
+  function stepGroup(step: number, includeHidden = false): void {
+    const visible = getVisibleGroups(groupSettings, includeHidden);
+    if (visible.length === 0) return;
+    const idx = visible.findIndex(g => g.id === groupSettings.activeGroupId);
+    const next = visible[(idx + step + visible.length * 2) % visible.length];
+    if (!next || next.id === groupSettings.activeGroupId) return;
+    switchToGroup(next);
+  }
+
+  /** Switch DIRECTLY to a group (title dropdown) — same semantics as
+   *  cycling: save current, activate target, apply its layer states. */
+  function setActiveGroup(groupId: string, includeHidden = false): void {
+    const group = groupSettings.groups.find(
+      g => g.id === groupId && !g.removed && (includeHidden || !g.hidden)
+    );
+    if (!group || group.id === groupSettings.activeGroupId) return;
+    switchToGroup(group);
   }
 
   /** Get the active group's display name */
@@ -155,6 +198,8 @@ export const useOverlayStore = defineStore('overlay', () => {
   return {
     overlays,
     toggleOverlay,
+    setActiveGroup,
+    stepGroup,
     rebuildOverlays,
     // Layer groups
     groupSettings,
@@ -165,6 +210,7 @@ export const useOverlayStore = defineStore('overlay', () => {
     activeGroupIcon,
     visibleGroups,
     mergeLayerGroups,
+    syncGroupSettings,
     //setBasemap,
     //getBasemap,
     //setEmitter,

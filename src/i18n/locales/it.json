@@ -371,7 +371,45 @@
       "label": "Mountain bike",
       "desc": "Itinerari MTB da OpenStreetMap, mostrati via Waymarked Trails",
       "link": "Rete Svizzera in mountain bike"
-    }
+    },
+    "groups": {
+      "hiking": {
+        "name": "Escursionismo"
+      },
+      "cycling": {
+        "name": "Ciclismo"
+      },
+      "snowsport": {
+        "name": "Sport invernali"
+      }
+    },
+    "all_layers": "Tutti i livelli",
+    "group_rename": "Rinomina gruppo",
+    "group_hide": "Nascondi gruppo",
+    "group_delete": "Elimina gruppo",
+    "group_add": "Aggiungi gruppo",
+    "edit_cancel": "Annulla",
+    "group_reset": "Ripristina",
+    "group_name": "Nome del gruppo",
+    "edit_unsaved_title": "Salvare le modifiche?",
+    "edit_unsaved_message": "Hai modifiche non salvate ai tuoi gruppi.",
+    "edit_save": "Salva",
+    "edit_discard": "Scarta",
+    "group_delete_confirm": "Eliminare «{name}»? I suoi livelli tornano in «Altri livelli».",
+    "other_layers": "Altri livelli",
+    "group_switch": "Cambia gruppo ({name})",
+    "group_show": "Mostra gruppo",
+    "group_more": "Altre azioni",
+    "group_reset_confirm": "Ripristinare «{name}» ai livelli predefiniti? Le tue modifiche a questo gruppo andranno perse.",
+    "icon_change": "Cambia icona",
+    "group_empty_hint": "Nessun livello in questo gruppo — aggiungili con + qui sotto.",
+    "icon_search": "Cerca icone …",
+    "icon_none": "Nessuna icona trovata.",
+    "icon_search_error": "Ricerca icone non disponibile al momento.",
+    "icon_more": "Mostra altro",
+    "group_prev": "Gruppo precedente ({name})",
+    "group_next": "Gruppo successivo ({name})",
+    "edit_keep_editing": "Continua a modificare"
   },
   "basemap": "Mappa di base",
   "basemaps": {

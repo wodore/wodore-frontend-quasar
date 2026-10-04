@@ -371,7 +371,45 @@
       "label": "Mountain bike",
       "desc": "Mountain bike routes from OpenStreetMap, shown via Waymarked Trails",
       "link": "Switzerland mountain bike network"
-    }
+    },
+    "groups": {
+      "hiking": {
+        "name": "Hiking"
+      },
+      "cycling": {
+        "name": "Cycling"
+      },
+      "snowsport": {
+        "name": "Snowsport"
+      }
+    },
+    "all_layers": "All layers",
+    "group_rename": "Rename group",
+    "group_hide": "Hide group",
+    "group_delete": "Delete group",
+    "group_add": "Add group",
+    "edit_cancel": "Cancel",
+    "group_reset": "Reset to default",
+    "group_name": "Group name",
+    "edit_unsaved_title": "Save changes?",
+    "edit_unsaved_message": "You have unsaved changes to your groups.",
+    "edit_save": "Save",
+    "edit_discard": "Discard",
+    "group_delete_confirm": "Delete \"{name}\"? Its layers return to More layers.",
+    "other_layers": "More layers",
+    "group_switch": "Switch group ({name})",
+    "group_show": "Show group",
+    "group_more": "More actions",
+    "group_reset_confirm": "Reset \"{name}\" to its default layers? Your changes to this group will be discarded.",
+    "icon_change": "Change icon",
+    "group_empty_hint": "No layers in this group yet — add them with + below.",
+    "icon_search": "Search icons …",
+    "icon_none": "No icons found.",
+    "icon_search_error": "Icon search is currently unavailable.",
+    "icon_more": "Show more",
+    "group_prev": "Previous group ({name})",
+    "group_next": "Next group ({name})",
+    "edit_keep_editing": "Keep editing"
   },
   "basemap": "Basemap",
   "basemaps": {

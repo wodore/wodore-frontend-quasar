@@ -7,7 +7,7 @@
 
 import { defineStore } from 'pinia';
 import { ref, computed, watch } from 'vue';
-import { storageGet, storageSet, storageHas } from '@services/storage';
+import { storageGet, storageSet } from '@services/storage';
 import { useDebounceFn } from '@vueuse/core';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
 import type { ExpressionSpecification } from 'maplibre-gl';

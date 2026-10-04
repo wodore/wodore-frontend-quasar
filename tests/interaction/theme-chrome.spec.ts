@@ -3,7 +3,6 @@
  * Runs light AND dark, mobile AND desktop.
  */
 import { test, expect } from '@playwright/test';
-import { allure } from 'allure-playwright';
 import { loadMap, pinTheme, tagTest, attachScreenshot, evalJSON, parseColor } from './helpers';
 
 const CONFIGS = [
@@ -27,7 +26,7 @@ test.describe('map chrome theming', () => {
       await loadMap(page);
       await pinTheme(page, theme);
 
-      const isDark = theme === 'dark';
+      const _isDark = theme === 'dark';
       const chips = await evalJSON<Record<string, string>>(page, () => {
         const q = (s: string) => document.querySelector(s);
         const bg = (s: string) => (q(s) ? getComputedStyle(q(s)!).backgroundColor : 'MISSING');
@@ -61,7 +60,7 @@ test.describe('map chrome theming', () => {
       }
     });
 
-    test(`${theme}-${mode}: icon invert treatment`, async ({ page }, testInfo) => {
+    test(`${theme}-${mode}: icon invert treatment`, async ({ page }, _testInfo) => {
       tagTest(theme, mode, 'theming');
       test.setTimeout(90_000);
 

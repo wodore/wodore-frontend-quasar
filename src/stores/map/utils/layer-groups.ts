@@ -2,7 +2,6 @@
  * Overlay layer groups — data model, defaults, merge logic.
  * See openspec/changes/overlay-layer-groups/ for the full spec.
  */
-import { createHuts, createPublicTransportStops, createHiking, createMtb, createCycling, createHillslope, createSkitouren, createSnowshoes, createSkislopes, createProtectedNature, createSheepdogs } from './overlays';
 import type { OverlaySwitchItem } from './interfaces';
 
 // ─── Types ────────────────────────────────────────────────────────────────
@@ -56,7 +55,8 @@ export function createDefaultGroups(): LayerGroup[] {
     {
       slug: 'hiking',
       name: 'overlays.groups.hiking.name',
-      icon: 'hiking',
+      // Fluent Emoji (Flat) — the app's icon family
+      icon: 'fluent-emoji-flat:hiking-boot',
       layerSlugs: [SLUGS.huts, SLUGS.hiking, SLUGS.nature, SLUGS.transport],
       activeLayerSlugs: [SLUGS.huts],
       hidden: false,
@@ -67,9 +67,10 @@ export function createDefaultGroups(): LayerGroup[] {
     {
       slug: 'cycling',
       name: 'overlays.groups.cycling.name',
-      icon: 'mtb',
-      layerSlugs: [SLUGS.mtb, SLUGS.cycling, SLUGS.huts, SLUGS.transport],
-      activeLayerSlugs: [],
+      icon: 'fluent-emoji-flat:bicycle',
+      // Huts first — every default group leads with the hut layer
+      layerSlugs: [SLUGS.huts, SLUGS.mtb, SLUGS.cycling, SLUGS.transport],
+      activeLayerSlugs: [SLUGS.huts],
       hidden: false,
       removed: false,
       locked: true,
@@ -78,9 +79,9 @@ export function createDefaultGroups(): LayerGroup[] {
     {
       slug: 'snowsport',
       name: 'overlays.groups.snowsport.name',
-      icon: 'skitouren',
-      layerSlugs: [SLUGS.skiTours, SLUGS.snowshoes, SLUGS.skiSlopes, SLUGS.slopeAngle, SLUGS.huts, SLUGS.transport],
-      activeLayerSlugs: [],
+      icon: 'fluent-emoji-flat:snowflake',
+      layerSlugs: [SLUGS.huts, SLUGS.skiTours, SLUGS.snowshoes, SLUGS.skiSlopes, SLUGS.slopeAngle, SLUGS.transport],
+      activeLayerSlugs: [SLUGS.huts],
       hidden: false,
       removed: false,
       locked: true,
@@ -88,6 +89,25 @@ export function createDefaultGroups(): LayerGroup[] {
     },
   ];
   return groups.map(g => ({ ...g, id: uid() }));
+}
+
+/** Whether a group slug belongs to the predefined (resettable) groups */
+export function isDefaultGroupSlug(slug: string): boolean {
+  return createDefaultGroups().some(g => g.slug === slug);
+}
+
+/** Reset a user group to its predefined definition (layers, name, icon,
+ *  un-hide). Defaults are recomputed on every call — app updates that
+ *  change the predefined groups flow into resets automatically. */
+export function resetGroupToDefault(group: LayerGroup): boolean {
+  const def = createDefaultGroups().find(g => g.slug === group.slug);
+  if (!def) return false;
+  group.layerSlugs = [...def.layerSlugs];
+  group.activeLayerSlugs = [...def.activeLayerSlugs];
+  group.name = def.name;
+  group.icon = def.icon;
+  group.hidden = false;
+  return true;
 }
 
 export function defaultOverlayGroupSettings(): OverlayGroupSettings {
@@ -149,19 +169,24 @@ export function mergeGroups(
 
 /** Get the active group (or null if none selected) */
 export function getActiveGroup(settings: OverlayGroupSettings): LayerGroup | null {
-  return settings.groups.find(g => g.id === settings.activeGroupId && !g.hidden && !g.removed) ?? null;
+  // Hidden groups stay ACTIVE in edit mode (they must remain editable);
+  // selectability is decided by getVisibleGroups, not here.
+  return settings.groups.find(g => g.id === settings.activeGroupId && !g.removed) ?? null;
 }
 
 /** Get visible groups for the mini selector cycle (not hidden, not removed) */
-export function getVisibleGroups(settings: OverlayGroupSettings): LayerGroup[] {
+export function getVisibleGroups(settings: OverlayGroupSettings, includeHidden = false): LayerGroup[] {
   return settings.groups
-    .filter(g => !g.hidden && !g.removed)
+    .filter(g => !g.removed && (includeHidden || !g.hidden))
     .sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
 /** Cycle to the next visible group */
-export function cycleGroup(settings: OverlayGroupSettings): { group: LayerGroup; settings: OverlayGroupSettings } {
-  const visible = getVisibleGroups(settings);
+export function cycleGroup(
+  settings: OverlayGroupSettings,
+  includeHidden = false,
+): { group: LayerGroup; settings: OverlayGroupSettings } {
+  const visible = getVisibleGroups(settings, includeHidden);
   if (visible.length === 0) return { group: null!, settings };
 
   const currentIdx = visible.findIndex(g => g.id === settings.activeGroupId);

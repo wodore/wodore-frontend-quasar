@@ -1,6 +1,6 @@
 import { RouteLocation, RouteLocationRaw, RouteRecordRaw } from 'vue-router';
 
-import { FALLBACK_LOCALE, LANG_PREFIXES } from '@/i18n';
+import { LANG_PREFIXES } from '@/i18n';
 
 function redirectFix(to: RouteLocation, newRouteName: string): RouteLocationRaw {
   return {

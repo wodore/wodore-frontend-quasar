@@ -68,6 +68,7 @@ export default configure(ctx => {
     boot: [
       'i18n',
       'storage',
+      'storage',
       'theme',
       'icons',
       { server: false, path: 'auth' },
