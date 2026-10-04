@@ -311,18 +311,18 @@ body {
 // separate with dashed dividers instead of their own borders.
 .wd-date-stepper {
   border: 1px dashed rgba(255, 255, 255, 0.24);
-//  border-radius: 4px;
-//  background: rgba(255, 255, 255, 0.07);
-//
-//  > * + * {
-//    // slightly stronger than the outer frame so the segment breaks read
-//    border-left: 1px dashed rgba(255, 255, 255, 0.34);
-//  }
-//
-//  // Segments lose their individual frames (family rules above)
-//  .wd-input-button .q-field__control,
-//
-//  .wd-input-button .q-field__control::before,
+  //  border-radius: 4px;
+  //  background: rgba(255, 255, 255, 0.07);
+  //
+  //  > * + * {
+  //    // slightly stronger than the outer frame so the segment breaks read
+  //    border-left: 1px dashed rgba(255, 255, 255, 0.34);
+  //  }
+  //
+  //  // Segments lose their individual frames (family rules above)
+  //  .wd-input-button .q-field__control,
+  //
+  //  .wd-input-button .q-field__control::before,
 }
 
 // ── Menu drawer: floats over map imagery ───────────────────────────────

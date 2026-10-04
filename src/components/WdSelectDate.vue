@@ -323,12 +323,10 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
 </style>
 <style lang="scss">
 .no-trans .q-transition {
-
   &--slide-right,
   &--slide-left,
   &--jump-right,
   &--jump-left {
-
     &-enter-active,
     &-leave-active {
       --q-transition-duration: 0s;
@@ -339,13 +337,23 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
 <template>
   <div class="wd-date-seg">
     <!-- CALENDAR -->
-    <q-popup-proxy :offset="[10, 1]" no-parent-event anchor="top start" target="#select-date-huts-location"
-      v-model="showMenu" breakpoint="600" transition-show="jump-down" transition-hide="jump-up">
+    <q-popup-proxy
+      :offset="[10, 1]"
+      no-parent-event
+      anchor="top start"
+      target="#select-date-huts-location"
+      v-model="showMenu"
+      breakpoint="600"
+      transition-show="jump-down"
+      transition-hide="jump-up"
+    >
       <div>
         <!-- @update:model-value="setNewDate" -->
         <q-card class="dialog-radius wd-menu">
-          <div class="q-ma-xs z-top text-icon wd-close-btn"
-            style="position: absolute; width: 32px; top: 6px; right: 6px">
+          <div
+            class="q-ma-xs z-top text-icon wd-close-btn"
+            style="position: absolute; width: 32px; top: 6px; right: 6px"
+          >
             <q-btn dense round flat v-close-popup class="wd-close-chip" icon="wd-close"></q-btn>
           </div>
           <!-- HEADER: same slight bg as the footer -->
@@ -361,7 +369,7 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
                 <q-item-label class="text-h6 wd-ink-text">{{ selectedDateDay }}</q-item-label>
                 <q-item-label class="text-body2 text-primary-100">{{
                   selectedDateLongName
-                  }}</q-item-label>
+                }}</q-item-label>
               </q-item-section>
               <!-- ERROR MESSAGE HEADER -->
               <q-item-section v-else>
@@ -371,68 +379,139 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
               </q-item-section>
             </q-item>
           </q-list>
-          <div :style="showCalendarError
-            ? 'max-height: 430px; height: 430px; overflow: hidden'
-            : 'max-height: 315px; height: 315px; overflow: hidden'
-            " v-touch-swipe.mouse.horizontal="handleDateSwipe">
+          <div
+            :style="
+              showCalendarError
+                ? 'max-height: 430px; height: 430px; overflow: hidden'
+                : 'max-height: 315px; height: 315px; overflow: hidden'
+            "
+            v-touch-swipe.mouse.horizontal="handleDateSwipe"
+          >
             <!-- ERROR MESSAGE CONTENT -->
-            <div v-if="showCalendarError" style="height: 100%; display: flex; flex-direction: column">
-              <img src="/images/no_bookings.jpg" alt="Sad mood"
-                style="width: 370px; height: 180px; object-fit: cover" />
-              <div class="q-pa-lg text-center" style="
+            <div
+              v-if="showCalendarError"
+              style="height: 100%; display: flex; flex-direction: column"
+            >
+              <img
+                src="/images/no_bookings.jpg"
+                alt="Sad mood"
+                style="width: 370px; height: 180px; object-fit: cover"
+              />
+              <div
+                class="q-pa-lg text-center"
+                style="
                   flex: 1;
                   display: flex;
                   flex-direction: column;
                   align-items: center;
                   justify-content: center;
-                ">
+                "
+              >
                 <p class="text-h6 text-primary-100">{{ t('select_date.error_title') }}</p>
                 <p class="text-body2 text-primary-200 q-mt-md">
                   {{ t('select_date.error_restricted') }}<br />
                   {{ t('select_date.error_contact') }}
-                  <a href="https://www.sac-cas.ch/de/kontakt/" target="_blank" class="text-accent">{{
-                    t('select_date.error_contact_link') }}</a>.
+                  <a
+                    href="https://www.sac-cas.ch/de/kontakt/"
+                    target="_blank"
+                    class="text-accent"
+                    >{{ t('select_date.error_contact_link') }}</a
+                  >.
                 </p>
-                <div class="q-mt-md q-pa-sm bg-dark-700 rounded-borders text-center"
-                  style="border: 1px solid rgba(255, 193, 7, 0.3)">
+                <div
+                  class="q-mt-md q-pa-sm bg-dark-700 rounded-borders text-center"
+                  style="border: 1px solid rgba(255, 193, 7, 0.3)"
+                >
                   <p class="text-body2 text-accent q-mb-none" style="font-weight: 500">
                     {{ t('select_date.error_solution') }}
                   </p>
                 </div>
                 <p class="text-caption text-primary-400 q-mt-md" style="font-size: 0.75rem">
                   {{ t('select_date.alternative') }}
-                  <a href="https://www.deine-berge.de/av_reservierung.php" target="_blank"
-                    class="text-accent">deine-berge</a>
+                  <a
+                    href="https://www.deine-berge.de/av_reservierung.php"
+                    target="_blank"
+                    class="text-accent"
+                    >deine-berge</a
+                  >
                   {{ t('select_date.or') }}
-                  <a href="https://www.hut-reservation.org" target="_blank" class="text-accent">hut-reservation</a>
+                  <a href="https://www.hut-reservation.org" target="_blank" class="text-accent"
+                    >hut-reservation</a
+                  >
                 </p>
               </div>
             </div>
             <!-- CALENDAR -->
             <div v-else>
-              <q-date :class="{ 'no-trans': noTrans }" v-model="selectedDate" minimal flat :dark="$q.dark.isActive"
-                :options="dateRangeOptions" first-day-of-week="1"
-                :navigation-min-year-month="formatDate(Date.now(), 'YYYY/MM')" :navigation-max-year-month="formatDate(addToDate(Date.now(), { years: 2 }), 'YYYY/MM')
-                  " mask="DD.MM.YY" color="accent" ref="calLeft" @navigation="updateLeft">
+              <q-date
+                :class="{ 'no-trans': noTrans }"
+                v-model="selectedDate"
+                minimal
+                flat
+                :dark="$q.dark.isActive"
+                :options="dateRangeOptions"
+                first-day-of-week="1"
+                :navigation-min-year-month="formatDate(Date.now(), 'YYYY/MM')"
+                :navigation-max-year-month="
+                  formatDate(addToDate(Date.now(), { years: 2 }), 'YYYY/MM')
+                "
+                mask="DD.MM.YY"
+                color="accent"
+                ref="calLeft"
+                @navigation="updateLeft"
+              >
               </q-date>
-              <q-date :class="{ 'no-trans': noTrans }" v-model="selectedDate" v-if="$q.screen.gt.xs" minimal flat
-                :dark="$q.dark.isActive" :options="dateRangeOptions" ref="calRigth" color="accent" first-day-of-week="1"
-                :navigation-min-year-month="formatDate(addToDate(Date.now(), { month: 1 }), 'YYYY/MM')
-                  " :navigation-max-year-month="formatDate(addToDate(Date.now(), { years: 2, month: 1 }), 'YYYY/MM')
-                    " mask="DD.MM.YY" @navigation="updateRigth">
+              <q-date
+                :class="{ 'no-trans': noTrans }"
+                v-model="selectedDate"
+                v-if="$q.screen.gt.xs"
+                minimal
+                flat
+                :dark="$q.dark.isActive"
+                :options="dateRangeOptions"
+                ref="calRigth"
+                color="accent"
+                first-day-of-week="1"
+                :navigation-min-year-month="
+                  formatDate(addToDate(Date.now(), { month: 1 }), 'YYYY/MM')
+                "
+                :navigation-max-year-month="
+                  formatDate(addToDate(Date.now(), { years: 2, month: 1 }), 'YYYY/MM')
+                "
+                mask="DD.MM.YY"
+                @navigation="updateRigth"
+              >
               </q-date>
             </div>
           </div>
           <div class="q-pa-xs row items-center justify-center wd-surface-deep">
             <!-- ERROR FOOTER -->
-            <q-btn v-if="showCalendarError" v-close-popup :label="t('select_date.error_dismiss')" color="secondary" flat
-              no-caps class="no-text-transform" />
+            <q-btn
+              v-if="showCalendarError"
+              v-close-popup
+              :label="t('select_date.error_dismiss')"
+              color="secondary"
+              flat
+              no-caps
+              class="no-text-transform"
+            />
             <!-- NORMAL FOOTER -->
             <template v-else>
-              <q-btn flat :disable="todayDisabled" @click="gotoToday" class="q-mr-md wd-info-text"
-                :class="{ 'text-dark-200': todayDisabled }">{{ t('today') }}</q-btn>
-              <q-btn :label="t('reset')" color="secondary" :disable="selectedDate === undefined" flat
-                @click="resetDate()" />
+              <q-btn
+                flat
+                :disable="todayDisabled"
+                @click="gotoToday"
+                class="q-mr-md wd-info-text"
+                :class="{ 'text-dark-200': todayDisabled }"
+                >{{ t('today') }}</q-btn
+              >
+              <q-btn
+                :label="t('reset')"
+                color="secondary"
+                :disable="selectedDate === undefined"
+                flat
+                @click="resetDate()"
+              />
             </template>
           </div>
         </q-card>
@@ -496,19 +575,31 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
         <!---->
         <!-- </q-btn> -->
         <button type="button" class="wd-date-btn" @click="showMenu = true">
-          <q-icon name="wd-calendar" size="sm" class="text-icon"
-            :class="{ 'wd-date-btn__icon--empty': selectedDate === undefined }" />
-          <span class=" wd-date-btn__lines">
-            <span class="wd-date-btn__day" :class="{ 'wd-date-btn__day--empty': selectedDate === undefined }">
+          <q-icon
+            name="wd-calendar"
+            size="sm"
+            class="text-icon"
+            :class="{ 'wd-date-btn__icon--empty': selectedDate === undefined }"
+          />
+          <span class="wd-date-btn__lines">
+            <span
+              class="wd-date-btn__day"
+              :class="{ 'wd-date-btn__day--empty': selectedDate === undefined }"
+            >
               {{ dateDayLabel }}
             </span>
-            <span class="wd-date-btn__date" :class="{ 'wd-date-btn__date--empty': selectedDate === undefined }">
+            <span
+              class="wd-date-btn__date"
+              :class="{ 'wd-date-btn__date--empty': selectedDate === undefined }"
+            >
               {{ dateValueLabel }}
             </span>
           </span>
         </button>
         <!-- Swipe overlay -->
-        <div v-touch-swipe.mouse.horizontal="handleDateInputSwipe" style="
+        <div
+          v-touch-swipe.mouse.horizontal="handleDateInputSwipe"
+          style="
             position: absolute;
             top: 0;
             left: 0;
@@ -516,7 +607,9 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
             bottom: 0;
             z-index: 1;
             pointer-events: auto;
-          " @click="showMenu = true"></div>
+          "
+          @click="showMenu = true"
+        ></div>
       </div>
       <!--
       <div v-if="!isMobile" @click="incrementDate"

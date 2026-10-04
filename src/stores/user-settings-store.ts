@@ -1,11 +1,10 @@
 import { defineStore } from 'pinia';
 import { ref, computed, watch } from 'vue';
 import { useDebounceFn } from '@vueuse/core';
-import { LocalStorage } from 'quasar';
+import { storageGet, storageSet, storageHas } from '@services/storage';
 
 import { resolveLocale } from '@/i18n';
 import type { Locale } from '@/i18n';
-import { mirrorDurableSettings } from '@services/durableSettings';
 
 /**
  * User Settings Store
@@ -38,7 +37,6 @@ export interface UserSettings {
     defaultZoom: number;
     minZoom: number;
     maxZoom: number;
-    overlayGroups?: import('./map/utils/layer-groups').OverlayGroupSettings;
   };
 }
 
@@ -111,11 +109,11 @@ export const useUserSettingsStore = defineStore('userSettings', () => {
   const STORAGE_KEY = 'wodore:userSettings';
 
   // Load from localStorage first
-  const hadStoredSettings = LocalStorage.hasItem(STORAGE_KEY);
+  const hadStoredSettings = storageHas(STORAGE_KEY);
 
   const loadSettings = (): UserSettings => {
     try {
-      const stored = LocalStorage.getItem(STORAGE_KEY) as UserSettings | null;
+      const stored = storageGet(STORAGE_KEY) as UserSettings | null;
       if (stored) {
         const parsed = stored; // Quasar already parses JSON
         // Merge with defaults to handle new properties
@@ -142,17 +140,15 @@ export const useUserSettingsStore = defineStore('userSettings', () => {
   // store (Capacitor Preferences) so a WebView cache/data clear cannot
   // lose the settings (incl. custom group icons)
   const saveSettings = useDebounceFn(() => {
-    LocalStorage.set(STORAGE_KEY, settings.value);
-    mirrorDurableSettings(settings.value);
+    storageSet(STORAGE_KEY, settings.value);
   }, 500);
 
   // Watch for changes and save
   watch(settings, saveSettings, { deep: true });
 
   // Save immediately on initialization to ensure key exists
-  if (!LocalStorage.hasItem(STORAGE_KEY)) {
-    LocalStorage.set(STORAGE_KEY, settings.value);
-    mirrorDurableSettings(settings.value);
+  if (!storageHas(STORAGE_KEY)) {
+    storageSet(STORAGE_KEY, settings.value);
   }
 
   // Track which settings need server sync (prepare for future)

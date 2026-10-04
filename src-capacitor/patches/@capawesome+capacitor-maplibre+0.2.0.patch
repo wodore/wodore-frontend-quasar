@@ -1,0 +1,71 @@
+diff --git a/node_modules/@capawesome/capacitor-maplibre/android/src/main/java/io/capawesome/capacitorjs/plugins/maplibre/MapLibre.java b/node_modules/@capawesome/capacitor-maplibre/android/src/main/java/io/capawesome/capacitorjs/plugins/maplibre/MapLibre.java
+index 15ad342..26e524b 100644
+--- a/node_modules/@capawesome/capacitor-maplibre/android/src/main/java/io/capawesome/capacitorjs/plugins/maplibre/MapLibre.java
++++ b/node_modules/@capawesome/capacitor-maplibre/android/src/main/java/io/capawesome/capacitorjs/plugins/maplibre/MapLibre.java
+@@ -982,7 +982,17 @@ public class MapLibre {
+     private LineManager getLineManager(@NonNull MapInstance instance) throws Exception {
+         LineManager lineManager = instance.getLineManager();
+         if (lineManager == null) {
+-            throw CustomExceptions.MAP_NOT_READY;
++            // Lazy creation: managers are only created when annotations
++            // are actually used. Eager creation on every style load
++            // crashes with an NPE inside the annotation plugin's async
++            // updateSource runnable (DraggableAnnotationController).
++            MapLibreMap map = getMap(instance);
++            Style style = map.getStyle();
++            if (style == null) {
++                throw CustomExceptions.MAP_NOT_READY;
++            }
++            lineManager = new LineManager(instance.getMapView(), map, style);
++            instance.setLineManager(lineManager);
+         }
+         return lineManager;
+     }
+@@ -1024,7 +1034,22 @@ public class MapLibre {
+     private SymbolManager getSymbolManager(@NonNull MapInstance instance) throws Exception {
+         SymbolManager symbolManager = instance.getSymbolManager();
+         if (symbolManager == null) {
+-            throw CustomExceptions.MAP_NOT_READY;
++            // Lazy creation — see getLineManager(..) for the rationale.
++            MapLibreMap map = getMap(instance);
++            Style style = map.getStyle();
++            if (style == null) {
++                throw CustomExceptions.MAP_NOT_READY;
++            }
++            symbolManager = new SymbolManager(instance.getMapView(), map, style);
++            symbolManager.setIconAllowOverlap(true);
++            symbolManager.setIconIgnorePlacement(true);
++            symbolManager.setIconRotationAlignment(Property.ICON_ROTATION_ALIGNMENT_MAP);
++            symbolManager.addClickListener(marker -> {
++                notifyMarkerClickListeners(instance, marker);
++                return true;
++            });
++            symbolManager.addDragListener(createSymbolDragListener(instance));
++            instance.setSymbolManager(symbolManager);
+         }
+         return symbolManager;
+     }
+@@ -1043,18 +1068,11 @@ public class MapLibre {
+     private void handleStyleLoaded(@NonNull MapInstance instance, @NonNull Style style) {
+         try {
+             MapLibreMap map = getMap(instance);
+-            MapView mapView = instance.getMapView();
+-            instance.setLineManager(new LineManager(mapView, map, style));
+-            SymbolManager symbolManager = new SymbolManager(mapView, map, style);
+-            symbolManager.setIconAllowOverlap(true);
+-            symbolManager.setIconIgnorePlacement(true);
+-            symbolManager.setIconRotationAlignment(Property.ICON_ROTATION_ALIGNMENT_MAP);
+-            symbolManager.addClickListener(marker -> {
+-                notifyMarkerClickListeners(instance, marker);
+-                return true;
+-            });
+-            symbolManager.addDragListener(createSymbolDragListener(instance));
+-            instance.setSymbolManager(symbolManager);
++            // Annotation managers are created lazily on first use — see
++            // getSymbolManager(..). Eager creation crashed on style
++            // reloads (NPE in the annotation plugin's async
++            // DraggableAnnotationController runnable) and its extra
++            // annotation sources interfered with the tile pipeline.
+             if (instance.isUserLocationEnabled()) {
+                 enableUserLocation(instance, map.getLocationComponent().getCameraMode());
+             }

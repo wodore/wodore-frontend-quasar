@@ -1,6 +1,7 @@
 import { defineConfig } from '@playwright/test';
 
-const BASE_URL = process.env.E2E_BASE_URL ?? process.env.INTERACTION_BASE_URL ?? 'http://localhost:9000';
+const BASE_URL =
+  process.env.E2E_BASE_URL ?? process.env.INTERACTION_BASE_URL ?? 'http://localhost:9000';
 
 export default defineConfig({
   testDir: './tests',

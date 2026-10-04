@@ -1,6 +1,5 @@
 import { ref, type Ref } from 'vue';
 import type { HutImage } from './useHutImages';
-import { type ImageSize, orientationUrls, variantUrl } from '@/utils/imageVariants';
 
 /**
  * Retry schedule for transient upstream failures (imagor cache misses can
@@ -18,8 +17,9 @@ export function useMediaPreload(images: Ref<HutImage[]>, currentSlide: Ref<numbe
   const preloadedUrls = ref<Set<string>>(new Set());
 
   // Get optimal image size based on screen size - NEVER upscale
-  // (medium → md ~1200px, large → lg ~2000px)
-  const getOptimalImageSize = (): ImageSize => {
+  const LADDER = ['xs', 'sm', 'md', 'lg', 'xl'] as const;
+
+  const getOptimalImageSize = (): 'md' | 'lg' => {
     if (typeof window === 'undefined') return 'md';
 
     const screenWidth = window.innerWidth;
@@ -37,23 +37,64 @@ export function useMediaPreload(images: Ref<HutImage[]>, currentSlide: Ref<numbe
   };
 
   // Get image URL for main gallery with proper size and orientation
-  // (retina devices get the next size up via variantUrl)
   const getGalleryImageUrl = (image: HutImage): string => {
     if (!image.urls) return '';
-    return variantUrl(orientationUrls(image), getOptimalImageSize());
+
+    // Use is_portrait to determine orientation, default to landscape
+    const orientation = image.is_portrait ? 'portrait' : 'landscape';
+    const urls = image.urls[orientation] || image.urls.landscape;
+
+    if (!urls) return '';
+
+    const size = getOptimalImageSize();
+
+    // Retina: serve the next size up (the schema has no @2x variants)
+    const pixelRatio = window.devicePixelRatio || 1;
+    if (pixelRatio >= 1.5) {
+      const bumped = LADDER[Math.min(LADDER.indexOf(size) + 1, LADDER.length - 1)];
+      if (urls[bumped]) {
+        return urls[bumped];
+      }
+    }
+
+    // Fallback down the ladder if the chosen size doesn't exist
+    for (let i = LADDER.indexOf(size); i >= 0; i--) {
+      if (urls[LADDER[i]]) {
+        return urls[LADDER[i]];
+      }
+    }
+    return '';
   };
 
-  // Get thumbnail URL (small square images) with HiDPI support (xs → sm)
+  // Get thumbnail URL (small square images) with HiDPI support
   const getThumbnailUrl = (image: HutImage): string => {
     if (!image.urls?.square) return '';
-    return variantUrl(image.urls.square, 'xs');
+
+    const pixelRatio = window.devicePixelRatio || 1;
+    // Retina: serve the next size up (the schema has no @2x variants)
+    if (pixelRatio >= 1.5 && image.urls.square.sm) {
+      return image.urls.square.sm;
+    }
+    return image.urls.square.xs || '';
   };
 
   // Get preview image URL (same as preview component uses) - already cached
-  // (old `preview` size → sm; retina devices get md via variantUrl)
   const getPreviewImageUrl = (image: HutImage): string => {
     if (!image.urls) return '';
-    return variantUrl(orientationUrls(image), 'sm');
+
+    // Use is_portrait to determine orientation, same as preview component
+    const orientation = image.is_portrait ? 'portrait' : 'landscape';
+    const urls = image.urls[orientation] || image.urls.landscape;
+
+    if (!urls) return '';
+
+    // Return preview size (same as preview component uses); retina
+    // serves the next size up (the schema has no @2x variants)
+    const pixelRatio = window.devicePixelRatio || 1;
+    if (pixelRatio >= 1.5 && urls.md) {
+      return urls.md;
+    }
+    return urls.sm || urls.md || '';
   };
 
   // Preload single image with retry logic for rate limiting

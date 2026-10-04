@@ -66,8 +66,9 @@ export default configure(ctx => {
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
     /// axios
     boot: [
-      'durable-settings',
       'i18n',
+      'storage',
+      'storage',
       'theme',
       'icons',
       { server: false, path: 'auth' },

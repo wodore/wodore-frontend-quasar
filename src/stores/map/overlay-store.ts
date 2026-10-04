@@ -17,12 +17,12 @@ import {
 import { useUserSettingsStore } from '@stores/user-settings-store';
 //import { useMap } from '@indoorequal/vue-maplibre-gl';
 //import type { Emitter } from 'mitt';
-import { LocalStorage } from 'quasar';
+import { storageGet, storageSet, storageHas } from '@services/storage';
 
 export const useOverlayStore = defineStore('overlay', () => {
   function toggleOverlay(s: OverlaySwitchItem): boolean {
     s.active = s.active ? false : true;
-    LocalStorage.set('overlays', overlays);
+    storageSet('overlays', overlays);
     // Per-group VIEW state: every toggle — member OR promoted row — records
     // into the ACTIVE group's activeLayerSlugs (= the layers active in this
     // group's view). Other groups keep their own view untouched, so a
@@ -42,8 +42,8 @@ export const useOverlayStore = defineStore('overlay', () => {
   }
   const overlays = reactive<Array<OverlaySwitchItem>>(overlayFactories.map(factory => factory()));
 
-  const savedOverlays: Array<OverlaySwitchItem> = LocalStorage.hasItem('overlays')
-    ? (LocalStorage.getItem('overlays') as Array<OverlaySwitchItem>)
+  const savedOverlays: Array<OverlaySwitchItem> = storageHas('overlays')
+    ? (storageGet('overlays') as Array<OverlaySwitchItem>)
     : [];
   const savedOverlaysRecord = savedOverlays.reduce(
     (acc: Record<string, OverlaySwitchItem>, obj: OverlaySwitchItem) => {
@@ -88,10 +88,13 @@ export const useOverlayStore = defineStore('overlay', () => {
   }
 
   // ── Layer groups ──────────────────────────────────────────────────────
-  const settingsStore = useUserSettingsStore() as unknown as { settings: { map: Record<string, unknown> }, updateMapSetting: (k: string, v: unknown) => void };
+  const settingsStore = useUserSettingsStore() as unknown as {
+    settings: { map: Record<string, unknown> };
+    updateMapSetting: (k: string, v: unknown) => void;
+  };
   const groupSettings = reactive<OverlayGroupSettings>(
-    (settingsStore.settings.map as Record<string, unknown>).overlayGroups as OverlayGroupSettings
-      ?? defaultOverlayGroupSettings()
+    ((settingsStore.settings.map as Record<string, unknown>)
+      .overlayGroups as OverlayGroupSettings) ?? defaultOverlayGroupSettings()
   );
 
   // Keep the settings store in sync
@@ -133,7 +136,7 @@ export const useOverlayStore = defineStore('overlay', () => {
     for (const o of overlays) {
       o.active = group.activeLayerSlugs.includes(o.name);
     }
-    LocalStorage.set('overlays', overlays);
+    storageSet('overlays', overlays);
     syncGroupSettings();
   }
 

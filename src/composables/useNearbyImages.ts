@@ -2,7 +2,8 @@ import { ref, watch, type Ref } from 'vue';
 import { clientWodore } from '@clients/index';
 import { currentLocale } from '@services/locale';
 import { useLatestRequest } from './useLatestRequest';
-import type { HutImage, NearbyImagesResponse, NearbyImageFeature } from 'src/types/geo';
+import type { paths } from '@clients/wodore_v1.d';
+import type { HutImage } from 'src/types/geo';
 
 /**
  * Composable for fetching nearby images for a hut location
@@ -15,14 +16,25 @@ export function useNearbyImages(lat?: Ref<number | undefined>, lon?: Ref<number 
   const loadingWodore = ref(false);
   const loadingAll = ref(false);
 
+  // Structural type from the endpoint response (generated OpenAPI
+  // types): the nearby endpoint inlines its geojson FeatureCollection
+  // with looser bbox typing than the strict component schema - accept
+  // just what this transform reads.
+  type NearbyProperties = NonNullable<
+    paths['/v1/geo/images/nearby']['get']['responses']['200']['content']['application/json']['features'][number]['properties']
+  >;
+  type NearbyEndpointResponse = { features: Array<{ properties: NearbyProperties | null }> };
+
   /**
    * Transform API response to HutImage array
    */
-  const transformResponse = (response: NearbyImagesResponse): HutImage[] => {
-    return response.features.map((feature: NearbyImageFeature) => ({
-      ...feature.properties,
-      id: `${feature.properties.provider.slug}_${feature.properties.source_id}`,
-    }));
+  const transformResponse = (response: NearbyEndpointResponse): HutImage[] => {
+    return response.features
+      .filter(feature => feature.properties !== null)
+      .map(feature => ({
+        ...feature.properties!,
+        id: `${feature.properties!.provider.slug}_${feature.properties!.source_id}`,
+      }));
   };
 
   /**
@@ -92,10 +104,7 @@ export function useNearbyImages(lat?: Ref<number | undefined>, lon?: Ref<number 
           } else if (data) {
             // A newer request superseded this one - do not merge stale images
             if (!latest.isLatest(token)) return;
-            // SAFETY: openapi-fetch's generated response type for this
-            // endpoint does not carry the geojson feature shape; the runtime
-            // payload matches NearbyImagesResponse
-            const wodoreImages = transformResponse(data as unknown as NearbyImagesResponse);
+            const wodoreImages = transformResponse(data);
             images.value = mergeImages(images.value, wodoreImages);
           }
         })
@@ -114,8 +123,7 @@ export function useNearbyImages(lat?: Ref<number | undefined>, lon?: Ref<number 
         console.error('Error fetching all images:', allErr);
         error.value = 'Failed to load images';
       } else if (allData) {
-        // SAFETY: same generated-type gap as the wodore response above
-        const allImages = transformResponse(allData as unknown as NearbyImagesResponse);
+        const allImages = transformResponse(allData);
         images.value = mergeImages(images.value, allImages);
       }
     } catch (err) {

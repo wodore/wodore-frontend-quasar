@@ -13,6 +13,13 @@ import { currentLocale, getStoredLocale, initLocale, setLocale } from '@services
 import { useUserSettingsStore } from '@stores/user-settings-store';
 
 // Quasar's LocalStorage no-ops under happy-dom; back it with the real DOM storage
+
+// Mock the storage abstraction — uses localStorage (which the tests already mock)
+vi.mock('@services/storage', async () => {
+  const { storageGet, storageSet, storageHas, storageRemove } = await import('./helpers/storage-mock');
+  return { storageGet, storageSet, storageHas, storageRemove, storageClear: () => {}, initStorage: async () => {} };
+});
+
 vi.mock('quasar', async importOriginal => {
   const actual = await importOriginal<typeof import('quasar')>();
   return {
