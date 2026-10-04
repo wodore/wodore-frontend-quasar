@@ -335,6 +335,53 @@ for (const id of [
   const bf = layer('building_footprint_multicolored');
   bf.paint['fill-color'] = 'hsla(220, 8%, 82%, 0.55)';
 }
+// Round caps/joins on all casings (swisstopo: cap round, join round) —
+// butt-capped casings end square while the fill's round cap pokes past,
+// breaking the look at segment ends and junctions
+for (const id of [
+  'road_major_casing', 'road_major_casing_bridge', 'road_major_casing_tunnel',
+  'road_minor_casing', 'road_minor_casing_bridge', 'road_minor_casing_tunnel',
+]) {
+  const l = layer(id);
+  l.layout = { ...l.layout, 'line-cap': 'round', 'line-join': 'round' };
+}
+// Tracks are single solid lines in swisstopo (no white fill + casing):
+// pull them out of the street layers and render them like their
+// paths — one grey line, round caps
+for (const id of ['road_minor', 'road_minor_bridge']) {
+  const l = layer(id);
+  const json = JSON.stringify(l.filter);
+  l.filter = JSON.parse(json.replace('"minor","service","track"', '"minor","service"'));
+}
+for (const id of ['road_minor_casing', 'road_minor_casing_bridge', 'road_minor_casing_tunnel']) {
+  const l = layer(id);
+  const json = JSON.stringify(l.filter);
+  l.filter = JSON.parse(json.replace('"track","service"', '"service"').replace('"minor","service","track"', '"minor","service"'));
+}
+const trackLayer = {
+  id: 'wd-track',
+  type: 'line',
+  source: 'mtk',
+  'source-layer': 'road',
+  minzoom: 12,
+  filter: ['all', ['==', ['get', 'type'], 'track'], ['!=', ['get', 'subtype'], 'pedestrian']],
+  layout: { 'line-cap': 'round', 'line-join': 'round' },
+  paint: {
+    'line-color': [
+      'interpolate', ['linear'], ['zoom'],
+      12, 'rgba(115, 115, 115, 0)', 13, 'rgba(115, 115, 115, 1)',
+    ],
+    'line-width': [
+      'interpolate', ['exponential', 2], ['zoom'],
+      13, 0.7, 15, 1.3, 19, 2.4,
+    ],
+  },
+};
+{
+  const idx = base.layers.findIndex(l => l.id === 'road_minor');
+  base.layers.splice(idx === -1 ? base.layers.length : idx, 0, trackLayer);
+}
+
 // The natural-earth landcover raster drags a uniform dark tint over
 // everything at low zooms (0.1 opacity at z7 measured) — swisstopo's
 // country views are clean paper. Fade it fully out by z5.
