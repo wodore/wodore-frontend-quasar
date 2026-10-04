@@ -140,7 +140,7 @@ for (const id of ['border_admin_country', 'border_admin_disputed']) {
 // Capitals switch from a solid dot to a hollow ring at z8 (like
 // swisstopo's dot_circle -> circle_circle step), towns/villages stay
 // solid dots at every zoom.
-const SW_DOT_GREY = '#5C5C5C';
+const SW_DOT_GREY = '#4B4B4B';
 const byCategory = (capital, big, small) => [
   'match', ['get', 'category'],
   ['capital'], capital,
@@ -151,12 +151,13 @@ const dotLayers = () =>
   base.layers
     .filter(l => /^place_point_label_rank_\d$/.test(l.id))
     .map(l => {
-      // villages (small_place) only get dots once their labels genuinely
-      // populate (rank_4 z10+); the early bands would paint a dot field
-      const early = Number(l.id.match(/rank_(\d)$/)[1]) <= 3;
-      const cats = early
-        ? ['capital', 'big_place']
-        : ['capital', 'big_place', 'small_place'];
+      // villages join from the rank_2 band (important towns, rank 10-13):
+      // mtk's rank_3 band carries too many minor villages for static
+      // circles (no label collision) — measured 3x swisstopo's dot count
+      const band = Number(l.id.match(/rank_(\d)$/)[1]);
+      const cats = band <= 2
+        ? ['capital', 'big_place', 'small_place']
+        : ['capital', 'big_place'];
       return ({
       id: `wd-place-dot-${l.id.match(/rank_(\d)$/)[1]}`,
       type: 'circle',
@@ -171,12 +172,12 @@ const dotLayers = () =>
       ],
       paint: {
         'circle-color': SW_DOT_GREY,
-        // capitals hollow out into rings from z8 on
-        // swisstopo's town/village symbols are HOLLOW rings at every
-        // zoom (circle_dark_grey); only cities run solid dots below z8
-        // before switching to their big ring
+        // swisstopo semantics: towns and villages are hollow rings at
+        // every zoom (their place_town_village icons are rings from z6 —
+        // subtle but visible zoomed out); only capitals run a solid dot
+        // below z8 before switching to their big ring
         'circle-opacity': [
-          'step', ['zoom'], 1, 8, byCategory(0, 0, 0),
+          'step', ['zoom'], byCategory(1, 0, 0), 8, byCategory(0, 0, 0),
         ],
         'circle-stroke-color': SW_DOT_GREY,
         'circle-stroke-width': byCategory(1.5, 1.1, 1),
@@ -186,7 +187,7 @@ const dotLayers = () =>
         'circle-radius': [
           'interpolate', ['linear'], ['zoom'],
           1, byCategory(2.2, 2.2, 1.8),
-          6, byCategory(3, 3, 2),
+          6, byCategory(3, 3, 2.2),
           8, byCategory(4, 4, 3),
           10, byCategory(5, 5, 4),
           12, byCategory(6, 6, 5),

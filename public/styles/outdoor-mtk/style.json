@@ -14057,21 +14057,35 @@
           ],
           [
             "capital",
-            "big_place",
-            "small_place"
+            "big_place"
           ],
           true,
           false
         ]
       ],
       "paint": {
-        "circle-color": "#5C5C5C",
+        "circle-color": "#4B4B4B",
         "circle-opacity": [
           "step",
           [
             "zoom"
           ],
-          1,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            1,
+            [
+              "big_place"
+            ],
+            0,
+            0
+          ],
           8,
           [
             "match",
@@ -14090,7 +14104,7 @@
             0
           ]
         ],
-        "circle-stroke-color": "#5C5C5C",
+        "circle-stroke-color": "#4B4B4B",
         "circle-stroke-width": [
           "match",
           [
@@ -14148,7 +14162,7 @@
               "big_place"
             ],
             3,
-            2
+            2.2
           ],
           8,
           [
@@ -14265,21 +14279,35 @@
           ],
           [
             "capital",
-            "big_place",
-            "small_place"
+            "big_place"
           ],
           true,
           false
         ]
       ],
       "paint": {
-        "circle-color": "#5C5C5C",
+        "circle-color": "#4B4B4B",
         "circle-opacity": [
           "step",
           [
             "zoom"
           ],
-          1,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            1,
+            [
+              "big_place"
+            ],
+            0,
+            0
+          ],
           8,
           [
             "match",
@@ -14298,7 +14326,7 @@
             0
           ]
         ],
-        "circle-stroke-color": "#5C5C5C",
+        "circle-stroke-color": "#4B4B4B",
         "circle-stroke-width": [
           "match",
           [
@@ -14356,7 +14384,7 @@
               "big_place"
             ],
             3,
-            2
+            2.2
           ],
           8,
           [
@@ -14480,13 +14508,28 @@
         ]
       ],
       "paint": {
-        "circle-color": "#5C5C5C",
+        "circle-color": "#4B4B4B",
         "circle-opacity": [
           "step",
           [
             "zoom"
           ],
-          1,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            1,
+            [
+              "big_place"
+            ],
+            0,
+            0
+          ],
           8,
           [
             "match",
@@ -14505,7 +14548,7 @@
             0
           ]
         ],
-        "circle-stroke-color": "#5C5C5C",
+        "circle-stroke-color": "#4B4B4B",
         "circle-stroke-width": [
           "match",
           [
@@ -14563,7 +14606,7 @@
               "big_place"
             ],
             3,
-            2
+            2.2
           ],
           8,
           [
@@ -14680,20 +14723,36 @@
           ],
           [
             "capital",
-            "big_place"
+            "big_place",
+            "small_place"
           ],
           true,
           false
         ]
       ],
       "paint": {
-        "circle-color": "#5C5C5C",
+        "circle-color": "#4B4B4B",
         "circle-opacity": [
           "step",
           [
             "zoom"
           ],
-          1,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            1,
+            [
+              "big_place"
+            ],
+            0,
+            0
+          ],
           8,
           [
             "match",
@@ -14712,7 +14771,7 @@
             0
           ]
         ],
-        "circle-stroke-color": "#5C5C5C",
+        "circle-stroke-color": "#4B4B4B",
         "circle-stroke-width": [
           "match",
           [
@@ -14770,7 +14829,7 @@
               "big_place"
             ],
             3,
-            2
+            2.2
           ],
           8,
           [
@@ -14879,20 +14938,36 @@
           ],
           [
             "capital",
-            "big_place"
+            "big_place",
+            "small_place"
           ],
           true,
           false
         ]
       ],
       "paint": {
-        "circle-color": "#5C5C5C",
+        "circle-color": "#4B4B4B",
         "circle-opacity": [
           "step",
           [
             "zoom"
           ],
-          1,
+          [
+            "match",
+            [
+              "get",
+              "category"
+            ],
+            [
+              "capital"
+            ],
+            1,
+            [
+              "big_place"
+            ],
+            0,
+            0
+          ],
           8,
           [
             "match",
@@ -14911,7 +14986,7 @@
             0
           ]
         ],
-        "circle-stroke-color": "#5C5C5C",
+        "circle-stroke-color": "#4B4B4B",
         "circle-stroke-width": [
           "match",
           [
@@ -14969,7 +15044,7 @@
               "big_place"
             ],
             3,
-            2
+            2.2
           ],
           8,
           [
