@@ -1,0 +1,18 @@
+{
+  "worktree": {
+    "setup": [
+      "yarn install --frozen-lockfile",
+      "test -f \"$PASEO_SOURCE_CHECKOUT_PATH/.env.local\" && cp \"$PASEO_SOURCE_CHECKOUT_PATH/.env.local\" . || true"
+    ],
+    "servicePorts": { "range": "3500-3599" }
+  },
+  "scripts": {
+    "test": { "command": "yarn test:unit" },
+    "lint": { "command": "yarn lint" },
+    "gen:api": { "command": "yarn gen:api" },
+    "web": {
+      "type": "service",
+      "command": "yarn quasar dev -m pwa --port $PASEO_PORT"
+    }
+  }
+}
