@@ -750,8 +750,12 @@ function stopLinger(slug: string): void {
 }
 
 /** Reconcile lingering state against every path that flips layers:
- *  row taps, group switches, resets, edit-mode changes. */
+ *  row taps, resets, edit-mode changes. GROUP SWITCHES are exempt: the
+ *  previous group's layers are replaced wholesale by the new group's
+ *  view, so no grace window — lingering rows drop immediately and none
+ *  are started (the mini strip shows exactly the new group's layers). */
 let prevActive: Map<string, boolean> | null = null;
+let prevGroupId: string | null | undefined;
 watch(
   () => {
     const group = overlayStore.groupSettings.groups.find(
@@ -763,25 +767,29 @@ watch(
     return `${overlayStore.groupSettings.activeGroupId}#${group?.layerSlugs.join(',') ?? ''}#${states}`;
   },
   () => {
-    const group = overlayStore.groupSettings.groups.find(
-      g => g.id === overlayStore.groupSettings.activeGroupId
-    );
+    const groupId = overlayStore.groupSettings.activeGroupId;
+    const group = overlayStore.groupSettings.groups.find(g => g.id === groupId);
     const groupSlugs = new Set(group?.layerSlugs ?? []);
     const current = new Map<string, boolean>();
     for (const o of overlayStore.overlays as unknown as Array<{ name: string; active?: boolean }>) {
       current.set(o.name, o.active === true);
     }
-    if (prevActive) {
+    const groupSwitched = prevGroupId !== undefined && prevGroupId !== groupId;
+    if (groupSwitched) {
+      // Group switch: replace the layer set without the 6s linger
+      for (const slug of [...lingeringSlugs.value]) stopLinger(slug);
+    } else if (prevActive) {
       for (const [slug, wasActive] of prevActive) {
         if (wasActive && !(current.get(slug) ?? false) && !groupSlugs.has(slug)) {
           startLinger(slug); // freshly disabled non-group layer → grace window
         }
       }
-    }
-    for (const slug of [...lingeringSlugs.value]) {
-      if (current.get(slug) || groupSlugs.has(slug)) stopLinger(slug); // back on / absorbed
+      for (const slug of [...lingeringSlugs.value]) {
+        if (current.get(slug) || groupSlugs.has(slug)) stopLinger(slug); // back on / absorbed
+      }
     }
     prevActive = current;
+    prevGroupId = groupId;
   },
   { immediate: true }
 );
