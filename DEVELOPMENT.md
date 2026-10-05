@@ -300,9 +300,9 @@ git commit -m "Update API client types"
 
 ### Icon Development
 
-**For icon selection and implementation, use the iconify agent** (`.claude/agents/iconify.md`).
+**For icon selection and implementation, use the iconify skill** (`.agents/skills/iconify/SKILL.md`).
 
-The iconify agent will help you:
+The iconify skill will help you:
 
 - Search existing custom `wd` icons
 - Find and download new icons from Iconify

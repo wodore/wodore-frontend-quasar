@@ -10,9 +10,11 @@ export type IconsId =
   | "search-outline"
   | "rain"
   | "question-mark"
+  | "plus"
   | "no-bed-flat"
   | "mountain"
   | "more-vertical"
+  | "minus"
   | "message"
   | "menu"
   | "menu-arrow"
@@ -63,9 +65,11 @@ export type IconsKey =
   | "SearchOutline"
   | "Rain"
   | "QuestionMark"
+  | "Plus"
   | "NoBedFlat"
   | "Mountain"
   | "MoreVertical"
+  | "Minus"
   | "Message"
   | "Menu"
   | "MenuArrow"
@@ -116,9 +120,11 @@ export enum Icons {
   SearchOutline = "search-outline",
   Rain = "rain",
   QuestionMark = "question-mark",
+  Plus = "plus",
   NoBedFlat = "no-bed-flat",
   Mountain = "mountain",
   MoreVertical = "more-vertical",
+  Minus = "minus",
   Message = "message",
   Menu = "menu",
   MenuArrow = "menu-arrow",
@@ -170,44 +176,46 @@ export const ICONS_CODEPOINTS: { [key in Icons]: string } = {
   [Icons.SearchOutline]: "61705",
   [Icons.Rain]: "61706",
   [Icons.QuestionMark]: "61707",
-  [Icons.NoBedFlat]: "61708",
-  [Icons.Mountain]: "61709",
-  [Icons.MoreVertical]: "61710",
-  [Icons.Message]: "61711",
-  [Icons.Menu]: "61712",
-  [Icons.MenuArrow]: "61713",
-  [Icons.LocationShareOutline]: "61714",
-  [Icons.LocationQuestion]: "61715",
-  [Icons.Link]: "61716",
-  [Icons.Info]: "61717",
-  [Icons.InfoOutline]: "61718",
-  [Icons.Gift]: "61719",
-  [Icons.Filter]: "61720",
-  [Icons.FilterOutline]: "61721",
-  [Icons.Favorite]: "61722",
-  [Icons.FavoriteOutline]: "61723",
-  [Icons.Eye]: "61724",
-  [Icons.EyeOutline]: "61725",
-  [Icons.ElevationOutline]: "61726",
-  [Icons.Edit]: "61727",
-  [Icons.EditOutline]: "61728",
-  [Icons.Copyright]: "61729",
-  [Icons.Close]: "61730",
-  [Icons.Checkmark]: "61731",
-  [Icons.Calendar]: "61732",
-  [Icons.Browser]: "61733",
-  [Icons.Bike]: "61734",
-  [Icons.Bell]: "61735",
-  [Icons.BellOutline]: "61736",
-  [Icons.BedFlat]: "61737",
-  [Icons.BedFlatOutline]: "61738",
-  [Icons.At]: "61739",
-  [Icons.ArrowheadUp]: "61740",
-  [Icons.ArrowheadRight]: "61741",
-  [Icons.ArrowheadLeft]: "61742",
-  [Icons.ArrowheadDown]: "61743",
-  [Icons.ArrowUpDown]: "61744",
-  [Icons.AlertTriangleOutline]: "61745",
-  [Icons.Add]: "61746",
-  [Icons.AddOutline]: "61747",
+  [Icons.Plus]: "61708",
+  [Icons.NoBedFlat]: "61709",
+  [Icons.Mountain]: "61710",
+  [Icons.MoreVertical]: "61711",
+  [Icons.Minus]: "61712",
+  [Icons.Message]: "61713",
+  [Icons.Menu]: "61714",
+  [Icons.MenuArrow]: "61715",
+  [Icons.LocationShareOutline]: "61716",
+  [Icons.LocationQuestion]: "61717",
+  [Icons.Link]: "61718",
+  [Icons.Info]: "61719",
+  [Icons.InfoOutline]: "61720",
+  [Icons.Gift]: "61721",
+  [Icons.Filter]: "61722",
+  [Icons.FilterOutline]: "61723",
+  [Icons.Favorite]: "61724",
+  [Icons.FavoriteOutline]: "61725",
+  [Icons.Eye]: "61726",
+  [Icons.EyeOutline]: "61727",
+  [Icons.ElevationOutline]: "61728",
+  [Icons.Edit]: "61729",
+  [Icons.EditOutline]: "61730",
+  [Icons.Copyright]: "61731",
+  [Icons.Close]: "61732",
+  [Icons.Checkmark]: "61733",
+  [Icons.Calendar]: "61734",
+  [Icons.Browser]: "61735",
+  [Icons.Bike]: "61736",
+  [Icons.Bell]: "61737",
+  [Icons.BellOutline]: "61738",
+  [Icons.BedFlat]: "61739",
+  [Icons.BedFlatOutline]: "61740",
+  [Icons.At]: "61741",
+  [Icons.ArrowheadUp]: "61742",
+  [Icons.ArrowheadRight]: "61743",
+  [Icons.ArrowheadLeft]: "61744",
+  [Icons.ArrowheadDown]: "61745",
+  [Icons.ArrowUpDown]: "61746",
+  [Icons.AlertTriangleOutline]: "61747",
+  [Icons.Add]: "61748",
+  [Icons.AddOutline]: "61749",
 };
