@@ -8,8 +8,14 @@ const nestedEntry = {
   slug: 'overcast',
   description_day: 'Bedeckt',
   description_night: 'Bedeckt',
-  symbol_day: { slug: 'weather-icons-overcast-day', url: 'https://hub.stg.wodore.com/media/symbols/overcast-day_abc.svg' },
-  symbol_night: { slug: 'weather-icons-overcast-night', url: 'https://hub.stg.wodore.com/media/symbols/overcast-night_def.svg' },
+  symbol_day: {
+    slug: 'weather-icons-overcast-day',
+    url: 'https://hub.stg.wodore.com/media/symbols/overcast-day_abc.svg',
+  },
+  symbol_night: {
+    slug: 'weather-icons-overcast-night',
+    url: 'https://hub.stg.wodore.com/media/symbols/overcast-night_def.svg',
+  },
 };
 
 /** Legacy cached shape: symbols were plain strings (slug or URL) */
