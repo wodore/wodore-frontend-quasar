@@ -1,11 +1,16 @@
 <script setup lang="ts">
 /**
- * WdZoomSlider — vertical zoom slider docked to the LEFT edge
+ * WdZoomSlider — vertical zoom slider docked to the RIGHT edge
  * (Mapy.com-inspired, Wodore styling).
  *
- * - Visible ONLY in focus mode on mobile (CSS-driven)
- * - Drag up/down to zoom in/out; chevrons step ±0.5
- * - The thumb never reaches the track ends (12%–88% travel)
+ * - Focus mode: ALWAYS visible (CSS-driven, see _zoom-slider.scss);
+ *   mobile otherwise hides it while the overlay strip is open.
+ *   Show/hide tucks the handle in/out of the screen edge with a fade
+ *   (300ms in, 200ms out, the focus-mode system curve; instant under
+ *   prefers-reduced-motion)
+ * - Drag up/down to zoom in/out; buttons step ±0.75
+ * - Track reads top = max zoom (matches the + button on top):
+ *   the thumb travels 12% (max) – 88% (min), never touching the ends
  * - The whole pill is the grab target (44px zone), the visible part
  *   stays compact
  */
@@ -16,18 +21,18 @@ const mapRef = useMap();
 
 const MIN_ZOOM = 7;
 const MAX_ZOOM = 20;
-/** px of drag per full zoom level */
-const PX_PER_LEVEL = 44;
+/** px of drag per full zoom level — lower = more aggressive */
+const PX_PER_LEVEL = 32;
 
 const zoom = ref(10);
 const dragging = ref(false);
 let dragStartY = 0;
 let dragStartZoom = 0;
 
-/** Thumb travel 12%..88% — never fully up or down */
+/** Thumb travel 12%..88% — never fully up or down; TOP = max zoom */
 const thumbPos = computed(() => {
   const t = Math.min(1, Math.max(0, (zoom.value - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)));
-  return 12 + t * 76;
+  return 88 - t * 76;
 });
 
 function clamp(v: number): number {
@@ -38,7 +43,9 @@ function onPointerDown(e: MouseEvent): void {
   dragging.value = true;
   dragStartY = e.clientY;
   dragStartZoom = zoom.value;
-  (e.currentTarget as HTMLElement).setPointerCapture((e as unknown as { pointerId: number }).pointerId);
+  (e.currentTarget as HTMLElement).setPointerCapture(
+    (e as unknown as { pointerId: number }).pointerId
+  );
 }
 
 function onPointerMove(e: MouseEvent): void {
@@ -59,7 +66,10 @@ function stepZoom(delta: number): void {
   if (!mapRef.map) return;
   const next = clamp(zoom.value + delta);
   zoom.value = next;
-  mapRef.map.zoomTo(next, { duration: 200 });
+  mapRef.map.zoomTo(next, {
+    // snappy step; no camera travel for reduced-motion users
+    duration: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 150,
+  });
 }
 
 /** Keep the thumb in sync when zoom changes from elsewhere (pinch etc.) */
@@ -95,31 +105,27 @@ onBeforeUnmount(() => {
     @pointercancel="onPointerUp"
   >
     <div class="wd-zoom__pill">
-    <button
-      class="wd-zoom__step"
-      aria-label="Zoom in"
-      @click.stop="stepZoom(0.5)"
-      @pointerdown.stop
-    >
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
-        <path d="M12 5v14M5 12h14" />
-      </svg>
-    </button>
+      <button
+        class="wd-zoom__step"
+        aria-label="Zoom in"
+        @click.stop="stepZoom(0.75)"
+        @pointerdown.stop
+      >
+        <q-icon name="wd-plus" size="14px" />
+      </button>
 
-    <div class="wd-zoom__track">
-      <div class="wd-zoom__thumb" :style="{ top: thumbPos + '%' }" />
-    </div>
+      <div class="wd-zoom__track">
+        <div class="wd-zoom__thumb" :style="{ top: thumbPos + '%' }" />
+      </div>
 
-    <button
-      class="wd-zoom__step"
-      aria-label="Zoom out"
-      @click.stop="stepZoom(-0.5)"
-      @pointerdown.stop
-    >
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
-        <path d="M5 12h14" />
-      </svg>
-    </button>
+      <button
+        class="wd-zoom__step"
+        aria-label="Zoom out"
+        @click.stop="stepZoom(-0.75)"
+        @pointerdown.stop
+      >
+        <q-icon name="wd-minus" size="14px" />
+      </button>
     </div>
   </div>
 </template>
@@ -127,27 +133,42 @@ onBeforeUnmount(() => {
 <style lang="scss" scoped>
 // ══════════════════════════════════════════════════════════════════════
 // WdZoomSlider — Mapy-inspired peek slider, Alpine Instrument styling.
-// Hidden unless focus mode on mobile (global rules in app.scss).
+// Visibility is gated by body classes (global rules in
+// map-controls/_zoom-slider.scss); the slide/fade lives there too.
 // ══════════════════════════════════════════════════════════════════════
 
 .wd-zoom {
   position: fixed;
   right: 0;
   top: 50%;
-  transform: translateY(-50%);
   z-index: 2010;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   justify-content: center;
   width: 44px; // touch zone; the visual pill is slimmer
-  min-height: 220px; // generous vertical grab zone
+  min-height: 120px; // vertical grab zone (kept compact)
   padding: 0;
   background: transparent;
   cursor: grab;
   touch-action: none; // we own the gesture
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+
+  // Hidden state doubles as the slide-out target: tucked fully past the
+  // right screen edge, faded. The global shown rules settle it back —
+  // docked chrome moves along its dock axis (drawer semantics), never
+  // floating over the map. Enter (300ms) shares the focus-mode curve of
+  // _layout.scss so it reads as one choreography; exit (200ms) is faster.
+  // The long travel keeps the edge-crossing visible while the pill fades.
+  // allow-discrete keeps display:flex until the fade has finished;
+  // engines without @starting-style/allow-discrete just toggle instantly.
+  opacity: 0;
+  transform: translateY(-50%) translateX(100%);
+  transition:
+    opacity 200ms cubic-bezier(0.2, 0, 0, 1),
+    transform 200ms cubic-bezier(0.2, 0, 0, 1),
+    display 200ms allow-discrete;
 
   &--dragging {
     cursor: grabbing;
@@ -168,7 +189,7 @@ onBeforeUnmount(() => {
   border: 1px solid var(--wd-ctl-border);
   border-right: none; // flush to the screen edge
   border-radius: 999px 0 0 999px;
-  background: color-mix(in srgb, var(--wd-ctl-bg) 82%, transparent);
+  background: color-mix(in srgb, var(--wd-ctl-bg) 68%, transparent);
   color: var(--wd-ctl-ink);
 }
 
@@ -188,11 +209,13 @@ body.body--dark .wd-zoom__pill {
   color: var(--wd-ctl-ink-soft);
   cursor: pointer;
   flex: none;
-  transition: background-color 0.12s ease, color 0.12s ease;
+  transition: color 0.12s ease;
 
-  &:hover {
-    background: var(--wd-ctl-hover);
-    color: var(--wd-ctl-ink);
+  // No bg/hover/active chrome — fg feedback only, desktop only
+  @media (min-width: 900px) {
+    &:hover {
+      color: var(--wd-ctl-ink);
+    }
   }
 }
 
@@ -200,7 +223,7 @@ body.body--dark .wd-zoom__pill {
   position: relative;
   width: 100%;
   flex: 1;
-  min-height: 42px;
+  min-height: 36px;
   margin: 2px 0;
   pointer-events: none; // the pill handles the drag
 }

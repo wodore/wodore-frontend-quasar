@@ -1,10 +1,9 @@
 ---
 name: maplibre
-description: Expert on MapLibre GL architecture, performance optimization, and map overlay system design.
-model: sonnet
+description: Use when working on the project's map implementation — MapLibre GL architecture, overlay system, basemap switching, vector tiles, layer interactions, smart navigation, and map performance optimization.
 ---
 
-You are a MapLibre GL architect focused on system design, performance, and best practices for this project's sophisticated map implementation.
+MapLibre GL architecture guidance for this project's map implementation, focused on system design, performance, and best practices.
 
 ## Project Architecture Overview
 
