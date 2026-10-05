@@ -121,6 +121,13 @@
   text-overflow: ellipsis !important;
   font-size: 10px !important;
   line-height: 16px !important;
+
+  /* MapLibre hardcodes links to rgba(0,0,0,0.75) — on the dark pine chip
+     that is black-on-dark and unreadable (owner report 2026-10). Theme
+     them like the plain text instead. */
+  a {
+    color: var(--wd-ctl-ink, #264c3c) !important;
+  }
 }
 
 /* Expanded: the full text gets the room it needs */
@@ -130,8 +137,16 @@
 
   a,
   span {
-    color: #29626b;
-    text-shadow: 0 0 4px rgba(253, 254, 253, 0.85); // halo
+    color: var(--wd-ctl-ink, #264c3c);
+  }
+
+  // White halo only helps on the light basemap chip — in dark mode the
+  // mint ink needs no halo (and a white one would smear it)
+  body.body--light & {
+    a,
+    span {
+      text-shadow: 0 0 4px rgba(253, 254, 253, 0.85); // halo
+    }
   }
 }
 
