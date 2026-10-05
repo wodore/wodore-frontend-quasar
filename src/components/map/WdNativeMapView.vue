@@ -46,6 +46,8 @@ import type { LayerSpecification, StyleSpecification } from 'maplibre-gl';
 import { MapLibre } from '@capawesome/capacitor-maplibre';
 import type { PluginListenerHandle } from '@capacitor/core';
 import { useBasemapStore } from '@stores/map/basemap-store';
+import type { BasemapSwitchItem } from '@stores/map/utils/interfaces';
+import type { OverlaySwitchItem } from '@stores/map/utils/interfaces';
 import { useOverlayStore } from '@stores/map/overlay-store';
 import { useLocalPropertiesStore } from '@stores/local-properties-store';
 import { useHutsStore } from '@stores/huts-store';
@@ -69,6 +71,15 @@ const basemapStore = useBasemapStore();
 const overlayStore = useOverlayStore();
 const localPropertiesStore = useLocalPropertiesStore();
 const hutsStore = useHutsStore();
+
+// basemaps is a reactive() array whose element type deep-unwraps into the
+// recursive StyleSpecification union — calling Array.find on it directly
+// trips TS2589 (excessively deep instantiation). Cast to the plain item
+// type first (same dodge the store itself uses in getBasemapByName).
+function findBasemapByName(name: string): BasemapSwitchItem | undefined {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (basemapStore.basemaps as any[]).find(b => b.name === name);
+}
 
 const scaleWidth = ref(80);
 const scaleLabel = ref('');
@@ -122,13 +133,13 @@ async function resolveBasemapStyle(): Promise<StyleSpecification> {
       console.warn(
         '[WdNativeMapView] Basemap uses MapTiler tiles but the key is dead — falling back'
       );
-      const ofm = basemapStore.basemaps.find(b => b.name === 'openfreemap-bright');
+      const ofm = findBasemapByName('openfreemap-bright');
       if (ofm) {
         console.debug('[WdNativeMapView] resolve: fallback -> openfreemap-bright (bundled)');
         basemapStore.setBasemap(ofm);
         return JSON.parse(JSON.stringify(openfreemapBrightStyle));
       }
-      const full = basemapStore.basemaps.find(b => b.name === 'ch-swisstopo-full');
+      const full = findBasemapByName('ch-swisstopo-full');
       if (full && typeof full.style !== 'string') {
         console.debug('[WdNativeMapView] resolve: fallback -> ch-swisstopo-full');
         basemapStore.setBasemap(full);
@@ -168,14 +179,14 @@ async function resolveBasemapStyleInner(): Promise<StyleSpecification> {
       // natively. Fall back to the keyless OpenFreeMap vector style
       // (the store's designated fallback), then swisstopo-full raster.
       console.warn(`[WdNativeMapView] resolve: fetch failed (${style})`, e);
-      const ofm = basemapStore.basemaps.find(b => b.name === 'openfreemap-bright');
+      const ofm = findBasemapByName('openfreemap-bright');
       if (ofm) {
         // Bundled style — works even when the WebView cannot fetch it
         console.debug('[WdNativeMapView] resolve: fallback -> openfreemap-bright (bundled)');
         basemapStore.setBasemap(ofm);
         return JSON.parse(JSON.stringify(openfreemapBrightStyle));
       }
-      const full = basemapStore.basemaps.find(b => b.name === 'ch-swisstopo-full');
+      const full = findBasemapByName('ch-swisstopo-full');
       if (full && typeof full.style !== 'string') {
         console.debug('[WdNativeMapView] resolve: fallback -> ch-swisstopo-full');
         basemapStore.setBasemap(full);
@@ -560,16 +571,26 @@ watch(
 // layer is visible -> its tiles pre-load invisibly, skipping the ugly
 // stretched parent tile), then ~300ms later the final style swaps in
 // the real opacity.
-let lastOverlayState = overlayStore.overlays.map(o => `${o.name}:${o.active ? 1 : 0}`).join('|');
+// overlayStore.overlays is a reactive() array whose element type
+// deep-unwraps into a recursive spec union — Array.map/filter on it
+// trips TS2589 (the store itself uses the same plain-type casts).
+function overlaySnapshot(): OverlaySwitchItem[] {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return overlayStore.overlays as any[];
+}
+function overlayStateString(): string {
+  return overlaySnapshot().map(o => `${o.name}:${o.active ? 1 : 0}`).join('|');
+}
+let lastOverlayState = overlayStateString();
 let revealTimer: ReturnType<typeof setTimeout> | undefined;
 watch(
-  () => overlayStore.overlays.map(o => `${o.name}:${o.active ? 1 : 0}`).join('|'),
+  () => overlayStateString(),
   next => {
     const prevState = lastOverlayState;
     lastOverlayState = next;
     clearTimeout(revealTimer);
     const newlyOn = new Set(
-      overlayStore.overlays
+      overlaySnapshot()
         .filter(o => o.active && !prevState.includes(`${o.name}:1`))
         .map(o => o.name)
     );

@@ -71,10 +71,13 @@ const handleKeydown = (event: KeyboardEvent) => {
             class="contribute-icon"
           />
           <div class="text-section">
-            <span class="text-grey-7 status-text" role="status">{{
-              t('media.no_photos_yet')
-            }}</span>
-            <span class="text-grey-6 message-text">{{ message }}</span>
+            <span
+              class="status-text"
+              :class="$q.dark.isActive ? 'text-secondary-200' : 'text-secondary-800'"
+              role="status"
+              >{{ t('media.no_photos_yet') }}</span
+            >
+            <span class="text-secondary-700 message-text">{{ message }}</span>
           </div>
         </div>
       </div>

@@ -110,6 +110,19 @@ const metaDescription = computed(() => {
   return desc + cap;
 });
 
+// Absolute hut URL for canonical/og:url — derived from the current origin
+// so it stays correct on every deployment (production, Pages previews).
+const hutPageUrl = computed(() => {
+  if (!hut.value?.slug || typeof window === 'undefined') return '';
+  return `${window.location.origin}/hut/${hut.value.slug}`;
+});
+
+// Best available social preview image (og:image needs an absolute URL).
+const ogImage = computed(() => {
+  const urls = hut.value?.images?.[0]?.urls;
+  return urls?.large || urls?.medium || 'https://wodore.com/meta/meta.jpg';
+});
+
 useMeta(() => ({
   title: hut.value?.name || getEnv('WODORE_APP_NAME') || 'Wodore',
   meta: {
@@ -117,6 +130,15 @@ useMeta(() => ({
       name: 'description',
       content: metaDescription.value,
     },
+    ogTitle: { property: 'og:title', content: hut.value?.name || '' },
+    ogDescription: { property: 'og:description', content: metaDescription.value },
+    ogType: { property: 'og:type', content: 'website' },
+    ogUrl: { property: 'og:url', content: hutPageUrl.value },
+    ogImage: { property: 'og:image', content: ogImage.value },
+    twitterCard: { name: 'twitter:card', content: 'summary_large_image' },
+  },
+  link: {
+    canonical: { rel: 'canonical', href: hutPageUrl.value },
   },
 }));
 

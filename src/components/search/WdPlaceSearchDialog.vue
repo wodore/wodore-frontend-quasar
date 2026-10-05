@@ -19,9 +19,7 @@ function onSearchClose() {
 <template>
   <div>
     <q-btn flat round dense @click="showDialog = true">
-      <q-icon size="sm" class="text-icon">
-        <IconEvaSearchOutline />
-      </q-icon>
+      <q-icon size="sm" class="text-icon" name="wd-search-outline" />
     </q-btn>
 
     <q-dialog

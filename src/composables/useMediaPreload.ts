@@ -1,6 +1,5 @@
 import { ref, type Ref } from 'vue';
 import type { HutImage } from './useHutImages';
-import type { ImageSizeVariants } from 'src/types/geo';
 
 /**
  * Retry schedule for transient upstream failures (imagor cache misses can
@@ -18,8 +17,10 @@ export function useMediaPreload(images: Ref<HutImage[]>, currentSlide: Ref<numbe
   const preloadedUrls = ref<Set<string>>(new Set());
 
   // Get optimal image size based on screen size - NEVER upscale
-  const getOptimalImageSize = (): 'large' | 'medium' => {
-    if (typeof window === 'undefined') return 'medium';
+  const LADDER = ['xs', 'sm', 'md', 'lg', 'xl'] as const;
+
+  const getOptimalImageSize = (): 'md' | 'lg' => {
+    if (typeof window === 'undefined') return 'md';
 
     const screenWidth = window.innerWidth;
     const screenHeight = window.innerHeight;
@@ -28,11 +29,11 @@ export function useMediaPreload(images: Ref<HutImage[]>, currentSlide: Ref<numbe
     const maxHeight = screenHeight - 140; // Leave room for thumbnails
     const maxWidth = screenWidth >= 1200 ? screenWidth - 80 : screenWidth; // Add margin on large screens
 
-    // Always use at least medium, use large if screen is big enough
+    // Always use at least md, use lg if screen is big enough
     if (maxWidth <= 1600 || maxHeight <= 1200) {
-      return 'medium';
+      return 'md';
     }
-    return 'large';
+    return 'lg';
   };
 
   // Get image URL for main gallery with proper size and orientation
@@ -47,23 +48,22 @@ export function useMediaPreload(images: Ref<HutImage[]>, currentSlide: Ref<numbe
 
     const size = getOptimalImageSize();
 
-    // Use @2x version for HiDPI devices
+    // Retina: serve the next size up (the schema has no @2x variants)
     const pixelRatio = window.devicePixelRatio || 1;
     if (pixelRatio >= 1.5) {
-      const size2x = `${size}@2x` as keyof ImageSizeVariants;
-      if (urls[size2x]) {
-        return urls[size2x];
+      const bumped = LADDER[Math.min(LADDER.indexOf(size) + 1, LADDER.length - 1)];
+      if (urls[bumped]) {
+        return urls[bumped];
       }
     }
 
-    // Fallback to smaller sizes if the chosen size doesn't exist
-    if (urls[size]) {
-      return urls[size];
+    // Fallback down the ladder if the chosen size doesn't exist
+    for (let i = LADDER.indexOf(size); i >= 0; i--) {
+      if (urls[LADDER[i]]) {
+        return urls[LADDER[i]];
+      }
     }
-    if (urls.medium) {
-      return urls.medium;
-    }
-    return urls.preview || urls.thumb || '';
+    return '';
   };
 
   // Get thumbnail URL (small square images) with HiDPI support
@@ -71,11 +71,11 @@ export function useMediaPreload(images: Ref<HutImage[]>, currentSlide: Ref<numbe
     if (!image.urls?.square) return '';
 
     const pixelRatio = window.devicePixelRatio || 1;
-    // Use @2x for HiDPI devices
-    if (pixelRatio >= 1.5 && image.urls.square['thumb@2x']) {
-      return image.urls.square['thumb@2x'];
+    // Retina: serve the next size up (the schema has no @2x variants)
+    if (pixelRatio >= 1.5 && image.urls.square.sm) {
+      return image.urls.square.sm;
     }
-    return image.urls.square.thumb || '';
+    return image.urls.square.xs || '';
   };
 
   // Get preview image URL (same as preview component uses) - already cached
@@ -88,8 +88,13 @@ export function useMediaPreload(images: Ref<HutImage[]>, currentSlide: Ref<numbe
 
     if (!urls) return '';
 
-    // Return preview size (same as preview component uses)
-    return urls.preview || urls.thumb || '';
+    // Return preview size (same as preview component uses); retina
+    // serves the next size up (the schema has no @2x variants)
+    const pixelRatio = window.devicePixelRatio || 1;
+    if (pixelRatio >= 1.5 && urls.md) {
+      return urls.md;
+    }
+    return urls.sm || urls.md || '';
   };
 
   // Preload single image with retry logic for rate limiting

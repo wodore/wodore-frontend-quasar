@@ -315,3 +315,17 @@ $h-tags: (
 // CUSTOM APP
 $drawer-duration: 140ms;
 $drawer-transition: ease-out;
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// WODORE MAP-CHROME TOKENS (static accents — runtime light/dark flipping
+// stays on the --wd-ctl-* custom properties in map-controls/_topbar.scss;
+// these Sass tokens are the FIXED accent values shared across files)
+
+$wd-gold: #bfab25; // selection beam / active border (light surfaces)
+$wd-gold-bright: #d4c23a; // selection beam on pine (dark)
+$wd-day-ink: #1c1c1c; // neutral text ink on light chips
+$wd-paper: #f2f7f4; // paper-white text ink on pine
+$wd-mint: #a9f0d2; // mint ink (brand, dark chrome)
+$wd-pine: #112119; // pine chip surface (dark chrome)
+$wd-pine-ridge: #1c3629; // hairline ridge on pine
+$wd-mint-ridge: rgba(169, 240, 210, 0.16); // mint hairline on pine

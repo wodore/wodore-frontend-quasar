@@ -9,6 +9,8 @@
     "@capacitor/app": "^8.1.1",
     "@capacitor/cli": "^8.5.2",
     "@capacitor/core": "^8.5.2",
+    "@capacitor/preferences": "^8.0.1",
+    "@capawesome/capacitor-app-update": "^8.0.5",
     "@capawesome/capacitor-maplibre": "^0.2.0",
     "maplibre-gl": "^6.11.2"
   },

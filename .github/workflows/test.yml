@@ -21,9 +21,23 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  unit-tests:
+  check-draft:
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' || github.event.action != 'closed'
+    steps:
+      - id: is_draft
+        run: echo "draft=${{ github.event.pull_request.draft || false }}" >> "$GITHUB_OUTPUT"
+  # Skip ALL jobs when the PR is a draft (no tests, no preview, no APK)
+  unit-tests:
+    needs: check-draft
+    if: needs.check-draft.outputs.draft != 'true' && (github.event_name != 'pull_request' || github.event.action != 'closed')
+    runs-on: ubuntu-latest
+    # gh-pages is shared with the Preview workflow's deploy — serialize
+    # every push to it or the two race and one loses ('failed to push
+    # some refs'). The workflow-level allure-<ref> group only serializes
+    # Allure against itself.
+    concurrency:
+      group: gh-pages-push
+      cancel-in-progress: false
 
     steps:
       - name: Check out
@@ -67,8 +81,34 @@ jobs:
 
       # NOTE: e2e (Playwright) is intentionally NOT run in CI — it requires a
       # real dev server + backend and stays a local-only suite for now.
+      - name: Start dev server for interaction tests
+        run: yarn dev -p 9000 &
+        env:
+          WODORE_API_HOST: ${{ vars.WODORE_API_HOST || 'https://hub.stg.wodore.com' }}
+
       - name: Run unit tests
         run: rm -rf allure-results && yarn test:unit
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Wait for dev server
+        run: |
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:9000/ > /dev/null && break
+            sleep 5
+          done
+          curl -sf http://localhost:9000/ > /dev/null || (echo "Dev server not ready" && exit 1)
+
+      - name: Run interaction tests (map controls)
+        run: |
+          # Exclude visual-regression: reference screenshots are
+          # environment-specific (fonts, GPU, antialiasing differ between
+          # local and CI) — run locally with: yarn test:interaction
+          yarn playwright test tests/interaction/ --project=interaction --grep-invert "visual regression"
+          node scripts/link-allure-attachments.mjs allure-results/e2e
+        env:
+          INTERACTION_BASE_URL: http://localhost:9000
 
       - name: Cache Allure (npm)
         uses: actions/cache@v4
@@ -95,14 +135,37 @@ jobs:
               > allure-results/history/history.json
           fi
 
-      # allure@3 (Allure Report 3): the allure-action reads the v3 summary
-      # format; the v2 allure-commandline report is not parseable by it
-      - name: Generate Allure report
+      # allure-commandline v2: produces a static HTML report with DIRECT
+      # file links to attachments — works on GitHub Pages sub-paths.
+      # (allure@3 SPA falls back to blob: URLs on GH Pages → broken screenshots)
+      - name: Generate Allure report (unit + interaction/e2e)
         if: always()
-        run: npx -y allure@3 generate allure-results/unit
+        run: |
+          # merge all result dirs into one the report can consume
+          mkdir -p allure-results/merged
+          if [ -d allure-results/unit ]; then cp -R allure-results/unit/. allure-results/merged/; fi
+          if [ -d allure-results/e2e ]; then cp -R allure-results/e2e/. allure-results/merged/; fi
+          npx -y allure-commandline generate allure-results/merged --clean
 
-      - name: Publish report to GitHub Pages
+      - name: Upload Playwright artifacts (traces + failure screenshots)
         if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      # The push races with OTHER PRs' publishers (branches without the
+      # gh-pages-push concurrency group still push unlocked). Tolerate one
+      # rejected push: wait out the racer, then a fresh attempt clones the
+      # updated branch and lands.
+      - name: Publish report to GitHub Pages
+        id: allure_publish
+        if: always()
+        continue-on-error: true
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -112,34 +175,55 @@ jobs:
           commit_message: >-
             Allure report for run ${{ github.run_number }}
 
-      # allure@3 does NOT write history back into the report; rebuild the
-      # next run's history.json from this report's per-test data. Capped at
-      # 2000 entries (63 tests here) to bound the gh-pages file size.
+      - name: Wait out gh-pages racer
+        if: always() && steps.allure_publish.outcome == 'failure'
+        run: sleep 75
+
+      - name: Publish report to GitHub Pages (retry)
+        if: always() && steps.allure_publish.outcome == 'failure'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./allure-report
+          destination_dir: ${{ steps.ctx.outputs.dir }}/${{ github.run_number }}
+          keep_files: true
+          commit_message: >-
+            Allure report for run ${{ github.run_number }} (retry)
+
+      # Prune old Allure reports (keep the latest 30 per PR/branch)
+      - name: Prune old reports (>30 runs)
+        if: always()
+        run: |
+          cd $(mktemp -d)
+          git clone --depth 1 --branch gh-pages ${{ github.server_url }}/${{ github.repository }}.git repo
+          cd repo
+          DIR=${{ steps.ctx.outputs.dir }}
+          if [ -d "$DIR" ]; then
+            RUNS=$(ls -1 "$DIR" | sort -n | head -n -30)
+            if [ -n "$RUNS" ]; then
+              echo "Pruning: $RUNS"
+              echo "$RUNS" | xargs -I{} rm -rf "$DIR/{}/"
+              git config user.name 'Allure Bot'
+              git config user.email 'actions@github.com'
+              git add -A
+              git commit -m 'Prune Allure reports older than 30 runs' || true
+              git push
+            fi
+          fi
+
+      # allure-commandline v2 writes history into the report directly
+      # (allure-report/history/history.json). Copy it to the results dir
+      # for the next run's "Fetch Allure history" step.
       - name: Build next-run history
         if: always()
         run: |
-          cat > /tmp/build-history.js <<'EOF'
-          const fs = require('fs');
-          const h = {};
-          const d = 'allure-report/data/test-results';
-          for (const f of fs.readdirSync(d)) {
-            const j = JSON.parse(fs.readFileSync(d + '/' + f));
-            h[j.historyId] = {
-              status: j.status,
-              statusDetails: j.statusDetails || {},
-              trace: '',
-              stop: j.stop,
-            };
-          }
-          const capped = {};
-          for (const k of Object.keys(h).slice(0, 2000)) capped[k] = h[k];
-          fs.mkdirSync('allure-results/history', { recursive: true });
-          fs.writeFileSync(
-            'allure-results/history/history.json',
-            JSON.stringify(capped),
-          );
-          EOF
-          node /tmp/build-history.js
+          mkdir -p allure-results/history
+          if [ -f allure-report/history/history.json ]; then
+            cp allure-report/history/history.json allure-results/history/
+            echo "Copied v2 history for next run"
+          else
+            echo "No history file in report (first run?) — tolerated"
+          fi
 
       # Persist the history via plain git — a second peaceiris publish in
       # the same job deadlocks on `checkout --orphan gh-pages` (branch
@@ -239,9 +323,10 @@ jobs:
   # Remove the PR's whole report directory (all runs + history) when it
   # closes, so gh-pages does not accumulate stale reports.
   cleanup:
+    needs: check-draft
+    if: needs.check-draft.outputs.draft != 'true' && github.event_name == 'pull_request' && github.event.action == 'closed'
     name: Remove PR reports
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && github.event.action == 'closed'
 
     steps:
       - name: Check out gh-pages

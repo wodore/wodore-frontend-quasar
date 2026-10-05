@@ -21,7 +21,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  check-draft:
+    runs-on: ubuntu-latest
+    steps:
+      - id: is_draft
+        run: echo "draft=${{ github.event.pull_request.draft || false }}" >> "$GITHUB_OUTPUT"
+  # Skip ALL jobs when the PR is a draft (no tests, no preview, no APK)
   preview:
+    # gh-pages is shared with the Tests workflow's Allure publish —
+    # serialize every push to it (same race as documented in test.yml).
+    concurrency:
+      group: gh-pages-push
+      cancel-in-progress: false
+    needs: check-draft
+    if: needs.check-draft.outputs.draft != 'true'
     name: Deploy / cleanup preview
     runs-on: ubuntu-latest
     steps:
@@ -162,6 +175,9 @@ jobs:
             }}/
           WODORE_ROUTER_MODE: hash
           WODORE_ENV: preview
+          # Static Pages deployment — indexing must be opt-out at build time
+          # (the Docker entrypoint handles this at runtime for server deploys).
+          WODORE_SEO_NOINDEX: '1'
           # Per-commit path: every build lives at pr-N/<sha7>/ - a fresh
           # URL per push that the Pages CDN has never cached, and all
           # builds stay comparable until the PR closes
@@ -194,7 +210,9 @@ jobs:
         run: yarn build:pwa
 
       - name: Deploy to gh-pages
+        id: preview_deploy
         if: steps.pr.outputs.action == 'deploy'
+        continue-on-error: true
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -206,6 +224,27 @@ jobs:
             Preview pr-${{ steps.pr.outputs.number }} @ ${{
               github.event.pull_request.head.sha
             }}
+
+      # gh-pages is pushed by several workflows; PRs whose branches predate
+      # the shared gh-pages-push concurrency group can still reject this
+      # push mid-flight. Wait out the racer, then retry once on a fresh clone.
+      - name: Wait out gh-pages racer
+        if: steps.pr.outputs.action == 'deploy' && steps.preview_deploy.outcome == 'failure'
+        run: sleep 75
+
+      - name: Deploy to gh-pages (retry)
+        if: steps.pr.outputs.action == 'deploy' && steps.preview_deploy.outcome == 'failure'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: dist/pwa
+          destination_dir: pr-${{ steps.pr.outputs.number }}/${{ steps.pr.outputs.sha7 }}
+          keep_files: true
+          commit_message: >-
+            Preview pr-${{ steps.pr.outputs.number }} @ ${{
+              github.event.pull_request.head.sha
+            }} (retry)
 
       # SPA fallback: GitHub Pages has no server rewrite, so a custom 404.html
       # redirects subdirectory paths (e.g. /pr-150/hut/damma) back to the

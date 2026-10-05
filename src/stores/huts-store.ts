@@ -43,6 +43,7 @@ export const useHutsStore = defineStore('huts', () => {
   // };
   //const emptyHutBookingsGeojson: schemasWodore['HutBookingsFeatureCollection'] =
   const emptyHutBookingsGeojson: schemasWodore['HutAvailabilityFeatureCollection'] = {
+    bbox: null, // explicit null: the dmr schema declares bbox with default null
     type: 'FeatureCollection',
     features: [],
   };

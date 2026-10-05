@@ -3,6 +3,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ref } from 'vue';
 import { useMediaPreload, RETRY_DELAYS_MS, getRetryDelayMs } from '@composables/useMediaPreload';
 import type { HutImage } from '@composables/useHutImages';
+import type { ImageVariantUrls } from 'src/types/geo';
+
+const makeVariantUrls = (prefix: string): ImageVariantUrls => ({
+  xs: `${prefix}-xs`,
+  sm: `${prefix}-sm`,
+  md: `${prefix}-md`,
+  lg: `${prefix}-lg`,
+  xl: `${prefix}-xl`,
+});
 
 /** Minimal image fixture — only fields the composable reads. */
 const makeImage = (overrides: Partial<HutImage> = {}): HutImage =>
@@ -11,17 +20,10 @@ const makeImage = (overrides: Partial<HutImage> = {}): HutImage =>
     is_portrait: false,
     ...overrides,
     urls: {
-      square: {
-        thumb: 'square-thumb',
-        'thumb@2x': 'square-thumb-2x',
-      } as HutImage['urls']['square'],
-      landscape: {
-        preview: 'landscape-preview',
-        thumb: 'landscape-thumb',
-        medium: 'landscape-medium',
-        'medium@2x': 'landscape-medium-2x',
-        large: 'landscape-large',
-      } as HutImage['urls']['landscape'],
+      square: makeVariantUrls('square'),
+      landscape: makeVariantUrls('landscape'),
+      portrait: makeVariantUrls('portrait'),
+      original: { raw: 'original-raw', proxy: 'original-proxy' },
     },
   }) as unknown as HutImage;
 
@@ -126,39 +128,84 @@ describe('useMediaPreload source picking', () => {
     vi.unstubAllGlobals();
   });
 
-  it('picks the portrait variant when the image is portrait and has portrait urls', () => {
-    const portrait = makeImage({ id: 'p', is_portrait: true });
-    portrait.urls.portrait = {
-      preview: 'portrait-preview',
-      thumb: 'portrait-thumb',
-      medium: 'portrait-medium',
-    } as HutImage['urls']['portrait'];
-    const { getGalleryImageUrl } = useMediaPreload(ref([portrait]), ref(0));
-
-    // Small screen -> medium size, from the portrait orientation block
+  const stubSmallScreen = () => {
     vi.stubGlobal('innerWidth', 800);
     vi.stubGlobal('innerHeight', 600);
-    expect(getGalleryImageUrl(portrait)).toBe('portrait-medium');
+  };
+
+  const stubLargeScreen = () => {
+    vi.stubGlobal('innerWidth', 1920);
+    vi.stubGlobal('innerHeight', 1400);
+  };
+
+  it('picks the portrait variant when the image is portrait', () => {
+    const portrait = makeImage({ id: 'p', is_portrait: true });
+    const { getGalleryImageUrl } = useMediaPreload(ref([portrait]), ref(0));
+
+    // Small screen -> md size, from the portrait orientation block
+    stubSmallScreen();
+    expect(getGalleryImageUrl(portrait)).toBe('portrait-md');
   });
 
   it('falls back to landscape variants for portrait images without portrait urls', () => {
     const portrait = makeImage({ id: 'p-no-portrait', is_portrait: true });
+    portrait.urls.portrait = undefined as unknown as HutImage['urls']['portrait'];
     const { getGalleryImageUrl } = useMediaPreload(ref([portrait]), ref(0));
 
-    // Small screen -> medium; no portrait urls present, so the landscape
+    // Small screen -> md; no portrait urls present, so the landscape
     // block is used as fallback
-    vi.stubGlobal('innerWidth', 800);
-    vi.stubGlobal('innerHeight', 600);
-    expect(getGalleryImageUrl(portrait)).toBe('landscape-medium');
+    stubSmallScreen();
+    expect(getGalleryImageUrl(portrait)).toBe('landscape-md');
   });
 
   it('falls back through smaller sizes when a variant is missing', () => {
     const image = makeImage();
-    delete (image.urls.landscape as Record<string, string | undefined>).medium;
+    image.urls.landscape.md = '';
     const { getGalleryImageUrl } = useMediaPreload(ref([image]), ref(0));
 
-    vi.stubGlobal('innerWidth', 800);
-    vi.stubGlobal('innerHeight', 600);
-    expect(getGalleryImageUrl(image)).toBe('landscape-preview');
+    stubSmallScreen();
+    expect(getGalleryImageUrl(image)).toBe('landscape-sm');
+  });
+
+  it('uses lg on large screens (medium -> md, large -> lg)', () => {
+    const image = makeImage();
+    const { getGalleryImageUrl } = useMediaPreload(ref([image]), ref(0));
+
+    stubLargeScreen();
+    expect(getGalleryImageUrl(image)).toBe('landscape-lg');
+  });
+
+  it('serves the next size up for retina displays', () => {
+    vi.stubGlobal('devicePixelRatio', 2);
+    const image = makeImage();
+    const { getGalleryImageUrl, getThumbnailUrl, getPreviewImageUrl } = useMediaPreload(
+      ref([image]),
+      ref(0)
+    );
+
+    stubSmallScreen();
+    // md -> lg on retina
+    expect(getGalleryImageUrl(image)).toBe('landscape-lg');
+    // square thumb xs -> sm on retina
+    expect(getThumbnailUrl(image)).toBe('square-sm');
+    // preview sm -> md on retina
+    expect(getPreviewImageUrl(image)).toBe('landscape-md');
+  });
+
+  it('clamps the retina bump at xl', () => {
+    vi.stubGlobal('devicePixelRatio', 3);
+    const image = makeImage();
+    const { getGalleryImageUrl } = useMediaPreload(ref([image]), ref(0));
+
+    stubLargeScreen();
+    // lg + retina bump -> xl (there is nothing beyond xl)
+    expect(getGalleryImageUrl(image)).toBe('landscape-xl');
+  });
+
+  it('uses the orientation group for preview urls of portrait images', () => {
+    const portrait = makeImage({ id: 'p-preview', is_portrait: true });
+    const { getPreviewImageUrl } = useMediaPreload(ref([portrait]), ref(0));
+
+    expect(getPreviewImageUrl(portrait)).toBe('portrait-sm');
   });
 });

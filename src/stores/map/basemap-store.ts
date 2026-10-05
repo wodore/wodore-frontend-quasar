@@ -5,7 +5,7 @@ import { getRasterStyle } from '@stores/map/utils/raster';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
 import { Platform } from 'quasar';
 //import type { Emitter } from 'mitt';
-import { LocalStorage } from 'quasar';
+import { storageGet, storageSet } from '@services/storage';
 import { getGPUTier } from '@pmndrs/detect-gpu';
 import { useOverlayStore } from './overlay-store';
 import { StyleSpecification } from 'maplibre-gl';
@@ -34,17 +34,19 @@ const swissTopoRasterStyle = getRasterStyle({
   tileSize: Platform.is.mobile ? 128 : 156,
 });
 
-const swissTopoLbmRasterStyle = getRasterStyle({
-  name: 'ch-swisstopo-lbm',
-  tiles: [
-    'https://api.maptiler.com/maps/ch-swisstopo-lbm/{z}/{x}/{y}.png?key=' +
-      getEnv('WODORE_MAPTILER_API_KEY'),
-  ],
+// Keyless plain OSM raster (tile.openstreetmap.org) — style for the weak-GPU
+// raster variant of "Switzerland Topo Light". Deliberately NOT MapTiler
+// raster tiles: those are key-metered and exhausted the free quota —
+// weak-GPU devices must never touch MapTiler.
+const osmRasterStyle = getRasterStyle({
+  name: 'osm-raster',
+  tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
   attribution:
-    '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank"> &copy; OpenStreetMap contributors</a> &#124; <a href="https://www.swisstopo.admin.ch/en/home.html" target="_blank">&copy; swisstopo</a>',
+    '<a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
   suffix: '',
-  //tileSize: Platform.is.mobile ? 128 : 156,
-  tileSize: 512,
+  // OSM tiles stop at z19 — source maxzoom lets MapLibre overzoom to the
+  // app's z20 cap instead of requesting missing tiles
+  sourceMaxZoom: 19,
 });
 
 const oeLayer: 'geolandbasemap' | 'bmaphidpi' = 'bmaphidpi';
@@ -75,7 +77,11 @@ export const useBasemapStore = defineStore('basemap', () => {
     return undefined;
   }
 
-  function setBasemap(s: BasemapSwitchItem, force: boolean = false): boolean {
+  /** Select a basemap. `persist=false` switches without saving the
+   * selection — used by the automatic MapTiler-auth fallback so the next
+   * session retries the user's chosen basemap instead of starting on the
+   * fallback. */
+  function setBasemap(s: BasemapSwitchItem, force = false, persist = true): boolean {
     const basemapStyle = getBasemap();
     if (basemapStyle !== undefined && s.name == basemapStyle.name && !force) {
       console.debug('Active baselayer is already set.');
@@ -421,7 +427,9 @@ export const useBasemapStore = defineStore('basemap', () => {
         style.active = false;
       }
     }
-    LocalStorage.set('basemapName', s.name);
+    if (persist) {
+      storageSet('basemapName', s.name);
+    }
     console.debug('[setBasemap] Map layer is set to ', s.label);
     return true;
   }
@@ -457,7 +465,7 @@ export const useBasemapStore = defineStore('basemap', () => {
   let basemapInitPromise: Promise<void> | null = null;
 
   // Get saved basemap name from localStorage (not the full object)
-  const savedBasemapName = LocalStorage.getItem('basemapName') as string | null;
+  const savedBasemapName = storageGet('basemapName') as string | null;
 
   // Helper to get basemap by name
   function getBasemapByName(name: string): BasemapSwitchItem | undefined {
@@ -497,8 +505,8 @@ export const useBasemapStore = defineStore('basemap', () => {
   // Async function to initialize basemaps based on GPU tier
   async function runBasemapInit() {
     // Check if we have a cached GPU tier result (valid for 2 days)
-    const cachedGpuTier = LocalStorage.getItem('gpuTier');
-    const cachedGpuTierTime = LocalStorage.getItem('gpuTierTime') as number | null;
+    const cachedGpuTier = storageGet('gpuTier');
+    const cachedGpuTierTime = storageGet('gpuTierTime') as number | null;
     const twoDaysInMs = 2 * 24 * 60 * 60 * 1000;
     const now = Date.now();
 
@@ -512,8 +520,8 @@ export const useBasemapStore = defineStore('basemap', () => {
       // Run GPU detection
       gpuTier = await getGPUTier();
       // Cache the result
-      LocalStorage.set('gpuTier', gpuTier);
-      LocalStorage.set('gpuTierTime', now);
+      storageSet('gpuTier', gpuTier);
+      storageSet('gpuTierTime', now);
       console.debug('Detected and cached GPU tier:', gpuTier.tier);
     }
 
@@ -536,8 +544,10 @@ export const useBasemapStore = defineStore('basemap', () => {
         show: true,
         active: false,
         img: getImageUrl('swiss-vector.png'),
+        // Weak-GPU raster variant: keyless OSM raster (MapTiler raster tiles
+        // are key-metered and exhausted the free quota)
         style: useRaster
-          ? swissTopoLbmRasterStyle
+          ? osmRasterStyle
           : 'https://api.maptiler.com/maps/ch-swisstopo-lbm/style.json?key=' +
             getEnv('WODORE_MAPTILER_API_KEY'),
         layers: {
@@ -611,14 +621,17 @@ export const useBasemapStore = defineStore('basemap', () => {
       },
       {
         // Keyless OpenFreeMap vector basemap (openfreemap.org). Hidden
-        // from the picker - it is the automatic fallback when the
-        // MapTiler-based basemaps are rejected (suspended/rotated key).
-        name: 'openfreemap-bright',
-        label: 'OpenFreeMap Bright',
+        // from the picker — it is the automatic fallback when MapTiler-based
+        // basemaps are rejected (suspended/rotated/exhausted key).
+        // Liberty style: full-featured vector cartography with labels;
+        // glyphs are served keylessly by OpenFreeMap itself
+        // (https://tiles.openfreemap.org/fonts/...).
+        name: 'openfreemap-liberty',
+        label: 'OpenFreeMap Liberty',
         show: false,
         active: false,
         img: getImageUrl('outdoor-v2.png'),
-        style: 'https://tiles.openfreemap.org/styles/bright',
+        style: 'https://tiles.openfreemap.org/styles/liberty',
         layers: {
           ways: { before: undefined },
           background: { before: undefined },
@@ -654,9 +667,39 @@ export const useBasemapStore = defineStore('basemap', () => {
         ) || (basemaps as unknown as Array<BasemapSwitchItem>)[0];
     }
 
-    // Set the active basemap
+    // A MapTiler-based basemap with a rejected key (suspended/exhausted)
+    // would 403 during the FIRST style load — MapLibre then never fires its
+    // 'load' event and the map stays blank; switching styles mid-load
+    // dead-ends too. Probe the style URL up front and start directly on
+    // the keyless fallback when the host rejects it.
+    let sessionFallback = false;
+    if (
+      basemapToSet &&
+      typeof basemapToSet.style === 'string' &&
+      basemapToSet.style.includes('api.maptiler.com')
+    ) {
+      try {
+        const probe = await fetch(basemapToSet.style);
+        if (!probe.ok) {
+          const fallback = getBasemapByName('openfreemap-liberty');
+          if (fallback) {
+            console.warn(
+              `[basemap] Tile host rejected the style (HTTP ${probe.status}) - starting on OpenFreeMap Liberty`
+            );
+            basemapToSet = fallback;
+            sessionFallback = true;
+          }
+        }
+      } catch {
+        // Network error: keep the configured basemap; the onMapError
+        // fallback in WdMapView handles failures once the map is up
+      }
+    }
+
+    // Set the active basemap. A startup fallback is session-only (not
+    // persisted) so the next session retries the user's chosen basemap.
     if (basemapToSet) {
-      setBasemap(basemapToSet);
+      setBasemap(basemapToSet, false, !sessionFallback);
     }
   }
 

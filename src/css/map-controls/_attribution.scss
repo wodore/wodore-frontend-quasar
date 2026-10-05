@@ -1,0 +1,148 @@
+// ══════════════════════════════════════════════════════════════════════
+// ATTRIBUTION — the owned mobile chip (created by WdMapView JS)
+// GLOBAL because: the chip is appended to <body> by WdMapView's
+// wireAttributionToggle() — it lives outside any component's DOM tree.
+// ══════════════════════════════════════════════════════════════════════
+@keyframes wd-attrib-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// ── Collapsed: round ⓘ chip beside the GPS cluster ──────────────────────
+.wd-attrib {
+  animation: wd-attrib-in 0.25s ease-out; /* fade in when ready */
+  position: fixed;
+  left: calc(68px + env(safe-area-inset-left, 0px)); /* beside the GPS cluster */
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  z-index: 2010;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--wd-ctl-border);
+  border-radius: 999px; /* round ⓘ */
+  background: color-mix(in srgb, var(--wd-ctl-bg) 88%, transparent);
+  color: var(--wd-ctl-ink);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    width 0.15s cubic-bezier(0.2, 0, 0, 1),
+    height 0.15s cubic-bezier(0.2, 0, 0, 1),
+    min-width 0.15s cubic-bezier(0.2, 0, 0, 1),
+    border-radius 0.15s cubic-bezier(0.2, 0, 0, 1),
+    background-color 0.15s cubic-bezier(0.2, 0, 0, 1),
+    padding 0.15s cubic-bezier(0.2, 0, 0, 1),
+    opacity 0.15s ease;
+  overflow: hidden; /* clip during the size morph */
+
+  *:focus {
+    outline: none;
+  }
+
+  &:active {
+    background: color-mix(in srgb, var(--wd-ctl-bg) 95%, transparent);
+  }
+
+  // plain italic serif "i" — the chip IS the circle
+  .wd-attrib__i {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-style: italic;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1;
+
+    .wd-attrib__close {
+      display: none;
+    }
+  }
+
+  .wd-attrib__text {
+    display: none;
+  }
+}
+
+// ── Expanded: wrapping text chip with a BIG close button ─────────────────
+// (AFTER the base block — wins the cascade for the glyph swap)
+.wd-attrib--open {
+  width: auto;
+  max-width: min(66vw, 320px);
+  min-width: 190px;
+  height: auto;
+  padding: 7px 12px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--wd-ctl-bg) 92%, transparent);
+  justify-content: flex-start;
+  gap: 8px;
+
+  // the "i" becomes a 32px round close button (taps were hitting links)
+  .wd-attrib__i {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    flex: none;
+    border-radius: 999px;
+    background: rgba(128, 145, 135, 0.14);
+    animation: wd-attrib-btn-in 0.12s ease-out 0.06s both; /* after the morph */
+
+    .wd-attrib__info {
+      display: none;
+    }
+
+    .wd-attrib__close {
+      display: block;
+    }
+  }
+
+  .wd-attrib__text {
+    display: block;
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+    font-size: 10px;
+    line-height: 1.5;
+    white-space: normal;
+    color: var(--wd-ctl-ink);
+    animation: wd-attrib-text-in 0.15s ease-out 0.04s both; /* slight delay */
+
+    a {
+      color: var(--wd-ctl-ink);
+      text-decoration: underline;
+      opacity: 0.8;
+    }
+  }
+}
+
+// ── Focus mode: fully to the left, AT the bottom ─────────────────────────
+body.wd-map-focus .wd-attrib {
+  left: calc(12px + env(safe-area-inset-left, 0px));
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+}
+
+@keyframes wd-attrib-text-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes wd-attrib-btn-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

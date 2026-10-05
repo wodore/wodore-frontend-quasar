@@ -28,7 +28,7 @@ import { useRequestProgress } from '@composables/useRequestProgress';
 import { getEnv } from '@services/runtimeEnv';
 
 // Initialize stores
-const authStore = useAuthStore();
+const _authStore = useAuthStore();
 const menuStore = useMapMenuStore();
 const contentStore = useMapContentStore();
 
@@ -118,6 +118,22 @@ const contentDrawerOpen = computed({
     }
   },
 });
+
+// Side panel (content drawer, desktop): flag on <body> so map controls
+// and the utility cluster can shift left and stay clear of the drawer
+watch(
+  () => contentDrawerOpen.value,
+  open => {
+    document.body.classList.toggle('wd-sidepanel-open', !!open);
+    // Actual drawer width — the control shift follows the real panel,
+    // not a hardcoded 330px that mismatched the 380/460px drawers
+    document.body.style.setProperty(
+      '--wd-drawer-w',
+      open ? `${$q.screen.gt.md ? 460 : 380}px` : '0px'
+    );
+  },
+  { immediate: true }
+);
 
 // Mobile bottom sheet ref (for programmatic snap control)
 const bottomSheetRef = ref<InstanceType<typeof WdBottomSheet> | null>(null);
@@ -238,9 +254,11 @@ onMounted(() => {
 .wd-surface {
   background: var(--wd-surface) !important;
 }
+
 .wd-ink-soft-text {
   color: var(--wd-ink-soft) !important;
 }
+
 .app-header {
   backdrop-filter: blur(10px);
   // Night (default here): pine bar, paper text. Day gets the lighter bar
@@ -294,6 +312,7 @@ body.body--light .app-header .q-btn.text-icon:hover,
 body.body--light .app-header button.text-icon:hover {
   background: rgba(255, 255, 255, 0.16) !important;
 }
+
 // Quasar draws button fills on ::before - kill it in the header
 .app-header .q-btn::before {
   background: transparent !important;
@@ -400,57 +419,64 @@ body.capacitor .preview-badge {
   <WdAnalytics />
   <q-layout view="hHh LpR fFf" class="overflow-hidden" @scroll="onLayoutScroll">
     <div v-if="isStaging" class="preview-badge">preview</div>
-    <q-header class="app-header" :class="{ 'app-header--scrolled': headerScrolled }">
-      <!-- TOOLBAR -->
-      <q-toolbar>
-        <WdMenuButton desktop v-model="menuDrawerOpen" />
-        <q-toolbar-title>
-          <WodoreLogo
-            class="text-h4"
-            :text="!isMobile"
-            icon
-            :text-color-left="$q.dark.isActive ? 'white' : 'black'"
-          />
-        </q-toolbar-title>
-        <WdPlaceSearchMenu v-if="!isMobile" />
-        <WdSelectDate />
-        <WdPlaceSearchDialog v-if="isMobile" />
-        <WdSupportButton v-if="!authStore.isLoggedIn && !isMobile" class="wd-info-text" />
-        <WdFeedbackButton v-if="!isMobile" size="md" />
-        <WdLanguageSwitcher v-if="!isMobile" size="md" />
-        <WdThemeSwitcher v-if="!isMobile" size="md" />
+    <WdApiVersionBanner />
+    <!-- FLOATING TOPBAR: search | date (highlight) | avatar ──────────── -->
+    <div class="wd-topbar">
+      <div class="wd-topbar__pill">
+        <!-- Search (icon-only, opens search) -->
+        <div class="wd-topbar__search">
+          <WdPlaceSearchMenu v-if="!isMobile" class="wd-topbar__search-menu" />
+          <WdPlaceSearchDialog v-else class="wd-topbar__search-dialog" />
+        </div>
 
-        <WdUser v-if="authStore.isLoggedIn" />
+        <!-- Date (the highlighted core element — main pill width) -->
+        <div class="wd-topbar__date">
+          <WdSelectDate />
+        </div>
 
-        <!-- MAIN DIALOG -->
-        <q-dialog
-          v-model="showDialog"
-          :maximized="isMobile"
-          backdrop-filter="blur(3px) saturate(180%) grayscale(60%)"
-          class="dialog-radius"
-          @hide="onDialogHide"
-          @escape-key="onDialogHide"
-        >
-          <router-view name="dialog" v-slot="{ Component, route }">
-            <!-- <transition name="fade" mode="out-in"> -->
-            <component :is="Component" :key="route.path" />
-            <!-- </transition> -->
-          </router-view>
-        </q-dialog>
+        <!-- User / menu button (right edge, inside the pill) -->
+        <!--<button class="text-icon" :aria-label="$t('menu')" @click="menuDrawerOpen = !menuDrawerOpen">-->
+        <div class="wd-topbar__menu">
+          <q-btn flat round :aria-label="$t('menu')" @click="menuDrawerOpen = !menuDrawerOpen">
+            <q-icon size="sm" class="text-icon" name="wd-menu" />
+          </q-btn>
+        </div>
+        <!-- <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"> -->
+        <!--   <circle cx="12" cy="8" r="4" /> -->
+        <!--   <path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6" /> -->
+        <!-- </svg> -->
+        <!--</button>-->
+      </div>
 
-        <!-- MENU BUTTON mobile open -->
-        <WdMenuButton mobile function="open" side="right" v-model="menuDrawerOpen" />
-      </q-toolbar>
+      <!-- Desktop-only utilities: top-right chip cluster (8px radius) -->
+      <div v-if="!isMobile" class="wd-topbar__utils">
+        <WdFeedbackButton size="sm" />
+        <WdLanguageSwitcher size="sm" />
+        <WdThemeSwitcher size="sm" />
+      </div>
+    </div>
 
-      <!-- API progress bar: pinned to the bottom edge of the toolbar -->
-      <q-linear-progress
-        v-if="progressVisible"
-        indeterminate
-        color="accent-500"
-        size="3px"
-        class="header-progress"
-      />
-    </q-header>
+    <!-- MAIN DIALOG -->
+    <q-dialog
+      v-model="showDialog"
+      :maximized="isMobile"
+      backdrop-filter="blur(3px) saturate(180%) grayscale(60%)"
+      class="dialog-radius"
+      @hide="onDialogHide"
+      @escape-key="onDialogHide"
+    >
+      <router-view name="dialog" v-slot="{ Component, route }">
+        <component :is="Component" :key="route.path" />
+      </router-view>
+    </q-dialog>
+
+    <q-linear-progress
+      v-if="progressVisible"
+      indeterminate
+      color="accent-500"
+      size="3px"
+      class="wd-topbar__progress"
+    />
 
     <!-- MENU -->
     <q-drawer
@@ -459,7 +485,7 @@ body.capacitor .preview-badge {
       :width="300"
       :breakpoint="610"
       class="wd-menu-drawer"
-      style="max-width: 80vw"
+      style="max-width: 80vw; z-index: 3000"
     >
       <!-- TOOLBAR mobile -->
       <q-toolbar v-if="isMobile" class="bg-primary-600 shadow-6">

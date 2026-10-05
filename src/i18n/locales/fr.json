@@ -56,8 +56,7 @@
       "generic_message": "Une erreur s'est produite lors du chargement de la carte",
       "reload": "Recharger la page"
     },
-    "layers": "Couches",
-    "basemap_fallback": "Fond de carte indisponible — bascule vers Swisstopo"
+    "layers": "Couches"
   },
   "map_style": "Carte",
   "location": "Lieu",
@@ -255,7 +254,7 @@
     "one_man_project_term": "projet d'une seule personne"
   },
   "select_date": {
-    "placeholder": "Choisir une date",
+    "placeholder": "Disponibilité",
     "error_title": "Oh non, plus rien ne fonctionne !",
     "error_restricted": "Le CAS a restreint l'accès !",
     "error_contact": "N'hésitez pas à",
@@ -265,7 +264,10 @@
     "alternative": "Alternativement :",
     "or": "ou",
     "not_available": "Actuellement indisponible",
-    "placeholder_short": "Date"
+    "placeholder_short": "Disponibilité",
+    "today": "Aujourd'hui",
+    "tomorrow": "Demain",
+    "choose_hint": "Choisir une date"
   },
   "overlay_config": {
     "reset_done": "Paramètres réinitialisés",
@@ -369,7 +371,45 @@
       "label": "VTT",
       "desc": "Itinéraires VTT d’OpenStreetMap, affichés via Waymarked Trails",
       "link": "Réseau Suisse à VTT"
-    }
+    },
+    "groups": {
+      "hiking": {
+        "name": "Randonnée"
+      },
+      "cycling": {
+        "name": "Vélo"
+      },
+      "snowsport": {
+        "name": "Sports d'hiver"
+      }
+    },
+    "all_layers": "Toutes les couches",
+    "group_rename": "Renommer le groupe",
+    "group_hide": "Masquer le groupe",
+    "group_delete": "Supprimer le groupe",
+    "group_add": "Ajouter un groupe",
+    "edit_cancel": "Annuler",
+    "group_reset": "Réinitialiser",
+    "group_name": "Nom du groupe",
+    "edit_unsaved_title": "Enregistrer les modifications ?",
+    "edit_unsaved_message": "Vous avez des modifications non enregistrées de vos groupes.",
+    "edit_save": "Enregistrer",
+    "edit_discard": "Annuler",
+    "group_delete_confirm": "Supprimer « {name} » ? Ses couches reviennent dans « Autres couches ».",
+    "other_layers": "Autres couches",
+    "group_switch": "Changer de groupe ({name})",
+    "group_show": "Afficher le groupe",
+    "group_more": "Plus d'actions",
+    "group_reset_confirm": "Réinitialiser « {name} » avec ses couches par défaut ? Vos modifications de ce groupe seront perdues.",
+    "icon_change": "Changer d'icône",
+    "group_empty_hint": "Pas encore de couches dans ce groupe — ajoutez-les avec + ci-dessous.",
+    "icon_search": "Rechercher des icônes …",
+    "icon_none": "Aucune icône trouvée.",
+    "icon_search_error": "Recherche d'icônes indisponible pour le moment.",
+    "icon_more": "Afficher plus",
+    "group_prev": "Groupe précédent ({name})",
+    "group_next": "Groupe suivant ({name})",
+    "edit_keep_editing": "Continuer la modification"
   },
   "basemap": "Fond de carte",
   "basemaps": {
@@ -458,5 +498,11 @@
     "dark": "Sombre"
   },
   "basemap_lock": "Verrouiller le fond de carte",
-  "basemap_unlock": "Déverrouiller le fond de carte"
+  "basemap_unlock": "Déverrouiller le fond de carte",
+  "api_version_deprecated_native": "Une nouvelle version de l'application est disponible — veuillez la mettre à jour. La prise en charge de cette version prend fin le :",
+  "api_version_deprecated_web": "Une nouvelle version est disponible — veuillez recharger la page. La prise en charge de cette version prend fin le :",
+  "api_version_unsupported_native": "Cette version de l'application n'est plus prise en charge par le serveur. Veuillez mettre à jour l'application.",
+  "api_version_unsupported_web": "Cette version n'est plus prise en charge par le serveur. Veuillez recharger la page.",
+  "api_version_reload": "Recharger",
+  "api_version_update": "Mettre à jour l'appli"
 }

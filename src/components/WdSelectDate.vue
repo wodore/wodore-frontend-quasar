@@ -43,17 +43,28 @@ const selectedDateDay = computed<string>(() => {
   }
   return t('select_date.placeholder');
 });
-const selectedDateDisplay = computed(() => {
-  if (selectedDateObj.value !== undefined && selectedDate.value) {
-    if (!isMobile.value) {
-      const dayShort = formatDate(selectedDateObj.value, 'dd');
-      return `${selectedDate.value} • ${dayShort}`;
-    }
-    return selectedDate.value;
-  }
-  return selectedDate.value || '';
+
+/** Line 1: relative day name (Today/Tomorrow/weekday), placeholder when empty */
+const dateDayLabel = computed(() => {
+  if (selectedDateObj.value === undefined) return t('select_date.placeholder');
+  const today = new Date();
+  const tomorrow = new Date();
+  tomorrow.setDate(today.getDate() + 1);
+  const sameDay = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
+  if (sameDay(selectedDateObj.value, today)) return t('select_date.today');
+  if (sameDay(selectedDateObj.value, tomorrow)) return t('select_date.tomorrow');
+  return formatDate(selectedDateObj.value, 'dddd');
 });
-const isMobile = computed(() => {
+
+/** Line 2: full date, subtle hint when empty */
+const dateValueLabel = computed(() => {
+  if (selectedDateObj.value === undefined) return t('select_date.choose_hint');
+  return formatDate(selectedDateObj.value, 'DD.MM.YYYY');
+});
+const _isMobile = computed(() => {
   return $q.screen.xs;
 });
 const showMenu = ref(false);
@@ -324,14 +335,7 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
 }
 </style>
 <template>
-  <div
-    :class="{
-      'q-ml-md': !isMobile,
-      'q-ml-xs': isMobile,
-    }"
-    class="q-mr-md"
-    :style="isMobile ? 'max-width: 130px; max-height: 40px' : 'max-width: 210px; max-height: 40px'"
-  >
+  <div class="wd-date-seg">
     <!-- CALENDAR -->
     <q-popup-proxy
       :offset="[10, 1]"
@@ -531,7 +535,8 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
       >
     </q-btn> -->
     <!-- DESKTOP - textfiled -->
-    <div class="wd-date-stepper row no-wrap items-start">
+    <div class="wd-date-stepper row no-wrap items-start cursor-pointer">
+      <!--
       <div
         v-if="!isMobile"
         @click="decrementDate"
@@ -554,35 +559,43 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
           </div>
         </div>
       </div>
+      -->
       <div id="select-date-huts-location" style="flex: 1; position: relative">
         <!-- class="gt-xs" -->
-        <q-input
-          id="menu"
-          readonly
-          standout
-          :model-value="selectedDateDisplay"
-          dense
-          class="toolbar-font wd-date-field"
-          :placeholder="
-            selectedDateDisplay ||
-            t(isMobile ? 'select_date.placeholder_short' : 'select_date.placeholder')
-          "
-          @click="showMenu = true"
-        >
-          <!-- </q-input>:rules="[
-            (v) => /^[0-3]\d\.[0-1]\d\.\d\d$/.test(v) || 'Format: dd.mm.yy',
-          ]"
-          -->
-          <template v-slot:append>
-            <q-icon
-              @click="showMenu = true"
-              name="wd-calendar"
-              class="text-icon cursor-pointer"
-              size="26px"
+        <!-- Plain 2-line button (no input field): day name + date -->
+        <!-- <q-btn flat class="wd-date-btn" icon="wd-calendar" @click="showMenu = true"> -->
+        <!--   <span class="wd-date-btn__lines"> -->
+        <!--     <span class="wd-date-btn__day" :class="{ 'wd-date-btn__day--empty': selectedDate === undefined }"> -->
+        <!--       {{ dateDayLabel }} -->
+        <!--     </span> -->
+        <!--     <span class="wd-date-btn__date" :class="{ 'wd-date-btn__date--empty': selectedDate === undefined }"> -->
+        <!--       {{ dateValueLabel }} -->
+        <!--     </span> -->
+        <!--   </span> -->
+        <!---->
+        <!-- </q-btn> -->
+        <button type="button" class="wd-date-btn" @click="showMenu = true">
+          <q-icon
+            name="wd-calendar"
+            size="sm"
+            class="text-icon"
+            :class="{ 'wd-date-btn__icon--empty': selectedDate === undefined }"
+          />
+          <span class="wd-date-btn__lines">
+            <span
+              class="wd-date-btn__day"
+              :class="{ 'wd-date-btn__day--empty': selectedDate === undefined }"
             >
-            </q-icon>
-          </template>
-        </q-input>
+              {{ dateDayLabel }}
+            </span>
+            <span
+              class="wd-date-btn__date"
+              :class="{ 'wd-date-btn__date--empty': selectedDate === undefined }"
+            >
+              {{ dateValueLabel }}
+            </span>
+          </span>
+        </button>
         <!-- Swipe overlay -->
         <div
           v-touch-swipe.mouse.horizontal="handleDateInputSwipe"
@@ -598,17 +611,14 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
           @click="showMenu = true"
         ></div>
       </div>
-      <div
-        v-if="!isMobile"
-        @click="incrementDate"
+      <!--
+      <div v-if="!isMobile" @click="incrementDate"
         class="q-field row no-wrap items-start q-field--standout q-field--dense q-field--dark q-field--readonly cursor-pointer wd-input-button"
-        style="width: 22px; min-width: 22px; max-width: 22px"
-      >
+        style="width: 22px; min-width: 22px; max-width: 22px">
         <div class="q-field__inner relative-position col self-stretch">
           <div class="q-field__control relative-position row no-wrap">
             <div
-              class="q-field__control-container col relative-position row items-center justify-center no-wrap q-anchor--skip"
-            >
+              class="q-field__control-container col relative-position row items-center justify-center no-wrap q-anchor--skip">
               <q-icon size="26px" class="text-icon">
                 <IconEvaArrowIosForwardOutline />
               </q-icon>
@@ -616,6 +626,7 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
           </div>
         </div>
       </div>
+      -->
     </div>
   </div>
 </template>

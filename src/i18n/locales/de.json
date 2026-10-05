@@ -79,8 +79,7 @@
       "generic_message": "Beim Laden der Karte ist ein Fehler aufgetreten",
       "reload": "Seite neu laden"
     },
-    "layers": "Ebenen",
-    "basemap_fallback": "Basiskarte nicht verfügbar — auf Swisstopo umgestellt"
+    "layers": "Ebenen"
   },
   "favorites": "Favoriten",
   "layers": "Layers",
@@ -255,7 +254,7 @@
     "one_man_project_term": "Ein-Mann-Projekt"
   },
   "select_date": {
-    "placeholder": "Datum auswählen",
+    "placeholder": "Wo Frei",
     "error_title": "Ah Blöd, da geht nichts mehr!",
     "error_restricted": "Der SAC hat den Zugriff eingeschrenkt!",
     "error_contact": "Gerne",
@@ -265,7 +264,10 @@
     "alternative": "Alternativ:",
     "or": "oder",
     "not_available": "Im Moment nicht verfügbar",
-    "placeholder_short": "Datum"
+    "placeholder_short": "Verfügbarkeit",
+    "today": "Heute",
+    "tomorrow": "Morgen",
+    "choose_hint": "Datum wählen"
   },
   "overlay_config": {
     "reset_done": "Einstellungen zurückgesetzt",
@@ -369,7 +371,45 @@
       "label": "Mountainbike",
       "desc": "Mountainbike-Routen aus OpenStreetMap, angezeigt über Waymarked Trails",
       "link": "Mountainbikeland Schweiz"
-    }
+    },
+    "groups": {
+      "hiking": {
+        "name": "Wandern"
+      },
+      "cycling": {
+        "name": "Radfahren"
+      },
+      "snowsport": {
+        "name": "Wintersport"
+      }
+    },
+    "all_layers": "Alle Ebenen",
+    "group_rename": "Gruppe umbenennen",
+    "group_hide": "Gruppe ausblenden",
+    "group_delete": "Gruppe löschen",
+    "group_add": "Gruppe hinzufügen",
+    "edit_cancel": "Abbrechen",
+    "group_reset": "Zurücksetzen",
+    "group_name": "Gruppenname",
+    "edit_unsaved_title": "Änderungen speichern?",
+    "edit_unsaved_message": "Es gibt ungespeicherte Änderungen an deinen Gruppen.",
+    "edit_save": "Speichern",
+    "edit_discard": "Verwerfen",
+    "group_delete_confirm": "\"{name}\" löschen? Die Ebenen kehren zu \"Weitere Ebenen\" zurück.",
+    "other_layers": "Weitere Ebenen",
+    "group_switch": "Gruppe wechseln ({name})",
+    "group_show": "Gruppe einblenden",
+    "group_more": "Weitere Aktionen",
+    "group_reset_confirm": "\"{name}\" auf die Standard-Ebenen zurücksetzen? Deine Änderungen an dieser Gruppe werden verworfen.",
+    "icon_change": "Symbol ändern",
+    "group_empty_hint": "Noch keine Ebenen in dieser Gruppe — füge unten mit + hinzu.",
+    "icon_search": "Symbol suchen …",
+    "icon_none": "Keine Symbole gefunden.",
+    "icon_search_error": "Symbolsuche derzeit nicht verfügbar.",
+    "icon_more": "Mehr anzeigen",
+    "group_prev": "Vorherige Gruppe ({name})",
+    "group_next": "Nächste Gruppe ({name})",
+    "edit_keep_editing": "Weiter bearbeiten"
   },
   "basemap": "Basiskarte",
   "basemaps": {
@@ -458,5 +498,11 @@
     "dark": "Dunkel"
   },
   "basemap_lock": "Basiskarte fixieren",
-  "basemap_unlock": "Basiskarte lösen"
+  "basemap_unlock": "Basiskarte lösen",
+  "api_version_deprecated_native": "Eine neuere App-Version ist verfügbar – bitte aktualisiere die App. Unterstützung für diese Version läuft ab:",
+  "api_version_deprecated_web": "Eine neuere Version ist verfügbar – bitte lade die Seite neu. Unterstützung für diese Version läuft ab:",
+  "api_version_unsupported_native": "Diese App-Version wird vom Server nicht mehr unterstützt. Bitte aktualisiere die App.",
+  "api_version_unsupported_web": "Diese Version wird vom Server nicht mehr unterstützt. Bitte lade die Seite neu.",
+  "api_version_reload": "Neu laden",
+  "api_version_update": "App aktualisieren"
 }

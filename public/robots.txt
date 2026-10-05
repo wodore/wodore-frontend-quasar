@@ -1,4 +1,11 @@
 User-agent: *
 Allow: /
-User-agent: facebookexternalhit
+
+# Well-behaved AI crawlers: welcome — see /llms.txt for a machine
+# readable site overview.
+User-agent: GPTBot
 Allow: /
+User-agent: ClaudeBot
+Allow: /
+
+Sitemap: https://wodore.com/sitemap.xml

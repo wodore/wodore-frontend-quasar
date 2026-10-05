@@ -1,0 +1,122 @@
+name: Cleanup old Allure reports
+
+# Global cron: prune Allure report directories on gh-pages that are
+# older than 7 days. Runs daily at 03:00 UTC, also on demand.
+#
+# Report layout on gh-pages:
+#   allure/pr-<num>/<run>/    — one directory per CI run (per PR)
+#   allure/main/<run>/        — same for main-branch runs
+#
+# The gh-pages branch is NOT auto-cleaned by GitHub — without this job
+# it grows indefinitely (each report is ~10-80 MB with screenshots).
+
+on:
+  schedule:
+    - cron: '0 3 * * *'  # daily at 03:00 UTC
+  workflow_dispatch: {}   # manual trigger
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cleanup-reports
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Clone gh-pages
+        run: |
+          git clone --depth 1 --branch gh-pages \
+            "${{ github.server_url }}/${{ github.repository }}.git" repo
+          cd repo
+
+      - name: Prune reports older than 7 days
+        run: |
+          cd repo
+          MAX_AGE_DAYS=7
+          CUTOFF=$(date -d "-${MAX_AGE_DAYS} days" +%s)
+          PRUNED=0
+
+          # Allure report directories: allure/pr-*/<run>/ and allure/main*/<run>/
+          for dir in allure/*/; do
+            [ -d "$dir" ] || continue
+            for run_dir in "$dir"*/; do
+              [ -d "$run_dir" ] || continue
+              # Get the directory's last modification time
+              mtime=$(stat -c %Y "$run_dir" 2>/dev/null || echo 0)
+              if [ "$mtime" -lt "$CUTOFF" ]; then
+                echo "  pruning: $run_dir (last modified $(date -d @$mtime '+%Y-%m-%d %H:%M'))"
+                rm -rf "$run_dir"
+                PRUNED=$((PRUNED + 1))
+              fi
+            done
+            # Remove empty PR directories
+            if [ -d "$dir" ] && [ -z "$(ls -A "$dir")" ]; then
+              echo "  removing empty: $dir"
+              rmdir "$dir"
+            fi
+          done
+
+          echo "Pruned $PRUNED report directories older than $MAX_AGE_DAYS days"
+
+          if [ "$PRUNED" -gt 0 ]; then
+            git config user.name 'Allure Bot'
+            git config user.email 'actions@github.com'
+            git add -A
+            git commit -m "Cleanup: prune $PRUNED Allure reports older than ${MAX_AGE_DAYS} days"
+            git push
+            echo "Pushed cleanup commit"
+          else
+            echo "Nothing to prune"
+          fi
+
+      - name: Delete old Android build artifacts (14 days)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const MAX_AGE_DAYS = 14;
+            const cutoff = Date.now() - MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
+
+            // List all workflow runs (artifacts are attached to runs)
+            const runs = await github.paginate(github.rest.actions.listWorkflowRuns, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100,
+            });
+
+            let deleted = 0;
+            for (const run of runs) {
+              if (new Date(run.created_at).getTime() > cutoff) continue;
+
+              const artifacts = await github.paginate(
+                github.rest.actions.listWorkflowArtifacts,
+                {
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  run_id: run.id,
+                }
+              );
+
+              for (const artifact of artifacts) {
+                if (artifact.name.includes('apk') || artifact.name.includes('android')) {
+                  await github.rest.actions.deleteArtifact({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    artifact_id: artifact.id,
+                  });
+                  deleted++;
+                  console.log(`  deleted: ${artifact.name} (run ${run.id}, ${run.created_at})`);
+                }
+              }
+            }
+            console.log(`Deleted ${deleted} Android artifacts older than ${MAX_AGE_DAYS} days`);
+
+      - name: Report gh-pages size
+        run: |
+          cd repo
+          SIZE=$(du -sh . | cut -f1)
+          DIRS=$(find allure -maxdepth 1 -type d | wc -l)
+          echo "gh-pages total: $SIZE, allure directories: $DIRS"

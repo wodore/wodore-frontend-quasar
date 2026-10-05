@@ -42,36 +42,57 @@ Use `yarn run` command. Check `package.json` for details.
 yarn
 
 # Generate assets (API client, icons, favicons)
-yarn gen:api          # OpenAPI client from backend
-yarn gen:api-local    # OpenAPI client from local backend
+yarn gen:api          # OpenAPI client from backend (latest) + pins the API version
+yarn gen:api-local    # same, from the local backend (127.0.0.1:8000)
 yarn gen:icons        # Custom wd icons from SVG files
 yarn gen:favs         # Favicons from icongenie
+```
+
+**API version pinning**: `gen:api` generates BOTH the typed client
+(`src/clients/wodore_v1.d.ts`) and the pinned API contract version
+(`src/clients/apiVersion.ts`, re-exported by `src/services/apiVersion.ts`)
+from the same schema — types and pin cannot drift. Default = latest schema
+(`info.version`); after the backend released a new API version this absorbs
+it (pin + types bump together in the diff). To stay on / adopt a specific
+contract: `yarn gen:api-version 2026-10-01` (frozen snapshot for that date,
+works only while the backend still supports it). The pin is sent as
+`Api-Version` header on every API request; `WdApiVersionBanner` surfaces
+deprecation/retirement to the user (web/PWA: reload button incl. service
+worker activation; native: Play in-app update via
+`@capawesome/capacitor-app-update`, store entry fallback — see
+`src/services/appUpdate.ts`).
 
 # Development server (default: PWA mode on port 9000)
-yarn dev              # or yarn dev:pwa
-yarn dev:spa          # SPA mode
-yarn dev:ssr          # SSR mode
+
+yarn dev # or yarn dev:pwa
+yarn dev:spa # SPA mode
+yarn dev:ssr # SSR mode
 
 # Build for production
-yarn build            # or yarn build:pwa
-yarn build:spa        # SPA build
-yarn build:ssr        # SSR build
+
+yarn build # or yarn build:pwa
+yarn build:spa # SPA build
+yarn build:ssr # SSR build
 
 # Serve production build locally
-yarn serve            # or yarn serve:pwa
+
+yarn serve # or yarn serve:pwa
 yarn serve:spa
 yarn serve:ssr
 
 # Code quality
-yarn lint             # Check code
-yarn lint:fix         # Fix linting issues
-yarn format           # Format with Prettier
+
+yarn lint # Check code
+yarn lint:fix # Fix linting issues
+yarn format # Format with Prettier
 
 # Component development (Histoire)
-yarn story:dev        # Start Histoire dev server
-yarn story:build      # Build static Histoire site
-yarn story:preview    # Preview built Histoire site
-```
+
+yarn story:dev # Start Histoire dev server
+yarn story:build # Build static Histoire site
+yarn story:preview # Preview built Histoire site
+
+````
 
 ### Testing
 
@@ -89,7 +110,7 @@ yarn test:e2e             # 2. run the suite (mobile-chrome project)
 yarn allure:generate      # merge unit + e2e results, generate report
 yarn allure:open          # open the generated report in a browser
 yarn allure:clean         # remove all results and reports
-```
+````
 
 **Test structure**: `tests/unit/` (Vitest, node env; store specs use happy-dom via a
 `// @vitest-environment happy-dom` docblock) and `tests/e2e/` (Playwright).
@@ -238,7 +259,7 @@ OpenAPI schema available at:
 Generate TypeScript types from OpenAPI schema:
 
 ```bash
-yarn gen:api        # Production API
+yarn gen:api        # Production API (latest; also updates the API version pin)
 yarn gen:api-local  # Local development API
 ```
 
@@ -253,13 +274,18 @@ yarn gen:api-local  # Local development API
 - **Routing**: [Vue Router](https://router.vuejs.org/)
 - **i18n**: [Vue I18n](https://vue-i18n.intlify.dev/)
 
-**Specialized Agents Available:**
+**Specialized Skills Available:**
 
-- **quasar agent** (`.claude/agents/quasar.md`) - Quasar components, styling, theming
-- **vueuse agent** (`.claude/agents/vueuse.md`) - VueUse composables and utilities
-- **iconify agent** (`.claude/agents/iconify.md`) - Icon selection and implementation
-- **maplibre agent** (`.claude/agents/maplibre.md`) - MapLibre GL implementation
-- **code-review agent** (`.claude/agents/code-review.md`) - Code review and best practices
+- **iconify skill** (`.agents/skills/iconify/SKILL.md`) - Icon selection and implementation
+- **quasar skill** (`.agents/skills/quasar/SKILL.md`) - Quasar components, styling, theming
+- **vueuse skill** (`.agents/skills/vueuse/SKILL.md`) - VueUse composables and utilities
+- **maplibre skill** (`.agents/skills/maplibre/SKILL.md`) - MapLibre GL implementation
+- **code-review skill** (`.agents/skills/code-review/SKILL.md`) - Code review checklist and best practices
+
+**Specialized Agents Available** (`.claude/agents/`, subagent delegation targets):
+
+- **impeccable agents** (`impeccable-asset-producer`, `impeccable-documenter`, `impeccable-finish-reviewer`, `impeccable-manual-edit-applier`) - Isolated subagents spawned by the impeccable skill
+- **code-review agent** (`.claude/agents/code-review.md`) - Thin wrapper around the code-review skill for fresh-context delegated review
 
 ### Key Libraries
 
@@ -335,9 +361,9 @@ See `.env` file for all available variables
 
 The project uses a custom icon system based on `wd` prefixed icons.
 
-**When you need to find or add an icon, use the iconify agent** (`.claude/agents/iconify.md`).
+**When you need to find or add an icon, use the iconify skill** (`.agents/skills/iconify/SKILL.md`).
 
-The iconify agent will:
+The iconify skill will:
 
 - Search existing custom `wd` icons first
 - Download and integrate new icons from Iconify if needed
@@ -353,7 +379,7 @@ Quick syntax reference:
 <!-- Quasar built-in -->
 ```
 
-See `.claude/agents/iconify.md` for detailed workflow and usage examples.
+See `.agents/skills/iconify/SKILL.md` for detailed workflow and usage examples.
 
 ### CSS and Styling
 

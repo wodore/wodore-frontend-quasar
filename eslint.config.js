@@ -9,6 +9,8 @@ export default [
   // Ignore patterns (replaces .eslintignore)
   {
     ignores: [
+      '_work/**',
+      'scripts/interaction-suite.cjs',
       '**/dist/**',
       '**/src-capacitor/**',
       '**/src-cordova/**',
@@ -57,6 +59,7 @@ export default [
         URL: 'readonly',
         Event: 'readonly',
         MouseEvent: 'readonly',
+        PointerEvent: 'readonly',
         KeyboardEvent: 'readonly',
         WheelEvent: 'readonly',
         HTMLElement: 'readonly',

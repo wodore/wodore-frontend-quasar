@@ -1,12 +1,17 @@
 export type IconsId =
   | "tip"
   | "text-outline"
+  | "tent"
+  | "sun"
   | "subject"
   | "snow"
+  | "ski"
   | "server"
+  | "search-outline"
   | "rain"
   | "question-mark"
   | "no-bed-flat"
+  | "mountain"
   | "more-vertical"
   | "message"
   | "menu"
@@ -31,6 +36,7 @@ export type IconsId =
   | "checkmark"
   | "calendar"
   | "browser"
+  | "bike"
   | "bell"
   | "bell-outline"
   | "bed-flat"
@@ -48,12 +54,17 @@ export type IconsId =
 export type IconsKey =
   | "Tip"
   | "TextOutline"
+  | "Tent"
+  | "Sun"
   | "Subject"
   | "Snow"
+  | "Ski"
   | "Server"
+  | "SearchOutline"
   | "Rain"
   | "QuestionMark"
   | "NoBedFlat"
+  | "Mountain"
   | "MoreVertical"
   | "Message"
   | "Menu"
@@ -78,6 +89,7 @@ export type IconsKey =
   | "Checkmark"
   | "Calendar"
   | "Browser"
+  | "Bike"
   | "Bell"
   | "BellOutline"
   | "BedFlat"
@@ -95,12 +107,17 @@ export type IconsKey =
 export enum Icons {
   Tip = "tip",
   TextOutline = "text-outline",
+  Tent = "tent",
+  Sun = "sun",
   Subject = "subject",
   Snow = "snow",
+  Ski = "ski",
   Server = "server",
+  SearchOutline = "search-outline",
   Rain = "rain",
   QuestionMark = "question-mark",
   NoBedFlat = "no-bed-flat",
+  Mountain = "mountain",
   MoreVertical = "more-vertical",
   Message = "message",
   Menu = "menu",
@@ -125,6 +142,7 @@ export enum Icons {
   Checkmark = "checkmark",
   Calendar = "calendar",
   Browser = "browser",
+  Bike = "bike",
   Bell = "bell",
   BellOutline = "bell-outline",
   BedFlat = "bed-flat",
@@ -143,47 +161,53 @@ export enum Icons {
 export const ICONS_CODEPOINTS: { [key in Icons]: string } = {
   [Icons.Tip]: "61697",
   [Icons.TextOutline]: "61698",
-  [Icons.Subject]: "61699",
-  [Icons.Snow]: "61700",
-  [Icons.Server]: "61701",
-  [Icons.Rain]: "61702",
-  [Icons.QuestionMark]: "61703",
-  [Icons.NoBedFlat]: "61704",
-  [Icons.MoreVertical]: "61705",
-  [Icons.Message]: "61706",
-  [Icons.Menu]: "61707",
-  [Icons.MenuArrow]: "61708",
-  [Icons.LocationShareOutline]: "61709",
-  [Icons.LocationQuestion]: "61710",
-  [Icons.Link]: "61711",
-  [Icons.Info]: "61712",
-  [Icons.InfoOutline]: "61713",
-  [Icons.Gift]: "61714",
-  [Icons.Filter]: "61715",
-  [Icons.FilterOutline]: "61716",
-  [Icons.Favorite]: "61717",
-  [Icons.FavoriteOutline]: "61718",
-  [Icons.Eye]: "61719",
-  [Icons.EyeOutline]: "61720",
-  [Icons.ElevationOutline]: "61721",
-  [Icons.Edit]: "61722",
-  [Icons.EditOutline]: "61723",
-  [Icons.Copyright]: "61724",
-  [Icons.Close]: "61725",
-  [Icons.Checkmark]: "61726",
-  [Icons.Calendar]: "61727",
-  [Icons.Browser]: "61728",
-  [Icons.Bell]: "61729",
-  [Icons.BellOutline]: "61730",
-  [Icons.BedFlat]: "61731",
-  [Icons.BedFlatOutline]: "61732",
-  [Icons.At]: "61733",
-  [Icons.ArrowheadUp]: "61734",
-  [Icons.ArrowheadRight]: "61735",
-  [Icons.ArrowheadLeft]: "61736",
-  [Icons.ArrowheadDown]: "61737",
-  [Icons.ArrowUpDown]: "61738",
-  [Icons.AlertTriangleOutline]: "61739",
-  [Icons.Add]: "61740",
-  [Icons.AddOutline]: "61741",
+  [Icons.Tent]: "61699",
+  [Icons.Sun]: "61700",
+  [Icons.Subject]: "61701",
+  [Icons.Snow]: "61702",
+  [Icons.Ski]: "61703",
+  [Icons.Server]: "61704",
+  [Icons.SearchOutline]: "61705",
+  [Icons.Rain]: "61706",
+  [Icons.QuestionMark]: "61707",
+  [Icons.NoBedFlat]: "61708",
+  [Icons.Mountain]: "61709",
+  [Icons.MoreVertical]: "61710",
+  [Icons.Message]: "61711",
+  [Icons.Menu]: "61712",
+  [Icons.MenuArrow]: "61713",
+  [Icons.LocationShareOutline]: "61714",
+  [Icons.LocationQuestion]: "61715",
+  [Icons.Link]: "61716",
+  [Icons.Info]: "61717",
+  [Icons.InfoOutline]: "61718",
+  [Icons.Gift]: "61719",
+  [Icons.Filter]: "61720",
+  [Icons.FilterOutline]: "61721",
+  [Icons.Favorite]: "61722",
+  [Icons.FavoriteOutline]: "61723",
+  [Icons.Eye]: "61724",
+  [Icons.EyeOutline]: "61725",
+  [Icons.ElevationOutline]: "61726",
+  [Icons.Edit]: "61727",
+  [Icons.EditOutline]: "61728",
+  [Icons.Copyright]: "61729",
+  [Icons.Close]: "61730",
+  [Icons.Checkmark]: "61731",
+  [Icons.Calendar]: "61732",
+  [Icons.Browser]: "61733",
+  [Icons.Bike]: "61734",
+  [Icons.Bell]: "61735",
+  [Icons.BellOutline]: "61736",
+  [Icons.BedFlat]: "61737",
+  [Icons.BedFlatOutline]: "61738",
+  [Icons.At]: "61739",
+  [Icons.ArrowheadUp]: "61740",
+  [Icons.ArrowheadRight]: "61741",
+  [Icons.ArrowheadLeft]: "61742",
+  [Icons.ArrowheadDown]: "61743",
+  [Icons.ArrowUpDown]: "61744",
+  [Icons.AlertTriangleOutline]: "61745",
+  [Icons.Add]: "61746",
+  [Icons.AddOutline]: "61747",
 };
