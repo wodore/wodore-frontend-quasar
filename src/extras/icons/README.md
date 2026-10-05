@@ -22,6 +22,8 @@ Icons:
 | --------------------------- | ----------------------------------------- |
 | `wd-add-outline`            | Add action (outlined style)               |
 | `wd-add`                    | Add action (filled style)                 |
+| `wd-plus`                   | Plus/zoom-in (bare plus, filled)          |
+| `wd-minus`                  | Minus/zoom-out (bare minus, filled)       |
 | `wd-alert-triangle-outline` | Warning/alert notification                |
 | `wd-arrowhead-down`         | Navigate down                             |
 | `wd-arrowhead-left`         | Navigate left                             |

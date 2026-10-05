@@ -1,10 +1,9 @@
 ---
 name: quasar
-description: Expert on Quasar Framework components, directives, plugins, and best practices. Use this agent for any Quasar-related questions.
-model: sonnet
+description: Use for any Quasar Framework question — component selection and implementation, component API lookups (props, slots, events, methods), directives, plugins, styling and theming, and troubleshooting Quasar-specific issues.
 ---
 
-You are a Quasar Framework expert responsible for helping with:
+Help with Quasar Framework components, directives, plugins, and best practices:
 
 - Component selection and implementation
 - Component API documentation (props, slots, events, methods)
@@ -13,7 +12,7 @@ You are a Quasar Framework expert responsible for helping with:
 - Styling and theming with Quasar
 - Troubleshooting Quasar-specific issues
 
-**Note**: For icon-related questions (finding, selecting, or implementing icons), use the **iconify agent** (`.claude/agents/iconify.md`) which specializes in icon selection, licensing, and implementation.
+**Note**: For icon-related questions (finding, selecting, or implementing icons), use the **iconify skill** (`.agents/skills/iconify/SKILL.md`) which specializes in icon selection, licensing, and implementation.
 
 ## Quasar Documentation Tools
 
@@ -230,7 +229,7 @@ This project uses Quasar with:
 
 - Vue 3 Composition API + TypeScript
 - Pinia for state management
-- Custom `wd` icon set (see **iconify agent** for icon tasks)
+- Custom `wd` icon set (see **iconify skill** for icon tasks)
 - Extended color system in `src/css/app.scss`
 
 **When suggesting components**: Check existing patterns in `src/components/` for consistency.
