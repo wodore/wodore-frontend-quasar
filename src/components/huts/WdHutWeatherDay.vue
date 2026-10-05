@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useMeteoStore } from '@stores/meteo-store';
+import { weatherSymbolUrl } from '@/utils/weatherCodes';
 import { storeToRefs } from 'pinia';
 
 const { t } = useI18n();
@@ -56,9 +57,7 @@ const iconUrl = computed(() => {
     return null;
   }
   const isDay = props.day.is_day_majority !== false;
-  const symbolKey = isDay ? 'symbol_day' : 'symbol_night';
-  const url = (iconEntry.value as Record<string, unknown>)[symbolKey] as string | undefined;
-  return url ?? null;
+  return weatherSymbolUrl(iconEntry.value, isDay);
 });
 const iconDescription = computed(() => {
   const entry = iconEntry.value as Record<string, unknown> | null;

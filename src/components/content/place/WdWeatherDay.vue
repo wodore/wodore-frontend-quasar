@@ -3,6 +3,7 @@ import { computed, ref, watchEffect } from 'vue';
 import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import { useMeteoStore } from '@stores/meteo-store';
+import { weatherSymbolDescription, weatherSymbolUrl } from '@/utils/weatherCodes';
 import { storeToRefs } from 'pinia';
 import WdDayLabel from './WdDayLabel.vue';
 
@@ -79,19 +80,12 @@ const iconEntry = computed(() => {
 const iconUrl = computed(() => {
   if (!iconEntry.value) return null;
   const isDay = props.day.is_day_majority !== false;
-  const symbolKey = isDay ? 'symbol_day' : 'symbol_night';
-  const url = (iconEntry.value as Record<string, unknown>)[symbolKey] as string | undefined;
-  return url ?? null;
+  return weatherSymbolUrl(iconEntry.value, isDay);
 });
 const iconDescription = computed(() => {
-  const entry = iconEntry.value as Record<string, unknown> | null;
-  if (!entry) return '';
+  if (!iconEntry.value) return '';
   const isDay = props.day.is_day_majority !== false;
-  return (
-    ((isDay ? entry.description_day : entry.description_night) as string | undefined) ??
-    (entry.description as string | undefined) ??
-    ''
-  );
+  return weatherSymbolDescription(iconEntry.value, isDay);
 });
 const tempMax = computed(() =>
   props.day.temp_max !== null ? Math.round(props.day.temp_max) : null

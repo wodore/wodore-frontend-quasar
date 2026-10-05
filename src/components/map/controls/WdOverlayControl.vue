@@ -564,14 +564,6 @@ onMounted(() => {
   rowsResizeObserve();
 });
 
-// The rows BOX is the same size in mini and expanded (pixel-perfect
-// design) — the ResizeObserver never fires on state changes. Re-measure
-// when the CONTENT changes, or the thumb goes stale (mini after scroll).
-watch(
-  [expanded, () => miniLayers.value.length, () => visibleOthers.value.length, () => cappedPromotedCount.value],
-  () => nextTick(measureThumb)
-);
-
 function rowsResizeObserve(): void {
   const rows = document.querySelector('.wd-ovl__rows') as HTMLElement | null;
   if (!rows) return;
@@ -822,6 +814,19 @@ const visibleOthers = computed(() => {
 /** Mini height cap: group rows + visible promoted rows (linger included) */
 const cappedPromotedCount = computed(
   () => overlayStore.otherLayers().filter(o => o.active || lingeringSlugs.value.has(o.name)).length
+);
+
+// The rows BOX is the same size in mini and expanded (pixel-perfect
+// design) — the ResizeObserver never fires on state changes. Re-measure
+// when the CONTENT changes, or the thumb goes stale (mini after scroll).
+// NOTE: must stay BELOW the miniLayers/visibleOthers/cappedPromotedCount
+// declarations — watch() evaluates its getters immediately and would hit
+// the temporal dead zone otherwise (ReferenceError on hut pages, breaking
+// the overlay control; seen as "Cannot access 'miniLayers' before
+// initialization" on staging).
+watch(
+  [expanded, () => miniLayers.value.length, () => visibleOthers.value.length, () => cappedPromotedCount.value],
+  () => nextTick(measureThumb)
 );
 
 /** Reset the active group to its predefined definition — behind a
