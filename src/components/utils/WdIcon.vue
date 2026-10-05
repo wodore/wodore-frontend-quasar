@@ -88,7 +88,7 @@ const wrapperStyle = computed(() => ({
   <i v-if="isInlineSvg && name" :class="['wd-icon q-icon', wrapperClass]" :style="wrapperStyle">
     <InlineSvg :src="svgSrc" />
   </i>
-  <QIcon
+  <q-icon
     v-else
     :name="qIconName"
     :size="size"
@@ -98,7 +98,7 @@ const wrapperStyle = computed(() => ({
     :style="isCssColor && color ? { color } : undefined"
   >
     <slot />
-  </QIcon>
+  </q-icon>
 </template>
 
 <style lang="scss">

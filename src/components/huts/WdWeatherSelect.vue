@@ -3,6 +3,7 @@ import { computed, ref, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
 import { sanitizeHtml } from '@/utils/sanitize-html';
+import { weatherSymbolDescription, weatherSymbolUrl } from '@/utils/weatherCodes';
 import { useMeteoStore } from '@stores/meteo-store';
 import { useHutsStore } from '@stores/huts-store';
 import { storeToRefs } from 'pinia';
@@ -81,21 +82,14 @@ const iconUrl = computed(() => {
     return null;
   }
   const isDay = summary.value?.is_day_majority !== false;
-  const symbolKey = isDay ? 'symbol_day' : 'symbol_night';
-  const url = (iconEntry.value as Record<string, unknown>)[symbolKey] as string | undefined;
-  return url ?? null;
+  return weatherSymbolUrl(iconEntry.value, isDay);
 });
 const iconDescription = computed(() => {
-  const entry = iconEntry.value as Record<string, unknown> | null;
-  if (!entry) {
+  if (!iconEntry.value) {
     return '';
   }
   const isDay = summary.value?.is_day_majority !== false;
-  return (
-    ((isDay ? entry.description_day : entry.description_night) as string | undefined) ??
-    (entry.description as string | undefined) ??
-    ''
-  );
+  return weatherSymbolDescription(iconEntry.value, isDay);
 });
 const selectedDayLabel = computed(() => {
   const today = new Date();
