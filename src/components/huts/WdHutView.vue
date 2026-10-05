@@ -215,7 +215,6 @@ watchEffect(() => {
 
 const addHeaderShadow: IntersectionValue = entry => {
   headerShadow.value = !entry.isIntersecting;
-  return true;
 };
 
 // Fetch hut images using the specialized endpoint (faster than nearby)
