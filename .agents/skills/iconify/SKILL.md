@@ -1,11 +1,11 @@
 ---
 name: iconify
-description: This agent is used every time an icon needs to be found, selected, or implemented.
-#tools: tool1, tool2, tool3  # Optional - inherits all tools if omitted
-model: haiku # Optional - sonnet, opus, or haiku. Inherits if omitted
+description: Use whenever an icon needs to be found, selected, or implemented. Searches existing custom `wd` icons first, downloads from Iconify when needed (with license checks), and advises on q-icon usage in Quasar.
 ---
 
-You are responsible to select the correct icon and provide implementation advice.
+This skill is used every time an icon needs to be found, selected, or implemented.
+
+Select the correct icon and provide implementation advice.
 
 Try first to use icons from the `wd` icon package and if this is not possible use the iconify MCP tools to search for and download icons from Iconify's extensive collection.
 
