@@ -40,7 +40,9 @@ function onPointerDown(e: MouseEvent): void {
   dragging.value = true;
   dragStartY = e.clientY;
   dragStartZoom = zoom.value;
-  (e.currentTarget as HTMLElement).setPointerCapture((e as unknown as { pointerId: number }).pointerId);
+  (e.currentTarget as HTMLElement).setPointerCapture(
+    (e as unknown as { pointerId: number }).pointerId
+  );
 }
 
 function onPointerMove(e: MouseEvent): void {
@@ -97,31 +99,27 @@ onBeforeUnmount(() => {
     @pointercancel="onPointerUp"
   >
     <div class="wd-zoom__pill">
-    <button
-      class="wd-zoom__step"
-      aria-label="Zoom in"
-      @click.stop="stepZoom(0.5)"
-      @pointerdown.stop
-    >
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
-        <path d="M12 5v14M5 12h14" />
-      </svg>
-    </button>
+      <button
+        class="wd-zoom__step"
+        aria-label="Zoom in"
+        @click.stop="stepZoom(0.5)"
+        @pointerdown.stop
+      >
+        <q-icon name="wd-plus" size="14px" />
+      </button>
 
-    <div class="wd-zoom__track">
-      <div class="wd-zoom__thumb" :style="{ top: thumbPos + '%' }" />
-    </div>
+      <div class="wd-zoom__track">
+        <div class="wd-zoom__thumb" :style="{ top: thumbPos + '%' }" />
+      </div>
 
-    <button
-      class="wd-zoom__step"
-      aria-label="Zoom out"
-      @click.stop="stepZoom(-0.5)"
-      @pointerdown.stop
-    >
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
-        <path d="M5 12h14" />
-      </svg>
-    </button>
+      <button
+        class="wd-zoom__step"
+        aria-label="Zoom out"
+        @click.stop="stepZoom(-0.5)"
+        @pointerdown.stop
+      >
+        <q-icon name="wd-minus" size="14px" />
+      </button>
     </div>
   </div>
 </template>
