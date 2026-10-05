@@ -1,11 +1,13 @@
 <script setup lang="ts">
 /**
- * WdZoomSlider — vertical zoom slider docked to the LEFT edge
+ * WdZoomSlider — vertical zoom slider docked to the RIGHT edge
  * (Mapy.com-inspired, Wodore styling).
  *
- * - Visible ONLY in focus mode on mobile (CSS-driven)
- * - Drag up/down to zoom in/out; chevrons step ±0.5
- * - The thumb never reaches the track ends (12%–88% travel)
+ * - Focus mode: ALWAYS visible (CSS-driven, see _zoom-slider.scss);
+ *   mobile otherwise hides it while the overlay strip is open
+ * - Drag up/down to zoom in/out; buttons step ±0.5
+ * - Track reads top = max zoom (matches the + button on top):
+ *   the thumb travels 12% (max) – 88% (min), never touching the ends
  * - The whole pill is the grab target (44px zone), the visible part
  *   stays compact
  */
@@ -24,10 +26,10 @@ const dragging = ref(false);
 let dragStartY = 0;
 let dragStartZoom = 0;
 
-/** Thumb travel 12%..88% — never fully up or down */
+/** Thumb travel 12%..88% — never fully up or down; TOP = max zoom */
 const thumbPos = computed(() => {
   const t = Math.min(1, Math.max(0, (zoom.value - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)));
-  return 12 + t * 76;
+  return 88 - t * 76;
 });
 
 function clamp(v: number): number {
@@ -141,7 +143,7 @@ onBeforeUnmount(() => {
   align-items: flex-end;
   justify-content: center;
   width: 44px; // touch zone; the visual pill is slimmer
-  min-height: 220px; // generous vertical grab zone
+  min-height: 180px; // generous vertical grab zone
   padding: 0;
   background: transparent;
   cursor: grab;
@@ -168,7 +170,7 @@ onBeforeUnmount(() => {
   border: 1px solid var(--wd-ctl-border);
   border-right: none; // flush to the screen edge
   border-radius: 999px 0 0 999px;
-  background: color-mix(in srgb, var(--wd-ctl-bg) 82%, transparent);
+  background: color-mix(in srgb, var(--wd-ctl-bg) 68%, transparent);
   color: var(--wd-ctl-ink);
 }
 
@@ -188,11 +190,13 @@ body.body--dark .wd-zoom__pill {
   color: var(--wd-ctl-ink-soft);
   cursor: pointer;
   flex: none;
-  transition: background-color 0.12s ease, color 0.12s ease;
+  transition: color 0.12s ease;
 
-  &:hover {
-    background: var(--wd-ctl-hover);
-    color: var(--wd-ctl-ink);
+  // No bg/hover/active chrome — fg feedback only, desktop only
+  @media (min-width: 900px) {
+    &:hover {
+      color: var(--wd-ctl-ink);
+    }
   }
 }
 

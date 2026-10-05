@@ -3,25 +3,27 @@
 // GLOBAL because: visibility depends on body classes and overlay state
 // that the component cannot scope to from its own scoped styles.
 //
-// Mobile: visible when the overlay strip is CLOSED (they interfere).
-// Desktop: visible in focus mode only (classic zoom buttons serve
-// otherwise).
+// Focus mode: ALWAYS visible (any viewport) — the overlay strip is
+// hidden in focus mode, so they cannot collide.
+// Mobile (no focus): visible when the overlay strip is CLOSED (they
+// interfere otherwise).
+// Desktop (no focus): hidden — the classic zoom buttons serve instead.
 // ══════════════════════════════════════════════════════════════════════
 .wd-zoom {
   display: none !important;
 }
 
-// Mobile: visible when overlays are NOT open (the strip/box and the zoom
-// handle occupy the same right edge — showing both is cluttered)
-@media (max-width: 899px) {
-  body:not(.wd-ovl-strip-open) .wd-zoom {
-    display: flex !important;
-  }
+// Focus mode wins over everything, including a strip left open before
+// entering focus
+body.wd-map-focus .wd-zoom {
+  display: flex !important;
 }
 
-// Desktop: focus mode only (classic zoom buttons serve otherwise)
-@media (min-width: 900px) {
-  body.wd-map-focus .wd-zoom {
+// Mobile, outside focus mode: visible when overlays are NOT open (the
+// strip/box and the zoom handle occupy the same right edge — showing
+// both is cluttered)
+@media (max-width: 899px) {
+  body:not(.wd-ovl-strip-open) .wd-zoom {
     display: flex !important;
   }
 }
