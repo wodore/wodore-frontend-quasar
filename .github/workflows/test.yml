@@ -190,13 +190,22 @@ jobs:
           commit_message: >-
             Allure report for run ${{ github.run_number }} (retry)
 
-      # Prune old Allure reports (keep the latest 30 per PR/branch)
+      # Prune old Allure reports (keep the latest 30 per PR/branch).
+      # Uses an authenticated checkout: on main the prune actually pushes
+      # (allure/main accumulates >30 runs) and an unauthenticated clone
+      # cannot push ("could not read Username" → exit 128).
+      - name: Check out gh-pages for pruning
+        if: always()
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages-prune
+          fetch-depth: 1
+
       - name: Prune old reports (>30 runs)
         if: always()
         run: |
-          cd $(mktemp -d)
-          git clone --depth 1 --branch gh-pages ${{ github.server_url }}/${{ github.repository }}.git repo
-          cd repo
+          cd gh-pages-prune
           DIR=${{ steps.ctx.outputs.dir }}
           if [ -d "$DIR" ]; then
             RUNS=$(ls -1 "$DIR" | sort -n | head -n -30)
