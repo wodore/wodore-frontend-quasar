@@ -2,7 +2,7 @@
 import { ref, inject, watchEffect, watch, onErrorCaptured, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useResizeObserver, useDebounceFn, useThrottleFn, useEventListener } from '@vueuse/core';
-import { useQuasar } from 'quasar';
+import { useQuasar, Platform } from 'quasar';
 import { useBasemapStore } from '@stores/map/basemap-store';
 import type { BasemapSwitchItem } from '@stores/map/utils/interfaces';
 import { useLocalPropertiesStore } from '@stores/local-properties-store';
@@ -23,6 +23,11 @@ import {
 import mapDraw from '@services/draw';
 import { currentLocale } from '@services/locale';
 import { clientWodore } from '@clients/index';
+import WdNativeMapView from './WdNativeMapView.vue';
+
+// Capacitor: render the native MapLibre map (@capawesome plugin) instead
+// of the WebView-based MapLibre GL JS instance.
+const isNativeCapacitor = !!Platform.is.capacitor;
 
 // MapLibre v6 resolves its web worker via import.meta.url, which breaks under
 // Vite's dependency optimization: the rewritten worker URL 404s and vector
@@ -1206,8 +1211,10 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
   <!-- @map:render="onMapRender" -->
   <q-no-ssr>
     <div ref="mapDiv" class="wd-map-fill">
+      <!-- Capacitor: native MapLibre map behind the WebView -->
+      <WdNativeMapView v-if="isNativeCapacitor" />
       <MglMap
-        v-if="webglSupported"
+        v-else-if="webglSupported"
         @map:load="onMapLoad"
         @map:error="onMapError"
         @map:styledata="onMapStyledata"

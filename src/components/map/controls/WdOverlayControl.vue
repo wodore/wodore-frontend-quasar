@@ -37,6 +37,13 @@ import type { LayerSpecification, PropertyValueSpecification, Map as MapLibreMap
 const { t } = useI18n();
 const $q = useQuasar();
 const overlayStore = useOverlayStore();
+
+// Overlay lookup — plain-typed: Array.find on the reactive array
+// explodes TS instantiation depth (same dodge as the store itself).
+function findOverlayByName(name: string): OverlaySwitchItem | undefined {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (overlayStore.overlays as any[]).find(o => o.name === name);
+}
 const basemapStore = useBasemapStore();
 const configStore = useOverlayConfigStore();
 const menuStore = useMapMenuStore();
@@ -95,7 +102,7 @@ const dropLineTop = ref<number | null>(null);
 /** Pointer position while dragging — drives the floating ghost chip */
 const dragPointer = ref<{ x: number; y: number } | null>(null);
 const draggedItem = computed(() =>
-  dragSlug.value ? overlayStore.overlays.find(o => o.name === dragSlug.value) ?? null : null
+  dragSlug.value ? findOverlayByName(dragSlug.value) ?? null : null
 );
 let pendingDrag: { slug: string; startX: number; startY: number } | null = null;
 
@@ -1384,23 +1391,23 @@ watch(
 // ── Actions ───────────────────────────────────────────────────────────────
 
 function openConfig(overlayName: string, tab?: string): void {
-  const overlay = overlayStore.overlays.find(o => o.name === overlayName);
+  const overlay = findOverlayByName(overlayName);
   menuStore.openOverlayConfig(overlayName, tab);
   menuStore.menuData.title = overlay?.label ?? overlayName;
 }
 
 function hasInfo(overlayName: string): boolean {
-  const overlay = overlayStore.overlays.find(o => o.name === overlayName);
+  const overlay = findOverlayByName(overlayName);
   return !!(overlay?.config?.legend?.sections?.length);
 }
 
 function hasFilterConfig(overlayName: string): boolean {
-  const overlay = overlayStore.overlays.find(o => o.name === overlayName);
+  const overlay = findOverlayByName(overlayName);
   return !!(overlay?.config?.filters?.length);
 }
 
 function hasActiveFilters(overlayName: string): boolean {
-  const overlay = overlayStore.overlays.find(o => o.name === overlayName);
+  const overlay = findOverlayByName(overlayName);
   const config = overlay?.config;
   if (!config?.filters?.length) return false;
   return config.filters.some(f => {
