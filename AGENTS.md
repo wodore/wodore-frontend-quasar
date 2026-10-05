@@ -274,13 +274,18 @@ yarn gen:api-local  # Local development API
 - **Routing**: [Vue Router](https://router.vuejs.org/)
 - **i18n**: [Vue I18n](https://vue-i18n.intlify.dev/)
 
-**Specialized Agents Available:**
+**Specialized Skills Available:**
 
-- **quasar agent** (`.claude/agents/quasar.md`) - Quasar components, styling, theming
-- **vueuse agent** (`.claude/agents/vueuse.md`) - VueUse composables and utilities
-- **iconify agent** (`.claude/agents/iconify.md`) - Icon selection and implementation
-- **maplibre agent** (`.claude/agents/maplibre.md`) - MapLibre GL implementation
-- **code-review agent** (`.claude/agents/code-review.md`) - Code review and best practices
+- **iconify skill** (`.agents/skills/iconify/SKILL.md`) - Icon selection and implementation
+- **quasar skill** (`.agents/skills/quasar/SKILL.md`) - Quasar components, styling, theming
+- **vueuse skill** (`.agents/skills/vueuse/SKILL.md`) - VueUse composables and utilities
+- **maplibre skill** (`.agents/skills/maplibre/SKILL.md`) - MapLibre GL implementation
+- **code-review skill** (`.agents/skills/code-review/SKILL.md`) - Code review checklist and best practices
+
+**Specialized Agents Available** (`.claude/agents/`, subagent delegation targets):
+
+- **impeccable agents** (`impeccable-asset-producer`, `impeccable-documenter`, `impeccable-finish-reviewer`, `impeccable-manual-edit-applier`) - Isolated subagents spawned by the impeccable skill
+- **code-review agent** (`.claude/agents/code-review.md`) - Thin wrapper around the code-review skill for fresh-context delegated review
 
 ### Key Libraries
 
@@ -356,9 +361,9 @@ See `.env` file for all available variables
 
 The project uses a custom icon system based on `wd` prefixed icons.
 
-**When you need to find or add an icon, use the iconify agent** (`.claude/agents/iconify.md`).
+**When you need to find or add an icon, use the iconify skill** (`.agents/skills/iconify/SKILL.md`).
 
-The iconify agent will:
+The iconify skill will:
 
 - Search existing custom `wd` icons first
 - Download and integrate new icons from Iconify if needed
@@ -374,7 +379,7 @@ Quick syntax reference:
 <!-- Quasar built-in -->
 ```
 
-See `.claude/agents/iconify.md` for detailed workflow and usage examples.
+See `.agents/skills/iconify/SKILL.md` for detailed workflow and usage examples.
 
 ### CSS and Styling
 
