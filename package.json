@@ -72,7 +72,7 @@
     "@fontsource/roboto-condensed": "^5.3",
     "@iconify/vue": "^5.0.3",
     "@indoorequal/vue-maplibre-gl": "^9.0.1",
-    "@mapbox/mapbox-gl-draw": "^1.4.3",
+    "@mapbox/mapbox-gl-draw": "^1.5.2",
     "@mapbox/polyline": "^1.2.1",
     "@maplibre/maplibre-gl-style-spec": "^26.4.4",
     "@pmndrs/detect-gpu": "^6.0.0",
