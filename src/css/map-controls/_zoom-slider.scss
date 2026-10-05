@@ -10,13 +10,13 @@
 // Desktop (no focus): hidden — the classic zoom buttons serve instead.
 //
 // Motion: docked chrome moves along its dock axis — the handle tucks
-// in/out of the right screen edge (24px) with a fade. Enter (300ms)
-// shares the focus-mode choreography curve of _layout.scss
-// (cubic-bezier(0.2, 0, 0, 1)); exit (200ms, owned by the scoped base
-// rule) is faster. @starting-style boots the enter transition from
-// display:none; allow-discrete holds display until the exit fade has
-// finished. Engines without these (pre-2023) fall back to instant
-// toggling.
+// fully in/out of the right screen edge (100% travel) with a fade.
+// Enter (300ms) shares the focus-mode choreography curve of
+// _layout.scss (cubic-bezier(0.2, 0, 0, 1)); exit (200ms, owned by the
+// scoped base rule) is faster. @starting-style boots the enter
+// transition from display:none; allow-discrete holds display until the
+// exit fade has finished. Engines without these (pre-2023) fall back
+// to instant toggling.
 // ══════════════════════════════════════════════════════════════════════
 .wd-zoom {
   display: none !important;
@@ -55,7 +55,7 @@ body.wd-map-focus .wd-zoom {
   body.wd-map-focus .wd-zoom,
   body:not(.wd-ovl-strip-open) .wd-zoom {
     opacity: 0;
-    transform: translateY(-50%) translateX(24px);
+    transform: translateY(-50%) translateX(100%);
   }
 }
 

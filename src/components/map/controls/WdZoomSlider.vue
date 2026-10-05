@@ -155,15 +155,16 @@ onBeforeUnmount(() => {
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 
-  // Hidden state doubles as the slide-out target: tucked INTO the right
-  // screen edge, faded. The global shown rules settle it back — docked
-  // chrome moves along its dock axis (drawer semantics), never floating
-  // over the map. Enter (300ms) shares the focus-mode curve of
+  // Hidden state doubles as the slide-out target: tucked fully past the
+  // right screen edge, faded. The global shown rules settle it back —
+  // docked chrome moves along its dock axis (drawer semantics), never
+  // floating over the map. Enter (300ms) shares the focus-mode curve of
   // _layout.scss so it reads as one choreography; exit (200ms) is faster.
+  // The long travel keeps the edge-crossing visible while the pill fades.
   // allow-discrete keeps display:flex until the fade has finished;
   // engines without @starting-style/allow-discrete just toggle instantly.
   opacity: 0;
-  transform: translateY(-50%) translateX(24px);
+  transform: translateY(-50%) translateX(100%);
   transition:
     opacity 200ms cubic-bezier(0.2, 0, 0, 1),
     transform 200ms cubic-bezier(0.2, 0, 0, 1),
