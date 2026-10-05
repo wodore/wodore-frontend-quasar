@@ -9,8 +9,16 @@
 import { ref, watch, computed, onBeforeUnmount } from 'vue';
 import { LocalStorage } from 'quasar';
 import { useBasemapStore } from '@stores/map/basemap-store';
+import type { BasemapSwitchItem } from '@stores/map/utils/interfaces';
 
 const basemapStore = useBasemapStore();
+
+// Basemaps for the rail — plain-typed snapshot: filtering the reactive
+// array directly (template or script) explodes TS instantiation depth.
+const railBasemaps = computed((): BasemapSwitchItem[] =>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (basemapStore.basemaps as any[]).filter(b => b.show)
+);
 
 const open = ref(
   LocalStorage.hasItem('wd_bm_open') ? (LocalStorage.getItem('wd_bm_open') as boolean) : false
@@ -35,7 +43,10 @@ watch(open, v => {
 onBeforeUnmount(() => document.removeEventListener('click', onDocClick, { capture: true }));
 
 function selectBasemap(bm: { name: string }): void {
-  const item = basemapStore.basemaps.find(b => b.name === bm.name);
+  // cast: reactive array + find explodes TS instantiation depth (same
+  // dodge as the store's getBasemapByName)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const item = (basemapStore.basemaps as any[]).find(b => b.name === bm.name);
   if (item) basemapStore.setBasemap(item);
   // stays open — the owner closes it via outside-click or the toggle
 }
@@ -50,7 +61,7 @@ const iconClose = new URL('/src/assets/wodore-design/icons/export/basemap-switch
     <Transition name="wd-bm-rail">
       <div v-if="open" class="wd-bm__rail" role="group" aria-label="Basemap">
         <button
-          v-for="bm in basemapStore.basemaps.filter(b => b.show)"
+          v-for="bm in railBasemaps"
           :key="bm.name"
           class="wd-bm__btn"
           :class="{

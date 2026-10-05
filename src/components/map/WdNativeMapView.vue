@@ -15,18 +15,15 @@
     <div :id="mapElementId" class="wd-native-map-div"></div>
 
     <!-- Map controls as DOM overlays (QPageSticky-based, work over the
-         native map): basemap switch + overlay switch. Geolocate /
+         native map): the v2 control stack, identical to the web map —
+         overlay strip above basemap picker, bottom-right. Geolocate /
          navigation / scale / attribution controls are web-only for now. -->
-    <WdBasemapSwitch
-      :position="$q.platform.is.mobile ? 'bottom-right' : 'top-left'"
-      :direction="$q.platform.is.mobile ? 'left' : 'right'"
-      :offset="[$q.platform.is.mobile ? 12 : 12, $q.platform.is.mobile ? 20 : 14]"
-    />
-    <WdOverlaySwitch
-      position="top-left"
-      direction="down"
-      :offset="[$q.platform.is.mobile ? 12 : 12, $q.platform.is.mobile ? 12 : 68]"
-    />
+    <q-page-sticky position="bottom-right" :offset="[12, 14]" class="wd-map-ctl-sticky">
+      <div class="wd-map-ctl-col">
+        <WdOverlayControl />
+        <WdBasemapControl />
+      </div>
+    </q-page-sticky>
 
     <div class="map-footer-shade" aria-hidden="true"></div>
 
@@ -41,7 +38,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useQuasar } from 'quasar';
 import type { LayerSpecification, StyleSpecification } from 'maplibre-gl';
 import { MapLibre } from '@capawesome/capacitor-maplibre';
 import type { PluginListenerHandle } from '@capacitor/core';
@@ -55,8 +51,8 @@ import { clientWodore } from '@clients/index';
 import axios from 'axios';
 import openfreemapBrightStyle from '@assets/map-styles/openfreemap-bright.json';
 import type { Feature, FeatureCollection, Point } from 'geojson';
-import WdBasemapSwitch from './WdBasemapSwitch.vue';
-import WdOverlaySwitch from './WdOverlaySwitch.vue';
+import WdBasemapControl from './controls/WdBasemapControl.vue';
+import WdOverlayControl from './controls/WdOverlayControl.vue';
 
 const MAP_ID = 'wd-native-map';
 const mapElementId = 'wd-native-map-element';
@@ -64,7 +60,6 @@ const MIN_HUT_CLICK_ZOOM = 8;
 const SELECT_ZOOM = 12;
 const MIN_FLY_ZOOM = 9;
 
-const $q = useQuasar();
 const route = useRoute();
 const router = useRouter();
 const basemapStore = useBasemapStore();

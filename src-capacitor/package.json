@@ -2,7 +2,7 @@
   "name": "wodore",
   "version": "0.0.6",
   "description": "Where does your next tour peak?",
-  "author": "Tobias Burgherr <tb@wodore.com",
+  "author": "Tobias Burgherr <tb@wodore.com>",
   "private": true,
   "dependencies": {
     "@capacitor/android": "^8.5.2",
