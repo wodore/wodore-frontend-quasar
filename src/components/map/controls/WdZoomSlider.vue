@@ -5,8 +5,9 @@
  *
  * - Focus mode: ALWAYS visible (CSS-driven, see _zoom-slider.scss);
  *   mobile otherwise hides it while the overlay strip is open.
- *   Show/hide glides in from the left with a fade (220ms in, 165ms out,
- *   ease-out-quart; instant under prefers-reduced-motion)
+ *   Show/hide tucks the handle in/out of the screen edge with a fade
+ *   (300ms in, 200ms out, the focus-mode system curve; instant under
+ *   prefers-reduced-motion)
  * - Drag up/down to zoom in/out; buttons step ±0.75
  * - Track reads top = max zoom (matches the + button on top):
  *   the thumb travels 12% (max) – 88% (min), never touching the ends
@@ -146,7 +147,7 @@ onBeforeUnmount(() => {
   align-items: flex-end;
   justify-content: center;
   width: 44px; // touch zone; the visual pill is slimmer
-  min-height: 150px; // vertical grab zone (kept compact)
+  min-height: 120px; // vertical grab zone (kept compact)
   padding: 0;
   background: transparent;
   cursor: grab;
@@ -154,18 +155,19 @@ onBeforeUnmount(() => {
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 
-  // Hidden state doubles as the slide-out target: pulled 24px toward the
-  // map, faded. The global shown rules settle it back — the visibility
-  // toggle reads as a glide from the left + fade. Exit (~165ms) is faster
-  // than the 220ms enter owned by the shown rules.
+  // Hidden state doubles as the slide-out target: tucked INTO the right
+  // screen edge, faded. The global shown rules settle it back — docked
+  // chrome moves along its dock axis (drawer semantics), never floating
+  // over the map. Enter (300ms) shares the focus-mode curve of
+  // _layout.scss so it reads as one choreography; exit (200ms) is faster.
   // allow-discrete keeps display:flex until the fade has finished;
   // engines without @starting-style/allow-discrete just toggle instantly.
   opacity: 0;
-  transform: translateY(-50%) translateX(-24px);
+  transform: translateY(-50%) translateX(24px);
   transition:
-    opacity 165ms cubic-bezier(0.25, 1, 0.5, 1),
-    transform 165ms cubic-bezier(0.25, 1, 0.5, 1),
-    display 165ms allow-discrete;
+    opacity 200ms cubic-bezier(0.2, 0, 0, 1),
+    transform 200ms cubic-bezier(0.2, 0, 0, 1),
+    display 200ms allow-discrete;
 
   &--dragging {
     cursor: grabbing;
@@ -220,7 +222,7 @@ body.body--dark .wd-zoom__pill {
   position: relative;
   width: 100%;
   flex: 1;
-  min-height: 42px;
+  min-height: 36px;
   margin: 2px 0;
   pointer-events: none; // the pill handles the drag
 }
