@@ -4,8 +4,10 @@
  * (Mapy.com-inspired, Wodore styling).
  *
  * - Focus mode: ALWAYS visible (CSS-driven, see _zoom-slider.scss);
- *   mobile otherwise hides it while the overlay strip is open
- * - Drag up/down to zoom in/out; buttons step ±0.5
+ *   mobile otherwise hides it while the overlay strip is open.
+ *   Show/hide glides in from the left with a fade (220ms in, 165ms out,
+ *   ease-out-quart; instant under prefers-reduced-motion)
+ * - Drag up/down to zoom in/out; buttons step ±0.75
  * - Track reads top = max zoom (matches the + button on top):
  *   the thumb travels 12% (max) – 88% (min), never touching the ends
  * - The whole pill is the grab target (44px zone), the visible part
@@ -18,8 +20,8 @@ const mapRef = useMap();
 
 const MIN_ZOOM = 7;
 const MAX_ZOOM = 20;
-/** px of drag per full zoom level */
-const PX_PER_LEVEL = 44;
+/** px of drag per full zoom level — lower = more aggressive */
+const PX_PER_LEVEL = 32;
 
 const zoom = ref(10);
 const dragging = ref(false);
@@ -63,7 +65,10 @@ function stepZoom(delta: number): void {
   if (!mapRef.map) return;
   const next = clamp(zoom.value + delta);
   zoom.value = next;
-  mapRef.map.zoomTo(next, { duration: 200 });
+  mapRef.map.zoomTo(next, {
+    // snappy step; no camera travel for reduced-motion users
+    duration: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 150,
+  });
 }
 
 /** Keep the thumb in sync when zoom changes from elsewhere (pinch etc.) */
@@ -102,7 +107,7 @@ onBeforeUnmount(() => {
       <button
         class="wd-zoom__step"
         aria-label="Zoom in"
-        @click.stop="stepZoom(0.5)"
+        @click.stop="stepZoom(0.75)"
         @pointerdown.stop
       >
         <q-icon name="wd-plus" size="14px" />
@@ -115,7 +120,7 @@ onBeforeUnmount(() => {
       <button
         class="wd-zoom__step"
         aria-label="Zoom out"
-        @click.stop="stepZoom(-0.5)"
+        @click.stop="stepZoom(-0.75)"
         @pointerdown.stop
       >
         <q-icon name="wd-minus" size="14px" />
@@ -127,27 +132,40 @@ onBeforeUnmount(() => {
 <style lang="scss" scoped>
 // ══════════════════════════════════════════════════════════════════════
 // WdZoomSlider — Mapy-inspired peek slider, Alpine Instrument styling.
-// Hidden unless focus mode on mobile (global rules in app.scss).
+// Visibility is gated by body classes (global rules in
+// map-controls/_zoom-slider.scss); the slide/fade lives there too.
 // ══════════════════════════════════════════════════════════════════════
 
 .wd-zoom {
   position: fixed;
   right: 0;
   top: 50%;
-  transform: translateY(-50%);
   z-index: 2010;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   justify-content: center;
   width: 44px; // touch zone; the visual pill is slimmer
-  min-height: 180px; // generous vertical grab zone
+  min-height: 150px; // vertical grab zone (kept compact)
   padding: 0;
   background: transparent;
   cursor: grab;
   touch-action: none; // we own the gesture
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+
+  // Hidden state doubles as the slide-out target: pulled 24px toward the
+  // map, faded. The global shown rules settle it back — the visibility
+  // toggle reads as a glide from the left + fade. Exit (~165ms) is faster
+  // than the 220ms enter owned by the shown rules.
+  // allow-discrete keeps display:flex until the fade has finished;
+  // engines without @starting-style/allow-discrete just toggle instantly.
+  opacity: 0;
+  transform: translateY(-50%) translateX(-24px);
+  transition:
+    opacity 165ms cubic-bezier(0.25, 1, 0.5, 1),
+    transform 165ms cubic-bezier(0.25, 1, 0.5, 1),
+    display 165ms allow-discrete;
 
   &--dragging {
     cursor: grabbing;
