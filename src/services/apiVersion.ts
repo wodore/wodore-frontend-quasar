@@ -14,10 +14,10 @@
  * version was released absorbs it — types and pin bump together in the
  * diff. Additive backend changes never bump the pin.
  *
- * Current exception: the pin is deliberately held at `unreleased` (the
- * backend registry's tip) so unreleased contract features reach the app on
- * staging; `yarn gen:api` would reset it to the schema version — restore
- * `unreleased` until the next coordinated backend api-release.
+ * During an unreleased window the backend serves `info.version` as the
+ * literal `unreleased`, so generating against it pins the unreleased tip
+ * (e.g. to pick up unreleased contract features on staging); the next
+ * coordinated backend api-release re-pins via a routine `gen:api`.
  */
 
 export { PINNED_API_VERSION } from '@clients/apiVersion';
