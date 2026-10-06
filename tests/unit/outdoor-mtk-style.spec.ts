@@ -73,9 +73,7 @@ describe('outdoor-mtk basemap style', () => {
     // swisstopo runs relief from z0 — our AO must be clearly present at
     // country zoom, not only in the mountains up close
     for (const id of ['relief_hillshade_ao_min', 'relief_hillshade_ao_med']) {
-      const ex = style.layers
-        .find(l => l.id === id)!
-        .paint['hillshade-exaggeration'] as unknown[];
+      const ex = style.layers.find(l => l.id === id)!.paint['hillshade-exaggeration'] as unknown[];
       expect(zoomValue(ex, 5.5)).toBeGreaterThanOrEqual(0.2);
       expect(zoomValue(ex, 13)).toBeGreaterThanOrEqual(0.4);
     }
@@ -108,6 +106,66 @@ describe('outdoor-mtk basemap style', () => {
     ]) {
       expect(layerIds, `layer ${id} must not exist`).not.toContain(id);
     }
+  });
+
+  it('draws swisstopo-style streets when zoomed in: dark casings hug the fills', () => {
+    const zoomValue = (stops: unknown[], z: number): number => {
+      const pairs = (stops as unknown[]).slice(3);
+      // road_minor widths carry per-type match arms — resolve the
+      // minor/service branch
+      const resolve = (v: unknown): number => {
+        if (Array.isArray(v) && v[0] === 'match') {
+          const idx = (v as unknown[]).findIndex(
+            a => Array.isArray(a) && a[0] === 'minor' && a[1] === 'service'
+          );
+          return (idx >= 0 ? (v as unknown[])[idx + 1] : (v as unknown[])[v.length - 1]) as number;
+        }
+        return v as number;
+      };
+      let lo = [pairs[0] as number, resolve(pairs[1])];
+      let hi = lo;
+      for (let i = 0; i + 1 < pairs.length; i += 2) {
+        const zStop = pairs[i] as number;
+        const vStop = resolve(pairs[i + 1]);
+        if (zStop <= z) lo = [zStop, vStop];
+        if (zStop >= z) {
+          hi = [zStop, vStop];
+          break;
+        }
+      }
+      if (lo[0] === hi[0]) return lo[1];
+      return lo[1] + ((hi[1] - lo[1]) * (z - lo[0])) / (hi[0] - lo[0]);
+    };
+    // Casings must be solid underlays: no inherited line-gap-width
+    // (mtk's hollow strokes float off our narrower fills)
+    for (const id of [
+      'road_minor_casing',
+      'road_minor_casing_bridge',
+      'road_major_casing',
+      'road_major_casing_bridge',
+    ]) {
+      const l = style.layers.find(x => x.id === id)!;
+      expect(l.paint['line-gap-width'] ?? 0, `${id} gap-width`).toBe(0);
+    }
+    // Minor roads carry the swisstopo look: bold-ish white fill with a
+    // dark ~1px edge per side (casing ≈ fill + 2) from z14 on
+    const minor = style.layers.find(l => l.id === 'road_minor')!;
+    const minorW = minor.paint['line-width'] as unknown[];
+    expect(zoomValue(minorW, 16)).toBeGreaterThanOrEqual(5);
+    const minorCasing = style.layers.find(l => l.id === 'road_minor_casing')!;
+    const casingW = minorCasing.paint['line-width'] as unknown[];
+    expect(zoomValue(casingW, 16) - zoomValue(minorW, 16)).toBeGreaterThanOrEqual(1.8);
+    // Casing ink: near-black grey (swisstopo rgb(60,60,60) = #3C3C3C)
+    expect(JSON.stringify(minorCasing.paint['line-color'])).toContain('#3C3C3C');
+    // Paths + tracks use swisstopo ink, too
+    for (const id of ['road_path', 'road_path_urban', 'wd-track']) {
+      const col = JSON.stringify(style.layers.find(l => l.id === id)!.paint['line-color']);
+      expect(col, `${id} ink`).toContain('rgb(');
+      expect(col).not.toContain('hsla(0, 0%, 6');
+    }
+    // Parking: crisp white patch with dark edge (swisstopo landuse_parking)
+    expect(layerIds).toContain('wd-parking');
+    expect(layerIds).toContain('wd-parking-casing');
   });
 
   it('keeps huts anonymous: no hut POI layer', () => {

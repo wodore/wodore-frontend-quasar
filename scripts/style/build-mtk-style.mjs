@@ -89,8 +89,12 @@ for (const l of base.layers) {
 // stay the top-level expression, so the category case wraps each
 // interpolate stop's value instead of the whole size.
 const countryScale = 0.75;
-const wrapCountry = v =>
-  ['case', ['==', ['get', 'category'], 'country'], ['*', countryScale, v], v];
+const wrapCountry = v => [
+  'case',
+  ['==', ['get', 'category'], 'country'],
+  ['*', countryScale, v],
+  v,
+];
 
 /** Multiply every zoom-interpolate stop value by `factor` (data-driven
  * stop values are wrapped in an arithmetic expression — allowed, since
@@ -113,7 +117,10 @@ for (const id of ['place_point_label_rank_1', 'place_line_label_rank_1']) {
   const scaled = [...size];
   for (let i = 4; i < scaled.length; i += 2) {
     const v = scaled[i];
-    scaled[i] = typeof v === 'number' ? wrapCountry(v) : ['case', ['==', ['get', 'category'], 'country'], ['*', countryScale, v], v];
+    scaled[i] =
+      typeof v === 'number'
+        ? wrapCountry(v)
+        : ['case', ['==', ['get', 'category'], 'country'], ['*', countryScale, v], v];
   }
   l.layout['text-size'] = scaled;
 }
@@ -133,15 +140,7 @@ for (const id of [
 for (const id of ['border_admin_country', 'border_admin_disputed']) {
   const p = layer(id).paint;
   p['line-color'] = 'hsla(306, 30%, 40%, 1)';
-  p['line-width'] = [
-    'interpolate',
-    ['exponential', 0.9],
-    ['zoom'],
-    3,
-    0.55,
-    19,
-    3.1,
-  ];
+  p['line-width'] = ['interpolate', ['exponential', 0.9], ['zoom'], 3, 0.55, 19, 3.1];
 }
 
 // Settlement dots, swisstopo lightbasemap style: tiny dark-grey
@@ -153,9 +152,12 @@ for (const id of ['border_admin_country', 'border_admin_disputed']) {
 // solid dots at every zoom.
 const SW_DOT_GREY = '#4B4B4B';
 const byCategory = (capital, big, small) => [
-  'match', ['get', 'category'],
-  ['capital'], capital,
-  ['big_place'], big,
+  'match',
+  ['get', 'category'],
+  ['capital'],
+  capital,
+  ['big_place'],
+  big,
   small,
 ];
 const dotLayers = () =>
@@ -166,60 +168,73 @@ const dotLayers = () =>
       // mtk's rank_3 band carries too many minor villages for static
       // circles (no label collision) — measured 3x swisstopo's dot count
       const band = Number(l.id.match(/rank_(\d)$/)[1]);
-      const cats = band <= 2
-        ? ['capital', 'big_place', 'small_place']
-        : ['capital', 'big_place'];
-      return ({
-      id: `wd-place-dot-${l.id.match(/rank_(\d)$/)[1]}`,
-      type: 'circle',
-      source: 'mtk',
-      'source-layer': 'place_label',
-      minzoom: l.minzoom,
-      maxzoom: l.maxzoom,
-      filter: [
-        'all',
-        l.filter,
-        ['match', ['get', 'category'], cats, true, false],
-      ],
-      paint: {
-        // swisstopo semantics, straight from their style: the rings are
-        // WHITE-FILLED with a dark grey stroke (their sprites carry a
-        // white center), and every icon fades out as you zoom in —
-        // cities at z11, towns at z12, villages at z13 (icon-opacity
-        // steps) so street-level views carry no symbols. Capitals run
-        // a solid dark dot below z8 (their dot_circle) before the ring.
-        'circle-color': [
-          'step', ['zoom'],
-          byCategory(SW_DOT_GREY, '#FFFFFF', '#FFFFFF'),
-          8, '#FFFFFF',
-        ],
-        'circle-opacity': [
-          'step', ['zoom'], 1,
-          11, byCategory(0, 1, 1),
-          12, byCategory(0, 0, 1),
-          13, byCategory(0, 0, 0),
-        ],
-        'circle-stroke-color': SW_DOT_GREY,
-        'circle-stroke-opacity': [
-          'step', ['zoom'], 1,
-          11, byCategory(0, 1, 1),
-          12, byCategory(0, 0, 1),
-          13, byCategory(0, 0, 0),
-        ],
-        'circle-stroke-width': byCategory(1.5, 1.1, 1),
-        'circle-pitch-alignment': 'map',
-        // swisstopo icon ladder: dot 6 -> 8px, ring 10 -> 12px;
-        // villages 4 -> 6 -> 8 -> 10px (radii = half diameter)
-        'circle-radius': [
-          'interpolate', ['linear'], ['zoom'],
-          1, byCategory(2.2, 2.2, 1.8),
-          6, byCategory(3, 3, 2.2),
-          8, byCategory(4, 4, 3),
-          10, byCategory(5, 5, 4),
-          12, byCategory(6, 6, 5),
-        ],
-      },
-      });
+      const cats = band <= 2 ? ['capital', 'big_place', 'small_place'] : ['capital', 'big_place'];
+      return {
+        id: `wd-place-dot-${l.id.match(/rank_(\d)$/)[1]}`,
+        type: 'circle',
+        source: 'mtk',
+        'source-layer': 'place_label',
+        minzoom: l.minzoom,
+        maxzoom: l.maxzoom,
+        filter: ['all', l.filter, ['match', ['get', 'category'], cats, true, false]],
+        paint: {
+          // swisstopo semantics, straight from their style: the rings are
+          // WHITE-FILLED with a dark grey stroke (their sprites carry a
+          // white center), and every icon fades out as you zoom in —
+          // cities at z11, towns at z12, villages at z13 (icon-opacity
+          // steps) so street-level views carry no symbols. Capitals run
+          // a solid dark dot below z8 (their dot_circle) before the ring.
+          'circle-color': [
+            'step',
+            ['zoom'],
+            byCategory(SW_DOT_GREY, '#FFFFFF', '#FFFFFF'),
+            8,
+            '#FFFFFF',
+          ],
+          'circle-opacity': [
+            'step',
+            ['zoom'],
+            1,
+            11,
+            byCategory(0, 1, 1),
+            12,
+            byCategory(0, 0, 1),
+            13,
+            byCategory(0, 0, 0),
+          ],
+          'circle-stroke-color': SW_DOT_GREY,
+          'circle-stroke-opacity': [
+            'step',
+            ['zoom'],
+            1,
+            11,
+            byCategory(0, 1, 1),
+            12,
+            byCategory(0, 0, 1),
+            13,
+            byCategory(0, 0, 0),
+          ],
+          'circle-stroke-width': byCategory(1.5, 1.1, 1),
+          'circle-pitch-alignment': 'map',
+          // swisstopo icon ladder: dot 6 -> 8px, ring 10 -> 12px;
+          // villages 4 -> 6 -> 8 -> 10px (radii = half diameter)
+          'circle-radius': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            1,
+            byCategory(2.2, 2.2, 1.8),
+            6,
+            byCategory(3, 3, 2.2),
+            8,
+            byCategory(4, 4, 3),
+            10,
+            byCategory(5, 5, 4),
+            12,
+            byCategory(6, 6, 5),
+          ],
+        },
+      };
     });
 // ── Pastel paper: swisstopo's light-basemap ground ────────────────────
 // swisstopo's country/regional views are near-white paper (measured
@@ -280,8 +295,13 @@ const pastel = (paint, key) => {
   paint[key] = parseJson(json, `pastel transform of ${key}`);
 };
 for (const id of [
-  'background', 'nature_natural_land', 'nature_natural', 'nature_landuse',
-  'water_area_inland', 'water_area_ocean', 'water_area_lagoon',
+  'background',
+  'nature_natural_land',
+  'nature_natural',
+  'nature_landuse',
+  'water_area_inland',
+  'water_area_ocean',
+  'water_area_lagoon',
   'water_intermittent',
 ]) {
   const l = layer(id);
@@ -315,10 +335,7 @@ for (const id of [
       .replaceAll('hsla(70, 10%, 90%, 1)', 'hsla(70, 10%, 90%, 0.45)'),
     'nature_natural color stops'
   ); // full-alpha match at z13, farm classes faded
-  l.paint['fill-color'] = [
-    'interpolate', ['linear'], ['zoom'],
-    4, a0, 9, a30, 11, a70, 13, a1,
-  ];
+  l.paint['fill-color'] = ['interpolate', ['linear'], ['zoom'], 4, a0, 9, a30, 11, a70, 13, a1];
 }
 // Bathymetry: mtk paints depth in saturated cyan (dark Med at 65% L).
 // swisstopo water is flat pale blue — remap the relief ramp to gentle
@@ -336,25 +353,38 @@ for (const id of [
     [0, 'hsla(207, 36%, 90%, 0)'],
   ];
   b.paint['color-relief-color'] = [
-    'interpolate', ['linear'], ['elevation'],
+    'interpolate',
+    ['linear'],
+    ['elevation'],
     ...ramp.map(([e, c]) => [e, c]).flat(),
   ];
 }
-// swisstopo fills buildings uniform blue-grey (rendered ~200,200,208)
-// from z13 — override mtk's base AND the warm multicolored footprints
+// swisstopo fills buildings a uniform cool grey (rgb 170,172,174 in
+// their style; rendered ~188-195 through our lighter paper) from z12 —
+// we keep our slightly cooler hue, bring them in one zoom earlier and
+// add their crisp footprint casing that fades in z15-16 (the warm
+// per-building variation stays as a faint whisper of our own)
 {
   const b = layer('building_base');
-  b.paint['fill-color'] = 'hsla(220, 8%, 82%, 1)';
-  b.paint['fill-outline-color'] = 'hsla(220, 10%, 74%, 1)';
+  b.minzoom = 12;
+  b.paint['fill-color'] = 'hsla(220, 8%, 76%, 1)';
+  b.paint['fill-outline-color'] = [
+    'interpolate', ['linear'], ['zoom'],
+    14.5, 'rgba(154, 156, 158, 0)', 16, 'rgba(154, 156, 158, 1)',
+  ];
   const bf = layer('building_footprint_multicolored');
-  bf.paint['fill-color'] = 'hsla(220, 8%, 82%, 0.55)';
+  bf.paint['fill-color'] = 'hsla(28, 18%, 74%, 0.25)';
 }
 // Round caps/joins on all casings (swisstopo: cap round, join round) —
 // butt-capped casings end square while the fill's round cap pokes past,
 // breaking the look at segment ends and junctions
 for (const id of [
-  'road_major_casing', 'road_major_casing_bridge', 'road_major_casing_tunnel',
-  'road_minor_casing', 'road_minor_casing_bridge', 'road_minor_casing_tunnel',
+  'road_major_casing',
+  'road_major_casing_bridge',
+  'road_major_casing_tunnel',
+  'road_minor_casing',
+  'road_minor_casing_bridge',
+  'road_minor_casing_tunnel',
 ]) {
   const l = layer(id);
   l.layout = { ...l.layout, 'line-cap': 'round', 'line-join': 'round' };
@@ -374,7 +404,9 @@ for (const id of ['road_minor_casing', 'road_minor_casing_bridge', 'road_minor_c
   const l = layer(id);
   const json = JSON.stringify(l.filter);
   l.filter = parseJson(
-    json.replace('"track","service"', '"service"').replace('"minor","service","track"', '"minor","service"'),
+    json
+      .replace('"track","service"', '"service"')
+      .replace('"minor","service","track"', '"minor","service"'),
     `filter of ${id}`
   );
 }
@@ -387,14 +419,17 @@ const trackLayer = {
   filter: ['all', ['==', ['get', 'type'], 'track'], ['!=', ['get', 'subtype'], 'pedestrian']],
   layout: { 'line-cap': 'round', 'line-join': 'round' },
   paint: {
+    // swisstopo's track grey (rgb 75,75,75) and their width ladder
     'line-color': [
-      'interpolate', ['linear'], ['zoom'],
-      12, 'rgba(115, 115, 115, 0)', 13, 'rgba(115, 115, 115, 1)',
+      'interpolate',
+      ['linear'],
+      ['zoom'],
+      12,
+      'rgba(75, 75, 75, 0)',
+      13,
+      'rgb(75, 75, 75)',
     ],
-    'line-width': [
-      'interpolate', ['exponential', 2], ['zoom'],
-      13, 0.7, 15, 1.3, 19, 2.4,
-    ],
+    'line-width': ['interpolate', ['exponential', 2], ['zoom'], 12, 0.75, 13, 1, 15, 1.25, 16, 2, 20, 5],
   },
 };
 {
@@ -402,30 +437,64 @@ const trackLayer = {
   base.layers.splice(idx === -1 ? base.layers.length : idx, 0, trackLayer);
 }
 
-// Paths in neutral grey (swisstopo rgb(115,115,115)) at our own,
-// clearly visible widths; T5/T6 + via ferrata become dotted
+// Parking: swisstopo renders parking lots as crisp white patches with
+// a thin dark edge (their landuse_parking + casing, z12) — copy that on
+// top of the pastel landuse fills, under the street network
+{
+  const firstRoadIdx = base.layers.findIndex(l => l.id?.startsWith('road_'));
+  const at = firstRoadIdx === -1 ? base.layers.length : firstRoadIdx;
+  base.layers.splice(at, 0, {
+    id: 'wd-parking',
+    type: 'fill',
+    source: 'mtk',
+    'source-layer': 'landuse',
+    minzoom: 12.5,
+    filter: ['==', ['get', 'type'], 'parking'],
+    paint: {
+      'fill-color': ['interpolate', ['linear'], ['zoom'], 12.5, 'rgba(255, 255, 255, 0)', 13.5, 'rgb(255, 255, 255)'],
+    },
+  }, {
+    id: 'wd-parking-casing',
+    type: 'line',
+    source: 'mtk',
+    'source-layer': 'landuse',
+    minzoom: 13,
+    filter: ['==', ['get', 'type'], 'parking'],
+    paint: {
+      'line-color': ['interpolate', ['linear'], ['zoom'], 13, 'rgba(60, 60, 60, 0)', 14, 'rgb(60, 60, 60)'],
+      'line-width': ['interpolate', ['linear'], ['zoom'], 13, 0.5, 16, 1.2],
+    },
+  });
+}
+
+// Paths: swisstopo draws them solid dark grey (rgb 60,60,60) on a
+// ladder that widens when zoomed in (0.75 z11 → 2 z16 → 5 z20) —
+// match it; T5/T6 + via ferrata become dotted
+const PATH_COLOR = [
+  'interpolate', ['linear'], ['zoom'],
+  12, 'rgba(60, 60, 60, 0)', 13, 'rgb(60, 60, 60)',
+];
+const PATH_WIDTH = [
+  'interpolate', ['exponential', 2], ['zoom'],
+  12, 0.75, 13, 1, 15, 1.25, 16, 2, 20, 5,
+];
 for (const id of ['road_path', 'road_path_mountain', 'road_path_alpine']) {
   const l = layer(id);
-  let json = JSON.stringify(l.paint['line-color']);
-    json = json
-    .replaceAll('hsla(225, 15%, 40%', 'hsla(0, 0%, 45%')
-    .replaceAll('hsla(225, 5%, 30%', 'hsla(0, 0%, 38%');
-  l.paint['line-color'] = parseJson(json, `color of ${id}`);
+  l.paint['line-color'] = [...PATH_COLOR];
+  l.paint['line-width'] = [...PATH_WIDTH];
 }
+// Urban paths/steps: swisstopo ink (rgb 60,60,60) so village footpaths
+// read as clearly as their reference — ours stay solid (their
+// footways are dashed); a touch narrower than hiking paths
 for (const id of ['road_path_urban', 'road_path_steps']) {
   const l = layer(id);
-  let json = JSON.stringify(l.paint['line-color']);
-  json = json.replaceAll('hsla(216, 15%, 70%', 'hsla(0, 0%, 62%');
-  l.paint['line-color'] = parseJson(json, `color of ${id}`);
+  l.paint['line-color'] = ['interpolate', ['linear'], ['zoom'], 13, 'rgba(60, 60, 60, 0)', 14, 'rgb(60, 60, 60)'];
+  l.paint['line-width'] = ['interpolate', ['exponential', 2], ['zoom'], 13, 0.9, 15, 1.25, 16, 1.75, 20, 4.5];
 }
 // alpine layer keeps only T4 (dashed); T5/T6 + via ferrata get dots
 {
   const alpine = layer('road_path_alpine');
-  alpine.filter = [
-    'all',
-    ['has', 'sac_scale'],
-    ['in', ['get', 'sac_scale'], ['literal', ['T4']]],
-  ];
+  alpine.filter = ['all', ['has', 'sac_scale'], ['in', ['get', 'sac_scale'], ['literal', ['T4']]]];
   const dots = {
     id: 'wd-path-extreme',
     type: 'line',
@@ -470,8 +539,17 @@ for (const id of ['relief_hillshade_ao_min', 'relief_hillshade_ao_med']) {
   // zoom but clearly visible, then let it carry terrain detail in the
   // mountain zooms where it matters
   p['hillshade-exaggeration'] = [
-    'interpolate', ['linear'], ['zoom'],
-    5, 0.22, 8.5, 0.36, 12, 0.54, 16, 0.5,
+    'interpolate',
+    ['linear'],
+    ['zoom'],
+    5,
+    0.22,
+    8.5,
+    0.36,
+    12,
+    0.54,
+    16,
+    0.5,
   ];
 }
 // Landcover textures (forest floor, tree rows, quarries…) painted the
@@ -565,7 +643,7 @@ base.layers.splice(
   firstPlaceIdx === -1 ? base.layers.length : firstPlaceIdx,
   0,
   ...dotLayers(),
-  parkLabel,
+  parkLabel
 );
 // Place labels sit to the right of their dot (point layers only)
 for (const l of base.layers) {
@@ -590,13 +668,20 @@ for (const l of base.layers) {
 // motorway ramp thinning swisstopo applies.
 const rampOr = (rampW, mainW) => ['match', ['get', 'ramp'], 1, rampW, mainW];
 const byType = (motorway, trunk, primary, secondary, tertiary, minor, rest) => [
-  'match', ['get', 'type'],
-  ['motorway'], motorway,
-  ['trunk'], trunk,
-  ['primary'], primary,
-  ['secondary'], secondary,
-  ['tertiary'], tertiary,
-  ['minor', 'service'], minor,
+  'match',
+  ['get', 'type'],
+  ['motorway'],
+  motorway,
+  ['trunk'],
+  trunk,
+  ['primary'],
+  primary,
+  ['secondary'],
+  secondary,
+  ['tertiary'],
+  tertiary,
+  ['minor', 'service'],
+  minor,
   rest,
 ];
 const paintOnto = (id, paint) => {
@@ -606,49 +691,101 @@ const paintOnto = (id, paint) => {
 const clonePaint = (ids, paint) => ids.forEach(id => paintOnto(id, paint));
 
 // Fill colors: white everywhere, soft orange on motorway/trunk
+// (swisstopo's gold rgb(248,207,117) from street zooms; ours softer
+// below, matching their rendered look when zoomed in)
 const FILL_WHITE = [
-  'interpolate', ['linear'], ['zoom'],
-  4, 'hsla(45, 100%, 82%, 0)',
-  6, byType('#FFE6A0', '#FFE6A0', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF'),
-  15, byType('#FFE08A', '#FFE08A', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF'),
+  'interpolate',
+  ['linear'],
+  ['zoom'],
+  4,
+  'hsla(45, 100%, 82%, 0)',
+  6,
+  byType('#FFE6A0', '#FFE6A0', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF'),
+  15,
+  byType('#F8CF75', '#F8CF75', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF'),
 ];
 const FILL_MEDIUM_COLOR = [
-  'interpolate', ['linear'], ['zoom'],
-  8, 'hsla(45, 100%, 82%, 0)',
-  10, '#FFFFFF',
+  'interpolate',
+  ['linear'],
+  ['zoom'],
+  8,
+  'hsla(45, 100%, 82%, 0)',
+  10,
+  '#FFFFFF',
 ];
 const FILL_MINOR_COLOR = [
-  'interpolate', ['linear'], ['zoom'],
-  9, 'hsla(45, 100%, 82%, 0)',
-  10.5, '#FFFFFF',
+  'interpolate',
+  ['linear'],
+  ['zoom'],
+  9,
+  'hsla(45, 100%, 82%, 0)',
+  10.5,
+  '#FFFFFF',
 ];
 const FILL_BLUR = ['interpolate', ['linear'], ['zoom'], 8, 0.4, 14, 0.1];
 
-// Fill widths (swisstopo stops, split by mtk's layer coverage)
+// Fill widths. Low zooms keep our gentler overview look; from z12 on
+// these are swisstopo's own ladders (their basemap.vt road_fill stops,
+// non-route arms) — they more than double at z15/16 so streets read as
+// bold white ribbons with crisp dark edges when zoomed in.
 const FILL_DARK_WIDTH = [
-  'interpolate', ['exponential', 2], ['zoom'],
-  6, 0,
-  8, byType(rampOr(0.5, 2), 2, 0, 0, 0, 0, 0),
-  9, byType(rampOr(0.75, 2.25), 2.25, 0, 0, 0, 0, 0),
-  10, byType(rampOr(0.75, 2.75), 2.75, 2.5, 0, 0, 0, 0),
-  12, byType(rampOr(1.5, 3.75), 3.75, 4, 0, 0, 0, 0),
-  15, byType(rampOr(2.75, 5.5), 5.5, 5.5, 0, 0, 0, 0),
-  19, byType(rampOr(5, 8), 8, 8, 0, 0, 0, 0),
+  'interpolate',
+  ['exponential', 2],
+  ['zoom'],
+  6,
+  0,
+  8,
+  byType(rampOr(0.5, 2), 2, 0, 0, 0, 0, 0),
+  9,
+  byType(rampOr(0.75, 2.25), 2.25, 0, 0, 0, 0, 0),
+  10,
+  byType(rampOr(0.75, 2.75), 2.75, 2.5, 0, 0, 0, 0),
+  12,
+  byType(rampOr(1.75, 4.5), 4.5, 2.75, 0, 0, 0, 0),
+  13,
+  byType(rampOr(2, 4.5), 4.5, 3, 0, 0, 0, 0),
+  15,
+  byType(rampOr(4.4, 5.6), 5.6, 5.2, 0, 0, 0, 0),
+  16,
+  byType(rampOr(8, 8.8), 8.8, 8, 0, 0, 0, 0),
+  20,
+  byType(rampOr(97, 107), 107, 101, 0, 0, 0, 0),
 ];
 const FILL_MEDIUM_WIDTH = [
-  'interpolate', ['exponential', 2], ['zoom'],
-  9, 0,
-  10, byType(0, 0, 0, 2.5, 2, 0, 0),
-  12, byType(0, 0, 0, 3.5, 3, 0, 0),
-  15, byType(0, 0, 0, 5, 4, 0, 0),
-  19, byType(0, 0, 0, 7, 5.5, 0, 0),
+  'interpolate',
+  ['exponential', 2],
+  ['zoom'],
+  9,
+  0,
+  10,
+  byType(0, 0, 0, 2.5, 2, 0, 0),
+  12,
+  byType(0, 0, 0, 2.5, 2.5, 0, 0),
+  13,
+  byType(0, 0, 0, 2.75, 2.75, 0, 0),
+  15,
+  byType(0, 0, 0, 4.4, 3.6, 0, 0),
+  16,
+  byType(0, 0, 0, 7.2, 6.4, 0, 0),
+  20,
+  byType(0, 0, 0, 97, 93, 0, 0),
 ];
 const FILL_MINOR_WIDTH = [
-  'interpolate', ['exponential', 2], ['zoom'],
-  10, ['match', ['get', 'type'], ['minor', 'service'], 1.5, 1],
-  12, ['match', ['get', 'type'], ['minor', 'service'], 2, 1.4],
-  15, ['match', ['get', 'type'], ['minor', 'service'], 3, 1.9],
-  19, ['match', ['get', 'type'], ['minor', 'service'], 4, 2.6],
+  'interpolate',
+  ['exponential', 2],
+  ['zoom'],
+  10,
+  ['match', ['get', 'type'], ['minor', 'service'], 1.5, 1],
+  12,
+  ['match', ['get', 'type'], ['minor', 'service'], 2.25, 1.4],
+  13,
+  ['match', ['get', 'type'], ['minor', 'service'], 2.5, 1.6],
+  15,
+  ['match', ['get', 'type'], ['minor', 'service'], 2.8, 2],
+  16,
+  ['match', ['get', 'type'], ['minor', 'service'], 5.6, 3.5],
+  20,
+  ['match', ['get', 'type'], ['minor', 'service'], 89, 50],
 ];
 
 clonePaint(['road_major_dark', 'road_major_dark_bridge'], {
@@ -667,68 +804,120 @@ clonePaint(['road_minor', 'road_minor_bridge'], {
   'line-blur': FILL_BLUR,
 });
 
-// Casings: swisstopo's near-black grey (gold-brown under motorway/trunk)
-// user call: lighter than the first dark port, closer to swisstopo's
-// faint rendered hairline (their gold halo measures ~rgb(205,178,97))
+// Casings: overview zooms keep the lighter hairline the user picked
+// earlier; street zooms (z15+) switch to swisstopo's own dark ink —
+// rgb(70,55,30) under motorway/trunk, rgb(60,60,60) otherwise — so
+// every white road carries their crisp dark edge when zoomed in
 const CASING_COLOR = [
-  'interpolate', ['linear'], ['zoom'],
-  5, 'hsla(0, 0%, 60%, 0)',
-  9, byType('#BE9A50', '#BE9A50', '#8C8C8C', '#8C8C8C', '#8C8C8C', '#8C8C8C', '#8C8C8C'),
-  15, byType('#B08A44', '#B08A44', '#969696', '#969696', '#969696', '#969696', '#969696'),
+  'interpolate',
+  ['linear'],
+  ['zoom'],
+  5,
+  'hsla(0, 0%, 60%, 0)',
+  9,
+  byType('#BE9A50', '#BE9A50', '#8C8C8C', '#8C8C8C', '#8C8C8C', '#8C8C8C', '#8C8C8C'),
+  14.5,
+  byType('#46371E', '#46371E', '#3C3C3C', '#3C3C3C', '#3C3C3C', '#3C3C3C', '#3C3C3C'),
 ];
 const CASING_WIDTH = [
-  'interpolate', ['exponential', 2], ['zoom'],
-  6, 0,
-  8, byType(rampOr(0.4, 0.8), 0.8, 0, 0, 0, 0, 0),
-  9, byType(rampOr(0.5, 1), 1, 0, 0, 0, 0, 0),
-  10, byType(rampOr(0.6, 1.2), 1.2, 1, 1, 0.9, 0.7, 0),
-  12, byType(rampOr(0.9, 1.8), 1.8, 1.5, 1.4, 1.2, 1, 0.7),
-  15, byType(rampOr(1.3, 2.6), 2.6, 2.2, 2, 1.8, 1.5, 1),
-  19, byType(rampOr(2, 4), 4, 3.5, 3.2, 2.8, 2.5, 1.6),
+  'interpolate',
+  ['exponential', 2],
+  ['zoom'],
+  6,
+  0,
+  8,
+  byType(rampOr(0.4, 0.8), 0.8, 0, 0, 0, 0, 0),
+  9,
+  byType(rampOr(0.5, 1), 1, 0, 0, 0, 0, 0),
+  10,
+  byType(rampOr(0.6, 1.2), 1.2, 1, 1, 0.9, 0.7, 0),
+  12,
+  byType(rampOr(2.75, 5.5), 5.5, 3.75, 3.5, 3.5, 0, 0),
+  13,
+  byType(rampOr(3, 6), 6, 4, 3.75, 3.75, 0, 0),
+  15,
+  byType(rampOr(5.5, 7), 7, 6.5, 6, 5, 0, 0),
+  16,
+  byType(rampOr(9.6, 11), 11, 10, 9.5, 8.5, 0, 0),
+  20,
+  byType(rampOr(103, 113), 113, 107, 103, 99, 0, 0),
 ];
 const CASING_BLUR = ['interpolate', ['linear'], ['zoom'], 7, 3, 8, 0.4];
-clonePaint(
-  ['road_major_casing', 'road_major_casing_bridge', 'road_major_casing_tunnel'],
-  {
-    'line-color': CASING_COLOR,
-    'line-width': CASING_WIDTH,
-    'line-opacity': 1,
-    'line-blur': CASING_BLUR,
-  }
-);
+// line-gap-width: 0 — mtk's casings are hollow strokes tuned to mtk's
+// much wider fills (gap grows to ~6px at z16); with our narrower
+// swisstopo ladders they would float OFF the road instead of hugging
+// it. A solid underlay (fill + ~1px dark edge per side) is the
+// swisstopo look.
+clonePaint(['road_major_casing', 'road_major_casing_bridge', 'road_major_casing_tunnel'], {
+  'line-color': CASING_COLOR,
+  'line-width': CASING_WIDTH,
+  'line-gap-width': 0,
+  'line-opacity': 1,
+  'line-blur': CASING_BLUR,
+});
 const MINOR_CASING_COLOR = [
-  'interpolate', ['linear'], ['zoom'],
-  13, 'hsla(0, 0%, 60%, 0)', 15, '#969696',
+  'interpolate',
+  ['linear'],
+  ['zoom'],
+  13,
+  'hsla(0, 0%, 60%, 0)',
+  14.5,
+  '#3C3C3C',
 ];
 const MINOR_CASING_WIDTH = [
-  'interpolate', ['exponential', 2], ['zoom'],
-  13, 0.7, 15, 1.2, 19, 2.5,
+  'interpolate',
+  ['exponential', 2],
+  ['zoom'],
+  13,
+  3.5,
+  15,
+  4,
+  16,
+  8,
+  20,
+  95,
 ];
-clonePaint(
-  ['road_minor_casing', 'road_minor_casing_bridge', 'road_minor_casing_tunnel'],
-  {
-    'line-color': MINOR_CASING_COLOR,
-    'line-width': MINOR_CASING_WIDTH,
-  }
-);
+clonePaint(['road_minor_casing', 'road_minor_casing_bridge', 'road_minor_casing_tunnel'], {
+  'line-color': MINOR_CASING_COLOR,
+  'line-width': MINOR_CASING_WIDTH,
+  'line-gap-width': 0,
+});
 
 // ── Parks: strong at overview zooms, receding when zoomed in; visible
 // borders (mtk's protected-area lines are nearly invisible).
 const landuse = layer('nature_landuse');
 const parkAt = o => ['case', ['==', ['get', 'type'], 'park'], o, 1];
 landuse.paint['fill-opacity'] = [
-  'interpolate', ['linear'], ['zoom'],
-  8, parkAt(0.55), 12, parkAt(0.35), 14, parkAt(0.22),
+  'interpolate',
+  ['linear'],
+  ['zoom'],
+  8,
+  parkAt(0.55),
+  12,
+  parkAt(0.35),
+  14,
+  parkAt(0.22),
 ];
 const protectedLine = layer('border_protected_area');
 protectedLine.paint['line-opacity'] = [
-  'interpolate', ['exponential', 0.9], ['zoom'],
-  8, 0, 9.5, 0.45, 12, 0.8,
+  'interpolate',
+  ['exponential', 0.9],
+  ['zoom'],
+  8,
+  0,
+  9.5,
+  0.45,
+  12,
+  0.8,
 ];
 protectedLine.paint['line-width'] = [
-  'interpolate', ['exponential', 0.9], ['zoom'],
-  3, ['match', ['get', 'type'], 'national_park', 0.4, 0.28],
-  19, ['match', ['get', 'type'], 'national_park', 1.6, 1.1],
+  'interpolate',
+  ['exponential', 0.9],
+  ['zoom'],
+  3,
+  ['match', ['get', 'type'], 'national_park', 0.4, 0.28],
+  19,
+  ['match', ['get', 'type'], 'national_park', 1.6, 1.1],
 ];
 
 // swisstopo draws rock/scree from z11 through every zoom band
@@ -743,8 +932,23 @@ const rocks = layer('nature_rocks');
 rocks.minzoom = 12;
 rocks.maxzoom = 17;
 rocks.paint['raster-opacity'] = [
-  'interpolate', ['linear'], ['zoom'],
-  12, 0, 12.5, 0.16, 13, 0.36, 14, 0.48, 15, 0.42, 16, 0.34, 17, 0.24,
+  'interpolate',
+  ['linear'],
+  ['zoom'],
+  12,
+  0,
+  12.5,
+  0.16,
+  13,
+  0.36,
+  14,
+  0.48,
+  15,
+  0.42,
+  16,
+  0.34,
+  17,
+  0.24,
 ];
 
 /* ------------------------------------------------------------------ *
@@ -770,8 +974,5 @@ for (const l of base.layers) {
  * 3) Output: one style, local names only                              *
  * ------------------------------------------------------------------ */
 fs.mkdirSync(OUT_DIR, { recursive: true });
-fs.writeFileSync(
-  path.join(OUT_DIR, 'style.json'),
-  JSON.stringify(base, null, 2) + '\n'
-);
+fs.writeFileSync(path.join(OUT_DIR, 'style.json'), JSON.stringify(base, null, 2) + '\n');
 console.log('wrote style.json (single style, local names)');
