@@ -70,19 +70,19 @@ describe('outdoor-mtk basemap style', () => {
       return lo[1] + ((hi[1] - lo[1]) * (z - lo[0])) / (hi[0] - lo[0]);
     };
 
-    // swisstopo runs relief from z0 — our AO must be clearly present at
-    // country zoom, not only in the mountains up close
+    // swisstopo runs relief from z0 — ours stays restrained at Europe
+    // zoom (calm paper) but is clearly present from regional zoom on
     for (const id of ['relief_hillshade_ao_min', 'relief_hillshade_ao_med']) {
       const ex = style.layers.find(l => l.id === id)!.paint['hillshade-exaggeration'] as unknown[];
-      expect(zoomValue(ex, 5.5)).toBeGreaterThanOrEqual(0.2);
+      expect(zoomValue(ex, 6.6)).toBeGreaterThanOrEqual(0.18);
       expect(zoomValue(ex, 13)).toBeGreaterThanOrEqual(0.4);
     }
 
     // Rock drawing: swisstopo scree spans z11→z17 — ours starts fading
-    // in at z12 and keeps a floor into the overzoomed range instead of
+    // in at z11 and keeps a floor into the overzoomed range instead of
     // dropping out at z15.5
     const rocks = style.layers.find(l => l.id === 'nature_rocks')!;
-    expect(rocks.minzoom).toBeLessThanOrEqual(12);
+    expect(rocks.minzoom).toBeLessThanOrEqual(11);
     expect(rocks.maxzoom).toBeGreaterThanOrEqual(17);
     const op = rocks.paint['raster-opacity'] as unknown[];
     expect(zoomValue(op, 13)).toBeGreaterThanOrEqual(0.25); // visible mid-band

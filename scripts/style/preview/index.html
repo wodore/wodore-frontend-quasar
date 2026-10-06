@@ -52,6 +52,7 @@
     zoom,
     pitch,
     bearing,
+    pixelRatio: parseFloat(params.get('dpr') ?? '1'),
     attributionControl: { compact: false },
   });
   window.map = map;

@@ -248,32 +248,33 @@ const PASTEL = {
   'hsla(81, 23%, 95%,': 'hsla(0, 0%, 98%,',
   'hsla(81, 60%, 90%,': 'hsla(75, 8%, 93%,',
   'hsla(81, 60%, 87%,': 'hsla(90, 11%, 91%,',
-  // nature_natural z5 lightness stops
-  'hsla(92.25, 50%, 85%,': 'hsla(90, 22%, 86%,',
+  // nature_natural z5 lightness stops — Wodore forest-green family
+  // (own touch: green is identity; hue rotated 90° -> 160°)
+  'hsla(92.25, 50%, 85%,': 'hsla(160, 20%, 87%,',
   'hsla(58.5, 70%, 90%,': 'hsla(55, 13%, 92%,',
   'hsla(103.25, 55%, 90%,': 'hsla(100, 10%, 91%,',
   'hsla(69.75, 8%, 93%,': 'hsla(70, 6%, 93%,',
   'hsla(36, 75%, 90%,': 'hsla(45, 15%, 92%,',
   'hsla(86.63, 50%, 85%,': 'hsla(85, 12%, 89%,',
   'hsla(69.75, 60%, 87%,': 'hsla(70, 10%, 90%,',
-  'hsla(182.25, 80%, 98%,': 'hsla(201, 62%, 88%,',
-  'hsla(182.25, 65%, 98%,': 'hsla(201, 55%, 90%,',
+  'hsla(182.25, 80%, 98%,': 'hsla(193, 42%, 91%,',
+  'hsla(182.25, 65%, 98%,': 'hsla(193, 38%, 93%,',
   // nature_natural z12 darker stops
-  'hsla(92.25, 50%, 82%,': 'hsla(90, 22%, 84%,',
+  'hsla(92.25, 50%, 82%,': 'hsla(160, 20%, 85%,',
   'hsla(58.5, 70%, 87%,': 'hsla(55, 14%, 91%,',
   'hsla(103.25, 55%, 87%,': 'hsla(100, 11%, 90%,',
   'hsla(69.75, 8%, 90%,': 'hsla(70, 6%, 91%,',
   'hsla(36, 75%, 87%,': 'hsla(45, 16%, 91%,',
   'hsla(86.63, 50%, 82%,': 'hsla(85, 13%, 87%,',
   'hsla(69.75, 60%, 84%,': 'hsla(70, 11%, 89%,',
-  'hsla(182.25, 80%, 95%,': 'hsla(201, 60%, 86%,',
-  'hsla(182.25, 65%, 95%,': 'hsla(201, 55%, 88%,',
-  // nature_landuse
+  'hsla(182.25, 80%, 95%,': 'hsla(193, 40%, 86%,',
+  'hsla(182.25, 65%, 95%,': 'hsla(193, 36%, 88%,',
+  // nature_landuse — parks/meadows in the green families
   'hsla(24.75, 8%, 93%,': 'hsla(35, 6%, 92%,',
-  'hsla(81, 55%, 93%,': 'hsla(100, 14%, 91%,',
+  'hsla(81, 55%, 93%,': 'hsla(150, 18%, 91%,',
   'hsla(47.25, 70%, 90%,': 'hsla(45, 15%, 92%,',
   'hsla(36, 75%, 97%,': 'hsla(45, 12%, 96%,',
-  'hsla(137.25, 70%, 90%,': 'hsla(120, 15%, 90%,',
+  'hsla(137.25, 70%, 90%,': 'hsla(140, 16%, 90%,',
   'hsla(47.25, 90%, 97%,': 'hsla(45, 15%, 96%,',
   'hsla(24.75, 8%, 90%,': 'hsla(35, 6%, 91%,',
   'hsla(81, 55%, 90%,': 'hsla(100, 15%, 90%,',
@@ -281,11 +282,12 @@ const PASTEL = {
   'hsla(36, 75%, 94%,': 'hsla(45, 13%, 95%,',
   'hsla(137.25, 70%, 87%,': 'hsla(120, 16%, 89%,',
   'hsla(47.25, 90%, 94%,': 'hsla(45, 16%, 95%,',
-  // water: saturated cyan -> pale blue
-  'hsla(182, 65%, 80%, 1)': 'hsla(207, 45%, 87%, 1)',
-  'hsla(182, 65%, 85%, 1)': 'hsla(207, 40%, 90%, 1)',
-  'hsla(182, 65%, 80%, 0.7)': 'hsla(207, 40%, 90%, 0.7)',
-  'hsla(182, 65%, 96%, 1)': 'hsla(207, 30%, 94%, 1)',
+  // water: saturated cyan -> glacier-turquoise family (own touch:
+  // turquoise is orientation) — pale at overview, deeper in valleys
+  'hsla(182, 65%, 80%, 1)': 'hsla(193, 42%, 88%, 1)',
+  'hsla(182, 65%, 85%, 1)': 'hsla(193, 40%, 90%, 1)',
+  'hsla(182, 65%, 80%, 0.7)': 'hsla(193, 40%, 90%, 0.7)',
+  'hsla(182, 65%, 96%, 1)': 'hsla(193, 32%, 92%, 1)',
 };
 const pastel = (paint, key) => {
   let json = JSON.stringify(paint[key]);
@@ -337,20 +339,22 @@ for (const id of [
   ); // full-alpha match at z13, farm classes faded
   l.paint['fill-color'] = ['interpolate', ['linear'], ['zoom'], 4, a0, 9, a30, 11, a70, 13, a1];
 }
-// Bathymetry: mtk paints depth in saturated cyan (dark Med at 65% L).
-// swisstopo water is flat pale blue — remap the relief ramp to gentle
-// pale blues with only lightness variation by depth.
+// Bathymetry: mtk paints depth in saturated cyan (dark Med at 65% L)
+// from z0 — swisstopo gates theirs to mid zooms and keeps overview
+// water flat. Gate to z8 and remap the relief ramp to gentle glacier
+// blues with only lightness variation by depth.
 {
   const b = layer('water_bathymetry');
+  b.minzoom = 8;
   const ramp = [
-    [-12000, 'hsla(207, 45%, 78%, 1)'],
-    [-1000, 'hsla(207, 45%, 82%, 1)'],
-    [-500, 'hsla(207, 44%, 83%, 1)'],
-    [-250, 'hsla(207, 42%, 84%, 1)'],
-    [-100, 'hsla(207, 40%, 86%, 1)'],
-    [-30, 'hsla(207, 38%, 88%, 1)'],
-    [-0.1, 'hsla(207, 36%, 90%, 1)'],
-    [0, 'hsla(207, 36%, 90%, 0)'],
+    [-12000, 'hsla(193, 42%, 80%, 1)'],
+    [-1000, 'hsla(193, 42%, 84%, 1)'],
+    [-500, 'hsla(193, 42%, 85%, 1)'],
+    [-250, 'hsla(193, 41%, 86%, 1)'],
+    [-100, 'hsla(193, 40%, 87%, 1)'],
+    [-30, 'hsla(193, 39%, 89%, 1)'],
+    [-0.1, 'hsla(193, 38%, 90%, 1)'],
+    [0, 'hsla(193, 38%, 90%, 0)'],
   ];
   b.paint['color-relief-color'] = [
     'interpolate',
@@ -359,6 +363,34 @@ for (const id of [
     ...ramp.map(([e, c]) => [e, c]).flat(),
   ];
 }
+// Overview water calm (z4-6): glacier fills lighten toward paper at
+// Europe zooms — swisstopo's continent view is near-flat paper water
+for (const [id, deep, pale] of [
+  ['water_area_inland', 'hsla(193, 42%, 88%, 1)', 'hsla(193, 36%, 93%, 1)'],
+  ['water_area_ocean', 'hsla(193, 40%, 90%, 1)', 'hsla(193, 36%, 93%, 1)'],
+  ['water_area_lagoon', 'hsla(193, 40%, 90%, 0.7)', 'hsla(193, 36%, 93%, 0.7)'],
+  ['water_intermittent', 'hsla(193, 32%, 92%, 1)', 'hsla(193, 30%, 94%, 1)'],
+]) {
+  layer(id).paint['fill-color'] = [
+    'interpolate', ['linear'], ['zoom'],
+    4, pale, 9, deep,
+  ];
+}
+// Rivers: glacier-deep lines carry the valley skeleton (swisstopo's
+// water_line rgb ladder ≈ 0.75 z7 -> 1 z10 -> 3 z13; widths kept)
+for (const id of ['water_waterway', 'water_waterway_intermittent', 'water_intermittent_outline']) {
+  layer(id).paint['line-color'] = 'hsla(196, 52%, 52%, 1)';
+}
+// Water labels: glacier-turquoise-deep ink
+for (const l of base.layers) {
+  if (l.type !== 'symbol' || !/^water_.*label/.test(l.id)) continue;
+  if (l.paint?.['text-color']) l.paint['text-color'] = '#29626B';
+}
+// Water label diet at overview: rank_1 seas/rivers waited until z1/z3 —
+// swisstopo's Europe view carries none. Defer to z6.
+layer('water_area_label_rank_1').minzoom = 6;
+layer('water_waterway_label_rank_1').minzoom = 6;
+
 // swisstopo fills buildings a uniform cool grey (rgb 170,172,174 in
 // their style; rendered ~188-195 through our lighter paper) from z12 —
 // we keep our slightly cooler hue, bring them in one zoom earlier and
@@ -367,7 +399,10 @@ for (const id of [
 {
   const b = layer('building_base');
   b.minzoom = 12;
-  b.paint['fill-color'] = 'hsla(220, 8%, 76%, 1)';
+  b.paint['fill-color'] = [
+    'interpolate', ['linear'], ['zoom'],
+    12, 'hsla(220, 8%, 76%, 1)', 16.5, 'hsla(220, 8%, 73%, 1)',
+  ];
   b.paint['fill-outline-color'] = [
     'interpolate', ['linear'], ['zoom'],
     14.5, 'rgba(154, 156, 158, 0)', 16, 'rgba(154, 156, 158, 1)',
@@ -519,10 +554,10 @@ for (const id of ['road_path_urban', 'road_path_steps']) {
 
 // The natural-earth landcover raster drags a uniform dark tint over
 // everything at low zooms (0.1 opacity at z7 measured) — swisstopo's
-// country views are clean paper. Fade it fully out by z5.
+// country views are clean paper. Kill it fully by z4 (no half-blend).
 {
   const l = layer('nature_naturalearth');
-  l.paint['raster-opacity'] = ['interpolate', ['linear'], ['zoom'], 3, 0.7, 5, 0];
+  l.paint['raster-opacity'] = ['interpolate', ['linear'], ['zoom'], 3, 0.3, 4, 0];
 }
 // Hillshade: greyer + gentler (swisstopo relief reads as light grey),
 // with real presence: their relief runs from z0 (hillshade_grey) —
@@ -542,8 +577,10 @@ for (const id of ['relief_hillshade_ao_min', 'relief_hillshade_ao_med']) {
     'interpolate',
     ['linear'],
     ['zoom'],
-    5,
-    0.22,
+    4,
+    0.12,
+    6.5,
+    0.2,
     8.5,
     0.36,
     12,
@@ -558,7 +595,7 @@ for (const id of ['relief_hillshade_ao_min', 'relief_hillshade_ao_med']) {
 // then step up at z15 where the sprite patterns switch to their large
 // variants (nature:*_large) and carry full detail at the hiking zooms
 // (swisstopo's pattern_landcover_z16 band)
-const TEXTURE_RAMP = ['interpolate', ['linear'], ['zoom'], 13, 0, 14.5, 0.3, 15, 0.45, 16.5, 0.7];
+const TEXTURE_RAMP = ['interpolate', ['linear'], ['zoom'], 12, 0.12, 13, 0.22, 14.5, 0.35, 15, 0.45, 16.5, 0.7];
 for (const id of [
   'nature_natural_texture',
   'nature_landuse_quarry_texture',
@@ -568,6 +605,16 @@ for (const id of [
   layer(id).paint['fill-opacity'] = [...TEXTURE_RAMP];
 }
 layer('nature_natural_tree_row_texture').paint['line-opacity'] = [...TEXTURE_RAMP];
+
+// Landcover hairlines (swisstopo's landcover_casing/landuse_outline,
+// z12+) in Wodore forest-green-deep — crisp polygon edges, free (same
+// fill pass), and the green identity spent on protected alpine land
+for (const id of ['nature_natural', 'nature_landuse']) {
+  layer(id).paint['fill-outline-color'] = [
+    'interpolate', ['linear'], ['zoom'],
+    12.5, 'rgba(34, 78, 59, 0)', 13.5, 'rgba(34, 78, 59, 0.35)',
+  ];
+}
 
 // Contours, swisstopo-flavored: they start at z13 in a light tan
 // (rgb 191,138,64) with 0.4 blur; mtk opens at z11 in dark brown
@@ -588,8 +635,9 @@ for (const id of ['relief_contour_multicolored', 'relief_contour_shadow']) {
 layer('relief_contour_multicolored_label').minzoom = 14;
 
 // Place labels: swisstopo keeps them consistently dark — flatten mtk's
-// rank-based lightening (rank 1 = 20% grey ... rank 25 = 40% grey)
-const DARK_LABEL = 'hsla(-9, 0%, 25%, 1)';
+// rank-based lightening (rank 1 = 20% grey ... rank 25 = 40% grey) into
+// Wodore day-ink with a paper-white halo (ties map to chrome)
+const DARK_LABEL = '#1C1C1C';
 for (const l of base.layers) {
   if (l.type !== 'symbol' || !l['source-layer'] || l['source-layer'] !== 'place_label') continue;
   const tf = l.paint?.['text-color'];
@@ -597,6 +645,7 @@ for (const l of base.layers) {
   const json = JSON.stringify(tf);
   if (json.includes('["get","rank"]')) {
     l.paint['text-color'] = DARK_LABEL;
+    if (l.paint['text-halo-color']) l.paint['text-halo-color'] = 'rgba(242, 247, 244, 0.9)';
   }
 }
 
@@ -632,8 +681,8 @@ const parkLabel = {
     'text-max-width': 8,
   },
   paint: {
-    'text-color': '#4A6B45',
-    'text-halo-color': 'rgba(255,255,255,0.75)',
+    'text-color': '#224E3B',
+    'text-halo-color': 'rgba(242, 247, 244, 0.8)',
     'text-halo-width': 1.2,
   },
 };
@@ -702,7 +751,7 @@ const FILL_WHITE = [
   6,
   byType('#FFE6A0', '#FFE6A0', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF'),
   15,
-  byType('#F8CF75', '#F8CF75', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF'),
+  byType('#E8C563', '#E8C563', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF'),
 ];
 const FILL_MEDIUM_COLOR = [
   'interpolate',
@@ -899,6 +948,7 @@ landuse.paint['fill-opacity'] = [
   parkAt(0.22),
 ];
 const protectedLine = layer('border_protected_area');
+protectedLine.paint['line-color'] = '#224E3B'; // forest-green-deep
 protectedLine.paint['line-opacity'] = [
   'interpolate',
   ['exponential', 0.9],
@@ -929,16 +979,16 @@ protectedLine.paint['line-width'] = [
 // soft mass tone, accepted) while the vector stipple textures
 // (z12+, TEXTURE_RAMP) carry the crisp detail up close.
 const rocks = layer('nature_rocks');
-rocks.minzoom = 12;
+rocks.minzoom = 11;
 rocks.maxzoom = 17;
 rocks.paint['raster-opacity'] = [
   'interpolate',
   ['linear'],
   ['zoom'],
-  12,
+  11,
   0,
-  12.5,
-  0.16,
+  12,
+  0.18,
   13,
   0.36,
   14,
