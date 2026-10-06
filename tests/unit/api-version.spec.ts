@@ -32,8 +32,11 @@ const versionResponse = (supported: unknown[] = []) =>
   Response.json({ api: { current: '2026-10-01', default: '2026-10-01', supported } });
 
 describe('PINNED_API_VERSION', () => {
-  it('is a date string (YYYY-MM-DD)', () => {
-    expect(PINNED_API_VERSION).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  // Held at the backend's UNRELEASED tip so unreleased contract features
+  // (e.g. the gallery static-map fallback) reach the app on staging;
+  // re-pinned to a dated version at each coordinated backend api-release.
+  it('is deliberately pinned to the backend unreleased tip', () => {
+    expect(PINNED_API_VERSION).toBe('unreleased');
   });
 });
 

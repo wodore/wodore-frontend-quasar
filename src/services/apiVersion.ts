@@ -13,6 +13,11 @@
  * so types and pin cannot drift. Generating with latest after a new API
  * version was released absorbs it — types and pin bump together in the
  * diff. Additive backend changes never bump the pin.
+ *
+ * Current exception: the pin is deliberately held at `unreleased` (the
+ * backend registry's tip) so unreleased contract features reach the app on
+ * staging; `yarn gen:api` would reset it to the schema version — restore
+ * `unreleased` until the next coordinated backend api-release.
  */
 
 export { PINNED_API_VERSION } from '@clients/apiVersion';

@@ -62,6 +62,13 @@ worker activation; native: Play in-app update via
 `@capawesome/capacitor-app-update`, store entry fallback — see
 `src/services/appUpdate.ts`).
 
+**Current pin hold (2026-10):** the pin is deliberately held at
+`unreleased` — the backend registry's UNRELEASED tip — so unreleased
+contract features (e.g. the gallery static-map fallback) reach staging
+without waiting for an api-release. `yarn gen:api` resets the constant to
+the schema's `info.version`; restore `'unreleased'` after regenerating,
+until the next coordinated backend api-release re-pins us.
+
 # Development server (default: PWA mode on port 9000)
 
 yarn dev # or yarn dev:pwa
