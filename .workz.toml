@@ -1,0 +1,35 @@
+# workz provisioning for wodore-frontend-quasar agent worktrees.
+# Docs: https://github.com/rohansx/workz — repo usage: AGENTS.md § Worktrees / workz
+#
+# What workz defaults already do: copy `.env`/`.env.*` (quasar/vite read
+# `.env.local`) and auto-install deps from the lockfile (yarn —
+# package-lock.json was removed so detection is deterministic).
+
+[sync.overrides]
+# NOT symlinked (the Node default): a symlinked node_modules makes lanes run
+# the MAIN checkout's dependencies (lane package.json changes ignored) and
+# any lane `yarn install` writes through into main's node_modules — the
+# same poisoning the backend avoids with per-lane .venv. It would also
+# coalesce vite's node_modules/.vite cache across lanes. ext4 has no
+# reflink (`clone` is unavailable), so a full copy it is (~1.5 GB per lane,
+# freed by `workz done`). Follow-up: migrate to pnpm (global store +
+# per-lane hardlinked installs — the uv model) and flip this to "ignore".
+node_modules = "copy"
+
+[isolation]
+# Dev-server port ranges from 3500 up — clear of the backend lanes
+# (workz base_port 3400 in wodore-backend) and of the shared dev ports
+# (9000s).
+base_port = 3500
+
+[run]
+# Auto-detect would use the "dev" script, but quasar ignores the $PORT env
+# workz injects — the port must be passed as a flag, read from the workz
+# managed block by the wrapper (which also guards double starts).
+cmd = "scripts/lane-web.sh fg"
+
+[hooks]
+# Same bodies as paseo.json (worktree.setup/teardown) and the pi-agent lane
+# step 1 — one implementation, every host.
+post_start = "scripts/lane-setup.sh"
+pre_done = "scripts/lane-teardown.sh"
