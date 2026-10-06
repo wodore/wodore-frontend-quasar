@@ -32,8 +32,12 @@ const versionResponse = (supported: unknown[] = []) =>
   Response.json({ api: { current: '2026-10-01', default: '2026-10-01', supported } });
 
 describe('PINNED_API_VERSION', () => {
-  it('is a date string (YYYY-MM-DD)', () => {
-    expect(PINNED_API_VERSION).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  // gen:api pins the backend's CURRENT version (schema info.version) — the
+  // literal "unreleased" while a breaking change is unfrozen. Carries
+  // unreleased contract features (e.g. the gallery static-map fallback);
+  // the next coordinated backend api-release re-pins via a routine gen:api.
+  it('is pinned to the backend current version (unreleased tip)', () => {
+    expect(PINNED_API_VERSION).toBe('unreleased');
   });
 });
 

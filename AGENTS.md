@@ -62,6 +62,16 @@ worker activation; native: Play in-app update via
 `@capawesome/capacitor-app-update`, store entry fallback — see
 `src/services/appUpdate.ts`).
 
+**Pin during an unreleased window (2026-10):** `gen:api` pins the
+backend's CURRENT version — the schema's `info.version`, which the
+backend serves as the literal `unreleased` while a breaking change is
+unfrozen. Generating against staging
+(`node scripts/gen-api.mjs --base https://hub.stg.wodore.com`) therefore
+pins `unreleased` and carries the unreleased contract (e.g. the gallery
+static-map fallback) without waiting for an api-release; the next
+coordinated backend api-release re-pins via a routine `gen:api` — no
+manual pin edits.
+
 # Development server (default: PWA mode on port 9000)
 
 yarn dev # or yarn dev:pwa

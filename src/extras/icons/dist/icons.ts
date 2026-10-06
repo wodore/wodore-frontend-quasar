@@ -49,6 +49,7 @@ export type IconsId =
   | "arrowhead-left"
   | "arrowhead-down"
   | "arrow-up-down"
+  | "api"
   | "alert-triangle-outline"
   | "add"
   | "add-outline";
@@ -104,6 +105,7 @@ export type IconsKey =
   | "ArrowheadLeft"
   | "ArrowheadDown"
   | "ArrowUpDown"
+  | "Api"
   | "AlertTriangleOutline"
   | "Add"
   | "AddOutline";
@@ -159,6 +161,7 @@ export enum Icons {
   ArrowheadLeft = "arrowhead-left",
   ArrowheadDown = "arrowhead-down",
   ArrowUpDown = "arrow-up-down",
+  Api = "api",
   AlertTriangleOutline = "alert-triangle-outline",
   Add = "add",
   AddOutline = "add-outline",
@@ -215,7 +218,8 @@ export const ICONS_CODEPOINTS: { [key in Icons]: string } = {
   [Icons.ArrowheadLeft]: "61744",
   [Icons.ArrowheadDown]: "61745",
   [Icons.ArrowUpDown]: "61746",
-  [Icons.AlertTriangleOutline]: "61747",
-  [Icons.Add]: "61748",
-  [Icons.AddOutline]: "61749",
+  [Icons.Api]: "61747",
+  [Icons.AlertTriangleOutline]: "61748",
+  [Icons.Add]: "61749",
+  [Icons.AddOutline]: "61750",
 };
