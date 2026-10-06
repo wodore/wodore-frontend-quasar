@@ -247,6 +247,11 @@ body {
   --wd-avail: #198053;
   --wd-closed: #bf211e;
   --wd-wash: rgba(0, 0, 0, 0.06);
+  // Fullscreen media viewer (photo gallery lightbox): intentionally dark in
+  // BOTH themes — photo-viewer convention (darkroom, like Google/Apple
+  // Photos), avoids daylight glare; overlay chrome stays light-on-dark.
+  // Design review decision, see wodore-design/DESIGN.md.
+  --wd-viewer: #1c1c1c;
 }
 
 .body--dark {
@@ -262,6 +267,7 @@ body {
   --wd-avail: #25bf5e;
   --wd-closed: #f2acab;
   --wd-wash: rgba(255, 255, 255, 0.1);
+  --wd-viewer: #000000;
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

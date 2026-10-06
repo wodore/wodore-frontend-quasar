@@ -152,8 +152,16 @@ const downloadOriginal = () => {
 };
 
 // ThumbHash placeholders: curated-crop hashes for the fullscreen main slides
-// (md–xl variants), square hashes for the thumb strip
-const getMainThumbhashStyle = (image: HutImage) => thumbhashStyle(image, 'orientation', 'curated');
+// (md–xl variants), square hashes for the thumb strip.
+// Main slides: `contain` — never `cover` — so the blur sits exactly where the
+// photo will appear and the letterbox stays the themed viewer surface
+// (--wd-viewer). Once the image has loaded the style is dropped entirely:
+// no mid-gray blur remains around the photo in either theme.
+const getMainThumbhashStyle = (image: HutImage) => {
+  if (isImageLoaded(image.id)) return undefined;
+  const style = thumbhashStyle(image, 'orientation', 'curated');
+  return style ? { ...style, backgroundSize: 'contain' } : undefined;
+};
 const getThumbThumbhashStyle = (image: HutImage) => thumbhashStyleForSize(image, 'square', 'sm');
 
 // Show navigation only on non-touch devices with multiple images
@@ -328,8 +336,9 @@ onUnmounted(() => {
   height: 100dvh;
   display: flex;
   flex-direction: column;
-  background: black;
-  // Native app: pad content away from the system bars (the black bg
+  // Themed viewer surface: light #1c1c1c / dark #000 (--wd-viewer, app.scss)
+  background: var(--wd-viewer);
+  // Native app: pad content away from the system bars (the viewer bg
   // stays full-bleed behind them)
   padding-top: var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px));
   padding-bottom: var(--q-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
@@ -476,7 +485,8 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: black;
+  // Same themed surface as the container — no seam around the photo
+  background: var(--wd-viewer);
   overflow: hidden;
   height: 100%;
   width: 100%;
