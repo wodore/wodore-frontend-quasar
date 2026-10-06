@@ -20,7 +20,7 @@
       "url": "https://icons.maptoolkit.org/water~hsl_182_65_80"
     }
   ],
-  "glyphs": "https://fonts.maptoolkit.org/{fontstack}/{range}.pbf",
+  "glyphs": "../glyphs/{fontstack}/{range}.pbf",
   "light": {
     "color": "hsl(60, 90%, 96%)",
     "anchor": "viewport",
@@ -13070,7 +13070,7 @@
         "text-font": [
           "literal",
           [
-            "Ysabeau Regular"
+            "Barlow Semi Condensed Regular"
           ]
         ],
         "text-pitch-alignment": "viewport",
@@ -13224,7 +13224,7 @@
         "text-font": [
           "literal",
           [
-            "Ysabeau Bold"
+            "Barlow Semi Condensed SemiBold"
           ]
         ],
         "text-letter-spacing": 0.1,
@@ -13430,7 +13430,7 @@
           [
             "literal",
             [
-              "Ysabeau Bold"
+              "Barlow Semi Condensed SemiBold"
             ]
           ],
           [
@@ -13764,7 +13764,7 @@
           [
             "literal",
             [
-              "Ysabeau Regular"
+              "Barlow Semi Condensed Regular"
             ]
           ],
           [
@@ -13880,7 +13880,7 @@
           [
             "literal",
             [
-              "Ysabeau Regular"
+              "Barlow Semi Condensed Regular"
             ]
           ],
           [
@@ -13998,7 +13998,7 @@
           [
             "literal",
             [
-              "Ysabeau Regular"
+              "Barlow Semi Condensed Regular"
             ]
           ],
           [
@@ -14106,7 +14106,7 @@
           [
             "literal",
             [
-              "Ysabeau Extrabold Italic"
+              "Barlow SemiBold Italic"
             ]
           ],
           [
@@ -14221,7 +14221,7 @@
           [
             "literal",
             [
-              "Ysabeau Regular"
+              "Barlow Semi Condensed Regular"
             ]
           ],
           [
@@ -14379,7 +14379,7 @@
           [
             "literal",
             [
-              "Ysabeau Medium Italic"
+              "Barlow Italic"
             ]
           ],
           [
@@ -14537,7 +14537,7 @@
           [
             "literal",
             [
-              "Ysabeau Medium Italic"
+              "Barlow Italic"
             ]
           ],
           [
@@ -16273,7 +16273,7 @@
           "name"
         ],
         "text-font": [
-          "Ysabeau Italic"
+          "Barlow Italic"
         ],
         "text-size": [
           "interpolate",
@@ -16415,7 +16415,7 @@
           [
             "literal",
             [
-              "Ysabeau Italic"
+              "Barlow Italic"
             ]
           ],
           [
@@ -16593,48 +16593,48 @@
             [
               "literal",
               [
-                "Ysabeau Small Caps Regular"
+                "Barlow Semi Condensed Regular"
               ]
             ],
             "capital",
             [
               "literal",
               [
-                "Ysabeau Small Caps Bold"
+                "Barlow Semi Condensed SemiBold"
               ]
             ],
             "big_place",
             [
               "literal",
               [
-                "Ysabeau Bold"
+                "Barlow Semi Condensed SemiBold"
               ]
             ],
             "small_place",
             [
               "literal",
               [
-                "Ysabeau Regular"
+                "Barlow Semi Condensed Regular"
               ]
             ],
             "other",
             [
               "literal",
               [
-                "Ysabeau Italic"
+                "Barlow Italic"
               ]
             ],
             "park",
             [
               "literal",
               [
-                "Ysabeau Medium Italic"
+                "Barlow Italic"
               ]
             ],
             [
               "literal",
               [
-                "Ysabeau Extrabold Italic"
+                "Barlow SemiBold Italic"
               ]
             ]
           ],
@@ -16689,7 +16689,7 @@
             [
               "literal",
               [
-                "Noto Sans Bold Italic"
+                "Noto Sans Italic"
               ]
             ]
           ]
@@ -17010,7 +17010,7 @@
           [
             "literal",
             [
-              "Ysabeau Bold"
+              "Barlow Semi Condensed SemiBold"
             ]
           ],
           [
@@ -17376,7 +17376,7 @@
           [
             "literal",
             [
-              "Ysabeau Regular"
+              "Barlow Semi Condensed Regular"
             ]
           ],
           [
@@ -17542,7 +17542,7 @@
           [
             "literal",
             [
-              "Ysabeau Medium Italic"
+              "Barlow Italic"
             ]
           ],
           [
@@ -17734,7 +17734,7 @@
           [
             "literal",
             [
-              "Ysabeau Medium Italic"
+              "Barlow Italic"
             ]
           ],
           [
@@ -17973,7 +17973,7 @@
           [
             "literal",
             [
-              "Ysabeau Italic"
+              "Barlow Italic"
             ]
           ],
           [
@@ -18185,48 +18185,48 @@
             [
               "literal",
               [
-                "Ysabeau Small Caps Regular"
+                "Barlow Semi Condensed Regular"
               ]
             ],
             "capital",
             [
               "literal",
               [
-                "Ysabeau Small Caps Bold"
+                "Barlow Semi Condensed SemiBold"
               ]
             ],
             "big_place",
             [
               "literal",
               [
-                "Ysabeau Bold"
+                "Barlow Semi Condensed SemiBold"
               ]
             ],
             "small_place",
             [
               "literal",
               [
-                "Ysabeau Regular"
+                "Barlow Semi Condensed Regular"
               ]
             ],
             "other",
             [
               "literal",
               [
-                "Ysabeau Italic"
+                "Barlow Italic"
               ]
             ],
             "park",
             [
               "literal",
               [
-                "Ysabeau Medium Italic"
+                "Barlow Italic"
               ]
             ],
             [
               "literal",
               [
-                "Ysabeau Extrabold Italic"
+                "Barlow SemiBold Italic"
               ]
             ]
           ],
@@ -18281,7 +18281,7 @@
             [
               "literal",
               [
-                "Noto Sans Bold Italic"
+                "Noto Sans Italic"
               ]
             ]
           ]
@@ -18548,7 +18548,7 @@
           [
             "literal",
             [
-              "Ysabeau Bold"
+              "Barlow Semi Condensed SemiBold"
             ]
           ],
           [
@@ -18818,7 +18818,7 @@
           [
             "literal",
             [
-              "Ysabeau Bold"
+              "Barlow Semi Condensed SemiBold"
             ]
           ],
           [
@@ -19211,7 +19211,7 @@
           [
             "literal",
             [
-              "Ysabeau Medium Italic"
+              "Barlow Italic"
             ]
           ],
           [
@@ -19403,7 +19403,7 @@
           [
             "literal",
             [
-              "Ysabeau Medium Italic"
+              "Barlow Italic"
             ]
           ],
           [
@@ -19630,7 +19630,7 @@
           [
             "literal",
             [
-              "Ysabeau Medium Italic"
+              "Barlow Italic"
             ]
           ],
           [
@@ -19844,7 +19844,7 @@
           [
             "literal",
             [
-              "Ysabeau Italic"
+              "Barlow Italic"
             ]
           ],
           [
@@ -20056,48 +20056,48 @@
             [
               "literal",
               [
-                "Ysabeau Small Caps Regular"
+                "Barlow Semi Condensed Regular"
               ]
             ],
             "capital",
             [
               "literal",
               [
-                "Ysabeau Small Caps Bold"
+                "Barlow Semi Condensed SemiBold"
               ]
             ],
             "big_place",
             [
               "literal",
               [
-                "Ysabeau Bold"
+                "Barlow Semi Condensed SemiBold"
               ]
             ],
             "small_place",
             [
               "literal",
               [
-                "Ysabeau Regular"
+                "Barlow Semi Condensed Regular"
               ]
             ],
             "other",
             [
               "literal",
               [
-                "Ysabeau Italic"
+                "Barlow Italic"
               ]
             ],
             "park",
             [
               "literal",
               [
-                "Ysabeau Medium Italic"
+                "Barlow Italic"
               ]
             ],
             [
               "literal",
               [
-                "Ysabeau Extrabold Italic"
+                "Barlow SemiBold Italic"
               ]
             ]
           ],
@@ -20152,7 +20152,7 @@
             [
               "literal",
               [
-                "Noto Sans Bold Italic"
+                "Noto Sans Italic"
               ]
             ]
           ]
@@ -20399,7 +20399,7 @@
           [
             "literal",
             [
-              "Ysabeau Bold"
+              "Barlow Semi Condensed SemiBold"
             ]
           ],
           [
@@ -20792,7 +20792,7 @@
           [
             "literal",
             [
-              "Ysabeau Medium Italic"
+              "Barlow Italic"
             ]
           ],
           [
@@ -20984,7 +20984,7 @@
           [
             "literal",
             [
-              "Ysabeau Medium Italic"
+              "Barlow Italic"
             ]
           ],
           [
@@ -21211,7 +21211,7 @@
           [
             "literal",
             [
-              "Ysabeau Medium Italic"
+              "Barlow Italic"
             ]
           ],
           [
@@ -21425,7 +21425,7 @@
           [
             "literal",
             [
-              "Ysabeau Italic"
+              "Barlow Italic"
             ]
           ],
           [
@@ -21637,48 +21637,48 @@
             [
               "literal",
               [
-                "Ysabeau Small Caps Regular"
+                "Barlow Semi Condensed Regular"
               ]
             ],
             "capital",
             [
               "literal",
               [
-                "Ysabeau Small Caps Bold"
+                "Barlow Semi Condensed SemiBold"
               ]
             ],
             "big_place",
             [
               "literal",
               [
-                "Ysabeau Bold"
+                "Barlow Semi Condensed SemiBold"
               ]
             ],
             "small_place",
             [
               "literal",
               [
-                "Ysabeau Regular"
+                "Barlow Semi Condensed Regular"
               ]
             ],
             "other",
             [
               "literal",
               [
-                "Ysabeau Italic"
+                "Barlow Italic"
               ]
             ],
             "park",
             [
               "literal",
               [
-                "Ysabeau Medium Italic"
+                "Barlow Italic"
               ]
             ],
             [
               "literal",
               [
-                "Ysabeau Extrabold Italic"
+                "Barlow SemiBold Italic"
               ]
             ]
           ],
@@ -21733,7 +21733,7 @@
             [
               "literal",
               [
-                "Noto Sans Bold Italic"
+                "Noto Sans Italic"
               ]
             ]
           ]
@@ -21960,7 +21960,7 @@
           [
             "literal",
             [
-              "Ysabeau Medium Italic"
+              "Barlow Italic"
             ]
           ],
           [
@@ -22144,7 +22144,7 @@
           [
             "literal",
             [
-              "Ysabeau Medium Italic"
+              "Barlow Italic"
             ]
           ],
           [
@@ -22363,7 +22363,7 @@
           [
             "literal",
             [
-              "Ysabeau Medium Italic"
+              "Barlow Italic"
             ]
           ],
           [
@@ -22569,7 +22569,7 @@
           [
             "literal",
             [
-              "Ysabeau Italic"
+              "Barlow Italic"
             ]
           ],
           [
@@ -22831,48 +22831,48 @@
             [
               "literal",
               [
-                "Ysabeau Small Caps Regular"
+                "Barlow Semi Condensed Regular"
               ]
             ],
             "capital",
             [
               "literal",
               [
-                "Ysabeau Small Caps Bold"
+                "Barlow Semi Condensed SemiBold"
               ]
             ],
             "big_place",
             [
               "literal",
               [
-                "Ysabeau Bold"
+                "Barlow Semi Condensed SemiBold"
               ]
             ],
             "small_place",
             [
               "literal",
               [
-                "Ysabeau Regular"
+                "Barlow Semi Condensed Regular"
               ]
             ],
             "other",
             [
               "literal",
               [
-                "Ysabeau Italic"
+                "Barlow Italic"
               ]
             ],
             "park",
             [
               "literal",
               [
-                "Ysabeau Medium Italic"
+                "Barlow Italic"
               ]
             ],
             [
               "literal",
               [
-                "Ysabeau Extrabold Italic"
+                "Barlow SemiBold Italic"
               ]
             ]
           ],
@@ -22927,7 +22927,7 @@
             [
               "literal",
               [
-                "Noto Sans Bold Italic"
+                "Noto Sans Italic"
               ]
             ]
           ]

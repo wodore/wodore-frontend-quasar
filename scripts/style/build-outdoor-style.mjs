@@ -23,7 +23,17 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SRC = path.join(__dirname, 'liberty-src.json');
 const OUT = path.join(__dirname, '..', '..', 'public', 'styles', 'outdoor', 'style.json');
 
-const style = JSON.parse(fs.readFileSync(SRC, 'utf8'));
+/** JSON.parse that rethrows with context — the build must fail loudly
+ * (and legibly) when the vendored source drifts. */
+function parseJson(text, what) {
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    throw new Error(`invalid JSON in ${what}: ${err.message}`, { cause: err });
+  }
+}
+
+const style = parseJson(fs.readFileSync(SRC, 'utf8'), SRC);
 
 /* ------------------------------------------------------------------ *
  * Palette (mapy.com tourist reference captures, see docs/design-ref) *
@@ -131,8 +141,11 @@ style.id = 'wodore-outdoor-ofm';
 // MapLibre's public font server hosts both the Noto Sans stacks this style
 // uses AND the "Open Sans Semibold" stack the app's overlay labels need
 // (OFM's font server 404s on Open Sans, which broke hut label typography).
-// Self-hosting glyphs is a documented future option (see README).
-style.glyphs = 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf';
+// Glyphs: the same vendored set as outdoor-mtk (yarn gen:glyphs) — no
+// dependency on demotiles, service-worker cacheable for offline use.
+// Note: our vendored Noto covers latin/latin-ext/greek/cyrillic only;
+// CJK labels render empty rather than tofu (same trade-off as mtk).
+style.glyphs = '../glyphs/{fontstack}/{range}.pbf';
 style.sources.openmaptiles.attribution = ATTR_OSM + ATTR_OFM;
 style.sources['dem-mapterhorn'] = {
   type: 'raster-dem',

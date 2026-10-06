@@ -1,7 +1,5 @@
 {
   "version": 8,
-  "name": "Wodore Outdoor (OpenFreeMap)",
-  "metadata": {},
   "sources": {
     "ne2_shaded": {
       "maxzoom": 6,
@@ -36,7 +34,7 @@
     }
   },
   "sprite": "https://tiles.openfreemap.org/sprites/ofm_f384/ofm",
-  "glyphs": "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+  "glyphs": "../glyphs/{fontstack}/{range}.pbf",
   "layers": [
     {
       "id": "background",
@@ -2525,10 +2523,10 @@
       }
     },
     {
-      "id": "trail-track",
-      "type": "line",
       "source": "openmaptiles",
       "source-layer": "transportation",
+      "type": "line",
+      "id": "trail-track",
       "minzoom": 11.5,
       "filter": [
         "all",
@@ -2597,10 +2595,10 @@
       }
     },
     {
-      "id": "trail-cycleway",
-      "type": "line",
       "source": "openmaptiles",
       "source-layer": "transportation",
+      "type": "line",
+      "id": "trail-cycleway",
       "minzoom": 12.5,
       "filter": [
         "all",
@@ -2686,10 +2684,10 @@
       }
     },
     {
-      "id": "trail-pedestrian",
-      "type": "line",
       "source": "openmaptiles",
       "source-layer": "transportation",
+      "type": "line",
+      "id": "trail-pedestrian",
       "minzoom": 13.5,
       "filter": [
         "all",
@@ -2764,10 +2762,10 @@
       }
     },
     {
-      "id": "trail-footway",
-      "type": "line",
       "source": "openmaptiles",
       "source-layer": "transportation",
+      "type": "line",
+      "id": "trail-footway",
       "minzoom": 13,
       "filter": [
         "all",
@@ -2850,10 +2848,10 @@
       }
     },
     {
-      "id": "trail-path-dashed",
-      "type": "line",
       "source": "openmaptiles",
       "source-layer": "transportation",
+      "type": "line",
+      "id": "trail-path-dashed",
       "minzoom": 13.5,
       "filter": [
         "all",
@@ -2941,10 +2939,10 @@
       }
     },
     {
-      "id": "trail-steps",
-      "type": "line",
       "source": "openmaptiles",
       "source-layer": "transportation",
+      "type": "line",
+      "id": "trail-steps",
       "minzoom": 15,
       "filter": [
         "all",
@@ -3017,10 +3015,10 @@
       }
     },
     {
-      "id": "trail-tunnel",
-      "type": "line",
       "source": "openmaptiles",
       "source-layer": "transportation",
+      "type": "line",
+      "id": "trail-tunnel",
       "minzoom": 13,
       "filter": [
         "all",
@@ -3085,10 +3083,10 @@
       }
     },
     {
-      "id": "trail-bridge-casing",
-      "type": "line",
       "source": "openmaptiles",
       "source-layer": "transportation",
+      "type": "line",
+      "id": "trail-bridge-casing",
       "minzoom": 13,
       "filter": [
         "all",
@@ -3146,10 +3144,10 @@
       }
     },
     {
-      "id": "trail-bridge",
-      "type": "line",
       "source": "openmaptiles",
       "source-layer": "transportation",
+      "type": "line",
+      "id": "trail-bridge",
       "minzoom": 13,
       "filter": [
         "all",
@@ -5164,7 +5162,6 @@
       "type": "symbol",
       "source": "openmaptiles",
       "source-layer": "poi",
-      "minzoom": 12.5,
       "filter": [
         "match",
         [
@@ -5234,7 +5231,8 @@
         "text-halo-blur": 0.5,
         "text-halo-color": "#ffffff",
         "text-halo-width": 1
-      }
+      },
+      "minzoom": 12.5
     },
     {
       "id": "poi-parking",
@@ -6921,5 +6919,6 @@
       }
     }
   ],
+  "name": "Wodore Outdoor (OpenFreeMap)",
   "id": "wodore-outdoor-ofm"
 }

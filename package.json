@@ -61,6 +61,7 @@
     "gen:icons:watch": "watch 'yarn run gen:icons' src/extras/icons/svg/source",
     "postgen:icons": "node scripts/scope-icon-selectors.mjs && yarn run eslint --fix src/extras/icons/dist/icons.ts",
     "gen:favs": "icongenie generate -p src/assets/icongenie/",
+    "gen:glyphs": "node scripts/style/build-glyphs.mjs",
     "gen:realfavs": "real-favicon generate src/assets/realfavgen.json src/assets/realfavgen_result.json public/realfavgen"
   },
   "dependencies": {
@@ -143,6 +144,7 @@
     "happy-dom": "^20.14.5",
     "histoire": "^1.0.0-beta.1",
     "lint-staged": "^17.6.0",
+    "maplibre-font-maker-node": "^0.5.0",
     "oslllo-svg-fixer": "^6.0.1",
     "prettier": "^3.0.3",
     "storybook": "10",

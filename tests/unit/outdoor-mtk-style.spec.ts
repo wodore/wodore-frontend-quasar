@@ -108,6 +108,33 @@ describe('outdoor-mtk basemap style', () => {
     }
   });
 
+  it('speaks Wodore typography: Barlow labels from vendored glyphs', () => {
+    // glyphs resolve next to the style (works under any base path)
+    expect(style.glyphs).toBe('../glyphs/{fontstack}/{range}.pbf');
+    const used = new Set<string>();
+    const walk = (node: unknown) => {
+      if (Array.isArray(node)) {
+        if (node[0] === 'literal') (node[1] as string[]).forEach(f => used.add(f));
+        else node.slice(1).forEach(walk);
+      }
+    };
+    for (const l of style.layers) if (l.layout?.['text-font']) walk(l.layout['text-font']);
+    // every referenced font is Barlow or vendored Noto — no mtk Ysabeau
+    for (const f of used) {
+      expect(f, `unexpected font ${f}`).toMatch(/^(Barlow|Noto Sans) /);
+    }
+    // …and every used stack has PBFs on disk for the latin ranges
+    expect(used.size).toBeGreaterThan(0);
+    for (const f of used) {
+      for (const range of ['0-255', '256-511']) {
+        expect(
+          existsSync(resolve(process.cwd(), 'public/styles/glyphs', f, `${range}.pbf`)),
+          `missing glyph file ${f}/${range}.pbf — run yarn gen:glyphs`
+        ).toBe(true);
+      }
+    }
+  });
+
   it('draws swisstopo-style streets when zoomed in: dark casings hug the fills', () => {
     const zoomValue = (stops: unknown[], z: number): number => {
       const pairs = (stops as unknown[]).slice(3);
