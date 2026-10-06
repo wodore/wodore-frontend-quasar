@@ -1142,7 +1142,16 @@ function syncAttributionChip(): void {
   const chip = document.querySelector('.wd-attrib');
   const original = document.querySelector('.maplibregl-ctrl-attrib');
   if (isMobileMap.value) {
-    if (chip || !original) return;
+    if (!original) return;
+    if (chip) {
+      // Refresh the copy: MapLibre populates/updates the inner text on
+      // style changes, so a chip created before the first styledata (or
+      // before a basemap switch) would otherwise show empty/stale text.
+      const text = chip.querySelector('.wd-attrib__text');
+      const source = original.querySelector('.maplibregl-ctrl-attrib-inner');
+      if (text && source) text.innerHTML = source.innerHTML;
+      return;
+    }
     (original as HTMLElement).style.display = 'none';
     const newChip = document.createElement('button');
     newChip.type = 'button';
@@ -1184,7 +1193,6 @@ function collapseAutoExpandedAttribution(): void {
       details.open = false;
       details.removeAttribute('open');
       el.classList.remove('maplibregl-compact-show');
-      el.classList.remove('wd-attrib--open');
     });
     syncAttributionChip();
   }, 800);
