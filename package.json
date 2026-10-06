@@ -62,6 +62,7 @@
     "postgen:icons": "node scripts/scope-icon-selectors.mjs && yarn run eslint --fix src/extras/icons/dist/icons.ts",
     "gen:favs": "icongenie generate -p src/assets/icongenie/",
     "gen:glyphs": "node scripts/style/build-glyphs.mjs",
+    "gen:sprite": "node scripts/style/build-sprite.mjs",
     "gen:realfavs": "real-favicon generate src/assets/realfavgen.json src/assets/realfavgen_result.json public/realfavgen"
   },
   "dependencies": {

@@ -221,14 +221,22 @@ describe('outdoor-mtk basemap style', () => {
     }
   });
 
-  it('adds swisstopo-style settlement dots mirroring label rank bands', () => {
-    // one dot layer per place-label rank band: a dot appears exactly
-    // when its place label layer becomes active
-    for (const n of ['1', '2', '3', '4', '5']) {
-      expect(layerIds).toContain(`wd-place-dot-${n}`);
+  it('adds swisstopo-style settlement dots inside the label symbols', () => {
+    // dots are icons IN the place-label layers: one collision box for
+    // icon + text, so a dot can never render without its label
+    expect(layerIds.filter(id => id.startsWith('wd-place-dot-'))).toEqual([]);
+    const ranked = style.layers.filter(l => /^place_point_label_rank_\d$/.test(l.id));
+    expect(ranked.length).toBeGreaterThanOrEqual(5);
+    for (const l of ranked) {
+      expect(JSON.stringify(l.layout?.['icon-image']), `${l.id} icon-image`).toContain('wd-dot');
+      expect(l.layout?.['icon-optional'], `${l.id} icon-optional`).toBe(false);
+      expect(l.layout?.['text-optional'], `${l.id} text-optional`).toBe(false);
     }
-    expect(layerIds).not.toContain('wd-place-dot-big');
-    expect(layerIds).not.toContain('wd-place-dot-small');
+    // the sprite ships with the style (multi-sprite array, relative URL)
+    const sprites = Array.isArray(style.sprite) ? style.sprite : [style.sprite];
+    expect(JSON.stringify(sprites)).toContain('../sprites/wd/sprite');
+    expect(existsSync(resolve(process.cwd(), 'public/styles/sprites/wd/sprite.png'))).toBe(true);
+    expect(existsSync(resolve(process.cwd(), 'public/styles/sprites/wd/sprite@2x.png'))).toBe(true);
     const border = style.layers.find(l => l.id === 'border_admin_country');
     expect(JSON.stringify(border?.paint)).toContain('hsla(306, 30%, 40%, 1)');
   });

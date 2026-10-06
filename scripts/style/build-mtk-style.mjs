@@ -57,6 +57,12 @@ base.id = 'wodore-outdoor-mtk';
 // app uses; Noto Sans mirrored for the non-latin second line) —
 // run `yarn gen:glyphs` after touching the stacks.
 base.glyphs = '../glyphs/{fontstack}/{range}.pbf';
+// our settlement-dot sprite joins mtk's multi-sprite array (relative
+// URL resolves against the style URL — works under any base path)
+base.sprite = [
+  ...(Array.isArray(base.sprite) ? base.sprite : [base.sprite]),
+  { id: 'wd', url: '../sprites/wd/sprite' },
+];
 const FONT_MAP = {
   'Ysabeau Small Caps Regular': 'Barlow Semi Condensed Regular',
   'Ysabeau Small Caps Bold': 'Barlow Semi Condensed SemiBold',
@@ -173,14 +179,13 @@ for (const id of ['border_admin_country', 'border_admin_disputed']) {
   p['line-width'] = ['interpolate', ['exponential', 0.9], ['zoom'], 3, 0.55, 19, 3.1];
 }
 
-// Settlement dots, swisstopo lightbasemap style: tiny dark-grey
-// circles. Each dot layer mirrors one place-label rank band (same
-// minzoom, same filter), so a dot appears exactly when its place label
-// layer is active — no dot fields for places that carry no labels.
-// Capitals switch from a solid dot to a hollow ring at z8 (like
-// swisstopo's dot_circle -> circle_circle step), towns/villages stay
-// solid dots at every zoom.
-const SW_DOT_GREY = '#4B4B4B';
+// Settlement dots, swisstopo lightbasemap style — rendered INSIDE the
+// place-label symbol layers as icons (sprite: build-sprite.mjs): icon
+// and text share ONE collision box, so a dot can never appear without
+// its label (circle layers have no collision and orphaned — user
+// directive). Capitals run a solid dot below z8, then the white-filled
+// ring; towns/villages ring from the start. Icons fade out as streets
+// take over (cities z11, towns z12, villages z13).
 const byCategory = (capital, big, small) => [
   'match',
   ['get', 'category'],
@@ -190,82 +195,44 @@ const byCategory = (capital, big, small) => [
   big,
   small,
 ];
-const dotLayers = () =>
-  base.layers
-    .filter(l => /^place_point_label_rank_\d$/.test(l.id))
-    .map(l => {
-      // villages join from the rank_2 band (important towns, rank 10-13):
-      // mtk's rank_3 band carries too many minor villages for static
-      // circles (no label collision) — measured 3x swisstopo's dot count
-      const band = Number(l.id.match(/rank_(\d)$/)[1]);
-      const cats = band <= 2 ? ['capital', 'big_place', 'small_place'] : ['capital', 'big_place'];
-      return {
-        id: `wd-place-dot-${l.id.match(/rank_(\d)$/)[1]}`,
-        type: 'circle',
-        source: 'mtk',
-        'source-layer': 'place_label',
-        minzoom: l.minzoom,
-        maxzoom: l.maxzoom,
-        filter: ['all', l.filter, ['match', ['get', 'category'], cats, true, false]],
-        paint: {
-          // swisstopo semantics, straight from their style: the rings are
-          // WHITE-FILLED with a dark grey stroke (their sprites carry a
-          // white center), and every icon fades out as you zoom in —
-          // cities at z11, towns at z12, villages at z13 (icon-opacity
-          // steps) so street-level views carry no symbols. Capitals run
-          // a solid dark dot below z8 (their dot_circle) before the ring.
-          'circle-color': [
-            'step',
-            ['zoom'],
-            byCategory(SW_DOT_GREY, '#FFFFFF', '#FFFFFF'),
-            8,
-            '#FFFFFF',
-          ],
-          'circle-opacity': [
-            'step',
-            ['zoom'],
-            1,
-            11,
-            byCategory(0, 1, 1),
-            12,
-            byCategory(0, 0, 1),
-            13,
-            byCategory(0, 0, 0),
-          ],
-          'circle-stroke-color': SW_DOT_GREY,
-          'circle-stroke-opacity': [
-            'step',
-            ['zoom'],
-            1,
-            11,
-            byCategory(0, 1, 1),
-            12,
-            byCategory(0, 0, 1),
-            13,
-            byCategory(0, 0, 0),
-          ],
-          'circle-stroke-width': byCategory(1.5, 1.1, 1),
-          'circle-pitch-alignment': 'map',
-          // swisstopo icon ladder: dot 6 -> 8px, ring 10 -> 12px;
-          // villages 4 -> 6 -> 8 -> 10px (radii = half diameter)
-          'circle-radius': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            1,
-            byCategory(2.2, 2.2, 1.8),
-            6,
-            byCategory(3, 3, 2.2),
-            8,
-            byCategory(4, 4, 3),
-            10,
-            byCategory(5, 5, 4),
-            12,
-            byCategory(6, 6, 5),
-          ],
-        },
-      };
-    });
+for (const l of base.layers) {
+  if (!/^place_point_label_rank_\d$/.test(l.id)) continue;
+  const dotFor = solidCapital =>
+    byCategory(solidCapital ? 'wd-dot' : 'wd-dot-ring', 'wd-dot-ring', 'wd-dot-ring');
+  l.layout['icon-image'] = ['step', ['zoom'], dotFor(true), 8, dotFor(false)];
+  // both must place, or neither shows — the no-orphan guarantee
+  l.layout['icon-optional'] = false;
+  l.layout['text-optional'] = false;
+  l.layout['icon-padding'] = 2;
+  // swisstopo icon ladder: dot 6 -> 8px, ring 10 -> 12px; villages
+  // 4 -> 6 -> 8 -> 10px radii — sprite radius is 6 css px at size 1
+  l.layout['icon-size'] = [
+    'interpolate',
+    ['linear'],
+    ['zoom'],
+    1,
+    byCategory(0.37, 0.37, 0.3),
+    6,
+    byCategory(0.5, 0.5, 0.37),
+    8,
+    byCategory(0.67, 0.67, 0.5),
+    10,
+    byCategory(0.83, 0.83, 0.67),
+    12,
+    byCategory(1, 1, 0.83),
+  ];
+  l.paint['icon-opacity'] = [
+    'step',
+    ['zoom'],
+    1,
+    11,
+    byCategory(0, 1, 1),
+    12,
+    byCategory(0, 0, 1),
+    13,
+    byCategory(0, 0, 0),
+  ];
+}
 // ── Pastel paper: swisstopo's light-basemap ground ────────────────────
 // swisstopo's country/regional views are near-white paper (measured
 // mean 243,245,245, saturation ~4) with grey relief and pale water —
@@ -401,10 +368,7 @@ for (const [id, deep, pale] of [
   ['water_area_lagoon', 'hsla(193, 40%, 90%, 0.7)', 'hsla(193, 36%, 93%, 0.7)'],
   ['water_intermittent', 'hsla(193, 32%, 92%, 1)', 'hsla(193, 30%, 94%, 1)'],
 ]) {
-  layer(id).paint['fill-color'] = [
-    'interpolate', ['linear'], ['zoom'],
-    4, pale, 9, deep,
-  ];
+  layer(id).paint['fill-color'] = ['interpolate', ['linear'], ['zoom'], 4, pale, 9, deep];
 }
 // Rivers: glacier-deep lines carry the valley skeleton (swisstopo's
 // water_line rgb ladder ≈ 0.75 z7 -> 1 z10 -> 3 z13; widths kept)
@@ -430,12 +394,22 @@ layer('water_waterway_label_rank_1').minzoom = 6;
   const b = layer('building_base');
   b.minzoom = 12;
   b.paint['fill-color'] = [
-    'interpolate', ['linear'], ['zoom'],
-    12, 'hsla(220, 8%, 76%, 1)', 16.5, 'hsla(220, 8%, 73%, 1)',
+    'interpolate',
+    ['linear'],
+    ['zoom'],
+    12,
+    'hsla(220, 8%, 76%, 1)',
+    16.5,
+    'hsla(220, 8%, 73%, 1)',
   ];
   b.paint['fill-outline-color'] = [
-    'interpolate', ['linear'], ['zoom'],
-    14.5, 'rgba(154, 156, 158, 0)', 16, 'rgba(154, 156, 158, 1)',
+    'interpolate',
+    ['linear'],
+    ['zoom'],
+    14.5,
+    'rgba(154, 156, 158, 0)',
+    16,
+    'rgba(154, 156, 158, 1)',
   ];
   const bf = layer('building_footprint_multicolored');
   bf.paint['fill-color'] = 'hsla(28, 18%, 74%, 0.25)';
@@ -494,7 +468,21 @@ const trackLayer = {
       13,
       'rgb(75, 75, 75)',
     ],
-    'line-width': ['interpolate', ['exponential', 2], ['zoom'], 12, 0.75, 13, 1, 15, 1.25, 16, 2, 20, 5],
+    'line-width': [
+      'interpolate',
+      ['exponential', 2],
+      ['zoom'],
+      12,
+      0.75,
+      13,
+      1,
+      15,
+      1.25,
+      16,
+      2,
+      20,
+      5,
+    ],
   },
 };
 {
@@ -508,40 +496,77 @@ const trackLayer = {
 {
   const firstRoadIdx = base.layers.findIndex(l => l.id?.startsWith('road_'));
   const at = firstRoadIdx === -1 ? base.layers.length : firstRoadIdx;
-  base.layers.splice(at, 0, {
-    id: 'wd-parking',
-    type: 'fill',
-    source: 'mtk',
-    'source-layer': 'landuse',
-    minzoom: 12.5,
-    filter: ['==', ['get', 'type'], 'parking'],
-    paint: {
-      'fill-color': ['interpolate', ['linear'], ['zoom'], 12.5, 'rgba(255, 255, 255, 0)', 13.5, 'rgb(255, 255, 255)'],
+  base.layers.splice(
+    at,
+    0,
+    {
+      id: 'wd-parking',
+      type: 'fill',
+      source: 'mtk',
+      'source-layer': 'landuse',
+      minzoom: 12.5,
+      filter: ['==', ['get', 'type'], 'parking'],
+      paint: {
+        'fill-color': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          12.5,
+          'rgba(255, 255, 255, 0)',
+          13.5,
+          'rgb(255, 255, 255)',
+        ],
+      },
     },
-  }, {
-    id: 'wd-parking-casing',
-    type: 'line',
-    source: 'mtk',
-    'source-layer': 'landuse',
-    minzoom: 13,
-    filter: ['==', ['get', 'type'], 'parking'],
-    paint: {
-      'line-color': ['interpolate', ['linear'], ['zoom'], 13, 'rgba(60, 60, 60, 0)', 14, 'rgb(60, 60, 60)'],
-      'line-width': ['interpolate', ['linear'], ['zoom'], 13, 0.5, 16, 1.2],
-    },
-  });
+    {
+      id: 'wd-parking-casing',
+      type: 'line',
+      source: 'mtk',
+      'source-layer': 'landuse',
+      minzoom: 13,
+      filter: ['==', ['get', 'type'], 'parking'],
+      paint: {
+        'line-color': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          13,
+          'rgba(60, 60, 60, 0)',
+          14,
+          'rgb(60, 60, 60)',
+        ],
+        'line-width': ['interpolate', ['linear'], ['zoom'], 13, 0.5, 16, 1.2],
+      },
+    }
+  );
 }
 
 // Paths: swisstopo draws them solid dark grey (rgb 60,60,60) on a
 // ladder that widens when zoomed in (0.75 z11 → 2 z16 → 5 z20) —
 // match it; T5/T6 + via ferrata become dotted
 const PATH_COLOR = [
-  'interpolate', ['linear'], ['zoom'],
-  12, 'rgba(60, 60, 60, 0)', 13, 'rgb(60, 60, 60)',
+  'interpolate',
+  ['linear'],
+  ['zoom'],
+  12,
+  'rgba(60, 60, 60, 0)',
+  13,
+  'rgb(60, 60, 60)',
 ];
 const PATH_WIDTH = [
-  'interpolate', ['exponential', 2], ['zoom'],
-  12, 0.75, 13, 1, 15, 1.25, 16, 2, 20, 5,
+  'interpolate',
+  ['exponential', 2],
+  ['zoom'],
+  12,
+  0.75,
+  13,
+  1,
+  15,
+  1.25,
+  16,
+  2,
+  20,
+  5,
 ];
 for (const id of ['road_path', 'road_path_mountain', 'road_path_alpine']) {
   const l = layer(id);
@@ -553,33 +578,75 @@ for (const id of ['road_path', 'road_path_mountain', 'road_path_alpine']) {
 // footways are dashed); a touch narrower than hiking paths
 for (const id of ['road_path_urban', 'road_path_steps']) {
   const l = layer(id);
-  l.paint['line-color'] = ['interpolate', ['linear'], ['zoom'], 13, 'rgba(60, 60, 60, 0)', 14, 'rgb(60, 60, 60)'];
-  l.paint['line-width'] = ['interpolate', ['exponential', 2], ['zoom'], 13, 0.9, 15, 1.25, 16, 1.75, 20, 4.5];
+  l.paint['line-color'] = [
+    'interpolate',
+    ['linear'],
+    ['zoom'],
+    13,
+    'rgba(60, 60, 60, 0)',
+    14,
+    'rgb(60, 60, 60)',
+  ];
+  l.paint['line-width'] = [
+    'interpolate',
+    ['exponential', 2],
+    ['zoom'],
+    13,
+    0.9,
+    15,
+    1.25,
+    16,
+    1.75,
+    20,
+    4.5,
+  ];
 }
-// alpine layer keeps only T4 (dashed); T5/T6 + via ferrata get dots
+// SAC difficulty is the line itself (user call: only easy walking is
+// solid; as demand grows the marks thin out). Dashed layers use BUTT
+// caps — round caps bridge the gaps and re-solidify the line; only the
+// dots layer keeps round caps (that's what makes ~0 dashes round).
+//   T1 solid | T2 [3, 2] | T3 [2, 2.5] | T4 [1.5, 3] |
+//   T5/T6 + via ferrata dots [0.1, 2]
+// Ungraded paths/bridleways (road_path) and urban footpaths stay solid.
 {
+  const mountain = layer('road_path_mountain');
+  mountain.filter = ['all', ['has', 'sac_scale'], ['in', ['get', 'sac_scale'], ['literal', ['T1']]]];
+  // T1 is the only SOLID hiking path — drop mtk's leftover [6,4] dash
+  // (mtk ships it in paint; MapLibre honors it there too)
+  for (const bag of [mountain.layout, mountain.paint]) {
+    if (bag?.['line-dasharray']) delete bag['line-dasharray'];
+  }
   const alpine = layer('road_path_alpine');
   alpine.filter = ['all', ['has', 'sac_scale'], ['in', ['get', 'sac_scale'], ['literal', ['T4']]]];
-  const dots = {
-    id: 'wd-path-extreme',
+  alpine.layout = { ...alpine.layout, 'line-cap': 'butt', 'line-join': 'round' };
+  alpine.paint = { ...alpine.paint, 'line-dasharray': [1.5, 3] };
+  const sacLayer = (id, scales, dash, cap = 'butt') => ({
+    id,
     type: 'line',
     source: 'mtk',
     'source-layer': 'road',
-    minzoom: alpine.minzoom,
-    maxzoom: alpine.maxzoom,
+    minzoom: mountain.minzoom,
+    maxzoom: mountain.maxzoom,
+    filter: ['all', ['has', 'sac_scale'], ['in', ['get', 'sac_scale'], ['literal', scales]]],
+    layout: { 'line-cap': cap, 'line-join': 'round' },
+    paint: { ...mountain.paint, 'line-dasharray': dash },
+  });
+  const dots = {
+    ...sacLayer('wd-path-extreme', ['T5', 'T6'], [0.1, 2], 'round'),
     filter: [
       'any',
       ['in', ['get', 'sac_scale'], ['literal', ['T5', 'T6']]],
       ['==', ['get', 'type'], 'via_ferrata'],
     ],
-    layout: { ...alpine.layout, 'line-cap': 'round', 'line-join': 'round' },
-    paint: {
-      ...alpine.paint,
-      'line-dasharray': [0.1, 1.6],
-    },
   };
   const idx = base.layers.findIndex(l => l.id === 'road_path_alpine');
-  base.layers.splice(idx + 1, 0, dots);
+  base.layers.splice(
+    idx + 1,
+    0,
+    sacLayer('wd-path-dashed', ['T2'], [3, 2]),
+    sacLayer('wd-path-sparse', ['T3'], [2, 2.5]),
+    dots
+  );
 }
 
 // The natural-earth landcover raster drags a uniform dark tint over
@@ -625,7 +692,21 @@ for (const id of ['relief_hillshade_ao_min', 'relief_hillshade_ao_med']) {
 // then step up at z15 where the sprite patterns switch to their large
 // variants (nature:*_large) and carry full detail at the hiking zooms
 // (swisstopo's pattern_landcover_z16 band)
-const TEXTURE_RAMP = ['interpolate', ['linear'], ['zoom'], 12, 0.12, 13, 0.22, 14.5, 0.35, 15, 0.45, 16.5, 0.7];
+const TEXTURE_RAMP = [
+  'interpolate',
+  ['linear'],
+  ['zoom'],
+  12,
+  0.12,
+  13,
+  0.22,
+  14.5,
+  0.35,
+  15,
+  0.45,
+  16.5,
+  0.7,
+];
 for (const id of [
   'nature_natural_texture',
   'nature_landuse_quarry_texture',
@@ -641,8 +722,13 @@ layer('nature_natural_tree_row_texture').paint['line-opacity'] = [...TEXTURE_RAM
 // fill pass), and the green identity spent on protected alpine land
 for (const id of ['nature_natural', 'nature_landuse']) {
   layer(id).paint['fill-outline-color'] = [
-    'interpolate', ['linear'], ['zoom'],
-    12.5, 'rgba(34, 78, 59, 0)', 13.5, 'rgba(34, 78, 59, 0.35)',
+    'interpolate',
+    ['linear'],
+    ['zoom'],
+    12.5,
+    'rgba(34, 78, 59, 0)',
+    13.5,
+    'rgba(34, 78, 59, 0.35)',
   ];
 }
 
@@ -718,12 +804,7 @@ const parkLabel = {
 };
 
 const firstPlaceIdx = base.layers.findIndex(l => l.id.startsWith('place_'));
-base.layers.splice(
-  firstPlaceIdx === -1 ? base.layers.length : firstPlaceIdx,
-  0,
-  ...dotLayers(),
-  parkLabel
-);
+base.layers.splice(firstPlaceIdx === -1 ? base.layers.length : firstPlaceIdx, 0, parkLabel);
 // Place labels sit to the right of their dot (point layers only)
 for (const l of base.layers) {
   if (
@@ -803,22 +884,21 @@ const FILL_MINOR_COLOR = [
 ];
 const FILL_BLUR = ['interpolate', ['linear'], ['zoom'], 8, 0.4, 14, 0.1];
 
-// Fill widths. Low zooms keep our gentler overview look; from z12 on
-// these are swisstopo's own ladders (their basemap.vt road_fill stops,
-// non-route arms) — they more than double at z15/16 so streets read as
-// bold white ribbons with crisp dark edges when zoomed in.
+// Fill widths. swisstopo's overview trick: a thin full-class road
+// skeleton from z5 (0.75px everything), progressively thickening;
+// street zooms run our ~80% ladders (their basemap.vt stops).
 const FILL_DARK_WIDTH = [
   'interpolate',
   ['exponential', 2],
   ['zoom'],
   6,
-  0,
+  byType(rampOr(0.5, 1.5), 1.5, 0, 0, 0, 0, 0),
   8,
-  byType(rampOr(0.5, 2), 2, 0, 0, 0, 0, 0),
+  byType(rampOr(1, 2.5), 2.5, 1.5, 0, 0, 0, 0),
   9,
-  byType(rampOr(0.75, 2.25), 2.25, 0, 0, 0, 0, 0),
+  byType(rampOr(1.25, 3), 3, 2, 0, 0, 0, 0),
   10,
-  byType(rampOr(0.75, 2.75), 2.75, 2.5, 0, 0, 0, 0),
+  byType(rampOr(1.5, 3.5), 3.5, 2.75, 0, 0, 0, 0),
   12,
   byType(rampOr(1.75, 4.5), 4.5, 2.75, 0, 0, 0, 0),
   13,
@@ -835,9 +915,9 @@ const FILL_MEDIUM_WIDTH = [
   ['exponential', 2],
   ['zoom'],
   9,
-  0,
+  byType(0, 0, 0, 1.5, 0, 0, 0),
   10,
-  byType(0, 0, 0, 2.5, 2, 0, 0),
+  byType(0, 0, 0, 2.2, 1.8, 0, 0),
   12,
   byType(0, 0, 0, 2.5, 2.5, 0, 0),
   13,
@@ -854,7 +934,7 @@ const FILL_MINOR_WIDTH = [
   ['exponential', 2],
   ['zoom'],
   10,
-  ['match', ['get', 'type'], ['minor', 'service'], 1.5, 1],
+  ['match', ['get', 'type'], ['minor', 'service'], 1.6, 0.9],
   12,
   ['match', ['get', 'type'], ['minor', 'service'], 2.25, 1.4],
   13,
@@ -893,7 +973,7 @@ const CASING_COLOR = [
   ['zoom'],
   5,
   'hsla(0, 0%, 60%, 0)',
-  9,
+  6.5,
   byType('#BE9A50', '#BE9A50', '#8C8C8C', '#8C8C8C', '#8C8C8C', '#8C8C8C', '#8C8C8C'),
   14.5,
   byType('#46371E', '#46371E', '#3C3C3C', '#3C3C3C', '#3C3C3C', '#3C3C3C', '#3C3C3C'),
@@ -903,13 +983,13 @@ const CASING_WIDTH = [
   ['exponential', 2],
   ['zoom'],
   6,
-  0,
-  8,
-  byType(rampOr(0.4, 0.8), 0.8, 0, 0, 0, 0, 0),
-  9,
   byType(rampOr(0.5, 1), 1, 0, 0, 0, 0, 0),
+  8,
+  byType(rampOr(0.6, 1), 1, 2.5, 0, 0, 0, 0),
+  9,
+  byType(rampOr(0.75, 1.25), 1.25, 3, 2.5, 0, 0, 0),
   10,
-  byType(rampOr(0.6, 1.2), 1.2, 1, 1, 0.9, 0.7, 0),
+  byType(rampOr(0.9, 1.5), 1.5, 3.5, 2.9, 2.5, 0, 0),
   12,
   byType(rampOr(2.75, 5.5), 5.5, 3.75, 3.5, 3.5, 0, 0),
   13,
