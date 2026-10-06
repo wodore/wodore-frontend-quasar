@@ -208,6 +208,51 @@ Example ESLint check for specific files:
 npx eslint src/stores/user-settings-store.ts src/stores/local-properties-store.ts
 ```
 
+## Worktrees / workz
+
+Agent worktrees are provisioned by [workz](https://github.com/rohansx/workz)
+(see `.workz.toml`). Every worktree gets:
+
+- **`.env*` copied** from the main checkout (workz default — quasar/vite
+  read `.env.local`) plus a workz-managed block with its isolated `PORT`.
+- **Its own `node_modules`** — copied, never symlinked (`.workz.toml`
+  overrides the Node default): a symlink would make lanes silently run the
+  main checkout's dependencies, any lane `yarn install` would write
+  through into main's `node_modules`, and vite's `node_modules/.vite`
+  cache would collide across lanes. `yarn` is the package manager
+  (yarn.lock); `package-lock.json` was removed so workz's auto-install
+  detection is deterministic.
+- **A dev-server port range** from 3500 up — clear of the backend lanes
+  (workz `base_port = 3400` in wodore-backend) and of the shared dev ports
+  (9000s). workz is the ONLY port allocator; paseo's `web` service wraps
+  the same script and uses no `$PASEO_PORT` of its own.
+
+**Setup** is one idempotent script, shared by every host — `workz start`
+(`post_start` hook), `paseo.json` `worktree.setup`, or the pi-agent lane
+step 1 (the global pi hook runs `workz sync … --isolated`, which fires NO
+hooks — run the script yourself after it):
+
+```bash
+scripts/lane-setup.sh    # yarn install --frozen-lockfile on the copied node_modules
+```
+
+**Dev server:** `scripts/lane-web.sh fg|start|stop|status` — `fg` runs a
+guarded foreground `quasar dev -m pwa` on the workz port (quasar ignores
+the `$PORT` env, hence the `--port` flag); a second start on a live lane
+port is a no-op, a foreign listener is refused. `start`/`stop` wrap
+detached `workz run`/`workz run --stop`.
+
+**Teardown:** `scripts/lane-teardown.sh` (dev server stop + workz reap,
+idempotent) — fired by `workz done` (`pre_done`) and by `paseo.json`
+`worktree.teardown` on workspace archive. The lane owns no database or
+containers; the port allocation is reclaimed by `workz doctor --fix` once
+the worktree is gone.
+
+**Backend pairing:** `yarn gen:api-local` targets a hardcoded
+`http://127.0.0.1:8000` (the shared dev backend), not a backend lane
+port — see `scripts/gen-api.mjs` before pointing a frontend lane at a
+backend lane.
+
 ## Related Projects
 
 The Wodore ecosystem consists of multiple repositories:
