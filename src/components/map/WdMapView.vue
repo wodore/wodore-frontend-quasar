@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, inject, watchEffect, watch, onErrorCaptured, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { useResizeObserver, useDebounceFn, useThrottleFn, useEventListener } from '@vueuse/core';
+import { useResizeObserver, useDebounceFn, useThrottleFn, useEventListener, useMediaQuery } from '@vueuse/core';
 import { useQuasar } from 'quasar';
 import { useBasemapStore } from '@stores/map/basemap-store';
 import type { BasemapSwitchItem } from '@stores/map/utils/interfaces';
@@ -53,6 +53,12 @@ const MOBILE_DRAWER_TRACK_THRESHOLD = 100;
 // exists at all)
 const DESKTOP_DRAWER_WIDTH_LARGE = 460;
 const DESKTOP_DRAWER_WIDTH_MEDIUM = 380;
+
+// Mobile map chrome lives below Quasar's md boundary. Keep the media
+// query in ONE place — it drives the attribution chip swap (see
+// syncAttributionChip) and tap-to-focus.
+const MOBILE_MAP_QUERY = '(max-width: 769px)';
+const isMobileMap = useMediaQuery(MOBILE_MAP_QUERY);
 
 // Map layer IDs
 const HUT_LAYER_ID = 'wd-huts';
@@ -1019,7 +1025,7 @@ function cancelPendingTap(): void {
 }
 
 function onMapPointerDown(ev: MouseEvent): void {
-  if (!window.matchMedia('(max-width: 769px)').matches) return;
+  if (!isMobileMap.value) return;
   const pointerType = (ev as unknown as { pointerType?: string }).pointerType;
   if (pointerType !== 'touch') return; // desktop has the explicit button
   if (
@@ -1125,6 +1131,53 @@ onMounted(() => {
   });
 });
 
+/** Mobile uses an OWNED attribution chip (`.wd-attrib`, appended to
+ *  <body>) because MapLibre's markup is unreachable there — the PE-none
+ *  control container skips fixed children in hit-testing and its own CSS
+ *  fights ours. Desktop shows MapLibre's native chip.
+ *  Runs at map load AND on every crossing of the mobile boundary, so a
+ *  landscape-loaded phone picks the chip up when rotating to portrait
+ *  (and drops it again back on desktop). Idempotent in all four states. */
+function syncAttributionChip(): void {
+  const chip = document.querySelector('.wd-attrib');
+  const original = document.querySelector('.maplibregl-ctrl-attrib');
+  if (isMobileMap.value) {
+    if (!original) return;
+    if (chip) {
+      // Refresh the copy: MapLibre populates/updates the inner text on
+      // style changes, so a chip created before the first styledata (or
+      // before a basemap switch) would otherwise show empty/stale text.
+      const text = chip.querySelector('.wd-attrib__text');
+      const source = original.querySelector('.maplibregl-ctrl-attrib-inner');
+      if (text && source) text.innerHTML = source.innerHTML;
+      return;
+    }
+    (original as HTMLElement).style.display = 'none';
+    const newChip = document.createElement('button');
+    newChip.type = 'button';
+    newChip.className = 'wd-attrib';
+    newChip.setAttribute('aria-label', 'Attribution');
+    // Icon: a plain italic "i" — the circle is the chip itself (CSS)
+    newChip.innerHTML =
+      '<span class="wd-attrib__i"><span class="wd-attrib__info">i</span><svg class="wd-attrib__close" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span>' +
+      '<span class="wd-attrib__text">' +
+      (original.querySelector('.maplibregl-ctrl-attrib-inner')?.innerHTML ?? '') +
+      '</span>';
+    newChip.addEventListener('click', ev => {
+      ev.stopPropagation();
+      newChip.classList.toggle('wd-attrib--open');
+    });
+    document.body.appendChild(newChip);
+  } else if (chip) {
+    chip.remove();
+    if (original) (original as HTMLElement).style.display = '';
+  }
+}
+
+// Keep the swap in sync across the boundary after load (rotation, window
+// resize). Initial state comes from the map-load path below.
+watch(isMobileMap, () => syncAttributionChip());
+
 /** MapLibre mixes the <details> `open` ATTRIBUTE with its
  *  `maplibregl-compact-show` class — they desync (starts expanded, close
  *  taps stop working). We own the state: sync BOTH on every toggle.
@@ -1135,43 +1188,13 @@ function collapseAutoExpandedAttribution(): void {
       const details = el as unknown as {
         open: boolean;
         removeAttribute: (n: string) => void;
-        dataset: Record<string, string>;
       };
       // collapsed start — clear BOTH signals
       details.open = false;
       details.removeAttribute('open');
       el.classList.remove('maplibregl-compact-show');
-      el.classList.remove('wd-attrib--open');
-
-      if (details.dataset.wdWired) return;
-      details.dataset.wdWired = '1';
-
-      // Mobile: MapLibre's attribution markup is unreachable — the
-      // PE-none control container skips fixed children in hit-testing and
-      // its own CSS fights ours. Replace it with a fully owned chip.
-      if (
-        window.matchMedia('(max-width: 769px)').matches &&
-        !document.querySelector('.wd-attrib')
-      ) {
-        (el as HTMLElement).style.display = 'none';
-        const chip = document.createElement('button');
-        chip.type = 'button';
-        chip.className = 'wd-attrib';
-        chip.setAttribute('aria-label', 'Attribution');
-        // Icon: a plain italic "i" — the circle is the chip itself (CSS)
-        chip.innerHTML =
-          '<span class="wd-attrib__i"><span class="wd-attrib__info">i</span><svg class="wd-attrib__close" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span>' +
-          '<span class="wd-attrib__text">' +
-          (el.querySelector('.maplibregl-ctrl-attrib-inner')?.innerHTML ?? '') +
-          '</span>';
-        chip.addEventListener('click', ev => {
-          ev.stopPropagation();
-          chip.classList.toggle('wd-attrib--open');
-        });
-        // keep the original in sync (MapLibre updates it on style changes)
-        document.body.appendChild(chip);
-      }
     });
+    syncAttributionChip();
   }, 800);
 }
 
