@@ -1,7 +1,7 @@
 @font-face {
     font-family: "icons";
-    src: url("./icons.woff?b34d3d709847ab366d855f1fdc46ceb4") format("woff"),
-url("./icons.woff2?b34d3d709847ab366d855f1fdc46ceb4") format("woff2");
+    src: url("./icons.woff?f3af4cc90d834532c5aec8ab8d11756d") format("woff"),
+url("./icons.woff2?f3af4cc90d834532c5aec8ab8d11756d") format("woff2");
 }
 
 i[class^="wd-"]:before, i[class*=" wd-"]:before {
@@ -165,12 +165,15 @@ i.wd-arrowhead-down:before {
 i.wd-arrow-up-down:before {
     content: "\f132";
 }
-i.wd-alert-triangle-outline:before {
+i.wd-api:before {
     content: "\f133";
 }
-i.wd-add:before {
+i.wd-alert-triangle-outline:before {
     content: "\f134";
 }
-i.wd-add-outline:before {
+i.wd-add:before {
     content: "\f135";
+}
+i.wd-add-outline:before {
+    content: "\f136";
 }

@@ -7,7 +7,8 @@
 //   node scripts/gen-api.mjs [--local] [--base https://…] [--version 2026-10-01]
 //
 // - default: uses the latest schema (https://api.wodore.com); the pin is
-//   set to its info.version (= current API version) — routine additive
+//   set to its info.version (= current API version — the literal
+//   "unreleased" while a breaking change is unfrozen) — routine additive
 //   backend changes are a no-op for the pin; after a NEW API version was
 //   released this ABSORBS it (types + pin bump together, visible in the
 //   diff — review exactly like any contract change).
@@ -52,11 +53,17 @@ if (!response.ok) {
 }
 const schema = await response.json();
 
+// The backend serves the registry's CURRENT version as info.version — a
+// date for released versions, the literal "unreleased" between api-freeze
+// and release (server/apps/apiversions/registry.py). Both are valid pins.
 const schemaVersion = schema?.info?.version;
-if (!/^\d{4}-\d{2}-\d{2}$/.test(String(schemaVersion ?? ''))) {
+if (
+  !/^\d{4}-\d{2}-\d{2}$/.test(String(schemaVersion ?? '')) &&
+  schemaVersion !== 'unreleased'
+) {
   console.error(
-    `[gen-api] schema has no date info.version (got: ${schemaVersion}) — ` +
-      'the backend is older than API versioning; upgrade it first.',
+    `[gen-api] schema has no usable info.version (got: ${schemaVersion}) — ` +
+      'expected a date (YYYY-MM-DD) or "unreleased".',
   );
   process.exit(1);
 }

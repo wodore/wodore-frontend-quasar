@@ -13,6 +13,11 @@
  * so types and pin cannot drift. Generating with latest after a new API
  * version was released absorbs it — types and pin bump together in the
  * diff. Additive backend changes never bump the pin.
+ *
+ * During an unreleased window the backend serves `info.version` as the
+ * literal `unreleased`, so generating against it pins the unreleased tip
+ * (e.g. to pick up unreleased contract features on staging); the next
+ * coordinated backend api-release re-pins via a routine `gen:api`.
  */
 
 export { PINNED_API_VERSION } from '@clients/apiVersion';

@@ -481,6 +481,12 @@ export interface paths {
         /**
          * get_hut_availability_trend — Get historical availability trend data.
          * @description Shows how availability changed over time for a specific date.
+         *
+         *     Wire-schema disposition (OpenSpec adopt-django-readers 3.3):
+         *     already minimal — the hut fetch reads only ``slug``/``id`` (no
+         *     FK access, nothing to join) and the single history query joins
+         *     ``hut_type`` for the row loop. Two queries total, pinned by
+         *     TestAvailabilityQueryCount.
          */
         get: operations["get_hut_availability_trend"];
         put?: never;
@@ -520,10 +526,8 @@ export interface paths {
         };
         /**
          * get_weather_code_svg — Redirect to a weather code SVG.
-         * @description From a specific collection. Collection examples: weather-icons-outlined-mono, weather-icons-filled, meteoswiss-filled
-         *     Time options: day, night
-         *
-         *     If the collection doesn't have a symbol for the WMO code, returns 404.
+         * @description From a specific collection. If the collection doesn't have a symbol
+         *     for the WMO code, returns 404.
          */
         get: operations["get_weather_code_svg"];
         put?: never;
@@ -543,8 +547,7 @@ export interface paths {
         };
         /**
          * get_weather_codes — List weather codes.
-         * @description Dict keyed by WMO code. Returns weather codes with symbols from the specified collection.
-         *     If a WMO code is missing from the collection, an error is raised.
+         * @description Dict keyed by WMO code, with symbols from the specified collection.
          */
         get: operations["get_weather_codes"];
         put?: never;
@@ -562,7 +565,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** get_weather_code — Get a specific weather code by WMO code. */
+        /**
+         * get_weather_code — Get a weather code.
+         * @description Dict for one WMO code, with symbols from the specified collection.
+         */
         get: operations["get_weather_code"];
         put?: never;
         post?: never;
@@ -1198,6 +1204,58 @@ export interface components {
              * @default false
              */
             children: components["schemas"]["CategoryTreeSchema"][] | boolean;
+        };
+        /**
+         * CategoryValue
+         * @description The weather-code category.
+         */
+        CategoryValue: {
+            /**
+             * Slug
+             * @default null
+             */
+            slug: string | null;
+            /**
+             * Name
+             * @default null
+             */
+            name: string | null;
+            /**
+             * Parent
+             * @default null
+             */
+            parent: string | null;
+            /**
+             * Symbol Detailed
+             * @default null
+             */
+            symbol_detailed: string | null;
+            /**
+             * Symbol Simple
+             * @default null
+             */
+            symbol_simple: string | null;
+            /**
+             * Symbol Mono
+             * @default null
+             */
+            symbol_mono: string | null;
+        };
+        /**
+         * CollectionValue
+         * @description The symbol collection a weather code belongs to.
+         */
+        CollectionValue: {
+            /**
+             * Slug
+             * @default null
+             */
+            slug: string | null;
+            /**
+             * Organization
+             * @default null
+             */
+            organization: string | null;
         };
         CountryTuple: [
             string,
@@ -2774,16 +2832,6 @@ export interface components {
             xl: string;
         };
         /**
-         * IncludeModeEnum
-         * @description Include mode for nested objects - controls level of detail.
-         *
-         *     Used by search/nearby/detail endpoints for categories, sources,
-         *     symbols, collections: ``no`` excludes the field, ``slug`` returns
-         *     slugs only, ``all`` returns the full nested object.
-         * @enum {string}
-         */
-        IncludeModeEnum: "no" | "slug" | "all";
-        /**
          * LicenseInfoSchema
          * @description Important information, for example for an image
          */
@@ -3260,6 +3308,22 @@ export interface components {
             id: number;
         };
         /**
+         * SymbolValue
+         * @description One symbol variant (day or night).
+         */
+        SymbolValue: {
+            /**
+             * Slug
+             * @default null
+             */
+            slug: string | null;
+            /**
+             * Url
+             * @default null
+             */
+            url: string | null;
+        };
+        /**
          * SymbolVariantEnum
          * @description Symbol variant types for categories.
          * @enum {string}
@@ -3304,6 +3368,36 @@ export interface components {
             environment: string;
             /** @description API contract versions (see the Api-Version header) */
             api: components["schemas"]["ApiVersionsBlock"];
+        };
+        /**
+         * WeatherCodeValue
+         * @description One weather-code entry (the value in the WMO-keyed dict).
+         */
+        WeatherCodeValue: {
+            /** Code */
+            code: number;
+            /** Slug */
+            slug: string;
+            /**
+             * Description Day
+             * @default null
+             */
+            description_day: string | null;
+            /**
+             * Description Night
+             * @default null
+             */
+            description_night: string | null;
+            /** @default null */
+            symbol_day: components["schemas"]["SymbolValue"] | null;
+            /** @default null */
+            symbol_night: components["schemas"]["SymbolValue"] | null;
+            /** @default null */
+            category: components["schemas"]["CategoryValue"] | null;
+            /** @default null */
+            collection: components["schemas"]["CollectionValue"] | null;
+        } & {
+            [key: string]: unknown;
         };
         /**
          * WebsiteSchema
@@ -3736,6 +3830,8 @@ export interface operations {
             query?: {
                 /** @description Select language code: de, en, fr, it. */
                 lang?: string;
+                /** @description Fast call: serve only a cached response (fresh or stale), never query providers — an empty collection when nothing is cached. Mutually exclusive with update_cache. */
+                cached_only?: boolean;
                 /** @description Search radius in meters for external providers */
                 radius?: number;
                 /** @description Comma-separated provider list (e.g., 'wodore,wikidata,flickr'). If provided without wodore, wodore images are not shown but the place is still used for location. */
@@ -3744,8 +3840,8 @@ export interface operations {
                 limit?: number;
                 /** @description Force cache refresh - bypass cache and update all cached data from providers */
                 update_cache?: boolean;
-                /** @description When the entity has no images, include the generated static-map card as a single feature (is_fallback=true) */
-                fallback?: boolean;
+                /** @description When the entity has no images, include the generated static-map card (zoom 15, spotlight effect, type-symbol marker) as a single feature (is_fallback=true). Opt out with false to receive a plain empty collection. */
+                static_map_fallback?: boolean;
             };
             header?: never;
             path: {
@@ -3809,6 +3905,8 @@ export interface operations {
             query: {
                 /** @description Select language code: de, en, fr, it. */
                 lang?: string;
+                /** @description Fast call: serve only a cached response (fresh or stale), never query providers — an empty collection when nothing is cached. Mutually exclusive with update_cache. */
+                cached_only?: boolean;
                 /** @description Latitude in WGS84 */
                 lat: number;
                 /** @description Longitude in WGS84 */
@@ -3874,6 +3972,8 @@ export interface operations {
             query?: {
                 /** @description Select language code: de, en, fr, it. */
                 lang?: string;
+                /** @description Fast call: serve only a cached response (fresh or stale), never query providers — an empty collection when nothing is cached. Mutually exclusive with update_cache. */
+                cached_only?: boolean;
                 /** @description Search radius in meters for external providers */
                 radius?: number;
                 /** @description Comma-separated provider list (e.g., 'wodore,wikidata,flickr'). If provided without wodore, wodore images are not shown but the place is still used for location. */
@@ -3882,8 +3982,8 @@ export interface operations {
                 limit?: number;
                 /** @description Force cache refresh - bypass cache and update all cached data from providers */
                 update_cache?: boolean;
-                /** @description When the entity has no images, include the generated static-map card as a single feature (is_fallback=true) */
-                fallback?: boolean;
+                /** @description When the entity has no images, include the generated static-map card (zoom 15, spotlight effect, type-symbol marker) as a single feature (is_fallback=true). Opt out with false to receive a plain empty collection. */
+                static_map_fallback?: boolean;
             };
             header?: never;
             path: {
@@ -3945,10 +4045,12 @@ export interface operations {
     get_amenity: {
         parameters: {
             query?: {
+                /** @description Sparse fieldsets (JSON:API): `fields[TYPE]=name1,name2` narrows the response to the selected fields (`__all__` = every field). Valid TYPEs: places, categories, sources. */
+                fields?: {
+                    [key: string]: string;
+                } | null;
                 /** @description Select language code: de, en, fr, it. */
                 lang?: string;
-                /** @description Include data sources: 'no' excludes field, 'slug' returns source slugs only, all returns full source details with name and logo */
-                include_sources?: components["schemas"]["IncludeModeEnum"];
             };
             header?: never;
             path: {
@@ -4010,16 +4112,16 @@ export interface operations {
     nearby_geoplaces: {
         parameters: {
             query: {
+                /** @description Sparse fieldsets (JSON:API): `fields[TYPE]=name1,name2` narrows the response to the selected fields (`__all__` = every field). Valid TYPEs: places, categories, sources. */
+                fields?: {
+                    [key: string]: string;
+                } | null;
                 /** @description Select language code: de, en, fr, it. */
                 lang?: string;
                 /** @description Filter by category slugs (e.g., 'peak', 'pass', 'lake'). Use 'parent.child' format for child categories. */
                 types?: string[] | null;
                 /** @description Filter by parent category slugs (e.g., 'terrain', 'transport') */
                 categories?: string[] | null;
-                /** @description Include categories information: 'no' excludes field, 'slug' returns category slugs only, 'all' returns full category details with name and description */
-                include_categories?: components["schemas"]["IncludeModeEnum"];
-                /** @description Include data sources: 'no' excludes field, 'slug' returns source slugs only, all returns full source details with name and logo */
-                include_sources?: components["schemas"]["IncludeModeEnum"];
                 /** @description Latitude coordinate */
                 lat: number;
                 /** @description Longitude coordinate */
@@ -4124,16 +4226,16 @@ export interface operations {
             query: {
                 /** @description Filter to features intersecting the box, formatted as minLon,minLat,maxLon,maxLat (WGS84 decimal degrees). */
                 bbox?: string | null;
+                /** @description Sparse fieldsets (JSON:API): `fields[TYPE]=name1,name2` narrows the response to the selected fields (`__all__` = every field). Valid TYPEs: places, categories, sources. */
+                fields?: {
+                    [key: string]: string;
+                } | null;
                 /** @description Select language code: de, en, fr, it. */
                 lang?: string;
                 /** @description Filter by category slugs (e.g., 'peak', 'pass', 'lake'). Use 'parent.child' format for child categories. */
                 types?: string[] | null;
                 /** @description Filter by parent category slugs (e.g., 'terrain', 'transport') */
                 categories?: string[] | null;
-                /** @description Include categories information: 'no' excludes field, 'slug' returns category slugs only, 'all' returns full category details with name and description */
-                include_categories?: components["schemas"]["IncludeModeEnum"];
-                /** @description Include data sources: 'no' excludes field, 'slug' returns source slugs only, all returns full source details with name and logo */
-                include_sources?: components["schemas"]["IncludeModeEnum"];
                 /** @description Search query string to match against place names in all languages */
                 q: string;
                 /** @description Maximum number of results to return */
@@ -4672,6 +4774,10 @@ export interface operations {
             query: {
                 /** @description Filter to features intersecting the box, formatted as minLon,minLat,maxLon,maxLat (WGS84 decimal degrees). */
                 bbox?: string | null;
+                /** @description Sparse fieldsets (JSON:API): `fields[TYPE]=name1,name2` narrows the response to the selected fields (`__all__` = every field). Valid TYPEs: huts, hut_types, sources. */
+                fields?: {
+                    [key: string]: string;
+                } | null;
                 /** @description Select language code: de, en, fr, it. */
                 lang?: string;
                 /** @description Search query string to match against hut names in all languages */
@@ -4682,12 +4788,6 @@ export interface operations {
                 limit?: number | null;
                 /** @description Minimum similarity score (0.0-1.0). Lower values return more results but with lower relevance. Recommended: 0.1 for fuzzy matching, 0.3 for stricter matching. */
                 threshold?: number;
-                /** @description Include hut type information: 'no' excludes field, 'slug' returns type slugs only, all returns full type details with icons */
-                include_hut_type?: components["schemas"]["IncludeModeEnum"];
-                /** @description Include data sources: 'no' excludes field, 'slug' returns source slugs only, all returns full source details with logos */
-                include_sources?: components["schemas"]["IncludeModeEnum"];
-                /** @description Include avatar/primary photo URL in results */
-                include_avatar?: boolean;
             };
             header?: never;
             path?: never;
@@ -5087,18 +5187,16 @@ export interface operations {
     get_weather_codes: {
         parameters: {
             query?: {
+                /** @description Sparse fieldsets (JSON:API): `fields[TYPE]=name1,name2` narrows the response to the selected fields (`__all__` = every field). Valid TYPEs: weather_codes, symbols, categories, collections. */
+                fields?: {
+                    [key: string]: string;
+                } | null;
                 /** @description Select language code: de, en, fr, it. */
                 lang?: string;
                 /** @description Symbol collection slug (default: weather-icons-outlined-mono) */
                 collection?: string;
                 /** @description Filter by category slug (supports dot notation like 'meteo.rain') */
                 category?: string | null;
-                /** @description Include symbols: 'no' excludes, 'slug' returns slugs only, 'all' returns full URLs */
-                include_symbols?: components["schemas"]["IncludeModeEnum"];
-                /** @description Include category: 'no' excludes, 'slug' returns slug, 'all' returns full details with symbols */
-                include_category?: components["schemas"]["IncludeModeEnum"];
-                /** @description Include collection: 'no' excludes, 'slug' returns slug, 'all' returns full details */
-                include_collection?: components["schemas"]["IncludeModeEnum"];
             };
             header?: never;
             path?: never;
@@ -5114,9 +5212,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        [key: string]: {
-                            [key: string]: unknown;
-                        };
+                        [key: string]: components["schemas"]["WeatherCodeValue"];
                     };
                 };
             };
@@ -5152,16 +5248,14 @@ export interface operations {
     get_weather_code: {
         parameters: {
             query?: {
+                /** @description Sparse fieldsets (JSON:API): `fields[TYPE]=name1,name2` narrows the response to the selected fields (`__all__` = every field). Valid TYPEs: weather_codes, symbols, categories, collections. */
+                fields?: {
+                    [key: string]: string;
+                } | null;
                 /** @description Select language code: de, en, fr, it. */
                 lang?: string;
                 /** @description Symbol collection slug (default: weather-icons-outlined-mono) */
                 collection?: string;
-                /** @description Include symbols: 'no' excludes, 'slug' returns slugs only, 'all' returns full URLs */
-                include_symbols?: components["schemas"]["IncludeModeEnum"];
-                /** @description Include category: 'no' excludes, 'slug' returns slug, 'all' returns full details with symbols */
-                include_category?: components["schemas"]["IncludeModeEnum"];
-                /** @description Include collection: 'no' excludes, 'slug' returns slug, 'all' returns full details */
-                include_collection?: components["schemas"]["IncludeModeEnum"];
             };
             header?: never;
             path: {
