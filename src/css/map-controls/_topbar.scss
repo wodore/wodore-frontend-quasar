@@ -287,7 +287,9 @@ body.body--dark .wd-date-btn__icon {
   color: $wd-day-ink;
   cursor: pointer;
   flex: none;
-  transition: background-color 0.12s ease, color 0.12s ease;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease;
 
   &:hover {
     background: rgba(128, 128, 128, 0.14);

@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { ref, inject, watchEffect, watch, onErrorCaptured, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { useResizeObserver, useDebounceFn, useThrottleFn, useEventListener, useMediaQuery } from '@vueuse/core';
+import {
+  useResizeObserver,
+  useDebounceFn,
+  useThrottleFn,
+  useEventListener,
+  useMediaQuery,
+} from '@vueuse/core';
 import { useQuasar } from 'quasar';
 import { useBasemapStore } from '@stores/map/basemap-store';
 import type { BasemapSwitchItem } from '@stores/map/utils/interfaces';
