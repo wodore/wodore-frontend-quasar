@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { clientWodore } from 'src/clients';
+import { PINNED_API_VERSION } from '@services/apiVersion';
 import WdVersionTag from './WdVersionTag.vue';
 
 const frontendVersion = process.env.WODORE_APP_VERSION || '';
@@ -56,5 +57,20 @@ onMounted(fetchBackendVersion);
       :loading="backendLoading"
       :error="backendError"
     />
+    <div class="row items-center no-wrap q-gutter-xs">
+      <q-tooltip self="center right" anchor="center right" :delay="1000" :offset="[-5, 0]">
+        API version — backend CHANGELOG_API.md
+      </q-tooltip>
+      <q-icon name="wd-api" size="14px" class="wd-ink-soft-text" />
+      <span class="text-caption wd-ink-soft-text">
+        <span class="text-weight-medium">
+          <a
+            target="_blank"
+            href="https://github.com/wodore/wodore-backend/blob/main/CHANGELOG_API.md"
+            >API {{ PINNED_API_VERSION || '—' }}</a
+          >
+        </span>
+      </span>
+    </div>
   </div>
 </template>
