@@ -52,3 +52,6 @@ AGENT/
 # on demand from GitHub releases into ~/.impeccable — see scripts/impeccable)
 **/skills/impeccable/scripts/bin/
 .visual-tests/
+
+# Agent/worktree lanes (pi, Paseo, workz)
+.worktrees/

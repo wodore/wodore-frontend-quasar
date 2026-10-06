@@ -32,7 +32,11 @@ import { useBasemapStore } from '@stores/map/basemap-store';
 import { useOverlayConfigStore } from '@stores/map/overlay-config-store';
 import { useMapMenuStore } from '@stores/map/map-menu-store';
 import { OpacitySpecification, OverlaySwitchItem } from '@stores/map/utils/interfaces';
-import type { LayerSpecification, PropertyValueSpecification, Map as MapLibreMap } from 'maplibre-gl';
+import type {
+  LayerSpecification,
+  PropertyValueSpecification,
+  Map as MapLibreMap,
+} from 'maplibre-gl';
 
 const { t } = useI18n();
 const $q = useQuasar();
@@ -95,7 +99,7 @@ const dropLineTop = ref<number | null>(null);
 /** Pointer position while dragging — drives the floating ghost chip */
 const dragPointer = ref<{ x: number; y: number } | null>(null);
 const draggedItem = computed(() =>
-  dragSlug.value ? overlayStore.overlays.find(o => o.name === dragSlug.value) ?? null : null
+  dragSlug.value ? (overlayStore.overlays.find(o => o.name === dragSlug.value) ?? null) : null
 );
 let pendingDrag: { slug: string; startX: number; startY: number } | null = null;
 
@@ -295,10 +299,10 @@ function cancelEdit(): void {
     okVariant: 'danger',
     message: t('overlays.edit_unsaved_message'),
     onOk: () => {
-    if (snapshotGroups.value) {
-      overlayStore.groupSettings.groups = JSON.parse(snapshotGroups.value);
-      overlayStore.syncGroupSettings();
-    }
+      if (snapshotGroups.value) {
+        overlayStore.groupSettings.groups = JSON.parse(snapshotGroups.value);
+        overlayStore.syncGroupSettings();
+      }
       editMode.value = false;
       hasEdits.value = false;
       ensureVisibleActiveGroup();
@@ -358,12 +362,13 @@ function toggleEditMode(): void {
     });
     return;
   }
-    editMode.value = false;
+  editMode.value = false;
   ensureVisibleActiveGroup();
 }
 
 function markEdited(): void {
-  if (editMode.value) hasEdits.value = JSON.stringify(overlayStore.groupSettings.groups) !== snapshotGroups.value;
+  if (editMode.value)
+    hasEdits.value = JSON.stringify(overlayStore.groupSettings.groups) !== snapshotGroups.value;
 }
 
 /** Add a new group */
@@ -384,7 +389,10 @@ const HUTS_SLUG = 'huts';
 
 function addGroupWithName(name: string): void {
   const group = {
-    id: typeof window !== 'undefined' && window.crypto?.randomUUID ? window.crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    id:
+      typeof window !== 'undefined' && window.crypto?.randomUUID
+        ? window.crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     slug: name.toLowerCase().replace(/\s+/g, '-'),
     name,
     icon: 'hiking',
@@ -427,7 +435,12 @@ function startRename(): void {
   if (!group) return;
   $q.dialog({
     title: t('overlays.group_rename'),
-    prompt: { model: overlayStore.activeGroupName(t), type: 'text', outlined: true, label: t('overlays.group_name') },
+    prompt: {
+      model: overlayStore.activeGroupName(t),
+      type: 'text',
+      outlined: true,
+      label: t('overlays.group_name'),
+    },
     cancel: true,
     persistent: false,
   }).onOk((name: string | number | null) => {
@@ -564,18 +577,14 @@ onMounted(() => {
   rowsResizeObserve();
 });
 
-// The rows BOX is the same size in mini and expanded (pixel-perfect
-// design) — the ResizeObserver never fires on state changes. Re-measure
-// when the CONTENT changes, or the thumb goes stale (mini after scroll).
-watch(
-  [expanded, () => miniLayers.value.length, () => visibleOthers.value.length, () => cappedPromotedCount.value],
-  () => nextTick(measureThumb)
-);
-
 function rowsResizeObserve(): void {
   const rows = document.querySelector('.wd-ovl__rows') as HTMLElement | null;
   if (!rows) return;
-  const RO = (window as unknown as { ResizeObserver?: new (cb: () => void) => { observe: (el: HTMLElement) => void } }).ResizeObserver;
+  const RO = (
+    window as unknown as {
+      ResizeObserver?: new (cb: () => void) => { observe: (el: HTMLElement) => void };
+    }
+  ).ResizeObserver;
   if (!RO) return;
   new RO(() => measureThumb()).observe(rows);
 }
@@ -635,11 +644,14 @@ function pulseChip(slug: string): void {
 /** Swipe left = expand, swipe right = collapse (on rows and toggle) */
 let swipeStartX: number | null = null;
 function onSwipeStart(e: Event): void {
-  swipeStartX = (e as unknown as { touches: Array<{ clientX: number }> }).touches[0]?.clientX ?? null;
+  swipeStartX =
+    (e as unknown as { touches: Array<{ clientX: number }> }).touches[0]?.clientX ?? null;
 }
 function onSwipeEnd(e: Event): void {
   if (swipeStartX === null) return;
-  const endX = (e as unknown as { changedTouches: Array<{ clientX: number }> }).changedTouches[0]?.clientX ?? swipeStartX;
+  const endX =
+    (e as unknown as { changedTouches: Array<{ clientX: number }> }).changedTouches[0]?.clientX ??
+    swipeStartX;
   const delta = endX - swipeStartX;
   swipeStartX = null;
   if (Math.abs(delta) < 30) return;
@@ -733,7 +745,10 @@ function startLinger(slug: string): void {
   const next = new Set(lingeringSlugs.value);
   next.add(slug);
   lingeringSlugs.value = next;
-  lingerTimers.set(slug, setTimeout(() => stopLinger(slug), LINGER_MS));
+  lingerTimers.set(
+    slug,
+    setTimeout(() => stopLinger(slug), LINGER_MS)
+  );
 }
 
 function stopLinger(slug: string): void {
@@ -750,8 +765,12 @@ function stopLinger(slug: string): void {
 }
 
 /** Reconcile lingering state against every path that flips layers:
- *  row taps, group switches, resets, edit-mode changes. */
+ *  row taps, resets, edit-mode changes. GROUP SWITCHES are exempt: the
+ *  previous group's layers are replaced wholesale by the new group's
+ *  view, so no grace window — lingering rows drop immediately and none
+ *  are started (the mini strip shows exactly the new group's layers). */
 let prevActive: Map<string, boolean> | null = null;
+let prevGroupId: string | null | undefined;
 watch(
   () => {
     const group = overlayStore.groupSettings.groups.find(
@@ -763,25 +782,29 @@ watch(
     return `${overlayStore.groupSettings.activeGroupId}#${group?.layerSlugs.join(',') ?? ''}#${states}`;
   },
   () => {
-    const group = overlayStore.groupSettings.groups.find(
-      g => g.id === overlayStore.groupSettings.activeGroupId
-    );
+    const groupId = overlayStore.groupSettings.activeGroupId;
+    const group = overlayStore.groupSettings.groups.find(g => g.id === groupId);
     const groupSlugs = new Set(group?.layerSlugs ?? []);
     const current = new Map<string, boolean>();
     for (const o of overlayStore.overlays as unknown as Array<{ name: string; active?: boolean }>) {
       current.set(o.name, o.active === true);
     }
-    if (prevActive) {
+    const groupSwitched = prevGroupId !== undefined && prevGroupId !== groupId;
+    if (groupSwitched) {
+      // Group switch: replace the layer set without the 6s linger
+      for (const slug of [...lingeringSlugs.value]) stopLinger(slug);
+    } else if (prevActive) {
       for (const [slug, wasActive] of prevActive) {
         if (wasActive && !(current.get(slug) ?? false) && !groupSlugs.has(slug)) {
           startLinger(slug); // freshly disabled non-group layer → grace window
         }
       }
-    }
-    for (const slug of [...lingeringSlugs.value]) {
-      if (current.get(slug) || groupSlugs.has(slug)) stopLinger(slug); // back on / absorbed
+      for (const slug of [...lingeringSlugs.value]) {
+        if (current.get(slug) || groupSlugs.has(slug)) stopLinger(slug); // back on / absorbed
+      }
     }
     prevActive = current;
+    prevGroupId = groupId;
   },
   { immediate: true }
 );
@@ -791,10 +814,11 @@ watch(
  *  the actives) — a switched-off layer does not move for LINGER_MS. */
 const otherLayersSorted = computed(() => {
   const orderOf = new Map(
-    (overlayStore.overlays as unknown as Array<{ name: string }>).map((o, i) => [o.name, i] as const)
+    (overlayStore.overlays as unknown as Array<{ name: string }>).map(
+      (o, i) => [o.name, i] as const
+    )
   );
-  const isRest = (o: OverlaySwitchItem): boolean =>
-    !o.active && !lingeringSlugs.value.has(o.name);
+  const isRest = (o: OverlaySwitchItem): boolean => !o.active && !lingeringSlugs.value.has(o.name);
   return overlayStore
     .otherLayers()
     .slice()
@@ -814,6 +838,24 @@ const visibleOthers = computed(() => {
 /** Mini height cap: group rows + visible promoted rows (linger included) */
 const cappedPromotedCount = computed(
   () => overlayStore.otherLayers().filter(o => o.active || lingeringSlugs.value.has(o.name)).length
+);
+
+// The rows BOX is the same size in mini and expanded (pixel-perfect
+// design) — the ResizeObserver never fires on state changes. Re-measure
+// when the CONTENT changes, or the thumb goes stale (mini after scroll).
+// NOTE: must stay BELOW the miniLayers/visibleOthers/cappedPromotedCount
+// declarations — watch() evaluates its getters immediately and would hit
+// the temporal dead zone otherwise (ReferenceError on hut pages, breaking
+// the overlay control; seen as "Cannot access 'miniLayers' before
+// initialization" on staging).
+watch(
+  [
+    expanded,
+    () => miniLayers.value.length,
+    () => visibleOthers.value.length,
+    () => cappedPromotedCount.value,
+  ],
+  () => nextTick(measureThumb)
 );
 
 /** Reset the active group to its predefined definition — behind a
@@ -974,7 +1016,12 @@ let emojiDataPromiseLocale = '';
 
 async function ensureEmojiData(): Promise<boolean> {
   const wantLocale = EMOJIBASE_LOCALES.includes(currentLocale()) ? currentLocale() : 'en';
-  if (emojiLocaleEntries && emojiSlugByHex && fluentEmojiNames && emojiLocaleLoadedFor === wantLocale) {
+  if (
+    emojiLocaleEntries &&
+    emojiSlugByHex &&
+    fluentEmojiNames &&
+    emojiLocaleLoadedFor === wantLocale
+  ) {
     return true;
   }
   if (emojiDataPromise && emojiDataPromiseLocale === wantLocale) return emojiDataPromise;
@@ -1001,7 +1048,9 @@ async function ensureEmojiData(): Promise<boolean> {
         emojiLocaleEntries = loc;
         emojiSlugByHex = new Map(
           en.map(e => {
-            const slug = fold(e.label).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+            const slug = fold(e.label)
+              .replace(/[^a-z0-9]+/g, '-')
+              .replace(/^-+|-+$/g, '');
             return [e.hexcode, slug];
           })
         );
@@ -1021,7 +1070,10 @@ async function ensureEmojiData(): Promise<boolean> {
 }
 
 function fold(s: string): string {
-  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  return s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
 }
 
 async function fetchJsonCached<T>(url: string, cacheKey: string): Promise<T | null> {
@@ -1049,10 +1101,10 @@ async function searchLocalizedEmoji(q: string): Promise<string[]> {
   const needle = fold(q);
   if (needle.length < 2) return [];
   const hits: string[] = [];
-   
+
   for (const entry of emojiLocaleEntries) {
     const haystack = [entry.label, ...(entry.tags ?? [])].map(fold);
-    if (haystack.some(h => h.includes(needle) || needle.includes(h) && h.length >= 3)) {
+    if (haystack.some(h => h.includes(needle) || (needle.includes(h) && h.length >= 3))) {
       const slug = emojiSlugByHex.get(entry.hexcode);
       if (slug && fluentEmojiNames.has(slug)) hits.push(`${FLUENT_FLAT}:${slug}`);
       if (hits.length >= 24) break;
@@ -1080,7 +1132,10 @@ function levenshtein(a: string, b: string): number {
 function fuzzyIconNames(q: string): string[] {
   const needle = fold(q.trim());
   if (needle.length < 3) return [];
-  const pool: string[] = [...(WD_GROUP_SYMBOLS as readonly string[]), ...(fluentEmojiNames ? [...fluentEmojiNames].map(n => `${FLUENT_FLAT}:${n}`) : [])];
+  const pool: string[] = [
+    ...(WD_GROUP_SYMBOLS as readonly string[]),
+    ...(fluentEmojiNames ? [...fluentEmojiNames].map(n => `${FLUENT_FLAT}:${n}`) : []),
+  ];
   const hits: string[] = [];
   for (const name of pool) {
     const words = name.split(/[:-]/).filter(w => w.length >= Math.max(3, needle.length - 2));
@@ -1100,11 +1155,14 @@ watch(iconMoreSentinel, el => {
   iconObserver?.disconnect();
   iconObserver = null;
   if (!el || typeof window.IntersectionObserver === 'undefined') return;
-  iconObserver = new window.IntersectionObserver(entries => {
-    if (entries.some(e => e.isIntersecting)) {
-      iconVisibleCount.value += 32;
-    }
-  }, { root: el.closest('.wd-ovl__icon-grid'), rootMargin: '120px' });
+  iconObserver = new window.IntersectionObserver(
+    entries => {
+      if (entries.some(e => e.isIntersecting)) {
+        iconVisibleCount.value += 32;
+      }
+    },
+    { root: el.closest('.wd-ovl__icon-grid'), rootMargin: '120px' }
+  );
   iconObserver.observe(el);
 });
 
@@ -1384,17 +1442,13 @@ function openConfig(overlayName: string, tab?: string): void {
 }
 
 function hasInfo(overlayName: string): boolean {
-  const overlay = (overlayStore.overlays as unknown as OverlaySwitchItem[]).find(
-    (o: OverlaySwitchItem) => o.name === overlayName
-  );
-  return !!(overlay?.config?.legend?.sections?.length);
+  const overlay = overlayStore.overlays.find(o => o.name === overlayName);
+  return !!overlay?.config?.legend?.sections?.length;
 }
 
 function hasFilterConfig(overlayName: string): boolean {
-  const overlay = (overlayStore.overlays as unknown as OverlaySwitchItem[]).find(
-    (o: OverlaySwitchItem) => o.name === overlayName
-  );
-  return !!(overlay?.config?.filters?.length);
+  const overlay = overlayStore.overlays.find(o => o.name === overlayName);
+  return !!overlay?.config?.filters?.length;
 }
 
 function hasActiveFilters(overlayName: string): boolean {
@@ -1435,7 +1489,11 @@ onBeforeUnmount(() => {
       <div
         v-if="stripOpen"
         class="wd-ovl__box"
-        :class="{ 'wd-ovl__box--expanded': expanded, 'wd-ovl__box--edit': editMode, 'wd-ovl__box--btnless': !groupCycleable }"
+        :class="{
+          'wd-ovl__box--expanded': expanded,
+          'wd-ovl__box--edit': editMode,
+          'wd-ovl__box--btnless': !groupCycleable,
+        }"
         :style="{
           '--mini-rows': miniLayers.length,
           '--prom-count': cappedPromotedCount,
@@ -1456,7 +1514,14 @@ onBeforeUnmount(() => {
             :disabled="!editMode"
             @click.stop="editMode && (showIconPicker = true)"
           >
-            <IconifyIcon v-if="isIconifyIcon(overlayStore.activeGroupIcon())" :icon="overlayStore.activeGroupIcon()" :height="16" :width="16" class="wd-ovl__ifg" :class="{ 'wd-ovl__ifg--multi': isColoredIcon(overlayStore.activeGroupIcon()) }" />
+            <IconifyIcon
+              v-if="isIconifyIcon(overlayStore.activeGroupIcon())"
+              :icon="overlayStore.activeGroupIcon()"
+              :height="16"
+              :width="16"
+              class="wd-ovl__ifg"
+              :class="{ 'wd-ovl__ifg--multi': isColoredIcon(overlayStore.activeGroupIcon()) }"
+            />
             <q-icon v-else :name="groupIcon(overlayStore.activeGroupIcon())" size="16px" />
           </button>
           <!-- Group NAME = quick switch dropdown (expanded + edit).
@@ -1469,7 +1534,17 @@ onBeforeUnmount(() => {
             @click.stop
           >
             <span class="wd-ovl__toolbar-title-text">{{ overlayStore.activeGroupName(t) }}</span>
-            <svg class="wd-ovl__toolbar-title-caret" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg
+              class="wd-ovl__toolbar-title-caret"
+              width="9"
+              height="9"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
               <path d="M6 9l6 6 6-6" />
             </svg>
             <q-menu anchor="bottom start" self="top start" class="wd-ovl__menu wd-ovl__group-menu">
@@ -1479,17 +1554,35 @@ onBeforeUnmount(() => {
                   :key="g.id"
                   clickable
                   v-close-popup
-                  :class="{ 'wd-ovl__group-menu-item--active': g.id === overlayStore.groupSettings.activeGroupId }"
+                  :class="{
+                    'wd-ovl__group-menu-item--active':
+                      g.id === overlayStore.groupSettings.activeGroupId,
+                  }"
                   @click="onGroupMenuSelect(g.id)"
                 >
                   <q-item-section avatar>
-                    <IconifyIcon v-if="isIconifyIcon(g.icon)" :icon="g.icon" :height="16" :width="16" class="wd-ovl__ifg" :class="{ 'wd-ovl__ifg--multi': isColoredIcon(g.icon) }" />
+                    <IconifyIcon
+                      v-if="isIconifyIcon(g.icon)"
+                      :icon="g.icon"
+                      :height="16"
+                      :width="16"
+                      class="wd-ovl__ifg"
+                      :class="{ 'wd-ovl__ifg--multi': isColoredIcon(g.icon) }"
+                    />
                     <q-icon v-else :name="groupIcon(g.icon)" size="16px" />
                   </q-item-section>
                   <q-item-section>{{ groupDisplayName(g.name, t) }}</q-item-section>
                   <!-- Hidden marker (edit mode lists hidden groups too) -->
                   <q-item-section v-if="g.hidden" side>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <svg
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      aria-hidden="true"
+                    >
                       <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
                       <circle cx="12" cy="12" r="3" />
                       <path d="M4 4l16 16" stroke-linecap="round" />
@@ -1509,7 +1602,14 @@ onBeforeUnmount(() => {
               :title="t('overlays.group_show')"
               @click.stop="toggleGroupHidden"
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+              >
                 <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
                 <circle cx="12" cy="12" r="3" />
                 <path d="M4 4l16 16" stroke-linecap="round" />
@@ -1522,7 +1622,15 @@ onBeforeUnmount(() => {
               :title="t('overlays.group_add')"
               @click.stop="addNewGroup"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
                 <path d="M12 5v14M5 12h14" />
               </svg>
             </button>
@@ -1534,13 +1642,22 @@ onBeforeUnmount(() => {
               @click.stop
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                <circle cx="12" cy="5" r="1.7" /><circle cx="12" cy="12" r="1.7" /><circle cx="12" cy="19" r="1.7" />
+                <circle cx="12" cy="5" r="1.7" />
+                <circle cx="12" cy="12" r="1.7" />
+                <circle cx="12" cy="19" r="1.7" />
               </svg>
               <q-menu anchor="bottom right" self="top right" class="wd-ovl__menu">
                 <q-list dense style="min-width: 200px">
                   <q-item clickable v-close-popup @click="startRename">
                     <q-item-section avatar>
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                      <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                      >
                         <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />
                       </svg>
                     </q-item-section>
@@ -1548,26 +1665,53 @@ onBeforeUnmount(() => {
                   </q-item>
                   <q-item clickable v-close-popup @click="showIconPicker = true">
                     <q-item-section avatar>
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                        <rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" />
-                        <rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" />
+                      <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                      >
+                        <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                        <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                        <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                        <rect x="14" y="14" width="7" height="7" rx="1.5" />
                       </svg>
                     </q-item-section>
                     <q-item-section>{{ t('overlays.icon_change') }}</q-item-section>
                   </q-item>
                   <q-item clickable v-close-popup @click="toggleGroupHidden">
                     <q-item-section avatar>
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                      <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                      >
                         <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
                         <circle cx="12" cy="12" r="3" />
                         <path v-if="isGroupHidden" d="M4 4l16 16" stroke-linecap="round" />
                       </svg>
                     </q-item-section>
-                    <q-item-section>{{ isGroupHidden ? t('overlays.group_show') : t('overlays.group_hide') }}</q-item-section>
+                    <q-item-section>{{
+                      isGroupHidden ? t('overlays.group_show') : t('overlays.group_hide')
+                    }}</q-item-section>
                   </q-item>
                   <q-item v-if="isDefaultGroup" clickable v-close-popup @click="confirmResetGroup">
                     <q-item-section avatar>
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
                         <path d="M3 12a9 9 0 1 0 2.6-6.4" />
                         <path d="M3 4v4h4" />
                         <path d="M12 8v4l3 2" />
@@ -1576,10 +1720,24 @@ onBeforeUnmount(() => {
                     <q-item-section>{{ t('overlays.group_reset') }}</q-item-section>
                   </q-item>
                   <q-separator />
-                  <q-item clickable v-close-popup class="wd-ovl__menu-item--danger" @click="confirmDeleteGroup">
+                  <q-item
+                    clickable
+                    v-close-popup
+                    class="wd-ovl__menu-item--danger"
+                    @click="confirmDeleteGroup"
+                  >
                     <q-item-section avatar>
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                        <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z" />
+                      <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                      >
+                        <path
+                          d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z"
+                        />
                       </svg>
                     </q-item-section>
                     <q-item-section>{{ t('overlays.group_delete') }}</q-item-section>
@@ -1593,10 +1751,27 @@ onBeforeUnmount(() => {
               :aria-label="editMode ? t('overlays.edit_done') : t('overlays.edit_groups')"
               @click.stop="toggleEditMode"
             >
-              <svg v-if="!editMode" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <svg
+                v-if="!editMode"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+              >
                 <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />
               </svg>
-              <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+              <svg
+                v-else
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+              >
                 <path d="M5 13l4 4L19 7" />
               </svg>
             </button>
@@ -1607,196 +1782,279 @@ onBeforeUnmount(() => {
         <!-- The WRAP carries the height cap + the fades (absolute, flush
              with the visible edges, clipped by the rounded corners). -->
         <div class="wd-ovl__rows-wrap">
-        <div
-          :key="overlayStore.groupSettings.activeGroupId ?? 'none'"
-          ref="rowsEl"
-          class="wd-ovl__rows"
-          role="group"
-          :aria-label="t('overlay_style')"
-          @scroll.passive="onRowsScroll"
-          @pointerdown="onRowsPointerDown"
-          @pointermove="onRowsPointerMove"
-          @pointerup="onRowsPointerUp"
-          @pointerleave="onRowsPointerUp"
-        >
-          <!-- Empty group (edit mode): a quiet pointer to the + buttons below -->
-          <div v-if="editMode && miniLayers.length === 0" class="wd-ovl__empty-hint">
-            {{ t('overlays.group_empty_hint') }}
-          </div>
-          <TransitionGroup name="wd-ovl-row">
-          <div v-for="item in miniLayers" :key="`g-${item.name}`" v-show="item.show" class="wd-ovl__row" :class="{
-            'wd-ovl__row--active': item.active,
-            'wd-ovl__row--passive': !item.active,
-            'wd-ovl__row--dragging': dragSlug === item.name,
-            'wd-ovl__row--drop-above': dragOverSlug === item.name && dragSlug !== item.name && dropPos === 'above',
-            'wd-ovl__row--drop-below': dragOverSlug === item.name && dragSlug !== item.name && dropPos === 'below',
-          }"
-            :data-slug="item.name"
-            @click="onRowClick(<OverlaySwitchItem>(item as unknown))">
-            <!-- Label + actions (LEFT of icon, only when expanded) -->
-            <div v-if="expanded" class="wd-ovl__row-info">
-              <span v-if="editMode" class="wd-ovl__drag-handle" title="Drag to reorder"
-                @pointerdown.stop="onHandlePointerDown($event, item.name)"
-                @pointermove="onHandlePointerMove"
-                @pointerup="onHandlePointerUp"
-                @pointercancel="onHandlePointerUp">
-                <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor">
-                  <circle cx="2" cy="3" r="1.2" /><circle cx="6" cy="3" r="1.2" />
-                  <circle cx="2" cy="8" r="1.2" /><circle cx="6" cy="8" r="1.2" />
-                  <circle cx="2" cy="13" r="1.2" /><circle cx="6" cy="13" r="1.2" />
-                </svg>
-              </span>
-              <button v-if="hasInfo(item.name)" class="wd-ovl__row-action wd-ovl__row-action--info"
-                :aria-label="`${item.label} info`" title="Info" @click.stop="openConfig(item.name, 'legend')">
-                <q-icon name="wd-info" size="xs" />
-              </button>
-              <span class="wd-ovl__row-name">{{ item.label }}</span>
-              <button v-if="hasFilterConfig(item.name)" class="wd-ovl__row-action"
-                :class="{ 'wd-ovl__row-action--filtered': hasActiveFilters(item.name) }"
-                :aria-label="`${item.label} filter`" title="Filter" @click.stop="openConfig(item.name, 'filter')">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z" />
-                </svg>
-              </button>
-              <button
-                v-if="editMode"
-                class="wd-ovl__row-action wd-ovl__row-action--remove"
-                :aria-label="`${item.label} remove from group`" title="Remove from group"
-                @click.stop="removeLayerFromGroup(item.name)"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                  <path d="M5 12h14" />
-                </svg>
-              </button>
-            </div>
-
-            <!-- Icon button (ALWAYS at the right edge of the box) -->
-            <span class="wd-ovl__icon" :class="{
-              'wd-ovl__icon--active': item.active,
-              'wd-ovl__icon--inactive': !item.active,
-              'wd-ovl__icon--pulse': toggledSlug === item.name,
-            }" :aria-label="item.label" role="button" :aria-pressed="item.active" @touchstart.passive="onSwipeStart"
-              @touchend.passive="onSwipeEnd">
-              <q-icon :name="layerIcon(item.icon)" size="20px" />
-              <span v-if="hasActiveFilters(item.name)" class="wd-ovl__chip-filter"
-                :aria-label="`${item.label}: filter active`">
-                <svg width="7" height="7" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z" />
-                </svg>
-              </span>
-            </span>
-          </div>
-          <!-- ONE separator under the group rows: the title sits ON the
-               line; the mini box shows the line only (label hidden). -->
           <div
-            v-if="visibleOthers.length > 0 || editMode"
-            key="wd-ovl-sep"
-            class="wd-ovl__sep"
-            :class="{ 'wd-ovl__sep--drop': dropOnSep }"
-            role="separator"
-            :aria-label="t('overlays.other_layers')"
+            :key="overlayStore.groupSettings.activeGroupId ?? 'none'"
+            ref="rowsEl"
+            class="wd-ovl__rows"
+            role="group"
+            :aria-label="t('overlay_style')"
+            @scroll.passive="onRowsScroll"
+            @pointerdown="onRowsPointerDown"
+            @pointermove="onRowsPointerMove"
+            @pointerup="onRowsPointerUp"
+            @pointerleave="onRowsPointerUp"
           >
-            <span class="wd-ovl__sep-rule" />
-            <span v-if="visibleOthers.length > 0" class="wd-ovl__sep-label">{{ t('overlays.other_layers') }}</span>
-            <span class="wd-ovl__sep-rule" />
-          </div>
+            <!-- Empty group (edit mode): a quiet pointer to the + buttons below -->
+            <div v-if="editMode && miniLayers.length === 0" class="wd-ovl__empty-hint">
+              {{ t('overlays.group_empty_hint') }}
+            </div>
+            <TransitionGroup name="wd-ovl-row">
+              <div
+                v-for="item in miniLayers"
+                :key="`g-${item.name}`"
+                v-show="item.show"
+                class="wd-ovl__row"
+                :class="{
+                  'wd-ovl__row--active': item.active,
+                  'wd-ovl__row--passive': !item.active,
+                  'wd-ovl__row--dragging': dragSlug === item.name,
+                  'wd-ovl__row--drop-above':
+                    dragOverSlug === item.name && dragSlug !== item.name && dropPos === 'above',
+                  'wd-ovl__row--drop-below':
+                    dragOverSlug === item.name && dragSlug !== item.name && dropPos === 'below',
+                }"
+                :data-slug="item.name"
+                @click="onRowClick(<OverlaySwitchItem>(item as unknown))"
+              >
+                <!-- Label + actions (LEFT of icon, only when expanded) -->
+                <div v-if="expanded" class="wd-ovl__row-info">
+                  <span
+                    v-if="editMode"
+                    class="wd-ovl__drag-handle"
+                    title="Drag to reorder"
+                    @pointerdown.stop="onHandlePointerDown($event, item.name)"
+                    @pointermove="onHandlePointerMove"
+                    @pointerup="onHandlePointerUp"
+                    @pointercancel="onHandlePointerUp"
+                  >
+                    <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor">
+                      <circle cx="2" cy="3" r="1.2" />
+                      <circle cx="6" cy="3" r="1.2" />
+                      <circle cx="2" cy="8" r="1.2" />
+                      <circle cx="6" cy="8" r="1.2" />
+                      <circle cx="2" cy="13" r="1.2" />
+                      <circle cx="6" cy="13" r="1.2" />
+                    </svg>
+                  </span>
+                  <button
+                    v-if="hasInfo(item.name)"
+                    class="wd-ovl__row-action wd-ovl__row-action--info"
+                    :aria-label="`${item.label} info`"
+                    title="Info"
+                    @click.stop="openConfig(item.name, 'legend')"
+                  >
+                    <q-icon name="wd-info" size="xs" />
+                  </button>
+                  <span class="wd-ovl__row-name">{{ item.label }}</span>
+                  <button
+                    v-if="hasFilterConfig(item.name)"
+                    class="wd-ovl__row-action"
+                    :class="{ 'wd-ovl__row-action--filtered': hasActiveFilters(item.name) }"
+                    :aria-label="`${item.label} filter`"
+                    title="Filter"
+                    @click.stop="openConfig(item.name, 'filter')"
+                  >
+                    <svg
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                    >
+                      <path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z" />
+                    </svg>
+                  </button>
+                  <button
+                    v-if="editMode"
+                    class="wd-ovl__row-action wd-ovl__row-action--remove"
+                    :aria-label="`${item.label} remove from group`"
+                    title="Remove from group"
+                    @click.stop="removeLayerFromGroup(item.name)"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                    >
+                      <path d="M5 12h14" />
+                    </svg>
+                  </button>
+                </div>
 
-          <!-- Non-group layers, ONE list: selected first, then lingering
+                <!-- Icon button (ALWAYS at the right edge of the box) -->
+                <span
+                  class="wd-ovl__icon"
+                  :class="{
+                    'wd-ovl__icon--active': item.active,
+                    'wd-ovl__icon--inactive': !item.active,
+                    'wd-ovl__icon--pulse': toggledSlug === item.name,
+                  }"
+                  :aria-label="item.label"
+                  role="button"
+                  :aria-pressed="item.active"
+                  @touchstart.passive="onSwipeStart"
+                  @touchend.passive="onSwipeEnd"
+                >
+                  <q-icon :name="layerIcon(item.icon)" size="20px" />
+                  <span
+                    v-if="hasActiveFilters(item.name)"
+                    class="wd-ovl__chip-filter"
+                    :aria-label="`${item.label}: filter active`"
+                  >
+                    <svg width="7" height="7" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z" />
+                    </svg>
+                  </span>
+                </span>
+              </div>
+              <!-- ONE separator under the group rows: the title sits ON the
+               line; the mini box shows the line only (label hidden). -->
+              <div
+                v-if="visibleOthers.length > 0 || editMode"
+                key="wd-ovl-sep"
+                class="wd-ovl__sep"
+                :class="{ 'wd-ovl__sep--drop': dropOnSep }"
+                role="separator"
+                :aria-label="t('overlays.other_layers')"
+              >
+                <span class="wd-ovl__sep-rule" />
+                <span v-if="visibleOthers.length > 0" class="wd-ovl__sep-label">{{
+                  t('overlays.other_layers')
+                }}</span>
+                <span class="wd-ovl__sep-rule" />
+              </div>
+
+              <!-- Non-group layers, ONE list: selected first, then lingering
                (6s grace), then the rest. Same row DOM in mini and expanded —
                labels just clip in the 48px mini box. -->
-          <div
-            v-for="item in visibleOthers"
-            :key="`o-${item.name}`"
-            class="wd-ovl__row"
-            :class="{
-              'wd-ovl__row--active': item.active,
-              'wd-ovl__row--other': !item.active,
-              'wd-ovl__row--lingering': !item.active && lingeringSlugs.has(item.name),
-              'wd-ovl__row--dragging': dragSlug === item.name,
-            }"
-            :data-slug="item.name"
-            @click="onRowClick(<OverlaySwitchItem>(item as unknown))"
-          >
-            <div v-if="expanded" class="wd-ovl__row-info">
-              <span v-if="editMode" class="wd-ovl__drag-handle" title="Drag into the group"
-                @pointerdown.stop="onHandlePointerDown($event, item.name)"
-                @pointermove="onHandlePointerMove"
-                @pointerup="onHandlePointerUp"
-                @pointercancel="onHandlePointerUp">
-                <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor">
-                  <circle cx="2" cy="3" r="1.2" /><circle cx="6" cy="3" r="1.2" />
-                  <circle cx="2" cy="8" r="1.2" /><circle cx="6" cy="8" r="1.2" />
-                  <circle cx="2" cy="13" r="1.2" /><circle cx="6" cy="13" r="1.2" />
-                </svg>
-              </span>
-              <button
-                v-if="hasInfo(item.name)"
-                class="wd-ovl__row-action wd-ovl__row-action--info"
-                :aria-label="`${item.label} info`"
-                title="Info"
-                @click.stop="openConfig(item.name, 'legend')"
+              <div
+                v-for="item in visibleOthers"
+                :key="`o-${item.name}`"
+                class="wd-ovl__row"
+                :class="{
+                  'wd-ovl__row--active': item.active,
+                  'wd-ovl__row--other': !item.active,
+                  'wd-ovl__row--lingering': !item.active && lingeringSlugs.has(item.name),
+                  'wd-ovl__row--dragging': dragSlug === item.name,
+                }"
+                :data-slug="item.name"
+                @click="onRowClick(<OverlaySwitchItem>(item as unknown))"
               >
-                <q-icon name="wd-info" size="xs" />
-              </button>
-              <span class="wd-ovl__row-name">{{ item.label }}</span>
-              <button
-                v-if="hasFilterConfig(item.name)"
-                class="wd-ovl__row-action"
-                :class="{ 'wd-ovl__row-action--filtered': hasActiveFilters(item.name) }"
-                :aria-label="`${item.label} filter`"
-                title="Filter"
-                @click.stop="openConfig(item.name, 'filter')"
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z" />
-                </svg>
-              </button>
-              <button
-                v-if="editMode && !isInActiveGroup(item.name)"
-                class="wd-ovl__row-action wd-ovl__row-action--add"
-                :aria-label="`${item.label} add to group`"
-                @click.stop="addLayerToGroup(item.name)"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                  <path d="M12 5v14M5 12h14" />
-                </svg>
-              </button>
-            </div>
-            <span
-              class="wd-ovl__icon"
-              :class="{
-                'wd-ovl__icon--active': item.active,
-                'wd-ovl__icon--inactive': !item.active,
-                'wd-ovl__icon--pulse': toggledSlug === item.name,
-              }"
-              :aria-label="item.label"
-              role="button"
-              :aria-pressed="item.active"
-              @touchstart.passive="onSwipeStart"
-              @touchend.passive="onSwipeEnd"
-            >
-              <q-icon :name="layerIcon(item.icon)" size="20px" />
-              <span v-if="hasActiveFilters(item.name)" class="wd-ovl__chip-filter"
-                :aria-label="`${item.label}: filter active`">
-                <svg width="7" height="7" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z" />
-                </svg>
-              </span>
-            </span>
-          </div>
-          </TransitionGroup>
-          <!-- Insertion marker: a real dashed line pinned to the target
+                <div v-if="expanded" class="wd-ovl__row-info">
+                  <span
+                    v-if="editMode"
+                    class="wd-ovl__drag-handle"
+                    title="Drag into the group"
+                    @pointerdown.stop="onHandlePointerDown($event, item.name)"
+                    @pointermove="onHandlePointerMove"
+                    @pointerup="onHandlePointerUp"
+                    @pointercancel="onHandlePointerUp"
+                  >
+                    <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor">
+                      <circle cx="2" cy="3" r="1.2" />
+                      <circle cx="6" cy="3" r="1.2" />
+                      <circle cx="2" cy="8" r="1.2" />
+                      <circle cx="6" cy="8" r="1.2" />
+                      <circle cx="2" cy="13" r="1.2" />
+                      <circle cx="6" cy="13" r="1.2" />
+                    </svg>
+                  </span>
+                  <button
+                    v-if="hasInfo(item.name)"
+                    class="wd-ovl__row-action wd-ovl__row-action--info"
+                    :aria-label="`${item.label} info`"
+                    title="Info"
+                    @click.stop="openConfig(item.name, 'legend')"
+                  >
+                    <q-icon name="wd-info" size="xs" />
+                  </button>
+                  <span class="wd-ovl__row-name">{{ item.label }}</span>
+                  <button
+                    v-if="hasFilterConfig(item.name)"
+                    class="wd-ovl__row-action"
+                    :class="{ 'wd-ovl__row-action--filtered': hasActiveFilters(item.name) }"
+                    :aria-label="`${item.label} filter`"
+                    title="Filter"
+                    @click.stop="openConfig(item.name, 'filter')"
+                  >
+                    <svg
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                    >
+                      <path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z" />
+                    </svg>
+                  </button>
+                  <button
+                    v-if="editMode && !isInActiveGroup(item.name)"
+                    class="wd-ovl__row-action wd-ovl__row-action--add"
+                    :aria-label="`${item.label} add to group`"
+                    @click.stop="addLayerToGroup(item.name)"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                    >
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                  </button>
+                </div>
+                <span
+                  class="wd-ovl__icon"
+                  :class="{
+                    'wd-ovl__icon--active': item.active,
+                    'wd-ovl__icon--inactive': !item.active,
+                    'wd-ovl__icon--pulse': toggledSlug === item.name,
+                  }"
+                  :aria-label="item.label"
+                  role="button"
+                  :aria-pressed="item.active"
+                  @touchstart.passive="onSwipeStart"
+                  @touchend.passive="onSwipeEnd"
+                >
+                  <q-icon :name="layerIcon(item.icon)" size="20px" />
+                  <span
+                    v-if="hasActiveFilters(item.name)"
+                    class="wd-ovl__chip-filter"
+                    :aria-label="`${item.label}: filter active`"
+                  >
+                    <svg width="7" height="7" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M3 5h18l-7 8v6l-4-2v-4L3 5Z" />
+                    </svg>
+                  </span>
+                </span>
+              </div>
+            </TransitionGroup>
+            <!-- Insertion marker: a real dashed line pinned to the target
                row's boundary — no radius, scrolls with the content. -->
+            <div
+              v-if="dropLineTop !== null"
+              class="wd-ovl__dropline"
+              :style="{ top: dropLineTop + 'px' }"
+              aria-hidden="true"
+            />
+          </div>
           <div
-            v-if="dropLineTop !== null"
-            class="wd-ovl__dropline"
-            :style="{ top: dropLineTop + 'px' }"
-            aria-hidden="true"
+            class="wd-ovl__fade wd-ovl__fade--top"
+            :class="{ 'wd-ovl__fade--hidden': scrollAtTop }"
           />
-
-        </div>
-          <div class="wd-ovl__fade wd-ovl__fade--top" :class="{ 'wd-ovl__fade--hidden': scrollAtTop }" />
-          <div class="wd-ovl__fade wd-ovl__fade--bottom" :class="{ 'wd-ovl__fade--hidden': scrollAtBottom }" />
+          <div
+            class="wd-ovl__fade wd-ovl__fade--bottom"
+            :class="{ 'wd-ovl__fade--hidden': scrollAtBottom }"
+          />
         </div>
 
         <!-- Group selector: spans the box width, distinct from layer buttons.
@@ -1810,16 +2068,43 @@ onBeforeUnmount(() => {
           @click.stop="onGroupSelectorTap"
           @wheel.prevent
         >
-          <svg class="wd-ovl__group-arrow wd-ovl__group-arrow--prev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <svg
+            class="wd-ovl__group-arrow wd-ovl__group-arrow--prev"
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
             <path d="M15 6l-6 6 6 6" />
           </svg>
           <Transition :name="`wd-ovl-gswap-${groupSwapDir}`" mode="out-in">
             <span :key="overlayStore.groupSettings.activeGroupId ?? 'g'" class="wd-ovl__gswap-item">
-              <IconifyIcon v-if="isIconifyIcon(overlayStore.activeGroupIcon())" :icon="overlayStore.activeGroupIcon()" :height="20" :width="20" class="wd-ovl__ifg" :class="{ 'wd-ovl__ifg--multi': isColoredIcon(overlayStore.activeGroupIcon()) }" />
+              <IconifyIcon
+                v-if="isIconifyIcon(overlayStore.activeGroupIcon())"
+                :icon="overlayStore.activeGroupIcon()"
+                :height="20"
+                :width="20"
+                class="wd-ovl__ifg"
+                :class="{ 'wd-ovl__ifg--multi': isColoredIcon(overlayStore.activeGroupIcon()) }"
+              />
               <q-icon v-else :name="groupIcon(overlayStore.activeGroupIcon())" size="20px" />
             </span>
           </Transition>
-          <svg class="wd-ovl__group-arrow wd-ovl__group-arrow--next" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <svg
+            class="wd-ovl__group-arrow wd-ovl__group-arrow--next"
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
             <path d="M9 6l6 6-6 6" />
           </svg>
           <!-- Expanded: the FULL halves are hit zones — left = previous,
@@ -1838,7 +2123,6 @@ onBeforeUnmount(() => {
           />
         </button>
 
-
         <!-- Scroll thumb at BOX level (the rows scroll-clip ate it inside);
              rides exactly on the box's right border. Always visible while
              the list overflows — 2px on desktop (media query below). -->
@@ -1852,26 +2136,64 @@ onBeforeUnmount(() => {
         <!-- Edit mode: cancel (X) / confirm (✓) footer (restored — the
              header ✓ stays as the keyboard/discoverable exit). -->
         <div v-if="editMode" class="wd-ovl__more-group" @wheel.prevent>
-          <button class="wd-ovl__more wd-ovl__more--cancel" :aria-label="t('overlays.edit_cancel')"
-            @click.stop="cancelEdit">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+          <button
+            class="wd-ovl__more wd-ovl__more--cancel"
+            :aria-label="t('overlays.edit_cancel')"
+            @click.stop="cancelEdit"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.4"
+              stroke-linecap="round"
+            >
               <path d="M6 6l12 12M18 6L6 18" />
             </svg>
           </button>
-          <button class="wd-ovl__more wd-ovl__more--confirm" :aria-label="t('overlays.edit_done')"
-            @click.stop="confirmEdit">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+          <button
+            class="wd-ovl__more wd-ovl__more--confirm"
+            :aria-label="t('overlays.edit_done')"
+            @click.stop="confirmEdit"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.4"
+              stroke-linecap="round"
+            >
               <path d="M5 13l4 4L19 7" />
             </svg>
           </button>
         </div>
-        <button v-else class="wd-ovl__more" :aria-label="expanded ? t('close') : t('overlay_style')" :aria-expanded="expanded"
-          @click.stop="expanded = !expanded">
+        <button
+          v-else
+          class="wd-ovl__more"
+          :aria-label="expanded ? t('close') : t('overlay_style')"
+          :aria-expanded="expanded"
+          @click.stop="expanded = !expanded"
+        >
           <svg v-if="!expanded" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" />
+            <circle cx="5" cy="12" r="2" />
+            <circle cx="12" cy="12" r="2" />
+            <circle cx="19" cy="12" r="2" />
           </svg>
-          <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
+          <svg
+            v-else
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
             <path d="M5 12h14M13 6l6 6-6 6" />
           </svg>
         </button>
@@ -1879,12 +2201,26 @@ onBeforeUnmount(() => {
     </Transition>
 
     <!-- ── Main toggle (48px, colored SVG icon, 360° rotation) ───────── -->
-    <button class="wd-ovl__toggle" :aria-label="t('overlay_style')" :aria-expanded="stripOpen"
-      @click="stripOpen = !stripOpen">
-      <img v-show="!stripOpen" :src="iconOpen" alt="" class="wd-ovl__toggle-icon wd-ovl__toggle-icon--closed-icon"
-        :class="{ 'wd-ovl__toggle-icon--hidden': stripOpen }" />
-      <img v-show="stripOpen" :src="iconClose" alt="" class="wd-ovl__toggle-icon"
-        :class="{ 'wd-ovl__toggle-icon--open': stripOpen }" />
+    <button
+      class="wd-ovl__toggle"
+      :aria-label="t('overlay_style')"
+      :aria-expanded="stripOpen"
+      @click="stripOpen = !stripOpen"
+    >
+      <img
+        v-show="!stripOpen"
+        :src="iconOpen"
+        alt=""
+        class="wd-ovl__toggle-icon wd-ovl__toggle-icon--closed-icon"
+        :class="{ 'wd-ovl__toggle-icon--hidden': stripOpen }"
+      />
+      <img
+        v-show="stripOpen"
+        :src="iconClose"
+        alt=""
+        class="wd-ovl__toggle-icon"
+        :class="{ 'wd-ovl__toggle-icon--open': stripOpen }"
+      />
     </button>
 
     <!-- ── Floating drag ghost: the row follows the cursor ──────────── -->
@@ -1908,7 +2244,9 @@ onBeforeUnmount(() => {
         <div class="wd-ovl__icon-picker-title">{{ t('overlays.icon_change') }}</div>
         <q-input
           v-model="iconQuery"
-          dense outlined clearable
+          dense
+          outlined
+          clearable
           class="wd-ovl__icon-search"
           :placeholder="t('overlays.icon_search')"
           :loading="iconSearching"
@@ -1917,8 +2255,12 @@ onBeforeUnmount(() => {
         </q-input>
         <!-- Search results (Iconify, loads at runtime) -->
         <template v-if="iconQuery && iconQuery.trim().length >= 2">
-          <div v-if="iconSearchError" class="wd-ovl__icon-note">{{ t('overlays.icon_search_error') }}</div>
-          <div v-else-if="!iconSearching && iconResults.length === 0" class="wd-ovl__icon-note">{{ t('overlays.icon_none') }}</div>
+          <div v-if="iconSearchError" class="wd-ovl__icon-note">
+            {{ t('overlays.icon_search_error') }}
+          </div>
+          <div v-else-if="!iconSearching && iconResults.length === 0" class="wd-ovl__icon-note">
+            {{ t('overlays.icon_none') }}
+          </div>
           <div v-else class="wd-ovl__icon-grid">
             <button
               v-for="name in visibleIconResults"
@@ -1929,7 +2271,13 @@ onBeforeUnmount(() => {
               :title="name"
               @click.stop="applyGroupIcon(name)"
             >
-              <IconifyIcon :icon="name" :height="26" :width="26" class="wd-ovl__ifg" :class="{ 'wd-ovl__ifg--multi': isColoredIcon(name) }" />
+              <IconifyIcon
+                :icon="name"
+                :height="26"
+                :width="26"
+                class="wd-ovl__ifg"
+                :class="{ 'wd-ovl__ifg--multi': isColoredIcon(name) }"
+              />
             </button>
             <!-- Auto lazy-load sentinel: reveals the next chunk on scroll -->
             <div
@@ -1952,7 +2300,12 @@ onBeforeUnmount(() => {
               :title="name"
               @click.stop="applyGroupIcon(name)"
             >
-              <IconifyIcon :icon="name" :height="26" :width="26" class="wd-ovl__ifg wd-ovl__ifg--multi" />
+              <IconifyIcon
+                :icon="name"
+                :height="26"
+                :width="26"
+                class="wd-ovl__ifg wd-ovl__ifg--multi"
+              />
             </button>
           </div>
         </template>
@@ -2099,7 +2452,9 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   // Edit mode: tapping the group icon opens the icon picker
   &--pick {
     cursor: pointer;
-    transition: background-color 0.12s $ease, border-color 0.12s $ease;
+    transition:
+      background-color 0.12s $ease,
+      border-color 0.12s $ease;
 
     &:hover {
       background: var(--wd-ctl-hover);
@@ -2167,7 +2522,9 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   .wd-ovl__toolbar-title-caret {
     flex: none;
     opacity: 0.5;
-    transition: transform 0.15s $ease, opacity 0.15s $ease;
+    transition:
+      transform 0.15s $ease,
+      opacity 0.15s $ease;
   }
 
   &:hover .wd-ovl__toolbar-title-caret {
@@ -2198,7 +2555,9 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   pointer-events: auto;
   flex: none;
   -webkit-tap-highlight-color: transparent;
-  transition: background-color 0.12s ease, color 0.12s ease;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease;
 
   &:hover {
     background: var(--wd-ctl-hover);
@@ -2345,7 +2704,7 @@ body.body--dark .wd-ovl__toolbar-btn--active {
   }
 }
 
-@media (min-width: 900px) {
+@media (min-width: #{$breakpoint-sm + 1}) {
   .wd-ovl__scrollthumb {
     width: 1.5px; // hairline always visible on desktop
   }
@@ -2353,7 +2712,7 @@ body.body--dark .wd-ovl__toolbar-btn--active {
 
 /* Mobile: the overlay thumb IS the scroll affordance (fades alone were
    too subtle in the expanded view) — it stays visible, slightly stronger */
-@media (max-width: 899px) {
+@media (max-width: #{$breakpoint-sm}) {
   .wd-ovl__scrollthumb {
     width: 2.5px;
     background: rgba(128, 145, 135, 0.7);
@@ -2361,7 +2720,7 @@ body.body--dark .wd-ovl__toolbar-btn--active {
 }
 
 // Mouse pan affordance: grab cursor over the list (desktop)
-@media (min-width: 900px) and (pointer: fine) {
+@media (min-width: #{$breakpoint-sm + 1}) and (pointer: fine) {
   .wd-ovl__rows {
     cursor: grab;
 
@@ -2421,13 +2780,14 @@ body.body--dark .wd-ovl__toolbar-btn--active {
   opacity: 0.82;
   line-height: 1.2;
   pointer-events: none;
-  transition: color 0.15s $ease, font-weight 0.15s $ease;
+  transition:
+    color 0.15s $ease,
+    font-weight 0.15s $ease;
 }
 
 body.body--dark .wd-ovl__row-name {
   color: #cfe8dc; // brighter than ink-soft — passive but readable on pine
 }
-
 
 .wd-ovl__row--active .wd-ovl__row-name {
   font-weight: 600;
@@ -2446,7 +2806,9 @@ body.body--dark .wd-ovl__row-name {
   color: var(--wd-ctl-ink-soft);
   cursor: pointer;
   pointer-events: auto;
-  transition: background-color 0.12s $ease, color 0.12s $ease;
+  transition:
+    background-color 0.12s $ease,
+    color 0.12s $ease;
 
   &:hover {
     background: var(--wd-ctl-hover);
@@ -2456,7 +2818,6 @@ body.body--dark .wd-ovl__row-name {
   &--info {
     color: #1f7a63; // turquoise touch (info = "learn more")
   }
-
 
   body.body--dark &--info {
     color: #7fe3c8;
@@ -2571,7 +2932,9 @@ body.body--dark .wd-ovl__row-name {
   flex: none;
   width: 100%;
   border-radius: 0 0 8px 8px;
-  transition: background-color 0.12s $ease, color 0.12s $ease;
+  transition:
+    background-color 0.12s $ease,
+    color 0.12s $ease;
   pointer-events: auto;
 
   &:hover {
@@ -2581,7 +2944,7 @@ body.body--dark .wd-ovl__row-name {
 
 // More button: taller on mobile — the primary expand affordance needs
 // a proper touch target
-@media (max-width: 899px) {
+@media (max-width: #{$breakpoint-sm}) {
   .wd-ovl__more {
     height: 36px;
     min-height: 36px;
@@ -2634,7 +2997,9 @@ body.body--dark .wd-ovl__row-name {
     opacity: 0.7;
     flex: none;
     color: var(--wd-ctl-ink-soft);
-    transition: transform 0.15s $ease, opacity 0.15s $ease;
+    transition:
+      transform 0.15s $ease,
+      opacity 0.15s $ease;
   }
 }
 
@@ -2677,7 +3042,9 @@ body.body--dark .wd-ovl__row-name {
 .wd-ovl-gswap-fwd-leave-active,
 .wd-ovl-gswap-back-enter-active,
 .wd-ovl-gswap-back-leave-active {
-  transition: opacity 0.16s $ease, transform 0.16s $ease;
+  transition:
+    opacity 0.16s $ease,
+    transform 0.16s $ease;
 }
 
 .wd-ovl-gswap-fwd-enter-from {
@@ -2711,7 +3078,9 @@ body.body--dark .wd-ovl__row-name {
   min-height: 14px;
   margin: 2px 8px 2px;
   pointer-events: auto; // drop target in edit mode (opt back in)
-  transition: background-color 0.12s $ease, box-shadow 0.12s $ease;
+  transition:
+    background-color 0.12s $ease,
+    box-shadow 0.12s $ease;
 }
 
 .wd-ovl__sep-rule {
@@ -2769,7 +3138,9 @@ body.body--dark .wd-ovl__row-name {
 }
 
 .wd-ovl-row-enter-active {
-  transition: opacity 0.2s $ease, transform 0.2s $ease;
+  transition:
+    opacity 0.2s $ease,
+    transform 0.2s $ease;
 }
 
 .wd-ovl-row-enter-from {
@@ -2782,7 +3153,9 @@ body.body--dark .wd-ovl__row-name {
   position: absolute;
   left: 3px;
   right: 3px;
-  transition: opacity 0.22s $ease, transform 0.22s $ease;
+  transition:
+    opacity 0.22s $ease,
+    transform 0.22s $ease;
 }
 
 .wd-ovl-row-leave-to {
@@ -2875,12 +3248,16 @@ body.body--dark .wd-ovl__row-name {
 // ── Row actions (edit mode): add/remove from group ────────────────────
 .wd-ovl__row-action--remove {
   color: #c44e3b;
-  &:hover { background: rgba(196, 78, 59, 0.08); }
+  &:hover {
+    background: rgba(196, 78, 59, 0.08);
+  }
 }
 
 .wd-ovl__row-action--add {
   color: #2a8a72;
-  &:hover { background: rgba(42, 138, 114, 0.08); }
+  &:hover {
+    background: rgba(42, 138, 114, 0.08);
+  }
 }
 
 // ── Drag handle (6-dot grip) ───────────────────────────────────────────
@@ -2895,7 +3272,9 @@ body.body--dark .wd-ovl__row-name {
   cursor: grab;
   pointer-events: auto;
   touch-action: none; // touch drag must NOT scroll the list
-  transition: opacity 0.12s $ease, color 0.12s $ease;
+  transition:
+    opacity 0.12s $ease,
+    color 0.12s $ease;
 
   &:hover {
     opacity: 0.85;
@@ -2956,7 +3335,9 @@ body.body--dark .wd-ovl__row-name {
   border: 1px solid var(--wd-ctl-border);
   border-radius: 4px;
   background: var(--wd-ctl-bg);
-  box-shadow: 0 8px 22px rgba(10, 20, 15, 0.26), 0 2px 5px rgba(10, 20, 15, 0.16) !important;
+  box-shadow:
+    0 8px 22px rgba(10, 20, 15, 0.26),
+    0 2px 5px rgba(10, 20, 15, 0.16) !important;
   pointer-events: none;
   z-index: 2100;
   // Hover just above the pointer — the insertion line stays visible
@@ -3031,7 +3412,6 @@ body.body--dark .wd-ovl__empty-hint {
   color: #9fc3b2;
 }
 
-
 .wd-ovl__icon-picker-title {
   font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif;
   font-size: 13px;
@@ -3071,7 +3451,9 @@ body.body--dark .wd-ovl__empty-hint {
   border-radius: 4px;
   background: transparent;
   cursor: pointer;
-  transition: background-color 0.12s $ease, border-color 0.12s $ease;
+  transition:
+    background-color 0.12s $ease,
+    border-color 0.12s $ease;
 
   &:hover {
     background: var(--wd-ctl-hover);
@@ -3105,7 +3487,9 @@ body.body--dark .wd-ovl__empty-hint {
   border-right: 1px solid var(--wd-ctl-border);
   color: var(--wd-ctl-ink-soft);
 
-  &:hover { background: var(--wd-ctl-hover); }
+  &:hover {
+    background: var(--wd-ctl-hover);
+  }
 }
 
 .wd-ovl__more-group .wd-ovl__more--confirm {
@@ -3113,7 +3497,9 @@ body.body--dark .wd-ovl__empty-hint {
   color: #2a8a72;
   background: rgba(42, 138, 114, 0.07);
 
-  &:hover { background: rgba(42, 138, 114, 0.14); }
+  &:hover {
+    background: rgba(42, 138, 114, 0.14);
+  }
 }
 
 // ── Reduced motion: keep state legible, drop spatial movement ─────────
@@ -3141,7 +3527,6 @@ body.body--dark .wd-ovl__empty-hint {
     animation: none;
   }
 }
-
 </style>
 
 <style lang="scss">
@@ -3189,7 +3574,6 @@ body.body--dark .wd-ovl__menu .q-item {
   display: inline-block;
   vertical-align: middle;
 }
-
 
 /* Group quick-switch dropdown (title): active item + hidden marker */
 .wd-ovl__group-menu .q-item__section--avatar .q-icon img {
@@ -3248,7 +3632,6 @@ body.body--dark .wd-ovl__menu .q-item {
   display: inline-block;
   vertical-align: middle;
 }
-
 
 /* Group quick-switch dropdown (title): active item + hidden marker */
 .wd-ovl__group-menu .q-item__section--avatar .q-icon img {

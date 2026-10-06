@@ -130,6 +130,7 @@ useMeta(() => ({
       name: 'description',
       content: metaDescription.value,
     },
+    ogSiteName: { property: 'og:site_name', content: 'Wodore' },
     ogTitle: { property: 'og:title', content: hut.value?.name || '' },
     ogDescription: { property: 'og:description', content: metaDescription.value },
     ogType: { property: 'og:type', content: 'website' },
@@ -215,7 +216,6 @@ watchEffect(() => {
 
 const addHeaderShadow: IntersectionValue = entry => {
   headerShadow.value = !entry.isIntersecting;
-  return true;
 };
 
 // Fetch hut images using the specialized endpoint (faster than nearby)

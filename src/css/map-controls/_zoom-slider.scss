@@ -1,27 +1,67 @@
 // ══════════════════════════════════════════════════════════════════════
-// ZOOM SLIDER — visibility gating
+// ZOOM SLIDER — visibility gating + show/hide motion
 // GLOBAL because: visibility depends on body classes and overlay state
 // that the component cannot scope to from its own scoped styles.
 //
-// Mobile: visible when the overlay strip is CLOSED (they interfere).
-// Desktop: visible in focus mode only (classic zoom buttons serve
-// otherwise).
+// Focus mode: ALWAYS visible (any viewport) — the overlay strip is
+// hidden in focus mode, so they cannot collide.
+// Mobile (no focus): visible when the overlay strip is CLOSED (they
+// interfere otherwise).
+// Desktop (no focus): hidden — the classic zoom buttons serve instead.
+//
+// Motion: docked chrome moves along its dock axis — the handle tucks
+// fully in/out of the right screen edge (100% travel) with a fade.
+// Enter (300ms) shares the focus-mode choreography curve of
+// _layout.scss (cubic-bezier(0.2, 0, 0, 1)); exit (200ms, owned by the
+// scoped base rule) is faster. @starting-style boots the enter
+// transition from display:none; allow-discrete holds display until the
+// exit fade has finished. Engines without these (pre-2023) fall back
+// to instant toggling.
 // ══════════════════════════════════════════════════════════════════════
 .wd-zoom {
   display: none !important;
 }
 
-// Mobile: visible when overlays are NOT open (the strip/box and the zoom
-// handle occupy the same right edge — showing both is cluttered)
-@media (max-width: 899px) {
+// Focus mode wins over everything, including a strip left open before
+// entering focus
+body.wd-map-focus .wd-zoom {
+  display: flex !important;
+  opacity: 1;
+  transform: translateY(-50%);
+  transition:
+    opacity 300ms cubic-bezier(0.2, 0, 0, 1),
+    transform 300ms cubic-bezier(0.2, 0, 0, 1),
+    display 300ms allow-discrete;
+}
+
+// Mobile, outside focus mode: visible when overlays are NOT open (the
+// strip/box and the zoom handle occupy the same right edge — showing
+// both is cluttered)
+@media (max-width: #{$breakpoint-sm}) {
   body:not(.wd-ovl-strip-open) .wd-zoom {
     display: flex !important;
+    opacity: 1;
+    transform: translateY(-50%);
+    transition:
+      opacity 300ms cubic-bezier(0.2, 0, 0, 1),
+      transform 300ms cubic-bezier(0.2, 0, 0, 1),
+      display 300ms allow-discrete;
   }
 }
 
-// Desktop: focus mode only (classic zoom buttons serve otherwise)
-@media (min-width: 900px) {
-  body.wd-map-focus .wd-zoom {
-    display: flex !important;
+// Enter start values — an element first rendered from display:none has
+// no previous style to transition from, so the engine needs these
+@starting-style {
+  body.wd-map-focus .wd-zoom,
+  body:not(.wd-ovl-strip-open) .wd-zoom {
+    opacity: 0;
+    transform: translateY(-50%) translateX(100%);
+  }
+}
+
+// Reduced motion: skip the glide entirely
+@media (prefers-reduced-motion: reduce) {
+  .wd-zoom {
+    transition-duration: 0.01ms !important;
   }
 }

@@ -19,7 +19,7 @@ withDefaults(defineProps<Props>(), {
 
 <template>
   <q-dialog ref="dialogRef" maximized @hide="onDialogHide">
-    <q-card class="bg-black no-border no-box-shadow dialog-card">
+    <q-card class="media-viewer-card no-border no-box-shadow dialog-card">
       <!-- Media Gallery Component -->
       <WdMediaGallery
         v-if="images.length > 0"
@@ -39,13 +39,17 @@ withDefaults(defineProps<Props>(), {
 </template>
 
 <style lang="scss" scoped>
-:deep(.q-card) {
-  box-shadow: none;
-  border-radius: 0;
+// Fullscreen media viewer surfaces. `bg-black` is NOT pure black here: the
+// app redefines Quasar's $black as #1c1c1c (quasar.variables.scss). The theme
+// decision lives in ONE place — the --wd-viewer token in app.scss
+// (light #1c1c1c charcoal / dark #000 pure black) — applied to every surface
+// that fills the viewport behind the photo (card, backdrop, gallery).
+.media-viewer-card {
+  background: var(--wd-viewer);
 }
 
 :deep(.q-dialog__backdrop) {
-  background: rgba(0, 0, 0, 1) !important;
+  background: var(--wd-viewer) !important;
 }
 
 :deep(.q-dialog__inner) {

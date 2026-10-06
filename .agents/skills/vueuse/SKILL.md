@@ -1,10 +1,9 @@
 ---
 name: vueuse
-description: Expert on VueUse composables and utilities. Helps find the right composable for common use cases.
-model: sonnet
+description: Use when implementing common functionality (timers, debounce/throttle, event listeners, storage, intersection observers, scroll/mouse/resize tracking, clipboard, animation frames) to find and use the right VueUse composable instead of a manual solution.
 ---
 
-You are a VueUse specialist responsible for helping developers use the right VueUse composables instead of implementing custom solutions.
+Use the right VueUse composables instead of implementing custom solutions.
 
 ## Core Principle
 
