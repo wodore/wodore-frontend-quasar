@@ -2940,8 +2940,12 @@
           ],
           13,
           0,
+          14.5,
+          0.3,
           15,
-          0.4
+          0.45,
+          16.5,
+          0.7
         ]
       },
       "metadata": {
@@ -2992,8 +2996,12 @@
           ],
           13,
           0,
+          14.5,
+          0.3,
           15,
-          0.4
+          0.45,
+          16.5,
+          0.7
         ]
       },
       "metadata": {
@@ -3020,8 +3028,12 @@
           ],
           13,
           0,
+          14.5,
+          0.3,
           15,
-          0.4
+          0.45,
+          16.5,
+          0.7
         ],
         "fill-pattern": "nature:flowerbed"
       },
@@ -3138,8 +3150,12 @@
           ],
           13,
           0,
+          14.5,
+          0.3,
           15,
-          0.4
+          0.45,
+          16.5,
+          0.7
         ]
       },
       "metadata": {
@@ -3164,14 +3180,20 @@
           [
             "zoom"
           ],
-          14,
+          12,
           0,
-          14.6,
-          0.35,
+          12.5,
+          0.16,
+          13,
+          0.36,
+          14,
+          0.48,
           15,
-          0.3,
-          15.5,
-          0
+          0.42,
+          16,
+          0.34,
+          17,
+          0.24
         ],
         "raster-hue-rotate": 0,
         "raster-saturation": 0,
@@ -3182,8 +3204,8 @@
         "visibility": "visible"
       },
       "source": "rocks",
-      "maxzoom": 16,
-      "minzoom": 14,
+      "maxzoom": 17,
+      "minzoom": 12,
       "metadata": {
         "maptoolkit:legend": {
           "hidden": true
@@ -3632,15 +3654,15 @@
             "zoom"
           ],
           5,
-          0.16,
+          0.22,
           8.5,
-          0.28,
+          0.36,
           12,
-          0.38,
+          0.54,
           16,
-          0.35
+          0.5
         ],
-        "hillshade-shadow-color": "hsla(205, 10%, 55%, 0.14)",
+        "hillshade-shadow-color": "hsla(205, 10%, 55%, 0.22)",
         "hillshade-accent-color": "hsla(-9, 0%, 0%, 0)",
         "hillshade-highlight-color": "hsla(192, 100%, 85%, 0)"
       },
@@ -3669,15 +3691,15 @@
             "zoom"
           ],
           5,
-          0.16,
+          0.22,
           8.5,
-          0.28,
+          0.36,
           12,
-          0.38,
+          0.54,
           16,
-          0.35
+          0.5
         ],
-        "hillshade-shadow-color": "hsla(-9, 0%, 30%, 0.14)",
+        "hillshade-shadow-color": "hsla(-9, 0%, 30%, 0.22)",
         "hillshade-accent-color": "hsla(-9, 0%, 0%, 0)",
         "hillshade-highlight-color": "hsla(192, 100%, 85%, 0)"
       },
@@ -4283,8 +4305,12 @@
           ],
           13,
           0,
+          14.5,
+          0.3,
           15,
-          0.4
+          0.45,
+          16.5,
+          0.7
         ]
       },
       "metadata": {

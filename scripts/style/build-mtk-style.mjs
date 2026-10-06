@@ -27,7 +27,18 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SRC = path.join(__dirname, 'mtk-src.json');
 const OUT_DIR = path.join(__dirname, '..', '..', 'public', 'styles', 'outdoor-mtk');
 
-const base = JSON.parse(fs.readFileSync(SRC, 'utf8'));
+/** JSON.parse that rethrows with context — a drift in the vendored
+ * source or a failed string transform must fail the build loudly
+ * (and legibly), never emit a half-transformed style. */
+function parseJson(text, what) {
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    throw new Error(`invalid JSON in ${what}: ${err.message}`, { cause: err });
+  }
+}
+
+const base = parseJson(fs.readFileSync(SRC, 'utf8'), SRC);
 
 /* ------------------------------------------------------------------ *
  * 1) Shared transforms (language-independent)                         *
@@ -266,7 +277,7 @@ const pastel = (paint, key) => {
   for (const [from, to] of Object.entries(PASTEL)) {
     json = json.replaceAll(JSON.stringify(from).slice(1, -1), to);
   }
-  paint[key] = JSON.parse(json);
+  paint[key] = parseJson(json, `pastel transform of ${key}`);
 };
 for (const id of [
   'background', 'nature_natural_land', 'nature_natural', 'nature_landuse',
@@ -285,13 +296,15 @@ for (const id of [
   const l = layer('nature_natural');
   const expr = l.paint['fill-color'];
   const a0 = expr[4]; // alpha-0 match (z4 stop)
-  const a30 = JSON.parse(
-    JSON.stringify(a0).replaceAll(', 0)"', ', 0.3)"')
+  const a30 = parseJson(
+    JSON.stringify(a0).replaceAll(', 0)"', ', 0.3)"'),
+    'nature_natural alpha stops'
   );
-  const a70 = JSON.parse(
-    JSON.stringify(a0).replaceAll(', 0)"', ', 0.7)"')
+  const a70 = parseJson(
+    JSON.stringify(a0).replaceAll(', 0)"', ', 0.7)"'),
+    'nature_natural alpha stops'
   );
-  const a1 = JSON.parse(
+  const a1 = parseJson(
     JSON.stringify(expr[6])
       .replaceAll(', 1)"', ', 1)"')
       // farm/scrub classes stay near-paper: swisstopo renders vineyards
@@ -299,7 +312,8 @@ for (const id of [
       // views were 40% warm pixels vs their 2.5%)
       .replaceAll('hsla(55, 13%, 92%, 1)', 'hsla(55, 13%, 92%, 0.22)')
       .replaceAll('hsla(85, 12%, 89%, 1)', 'hsla(85, 12%, 89%, 0.45)')
-      .replaceAll('hsla(70, 10%, 90%, 1)', 'hsla(70, 10%, 90%, 0.45)')
+      .replaceAll('hsla(70, 10%, 90%, 1)', 'hsla(70, 10%, 90%, 0.45)'),
+    'nature_natural color stops'
   ); // full-alpha match at z13, farm classes faded
   l.paint['fill-color'] = [
     'interpolate', ['linear'], ['zoom'],
@@ -351,12 +365,18 @@ for (const id of [
 for (const id of ['road_minor', 'road_minor_bridge']) {
   const l = layer(id);
   const json = JSON.stringify(l.filter);
-  l.filter = JSON.parse(json.replace('"minor","service","track"', '"minor","service"'));
+  l.filter = parseJson(
+    json.replace('"minor","service","track"', '"minor","service"'),
+    `filter of ${id}`
+  );
 }
 for (const id of ['road_minor_casing', 'road_minor_casing_bridge', 'road_minor_casing_tunnel']) {
   const l = layer(id);
   const json = JSON.stringify(l.filter);
-  l.filter = JSON.parse(json.replace('"track","service"', '"service"').replace('"minor","service","track"', '"minor","service"'));
+  l.filter = parseJson(
+    json.replace('"track","service"', '"service"').replace('"minor","service","track"', '"minor","service"'),
+    `filter of ${id}`
+  );
 }
 const trackLayer = {
   id: 'wd-track',
@@ -387,16 +407,16 @@ const trackLayer = {
 for (const id of ['road_path', 'road_path_mountain', 'road_path_alpine']) {
   const l = layer(id);
   let json = JSON.stringify(l.paint['line-color']);
-  json = json
+    json = json
     .replaceAll('hsla(225, 15%, 40%', 'hsla(0, 0%, 45%')
     .replaceAll('hsla(225, 5%, 30%', 'hsla(0, 0%, 38%');
-  l.paint['line-color'] = JSON.parse(json);
+  l.paint['line-color'] = parseJson(json, `color of ${id}`);
 }
 for (const id of ['road_path_urban', 'road_path_steps']) {
   const l = layer(id);
   let json = JSON.stringify(l.paint['line-color']);
   json = json.replaceAll('hsla(216, 15%, 70%', 'hsla(0, 0%, 62%');
-  l.paint['line-color'] = JSON.parse(json);
+  l.paint['line-color'] = parseJson(json, `color of ${id}`);
 }
 // alpine layer keeps only T4 (dashed); T5/T6 + via ferrata get dots
 {
@@ -435,26 +455,32 @@ for (const id of ['road_path_urban', 'road_path_steps']) {
   const l = layer('nature_naturalearth');
   l.paint['raster-opacity'] = ['interpolate', ['linear'], ['zoom'], 3, 0.7, 5, 0];
 }
-// Hillshade: greyer + gentler (swisstopo relief reads as light grey)
+// Hillshade: greyer + gentler (swisstopo relief reads as light grey),
+// with real presence: their relief runs from z0 (hillshade_grey) —
+// ours must read as terrain at country zoom too, not only up close
 for (const id of ['relief_hillshade_ao_min', 'relief_hillshade_ao_med']) {
   const p = layer(id).paint;
   p['hillshade-shadow-color'] = p['hillshade-shadow-color']
     .toString()
     .replace('hsla(-9, 0%, 0%,', 'hsla(205, 10%, 55%,')
     .replace('0%, 30%,', '0%, 30%,')
-    .replace(', 0.3)', ', 0.14)');
+    .replace(', 0.3)', ', 0.22)');
   // swisstopo's relief only shades real mountain slopes (~20% of a
-  // country view); AO shades every slope — keep it faint until the
-  // mid zooms where terrain detail starts to matter
+  // country view); AO shades every slope — keep it restrained at low
+  // zoom but clearly visible, then let it carry terrain detail in the
+  // mountain zooms where it matters
   p['hillshade-exaggeration'] = [
     'interpolate', ['linear'], ['zoom'],
-    5, 0.16, 8.5, 0.28, 12, 0.38, 16, 0.35,
+    5, 0.22, 8.5, 0.36, 12, 0.54, 16, 0.5,
   ];
 }
 // Landcover textures (forest floor, tree rows, quarries…) painted the
 // whole town view warm (40% warm pixels vs swisstopo's 2.5% — their
-// patterns only appear subtly from z13). Fade the textures in gently.
-const TEXTURE_RAMP = ['interpolate', ['linear'], ['zoom'], 13, 0, 15, 0.4];
+// patterns only appear subtly from z13). Fade the textures in gently,
+// then step up at z15 where the sprite patterns switch to their large
+// variants (nature:*_large) and carry full detail at the hiking zooms
+// (swisstopo's pattern_landcover_z16 band)
+const TEXTURE_RAMP = ['interpolate', ['linear'], ['zoom'], 13, 0, 14.5, 0.3, 15, 0.45, 16.5, 0.7];
 for (const id of [
   'nature_natural_texture',
   'nature_landuse_quarry_texture',
@@ -472,10 +498,11 @@ for (const id of ['relief_contour_multicolored', 'relief_contour_shadow']) {
   l.minzoom = 13;
   if (l.paint['line-color']) {
     const json = JSON.stringify(l.paint['line-color']);
-    l.paint['line-color'] = JSON.parse(
+    l.paint['line-color'] = parseJson(
       json
         .replaceAll('hsla(24.75, 40%, 45%, 0.7)', 'hsla(30, 49%, 50%, 0.85)')
-        .replaceAll('hsla(24.75, 40%, 45%, 0.6)', 'hsla(30, 49%, 55%, 0.75)')
+        .replaceAll('hsla(24.75, 40%, 45%, 0.6)', 'hsla(30, 49%, 55%, 0.75)'),
+      `color of ${id}`
     );
   }
   l.paint['line-blur'] = 0.4;
@@ -704,15 +731,20 @@ protectedLine.paint['line-width'] = [
   19, ['match', ['get', 'type'], 'national_park', 1.6, 1.1],
 ];
 
-// performance: rock-drawing raster fetched ~90 tiles (z14, 512px) per
-// z13 view — half of ALL requests. Start it at z14 where the texture
-// actually matters, fading IN to its mid-zoom peak and back out as the
-// vector stipple textures (z12+) take over — no popping.
+// swisstopo draws rock/scree from z11 through every zoom band
+// (scree_z11…z17 vector fills + pattern_landcover z12/z16). Match the
+// shape with the rocks raster: fade in from z12 (TileJSON serves
+// z11–14 natively; a z12 view needs ~1/4 of a z13 view's tiles), peak
+// around z14, and instead of dropping out at z15.5 keep a gentle
+// floor into the overzoomed range (z14 tiles upscale 2×/4× — mildly
+// soft mass tone, accepted) while the vector stipple textures
+// (z12+, TEXTURE_RAMP) carry the crisp detail up close.
 const rocks = layer('nature_rocks');
-rocks.minzoom = 14;
+rocks.minzoom = 12;
+rocks.maxzoom = 17;
 rocks.paint['raster-opacity'] = [
   'interpolate', ['linear'], ['zoom'],
-  14, 0, 14.6, 0.35, 15, 0.3, 15.5, 0,
+  12, 0, 12.5, 0.16, 13, 0.36, 14, 0.48, 15, 0.42, 16, 0.34, 17, 0.24,
 ];
 
 /* ------------------------------------------------------------------ *

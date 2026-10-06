@@ -51,6 +51,53 @@ describe('outdoor-mtk basemap style', () => {
     expect(Object.keys(style.sources)).toContain('rocks');
   });
 
+  it('tunes terrain for presence: hillshade from country zoom, rocks z12–17', () => {
+    // Linear zoom interpolation of an ["interpolate", ["linear"], ["zoom"], z, v, …] stop list
+    const zoomValue = (stops: unknown[], z: number): number => {
+      const pairs = (stops as unknown[]).slice(3); // ["interpolate", ["linear"], ["zoom"], z, v, …]
+      let lo = [pairs[0] as number, pairs[1] as number];
+      let hi = lo;
+      for (let i = 0; i + 1 < pairs.length; i += 2) {
+        const zStop = pairs[i] as number;
+        const vStop = pairs[i + 1] as number;
+        if (zStop <= z) lo = [zStop, vStop];
+        if (zStop >= z) {
+          hi = [zStop, vStop];
+          break;
+        }
+      }
+      if (lo[0] === hi[0]) return lo[1];
+      return lo[1] + ((hi[1] - lo[1]) * (z - lo[0])) / (hi[0] - lo[0]);
+    };
+
+    // swisstopo runs relief from z0 — our AO must be clearly present at
+    // country zoom, not only in the mountains up close
+    for (const id of ['relief_hillshade_ao_min', 'relief_hillshade_ao_med']) {
+      const ex = style.layers
+        .find(l => l.id === id)!
+        .paint['hillshade-exaggeration'] as unknown[];
+      expect(zoomValue(ex, 5.5)).toBeGreaterThanOrEqual(0.2);
+      expect(zoomValue(ex, 13)).toBeGreaterThanOrEqual(0.4);
+    }
+
+    // Rock drawing: swisstopo scree spans z11→z17 — ours starts fading
+    // in at z12 and keeps a floor into the overzoomed range instead of
+    // dropping out at z15.5
+    const rocks = style.layers.find(l => l.id === 'nature_rocks')!;
+    expect(rocks.minzoom).toBeLessThanOrEqual(12);
+    expect(rocks.maxzoom).toBeGreaterThanOrEqual(17);
+    const op = rocks.paint['raster-opacity'] as unknown[];
+    expect(zoomValue(op, 13)).toBeGreaterThanOrEqual(0.25); // visible mid-band
+    expect(zoomValue(op, 15.5)).toBeGreaterThanOrEqual(0.3); // no more cliff at 15.5
+    expect(zoomValue(op, 16)).toBeGreaterThanOrEqual(0.25); // stays on when zoomed in
+
+    // Vector stipple textures carry full detail at hiking zooms
+    // (swisstopo's pattern_landcover_z16 band)
+    const texture = style.layers.find(l => l.id === 'nature_natural_texture')!;
+    const ramp = texture.paint['fill-opacity'] as unknown[];
+    expect(zoomValue(ramp, 16.5)).toBeGreaterThanOrEqual(0.55);
+  });
+
   it('renders NO routes — the hiking overlay owns them', () => {
     for (const id of [
       'road_hiking',
