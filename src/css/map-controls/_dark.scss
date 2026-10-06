@@ -68,6 +68,12 @@ body.body--dark .preview-badge {
   body.wd-sidepanel-open .wd-map-ctl-sticky {
     transform: translateX(calc(-1 * var(--wd-drawer-w, 0px))) !important;
   }
+}
+
+/* The utils shift follows the utils STYLING gate (_topbar.scss, 900px):
+   below 900 the utils render un-styled in the centered topbar flow, so
+   sliding them would only push the raw buttons across the pill. */
+@media (min-width: 900px) {
   body.wd-sidepanel-open .wd-topbar__utils {
     transform: translateX(calc(-1 * var(--wd-drawer-w, 0px)));
   }
