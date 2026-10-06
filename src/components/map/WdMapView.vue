@@ -76,7 +76,7 @@ function isMobileView(): boolean {
 
 /**
  * Helper: Get expected desktop drawer width based on screen size
- * Matches logic from WdMapContent.vue:103
+ * Matches MainLayout.vue desktopDrawerWidth
  * @returns 460px for large screens, 380px for medium
  */
 function getExpectedDesktopDrawerWidth(): number {
