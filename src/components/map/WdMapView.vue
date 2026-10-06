@@ -48,7 +48,9 @@ const INITIAL_ZOOM = 12;
 const MOBILE_DRAWER_DEFAULT_RATIO = 0.5; // 50% of screen height
 const MOBILE_DRAWER_TRACK_THRESHOLD = 100;
 
-// Desktop drawer widths (matches WdMapContent.vue:103)
+// Desktop drawer widths (matches MainLayout.vue desktopDrawerWidth; Quasar
+// md boundary — $breakpoint-sm + 1 = 770px — is where the desktop drawer
+// exists at all)
 const DESKTOP_DRAWER_WIDTH_LARGE = 460;
 const DESKTOP_DRAWER_WIDTH_MEDIUM = 380;
 
@@ -1017,7 +1019,7 @@ function cancelPendingTap(): void {
 }
 
 function onMapPointerDown(ev: MouseEvent): void {
-  if (!window.matchMedia('(max-width: 899px)').matches) return;
+  if (!window.matchMedia('(max-width: 769px)').matches) return;
   const pointerType = (ev as unknown as { pointerType?: string }).pointerType;
   if (pointerType !== 'touch') return; // desktop has the explicit button
   if (
@@ -1148,7 +1150,7 @@ function collapseAutoExpandedAttribution(): void {
       // PE-none control container skips fixed children in hit-testing and
       // its own CSS fights ours. Replace it with a fully owned chip.
       if (
-        window.matchMedia('(max-width: 899px)').matches &&
+        window.matchMedia('(max-width: 769px)').matches &&
         !document.querySelector('.wd-attrib')
       ) {
         (el as HTMLElement).style.display = 'none';

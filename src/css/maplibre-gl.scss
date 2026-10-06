@@ -31,8 +31,11 @@
 }
 
 /* Desktop: the focus toggle owns the TOP of the right column — push the
-   MapLibre cluster (GPS/compass/zoom) down below it */
-@media (min-width: 900px) {
+   MapLibre cluster (GPS/compass/zoom) down below it.
+   Boundary convention: map chrome is desktop from Quasar's md boundary
+   ($breakpoint-sm + 1 = 770px — the same boundary as $q.screen lt.md /
+   the desktop drawer), NOT an arbitrary 900px. */
+@media (min-width: #{$breakpoint-sm + 1}) {
   .maplibregl-ctrl-top-right {
     margin-top: 58px;
   }
@@ -51,7 +54,7 @@
   margin-bottom: 14px; /* aligns bottom edge with the basemap toggle */
 }
 
-@media (min-width: 900px) {
+@media (min-width: #{$breakpoint-sm + 1}) {
   .maplibregl-ctrl-bottom-left {
     flex-direction: column-reverse;
   }
@@ -65,7 +68,7 @@
 /* Mobile: merge GPS + navigator groups into one chip. NOTE: the
    attribution <details> sits FIRST in the corner DOM — use
    :first-of-type on DIVs so the merge rounding lands correctly. */
-@media (max-width: 899px) {
+@media (max-width: #{$breakpoint-sm}) {
   .maplibregl-ctrl-bottom-left div.maplibregl-ctrl-group + div.maplibregl-ctrl-group {
     border-top: none !important;
     border-radius: 0 0 8px 8px !important;
@@ -200,7 +203,7 @@ body.body--dark .maplibregl-ctrl-group {
   border-top: 1px solid rgba(128, 128, 128, 0.15);
 }
 
-@media (min-width: 900px) {
+@media (min-width: #{$breakpoint-sm + 1}) {
   .maplibregl-ctrl-group button {
     height: 46px; /* keep 48px outer everywhere */
     width: 46px;
@@ -375,7 +378,7 @@ body.body--dark .maplibregl-ctrl button .maplibregl-ctrl-icon {
 
 /* Mobile: MapLibre's own attribution is hidden INSTANTLY (the JS swap at
    map-load showed it expanded at the wrong spot, then it "jumped") */
-@media (max-width: 899px) {
+@media (max-width: #{$breakpoint-sm}) {
   .maplibregl-control-container .maplibregl-ctrl-attrib {
     display: none !important;
   }
