@@ -8,7 +8,8 @@
 #
 # The port comes from the workz-managed block in .env.local — workz is the
 # ONLY port allocator for lanes. A paseo-allocated $PASEO_PORT would be
-# invisible to workz run/reap/preview/done, so paseo.json's `web` service
+# invisible to workz run/reap/preview/done, so paseo.json's `runserver`
+# service
 # wraps `fg` instead of using its own port. quasar ignores the $PORT env
 # workz injects, which is why the port is passed as --port explicitly.
 #

@@ -224,7 +224,8 @@ Agent worktrees are provisioned by [workz](https://github.com/rohansx/workz)
   detection is deterministic.
 - **A dev-server port range** from 3500 up — clear of the backend lanes
   (workz `base_port = 3400` in wodore-backend) and of the shared dev ports
-  (9000s). workz is the ONLY port allocator; paseo's `web` service wraps
+  (9000s). workz is the ONLY port allocator; paseo's `runserver` service
+  wraps
   the same script and uses no `$PASEO_PORT` of its own.
 
 **Setup** is one idempotent script, shared by every host — `workz start`
