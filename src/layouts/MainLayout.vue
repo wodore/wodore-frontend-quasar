@@ -120,17 +120,21 @@ const contentDrawerOpen = computed({
 });
 
 // Side panel (content drawer, desktop): flag on <body> so map controls
-// and the utility cluster can shift left and stay clear of the drawer
+// and the utility cluster can shift left and stay clear of the drawer.
+// Only the DESKTOP drawer (≥ md, !isMobile — Quasar md starts at
+// $breakpoint-sm + 1 = 770px here) takes layout space — the mobile
+// bottom sheet overlays, so it must NOT set the flag. Watching isMobile
+// too means crossing the breakpoint while open removes (or adds) the
+// flag together with the drawer/sheet swap.
+const desktopDrawerWidth = computed(() => ($q.screen.gt.md ? 460 : 380));
 watch(
-  () => contentDrawerOpen.value,
-  open => {
-    document.body.classList.toggle('wd-sidepanel-open', !!open);
+  [contentDrawerOpen, isMobile, desktopDrawerWidth],
+  ([open, mobile, width]) => {
+    const shift = open && !mobile;
+    document.body.classList.toggle('wd-sidepanel-open', shift);
     // Actual drawer width — the control shift follows the real panel,
     // not a hardcoded 330px that mismatched the 380/460px drawers
-    document.body.style.setProperty(
-      '--wd-drawer-w',
-      open ? `${$q.screen.gt.md ? 460 : 380}px` : '0px'
-    );
+    document.body.style.setProperty('--wd-drawer-w', shift ? `${width}px` : '0px');
   },
   { immediate: true }
 );

@@ -54,17 +54,26 @@ body.body--dark .preview-badge {
 }
 
 /* ── Side panel opens: bottom-right controls + top-right utility cluster
-      shift left so they stay clear of the drawer (desktop). The MapLibre
+      shift left so they stay clear of the drawer (desktop). The flag is
+      only set while the DESKTOP drawer is present — the mobile bottom
+      sheet overlays and must not shift anything. The media gate mirrors
+      Quasar's md-min ($q.screen lt.md = width < $breakpoint-sm + 1,
+      MainLayout keys the flag off the same boundary). The MapLibre
       top-right cluster needs NO shift: its fixed .maplibregl-control-
       container already follows the drawer via WdMapView's v-bind right
       inset, and the focus toggle anchors to the page, which Quasar
       shrinks by the drawer width — shifting either moved them TWICE the
-      drawer width (owner report 2026-10). Mobile drawers overlay, no
-      shift needed there. */
-@media (min-width: 900px) {
+      drawer width (owner report 2026-10). */
+@media (min-width: #{$breakpoint-sm + 1}) {
   body.wd-sidepanel-open .wd-map-ctl-sticky {
     transform: translateX(calc(-1 * var(--wd-drawer-w, 0px))) !important;
   }
+}
+
+/* The utils shift follows the utils STYLING gate (_topbar.scss, 900px):
+   below 900 the utils render un-styled in the centered topbar flow, so
+   sliding them would only push the raw buttons across the pill. */
+@media (min-width: 900px) {
   body.wd-sidepanel-open .wd-topbar__utils {
     transform: translateX(calc(-1 * var(--wd-drawer-w, 0px)));
   }
