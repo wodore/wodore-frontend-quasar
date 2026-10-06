@@ -37,7 +37,7 @@ body.wd-map-focus .wd-zoom {
 // Mobile, outside focus mode: visible when overlays are NOT open (the
 // strip/box and the zoom handle occupy the same right edge — showing
 // both is cluttered)
-@media (max-width: 899px) {
+@media (max-width: #{$breakpoint-sm}) {
   body:not(.wd-ovl-strip-open) .wd-zoom {
     display: flex !important;
     opacity: 1;

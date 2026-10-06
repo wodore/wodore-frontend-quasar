@@ -212,7 +212,7 @@ body.body--dark .wd-zoom__pill {
   transition: color 0.12s ease;
 
   // No bg/hover/active chrome — fg feedback only, desktop only
-  @media (min-width: 900px) {
+  @media (min-width: #{$breakpoint-sm + 1}) {
     &:hover {
       color: var(--wd-ctl-ink);
     }

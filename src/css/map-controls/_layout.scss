@@ -40,8 +40,10 @@
     background-color 0.15s ease;
 
   // Desktop: TOP of the right column — the MapLibre cluster is pushed
-  // below it (margin-top on .maplibregl-ctrl-top-right)
-  @media (min-width: 900px) {
+  // below it (margin-top on .maplibregl-ctrl-top-right).
+  // Gate = Quasar md boundary ($breakpoint-sm + 1 = 770px), see
+  // maplibre-gl.scss for the convention note.
+  @media (min-width: #{$breakpoint-sm + 1}) {
     opacity: 1;
     pointer-events: auto;
     transform: none;
@@ -52,7 +54,7 @@
   // Mobile: HIDDEN in normal view (focus is entered by tapping the map);
   // visible ONLY as the exit button in focus mode. position: FIXED +
   // z-index above the topbar so nothing covers it.
-  @media (max-width: 899px) {
+  @media (max-width: #{$breakpoint-sm}) {
     position: fixed;
     top: calc(11px + env(safe-area-inset-top, 0px));
     right: 12px;
@@ -112,7 +114,7 @@ body.wd-map-focus {
     opacity: 1; pointer-events: auto; transform: none;
     // Mobile: the exit lives bottom-right (where the overlay toggle
     // normally sits) — top-right belongs to nothing in focus mode
-    @media (max-width: 899px) {
+    @media (max-width: #{$breakpoint-sm}) {
       position: fixed;
       top: auto;
       bottom: calc(14px + env(safe-area-inset-bottom, 0px));

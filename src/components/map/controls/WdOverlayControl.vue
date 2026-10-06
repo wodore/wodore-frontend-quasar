@@ -2700,7 +2700,7 @@ body.body--dark .wd-ovl__toolbar-btn--active {
   }
 }
 
-@media (min-width: 900px) {
+@media (min-width: #{$breakpoint-sm + 1}) {
   .wd-ovl__scrollthumb {
     width: 1.5px; // hairline always visible on desktop
   }
@@ -2708,7 +2708,7 @@ body.body--dark .wd-ovl__toolbar-btn--active {
 
 /* Mobile: the overlay thumb IS the scroll affordance (fades alone were
    too subtle in the expanded view) — it stays visible, slightly stronger */
-@media (max-width: 899px) {
+@media (max-width: #{$breakpoint-sm}) {
   .wd-ovl__scrollthumb {
     width: 2.5px;
     background: rgba(128, 145, 135, 0.7);
@@ -2716,7 +2716,7 @@ body.body--dark .wd-ovl__toolbar-btn--active {
 }
 
 // Mouse pan affordance: grab cursor over the list (desktop)
-@media (min-width: 900px) and (pointer: fine) {
+@media (min-width: #{$breakpoint-sm + 1}) and (pointer: fine) {
   .wd-ovl__rows {
     cursor: grab;
 
@@ -2940,7 +2940,7 @@ body.body--dark .wd-ovl__row-name {
 
 // More button: taller on mobile — the primary expand affordance needs
 // a proper touch target
-@media (max-width: 899px) {
+@media (max-width: #{$breakpoint-sm}) {
   .wd-ovl__more {
     height: 36px;
     min-height: 36px;
