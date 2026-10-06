@@ -27,7 +27,8 @@ export async function requireDevServer(): Promise<void> {
     const reason = error instanceof Error ? error.message : String(error);
     throw new Error(
       `Dev server not reachable at ${BASE_URL} (${reason}).\n` +
-        'The e2e suite runs against the real dev server — start it first with: yarn dev'
+        'The e2e suite runs against the real dev server — start it first with: yarn dev',
+      { cause: error }
     );
   }
 }
