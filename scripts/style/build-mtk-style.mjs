@@ -237,7 +237,11 @@ for (const [id, defer] of [
   const triSection = hasTriangle
     ? [
         '\u25B2\n',
-        { 'font-scale': 0.55, 'text-font': ['literal', ['Noto Sans Regular']], 'text-color': 'hsla(28, 14%, 42%, 1)' },
+        {
+          'font-scale': 0.55,
+          'text-font': ['literal', ['Noto Sans Regular']],
+          'text-color': 'hsla(28, 14%, 42%, 1)',
+        },
       ]
     : [];
   l.layout['text-field'] = [
@@ -271,8 +275,11 @@ for (const [id, defer] of [
       { 'font-scale': 0.76, 'text-color': 'hsla(28, 10%, 48%, 1)' },
     ],
   ];
-  // centered anchor: the whole block (name+triangle+elevation) centers
-  // on the summit point
+  // centered anchor + justify: the whole block (name+triangle+
+  // elevation) centers on the summit point. mtk sets justify:'left'
+  // by default — override to 'center' so the multi-line text block
+  // is centered (user call)
+  l.layout['text-justify'] = 'center';
   l.paint['text-color'] = 'hsla(28, 14%, 42%, 1)';
   l.paint['text-halo-color'] = 'rgba(242, 247, 244, 0.9)';
   l.paint['text-halo-width'] = 1.2;
@@ -329,8 +336,10 @@ for (const l of base.layers) {
     'wd-base:wd-ring',
     '',
   ];
-  // both must place, or neither shows — the no-orphan guarantee
-  l.layout['icon-optional'] = false;
+  // icon can drop independently (labels always show — user: 'should
+  // only be dropped when label is gone as well'); text-optional:
+  // false prevents orphan dots (if text collides, both drop)
+  l.layout['icon-optional'] = true;
   l.layout['text-optional'] = false;
   l.layout['icon-padding'] = 2;
   // FOUR sizes scaling with rank (user: 'size the ring with the rank,
@@ -998,7 +1007,10 @@ for (const l of base.layers) {
   l.layout['text-font'] = walk(l.layout['text-font'] ?? []);
   l.layout['text-letter-spacing'] = 0.12;
   // dark ink (user call) — glacier names keep the turquoise voice
-  l.paint['text-color'] = ['match', ['get', 'type'], ['glacier'], '#29626B', '#2A2A2A'];
+  // Advisor: glacier-slate #3E6A66 — muted blue-green that says 'high
+  // alpine terrain' without reading as water; distinct from the
+  // grey-brown peaks and the dark city sans
+  l.paint['text-color'] = ['match', ['get', 'type'], ['glacier'], '#29626B', '#3E6A66'];
   l.paint['text-halo-color'] = 'rgba(242, 247, 244, 0.9)';
 }
 

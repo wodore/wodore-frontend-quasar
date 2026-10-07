@@ -14878,7 +14878,7 @@
             "glacier"
           ],
           "#29626B",
-          "#2A2A2A"
+          "#3E6A66"
         ],
         "text-halo-color": "rgba(242, 247, 244, 0.9)",
         "text-halo-width": 1,
@@ -15262,7 +15262,7 @@
           "wd-base:wd-ring",
           ""
         ],
-        "icon-optional": false,
+        "icon-optional": true,
         "text-optional": false,
         "icon-padding": 2,
         "icon-size": [
@@ -16883,7 +16883,7 @@
             "glacier"
           ],
           "#29626B",
-          "#2A2A2A"
+          "#3E6A66"
         ],
         "text-halo-color": "rgba(242, 247, 244, 0.9)",
         "text-halo-width": 1,
@@ -17275,7 +17275,7 @@
           "wd-base:wd-ring",
           ""
         ],
-        "icon-optional": false,
+        "icon-optional": true,
         "text-optional": false,
         "icon-padding": 2,
         "icon-size": [
@@ -18830,7 +18830,7 @@
           "rank_new"
         ],
         "text-anchor": "center",
-        "text-justify": "left",
+        "text-justify": "center",
         "text-field": [
           "case",
           [
@@ -19208,7 +19208,7 @@
             "glacier"
           ],
           "#29626B",
-          "#2A2A2A"
+          "#3E6A66"
         ],
         "text-halo-color": "rgba(242, 247, 244, 0.9)",
         "text-halo-width": 1,
@@ -19600,7 +19600,7 @@
           "wd-base:wd-ring",
           ""
         ],
-        "icon-optional": false,
+        "icon-optional": true,
         "text-optional": false,
         "icon-padding": 2,
         "icon-size": [
@@ -20857,7 +20857,7 @@
           "rank_new"
         ],
         "text-anchor": "center",
-        "text-justify": "left",
+        "text-justify": "center",
         "text-field": [
           "case",
           [
@@ -21257,7 +21257,7 @@
             "glacier"
           ],
           "#29626B",
-          "#2A2A2A"
+          "#3E6A66"
         ],
         "text-halo-color": "rgba(242, 247, 244, 0.9)",
         "text-halo-width": 1,
@@ -21649,7 +21649,7 @@
           "wd-base:wd-ring",
           ""
         ],
-        "icon-optional": false,
+        "icon-optional": true,
         "text-optional": false,
         "icon-padding": 2,
         "icon-size": [
@@ -22423,7 +22423,7 @@
           "rank_new"
         ],
         "text-anchor": "center",
-        "text-justify": "left",
+        "text-justify": "center",
         "text-field": [
           "case",
           [
@@ -22873,7 +22873,7 @@
             "glacier"
           ],
           "#29626B",
-          "#2A2A2A"
+          "#3E6A66"
         ],
         "text-halo-color": "rgba(242, 247, 244, 0.9)",
         "text-halo-width": 1,
@@ -23315,7 +23315,7 @@
           "wd-base:wd-ring",
           ""
         ],
-        "icon-optional": false,
+        "icon-optional": true,
         "text-optional": false,
         "icon-padding": 2,
         "icon-size": [

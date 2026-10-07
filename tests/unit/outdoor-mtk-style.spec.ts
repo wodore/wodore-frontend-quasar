@@ -232,7 +232,7 @@ describe('outdoor-mtk basemap style', () => {
     expect(ranked.length).toBeGreaterThanOrEqual(5);
     for (const l of ranked) {
       expect(JSON.stringify(l.layout?.['icon-image']), `${l.id} icon-image`).toContain('wd-ring');
-      expect(l.layout?.['icon-optional'], `${l.id} icon-optional`).toBe(false);
+      expect(l.layout?.['icon-optional'], `${l.id} icon-optional`).toBe(true);
       expect(l.layout?.['text-optional'], `${l.id} text-optional`).toBe(false);
     }
     // the sprite ships with the style (multi-sprite array, relative URL)
