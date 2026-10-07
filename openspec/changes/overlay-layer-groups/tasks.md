@@ -62,4 +62,4 @@
 - [ ] Design review with the impeccable skill
 - [ ] Interaction tests: group cycle, expanded grouping, edit CRUD, active state memory
 - [ ] Visual regression: all new states (mini with selector bottom, expanded grouped, edit mode)
-- [ ] Full `yarn test:ci` + `yarn test:visual` pass
+- [ ] Full `pnpm test:ci` + `pnpm test:visual` pass

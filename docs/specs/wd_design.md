@@ -240,7 +240,7 @@ Custom icon font generated from SVG files in `src/extras/icons/svg/source/`:
 **Adding New Custom Icons:**
 
 1. Add SVG file to `src/extras/icons/svg/source/`
-2. Run `yarn gen:icons`
+2. Run `pnpm gen:icons`
 3. Use with `wd-{filename}` prefix
 
 ### 3. Iconify Icons (Unplugin Icons)

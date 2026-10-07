@@ -7,7 +7,7 @@ The repository SHALL provide a Playwright smoke suite under `tests/e2e/` that ru
 #### Scenario: Dev server not running
 
 - **WHEN** the e2e suite is started and nothing listens on the base URL
-- **THEN** the run fails immediately with a message instructing the developer to start `yarn dev`
+- **THEN** the run fails immediately with a message instructing the developer to start `pnpm dev`
 
 #### Scenario: Dev server running
 

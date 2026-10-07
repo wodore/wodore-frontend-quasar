@@ -40,12 +40,12 @@ When first cloning the repository:
 
 ```bash
 # Install dependencies
-yarn
+pnpm install
 
 # Generate assets (API client, icons, favicons)
-yarn gen:api-local  # Requires backend running on localhost:8000
-yarn gen:icons      # Generate custom wd icons
-yarn gen:favs       # Generate favicons
+pnpm gen:api-local  # Requires backend running on localhost:8000
+pnpm gen:icons      # Generate custom wd icons
+pnpm gen:favs       # Generate favicons
 ```
 
 ### Setup
@@ -97,10 +97,10 @@ See `.env` for all available configuration options.
 Start the development server (PWA mode by default):
 
 ```bash
-yarn dev              # PWA mode on port 9000
+pnpm dev              # PWA mode on port 9000
 # or
-yarn dev:spa          # SPA mode
-yarn dev:ssr          # SSR mode
+pnpm dev:spa          # SPA mode
+pnpm dev:ssr          # SSR mode
 ```
 
 The application will be available at [http://localhost:9000](http://localhost:9000).
@@ -115,10 +115,10 @@ Generate TypeScript types from the backend OpenAPI schema:
 
 ```bash
 # From production API
-yarn gen:api
+pnpm gen:api
 
 # From local backend (recommended during development)
-yarn gen:api-local
+pnpm gen:api-local
 ```
 
 This creates type-safe API client definitions in `src/clients/wodore_v1.d.ts`.
@@ -129,10 +129,10 @@ Add SVG files to `src/extras/icons/svg/source/` and generate icon font:
 
 ```bash
 # One-time generation
-yarn gen:icons
+pnpm gen:icons
 
 # Watch mode (regenerate on changes)
-yarn gen:icons:watch
+pnpm gen:icons:watch
 ```
 
 Use in components:
@@ -147,7 +147,7 @@ Use in components:
 Generate favicons from source files in `src/assets/icongenie/`:
 
 ```bash
-yarn gen:favs
+pnpm gen:favs
 ```
 
 ## Build for Production
@@ -158,13 +158,13 @@ Build and test the production bundle locally:
 
 ```bash
 # Build the application
-yarn build            # PWA mode
+pnpm build            # PWA mode
 # or
-yarn build:spa        # SPA mode
-yarn build:ssr        # SSR mode
+pnpm build:spa        # SPA mode
+pnpm build:ssr        # SSR mode
 
 # Serve the production build locally
-yarn serve            # PWA mode on port 9000
+pnpm serve            # PWA mode on port 9000
 ```
 
 The build output will be in `dist/pwa/` (or `dist/spa/`, `dist/ssr/`).
@@ -175,15 +175,15 @@ Build and run the Docker container:
 
 ```bash
 # Build image with git hash
-yarn docker:build
+pnpm docker:build
 
 # Run with different environment configurations
-yarn docker:run-dev   # Development environment
-yarn docker:run-prod  # Production environment
-yarn docker:run-env   # Using .env only
+pnpm docker:run-dev   # Development environment
+pnpm docker:run-prod  # Production environment
+pnpm docker:run-env   # Using .env only
 
 # View built images
-yarn docker:ls
+pnpm docker:ls
 ```
 
 Manual Docker build:
@@ -210,10 +210,10 @@ export DOCKER_GITHUB_TOKEN=your_token
 echo $DOCKER_GITHUB_TOKEN | docker login ghcr.io -u GITHUB_USERNAME --password-stdin
 
 # Publish edge tag
-yarn docker:publish
+pnpm docker:publish
 
 # Create versioned release
-yarn release
+pnpm release
 ```
 
 ## Code Quality
@@ -222,16 +222,16 @@ Maintain code quality with linting and formatting:
 
 ```bash
 # Check code with ESLint
-yarn lint
+pnpm lint
 
 # Fix linting issues automatically
-yarn lint:fix
+pnpm lint:fix
 
 # Format code with Prettier
-yarn format
+pnpm format
 
 # Run tests (when implemented)
-yarn test
+pnpm test
 ```
 
 ## Project Structure
@@ -294,7 +294,7 @@ The container serves static files via Nginx and replaces environment variables a
 Required development tools:
 
 - `node` >= 18 (see `package.json`)
-- `yarn` >= 1.21.1
+- `pnpm` >= 10 (pinned via `packageManager`)
 - `docker` with `docker compose`
 - Backend services (see `../wodore-backend/README.md`)
 

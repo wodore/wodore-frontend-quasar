@@ -2,7 +2,7 @@
  * Visual test matrix: capture, assert, contrast-audit.
  *
  * Usage: node scripts/visual-matrix.mjs [--scheme light|dark] [--tag desktop|mobile] [--sheet]
- *       (yarn test:visual runs everything)
+ *       (pnpm test:visual runs everything)
  *
  * Output: .visual-tests/<timestamp>/
  *   <scheme>-<tag>-<state>.png   full-resolution, state-ASSERTED captures

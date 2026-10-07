@@ -2,7 +2,7 @@
 # Docs: https://github.com/rohansx/workz — repo usage: AGENTS.md § Worktrees / workz
 #
 # What workz defaults already do: copy `.env`/`.env.*` (quasar/vite read
-# `.env.local`) and auto-install deps from the lockfile (yarn —
+# `.env.local`) and auto-install deps from the lockfile (pnpm —
 # package-lock.json was removed so detection is deterministic).
 
 [sync.overrides]

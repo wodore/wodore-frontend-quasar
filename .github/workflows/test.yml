@@ -107,7 +107,7 @@ jobs:
         run: |
           # Exclude visual-regression: reference screenshots are
           # environment-specific (fonts, GPU, antialiasing differ between
-          # local and CI) — run locally with: yarn test:interaction
+          # local and CI) — run locally with: pnpm test:interaction
           pnpm exec playwright test tests/interaction/ --project=interaction --grep-invert "visual regression"
           node scripts/link-allure-attachments.mjs allure-results/e2e
         env:

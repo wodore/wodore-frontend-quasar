@@ -6,7 +6,7 @@
  *   - compares against the reference on subsequent runs
  *   - produces a diff image on failure
  *
- * Update references: yarn test:snapshots-update
+ * Update references: pnpm test:snapshots-update
  *
  * Captures the FULL viewport width — the controls live at the right edge
  * but their visual context (what's beside them, the map margin) matters.

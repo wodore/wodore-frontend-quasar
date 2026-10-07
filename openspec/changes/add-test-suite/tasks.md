@@ -22,18 +22,18 @@
 - [x] 3.4 Spec: unknown route shows the ErrorNotFound page
 - [x] 3.5 Spec: hut detail deep link `/m/hut/:slug` loads hut content (skip with message when hut not in local DB)
 - [x] 3.6 Spec: in-app navigation (e.g. map → feedback/support) works via the UI
-- [x] 3.7 Run the suite locally against `yarn dev` and confirm Allure results in `allure-results/e2e`
+- [x] 3.7 Run the suite locally against `pnpm dev` and confirm Allure results in `allure-results/e2e`
 
 ## 4. CI Allure Reporting (unit only)
 
 - [x] 4.1 Add a `tests` job to the PR workflow (new `test.yml` or extend `main.yml`) with `permissions: pull-requests: write, checks: write`
-- [x] 4.2 Run `yarn lint`, `npx vue-tsc --noEmit`, `yarn test:unit` (with `--clean-alluredir` semantics for the results dir)
+- [x] 4.2 Run `pnpm lint`, `npx vue-tsc --noEmit`, `pnpm test:unit` (with `--clean-alluredir` semantics for the results dir)
 - [x] 4.3 `npx -y allure generate allure-results/unit --clean` (cache npm like the backend does)
 - [x] 4.4 Post via `allure-framework/allure-action@v0.6.6` with `GITHUB_TOKEN`; verify no e2e step exists in CI
 - [x] 4.5 Open a test PR and confirm the Allure check appears on it
 
 ## 5. Validation & Docs
 
-- [x] 5.1 `yarn lint` and `npx vue-tsc --noEmit` pass on all new files
+- [x] 5.1 `pnpm lint` and `npx vue-tsc --noEmit` pass on all new files
 - [x] 5.2 Update `AGENTS.md`: test commands, local e2e precondition (dev server on :9000), results/report locations
 - [x] 5.3 Validate with `openspec validate add-test-suite` (fix any spec issues)

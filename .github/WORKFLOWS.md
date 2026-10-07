@@ -21,7 +21,7 @@ This project uses GitHub Actions for CI/CD automation.
 **Cache Strategy**:
 
 - ESLint cache: `.eslintcache`
-- node_modules: Based on `yarn.lock` hash
+- node_modules: pnpm store via setup-node (keyed on `pnpm-lock.yaml`); vite cache keyed separately
 
 ### Docker Build Workflow (`docker.yml`)
 

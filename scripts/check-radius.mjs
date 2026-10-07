@@ -13,7 +13,7 @@
  *   - 50%, 999px (circles and pills)
  *   - var()/ SCSS $variables / 999em etc. (non-literal, unchecked)
  *
- * Anything else fails the build. Run via `yarn lint`.
+ * Anything else fails the build. Run via `pnpm lint`.
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';

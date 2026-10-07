@@ -10,7 +10,7 @@
 # node_modules (node_modules = "copy") and allocated the port (managed
 # block in .env.local). A `pnpm install --frozen-lockfile` on top is a
 # fast no-op when in sync and reconciles drift when the lane's
-# package.json/yarn.lock diverge from main's node_modules snapshot.
+# package.json/pnpm-lock.yaml diverge from main's node_modules snapshot.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 

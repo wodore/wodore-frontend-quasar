@@ -7,7 +7,7 @@
  * → `api` block (never version-validated server-side, so it stays reachable
  * even when the pinned version has been retired).
  *
- * The pin is GENERATED: `yarn gen:api` (latest) or `yarn gen:api-version
+ * The pin is GENERATED: `pnpm gen:api` (latest) or `pnpm gen:api-version
  * 2026-10-01` (frozen snapshot for that version) writes both the typed
  * client and the pin (`src/clients/apiVersion.ts`) from the same schema,
  * so types and pin cannot drift. Generating with latest after a new API

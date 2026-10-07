@@ -67,5 +67,5 @@ Before writing CSS, check whether Quasar already provides it:
 
 1. **Visual regression** — Playwright's built-in `toHaveScreenshot()` on deterministic chrome states (overlay, basemap, focus) for automatic pixel-level comparison
 2. **Parallelize interaction tests** — currently `workers: 1` for the e2e suite; interaction specs are independent and could use `workers: 2+`
-3. **Composite `test:ci`** — `yarn test:unit && yarn test:interaction && yarn test:visual` as a single command
+3. **Composite `test:ci`** — `pnpm test:unit && pnpm test:interaction && pnpm test:visual` as a single command
 4. **Playwright HTML reporter** alongside Allure for local debugging (`npx playwright show-report`)
