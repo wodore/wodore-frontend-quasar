@@ -1,0 +1,18 @@
+{
+  "wd-dot": {
+    "x": 2,
+    "y": 2,
+    "width": 24,
+    "height": 24,
+    "pixelRatio": 1,
+    "sdf": false
+  },
+  "wd-dot-ring": {
+    "x": 28,
+    "y": 2,
+    "width": 24,
+    "height": 24,
+    "pixelRatio": 1,
+    "sdf": false
+  }
+}
