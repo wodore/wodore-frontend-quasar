@@ -1,1 +1,0 @@
-import{b as s}from"./index-DkdX2iHI.js";import{b as a,i,g as r,s as l,a as o}from"./locale-DLTnf9AI.js";import{u as n,d as g}from"./user-settings-store-BPdmMIR9.js";import"./vue-i18n.runtime-DxlHJENX.js";const S=s(({app:t,store:e})=>{a(t.config.globalProperties.$q),n(e).hasStoredSettings?i(r(e)):l(g()),t.use(o),t.config.globalProperties.$t=o.global.t});export{S as default};

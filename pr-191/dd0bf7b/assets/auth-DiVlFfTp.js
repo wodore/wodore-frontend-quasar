@@ -1,1 +1,0 @@
-import{b as o}from"./index-Bt26pgPU.js";import{u as n}from"./useAuthService-BjYaB_ru.js";import"./auth-store-CvKw_Mx9.js";import"./runtimeEnv-rF6Bd-z9.js";const u=o(async()=>{n().signinSilent().then().catch(t=>console.warn("Could not silent login",t))});export{u as default};

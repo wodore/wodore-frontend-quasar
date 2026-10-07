@@ -1,1 +1,0 @@
-var t={};const i=typeof window<"u"?window.__WODORE_RUNTIME_ENV__??{}:{};function r(n){return n!==void 0&&n!==""&&!n.startsWith("@@")}function o(n){const e=i[n];if(r(e))return e;if(typeof process<"u"&&t)return t[n]}export{o as g};
