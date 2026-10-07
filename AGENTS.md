@@ -33,7 +33,11 @@ implementation must match.
 
 ## Essential Commands
 
-Use `pnpm run` (or the `just` façade) — commands. Check `package.json` for details.
+Use `pnpm run` for scripts (see `package.json`) or the `just` task façade
+(cartoload-style, see `.justfile` + `tasks/*.just`): `just` shows the menu;
+`just check` runs lint + format + types; `just tests cov=yes` runs unit tests
+with coverage; `just lane status` inspects a workz lane. CI, Docker and workz
+call pnpm directly — `just` is human/agent ergonomics only.
 
 ### Development
 
