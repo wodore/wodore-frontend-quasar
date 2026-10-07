@@ -111,7 +111,7 @@ pnpm story:preview # Preview built Histoire site
 ### Testing
 
 ```bash
-# Unit tests (Vitest) — run in CI on every PR, Allure report posted to the PR
+# Unit tests (Vitest) — run in CI on every PR (JUnit annotations on failures)
 pnpm test:unit            # run once
 pnpm test:unit:watch      # watch mode
 pnpm test:unit:coverage   # with coverage
@@ -120,7 +120,7 @@ pnpm test:unit:coverage   # with coverage
 pnpm dev                  # 1. start the dev server (required!)
 pnpm test:e2e             # 2. run the suite (mobile-chrome project)
 
-# Allure reports
+# Allure reports (LOCAL or the manual CI workflow — see allure-report.yml)
 pnpm allure:generate      # merge unit + e2e results, generate report
 pnpm allure:open          # open the generated report in a browser
 pnpm allure:clean         # remove all results and reports
@@ -192,8 +192,14 @@ backend (`E2E_API_HOST`, default `http://127.0.0.1:8000`). The hut deep-link tes
 `E2E_HUT_SLUG` (default `aarbiwak`) and skips when the hut is not found. E2E is
 intentionally not part of CI (deterministic CI is handled by the unit suite).
 
-**CI**: `.github/workflows/test.yml` runs the unit suite on every PR and posts the Allure
-report via `allure-framework/allure-action` (same pattern as wodore-backend). Package
+**CI**: `.github/workflows/test.yml` runs the unit + interaction suites on every PR;
+failed unit tests surface as inline JUnit check-run annotations (mikepenz/
+action-junit-report — GitHub has no native GitLab-style test report view).
+The full Allure report is **on demand**: every Tests run uploads its raw
+`allure-results` artifact (14d retention), and `allure-report.yml`
+(workflow_dispatch, optional `run_id`, empty = latest on main) generates and
+publishes the report + history to gh-pages in a single commit — regular runs
+no longer spend ~7 minutes per run publishing reports. Package
 builds are label-gated on merged PRs: `BUILD:docker` triggers the Docker image build,
 `BUILD:android` the Capacitor debug-APK build (`.github/workflows/android.yml`); both
 also run on version tags and support manual dispatch.
