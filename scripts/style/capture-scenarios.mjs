@@ -23,16 +23,76 @@ const BASE = 'http://localhost:8917';
 
 /** name, anchor, zoom, what to check (kept in the manifest for reviews) */
 export const SCENARIOS = [
-  { name: 'country-z6.2', lon: 8.2, lat: 46.8, z: 6.2, check: 'town dots+labels, borders, overview hillshade, motorway skeleton' },
-  { name: 'regional-z8', lon: 7.75, lat: 46.55, z: 8, check: 'rivers visible, lakes, serif range names, rail ribbon' },
-  { name: 'rhone-valley-z10.3', lon: 7.7, lat: 46.31, z: 10.3, check: 'Rhone river spine, orange motorway+ramps, sparse streets, dots' },
-  { name: 'brig-interchange-z13.5', lon: 7.98, lat: 46.31, z: 13.5, check: 'ramp casings, tunnels dashed, station dot+label' },
-  { name: 'zermatt-trails-z13', lon: 7.748, lat: 46.012, z: 13, check: 'SAC dash ladder, no white on trails, glacier edge' },
-  { name: 'matterhorn-glacier-z14.5', lon: 7.7, lat: 45.99, z: 14.5, check: 'glacier paths sparse-dotted, peaks + small elevation' },
-  { name: 'gornergrat-terrain-z15.5', lon: 7.78, lat: 45.98, z: 15.5, check: 'rocks, AO relief, trail ink, close-zoom color' },
-  { name: 'sion-streets-z15.5', lon: 7.361, lat: 46.235, z: 15.5, check: 'minor streets soft casings, hierarchy tints' },
-  { name: 'bern-rail-z12.5', lon: 7.447, lat: 46.948, z: 12.5, check: 'rail ribbon + white hatch, station dots, quiet station names' },
-  { name: 'engelberg-ranges-z11.5', lon: 8.4, lat: 46.82, z: 11.5, check: 'serif mountain-range labels dark, peaks readable' },
+  {
+    name: 'country-z6.2',
+    lon: 8.2,
+    lat: 46.8,
+    z: 6.2,
+    check: 'town dots+labels, borders, overview hillshade, motorway skeleton',
+  },
+  {
+    name: 'regional-z8',
+    lon: 7.75,
+    lat: 46.55,
+    z: 8,
+    check: 'rivers visible, lakes, serif range names, rail ribbon',
+  },
+  {
+    name: 'rhone-valley-z10.3',
+    lon: 7.7,
+    lat: 46.31,
+    z: 10.3,
+    check: 'Rhone river spine, orange motorway+ramps, sparse streets, dots',
+  },
+  {
+    name: 'brig-interchange-z13.5',
+    lon: 7.98,
+    lat: 46.31,
+    z: 13.5,
+    check: 'ramp casings, tunnels dashed, station dot+label',
+  },
+  {
+    name: 'zermatt-trails-z13',
+    lon: 7.748,
+    lat: 46.012,
+    z: 13,
+    check: 'SAC dash ladder, no white on trails, glacier edge',
+  },
+  {
+    name: 'matterhorn-glacier-z14.5',
+    lon: 7.7,
+    lat: 45.99,
+    z: 14.5,
+    check: 'glacier paths sparse-dotted, peaks + small elevation',
+  },
+  {
+    name: 'gornergrat-terrain-z15.5',
+    lon: 7.78,
+    lat: 45.98,
+    z: 15.5,
+    check: 'rocks, AO relief, trail ink, close-zoom color',
+  },
+  {
+    name: 'sion-streets-z15.5',
+    lon: 7.361,
+    lat: 46.235,
+    z: 15.5,
+    check: 'minor streets soft casings, hierarchy tints',
+  },
+  {
+    name: 'bern-rail-z12.5',
+    lon: 7.447,
+    lat: 46.948,
+    z: 12.5,
+    check: 'rail ribbon + white hatch, station dots, quiet station names',
+  },
+  {
+    name: 'engelberg-ranges-z11.5',
+    lon: 8.4,
+    lat: 46.82,
+    z: 11.5,
+    check: 'serif mountain-range labels dark, peaks readable',
+  },
 ];
 
 const VARIANTS = {

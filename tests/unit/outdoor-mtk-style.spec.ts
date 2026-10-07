@@ -186,7 +186,7 @@ describe('outdoor-mtk basemap style', () => {
     expect(zoomValue(casingW, 16) - zoomValue(minorW, 16)).toBeGreaterThanOrEqual(1.8);
     // Casing ink: soft grey (swisstopo's minor roads: white lines with
     // a gentle edge — the near-black edges were too aggressive)
-    expect(JSON.stringify(minorCasing.paint['line-color'])).toContain('#B9B9B9');
+    expect(JSON.stringify(minorCasing.paint['line-color'])).toContain('#D2D2CE');
     // Paths + tracks use swisstopo ink, too
     for (const id of ['road_path', 'road_path_urban', 'wd-track']) {
       const col = JSON.stringify(style.layers.find(l => l.id === id)!.paint['line-color']);

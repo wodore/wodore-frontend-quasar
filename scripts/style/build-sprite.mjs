@@ -82,7 +82,8 @@ function drawIcon(kind, box) {
       } else if (kind === 'wd-star') {
         let hit = 0;
         for (let sy = 0; sy < 4; sy++)
-          for (let sx = 0; sx < 4; sx++) if (inPoly(x + (sx + 0.5) / 4, y + (sy + 0.5) / 4, verts)) hit++;
+          for (let sx = 0; sx < 4; sx++)
+            if (inPoly(x + (sx + 0.5) / 4, y + (sy + 0.5) / 4, verts)) hit++;
         const cov = hit / 16;
         r = Math.round(INK[0] * cov + r * (1 - cov));
         g = Math.round(INK[1] * cov + g * (1 - cov));
@@ -160,4 +161,6 @@ for (const [suffix, box, ratio] of [
   fs.writeFileSync(path.join(OUT, `sprite${suffix}.png`), encodePng(sheetW, box, rgba));
   fs.writeFileSync(path.join(OUT, `sprite${suffix}.json`), JSON.stringify(json) + '\n');
 }
-console.log(`wd sprite (ring, ring-dot, star — ${SIZE}px css) -> ${path.relative(process.cwd(), OUT)}`);
+console.log(
+  `wd sprite (ring, ring-dot, star — ${SIZE}px css) -> ${path.relative(process.cwd(), OUT)}`
+);

@@ -78,7 +78,12 @@
         styleJson.sprite = styleJson.sprite.map(s =>
           typeof s === 'string'
             ? abs(s)
-            : { ...s, url: abs(s.url) + (s.url.includes('sprites/wd') ? '?sv=' + (params.get('sv') ?? '1') : '') }
+            : {
+                ...s,
+                url:
+                  abs(s.url) +
+                  (s.url.includes('sprites/wd') ? '?sv=' + (params.get('sv') ?? '1') : ''),
+              }
         );
       } else if (typeof styleJson.sprite === 'string') {
         styleJson.sprite = abs(styleJson.sprite);

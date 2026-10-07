@@ -181,18 +181,45 @@ setPaint('landuse_residential', 'fill-color', C.residential);
 setPaint('landuse_residential', 'fill-opacity', 0.55);
 setPaint('landcover_wood', 'fill-color', C.wood);
 setPaint('landcover_wood', 'fill-opacity', [
-  'interpolate', ['linear'], ['zoom'],
-  6, 0, 8, 0.25, 10, 0.45, 12, 0.62, 14, 0.72,
+  'interpolate',
+  ['linear'],
+  ['zoom'],
+  6,
+  0,
+  8,
+  0.25,
+  10,
+  0.45,
+  12,
+  0.62,
+  14,
+  0.72,
 ]);
 setPaint('landcover_grass', 'fill-color', C.grass);
 setPaint('landcover_grass', 'fill-opacity', [
-  'interpolate', ['linear'], ['zoom'],
-  8, 0, 10, 0.2, 12, 0.35, 14, 0.5,
+  'interpolate',
+  ['linear'],
+  ['zoom'],
+  8,
+  0,
+  10,
+  0.2,
+  12,
+  0.35,
+  14,
+  0.5,
 ]);
 setPaint('landcover_ice', 'fill-color', C.ice);
 setPaint('landcover_ice', 'fill-opacity', [
-  'interpolate', ['linear'], ['zoom'],
-  6, 0.5, 10, 0.8, 13, 0.95,
+  'interpolate',
+  ['linear'],
+  ['zoom'],
+  6,
+  0.5,
+  10,
+  0.8,
+  13,
+  0.95,
 ]);
 setPaint('landcover_wetland', 'fill-color', C.wetland);
 setPaint('landcover_wetland', 'fill-opacity', 0.7);
@@ -205,16 +232,33 @@ setPaint('landuse_hospital', 'fill-color', C.cemetery);
 setPaint('landuse_school', 'fill-color', C.dirt);
 
 setPaint('water', 'fill-color', [
-  'interpolate', ['linear'], ['zoom'],
-  8, '#A9CBE4', 11, '#7FB0D9', 13, C.waterFill,
+  'interpolate',
+  ['linear'],
+  ['zoom'],
+  8,
+  '#A9CBE4',
+  11,
+  '#7FB0D9',
+  13,
+  C.waterFill,
 ]);
 setPaint('waterway_river', 'line-color', [
-  'interpolate', ['linear'], ['zoom'],
-  9, '#A5C6E0', 12, C.waterLine,
+  'interpolate',
+  ['linear'],
+  ['zoom'],
+  9,
+  '#A5C6E0',
+  12,
+  C.waterLine,
 ]);
 setPaint('waterway_other', 'line-color', [
-  'interpolate', ['linear'], ['zoom'],
-  9, '#B4D0E6', 12, C.waterLine2,
+  'interpolate',
+  ['linear'],
+  ['zoom'],
+  9,
+  '#B4D0E6',
+  12,
+  C.waterLine2,
 ]);
 setPaint('waterway_tunnel', 'line-color', C.waterLine2);
 paint('waterway_tunnel')['line-opacity'] = 0.7;
@@ -246,11 +290,15 @@ for (const p of [
   setPaint(p, 'line-color', C.roadWhite);
 }
 setPaint('road_minor', 'line-color', C.roadMinor);
-setPaint('road_minor', 'line-width', zw([
-  [13.5, 0],
-  [14, 2.6],
-  [20, 16],
-]));
+setPaint(
+  'road_minor',
+  'line-width',
+  zw([
+    [13.5, 0],
+    [14, 2.6],
+    [20, 16],
+  ])
+);
 setPaint('road_service_track', 'line-color', C.service);
 // service/track casings and fills: restrict to service only —
 // `track` joins the trail family below.
@@ -265,65 +313,105 @@ for (const id of ['bridge_service_track_casing', 'bridge_service_track']) {
   layer(id).filter = ['all', isLine, brunnel('bridge'), cls('service')];
 }
 
-setPaint('road_motorway', 'line-width', zw([
-  [5, 0.9],
-  [7, 1.7],
-  [9, 3.2],
-  [11, 4.2],
-  [13, 5.5],
-  [20, 16],
-]));
-setPaint('road_trunk_primary', 'line-width', zw([
-  [6.5, 0.7],
-  [8, 1.4],
-  [10, 2.6],
-  [12, 3.5],
-  [20, 13],
-]));
-setPaint('road_secondary_tertiary', 'line-width', zw([
-  [8, 0.5],
-  [10, 1.3],
-  [12, 2.3],
-  [20, 11],
-]));
+setPaint(
+  'road_motorway',
+  'line-width',
+  zw([
+    [5, 0.9],
+    [7, 1.7],
+    [9, 3.2],
+    [11, 4.2],
+    [13, 5.5],
+    [20, 16],
+  ])
+);
+setPaint(
+  'road_trunk_primary',
+  'line-width',
+  zw([
+    [6.5, 0.7],
+    [8, 1.4],
+    [10, 2.6],
+    [12, 3.5],
+    [20, 13],
+  ])
+);
+setPaint(
+  'road_secondary_tertiary',
+  'line-width',
+  zw([
+    [8, 0.5],
+    [10, 1.3],
+    [12, 2.3],
+    [20, 11],
+  ])
+);
 // swisstopo-style "2nd line": visible casing around the fill from low zoom
-setPaint('road_motorway_casing', 'line-width', zw([
-  [5, 1.3],
-  [9, 4.2],
-  [13, 7],
-  [20, 20],
-]));
-setPaint('road_trunk_primary_casing', 'line-width', zw([
-  [7, 0.9],
-  [10, 3.2],
-  [13, 5],
-  [20, 17],
-]));
-setPaint('road_secondary_tertiary_casing', 'line-width', zw([
-  [10, 1.8],
-  [13, 4],
-  [20, 15],
-]));
+setPaint(
+  'road_motorway_casing',
+  'line-width',
+  zw([
+    [5, 1.3],
+    [9, 4.2],
+    [13, 7],
+    [20, 20],
+  ])
+);
+setPaint(
+  'road_trunk_primary_casing',
+  'line-width',
+  zw([
+    [7, 0.9],
+    [10, 3.2],
+    [13, 5],
+    [20, 17],
+  ])
+);
+setPaint(
+  'road_secondary_tertiary_casing',
+  'line-width',
+  zw([
+    [10, 1.8],
+    [13, 4],
+    [20, 15],
+  ])
+);
 // smaller white roads also get their outline (2nd line), later zooms
-setPaint('road_minor_casing', 'line-width', zw([
-  [13, 0],
-  [14, 3],
-  [20, 13],
-]));
-setPaint('road_link_casing', 'line-width', zw([
-  [13, 2.5],
-  [20, 10],
-]));
-setPaint('road_service_track_casing', 'line-width', zw([
-  [14, 1.8],
-  [20, 9],
-]));
+setPaint(
+  'road_minor_casing',
+  'line-width',
+  zw([
+    [13, 0],
+    [14, 3],
+    [20, 13],
+  ])
+);
+setPaint(
+  'road_link_casing',
+  'line-width',
+  zw([
+    [13, 2.5],
+    [20, 10],
+  ])
+);
+setPaint(
+  'road_service_track_casing',
+  'line-width',
+  zw([
+    [14, 1.8],
+    [20, 9],
+  ])
+);
 // bridges carry the same network weight
 for (const b of ['bridge_motorway', 'bridge_trunk_primary', 'bridge_secondary_tertiary']) {
   const r = 'road_' + b.slice(7);
   paint(b)['line-width'] = paint(r)['line-width'];
 }
-for (const b of ['bridge_motorway_casing', 'bridge_trunk_primary_casing', 'bridge_secondary_tertiary_casing']) {
+for (const b of [
+  'bridge_motorway_casing',
+  'bridge_trunk_primary_casing',
+  'bridge_secondary_tertiary_casing',
+]) {
   const r = 'road_' + b.slice(7);
   paint(b)['line-width'] = paint(r)['line-width'];
 }
@@ -531,17 +619,7 @@ const hillshadeLayer = {
   source: 'dem-mapterhorn',
   minzoom: 6,
   paint: {
-    'hillshade-exaggeration': [
-      'interpolate',
-      ['linear'],
-      ['zoom'],
-      6,
-      0.06,
-      10,
-      0.16,
-      13,
-      0.36,
-    ],
+    'hillshade-exaggeration': ['interpolate', ['linear'], ['zoom'], 6, 0.06, 10, 0.16, 13, 0.36],
     'hillshade-shadow-color': '#50483A',
     'hillshade-highlight-color': '#FFFFFF',
     'hillshade-accent-color': '#5E5544',
@@ -633,15 +711,19 @@ const cityDotLayers = [
         6,
         [
           'case',
-          ['<=', ['to-number', ['get', 'rank']], 3], 3.5,
-          ['<=', ['to-number', ['get', 'rank']], 6], 2.5,
+          ['<=', ['to-number', ['get', 'rank']], 3],
+          3.5,
+          ['<=', ['to-number', ['get', 'rank']], 6],
+          2.5,
           1.8,
         ],
         13,
         [
           'case',
-          ['<=', ['to-number', ['get', 'rank']], 3], 6,
-          ['<=', ['to-number', ['get', 'rank']], 6], 4.5,
+          ['<=', ['to-number', ['get', 'rank']], 3],
+          6,
+          ['<=', ['to-number', ['get', 'rank']], 6],
+          4.5,
           3.5,
         ],
       ],
@@ -720,17 +802,23 @@ layout('label_city')['text-size'] = [
   4,
   [
     'case',
-    ['<=', ['to-number', ['get', 'rank']], 2], 13,
-    ['<=', ['to-number', ['get', 'rank']], 4], 12,
-    ['<=', ['to-number', ['get', 'rank']], 8], 10.5,
+    ['<=', ['to-number', ['get', 'rank']], 2],
+    13,
+    ['<=', ['to-number', ['get', 'rank']], 4],
+    12,
+    ['<=', ['to-number', ['get', 'rank']], 8],
+    10.5,
     10,
   ],
   11,
   [
     'case',
-    ['<=', ['to-number', ['get', 'rank']], 2], 17,
-    ['<=', ['to-number', ['get', 'rank']], 4], 15,
-    ['<=', ['to-number', ['get', 'rank']], 8], 13.5,
+    ['<=', ['to-number', ['get', 'rank']], 2],
+    17,
+    ['<=', ['to-number', ['get', 'rank']], 4],
+    15,
+    ['<=', ['to-number', ['get', 'rank']], 8],
+    13.5,
     12.5,
   ],
 ];
@@ -744,15 +832,7 @@ layout('label_town')['text-size'] = [
   11,
   ['case', ['<=', ['to-number', ['get', 'rank']], 2], 14.5, 13],
 ];
-layout('label_town')['text-size'] = [
-  'interpolate',
-  ['exponential', 1.2],
-  ['zoom'],
-  7,
-  13,
-  11,
-  15,
-];
+layout('label_town')['text-size'] = ['interpolate', ['exponential', 1.2], ['zoom'], 7, 13, 11, 15];
 recolorLabels(
   ['waterway_line_label', 'water_name_point_label', 'water_name_line_label'],
   C.waterLabel,
@@ -762,15 +842,7 @@ recolorLabels(
 layer('highway-name-path').minzoom = 14;
 setPaint('highway-name-path', 'text-color', '#8A6F4D');
 setPaint('highway-name-path', 'text-halo-color', C.contourHalo);
-layout('highway-name-path')['text-size'] = [
-  'interpolate',
-  ['linear'],
-  ['zoom'],
-  14.5,
-  9.5,
-  17,
-  11,
-];
+layout('highway-name-path')['text-size'] = ['interpolate', ['linear'], ['zoom'], 14.5, 9.5, 17, 11];
 
 /* ------------------------------------------------------------------ *
  * POIs — functional & sparse only                                    *
@@ -820,17 +892,23 @@ const peakLayers = [
         8,
         [
           'case',
-          ['>=', ['to-number', ['get', 'ele']], 4000], 11.5,
-          ['>=', ['to-number', ['get', 'ele']], 3000], 10.5,
-          ['>=', ['to-number', ['get', 'ele']], 2000], 9.5,
+          ['>=', ['to-number', ['get', 'ele']], 4000],
+          11.5,
+          ['>=', ['to-number', ['get', 'ele']], 3000],
+          10.5,
+          ['>=', ['to-number', ['get', 'ele']], 2000],
+          9.5,
           9,
         ],
         14,
         [
           'case',
-          ['>=', ['to-number', ['get', 'ele']], 4000], 15,
-          ['>=', ['to-number', ['get', 'ele']], 3000], 13.5,
-          ['>=', ['to-number', ['get', 'ele']], 2000], 12,
+          ['>=', ['to-number', ['get', 'ele']], 4000],
+          15,
+          ['>=', ['to-number', ['get', 'ele']], 3000],
+          13.5,
+          ['>=', ['to-number', ['get', 'ele']], 2000],
+          12,
           11,
         ],
       ],
@@ -961,4 +1039,6 @@ if (forbidden) throw new Error('style must not reference api.maptiler.com');
 
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, JSON.stringify(style, null, 2) + '\n');
-console.log(`wrote ${OUT} (${style.layers.length} layers, ${Object.keys(style.sources).length} sources)`);
+console.log(
+  `wrote ${OUT} (${style.layers.length} layers, ${Object.keys(style.sources).length} sources)`
+);

@@ -257,6 +257,15 @@ for (const id of ['border_admin_country', 'border_admin_disputed']) {
   p['line-color'] = 'hsla(350, 25%, 58%, 1)';
   p['line-width'] = ['interpolate', ['exponential', 0.9], ['zoom'], 3, 0.4, 19, 2.6];
 }
+// Canton borders (admin_level 3/4): distinct from country — thinner,
+// dashed, quieter ink (user call: 'use a different style')
+for (const id of ['border_admin_province', 'border_admin_province_band']) {
+  const l = layer(id);
+  l.paint['line-color'] = 'hsla(350, 15%, 62%, 1)';
+  l.paint['line-width'] = ['interpolate', ['exponential', 0.9], ['zoom'], 3, 0.3, 19, 1.8];
+  l.paint['line-dasharray'] = [4, 2];
+  l.layout = { ...l.layout, 'line-cap': 'butt', 'line-join': 'round' };
+}
 
 // Settlement dots, swisstopo lightbasemap style — rendered INSIDE the
 // place-label symbol layers as icons (sprite: build-sprite.mjs): icon
@@ -460,23 +469,23 @@ for (const [id, deep, pale] of [
 }
 // Rivers: glacier-deep lines carry the valley skeleton (swisstopo's
 // water_line rgb ladder ≈ 0.75 z7 -> 1 z10 -> 3 z13; widths kept)
-// Rivers: the valley skeleton — wider and lighter than the earlier
-// dark hairlines (user call: 'currently too thin and dark');
-// swisstopo's ladder ≈ 0.75 z7 -> 1 z10 -> 3 z13
+// Rivers: the valley skeleton — wider and clearly visible (user:
+// 'main river barely visible'). The earlier lighter tint washed out —
+// this stays blue enough to read as water at every zoom.
 for (const id of ['water_waterway', 'water_waterway_intermittent', 'water_intermittent_outline']) {
-  layer(id).paint['line-color'] = 'hsla(197, 45%, 62%, 1)';
+  layer(id).paint['line-color'] = 'hsla(200, 48%, 55%, 1)';
   layer(id).paint['line-width'] = [
     'interpolate',
     ['linear'],
     ['zoom'],
     7,
-    0.8,
+    0.9,
     10,
-    1.2,
+    1.5,
     13,
-    2.6,
+    3,
     16,
-    4,
+    4.5,
     20,
     7,
   ];
@@ -985,11 +994,13 @@ const parkLabel = {
 
 const firstPlaceIdx = base.layers.findIndex(l => l.id.startsWith('place_'));
 base.layers.splice(firstPlaceIdx === -1 ? base.layers.length : firstPlaceIdx, 0, parkLabel);
-// Place labels sit to the right of their dot (point layers only)
+// Place labels sit to the right of their dot (point layers only).
+// PEAKS stay centered: they carry no icon, and centering the anchor
+// centers the elevation line under the name (user call)
 for (const l of base.layers) {
   if (
     l.type === 'symbol' &&
-    /^place_(point|peak)_label/.test(l.id) &&
+    /^place_point_label/.test(l.id) &&
     l['source-layer'] === 'place_label'
   ) {
     l.layout['text-anchor'] = 'left';
@@ -1062,7 +1073,10 @@ const FILL_MINOR_COLOR = [
   9,
   'hsla(45, 100%, 82%, 0)',
   10.5,
-  '#FFFFFF',
+  // warm cream (mapy.com-style local streets) — reads as a soft
+  // yellow ribbon against the paper, distinctly friendlier than
+  // harsh white with dark edges (user call)
+  '#F5EED8',
 ];
 const FILL_BLUR = ['interpolate', ['linear'], ['zoom'], 8, 0.4, 14, 0.1];
 
@@ -1210,11 +1224,10 @@ const MINOR_CASING_COLOR = [
   ['zoom'],
   13,
   'hsla(0, 0%, 60%, 0)',
-  // soft grey, not near-black: swisstopo's minor roads read as white
-  // lines with a gentle edge (user call — the dark edges were too
-  // aggressive when zoomed close)
+  // very light grey — mapy.com-style: minor streets read as warm
+  // cream ribbons with a whisper of an edge, not white-with-dark-line
   14.5,
-  '#B9B9B9',
+  '#D2D2CE',
 ];
 const MINOR_CASING_WIDTH = [
   'interpolate',
