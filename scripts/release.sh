@@ -2,7 +2,7 @@
 
 # Help function
 display_help() {
-  echo "Usage: yarn release [options]"
+  echo "Usage: pnpm release [options]"
   echo ""
   echo "Options:"
   echo "  -t, --add-tag    Add the new tag and push it to remote"
@@ -60,7 +60,7 @@ done
 ##     exit 1
 ## fi
 
-# Get new tag using git-cliff directly from node_modules to avoid yarn output
+# Get new tag using git-cliff directly from node_modules to avoid npm/pnpm output
 NEW_TAG=$(./node_modules/.bin/git-cliff --bumped-version)
 NEW_VERSION=${NEW_TAG//v/}
 
@@ -88,7 +88,7 @@ else
   ${EDITOR:-vi} CHANGELOG.md
 
   # Update package.json version
-  yarn version --new-version $NEW_VERSION --no-git-tag-version
+  pnpm version $NEW_VERSION --no-git-tag-version
 
   # Sync Android version (versionName + versionCode) in the Capacitor project
   GRADLE_FILE="src-capacitor/android/app/build.gradle"

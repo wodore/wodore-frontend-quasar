@@ -23,11 +23,11 @@ Before writing CSS, check whether Quasar already provides it:
 
 - No hardcoded colors in component styles — use `$wd-*` Sass vars (static) or `--wd-ctl-*` custom properties (theme-aware).
 - `!important` requires a comment naming what it beats (Quasar `::before` fills, the dark-mode elevation kill). Anything else should be solvable by specificity.
-- Radius ramp: 4/8/16 + 999 (see `scripts/check-radius.mjs`, part of `yarn lint`).
+- Radius ramp: 4/8/16 + 999 (see `scripts/check-radius.mjs`, part of `pnpm lint`).
 
 ## Parity gate for refactors
 
-`yarn test:visual` captures 40 state-asserted screenshots (2 schemes × 2 viewports × 10 states) with a WCAG contrast audit. For zero-visual-change refactors: capture a baseline on main, refactor, re-capture — all deterministic chrome states must be pixel-identical (hut/home states render live staging data and vary run-to-run; compare those by eye, not bytes).
+`pnpm test:visual` captures 40 state-asserted screenshots (2 schemes × 2 viewports × 10 states) with a WCAG contrast audit. For zero-visual-change refactors: capture a baseline on main, refactor, re-capture — all deterministic chrome states must be pixel-identical (hut/home states render live staging data and vary run-to-run; compare those by eye, not bytes).
 
 
 ## Decision: SFC-scoped vs global (2026-10-01)
@@ -61,7 +61,7 @@ Before writing CSS, check whether Quasar already provides it:
 - `theme: light|dark` / `viewport: mobile|desktop` — dimensions
 - `@visual` — tests that verify visual output (colors, sizes, filters)
 
-**Generate the full report:** `yarn allure:generate` (merges unit + e2e/interaction results)
+**Generate the full report:** `pnpm allure:generate` (merges unit + e2e/interaction results)
 
 ### Suggested improvements (future)
 1. **Visual regression** — Playwright's built-in `toHaveScreenshot()` on deterministic chrome states (overlay, basemap, focus) for automatic pixel-level comparison

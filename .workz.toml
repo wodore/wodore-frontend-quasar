@@ -6,15 +6,13 @@
 # package-lock.json was removed so detection is deterministic).
 
 [sync.overrides]
-# NOT symlinked (the Node default): a symlinked node_modules makes lanes run
-# the MAIN checkout's dependencies (lane package.json changes ignored) and
-# any lane `yarn install` writes through into main's node_modules — the
-# same poisoning the backend avoids with per-lane .venv. It would also
-# coalesce vite's node_modules/.vite cache across lanes. ext4 has no
-# reflink (`clone` is unavailable), so a full copy it is (~1.5 GB per lane,
-# freed by `workz done`). Follow-up: migrate to pnpm (global store +
-# per-lane hardlinked installs — the uv model) and flip this to "ignore".
-node_modules = "copy"
+# pnpm lanes build their OWN node_modules from the global content-addressable
+# store (hardlinks, ~MB marginal disk — the uv model): scripts/lane-setup.sh
+# runs `pnpm install --frozen-lockfile`. "ignore" keeps workz from symlinking
+# the main checkout's node_modules (lanes would silently run main's deps,
+# lane installs would write through into main's tree, and vite's
+# node_modules/.vite cache would collide across lanes).
+node_modules = "ignore"
 
 [isolation]
 # Dev-server port ranges from 3500 up — clear of the backend lanes

@@ -59,7 +59,7 @@ fg)
         echo "lane-web: port :$PORT held by a foreign process (pid $(echo "$PIDS" | tr '\n' ' '))— refusing to start" >&2
         exit 1
     fi
-    exec yarn quasar dev -m pwa --port "$PORT"
+    exec pnpm exec quasar dev -m pwa --port "$PORT"
     ;;
 start)
     exec workz run

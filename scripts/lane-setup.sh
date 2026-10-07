@@ -8,7 +8,7 @@
 #
 # workz sync has already copied .env* from the main checkout, mirrored
 # node_modules (node_modules = "copy") and allocated the port (managed
-# block in .env.local). A `yarn install --frozen-lockfile` on top is a
+# block in .env.local). A `pnpm install --frozen-lockfile` on top is a
 # fast no-op when in sync and reconciles drift when the lane's
 # package.json/yarn.lock diverge from main's node_modules snapshot.
 set -euo pipefail
@@ -19,11 +19,11 @@ if [ ! -f .env.local ]; then
     exit 1
 fi
 
-if ! command -v yarn >/dev/null 2>&1; then
-    echo "lane-setup: yarn not found on PATH" >&2
+if ! command -v pnpm >/dev/null 2>&1; then
+    echo "lane-setup: pnpm not found on PATH" >&2
     exit 1
 fi
 
-yarn install --frozen-lockfile
+pnpm install --frozen-lockfile
 
 echo "lane-setup: ready — dev server: scripts/lane-web.sh fg|start (port $(sed -n 's/^PORT=//p' .env.local 2>/dev/null || true))"

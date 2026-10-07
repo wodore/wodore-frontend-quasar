@@ -1,9 +1,9 @@
 Run
 
 ```bash
-yarn run gen:icons
+pnpm gen:icons
 # or
-yarn run gen:icons:watch
+pnpm gen:icons:watch
 ```
 
 Icons:

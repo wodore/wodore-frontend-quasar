@@ -84,7 +84,7 @@ BUILD_START=$(date +%s)
 # failure happens AFTER the asset copy, so tolerate it and verify the
 # packaged assets are fresh instead.
 env "${ENVVARS[@]}" WODORE_MAPTILER_API_KEY="$MAPTILER_KEY" \
-  yarn build:capacitor || echo "(quasar exit tolerated — see note above)"
+  pnpm build:capacitor || echo "(quasar exit tolerated — see note above)"
 
 restore_env
 trap - EXIT

@@ -221,3 +221,8 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             GIT_HASH=${{ env.GIT_HASH }}
+          # Layer cache: rebuilds reuse previous image layers (deps stage is
+          # expensive); ~10 GB gha cache scope per repo, mode=max caches all
+          # intermediate stages including the pnpm store mount user.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
