@@ -18,42 +18,43 @@ function mtkStylePath(): string {
   return 'styles/outdoor-mtk/style.json';
 }
 
-/** Resolve a style's relative asset URLs (glyphs, sprite) against the
+/** Compute absolute glyph/sprite URLs for a style, relative to the
  * style's own URL. With setStyle(..., { transformStyle }) MapLibre loses
  * the style-URL context — relative URLs then resolve against the PAGE
- * base and 404 under subpath deploys (PR previews) — which silently
+ * base and 404 under subpath deploys (PR previews), which silently
  * killed the settlement-dot sprite and left labels at the mercy of the
- * service-worker cache. Absolutizing makes both travel safely. */
-async function resolveStyleAssets(
+ * service-worker cache. Non-mutating: the parsed style object may be
+ * frozen by MapLibre. */
+function absoluteStyleAssets(
+  style: { glyphs?: unknown; sprite?: unknown },
   styleUrl: string
-): Promise<string | import('maplibre-gl').StyleSpecification> {
+): { glyphs?: unknown; sprite?: unknown } {
+  let base: URL;
   try {
-    const res = await fetch(styleUrl);
-    if (!res.ok) return styleUrl;
-    const style = (await res.json()) as {
-      glyphs?: string;
-      sprite?: string | Array<string | { id?: string; url: string }>;
-    };
-    const base = new URL(styleUrl, document.baseURI);
-    if (typeof style.glyphs === 'string') {
-      style.glyphs = new URL(style.glyphs, base).href;
-    }
-    if (typeof style.sprite === 'string') {
-      style.sprite = new URL(style.sprite, base).href;
-    } else if (Array.isArray(style.sprite)) {
-      style.sprite = style.sprite.map(entry =>
-        typeof entry === 'string'
-          ? new URL(entry, base).href
-          : { ...entry, url: new URL(entry.url, base).href }
-      );
-    }
-    // SAFETY: the JSON is one of our own generated style files
-    // (public/styles/**) — shape verified by the unit style-contract
-    // tests before it ever ships.
-    return style as unknown as import('maplibre-gl').StyleSpecification;
+    base = new URL(styleUrl, document.baseURI);
   } catch {
-    return styleUrl; // network error: let MapLibre try the URL itself
+    return {};
   }
+  const abs = (url: string) => {
+    try {
+      // URL() percent-encodes the {fontstack}/{range} template tokens —
+      // MapLibre's style validator requires them verbatim
+      return new URL(url, base)
+        .href.replaceAll('%7B', '{')
+        .replaceAll('%7D', '}');
+    } catch {
+      return url;
+    }
+  };
+  const out: { glyphs?: unknown; sprite?: unknown } = {};
+  if (typeof style.glyphs === 'string') out.glyphs = abs(style.glyphs);
+  if (typeof style.sprite === 'string') out.sprite = abs(style.sprite);
+  else if (Array.isArray(style.sprite)) {
+    out.sprite = style.sprite.map(entry =>
+      typeof entry === 'string' ? abs(entry) : { ...entry, url: abs(entry.url) }
+    );
+  }
+  return out;
 }
 
 /** Static Maptoolkit endpoints (immutable, CDN-cached) — prefetched at
@@ -166,12 +167,16 @@ export const useBasemapStore = defineStore('basemap', () => {
      * Solution from: https://github.com/maplibre/maplibre-gl-js/issues/2587#issuecomment-1996106037
      */
     //mapRef.map?.style.setState(s.style, {
-    // Local styles get their relative asset URLs absolutized first —
-    // transformStyle strips the style-URL context (see resolveStyleAssets)
-    const applyStyle = (style: string | import('maplibre-gl').StyleSpecification) => {
-      mapRef.map?.setStyle(style, {
-        diff: true,
+    mapRef.map?.setStyle(s.style, {
+      diff: true,
       transformStyle: (previousStyle, nextStyle) => {
+        // The returned object loses MapLibre's style-URL context — pin
+        // relative glyph/sprite URLs to the style's own URL on every
+        // return path (spread: the parsed style object may be frozen)
+        const pin = (styleObj: Record<string, unknown>): import('maplibre-gl').StyleSpecification =>
+          typeof s.style === 'string'
+            ? ({ ...styleObj, ...absoluteStyleAssets(styleObj, s.style) } as import('maplibre-gl').StyleSpecification)
+            : (styleObj as import('maplibre-gl').StyleSpecification);
         // Debug input types
         console.debug('[transformStyle] Called with:', {
           previousStyleType: typeof previousStyle,
@@ -187,7 +192,7 @@ export const useBasemapStore = defineStore('basemap', () => {
         // If no previous style, return as-is (first load)
         if (!previousStyle) {
           console.debug('[transformStyle] No previous style, returning nextStyle as-is');
-          return nextStyle;
+          return pin(nextStyle as Record<string, unknown>);
         }
 
         // If nextStyle is a string (URL), we can't transform it - MapLibre should fetch it first
@@ -455,15 +460,12 @@ export const useBasemapStore = defineStore('basemap', () => {
           transformedStyle
         );
 
-        return transformedStyle;
+        // SAFETY: transformedStyle is our own StyleSpecification-typed
+        // object built above — the unknown hop only widens it to the
+        // open record shape pin() spreads.
+        return pin(transformedStyle as unknown as Record<string, unknown>);
       },
-      });
-    };
-    if (typeof s.style === 'string' && !/^(https?:)?\/\//.test(s.style)) {
-      void resolveStyleAssets(s.style).then(applyStyle);
-    } else {
-      applyStyle(s.style);
-    }
+    });
 
     // Debug: After setStyle completes, verify the layers/sources are present
     setTimeout(() => {
