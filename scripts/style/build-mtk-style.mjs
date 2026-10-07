@@ -110,9 +110,9 @@ const layer = id => {
   return l;
 };
 
-// Hut anonymity (user call: symbols okay, text not): blank the text of
-// alpine_hut/shelter features inside the generic POI layers while
-// keeping their icons.
+// Hut anonymity (user call: symbols okay but LATER, text never): blank
+// the text of alpine_hut/shelter features inside the generic POI
+// layers, and defer their icons by 2 zoom levels (user round 7)
 for (const l of base.layers) {
   if (!/^poi_generic_label_rank_\d$/.test(l.id)) continue;
   const field = l.layout?.['text-field'];
@@ -122,6 +122,16 @@ for (const l of base.layers) {
     ['in', ['get', 'type'], ['literal', ['alpine_hut', 'shelter']]],
     '',
     field,
+  ];
+  // hut icons deferred 2 zoom levels (typical POI icons from z14,
+  // hut icons from z16) — the case must be the step's default value,
+  // not wrap the zoom expression (MapLibre spec rule)
+  l.paint['icon-opacity'] = [
+    'step',
+    ['zoom'],
+    ['case', ['in', ['get', 'type'], ['literal', ['alpine_hut', 'shelter']]], 0, 1],
+    16,
+    1,
   ];
 }
 
@@ -216,27 +226,20 @@ for (const [id, defer] of [
     ['literal', ['Barlow SemiBold Italic']],
     ['literal', ['Noto Sans Italic']],
   ];
-  // TRIANGLE for important peaks (user call: not every peak should
-  // have one — only rank_1 and rank_2 get the cartographic triangle)
-  if (id !== 'place_peak_label_rank_3') {
-    l.layout['icon-image'] = 'wd-base:wd-peak';
-    l.layout['icon-optional'] = true; // text can show without triangle
-    l.layout['text-optional'] = true;
-    l.layout['icon-size'] = [
-      'interpolate',
-      ['linear'],
-      ['zoom'],
-      l.minzoom,
-      0.45,
-      l.minzoom + 2,
-      0.55,
-      14,
-      0.65,
-    ];
-    // triangle above the text (centered anchor — icon sits on the
-    // summit point, text flows below)
-    l.layout['icon-offset'] = [0, -0.8];
-  }
+  // TRIANGLE + name + elevation, ONE centered text block (user spec):
+  //     Matterhorn
+  //         ▲
+  //       4401
+  // The ▲ (U+25B2) is a text glyph in Noto Sans — perfectly centered,
+  // coupled in one collision box, same ink color as the name.
+  // Only rank_1/rank_2 peaks get the triangle; rank_3 is text-only.
+  const hasTriangle = id !== 'place_peak_label_rank_3';
+  const triSection = hasTriangle
+    ? [
+        '\u25B2\n',
+        { 'font-scale': 0.55, 'text-font': ['literal', ['Noto Sans Regular']], 'text-color': 'hsla(28, 14%, 42%, 1)' },
+      ]
+    : [];
   l.layout['text-field'] = [
     'case',
     ['!', ['has', 'is_nonlatin']],
@@ -246,6 +249,7 @@ for (const [id, defer] of [
       {},
       '\n',
       {},
+      ...triSection,
       ['to-string', ['get', 'ele']],
       { 'font-scale': 0.76, 'text-color': 'hsla(28, 10%, 48%, 1)' },
     ],
@@ -262,10 +266,13 @@ for (const [id, defer] of [
       {},
       '\n',
       {},
+      ...triSection,
       ['to-string', ['get', 'ele']],
       { 'font-scale': 0.76, 'text-color': 'hsla(28, 10%, 48%, 1)' },
     ],
   ];
+  // centered anchor: the whole block (name+triangle+elevation) centers
+  // on the summit point
   l.paint['text-color'] = 'hsla(28, 14%, 42%, 1)';
   l.paint['text-halo-color'] = 'rgba(242, 247, 244, 0.9)';
   l.paint['text-halo-width'] = 1.2;
@@ -326,17 +333,31 @@ for (const l of base.layers) {
   l.layout['icon-optional'] = false;
   l.layout['text-optional'] = false;
   l.layout['icon-padding'] = 2;
-  // THREE sizes: capitals biggest, major cities mid, medium cities smaller
+  // FOUR sizes scaling with rank (user: 'size the ring with the rank,
+  // e.g. 8 is smaller than 10') — capitals biggest, major cities
+  // (rank <=8) large, medium cities (rank 9-13) medium, small = none
+  const sizeFor = (cap, major, med) => [
+    'case',
+    ['==', ['get', 'category'], 'capital'],
+    cap,
+    ['all', ['==', ['get', 'category'], 'big_place'], ['<=', ['get', 'rank'], 8]],
+    major,
+    ['all', ['==', ['get', 'category'], 'big_place'], ['>', ['get', 'rank'], 8]],
+    med,
+    0,
+  ];
   l.layout['icon-size'] = [
     'interpolate',
     ['linear'],
     ['zoom'],
     1,
-    byCategory(0.8, 0.65, 0),
+    sizeFor(0.8, 0.6, 0.5),
     8,
-    byCategory(1.0, 0.8, 0),
+    sizeFor(1.0, 0.78, 0.65),
     10,
-    byCategory(1.15, 0.9, 0),
+    sizeFor(1.15, 0.88, 0.75),
+    13,
+    sizeFor(1.2, 0.95, 0.82),
   ];
   l.paint['icon-opacity'] = [
     'step',
@@ -865,7 +886,7 @@ for (const id of ['relief_hillshade_ao_min', 'relief_hillshade_ao_med']) {
 // pan cost that originally got it removed.
 {
   const d = layer('relief_hillshade_dramatic');
-  d.maxzoom = 9.5;
+  d.maxzoom = 14;
   d.paint['hillshade-shadow-color'] = 'hsla(210, 14%, 38%, 0.46)';
   d.paint['hillshade-highlight-color'] = 'hsla(45, 60%, 96%, 0.55)';
   d.paint['hillshade-accent-color'] = 'hsla(0, 0%, 0%, 0)';

@@ -3818,7 +3818,7 @@
         "visibility": "visible"
       },
       "source": "rgb-tiles",
-      "maxzoom": 9.5,
+      "maxzoom": 14,
       "minzoom": 0,
       "metadata": {
         "maptoolkit:legend": {
@@ -13664,7 +13664,34 @@
           "hsla(306, 0%, 100%, 1)"
         ],
         "icon-halo-width": 1.5,
-        "icon-halo-blur": 1.5
+        "icon-halo-blur": 1.5,
+        "icon-opacity": [
+          "step",
+          [
+            "zoom"
+          ],
+          [
+            "case",
+            [
+              "in",
+              [
+                "get",
+                "type"
+              ],
+              [
+                "literal",
+                [
+                  "alpine_hut",
+                  "shelter"
+                ]
+              ]
+            ],
+            0,
+            1
+          ],
+          16,
+          1
+        ]
       },
       "metadata": {
         "maptoolkit:legend": {
@@ -15248,53 +15275,218 @@
           ],
           1,
           [
-            "match",
+            "case",
             [
-              "get",
-              "category"
-            ],
-            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
               "capital"
             ],
             0.8,
             [
-              "big_place"
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
             ],
-            0.65,
+            0.6,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                ">",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
+            ],
+            0.5,
             0
           ],
           8,
           [
-            "match",
+            "case",
             [
-              "get",
-              "category"
-            ],
-            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
               "capital"
             ],
             1,
             [
-              "big_place"
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
             ],
-            0.8,
+            0.78,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                ">",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
+            ],
+            0.65,
             0
           ],
           10,
           [
-            "match",
+            "case",
             [
-              "get",
-              "category"
-            ],
-            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
               "capital"
             ],
             1.15,
             [
-              "big_place"
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
             ],
-            0.9,
+            0.88,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                ">",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
+            ],
+            0.75,
+            0
+          ],
+          13,
+          [
+            "case",
+            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
+              "capital"
+            ],
+            1.2,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
+            ],
+            0.95,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                ">",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
+            ],
+            0.82,
             0
           ]
         ],
@@ -15861,7 +16053,34 @@
           "hsla(306, 0%, 100%, 1)"
         ],
         "icon-halo-width": 1.5,
-        "icon-halo-blur": 1.5
+        "icon-halo-blur": 1.5,
+        "icon-opacity": [
+          "step",
+          [
+            "zoom"
+          ],
+          [
+            "case",
+            [
+              "in",
+              [
+                "get",
+                "type"
+              ],
+              [
+                "literal",
+                [
+                  "alpine_hut",
+                  "shelter"
+                ]
+              ]
+            ],
+            0,
+            1
+          ],
+          16,
+          1
+        ]
       },
       "metadata": {
         "maptoolkit:legend": {
@@ -17069,53 +17288,218 @@
           ],
           1,
           [
-            "match",
+            "case",
             [
-              "get",
-              "category"
-            ],
-            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
               "capital"
             ],
             0.8,
             [
-              "big_place"
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
             ],
-            0.65,
+            0.6,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                ">",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
+            ],
+            0.5,
             0
           ],
           8,
           [
-            "match",
+            "case",
             [
-              "get",
-              "category"
-            ],
-            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
               "capital"
             ],
             1,
             [
-              "big_place"
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
             ],
-            0.8,
+            0.78,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                ">",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
+            ],
+            0.65,
             0
           ],
           10,
           [
-            "match",
+            "case",
             [
-              "get",
-              "category"
-            ],
-            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
               "capital"
             ],
             1.15,
             [
-              "big_place"
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
             ],
-            0.9,
+            0.88,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                ">",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
+            ],
+            0.75,
+            0
+          ],
+          13,
+          [
+            "case",
+            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
+              "capital"
+            ],
+            1.2,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
+            ],
+            0.95,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                ">",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
+            ],
+            0.82,
             0
           ]
         ],
@@ -17924,7 +18308,34 @@
           "hsla(306, 0%, 100%, 1)"
         ],
         "icon-halo-width": 1.5,
-        "icon-halo-blur": 1.5
+        "icon-halo-blur": 1.5,
+        "icon-opacity": [
+          "step",
+          [
+            "zoom"
+          ],
+          [
+            "case",
+            [
+              "in",
+              [
+                "get",
+                "type"
+              ],
+              [
+                "literal",
+                [
+                  "alpine_hut",
+                  "shelter"
+                ]
+              ]
+            ],
+            0,
+            1
+          ],
+          16,
+          1
+        ]
       },
       "metadata": {
         "maptoolkit:legend": {
@@ -19202,53 +19613,218 @@
           ],
           1,
           [
-            "match",
+            "case",
             [
-              "get",
-              "category"
-            ],
-            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
               "capital"
             ],
             0.8,
             [
-              "big_place"
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
             ],
-            0.65,
+            0.6,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                ">",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
+            ],
+            0.5,
             0
           ],
           8,
           [
-            "match",
+            "case",
             [
-              "get",
-              "category"
-            ],
-            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
               "capital"
             ],
             1,
             [
-              "big_place"
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
             ],
-            0.8,
+            0.78,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                ">",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
+            ],
+            0.65,
             0
           ],
           10,
           [
-            "match",
+            "case",
             [
-              "get",
-              "category"
-            ],
-            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
               "capital"
             ],
             1.15,
             [
-              "big_place"
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
             ],
-            0.9,
+            0.88,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                ">",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
+            ],
+            0.75,
+            0
+          ],
+          13,
+          [
+            "case",
+            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
+              "capital"
+            ],
+            1.2,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
+            ],
+            0.95,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                ">",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
+            ],
+            0.82,
             0
           ]
         ],
@@ -19759,7 +20335,34 @@
           "hsla(306, 0%, 100%, 1)"
         ],
         "icon-halo-width": 1.5,
-        "icon-halo-blur": 1.5
+        "icon-halo-blur": 1.5,
+        "icon-opacity": [
+          "step",
+          [
+            "zoom"
+          ],
+          [
+            "case",
+            [
+              "in",
+              [
+                "get",
+                "type"
+              ],
+              [
+                "literal",
+                [
+                  "alpine_hut",
+                  "shelter"
+                ]
+              ]
+            ],
+            0,
+            1
+          ],
+          16,
+          1
+        ]
       },
       "metadata": {
         "maptoolkit:legend": {
@@ -20273,6 +20876,17 @@
             {},
             "\n",
             {},
+            "▲\n",
+            {
+              "font-scale": 0.55,
+              "text-font": [
+                "literal",
+                [
+                  "Noto Sans Regular"
+                ]
+              ],
+              "text-color": "hsla(28, 14%, 42%, 1)"
+            },
             [
               "to-string",
               [
@@ -20313,6 +20927,17 @@
             {},
             "\n",
             {},
+            "▲\n",
+            {
+              "font-scale": 0.55,
+              "text-font": [
+                "literal",
+                [
+                  "Noto Sans Regular"
+                ]
+              ],
+              "text-color": "hsla(28, 14%, 42%, 1)"
+            },
             [
               "to-string",
               [
@@ -20417,29 +21042,7 @@
             ]
           ]
         ],
-        "visibility": "visible",
-        "icon-image": "wd-base:wd-peak",
-        "icon-optional": true,
-        "text-optional": true,
-        "icon-size": [
-          "interpolate",
-          [
-            "linear"
-          ],
-          [
-            "zoom"
-          ],
-          8,
-          0.45,
-          10,
-          0.55,
-          14,
-          0.65
-        ],
-        "icon-offset": [
-          0,
-          -0.8
-        ]
+        "visibility": "visible"
       },
       "paint": {
         "text-color": "hsla(28, 14%, 42%, 1)",
@@ -21059,53 +21662,218 @@
           ],
           1,
           [
-            "match",
+            "case",
             [
-              "get",
-              "category"
-            ],
-            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
               "capital"
             ],
             0.8,
             [
-              "big_place"
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
             ],
-            0.65,
+            0.6,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                ">",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
+            ],
+            0.5,
             0
           ],
           8,
           [
-            "match",
+            "case",
             [
-              "get",
-              "category"
-            ],
-            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
               "capital"
             ],
             1,
             [
-              "big_place"
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
             ],
-            0.8,
+            0.78,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                ">",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
+            ],
+            0.65,
             0
           ],
           10,
           [
-            "match",
+            "case",
             [
-              "get",
-              "category"
-            ],
-            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
               "capital"
             ],
             1.15,
             [
-              "big_place"
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
             ],
-            0.9,
+            0.88,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                ">",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
+            ],
+            0.75,
+            0
+          ],
+          13,
+          [
+            "case",
+            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
+              "capital"
+            ],
+            1.2,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
+            ],
+            0.95,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                ">",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
+            ],
+            0.82,
             0
           ]
         ],
@@ -21674,6 +22442,17 @@
             {},
             "\n",
             {},
+            "▲\n",
+            {
+              "font-scale": 0.55,
+              "text-font": [
+                "literal",
+                [
+                  "Noto Sans Regular"
+                ]
+              ],
+              "text-color": "hsla(28, 14%, 42%, 1)"
+            },
             [
               "to-string",
               [
@@ -21714,6 +22493,17 @@
             {},
             "\n",
             {},
+            "▲\n",
+            {
+              "font-scale": 0.55,
+              "text-font": [
+                "literal",
+                [
+                  "Noto Sans Regular"
+                ]
+              ],
+              "text-color": "hsla(28, 14%, 42%, 1)"
+            },
             [
               "to-string",
               [
@@ -21818,29 +22608,7 @@
             ]
           ]
         ],
-        "visibility": "visible",
-        "icon-image": "wd-base:wd-peak",
-        "icon-optional": true,
-        "text-optional": true,
-        "icon-size": [
-          "interpolate",
-          [
-            "linear"
-          ],
-          [
-            "zoom"
-          ],
-          7,
-          0.45,
-          9,
-          0.55,
-          14,
-          0.65
-        ],
-        "icon-offset": [
-          0,
-          -0.8
-        ]
+        "visibility": "visible"
       },
       "paint": {
         "text-color": "hsla(28, 14%, 42%, 1)",
@@ -22560,53 +23328,218 @@
           ],
           1,
           [
-            "match",
+            "case",
             [
-              "get",
-              "category"
-            ],
-            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
               "capital"
             ],
             0.8,
             [
-              "big_place"
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
             ],
-            0.65,
+            0.6,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                ">",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
+            ],
+            0.5,
             0
           ],
           8,
           [
-            "match",
+            "case",
             [
-              "get",
-              "category"
-            ],
-            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
               "capital"
             ],
             1,
             [
-              "big_place"
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
             ],
-            0.8,
+            0.78,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                ">",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
+            ],
+            0.65,
             0
           ],
           10,
           [
-            "match",
+            "case",
             [
-              "get",
-              "category"
-            ],
-            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
               "capital"
             ],
             1.15,
             [
-              "big_place"
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
             ],
-            0.9,
+            0.88,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                ">",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
+            ],
+            0.75,
+            0
+          ],
+          13,
+          [
+            "case",
+            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
+              "capital"
+            ],
+            1.2,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
+            ],
+            0.95,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "big_place"
+              ],
+              [
+                ">",
+                [
+                  "get",
+                  "rank"
+                ],
+                8
+              ]
+            ],
+            0.82,
             0
           ]
         ],

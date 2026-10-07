@@ -618,6 +618,25 @@ export const useBasemapStore = defineStore('basemap', () => {
     const useRaster = shouldUseRaster(gpuTier);
     weakGpu = useRaster;
 
+    // GPU + optimization status (user-facing console diagnostics)
+    {
+      const gl = document.createElement('canvas').getContext('webgl2');
+      const renderer = gl?.getExtension('WEBGL_debug_renderer_info');
+      const gpuName = renderer ? String(gl!.getParameter(renderer.UNMASKED_RENDERER_WEBGL)) : gpuTier.gpu || 'unknown';
+      console.info(
+        `[perf] GPU: ${gpuName} | tier: ${gpuTier.tier} | fps: ${gpuTier.fps || 'n/a'} | ` +
+          `weak: ${weakGpu} | ` +
+          `optimizations: ${[
+            'ao_max+dramatic removed (all)',
+            weakGpu ? 'ao_med hidden (weak GPU)' : 'ao_med active',
+            weakGpu ? 'raster basemap (weak GPU)' : 'vector basemap',
+            'local glyphs/sprites (SW-cacheable)',
+            'boot prefetch (style + TileJSONs)',
+          ].join(', ')}`
+      );
+      if (gl) gl.getExtension('WEBGL_lose_context')?.loseContext();
+    }
+
     // Warm the HTTP cache for the default basemap's static assets
     prewarmOutdoorMtk();
 
