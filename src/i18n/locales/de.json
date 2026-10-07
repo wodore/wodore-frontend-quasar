@@ -22,7 +22,13 @@
     "camping": "Zeltplatz",
     "others": "Anderes",
     "unknown": "Unbekannt",
-    "load_error": "Hütte konnte nicht geladen werden"
+    "load_error": "Hütte konnte nicht geladen werden",
+    "load_error_hint": "Prüfe deine Internetverbindung und versuche es erneut.",
+    "load_error_retry": "Erneut versuchen",
+    "load_error_offline_title": "Offline",
+    "load_error_offline_hint": "Es besteht keine Internetverbindung. Versuche es erneut, sobald du wieder online bist.",
+    "load_error_unreachable_hint": "Der Server ist derzeit nicht erreichbar. Versuche es später erneut.",
+    "load_error_server_hint": "Der Server hat einen Fehler gemeldet."
   },
   "lang": {
     "german": "Deutsch",

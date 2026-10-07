@@ -34,6 +34,7 @@ export type IconsId =
   | "edit"
   | "edit-outline"
   | "copyright"
+  | "cloud-offline-outline"
   | "close"
   | "checkmark"
   | "calendar"
@@ -90,6 +91,7 @@ export type IconsKey =
   | "Edit"
   | "EditOutline"
   | "Copyright"
+  | "CloudOfflineOutline"
   | "Close"
   | "Checkmark"
   | "Calendar"
@@ -146,6 +148,7 @@ export enum Icons {
   Edit = "edit",
   EditOutline = "edit-outline",
   Copyright = "copyright",
+  CloudOfflineOutline = "cloud-offline-outline",
   Close = "close",
   Checkmark = "checkmark",
   Calendar = "calendar",
@@ -203,23 +206,24 @@ export const ICONS_CODEPOINTS: { [key in Icons]: string } = {
   [Icons.Edit]: "61729",
   [Icons.EditOutline]: "61730",
   [Icons.Copyright]: "61731",
-  [Icons.Close]: "61732",
-  [Icons.Checkmark]: "61733",
-  [Icons.Calendar]: "61734",
-  [Icons.Browser]: "61735",
-  [Icons.Bike]: "61736",
-  [Icons.Bell]: "61737",
-  [Icons.BellOutline]: "61738",
-  [Icons.BedFlat]: "61739",
-  [Icons.BedFlatOutline]: "61740",
-  [Icons.At]: "61741",
-  [Icons.ArrowheadUp]: "61742",
-  [Icons.ArrowheadRight]: "61743",
-  [Icons.ArrowheadLeft]: "61744",
-  [Icons.ArrowheadDown]: "61745",
-  [Icons.ArrowUpDown]: "61746",
-  [Icons.Api]: "61747",
-  [Icons.AlertTriangleOutline]: "61748",
-  [Icons.Add]: "61749",
-  [Icons.AddOutline]: "61750",
+  [Icons.CloudOfflineOutline]: "61732",
+  [Icons.Close]: "61733",
+  [Icons.Checkmark]: "61734",
+  [Icons.Calendar]: "61735",
+  [Icons.Browser]: "61736",
+  [Icons.Bike]: "61737",
+  [Icons.Bell]: "61738",
+  [Icons.BellOutline]: "61739",
+  [Icons.BedFlat]: "61740",
+  [Icons.BedFlatOutline]: "61741",
+  [Icons.At]: "61742",
+  [Icons.ArrowheadUp]: "61743",
+  [Icons.ArrowheadRight]: "61744",
+  [Icons.ArrowheadLeft]: "61745",
+  [Icons.ArrowheadDown]: "61746",
+  [Icons.ArrowUpDown]: "61747",
+  [Icons.Api]: "61748",
+  [Icons.AlertTriangleOutline]: "61749",
+  [Icons.Add]: "61750",
+  [Icons.AddOutline]: "61751",
 };
