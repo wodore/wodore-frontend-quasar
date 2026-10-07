@@ -49,11 +49,13 @@ function readCached(url: string): CachedResponse | null {
 export const test = baseTest.extend<{ stagingCache: void }>({
   stagingCache: [
     async ({ page }, use) => {
-      await page.route('**/*', async route => {
+      // Intercept cross-origin GETs only — localhost (dev server) requests never
+      // enter the handler at all: the initial 4-file burst of cold app loads
+      // must not queue behind Node-side interception on a 2-core runner.
+      await page.route(/^https?:\/\/(?!localhost)/, async route => {
         const req = route.request();
         const url = req.url();
-        const isLocal = /^[a-z]+:\/\/localhost/.test(url);
-        if (req.method() !== 'GET' || isLocal) return route.fallback();
+        if (req.method() !== 'GET') return route.fallback();
 
         const hit = readCached(url);
         if (hit) {
@@ -223,7 +225,9 @@ export async function waitForOverlayExpanded(page: Page): Promise<void> {
  */
 export async function loadMap(page: Page): Promise<void> {
   await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 60_000 });
-  await page.waitForSelector('.maplibregl-canvas', { timeout: 20_000 });
+  // First load after the dev server boots pays vite's on-demand dependency
+  // optimization on a busy 2-core runner — give that burst real headroom.
+  await page.waitForSelector('.maplibregl-canvas', { timeout: 60_000 });
   await waitForMapIdle(page, 30_000);
   await page.waitForTimeout(500); // brief paint settle for overlay chrome
 }
