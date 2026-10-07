@@ -1,0 +1,1 @@
+import{b as o}from"./index-DaFKlsVA.js";import{u as n}from"./useAuthService-CWh4SyKG.js";import{g as e}from"./runtimeEnv-rF6Bd-z9.js";import"./auth-store-DvW6bOQ5.js";const c=o(async()=>{if(e("WODORE_ENV")==="preview")return;n().signinSilent().then().catch(t=>console.warn("Could not silent login",t))});export{c as default};
