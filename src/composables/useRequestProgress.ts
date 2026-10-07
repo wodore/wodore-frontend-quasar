@@ -5,9 +5,9 @@ import { ref } from 'vue';
  * (src/clients/index.ts) and the header progress bar (MainLayout).
  *
  * Replaces Quasar's LoadingBar (QAjaxBar), which is pinned to the
- * viewport top edge — the bar now lives at the bottom of the header
- * toolbar. Mirrors QAjaxBar's debounce so fast responses (< 150 ms)
- * never flash the bar.
+ * viewport top edge — the bar now rides the bottom edge of the floating
+ * topbar pill (MainLayout), clipped by its stadium border. Mirrors
+ * QAjaxBar's debounce so fast responses (< 150 ms) never flash the bar.
  */
 const activeCount = ref(0);
 const visible = ref(false);
