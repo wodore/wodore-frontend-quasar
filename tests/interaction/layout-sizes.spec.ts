@@ -1,8 +1,16 @@
 /**
  * Layout and size audit — 48px controls, alignment, pill centering.
  */
-import { test, expect } from '@playwright/test';
-import { loadMap, pinTheme, tagTest, attachScreenshot, evalJSON } from './helpers';
+import { test, expect } from './helpers';
+import {
+  waitForMapIdle,
+  waitForOverlayExpanded,
+  loadMap,
+  pinTheme,
+  tagTest,
+  attachScreenshot,
+  evalJSON,
+} from './helpers';
 
 const CONFIGS = [
   { theme: 'light', mode: 'mobile' },
@@ -48,12 +56,12 @@ test.describe('layout and sizing', () => {
 
       // Open basemap rail for its measurement
       await page.evaluate('document.querySelector(".wd-bm__toggle")?.click()');
-      await page.waitForTimeout(500);
+      await page.waitForSelector('.wd-bm__rail', { timeout: 5_000 });
       const railH = await page.evaluate(
         'Math.round(document.querySelector(".wd-bm__rail")?.getBoundingClientRect().height ?? -1)'
       );
       await page.evaluate('document.querySelector(".wd-bm__toggle")?.click()');
-      await page.waitForTimeout(400);
+      await page.waitForSelector('.wd-bm__rail', { state: 'hidden', timeout: 5_000 });
 
       await attachScreenshot(page, testInfo, `${theme}-${mode}-layout`);
 

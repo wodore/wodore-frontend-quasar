@@ -36,6 +36,10 @@ jobs:
         id: nvmrc
         run: echo "NODE_VERSION=$(cat .nvmrc)" >> "$GITHUB_OUTPUT"
 
+      - name: Day stamp (staging cache key)
+        id: date
+        run: echo "day=$(date -u +%F)" >> "$GITHUB_OUTPUT"
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -56,6 +60,18 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      # Staging responses (API, tiles, fonts) cached across runs by the
+      # tests themselves (tests/interaction/helpers.ts) — first fetch per
+      # URL hits staging (drift detection stays), the rest replay local.
+      # Daily key rotation keeps the data reasonably fresh.
+      - name: Cache staging responses (rotates daily)
+        uses: actions/cache@v4
+        with:
+          path: tests/interaction/.staging-cache
+          key: staging-cache-v1-${{ steps.date.outputs.day }}
+          restore-keys: |
+            staging-cache-v1-
 
       # NOTE: e2e (Playwright) is intentionally NOT run in CI — it requires a
       # real dev server + backend and stays a local-only suite for now.

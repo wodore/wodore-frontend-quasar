@@ -31,6 +31,10 @@ export default defineConfig({
     {
       name: 'interaction',
       testDir: './tests/interaction',
+      // Each interaction test owns a fresh browser context (helpers.ts) —
+      // per-TEST parallelism, not just per-file: the overlay spec alone
+      // used to be the serial critical path.
+      fullyParallel: true,
       use: {
         viewport: { width: 390, height: 844 },
         isMobile: true,

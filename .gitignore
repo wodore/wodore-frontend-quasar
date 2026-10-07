@@ -56,3 +56,4 @@ AGENT/
 # Agent/worktree lanes (pi, Paseo, workz)
 .worktrees/
 junit-results/
+tests/interaction/.staging-cache/
