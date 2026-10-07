@@ -231,7 +231,7 @@ describe('outdoor-mtk basemap style', () => {
     const ranked = style.layers.filter(l => /^place_point_label_rank_\d$/.test(l.id));
     expect(ranked.length).toBeGreaterThanOrEqual(5);
     for (const l of ranked) {
-      expect(JSON.stringify(l.layout?.['icon-image']), `${l.id} icon-image`).toContain('wd-dot');
+      expect(JSON.stringify(l.layout?.['icon-image']), `${l.id} icon-image`).toContain('wd-ring');
       expect(l.layout?.['icon-optional'], `${l.id} icon-optional`).toBe(false);
       expect(l.layout?.['text-optional'], `${l.id} text-optional`).toBe(false);
     }

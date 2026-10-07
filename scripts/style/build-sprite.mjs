@@ -1,15 +1,18 @@
 /**
  * Build `public/styles/sprites/wd/sprite{,@2x}.{png,json}` — the
- * settlement dot icon used INSIDE the place-label symbol layers
+ * settlement dot icons used INSIDE the place-label symbol layers
  * (icon + text share one collision box, so a dot never renders without
  * its label — user directive).
  *
- * One icon, swisstopo's look: a small SOLID dark dot with a thin white
- * halo (the halo separates it from terrain). Authored small and shown
- * near scale 1.0 — scaling a big asset down blurs (advisor round 5).
+ * Three icons, swisstopo's settlement grammar (user round 6):
+ *   wd-ring      white fill + black border (towns)
+ *   wd-ring-dot  ring + small black center dot (big towns)
+ *   wd-star      ring + small black 5-point star (capitals)
  *
- * Pure Node: circles are rasterized with distance-based anti-aliasing
- * and encoded as PNG via zlib (no image library dependency).
+ * Authored small and shown near scale 1.0 — scaling a big asset down
+ * blurs (advisor round 5). Pure Node: circles rasterized with
+ * distance-based anti-aliasing, the star via 4x4 supersampled polygon
+ * coverage; PNG encoded through zlib (no image library dependency).
  *
  * Run: node scripts/style/build-sprite.mjs   (or: yarn gen:sprite)
  */
@@ -22,34 +25,73 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(__dirname, '..', '..', 'public', 'styles', 'sprites', 'wd');
 
-const INK = [0x26, 0x26, 0x26]; // swisstopo dot dark
-const HALO = [255, 255, 255];
+const INK = [0x1d, 0x1d, 0x1d]; // border + center marks (near-black)
+const FILL = [255, 255, 255]; // ring interior
 const SIZE = 14; // css px box at 1x -> draw box is 28
 
-/** Rasterize the dot into an RGBA buffer of `box` px. */
-function drawIcon(box) {
+/** Anti-aliased coverage of a filled circle. */
+const circle = (x, y, cx, cy, r) => Math.max(0, Math.min(1, r + 0.5 - Math.hypot(x - cx, y - cy)));
+
+/** Point-in-polygon (ray cast). */
+function inPoly(px, py, verts) {
+  let inside = false;
+  for (let i = 0, j = verts.length - 1; i < verts.length; j = i++) {
+    const [xi, yi] = verts[i];
+    const [xj, yj] = verts[j];
+    if (yi > py !== yj > py && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+/** 5-point star vertices, point-up. */
+function starVerts(cx, cy, R, r) {
+  const v = [];
+  for (let i = 0; i < 10; i++) {
+    const rad = i % 2 === 0 ? R : r;
+    const a = -Math.PI / 2 + (i * Math.PI) / 5;
+    v.push([cx + rad * Math.cos(a), cy + rad * Math.sin(a)]);
+  }
+  return v;
+}
+
+/** Rasterize one icon into an RGBA buffer of `box` px. */
+function drawIcon(kind, box) {
   const cx = box / 2;
   const cy = box / 2;
   const scale = box / SIZE;
-  const rInk = 3.6 * scale; // solid dark core radius
-  const rHalo = 5.4 * scale; // halo outer radius
+  const rOuter = 5.9 * scale; // outer edge of the black border
+  const rInner = 4.3 * scale; // inner edge of the border (white fill)
   const buf = Buffer.alloc(box * box * 4, 0);
+  const verts = kind === 'wd-star' ? starVerts(cx, cy, 3.1 * scale, 1.35 * scale) : null;
   for (let y = 0; y < box; y++) {
     for (let x = 0; x < box; x++) {
-      const d = Math.hypot(x + 0.5 - cx, y + 0.5 - cy);
-      const ink = Math.max(0, Math.min(1, rInk + 0.5 - d));
-      const halo = Math.max(0, Math.min(1, rHalo + 0.5 - d));
-      // alpha = halo coverage; color = ink over white halo
-      if (halo <= 0) continue;
       const px = y * box * 4 + x * 4;
-      const a = Math.round(halo * 255);
-      const r = Math.round(INK[0] * ink + HALO[0] * (1 - ink));
-      const g = Math.round(INK[1] * ink + HALO[1] * (1 - ink));
-      const b = Math.round(INK[2] * ink + HALO[2] * (1 - ink));
+      // border ring: black between rInner and rOuter, white inside
+      const outer = circle(x + 0.5, y + 0.5, cx, cy, rOuter);
+      if (outer <= 0) continue;
+      const inner = circle(x + 0.5, y + 0.5, cx, cy, rInner);
+      let r = Math.round(INK[0] * (outer - inner) + FILL[0] * inner);
+      let g = Math.round(INK[1] * (outer - inner) + FILL[1] * inner);
+      let b = Math.round(INK[2] * (outer - inner) + FILL[2] * inner);
+      // center marks, supersampled for the star
+      if (kind === 'wd-ring-dot') {
+        const dot = circle(x + 0.5, y + 0.5, cx, cy, 1.9 * scale);
+        r = Math.round(INK[0] * dot + r * (1 - dot));
+        g = Math.round(INK[1] * dot + g * (1 - dot));
+        b = Math.round(INK[2] * dot + b * (1 - dot));
+      } else if (kind === 'wd-star') {
+        let hit = 0;
+        for (let sy = 0; sy < 4; sy++)
+          for (let sx = 0; sx < 4; sx++) if (inPoly(x + (sx + 0.5) / 4, y + (sy + 0.5) / 4, verts)) hit++;
+        const cov = hit / 16;
+        r = Math.round(INK[0] * cov + r * (1 - cov));
+        g = Math.round(INK[1] * cov + g * (1 - cov));
+        b = Math.round(INK[2] * cov + b * (1 - cov));
+      }
       buf[px] = r;
       buf[px + 1] = g;
       buf[px + 2] = b;
-      buf[px + 3] = a;
+      buf[px + 3] = Math.round(outer * 255);
     }
   }
   return buf;
@@ -99,18 +141,23 @@ function crc32(buf) {
   return (crc ^ 0xffffffff) >>> 0;
 }
 
+const KINDS = ['wd-ring', 'wd-ring-dot', 'wd-star'];
 for (const [suffix, box, ratio] of [
   ['', SIZE, 1],
   ['@2x', SIZE * 2, 2],
 ]) {
-  const icon = drawIcon(box);
+  const sheetW = KINDS.length * box;
+  const rgba = Buffer.alloc(sheetW * box * 4, 0);
+  const json = {};
+  KINDS.forEach((kind, i) => {
+    const icon = drawIcon(kind, box);
+    for (let y = 0; y < box; y++) {
+      icon.copy(rgba, (y * sheetW + i * box) * 4, y * box * 4, (y + 1) * box * 4);
+    }
+    json[kind] = { x: i * box, y: 0, width: box, height: box, pixelRatio: ratio, sdf: false };
+  });
   fs.mkdirSync(OUT, { recursive: true });
-  fs.writeFileSync(path.join(OUT, `sprite${suffix}.png`), encodePng(box, box, icon));
-  fs.writeFileSync(
-    path.join(OUT, `sprite${suffix}.json`),
-    JSON.stringify({
-      'wd-dot': { x: 0, y: 0, width: box, height: box, pixelRatio: ratio, sdf: false },
-    }) + '\n'
-  );
+  fs.writeFileSync(path.join(OUT, `sprite${suffix}.png`), encodePng(sheetW, box, rgba));
+  fs.writeFileSync(path.join(OUT, `sprite${suffix}.json`), JSON.stringify(json) + '\n');
 }
-console.log(`wrote wd sprite (solid dot + white halo, ${SIZE}px css) to ${path.relative(process.cwd(), OUT)}`);
+console.log(`wd sprite (ring, ring-dot, star — ${SIZE}px css) -> ${path.relative(process.cwd(), OUT)}`);

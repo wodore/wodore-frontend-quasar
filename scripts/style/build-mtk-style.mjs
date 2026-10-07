@@ -110,6 +110,21 @@ const layer = id => {
   return l;
 };
 
+// Hut anonymity (user call: symbols okay, text not): blank the text of
+// alpine_hut/shelter features inside the generic POI layers while
+// keeping their icons.
+for (const l of base.layers) {
+  if (!/^poi_generic_label_rank_\d$/.test(l.id)) continue;
+  const field = l.layout?.['text-field'];
+  if (!field) continue;
+  l.layout['text-field'] = [
+    'case',
+    ['in', ['get', 'type'], ['literal', ['alpine_hut', 'shelter']]],
+    '',
+    field,
+  ];
+}
+
 // POI crowd control: defer the densest generic ranks...
 const poiZoom = { poi_generic_label_rank_4: 14, poi_generic_label_rank_5: 15.5 };
 for (const [id, z] of Object.entries(poiZoom)) layer(id).minzoom = z;
@@ -193,6 +208,14 @@ for (const [id, defer] of [
 ]) {
   const l = layer(id);
   l.minzoom += defer;
+  // bolder + a notch bigger (user call: peaks hard to read)
+  l.layout['text-size'] = scaleZoomStops(l.layout['text-size'], 1.12);
+  l.layout['text-font'] = [
+    'case',
+    ['!', ['has', 'is_nonlatin']],
+    ['literal', ['Barlow SemiBold Italic']],
+    ['literal', ['Noto Sans Italic']],
+  ];
   l.layout['text-field'] = [
     'case',
     ['!', ['has', 'is_nonlatin']],
@@ -203,7 +226,7 @@ for (const [id, defer] of [
       '\n',
       {},
       ['to-string', ['get', 'ele']],
-      { 'font-scale': 0.7, 'text-color': 'hsla(28, 10%, 52%, 1)' },
+      { 'font-scale': 0.76, 'text-color': 'hsla(28, 10%, 48%, 1)' },
     ],
     [
       'format',
@@ -219,7 +242,7 @@ for (const [id, defer] of [
       '\n',
       {},
       ['to-string', ['get', 'ele']],
-      { 'font-scale': 0.7, 'text-color': 'hsla(28, 10%, 52%, 1)' },
+      { 'font-scale': 0.76, 'text-color': 'hsla(28, 10%, 48%, 1)' },
     ],
   ];
   l.paint['text-color'] = 'hsla(28, 14%, 42%, 1)';
@@ -253,15 +276,17 @@ const byCategory = (capital, big, small) => [
 ];
 for (const l of base.layers) {
   if (!/^place_point_label_rank_\d$/.test(l.id)) continue;
-  // One icon, swisstopo look: small solid dark dot + white halo
-  // (re-authored small, shown near scale 1.0 — scaled-down big assets
-  // blur). Capitals and towns only; villages/hamlets stay label-only
-  // (advisor round 5 — that alone removes ~9 marks per view).
+  // Settlement grammar (user round 6): white-inside/black-border ring
+  // for towns, ring + center dot for big towns, ring + star for
+  // capitals; villages/hamlets label-only. MapLibre namespaces
+  // multi-sprite images by sprite id — ours is 'wd-base'
   l.layout['icon-image'] = [
     'match',
     ['get', 'category'],
-    ['capital', 'big_place'],
-    'wd-base:wd-dot',
+    ['capital'],
+    'wd-base:wd-star',
+    ['big_place'],
+    'wd-base:wd-ring-dot',
     '',
   ];
   // both must place, or neither shows — the no-orphan guarantee
@@ -435,30 +460,25 @@ for (const [id, deep, pale] of [
 }
 // Rivers: glacier-deep lines carry the valley skeleton (swisstopo's
 // water_line rgb ladder ≈ 0.75 z7 -> 1 z10 -> 3 z13; widths kept)
-// Rivers: the valley skeleton — swisstopo's rivers are clearly
-// visible blue lines from regional zoom on; mtk's hairline ladder
-// (0.33px at z3, exp 1.2) leaves them invisible exactly where they
-// carry the terrain story
+// Rivers: the valley skeleton — wider and lighter than the earlier
+// dark hairlines (user call: 'currently too thin and dark');
+// swisstopo's ladder ≈ 0.75 z7 -> 1 z10 -> 3 z13
 for (const id of ['water_waterway', 'water_waterway_intermittent', 'water_intermittent_outline']) {
-  layer(id).paint['line-color'] = 'hsla(196, 52%, 52%, 1)';
+  layer(id).paint['line-color'] = 'hsla(197, 45%, 62%, 1)';
   layer(id).paint['line-width'] = [
     'interpolate',
     ['linear'],
     ['zoom'],
     7,
-    0.6,
-    9,
-    0.9,
-    11,
-    1.3,
+    0.8,
+    10,
+    1.2,
     13,
-    2,
-    15,
-    3,
-    17,
-    4.5,
+    2.6,
+    16,
+    4,
     20,
-    6,
+    7,
   ];
 }
 // Water labels: glacier-turquoise-deep ink
@@ -704,7 +724,11 @@ layer('road_path_blur').layout = { ...layer('road_path_blur').layout, visibility
 // Ungraded plain paths: dotted (user call — 'if unsure better dot
 // them'; only explicit T1 easy-walking paths stay solid)
 layer('road_path').paint['line-dasharray'] = [0.1, 2];
-layer('road_path').layout = { ...layer('road_path').layout, 'line-cap': 'round', 'line-join': 'round' };
+layer('road_path').layout = {
+  ...layer('road_path').layout,
+  'line-cap': 'round',
+  'line-join': 'round',
+};
 
 // SAC difficulty is the line itself (user call: only easy walking is
 // solid; as demand grows the marks thin out). Dashed layers use BUTT
@@ -898,7 +922,11 @@ for (const l of base.layers) {
 for (const l of base.layers) {
   if (l.type !== 'symbol' || !/^place_line_label_rank_\d$/.test(l.id)) continue;
   const remap = f =>
-    f === 'Barlow Italic' ? 'Noto Serif Italic' : f === 'Barlow SemiBold Italic' ? 'Noto Serif Bold Italic' : f;
+    f === 'Barlow Italic'
+      ? 'Noto Serif Italic'
+      : f === 'Barlow SemiBold Italic'
+        ? 'Noto Serif Bold Italic'
+        : f;
   const walk = node =>
     Array.isArray(node)
       ? node[0] === 'literal'
@@ -909,6 +937,9 @@ for (const l of base.layers) {
         : node;
   l.layout['text-font'] = walk(l.layout['text-font'] ?? []);
   l.layout['text-letter-spacing'] = 0.12;
+  // dark ink (user call) — glacier names keep the turquoise voice
+  l.paint['text-color'] = ['match', ['get', 'type'], ['glacier'], '#29626B', '#2A2A2A'];
+  l.paint['text-halo-color'] = 'rgba(242, 247, 244, 0.9)';
 }
 
 // Park labels: mtk ranks parks like top places (r5-r10), so the generic
