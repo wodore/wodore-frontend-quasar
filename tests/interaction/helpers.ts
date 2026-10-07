@@ -21,10 +21,7 @@ export const GET_MAP =
 // later run (CI persists the dir via actions/cache) serves local bytes.
 // GET + 2xx + ≤5 MB only; content-encoding/length stripped so the decoded
 // body can be replayed verbatim.
-const CACHE_DIR = path.join(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '.staging-cache'
-);
+const CACHE_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '.staging-cache');
 const MAX_ENTRY_BYTES = 5 * 1024 * 1024;
 
 interface CachedResponse {
@@ -160,31 +157,37 @@ export async function attachFailureArtifacts(testInfo: TestInfo): Promise<void> 
 export async function pinTheme(page: Page, theme: 'light' | 'dark'): Promise<void> {
   if (theme === 'light') return;
   const isMobile = page.viewportSize()!.width < 900;
-  const menuOpened = '.wd-topbar__menu, .q-menu';
   if (isMobile) {
     await page.evaluate(
       'document.querySelector(".wd-topbar__user, .wd-topbar__menu .q-btn")?.click()'
     );
-    await page.waitForSelector(`${menuOpened} >> visible=true`, { timeout: 5_000 });
+    await page.waitForTimeout(700);
   }
   for (let i = 0; i < 3; i++) {
     const dark = await page.evaluate(() => document.body.classList.contains('body--dark'));
     if (dark) break;
     await page.evaluate('document.querySelector("[data-testid=theme-cycle]")?.click()');
-    await page
-      .waitForFunction(() => document.body.classList.contains('body--dark'), null, {
-        polling: 100,
-        timeout: 5_000,
-      })
-      .catch(() => {}); // bounded; loop retries
+    await page.waitForTimeout(400);
   }
+  // The theme transition (CSS vars) must fully land before color sampling —
+  // bounded poll instead of a blind sleep, but generous: intermediate
+  // colors were sampled mid-transition when this waited too little.
+  await page
+    .waitForFunction(
+      () => {
+        if (!document.body.classList.contains('body--dark')) return false;
+        const cs = getComputedStyle(document.body);
+        return cs.transitionDuration === '0s' || cs.getPropertyValue('--transition') === '';
+      },
+      null,
+      { timeout: 5_000 }
+    )
+    .catch(() => page.waitForTimeout(500));
   if (isMobile) {
     await page.evaluate(
       'document.querySelector(".wd-topbar__user, .wd-topbar__menu .q-btn")?.click()'
     );
-    await page
-      .waitForSelector(`${menuOpened} >> visible=true`, { state: 'hidden', timeout: 5_000 })
-      .catch(() => {});
+    await page.waitForTimeout(500);
   }
 }
 
