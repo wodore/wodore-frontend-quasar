@@ -3868,44 +3868,25 @@
         "line-width": [
           "interpolate",
           [
-            "exponential",
-            1.2
+            "linear"
           ],
           [
             "zoom"
           ],
+          7,
+          0.6,
+          9,
+          0.9,
+          11,
+          1.3,
+          13,
+          2,
+          15,
           3,
-          [
-            "match",
-            [
-              "get",
-              "type"
-            ],
-            "river",
-            1,
-            [
-              "stream",
-              "canal"
-            ],
-            0.5,
-            0.33
-          ],
-          19,
-          [
-            "match",
-            [
-              "get",
-              "type"
-            ],
-            "river",
-            6,
-            [
-              "stream",
-              "canal"
-            ],
-            3,
-            1.98
-          ]
+          17,
+          4.5,
+          20,
+          6
         ]
       },
       "metadata": {
@@ -3949,46 +3930,25 @@
         "line-width": [
           "interpolate",
           [
-            "exponential",
-            1.2
+            "linear"
           ],
           [
             "zoom"
           ],
+          7,
+          0.6,
+          9,
+          0.9,
+          11,
+          1.3,
+          13,
+          2,
+          15,
           3,
-          [
-            "match",
-            [
-              "get",
-              "type"
-            ],
-            "river",
-            1,
-            [
-              "lake",
-              "stream",
-              "canal"
-            ],
-            0.5,
-            0.33
-          ],
-          19,
-          [
-            "match",
-            [
-              "get",
-              "type"
-            ],
-            "river",
-            6,
-            [
-              "lake",
-              "stream",
-              "canal"
-            ],
-            3,
-            1.98
-          ]
+          17,
+          4.5,
+          20,
+          6
         ],
         "line-dasharray": [
           3,
@@ -4239,16 +4199,25 @@
         "line-width": [
           "interpolate",
           [
-            "exponential",
-            1.2
+            "linear"
           ],
           [
             "zoom"
           ],
+          7,
+          0.6,
+          9,
+          0.9,
+          11,
+          1.3,
+          13,
+          2,
+          15,
           3,
-          0.33,
-          19,
-          1.98
+          17,
+          4.5,
+          20,
+          6
         ],
         "line-dasharray": [
           3,
@@ -6002,7 +5971,7 @@
       "maxzoom": 23,
       "layout": {
         "line-join": "round",
-        "visibility": "visible"
+        "visibility": "none"
       },
       "paint": {
         "line-color": [
@@ -6086,7 +6055,7 @@
       "layout": {
         "line-cap": "round",
         "line-join": "round",
-        "visibility": "visible"
+        "visibility": "none"
       },
       "paint": {
         "line-blur": [
@@ -6206,7 +6175,7 @@
       "layout": {
         "line-cap": "round",
         "line-join": "round",
-        "visibility": "visible"
+        "visibility": "none"
       },
       "paint": {
         "line-blur": [
@@ -6400,12 +6369,14 @@
       "minzoom": 11,
       "maxzoom": 23,
       "layout": {
-        "line-cap": "round",
+        "line-cap": "butt",
         "line-join": "round",
         "visibility": "visible"
       },
       "paint": {
-        "line-color": [
+        "line-color": "#8A8A8A",
+        "line-gap-width": 0,
+        "line-width": [
           "interpolate",
           [
             "linear"
@@ -6413,29 +6384,16 @@
           [
             "zoom"
           ],
-          13,
-          "hsla(0, 0%, 60%, 0)",
-          14.5,
-          "#3C3C3C"
-        ],
-        "line-gap-width": 0,
-        "line-width": [
-          "interpolate",
-          [
-            "exponential",
-            2
-          ],
-          [
-            "zoom"
-          ],
-          13,
-          3.5,
-          15,
-          4,
-          16,
           8,
-          20,
-          95
+          0.8,
+          12,
+          1.2,
+          16,
+          1.8
+        ],
+        "line-dasharray": [
+          2,
+          2.2
         ]
       },
       "metadata": {
@@ -6490,12 +6448,14 @@
       "minzoom": 5,
       "maxzoom": 23,
       "layout": {
-        "line-cap": "round",
+        "line-cap": "butt",
         "line-join": "round",
         "visibility": "visible"
       },
       "paint": {
-        "line-color": [
+        "line-color": "#8A8A8A",
+        "line-gap-width": 0,
+        "line-width": [
           "interpolate",
           [
             "linear"
@@ -6503,474 +6463,12 @@
           [
             "zoom"
           ],
-          5,
-          "hsla(0, 0%, 60%, 0)",
-          6.5,
-          [
-            "match",
-            [
-              "get",
-              "type"
-            ],
-            [
-              "motorway"
-            ],
-            "#BE9A50",
-            [
-              "trunk"
-            ],
-            "#BE9A50",
-            [
-              "primary"
-            ],
-            "#8C8C8C",
-            [
-              "secondary"
-            ],
-            "#8C8C8C",
-            [
-              "tertiary"
-            ],
-            "#8C8C8C",
-            [
-              "minor",
-              "service"
-            ],
-            "#8C8C8C",
-            "#8C8C8C"
-          ],
-          14.5,
-          [
-            "match",
-            [
-              "get",
-              "type"
-            ],
-            [
-              "motorway"
-            ],
-            "#46371E",
-            [
-              "trunk"
-            ],
-            "#46371E",
-            [
-              "primary"
-            ],
-            "#3C3C3C",
-            [
-              "secondary"
-            ],
-            "#3C3C3C",
-            [
-              "tertiary"
-            ],
-            "#3C3C3C",
-            [
-              "minor",
-              "service"
-            ],
-            "#3C3C3C",
-            "#3C3C3C"
-          ]
-        ],
-        "line-gap-width": 0,
-        "line-width": [
-          "interpolate",
-          [
-            "exponential",
-            2
-          ],
-          [
-            "zoom"
-          ],
-          6,
-          [
-            "match",
-            [
-              "get",
-              "type"
-            ],
-            [
-              "motorway"
-            ],
-            [
-              "match",
-              [
-                "get",
-                "ramp"
-              ],
-              1,
-              0.5,
-              1
-            ],
-            [
-              "trunk"
-            ],
-            1,
-            [
-              "primary"
-            ],
-            0,
-            [
-              "secondary"
-            ],
-            0,
-            [
-              "tertiary"
-            ],
-            0,
-            [
-              "minor",
-              "service"
-            ],
-            0,
-            0
-          ],
           8,
-          [
-            "match",
-            [
-              "get",
-              "type"
-            ],
-            [
-              "motorway"
-            ],
-            [
-              "match",
-              [
-                "get",
-                "ramp"
-              ],
-              1,
-              0.8,
-              1.4
-            ],
-            [
-              "trunk"
-            ],
-            1.4,
-            [
-              "primary"
-            ],
-            2.8,
-            [
-              "secondary"
-            ],
-            0,
-            [
-              "tertiary"
-            ],
-            0,
-            [
-              "minor",
-              "service"
-            ],
-            0,
-            0
-          ],
-          9,
-          [
-            "match",
-            [
-              "get",
-              "type"
-            ],
-            [
-              "motorway"
-            ],
-            [
-              "match",
-              [
-                "get",
-                "ramp"
-              ],
-              1,
-              1,
-              1.7
-            ],
-            [
-              "trunk"
-            ],
-            1.7,
-            [
-              "primary"
-            ],
-            3.3,
-            [
-              "secondary"
-            ],
-            2.7,
-            [
-              "tertiary"
-            ],
-            0,
-            [
-              "minor",
-              "service"
-            ],
-            0,
-            0
-          ],
-          10,
-          [
-            "match",
-            [
-              "get",
-              "type"
-            ],
-            [
-              "motorway"
-            ],
-            [
-              "match",
-              [
-                "get",
-                "ramp"
-              ],
-              1,
-              1.2,
-              2
-            ],
-            [
-              "trunk"
-            ],
-            2,
-            [
-              "primary"
-            ],
-            3.9,
-            [
-              "secondary"
-            ],
-            3.1,
-            [
-              "tertiary"
-            ],
-            2.6,
-            [
-              "minor",
-              "service"
-            ],
-            0,
-            0
-          ],
+          0.8,
           12,
-          [
-            "match",
-            [
-              "get",
-              "type"
-            ],
-            [
-              "motorway"
-            ],
-            [
-              "match",
-              [
-                "get",
-                "ramp"
-              ],
-              1,
-              2.75,
-              5.5
-            ],
-            [
-              "trunk"
-            ],
-            5.5,
-            [
-              "primary"
-            ],
-            3.75,
-            [
-              "secondary"
-            ],
-            3.5,
-            [
-              "tertiary"
-            ],
-            3.5,
-            [
-              "minor",
-              "service"
-            ],
-            0,
-            0
-          ],
-          13,
-          [
-            "match",
-            [
-              "get",
-              "type"
-            ],
-            [
-              "motorway"
-            ],
-            [
-              "match",
-              [
-                "get",
-                "ramp"
-              ],
-              1,
-              3,
-              6
-            ],
-            [
-              "trunk"
-            ],
-            6,
-            [
-              "primary"
-            ],
-            4,
-            [
-              "secondary"
-            ],
-            3.75,
-            [
-              "tertiary"
-            ],
-            3.75,
-            [
-              "minor",
-              "service"
-            ],
-            0,
-            0
-          ],
-          15,
-          [
-            "match",
-            [
-              "get",
-              "type"
-            ],
-            [
-              "motorway"
-            ],
-            [
-              "match",
-              [
-                "get",
-                "ramp"
-              ],
-              1,
-              5.5,
-              7
-            ],
-            [
-              "trunk"
-            ],
-            7,
-            [
-              "primary"
-            ],
-            6.5,
-            [
-              "secondary"
-            ],
-            6,
-            [
-              "tertiary"
-            ],
-            5,
-            [
-              "minor",
-              "service"
-            ],
-            0,
-            0
-          ],
+          1.2,
           16,
-          [
-            "match",
-            [
-              "get",
-              "type"
-            ],
-            [
-              "motorway"
-            ],
-            [
-              "match",
-              [
-                "get",
-                "ramp"
-              ],
-              1,
-              9.6,
-              11
-            ],
-            [
-              "trunk"
-            ],
-            11,
-            [
-              "primary"
-            ],
-            10,
-            [
-              "secondary"
-            ],
-            9.5,
-            [
-              "tertiary"
-            ],
-            8.5,
-            [
-              "minor",
-              "service"
-            ],
-            0,
-            0
-          ],
-          20,
-          [
-            "match",
-            [
-              "get",
-              "type"
-            ],
-            [
-              "motorway"
-            ],
-            [
-              "match",
-              [
-                "get",
-                "ramp"
-              ],
-              1,
-              103,
-              113
-            ],
-            [
-              "trunk"
-            ],
-            113,
-            [
-              "primary"
-            ],
-            107,
-            [
-              "secondary"
-            ],
-            103,
-            [
-              "tertiary"
-            ],
-            99,
-            [
-              "minor",
-              "service"
-            ],
-            0,
-            0
-          ]
+          1.8
         ],
         "line-opacity": 1,
         "line-blur": [
@@ -6985,6 +6483,10 @@
           3,
           8,
           0.4
+        ],
+        "line-dasharray": [
+          2,
+          2.2
         ]
       },
       "metadata": {
@@ -7076,7 +6578,7 @@
           2.9
         ],
         "line-dasharray": [
-          4,
+          2,
           3
         ]
       },
@@ -7419,11 +6921,11 @@
             [
               "motorway"
             ],
-            "#BE9A50",
+            "#A05A28",
             [
               "trunk"
             ],
-            "#BE9A50",
+            "#A05A28",
             [
               "primary"
             ],
@@ -7453,11 +6955,11 @@
             [
               "motorway"
             ],
-            "#46371E",
+            "#7A451E",
             [
               "trunk"
             ],
-            "#46371E",
+            "#7A451E",
             [
               "primary"
             ],
@@ -8874,7 +8376,7 @@
           ]
         ]
       ],
-      "minzoom": 10,
+      "minzoom": 12,
       "maxzoom": 23,
       "layout": {
         "line-cap": "round",
@@ -8915,7 +8417,7 @@
               "minor",
               "service"
             ],
-            1.6,
+            1.2,
             0.9
           ],
           12,
@@ -9109,7 +8611,7 @@
           [
             "zoom"
           ],
-          9,
+          10,
           [
             "match",
             [
@@ -9143,7 +8645,7 @@
             0,
             0
           ],
-          10,
+          11.5,
           [
             "match",
             [
@@ -9165,11 +8667,11 @@
             [
               "secondary"
             ],
-            2.2,
+            1.8,
             [
               "tertiary"
             ],
-            1.8,
+            1.4,
             [
               "minor",
               "service"
@@ -9436,11 +8938,11 @@
             [
               "motorway"
             ],
-            "#FFE6A0",
+            "#EE9A5F",
             [
               "trunk"
             ],
-            "#FFE6A0",
+            "#EE9A5F",
             [
               "primary"
             ],
@@ -9460,7 +8962,7 @@
             "#FFFFFF",
             "#FFFFFF"
           ],
-          15,
+          11,
           [
             "match",
             [
@@ -9470,11 +8972,45 @@
             [
               "motorway"
             ],
-            "#E8C563",
+            "#E8894C",
             [
               "trunk"
             ],
-            "#E8C563",
+            "#E8894C",
+            [
+              "primary"
+            ],
+            "#FFFFFF",
+            [
+              "secondary"
+            ],
+            "#FFFFFF",
+            [
+              "tertiary"
+            ],
+            "#FFFFFF",
+            [
+              "minor",
+              "service"
+            ],
+            "#FFFFFF",
+            "#FFFFFF"
+          ],
+          14,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            "#E27E3E",
+            [
+              "trunk"
+            ],
+            "#E27E3E",
             [
               "primary"
             ],
@@ -10837,11 +10373,11 @@
             [
               "motorway"
             ],
-            "#BE9A50",
+            "#A05A28",
             [
               "trunk"
             ],
-            "#BE9A50",
+            "#A05A28",
             [
               "primary"
             ],
@@ -10871,11 +10407,11 @@
             [
               "motorway"
             ],
-            "#46371E",
+            "#7A451E",
             [
               "trunk"
             ],
-            "#46371E",
+            "#7A451E",
             [
               "primary"
             ],
@@ -11568,7 +11104,7 @@
           "bridge"
         ]
       ],
-      "minzoom": 10,
+      "minzoom": 12,
       "maxzoom": 23,
       "layout": {
         "line-cap": "butt",
@@ -11609,7 +11145,7 @@
               "minor",
               "service"
             ],
-            1.6,
+            1.2,
             0.9
           ],
           12,
@@ -11805,7 +11341,7 @@
           [
             "zoom"
           ],
-          9,
+          10,
           [
             "match",
             [
@@ -11839,7 +11375,7 @@
             0,
             0
           ],
-          10,
+          11.5,
           [
             "match",
             [
@@ -11861,11 +11397,11 @@
             [
               "secondary"
             ],
-            2.2,
+            1.8,
             [
               "tertiary"
             ],
-            1.8,
+            1.4,
             [
               "minor",
               "service"
@@ -12134,11 +11670,11 @@
             [
               "motorway"
             ],
-            "#FFE6A0",
+            "#EE9A5F",
             [
               "trunk"
             ],
-            "#FFE6A0",
+            "#EE9A5F",
             [
               "primary"
             ],
@@ -12158,7 +11694,7 @@
             "#FFFFFF",
             "#FFFFFF"
           ],
-          15,
+          11,
           [
             "match",
             [
@@ -12168,11 +11704,45 @@
             [
               "motorway"
             ],
-            "#E8C563",
+            "#E8894C",
             [
               "trunk"
             ],
-            "#E8C563",
+            "#E8894C",
+            [
+              "primary"
+            ],
+            "#FFFFFF",
+            [
+              "secondary"
+            ],
+            "#FFFFFF",
+            [
+              "tertiary"
+            ],
+            "#FFFFFF",
+            [
+              "minor",
+              "service"
+            ],
+            "#FFFFFF",
+            "#FFFFFF"
+          ],
+          14,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            "#E27E3E",
+            [
+              "trunk"
+            ],
+            "#E27E3E",
             [
               "primary"
             ],
@@ -15526,43 +15096,17 @@
           0.05
         ],
         "icon-image": [
-          "step",
+          "match",
           [
-            "zoom"
+            "get",
+            "category"
           ],
           [
-            "match",
-            [
-              "get",
-              "category"
-            ],
-            [
-              "capital"
-            ],
-            "wd-base:wd-dot",
-            [
-              "big_place"
-            ],
-            "wd-base:wd-dot-ring",
-            "wd-base:wd-dot-ring"
+            "capital",
+            "big_place"
           ],
-          8,
-          [
-            "match",
-            [
-              "get",
-              "category"
-            ],
-            [
-              "capital"
-            ],
-            "wd-base:wd-dot-ring",
-            [
-              "big_place"
-            ],
-            "wd-base:wd-dot-ring",
-            "wd-base:wd-dot-ring"
-          ]
+          "wd-base:wd-dot",
+          ""
         ],
         "icon-optional": false,
         "text-optional": false,
@@ -15585,29 +15129,12 @@
             [
               "capital"
             ],
-            0.37,
+            0.75,
             [
               "big_place"
             ],
-            0.37,
-            0.3
-          ],
-          6,
-          [
-            "match",
-            [
-              "get",
-              "category"
-            ],
-            [
-              "capital"
-            ],
-            0.5,
-            [
-              "big_place"
-            ],
-            0.5,
-            0.37
+            0.75,
+            0.6
           ],
           8,
           [
@@ -15619,12 +15146,12 @@
             [
               "capital"
             ],
-            0.67,
+            0.9,
             [
               "big_place"
             ],
-            0.67,
-            0.5
+            0.9,
+            0.7
           ],
           10,
           [
@@ -15636,29 +15163,12 @@
             [
               "capital"
             ],
-            0.83,
-            [
-              "big_place"
-            ],
-            0.83,
-            0.67
-          ],
-          12,
-          [
-            "match",
-            [
-              "get",
-              "category"
-            ],
-            [
-              "capital"
-            ],
             1,
             [
               "big_place"
             ],
             1,
-            0.83
+            0.8
           ]
         ],
         "text-anchor": "left"
@@ -17375,43 +16885,17 @@
           0.05
         ],
         "icon-image": [
-          "step",
+          "match",
           [
-            "zoom"
+            "get",
+            "category"
           ],
           [
-            "match",
-            [
-              "get",
-              "category"
-            ],
-            [
-              "capital"
-            ],
-            "wd-base:wd-dot",
-            [
-              "big_place"
-            ],
-            "wd-base:wd-dot-ring",
-            "wd-base:wd-dot-ring"
+            "capital",
+            "big_place"
           ],
-          8,
-          [
-            "match",
-            [
-              "get",
-              "category"
-            ],
-            [
-              "capital"
-            ],
-            "wd-base:wd-dot-ring",
-            [
-              "big_place"
-            ],
-            "wd-base:wd-dot-ring",
-            "wd-base:wd-dot-ring"
-          ]
+          "wd-base:wd-dot",
+          ""
         ],
         "icon-optional": false,
         "text-optional": false,
@@ -17434,29 +16918,12 @@
             [
               "capital"
             ],
-            0.37,
+            0.75,
             [
               "big_place"
             ],
-            0.37,
-            0.3
-          ],
-          6,
-          [
-            "match",
-            [
-              "get",
-              "category"
-            ],
-            [
-              "capital"
-            ],
-            0.5,
-            [
-              "big_place"
-            ],
-            0.5,
-            0.37
+            0.75,
+            0.6
           ],
           8,
           [
@@ -17468,12 +16935,12 @@
             [
               "capital"
             ],
-            0.67,
+            0.9,
             [
               "big_place"
             ],
-            0.67,
-            0.5
+            0.9,
+            0.7
           ],
           10,
           [
@@ -17485,29 +16952,12 @@
             [
               "capital"
             ],
-            0.83,
-            [
-              "big_place"
-            ],
-            0.83,
-            0.67
-          ],
-          12,
-          [
-            "match",
-            [
-              "get",
-              "category"
-            ],
-            [
-              "capital"
-            ],
             1,
             [
               "big_place"
             ],
             1,
-            0.83
+            0.8
           ]
         ],
         "text-anchor": "left"
@@ -18803,24 +18253,28 @@
             ]
           ],
           [
-            "concat",
+            "format",
             [
               "get",
               "name"
             ],
+            {},
             "\n",
+            {},
             [
-              "get",
-              "ele"
-            ]
+              "to-string",
+              [
+                "get",
+                "ele"
+              ]
+            ],
+            {
+              "font-scale": 0.7,
+              "text-color": "hsla(28, 10%, 52%, 1)"
+            }
           ],
           [
-            "concat",
-            [
-              "get",
-              "name"
-            ],
-            "\n",
+            "format",
             [
               "coalesce",
               [
@@ -18838,13 +18292,26 @@
               [
                 "get",
                 "name_de"
+              ],
+              [
+                "get",
+                "name"
               ]
             ],
+            {},
             "\n",
+            {},
             [
-              "get",
-              "ele"
-            ]
+              "to-string",
+              [
+                "get",
+                "ele"
+              ]
+            ],
+            {
+              "font-scale": 0.7,
+              "text-color": "hsla(28, 10%, 52%, 1)"
+            }
           ]
         ],
         "text-font": [
@@ -19511,43 +18978,17 @@
           0.05
         ],
         "icon-image": [
-          "step",
+          "match",
           [
-            "zoom"
+            "get",
+            "category"
           ],
           [
-            "match",
-            [
-              "get",
-              "category"
-            ],
-            [
-              "capital"
-            ],
-            "wd-base:wd-dot",
-            [
-              "big_place"
-            ],
-            "wd-base:wd-dot-ring",
-            "wd-base:wd-dot-ring"
+            "capital",
+            "big_place"
           ],
-          8,
-          [
-            "match",
-            [
-              "get",
-              "category"
-            ],
-            [
-              "capital"
-            ],
-            "wd-base:wd-dot-ring",
-            [
-              "big_place"
-            ],
-            "wd-base:wd-dot-ring",
-            "wd-base:wd-dot-ring"
-          ]
+          "wd-base:wd-dot",
+          ""
         ],
         "icon-optional": false,
         "text-optional": false,
@@ -19570,29 +19011,12 @@
             [
               "capital"
             ],
-            0.37,
+            0.75,
             [
               "big_place"
             ],
-            0.37,
-            0.3
-          ],
-          6,
-          [
-            "match",
-            [
-              "get",
-              "category"
-            ],
-            [
-              "capital"
-            ],
-            0.5,
-            [
-              "big_place"
-            ],
-            0.5,
-            0.37
+            0.75,
+            0.6
           ],
           8,
           [
@@ -19604,12 +19028,12 @@
             [
               "capital"
             ],
-            0.67,
+            0.9,
             [
               "big_place"
             ],
-            0.67,
-            0.5
+            0.9,
+            0.7
           ],
           10,
           [
@@ -19621,29 +19045,12 @@
             [
               "capital"
             ],
-            0.83,
-            [
-              "big_place"
-            ],
-            0.83,
-            0.67
-          ],
-          12,
-          [
-            "match",
-            [
-              "get",
-              "category"
-            ],
-            [
-              "capital"
-            ],
             1,
             [
               "big_place"
             ],
             1,
-            0.83
+            0.8
           ]
         ],
         "text-anchor": "left"
@@ -20641,24 +20048,28 @@
             ]
           ],
           [
-            "concat",
+            "format",
             [
               "get",
               "name"
             ],
+            {},
             "\n",
+            {},
             [
-              "get",
-              "ele"
-            ]
+              "to-string",
+              [
+                "get",
+                "ele"
+              ]
+            ],
+            {
+              "font-scale": 0.7,
+              "text-color": "hsla(28, 10%, 52%, 1)"
+            }
           ],
           [
-            "concat",
-            [
-              "get",
-              "name"
-            ],
-            "\n",
+            "format",
             [
               "coalesce",
               [
@@ -20676,13 +20087,26 @@
               [
                 "get",
                 "name_de"
+              ],
+              [
+                "get",
+                "name"
               ]
             ],
+            {},
             "\n",
+            {},
             [
-              "get",
-              "ele"
-            ]
+              "to-string",
+              [
+                "get",
+                "ele"
+              ]
+            ],
+            {
+              "font-scale": 0.7,
+              "text-color": "hsla(28, 10%, 52%, 1)"
+            }
           ]
         ],
         "text-font": [
@@ -21349,43 +20773,17 @@
           0.05
         ],
         "icon-image": [
-          "step",
+          "match",
           [
-            "zoom"
+            "get",
+            "category"
           ],
           [
-            "match",
-            [
-              "get",
-              "category"
-            ],
-            [
-              "capital"
-            ],
-            "wd-base:wd-dot",
-            [
-              "big_place"
-            ],
-            "wd-base:wd-dot-ring",
-            "wd-base:wd-dot-ring"
+            "capital",
+            "big_place"
           ],
-          8,
-          [
-            "match",
-            [
-              "get",
-              "category"
-            ],
-            [
-              "capital"
-            ],
-            "wd-base:wd-dot-ring",
-            [
-              "big_place"
-            ],
-            "wd-base:wd-dot-ring",
-            "wd-base:wd-dot-ring"
-          ]
+          "wd-base:wd-dot",
+          ""
         ],
         "icon-optional": false,
         "text-optional": false,
@@ -21408,29 +20806,12 @@
             [
               "capital"
             ],
-            0.37,
+            0.75,
             [
               "big_place"
             ],
-            0.37,
-            0.3
-          ],
-          6,
-          [
-            "match",
-            [
-              "get",
-              "category"
-            ],
-            [
-              "capital"
-            ],
-            0.5,
-            [
-              "big_place"
-            ],
-            0.5,
-            0.37
+            0.75,
+            0.6
           ],
           8,
           [
@@ -21442,12 +20823,12 @@
             [
               "capital"
             ],
-            0.67,
+            0.9,
             [
               "big_place"
             ],
-            0.67,
-            0.5
+            0.9,
+            0.7
           ],
           10,
           [
@@ -21459,29 +20840,12 @@
             [
               "capital"
             ],
-            0.83,
-            [
-              "big_place"
-            ],
-            0.83,
-            0.67
-          ],
-          12,
-          [
-            "match",
-            [
-              "get",
-              "category"
-            ],
-            [
-              "capital"
-            ],
             1,
             [
               "big_place"
             ],
             1,
-            0.83
+            0.8
           ]
         ],
         "text-anchor": "left"
@@ -22041,24 +21405,28 @@
             ]
           ],
           [
-            "concat",
+            "format",
             [
               "get",
               "name"
             ],
+            {},
             "\n",
+            {},
             [
-              "get",
-              "ele"
-            ]
+              "to-string",
+              [
+                "get",
+                "ele"
+              ]
+            ],
+            {
+              "font-scale": 0.7,
+              "text-color": "hsla(28, 10%, 52%, 1)"
+            }
           ],
           [
-            "concat",
-            [
-              "get",
-              "name"
-            ],
-            "\n",
+            "format",
             [
               "coalesce",
               [
@@ -22076,13 +21444,26 @@
               [
                 "get",
                 "name_de"
+              ],
+              [
+                "get",
+                "name"
               ]
             ],
+            {},
             "\n",
+            {},
             [
-              "get",
-              "ele"
-            ]
+              "to-string",
+              [
+                "get",
+                "ele"
+              ]
+            ],
+            {
+              "font-scale": 0.7,
+              "text-color": "hsla(28, 10%, 52%, 1)"
+            }
           ]
         ],
         "text-font": [
@@ -22849,43 +22230,17 @@
           0.05
         ],
         "icon-image": [
-          "step",
+          "match",
           [
-            "zoom"
+            "get",
+            "category"
           ],
           [
-            "match",
-            [
-              "get",
-              "category"
-            ],
-            [
-              "capital"
-            ],
-            "wd-base:wd-dot",
-            [
-              "big_place"
-            ],
-            "wd-base:wd-dot-ring",
-            "wd-base:wd-dot-ring"
+            "capital",
+            "big_place"
           ],
-          8,
-          [
-            "match",
-            [
-              "get",
-              "category"
-            ],
-            [
-              "capital"
-            ],
-            "wd-base:wd-dot-ring",
-            [
-              "big_place"
-            ],
-            "wd-base:wd-dot-ring",
-            "wd-base:wd-dot-ring"
-          ]
+          "wd-base:wd-dot",
+          ""
         ],
         "icon-optional": false,
         "text-optional": false,
@@ -22908,29 +22263,12 @@
             [
               "capital"
             ],
-            0.37,
+            0.75,
             [
               "big_place"
             ],
-            0.37,
-            0.3
-          ],
-          6,
-          [
-            "match",
-            [
-              "get",
-              "category"
-            ],
-            [
-              "capital"
-            ],
-            0.5,
-            [
-              "big_place"
-            ],
-            0.5,
-            0.37
+            0.75,
+            0.6
           ],
           8,
           [
@@ -22942,12 +22280,12 @@
             [
               "capital"
             ],
-            0.67,
+            0.9,
             [
               "big_place"
             ],
-            0.67,
-            0.5
+            0.9,
+            0.7
           ],
           10,
           [
@@ -22959,29 +22297,12 @@
             [
               "capital"
             ],
-            0.83,
-            [
-              "big_place"
-            ],
-            0.83,
-            0.67
-          ],
-          12,
-          [
-            "match",
-            [
-              "get",
-              "category"
-            ],
-            [
-              "capital"
-            ],
             1,
             [
               "big_place"
             ],
             1,
-            0.83
+            0.8
           ]
         ],
         "text-anchor": "left"

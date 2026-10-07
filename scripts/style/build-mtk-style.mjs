@@ -182,10 +182,10 @@ for (const id of ['place_point_label_rank_1', 'place_line_label_rank_1']) {
 }
 
 // Mountain names: QUIETER than cities — grey-brown italic, later
-// ranks deferred. Name + elevation stay ONE symbol (swisstopo's own
-// approach): a separate elevation layer collides with the name's
-// collision box and gets culled — the elevation disappeared (user
-// report). One symbol also keeps them atomic on dense summits.
+// ranks deferred. Elevation SMALLER than the name via MapLibre's
+// format expression (per-section font-scale, one symbol = one
+// collision box — the two-layer attempt collided the elevation away;
+// advisor round 5: this is the canonical mixed-size-label pattern)
 for (const [id, defer] of [
   ['place_peak_label_rank_1', 0],
   ['place_peak_label_rank_2', 1],
@@ -193,6 +193,35 @@ for (const [id, defer] of [
 ]) {
   const l = layer(id);
   l.minzoom += defer;
+  l.layout['text-field'] = [
+    'case',
+    ['!', ['has', 'is_nonlatin']],
+    [
+      'format',
+      ['get', 'name'],
+      {},
+      '\n',
+      {},
+      ['to-string', ['get', 'ele']],
+      { 'font-scale': 0.7, 'text-color': 'hsla(28, 10%, 52%, 1)' },
+    ],
+    [
+      'format',
+      [
+        'coalesce',
+        ['get', 'name_en'],
+        ['get', 'name_fr'],
+        ['get', 'name_es'],
+        ['get', 'name_de'],
+        ['get', 'name'],
+      ],
+      {},
+      '\n',
+      {},
+      ['to-string', ['get', 'ele']],
+      { 'font-scale': 0.7, 'text-color': 'hsla(28, 10%, 52%, 1)' },
+    ],
+  ];
   l.paint['text-color'] = 'hsla(28, 14%, 42%, 1)';
   l.paint['text-halo-color'] = 'rgba(242, 247, 244, 0.9)';
   l.paint['text-halo-width'] = 1.2;
@@ -224,33 +253,25 @@ const byCategory = (capital, big, small) => [
 ];
 for (const l of base.layers) {
   if (!/^place_point_label_rank_\d$/.test(l.id)) continue;
-  // MapLibre namespaces multi-sprite images by their sprite id
-  // ("Images of the `default` sprite keep their plain id, the ones of
-  // any other sprite are namespaced") — ours is 'wd-base', so the
-  // icon-image references carry the prefix
-  const dotFor = solidCapital =>
-    byCategory(solidCapital ? 'wd-base:wd-dot' : 'wd-base:wd-dot-ring', 'wd-base:wd-dot-ring', 'wd-base:wd-dot-ring');
-  l.layout['icon-image'] = ['step', ['zoom'], dotFor(true), 8, dotFor(false)];
+  // One icon, swisstopo look: small solid dark dot + white halo
+  // (re-authored small, shown near scale 1.0 — scaled-down big assets
+  // blur). Capitals and towns only; villages/hamlets stay label-only
+  // (advisor round 5 — that alone removes ~9 marks per view).
+  l.layout['icon-image'] = ['match', ['get', 'category'], ['capital', 'big_place'], 'wd-base:wd-dot', ''];
   // both must place, or neither shows — the no-orphan guarantee
   l.layout['icon-optional'] = false;
   l.layout['text-optional'] = false;
   l.layout['icon-padding'] = 2;
-  // swisstopo icon ladder: dot 6 -> 8px, ring 10 -> 12px; villages
-  // 4 -> 6 -> 8 -> 10px radii — sprite radius is 6 css px at size 1
   l.layout['icon-size'] = [
     'interpolate',
     ['linear'],
     ['zoom'],
     1,
-    byCategory(0.37, 0.37, 0.3),
-    6,
-    byCategory(0.5, 0.5, 0.37),
+    byCategory(0.75, 0.75, 0.6),
     8,
-    byCategory(0.67, 0.67, 0.5),
+    byCategory(0.9, 0.9, 0.7),
     10,
-    byCategory(0.83, 0.83, 0.67),
-    12,
-    byCategory(1, 1, 0.83),
+    byCategory(1, 1, 0.8),
   ];
   l.paint['icon-opacity'] = [
     'step',
@@ -408,8 +429,31 @@ for (const [id, deep, pale] of [
 }
 // Rivers: glacier-deep lines carry the valley skeleton (swisstopo's
 // water_line rgb ladder ≈ 0.75 z7 -> 1 z10 -> 3 z13; widths kept)
+// Rivers: the valley skeleton — swisstopo's rivers are clearly
+// visible blue lines from regional zoom on; mtk's hairline ladder
+// (0.33px at z3, exp 1.2) leaves them invisible exactly where they
+// carry the terrain story
 for (const id of ['water_waterway', 'water_waterway_intermittent', 'water_intermittent_outline']) {
   layer(id).paint['line-color'] = 'hsla(196, 52%, 52%, 1)';
+  layer(id).paint['line-width'] = [
+    'interpolate',
+    ['linear'],
+    ['zoom'],
+    7,
+    0.6,
+    9,
+    0.9,
+    11,
+    1.3,
+    13,
+    2,
+    15,
+    3,
+    17,
+    4.5,
+    20,
+    6,
+  ];
 }
 // Water labels: glacier-turquoise-deep ink
 for (const l of base.layers) {
@@ -455,11 +499,22 @@ layer('water_waterway_label_rank_1').minzoom = 6;
 // past, breaking the look at segment ends and junctions. BRIDGES keep
 // butt caps: square deck ends against the terrain is the swisstopo
 // look (user call — round bridge ends read as blobs)
-for (const id of ['road_major_casing', 'road_major_casing_tunnel', 'road_minor_casing', 'road_minor_casing_tunnel']) {
+for (const id of [
+  'road_major_casing',
+  'road_major_casing_tunnel',
+  'road_minor_casing',
+  'road_minor_casing_tunnel',
+]) {
   const l = layer(id);
   l.layout = { ...l.layout, 'line-cap': 'round', 'line-join': 'round' };
 }
-for (const id of ['road_major_casing_bridge', 'road_minor_casing_bridge', 'road_major_dark_bridge', 'road_major_medium_bridge', 'road_minor_bridge']) {
+for (const id of [
+  'road_major_casing_bridge',
+  'road_minor_casing_bridge',
+  'road_major_dark_bridge',
+  'road_major_medium_bridge',
+  'road_minor_bridge',
+]) {
   const l = layer(id);
   l.layout = { ...l.layout, 'line-cap': 'butt', 'line-join': 'round' };
 }
@@ -811,13 +866,7 @@ layer('relief_contour_multicolored_label').minzoom = 14;
 // Wodore day-ink with a paper-white halo (ties map to chrome).
 // Glacier names keep the glacier-turquoise-deep ink of the water
 // labels (user call) — they carry type=glacier in the tiles.
-const DARK_LABEL = [
-  'match',
-  ['get', 'type'],
-  ['glacier'],
-  '#29626B',
-  '#1C1C1C',
-];
+const DARK_LABEL = ['match', ['get', 'type'], ['glacier'], '#29626B', '#1C1C1C'];
 for (const l of base.layers) {
   if (l.type !== 'symbol' || !l['source-layer'] || l['source-layer'] !== 'place_label') continue;
   const tf = l.paint?.['text-color'];
@@ -927,9 +976,11 @@ const FILL_WHITE = [
   4,
   'hsla(45, 100%, 82%, 0)',
   6,
-  byType('#FFE6A0', '#FFE6A0', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF'),
-  15,
-  byType('#E8C563', '#E8C563', '#FFF7EA', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF'),
+  byType('#EE9A5F', '#EE9A5F', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF'),
+  11,
+  byType('#E8894C', '#E8894C', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF'),
+  14,
+  byType('#E27E3E', '#E27E3E', '#FFF7EA', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF'),
 ];
 const FILL_MEDIUM_COLOR = [
   'interpolate',
@@ -981,10 +1032,10 @@ const FILL_MEDIUM_WIDTH = [
   'interpolate',
   ['exponential', 2],
   ['zoom'],
-  9,
-  byType(0, 0, 0, 1.5, 0, 0, 0),
   10,
-  byType(0, 0, 0, 2.2, 1.8, 0, 0),
+  byType(0, 0, 0, 1.5, 0, 0, 0),
+  11.5,
+  byType(0, 0, 0, 1.8, 1.4, 0, 0),
   12,
   byType(0, 0, 0, 2.5, 2.5, 0, 0),
   13,
@@ -1001,7 +1052,7 @@ const FILL_MINOR_WIDTH = [
   ['exponential', 2],
   ['zoom'],
   10,
-  ['match', ['get', 'type'], ['minor', 'service'], 1.6, 0.9],
+  ['match', ['get', 'type'], ['minor', 'service'], 1.2, 0.9],
   12,
   ['match', ['get', 'type'], ['minor', 'service'], 2.25, 1.4],
   13,
@@ -1024,6 +1075,12 @@ clonePaint(['road_major_medium', 'road_major_medium_bridge'], {
   'line-width': FILL_MEDIUM_WIDTH,
   'line-blur': FILL_BLUR,
 });
+// The minor layer defers to z12 (advisor round 5): the white hairline
+// mesh of residential/service roads at z10-13 was the single biggest
+// 'busier than swisstopo' factor — sparse valley reads cleaner
+for (const id of ['road_minor', 'road_minor_bridge']) {
+  layer(id).minzoom = 12;
+}
 clonePaint(['road_minor', 'road_minor_bridge'], {
   'line-color': FILL_MINOR_COLOR,
   'line-width': FILL_MINOR_WIDTH,
@@ -1041,9 +1098,9 @@ const CASING_COLOR = [
   5,
   'hsla(0, 0%, 60%, 0)',
   6.5,
-  byType('#BE9A50', '#BE9A50', '#8C8C8C', '#8C8C8C', '#8C8C8C', '#8C8C8C', '#8C8C8C'),
+  byType('#A05A28', '#A05A28', '#8C8C8C', '#8C8C8C', '#8C8C8C', '#8C8C8C', '#8C8C8C'),
   14.5,
-  byType('#46371E', '#46371E', '#3C3C3C', '#3C3C3C', '#3C3C3C', '#3C3C3C', '#3C3C3C'),
+  byType('#7A451E', '#7A451E', '#3C3C3C', '#3C3C3C', '#3C3C3C', '#3C3C3C', '#3C3C3C'),
 ];
 const CASING_WIDTH = [
   'interpolate',
@@ -1179,6 +1236,30 @@ for (const id of ['road_rail_hatching', 'road_rail_hatching_bridge']) {
     }
   );
 }
+
+// ── Tunnels: a single dashed line, nothing else (user call + advisor
+// round 5: swisstopo renders tunnels as a quiet dotted/dashed thread,
+// not full road treatment). Fills, blur halos and path tunnels hide;
+// the casing-tunnel layers become the dashed thread.
+for (const id of [
+  'road_major_dark_tunnel',
+  'road_major_medium_tunnel',
+  'road_minor_tunnel',
+  'road_major_blur_tunnel',
+  'road_minor_blur_tunnel',
+  'road_path_blur_tunnel',
+  'road_path_urban_tunnel',
+]) {
+  if (byId.has(id)) layer(id).layout = { ...layer(id).layout, visibility: 'none' };
+}
+for (const id of ['road_major_casing_tunnel', 'road_minor_casing_tunnel']) {
+  const l = layer(id);
+  l.paint['line-color'] = '#8A8A8A';
+  l.paint['line-width'] = ['interpolate', ['linear'], ['zoom'], 8, 0.8, 12, 1.2, 16, 1.8];
+  l.paint['line-dasharray'] = [2, 2.2];
+  l.layout = { ...l.layout, 'line-cap': 'butt', 'line-join': 'round' };
+}
+layer('road_rail_tunnel').paint['line-dasharray'] = [2, 3];
 
 // ── Parks: strong at overview zooms, receding when zoomed in; visible
 // borders (mtk's protected-area lines are nearly invisible).
