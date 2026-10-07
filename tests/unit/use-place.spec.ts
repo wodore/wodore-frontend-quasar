@@ -18,7 +18,10 @@ vi.mock('@stores/auth-store', () => ({
 // instance (fetchMock), not re-stub globalThis.fetch.
 vi.hoisted(() => {
   process.env.WODORE_API_HOST = 'http://test.local';
-  vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 200 })));
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => new Response('{}', { status: 200 }))
+  );
 });
 
 import { usePlace } from '@composables/usePlace';
