@@ -54,6 +54,15 @@ function starVerts(cx, cy, R, r) {
   return v;
 }
 
+/** Equilateral triangle vertices, point-up. */
+function triVerts(cx, cy, R) {
+  return [
+    [cx, cy - R],
+    [cx + R * 0.866, cy + R * 0.5],
+    [cx - R * 0.866, cy + R * 0.5],
+  ];
+}
+
 /** Rasterize one icon into an RGBA buffer of `box` px. */
 function drawIcon(kind, box) {
   const cx = box / 2;
@@ -62,7 +71,12 @@ function drawIcon(kind, box) {
   const rOuter = 5.9 * scale; // outer edge of the black border
   const rInner = 4.3 * scale; // inner edge of the border (white fill)
   const buf = Buffer.alloc(box * box * 4, 0);
-  const verts = kind === 'wd-star' ? starVerts(cx, cy, 3.1 * scale, 1.35 * scale) : null;
+  const verts =
+    kind === 'wd-star'
+      ? starVerts(cx, cy, 3.1 * scale, 1.35 * scale)
+      : kind === 'wd-peak'
+        ? triVerts(cx, cy, 5.0 * scale)
+        : null;
   for (let y = 0; y < box; y++) {
     for (let x = 0; x < box; x++) {
       const px = y * box * 4 + x * 4;
@@ -79,7 +93,7 @@ function drawIcon(kind, box) {
         r = Math.round(INK[0] * dot + r * (1 - dot));
         g = Math.round(INK[1] * dot + g * (1 - dot));
         b = Math.round(INK[2] * dot + b * (1 - dot));
-      } else if (kind === 'wd-star') {
+      } else if (kind === 'wd-star' || kind === 'wd-peak') {
         let hit = 0;
         for (let sy = 0; sy < 4; sy++)
           for (let sx = 0; sx < 4; sx++)
@@ -142,7 +156,7 @@ function crc32(buf) {
   return (crc ^ 0xffffffff) >>> 0;
 }
 
-const KINDS = ['wd-ring', 'wd-ring-dot', 'wd-star'];
+const KINDS = ['wd-ring', 'wd-ring-dot', 'wd-star', 'wd-peak'];
 for (const [suffix, box, ratio] of [
   ['', SIZE, 1],
   ['@2x', SIZE * 2, 2],
@@ -162,5 +176,5 @@ for (const [suffix, box, ratio] of [
   fs.writeFileSync(path.join(OUT, `sprite${suffix}.json`), JSON.stringify(json) + '\n');
 }
 console.log(
-  `wd sprite (ring, ring-dot, star — ${SIZE}px css) -> ${path.relative(process.cwd(), OUT)}`
+  `wd sprite (ring, ring-dot, star, peak — ${SIZE}px css) -> ${path.relative(process.cwd(), OUT)}`
 );

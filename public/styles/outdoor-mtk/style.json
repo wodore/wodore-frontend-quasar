@@ -3861,7 +3861,8 @@
       "maxzoom": 23,
       "layout": {
         "line-cap": "round",
-        "visibility": "visible"
+        "visibility": "visible",
+        "line-join": "round"
       },
       "paint": {
         "line-color": "hsla(203, 65%, 58%, 1)",
@@ -3883,7 +3884,8 @@
           5,
           20,
           8
-        ]
+        ],
+        "line-blur": 0.4
       },
       "metadata": {
         "maptoolkit:legend": {
@@ -3919,7 +3921,9 @@
       "minzoom": 0,
       "maxzoom": 22,
       "layout": {
-        "visibility": "visible"
+        "visibility": "visible",
+        "line-cap": "round",
+        "line-join": "round"
       },
       "paint": {
         "line-color": "hsla(203, 65%, 58%, 1)",
@@ -3945,7 +3949,8 @@
         "line-dasharray": [
           3,
           3
-        ]
+        ],
+        "line-blur": 0.4
       },
       "metadata": {
         "maptoolkit:legend": {
@@ -4184,7 +4189,9 @@
       "minzoom": 0,
       "maxzoom": 22,
       "layout": {
-        "visibility": "visible"
+        "visibility": "visible",
+        "line-cap": "round",
+        "line-join": "round"
       },
       "paint": {
         "line-color": "hsla(203, 65%, 58%, 1)",
@@ -4210,7 +4217,8 @@
         "line-dasharray": [
           3,
           3
-        ]
+        ],
+        "line-blur": 0.4
       },
       "metadata": {
         "maptoolkit:legend": {
@@ -15175,19 +15183,56 @@
           0.05
         ],
         "icon-image": [
-          "match",
+          "case",
           [
-            "get",
-            "category"
-          ],
-          [
+            "==",
+            [
+              "get",
+              "category"
+            ],
             "capital"
           ],
           "wd-base:wd-star",
           [
-            "big_place"
+            "all",
+            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
+              "big_place"
+            ],
+            [
+              "<=",
+              [
+                "get",
+                "rank"
+              ],
+              8
+            ]
           ],
           "wd-base:wd-ring-dot",
+          [
+            "all",
+            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
+              "big_place"
+            ],
+            [
+              ">",
+              [
+                "get",
+                "rank"
+              ],
+              8
+            ]
+          ],
+          "wd-base:wd-ring",
           ""
         ],
         "icon-optional": false,
@@ -15211,12 +15256,12 @@
             [
               "capital"
             ],
-            0.75,
+            0.8,
             [
               "big_place"
             ],
-            0.75,
-            0.6
+            0.65,
+            0
           ],
           8,
           [
@@ -15228,12 +15273,12 @@
             [
               "capital"
             ],
-            0.9,
+            1,
             [
               "big_place"
             ],
-            0.9,
-            0.7
+            0.8,
+            0
           ],
           10,
           [
@@ -15245,12 +15290,12 @@
             [
               "capital"
             ],
-            1,
+            1.15,
             [
               "big_place"
             ],
-            1,
-            0.8
+            0.9,
+            0
           ]
         ],
         "text-anchor": "left"
@@ -16959,19 +17004,56 @@
           0.05
         ],
         "icon-image": [
-          "match",
+          "case",
           [
-            "get",
-            "category"
-          ],
-          [
+            "==",
+            [
+              "get",
+              "category"
+            ],
             "capital"
           ],
           "wd-base:wd-star",
           [
-            "big_place"
+            "all",
+            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
+              "big_place"
+            ],
+            [
+              "<=",
+              [
+                "get",
+                "rank"
+              ],
+              8
+            ]
           ],
           "wd-base:wd-ring-dot",
+          [
+            "all",
+            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
+              "big_place"
+            ],
+            [
+              ">",
+              [
+                "get",
+                "rank"
+              ],
+              8
+            ]
+          ],
+          "wd-base:wd-ring",
           ""
         ],
         "icon-optional": false,
@@ -16995,12 +17077,12 @@
             [
               "capital"
             ],
-            0.75,
+            0.8,
             [
               "big_place"
             ],
-            0.75,
-            0.6
+            0.65,
+            0
           ],
           8,
           [
@@ -17012,12 +17094,12 @@
             [
               "capital"
             ],
-            0.9,
+            1,
             [
               "big_place"
             ],
-            0.9,
-            0.7
+            0.8,
+            0
           ],
           10,
           [
@@ -17029,12 +17111,12 @@
             [
               "capital"
             ],
-            1,
+            1.15,
             [
               "big_place"
             ],
-            1,
-            0.8
+            0.9,
+            0
           ]
         ],
         "text-anchor": "left"
@@ -19055,19 +19137,56 @@
           0.05
         ],
         "icon-image": [
-          "match",
+          "case",
           [
-            "get",
-            "category"
-          ],
-          [
+            "==",
+            [
+              "get",
+              "category"
+            ],
             "capital"
           ],
           "wd-base:wd-star",
           [
-            "big_place"
+            "all",
+            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
+              "big_place"
+            ],
+            [
+              "<=",
+              [
+                "get",
+                "rank"
+              ],
+              8
+            ]
           ],
           "wd-base:wd-ring-dot",
+          [
+            "all",
+            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
+              "big_place"
+            ],
+            [
+              ">",
+              [
+                "get",
+                "rank"
+              ],
+              8
+            ]
+          ],
+          "wd-base:wd-ring",
           ""
         ],
         "icon-optional": false,
@@ -19091,12 +19210,12 @@
             [
               "capital"
             ],
-            0.75,
+            0.8,
             [
               "big_place"
             ],
-            0.75,
-            0.6
+            0.65,
+            0
           ],
           8,
           [
@@ -19108,12 +19227,12 @@
             [
               "capital"
             ],
-            0.9,
+            1,
             [
               "big_place"
             ],
-            0.9,
-            0.7
+            0.8,
+            0
           ],
           10,
           [
@@ -19125,12 +19244,12 @@
             [
               "capital"
             ],
-            1,
+            1.15,
             [
               "big_place"
             ],
-            1,
-            0.8
+            0.9,
+            0
           ]
         ],
         "text-anchor": "left"
@@ -20298,7 +20417,29 @@
             ]
           ]
         ],
-        "visibility": "visible"
+        "visibility": "visible",
+        "icon-image": "wd-base:wd-peak",
+        "icon-optional": true,
+        "text-optional": true,
+        "icon-size": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          8,
+          0.45,
+          10,
+          0.55,
+          14,
+          0.65
+        ],
+        "icon-offset": [
+          0,
+          -0.8
+        ]
       },
       "paint": {
         "text-color": "hsla(28, 14%, 42%, 1)",
@@ -20853,19 +20994,56 @@
           0.05
         ],
         "icon-image": [
-          "match",
+          "case",
           [
-            "get",
-            "category"
-          ],
-          [
+            "==",
+            [
+              "get",
+              "category"
+            ],
             "capital"
           ],
           "wd-base:wd-star",
           [
-            "big_place"
+            "all",
+            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
+              "big_place"
+            ],
+            [
+              "<=",
+              [
+                "get",
+                "rank"
+              ],
+              8
+            ]
           ],
           "wd-base:wd-ring-dot",
+          [
+            "all",
+            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
+              "big_place"
+            ],
+            [
+              ">",
+              [
+                "get",
+                "rank"
+              ],
+              8
+            ]
+          ],
+          "wd-base:wd-ring",
           ""
         ],
         "icon-optional": false,
@@ -20889,12 +21067,12 @@
             [
               "capital"
             ],
-            0.75,
+            0.8,
             [
               "big_place"
             ],
-            0.75,
-            0.6
+            0.65,
+            0
           ],
           8,
           [
@@ -20906,12 +21084,12 @@
             [
               "capital"
             ],
-            0.9,
+            1,
             [
               "big_place"
             ],
-            0.9,
-            0.7
+            0.8,
+            0
           ],
           10,
           [
@@ -20923,12 +21101,12 @@
             [
               "capital"
             ],
-            1,
+            1.15,
             [
               "big_place"
             ],
-            1,
-            0.8
+            0.9,
+            0
           ]
         ],
         "text-anchor": "left"
@@ -21640,7 +21818,29 @@
             ]
           ]
         ],
-        "visibility": "visible"
+        "visibility": "visible",
+        "icon-image": "wd-base:wd-peak",
+        "icon-optional": true,
+        "text-optional": true,
+        "icon-size": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          7,
+          0.45,
+          9,
+          0.55,
+          14,
+          0.65
+        ],
+        "icon-offset": [
+          0,
+          -0.8
+        ]
       },
       "paint": {
         "text-color": "hsla(28, 14%, 42%, 1)",
@@ -22295,19 +22495,56 @@
           0.05
         ],
         "icon-image": [
-          "match",
+          "case",
           [
-            "get",
-            "category"
-          ],
-          [
+            "==",
+            [
+              "get",
+              "category"
+            ],
             "capital"
           ],
           "wd-base:wd-star",
           [
-            "big_place"
+            "all",
+            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
+              "big_place"
+            ],
+            [
+              "<=",
+              [
+                "get",
+                "rank"
+              ],
+              8
+            ]
           ],
           "wd-base:wd-ring-dot",
+          [
+            "all",
+            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
+              "big_place"
+            ],
+            [
+              ">",
+              [
+                "get",
+                "rank"
+              ],
+              8
+            ]
+          ],
+          "wd-base:wd-ring",
           ""
         ],
         "icon-optional": false,
@@ -22331,12 +22568,12 @@
             [
               "capital"
             ],
-            0.75,
+            0.8,
             [
               "big_place"
             ],
-            0.75,
-            0.6
+            0.65,
+            0
           ],
           8,
           [
@@ -22348,12 +22585,12 @@
             [
               "capital"
             ],
-            0.9,
+            1,
             [
               "big_place"
             ],
-            0.9,
-            0.7
+            0.8,
+            0
           ],
           10,
           [
@@ -22365,12 +22602,12 @@
             [
               "capital"
             ],
-            1,
+            1.15,
             [
               "big_place"
             ],
-            1,
-            0.8
+            0.9,
+            0
           ]
         ],
         "text-anchor": "left"

@@ -216,6 +216,27 @@ for (const [id, defer] of [
     ['literal', ['Barlow SemiBold Italic']],
     ['literal', ['Noto Sans Italic']],
   ];
+  // TRIANGLE for important peaks (user call: not every peak should
+  // have one — only rank_1 and rank_2 get the cartographic triangle)
+  if (id !== 'place_peak_label_rank_3') {
+    l.layout['icon-image'] = 'wd-base:wd-peak';
+    l.layout['icon-optional'] = true; // text can show without triangle
+    l.layout['text-optional'] = true;
+    l.layout['icon-size'] = [
+      'interpolate',
+      ['linear'],
+      ['zoom'],
+      l.minzoom,
+      0.45,
+      l.minzoom + 2,
+      0.55,
+      14,
+      0.65,
+    ];
+    // triangle above the text (centered anchor — icon sits on the
+    // summit point, text flows below)
+    l.layout['icon-offset'] = [0, -0.8];
+  }
   l.layout['text-field'] = [
     'case',
     ['!', ['has', 'is_nonlatin']],
@@ -285,33 +306,37 @@ const byCategory = (capital, big, small) => [
 ];
 for (const l of base.layers) {
   if (!/^place_point_label_rank_\d$/.test(l.id)) continue;
-  // Settlement grammar (user round 6): white-inside/black-border ring
-  // for towns, ring + center dot for big towns, ring + star for
-  // capitals; villages/hamlets label-only. MapLibre namespaces
-  // multi-sprite images by sprite id — ours is 'wd-base'
+  // Settlement grammar (user rounds 6+7): THREE tiers by rank+category
+  //   capital (Bern, rank ~5): STAR in ring, largest
+  //   major city (Genève, Lausanne — big_place rank ≤8): RING + DOT, large
+  //   medium city (Sion, Martigny — big_place rank 9-13): PLAIN RING, medium
+  //   small town (small_place, rank 14+): no marker
+  // MapLibre namespaces multi-sprite images by sprite id — 'wd-base'
   l.layout['icon-image'] = [
-    'match',
-    ['get', 'category'],
-    ['capital'],
+    'case',
+    ['==', ['get', 'category'], 'capital'],
     'wd-base:wd-star',
-    ['big_place'],
+    ['all', ['==', ['get', 'category'], 'big_place'], ['<=', ['get', 'rank'], 8]],
     'wd-base:wd-ring-dot',
+    ['all', ['==', ['get', 'category'], 'big_place'], ['>', ['get', 'rank'], 8]],
+    'wd-base:wd-ring',
     '',
   ];
   // both must place, or neither shows — the no-orphan guarantee
   l.layout['icon-optional'] = false;
   l.layout['text-optional'] = false;
   l.layout['icon-padding'] = 2;
+  // THREE sizes: capitals biggest, major cities mid, medium cities smaller
   l.layout['icon-size'] = [
     'interpolate',
     ['linear'],
     ['zoom'],
     1,
-    byCategory(0.75, 0.75, 0.6),
+    byCategory(0.8, 0.65, 0),
     8,
-    byCategory(0.9, 0.9, 0.7),
+    byCategory(1.0, 0.8, 0),
     10,
-    byCategory(1, 1, 0.8),
+    byCategory(1.15, 0.9, 0),
   ];
   l.paint['icon-opacity'] = [
     'step',
@@ -469,12 +494,15 @@ for (const [id, deep, pale] of [
 }
 // Rivers: glacier-deep lines carry the valley skeleton (swisstopo's
 // water_line rgb ladder ≈ 0.75 z7 -> 1 z10 -> 3 z13; widths kept)
-// Rivers: the valley skeleton — swisstopo's exact spine: brighter,
-// cleaner blue rgb(77,164,218) = hsla(203,65%,58%), at their width
-// ladder (advisor: ours was muddy more than thin)
+// Rivers: swisstopo's exact spine color + width ladder, plus subtle
+// blur + round joins to soften mtk's angular tile geometry (user:
+// swisstopo's rivers are smooth/flowing; ours jagged — the raw
+// polyline vertices are in the tiles, but blur + round joins soften
+// the visual appearance meaningfully)
 for (const id of ['water_waterway', 'water_waterway_intermittent', 'water_intermittent_outline']) {
-  layer(id).paint['line-color'] = 'hsla(203, 65%, 58%, 1)';
-  layer(id).paint['line-width'] = [
+  const l = layer(id);
+  l.paint['line-color'] = 'hsla(203, 65%, 58%, 1)';
+  l.paint['line-width'] = [
     'interpolate',
     ['linear'],
     ['zoom'],
@@ -489,6 +517,8 @@ for (const id of ['water_waterway', 'water_waterway_intermittent', 'water_interm
     20,
     8,
   ];
+  l.paint['line-blur'] = 0.4;
+  l.layout = { ...l.layout, 'line-cap': 'round', 'line-join': 'round' };
 }
 // Water labels: glacier-turquoise-deep ink
 for (const l of base.layers) {
