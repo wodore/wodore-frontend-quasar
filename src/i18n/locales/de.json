@@ -22,7 +22,9 @@
     "camping": "Zeltplatz",
     "others": "Anderes",
     "unknown": "Unbekannt",
-    "load_error": "Hütte konnte nicht geladen werden"
+    "load_error": "Hütte konnte nicht geladen werden",
+    "load_error_hint": "Prüfe deine Internetverbindung und versuche es erneut.",
+    "load_error_retry": "Erneut versuchen"
   },
   "lang": {
     "german": "Deutsch",

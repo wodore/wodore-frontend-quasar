@@ -25,6 +25,7 @@ Icons:
 | `wd-plus`                   | Plus/zoom-in (bare plus, filled)          |
 | `wd-minus`                  | Minus/zoom-out (bare minus, filled)       |
 | `wd-alert-triangle-outline` | Warning/alert notification                |
+| `wd-cloud-offline-outline`  | Data/connection unavailable (load errors) |
 | `wd-api`                    | API version — backend API changelog link  |
 | `wd-arrowhead-down`         | Navigate down                             |
 | `wd-arrowhead-left`         | Navigate left                             |

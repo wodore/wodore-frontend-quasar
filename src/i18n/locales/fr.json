@@ -20,7 +20,9 @@
     "bivouac": "Bivouac",
     "hostel": "Auberge",
     "unattended_hut": "Cabane sans surveillance",
-    "load_error": "Impossible de charger la cabane"
+    "load_error": "Impossible de charger la cabane",
+    "load_error_hint": "Vérifie ta connexion internet et réessaie.",
+    "load_error_retry": "Réessayer"
   },
   "lang": {
     "english": "Anglais",

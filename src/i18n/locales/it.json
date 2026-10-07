@@ -15,7 +15,9 @@
     "hostel": "Ostello",
     "unattended_hut": "Capanna incustodita",
     "alp": "Alpe",
-    "load_error": "Impossibile caricare il rifugio"
+    "load_error": "Impossibile caricare il rifugio",
+    "load_error_hint": "Controlla la connessione internet e riprova.",
+    "load_error_retry": "Riprova"
   },
   "contact": "Contatto",
   "standard": "Standard",

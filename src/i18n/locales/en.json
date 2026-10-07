@@ -17,7 +17,9 @@
     "bivouac": "Bivouc",
     "hostel": "Hostel",
     "unattended_hut": "Unattended Hut",
-    "load_error": "Hut could not be loaded"
+    "load_error": "Hut could not be loaded",
+    "load_error_hint": "Check your internet connection and try again.",
+    "load_error_retry": "Try again"
   },
   "lang": {
     "english": "English",
