@@ -3865,7 +3865,19 @@
         "line-join": "round"
       },
       "paint": {
-        "line-color": "hsla(203, 65%, 58%, 1)",
+        "line-color": [
+          "match",
+          [
+            "get",
+            "type"
+          ],
+          [
+            "river",
+            "canal"
+          ],
+          "hsla(203, 65%, 58%, 1)",
+          "hsla(200, 40%, 70%, 1)"
+        ],
         "line-width": [
           "interpolate",
           [
@@ -3875,15 +3887,75 @@
             "zoom"
           ],
           7,
-          0.75,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "river",
+              "canal"
+            ],
+            0.75,
+            0.4
+          ],
           10,
-          1.6,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "river",
+              "canal"
+            ],
+            1.6,
+            0.6
+          ],
           13,
-          3.2,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "river",
+              "canal"
+            ],
+            3.2,
+            1
+          ],
           16,
-          5,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "river",
+              "canal"
+            ],
+            5,
+            1.6
+          ],
           20,
-          8
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "river",
+              "canal"
+            ],
+            8,
+            3
+          ]
         ],
         "line-blur": 0.4
       },
@@ -3926,7 +3998,19 @@
         "line-join": "round"
       },
       "paint": {
-        "line-color": "hsla(203, 65%, 58%, 1)",
+        "line-color": [
+          "match",
+          [
+            "get",
+            "type"
+          ],
+          [
+            "river",
+            "canal"
+          ],
+          "hsla(203, 65%, 58%, 1)",
+          "hsla(200, 40%, 70%, 1)"
+        ],
         "line-width": [
           "interpolate",
           [
@@ -3936,15 +4020,75 @@
             "zoom"
           ],
           7,
-          0.75,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "river",
+              "canal"
+            ],
+            0.75,
+            0.4
+          ],
           10,
-          1.6,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "river",
+              "canal"
+            ],
+            1.6,
+            0.6
+          ],
           13,
-          3.2,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "river",
+              "canal"
+            ],
+            3.2,
+            1
+          ],
           16,
-          5,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "river",
+              "canal"
+            ],
+            5,
+            1.6
+          ],
           20,
-          8
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "river",
+              "canal"
+            ],
+            8,
+            3
+          ]
         ],
         "line-dasharray": [
           3,
@@ -4194,7 +4338,19 @@
         "line-join": "round"
       },
       "paint": {
-        "line-color": "hsla(203, 65%, 58%, 1)",
+        "line-color": [
+          "match",
+          [
+            "get",
+            "type"
+          ],
+          [
+            "river",
+            "canal"
+          ],
+          "hsla(203, 65%, 58%, 1)",
+          "hsla(200, 40%, 70%, 1)"
+        ],
         "line-width": [
           "interpolate",
           [
@@ -4204,15 +4360,75 @@
             "zoom"
           ],
           7,
-          0.75,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "river",
+              "canal"
+            ],
+            0.75,
+            0.4
+          ],
           10,
-          1.6,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "river",
+              "canal"
+            ],
+            1.6,
+            0.6
+          ],
           13,
-          3.2,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "river",
+              "canal"
+            ],
+            3.2,
+            1
+          ],
           16,
-          5,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "river",
+              "canal"
+            ],
+            5,
+            1.6
+          ],
           20,
-          8
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "river",
+              "canal"
+            ],
+            8,
+            3
+          ]
         ],
         "line-dasharray": [
           3,
@@ -15260,6 +15476,26 @@
             ]
           ],
           "wd-base:wd-ring",
+          [
+            "all",
+            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
+              "small_place"
+            ],
+            [
+              "<=",
+              [
+                "get",
+                "rank"
+              ],
+              10
+            ]
+          ],
+          "wd-base:wd-ring",
           ""
         ],
         "icon-optional": true,
@@ -15325,6 +15561,26 @@
               ]
             ],
             0.5,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "small_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                10
+              ]
+            ],
+            0.45,
             0
           ],
           8,
@@ -15379,6 +15635,26 @@
               ]
             ],
             0.65,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "small_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                10
+              ]
+            ],
+            0.55,
             0
           ],
           10,
@@ -15433,6 +15709,26 @@
               ]
             ],
             0.75,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "small_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                10
+              ]
+            ],
+            0.65,
             0
           ],
           13,
@@ -15487,6 +15783,26 @@
               ]
             ],
             0.82,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "small_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                10
+              ]
+            ],
+            0.7,
             0
           ]
         ],
@@ -17273,6 +17589,26 @@
             ]
           ],
           "wd-base:wd-ring",
+          [
+            "all",
+            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
+              "small_place"
+            ],
+            [
+              "<=",
+              [
+                "get",
+                "rank"
+              ],
+              10
+            ]
+          ],
+          "wd-base:wd-ring",
           ""
         ],
         "icon-optional": true,
@@ -17338,6 +17674,26 @@
               ]
             ],
             0.5,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "small_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                10
+              ]
+            ],
+            0.45,
             0
           ],
           8,
@@ -17392,6 +17748,26 @@
               ]
             ],
             0.65,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "small_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                10
+              ]
+            ],
+            0.55,
             0
           ],
           10,
@@ -17446,6 +17822,26 @@
               ]
             ],
             0.75,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "small_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                10
+              ]
+            ],
+            0.65,
             0
           ],
           13,
@@ -17500,6 +17896,26 @@
               ]
             ],
             0.82,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "small_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                10
+              ]
+            ],
+            0.7,
             0
           ]
         ],
@@ -19598,6 +20014,26 @@
             ]
           ],
           "wd-base:wd-ring",
+          [
+            "all",
+            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
+              "small_place"
+            ],
+            [
+              "<=",
+              [
+                "get",
+                "rank"
+              ],
+              10
+            ]
+          ],
+          "wd-base:wd-ring",
           ""
         ],
         "icon-optional": true,
@@ -19663,6 +20099,26 @@
               ]
             ],
             0.5,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "small_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                10
+              ]
+            ],
+            0.45,
             0
           ],
           8,
@@ -19717,6 +20173,26 @@
               ]
             ],
             0.65,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "small_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                10
+              ]
+            ],
+            0.55,
             0
           ],
           10,
@@ -19771,6 +20247,26 @@
               ]
             ],
             0.75,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "small_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                10
+              ]
+            ],
+            0.65,
             0
           ],
           13,
@@ -19825,6 +20321,26 @@
               ]
             ],
             0.82,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "small_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                10
+              ]
+            ],
+            0.7,
             0
           ]
         ],
@@ -21647,6 +22163,26 @@
             ]
           ],
           "wd-base:wd-ring",
+          [
+            "all",
+            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
+              "small_place"
+            ],
+            [
+              "<=",
+              [
+                "get",
+                "rank"
+              ],
+              10
+            ]
+          ],
+          "wd-base:wd-ring",
           ""
         ],
         "icon-optional": true,
@@ -21712,6 +22248,26 @@
               ]
             ],
             0.5,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "small_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                10
+              ]
+            ],
+            0.45,
             0
           ],
           8,
@@ -21766,6 +22322,26 @@
               ]
             ],
             0.65,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "small_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                10
+              ]
+            ],
+            0.55,
             0
           ],
           10,
@@ -21820,6 +22396,26 @@
               ]
             ],
             0.75,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "small_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                10
+              ]
+            ],
+            0.65,
             0
           ],
           13,
@@ -21874,6 +22470,26 @@
               ]
             ],
             0.82,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "small_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                10
+              ]
+            ],
+            0.7,
             0
           ]
         ],
@@ -23313,6 +23929,26 @@
             ]
           ],
           "wd-base:wd-ring",
+          [
+            "all",
+            [
+              "==",
+              [
+                "get",
+                "category"
+              ],
+              "small_place"
+            ],
+            [
+              "<=",
+              [
+                "get",
+                "rank"
+              ],
+              10
+            ]
+          ],
+          "wd-base:wd-ring",
           ""
         ],
         "icon-optional": true,
@@ -23378,6 +24014,26 @@
               ]
             ],
             0.5,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "small_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                10
+              ]
+            ],
+            0.45,
             0
           ],
           8,
@@ -23432,6 +24088,26 @@
               ]
             ],
             0.65,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "small_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                10
+              ]
+            ],
+            0.55,
             0
           ],
           10,
@@ -23486,6 +24162,26 @@
               ]
             ],
             0.75,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "small_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                10
+              ]
+            ],
+            0.65,
             0
           ],
           13,
@@ -23540,6 +24236,26 @@
               ]
             ],
             0.82,
+            [
+              "all",
+              [
+                "==",
+                [
+                  "get",
+                  "category"
+                ],
+                "small_place"
+              ],
+              [
+                "<=",
+                [
+                  "get",
+                  "rank"
+                ],
+                10
+              ]
+            ],
+            0.7,
             0
           ]
         ],

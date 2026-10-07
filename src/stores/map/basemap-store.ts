@@ -589,7 +589,7 @@ export const useBasemapStore = defineStore('basemap', () => {
     }
 
     // Use raster if tier is less than 1 (tier 0)
-    return gpuTier.tier < 1;
+    return gpuTier.tier < 2; // tier 2+: full vector; tier 0-1: weak-GPU path (user call)
   }
 
   // Async function to initialize basemaps based on GPU tier

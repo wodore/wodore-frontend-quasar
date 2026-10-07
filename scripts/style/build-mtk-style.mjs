@@ -334,6 +334,8 @@ for (const l of base.layers) {
     'wd-base:wd-ring-dot',
     ['all', ['==', ['get', 'category'], 'big_place'], ['>', ['get', 'rank'], 8]],
     'wd-base:wd-ring',
+    ['all', ['==', ['get', 'category'], 'small_place'], ['<=', ['get', 'rank'], 10]],
+    'wd-base:wd-ring',
     '',
   ];
   // icon can drop independently (labels always show — user: 'should
@@ -342,10 +344,10 @@ for (const l of base.layers) {
   l.layout['icon-optional'] = true;
   l.layout['text-optional'] = false;
   l.layout['icon-padding'] = 2;
-  // FOUR sizes scaling with rank (user: 'size the ring with the rank,
-  // e.g. 8 is smaller than 10') — capitals biggest, major cities
-  // (rank <=8) large, medium cities (rank 9-13) medium, small = none
-  const sizeFor = (cap, major, med) => [
+  // FOUR sizes scaling with rank: capitals > major > medium > small-town
+  // (small_place rank<=10 gets a smaller ring — Sion/Fribourg at
+  // country zoom where mtk generalizes them to small_place)
+  const sizeFor = (cap, major, med, smallTown) => [
     'case',
     ['==', ['get', 'category'], 'capital'],
     cap,
@@ -353,6 +355,8 @@ for (const l of base.layers) {
     major,
     ['all', ['==', ['get', 'category'], 'big_place'], ['>', ['get', 'rank'], 8]],
     med,
+    ['all', ['==', ['get', 'category'], 'small_place'], ['<=', ['get', 'rank'], 10]],
+    smallTown,
     0,
   ];
   l.layout['icon-size'] = [
@@ -360,13 +364,13 @@ for (const l of base.layers) {
     ['linear'],
     ['zoom'],
     1,
-    sizeFor(0.8, 0.6, 0.5),
+    sizeFor(0.8, 0.6, 0.5, 0.45),
     8,
-    sizeFor(1.0, 0.78, 0.65),
+    sizeFor(1.0, 0.78, 0.65, 0.55),
     10,
-    sizeFor(1.15, 0.88, 0.75),
+    sizeFor(1.15, 0.88, 0.75, 0.65),
     13,
-    sizeFor(1.2, 0.95, 0.82),
+    sizeFor(1.2, 0.95, 0.82, 0.7),
   ];
   l.paint['icon-opacity'] = [
     'step',
@@ -524,28 +528,32 @@ for (const [id, deep, pale] of [
 }
 // Rivers: glacier-deep lines carry the valley skeleton (swisstopo's
 // water_line rgb ladder ≈ 0.75 z7 -> 1 z10 -> 3 z13; widths kept)
-// Rivers: swisstopo's exact spine color + width ladder, plus subtle
-// blur + round joins to soften mtk's angular tile geometry (user:
-// swisstopo's rivers are smooth/flowing; ours jagged — the raw
-// polyline vertices are in the tiles, but blur + round joins soften
-// the visual appearance meaningfully)
+// Rivers vs streams (user: 'small streams too wide and blue'): mtk's
+// waterway layer carries a type field (river/canal/stream/ditch) —
+// rivers get swisstopo's bright blue spine, streams get thinner and
+// lighter so they don't compete with rivers for attention
 for (const id of ['water_waterway', 'water_waterway_intermittent', 'water_intermittent_outline']) {
   const l = layer(id);
-  l.paint['line-color'] = 'hsla(203, 65%, 58%, 1)';
+  l.paint['line-color'] = [
+    'match', ['get', 'type'],
+    ['river', 'canal'],
+    'hsla(203, 65%, 58%, 1)', // rivers: swisstopo's bright blue spine
+    'hsla(200, 40%, 70%, 1)', // fallback: streams, lighter
+  ];
   l.paint['line-width'] = [
     'interpolate',
     ['linear'],
     ['zoom'],
     7,
-    0.75,
+    ['match', ['get', 'type'], ['river', 'canal'], 0.75, 0.4],
     10,
-    1.6,
+    ['match', ['get', 'type'], ['river', 'canal'], 1.6, 0.6],
     13,
-    3.2,
+    ['match', ['get', 'type'], ['river', 'canal'], 3.2, 1.0],
     16,
-    5,
+    ['match', ['get', 'type'], ['river', 'canal'], 5, 1.6],
     20,
-    8,
+    ['match', ['get', 'type'], ['river', 'canal'], 8, 3],
   ];
   l.paint['line-blur'] = 0.4;
   l.layout = { ...l.layout, 'line-cap': 'round', 'line-join': 'round' };
