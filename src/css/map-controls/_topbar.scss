@@ -28,6 +28,8 @@
   max-width: calc(100vw - 24px); // fullscreen button is hidden in normal view
   display: flex;
   align-items: center;
+  position: relative;
+  overflow: hidden; // clips the 2px progress bar into the stadium shape
   height: 52px; // taller pill — the date hero needs presence
   background: var(--wd-ctl-bg);
   border: 1px solid var(--wd-ctl-border);
@@ -323,12 +325,20 @@ body.body--dark .wd-date-btn__icon {
   }
 }
 
-// ── Progress bar rides below the pill ───────────────────────────────────
+// ── Progress bar: 2px line on the pill's bottom edge ────────────────────
+// Absolutely positioned INSIDE the pill (relative + overflow:hidden above)
+// so the stadium border clips its rounded ends. Quasar paints track and
+// bar both from currentColor — one low-alpha ink keeps the whole thing
+// subtle: Day = pine ink on the near-white pill, Night = mint on pine.
 .wd-topbar__progress {
-  position: fixed;
-  top: 0;
+  position: absolute;
   left: 0;
   right: 0;
+  bottom: 0;
   border-radius: 0;
-  z-index: 2100;
+  color: rgba(52, 103, 81, 0.3);
+}
+
+body.body--dark .wd-topbar__progress {
+  color: rgba(169, 240, 210, 0.3);
 }
