@@ -3864,7 +3864,7 @@
         "visibility": "visible"
       },
       "paint": {
-        "line-color": "hsla(200, 48%, 55%, 1)",
+        "line-color": "hsla(203, 65%, 58%, 1)",
         "line-width": [
           "interpolate",
           [
@@ -3874,15 +3874,15 @@
             "zoom"
           ],
           7,
-          0.9,
+          0.75,
           10,
-          1.5,
+          1.6,
           13,
-          3,
+          3.2,
           16,
-          4.5,
+          5,
           20,
-          7
+          8
         ]
       },
       "metadata": {
@@ -3922,7 +3922,7 @@
         "visibility": "visible"
       },
       "paint": {
-        "line-color": "hsla(200, 48%, 55%, 1)",
+        "line-color": "hsla(203, 65%, 58%, 1)",
         "line-width": [
           "interpolate",
           [
@@ -3932,15 +3932,15 @@
             "zoom"
           ],
           7,
-          0.9,
+          0.75,
           10,
-          1.5,
+          1.6,
           13,
-          3,
+          3.2,
           16,
-          4.5,
+          5,
           20,
-          7
+          8
         ],
         "line-dasharray": [
           3,
@@ -4187,7 +4187,7 @@
         "visibility": "visible"
       },
       "paint": {
-        "line-color": "hsla(200, 48%, 55%, 1)",
+        "line-color": "hsla(203, 65%, 58%, 1)",
         "line-width": [
           "interpolate",
           [
@@ -4197,15 +4197,15 @@
             "zoom"
           ],
           7,
-          0.9,
+          0.75,
           10,
-          1.5,
+          1.6,
           13,
-          3,
+          3.2,
           16,
-          4.5,
+          5,
           20,
-          7
+          8
         ],
         "line-dasharray": [
           3,
@@ -6820,7 +6820,7 @@
           13,
           "hsla(0, 0%, 60%, 0)",
           14.5,
-          "#D2D2CE"
+          "#DCD9D2"
         ],
         "line-gap-width": 0,
         "line-width": [
@@ -6832,14 +6832,14 @@
           [
             "zoom"
           ],
-          13,
-          2.6,
+          14.5,
+          0,
           15,
-          3.4,
+          2.8,
           16,
-          8,
+          6,
           20,
-          95
+          80
         ]
       },
       "metadata": {
@@ -8392,7 +8392,7 @@
           9,
           "hsla(45, 100%, 82%, 0)",
           10.5,
-          "#F5EED8"
+          "#F6E8C8"
         ],
         "line-width": [
           "interpolate",
@@ -8597,7 +8597,18 @@
           8,
           "hsla(45, 100%, 82%, 0)",
           10,
-          "#FFFFFF"
+          "#FFFFFF",
+          14,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            "tertiary",
+            "#F6E8C8",
+            "#FFFFFF"
+          ]
         ],
         "line-width": [
           "interpolate",
@@ -10275,7 +10286,7 @@
           13,
           "hsla(0, 0%, 60%, 0)",
           14.5,
-          "#D2D2CE"
+          "#DCD9D2"
         ],
         "line-gap-width": 0,
         "line-width": [
@@ -10287,14 +10298,14 @@
           [
             "zoom"
           ],
-          13,
-          2.6,
+          14.5,
+          0,
           15,
-          3.4,
+          2.8,
           16,
-          8,
+          6,
           20,
-          95
+          80
         ]
       },
       "metadata": {
@@ -11120,7 +11131,7 @@
           9,
           "hsla(45, 100%, 82%, 0)",
           10.5,
-          "#F5EED8"
+          "#F6E8C8"
         ],
         "line-width": [
           "interpolate",
@@ -11327,7 +11338,18 @@
           8,
           "hsla(45, 100%, 82%, 0)",
           10,
-          "#FFFFFF"
+          "#FFFFFF",
+          14,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            "tertiary",
+            "#F6E8C8",
+            "#FFFFFF"
+          ]
         ],
         "line-width": [
           "interpolate",

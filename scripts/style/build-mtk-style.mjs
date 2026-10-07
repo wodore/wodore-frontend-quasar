@@ -469,25 +469,25 @@ for (const [id, deep, pale] of [
 }
 // Rivers: glacier-deep lines carry the valley skeleton (swisstopo's
 // water_line rgb ladder ≈ 0.75 z7 -> 1 z10 -> 3 z13; widths kept)
-// Rivers: the valley skeleton — wider and clearly visible (user:
-// 'main river barely visible'). The earlier lighter tint washed out —
-// this stays blue enough to read as water at every zoom.
+// Rivers: the valley skeleton — swisstopo's exact spine: brighter,
+// cleaner blue rgb(77,164,218) = hsla(203,65%,58%), at their width
+// ladder (advisor: ours was muddy more than thin)
 for (const id of ['water_waterway', 'water_waterway_intermittent', 'water_intermittent_outline']) {
-  layer(id).paint['line-color'] = 'hsla(200, 48%, 55%, 1)';
+  layer(id).paint['line-color'] = 'hsla(203, 65%, 58%, 1)';
   layer(id).paint['line-width'] = [
     'interpolate',
     ['linear'],
     ['zoom'],
     7,
-    0.9,
+    0.75,
     10,
-    1.5,
+    1.6,
     13,
-    3,
+    3.2,
     16,
-    4.5,
+    5,
     20,
-    7,
+    8,
   ];
 }
 // Water labels: glacier-turquoise-deep ink
@@ -1057,6 +1057,10 @@ const FILL_WHITE = [
   14,
   byType('#E27E3E', '#E27E3E', '#FFF7EA', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF'),
 ];
+// Secondary stays pure white; tertiary gets the cream fill from z14
+// (advisor: the hierarchy is white secondary > cream tertiary >
+// cream-with-faint-casing minor — tertiary currently collapses into
+// minor because both are undifferentiated at z14)
 const FILL_MEDIUM_COLOR = [
   'interpolate',
   ['linear'],
@@ -1065,6 +1069,8 @@ const FILL_MEDIUM_COLOR = [
   'hsla(45, 100%, 82%, 0)',
   10,
   '#FFFFFF',
+  14,
+  ['match', ['get', 'type'], 'tertiary', '#F6E8C8', '#FFFFFF'],
 ];
 const FILL_MINOR_COLOR = [
   'interpolate',
@@ -1076,7 +1082,7 @@ const FILL_MINOR_COLOR = [
   // warm cream (mapy.com-style local streets) — reads as a soft
   // yellow ribbon against the paper, distinctly friendlier than
   // harsh white with dark edges (user call)
-  '#F5EED8',
+  '#F6E8C8',
 ];
 const FILL_BLUR = ['interpolate', ['linear'], ['zoom'], 8, 0.4, 14, 0.1];
 
@@ -1227,20 +1233,22 @@ const MINOR_CASING_COLOR = [
   // very light grey — mapy.com-style: minor streets read as warm
   // cream ribbons with a whisper of an edge, not white-with-dark-line
   14.5,
-  '#D2D2CE',
+  '#DCD9D2',
 ];
+// Advisor round: delay casing to z15, much narrower (z14-15 minor
+// streets need no casing — fill+landuse contrast carries them)
 const MINOR_CASING_WIDTH = [
   'interpolate',
   ['exponential', 2],
   ['zoom'],
-  13,
-  2.6,
+  14.5,
+  0,
   15,
-  3.4,
+  2.8,
   16,
-  8,
+  6,
   20,
-  95,
+  80,
 ];
 clonePaint(['road_minor_casing', 'road_minor_casing_bridge', 'road_minor_casing_tunnel'], {
   'line-color': MINOR_CASING_COLOR,
