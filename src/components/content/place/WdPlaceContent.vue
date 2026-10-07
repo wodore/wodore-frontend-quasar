@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { copyToClipboard } from 'quasar';
-import { useIntersectionObserver } from '@vueuse/core';
+import { useIntersectionObserver, useOnline } from '@vueuse/core';
 import { usePlace } from '@composables/usePlace';
 import { useHutImages } from '@composables/useHutImages';
 import { schemasWodore } from '@clients/index';
@@ -27,7 +27,33 @@ const props = defineProps<Props>();
 const { selectedMonth } = storeToRefs(useHutsStore());
 
 // Fetch place data (primary data, loaded immediately)
-const { place, loading: placeLoading, error: placeError } = usePlace(computed(() => props.slug));
+const {
+  place,
+  loading: placeLoading,
+  error: placeError,
+  refetch: refetchPlace,
+} = usePlace(computed(() => props.slug));
+
+// Live connectivity: a stored error replays as 'offline' whenever the
+// browser reports no connection — accurate guidance for the retry the
+// user is about to click, even before they click it.
+const isOnline = useOnline();
+
+const placeErrorKind = computed(() => {
+  if (!placeError.value) return null;
+  return isOnline.value ? placeError.value.kind : 'offline';
+});
+
+const placeErrorHintKey = computed(() => {
+  switch (placeErrorKind.value) {
+    case 'offline':
+      return 'hut.load_error_offline_hint';
+    case 'unreachable':
+      return 'hut.load_error_unreachable_hint';
+    default:
+      return 'hut.load_error_server_hint';
+  }
+});
 
 // Fetch images (important for UX, loaded immediately)
 const { images, loading: imagesLoading } = useHutImages(computed(() => props.slug));
@@ -137,6 +163,78 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
   color: rgba(var(--wd-ink-rgb), 0.7);
   text-decoration: underline dotted;
 }
+
+// Load-failure state: a calm, centered recovery block. The drawer surface
+// already is the panel — no nested card, no alarm red (availability owns
+// red/green); the information voice (--wd-ink-soft) carries the state.
+.wd-place-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 45vh;
+  padding: 24px 16px;
+}
+
+.wd-place-error__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--wd-wash);
+  color: var(--wd-ink-soft);
+  margin-bottom: 16px;
+}
+
+.wd-place-error__title {
+  margin-bottom: 4px;
+}
+
+.wd-place-error__hint {
+  margin: 0 0 24px;
+  max-width: 38ch;
+}
+
+// HTTP status code line (label style; no API error body text is shown).
+// :has pulls the hint's bottom margin in tight when the code follows.
+.wd-place-error__hint:has(+ .wd-place-error__code) {
+  margin-bottom: 4px;
+}
+
+.wd-place-error__code {
+  margin: 0 0 24px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
+}
+
+// Below the Quasar md breakpoint (1440px) the place renders in the mobile
+// bottom sheet at its initial snap (~330px incl. header/footer): drop the
+// drawer centering and compact the rhythm so heading, hint AND the retry
+// action clear the fold.
+@media (max-width: 1439px) {
+  .wd-place-error {
+    min-height: 0;
+    padding: 16px;
+  }
+
+  .wd-place-error__icon {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 12px;
+
+    .q-icon {
+      font-size: 24px;
+    }
+  }
+
+  .wd-place-error__hint {
+    margin-bottom: 16px;
+  }
+}
 </style>
 
 <template>
@@ -148,9 +246,31 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
       <q-skeleton type="text" />
     </div>
 
-    <!-- Error state -->
-    <div v-else-if="placeError" class="q-pa-md">
-      <q-banner class="bg-negative text-white"> Failed to load place information </q-banner>
+    <!-- Error state: calm recovery block, retry is the one action -->
+    <div v-else-if="placeError" class="wd-place-error" role="alert">
+      <div class="wd-place-error__icon" aria-hidden="true">
+        <q-icon name="wd-cloud-offline-outline" size="28px" />
+      </div>
+      <div class="wd-place-error__title text-h6 wd-ink-text">
+        {{
+          $t(placeErrorKind === 'offline' ? 'hut.load_error_offline_title' : 'hut.load_error')
+        }}
+      </div>
+      <p class="wd-place-error__hint text-body2 wd-ink-soft-text">
+        {{ $t(placeErrorHintKey) }}
+      </p>
+      <div
+        v-if="placeErrorKind === 'http' && placeError?.status"
+        class="wd-place-error__code text-caption wd-ink-text"
+      >
+        {{ $t('error.code') }} {{ placeError.status }}
+      </div>
+      <q-btn
+        unelevated
+        color="primary"
+        :label="$t('hut.load_error_retry')"
+        @click="refetchPlace"
+      />
     </div>
 
     <!-- Content -->
