@@ -125,6 +125,7 @@
     "@typescript-eslint/parser": "^8.71.0",
     "@vitest/coverage-v8": "^4.1.11",
     "@vue/compiler-sfc": "^3.4.23",
+    "@vue/runtime-core": "^3.5.43",
     "allure": "3.18.0",
     "allure-js-commons": "^3.13.0",
     "allure-playwright": "^3.13.0",

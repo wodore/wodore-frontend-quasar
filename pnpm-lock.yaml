@@ -186,6 +186,9 @@ importers:
       '@vue/compiler-sfc':
         specifier: ^3.4.23
         version: 3.5.43
+      '@vue/runtime-core':
+        specifier: ^3.5.43
+        version: 3.5.43
       allure:
         specifier: 3.18.0
         version: 3.18.0(preact@11.0.0)
