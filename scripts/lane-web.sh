@@ -59,7 +59,10 @@ fg)
         echo "lane-web: port :$PORT held by a foreign process (pid $(echo "$PIDS" | tr '\n' ' '))— refusing to start" >&2
         exit 1
     fi
-    exec pnpm exec quasar dev -m pwa --port "$PORT"
+    # PACKAGE_VERSION: quasar.config.ts builds WODORE_APP_VERSION from it
+    # (npm_package_version is only injected by script runners, not pnpm exec).
+    PACKAGE_VERSION="$(node -p 'require("./package.json").version')" \
+        exec pnpm exec quasar dev -m pwa --port "$PORT"
     ;;
 start)
     exec workz run

@@ -12,7 +12,8 @@ dev mode="pwa" *ARGS:
     #! ./.shell-wrapper.sh
     header "Dev server ({{mode}})"
     info "In a workz lane: just lane web (guarded, own port)"
-    pnpm exec quasar dev -m {{mode}} {{ARGS}}
+    PACKAGE_VERSION="$(node -p 'require("./package.json").version')" \
+        pnpm exec quasar dev -m {{mode}} {{ARGS}}
 
 # 🏗️ Production build (usage: just dev build mode=pwa)
 build mode="pwa":
