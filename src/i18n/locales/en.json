@@ -19,7 +19,11 @@
     "unattended_hut": "Unattended Hut",
     "load_error": "Hut could not be loaded",
     "load_error_hint": "Check your internet connection and try again.",
-    "load_error_retry": "Try again"
+    "load_error_retry": "Try again",
+    "load_error_offline_title": "Offline",
+    "load_error_offline_hint": "You're offline. Try again once you're back online.",
+    "load_error_unreachable_hint": "The server can't be reached right now. Try again later.",
+    "load_error_server_hint": "The server reported an error."
   },
   "lang": {
     "english": "English",

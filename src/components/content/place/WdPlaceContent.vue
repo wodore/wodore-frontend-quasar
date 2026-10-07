@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { copyToClipboard } from 'quasar';
-import { useIntersectionObserver } from '@vueuse/core';
+import { useIntersectionObserver, useOnline } from '@vueuse/core';
 import { usePlace } from '@composables/usePlace';
 import { useHutImages } from '@composables/useHutImages';
 import { schemasWodore } from '@clients/index';
@@ -33,6 +33,27 @@ const {
   error: placeError,
   refetch: refetchPlace,
 } = usePlace(computed(() => props.slug));
+
+// Live connectivity: a stored error replays as 'offline' whenever the
+// browser reports no connection — accurate guidance for the retry the
+// user is about to click, even before they click it.
+const isOnline = useOnline();
+
+const placeErrorKind = computed(() => {
+  if (!placeError.value) return null;
+  return isOnline.value ? placeError.value.kind : 'offline';
+});
+
+const placeErrorHintKey = computed(() => {
+  switch (placeErrorKind.value) {
+    case 'offline':
+      return 'hut.load_error_offline_hint';
+    case 'unreachable':
+      return 'hut.load_error_unreachable_hint';
+    default:
+      return 'hut.load_error_server_hint';
+  }
+});
 
 // Fetch images (important for UX, loaded immediately)
 const { images, loading: imagesLoading } = useHutImages(computed(() => props.slug));
@@ -177,6 +198,19 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
   max-width: 38ch;
 }
 
+// HTTP status code line (label style; no API error body text is shown).
+// :has pulls the hint's bottom margin in tight when the code follows.
+.wd-place-error__hint:has(+ .wd-place-error__code) {
+  margin-bottom: 4px;
+}
+
+.wd-place-error__code {
+  margin: 0 0 24px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
+}
+
 // Below the Quasar md breakpoint (1440px) the place renders in the mobile
 // bottom sheet at its initial snap (~330px incl. header/footer): drop the
 // drawer centering and compact the rhythm so heading, hint AND the retry
@@ -217,10 +251,20 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
       <div class="wd-place-error__icon" aria-hidden="true">
         <q-icon name="wd-cloud-offline-outline" size="28px" />
       </div>
-      <div class="wd-place-error__title text-h6 wd-ink-text">{{ $t('hut.load_error') }}</div>
+      <div class="wd-place-error__title text-h6 wd-ink-text">
+        {{
+          $t(placeErrorKind === 'offline' ? 'hut.load_error_offline_title' : 'hut.load_error')
+        }}
+      </div>
       <p class="wd-place-error__hint text-body2 wd-ink-soft-text">
-        {{ $t('hut.load_error_hint') }}
+        {{ $t(placeErrorHintKey) }}
       </p>
+      <div
+        v-if="placeErrorKind === 'http' && placeError?.status"
+        class="wd-place-error__code text-caption wd-ink-text"
+      >
+        {{ $t('error.code') }} {{ placeError.status }}
+      </div>
       <q-btn
         unelevated
         color="primary"

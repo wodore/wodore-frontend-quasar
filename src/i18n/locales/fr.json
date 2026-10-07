@@ -22,7 +22,11 @@
     "unattended_hut": "Cabane sans surveillance",
     "load_error": "Impossible de charger la cabane",
     "load_error_hint": "Vérifie ta connexion internet et réessaie.",
-    "load_error_retry": "Réessayer"
+    "load_error_retry": "Réessayer",
+    "load_error_offline_title": "Hors ligne",
+    "load_error_offline_hint": "Tu es hors ligne. Réessaie dès que tu seras de nouveau en ligne.",
+    "load_error_unreachable_hint": "Le serveur est momentanément inaccessible. Réessaie plus tard.",
+    "load_error_server_hint": "Le serveur a signalé une erreur."
   },
   "lang": {
     "english": "Anglais",
