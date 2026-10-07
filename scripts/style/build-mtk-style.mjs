@@ -182,9 +182,10 @@ for (const id of ['place_point_label_rank_1', 'place_line_label_rank_1']) {
 }
 
 // Mountain names: QUIETER than cities — grey-brown italic, later
-// ranks deferred, and the elevation number in its own much smaller
-// grey line below the name (swisstopo convention) instead of sharing
-// the name's size
+// ranks deferred. Name + elevation stay ONE symbol (swisstopo's own
+// approach): a separate elevation layer collides with the name's
+// collision box and gets culled — the elevation disappeared (user
+// report). One symbol also keeps them atomic on dense summits.
 for (const [id, defer] of [
   ['place_peak_label_rank_1', 0],
   ['place_peak_label_rank_2', 1],
@@ -192,51 +193,9 @@ for (const [id, defer] of [
 ]) {
   const l = layer(id);
   l.minzoom += defer;
-  l.layout['text-field'] = [
-    'case',
-    ['!', ['has', 'is_nonlatin']],
-    ['get', 'name'],
-    [
-      'coalesce',
-      ['get', 'name_en'],
-      ['get', 'name_fr'],
-      ['get', 'name_es'],
-      ['get', 'name_de'],
-      ['get', 'name'],
-    ],
-  ];
   l.paint['text-color'] = 'hsla(28, 14%, 42%, 1)';
   l.paint['text-halo-color'] = 'rgba(242, 247, 244, 0.9)';
   l.paint['text-halo-width'] = 1.2;
-  // the elevation line: ~60% of the name size, lighter ink, tucked
-  // under the name (text-offset is in ems, so it tracks the size)
-  const rank = id.match(/rank_(\d)$/)[1];
-  const eleLayer = {
-    id: `wd-peak-ele-${rank}`,
-    type: 'symbol',
-    source: 'mtk',
-    'source-layer': 'place_label',
-    minzoom: l.minzoom,
-    maxzoom: l.maxzoom,
-    filter: l.filter,
-    layout: {
-      ...l.layout,
-      'text-field': ['get', 'ele'],
-      'text-size': scaleZoomStops(l.layout['text-size'], 0.62),
-      'text-anchor': 'left',
-      'text-offset': [0.6, 0.95],
-      'text-optional': true,
-      'icon-image': undefined,
-    },
-    paint: {
-      'text-color': 'hsla(28, 10%, 52%, 1)',
-      'text-halo-color': 'rgba(242, 247, 244, 0.9)',
-      'text-halo-width': 1,
-    },
-  };
-  delete eleLayer.layout['icon-image'];
-  const idx = base.layers.findIndex(x => x.id === id);
-  base.layers.splice(idx + 1, 0, eleLayer);
 }
 
 // Country borders: a bit less obvious (user call) — swisstopo's muted
@@ -265,8 +224,12 @@ const byCategory = (capital, big, small) => [
 ];
 for (const l of base.layers) {
   if (!/^place_point_label_rank_\d$/.test(l.id)) continue;
+  // MapLibre namespaces multi-sprite images by their sprite id
+  // ("Images of the `default` sprite keep their plain id, the ones of
+  // any other sprite are namespaced") — ours is 'wd-base', so the
+  // icon-image references carry the prefix
   const dotFor = solidCapital =>
-    byCategory(solidCapital ? 'wd-dot' : 'wd-dot-ring', 'wd-dot-ring', 'wd-dot-ring');
+    byCategory(solidCapital ? 'wd-base:wd-dot' : 'wd-base:wd-dot-ring', 'wd-base:wd-dot-ring', 'wd-base:wd-dot-ring');
   l.layout['icon-image'] = ['step', ['zoom'], dotFor(true), 8, dotFor(false)];
   // both must place, or neither shows — the no-orphan guarantee
   l.layout['icon-optional'] = false;
@@ -351,11 +314,12 @@ const PASTEL = {
   'hsla(137.25, 70%, 87%,': 'hsla(120, 16%, 89%,',
   'hsla(47.25, 90%, 94%,': 'hsla(45, 16%, 95%,',
   // water: saturated cyan -> glacier-turquoise family (own touch:
-  // turquoise is orientation) — pale at overview, deeper in valleys
-  'hsla(182, 65%, 80%, 1)': 'hsla(193, 42%, 88%, 1)',
-  'hsla(182, 65%, 85%, 1)': 'hsla(193, 40%, 90%, 1)',
-  'hsla(182, 65%, 80%, 0.7)': 'hsla(193, 40%, 90%, 0.7)',
-  'hsla(182, 65%, 96%, 1)': 'hsla(193, 32%, 92%, 1)',
+  // turquoise is orientation) — lakes a step darker than seas so they
+  // read as valley structure
+  'hsla(182, 65%, 80%, 1)': 'hsla(193, 44%, 85%, 1)',
+  'hsla(182, 65%, 85%, 1)': 'hsla(193, 40%, 87%, 1)',
+  'hsla(182, 65%, 80%, 0.7)': 'hsla(193, 40%, 87%, 0.7)',
+  'hsla(182, 65%, 96%, 1)': 'hsla(193, 32%, 90%, 1)',
 };
 const pastel = (paint, key) => {
   let json = JSON.stringify(paint[key]);
@@ -432,12 +396,13 @@ for (const id of [
   ];
 }
 // Overview water calm (z4-6): glacier fills lighten toward paper at
-// Europe zooms — swisstopo's continent view is near-flat paper water
+// Europe zooms — lakes sit a step darker than seas so valley chains
+// of lakes read as structure (user call)
 for (const [id, deep, pale] of [
-  ['water_area_inland', 'hsla(193, 42%, 88%, 1)', 'hsla(193, 36%, 93%, 1)'],
-  ['water_area_ocean', 'hsla(193, 40%, 90%, 1)', 'hsla(193, 36%, 93%, 1)'],
-  ['water_area_lagoon', 'hsla(193, 40%, 90%, 0.7)', 'hsla(193, 36%, 93%, 0.7)'],
-  ['water_intermittent', 'hsla(193, 32%, 92%, 1)', 'hsla(193, 30%, 94%, 1)'],
+  ['water_area_inland', 'hsla(193, 44%, 84%, 1)', 'hsla(193, 36%, 92%, 1)'],
+  ['water_area_ocean', 'hsla(193, 40%, 87%, 1)', 'hsla(193, 36%, 92%, 1)'],
+  ['water_area_lagoon', 'hsla(193, 40%, 87%, 0.7)', 'hsla(193, 36%, 92%, 0.7)'],
+  ['water_intermittent', 'hsla(193, 32%, 89%, 1)', 'hsla(193, 30%, 93%, 1)'],
 ]) {
   layer(id).paint['fill-color'] = ['interpolate', ['linear'], ['zoom'], 4, pale, 9, deep];
 }
@@ -485,19 +450,18 @@ layer('water_waterway_label_rank_1').minzoom = 6;
   const bf = layer('building_footprint_multicolored');
   bf.paint['fill-color'] = 'hsla(28, 18%, 74%, 0.25)';
 }
-// Round caps/joins on all casings (swisstopo: cap round, join round) —
-// butt-capped casings end square while the fill's round cap pokes past,
-// breaking the look at segment ends and junctions
-for (const id of [
-  'road_major_casing',
-  'road_major_casing_bridge',
-  'road_major_casing_tunnel',
-  'road_minor_casing',
-  'road_minor_casing_bridge',
-  'road_minor_casing_tunnel',
-]) {
+// Round caps/joins on casings (swisstopo: cap round, join round) —
+// butt-capped casings end square while the fill's round cap pokes
+// past, breaking the look at segment ends and junctions. BRIDGES keep
+// butt caps: square deck ends against the terrain is the swisstopo
+// look (user call — round bridge ends read as blobs)
+for (const id of ['road_major_casing', 'road_major_casing_tunnel', 'road_minor_casing', 'road_minor_casing_tunnel']) {
   const l = layer(id);
   l.layout = { ...l.layout, 'line-cap': 'round', 'line-join': 'round' };
+}
+for (const id of ['road_major_casing_bridge', 'road_minor_casing_bridge', 'road_major_dark_bridge', 'road_major_medium_bridge', 'road_minor_bridge']) {
+  const l = layer(id);
+  l.layout = { ...l.layout, 'line-cap': 'butt', 'line-join': 'round' };
 }
 // Tracks are single solid lines in swisstopo (no white fill + casing):
 // pull them out of the street layers and render them like their
@@ -844,15 +808,23 @@ layer('relief_contour_multicolored_label').minzoom = 14;
 
 // Place labels: swisstopo keeps them consistently dark — flatten mtk's
 // rank-based lightening (rank 1 = 20% grey ... rank 25 = 40% grey) into
-// Wodore day-ink with a paper-white halo (ties map to chrome)
-const DARK_LABEL = '#1C1C1C';
+// Wodore day-ink with a paper-white halo (ties map to chrome).
+// Glacier names keep the glacier-turquoise-deep ink of the water
+// labels (user call) — they carry type=glacier in the tiles.
+const DARK_LABEL = [
+  'match',
+  ['get', 'type'],
+  ['glacier'],
+  '#29626B',
+  '#1C1C1C',
+];
 for (const l of base.layers) {
   if (l.type !== 'symbol' || !l['source-layer'] || l['source-layer'] !== 'place_label') continue;
   const tf = l.paint?.['text-color'];
   if (!tf) continue;
   const json = JSON.stringify(tf);
   if (json.includes('["get","rank"]')) {
-    l.paint['text-color'] = DARK_LABEL;
+    l.paint['text-color'] = [...DARK_LABEL];
     if (l.paint['text-halo-color']) l.paint['text-halo-color'] = 'rgba(242, 247, 244, 0.9)';
   }
 }

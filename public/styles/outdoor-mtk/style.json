@@ -2339,9 +2339,9 @@
             "zoom"
           ],
           4,
-          "hsla(193, 36%, 93%, 1)",
+          "hsla(193, 36%, 92%, 1)",
           9,
-          "hsla(193, 40%, 90%, 1)"
+          "hsla(193, 40%, 87%, 1)"
         ]
       },
       "metadata": {
@@ -2914,9 +2914,9 @@
             "zoom"
           ],
           4,
-          "hsla(193, 36%, 93%, 0.7)",
+          "hsla(193, 36%, 92%, 0.7)",
           9,
-          "hsla(193, 40%, 90%, 0.7)"
+          "hsla(193, 40%, 87%, 0.7)"
         ]
       },
       "metadata": {
@@ -4193,9 +4193,9 @@
             "zoom"
           ],
           4,
-          "hsla(193, 30%, 94%, 1)",
+          "hsla(193, 30%, 93%, 1)",
           9,
-          "hsla(193, 32%, 92%, 1)"
+          "hsla(193, 32%, 89%, 1)"
         ]
       },
       "metadata": {
@@ -4321,9 +4321,9 @@
             "zoom"
           ],
           4,
-          "hsla(193, 36%, 93%, 1)",
+          "hsla(193, 36%, 92%, 1)",
           9,
-          "hsla(193, 42%, 88%, 1)"
+          "hsla(193, 44%, 84%, 1)"
         ]
       },
       "metadata": {
@@ -10726,7 +10726,7 @@
       "minzoom": 13,
       "maxzoom": 23,
       "layout": {
-        "line-cap": "round",
+        "line-cap": "butt",
         "line-join": "round",
         "visibility": "visible"
       },
@@ -10812,7 +10812,7 @@
       "minzoom": 5,
       "maxzoom": 23,
       "layout": {
-        "line-cap": "round",
+        "line-cap": "butt",
         "line-join": "round",
         "visibility": "visible"
       },
@@ -11571,7 +11571,7 @@
       "minzoom": 10,
       "maxzoom": 23,
       "layout": {
-        "line-cap": "round",
+        "line-cap": "butt",
         "line-join": "round",
         "visibility": "visible"
       },
@@ -11765,7 +11765,7 @@
       "minzoom": 9,
       "maxzoom": 23,
       "layout": {
-        "line-cap": "round",
+        "line-cap": "butt",
         "line-join": "round",
         "visibility": "visible"
       },
@@ -12096,7 +12096,7 @@
       "minzoom": 4,
       "maxzoom": 23,
       "layout": {
-        "line-cap": "round",
+        "line-cap": "butt",
         "line-join": "round",
         "visibility": "visible"
       },
@@ -15184,7 +15184,18 @@
         ]
       },
       "paint": {
-        "text-color": "#1C1C1C",
+        "text-color": [
+          "match",
+          [
+            "get",
+            "type"
+          ],
+          [
+            "glacier"
+          ],
+          "#29626B",
+          "#1C1C1C"
+        ],
         "text-halo-color": "rgba(242, 247, 244, 0.9)",
         "text-halo-width": 1,
         "text-halo-blur": 1
@@ -15528,12 +15539,12 @@
             [
               "capital"
             ],
-            "wd-dot",
+            "wd-base:wd-dot",
             [
               "big_place"
             ],
-            "wd-dot-ring",
-            "wd-dot-ring"
+            "wd-base:wd-dot-ring",
+            "wd-base:wd-dot-ring"
           ],
           8,
           [
@@ -15545,12 +15556,12 @@
             [
               "capital"
             ],
-            "wd-dot-ring",
+            "wd-base:wd-dot-ring",
             [
               "big_place"
             ],
-            "wd-dot-ring",
-            "wd-dot-ring"
+            "wd-base:wd-dot-ring",
+            "wd-base:wd-dot-ring"
           ]
         ],
         "icon-optional": false,
@@ -15653,7 +15664,18 @@
         "text-anchor": "left"
       },
       "paint": {
-        "text-color": "#1C1C1C",
+        "text-color": [
+          "match",
+          [
+            "get",
+            "type"
+          ],
+          [
+            "glacier"
+          ],
+          "#29626B",
+          "#1C1C1C"
+        ],
         "text-halo-color": "rgba(242, 247, 244, 0.9)",
         "text-halo-width": 1,
         "text-halo-blur": 1,
@@ -17003,7 +17025,18 @@
         ]
       },
       "paint": {
-        "text-color": "#1C1C1C",
+        "text-color": [
+          "match",
+          [
+            "get",
+            "type"
+          ],
+          [
+            "glacier"
+          ],
+          "#29626B",
+          "#1C1C1C"
+        ],
         "text-halo-color": "rgba(242, 247, 244, 0.9)",
         "text-halo-width": 1,
         "text-halo-blur": 1
@@ -17355,12 +17388,12 @@
             [
               "capital"
             ],
-            "wd-dot",
+            "wd-base:wd-dot",
             [
               "big_place"
             ],
-            "wd-dot-ring",
-            "wd-dot-ring"
+            "wd-base:wd-dot-ring",
+            "wd-base:wd-dot-ring"
           ],
           8,
           [
@@ -17372,12 +17405,12 @@
             [
               "capital"
             ],
-            "wd-dot-ring",
+            "wd-base:wd-dot-ring",
             [
               "big_place"
             ],
-            "wd-dot-ring",
-            "wd-dot-ring"
+            "wd-base:wd-dot-ring",
+            "wd-base:wd-dot-ring"
           ]
         ],
         "icon-optional": false,
@@ -17480,7 +17513,18 @@
         "text-anchor": "left"
       },
       "paint": {
-        "text-color": "#1C1C1C",
+        "text-color": [
+          "match",
+          [
+            "get",
+            "type"
+          ],
+          [
+            "glacier"
+          ],
+          "#29626B",
+          "#1C1C1C"
+        ],
         "text-halo-color": "rgba(242, 247, 244, 0.9)",
         "text-halo-width": 1,
         "text-halo-blur": 1,
@@ -18759,30 +18803,47 @@
             ]
           ],
           [
-            "get",
-            "name"
-          ],
-          [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name_fr"
-            ],
-            [
-              "get",
-              "name_es"
-            ],
-            [
-              "get",
-              "name_de"
-            ],
+            "concat",
             [
               "get",
               "name"
+            ],
+            "\n",
+            [
+              "get",
+              "ele"
+            ]
+          ],
+          [
+            "concat",
+            [
+              "get",
+              "name"
+            ],
+            "\n",
+            [
+              "coalesce",
+              [
+                "get",
+                "name_en"
+              ],
+              [
+                "get",
+                "name_fr"
+              ],
+              [
+                "get",
+                "name_es"
+              ],
+              [
+                "get",
+                "name_de"
+              ]
+            ],
+            "\n",
+            [
+              "get",
+              "ele"
             ]
           ]
         ],
@@ -18885,161 +18946,6 @@
           "keyProperty": "type",
           "rankProperty": "rank_new"
         }
-      }
-    },
-    {
-      "id": "wd-peak-ele-3",
-      "type": "symbol",
-      "source": "mtk",
-      "source-layer": "place_label",
-      "minzoom": 11.5,
-      "maxzoom": 23,
-      "filter": [
-        "all",
-        [
-          "in",
-          [
-            "get",
-            "type"
-          ],
-          [
-            "literal",
-            [
-              "peak",
-              "mountain_pass"
-            ]
-          ]
-        ],
-        [
-          ">",
-          [
-            "get",
-            "rank_new"
-          ],
-          13
-        ],
-        [
-          "<=",
-          [
-            "get",
-            "rank_new"
-          ],
-          17
-        ]
-      ],
-      "layout": {
-        "symbol-sort-key": [
-          "get",
-          "rank_new"
-        ],
-        "text-anchor": "left",
-        "text-justify": "left",
-        "text-field": [
-          "get",
-          "ele"
-        ],
-        "text-font": [
-          "case",
-          [
-            "!",
-            [
-              "has",
-              "is_nonlatin"
-            ]
-          ],
-          [
-            "literal",
-            [
-              "Barlow Italic"
-            ]
-          ],
-          [
-            "literal",
-            [
-              "Noto Sans Italic"
-            ]
-          ]
-        ],
-        "text-padding": [
-          "interpolate",
-          [
-            "linear"
-          ],
-          [
-            "zoom"
-          ],
-          1,
-          10,
-          18,
-          9
-        ],
-        "text-pitch-alignment": "viewport",
-        "text-size": [
-          "interpolate",
-          [
-            "linear"
-          ],
-          [
-            "zoom"
-          ],
-          1,
-          [
-            "*",
-            0.62,
-            [
-              "*",
-              0.92,
-              [
-                "interpolate",
-                [
-                  "linear"
-                ],
-                [
-                  "get",
-                  "rank_new"
-                ],
-                1,
-                6.51,
-                25,
-                1.18
-              ]
-            ]
-          ],
-          18,
-          [
-            "*",
-            0.62,
-            [
-              "*",
-              0.92,
-              [
-                "interpolate",
-                [
-                  "linear"
-                ],
-                [
-                  "get",
-                  "rank_new"
-                ],
-                1,
-                38.27,
-                25,
-                6.96
-              ]
-            ]
-          ]
-        ],
-        "visibility": "visible",
-        "text-offset": [
-          0.6,
-          0.95
-        ],
-        "text-optional": true
-      },
-      "paint": {
-        "text-color": "hsla(28, 10%, 52%, 1)",
-        "text-halo-color": "rgba(242, 247, 244, 0.9)",
-        "text-halo-width": 1
       }
     },
     {
@@ -19255,7 +19161,18 @@
         ]
       },
       "paint": {
-        "text-color": "#1C1C1C",
+        "text-color": [
+          "match",
+          [
+            "get",
+            "type"
+          ],
+          [
+            "glacier"
+          ],
+          "#29626B",
+          "#1C1C1C"
+        ],
         "text-halo-color": "rgba(242, 247, 244, 0.9)",
         "text-halo-width": 1,
         "text-halo-blur": 1
@@ -19607,12 +19524,12 @@
             [
               "capital"
             ],
-            "wd-dot",
+            "wd-base:wd-dot",
             [
               "big_place"
             ],
-            "wd-dot-ring",
-            "wd-dot-ring"
+            "wd-base:wd-dot-ring",
+            "wd-base:wd-dot-ring"
           ],
           8,
           [
@@ -19624,12 +19541,12 @@
             [
               "capital"
             ],
-            "wd-dot-ring",
+            "wd-base:wd-dot-ring",
             [
               "big_place"
             ],
-            "wd-dot-ring",
-            "wd-dot-ring"
+            "wd-base:wd-dot-ring",
+            "wd-base:wd-dot-ring"
           ]
         ],
         "icon-optional": false,
@@ -19732,7 +19649,18 @@
         "text-anchor": "left"
       },
       "paint": {
-        "text-color": "#1C1C1C",
+        "text-color": [
+          "match",
+          [
+            "get",
+            "type"
+          ],
+          [
+            "glacier"
+          ],
+          "#29626B",
+          "#1C1C1C"
+        ],
         "text-halo-color": "rgba(242, 247, 244, 0.9)",
         "text-halo-width": 1,
         "text-halo-blur": 1,
@@ -20713,30 +20641,47 @@
             ]
           ],
           [
-            "get",
-            "name"
-          ],
-          [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name_fr"
-            ],
-            [
-              "get",
-              "name_es"
-            ],
-            [
-              "get",
-              "name_de"
-            ],
+            "concat",
             [
               "get",
               "name"
+            ],
+            "\n",
+            [
+              "get",
+              "ele"
+            ]
+          ],
+          [
+            "concat",
+            [
+              "get",
+              "name"
+            ],
+            "\n",
+            [
+              "coalesce",
+              [
+                "get",
+                "name_en"
+              ],
+              [
+                "get",
+                "name_fr"
+              ],
+              [
+                "get",
+                "name_es"
+              ],
+              [
+                "get",
+                "name_de"
+              ]
+            ],
+            "\n",
+            [
+              "get",
+              "ele"
             ]
           ]
         ],
@@ -20839,161 +20784,6 @@
           "keyProperty": "type",
           "rankProperty": "rank_new"
         }
-      }
-    },
-    {
-      "id": "wd-peak-ele-2",
-      "type": "symbol",
-      "source": "mtk",
-      "source-layer": "place_label",
-      "minzoom": 8,
-      "maxzoom": 23,
-      "filter": [
-        "all",
-        [
-          "in",
-          [
-            "get",
-            "type"
-          ],
-          [
-            "literal",
-            [
-              "peak",
-              "mountain_pass"
-            ]
-          ]
-        ],
-        [
-          ">",
-          [
-            "get",
-            "rank_new"
-          ],
-          10
-        ],
-        [
-          "<=",
-          [
-            "get",
-            "rank_new"
-          ],
-          13
-        ]
-      ],
-      "layout": {
-        "symbol-sort-key": [
-          "get",
-          "rank_new"
-        ],
-        "text-anchor": "left",
-        "text-justify": "left",
-        "text-field": [
-          "get",
-          "ele"
-        ],
-        "text-font": [
-          "case",
-          [
-            "!",
-            [
-              "has",
-              "is_nonlatin"
-            ]
-          ],
-          [
-            "literal",
-            [
-              "Barlow Italic"
-            ]
-          ],
-          [
-            "literal",
-            [
-              "Noto Sans Italic"
-            ]
-          ]
-        ],
-        "text-padding": [
-          "interpolate",
-          [
-            "linear"
-          ],
-          [
-            "zoom"
-          ],
-          1,
-          10,
-          18,
-          9
-        ],
-        "text-pitch-alignment": "viewport",
-        "text-size": [
-          "interpolate",
-          [
-            "linear"
-          ],
-          [
-            "zoom"
-          ],
-          1,
-          [
-            "*",
-            0.62,
-            [
-              "*",
-              0.92,
-              [
-                "interpolate",
-                [
-                  "linear"
-                ],
-                [
-                  "get",
-                  "rank_new"
-                ],
-                1,
-                6.51,
-                25,
-                1.18
-              ]
-            ]
-          ],
-          18,
-          [
-            "*",
-            0.62,
-            [
-              "*",
-              0.92,
-              [
-                "interpolate",
-                [
-                  "linear"
-                ],
-                [
-                  "get",
-                  "rank_new"
-                ],
-                1,
-                38.27,
-                25,
-                6.96
-              ]
-            ]
-          ]
-        ],
-        "visibility": "visible",
-        "text-offset": [
-          0.6,
-          0.95
-        ],
-        "text-optional": true
-      },
-      "paint": {
-        "text-color": "hsla(28, 10%, 52%, 1)",
-        "text-halo-color": "rgba(242, 247, 244, 0.9)",
-        "text-halo-width": 1
       }
     },
     {
@@ -21209,7 +20999,18 @@
         ]
       },
       "paint": {
-        "text-color": "#1C1C1C",
+        "text-color": [
+          "match",
+          [
+            "get",
+            "type"
+          ],
+          [
+            "glacier"
+          ],
+          "#29626B",
+          "#1C1C1C"
+        ],
         "text-halo-color": "rgba(242, 247, 244, 0.9)",
         "text-halo-width": 1,
         "text-halo-blur": 1
@@ -21561,12 +21362,12 @@
             [
               "capital"
             ],
-            "wd-dot",
+            "wd-base:wd-dot",
             [
               "big_place"
             ],
-            "wd-dot-ring",
-            "wd-dot-ring"
+            "wd-base:wd-dot-ring",
+            "wd-base:wd-dot-ring"
           ],
           8,
           [
@@ -21578,12 +21379,12 @@
             [
               "capital"
             ],
-            "wd-dot-ring",
+            "wd-base:wd-dot-ring",
             [
               "big_place"
             ],
-            "wd-dot-ring",
-            "wd-dot-ring"
+            "wd-base:wd-dot-ring",
+            "wd-base:wd-dot-ring"
           ]
         ],
         "icon-optional": false,
@@ -21686,7 +21487,18 @@
         "text-anchor": "left"
       },
       "paint": {
-        "text-color": "#1C1C1C",
+        "text-color": [
+          "match",
+          [
+            "get",
+            "type"
+          ],
+          [
+            "glacier"
+          ],
+          "#29626B",
+          "#1C1C1C"
+        ],
         "text-halo-color": "rgba(242, 247, 244, 0.9)",
         "text-halo-width": 1,
         "text-halo-blur": 1,
@@ -22229,30 +22041,47 @@
             ]
           ],
           [
-            "get",
-            "name"
-          ],
-          [
-            "coalesce",
-            [
-              "get",
-              "name_en"
-            ],
-            [
-              "get",
-              "name_fr"
-            ],
-            [
-              "get",
-              "name_es"
-            ],
-            [
-              "get",
-              "name_de"
-            ],
+            "concat",
             [
               "get",
               "name"
+            ],
+            "\n",
+            [
+              "get",
+              "ele"
+            ]
+          ],
+          [
+            "concat",
+            [
+              "get",
+              "name"
+            ],
+            "\n",
+            [
+              "coalesce",
+              [
+                "get",
+                "name_en"
+              ],
+              [
+                "get",
+                "name_fr"
+              ],
+              [
+                "get",
+                "name_es"
+              ],
+              [
+                "get",
+                "name_de"
+              ]
+            ],
+            "\n",
+            [
+              "get",
+              "ele"
             ]
           ]
         ],
@@ -22355,153 +22184,6 @@
           "keyProperty": "type",
           "rankProperty": "rank_new"
         }
-      }
-    },
-    {
-      "id": "wd-peak-ele-1",
-      "type": "symbol",
-      "source": "mtk",
-      "source-layer": "place_label",
-      "minzoom": 7,
-      "maxzoom": 23,
-      "filter": [
-        "all",
-        [
-          "in",
-          [
-            "get",
-            "type"
-          ],
-          [
-            "literal",
-            [
-              "peak",
-              "mountain_pass"
-            ]
-          ]
-        ],
-        [
-          "<=",
-          [
-            "get",
-            "rank_new"
-          ],
-          10
-        ]
-      ],
-      "layout": {
-        "symbol-sort-key": [
-          "get",
-          "rank_new"
-        ],
-        "text-anchor": "left",
-        "text-justify": "left",
-        "text-field": [
-          "get",
-          "ele"
-        ],
-        "text-font": [
-          "case",
-          [
-            "!",
-            [
-              "has",
-              "is_nonlatin"
-            ]
-          ],
-          [
-            "literal",
-            [
-              "Barlow Italic"
-            ]
-          ],
-          [
-            "literal",
-            [
-              "Noto Sans Italic"
-            ]
-          ]
-        ],
-        "text-padding": [
-          "interpolate",
-          [
-            "linear"
-          ],
-          [
-            "zoom"
-          ],
-          1,
-          10,
-          18,
-          9
-        ],
-        "text-pitch-alignment": "viewport",
-        "text-size": [
-          "interpolate",
-          [
-            "linear"
-          ],
-          [
-            "zoom"
-          ],
-          1,
-          [
-            "*",
-            0.62,
-            [
-              "*",
-              0.92,
-              [
-                "interpolate",
-                [
-                  "linear"
-                ],
-                [
-                  "get",
-                  "rank_new"
-                ],
-                1,
-                6.51,
-                25,
-                1.18
-              ]
-            ]
-          ],
-          18,
-          [
-            "*",
-            0.62,
-            [
-              "*",
-              0.92,
-              [
-                "interpolate",
-                [
-                  "linear"
-                ],
-                [
-                  "get",
-                  "rank_new"
-                ],
-                1,
-                38.27,
-                25,
-                6.96
-              ]
-            ]
-          ]
-        ],
-        "visibility": "visible",
-        "text-offset": [
-          0.6,
-          0.95
-        ],
-        "text-optional": true
-      },
-      "paint": {
-        "text-color": "hsla(28, 10%, 52%, 1)",
-        "text-halo-color": "rgba(242, 247, 244, 0.9)",
-        "text-halo-width": 1
       }
     },
     {
@@ -22767,7 +22449,18 @@
         ]
       },
       "paint": {
-        "text-color": "#1C1C1C",
+        "text-color": [
+          "match",
+          [
+            "get",
+            "type"
+          ],
+          [
+            "glacier"
+          ],
+          "#29626B",
+          "#1C1C1C"
+        ],
         "text-halo-color": "rgba(242, 247, 244, 0.9)",
         "text-halo-width": 1,
         "text-halo-blur": 1
@@ -23169,12 +22862,12 @@
             [
               "capital"
             ],
-            "wd-dot",
+            "wd-base:wd-dot",
             [
               "big_place"
             ],
-            "wd-dot-ring",
-            "wd-dot-ring"
+            "wd-base:wd-dot-ring",
+            "wd-base:wd-dot-ring"
           ],
           8,
           [
@@ -23186,12 +22879,12 @@
             [
               "capital"
             ],
-            "wd-dot-ring",
+            "wd-base:wd-dot-ring",
             [
               "big_place"
             ],
-            "wd-dot-ring",
-            "wd-dot-ring"
+            "wd-base:wd-dot-ring",
+            "wd-base:wd-dot-ring"
           ]
         ],
         "icon-optional": false,
@@ -23294,7 +22987,18 @@
         "text-anchor": "left"
       },
       "paint": {
-        "text-color": "#1C1C1C",
+        "text-color": [
+          "match",
+          [
+            "get",
+            "type"
+          ],
+          [
+            "glacier"
+          ],
+          "#29626B",
+          "#1C1C1C"
+        ],
         "text-halo-color": "rgba(242, 247, 244, 0.9)",
         "text-halo-width": 1,
         "text-halo-blur": 1,
