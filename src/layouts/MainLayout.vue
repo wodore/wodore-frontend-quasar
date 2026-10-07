@@ -452,13 +452,18 @@ body.capacitor .preview-badge {
         <!--</button>-->
 
         <!-- API request progress — 2px line on the pill's bottom edge,
-             clipped by the stadium border (subtle translucent ink) -->
-        <q-linear-progress
-          v-if="progressVisible"
-          indeterminate
-          size="2px"
-          class="wd-topbar__progress"
-        />
+             clipped by the stadium border (subtle translucent ink).
+             Decorative: aria-hidden, no pointer events. Fades/rises in
+             200ms, fades/sinks out 150ms; static under reduced motion. -->
+        <transition name="wd-progress">
+          <q-linear-progress
+            v-if="progressVisible"
+            indeterminate
+            size="2px"
+            aria-hidden="true"
+            class="wd-topbar__progress"
+          />
+        </transition>
       </div>
 
       <!-- Desktop-only utilities: top-right chip cluster (8px radius) -->
