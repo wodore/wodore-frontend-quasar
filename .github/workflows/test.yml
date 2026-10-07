@@ -1,6 +1,7 @@
 name: Tests
 
 on:
+  workflow_dispatch: {}  # manual runs on any branch (PAT PR events can be flaky)
   push:
     branches:
       - main
