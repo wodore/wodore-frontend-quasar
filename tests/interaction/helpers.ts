@@ -9,6 +9,7 @@ import type { Page, TestInfo } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 
 export const GET_MAP =
   'document.querySelector(".maplibregl-map").__vueParentComponent.exposed.map._value';
@@ -20,7 +21,10 @@ export const GET_MAP =
 // later run (CI persists the dir via actions/cache) serves local bytes.
 // GET + 2xx + ≤5 MB only; content-encoding/length stripped so the decoded
 // body can be replayed verbatim.
-const CACHE_DIR = path.join(__dirname, '.staging-cache');
+const CACHE_DIR = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '.staging-cache'
+);
 const MAX_ENTRY_BYTES = 5 * 1024 * 1024;
 
 interface CachedResponse {
