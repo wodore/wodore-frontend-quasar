@@ -1,6 +1,7 @@
 name: Tests
 
 on:
+  workflow_dispatch: {}  # manual runs on any branch (PAT PR events can be flaky)
   push:
     branches:
       - main
@@ -64,33 +65,35 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ steps.nvmrc.outputs.NODE_VERSION }}
-          cache: yarn
+          cache: pnpm
 
-      - name: Cache node_modules
-        id: cache-node-modules
+      - name: Cache vite/vitest transform cache
         uses: actions/cache@v4
         with:
-          path: |
-            node_modules
-            ~/.cache/node-gyp
-          key: node-modules-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+          path: node_modules/.vite
+          key: vite-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies
-        if: steps.cache-node-modules.outputs.cache-hit != 'true'
-        run: yarn install --immutable
+        run: pnpm install --frozen-lockfile
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       # NOTE: e2e (Playwright) is intentionally NOT run in CI — it requires a
       # real dev server + backend and stays a local-only suite for now.
       - name: Start dev server for interaction tests
-        run: yarn dev -p 9000 &
+        run: pnpm run dev --port 9000 &
         env:
           WODORE_API_HOST: ${{ vars.WODORE_API_HOST || 'https://hub.stg.wodore.com' }}
 
       - name: Run unit tests
-        run: rm -rf allure-results && yarn test:unit
+        run: rm -rf allure-results && pnpm test:unit
 
       - name: Install Playwright browsers
-        run: npx playwright install chromium --with-deps
+        run: pnpm exec playwright install chromium --with-deps
 
       - name: Wait for dev server
         run: |
@@ -104,8 +107,8 @@ jobs:
         run: |
           # Exclude visual-regression: reference screenshots are
           # environment-specific (fonts, GPU, antialiasing differ between
-          # local and CI) — run locally with: yarn test:interaction
-          yarn playwright test tests/interaction/ --project=interaction --grep-invert "visual regression"
+          # local and CI) — run locally with: pnpm test:interaction
+          pnpm exec playwright test tests/interaction/ --project=interaction --grep-invert "visual regression"
           node scripts/link-allure-attachments.mjs allure-results/e2e
         env:
           INTERACTION_BASE_URL: http://localhost:9000

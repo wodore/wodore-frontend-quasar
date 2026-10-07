@@ -12,7 +12,12 @@ const { getAppUpdateInfo, performImmediateUpdate, openAppStore } = vi.hoisted(()
 
 vi.mock('@capawesome/capacitor-app-update', () => ({
   AppUpdate: { getAppUpdateInfo, performImmediateUpdate, openAppStore },
-  AppUpdateAvailability: { UNKNOWN: 0, UPDATE_NOT_AVAILABLE: 1, UPDATE_AVAILABLE: 2, UPDATE_IN_PROGRESS: 3 },
+  AppUpdateAvailability: {
+    UNKNOWN: 0,
+    UPDATE_NOT_AVAILABLE: 1,
+    UPDATE_AVAILABLE: 2,
+    UPDATE_IN_PROGRESS: 3,
+  },
 }));
 
 import { triggerNativeAppUpdate } from '@services/appUpdate';

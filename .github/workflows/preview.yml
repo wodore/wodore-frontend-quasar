@@ -160,11 +160,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ steps.nvmrc.outputs.NODE_VERSION }}
-          cache: 'yarn'
+          cache: pnpm
 
       - name: Install
         if: steps.pr.outputs.action == 'deploy'
-        run: yarn --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Build preview (hash router, subpath, prod API)
         if: steps.pr.outputs.action == 'deploy'
@@ -207,7 +207,7 @@ jobs:
             https://github.com/wodore/wodore-frontend-quasar
           WODORE_BACKEND_GITHUB: >-
             https://github.com/wodore/wodore-backend
-        run: yarn build:pwa
+        run: pnpm build:pwa
 
       - name: Deploy to gh-pages
         id: preview_deploy

@@ -1,6 +1,7 @@
 name: Main
 
 on:
+  workflow_dispatch: {}  # manual runs on any branch (PAT PR events can be flaky)
   push:
     branches:
       - main
@@ -25,8 +26,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ steps.nvmrc.outputs.NODE_VERSION }}
-          # Don't cache yarn - we'll cache ESLint instead
-          cache: "yarn"
+          # pnpm store cache (keyed on the lockfile by setup-node)
+          cache: pnpm
 
       - name: Cache ESLint
         uses: actions/cache@v4
@@ -36,27 +37,23 @@ jobs:
           restore-keys: |
             eslint-${{ runner.os }}-
 
-      - name: Cache node_modules
-        id: cache-node-modules
+      - name: Cache vite/vitest transform cache
         uses: actions/cache@v4
         with:
-          path: |
-            node_modules
-            ~/.cache/node-gyp
-          key: node-modules-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+          path: node_modules/.vite
+          key: vite-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies
-        if: steps.cache-node-modules.outputs.cache-hit != 'true'
-        run: yarn install --immutable
+        run: pnpm install --frozen-lockfile
 
       - name: Run linter
-        run: yarn run lint --cache --cache-location .eslintcache
+        run: pnpm run lint --cache --cache-location .eslintcache
 
       - name: Check formatting
-        run: yarn run format --check
+        run: pnpm exec prettier --check "**/*.{js,ts,vue,scss,html,md,json}"
 
       - name: Type-check
-        run: npx vue-tsc --noEmit
+        run: pnpm exec vue-tsc --noEmit
 
       - name: Run tests
-        run: yarn run test
+        run: pnpm run test

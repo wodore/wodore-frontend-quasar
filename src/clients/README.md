@@ -1,7 +1,7 @@
 # API clients
 
 `wodore_v1.d.ts` is generated from the backend OpenAPI schema
-(`yarn gen:api-local` against a running backend, or `yarn gen:api`
+(`pnpm gen:api-local` against a running backend, or `pnpm gen:api`
 against production). Never edit it by hand.
 
 ## Sparse fieldsets (`fields[TYPE]`)

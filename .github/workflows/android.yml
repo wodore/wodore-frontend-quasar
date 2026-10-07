@@ -210,7 +210,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ steps.nvmrc.outputs.NODE_VERSION }}
-          cache: yarn
+          cache: pnpm
 
       - name: Setup Java (Capacitor 7 / Gradle 8.11)
         if: steps.resolve.outputs.build == 'true'
@@ -223,8 +223,8 @@ jobs:
       - name: Install dependencies
         if: steps.resolve.outputs.build == 'true'
         run: |
-          yarn install --frozen-lockfile
-          yarn install --frozen-lockfile --cwd src-capacitor
+          pnpm install --frozen-lockfile
+          pnpm --dir src-capacitor install --frozen-lockfile
 
       - name: Build web assets (Quasar capacitor mode)
         # Backend hosts come from GITHUB_ENV (variant-specific); the rest
@@ -236,7 +236,7 @@ jobs:
           WODORE_OFFICIAL_URL: https://wodo.re
           WODORE_IMAGOR_REPLACE_API_HOST_MEDIA: >-
             ${{ vars.WODORE_IMAGOR_REPLACE_API_HOST_MEDIA }}
-        run: yarn build:capacitor
+        run: pnpm build:capacitor
 
       - name: Decode release keystore (if configured)
         # No-op unless the signing secret exists (Play upload key);

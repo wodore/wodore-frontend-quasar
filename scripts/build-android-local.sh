@@ -12,7 +12,7 @@
 #   system java may be a JRE without javac — quasar's internal gradle
 #   call fails with "does not provide the required capabilities").
 # - New worktrees need src-capacitor/android/local.properties
-#   (sdk.dir=...) and a yarn install in src-capacitor.
+#   (sdk.dir=...) and a pnpm install in src-capacitor.
 # - Known env gaps (2026-09): staging API sends no CORS header for the
 #   Capacitor origin (https://localhost) and api.wodore.com is IPv6-only
 #   — the map stays blank in emulators/IPv4 networks. Use the RC
@@ -84,7 +84,7 @@ BUILD_START=$(date +%s)
 # failure happens AFTER the asset copy, so tolerate it and verify the
 # packaged assets are fresh instead.
 env "${ENVVARS[@]}" WODORE_MAPTILER_API_KEY="$MAPTILER_KEY" \
-  yarn build:capacitor || echo "(quasar exit tolerated — see note above)"
+  pnpm build:capacitor || echo "(quasar exit tolerated — see note above)"
 
 restore_env
 trap - EXIT

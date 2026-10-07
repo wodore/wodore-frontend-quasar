@@ -26,8 +26,8 @@ the tool:
 ## Run
 
 ```bash
-yarn dev -p 9000                # dev server must run (or set VISUAL_BASE_URL)
-yarn test:visual                # all: light/dark x desktop/mobile x 14 states
+pnpm dev -p 9000                # dev server must run (or set VISUAL_BASE_URL)
+pnpm test:visual                # all: light/dark x desktop/mobile x 14 states
 node scripts/visual-matrix.mjs --scheme dark --tag mobile   # subset
 node scripts/visual-matrix.mjs --sheet   # additionally emit human contact sheets
 ```
@@ -47,7 +47,7 @@ Output in `.visual-tests/<timestamp>/`:
 
 ## Review flow
 
-1. `yarn test:visual` (or the subset you need)
+1. `pnpm test:visual` (or the subset you need)
 2. Inspect `report.json` first: assertion failures mean the interaction
    script needs fixing; contrast violations are code defects.
 3. Have a vision agent review the individual full-res PNGs of states you

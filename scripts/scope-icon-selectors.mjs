@@ -1,5 +1,5 @@
 /**
- * Post-gen step for `yarn gen:icons`.
+ * Post-gen step for `pnpm gen:icons`.
  *
  * 1. Scopes every per-glyph rule in the generated icons.css from
  *    `.wd-<name>:before` to `i.wd-<name>:before`. Fantasticon emits bare

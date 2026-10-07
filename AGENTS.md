@@ -33,19 +33,23 @@ implementation must match.
 
 ## Essential Commands
 
-Use `yarn run` command. Check `package.json` for details.
+Use `pnpm run` for scripts (see `package.json`) or the `just` task façade
+(cartoload-style, see `.justfile` + `tasks/*.just`): `just` shows the menu;
+`just check` runs lint + format + types; `just tests cov=yes` runs unit tests
+with coverage; `just lane status` inspects a workz lane. CI, Docker and workz
+call pnpm directly — `just` is human/agent ergonomics only.
 
 ### Development
 
 ```bash
 # Install dependencies
-yarn
+pnpm install
 
 # Generate assets (API client, icons, favicons)
-yarn gen:api          # OpenAPI client from backend (latest) + pins the API version
-yarn gen:api-local    # same, from the local backend (127.0.0.1:8000)
-yarn gen:icons        # Custom wd icons from SVG files
-yarn gen:favs         # Favicons from icongenie
+pnpm gen:api          # OpenAPI client from backend (latest) + pins the API version
+pnpm gen:api-local    # same, from the local backend (127.0.0.1:8000)
+pnpm gen:icons        # Custom wd icons from SVG files
+pnpm gen:favs         # Favicons from icongenie
 ```
 
 **API version pinning**: `gen:api` generates BOTH the typed client
@@ -54,7 +58,7 @@ yarn gen:favs         # Favicons from icongenie
 from the same schema — types and pin cannot drift. Default = latest schema
 (`info.version`); after the backend released a new API version this absorbs
 it (pin + types bump together in the diff). To stay on / adopt a specific
-contract: `yarn gen:api-version 2026-10-01` (frozen snapshot for that date,
+contract: `pnpm gen:api-version 2026-10-01` (frozen snapshot for that date,
 works only while the backend still supports it). The pin is sent as
 `Api-Version` header on every API request; `WdApiVersionBanner` surfaces
 deprecation/retirement to the user (web/PWA: reload button incl. service
@@ -74,33 +78,33 @@ manual pin edits.
 
 # Development server (default: PWA mode on port 9000)
 
-yarn dev # or yarn dev:pwa
-yarn dev:spa # SPA mode
-yarn dev:ssr # SSR mode
+pnpm dev # or pnpm dev:pwa
+pnpm dev:spa # SPA mode
+pnpm dev:ssr # SSR mode
 
 # Build for production
 
-yarn build # or yarn build:pwa
-yarn build:spa # SPA build
-yarn build:ssr # SSR build
+pnpm build # or pnpm build:pwa
+pnpm build:spa # SPA build
+pnpm build:ssr # SSR build
 
 # Serve production build locally
 
-yarn serve # or yarn serve:pwa
-yarn serve:spa
-yarn serve:ssr
+pnpm serve # or pnpm serve:pwa
+pnpm serve:spa
+pnpm serve:ssr
 
 # Code quality
 
-yarn lint # Check code
-yarn lint:fix # Fix linting issues
-yarn format # Format with Prettier
+pnpm lint # Check code
+pnpm lint:fix # Fix linting issues
+pnpm format # Format with Prettier
 
 # Component development (Histoire)
 
-yarn story:dev # Start Histoire dev server
-yarn story:build # Build static Histoire site
-yarn story:preview # Preview built Histoire site
+pnpm story:dev # Start Histoire dev server
+pnpm story:build # Build static Histoire site
+pnpm story:preview # Preview built Histoire site
 
 ````
 
@@ -108,18 +112,18 @@ yarn story:preview # Preview built Histoire site
 
 ```bash
 # Unit tests (Vitest) — run in CI on every PR, Allure report posted to the PR
-yarn test:unit            # run once
-yarn test:unit:watch      # watch mode
-yarn test:unit:coverage   # with coverage
+pnpm test:unit            # run once
+pnpm test:unit:watch      # watch mode
+pnpm test:unit:coverage   # with coverage
 
 # E2E smoke suite (Playwright) — LOCAL ONLY, never in CI
-yarn dev                  # 1. start the dev server (required!)
-yarn test:e2e             # 2. run the suite (mobile-chrome project)
+pnpm dev                  # 1. start the dev server (required!)
+pnpm test:e2e             # 2. run the suite (mobile-chrome project)
 
 # Allure reports
-yarn allure:generate      # merge unit + e2e results, generate report
-yarn allure:open          # open the generated report in a browser
-yarn allure:clean         # remove all results and reports
+pnpm allure:generate      # merge unit + e2e results, generate report
+pnpm allure:open          # open the generated report in a browser
+pnpm allure:clean         # remove all results and reports
 ````
 
 **Test structure**: `tests/unit/` (Vitest, node env; store specs use happy-dom via a
@@ -129,7 +133,7 @@ yarn allure:clean         # remove all results and reports
 `// @vitest-environment happy-dom` docblock) and `tests/e2e/` (Playwright).
 
 **Dev server ports & worktree testing**: Quasar's PWA mode defaults to port **9200**
-when no port is passed — always pass one explicitly: `yarn dev:pwa -p 9000`. When
+when no port is passed — always pass one explicitly: `pnpm dev:pwa -p 9000`. When
 working in git worktrees (parallel branches/PRs), use ports **9001-9010** so multiple
 dev servers can run side by side. Note:
 `.env.local` is gitignored and does not propagate to new worktrees — copy it
@@ -138,7 +142,7 @@ from the main checkout, or API hosts / map keys will be missing. Also run
 (the map/overlay icon assets) is a submodule; without it the overlay and
 map-picker icons 404.
 
-**Capacitor (Android on-device dev)**: `yarn quasar dev -m capacitor -T android` prompts
+**Capacitor (Android on-device dev)**: `pnpm quasar dev -m capacitor -T android` prompts
 for the LAN IP, serves the dev server on it (port 9500), and opens Android Studio
 (snap install — path set via `bin.linuxAndroidStudio` in `quasar.config.ts`); run the
 app from the IDE onto a USB device (USB debugging enabled). The phone needs TCP access
@@ -158,14 +162,14 @@ PR merges); CI release candidate `std+dev` = `com.wodore.app.dev` ("Wodore RC", 
 production backend, built while a `BUILD:android`-labeled PR is still open and on version tags);
 Android Studio `std+debug` = `com.wodore.app.local` ("Wodore Dev"). Dev/preview/RC versionNames
 carry `yyyyMMddHHmmss-commit` (UTC timestamp + hash) instead of a semver guess. Launcher icons & splash screens are generated from the design
-submodule via icongenie profiles (`src/assets/icongenie/icongenie-capacitor-*.json`), included in `yarn gen:favs`.
+submodule via icongenie profiles (`src/assets/icongenie/icongenie-capacitor-*.json`), included in `pnpm gen:favs`.
 
 **Local Android builds** (no CI round-trip): `scripts/build-android-local.sh stg --install`
 (preview variant) or `std` (RC variant). Requirements: a full JDK 21 — **not** the Android Studio snap JBR
 (since the 2026 refresh it is Java 25, which Gradle 8.11 cannot load — 'Unsupported class file
 major version 69' / lint `25.0.3` failures); install Temurin 21 to `~/jdks/` (script default
 `~/jdks/jdk-21.0.12.1+1`). New worktrees need `src-capacitor/android/local.properties`
-(`sdk.dir=/home/tobias/Android/Sdk`) and a `yarn install` inside `src-capacitor`. The script
+(`sdk.dir=/home/tobias/Android/Sdk`) and a `pnpm install` inside `src-capacitor`. The script
 stashes `.env.local` while baking the variant env (CI parity) and restores it after. CI signs
 preview/RC builds with a stable dev keystore (`WODORE_ANDROID_DEV_*` secrets; local backup +
 password in `/home/tobias/git/wodore/wodore-ci-dev-keystore.txt`) so devices update over
@@ -183,7 +187,7 @@ Note: OIDC (`auth.burgdev.local.gd` →
 user where it is (full URL and which branch it serves). Always show active PRs
 in the summary as markdown links (e.g. `[PR #138](…/pull/138)`).
 
-**E2E preconditions**: dev server on `http://localhost:9000` (`yarn dev`) and a reachable
+**E2E preconditions**: dev server on `http://localhost:9000` (`pnpm dev`) and a reachable
 backend (`E2E_API_HOST`, default `http://127.0.0.1:8000`). The hut deep-link test uses
 `E2E_HUT_SLUG` (default `aarbiwak`) and skips when the hut is not found. E2E is
 intentionally not part of CI (deterministic CI is handled by the unit suite).
@@ -194,7 +198,7 @@ builds are label-gated on merged PRs: `BUILD:docker` triggers the Docker image b
 `BUILD:android` the Capacitor debug-APK build (`.github/workflows/android.yml`); both
 also run on version tags and support manual dispatch.
 
-**IMPORTANT**: Always run both `yarn lint` and `npx vue-tsc --noEmit` after making code changes to verify there are no ESLint warnings or TypeScript errors before committing.
+**IMPORTANT**: Always run both `pnpm lint` and `npx vue-tsc --noEmit` after making code changes to verify there are no ESLint warnings or TypeScript errors before committing.
 
 **CRITICAL**: Check ESLint for all modified files to catch:
 
@@ -215,18 +219,19 @@ Agent worktrees are provisioned by [workz](https://github.com/rohansx/workz)
 
 - **`.env*` copied** from the main checkout (workz default — quasar/vite
   read `.env.local`) plus a workz-managed block with its isolated `PORT`.
-- **Its own `node_modules`** — copied, never symlinked (`.workz.toml`
-  overrides the Node default): a symlink would make lanes silently run the
-  main checkout's dependencies, any lane `yarn install` would write
-  through into main's `node_modules`, and vite's `node_modules/.vite`
-  cache would collide across lanes. `yarn` is the package manager
-  (yarn.lock); `package-lock.json` was removed so workz's auto-install
+- **Its own `node_modules`** — built per lane by pnpm from the global
+  content-addressable store (hardlinks, ~MB marginal disk — the uv model;
+  `.workz.toml` sets `node_modules = "ignore"` so workz never symlinks
+  main's). A symlink would make lanes silently run the main checkout's
+  dependencies, any lane install would write through into main's
+  `node_modules`, and vite's `node_modules/.vite` cache would collide
+  across lanes. pnpm is the package manager (`pnpm-lock.yaml`);
+  `package-lock.json` and `yarn.lock` were removed so workz's auto-install
   detection is deterministic.
 - **A dev-server port range** from 3500 up — clear of the backend lanes
   (workz `base_port = 3400` in wodore-backend) and of the shared dev ports
   (9000s). workz is the ONLY port allocator; paseo's `runserver` service
-  wraps
-  the same script and uses no `$PASEO_PORT` of its own.
+  wraps the same script and uses no `$PASEO_PORT` of its own.
 
 **Setup** is one idempotent script, shared by every host — `workz start`
 (`post_start` hook), `paseo.json` `worktree.setup`, or the pi-agent lane
@@ -234,7 +239,7 @@ step 1 (the global pi hook runs `workz sync … --isolated`, which fires NO
 hooks — run the script yourself after it):
 
 ```bash
-scripts/lane-setup.sh    # yarn install --frozen-lockfile on the copied node_modules
+scripts/lane-setup.sh    # pnpm install --frozen-lockfile on the copied node_modules
 ```
 
 **Dev server:** `scripts/lane-web.sh fg|start|stop|status` — `fg` runs a
@@ -249,10 +254,18 @@ idempotent) — fired by `workz done` (`pre_done`) and by `paseo.json`
 containers; the port allocation is reclaimed by `workz doctor --fix` once
 the worktree is gone.
 
-**Backend pairing:** `yarn gen:api-local` targets a hardcoded
+**Backend pairing:** `pnpm gen:api-local` targets a hardcoded
 `http://127.0.0.1:8000` (the shared dev backend), not a backend lane
 port — see `scripts/gen-api.mjs` before pointing a frontend lane at a
 backend lane.
+
+**Worktree placement pitfall (vitest/vite):** a lane checked out INSIDE
+the repo tree (e.g. `.worktrees/<branch>`) sits below the main checkout's
+`node_modules`; vite/vitest module resolution can walk up into it and load
+a second vitest instance — every suite then fails with "Vitest failed to
+find the runner". Paseo lanes (`~/.paseo/worktrees/…`) and workz's default
+`../<repo>--<branch>` placement live outside the repo and are safe. Run
+tests from nested worktrees only in a check-out outside the repo tree.
 
 ## Related Projects
 
@@ -315,8 +328,8 @@ OpenAPI schema available at:
 Generate TypeScript types from OpenAPI schema:
 
 ```bash
-yarn gen:api        # Production API (latest; also updates the API version pin)
-yarn gen:api-local  # Local development API
+pnpm gen:api        # Production API (latest; also updates the API version pin)
+pnpm gen:api-local  # Local development API
 ```
 
 ## Tech Stack
@@ -511,8 +524,8 @@ router.push({ name: 'hut-detail', params: { id: '123' } });
 
 ### Common Issues
 
-1. **API Types Not Updating**: Run `yarn gen:api-local` after backend changes
-2. **Icons Not Showing**: Run `yarn gen:icons` after adding SVG files
+1. **API Types Not Updating**: Run `pnpm gen:api-local` after backend changes
+2. **Icons Not Showing**: Run `pnpm gen:icons` after adding SVG files
 3. **Environment Variables Not Working**: Check `quasar.config.ts` env section and restart dev server
 4. **Docker Build Fails**: Ensure `GIT_HASH` build arg is provided
 5. **Authentication Issues**: Check OIDC configuration in `.env.local`

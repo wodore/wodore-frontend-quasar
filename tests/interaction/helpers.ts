@@ -49,9 +49,7 @@ export async function attachScreenshot(
  * Attach the Playwright trace from a failed test to the Allure report.
  * Called in afterEach when testInfo.status === 'failed'.
  */
-export async function attachFailureArtifacts(
-  testInfo: TestInfo
-): Promise<void> {
+export async function attachFailureArtifacts(testInfo: TestInfo): Promise<void> {
   // Playwright stores traces as test-results/<test-id>-trace.zip
   // The allure-playwright reporter SHOULD pick these up automatically
   // via its `trace: 'retain-on-failure'` config. This is a safety net:
@@ -73,7 +71,9 @@ export async function pinTheme(page: Page, theme: 'light' | 'dark'): Promise<voi
   if (theme === 'light') return;
   const isMobile = page.viewportSize()!.width < 900;
   if (isMobile) {
-    await page.evaluate('document.querySelector(".wd-topbar__user, .wd-topbar__menu .q-btn")?.click()');
+    await page.evaluate(
+      'document.querySelector(".wd-topbar__user, .wd-topbar__menu .q-btn")?.click()'
+    );
     await page.waitForTimeout(700);
   }
   for (let i = 0; i < 3; i++) {
@@ -83,7 +83,9 @@ export async function pinTheme(page: Page, theme: 'light' | 'dark'): Promise<voi
     await page.waitForTimeout(400);
   }
   if (isMobile) {
-    await page.evaluate('document.querySelector(".wd-topbar__user, .wd-topbar__menu .q-btn")?.click()');
+    await page.evaluate(
+      'document.querySelector(".wd-topbar__user, .wd-topbar__menu .q-btn")?.click()'
+    );
     await page.waitForTimeout(500);
   }
 }
@@ -107,7 +109,12 @@ export async function evalJSON<T>(page: Page, fn: string | (() => T)): Promise<T
 /** Parse computed color strings (rgb, rgba, color(srgb)) → [r,g,b] */
 export function parseColor(v: string): [number, number, number] {
   const m = v.match(/color\(srgb ([\d.]+) ([\d.]+) ([\d.]+)/);
-  if (m) return [Number(m[1]) * 255, Number(m[2]) * 255, Number(m[3]) * 255].map(Math.round) as [number, number, number];
+  if (m)
+    return [Number(m[1]) * 255, Number(m[2]) * 255, Number(m[3]) * 255].map(Math.round) as [
+      number,
+      number,
+      number,
+    ];
   const nums = (v.match(/\d+/g) || []).map(Number);
   return [nums[0] ?? 0, nums[1] ?? 0, nums[2] ?? 0];
 }

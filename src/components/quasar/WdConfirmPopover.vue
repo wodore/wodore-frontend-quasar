@@ -153,7 +153,9 @@ body.body--dark .wd-confirm__msg {
   font-weight: 600;
   letter-spacing: 0.01em;
   cursor: pointer;
-  transition: background-color 0.12s ease, color 0.12s ease;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease;
 }
 
 .wd-confirm__btn:hover {

@@ -14,18 +14,17 @@ vi.mock('@stores/auth-store', () => ({
 // global at its own import time, so it must be replaced before then.
 vi.hoisted(() => {
   process.env.WODORE_API_HOST = 'http://test.local';
-  vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 200 })));
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => new Response('{}', { status: 200 }))
+  );
 });
 
 // The mock instance openapi-fetch actually captured (stubbed in hoisted).
 const fetchMock = vi.mocked(globalThis.fetch);
 
 import { clientWodore } from '@clients/index';
-import {
-  PINNED_API_VERSION,
-  onApiVersionError,
-  emitApiVersionError,
-} from '@services/apiVersion';
+import { PINNED_API_VERSION, onApiVersionError, emitApiVersionError } from '@services/apiVersion';
 import { useApiVersionStore } from '@stores/api-version-store';
 
 const versionResponse = (supported: unknown[] = []) =>
@@ -52,9 +51,7 @@ describe('apiVersionMiddleware (clientWodore)', () => {
   it('emits api_version_sunset on a 410 with the matching code', async () => {
     const listener = vi.fn();
     const off = onApiVersionError(listener);
-    fetchMock.mockResolvedValueOnce(
-      Response.json({ code: 'api_version_sunset' }, { status: 410 }),
-    );
+    fetchMock.mockResolvedValueOnce(Response.json({ code: 'api_version_sunset' }, { status: 410 }));
     await clientWodore.GET('/v1/version', {});
     expect(listener).toHaveBeenCalledWith('api_version_sunset');
     off();
@@ -79,7 +76,7 @@ describe('useApiVersionStore', () => {
 
   it('classifies a current pin as ok', async () => {
     fetchMock.mockResolvedValueOnce(
-      versionResponse([{ version: PINNED_API_VERSION, status: 'current', sunset: null }]),
+      versionResponse([{ version: PINNED_API_VERSION, status: 'current', sunset: null }])
     );
     const store = useApiVersionStore();
     await store.checkApiVersion();
@@ -88,9 +85,7 @@ describe('useApiVersionStore', () => {
 
   it('classifies a deprecated pin with its sunset date', async () => {
     fetchMock.mockResolvedValueOnce(
-      versionResponse([
-        { version: PINNED_API_VERSION, status: 'deprecated', sunset: '2027-04-01' },
-      ]),
+      versionResponse([{ version: PINNED_API_VERSION, status: 'deprecated', sunset: '2027-04-01' }])
     );
     const store = useApiVersionStore();
     await store.checkApiVersion();
@@ -102,7 +97,7 @@ describe('useApiVersionStore', () => {
 
   it('classifies an unknown pin as unsupported', async () => {
     fetchMock.mockResolvedValueOnce(
-      versionResponse([{ version: '2099-01-01', status: 'current', sunset: null }]),
+      versionResponse([{ version: '2099-01-01', status: 'current', sunset: null }])
     );
     const store = useApiVersionStore();
     await store.checkApiVersion();
@@ -111,7 +106,7 @@ describe('useApiVersionStore', () => {
 
   it('classifies a sunset pin as unsupported', async () => {
     fetchMock.mockResolvedValueOnce(
-      versionResponse([{ version: PINNED_API_VERSION, status: 'sunset', sunset: '2026-01-01' }]),
+      versionResponse([{ version: PINNED_API_VERSION, status: 'sunset', sunset: '2026-01-01' }])
     );
     const store = useApiVersionStore();
     await store.checkApiVersion();
@@ -127,7 +122,7 @@ describe('useApiVersionStore', () => {
 
   it('checks only once per session', async () => {
     fetchMock.mockResolvedValueOnce(
-      versionResponse([{ version: PINNED_API_VERSION, status: 'current', sunset: null }]),
+      versionResponse([{ version: PINNED_API_VERSION, status: 'current', sunset: null }])
     );
     const store = useApiVersionStore();
     await store.checkApiVersion();

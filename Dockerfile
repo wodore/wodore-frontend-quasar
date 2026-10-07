@@ -40,17 +40,17 @@ RUN if [ -z "$GIT_HASH" ]; then \
   exit 1; \
   fi
 
-# Install Quasar CLI globally
-RUN yarn global add @quasar/cli
+# Install Quasar CLI globally (pnpm comes from corepack via packageManager)
+RUN corepack enable && pnpm add -g @quasar/cli
 
-# Install dependencies efficiently
-COPY package.json yarn.lock ./
-#RUN yarn install --frozen-lockfile # --production
-RUN --mount=type=cache,target=/app/.yarn --mount=type=cache,target=/app/node_modules/.cache \
-  YARN_CACHE_FOLDER=/app/.yarn yarn --frozen-lockfile
+# Install dependencies efficiently (store cache mount = layer stays hot
+# across builds even when package.json changes)
+COPY package.json pnpm-lock.yaml ./
+RUN --mount=type=cache,target=/pnpm/store \
+  pnpm install --frozen-lockfile --store-dir /pnpm/store
 
 # Just copy the directories/files which are needed
-COPY .env index.html package.json yarn.lock quasar.config.ts tsconfig.json tsconfig.vue-tsc.json eslint.config.js ./
+COPY .env index.html package.json pnpm-lock.yaml quasar.config.ts tsconfig.json tsconfig.vue-tsc.json eslint.config.js ./
 # keep direcory structure
 COPY src/ ./src/
 COPY src-pwa/ ./src-pwa/

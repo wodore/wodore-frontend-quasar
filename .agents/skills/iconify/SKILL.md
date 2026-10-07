@@ -24,7 +24,7 @@ Follow this priority order when selecting icons:
    - **IMPORTANT**: Name icons by function/purpose, not appearance
      - Examples: `favorite` instead of `star`, `edit` instead of `pen`, `calendar` instead of `date-grid`
      - Exceptions exist (e.g., `eye` for show/visible, `bell` for notifications)
-   - Run `yarn gen:icons` to generate the icon set
+   - Run `pnpm gen:icons` to generate the icon set
    - Update `src/extras/icons/README.md` to document the new icon
 
 3. **Third**: For fast prototyping only, auto-import directly from Iconify

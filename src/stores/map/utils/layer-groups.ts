@@ -9,7 +9,7 @@ import type { OverlaySwitchItem } from './interfaces';
 export interface LayerGroup {
   id: string;
   slug: string;
-  name: string;          // i18n key for predefined, literal for custom
+  name: string; // i18n key for predefined, literal for custom
   icon: string;
   layerSlugs: string[];
   activeLayerSlugs: string[];
@@ -80,7 +80,14 @@ export function createDefaultGroups(): LayerGroup[] {
       slug: 'snowsport',
       name: 'overlays.groups.snowsport.name',
       icon: 'fluent-emoji-flat:snowflake',
-      layerSlugs: [SLUGS.huts, SLUGS.skiTours, SLUGS.snowshoes, SLUGS.skiSlopes, SLUGS.slopeAngle, SLUGS.transport],
+      layerSlugs: [
+        SLUGS.huts,
+        SLUGS.skiTours,
+        SLUGS.snowshoes,
+        SLUGS.skiSlopes,
+        SLUGS.slopeAngle,
+        SLUGS.transport,
+      ],
       activeLayerSlugs: [SLUGS.huts],
       hidden: false,
       removed: false,
@@ -130,7 +137,7 @@ export function defaultOverlayGroupSettings(): OverlayGroupSettings {
  */
 export function mergeGroups(
   settings: OverlayGroupSettings,
-  allLayerSlugs: string[],
+  allLayerSlugs: string[]
 ): OverlayGroupSettings {
   const groups = settings.groups.map(g => ({ ...g, layerSlugs: [...g.layerSlugs] }));
 
@@ -139,8 +146,7 @@ export function mergeGroups(
   const existingSlugs = new Set(groups.map(g => g.slug));
   const defaults = createDefaultGroups();
   for (const def of defaults) {
-    if (!existingSlugs.has(def.slug) &&
-        !settings.dismissedGroupSlugs.includes(def.slug)) {
+    if (!existingSlugs.has(def.slug) && !settings.dismissedGroupSlugs.includes(def.slug)) {
       // Check if a removed group with this slug exists — don't re-add
       const wasRemoved = groups.some(g => g.slug === def.slug && g.removed);
       if (!wasRemoved) {
@@ -175,7 +181,10 @@ export function getActiveGroup(settings: OverlayGroupSettings): LayerGroup | nul
 }
 
 /** Get visible groups for the mini selector cycle (not hidden, not removed) */
-export function getVisibleGroups(settings: OverlayGroupSettings, includeHidden = false): LayerGroup[] {
+export function getVisibleGroups(
+  settings: OverlayGroupSettings,
+  includeHidden = false
+): LayerGroup[] {
   return settings.groups
     .filter(g => !g.removed && (includeHidden || !g.hidden))
     .sort((a, b) => a.sortOrder - b.sortOrder);
@@ -184,7 +193,7 @@ export function getVisibleGroups(settings: OverlayGroupSettings, includeHidden =
 /** Cycle to the next visible group */
 export function cycleGroup(
   settings: OverlayGroupSettings,
-  includeHidden = false,
+  includeHidden = false
 ): { group: LayerGroup; settings: OverlayGroupSettings } {
   const visible = getVisibleGroups(settings, includeHidden);
   if (visible.length === 0) return { group: null!, settings };
@@ -210,7 +219,7 @@ export function cycleGroup(
 /** Get layers for a group (filtered to existing overlays) */
 export function getGroupLayers(
   group: LayerGroup,
-  overlays: OverlaySwitchItem[],
+  overlays: OverlaySwitchItem[]
 ): OverlaySwitchItem[] {
   return group.layerSlugs
     .map(slug => overlays.find(o => o.name === slug))
@@ -220,7 +229,7 @@ export function getGroupLayers(
 /** Get layers NOT in the active group (for the "All layers" section) */
 export function getOtherLayers(
   activeGroup: LayerGroup | null,
-  overlays: OverlaySwitchItem[],
+  overlays: OverlaySwitchItem[]
 ): OverlaySwitchItem[] {
   const activeSlugs = new Set(activeGroup?.layerSlugs ?? []);
   const others = overlays.filter(o => o.show && !activeSlugs.has(o.name));

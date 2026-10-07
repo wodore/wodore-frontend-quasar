@@ -18,9 +18,7 @@ test.describe('map chrome theming', () => {
       tagTest(theme, mode, 'theming');
       test.setTimeout(90_000);
 
-      const vp = mode === 'mobile'
-        ? { width: 390, height: 844 }
-        : { width: 1440, height: 900 };
+      const vp = mode === 'mobile' ? { width: 390, height: 844 } : { width: 1440, height: 900 };
       await page.setViewportSize(vp);
 
       await loadMap(page);
@@ -52,7 +50,7 @@ test.describe('map chrome theming', () => {
         const [r, g, b] = parseColor(value);
         const lum = 0.299 * r + 0.587 * g + 0.114 * b;
         if (name === 'dateSegment') continue; // wash, not a chip
-        if (theme === "dark") {
+        if (theme === 'dark') {
           expect(lum, `${name} should be pine-dark in dark (${value})`).toBeLessThan(80);
         } else {
           expect(lum, `${name} should be white in light (${value})`).toBeGreaterThan(195);
@@ -64,15 +62,15 @@ test.describe('map chrome theming', () => {
       tagTest(theme, mode, 'theming');
       test.setTimeout(90_000);
 
-      const vp = mode === 'mobile'
-        ? { width: 390, height: 844 }
-        : { width: 1440, height: 900 };
+      const vp = mode === 'mobile' ? { width: 390, height: 844 } : { width: 1440, height: 900 };
       await page.setViewportSize(vp);
 
       await loadMap(page);
       await pinTheme(page, theme);
 
-      const filters = await evalJSON(page, `(() => {
+      const filters = await evalJSON(
+        page,
+        `(() => {
         const g = (s) => { const el = document.querySelector(s); return el ? getComputedStyle(el).filter : 'MISSING'; };
         return {
           canvas: g('.maplibregl-canvas'),
@@ -80,12 +78,13 @@ test.describe('map chrome theming', () => {
           overlayToggleIcon: g('.wd-ovl__toggle-icon'),
           basemapToggleIcon: g('.wd-bm__toggle-icon'),
         };
-      })()`);
+      })()`
+      );
 
       // Map is NEVER darkened
       expect(filters.canvas).toBe('none');
 
-      if (theme === "dark") {
+      if (theme === 'dark') {
         // Layer icons: inverted (black silhouettes → white)
         expect(filters.layerIcon).toContain('invert');
         // Toggle icons: NOT inverted (colored graphics keep their colors)

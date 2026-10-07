@@ -8,8 +8,16 @@ import { useUserSettingsStore } from '@stores/user-settings-store';
 
 // Mock the storage abstraction — uses localStorage (which the tests already mock)
 vi.mock('@services/storage', async () => {
-  const { storageGet, storageSet, storageHas, storageRemove } = await import('./helpers/storage-mock');
-  return { storageGet, storageSet, storageHas, storageRemove, storageClear: () => {}, initStorage: async () => {} };
+  const { storageGet, storageSet, storageHas, storageRemove } =
+    await import('./helpers/storage-mock');
+  return {
+    storageGet,
+    storageSet,
+    storageHas,
+    storageRemove,
+    storageClear: () => {},
+    initStorage: async () => {},
+  };
 });
 
 vi.mock('quasar', async importOriginal => {

@@ -51,9 +51,7 @@ export default route(function (/* { store, ssrContext } */) {
     if (!hasLangParam && !langPrefix) return;
     seoLangNormalized = true;
     const { lang: _lang, ...query } = to.query;
-    const path = langPrefix
-      ? to.path.replace(new RegExp(`^/${langPrefix}(/|$)`), '/')
-      : to.path;
+    const path = langPrefix ? to.path.replace(new RegExp(`^/${langPrefix}(/|$)`), '/') : to.path;
     void Router.replace({ path, query, hash: to.hash });
   });
 
