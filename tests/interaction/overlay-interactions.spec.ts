@@ -208,7 +208,11 @@ test.describe('gesture disambiguation', () => {
   test('single tap enters focus', async ({ page }, testInfo) => {
     tagTest('light', 'mobile', 'gestures');
     await page.touchscreen.tap(195, 420);
-    await waitForMapIdle(page);
+    // Focus mode applies after the double-tap disambiguation window —
+    // wait for the class itself, map idle resolves too early.
+    await page.waitForFunction('document.body.classList.contains("wd-map-focus")', null, {
+      timeout: 10_000,
+    });
 
     const focus = await evalJSON<boolean>(page, 'document.body.classList.contains("wd-map-focus")');
     await attachScreenshot(page, testInfo, 'gesture-single-tap-focus');
