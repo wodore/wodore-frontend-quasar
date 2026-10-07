@@ -11,8 +11,7 @@ export const IMAGE_SIZES = ['xs', 'sm', 'md', 'lg', 'xl'] as const;
 
 export type ImageSize = (typeof IMAGE_SIZES)[number];
 
-const isRetina = (): boolean =>
-  typeof window !== 'undefined' && (window.devicePixelRatio || 1) > 1;
+const isRetina = (): boolean => typeof window !== 'undefined' && (window.devicePixelRatio || 1) > 1;
 
 /** The size actually served for `size`: the next size up on HiDPI, clamped at xl. */
 export function effectiveSize(size: ImageSize): ImageSize {
@@ -50,7 +49,9 @@ export function orientationUrls(
   image: Pick<HutImage, 'urls' | 'is_portrait'>
 ): ImageVariantUrls | undefined {
   if (!image.urls) return undefined;
-  return image.is_portrait ? (image.urls.portrait ?? image.urls.landscape) : (image.urls.landscape ?? image.urls.portrait);
+  return image.is_portrait
+    ? (image.urls.portrait ?? image.urls.landscape)
+    : (image.urls.landscape ?? image.urls.portrait);
 }
 
 export type ThumbhashAspect = 'square' | 'landscape' | 'portrait' | 'orientation';

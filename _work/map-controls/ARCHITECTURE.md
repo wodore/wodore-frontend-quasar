@@ -1,14 +1,17 @@
 # Map Controls — Component Architecture (v2, clean rewrite)
 
 ## Theme tokens (defined in app.scss, consumed by all controls)
-All floating map controls share --wd-ctl-* custom properties.
+
+All floating map controls share --wd-ctl-\* custom properties.
 
 ## Components
-WdOverlayControl.vue    — container: toggle + mini strip + expandable panel
-WdBasemapControl.vue    — container: toggle + basemap strip
-WdMapControlButton.vue  — shared 48px chip button (not a component, CSS class)
+
+WdOverlayControl.vue — container: toggle + mini strip + expandable panel
+WdBasemapControl.vue — container: toggle + basemap strip
+WdMapControlButton.vue — shared 48px chip button (not a component, CSS class)
 
 ## Key rules
+
 - No q-fab. Pure HTML buttons.
 - All buttons 48px. Strip buttons 44px (fit inside the box padding).
 - Overlay panel expands LEFT from the mini strip (same surface).

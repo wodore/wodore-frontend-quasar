@@ -17,15 +17,15 @@ test.describe('layout and sizing', () => {
       tagTest(theme, mode, 'layout');
       test.setTimeout(90_000);
 
-      const vp = mode === 'mobile'
-        ? { width: 390, height: 844 }
-        : { width: 1440, height: 900 };
+      const vp = mode === 'mobile' ? { width: 390, height: 844 } : { width: 1440, height: 900 };
       await page.setViewportSize(vp);
 
       await loadMap(page);
       await pinTheme(page, theme);
 
-      const audit = await evalJSON(page, `(() => {
+      const audit = await evalJSON(
+        page,
+        `(() => {
         const rect = (sel) => {
           const el = document.querySelector(sel);
           if (!el) return null;
@@ -43,12 +43,15 @@ test.describe('layout and sizing', () => {
           pill: rect('.wd-topbar__pill'),
           basemapRail: null,
         };
-      })()`);
+      })()`
+      );
 
       // Open basemap rail for its measurement
       await page.evaluate('document.querySelector(".wd-bm__toggle")?.click()');
       await page.waitForTimeout(500);
-      const railH = await page.evaluate('Math.round(document.querySelector(".wd-bm__rail")?.getBoundingClientRect().height ?? -1)');
+      const railH = await page.evaluate(
+        'Math.round(document.querySelector(".wd-bm__rail")?.getBoundingClientRect().height ?? -1)'
+      );
       await page.evaluate('document.querySelector(".wd-bm__toggle")?.click()');
       await page.waitForTimeout(400);
 
@@ -56,7 +59,14 @@ test.describe('layout and sizing', () => {
 
       // All standalone TOGGLES: 48px × 48px (the box is only width-checked)
       for (const [name, c] of Object.entries(audit)) {
-        if (!c || name === 'basemapRail' || name === 'pill' || name === 'chip' || name === 'overlayBox') continue;
+        if (
+          !c ||
+          name === 'basemapRail' ||
+          name === 'pill' ||
+          name === 'chip' ||
+          name === 'overlayBox'
+        )
+          continue;
         expect(Math.abs((c as { w: number }).w - 48), `${name} width`).toBeLessThanOrEqual(1);
         expect(Math.abs((c as { h: number }).h - 48), `${name} height`).toBeLessThanOrEqual(1);
       }

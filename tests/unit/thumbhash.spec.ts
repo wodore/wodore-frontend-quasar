@@ -46,7 +46,7 @@ describe('thumbHashToRGBA', () => {
     expect(landscape.h).toBeLessThan(32);
 
     // Solid-color input decodes back to (approximately) that color
-    const center = (landscape.w * landscape.h / 2) * 4;
+    const center = ((landscape.w * landscape.h) / 2) * 4;
     expect(landscape.rgba[center]!).toBeLessThan(80); // r
     expect(landscape.rgba[center + 2]!).toBeGreaterThan(180); // b
   });

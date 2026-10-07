@@ -7,6 +7,7 @@ The overlay system (`WdOverlayControl`) currently renders all 11 layers as a fla
 ## Goals / Non-Goals
 
 ### Goals
+
 - Users can organise layers into groups (predefined + custom)
 - One-tap group toggle from the mini strip
 - Clear visual separation of active vs hidden groups in the expanded view
@@ -16,6 +17,7 @@ The overlay system (`WdOverlayControl`) currently renders all 11 layers as a fla
 - Per-group active layer memory (each group remembers which layers are on)
 
 ### Non-Goals
+
 - Server-side sync (future PR — but the data model is designed for it)
 - Custom user-uploaded layer sources (future)
 - Nested groups (groups are flat)
@@ -26,27 +28,27 @@ The overlay system (`WdOverlayControl`) currently renders all 11 layers as a fla
 
 ```typescript
 interface LayerGroup {
-  id: string;              // UUID (client-generated)
-  slug: string;            // stable identifier for merge (e.g., 'hiking', 'snowsport')
-  name: string;            // user-editable display name
-                             // predefined groups: i18n key (translated at render)
-                             // custom groups: literal string (same across languages)
-                             // if user edits a predefined name: literal string replaces i18n key
-  icon: string;            // iconify name or asset path
-  layerSlugs: string[];    // ordered list of layer slugs
+  id: string; // UUID (client-generated)
+  slug: string; // stable identifier for merge (e.g., 'hiking', 'snowsport')
+  name: string; // user-editable display name
+  // predefined groups: i18n key (translated at render)
+  // custom groups: literal string (same across languages)
+  // if user edits a predefined name: literal string replaces i18n key
+  icon: string; // iconify name or asset path
+  layerSlugs: string[]; // ordered list of layer slugs
   activeLayerSlugs: string[]; // layers currently toggled ON in this group
-  hidden: boolean;         // hidden groups: not in mini selector, still in expanded view
-  removed: boolean;        // removed groups: never shown, but slug retained for merge
-  locked: boolean;         // predefined groups are locked by default (edit mode to change)
-  sortOrder: number;       // display order
+  hidden: boolean; // hidden groups: not in mini selector, still in expanded view
+  removed: boolean; // removed groups: never shown, but slug retained for merge
+  locked: boolean; // predefined groups are locked by default (edit mode to change)
+  sortOrder: number; // display order
 }
 
 interface OverlayGroupSettings {
   groups: LayerGroup[];
-  activeGroupId: string | null;  // which group the mini selector is on
+  activeGroupId: string | null; // which group the mini selector is on
   ungroupedActiveSlugs: string[]; // active layers NOT in any group
-  dismissedGroupSlugs: string[];  // groups user declined or deleted (no re-prompt)
-  editMode: boolean;             // per session, not persisted
+  dismissedGroupSlugs: string[]; // groups user declined or deleted (no re-prompt)
+  editMode: boolean; // per session, not persisted
 }
 ```
 
@@ -66,9 +68,10 @@ interface OverlayGroupSettings {
 ### Storage
 
 Settings stored in `useUserSettingsStore` under `map.overlayGroups`:
+
 ```typescript
 // user-settings-store addition
-overlayGroups: OverlayGroupSettings
+overlayGroups: OverlayGroupSettings;
 ```
 
 Uses the existing debounced localStorage write path. For Capacitor, migrate to `@capacitor/preferences` in a follow-up settings-management PR.
@@ -85,6 +88,7 @@ Layers are currently hardcoded in the frontend (`overlays.ts`). When they move t
 ### Merge Strategy
 
 When the overlay store's layer list changes (new layer, removed layer):
+
 1. For each layer, find a group whose `layerSlugs` contains the layer's slug → stays in that group.
 2. New layers: check the layer's `defaultGroup` hint (from the layer metadata, frontend or backend). If a group with a matching `slug` exists and is not `removed`, auto-add silently.
 3. New predefined groups (from an app update or backend): compare by `slug`. If the user doesn't have it and it's not in `dismissedGroupSlugs` or `removed`, prompt: "Add the new [name] group?" Yes → add. No → add slug to `dismissedGroupSlugs`.
@@ -93,10 +97,10 @@ When the overlay store's layer list changes (new layer, removed layer):
 
 ## Predefined Groups
 
-| Slug | Name key | Layers | Icon |
-|---|---|---|---|
-| `hiking` | overlays.groups.hiking | huts, hiking_trails, nature_protection, **transport** | hiking |
-| `cycling` | overlays.groups.cycling | mtb, cycling, **huts**, **transport** | mtb |
+| Slug        | Name key                  | Layers                                                                   | Icon      |
+| ----------- | ------------------------- | ------------------------------------------------------------------------ | --------- |
+| `hiking`    | overlays.groups.hiking    | huts, hiking_trails, nature_protection, **transport**                    | hiking    |
+| `cycling`   | overlays.groups.cycling   | mtb, cycling, **huts**, **transport**                                    | mtb       |
 | `snowsport` | overlays.groups.snowsport | ski_tours, snowshoeing, ski_slopes, slope_angle, **huts**, **transport** | skitouren |
 
 **Huts and transport appear in ALL default groups** — they're universally relevant for any mountain activity.
@@ -156,15 +160,16 @@ Layers not in any default group: livestock_guardian_dogs (niche, activity-agnost
 
 ### New components
 
-| Component | Path | Purpose |
-|---|---|---|
-| `WdOverlayGroupSelector` | `controls/WdOverlayGroupSelector.vue` | Mini strip bottom button — cycles groups, restores group active state |
-| `WdOverlayGroupHeader` | `controls/WdOverlayGroupHeader.vue` | Expanded view group section header |
-| `WdOverlayGroupEditSheet` | `controls/WdOverlayGroupEditSheet.vue` | Bottom sheet for group editing (rename, icon, delete) |
+| Component                 | Path                                   | Purpose                                                               |
+| ------------------------- | -------------------------------------- | --------------------------------------------------------------------- |
+| `WdOverlayGroupSelector`  | `controls/WdOverlayGroupSelector.vue`  | Mini strip bottom button — cycles groups, restores group active state |
+| `WdOverlayGroupHeader`    | `controls/WdOverlayGroupHeader.vue`    | Expanded view group section header                                    |
+| `WdOverlayGroupEditSheet` | `controls/WdOverlayGroupEditSheet.vue` | Bottom sheet for group editing (rename, icon, delete)                 |
 
 ### Store changes
 
 `useOverlayStore` gains:
+
 - `layersByGroup` computed: splits layers by active group + promotes
 - `cycleGroup()`: switches to next visible group, saves/restores active states
 - `toggleGroupLayer()`: toggles a layer within the current group's `activeLayerSlugs`

@@ -28,7 +28,7 @@ lint-fix:
 format-check:
     #! ./.shell-wrapper.sh
     header "Format check"
-    pnpm run format -- --check
+    pnpm exec prettier --check "**/*.{js,ts,vue,scss,html,md,json}"
     success "Formatting OK"
 
 # 🪄 Format with prettier (write)

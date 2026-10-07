@@ -132,9 +132,16 @@ describe('layer-groups', () => {
 
     it('returns empty for a group with no matching layers', () => {
       const group: LayerGroup = {
-        id: 'test', slug: 'test', name: 'Test', icon: 'test',
-        layerSlugs: ['nonexistent'], activeLayerSlugs: [],
-        hidden: false, removed: false, locked: false, sortOrder: 99,
+        id: 'test',
+        slug: 'test',
+        name: 'Test',
+        icon: 'test',
+        layerSlugs: ['nonexistent'],
+        activeLayerSlugs: [],
+        hidden: false,
+        removed: false,
+        locked: false,
+        sortOrder: 99,
       };
       const layers = getGroupLayers(group, mockOverlays);
       expect(layers).toHaveLength(0);
@@ -165,7 +172,7 @@ describe('layer-groups', () => {
 
   describe('groupDisplayName', () => {
     it('translates i18n keys', () => {
-      const t = (key: string) => key === 'overlays.groups.hiking.name' ? 'Wandern' : key;
+      const t = (key: string) => (key === 'overlays.groups.hiking.name' ? 'Wandern' : key);
       expect(groupDisplayName('overlays.groups.hiking.name', t)).toBe('Wandern');
     });
 
@@ -178,7 +185,10 @@ describe('layer-groups', () => {
   describe('mergeGroups', () => {
     it('preserves existing groups', () => {
       const settings = defaultOverlayGroupSettings();
-      const merged = mergeGroups(settings, mockOverlays.map(o => o.name));
+      const merged = mergeGroups(
+        settings,
+        mockOverlays.map(o => o.name)
+      );
       expect(merged.groups.length).toBeGreaterThanOrEqual(3);
     });
 
@@ -187,7 +197,10 @@ describe('layer-groups', () => {
       settings.groups[0].removed = true; // remove hiking
       settings.groups = settings.groups.slice(1); // physically remove it
       settings.dismissedGroupSlugs.push('hiking');
-      const merged = mergeGroups(settings, mockOverlays.map(o => o.name));
+      const merged = mergeGroups(
+        settings,
+        mockOverlays.map(o => o.name)
+      );
       expect(merged.groups.find(g => g.slug === 'hiking')).toBeUndefined();
     });
   });

@@ -315,9 +315,9 @@ function handleSwipeDown() {
     <div
       class="wd-surface-deep q-pa-md"
       :style="
-          isMobile
-            ? 'position: fixed; top: var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px)); left: 0; right: 0; z-index: 100; padding-right: 84px !important'
-            : 'padding-right: 84px !important'
+        isMobile
+          ? 'position: fixed; top: var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px)); left: 0; right: 0; z-index: 100; padding-right: 84px !important'
+          : 'padding-right: 84px !important'
       "
     >
       <q-input
@@ -354,9 +354,9 @@ function handleSwipeDown() {
         borderRadius: '8px 0 0 8px',
       }"
       :style="
-          isMobile
-            ? 'position: fixed; top: calc(88px + var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px))); left: 0; right: 0; bottom: 0; height: auto;'
-            : 'height: auto; max-height: 600px'
+        isMobile
+          ? 'position: fixed; top: calc(88px + var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px))); left: 0; right: 0; bottom: 0; height: auto;'
+          : 'height: auto; max-height: 600px'
       "
     >
       <q-list v-if="searchResults.length > 0" class="wd-surface" :class="{ 'q-mt-sm': !isMobile }">

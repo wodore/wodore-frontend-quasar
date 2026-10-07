@@ -35,8 +35,7 @@ export function thumbHashToRGBA(hash: Uint8Array): { w: number; h: number; rgba:
     for (let cy = 0; cy < ny; cy++)
       for (let cx = cy ? 0 : 1; cx * ny < nx * (ny - cy); cx++)
         ac.push(
-          ((((hash[ac_start + (ac_index >> 1)]! >> ((ac_index++ & 1) << 2)) & 15) / 7.5 - 1) *
-            scale)
+          (((hash[ac_start + (ac_index >> 1)]! >> ((ac_index++ & 1) << 2)) & 15) / 7.5 - 1) * scale
         );
     return ac;
   };
@@ -61,9 +60,9 @@ export function thumbHashToRGBA(hash: Uint8Array): { w: number; h: number; rgba:
 
       // Precompute the coefficients
       for (let cx = 0, n = max(lx, hasAlpha ? 5 : 3); cx < n; cx++)
-        fx[cx] = cos(PI / w * (x + 0.5) * cx);
+        fx[cx] = cos((PI / w) * (x + 0.5) * cx);
       for (let cy = 0, n = max(ly, hasAlpha ? 5 : 3); cy < n; cy++)
-        fy[cy] = cos(PI / h * (y + 0.5) * cy);
+        fy[cy] = cos((PI / h) * (y + 0.5) * cy);
 
       // Decode L
       for (let cy = 0, j = 0; cy < ly; cy++)
@@ -86,7 +85,7 @@ export function thumbHashToRGBA(hash: Uint8Array): { w: number; h: number; rgba:
             a += a_ac[j]! * fx[cx]! * fy2;
 
       // Convert to RGB
-      const b = l - 2 / 3 * p;
+      const b = l - (2 / 3) * p;
       const r = (3 * l - b + q) / 2;
       const g = r - q;
       rgba[i] = max(0, 255 * min(1, r));
@@ -113,26 +112,58 @@ export function rgbaToDataURL(w: number, h: number, rgba: Uint8Array): string {
   const row = w * 4 + 1;
   const idat = 6 + h * (5 + row);
   const bytes: number[] = [
-    137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, w >> 8,
-    w & 255, 0, 0, h >> 8, h & 255, 8, 6, 0, 0, 0, 0, 0, 0, 0, idat >>> 24,
-    (idat >> 16) & 255, (idat >> 8) & 255, idat & 255, 73, 68, 65, 84, 120, 1,
+    137,
+    80,
+    78,
+    71,
+    13,
+    10,
+    26,
+    10,
+    0,
+    0,
+    0,
+    13,
+    73,
+    72,
+    68,
+    82,
+    0,
+    0,
+    w >> 8,
+    w & 255,
+    0,
+    0,
+    h >> 8,
+    h & 255,
+    8,
+    6,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    idat >>> 24,
+    (idat >> 16) & 255,
+    (idat >> 8) & 255,
+    idat & 255,
+    73,
+    68,
+    65,
+    84,
+    120,
+    1,
   ];
   const table = [
-    0, 498536548, 997073096, 651767980, 1994146192, 1802195444, 1303535960,
-    1342533948, -306674912, -267414716, -690576408, -882789492, -1687895376,
-    -2032938284, -1609899400, -1111625188,
+    0, 498536548, 997073096, 651767980, 1994146192, 1802195444, 1303535960, 1342533948, -306674912,
+    -267414716, -690576408, -882789492, -1687895376, -2032938284, -1609899400, -1111625188,
   ];
   let a = 1,
     b = 0;
   for (let y = 0, i = 0, end = row - 1; y < h; y++, end += row - 1) {
-    bytes.push(
-      y + 1 < h ? 0 : 1,
-      row & 255,
-      row >> 8,
-      ~row & 255,
-      (row >> 8) ^ 255,
-      0
-    );
+    bytes.push(y + 1 < h ? 0 : 1, row & 255, row >> 8, ~row & 255, (row >> 8) ^ 255, 0);
     for (b = (b + a) % 65521; i < end; i++) {
       const u = rgba[i]! & 255;
       bytes.push(u);

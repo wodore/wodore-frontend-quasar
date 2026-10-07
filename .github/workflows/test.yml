@@ -84,7 +84,7 @@ jobs:
       # NOTE: e2e (Playwright) is intentionally NOT run in CI — it requires a
       # real dev server + backend and stays a local-only suite for now.
       - name: Start dev server for interaction tests
-        run: pnpm run dev -- -p 9000 &
+        run: pnpm exec quasar dev -m pwa -p 9000 &
         env:
           WODORE_API_HOST: ${{ vars.WODORE_API_HOST || 'https://hub.stg.wodore.com' }}
 

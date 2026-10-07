@@ -8,14 +8,14 @@
 ## Root cause (two bugs in #201, staging only — prod does not run this code yet)
 
 1. **Unreachable redirect target.** seo.js issues its language redirects with
-   a *relative* `Location` (`/en/hut/taelli`). nginx's default
+   a _relative_ `Location` (`/en/hut/taelli`). nginx's default
    `absolute_redirect on` + `port_in_redirect on` absolutized it from its own
    listener behind the TLS edge: `http://stg.wodore.com:8080/en/hut/taelli`.
    Port 8080 is not reachable from outside → social crawlers got no og
    preview, and **first-visit users with de/fr/it Accept-Language were
    302'd into a connection timeout** (worse than the reported symptom).
 2. **All crawlers were treated alike**: the single `CRAWLER_RE` 301'd every
-   known bot (social preview bots included) to the *default* language (`en`),
+   known bot (social preview bots included) to the _default_ language (`en`),
    ignoring the language of the user whose client unfurls the link.
 
 Verified against stg with a local Alpine nginx + njs rig (same packages as
@@ -47,16 +47,16 @@ the Dockerfile serve stage, `WODORE_API_HOST=https://hub.stg.wodore.com`).
 
 ## Verification matrix (rig + real staging API)
 
-| Request | Before (stg) | After (rig) |
-|---|---|---|
-| bare + facebookexternalhit | 301 → `http://…:8080/en/…` (dead) | 200, og in default (en), no-store |
-| bare + facebookexternalhit + `Accept-Language: de-CH` | 301 → dead | 200, og in **de** |
-| bare + TelegramBot + `Accept-Language: fr` | 301 → dead | 200, og in **fr** |
-| bare + Googlebot | 301 → dead | 301 → `/en/hut/taelli` (relative) |
-| bare + browser + `Accept-Language: de`, no cookie | 302 → dead | 302 → `/de/hut/taelli` (relative) |
-| bare + browser + `wodore_lang` cookie | 200 en | 200 en (unchanged) |
-| `/de/hut/taelli` | 200 de | 200 de, self-canonical (unchanged) |
-| bare + GPTBot + `Accept: text/markdown` | HTML shell (bug) | `text/markdown` proxied |
+| Request                                               | Before (stg)                      | After (rig)                        |
+| ----------------------------------------------------- | --------------------------------- | ---------------------------------- |
+| bare + facebookexternalhit                            | 301 → `http://…:8080/en/…` (dead) | 200, og in default (en), no-store  |
+| bare + facebookexternalhit + `Accept-Language: de-CH` | 301 → dead                        | 200, og in **de**                  |
+| bare + TelegramBot + `Accept-Language: fr`            | 301 → dead                        | 200, og in **fr**                  |
+| bare + Googlebot                                      | 301 → dead                        | 301 → `/en/hut/taelli` (relative)  |
+| bare + browser + `Accept-Language: de`, no cookie     | 302 → dead                        | 302 → `/de/hut/taelli` (relative)  |
+| bare + browser + `wodore_lang` cookie                 | 200 en                            | 200 en (unchanged)                 |
+| `/de/hut/taelli`                                      | 200 de                            | 200 de, self-canonical (unchanged) |
+| bare + GPTBot + `Accept: text/markdown`               | HTML shell (bug)                  | `text/markdown` proxied            |
 
 ## Notes
 

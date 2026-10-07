@@ -5,10 +5,7 @@ import { requestStart, requestStop } from '@composables/useRequestProgress';
 
 import { useAuthStore } from '@stores/auth-store';
 import { getEnv } from '@services/runtimeEnv';
-import {
-  PINNED_API_VERSION,
-  emitApiVersionError,
-} from '@services/apiVersion';
+import { PINNED_API_VERSION, emitApiVersionError } from '@services/apiVersion';
 
 export type schemasWodore = compWodore['schemas'];
 
@@ -95,7 +92,7 @@ const apiVersionMiddleware: Middleware = {
     const echoed = response.headers.get('Api-Version');
     if (import.meta.env.DEV && echoed && echoed !== PINNED_API_VERSION) {
       console.warn(
-        `[apiVersion] backend served '${echoed}', pin is '${PINNED_API_VERSION}' — bump the pin (see backend CHANGELOG_API.md)`,
+        `[apiVersion] backend served '${echoed}', pin is '${PINNED_API_VERSION}' — bump the pin (see backend CHANGELOG_API.md)`
       );
     }
     // A retired pinned version answers 410 on every endpoint — surface it

@@ -82,8 +82,7 @@ function headBlock(m, requestPath, host) {
   // URL canonicalizes to the default language's prefixed URL.
   var barePath = requestPath.replace(LANG_RE, '/');
   var lang = LANG_RE.exec(requestPath);
-  var canonical =
-    'https://' + host + (lang ? requestPath : '/' + DEFAULT_LANG + barePath);
+  var canonical = 'https://' + host + (lang ? requestPath : '/' + DEFAULT_LANG + barePath);
   parts.push('<link rel="canonical" href="' + esc(canonical) + '">');
   // hreflang cluster: every language's prefixed URL; x-default points
   // at the default language's prefixed URL. The bare URL (user alias)
@@ -113,9 +112,7 @@ function headBlock(m, requestPath, host) {
     parts.push('<meta name="twitter:image" content="' + esc(m.image) + '">');
   }
   if (m.jsonld) {
-    parts.push(
-      '<script type="application/ld+json">' + JSON.stringify(m.jsonld) + '</script>'
-    );
+    parts.push('<script type="application/ld+json">' + JSON.stringify(m.jsonld) + '</script>');
   }
   return parts.join('\n    ');
 }
@@ -168,8 +165,7 @@ function serve(r, body, noStore) {
   // responses (preview bots): a shared cache must not pin one
   // language's HTML to the bare URL for everyone else.
   if (PAGE_TTL > 0 && !noStore) {
-    r.headersOut['Cache-Control'] =
-      'public, max-age=0, must-revalidate, s-maxage=' + PAGE_TTL;
+    r.headersOut['Cache-Control'] = 'public, max-age=0, must-revalidate, s-maxage=' + PAGE_TTL;
   } else {
     // The shell contains no volatile values (runtime env lives in the
     // always-fresh /env.js), but its hashed asset URLs change on every
@@ -283,9 +279,7 @@ function hut(r) {
         r.log("seo: injected meta for hut '" + slug + "'");
         serve(r, inject(shellRes.responseText, meta, requestPath, r.headersIn.Host), isPreviewBot);
       } else {
-        r.log(
-          "seo: no meta for hut '" + slug + "' (status " + metaRes.status + '), serving shell'
-        );
+        r.log("seo: no meta for hut '" + slug + "' (status " + metaRes.status + '), serving shell');
         serve(r, shellRes.responseText, isPreviewBot);
       }
     })

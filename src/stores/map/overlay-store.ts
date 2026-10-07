@@ -127,9 +127,7 @@ export const useOverlayStore = defineStore('overlay', () => {
     if (currentGroup && currentGroup.id !== group.id) {
       // cast: reactive array + filter explodes TS instantiation depth
       const flat = overlays as unknown as Array<{ name: string; active?: boolean }>;
-      currentGroup.activeLayerSlugs = flat
-        .filter(o => o.active)
-        .map(o => o.name);
+      currentGroup.activeLayerSlugs = flat.filter(o => o.active).map(o => o.name);
     }
 
     groupSettings.activeGroupId = group.id;

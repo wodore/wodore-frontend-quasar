@@ -18,9 +18,7 @@ test.describe('overlay interactions', () => {
       tagTest(theme, mode, 'overlay');
       test.setTimeout(90_000);
 
-      const vp = mode === 'mobile'
-        ? { width: 390, height: 844 }
-        : { width: 1440, height: 900 };
+      const vp = mode === 'mobile' ? { width: 390, height: 844 } : { width: 1440, height: 900 };
       await page.setViewportSize(vp);
 
       await loadMap(page);
@@ -31,7 +29,10 @@ test.describe('overlay interactions', () => {
       await page.evaluate('document.querySelector(".wd-ovl__row")?.click()');
       await page.waitForTimeout(600);
 
-      const stillExpanded = await evalJSON<boolean>(page, '!!document.querySelector(".wd-ovl__box--expanded")');
+      const stillExpanded = await evalJSON<boolean>(
+        page,
+        '!!document.querySelector(".wd-ovl__box--expanded")'
+      );
       await attachScreenshot(page, testInfo, `${theme}-${mode}-expanded-selected`);
       expect(stillExpanded).toBe(true);
     });
@@ -40,9 +41,7 @@ test.describe('overlay interactions', () => {
       tagTest(theme, mode, 'overlay');
       test.setTimeout(90_000);
 
-      const vp = mode === 'mobile'
-        ? { width: 390, height: 844 }
-        : { width: 1440, height: 900 };
+      const vp = mode === 'mobile' ? { width: 390, height: 844 } : { width: 1440, height: 900 };
       await page.setViewportSize(vp);
 
       await loadMap(page);
@@ -65,10 +64,13 @@ test.describe('overlay interactions', () => {
       }
       await page.waitForTimeout(1000);
 
-      const state = await evalJSON(page, `(() => ({
+      const state = await evalJSON(
+        page,
+        `(() => ({
         closed: !document.querySelector('.wd-ovl__box--expanded'),
         focus: document.body.classList.contains('wd-map-focus'),
-      }))()`);
+      }))()`
+      );
       await attachScreenshot(page, testInfo, `${theme}-${mode}-closing-tap`);
       expect(state.closed).toBe(true);
       expect(state.focus).toBe(false);
@@ -84,40 +86,53 @@ test.describe('attribution', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await loadMap(page);
 
-    const state = await evalJSON(page, `(() => {
+    const state = await evalJSON(
+      page,
+      `(() => {
       const chip = document.querySelector('.wd-attrib');
       if (!chip) return { exists: false };
       const btn = chip.querySelector('.wd-attrib__i');
       return { exists: true, collapsed: !chip.classList.contains('wd-attrib--open') };
-    })()`);
+    })()`
+    );
     expect(state.exists).toBe(true);
     expect(state.collapsed).toBe(true);
 
     // Open via tap
-    const pt = await evalJSON<{ x: number; y: number }>(page,
-      `(() => { const b = document.querySelector('.wd-attrib').getBoundingClientRect(); return { x: Math.round(b.x + b.width / 2), y: Math.round(b.y + b.height / 2) }; })()`);
+    const pt = await evalJSON<{ x: number; y: number }>(
+      page,
+      `(() => { const b = document.querySelector('.wd-attrib').getBoundingClientRect(); return { x: Math.round(b.x + b.width / 2), y: Math.round(b.y + b.height / 2) }; })()`
+    );
     await page.touchscreen.tap(pt.x, pt.y);
     await page.waitForTimeout(400);
 
-    const open = await evalJSON(page, `(() => {
+    const open = await evalJSON(
+      page,
+      `(() => {
       const chip = document.querySelector('.wd-attrib');
       const close = chip.querySelector('.wd-attrib__close');
       return {
         open: chip.classList.contains('wd-attrib--open'),
         closeVisible: close ? getComputedStyle(close).display !== 'none' : false,
       };
-    })()`);
+    })()`
+    );
     await attachScreenshot(page, testInfo, 'attribution-open');
     expect(open.open).toBe(true);
     expect(open.closeVisible).toBe(true);
 
     // Close via the × button
-    const xpt = await evalJSON<{ x: number; y: number }>(page,
-      `(() => { const b = document.querySelector('.wd-attrib--open .wd-attrib__i').getBoundingClientRect(); return { x: Math.round(b.x + b.width / 2), y: Math.round(b.y + b.height / 2) }; })()`);
+    const xpt = await evalJSON<{ x: number; y: number }>(
+      page,
+      `(() => { const b = document.querySelector('.wd-attrib--open .wd-attrib__i').getBoundingClientRect(); return { x: Math.round(b.x + b.width / 2), y: Math.round(b.y + b.height / 2) }; })()`
+    );
     await page.touchscreen.tap(xpt.x, xpt.y);
     await page.waitForTimeout(400);
 
-    const closed = await evalJSON<boolean>(page, '!document.querySelector(".wd-attrib").classList.contains("wd-attrib--open")');
+    const closed = await evalJSON<boolean>(
+      page,
+      '!document.querySelector(".wd-attrib").classList.contains("wd-attrib--open")'
+    );
     expect(closed).toBe(true);
   });
 });

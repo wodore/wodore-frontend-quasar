@@ -1,9 +1,6 @@
 {
   "worktree": {
-    "setup": [
-      "workz sync --isolated --quiet .",
-      "scripts/lane-setup.sh"
-    ],
+    "setup": ["workz sync --isolated --quiet .", "scripts/lane-setup.sh"],
     "teardown": ["scripts/lane-teardown.sh"]
   },
   "scripts": {
