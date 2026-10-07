@@ -18,6 +18,44 @@ function mtkStylePath(): string {
   return 'styles/outdoor-mtk/style.json';
 }
 
+/** Resolve a style's relative asset URLs (glyphs, sprite) against the
+ * style's own URL. With setStyle(..., { transformStyle }) MapLibre loses
+ * the style-URL context — relative URLs then resolve against the PAGE
+ * base and 404 under subpath deploys (PR previews) — which silently
+ * killed the settlement-dot sprite and left labels at the mercy of the
+ * service-worker cache. Absolutizing makes both travel safely. */
+async function resolveStyleAssets(
+  styleUrl: string
+): Promise<string | import('maplibre-gl').StyleSpecification> {
+  try {
+    const res = await fetch(styleUrl);
+    if (!res.ok) return styleUrl;
+    const style = (await res.json()) as {
+      glyphs?: string;
+      sprite?: string | Array<string | { id?: string; url: string }>;
+    };
+    const base = new URL(styleUrl, document.baseURI);
+    if (typeof style.glyphs === 'string') {
+      style.glyphs = new URL(style.glyphs, base).href;
+    }
+    if (typeof style.sprite === 'string') {
+      style.sprite = new URL(style.sprite, base).href;
+    } else if (Array.isArray(style.sprite)) {
+      style.sprite = style.sprite.map(entry =>
+        typeof entry === 'string'
+          ? new URL(entry, base).href
+          : { ...entry, url: new URL(entry.url, base).href }
+      );
+    }
+    // SAFETY: the JSON is one of our own generated style files
+    // (public/styles/**) — shape verified by the unit style-contract
+    // tests before it ever ships.
+    return style as unknown as import('maplibre-gl').StyleSpecification;
+  } catch {
+    return styleUrl; // network error: let MapLibre try the URL itself
+  }
+}
+
 /** Static Maptoolkit endpoints (immutable, CDN-cached) — prefetched at
  * boot so the first map load doesn't pay ~8 serial round-trips. */
 const MTK_STATIC_URLS = [
@@ -128,8 +166,11 @@ export const useBasemapStore = defineStore('basemap', () => {
      * Solution from: https://github.com/maplibre/maplibre-gl-js/issues/2587#issuecomment-1996106037
      */
     //mapRef.map?.style.setState(s.style, {
-    mapRef.map?.setStyle(s.style, {
-      diff: true,
+    // Local styles get their relative asset URLs absolutized first —
+    // transformStyle strips the style-URL context (see resolveStyleAssets)
+    const applyStyle = (style: string | import('maplibre-gl').StyleSpecification) => {
+      mapRef.map?.setStyle(style, {
+        diff: true,
       transformStyle: (previousStyle, nextStyle) => {
         // Debug input types
         console.debug('[transformStyle] Called with:', {
@@ -416,7 +457,13 @@ export const useBasemapStore = defineStore('basemap', () => {
 
         return transformedStyle;
       },
-    });
+      });
+    };
+    if (typeof s.style === 'string' && !/^(https?:)?\/\//.test(s.style)) {
+      void resolveStyleAssets(s.style).then(applyStyle);
+    } else {
+      applyStyle(s.style);
+    }
 
     // Debug: After setStyle completes, verify the layers/sources are present
     setTimeout(() => {
@@ -732,6 +779,9 @@ export const useBasemapStore = defineStore('basemap', () => {
       // No saved basemap: default to the Maptoolkit-based outdoor style
       // (routes/sac/rock/contours). The keyless OpenFreeMap style is the
       // hidden fallback for when Maptoolkit tiles are unreachable.
+      // SAFETY: basemaps is a reactive Pinia array of BasemapSwitchItem at
+      // runtime; the `unknown` hop only sidesteps the reactive-proxy type
+      // mismatch between the store's declaration and the switch API.
       basemapToSet =
         (basemaps as unknown as Array<BasemapSwitchItem>).find(
           b => b.name === 'outdoor-mtk'

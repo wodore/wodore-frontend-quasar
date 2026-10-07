@@ -238,7 +238,7 @@ describe('outdoor-mtk basemap style', () => {
     expect(existsSync(resolve(process.cwd(), 'public/styles/sprites/wd/sprite.png'))).toBe(true);
     expect(existsSync(resolve(process.cwd(), 'public/styles/sprites/wd/sprite@2x.png'))).toBe(true);
     const border = style.layers.find(l => l.id === 'border_admin_country');
-    expect(JSON.stringify(border?.paint)).toContain('hsla(306, 30%, 40%, 1)');
+    expect(JSON.stringify(border?.paint)).toContain('hsla(350, 25%, 58%, 1)');
   });
 
   it('declutters generic POIs (rank 4/5 pushed to later zooms)', () => {

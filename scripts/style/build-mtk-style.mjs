@@ -8,8 +8,8 @@
  *     (local endonym; non-latin names keep mtk's latin second line).
  *     A localized fallback chain can be added later if wanted.
  *   - Country labels smaller
- *   - Mountain names more prominent (x1.3)
- *   - Country borders more obvious (darker + wider)
+ *   - Mountain names quieter than cities, elevation in its own small line
+ *   - Country borders a bit less obvious (lighter ink, thinner)
  *   - Settlement dots exactly like swisstopo's lightbasemap: tiny
  *     dark-grey circles on circle layers that mirror the label rank
  *     bands (a dot appears exactly when its place label layer does),
@@ -118,7 +118,7 @@ for (const l of base.layers) {
     op => Array.isArray(op) && op[0] === '!' && Array.isArray(op[1]) && op[1][0] === 'in'
   );
   if (!excl) throw new Error(`unexpected poi filter shape in ${l.id}`);
-  excl[1][2][1].push('lodging');
+  excl[1][2][1].push('lodging', 'rail'); // rail POIs get the dedicated station treatment
 }
 
 // Country labels smaller (they carry category="country"). Zoom must
@@ -161,22 +161,85 @@ for (const id of ['place_point_label_rank_1', 'place_line_label_rank_1']) {
   l.layout['text-size'] = scaled;
 }
 
-// Mountain names more prominent (rank_new bands, elevation line kept)
-for (const id of [
-  'place_peak_label_rank_1',
-  'place_peak_label_rank_2',
-  'place_peak_label_rank_3',
-]) {
-  const l = layer(id);
-  l.layout['text-size'] = scaleZoomStops(l.layout['text-size'], 1.3);
-  l.paint['text-halo-width'] = 1.4;
+// Global typography: a notch smaller across the board (user call),
+// then per-class overrides below
+{
+  const shrinkText = expr => {
+    if (typeof expr === 'number') return expr * 0.92;
+    if (Array.isArray(expr) && expr[0] === 'interpolate') return scaleZoomStops(expr, 0.92);
+    return expr;
+  };
+  for (const l of base.layers) {
+    if (l.layout?.['text-size'] !== undefined) {
+      l.layout['text-size'] = shrinkText(l.layout['text-size']);
+    }
+  }
 }
 
-// Country borders more obvious: darker ink + wider line
+// Mountain names: QUIETER than cities — grey-brown italic, later
+// ranks deferred, and the elevation number in its own much smaller
+// grey line below the name (swisstopo convention) instead of sharing
+// the name's size
+for (const [id, defer] of [
+  ['place_peak_label_rank_1', 0],
+  ['place_peak_label_rank_2', 1],
+  ['place_peak_label_rank_3', 1.5],
+]) {
+  const l = layer(id);
+  l.minzoom += defer;
+  l.layout['text-field'] = [
+    'case',
+    ['!', ['has', 'is_nonlatin']],
+    ['get', 'name'],
+    [
+      'coalesce',
+      ['get', 'name_en'],
+      ['get', 'name_fr'],
+      ['get', 'name_es'],
+      ['get', 'name_de'],
+      ['get', 'name'],
+    ],
+  ];
+  l.paint['text-color'] = 'hsla(28, 14%, 42%, 1)';
+  l.paint['text-halo-color'] = 'rgba(242, 247, 244, 0.9)';
+  l.paint['text-halo-width'] = 1.2;
+  // the elevation line: ~60% of the name size, lighter ink, tucked
+  // under the name (text-offset is in ems, so it tracks the size)
+  const rank = id.match(/rank_(\d)$/)[1];
+  const eleLayer = {
+    id: `wd-peak-ele-${rank}`,
+    type: 'symbol',
+    source: 'mtk',
+    'source-layer': 'place_label',
+    minzoom: l.minzoom,
+    maxzoom: l.maxzoom,
+    filter: l.filter,
+    layout: {
+      ...l.layout,
+      'text-field': ['get', 'ele'],
+      'text-size': scaleZoomStops(l.layout['text-size'], 0.62),
+      'text-anchor': 'left',
+      'text-offset': [0.6, 0.95],
+      'text-optional': true,
+      'icon-image': undefined,
+    },
+    paint: {
+      'text-color': 'hsla(28, 10%, 52%, 1)',
+      'text-halo-color': 'rgba(242, 247, 244, 0.9)',
+      'text-halo-width': 1,
+    },
+  };
+  delete eleLayer.layout['icon-image'];
+  const idx = base.layers.findIndex(x => x.id === id);
+  base.layers.splice(idx + 1, 0, eleLayer);
+}
+
+// Country borders: a bit less obvious (user call) — swisstopo's muted
+// red-pink, lighter ink, thinner at overview
 for (const id of ['border_admin_country', 'border_admin_disputed']) {
   const p = layer(id).paint;
-  p['line-color'] = 'hsla(306, 30%, 40%, 1)';
-  p['line-width'] = ['interpolate', ['exponential', 0.9], ['zoom'], 3, 0.55, 19, 3.1];
+  p['line-color'] = 'hsla(350, 25%, 58%, 1)';
+  p['line-width'] = ['interpolate', ['exponential', 0.9], ['zoom'], 3, 0.4, 19, 2.6];
 }
 
 // Settlement dots, swisstopo lightbasemap style — rendered INSIDE the
@@ -246,8 +309,9 @@ const PASTEL = {
   'hsla(81, 60%, 90%,': 'hsla(75, 8%, 93%,',
   'hsla(81, 60%, 87%,': 'hsla(90, 11%, 91%,',
   // nature_natural z5 lightness stops — Wodore forest-green family
-  // (own touch: green is identity; hue rotated 90° -> 160°)
-  'hsla(92.25, 50%, 85%,': 'hsla(160, 20%, 87%,',
+  // (own touch: green is identity; hue 138 = alpine conifer, warm
+  // enough to part from the glacier blues)
+  'hsla(92.25, 50%, 85%,': 'hsla(138, 20%, 87%,',
   'hsla(58.5, 70%, 90%,': 'hsla(55, 13%, 92%,',
   'hsla(103.25, 55%, 90%,': 'hsla(100, 10%, 91%,',
   'hsla(69.75, 8%, 93%,': 'hsla(70, 6%, 93%,',
@@ -256,8 +320,9 @@ const PASTEL = {
   'hsla(69.75, 60%, 87%,': 'hsla(70, 10%, 90%,',
   'hsla(182.25, 80%, 98%,': 'hsla(193, 42%, 91%,',
   'hsla(182.25, 65%, 98%,': 'hsla(193, 38%, 93%,',
-  // nature_natural z12 darker stops
-  'hsla(92.25, 50%, 82%,': 'hsla(160, 20%, 85%,',
+  // nature_natural z12 darker stops — richer when zoomed in (user
+  // call: the map may carry more color up close)
+  'hsla(92.25, 50%, 82%,': 'hsla(138, 26%, 82%,',
   'hsla(58.5, 70%, 87%,': 'hsla(55, 14%, 91%,',
   'hsla(103.25, 55%, 87%,': 'hsla(100, 11%, 90%,',
   'hsla(69.75, 8%, 90%,': 'hsla(70, 6%, 91%,',
@@ -266,12 +331,13 @@ const PASTEL = {
   'hsla(69.75, 60%, 84%,': 'hsla(70, 11%, 89%,',
   'hsla(182.25, 80%, 95%,': 'hsla(193, 40%, 86%,',
   'hsla(182.25, 65%, 95%,': 'hsla(193, 36%, 88%,',
-  // nature_landuse — parks/meadows in the green families
+  // nature_landuse — parks/meadows in the green families, a touch
+  // fuller at the z12 stops
   'hsla(24.75, 8%, 93%,': 'hsla(35, 6%, 92%,',
-  'hsla(81, 55%, 93%,': 'hsla(150, 18%, 91%,',
+  'hsla(81, 55%, 93%,': 'hsla(138, 22%, 89%,',
   'hsla(47.25, 70%, 90%,': 'hsla(45, 15%, 92%,',
   'hsla(36, 75%, 97%,': 'hsla(45, 12%, 96%,',
-  'hsla(137.25, 70%, 90%,': 'hsla(140, 16%, 90%,',
+  'hsla(137.25, 70%, 90%,': 'hsla(140, 22%, 88%,',
   'hsla(47.25, 90%, 97%,': 'hsla(45, 15%, 96%,',
   'hsla(24.75, 8%, 90%,': 'hsla(35, 6%, 91%,',
   'hsla(81, 55%, 90%,': 'hsla(100, 15%, 90%,',
@@ -562,9 +628,9 @@ const PATH_WIDTH = [
   13,
   1,
   15,
-  1.25,
+  1.4,
   16,
-  2,
+  2.3,
   20,
   5,
 ];
@@ -610,7 +676,11 @@ for (const id of ['road_path_urban', 'road_path_steps']) {
 // Ungraded paths/bridleways (road_path) and urban footpaths stay solid.
 {
   const mountain = layer('road_path_mountain');
-  mountain.filter = ['all', ['has', 'sac_scale'], ['in', ['get', 'sac_scale'], ['literal', ['T1']]]];
+  mountain.filter = [
+    'all',
+    ['has', 'sac_scale'],
+    ['in', ['get', 'sac_scale'], ['literal', ['T1']]],
+  ];
   // T1 is the only SOLID hiking path — drop mtk's leftover [6,4] dash
   // (mtk ships it in paint; MapLibre honors it there too)
   for (const bag of [mountain.layout, mountain.paint]) {
@@ -675,9 +745,9 @@ for (const id of ['relief_hillshade_ao_min', 'relief_hillshade_ao_med']) {
     ['linear'],
     ['zoom'],
     4,
-    0.12,
-    6.5,
     0.2,
+    6.5,
+    0.3,
     8.5,
     0.36,
     12,
@@ -771,6 +841,9 @@ for (const l of base.layers) {
 const PARK_CATEGORIES = ['national_park', 'protected_area'];
 for (const l of base.layers) {
   if (l['source-layer'] !== 'place_label' || l.type !== 'symbol') continue;
+  // our derived layers (wd-peak-ele-*) inherit their parent's filter
+  // and never carry parks — skip the shape guard for them
+  if (l.id.startsWith('wd-')) continue;
   const f = l.filter;
   const excl = f?.find?.(
     op => Array.isArray(op) && op[0] === '!' && Array.isArray(op[1]) && op[1][0] === 'in'
@@ -862,7 +935,7 @@ const FILL_WHITE = [
   6,
   byType('#FFE6A0', '#FFE6A0', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF'),
   15,
-  byType('#E8C563', '#E8C563', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF'),
+  byType('#E8C563', '#E8C563', '#FFF7EA', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF'),
 ];
 const FILL_MEDIUM_COLOR = [
   'interpolate',
@@ -892,13 +965,13 @@ const FILL_DARK_WIDTH = [
   ['exponential', 2],
   ['zoom'],
   6,
-  byType(rampOr(0.5, 1.5), 1.5, 0, 0, 0, 0, 0),
+  byType(rampOr(0.7, 2), 2, 0, 0, 0, 0, 0),
   8,
-  byType(rampOr(1, 2.5), 2.5, 1.5, 0, 0, 0, 0),
+  byType(rampOr(1.3, 3.1), 3.1, 1.8, 0, 0, 0, 0),
   9,
-  byType(rampOr(1.25, 3), 3, 2, 0, 0, 0, 0),
+  byType(rampOr(1.6, 3.6), 3.6, 2.3, 0, 0, 0, 0),
   10,
-  byType(rampOr(1.5, 3.5), 3.5, 2.75, 0, 0, 0, 0),
+  byType(rampOr(1.9, 4.2), 4.2, 3.1, 0, 0, 0, 0),
   12,
   byType(rampOr(1.75, 4.5), 4.5, 2.75, 0, 0, 0, 0),
   13,
@@ -985,11 +1058,11 @@ const CASING_WIDTH = [
   6,
   byType(rampOr(0.5, 1), 1, 0, 0, 0, 0, 0),
   8,
-  byType(rampOr(0.6, 1), 1, 2.5, 0, 0, 0, 0),
+  byType(rampOr(0.8, 1.4), 1.4, 2.8, 0, 0, 0, 0),
   9,
-  byType(rampOr(0.75, 1.25), 1.25, 3, 2.5, 0, 0, 0),
+  byType(rampOr(1, 1.7), 1.7, 3.3, 2.7, 0, 0, 0),
   10,
-  byType(rampOr(0.9, 1.5), 1.5, 3.5, 2.9, 2.5, 0, 0),
+  byType(rampOr(1.2, 2), 2, 3.9, 3.1, 2.6, 0, 0),
   12,
   byType(rampOr(2.75, 5.5), 5.5, 3.75, 3.5, 3.5, 0, 0),
   13,
@@ -1041,6 +1114,72 @@ clonePaint(['road_minor_casing', 'road_minor_casing_bridge', 'road_minor_casing_
   'line-width': MINOR_CASING_WIDTH,
   'line-gap-width': 0,
 });
+
+// ── Trains: swisstopo-style dark rail ribbon with white hatching
+// from mid zoom; stations as dark dots with their own quiet grey
+// labels (poi type=rail subtype=station — the generic-POI layers
+// exclude them so they never double-label)
+for (const id of ['road_rail', 'road_rail_bridge', 'road_rail_tunnel']) {
+  layer(id).paint['line-color'] = 'hsla(220, 12%, 38%, 1)';
+}
+for (const id of ['road_rail_hatching', 'road_rail_hatching_bridge']) {
+  const l = layer(id);
+  l.minzoom = 12.5;
+  l.paint['line-color'] = '#FFFFFF';
+}
+{
+  const railLabel = layer('road_rail_label');
+  railLabel.paint['text-color'] = 'hsla(220, 12%, 45%, 1)';
+  railLabel.paint['text-halo-color'] = 'rgba(242, 247, 244, 0.9)';
+  // station filter: mtk maps railway=station to poi type 'rail',
+  // subtype 'station' (halts/tram stops share the type)
+  const isStation = [
+    'all',
+    ['==', ['get', 'type'], 'rail'],
+    ['in', ['get', 'subtype'], ['literal', ['station', 'halt', 'tram_stop']]],
+  ];
+  const stationIdx = base.layers.findIndex(l => l.id === 'road_minor');
+  base.layers.splice(stationIdx === -1 ? base.layers.length : stationIdx, 0, {
+    id: 'wd-station',
+    type: 'circle',
+    source: 'mtk',
+    'source-layer': 'poi_label',
+    minzoom: 10.5,
+    filter: isStation,
+    paint: {
+      'circle-color': '#262626',
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 10.5, 1.8, 13, 2.4, 16, 3.2],
+      'circle-pitch-alignment': 'map',
+    },
+  }, {
+    id: 'wd-station-label',
+    type: 'symbol',
+    source: 'mtk',
+    'source-layer': 'poi_label',
+    // most station names wait: the dot carries the affordance, the
+    // quiet grey name joins from z12 (user call)
+    minzoom: 12,
+    filter: isStation,
+    layout: {
+      'text-field': [
+        'case',
+        ['!', ['has', 'is_nonlatin']],
+        ['coalesce', ['get', 'name'], ['get', 'name_en']],
+        ['coalesce', ['get', 'name_en'], ['get', 'name_de'], ['get', 'name']],
+      ],
+      'text-font': ['Barlow Semi Condensed Regular'],
+      'text-size': ['interpolate', ['linear'], ['zoom'], 12, 10, 16, 12],
+      'text-anchor': 'left',
+      'text-offset': [0.55, 0.05],
+      'text-optional': true,
+    },
+    paint: {
+      'text-color': 'hsla(220, 14%, 42%, 1)',
+      'text-halo-color': 'rgba(242, 247, 244, 0.9)',
+      'text-halo-width': 1,
+    },
+  });
+}
 
 // ── Parks: strong at overview zooms, receding when zoomed in; visible
 // borders (mtk's protected-area lines are nearly invisible).
@@ -1096,9 +1235,11 @@ rocks.paint['raster-opacity'] = [
   ['linear'],
   ['zoom'],
   11,
-  0,
+  0.1,
+  11.5,
+  0.22,
   12,
-  0.18,
+  0.26,
   13,
   0.36,
   14,
