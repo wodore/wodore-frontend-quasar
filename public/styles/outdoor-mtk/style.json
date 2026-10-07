@@ -6937,6 +6937,40 @@
             "#8C8C8C",
             "#8C8C8C"
           ],
+          12,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            "#9A6A30",
+            [
+              "trunk"
+            ],
+            "#9A6A30",
+            [
+              "primary"
+            ],
+            "#B5B5B0",
+            [
+              "secondary"
+            ],
+            "#B5B5B0",
+            [
+              "tertiary"
+            ],
+            "#B5B5B0",
+            [
+              "minor",
+              "service"
+            ],
+            "#B5B5B0",
+            "#B5B5B0"
+          ],
           14.5,
           [
             "match",
@@ -8392,7 +8426,7 @@
           9,
           "hsla(45, 100%, 82%, 0)",
           10.5,
-          "#F6E8C8"
+          "#F2EDE0"
         ],
         "line-width": [
           "interpolate",
@@ -8606,7 +8640,7 @@
               "type"
             ],
             "tertiary",
-            "#F6E8C8",
+            "#F2EDE0",
             "#FFFFFF"
           ]
         ],
@@ -10405,6 +10439,40 @@
             "#8C8C8C",
             "#8C8C8C"
           ],
+          12,
+          [
+            "match",
+            [
+              "get",
+              "type"
+            ],
+            [
+              "motorway"
+            ],
+            "#9A6A30",
+            [
+              "trunk"
+            ],
+            "#9A6A30",
+            [
+              "primary"
+            ],
+            "#B5B5B0",
+            [
+              "secondary"
+            ],
+            "#B5B5B0",
+            [
+              "tertiary"
+            ],
+            "#B5B5B0",
+            [
+              "minor",
+              "service"
+            ],
+            "#B5B5B0",
+            "#B5B5B0"
+          ],
           14.5,
           [
             "match",
@@ -11131,7 +11199,7 @@
           9,
           "hsla(45, 100%, 82%, 0)",
           10.5,
-          "#F6E8C8"
+          "#F2EDE0"
         ],
         "line-width": [
           "interpolate",
@@ -11347,7 +11415,7 @@
               "type"
             ],
             "tertiary",
-            "#F6E8C8",
+            "#F2EDE0",
             "#FFFFFF"
           ]
         ],

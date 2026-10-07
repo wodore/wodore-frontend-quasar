@@ -1070,7 +1070,7 @@ const FILL_MEDIUM_COLOR = [
   10,
   '#FFFFFF',
   14,
-  ['match', ['get', 'type'], 'tertiary', '#F6E8C8', '#FFFFFF'],
+  ['match', ['get', 'type'], 'tertiary', '#F2EDE0', '#FFFFFF'],
 ];
 const FILL_MINOR_COLOR = [
   'interpolate',
@@ -1082,7 +1082,7 @@ const FILL_MINOR_COLOR = [
   // warm cream (mapy.com-style local streets) — reads as a soft
   // yellow ribbon against the paper, distinctly friendlier than
   // harsh white with dark edges (user call)
-  '#F6E8C8',
+  '#F2EDE0',
 ];
 const FILL_BLUR = ['interpolate', ['linear'], ['zoom'], 8, 0.4, 14, 0.1];
 
@@ -1183,6 +1183,12 @@ const CASING_COLOR = [
   'hsla(0, 0%, 60%, 0)',
   6.5,
   byType('#A05A28', '#A05A28', '#8C8C8C', '#8C8C8C', '#8C8C8C', '#8C8C8C', '#8C8C8C'),
+  // mid zooms: grey stays LIGHT — mapy.com-style hierarchy where
+  // secondary/tertiary read as subtle grey lines, not dark-outlined
+  // white ribbons (user call: '2nd line makes them look very dark
+  // when zoomed out')
+  12,
+  byType('#9A6A30', '#9A6A30', '#B5B5B0', '#B5B5B0', '#B5B5B0', '#B5B5B0', '#B5B5B0'),
   14.5,
   byType('#7A451E', '#7A451E', '#3C3C3C', '#3C3C3C', '#3C3C3C', '#3C3C3C', '#3C3C3C'),
 ];
