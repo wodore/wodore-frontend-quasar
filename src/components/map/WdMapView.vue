@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { ref, inject, watchEffect, watch, onErrorCaptured, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { useResizeObserver, useDebounceFn, useThrottleFn, useEventListener, useMediaQuery } from '@vueuse/core';
+import {
+  useResizeObserver,
+  useDebounceFn,
+  useThrottleFn,
+  useEventListener,
+  useMediaQuery,
+} from '@vueuse/core';
 import { useQuasar } from 'quasar';
 import { useBasemapStore } from '@stores/map/basemap-store';
 import type { BasemapSwitchItem } from '@stores/map/utils/interfaces';
@@ -131,7 +137,15 @@ const localPropertiesStore = useLocalPropertiesStore();
 // Use a static ref for initial map style to prevent vue-maplibre-gl's reactive watcher
 // from overriding our transformStyle callback when basemap changes
 // After initial load, style switching is handled by basemapStore.setBasemap()
-const initialMapStyle = ref(basemapStore.getBasemap()?.style);
+// IMPORTANT: never pass a style to MglMap's constructor — the Map
+// would load it WITHOUT our transformStyle callback (which pins
+// relative glyph/sprite URLs to absolute). On first load the store
+// hasn't initialized so this is undefined anyway; on F5 reload the
+// cached GPU tier makes the store initialize FASTER, the constructor
+// gets the raw URL, loads it with relative paths, and the subsequent
+// setStyle with diff:true sees 'no changes' → 404s on glyphs/sprites.
+// Always let setBasemap() → setStyle() apply the style.
+const initialMapStyle = ref<undefined>(undefined);
 
 // Get initial location from store (handles URL hash, storage, defaults)
 const initialLocation = localPropertiesStore.getInitialLocation();
