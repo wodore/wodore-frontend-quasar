@@ -336,7 +336,7 @@ for (const l of base.layers) {
     'wd-base:wd-ring',
     ['all', ['==', ['get', 'category'], 'small_place'], ['<=', ['get', 'rank'], 10]],
     'wd-base:wd-ring',
-    '',
+    'wd-base:wd-ring', // villages: subtle small ring (user: 'smaller towns can also use a dot')
   ];
   // icon can drop independently (labels always show — user: 'should
   // only be dropped when label is gone as well'); text-optional:
@@ -347,7 +347,7 @@ for (const l of base.layers) {
   // FOUR sizes scaling with rank: capitals > major > medium > small-town
   // (small_place rank<=10 gets a smaller ring — Sion/Fribourg at
   // country zoom where mtk generalizes them to small_place)
-  const sizeFor = (cap, major, med, smallTown) => [
+  const sizeFor = (cap, major, med, smallTown, village = 0.35) => [
     'case',
     ['==', ['get', 'category'], 'capital'],
     cap,
@@ -357,20 +357,20 @@ for (const l of base.layers) {
     med,
     ['all', ['==', ['get', 'category'], 'small_place'], ['<=', ['get', 'rank'], 10]],
     smallTown,
-    0,
+    village,
   ];
   l.layout['icon-size'] = [
     'interpolate',
     ['linear'],
     ['zoom'],
     1,
-    sizeFor(0.8, 0.6, 0.5, 0.45),
+    sizeFor(0.8, 0.6, 0.5, 0.45, 0.3),
     8,
-    sizeFor(1.0, 0.78, 0.65, 0.55),
+    sizeFor(1.0, 0.78, 0.65, 0.55, 0.35),
     10,
-    sizeFor(1.15, 0.88, 0.75, 0.65),
+    sizeFor(1.15, 0.88, 0.75, 0.65, 0.4),
     13,
-    sizeFor(1.2, 0.95, 0.82, 0.7),
+    sizeFor(1.2, 0.95, 0.82, 0.7, 0.45),
   ];
   l.paint['icon-opacity'] = [
     'step',
@@ -437,8 +437,8 @@ const PASTEL = {
   // turquoise is orientation) — lakes a step darker than seas so they
   // read as valley structure
   'hsla(182, 65%, 80%, 1)': 'hsla(193, 44%, 85%, 1)',
-  'hsla(182, 65%, 85%, 1)': 'hsla(193, 40%, 87%, 1)',
-  'hsla(182, 65%, 80%, 0.7)': 'hsla(193, 40%, 87%, 0.7)',
+  'hsla(182, 65%, 85%, 1)': 'hsla(203, 70%, 85%, 1)',
+  'hsla(182, 65%, 80%, 0.7)': 'hsla(203, 70%, 85%, 0.7)',
   'hsla(182, 65%, 96%, 1)': 'hsla(193, 32%, 90%, 1)',
 };
 const pastel = (paint, key) => {
@@ -499,14 +499,13 @@ for (const id of [
   const b = layer('water_bathymetry');
   b.minzoom = 8;
   const ramp = [
-    [-12000, 'hsla(193, 42%, 80%, 1)'],
-    [-1000, 'hsla(193, 42%, 84%, 1)'],
-    [-500, 'hsla(193, 42%, 85%, 1)'],
-    [-250, 'hsla(193, 41%, 86%, 1)'],
-    [-100, 'hsla(193, 40%, 87%, 1)'],
-    [-30, 'hsla(193, 39%, 89%, 1)'],
-    [-0.1, 'hsla(193, 38%, 90%, 1)'],
-    [0, 'hsla(193, 38%, 90%, 0)'],
+    [-1000, 'hsla(203, 70%, 85%, 1)'],
+    [-500, 'hsla(203, 70%, 85%, 1)'],
+    [-250, 'hsla(203, 70%, 85%, 1)'],
+    [-100, 'hsla(203, 70%, 85%, 1)'],
+    [-30, 'hsla(203, 70%, 85%, 1)'],
+    [-0.1, 'hsla(203, 70%, 85%, 1)'],
+    [0, 'hsla(203, 70%, 85%, 0)'],
   ];
   b.paint['color-relief-color'] = [
     'interpolate',
@@ -519,10 +518,12 @@ for (const id of [
 // Europe zooms — lakes sit a step darker than seas so valley chains
 // of lakes read as structure (user call)
 for (const [id, deep, pale] of [
-  ['water_area_inland', 'hsla(193, 44%, 84%, 1)', 'hsla(193, 36%, 92%, 1)'],
-  ['water_area_ocean', 'hsla(193, 40%, 87%, 1)', 'hsla(193, 36%, 92%, 1)'],
-  ['water_area_lagoon', 'hsla(193, 40%, 87%, 0.7)', 'hsla(193, 36%, 92%, 0.7)'],
-  ['water_intermittent', 'hsla(193, 32%, 89%, 1)', 'hsla(193, 30%, 93%, 1)'],
+  // Advisor: ONE fill color for all water areas (swisstopo's logic:
+  // fills read as water-the-surface, lines read as water-the-flow)
+  ['water_area_inland', 'hsla(203, 70%, 85%, 1)', 'hsla(203, 65%, 92%, 1)'],
+  ['water_area_ocean', 'hsla(203, 70%, 85%, 1)', 'hsla(203, 65%, 92%, 1)'],
+  ['water_area_lagoon', 'hsla(203, 70%, 85%, 0.7)', 'hsla(203, 65%, 92%, 0.7)'],
+  ['water_intermittent', 'hsla(203, 70%, 85%, 1)', 'hsla(203, 65%, 92%, 1)'],
 ]) {
   layer(id).paint['fill-color'] = ['interpolate', ['linear'], ['zoom'], 4, pale, 9, deep];
 }
@@ -535,10 +536,11 @@ for (const [id, deep, pale] of [
 for (const id of ['water_waterway', 'water_waterway_intermittent', 'water_intermittent_outline']) {
   const l = layer(id);
   l.paint['line-color'] = [
-    'match', ['get', 'type'],
+    'match',
+    ['get', 'type'],
     ['river', 'canal'],
     'hsla(203, 65%, 58%, 1)', // rivers: swisstopo's bright blue spine
-    'hsla(200, 40%, 70%, 1)', // fallback: streams, lighter
+    'hsla(203, 65%, 58%, 1)', // fallback: streams same color as rivers, just thinner
   ];
   l.paint['line-width'] = [
     'interpolate',
