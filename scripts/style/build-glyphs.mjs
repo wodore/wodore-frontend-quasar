@@ -25,7 +25,7 @@ const fontsource = (pkg, file) =>
  * (0x000-0x2FF, 0x370-0x3FF, 0x400-0x52F, 0x1E00-0x1EFF rounded to
  * 256-glyph blocks). CJK and other exotic scripts are NOT vendored —
  * the non-latin label line renders empty for those instead of tofu. */
-const RANGES = [0, 256, 512, 768, 1024, 1280, 7680];
+const RANGES = [0, 256, 512, 768, 1024, 1280, 7680, 8192];
 
 const STACKS = [
   {

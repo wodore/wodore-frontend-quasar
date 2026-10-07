@@ -58,10 +58,12 @@ base.id = 'wodore-outdoor-mtk';
 // run `yarn gen:glyphs` after touching the stacks.
 base.glyphs = '../glyphs/{fontstack}/{range}.pbf';
 // our settlement-dot sprite joins mtk's multi-sprite array (relative
-// URL resolves against the style URL — works under any base path)
+// URL resolves against the style URL — works under any base path).
+// id must NOT collide with the app overlay icon sprite ('wd:…' icons):
+// transformStyle dedupes sprite ids, and 'wd' would swallow it
 base.sprite = [
   ...(Array.isArray(base.sprite) ? base.sprite : [base.sprite]),
-  { id: 'wd', url: '../sprites/wd/sprite' },
+  { id: 'wd-base', url: '../sprites/wd/sprite' },
 ];
 const FONT_MAP = {
   'Ysabeau Small Caps Regular': 'Barlow Semi Condensed Regular',
@@ -92,9 +94,12 @@ const removed = [
   'road_path_scale_label',
   // performance: 4 hillshade layers = 4 full-screen GPU passes
   // (28fps pan measured). ao_min + ao_med carry the look; removing
-  // these two brings pan to 39fps with barely visible difference.
+  // ao_max brings pan to 39fps with barely visible difference. The
+  // dramatic pass is KEPT but gated to overview zooms (maxzoom 9.5):
+  // its NW directional light is the crisp country-zoom relief
+  // swisstopo has and ambient occlusion alone doesn't (user call),
+  // and below z9.5 the street-zoom pan cost doesn't apply.
   'relief_hillshade_ao_max',
-  'relief_hillshade_dramatic',
 ];
 base.layers = base.layers.filter(l => !removed.includes(l.id));
 
@@ -745,16 +750,29 @@ for (const id of ['relief_hillshade_ao_min', 'relief_hillshade_ao_med']) {
     ['linear'],
     ['zoom'],
     4,
-    0.2,
+    0.26,
     6.5,
-    0.3,
-    8.5,
     0.36,
+    8.5,
+    0.4,
     12,
     0.54,
     16,
     0.5,
   ];
+}
+// The dramatic pass (NW 315° directional light) is the crisp lit
+// relief at country zoom — swisstopo's look, which soft ambient
+// occlusion alone never produces (user call). Overview zooms only:
+// softened to sit on our pastel paper, and gone before the street-zoom
+// pan cost that originally got it removed.
+{
+  const d = layer('relief_hillshade_dramatic');
+  d.maxzoom = 9.5;
+  d.paint['hillshade-shadow-color'] = 'hsla(210, 14%, 38%, 0.46)';
+  d.paint['hillshade-highlight-color'] = 'hsla(45, 60%, 96%, 0.55)';
+  d.paint['hillshade-accent-color'] = 'hsla(0, 0%, 0%, 0)';
+  d.paint['hillshade-exaggeration'] = ['interpolate', ['linear'], ['zoom'], 4, 0.24, 9.5, 0.36];
 }
 // Landcover textures (forest floor, tree rows, quarries…) painted the
 // whole town view warm (40% warm pixels vs swisstopo's 2.5% — their
@@ -766,8 +784,10 @@ const TEXTURE_RAMP = [
   'interpolate',
   ['linear'],
   ['zoom'],
+  11,
+  0.07,
   12,
-  0.12,
+  0.14,
   13,
   0.22,
   14.5,
@@ -783,7 +803,9 @@ for (const id of [
   'nature_landuse_flowerbed_texture',
   'nature_natural_tidalflat_texture',
 ]) {
-  layer(id).paint['fill-opacity'] = [...TEXTURE_RAMP];
+  const l = layer(id);
+  if (id === 'nature_natural_texture') l.minzoom = 11; // rock stipple joins the early rocks
+  l.paint['fill-opacity'] = [...TEXTURE_RAMP];
 }
 layer('nature_natural_tree_row_texture').paint['line-opacity'] = [...TEXTURE_RAMP];
 
@@ -1139,46 +1161,51 @@ for (const id of ['road_rail_hatching', 'road_rail_hatching_bridge']) {
     ['in', ['get', 'subtype'], ['literal', ['station', 'halt', 'tram_stop']]],
   ];
   const stationIdx = base.layers.findIndex(l => l.id === 'road_minor');
-  base.layers.splice(stationIdx === -1 ? base.layers.length : stationIdx, 0, {
-    id: 'wd-station',
-    type: 'circle',
-    source: 'mtk',
-    'source-layer': 'poi_label',
-    minzoom: 10.5,
-    filter: isStation,
-    paint: {
-      'circle-color': '#262626',
-      'circle-radius': ['interpolate', ['linear'], ['zoom'], 10.5, 1.8, 13, 2.4, 16, 3.2],
-      'circle-pitch-alignment': 'map',
+  base.layers.splice(
+    stationIdx === -1 ? base.layers.length : stationIdx,
+    0,
+    {
+      id: 'wd-station',
+      type: 'circle',
+      source: 'mtk',
+      'source-layer': 'poi_label',
+      minzoom: 10.5,
+      filter: isStation,
+      paint: {
+        'circle-color': '#262626',
+        'circle-radius': ['interpolate', ['linear'], ['zoom'], 10.5, 1.8, 13, 2.4, 16, 3.2],
+        'circle-pitch-alignment': 'map',
+      },
     },
-  }, {
-    id: 'wd-station-label',
-    type: 'symbol',
-    source: 'mtk',
-    'source-layer': 'poi_label',
-    // most station names wait: the dot carries the affordance, the
-    // quiet grey name joins from z12 (user call)
-    minzoom: 12,
-    filter: isStation,
-    layout: {
-      'text-field': [
-        'case',
-        ['!', ['has', 'is_nonlatin']],
-        ['coalesce', ['get', 'name'], ['get', 'name_en']],
-        ['coalesce', ['get', 'name_en'], ['get', 'name_de'], ['get', 'name']],
-      ],
-      'text-font': ['Barlow Semi Condensed Regular'],
-      'text-size': ['interpolate', ['linear'], ['zoom'], 12, 10, 16, 12],
-      'text-anchor': 'left',
-      'text-offset': [0.55, 0.05],
-      'text-optional': true,
-    },
-    paint: {
-      'text-color': 'hsla(220, 14%, 42%, 1)',
-      'text-halo-color': 'rgba(242, 247, 244, 0.9)',
-      'text-halo-width': 1,
-    },
-  });
+    {
+      id: 'wd-station-label',
+      type: 'symbol',
+      source: 'mtk',
+      'source-layer': 'poi_label',
+      // most station names wait: the dot carries the affordance, the
+      // quiet grey name joins from z12 (user call)
+      minzoom: 12,
+      filter: isStation,
+      layout: {
+        'text-field': [
+          'case',
+          ['!', ['has', 'is_nonlatin']],
+          ['coalesce', ['get', 'name'], ['get', 'name_en']],
+          ['coalesce', ['get', 'name_en'], ['get', 'name_de'], ['get', 'name']],
+        ],
+        'text-font': ['Barlow Semi Condensed Regular'],
+        'text-size': ['interpolate', ['linear'], ['zoom'], 12, 10, 16, 12],
+        'text-anchor': 'left',
+        'text-offset': [0.55, 0.05],
+        'text-optional': true,
+      },
+      paint: {
+        'text-color': 'hsla(220, 14%, 42%, 1)',
+        'text-halo-color': 'rgba(242, 247, 244, 0.9)',
+        'text-halo-width': 1,
+      },
+    }
+  );
 }
 
 // ── Parks: strong at overview zooms, receding when zoomed in; visible
@@ -1235,15 +1262,15 @@ rocks.paint['raster-opacity'] = [
   ['linear'],
   ['zoom'],
   11,
-  0.1,
-  11.5,
   0.22,
+  11.5,
+  0.34,
   12,
-  0.26,
+  0.42,
   13,
-  0.36,
+  0.44,
   14,
-  0.48,
+  0.5,
   15,
   0.42,
   16,

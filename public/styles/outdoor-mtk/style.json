@@ -20,7 +20,7 @@
       "url": "https://icons.maptoolkit.org/water~hsl_182_65_80"
     },
     {
-      "id": "wd",
+      "id": "wd-base",
       "url": "../sprites/wd/sprite"
     }
   ],
@@ -2953,7 +2953,7 @@
           ]
         ]
       ],
-      "minzoom": 12,
+      "minzoom": 11,
       "maxzoom": 22,
       "layout": {
         "visibility": "visible"
@@ -2992,8 +2992,10 @@
           [
             "zoom"
           ],
+          11,
+          0.07,
           12,
-          0.12,
+          0.14,
           13,
           0.22,
           14.5,
@@ -3050,8 +3052,10 @@
           [
             "zoom"
           ],
+          11,
+          0.07,
           12,
-          0.12,
+          0.14,
           13,
           0.22,
           14.5,
@@ -3084,8 +3088,10 @@
           [
             "zoom"
           ],
+          11,
+          0.07,
           12,
-          0.12,
+          0.14,
           13,
           0.22,
           14.5,
@@ -3208,8 +3214,10 @@
           [
             "zoom"
           ],
+          11,
+          0.07,
           12,
-          0.12,
+          0.14,
           13,
           0.22,
           14.5,
@@ -3243,15 +3251,15 @@
             "zoom"
           ],
           11,
-          0.1,
-          11.5,
           0.22,
+          11.5,
+          0.34,
           12,
-          0.26,
+          0.42,
           13,
-          0.36,
+          0.44,
           14,
-          0.48,
+          0.5,
           15,
           0.42,
           16,
@@ -3718,11 +3726,11 @@
             "zoom"
           ],
           4,
-          0.2,
+          0.26,
           6.5,
-          0.3,
-          8.5,
           0.36,
+          8.5,
+          0.4,
           12,
           0.54,
           16,
@@ -3757,11 +3765,11 @@
             "zoom"
           ],
           4,
-          0.2,
+          0.26,
           6.5,
-          0.3,
-          8.5,
           0.36,
+          8.5,
+          0.4,
           12,
           0.54,
           16,
@@ -3776,6 +3784,41 @@
       },
       "source": "rgb-tiles-blur-med",
       "maxzoom": 23,
+      "minzoom": 0,
+      "metadata": {
+        "maptoolkit:legend": {
+          "hidden": true
+        }
+      }
+    },
+    {
+      "id": "relief_hillshade_dramatic",
+      "type": "hillshade",
+      "paint": {
+        "hillshade-illumination-anchor": "viewport",
+        "hillshade-accent-color": "hsla(0, 0%, 0%, 0)",
+        "hillshade-shadow-color": "hsla(210, 14%, 38%, 0.46)",
+        "hillshade-highlight-color": "hsla(45, 60%, 96%, 0.55)",
+        "hillshade-illumination-direction": 315,
+        "hillshade-exaggeration": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          4,
+          0.24,
+          9.5,
+          0.36
+        ]
+      },
+      "layout": {
+        "visibility": "visible"
+      },
+      "source": "rgb-tiles",
+      "maxzoom": 9.5,
       "minzoom": 0,
       "metadata": {
         "maptoolkit:legend": {
@@ -4395,8 +4438,10 @@
           [
             "zoom"
           ],
+          11,
+          0.07,
           12,
-          0.12,
+          0.14,
           13,
           0.22,
           14.5,
