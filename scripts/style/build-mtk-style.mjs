@@ -257,7 +257,13 @@ for (const l of base.layers) {
   // (re-authored small, shown near scale 1.0 — scaled-down big assets
   // blur). Capitals and towns only; villages/hamlets stay label-only
   // (advisor round 5 — that alone removes ~9 marks per view).
-  l.layout['icon-image'] = ['match', ['get', 'category'], ['capital', 'big_place'], 'wd-base:wd-dot', ''];
+  l.layout['icon-image'] = [
+    'match',
+    ['get', 'category'],
+    ['capital', 'big_place'],
+    'wd-base:wd-dot',
+    '',
+  ];
   // both must place, or neither shows — the no-orphan guarantee
   l.layout['icon-optional'] = false;
   l.layout['text-optional'] = false;
@@ -691,6 +697,15 @@ for (const id of ['road_path_urban', 'road_path_steps']) {
     4.5,
   ];
 }
+// mtk paints a WHITE blur halo under every path (road_path_blur) —
+// the 'white on trails' the user flagged. Dashes and dots must read
+// as pure dark ink (swisstopo); hide the halo entirely.
+layer('road_path_blur').layout = { ...layer('road_path_blur').layout, visibility: 'none' };
+// Ungraded plain paths: dotted (user call — 'if unsure better dot
+// them'; only explicit T1 easy-walking paths stay solid)
+layer('road_path').paint['line-dasharray'] = [0.1, 2];
+layer('road_path').layout = { ...layer('road_path').layout, 'line-cap': 'round', 'line-join': 'round' };
+
 // SAC difficulty is the line itself (user call: only easy walking is
 // solid; as demand grows the marks thin out). Dashed layers use BUTT
 // caps — round caps bridge the gaps and re-solidify the line; only the
@@ -876,6 +891,24 @@ for (const l of base.layers) {
     l.paint['text-color'] = [...DARK_LABEL];
     if (l.paint['text-halo-color']) l.paint['text-halo-color'] = 'rgba(242, 247, 244, 0.9)';
   }
+}
+// Mountain ranges & regions (the LINE labels) speak a SERIF italic —
+// swisstopo's convention for area features, the user's ask for a
+// second voice besides the Barlow city labels (glyphs: yarn gen:glyphs)
+for (const l of base.layers) {
+  if (l.type !== 'symbol' || !/^place_line_label_rank_\d$/.test(l.id)) continue;
+  const remap = f =>
+    f === 'Barlow Italic' ? 'Noto Serif Italic' : f === 'Barlow SemiBold Italic' ? 'Noto Serif Bold Italic' : f;
+  const walk = node =>
+    Array.isArray(node)
+      ? node[0] === 'literal'
+        ? ['literal', node[1].map(remap)]
+        : node.map(walk)
+      : typeof node === 'string'
+        ? remap(node)
+        : node;
+  l.layout['text-font'] = walk(l.layout['text-font'] ?? []);
+  l.layout['text-letter-spacing'] = 0.12;
 }
 
 // Park labels: mtk ranks parks like top places (r5-r10), so the generic
@@ -1106,24 +1139,26 @@ const CASING_WIDTH = [
   'interpolate',
   ['exponential', 2],
   ['zoom'],
+  // Ramp casings stay vestigial (user call: interchanges read as
+  // muddy double lines — swisstopo's ramps are near-edgeless)
   6,
-  byType(rampOr(0.5, 1), 1, 0, 0, 0, 0, 0),
+  byType(rampOr(0.2, 1), 1, 0, 0, 0, 0, 0),
   8,
-  byType(rampOr(0.8, 1.4), 1.4, 2.8, 0, 0, 0, 0),
+  byType(rampOr(0.3, 1.4), 1.4, 2.8, 0, 0, 0, 0),
   9,
-  byType(rampOr(1, 1.7), 1.7, 3.3, 2.7, 0, 0, 0),
+  byType(rampOr(0.4, 1.7), 1.7, 3.3, 2.7, 0, 0, 0),
   10,
-  byType(rampOr(1.2, 2), 2, 3.9, 3.1, 2.6, 0, 0),
+  byType(rampOr(0.5, 2), 2, 3.9, 3.1, 2.6, 0, 0),
   12,
-  byType(rampOr(2.75, 5.5), 5.5, 3.75, 3.5, 3.5, 0, 0),
+  byType(rampOr(1.1, 5.5), 5.5, 3.75, 3.5, 3.5, 0, 0),
   13,
-  byType(rampOr(3, 6), 6, 4, 3.75, 3.75, 0, 0),
+  byType(rampOr(1.2, 6), 6, 4, 3.75, 3.75, 0, 0),
   15,
-  byType(rampOr(5.5, 7), 7, 6.5, 6, 5, 0, 0),
+  byType(rampOr(2.2, 7), 7, 6.5, 6, 5, 0, 0),
   16,
-  byType(rampOr(9.6, 11), 11, 10, 9.5, 8.5, 0, 0),
+  byType(rampOr(3.9, 11), 11, 10, 9.5, 8.5, 0, 0),
   20,
-  byType(rampOr(103, 113), 113, 107, 103, 99, 0, 0),
+  byType(rampOr(41, 113), 113, 107, 103, 99, 0, 0),
 ];
 const CASING_BLUR = ['interpolate', ['linear'], ['zoom'], 7, 3, 8, 0.4];
 // line-gap-width: 0 — mtk's casings are hollow strokes tuned to mtk's
@@ -1144,17 +1179,20 @@ const MINOR_CASING_COLOR = [
   ['zoom'],
   13,
   'hsla(0, 0%, 60%, 0)',
+  // soft grey, not near-black: swisstopo's minor roads read as white
+  // lines with a gentle edge (user call — the dark edges were too
+  // aggressive when zoomed close)
   14.5,
-  '#3C3C3C',
+  '#B9B9B9',
 ];
 const MINOR_CASING_WIDTH = [
   'interpolate',
   ['exponential', 2],
   ['zoom'],
   13,
-  3.5,
+  2.6,
   15,
-  4,
+  3.4,
   16,
   8,
   20,

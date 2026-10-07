@@ -63,6 +63,22 @@ const STACKS = [
       ['barlow', 'barlow-latin-ext-600-italic.woff2'],
     ],
   },
+  // Mountain ranges/regions (advisor + user: distinguish from city
+  // labels — swisstopo uses a serif italic there)
+  {
+    fontstack: 'Noto Serif Italic',
+    fonts: [
+      ['noto-serif', 'noto-serif-latin-400-italic.woff2'],
+      ['noto-serif', 'noto-serif-latin-ext-400-italic.woff2'],
+    ],
+  },
+  {
+    fontstack: 'Noto Serif Bold Italic',
+    fonts: [
+      ['noto-serif', 'noto-serif-latin-700-italic.woff2'],
+      ['noto-serif', 'noto-serif-latin-ext-700-italic.woff2'],
+    ],
+  },
 ];
 
 for (const { fontstack, fonts } of STACKS) {

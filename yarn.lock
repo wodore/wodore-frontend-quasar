@@ -1809,6 +1809,11 @@
   resolved "https://registry.yarnpkg.com/@fontsource/barlow/-/barlow-5.3.0.tgz#a0dba34af073385c3deea92fc9b84eb0da40654a"
   integrity sha512-tGR0y6QObRtKv71MOth44222+mdNFM/ZWFWDV1VLzNbG4oK9PNRlyJzmkck4vHAi9ibHBXgt4SlY51amFP55CA==
 
+"@fontsource/noto-serif@^5.3.0":
+  version "5.3.0"
+  resolved "https://registry.yarnpkg.com/@fontsource/noto-serif/-/noto-serif-5.3.0.tgz#a7e9929bc98bb53bd65c8eb0c703f0ad8b913637"
+  integrity sha512-ZrMzjuQlBIcw+qma1slZQdU3YDJvrjLG+9CWU1bxSf3YTkucwqd3EYa/Kfo4Ts19w8IMTGAmtOE3d6wWlgnBtA==
+
 "@fontsource/roboto-condensed@^5.3":
   version "5.3.0"
   resolved "https://registry.yarnpkg.com/@fontsource/roboto-condensed/-/roboto-condensed-5.3.0.tgz#77335105a938e2f33c5a1911d5a5fdf46e09fa70"

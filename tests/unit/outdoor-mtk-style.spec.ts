@@ -119,13 +119,15 @@ describe('outdoor-mtk basemap style', () => {
       }
     };
     for (const l of style.layers) if (l.layout?.['text-font']) walk(l.layout['text-font']);
-    // every referenced font is Barlow or vendored Noto — no mtk Ysabeau
+    // every referenced font is Barlow or vendored Noto (incl. the
+    // serif voice for mountain ranges) — no mtk Ysabeau
     for (const f of used) {
-      expect(f, `unexpected font ${f}`).toMatch(/^(Barlow|Noto Sans) /);
+      expect(f, `unexpected font ${f}`).toMatch(/^(Barlow|Noto (Sans|Serif)) /);
     }
     // …and every used stack has PBFs on disk for the latin ranges
     expect(used.size).toBeGreaterThan(0);
     for (const f of used) {
+      if (f === '') continue;
       for (const range of ['0-255', '256-511']) {
         expect(
           existsSync(resolve(process.cwd(), 'public/styles/glyphs', f, `${range}.pbf`)),
@@ -182,8 +184,9 @@ describe('outdoor-mtk basemap style', () => {
     const minorCasing = style.layers.find(l => l.id === 'road_minor_casing')!;
     const casingW = minorCasing.paint['line-width'] as unknown[];
     expect(zoomValue(casingW, 16) - zoomValue(minorW, 16)).toBeGreaterThanOrEqual(1.8);
-    // Casing ink: near-black grey (swisstopo rgb(60,60,60) = #3C3C3C)
-    expect(JSON.stringify(minorCasing.paint['line-color'])).toContain('#3C3C3C');
+    // Casing ink: soft grey (swisstopo's minor roads: white lines with
+    // a gentle edge — the near-black edges were too aggressive)
+    expect(JSON.stringify(minorCasing.paint['line-color'])).toContain('#B9B9B9');
     // Paths + tracks use swisstopo ink, too
     for (const id of ['road_path', 'road_path_urban', 'wd-track']) {
       const col = JSON.stringify(style.layers.find(l => l.id === id)!.paint['line-color']);
