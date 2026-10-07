@@ -31,6 +31,10 @@ export default defineConfig({
     {
       name: 'interaction',
       testDir: './tests/interaction',
+      // NOTE: per-test fullyParallel was measured and REJECTED — on 2-core
+      // runners it starves map boot (20s canvas timeouts) and software-GL
+      // rendering becomes nondeterministic (off-by-one RGB in the chrome
+      // assertions). File-level parallelism at workers:4 is the ceiling.
       use: {
         viewport: { width: 390, height: 844 },
         isMobile: true,

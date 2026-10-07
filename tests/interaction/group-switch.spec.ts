@@ -11,8 +11,16 @@
  *   active  → its style layers exist on the map and are visible
  *   passive → its layers on the map (if any) are set to none
  */
-import { test, expect } from '@playwright/test';
-import { loadMap, tagTest, attachScreenshot, evalJSON, GET_MAP } from './helpers';
+import { test, expect } from './helpers';
+import {
+  waitForMapIdle,
+  waitForOverlayExpanded,
+  loadMap,
+  tagTest,
+  attachScreenshot,
+  evalJSON,
+  GET_MAP,
+} from './helpers';
 
 const OVERLAY_STATE_VS_MAP = `
 (() => {
@@ -54,7 +62,7 @@ test.describe('group switching updates the map', () => {
 
     // Expand so the group cycle button is reachable
     await page.evaluate('document.querySelector(".wd-ovl__more")?.click()');
-    await page.waitForTimeout(700);
+    await waitForMapIdle(page);
 
     // Seed: activate the first group row so the current group has a
     // KNOWN active layer — cycling back to it must re-add/keep it on the
@@ -68,7 +76,7 @@ test.describe('group switching updates the map', () => {
       );
       row?.click();
     });
-    await page.waitForTimeout(700);
+    await waitForMapIdle(page);
     const seeded = await evalJSON<{ mismatches: string[]; active: string[] }>(
       page,
       OVERLAY_STATE_VS_MAP
@@ -107,7 +115,7 @@ test.describe('group switching updates the map', () => {
     let sawSeededMemberActive = false;
     for (let i = 0; i < 3; i++) {
       await page.evaluate('document.querySelector(".wd-ovl__group-btn")?.click()');
-      await page.waitForTimeout(900);
+      await waitForMapIdle(page);
       const state = await evalJSON<{ mismatches: string[]; active: string[] }>(
         page,
         OVERLAY_STATE_VS_MAP
@@ -142,7 +150,7 @@ test.describe('group switching updates the map', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await loadMap(page);
     await page.evaluate('document.querySelector(".wd-ovl__more")?.click()');
-    await page.waitForTimeout(700);
+    await waitForMapIdle(page);
 
     // Open the title dropdown and pick a DIFFERENT group
     const picked = await page.evaluate(() => {
@@ -152,7 +160,7 @@ test.describe('group switching updates the map', () => {
       return true;
     });
     expect(picked, 'title dropdown button exists (expanded)').toBe(true);
-    await page.waitForTimeout(500);
+    await page.waitForSelector('.wd-ovl__group-menu .q-item', { timeout: 5_000 });
     const switched = await page.evaluate(() => {
       const pinia = document.querySelector('#q-app').__vue_app__.config.globalProperties.$pinia;
       const store = pinia._s.get('overlay');
@@ -165,7 +173,7 @@ test.describe('group switching updates the map', () => {
       return true;
     });
     expect(switched, 'dropdown lists other groups').toBe(true);
-    await page.waitForTimeout(900);
+    await waitForMapIdle(page);
 
     const changed = await page.evaluate(() => {
       const pinia = document.querySelector('#q-app').__vue_app__.config.globalProperties.$pinia;

@@ -2,8 +2,16 @@
  * Overlay interaction tests — expand/collapse, stays-open, closing-tap,
  * outside-click, attribution open/close, focus-mode entry guards.
  */
-import { test, expect } from '@playwright/test';
-import { loadMap, pinTheme, tagTest, attachScreenshot, evalJSON } from './helpers';
+import { test, expect } from './helpers';
+import {
+  waitForMapIdle,
+  waitForOverlayExpanded,
+  loadMap,
+  pinTheme,
+  tagTest,
+  attachScreenshot,
+  evalJSON,
+} from './helpers';
 
 const CONFIGS = [
   { theme: 'light', mode: 'mobile' },
@@ -25,9 +33,9 @@ test.describe('overlay interactions', () => {
       await pinTheme(page, theme);
 
       await page.evaluate('document.querySelector(".wd-ovl__more")?.click()');
-      await page.waitForTimeout(600);
+      await waitForMapIdle(page);
       await page.evaluate('document.querySelector(".wd-ovl__row")?.click()');
-      await page.waitForTimeout(600);
+      await waitForMapIdle(page);
 
       const stillExpanded = await evalJSON<boolean>(
         page,
@@ -48,7 +56,7 @@ test.describe('overlay interactions', () => {
       await pinTheme(page, theme);
 
       await page.evaluate('document.querySelector(".wd-ovl__more")?.click()');
-      await page.waitForTimeout(600);
+      await waitForMapIdle(page);
 
       if (mode === 'mobile') {
         await page.touchscreen.tap(60, 400);
@@ -62,7 +70,7 @@ test.describe('overlay interactions', () => {
           target?.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 60, clientY: 400 }));
         })()`);
       }
-      await page.waitForTimeout(1000);
+      await waitForMapIdle(page);
 
       const state = await evalJSON(
         page,
@@ -104,7 +112,13 @@ test.describe('attribution', () => {
       `(() => { const b = document.querySelector('.wd-attrib').getBoundingClientRect(); return { x: Math.round(b.x + b.width / 2), y: Math.round(b.y + b.height / 2) }; })()`
     );
     await page.touchscreen.tap(pt.x, pt.y);
-    await page.waitForTimeout(400);
+    await page
+      .waitForFunction(
+        '!document.querySelector(".wd-attrib").classList.contains("wd-attrib--open")',
+        null,
+        { timeout: 5_000 }
+      )
+      .catch(() => {});
 
     const open = await evalJSON(
       page,
@@ -127,7 +141,11 @@ test.describe('attribution', () => {
       `(() => { const b = document.querySelector('.wd-attrib--open .wd-attrib__i').getBoundingClientRect(); return { x: Math.round(b.x + b.width / 2), y: Math.round(b.y + b.height / 2) }; })()`
     );
     await page.touchscreen.tap(xpt.x, xpt.y);
-    await page.waitForTimeout(400);
+    await page.waitForFunction(
+      '!document.querySelector(".wd-attrib").classList.contains("wd-attrib--open")',
+      null,
+      { timeout: 5_000 }
+    );
 
     const closed = await evalJSON<boolean>(
       page,
@@ -148,7 +166,7 @@ test.describe('gesture disambiguation', () => {
     await page.touchscreen.tap(195, 420);
     await page.waitForTimeout(180);
     await page.touchscreen.tap(195, 420);
-    await page.waitForTimeout(900);
+    await waitForMapIdle(page);
 
     const focus = await evalJSON<boolean>(page, 'document.body.classList.contains("wd-map-focus")');
     await attachScreenshot(page, testInfo, 'gesture-double-tap');
@@ -165,7 +183,7 @@ test.describe('gesture disambiguation', () => {
       el.dispatchEvent(new PointerEvent('pointermove', { ...o, clientX: 200, clientY: 300, pointerId: 1 }));
       el.dispatchEvent(new PointerEvent('pointerup', { ...o, clientX: 200, clientY: 300, pointerId: 1 }));
     })()`);
-    await page.waitForTimeout(900);
+    await waitForMapIdle(page);
 
     const focus = await evalJSON<boolean>(page, 'document.body.classList.contains("wd-map-focus")');
     expect(focus).toBe(false);
@@ -181,7 +199,7 @@ test.describe('gesture disambiguation', () => {
       el.dispatchEvent(new PointerEvent('pointerup', { ...o, clientX: 150, clientY: 400, pointerId: 1 }));
       el.dispatchEvent(new PointerEvent('pointerup', { ...o, clientX: 240, clientY: 400, pointerId: 2 }));
     })()`);
-    await page.waitForTimeout(900);
+    await waitForMapIdle(page);
 
     const focus = await evalJSON<boolean>(page, 'document.body.classList.contains("wd-map-focus")');
     expect(focus).toBe(false);
@@ -190,7 +208,11 @@ test.describe('gesture disambiguation', () => {
   test('single tap enters focus', async ({ page }, testInfo) => {
     tagTest('light', 'mobile', 'gestures');
     await page.touchscreen.tap(195, 420);
-    await page.waitForTimeout(900);
+    // Focus mode applies after the double-tap disambiguation window —
+    // wait for the class itself, map idle resolves too early.
+    await page.waitForFunction('document.body.classList.contains("wd-map-focus")', null, {
+      timeout: 10_000,
+    });
 
     const focus = await evalJSON<boolean>(page, 'document.body.classList.contains("wd-map-focus")');
     await attachScreenshot(page, testInfo, 'gesture-single-tap-focus');

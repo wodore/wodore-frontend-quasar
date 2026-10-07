@@ -27,6 +27,11 @@ export default defineConfig({
           resultsDir: 'allure-results/unit',
         },
       ],
+      // JUnit XML on CI only — feeds the check-run annotations
+      // (mikepenz/action-junit-report) in test.yml: a GitLab-style test
+      // view without any external service. Allure itself is generated
+      // on demand from the uploaded results (allure-report.yml).
+      ...(process.env.CI ? [['junit', { outputFile: 'junit-results/unit.xml' }]] : []),
     ],
     coverage: {
       provider: 'v8',
