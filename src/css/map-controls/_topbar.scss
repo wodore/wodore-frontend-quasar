@@ -29,7 +29,7 @@
   display: flex;
   align-items: center;
   position: relative;
-  overflow: hidden; // clips the 2px progress bar into the stadium shape
+  overflow: hidden; // clips the 1px progress bar into the stadium shape
   height: 52px; // taller pill — the date hero needs presence
   background: var(--wd-ctl-bg);
   border: 1px solid var(--wd-ctl-border);
@@ -325,13 +325,13 @@ body.body--dark .wd-date-btn__icon {
   }
 }
 
-// ── Progress bar: 2px line on the pill's bottom edge ────────────────────
+// ── Progress bar: 1px line on the pill's bottom edge ────────────────────
 // Absolutely positioned INSIDE the pill (relative + overflow:hidden above)
 // so the stadium border clips its rounded ends. Quasar paints track and
 // bar both from currentColor — one low-alpha ink keeps the whole thing
 // subtle: Day = pine ink on the near-white pill, Night = mint on pine.
 // Day alpha sits higher (0.4 vs 0.3): the same alpha is perceptually
-// fainter on the light panel — this parity keeps both readable at 2px.
+// fainter on the light panel — this parity keeps both readable at 1px.
 .wd-topbar__progress {
   position: absolute;
   left: 0;
@@ -349,7 +349,7 @@ body.body--dark .wd-topbar__progress {
 // ── Enter/exit: fade + rise out of the bottom edge ──────────────────
 // Vue <transition name="wd-progress"> wraps the v-if element. Enter is
 // ease-out-quint (decelerating arrival, 200ms); exit is shorter and
-// ease-in (accelerating sink, 150ms) so "settled" feels crisp. The 2px
+// ease-in (accelerating sink, 150ms) so "settled" feels crisp. The 1px
 // translateY is the bar's own height — a directional birth from the edge
 // it rides, clipped into the pill by overflow:hidden. Opacity/transform
 // only; reduced motion drops the transition (the indeterminate sweep
@@ -364,7 +364,7 @@ body.body--dark .wd-topbar__progress {
 .wd-progress-enter-from,
 .wd-progress-leave-to {
   opacity: 0;
-  transform: translateY(2px);
+  transform: translateY(1px);
 }
 
 .wd-progress-leave-active {

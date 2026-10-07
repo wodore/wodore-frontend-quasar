@@ -451,7 +451,7 @@ body.capacitor .preview-badge {
         <!-- </svg> -->
         <!--</button>-->
 
-        <!-- API request progress — 2px line on the pill's bottom edge,
+        <!-- API request progress — 1px line on the pill's bottom edge,
              clipped by the stadium border (subtle translucent ink).
              Decorative: aria-hidden, no pointer events. Fades/rises in
              200ms, fades/sinks out 150ms; static under reduced motion. -->
@@ -459,7 +459,7 @@ body.capacitor .preview-badge {
           <q-linear-progress
             v-if="progressVisible"
             indeterminate
-            size="2px"
+            size="1px"
             aria-hidden="true"
             class="wd-topbar__progress"
           />
