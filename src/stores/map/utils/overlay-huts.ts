@@ -225,7 +225,11 @@ export const hutsStyle: StyleSpecification = {
   sources: {
     'wd-huts': {
       type: 'vector',
-      url: `${TILE_SERVER_URL}/huts`,
+      // Direct https tile template instead of the TileJSON url: martin
+      // behind a TLS-terminating proxy advertises http:// tile URLs in its
+      // TileJSON (it ignores X-Forwarded-Proto), and maplibre would hang on
+      // the mixed-content fetches - hut markers silently never rendered.
+      tiles: [`${TILE_SERVER_URL}/huts/{z}/{x}/{y}`],
       promoteId: 'slug',
     },
     'wd-bookings': {
