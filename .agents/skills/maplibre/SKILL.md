@@ -142,13 +142,16 @@ Overlays are **declarative configurations** that include:
   `ensureWorldUnderlay` (initial load) — final safety net where NO
   basemap has data. Capped at z7.
 - Country basemaps (`ch-swisstopo-full`, `oe-raster`; flagged
-  `countryOnly`) compose the DEFAULT world basemap beneath their own
-  layers (`withCountryFallback`, country-fallback.ts): the country
-  layers stop rendering below `COUNTRY_BASEMAP_MIN_ZOOM = 6` and the
-  default (wd-outdoor-base-mtk) shows instead — no runtime style
-  switching. `setBasemap` builds the merged style (async style fetch,
-  session-cached); onMapLoad re-applies when a country basemap was
-  restored from a previous session.
+  `countryOnly` + `bbox`) compose the DEFAULT world basemap beneath
+  their own layers (`withCountryFallback`, country-fallback.ts). The
+  country layers carry `minzoom: 6`; a `moveend` watcher in
+  basemap-store toggles visibility by camera position — outside the
+  bbox (or below z6) the default world map shows at every zoom, inside
+  it the country raster renders on top. No runtime style switching, no
+  hidden GPU work (MapLibre has no occlusion culling). `setBasemap`
+  builds the merged style (async style fetch, session-cached);
+  onMapLoad re-applies when a country basemap was restored from a
+  previous session.
 - Overlay layers are clamped to `OVERLAY_MIN_ZOOM = 5`
   (`src/stores/map/utils/map-constants.ts`, applied in `addOverlayLayer`
   and `transformStyle`) — overlays never render at planet scale and

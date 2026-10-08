@@ -2,39 +2,48 @@ import type { LayerSpecification, StyleSpecification } from 'maplibre-gl';
 
 /**
  * Country basemap fallback — regional basemaps (swisstopo pixel raster,
- * basemap.at) only ship tiles for their country. When the camera zooms
- * out past country scale they would show blank space / open ocean.
+ * basemap.at) only ship tiles for their country. Two gates decide which
+ * layer set renders:
  *
- * Fix: compose the country style ON TOP of the DEFAULT basemap style
- * (wd-outdoor-base-mtk, world-covering vector). The country layers get a
- * layer-level `minzoom`, the fallback layers a matching `maxzoom` — they
- * occupy disjoint zoom bands: below COUNTRY_BASEMAP_MIN_ZOOM the world
- * map shows, at and above it only the (cheap) country raster renders.
- * No runtime style switching, no hidden GPU work beneath opaque tiles.
+ * - ZOOM: the country layers carry a layer-level `minzoom` — zooming out
+ *   past country scale always shows the default world map (no whitish
+ *   low-zoom country tiles on the planet).
+ * - BOUNDING BOX: the basemap declares its country `bbox`; the store
+ *   watches the camera and toggles visibility on moveend. Outside the
+ *   bbox the default world map shows at EVERY zoom — inside it the
+ *   country raster renders on top (MapLibre has no occlusion culling,
+ *   so the fallback layers are hidden while the country tiles cover
+ *   them — zero hidden GPU/tile work).
+ *
  * The world raster underlay (world-underlay.ts) remains the final safety
  * net beneath everything.
  */
 
 /**
- * Zoom at which country basemap layers stop rendering (zooming out past
- * this crossfades into the default basemap). At country zoom and above
- * the country tiles cover their area; the default beneath only shows
- * where country tiles are missing (outside the country).
+ * Zoom at which country basemap layers start rendering (zooming out past
+ * this always shows the default basemap, regardless of position).
  */
 export const COUNTRY_BASEMAP_MIN_ZOOM = 6;
+
+export type CountryBbox = readonly [number, number, number, number]; // w, s, e, n
+
+/** Whether a camera center point is inside the country bounding box. */
+export function isCenterInBbox(
+  center: readonly [number, number], // [lng, lat]
+  bbox: CountryBbox
+): boolean {
+  const [lng, lat] = center;
+  return lng >= bbox[0] && lng <= bbox[2] && lat >= bbox[1] && lat <= bbox[3];
+}
 
 /**
  * Compose the country style above the default (fallback) style. Pure —
  * returns a new style; the country style keeps its name/sprite identity
  * for MapLibre diffing.
  *
- * The fallback layers are clamped to `maxzoom = COUNTRY_BASEMAP_MIN_ZOOM`:
- * MapLibre has NO occlusion culling — every visible layer renders every
- * frame even beneath opaque country tiles — so the world fallback renders
- * exactly where it is needed (below country scale) and costs nothing
- * above. Outside the country at high zoom the map shows its plain light
- * background instead (pre-fallback behavior; the country basemap is
- * explicitly country-scoped).
+ * The fallback layers keep their full zoom range — their visibility is
+ * runtime-gated by the bbox watcher (basemap-store). The country layers
+ * get the zoom floor here.
  */
 export function withCountryFallback(
   country: StyleSpecification,
@@ -45,27 +54,17 @@ export function withCountryFallback(
   const countryLayers = (country.layers ?? []).map(layer =>
     clampLayerMinZoom(layer, COUNTRY_BASEMAP_MIN_ZOOM)
   );
-  // Fallback layers stop rendering AT country scale (no hidden GPU work
-  // beneath the opaque country tiles above it).
-  const fallbackLayers = (fallback.layers ?? []).map(layer =>
-    clampLayerMaxZoom(layer, COUNTRY_BASEMAP_MIN_ZOOM)
-  );
 
   return {
     ...country,
     glyphs: fallback.glyphs ?? country.glyphs,
     sprite: fallback.sprite ?? country.sprite,
     sources: { ...fallback.sources, ...country.sources },
-    layers: [...fallbackLayers, ...countryLayers],
+    layers: [...(fallback.layers ?? []), ...countryLayers],
   };
 }
 
 function clampLayerMinZoom(layer: LayerSpecification, minZoom: number): LayerSpecification {
   if ((layer.minzoom ?? 0) >= minZoom) return layer;
   return { ...layer, minzoom: minZoom } as LayerSpecification;
-}
-
-function clampLayerMaxZoom(layer: LayerSpecification, maxZoom: number): LayerSpecification {
-  if ((layer.maxzoom ?? Infinity) <= maxZoom) return layer;
-  return { ...layer, maxzoom: maxZoom } as LayerSpecification;
 }

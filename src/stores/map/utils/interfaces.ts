@@ -26,8 +26,12 @@ export interface BasemapSwitchItem {
   /** Country-scale basemap: tiles only cover one country. When composed
    *  into the map, the DEFAULT basemap (wd-outdoor-base-mtk) is merged
    *  beneath and the country layers stop rendering below
-   *  COUNTRY_BASEMAP_MIN_ZOOM (see country-fallback.ts). */
+   *  COUNTRY_BASEMAP_MIN_ZOOM or outside `bbox` — whichever hits first
+   *  (see country-fallback.ts). */
   countryOnly?: boolean;
+  /** [west, south, east, north] — tile coverage of the country basemap
+   *  (slightly padded beyond the border so border strips stay covered). */
+  bbox?: [number, number, number, number];
 }
 
 export interface OverlaySwitchItem {

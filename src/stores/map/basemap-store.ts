@@ -10,7 +10,11 @@ import { getGPUTier } from '@pmndrs/detect-gpu';
 import { useOverlayStore } from './overlay-store';
 import { withOverlayMinZoom, GLOBE_SKY } from './utils/map-constants';
 import { withWorldUnderlay } from './utils/world-underlay';
-import { withCountryFallback } from './utils/country-fallback';
+import {
+  withCountryFallback,
+  isCenterInBbox,
+  COUNTRY_BASEMAP_MIN_ZOOM,
+} from './utils/country-fallback';
 import { StyleSpecification } from 'maplibre-gl';
 import { i18n, currentLocale } from '@services/locale';
 import { getEnv } from '@services/runtimeEnv';
@@ -191,6 +195,50 @@ export const useBasemapStore = defineStore('basemap', () => {
     return undefined;
   }
 
+  // ── Country basemap bbox visibility ─────────────────────────────────
+  // Layer ids of the ACTIVE merged country style; a moveend watcher flips
+  // visibility between the country raster (inside the bbox at country
+  // zoom) and the default world fallback (everything else). See
+  // country-fallback.ts.
+  let countryLayerIds: string[] = [];
+  let fallbackLayerIds: string[] = [];
+  let countryBbox: [number, number, number, number] | undefined;
+  let lastCountryVisible: boolean | undefined;
+  let lastFallbackVisible: boolean | undefined;
+  let countryWatcherRegistered = false;
+
+  function registerCountryVisibilityWatcher(): void {
+    if (countryWatcherRegistered) return;
+    countryWatcherRegistered = true;
+    mapRef.map?.on('moveend', syncCountryFallbackVisibility);
+  }
+
+  function syncCountryFallbackVisibility(): void {
+    const map = mapRef.map;
+    if (!map || countryBbox === undefined) return;
+    if (countryLayerIds.length === 0 && fallbackLayerIds.length === 0) return;
+    const center = map.getCenter();
+    const inBbox = isCenterInBbox([center.lng, center.lat], countryBbox);
+    const countryVisible = inBbox;
+    const fallbackVisible = !inBbox || map.getZoom() < COUNTRY_BASEMAP_MIN_ZOOM;
+    if (countryVisible !== lastCountryVisible) {
+      for (const id of countryLayerIds) {
+        if (map.getLayer(id)) {
+          map.setLayoutProperty(id, 'visibility', countryVisible ? 'visible' : 'none');
+        }
+      }
+      lastCountryVisible = countryVisible;
+    }
+    if (fallbackVisible !== lastFallbackVisible) {
+      for (const id of fallbackLayerIds) {
+        if (map.getLayer(id)) {
+          map.setLayoutProperty(id, 'visibility', fallbackVisible ? 'visible' : 'none');
+        }
+      }
+      lastFallbackVisible = fallbackVisible;
+    }
+  }
+
   /** Select a basemap. `persist=false` switches without saving the
    * selection — used by the automatic MapTiler-auth fallback so the next
    * session retries the user's chosen basemap instead of starting on the
@@ -216,20 +264,36 @@ export const useBasemapStore = defineStore('basemap', () => {
     }
 
     // Country basemaps (CH/AT raster): compose the DEFAULT world basemap
-    // beneath the country layers, and stop the country layers below
-    // COUNTRY_BASEMAP_MIN_ZOOM — zooming out past country scale shows the
-    // default world map instead of blank space / open ocean
-    // (see country-fallback.ts)
+    // beneath the country layers and gate the country layers by zoom +
+    // bounding box — zooming out past country scale or panning outside
+    // the bbox shows the default world map instead of blank space / open
+    // ocean (see country-fallback.ts)
     let styleForMap: StyleSpecification | string = s.style;
     if (s.countryOnly) {
       const country = typeof s.style === 'string' ? await loadStyleObject(s.style) : s.style;
       const fallback = await loadDefaultStyleObject();
       if (country && fallback) {
         styleForMap = withCountryFallback(country, fallback);
+        countryLayerIds = country.layers.map(l => l.id);
+        fallbackLayerIds = fallback.layers.map(l => l.id);
+        countryBbox = s.bbox;
+        lastCountryVisible = undefined; // force re-apply after the swap
+        lastFallbackVisible = undefined;
+        registerCountryVisibilityWatcher();
+        if (mapRef.map) {
+          mapRef.map.once('style.load', syncCountryFallbackVisibility);
+        }
       } else if (country) {
         // Fallback style unavailable (fetch failed) — country tiles alone
         styleForMap = country;
+        countryLayerIds = [];
+        fallbackLayerIds = [];
+        countryBbox = undefined;
       }
+    } else {
+      countryLayerIds = [];
+      fallbackLayerIds = [];
+      countryBbox = undefined;
     }
     /*
      * Use transformStyle to preserve custom layers/sources when switching basemaps
@@ -763,6 +827,7 @@ export const useBasemapStore = defineStore('basemap', () => {
         show: true, // raster topo stays selectable alongside the outdoor default
         active: false,
         countryOnly: true, // CH-only tiles — world fallback via default basemap
+        bbox: [5.7, 45.6, 10.9, 48.1], // CH + border strips (pixelkarte covers them)
         img: getImageUrl('swiss-raster.png'),
         style: swissTopoRasterStyle,
         layers: {
@@ -828,6 +893,7 @@ export const useBasemapStore = defineStore('basemap', () => {
         show: false,
         active: false,
         countryOnly: true, // AT-only tiles — world fallback via default basemap
+        bbox: [9.3, 46.3, 17.3, 49.1], // AT + border strips (basemap.at covers them)
         img: getImageUrl('oe-raster.png'),
         style: oeTopoRasterStyle,
         layers: {

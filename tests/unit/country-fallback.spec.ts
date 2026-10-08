@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import type { StyleSpecification } from 'maplibre-gl';
-import { COUNTRY_BASEMAP_MIN_ZOOM, withCountryFallback } from '@stores/map/utils/country-fallback';
+import {
+  COUNTRY_BASEMAP_MIN_ZOOM,
+  isCenterInBbox,
+  withCountryFallback,
+} from '@stores/map/utils/country-fallback';
 import { OVERLAY_MIN_ZOOM } from '@stores/map/utils/map-constants';
 
 const fallbackStyle = (): StyleSpecification => ({
@@ -46,7 +50,7 @@ describe('country-fallback', () => {
     expect(merged.name).toBe('ch-swisstopo-raster');
   });
 
-  it('splits the zoom bands: fallback below, country at and above', () => {
+  it('splits rendering: country layers get the zoom floor, fallback stays full-range', () => {
     const merged = withCountryFallback(countryStyle(), fallbackStyle());
 
     // country layers stop rendering below the country max zoom-out…
@@ -54,17 +58,25 @@ describe('country-fallback', () => {
     expect(chRaster?.minzoom).toBe(COUNTRY_BASEMAP_MIN_ZOOM);
     // layers that already start above the floor keep their own value
     expect(merged.layers.find(l => l.id === 'ch-overlay')?.minzoom).toBe(9);
-    // …and the fallback layers stop at country scale — MapLibre has no
-    // occlusion culling, so hidden layers would still cost GPU every frame
-    expect(merged.layers.find(l => l.id === 'bg')?.maxzoom).toBe(COUNTRY_BASEMAP_MIN_ZOOM);
-    expect(merged.layers.find(l => l.id === 'land')?.maxzoom).toBe(COUNTRY_BASEMAP_MIN_ZOOM);
+    // …the fallback keeps its full zoom range — its VISIBILITY is runtime-
+    // gated by the bbox watcher (basemap-store), not by a static maxzoom
+    expect(merged.layers.find(l => l.id === 'bg')?.maxzoom).toBeUndefined();
+    expect(merged.layers.find(l => l.id === 'land')?.maxzoom).toBeUndefined();
+    // existing fallback maxzooms are preserved
+    const fallback = fallbackStyle();
+    (fallback.layers[1] as Record<string, unknown>).maxzoom = 11;
+    const remerged = withCountryFallback(countryStyle(), fallback);
+    expect(remerged.layers.find(l => l.id === 'land')?.maxzoom).toBe(11);
   });
 
-  it('keeps tighter existing maxzooms of fallback layers', () => {
-    const fallback = fallbackStyle();
-    (fallback.layers[1] as Record<string, unknown>).maxzoom = 4;
-    const merged = withCountryFallback(countryStyle(), fallback);
-    expect(merged.layers.find(l => l.id === 'land')?.maxzoom).toBe(4);
+  it('tests camera centers against the country bounding box', () => {
+    const ch: [number, number, number, number] = [5.7, 45.6, 10.9, 48.1];
+
+    expect(isCenterInBbox([8.2, 46.6], ch)).toBe(true); // Berner Oberland
+    expect(isCenterInBbox([5.7, 45.6], ch)).toBe(true); // corner inclusive
+    expect(isCenterInBbox([13.4, 52.5], ch)).toBe(false); // Berlin
+    expect(isCenterInBbox([2.35, 48.85], ch)).toBe(false); // Paris
+    expect(isCenterInBbox([8.2, 48.3], ch)).toBe(false); // just north
   });
 
   it('resolves glyphs and sprite from the fallback style', () => {
