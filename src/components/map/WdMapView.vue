@@ -29,6 +29,8 @@ import {
 import mapDraw from '@services/draw';
 import { currentLocale } from '@services/locale';
 import { clientWodore } from '@clients/index';
+import { GLOBE_SKY, MAP_MIN_ZOOM } from '@stores/map/utils/map-constants';
+import { ensureWorldUnderlay } from '@stores/map/utils/world-underlay';
 
 // MapLibre v6 resolves its web worker via import.meta.url, which breaks under
 // Vite's dependency optimization: the rewritten worker URL 404s and vector
@@ -65,6 +67,12 @@ const DESKTOP_DRAWER_WIDTH_MEDIUM = 380;
 // syncAttributionChip) and tap-to-focus.
 const MOBILE_MAP_QUERY = '(max-width: 769px)';
 const isMobileMap = useMediaQuery(MOBILE_MAP_QUERY);
+
+// Below these zooms the globe limb is exposed and the dark space
+// backdrop fades in/out — hysteresis dead-band (ON ≤ 5.0, OFF ≥ 5.4)
+// prevents class thrash while pinching at the boundary (advisor review)
+const SPACE_BACKDROP_ZOOM_ON = 5.0;
+const SPACE_BACKDROP_ZOOM_OFF = 5.4;
 
 // Map layer IDs
 const HUT_LAYER_ID = 'wd-huts';
@@ -218,6 +226,50 @@ useResizeObserver(mapDiv, () => {
 function onMapLoad(e: MglEvent<'load'>) {
   collapseAutoExpandedAttribution();
   console.debug(`[onMapLoad] Maplibre version ${e.map.version} loaded`);
+
+  // Globe projection: world coverage when zoomed out (the camera shows the
+  // planet below ~z6 and smoothly transitions back to mercator around z12,
+  // so local views render exactly as before). Basemap switches preserve it
+  // via transformStyle, which injects the same projection into the style.
+  e.map.setProjection({ type: 'globe' });
+
+  // Atmosphere rim around the planet; fades out by z9 so tilted close-up
+  // views keep a daylight horizon. The dark space BACKDROP is CSS (see
+  // .maplibregl-canvas-container below). Basemap switches carry the sky
+  // via transformStyle (GLOBE_SKY), same as the projection.
+  e.map.setSky(GLOBE_SKY);
+
+  // World underlay (cheap colored OSM raster) below the basemap layers —
+  // regional basemaps (swisstopo/basemap.at raster) leave the rest of the
+  // planet blank; the underlay shows through those gaps (basemap switches
+  // get it via transformStyle / withWorldUnderlay)
+  ensureWorldUnderlay(e.map);
+
+  // Country basemap restored from a previous session: the raw initial
+  // style carries no world fallback (composing it needs an async style
+  // fetch) — re-apply the active basemap once, which merges the default
+  // beneath the country layers (see setBasemap / country-fallback.ts)
+  const activeBasemap = basemapStore.getBasemap();
+  if (activeBasemap?.countryOnly) {
+    void basemapStore.setBasemap(activeBasemap, true);
+  }
+
+  // Space backdrop gate: the dark backdrop (.wd-map-space — an opacity-
+  // faded gradient layer, see SCSS below) only applies once the camera is
+  // far enough out to expose the planet limb; during app/map load and at
+  // normal zooms the wrapper keeps its light base color instead of
+  // flashing black
+  const updateSpaceBackdrop = () => {
+    const container = e.map.getContainer();
+    const zoom = e.map.getZoom();
+    if (container.classList.contains('wd-map-space')) {
+      if (zoom >= SPACE_BACKDROP_ZOOM_OFF) container.classList.remove('wd-map-space');
+    } else if (zoom <= SPACE_BACKDROP_ZOOM_ON) {
+      container.classList.add('wd-map-space');
+    }
+  };
+  updateSpaceBackdrop();
+  e.map.on('zoom', updateSpaceBackdrop);
 
   // Dev-only handle for debugging and e2e tests (map.project for exact
   // marker tap positions). Stripped from production behavior by the guard.
@@ -1260,6 +1312,52 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
 <style lang="scss">
 //@import 'vue-maplibre-gl/dist/vue-maplibre-gl.css';
 
+// Space around the globe: the WebGL canvas is transparent outside the
+// planet, so the map wrapper doubles as the sky. Design (advisor review:
+// Google Earth / Apple Maps converge on the same): a static blue-black
+// radial vignette anchored to the VIEWPORT — no stars (decoration, and
+// paint cost on software GL), identical in day and night themes.
+//
+// Implementation notes:
+// - The gradient lives on a ::before LAYER and fades via OPACITY:
+//   background-color/background-image cannot tween between a flat color
+//   and a gradient, opacity on a static layer is GPU-composited and
+//   cheap. The pseudo-element paints below the canvas (preceding box in
+//   the same stacking context).
+// - The wrapper keeps a permanent light base color — that is what kills
+//   the black flash while the app/map loads.
+// - GATED by camera zoom (.wd-map-space toggled in onMapLoad, hysteresis
+//   ON ≤ 5.0 / OFF ≥ 5.4): dark only once the planet limb is exposed.
+.wd-map-fill .maplibregl-map {
+  background-color: #f6f9f7;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 400ms ease;
+    background-image: radial-gradient(
+      ellipse 90% 90% at 50% 48%,
+      #0b1726 0%,
+      #060d16 55%,
+      #02040a 100%
+    );
+  }
+
+  &.wd-map-space::before {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wd-map-fill .maplibregl-map::before {
+    transition-duration: 1ms;
+  }
+}
+
 .maplibregl-control-container {
   // from https://github.com/quasarframework/quasar/blob/dev/ui/src/components/layout/QLayout.sass .q-body--layout-animate .q-page-sticky
   //@extend .q-body--layout-animate, .q-page-sticky; // not found
@@ -1296,9 +1394,7 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
         :bearing-snap="15"
         :center="mapCenter"
         :attribution-control="false"
-        :min-zoom="7"
-        :max-zoom="20"
-        :max-bounds="[3.6, 43, 18.7, 49.7]"
+        :min-zoom="MAP_MIN_ZOOM"
         :max-tile-cache-size="400"
         :max-parallel-image-requests="32"
         :render-world-copies="false"

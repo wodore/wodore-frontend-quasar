@@ -8,6 +8,13 @@ import { Platform } from 'quasar';
 import { storageGet, storageSet } from '@services/storage';
 import { getGPUTier } from '@pmndrs/detect-gpu';
 import { useOverlayStore } from './overlay-store';
+import { withOverlayMinZoom, GLOBE_SKY } from './utils/map-constants';
+import { withWorldUnderlay } from './utils/world-underlay';
+import {
+  withCountryFallback,
+  isCenterInBbox,
+  COUNTRY_BASEMAP_MIN_ZOOM,
+} from './utils/country-fallback';
 import { StyleSpecification } from 'maplibre-gl';
 import { i18n, currentLocale } from '@services/locale';
 import { getEnv } from '@services/runtimeEnv';
@@ -88,7 +95,42 @@ function prewarmOutdoorMtk(): void {
   for (const u of MTK_STATIC_URLS) void fetch(u, { mode: 'cors' }).catch(() => undefined);
 }
 
+/** Fetched default-basemap style object, shared by every country-basemap
+ *  composition (cached for the session — the style changes at most per
+ *  deploy, see STYLE_VERSION). */
+let defaultStylePromise: Promise<StyleSpecification | null> | null = null;
+
+/** Fetch a style URL into an object (assets resolved against the URL).
+ *  Returns null on failure — callers degrade to the unmerged style. */
+async function loadStyleObject(styleUrl: string): Promise<StyleSpecification | null> {
+  try {
+    const res = await fetch(styleUrl);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const styleObj = (await res.json()) as StyleSpecification;
+    return {
+      ...styleObj,
+      ...absoluteStyleAssets(styleObj, styleUrl),
+    } as StyleSpecification;
+  } catch (error) {
+    console.warn(`[basemap] Style fetch failed (${styleUrl}):`, error);
+    return null;
+  }
+}
+
+/** The DEFAULT basemap's style object (wd-outdoor-base-mtk) — the world
+ *  fallback merged beneath country basemaps (see country-fallback.ts). */
+function loadDefaultStyleObject(): Promise<StyleSpecification | null> {
+  if (!defaultStylePromise) {
+    defaultStylePromise = loadStyleObject(mtkStylePath());
+  }
+  return defaultStylePromise;
+}
+
 const t = i18n.global.t;
+
+/** The default world basemap — also the fallback composed beneath
+ *  country basemaps (see country-fallback.ts). */
+const DEFAULT_BASEMAP_NAME = 'wd-outdoor-base-mtk';
 
 const swissTopoRasterStyle = getRasterStyle({
   name: 'ch-swisstopo-raster',
@@ -153,11 +195,56 @@ export const useBasemapStore = defineStore('basemap', () => {
     return undefined;
   }
 
+  // ── Country basemap bbox visibility ─────────────────────────────────
+  // Layer ids of the ACTIVE merged country style; a moveend watcher flips
+  // visibility between the country raster (inside the bbox at country
+  // zoom) and the default world fallback (everything else). See
+  // country-fallback.ts.
+  let countryLayerIds: string[] = [];
+  let fallbackLayerIds: string[] = [];
+  let countryBbox: [number, number, number, number] | undefined;
+  let countryMinZoom = COUNTRY_BASEMAP_MIN_ZOOM;
+  let lastCountryVisible: boolean | undefined;
+  let lastFallbackVisible: boolean | undefined;
+  let countryWatcherRegistered = false;
+
+  function registerCountryVisibilityWatcher(): void {
+    if (countryWatcherRegistered) return;
+    countryWatcherRegistered = true;
+    mapRef.map?.on('moveend', syncCountryFallbackVisibility);
+  }
+
+  function syncCountryFallbackVisibility(): void {
+    const map = mapRef.map;
+    if (!map || countryBbox === undefined) return;
+    if (countryLayerIds.length === 0 && fallbackLayerIds.length === 0) return;
+    const center = map.getCenter();
+    const inBbox = isCenterInBbox([center.lng, center.lat], countryBbox);
+    const countryVisible = inBbox;
+    const fallbackVisible = !inBbox || map.getZoom() < countryMinZoom;
+    if (countryVisible !== lastCountryVisible) {
+      for (const id of countryLayerIds) {
+        if (map.getLayer(id)) {
+          map.setLayoutProperty(id, 'visibility', countryVisible ? 'visible' : 'none');
+        }
+      }
+      lastCountryVisible = countryVisible;
+    }
+    if (fallbackVisible !== lastFallbackVisible) {
+      for (const id of fallbackLayerIds) {
+        if (map.getLayer(id)) {
+          map.setLayoutProperty(id, 'visibility', fallbackVisible ? 'visible' : 'none');
+        }
+      }
+      lastFallbackVisible = fallbackVisible;
+    }
+  }
+
   /** Select a basemap. `persist=false` switches without saving the
    * selection — used by the automatic MapTiler-auth fallback so the next
    * session retries the user's chosen basemap instead of starting on the
    * fallback. */
-  function setBasemap(s: BasemapSwitchItem, force = false, persist = true): boolean {
+  async function setBasemap(s: BasemapSwitchItem, force = false, persist = true): Promise<boolean> {
     const basemapStyle = getBasemap();
     if (basemapStyle !== undefined && s.name == basemapStyle.name && !force) {
       console.debug('Active baselayer is already set.');
@@ -171,10 +258,46 @@ export const useBasemapStore = defineStore('basemap', () => {
     // Weak GPUs: drop the second ambient-occlusion pass after the style
     // loads (the heavy ao_max/dramatic passes are already removed from
     // the built style for everyone).
-    if (s.name === 'wd-outdoor-base-mtk' && weakGpu) {
+    if (s.name === DEFAULT_BASEMAP_NAME && weakGpu) {
       mapRef.map?.once('style.load', () => {
         mapRef.map?.setLayoutProperty('relief_hillshade_ao_med', 'visibility', 'none');
       });
+    }
+
+    // Country basemaps (CH/AT raster): compose the DEFAULT world basemap
+    // beneath the country layers and gate the country layers by zoom +
+    // bounding box — zooming out past country scale or panning outside
+    // the bbox shows the default world map instead of blank space / open
+    // ocean (see country-fallback.ts)
+    let styleForMap: StyleSpecification | string = s.style;
+    if (s.countryOnly) {
+      const country = typeof s.style === 'string' ? await loadStyleObject(s.style) : s.style;
+      const fallback = await loadDefaultStyleObject();
+      if (country && fallback) {
+        styleForMap = withCountryFallback(country, fallback, s.countryMinZoom);
+        countryLayerIds = country.layers.map(l => l.id);
+        fallbackLayerIds = fallback.layers.map(l => l.id);
+        countryBbox = s.bbox;
+        countryMinZoom = s.countryMinZoom ?? COUNTRY_BASEMAP_MIN_ZOOM;
+        lastCountryVisible = undefined; // force re-apply after the swap
+        lastFallbackVisible = undefined;
+        registerCountryVisibilityWatcher();
+        if (mapRef.map) {
+          mapRef.map.once('style.load', syncCountryFallbackVisibility);
+        }
+      } else if (country) {
+        // Fallback style unavailable (fetch failed) — country tiles alone
+        styleForMap = country;
+        countryLayerIds = [];
+        fallbackLayerIds = [];
+        countryBbox = undefined;
+        countryMinZoom = COUNTRY_BASEMAP_MIN_ZOOM;
+      }
+    } else {
+      countryLayerIds = [];
+      fallbackLayerIds = [];
+      countryBbox = undefined;
+      countryMinZoom = COUNTRY_BASEMAP_MIN_ZOOM;
     }
     /*
      * Use transformStyle to preserve custom layers/sources when switching basemaps
@@ -182,7 +305,7 @@ export const useBasemapStore = defineStore('basemap', () => {
      * Solution from: https://github.com/maplibre/maplibre-gl-js/issues/2587#issuecomment-1996106037
      */
     //mapRef.map?.style.setState(s.style, {
-    mapRef.map?.setStyle(s.style, {
+    mapRef.map?.setStyle(styleForMap, {
       diff: true,
       transformStyle: (previousStyle, nextStyle) => {
         // The returned object loses MapLibre's style-URL context — pin
@@ -290,6 +413,10 @@ export const useBasemapStore = defineStore('basemap', () => {
         // Set initial visibility based on overlay store state (deep clone to avoid mutations)
         const customLayersWithVisibility = customLayers.map(layer => {
           const visibility = layerVisibilityMap[layer.id];
+
+          // World/globe view: clamp overlay layers to the zoom floor (see
+          // map-constants.ts — same clamp as addOverlayLayer at runtime)
+          layer = withOverlayMinZoom(layer) as typeof layer;
 
           if (visibility !== undefined) {
             console.debug(`[transformStyle] Layer '${layer.id}' visibility set to '${visibility}'`);
@@ -469,12 +596,19 @@ export const useBasemapStore = defineStore('basemap', () => {
           `[transformStyle] Style transformation complete: ${orderedLayers.length} layers total, ${Object.keys(customSources).length} custom sources, ${customSprites.length} custom sprites`
         );
 
-        const transformedStyle = <StyleSpecification>{
+        const transformedStyle = withWorldUnderlay(<StyleSpecification>{
           ...nextStyle,
+          // World coverage: carry the globe projection across basemap
+          // switches (WdMapView sets it on initial load; without this the
+          // next style would silently revert to mercator)
+          projection: { type: 'globe' },
+          // Dark space around the globe (WdMapView sets it on initial
+          // load; same persistence rationale as the projection)
+          sky: GLOBE_SKY,
           sources: { ...nextStyle.sources, ...customSources },
           layers: orderedLayers,
           sprite: finalSprite,
-        };
+        });
         console.debug(
           `[transformStyle] Returning transformed style with ${Object.keys(transformedStyle.sources).length} sources, ${transformedStyle.layers.length} layers`,
           transformedStyle
@@ -696,6 +830,9 @@ export const useBasemapStore = defineStore('basemap', () => {
         label: t('basemaps.swiss_raster'),
         show: true, // raster topo stays selectable alongside the outdoor default
         active: false,
+        countryOnly: true, // CH-only tiles — world fallback via default basemap
+        countryMinZoom: 7, // pixelkarte hides one level earlier than the default floor
+        bbox: [5.7, 45.6, 10.9, 48.1], // CH + border strips (pixelkarte covers them)
         img: getImageUrl('swiss-raster.png'),
         style: swissTopoRasterStyle,
         layers: {
@@ -760,6 +897,8 @@ export const useBasemapStore = defineStore('basemap', () => {
         label: t('basemaps.austria_raster'),
         show: false,
         active: false,
+        countryOnly: true, // AT-only tiles — world fallback via default basemap
+        bbox: [9.3, 46.3, 17.3, 49.1], // AT + border strips (basemap.at covers them)
         img: getImageUrl('oe-raster.png'),
         style: oeTopoRasterStyle,
         layers: {
@@ -804,7 +943,7 @@ export const useBasemapStore = defineStore('basemap', () => {
         // Saved name unknown (e.g. renamed basemap) — use the fresh-install
         // default too, not the first array entry (which needs a MapTiler key)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        basemapToSet = (basemaps as any[]).find(b => b.name === 'wd-outdoor-base-mtk');
+        basemapToSet = (basemaps as any[]).find(b => b.name === DEFAULT_BASEMAP_NAME);
       }
     } else {
       // No saved basemap: default to the Maptoolkit-based outdoor style
@@ -815,7 +954,7 @@ export const useBasemapStore = defineStore('basemap', () => {
       // mismatch between the store's declaration and the switch API.
       basemapToSet =
         (basemaps as unknown as Array<BasemapSwitchItem>).find(
-          b => b.name === 'wd-outdoor-base-mtk'
+          b => b.name === DEFAULT_BASEMAP_NAME
         ) || (basemaps as unknown as Array<BasemapSwitchItem>)[0];
     }
 
@@ -851,7 +990,7 @@ export const useBasemapStore = defineStore('basemap', () => {
     // Set the active basemap. A startup fallback is session-only (not
     // persisted) so the next session retries the user's chosen basemap.
     if (basemapToSet) {
-      setBasemap(basemapToSet, false, !sessionFallback);
+      void setBasemap(basemapToSet, false, !sessionFallback);
     }
   }
 

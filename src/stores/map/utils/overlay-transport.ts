@@ -43,7 +43,7 @@ const transportStopsLayerPaint: CircleLayerSpecification['paint'] = {
   'circle-stroke-width': ['interpolate', ['linear'], ['zoom'], 10, 0, 12, 1, 16, 2],
   //'circle-opacity': 0.6,
   'circle-radius': getRadius(),
-  'circle-opacity': ['interpolate', ['linear'], ['zoom'], 6, 0, 7, 0.3, 10, 0.6, 14, 1],
+  'circle-opacity': ['interpolate', ['linear'], ['zoom'], 4, 0, 5, 0.3, 8, 0.6, 12, 1],
 };
 
 export const transportStyle: StyleSpecification = {

@@ -73,15 +73,15 @@ const hutsLayerLayout: SymbolLayerSpecification['layout'] = {
 };
 
 const hutsLayerPaint: SymbolLayerSpecification['paint'] = {
-  'icon-opacity': ['interpolate', ['linear'], ['zoom'], 7, 0.7, 12, 0.8, 22, 0.85],
-  'text-opacity': ['step', ['zoom'], 0, 9, 1],
+  'icon-opacity': ['interpolate', ['linear'], ['zoom'], 5, 0.7, 10, 0.8, 22, 0.85],
+  'text-opacity': ['step', ['zoom'], 0, 7, 1],
   'text-halo-width': 2,
   'text-halo-color': '#ffffff',
   'text-translate': [
     'interpolate',
     ['linear'],
     ['zoom'],
-    9,
+    7,
     ['literal', [0, -6]],
     20,
     ['literal', [0, -40]],
@@ -125,7 +125,7 @@ function getAvailColors(day: number): ExpressionSpecification {
 const hutsOccupationLayerPaint = {
   'circle-color': getAvailColors(0),
   'circle-radius': ['interpolate', ['linear'], ['zoom'], 7, 4, 9, 10, 20, 60],
-  'circle-opacity': ['interpolate', ['linear'], ['zoom'], 6, 0.8, 10, 0.6, 11, 0.5, 13, 0],
+  'circle-opacity': ['interpolate', ['linear'], ['zoom'], 4, 0.8, 8, 0.6, 9, 0.5, 11, 0],
 } as CircleLayerSpecification['paint'];
 
 function getHutsOccupationDayLayout(day: number) {
@@ -198,8 +198,8 @@ function getHutsOccupationDayPaint(day: number) {
     'icon-translate': occTranslate(day),
     'text-translate': occTranslate(day),
     //'text-opacity': ['step', ['zoom'], 0, 12, 0.6],
-    'text-opacity': ['interpolate', ['linear'], ['zoom'], 11, 0, 12, 0.4, 14, 0.6],
-    'icon-opacity': ['interpolate', ['linear'], ['zoom'], 8, 0, 10, 0.8, 11, 1, 13, 1, 15, 0.7],
+    'text-opacity': ['interpolate', ['linear'], ['zoom'], 9, 0, 10, 0.4, 12, 0.6],
+    'icon-opacity': ['interpolate', ['linear'], ['zoom'], 6, 0, 8, 0.8, 9, 1, 11, 1, 13, 0.7],
     //'icon-opacity': ['step', ['zoom'], 0, 8, 1],
   };
 }
@@ -209,7 +209,7 @@ function hutsOccpationDetailLayer(day: number) {
     type: 'symbol',
     source: 'wd-bookings',
     //filter: hutsOccupationFilter,
-    minzoom: 8,
+    minzoom: 6,
     layout: getHutsOccupationDayLayout(day),
     paint: getHutsOccupationDayPaint(day),
   } as SymbolLayerSpecification;

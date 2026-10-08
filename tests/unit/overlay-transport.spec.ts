@@ -45,7 +45,7 @@ describe('transportStyle', () => {
     const stops = radius.filter((_, i) => i >= 3 && i % 2 === 1);
     const values = radius.filter((_, i) => i >= 4 && i % 2 === 0);
     expect(stops).toEqual([7, 9, 16]);
-    // zoom 7: train 3 / bus 2 / other 1; zoom 9: 4/3/3; zoom 16: 9/8/8
+    // zoom 7: train 3 / bus 2 / other 1; zoom 9: 4/3/3; zoom 16: 9/8/8 (radius geometry as designed — only visibility shifted)
     const typeValue = (expr: unknown[]) => {
       const caseExpr = expr as unknown[];
       // case: train, bus, other values at indices 2, 4, 5

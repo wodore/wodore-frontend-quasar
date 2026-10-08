@@ -28,10 +28,10 @@ describe('opacityLevels', () => {
     expect(expr[0]).toBe('interpolate');
     expect(expr[1]).toEqual(['linear']);
     expect(expr[2]).toEqual(['zoom']);
-    // stops: zoom 10 (zoomOut=0), 11 (zoomMain*0.8), 15 (zoomMain), 18 (zoomIn)
+    // stops: zoom 8 (zoomOut=0), 9 (zoomMain*0.8), 13 (zoomMain), 16 (zoomIn)
     const stops = expr.filter((_, i) => i >= 3 && i % 2 === 1);
-    expect(stops).toEqual([10, 11, 15, 18]);
-    // default zoomMain = 0.8 -> zoom 11 stop is 0.64, zoom 15 stop is 0.8
+    expect(stops).toEqual([8, 9, 13, 16]);
+    // default zoomMain = 0.8 -> zoom 9 stop is 0.64, zoom 13 stop is 0.8
     const values = expr.filter((_, i) => i >= 4 && i % 2 === 0);
     expect(values).toEqual([0, 0.8 * 0.8, 0.8, 0.3]);
   });

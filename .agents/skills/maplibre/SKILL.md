@@ -118,6 +118,54 @@ Overlays are **declarative configurations** that include:
 
 **See**: Overlay filter application in `src/stores/map/`
 
+### World Coverage (Globe Projection)
+
+**Configuration**: globe projection, no app-level zoom caps
+
+- `WdMapView` sets `map.setProjection({ type: 'globe' })` on load; the
+  camera shows the planet when zoomed out and transitions smoothly back
+  to mercator around z12.
+- Dark space backdrop: the canvas is transparent outside the planet — the
+  backdrop is a static blue-black radial vignette on a `::before` layer
+  of `.wd-map-fill .maplibregl-map`, faded via OPACITY (gradients can't
+  tween against a flat color). Gated by camera zoom with hysteresis
+  (`.wd-map-space`: ON ≤ z5.0, OFF ≥ z5.4) so loading and normal map use
+  keep the light `#f6f9f7` base — no black flash on open. `sky`
+  (`GLOBE_SKY` in map-constants.ts) only paints the atmosphere rim,
+  which fades out by z9. `transformStyle` carries projection + sky into
+  every basemap switch.
+- Camera floor: `MAP_MIN_ZOOM = 2` (planet stays comfortably in view);
+  no max zoom (sources overzoom to MapLibre's z22).
+- World underlay (`src/stores/map/utils/world-underlay.ts`): a cheap
+  colored OSM raster (tile.openstreetmap.org) merged below every
+  basemap via `withWorldUnderlay` (transformStyle) /
+  `ensureWorldUnderlay` (initial load) — final safety net where NO
+  basemap has data. Capped at z7.
+- Country basemaps (`ch-swisstopo-full`, `oe-raster`; flagged
+  `countryOnly` + `bbox`) compose the DEFAULT world basemap beneath
+  their own layers (`withCountryFallback`, country-fallback.ts). The
+  country layers carry `minzoom: 6` (swisstopo raster: 7, per-basemap
+  `countryMinZoom`); a `moveend` watcher in
+  basemap-store toggles visibility by camera position — outside the
+  bbox (or below z6) the default world map shows at every zoom, inside
+  it the country raster renders on top. No runtime style switching, no
+  hidden GPU work (MapLibre has no occlusion culling). `setBasemap`
+  builds the merged style (async style fetch, session-cached);
+  onMapLoad re-applies when a country basemap was restored from a
+  previous session.
+- Overlay layers are clamped to `OVERLAY_MIN_ZOOM = 5`
+  (`src/stores/map/utils/map-constants.ts`, applied in `addOverlayLayer`
+  and `transformStyle`) — overlays never render at planet scale and
+  reappear automatically when zooming back in. The overlay paint ramps
+  (opacity/size in overlay-*.ts) are aligned: overlays fade in from z5
+  (−2 levels vs the pre-globe app).
+- First-visit initial position: timezone-based guess
+  (`src/services/timezone-location.ts`) → region-level coordinates, no
+  permission/network. Lifecycle lives in `local-properties-store
+  .getInitialLocation()`: once the user moves the map the position is
+  stored (`source: 'user'`) and always restored; the guess only runs
+  while the position was never user-moved.
+
 ### Tile Cache Management
 
 **Configuration**:

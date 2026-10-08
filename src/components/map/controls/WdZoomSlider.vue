@@ -16,11 +16,15 @@
  */
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
+import { MAP_MIN_ZOOM } from '@stores/map/utils/map-constants';
 
 const mapRef = useMap();
 
-const MIN_ZOOM = 7;
-const MAX_ZOOM = 20;
+/** Map zoom range — floor keeps the globe comfortably in view (see
+ *  MAP_MIN_ZOOM); no app-level max: sources overzoom past their own
+ *  tile max up to MapLibre's z22. */
+const MIN_ZOOM = MAP_MIN_ZOOM;
+const MAX_ZOOM = 22;
 /** px of drag per full zoom level — lower = more aggressive */
 const PX_PER_LEVEL = 32;
 
