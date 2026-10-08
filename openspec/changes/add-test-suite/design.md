@@ -27,7 +27,7 @@
 
 ### 1. E2E runs locally against the real dev server
 
-**Choice**: Playwright specs target `yarn dev` on `:9000` with the real local backend; developer starts the dev server manually before running specs.
+**Choice**: Playwright specs target `pnpm dev` on `:9000` with the real local backend; developer starts the dev server manually before running specs.
 **Alternative**: Auto-started `webServer` in `playwright.config.ts`, or mocked API routes.
 
 The real dev server exercises the real API and tile providers, which is what we want for smoke tests today. Auto-start and mocking belong to the deferred "correct setup" phase. The precondition is documented in `AGENTS.md` and asserted in a spec-time check (fail fast with a clear message when nothing listens on the base URL).

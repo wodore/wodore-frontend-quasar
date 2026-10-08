@@ -77,12 +77,13 @@
 .wd-map-ctl-sticky,
 .wd-map-ctl-col,
 .wd-topbar,
-.wd-topbar__progress,
 .maplibregl-ctrl-top-right .maplibregl-ctrl-group,
 .maplibregl-ctrl-bottom-left .maplibregl-ctrl-group {
   opacity: 1;
   transform: none;
-  transition: opacity 0.3s cubic-bezier(0.2, 0, 0, 1), transform 0.3s cubic-bezier(0.2, 0, 0, 1);
+  transition:
+    opacity 0.3s cubic-bezier(0.2, 0, 0, 1),
+    transform 0.3s cubic-bezier(0.2, 0, 0, 1);
 }
 
 .maplibregl-ctrl-top-left .maplibregl-ctrl-scale {
@@ -96,22 +97,32 @@
 body.wd-map-focus {
   .wd-map-ctl-sticky,
   .wd-map-ctl-col {
-    opacity: 0; pointer-events: none; transform: translateX(80px);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(80px);
   }
-  .wd-topbar, .wd-topbar__progress {
-    opacity: 0; pointer-events: none; transform: translateY(-60px);
+  .wd-topbar {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-60px);
   }
   .maplibregl-ctrl-top-right .maplibregl-ctrl-group {
-    opacity: 0; pointer-events: none; transform: translateY(-60px);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-60px);
   }
   .maplibregl-ctrl-bottom-left .maplibregl-ctrl-group {
-    opacity: 0; pointer-events: none; transform: translateX(-60px);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-60px);
   }
   .maplibregl-ctrl-top-left .maplibregl-ctrl-scale {
     top: calc(12px + env(safe-area-inset-top, 0px));
   }
   .wd-focus-toggle {
-    opacity: 1; pointer-events: auto; transform: none;
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
     // Mobile: the exit lives bottom-right (where the overlay toggle
     // normally sits) — top-right belongs to nothing in focus mode
     @media (max-width: #{$breakpoint-sm}) {

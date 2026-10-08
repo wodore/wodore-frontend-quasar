@@ -53,9 +53,7 @@ export default boot(({ app, store }) => {
   const settings = useUserSettingsStore(store);
   const prefixRe = new RegExp(`^/(${LANG_PREFIXES.join('|')})(?:/|$)`);
   const pathLang =
-    typeof window !== 'undefined'
-      ? window.location.pathname.match(prefixRe)?.[1]
-      : undefined;
+    typeof window !== 'undefined' ? window.location.pathname.match(prefixRe)?.[1] : undefined;
   if (settings.hasStoredSettings) {
     initLocale(getStoredLocale(store));
   } else if (pathLang) {
@@ -70,7 +68,12 @@ export default boot(({ app, store }) => {
   // boot precedence below when no path prefix is present.
   if (typeof window !== 'undefined' && window.location.search.includes('lang=')) {
     const urlLang = new URL(window.location.href).searchParams.get('lang') ?? undefined;
-    if (urlLang && LANG_PREFIXES.includes(urlLang as Locale) && !settings.hasStoredSettings && !pathLang) {
+    if (
+      urlLang &&
+      LANG_PREFIXES.includes(urlLang as Locale) &&
+      !settings.hasStoredSettings &&
+      !pathLang
+    ) {
       setLocale(urlLang as Locale);
     }
   }

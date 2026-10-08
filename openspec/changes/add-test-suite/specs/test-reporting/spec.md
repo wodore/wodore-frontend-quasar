@@ -6,12 +6,12 @@ The project SHALL provide package scripts for running unit tests (`test:unit`), 
 
 #### Scenario: Unit test run
 
-- **WHEN** `yarn test:unit` is executed
+- **WHEN** `pnpm test:unit` is executed
 - **THEN** Vitest runs all specs under `tests/unit/` and writes Allure results to `allure-results/unit` (cleaned per run)
 
 #### Scenario: Report generation
 
-- **WHEN** `yarn allure:generate` is executed after test runs
+- **WHEN** `pnpm allure:generate` is executed after test runs
 - **THEN** a single Allure report combining `allure-results/unit` and `allure-results/e2e` is generated locally
 
 ### Requirement: Allure report posted on every PR

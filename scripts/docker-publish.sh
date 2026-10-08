@@ -71,7 +71,7 @@ export GIT_HASH=$GIT_HASH
 
 # Build the Docker image
 echo "Building Docker image..."
-yarn docker:build
+pnpm docker:build
 if [ $? -ne 0 ]; then
   echo "Error: Docker build failed. Aborting publish."
   exit 1

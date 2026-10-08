@@ -252,9 +252,7 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
         <q-icon name="wd-cloud-offline-outline" size="28px" />
       </div>
       <div class="wd-place-error__title text-h6 wd-ink-text">
-        {{
-          $t(placeErrorKind === 'offline' ? 'hut.load_error_offline_title' : 'hut.load_error')
-        }}
+        {{ $t(placeErrorKind === 'offline' ? 'hut.load_error_offline_title' : 'hut.load_error') }}
       </div>
       <p class="wd-place-error__hint text-body2 wd-ink-soft-text">
         {{ $t(placeErrorHintKey) }}
@@ -265,12 +263,7 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
       >
         {{ $t('error.code') }} {{ placeError.status }}
       </div>
-      <q-btn
-        unelevated
-        color="primary"
-        :label="$t('hut.load_error_retry')"
-        @click="refetchPlace"
-      />
+      <q-btn unelevated color="primary" :label="$t('hut.load_error_retry')" @click="refetchPlace" />
     </div>
 
     <!-- Content -->

@@ -45,9 +45,7 @@ export function getEnv(name: string): string | undefined {
   // expressions with literals and `process` is undefined, so this
   // branch is skipped.
   if (typeof process !== 'undefined' && process.env) {
-    return (process.env as unknown as Record<string, string | undefined>)[
-      name
-    ];
+    return (process.env as unknown as Record<string, string | undefined>)[name];
   }
   return undefined;
 }

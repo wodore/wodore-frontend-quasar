@@ -48,8 +48,14 @@ function selectBasemap(bm: { name: string }): void {
   // stays open — the owner closes it via outside-click or the toggle
 }
 
-const iconOpen = new URL('/src/assets/wodore-design/icons/export/basemap-switch.svg', import.meta.url).href;
-const iconClose = new URL('/src/assets/wodore-design/icons/export/basemap-switch-close.svg', import.meta.url).href;
+const iconOpen = new URL(
+  '/src/assets/wodore-design/icons/export/basemap-switch.svg',
+  import.meta.url
+).href;
+const iconClose = new URL(
+  '/src/assets/wodore-design/icons/export/basemap-switch-close.svg',
+  import.meta.url
+).href;
 </script>
 
 <template>

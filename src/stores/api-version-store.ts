@@ -41,7 +41,7 @@ export const useApiVersionStore = defineStore('apiVersion', () => {
       }
       const supported = (data.api.supported ?? []) as ApiVersionEntry[];
       check.value = classify(
-        supported.find((entry: ApiVersionEntry) => entry.version === PINNED_API_VERSION),
+        supported.find((entry: ApiVersionEntry) => entry.version === PINNED_API_VERSION)
       );
     } catch (err) {
       // Offline / old backend without the api block: no banner — the app

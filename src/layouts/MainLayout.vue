@@ -46,8 +46,8 @@ const router = useRouter();
 
 const isMobile = computed(() => $q.screen.lt.md);
 
-// API request progress (bottom of the header toolbar, replaces the
-// viewport-top QAjaxBar)
+// API request progress (bottom edge of the floating topbar pill, replaces
+// the viewport-top QAjaxBar)
 const { visible: progressVisible } = useRequestProgress();
 
 // Menu drawer state
@@ -450,6 +450,20 @@ body.capacitor .preview-badge {
         <!--   <path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6" /> -->
         <!-- </svg> -->
         <!--</button>-->
+
+        <!-- API request progress — 1px line on the pill's bottom edge,
+             clipped by the stadium border (subtle translucent ink).
+             Decorative: aria-hidden, no pointer events. Fades/rises in
+             200ms, fades/sinks out 150ms; static under reduced motion. -->
+        <transition name="wd-progress">
+          <q-linear-progress
+            v-if="progressVisible"
+            indeterminate
+            size="1px"
+            aria-hidden="true"
+            class="wd-topbar__progress"
+          />
+        </transition>
       </div>
 
       <!-- Desktop-only utilities: top-right chip cluster (8px radius) -->
@@ -473,14 +487,6 @@ body.capacitor .preview-badge {
         <component :is="Component" :key="route.path" />
       </router-view>
     </q-dialog>
-
-    <q-linear-progress
-      v-if="progressVisible"
-      indeterminate
-      color="accent-500"
-      size="3px"
-      class="wd-topbar__progress"
-    />
 
     <!-- MENU -->
     <q-drawer

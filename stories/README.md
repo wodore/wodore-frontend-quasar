@@ -19,13 +19,13 @@ stories/
 
 ```bash
 # Development server (with hot reload)
-yarn story:dev
+pnpm story:dev
 
 # Build static version
-yarn story:build
+pnpm story:build
 
 # Preview built version
-yarn story:preview
+pnpm story:preview
 ```
 
 ## Writing Stories
@@ -247,7 +247,7 @@ For components that heavily depend on stores and backend:
 
 ```bash
 # Use Vitest for component testing instead of Histoire
-yarn test:component
+pnpm test:component
 ```
 
 Vitest allows you to:

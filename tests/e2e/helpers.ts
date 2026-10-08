@@ -2,7 +2,7 @@
  * Shared helpers for the local e2e smoke suite.
  *
  * The suite runs against the REAL dev server (default http://localhost:9000,
- * started manually with `yarn dev`) and is intentionally NOT part of CI.
+ * started manually with `pnpm dev`) and is intentionally NOT part of CI.
  */
 import { APIRequestContext } from '@playwright/test';
 
@@ -27,7 +27,7 @@ export async function requireDevServer(): Promise<void> {
     const reason = error instanceof Error ? error.message : String(error);
     throw new Error(
       `Dev server not reachable at ${BASE_URL} (${reason}).\n` +
-        'The e2e suite runs against the real dev server — start it first with: yarn dev',
+        'The e2e suite runs against the real dev server — start it first with: pnpm dev',
       { cause: error }
     );
   }

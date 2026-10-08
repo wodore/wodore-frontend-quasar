@@ -2,8 +2,16 @@
  * Overlay interaction tests — expand/collapse, stays-open, closing-tap,
  * outside-click, attribution open/close, focus-mode entry guards.
  */
-import { test, expect } from '@playwright/test';
-import { loadMap, pinTheme, tagTest, attachScreenshot, evalJSON } from './helpers';
+import { test, expect } from './helpers';
+import {
+  waitForMapIdle,
+  waitForOverlayExpanded,
+  loadMap,
+  pinTheme,
+  tagTest,
+  attachScreenshot,
+  evalJSON,
+} from './helpers';
 
 const CONFIGS = [
   { theme: 'light', mode: 'mobile' },
@@ -18,20 +26,21 @@ test.describe('overlay interactions', () => {
       tagTest(theme, mode, 'overlay');
       test.setTimeout(90_000);
 
-      const vp = mode === 'mobile'
-        ? { width: 390, height: 844 }
-        : { width: 1440, height: 900 };
+      const vp = mode === 'mobile' ? { width: 390, height: 844 } : { width: 1440, height: 900 };
       await page.setViewportSize(vp);
 
       await loadMap(page);
       await pinTheme(page, theme);
 
       await page.evaluate('document.querySelector(".wd-ovl__more")?.click()');
-      await page.waitForTimeout(600);
+      await waitForMapIdle(page);
       await page.evaluate('document.querySelector(".wd-ovl__row")?.click()');
-      await page.waitForTimeout(600);
+      await waitForMapIdle(page);
 
-      const stillExpanded = await evalJSON<boolean>(page, '!!document.querySelector(".wd-ovl__box--expanded")');
+      const stillExpanded = await evalJSON<boolean>(
+        page,
+        '!!document.querySelector(".wd-ovl__box--expanded")'
+      );
       await attachScreenshot(page, testInfo, `${theme}-${mode}-expanded-selected`);
       expect(stillExpanded).toBe(true);
     });
@@ -40,16 +49,14 @@ test.describe('overlay interactions', () => {
       tagTest(theme, mode, 'overlay');
       test.setTimeout(90_000);
 
-      const vp = mode === 'mobile'
-        ? { width: 390, height: 844 }
-        : { width: 1440, height: 900 };
+      const vp = mode === 'mobile' ? { width: 390, height: 844 } : { width: 1440, height: 900 };
       await page.setViewportSize(vp);
 
       await loadMap(page);
       await pinTheme(page, theme);
 
       await page.evaluate('document.querySelector(".wd-ovl__more")?.click()');
-      await page.waitForTimeout(600);
+      await waitForMapIdle(page);
 
       if (mode === 'mobile') {
         await page.touchscreen.tap(60, 400);
@@ -63,12 +70,15 @@ test.describe('overlay interactions', () => {
           target?.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 60, clientY: 400 }));
         })()`);
       }
-      await page.waitForTimeout(1000);
+      await waitForMapIdle(page);
 
-      const state = await evalJSON(page, `(() => ({
+      const state = await evalJSON(
+        page,
+        `(() => ({
         closed: !document.querySelector('.wd-ovl__box--expanded'),
         focus: document.body.classList.contains('wd-map-focus'),
-      }))()`);
+      }))()`
+      );
       await attachScreenshot(page, testInfo, `${theme}-${mode}-closing-tap`);
       expect(state.closed).toBe(true);
       expect(state.focus).toBe(false);
@@ -84,40 +94,63 @@ test.describe('attribution', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await loadMap(page);
 
-    const state = await evalJSON(page, `(() => {
+    const state = await evalJSON(
+      page,
+      `(() => {
       const chip = document.querySelector('.wd-attrib');
       if (!chip) return { exists: false };
       const btn = chip.querySelector('.wd-attrib__i');
       return { exists: true, collapsed: !chip.classList.contains('wd-attrib--open') };
-    })()`);
+    })()`
+    );
     expect(state.exists).toBe(true);
     expect(state.collapsed).toBe(true);
 
     // Open via tap
-    const pt = await evalJSON<{ x: number; y: number }>(page,
-      `(() => { const b = document.querySelector('.wd-attrib').getBoundingClientRect(); return { x: Math.round(b.x + b.width / 2), y: Math.round(b.y + b.height / 2) }; })()`);
+    const pt = await evalJSON<{ x: number; y: number }>(
+      page,
+      `(() => { const b = document.querySelector('.wd-attrib').getBoundingClientRect(); return { x: Math.round(b.x + b.width / 2), y: Math.round(b.y + b.height / 2) }; })()`
+    );
     await page.touchscreen.tap(pt.x, pt.y);
-    await page.waitForTimeout(400);
+    await page
+      .waitForFunction(
+        '!document.querySelector(".wd-attrib").classList.contains("wd-attrib--open")',
+        null,
+        { timeout: 5_000 }
+      )
+      .catch(() => {});
 
-    const open = await evalJSON(page, `(() => {
+    const open = await evalJSON(
+      page,
+      `(() => {
       const chip = document.querySelector('.wd-attrib');
       const close = chip.querySelector('.wd-attrib__close');
       return {
         open: chip.classList.contains('wd-attrib--open'),
         closeVisible: close ? getComputedStyle(close).display !== 'none' : false,
       };
-    })()`);
+    })()`
+    );
     await attachScreenshot(page, testInfo, 'attribution-open');
     expect(open.open).toBe(true);
     expect(open.closeVisible).toBe(true);
 
     // Close via the × button
-    const xpt = await evalJSON<{ x: number; y: number }>(page,
-      `(() => { const b = document.querySelector('.wd-attrib--open .wd-attrib__i').getBoundingClientRect(); return { x: Math.round(b.x + b.width / 2), y: Math.round(b.y + b.height / 2) }; })()`);
+    const xpt = await evalJSON<{ x: number; y: number }>(
+      page,
+      `(() => { const b = document.querySelector('.wd-attrib--open .wd-attrib__i').getBoundingClientRect(); return { x: Math.round(b.x + b.width / 2), y: Math.round(b.y + b.height / 2) }; })()`
+    );
     await page.touchscreen.tap(xpt.x, xpt.y);
-    await page.waitForTimeout(400);
+    await page.waitForFunction(
+      '!document.querySelector(".wd-attrib").classList.contains("wd-attrib--open")',
+      null,
+      { timeout: 5_000 }
+    );
 
-    const closed = await evalJSON<boolean>(page, '!document.querySelector(".wd-attrib").classList.contains("wd-attrib--open")');
+    const closed = await evalJSON<boolean>(
+      page,
+      '!document.querySelector(".wd-attrib").classList.contains("wd-attrib--open")'
+    );
     expect(closed).toBe(true);
   });
 });
@@ -133,7 +166,7 @@ test.describe('gesture disambiguation', () => {
     await page.touchscreen.tap(195, 420);
     await page.waitForTimeout(180);
     await page.touchscreen.tap(195, 420);
-    await page.waitForTimeout(900);
+    await waitForMapIdle(page);
 
     const focus = await evalJSON<boolean>(page, 'document.body.classList.contains("wd-map-focus")');
     await attachScreenshot(page, testInfo, 'gesture-double-tap');
@@ -150,7 +183,7 @@ test.describe('gesture disambiguation', () => {
       el.dispatchEvent(new PointerEvent('pointermove', { ...o, clientX: 200, clientY: 300, pointerId: 1 }));
       el.dispatchEvent(new PointerEvent('pointerup', { ...o, clientX: 200, clientY: 300, pointerId: 1 }));
     })()`);
-    await page.waitForTimeout(900);
+    await waitForMapIdle(page);
 
     const focus = await evalJSON<boolean>(page, 'document.body.classList.contains("wd-map-focus")');
     expect(focus).toBe(false);
@@ -166,7 +199,7 @@ test.describe('gesture disambiguation', () => {
       el.dispatchEvent(new PointerEvent('pointerup', { ...o, clientX: 150, clientY: 400, pointerId: 1 }));
       el.dispatchEvent(new PointerEvent('pointerup', { ...o, clientX: 240, clientY: 400, pointerId: 2 }));
     })()`);
-    await page.waitForTimeout(900);
+    await waitForMapIdle(page);
 
     const focus = await evalJSON<boolean>(page, 'document.body.classList.contains("wd-map-focus")');
     expect(focus).toBe(false);
@@ -175,7 +208,11 @@ test.describe('gesture disambiguation', () => {
   test('single tap enters focus', async ({ page }, testInfo) => {
     tagTest('light', 'mobile', 'gestures');
     await page.touchscreen.tap(195, 420);
-    await page.waitForTimeout(900);
+    // Focus mode applies after the double-tap disambiguation window —
+    // wait for the class itself, map idle resolves too early.
+    await page.waitForFunction('document.body.classList.contains("wd-map-focus")', null, {
+      timeout: 10_000,
+    });
 
     const focus = await evalJSON<boolean>(page, 'document.body.classList.contains("wd-map-focus")');
     await attachScreenshot(page, testInfo, 'gesture-single-tap-focus');

@@ -67,7 +67,10 @@ interface WeatherCodeFields {
   symbol_night: { slug: string; url: string | null } | null;
 }
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-type NarrowedWeatherCode = Sparse<WeatherCodeFields, 'code' | 'slug' | 'description_day' | 'description_night' | 'symbol_day' | 'symbol_night'>;
+type NarrowedWeatherCode = Sparse<
+  WeatherCodeFields,
+  'code' | 'slug' | 'description_day' | 'description_night' | 'symbol_day' | 'symbol_night'
+>;
 
 interface WeatherCodeEntry {
   symbol_day?: { slug: string; url: string | null } | null;
@@ -271,7 +274,9 @@ export const useMeteoStore = defineStore('meteo', () => {
         query: {
           lang,
           collection,
-          fields: { weather_codes: 'code,slug,description_day,description_night,symbol_day,symbol_night' },
+          fields: {
+            weather_codes: 'code,slug,description_day,description_night,symbol_day,symbol_night',
+          },
         },
       },
     });

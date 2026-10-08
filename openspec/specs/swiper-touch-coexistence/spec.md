@@ -3,6 +3,7 @@
 ## Purpose
 
 Defines how horizontal Swiper sliders inside the mobile bottom sheet coexist with the sheet's vertical touch scrolling: Swiper must not claim or block vertical touch gestures that drive the sheet's scroll-snap expansion, while horizontal swipes keep working and desktop behavior stays unchanged.
+
 ## Requirements
 
 ### Requirement: Swiper must not block vertical touch scroll propagation

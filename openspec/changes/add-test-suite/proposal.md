@@ -5,7 +5,7 @@ The test tooling is half-installed but unused: Vitest and Playwright are wired t
 ## What Changes
 
 - Wire test and Allure scripts in `package.json` (`test:unit`, `test:e2e`, `allure:generate`, `allure:open`, `allure:clean`), replacing the echo stub
-- Add a **basic Playwright e2e smoke suite** (`tests/e2e/`, mobile-chrome project) that runs **locally against the real dev server** (`yarn dev` on :9000, real backend). Covers: map page renders, data-policy page, 404 catch-all, hut detail deep link (`/m/hut/:slug`), in-app navigation. Public routes only — no login flows
+- Add a **basic Playwright e2e smoke suite** (`tests/e2e/`, mobile-chrome project) that runs **locally against the real dev server** (`pnpm dev` on :9000, real backend). Covers: map page renders, data-policy page, 404 catch-all, hut detail deep link (`/m/hut/:slug`), in-app navigation. Public routes only — no login flows
 - Add a **small set of high-value unit tests** for pure logic that breaks the map/app when wrong: `overlay-huts.ts`, `overlay-transport.ts` (map overlays), `customRouteMode.ts` (route mode styling), `imageService.ts` (image URLs), `user-settings-store` / `local-properties-store` (persistence logic)
 - Add CI reporting: PR workflow runs lint + type-check + unit tests, generates the Allure report and posts it to the PR — mirroring `wodore-backend` `test.yml`. **E2E is NOT run in CI**
 - Update `AGENTS.md` with test commands and the local-e2e precondition (dev server running)

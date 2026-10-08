@@ -46,7 +46,8 @@ const message = computed(() => {
   const sunset =
     check.state === 'deprecated' || check.state === 'unsupported' ? check.entry?.sunset : null;
   const datePart = sunset ? ` (${d(new Date(sunset), 'short')})` : '';
-  const scope = variant.value === 'deprecated' ? 'api_version_deprecated' : 'api_version_unsupported';
+  const scope =
+    variant.value === 'deprecated' ? 'api_version_deprecated' : 'api_version_unsupported';
   return `${t(isNative ? `${scope}_native` : `${scope}_web`)}${datePart}`;
 });
 
@@ -64,7 +65,7 @@ async function hardReload(): Promise<void> {
         navigator.serviceWorker.addEventListener(
           'controllerchange',
           () => window.location.reload(),
-          { once: true },
+          { once: true }
         );
         reg.waiting.postMessage({ type: 'SKIP_WAITING' });
         return;

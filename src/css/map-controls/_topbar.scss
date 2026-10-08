@@ -28,6 +28,8 @@
   max-width: calc(100vw - 24px); // fullscreen button is hidden in normal view
   display: flex;
   align-items: center;
+  position: relative;
+  overflow: hidden; // clips the 1px progress bar into the stadium shape
   height: 52px; // taller pill — the date hero needs presence
   background: var(--wd-ctl-bg);
   border: 1px solid var(--wd-ctl-border);
@@ -287,7 +289,9 @@ body.body--dark .wd-date-btn__icon {
   color: $wd-day-ink;
   cursor: pointer;
   flex: none;
-  transition: background-color 0.12s ease, color 0.12s ease;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease;
 
   &:hover {
     background: rgba(128, 128, 128, 0.14);
@@ -323,12 +327,56 @@ body.body--dark .wd-date-btn__icon {
   }
 }
 
-// ── Progress bar rides below the pill ───────────────────────────────────
+// ── Progress bar: 1px line on the pill's bottom edge ────────────────────
+// Absolutely positioned INSIDE the pill (relative + overflow:hidden above)
+// so the stadium border clips its rounded ends. Quasar paints track and
+// bar both from currentColor — one low-alpha ink keeps the whole thing
+// subtle: Day = pine ink on the near-white pill, Night = mint on pine.
+// Day alpha sits higher (0.4 vs 0.3): the same alpha is perceptually
+// fainter on the light panel — this parity keeps both readable at 1px.
 .wd-topbar__progress {
-  position: fixed;
-  top: 0;
+  position: absolute;
   left: 0;
   right: 0;
+  bottom: 0;
   border-radius: 0;
-  z-index: 2100;
+  color: rgba(52, 103, 81, 0.4);
+  pointer-events: none;
+}
+
+body.body--dark .wd-topbar__progress {
+  color: rgba(169, 240, 210, 0.3);
+}
+
+// ── Enter/exit: fade + rise out of the bottom edge ──────────────────
+// Vue <transition name="wd-progress"> wraps the v-if element. Enter is
+// ease-out-quint (decelerating arrival, 200ms); exit is shorter and
+// ease-in (accelerating sink, 150ms) so "settled" feels crisp. The 1px
+// translateY is the bar's own height — a directional birth from the edge
+// it rides, clipped into the pill by overflow:hidden. Opacity/transform
+// only; reduced motion drops the transition (the indeterminate sweep
+// stays — it IS the state).
+.wd-progress-enter-active,
+.wd-progress-leave-active {
+  transition:
+    opacity 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.wd-progress-enter-from,
+.wd-progress-leave-to {
+  opacity: 0;
+  transform: translateY(1px);
+}
+
+.wd-progress-leave-active {
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.64, 0, 0.78, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wd-progress-enter-active,
+  .wd-progress-leave-active {
+    transition: none;
+  }
 }

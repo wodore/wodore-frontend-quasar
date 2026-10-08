@@ -6,13 +6,13 @@
  *   - compares against the reference on subsequent runs
  *   - produces a diff image on failure
  *
- * Update references: yarn test:snapshots-update
+ * Update references: pnpm test:snapshots-update
  *
  * Captures the FULL viewport width — the controls live at the right edge
  * but their visual context (what's beside them, the map margin) matters.
  */
-import { test, expect } from '@playwright/test';
-import { loadMap, pinTheme, tagTest } from './helpers';
+import { test, expect } from './helpers';
+import { waitForMapIdle, waitForOverlayExpanded, loadMap, pinTheme, tagTest } from './helpers';
 
 const STATES = [
   // Mobile
@@ -54,20 +54,20 @@ test.describe('visual regression', () => {
           break;
         case 'overlay-expanded':
           await page.evaluate('document.querySelector(".wd-ovl__more")?.click()');
-          await page.waitForTimeout(700);
+          await waitForMapIdle(page);
           break;
         case 'basemap-rail':
           await page.evaluate('document.querySelector(".wd-bm__toggle")?.click()');
-          await page.waitForTimeout(700);
+          await waitForMapIdle(page);
           break;
         case 'zoom-only':
           // close the overlay strip — zoom handle becomes visible
           await page.evaluate('document.querySelector(".wd-ovl__toggle")?.click()');
-          await page.waitForTimeout(500);
+          await waitForMapIdle(page);
           break;
         case 'focus-mode':
           await page.evaluate('document.querySelector(".wd-focus-toggle")?.click()');
-          await page.waitForTimeout(900);
+          await waitForMapIdle(page);
           break;
         case 'topbar':
           // just the top area

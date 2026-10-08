@@ -45,10 +45,10 @@ First, preview what will be included in the changelog:
 
 ```bash
 # Show unreleased changes that will be included
-yarn release --dry --unreleased
+pnpm release --dry --unreleased
 
 # Or show first N lines of the full changelog
-yarn release --dry --length 50
+pnpm release --dry --length 50
 ```
 
 This is useful to verify that:
@@ -62,7 +62,7 @@ This is useful to verify that:
 Run the release script:
 
 ```bash
-yarn release
+pnpm release
 ```
 
 The script will:
@@ -99,7 +99,7 @@ git push origin vX.Y.Z
 Or use the `--add-tag` flag to automatically tag and push:
 
 ```bash
-yarn release --add-tag
+pnpm release --add-tag
 ```
 
 #### 4. Automated Build and Publish
@@ -118,19 +118,19 @@ The `release.sh` script supports several options:
 
 ```bash
 # Preview release without making changes
-yarn release --dry --unreleased
+pnpm release --dry --unreleased
 
 # Preview first 50 lines of changelog
-yarn release --dry --length 50
+pnpm release --dry --length 50
 
 # Create release without committing (manual commit later)
-yarn release --no-commit
+pnpm release --no-commit
 
 # Create release and automatically tag + push
-yarn release --add-tag
+pnpm release --add-tag
 
 # Show help
-yarn release --help
+pnpm release --help
 ```
 
 ### Version Bumping
@@ -192,7 +192,7 @@ If you need to manually create a release without the script:
 NEW_VERSION=$(./node_modules/.bin/git-cliff --bumped-version | sed 's/v//')
 
 # 3. Update package.json
-yarn version --new-version $NEW_VERSION --no-git-tag-version
+pnpm version $NEW_VERSION --no-git-tag-version
 
 # 4. Review and edit CHANGELOG.md
 $EDITOR CHANGELOG.md
@@ -213,7 +213,7 @@ git push origin main v$NEW_VERSION
 This was a bug in earlier versions of the release script. Update to the latest version where git-cliff is called directly:
 
 ```bash
-# Should use direct binary path, not yarn run
+# Should use direct binary path, not pnpm run
 ./node_modules/.bin/git-cliff --bumped-version
 ```
 
@@ -256,15 +256,15 @@ Solution: Manually bump version in `package.json` or add appropriate PR labels.
 2. **Develop and test**
 
    ```bash
-   yarn dev
+   pnpm dev
    # Make changes, test locally
    ```
 
 3. **Ensure code quality**
 
    ```bash
-   yarn lint:fix
-   yarn format
+   pnpm lint:fix
+   pnpm format
    ```
 
 4. **Commit changes**
@@ -291,7 +291,7 @@ app run -p 8000
 
 # In frontend project
 cd ../wodore-frontend-quasar
-yarn gen:api-local
+pnpm gen:api-local
 
 # Commit the updated types
 git add src/clients/wodore_v1.d.ts
@@ -316,7 +316,7 @@ To manually add custom icons:
 cp my-icon.svg src/extras/icons/svg/source/
 
 # 2. Generate icon font
-yarn gen:icons
+pnpm gen:icons
 
 # 3. Use in components
 # <q-icon name="wd-my-icon" />
@@ -334,11 +334,11 @@ git commit -m "Add my-icon to custom icon set"
 
 ```bash
 # Development server
-yarn dev
+pnpm dev
 
 # Production build testing
-yarn build
-yarn serve
+pnpm build
+pnpm serve
 ```
 
 ### Browser Testing
@@ -354,10 +354,10 @@ Test in multiple browsers and modes:
 
 ```bash
 # Build PWA
-yarn build:pwa
+pnpm build:pwa
 
 # Serve locally
-yarn serve:pwa
+pnpm serve:pwa
 
 # Test PWA features:
 # - Install app
@@ -369,11 +369,11 @@ yarn serve:pwa
 
 ```bash
 # Build and run Docker container
-yarn docker:build
-yarn docker:run-dev
+pnpm docker:build
+pnpm docker:run-dev
 
 # Test with production environment
-yarn docker:run-prod
+pnpm docker:run-prod
 
 # Test environment variable replacement
 docker run -p 9000:8080 \
@@ -410,14 +410,14 @@ curl http://127.0.0.1:8000/v1/openapi.json
 rm -rf node_modules/.cache
 
 # Regenerate
-yarn gen:api-local
+pnpm gen:api-local
 ```
 
 #### Icons Not Showing
 
 ```bash
 # Regenerate icon font
-yarn gen:icons
+pnpm gen:icons
 
 # Check if icon exists in source
 ls src/extras/icons/svg/source/
@@ -430,7 +430,7 @@ ls src/extras/icons/svg/source/
 
 ```bash
 # Restart dev server after changing .env files
-# Ctrl+C, then yarn dev
+# Ctrl+C, then pnpm dev
 
 # Check which env files are loaded
 cat .env .env.local .env.dev .env.local.dev

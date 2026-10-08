@@ -248,7 +248,7 @@ const huts = ref<schemasWodore['Hut'][]>([]);
 
 ### Code Quality
 
-- [ ] Run `yarn lint` before committing
+- [ ] Run `pnpm lint` before committing
 - [ ] Run `npx vue-tsc --noEmit` to check TypeScript compilation
 - [ ] Check ESLint for all modified files: `npx eslint path/to/file.ts`
 - [ ] Fix all linting errors and warnings
@@ -273,7 +273,7 @@ npx eslint src/stores/user-settings-store.ts src/stores/local-properties-store.t
 npx eslint src/stores/user-settings-store.ts --fix
 
 # Full project check
-yarn lint
+pnpm lint
 ```
 
 **TypeScript Compilation:**

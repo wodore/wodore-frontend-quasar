@@ -69,7 +69,7 @@ Ground rules learned the hard way:
 11. **Cross-check new CSS class names against the icon-font namespace.**
    Icon fonts generate `.wd-<name>:before` rules — any UI class named
    like an icon (`wd-menu` on a card) collides. In this repo
-   `yarn gen:icons` now runs `scripts/scope-icon-selectors.mjs` (scopes
+   `pnpm gen:icons` now runs `scripts/scope-icon-selectors.mjs` (scopes
    glyphs to `<i>` elements + warns on collisions); never name a CSS
    class after an icon, and scope any legacy collisions with
    `:not(i)`.
@@ -79,7 +79,7 @@ Ground rules learned the hard way:
 If the repo has `scripts/visual-matrix.mjs` (Wodore frontend does), use it:
 
 ```bash
-yarn test:visual            # full matrix: states x themes x viewports
+pnpm test:visual            # full matrix: states x themes x viewports
 node scripts/visual-matrix.mjs --states home,hut --scheme dark --tag mobile
 ```
 

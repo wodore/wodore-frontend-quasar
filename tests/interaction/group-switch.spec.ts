@@ -11,8 +11,16 @@
  *   active  → its style layers exist on the map and are visible
  *   passive → its layers on the map (if any) are set to none
  */
-import { test, expect } from '@playwright/test';
-import { loadMap, tagTest, attachScreenshot, evalJSON, GET_MAP } from './helpers';
+import { test, expect } from './helpers';
+import {
+  waitForMapIdle,
+  waitForOverlayExpanded,
+  loadMap,
+  tagTest,
+  attachScreenshot,
+  evalJSON,
+  GET_MAP,
+} from './helpers';
 
 const OVERLAY_STATE_VS_MAP = `
 (() => {
@@ -54,18 +62,25 @@ test.describe('group switching updates the map', () => {
 
     // Expand so the group cycle button is reachable
     await page.evaluate('document.querySelector(".wd-ovl__more")?.click()');
-    await page.waitForTimeout(700);
+    await waitForMapIdle(page);
 
     // Seed: activate the first group row so the current group has a
     // KNOWN active layer — cycling back to it must re-add/keep it on the
     // map (the regression path: layers not touched since load)
     await page.evaluate(() => {
       const rows = [...document.querySelectorAll('.wd-ovl__rows .wd-ovl__row')];
-      const row = rows.find(r => !r.classList.contains('wd-ovl__row--other') && r.classList.contains('wd-ovl__row--passive'));
+      const row = rows.find(
+        r =>
+          !r.classList.contains('wd-ovl__row--other') &&
+          r.classList.contains('wd-ovl__row--passive')
+      );
       row?.click();
     });
-    await page.waitForTimeout(700);
-    const seeded = await evalJSON<{ mismatches: string[]; active: string[] }>(page, OVERLAY_STATE_VS_MAP);
+    await waitForMapIdle(page);
+    const seeded = await evalJSON<{ mismatches: string[]; active: string[] }>(
+      page,
+      OVERLAY_STATE_VS_MAP
+    );
     expect(seeded.mismatches).toEqual([]);
     const seedCount = seeded.active.length;
     expect(seedCount, 'seeded group has active layers').toBeGreaterThan(0);
@@ -79,7 +94,11 @@ test.describe('group switching updates the map', () => {
       const pinia = document.querySelector('#q-app').__vue_app__.config.globalProperties.$pinia;
       const store = pinia._s.get('overlay');
       const next = store.groupSettings.groups.find(
-        g => g.id !== store.groupSettings.activeGroupId && !g.removed && !g.hidden && g.layerSlugs.length > 0
+        g =>
+          g.id !== store.groupSettings.activeGroupId &&
+          !g.removed &&
+          !g.hidden &&
+          g.layerSlugs.length > 0
       );
       const member = next.layerSlugs.find(slug => {
         const o = store.overlays.find(x => x.name === slug);
@@ -96,7 +115,7 @@ test.describe('group switching updates the map', () => {
     let sawSeededMemberActive = false;
     for (let i = 0; i < 3; i++) {
       await page.evaluate('document.querySelector(".wd-ovl__group-btn")?.click()');
-      await page.waitForTimeout(900);
+      await waitForMapIdle(page);
       const state = await evalJSON<{ mismatches: string[]; active: string[] }>(
         page,
         OVERLAY_STATE_VS_MAP
@@ -104,25 +123,34 @@ test.describe('group switching updates the map', () => {
       await attachScreenshot(page, testInfo, `light-mobile-switch-${i}`);
       // Report the full mismatch list on failure — one broken layer is enough
       expect(state.mismatches, `after group switch #${i + 1}`).toEqual([]);
-      if (await page.evaluate('window.__seededMember && document.querySelector("#q-app").__vue_app__.config.globalProperties.$pinia._s.get("overlay").groupSettings.activeGroupId === window.__seededNextGroup')) {
+      if (
+        await page.evaluate(
+          'window.__seededMember && document.querySelector("#q-app").__vue_app__.config.globalProperties.$pinia._s.get("overlay").groupSettings.activeGroupId === window.__seededNextGroup'
+        )
+      ) {
         const memberActive = await page.evaluate(
           'window.__seededMember && document.querySelector("#q-app").__vue_app__.config.globalProperties.$pinia._s.get("overlay").overlays.find(o => o.name === window.__seededMember)?.active === true'
         );
         if (memberActive) sawSeededMemberActive = true;
       }
     }
-    expect(sawSeededMemberActive, 'the seeded next-group member became active on its group (exercising the add path)').toBe(true);
+    expect(
+      sawSeededMemberActive,
+      'the seeded next-group member became active on its group (exercising the add path)'
+    ).toBe(true);
     expect(seedCount, 'returned with the seeded group layers active').toBeGreaterThan(0);
   });
 
-  test('light-mobile: title dropdown switches groups, map stays in sync', async ({ page }, testInfo) => {
+  test('light-mobile: title dropdown switches groups, map stays in sync', async ({
+    page,
+  }, testInfo) => {
     tagTest('light', 'mobile', 'group-switch');
     test.setTimeout(90_000);
 
     await page.setViewportSize({ width: 390, height: 844 });
     await loadMap(page);
     await page.evaluate('document.querySelector(".wd-ovl__more")?.click()');
-    await page.waitForTimeout(700);
+    await waitForMapIdle(page);
 
     // Open the title dropdown and pick a DIFFERENT group
     const picked = await page.evaluate(() => {
@@ -132,7 +160,7 @@ test.describe('group switching updates the map', () => {
       return true;
     });
     expect(picked, 'title dropdown button exists (expanded)').toBe(true);
-    await page.waitForTimeout(500);
+    await page.waitForSelector('.wd-ovl__group-menu .q-item', { timeout: 5_000 });
     const switched = await page.evaluate(() => {
       const pinia = document.querySelector('#q-app').__vue_app__.config.globalProperties.$pinia;
       const store = pinia._s.get('overlay');
@@ -145,7 +173,7 @@ test.describe('group switching updates the map', () => {
       return true;
     });
     expect(switched, 'dropdown lists other groups').toBe(true);
-    await page.waitForTimeout(900);
+    await waitForMapIdle(page);
 
     const changed = await page.evaluate(() => {
       const pinia = document.querySelector('#q-app').__vue_app__.config.globalProperties.$pinia;
