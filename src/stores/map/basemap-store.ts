@@ -17,7 +17,7 @@ function mtkStylePath(): string {
   // Served by Martin (same tile server that serves huts/sprites) when
   // WODORE_TILE_SERVER_URL is set; falls back to the local public copy
   // for PR previews without Martin
-  const martinUrl = import.meta.env.WODORE_TILE_SERVER_URL as string | undefined;
+  const martinUrl = getEnv('WODORE_TILE_SERVER_URL');
   if (martinUrl) {
     return `${martinUrl.replace(/\/$/, '')}/style/outdoor-mtk`;
   }
