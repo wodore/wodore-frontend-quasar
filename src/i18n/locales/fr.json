@@ -423,7 +423,6 @@
     "swiss_raster": "Suisse Topo Raster",
     "satellite": "Satellite",
     "outdoor": "Plein air",
-    "austria_vector": "Autriche Topo Vector",
     "austria_raster": "Autriche Topo Raster",
     "outdoor_ofm": "Plein air (OSM)"
   },

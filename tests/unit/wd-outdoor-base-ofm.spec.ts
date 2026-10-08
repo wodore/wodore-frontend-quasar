@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as allure from 'allure-js-commons';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { validateStyleMin } from '@maplibre/maplibre-gl-style-spec';
 import type { StyleSpecification } from 'maplibre-gl';
@@ -12,8 +12,14 @@ const STYLE_PATH = resolve(process.cwd(), 'dist/martin/wd-outdoor-base-ofm/style
  * (scripts/style/build-outdoor-style.mjs). These pin the keyless,
  * no-MapTiler contract and the layer hooks the app depends on.
  */
-describe('outdoor basemap style', () => {
-  const style: StyleSpecification = JSON.parse(readFileSync(STYLE_PATH, 'utf8'));
+// The built style lives in the backend repo (tile_server/styles/); dist/
+// only exists after a local build, so CI skips this suite.
+const hasStyle = existsSync(STYLE_PATH);
+const style: StyleSpecification = hasStyle
+  ? JSON.parse(readFileSync(STYLE_PATH, 'utf8'))
+  : ({ layers: [] } as unknown as StyleSpecification);
+
+describe.skipIf(!hasStyle)('outdoor basemap style', () => {
   const layerIds = style.layers.map(l => l.id);
 
   it('validates against the MapLibre style spec', () => {

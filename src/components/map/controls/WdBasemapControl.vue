@@ -23,9 +23,7 @@ watch(open, v => LocalStorage.set('wd_bm_open', v));
 const activeName = computed(() => basemapStore.getBasemap()?.name);
 // Typed alias: keeps template iteration inference shallow (TS2589 guard
 // after the store's setup return type grew with the outdoor basemaps)
-const visibleBasemaps = computed(
-  () => basemapStore.basemaps as unknown as BasemapSwitchItem[]
-);
+const visibleBasemaps = computed(() => basemapStore.basemaps as unknown as BasemapSwitchItem[]);
 
 /** Click outside the control closes the rail */
 function onDocClick(ev: Event): void {

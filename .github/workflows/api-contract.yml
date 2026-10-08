@@ -5,8 +5,8 @@ on:
     paths:
       - 'src/clients/**'
   schedule:
-    - cron: '0 6 * * 1'  # weekly Monday 06:00 UTC — catches staging drift
-  workflow_dispatch: {}  # manual trigger
+    - cron: '0 6 * * 1' # weekly Monday 06:00 UTC — catches staging drift
+  workflow_dispatch: {} # manual trigger
 
 jobs:
   check-types-fresh:

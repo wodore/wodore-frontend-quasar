@@ -14,8 +14,14 @@ const STYLE_PATH = resolve(STYLE_DIR, 'style.json');
  * via TileJSON, logo overlay required in the app, no pre-fetch/offline/
  * print use (OFM fallback covers those).
  */
-describe('wd-outdoor-base-mtk basemap style', () => {
-  const style: StyleSpecification = JSON.parse(readFileSync(STYLE_PATH, 'utf8'));
+// The built style lives in the backend repo (tile_server/styles/); dist/
+// only exists after a local build, so CI skips this suite.
+const hasStyle = existsSync(STYLE_PATH);
+const style: StyleSpecification = hasStyle
+  ? JSON.parse(readFileSync(STYLE_PATH, 'utf8'))
+  : ({ layers: [] } as unknown as StyleSpecification);
+
+describe.skipIf(!hasStyle)('wd-outdoor-base-mtk basemap style', () => {
   const layerIds = style.layers.map(l => l.id);
 
   it('validates against the MapLibre style spec', () => {

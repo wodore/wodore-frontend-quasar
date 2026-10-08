@@ -12,8 +12,8 @@ name: Cleanup old Allure reports
 
 on:
   schedule:
-    - cron: '0 3 * * *'  # daily at 03:00 UTC
-  workflow_dispatch: {}   # manual trigger
+    - cron: '0 3 * * *' # daily at 03:00 UTC
+  workflow_dispatch: {} # manual trigger
 
 permissions:
   contents: write

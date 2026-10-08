@@ -24,13 +24,13 @@ text/icons) — the app's hut overlay owns hut markers.
 
 ## Stack (all free, no API keys)
 
-| Piece        | Source                                                        |
-| ------------ | ------------------------------------------------------------- |
-| Vector tiles | OpenFreeMap planet (`tiles.openfreemap.org/planet`, OpenMapTiles schema) |
-| Base style   | OFM Liberty fork (vendored: `liberty-src.json`, BSD)          |
-| Hillshade    | Mapterhorn raster DEM (`tiles.mapterhorn.com`, terrarium)     |
-| Contours     | `maplibre-contour` — computed client-side in a web worker from the same DEM |
-| Sprites      | OpenFreeMap sprite CDN                                        |
+| Piece        | Source                                                                                                                                     |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Vector tiles | OpenFreeMap planet (`tiles.openfreemap.org/planet`, OpenMapTiles schema)                                                                   |
+| Base style   | OFM Liberty fork (vendored: `liberty-src.json`, BSD)                                                                                       |
+| Hillshade    | Mapterhorn raster DEM (`tiles.mapterhorn.com`, terrarium)                                                                                  |
+| Contours     | `maplibre-contour` — computed client-side in a web worker from the same DEM                                                                |
+| Sprites      | OpenFreeMap sprite CDN                                                                                                                     |
 | Glyphs       | `demotiles.maplibre.org/font/...` (hosts Noto Sans **and** the Open Sans stack the app overlays use — OFM's font server 404s on Open Sans) |
 
 Useful tile attributes (verified in OFM planet tiles): `transportation.class`
@@ -100,7 +100,7 @@ Thresholds (meters, `zoom*minor*major`): `11*200*1000 ~ 12*100*500 ~
 ## Future options (documented decisions)
 
 - **Colored route trails** (mapy's red/yellow waymarked routes) need OSM
-  route *relations* — not in OFM planet tiles. Could be served by the
+  route _relations_ — not in OFM planet tiles. Could be served by the
   existing Martin tile server (`WODORE_TILE_SERVER_URL`) as an overlay.
 - **Glyphs self-hosting**: if `demotiles.maplibre.org` becomes a
   bottleneck, bake Noto Sans + Open Sans Semibold with

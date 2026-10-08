@@ -11,7 +11,11 @@ import { useOverlayStore } from './overlay-store';
 import { StyleSpecification } from 'maplibre-gl';
 import { i18n, currentLocale } from '@services/locale';
 import { getEnv } from '@services/runtimeEnv';
-import { OUTDOOR_STYLE_PATH, isOutdoorStyle, setupOutdoorContours } from '@services/outdoorContours';
+import {
+  OUTDOOR_STYLE_PATH,
+  isOutdoorStyle,
+  setupOutdoorContours,
+} from '@services/outdoorContours';
 
 // Bump this when the Martin-served basemap style changes (new colors,
 // layers, fonts, sprites). Format: ISO date + optional .N for same-day
@@ -52,9 +56,7 @@ function absoluteStyleAssets(
     try {
       // URL() percent-encodes the {fontstack}/{range} template tokens —
       // MapLibre's style validator requires them verbatim
-      return new URL(url, base)
-        .href.replaceAll('%7B', '{')
-        .replaceAll('%7D', '}');
+      return new URL(url, base).href.replaceAll('%7B', '{').replaceAll('%7D', '}');
     } catch {
       return url;
     }
@@ -186,9 +188,14 @@ export const useBasemapStore = defineStore('basemap', () => {
         // The returned object loses MapLibre's style-URL context — pin
         // relative glyph/sprite URLs to the style's own URL on every
         // return path (spread: the parsed style object may be frozen)
-        const pin = (styleObj: Record<string, unknown>): import('maplibre-gl').StyleSpecification =>
+        const pin = (
+          styleObj: Record<string, unknown>
+        ): import('maplibre-gl').StyleSpecification =>
           typeof s.style === 'string'
-            ? ({ ...styleObj, ...absoluteStyleAssets(styleObj, s.style) } as import('maplibre-gl').StyleSpecification)
+            ? ({
+                ...styleObj,
+                ...absoluteStyleAssets(styleObj, s.style),
+              } as import('maplibre-gl').StyleSpecification)
             : (styleObj as import('maplibre-gl').StyleSpecification);
         // Debug input types
         console.debug('[transformStyle] Called with:', {
@@ -543,7 +550,6 @@ export const useBasemapStore = defineStore('basemap', () => {
     'Satellite Hybrid': 'basemaps.satellite',
     'wd-outdoor-base-mtk': 'basemaps.outdoor',
     'outdoor-osm': 'basemaps.outdoor_ofm',
-    'oe-vector': 'basemaps.austria_vector',
     'oe-raster': 'basemaps.austria_raster',
   };
 
@@ -557,8 +563,8 @@ export const useBasemapStore = defineStore('basemap', () => {
   };
 
   watch(currentLocale, () => {
-  applyBasemapLabels();
-});
+    applyBasemapLabels();
+  });
 
   // Weak-GPU flag for style-level degradation (set during init)
   let weakGpu = false;
@@ -635,7 +641,9 @@ export const useBasemapStore = defineStore('basemap', () => {
     {
       const gl = document.createElement('canvas').getContext('webgl2');
       const renderer = gl?.getExtension('WEBGL_debug_renderer_info');
-      const gpuName = renderer ? String(gl!.getParameter(renderer.UNMASKED_RENDERER_WEBGL)) : gpuTier.gpu || 'unknown';
+      const gpuName = renderer
+        ? String(gl!.getParameter(renderer.UNMASKED_RENDERER_WEBGL))
+        : gpuTier.gpu || 'unknown';
       console.info(
         `[perf] GPU: ${gpuName} | tier: ${gpuTier.tier} | fps: ${gpuTier.fps || 'n/a'} | ` +
           `weak: ${weakGpu} | ` +
@@ -741,18 +749,6 @@ export const useBasemapStore = defineStore('basemap', () => {
         active: false,
         img: getImageUrl('outdoor-v2.png'),
         style: OUTDOOR_STYLE_PATH,
-        layers: {
-          ways: { before: undefined },
-          background: { before: undefined },
-        },
-      },
-      {
-        name: 'oe-vector',
-        label: t('basemaps.austria_vector'),
-        active: false,
-        show: false,
-        img: getImageUrl('swiss-vector.png'),
-        style: 'styles/basemapv-bmapv-3857-resources-styles-root.json',
         layers: {
           ways: { before: undefined },
           background: { before: undefined },

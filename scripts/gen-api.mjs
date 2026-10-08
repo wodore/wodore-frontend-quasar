@@ -57,20 +57,17 @@ const schema = await response.json();
 // date for released versions, the literal "unreleased" between api-freeze
 // and release (server/apps/apiversions/registry.py). Both are valid pins.
 const schemaVersion = schema?.info?.version;
-if (
-  !/^\d{4}-\d{2}-\d{2}$/.test(String(schemaVersion ?? '')) &&
-  schemaVersion !== 'unreleased'
-) {
+if (!/^\d{4}-\d{2}-\d{2}$/.test(String(schemaVersion ?? '')) && schemaVersion !== 'unreleased') {
   console.error(
     `[gen-api] schema has no usable info.version (got: ${schemaVersion}) — ` +
-      'expected a date (YYYY-MM-DD) or "unreleased".',
+      'expected a date (YYYY-MM-DD) or "unreleased".'
   );
   process.exit(1);
 }
 if (version && schemaVersion !== version) {
   console.error(
     `[gen-api] requested version ${version} but schema serves ${schemaVersion} ` +
-      '(proxy cache or wrong backend?) — refusing to generate mismatched types.',
+      '(proxy cache or wrong backend?) — refusing to generate mismatched types.'
   );
   process.exit(1);
 }
@@ -82,11 +79,9 @@ try {
   const schemaFile = join(tmp, 'openapi.json');
   writeFileSync(schemaFile, JSON.stringify(schema));
 
-  execFileSync(
-    'npx',
-    ['openapi-typescript', schemaFile, '-o', './src/clients/wodore_v1.d.ts'],
-    { stdio: 'inherit' },
-  );
+  execFileSync('npx', ['openapi-typescript', schemaFile, '-o', './src/clients/wodore_v1.d.ts'], {
+    stdio: 'inherit',
+  });
 
   writeFileSync(
     './src/clients/apiVersion.ts',
@@ -95,18 +90,13 @@ try {
       `// Source schema: ${url}`,
       `export const PINNED_API_VERSION = '${schemaVersion}';`,
       '',
-    ].join('\n'),
+    ].join('\n')
   );
 
   execFileSync(
     'npx',
-    [
-      'prettier',
-      '--write',
-      './src/clients/wodore_v1.d.ts',
-      './src/clients/apiVersion.ts',
-    ],
-    { stdio: 'inherit' },
+    ['prettier', '--write', './src/clients/wodore_v1.d.ts', './src/clients/apiVersion.ts'],
+    { stdio: 'inherit' }
   );
 
   console.log(`[gen-api] done — client + pin set to API version ${schemaVersion}`);

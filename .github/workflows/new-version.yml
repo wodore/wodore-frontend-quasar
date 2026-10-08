@@ -2,7 +2,7 @@ name: New Version
 
 on:
   workflow_run:
-    workflows: ["Build Docker"]
+    workflows: ['Build Docker']
     types:
       - completed
 
@@ -43,7 +43,7 @@ jobs:
         uses: mukunku/tag-exists-action@v1.6.0
         id: check-tag
         with:
-          tag: "v${{ env.version }}"
+          tag: 'v${{ env.version }}'
 
       - name: Create and push tag if not exists
         if: steps.check-tag.outputs.exists == 'false'

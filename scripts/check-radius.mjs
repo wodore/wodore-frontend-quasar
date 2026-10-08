@@ -51,7 +51,10 @@ for (const file of walk(join(ROOT, 'src'))) {
         if (n > 3 && !ALLOWED.has(n)) {
           violations.push(`${rel}: border-radius: ${value}  (${px[1]}px off-ramp)`);
         }
-      } else if (!ALLOWED_NON_PX.test(part) && !/^(var\(|\$|inherit|initial|unset|calc\()/.test(part)) {
+      } else if (
+        !ALLOWED_NON_PX.test(part) &&
+        !/^(var\(|\$|inherit|initial|unset|calc\()/.test(part)
+      ) {
         violations.push(`${rel}: border-radius: ${value}  (unexpected unit/literal "${part}")`);
       }
     }
@@ -59,7 +62,9 @@ for (const file of walk(join(ROOT, 'src'))) {
 }
 
 if (violations.length) {
-  console.error(`Radius ramp lint: ${violations.length} violation(s) — allowed: 4/8/16px ramp, ≤3px micro, 50%/999px round`);
+  console.error(
+    `Radius ramp lint: ${violations.length} violation(s) — allowed: 4/8/16px ramp, ≤3px micro, 50%/999px round`
+  );
   for (const v of violations) console.error('  ' + v);
   process.exit(1);
 }
