@@ -27,7 +27,7 @@ describe('world-underlay', () => {
     const source = merged.sources[WORLD_UNDERLAY_SOURCE_ID];
     expect(source).toBeDefined();
     expect(source.type).toBe('raster');
-    expect(JSON.stringify(source)).toContain('openstreetmap.org');
+    expect(JSON.stringify(source)).toContain('openstreetmap.fr');
 
     const underlay = merged.layers.filter(l => l.id.startsWith('wd-world-underlay-'));
     expect(underlay).toHaveLength(1);

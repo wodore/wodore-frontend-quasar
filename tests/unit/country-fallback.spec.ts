@@ -46,15 +46,25 @@ describe('country-fallback', () => {
     expect(merged.name).toBe('ch-swisstopo-raster');
   });
 
-  it('hides country layers below the country max zoom-out', () => {
+  it('splits the zoom bands: fallback below, country at and above', () => {
     const merged = withCountryFallback(countryStyle(), fallbackStyle());
 
+    // country layers stop rendering below the country max zoom-out…
     const chRaster = merged.layers.find(l => l.id === 'ch-raster');
     expect(chRaster?.minzoom).toBe(COUNTRY_BASEMAP_MIN_ZOOM);
     // layers that already start above the floor keep their own value
     expect(merged.layers.find(l => l.id === 'ch-overlay')?.minzoom).toBe(9);
-    // default layers are untouched
-    expect(merged.layers.find(l => l.id === 'land')?.minzoom).toBeUndefined();
+    // …and the fallback layers stop at country scale — MapLibre has no
+    // occlusion culling, so hidden layers would still cost GPU every frame
+    expect(merged.layers.find(l => l.id === 'bg')?.maxzoom).toBe(COUNTRY_BASEMAP_MIN_ZOOM);
+    expect(merged.layers.find(l => l.id === 'land')?.maxzoom).toBe(COUNTRY_BASEMAP_MIN_ZOOM);
+  });
+
+  it('keeps tighter existing maxzooms of fallback layers', () => {
+    const fallback = fallbackStyle();
+    (fallback.layers[1] as Record<string, unknown>).maxzoom = 4;
+    const merged = withCountryFallback(countryStyle(), fallback);
+    expect(merged.layers.find(l => l.id === 'land')?.maxzoom).toBe(4);
   });
 
   it('resolves glyphs and sprite from the fallback style', () => {

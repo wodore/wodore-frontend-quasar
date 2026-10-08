@@ -69,7 +69,7 @@ describe('hutsStyle', () => {
     expect(day0?.minzoom).toBe(6);
 
     const occupation = hutsStyle.layers.find(l => l.id === 'wd-huts-occupation');
-    expect(occupation?.maxzoom).toBe(11);
+    expect(occupation?.maxzoom).toBe(13);
 
     const huts = hutsStyle.layers.find(l => l.id === 'wd-huts');
     expect(huts?.type).toBe('symbol');

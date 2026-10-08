@@ -37,10 +37,10 @@ const TILE_SERVER_URL = getEnv('WODORE_TILE_SERVER_URL') || 'https://tiles.stg.w
 //}
 // HUTS
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-const imageSwitchZoom = 9;
+const imageSwitchZoom = 11;
 const hutsLayerLayout: SymbolLayerSpecification['layout'] = {
   'text-field': ['case', ['>', ['get', 'type_standard_order'], 25], ['get', 'name'], ''],
-  'text-size': ['interpolate', ['linear'], ['zoom'], 5, 7, 7, 10, 22, 16],
+  'text-size': ['interpolate', ['linear'], ['zoom'], 7, 7, 9, 10, 22, 16],
   //'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
   // OpenFreeMap's glyph server does not host the Open Sans family —
   // use a Noto Sans stack it serves (see raster.ts glyphs note).
@@ -68,7 +68,7 @@ const hutsLayerLayout: SymbolLayerSpecification['layout'] = {
     ],
   ],
   //'icon-size': ['interpolate', ['linear'], ['zoom'], 7, 0.05, 9, 0.1, 20, 1],
-  'icon-size': ['interpolate', ['linear'], ['zoom'], 5, 0.1, 7, 0.3, 20, 2],
+  'icon-size': ['interpolate', ['linear'], ['zoom'], 7, 0.1, 9, 0.3, 20, 2],
   visibility: 'visible',
 };
 
@@ -97,7 +97,7 @@ const hutsLayerSelectedPaint: CircleLayerSpecification['paint'] = {
     '#2673bf',
   ],
   'circle-opacity': ['case', ['boolean', ['feature-state', 'selected'], false], 0.7, 0],
-  'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 10, 13, 40],
+  'circle-radius': ['interpolate', ['linear'], ['zoom'], 7, 10, 15, 40],
 };
 
 // BOOKINGS
@@ -124,7 +124,7 @@ function getAvailColors(day: number): ExpressionSpecification {
 }
 const hutsOccupationLayerPaint = {
   'circle-color': getAvailColors(0),
-  'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 4, 7, 10, 20, 60],
+  'circle-radius': ['interpolate', ['linear'], ['zoom'], 7, 4, 9, 10, 20, 60],
   'circle-opacity': ['interpolate', ['linear'], ['zoom'], 4, 0.8, 8, 0.6, 9, 0.5, 11, 0],
 } as CircleLayerSpecification['paint'];
 
@@ -153,7 +153,7 @@ function getHutsOccupationDayLayout(day: number) {
       ],
       '',
     ],
-    'text-size': ['interpolate', ['linear'], ['zoom'], 10, 7, 12, 10],
+    'text-size': ['interpolate', ['linear'], ['zoom'], 12, 7, 14, 10],
     //'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
     // OpenFreeMap's glyph server does not host the Open Sans family —
     // use a Noto Sans stack it serves (see raster.ts glyphs note).
@@ -177,7 +177,7 @@ function getHutsOccupationDayLayout(day: number) {
       ],
       ['image', 'wd:detailed/availability.unknown'],
     ],
-    'icon-size': ['interpolate', ['linear'], ['zoom'], 5, 0.1, 10, 0.3, 13, 0.6],
+    'icon-size': ['interpolate', ['linear'], ['zoom'], 7, 0.1, 12, 0.3, 15, 0.6],
   };
 }
 function occTranslate(day: number) {
@@ -187,9 +187,9 @@ function occTranslate(day: number) {
     ['zoom'],
     //0,
     //['literal', [(day - 1.5) * 2, 0.1]],
-    7,
+    9,
     ['literal', [(day - 1.5) * 7, 11 + Math.abs(day - 1.5) * -2]],
-    18,
+    20,
     ['literal', [(day - 1.5) * 40, 90 + Math.abs(day - 1.5) * -10]],
   ];
 }
@@ -239,7 +239,7 @@ export const hutsStyle: StyleSpecification = {
       id: 'wd-huts-occupation',
       type: 'circle',
       source: 'wd-bookings',
-      maxzoom: 11,
+      maxzoom: 13,
       //filter: hutsOccupationFilter,
       layout: {
         visibility: 'visible',

@@ -40,9 +40,17 @@ export const WORLD_UNDERLAY_MAX_ZOOM = 7;
 
 export const worldUnderlaySource: RasterSourceSpecification = {
   type: 'raster',
-  tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+  // HOT (Humanitarian OSM Team) style — muted cartography that reads well
+  // as a gap-filler beneath basemaps and overlays. {s} is not expanded by
+  // MapLibre (unlike Leaflet) — subdomains are listed explicitly.
+  tiles: [
+    'https://a.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+    'https://b.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+  ],
   tileSize: 256,
-  attribution: '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap</a>',
+  attribution:
+    '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap</a>' +
+    ' · <a href="https://www.hotosm.org/">HOT</a>',
 };
 
 function worldUnderlayLayers(): LayerSpecification[] {
