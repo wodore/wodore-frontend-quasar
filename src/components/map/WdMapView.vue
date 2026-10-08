@@ -137,15 +137,14 @@ const localPropertiesStore = useLocalPropertiesStore();
 // Use a static ref for initial map style to prevent vue-maplibre-gl's reactive watcher
 // from overriding our transformStyle callback when basemap changes
 // After initial load, style switching is handled by basemapStore.setBasemap()
-// IMPORTANT: never pass a style to MglMap's constructor — the Map
-// would load it WITHOUT our transformStyle callback (which pins
-// relative glyph/sprite URLs to absolute). On first load the store
-// hasn't initialized so this is undefined anyway; on F5 reload the
-// cached GPU tier makes the store initialize FASTER, the constructor
-// gets the raw URL, loads it with relative paths, and the subsequent
-// setStyle with diff:true sees 'no changes' → 404s on glyphs/sprites.
-// Always let setBasemap() → setStyle() apply the style.
-const initialMapStyle = ref<undefined>(undefined);
+// IMPORTANT: pass an EMPTY style to MglMap — not the real style URL,
+// and not undefined. undefined → "no style" errors from overlay stores
+// that query the map before setBasemap() completes. The real style URL
+// → loaded by the constructor WITHOUT our transformStyle (relative
+// glyph/sprite URLs → 404s on F5 reload, see previous fix). An empty
+// style object is valid, needs no URL pinning, and lets setBasemap()
+// apply the real style through setStyle() with transformStyle.
+const initialMapStyle = ref<import('maplibre-gl').StyleSpecification>({ version: 8 as const, sources: {}, layers: [] });
 
 // Get initial location from store (handles URL hash, storage, defaults)
 const initialLocation = localPropertiesStore.getInitialLocation();
