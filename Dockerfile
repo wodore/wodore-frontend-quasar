@@ -40,7 +40,10 @@ RUN if [ -z "$GIT_HASH" ]; then \
   exit 1; \
   fi
 
-# Install Quasar CLI globally (pnpm comes from corepack via packageManager)
+# Install Quasar CLI globally (pnpm comes from corepack via packageManager).
+# pnpm refuses `add -g` unless its global bin dir (PNPM_HOME) is on PATH.
+ENV PNPM_HOME=/root/.local/share/pnpm
+ENV PATH="/root/.local/share/pnpm:${PATH}"
 RUN corepack enable && pnpm add -g @quasar/cli
 
 # Install dependencies efficiently (store cache mount = layer stays hot
