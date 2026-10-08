@@ -125,10 +125,19 @@ Overlays are **declarative configurations** that include:
 - `WdMapView` sets `map.setProjection({ type: 'globe' })` on load; the
   camera shows the planet when zoomed out and transitions smoothly back
   to mercator around z12.
-- `transformStyle` (basemap-store) injects `projection: { type: 'globe' }`
-  into every transformed style — basemap switches preserve the globe.
-- No `min-zoom` / `max-zoom` / `max-bounds` props; the zoom slider spans
-  0–22.
+- Dark space backdrop: the canvas is transparent outside the planet — the
+  backdrop is CSS on `.wd-map-fill .maplibregl-map` (near-black); `sky`
+  (`GLOBE_SKY` in map-constants.ts) only paints the atmosphere rim, which
+  fades out by z9. `transformStyle` carries projection + sky into every
+  basemap switch.
+- Camera floor: `MAP_MIN_ZOOM = 2` (planet stays comfortably in view);
+  no max zoom (sources overzoom to MapLibre's z22).
+- World underlay (`src/stores/map/utils/world-underlay.ts`): a minimal
+  demotiles world (Natural Earth country contours + names) merged below
+  every basemap via `withWorldUnderlay` (transformStyle) /
+  `ensureWorldUnderlay` (initial load). Regional basemaps
+  (swisstopo/basemap.at) leave the rest of the planet blank — the
+  underlay shows through those gaps. Capped at z7.
 - Overlay layers are clamped to `OVERLAY_MIN_ZOOM = 7`
   (`src/stores/map/utils/map-constants.ts`, applied in `addOverlayLayer`
   and `transformStyle`) — overlays never render at planet scale and

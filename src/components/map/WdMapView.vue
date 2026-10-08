@@ -29,6 +29,8 @@ import {
 import mapDraw from '@services/draw';
 import { currentLocale } from '@services/locale';
 import { clientWodore } from '@clients/index';
+import { GLOBE_SKY, MAP_MIN_ZOOM } from '@stores/map/utils/map-constants';
+import { ensureWorldUnderlay } from '@stores/map/utils/world-underlay';
 
 // MapLibre v6 resolves its web worker via import.meta.url, which breaks under
 // Vite's dependency optimization: the rewritten worker URL 404s and vector
@@ -224,6 +226,18 @@ function onMapLoad(e: MglEvent<'load'>) {
   // so local views render exactly as before). Basemap switches preserve it
   // via transformStyle, which injects the same projection into the style.
   e.map.setProjection({ type: 'globe' });
+
+  // Atmosphere rim around the planet; fades out by z9 so tilted close-up
+  // views keep a daylight horizon. The dark space BACKDROP is CSS (see
+  // .maplibregl-canvas-container below). Basemap switches carry the sky
+  // via transformStyle (GLOBE_SKY), same as the projection.
+  e.map.setSky(GLOBE_SKY);
+
+  // Minimal world underlay (country contours + names) below the basemap
+  // layers — regional basemaps (swisstopo/basemap.at raster) leave the
+  // rest of the planet blank; the underlay shows through those gaps
+  // (basemap switches get it via transformStyle / withWorldUnderlay)
+  ensureWorldUnderlay(e.map);
 
   // Dev-only handle for debugging and e2e tests (map.project for exact
   // marker tap positions). Stripped from production behavior by the guard.
@@ -1266,6 +1280,17 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
 <style lang="scss">
 //@import 'vue-maplibre-gl/dist/vue-maplibre-gl.css';
 
+// Space around the globe: the WebGL canvas is transparent outside the
+// planet, so the map wrapper's background doubles as the space backdrop
+// (same pattern as MapLibre's globe-with-atmosphere example — `sky`
+// alone only paints the atmosphere rim, not the backdrop). Only visible
+// where no basemap tiles cover the canvas; at street zoom the map fills
+// the viewport entirely. Note: the canvas-container itself has a 0-height
+// box in this layout — the background must sit on the wrapper.
+.wd-map-fill .maplibregl-map {
+  background: #02040a;
+}
+
 .maplibregl-control-container {
   // from https://github.com/quasarframework/quasar/blob/dev/ui/src/components/layout/QLayout.sass .q-body--layout-animate .q-page-sticky
   //@extend .q-body--layout-animate, .q-page-sticky; // not found
@@ -1302,6 +1327,7 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
         :bearing-snap="15"
         :center="mapCenter"
         :attribution-control="false"
+        :min-zoom="MAP_MIN_ZOOM"
         :max-tile-cache-size="400"
         :max-parallel-image-requests="32"
         :render-world-copies="false"

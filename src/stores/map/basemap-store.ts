@@ -8,7 +8,8 @@ import { Platform } from 'quasar';
 import { storageGet, storageSet } from '@services/storage';
 import { getGPUTier } from '@pmndrs/detect-gpu';
 import { useOverlayStore } from './overlay-store';
-import { withOverlayMinZoom } from './utils/map-constants';
+import { withOverlayMinZoom, GLOBE_SKY } from './utils/map-constants';
+import { withWorldUnderlay } from './utils/world-underlay';
 import { StyleSpecification } from 'maplibre-gl';
 import { i18n, currentLocale } from '@services/locale';
 import { getEnv } from '@services/runtimeEnv';
@@ -474,16 +475,19 @@ export const useBasemapStore = defineStore('basemap', () => {
           `[transformStyle] Style transformation complete: ${orderedLayers.length} layers total, ${Object.keys(customSources).length} custom sources, ${customSprites.length} custom sprites`
         );
 
-        const transformedStyle = <StyleSpecification>{
+        const transformedStyle = withWorldUnderlay(<StyleSpecification>{
           ...nextStyle,
           // World coverage: carry the globe projection across basemap
           // switches (WdMapView sets it on initial load; without this the
           // next style would silently revert to mercator)
           projection: { type: 'globe' },
+          // Dark space around the globe (WdMapView sets it on initial
+          // load; same persistence rationale as the projection)
+          sky: GLOBE_SKY,
           sources: { ...nextStyle.sources, ...customSources },
           layers: orderedLayers,
           sprite: finalSprite,
-        };
+        });
         console.debug(
           `[transformStyle] Returning transformed style with ${Object.keys(transformedStyle.sources).length} sources, ${transformedStyle.layers.length} layers`,
           transformedStyle
