@@ -126,10 +126,14 @@ Overlays are **declarative configurations** that include:
   camera shows the planet when zoomed out and transitions smoothly back
   to mercator around z12.
 - Dark space backdrop: the canvas is transparent outside the planet — the
-  backdrop is CSS on `.wd-map-fill .maplibregl-map` (near-black); `sky`
-  (`GLOBE_SKY` in map-constants.ts) only paints the atmosphere rim, which
-  fades out by z9. `transformStyle` carries projection + sky into every
-  basemap switch.
+  backdrop is a static blue-black radial vignette on a `::before` layer
+  of `.wd-map-fill .maplibregl-map`, faded via OPACITY (gradients can't
+  tween against a flat color). Gated by camera zoom with hysteresis
+  (`.wd-map-space`: ON ≤ z5.0, OFF ≥ z5.4) so loading and normal map use
+  keep the light `#f6f9f7` base — no black flash on open. `sky`
+  (`GLOBE_SKY` in map-constants.ts) only paints the atmosphere rim,
+  which fades out by z9. `transformStyle` carries projection + sky into
+  every basemap switch.
 - Camera floor: `MAP_MIN_ZOOM = 2` (planet stays comfortably in view);
   no max zoom (sources overzoom to MapLibre's z22).
 - World underlay (`src/stores/map/utils/world-underlay.ts`): a minimal

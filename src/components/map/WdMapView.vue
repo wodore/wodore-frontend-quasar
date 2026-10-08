@@ -68,6 +68,12 @@ const DESKTOP_DRAWER_WIDTH_MEDIUM = 380;
 const MOBILE_MAP_QUERY = '(max-width: 769px)';
 const isMobileMap = useMediaQuery(MOBILE_MAP_QUERY);
 
+// Below these zooms the globe limb is exposed and the dark space
+// backdrop fades in/out — hysteresis dead-band (ON ≤ 5.0, OFF ≥ 5.4)
+// prevents class thrash while pinching at the boundary (advisor review)
+const SPACE_BACKDROP_ZOOM_ON = 5.0;
+const SPACE_BACKDROP_ZOOM_OFF = 5.4;
+
 // Map layer IDs
 const HUT_LAYER_ID = 'wd-huts';
 const HUT_SOURCE_ID = 'wd-huts';
@@ -238,6 +244,23 @@ function onMapLoad(e: MglEvent<'load'>) {
   // rest of the planet blank; the underlay shows through those gaps
   // (basemap switches get it via transformStyle / withWorldUnderlay)
   ensureWorldUnderlay(e.map);
+
+  // Space backdrop gate: the dark backdrop (.wd-map-space — an opacity-
+  // faded gradient layer, see SCSS below) only applies once the camera is
+  // far enough out to expose the planet limb; during app/map load and at
+  // normal zooms the wrapper keeps its light base color instead of
+  // flashing black
+  const updateSpaceBackdrop = () => {
+    const container = e.map.getContainer();
+    const zoom = e.map.getZoom();
+    if (container.classList.contains('wd-map-space')) {
+      if (zoom >= SPACE_BACKDROP_ZOOM_OFF) container.classList.remove('wd-map-space');
+    } else if (zoom <= SPACE_BACKDROP_ZOOM_ON) {
+      container.classList.add('wd-map-space');
+    }
+  };
+  updateSpaceBackdrop();
+  e.map.on('zoom', updateSpaceBackdrop);
 
   // Dev-only handle for debugging and e2e tests (map.project for exact
   // marker tap positions). Stripped from production behavior by the guard.
@@ -1281,14 +1304,49 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
 //@import 'vue-maplibre-gl/dist/vue-maplibre-gl.css';
 
 // Space around the globe: the WebGL canvas is transparent outside the
-// planet, so the map wrapper's background doubles as the space backdrop
-// (same pattern as MapLibre's globe-with-atmosphere example — `sky`
-// alone only paints the atmosphere rim, not the backdrop). Only visible
-// where no basemap tiles cover the canvas; at street zoom the map fills
-// the viewport entirely. Note: the canvas-container itself has a 0-height
-// box in this layout — the background must sit on the wrapper.
+// planet, so the map wrapper doubles as the sky. Design (advisor review:
+// Google Earth / Apple Maps converge on the same): a static blue-black
+// radial vignette anchored to the VIEWPORT — no stars (decoration, and
+// paint cost on software GL), identical in day and night themes.
+//
+// Implementation notes:
+// - The gradient lives on a ::before LAYER and fades via OPACITY:
+//   background-color/background-image cannot tween between a flat color
+//   and a gradient, opacity on a static layer is GPU-composited and
+//   cheap. The pseudo-element paints below the canvas (preceding box in
+//   the same stacking context).
+// - The wrapper keeps a permanent light base color — that is what kills
+//   the black flash while the app/map loads.
+// - GATED by camera zoom (.wd-map-space toggled in onMapLoad, hysteresis
+//   ON ≤ 5.0 / OFF ≥ 5.4): dark only once the planet limb is exposed.
 .wd-map-fill .maplibregl-map {
-  background: #02040a;
+  background-color: #f6f9f7;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 400ms ease;
+    background-image: radial-gradient(
+      ellipse 90% 90% at 50% 48%,
+      #0b1726 0%,
+      #060d16 55%,
+      #02040a 100%
+    );
+  }
+
+  &.wd-map-space::before {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wd-map-fill .maplibregl-map::before {
+    transition-duration: 1ms;
+  }
 }
 
 .maplibregl-control-container {
