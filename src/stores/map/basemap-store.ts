@@ -19,9 +19,9 @@ function mtkStylePath(): string {
   // for PR previews without Martin
   const martinUrl = getEnv('WODORE_TILE_SERVER_URL');
   if (martinUrl) {
-    return `${martinUrl.replace(/\/$/, '')}/style/outdoor-mtk`;
+    return `${martinUrl.replace(/\/$/, '')}/style/wd-outdoor-base-mtk`;
   }
-  return 'styles/outdoor-mtk/style.json';
+  return 'styles/wd-outdoor-base-mtk/style.json';
 }
 
 /** Compute absolute glyph/sprite URLs for a style, relative to the
@@ -162,7 +162,7 @@ export const useBasemapStore = defineStore('basemap', () => {
     // Weak GPUs: drop the second ambient-occlusion pass after the style
     // loads (the heavy ao_max/dramatic passes are already removed from
     // the built style for everyone).
-    if (s.name === 'outdoor-mtk' && weakGpu) {
+    if (s.name === 'wd-outdoor-base-mtk' && weakGpu) {
       mapRef.map?.once('style.load', () => {
         mapRef.map?.setLayoutProperty('relief_hillshade_ao_med', 'visibility', 'none');
       });
@@ -534,7 +534,7 @@ export const useBasemapStore = defineStore('basemap', () => {
     'ch-swisstopo-light': 'basemaps.swiss_light',
     'ch-swisstopo-full': 'basemaps.swiss_raster',
     'Satellite Hybrid': 'basemaps.satellite',
-    'outdoor-mtk': 'basemaps.outdoor',
+    'wd-outdoor-base-mtk': 'basemaps.outdoor',
     'outdoor-osm': 'basemaps.outdoor_ofm',
     'oe-vector': 'basemaps.austria_vector',
     'oe-raster': 'basemaps.austria_raster',
@@ -709,7 +709,7 @@ export const useBasemapStore = defineStore('basemap', () => {
         // revenue & < 10 FTE — attribution + logo required, no
         // pre-fetch/offline/print use (that's the OFM fallback's job).
         // Built by scripts/style/build-mtk-style.mjs.
-        name: 'outdoor-mtk',
+        name: 'wd-outdoor-base-mtk',
         label: t('basemaps.outdoor'),
         show: true,
         active: false,
@@ -800,7 +800,7 @@ export const useBasemapStore = defineStore('basemap', () => {
         // Saved name unknown (e.g. renamed basemap) — use the fresh-install
         // default too, not the first array entry (which needs a MapTiler key)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        basemapToSet = (basemaps as any[]).find(b => b.name === 'outdoor-mtk');
+        basemapToSet = (basemaps as any[]).find(b => b.name === 'wd-outdoor-base-mtk');
       }
     } else {
       // No saved basemap: default to the Maptoolkit-based outdoor style
@@ -811,7 +811,7 @@ export const useBasemapStore = defineStore('basemap', () => {
       // mismatch between the store's declaration and the switch API.
       basemapToSet =
         (basemaps as unknown as Array<BasemapSwitchItem>).find(
-          b => b.name === 'outdoor-mtk'
+          b => b.name === 'wd-outdoor-base-mtk'
         ) || (basemaps as unknown as Array<BasemapSwitchItem>)[0];
     }
 

@@ -1,5 +1,5 @@
 /**
- * Build `public/styles/outdoor-mtk/style*.json` — the default "Wodore
+ * Build `public/styles/wd-outdoor-base-mtk/style*.json` — the default "Wodore
  * Outdoor" basemap, a terrain fork of Maptoolkit's hiking style
  * (Community License, see README).
  *
@@ -25,7 +25,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SRC = path.join(__dirname, 'mtk-src.json');
-const OUT_DIR = path.join(__dirname, '..', '..', 'public', 'styles', 'outdoor-mtk');
+const OUT_DIR = path.join(__dirname, '..', '..', 'public', 'styles', 'wd-outdoor-base-mtk');
 
 /** JSON.parse that rethrows with context — a drift in the vendored
  * source or a failed string transform must fail the build loudly
@@ -43,9 +43,9 @@ const base = parseJson(fs.readFileSync(SRC, 'utf8'), SRC);
 /* ------------------------------------------------------------------ *
  * 1) Shared transforms (language-independent)                         *
  * ------------------------------------------------------------------ */
-base.name = 'Wodore Outdoor (Maptoolkit)';
+base.name = 'Wodore Outdoor Base (Maptoolkit)';
 // stable id: the Maputnik CLI requires it to expose the local file
-base.id = 'wodore-outdoor-mtk';
+base.id = 'wd-outdoor-base-mtk';
 
 // ── Fonts: Wodore's own — Barlow / Barlow Semi Condensed ────────────
 // The UI speaks Barlow (wodore-design DESIGN.md, 'instrument voice');
@@ -63,7 +63,7 @@ base.glyphs = '../glyphs/{fontstack}/{range}.pbf';
 // transformStyle dedupes sprite ids, and 'wd' would swallow it
 base.sprite = [
   ...(Array.isArray(base.sprite) ? base.sprite : [base.sprite]),
-  { id: 'wd-base', url: '../sprites/wd/sprite' },
+  { id: 'outdoor-base', url: '../sprites/outdoor-base/sprite' },
 ];
 const FONT_MAP = {
   'Ysabeau Small Caps Regular': 'Barlow Semi Condensed Regular',
@@ -325,18 +325,18 @@ for (const l of base.layers) {
   //   major city (Genève, Lausanne — big_place rank ≤8): RING + DOT, large
   //   medium city (Sion, Martigny — big_place rank 9-13): PLAIN RING, medium
   //   small town (small_place, rank 14+): no marker
-  // MapLibre namespaces multi-sprite images by sprite id — 'wd-base'
+  // MapLibre namespaces multi-sprite images by sprite id — 'outdoor-base'
   l.layout['icon-image'] = [
     'case',
     ['==', ['get', 'category'], 'capital'],
-    'wd-base:wd-star',
+    'outdoor-base:star',
     ['all', ['==', ['get', 'category'], 'big_place'], ['<=', ['get', 'rank'], 8]],
-    'wd-base:wd-ring-dot',
+    'outdoor-base:ring-dot',
     ['all', ['==', ['get', 'category'], 'big_place'], ['>', ['get', 'rank'], 8]],
-    'wd-base:wd-ring',
+    'outdoor-base:ring',
     ['all', ['==', ['get', 'category'], 'small_place'], ['<=', ['get', 'rank'], 10]],
-    'wd-base:wd-ring',
-    'wd-base:wd-ring', // villages: subtle small ring (user: 'smaller towns can also use a dot')
+    'outdoor-base:ring',
+    'outdoor-base:ring', // villages: subtle small ring (user: 'smaller towns can also use a dot')
   ];
   // icon can drop independently (labels always show — user: 'should
   // only be dropped when label is gone as well'); text-optional:

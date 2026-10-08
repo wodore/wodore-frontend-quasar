@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 import { validateStyleMin } from '@maplibre/maplibre-gl-style-spec';
 import type { StyleSpecification } from 'maplibre-gl';
 
-const STYLE_PATH = resolve(process.cwd(), 'public/styles/outdoor/style.json');
+const STYLE_PATH = resolve(process.cwd(), 'public/styles/wd-outdoor-base-ofm/style.json');
 
 /**
  * Guards for the generated outdoor basemap style

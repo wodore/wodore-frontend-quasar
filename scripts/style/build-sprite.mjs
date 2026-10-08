@@ -1,13 +1,13 @@
 /**
- * Build `public/styles/sprites/wd/sprite{,@2x}.{png,json}` — the
+ * Build `public/styles/sprites/outdoor-base/sprite{,@2x}.{png,json}` — the
  * settlement dot icons used INSIDE the place-label symbol layers
  * (icon + text share one collision box, so a dot never renders without
  * its label — user directive).
  *
  * Three icons, swisstopo's settlement grammar (user round 6):
- *   wd-ring      white fill + black border (towns)
- *   wd-ring-dot  ring + small black center dot (big towns)
- *   wd-star      ring + small black 5-point star (capitals)
+ *   ring      white fill + black border (towns)
+ *   ring-dot  ring + small black center dot (big towns)
+ *   star      ring + small black 5-point star (capitals)
  *
  * Authored small and shown near scale 1.0 — scaling a big asset down
  * blurs (advisor round 5). Pure Node: circles rasterized with
@@ -23,7 +23,7 @@ import { Buffer } from 'node:buffer';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const OUT = path.join(__dirname, '..', '..', 'public', 'styles', 'sprites', 'wd');
+const OUT = path.join(__dirname, '..', '..', 'public', 'styles', 'sprites', 'outdoor-base');
 
 const INK = [0x1d, 0x1d, 0x1d]; // border + center marks (near-black)
 const FILL = [255, 255, 255]; // ring interior
@@ -72,9 +72,9 @@ function drawIcon(kind, box) {
   const rInner = 4.3 * scale; // inner edge of the border (white fill)
   const buf = Buffer.alloc(box * box * 4, 0);
   const verts =
-    kind === 'wd-star'
+    kind === 'star'
       ? starVerts(cx, cy, 3.1 * scale, 1.35 * scale)
-      : kind === 'wd-peak'
+      : kind === 'peak'
         ? triVerts(cx, cy, 5.0 * scale)
         : null;
   for (let y = 0; y < box; y++) {
@@ -88,12 +88,12 @@ function drawIcon(kind, box) {
       let g = Math.round(INK[1] * (outer - inner) + FILL[1] * inner);
       let b = Math.round(INK[2] * (outer - inner) + FILL[2] * inner);
       // center marks, supersampled for the star
-      if (kind === 'wd-ring-dot') {
+      if (kind === 'ring-dot') {
         const dot = circle(x + 0.5, y + 0.5, cx, cy, 1.9 * scale);
         r = Math.round(INK[0] * dot + r * (1 - dot));
         g = Math.round(INK[1] * dot + g * (1 - dot));
         b = Math.round(INK[2] * dot + b * (1 - dot));
-      } else if (kind === 'wd-star' || kind === 'wd-peak') {
+      } else if (kind === 'star' || kind === 'peak') {
         let hit = 0;
         for (let sy = 0; sy < 4; sy++)
           for (let sx = 0; sx < 4; sx++)
@@ -156,7 +156,7 @@ function crc32(buf) {
   return (crc ^ 0xffffffff) >>> 0;
 }
 
-const KINDS = ['wd-ring', 'wd-ring-dot', 'wd-star', 'wd-peak'];
+const KINDS = ['ring', 'ring-dot', 'star', 'peak'];
 for (const [suffix, box, ratio] of [
   ['', SIZE, 1],
   ['@2x', SIZE * 2, 2],
@@ -176,5 +176,5 @@ for (const [suffix, box, ratio] of [
   fs.writeFileSync(path.join(OUT, `sprite${suffix}.json`), JSON.stringify(json) + '\n');
 }
 console.log(
-  `wd sprite (ring, ring-dot, star, peak — ${SIZE}px css) -> ${path.relative(process.cwd(), OUT)}`
+  `outdoor-base sprite (ring, ring-dot, star, peak — ${SIZE}px css) -> ${path.relative(process.cwd(), OUT)}`
 );

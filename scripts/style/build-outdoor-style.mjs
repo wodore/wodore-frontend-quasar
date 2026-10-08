@@ -1,5 +1,5 @@
 /**
- * Build `public/styles/outdoor/style.json` — the keyless "Wodore Outdoor"
+ * Build `public/styles/wd-outdoor-base-ofm/style.json` — the keyless "Wodore Outdoor"
  * basemap style — from the vendored OpenFreeMap Liberty source
  * (`scripts/style/liberty-src.json`, BSD-licensed fork of OSM Liberty,
  * https://github.com/hyperknot/openfreemap-styles).
@@ -13,7 +13,7 @@
  *
  * Run: node scripts/style/build-outdoor-style.mjs
  * Then fine-tune visually in Maputnik (changes must be ported back here):
- *   maputnik --watch --file public/styles/outdoor/style.json
+ *   maputnik --watch --file public/styles/wd-outdoor-base-ofm/style.json
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -21,7 +21,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SRC = path.join(__dirname, 'liberty-src.json');
-const OUT = path.join(__dirname, '..', '..', 'public', 'styles', 'outdoor', 'style.json');
+const OUT = path.join(__dirname, '..', '..', 'public', 'styles', 'wd-outdoor-base-ofm', 'style.json');
 
 /** JSON.parse that rethrows with context — the build must fail loudly
  * (and legibly) when the vendored source drifts. */
@@ -135,7 +135,7 @@ const cls = (...v) => ['match', ['get', 'class'], v, true, false];
 /* ------------------------------------------------------------------ *
  * Metadata + sources                                                 *
  * ------------------------------------------------------------------ */
-style.name = 'Wodore Outdoor (OpenFreeMap)';
+style.name = 'Wodore Outdoor Base (OpenFreeMap)';
 // stable id: the Maputnik CLI requires it to expose the local file
 style.id = 'wodore-outdoor-ofm';
 // MapLibre's public font server hosts both the Noto Sans stacks this style

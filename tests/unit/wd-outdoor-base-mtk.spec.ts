@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 import { validateStyleMin } from '@maplibre/maplibre-gl-style-spec';
 import type { StyleSpecification } from 'maplibre-gl';
 
-const STYLE_DIR = resolve(process.cwd(), 'public/styles/outdoor-mtk');
+const STYLE_DIR = resolve(process.cwd(), 'public/styles/wd-outdoor-base-mtk');
 const STYLE_PATH = resolve(STYLE_DIR, 'style.json');
 
 /**
@@ -14,7 +14,7 @@ const STYLE_PATH = resolve(STYLE_DIR, 'style.json');
  * via TileJSON, logo overlay required in the app, no pre-fetch/offline/
  * print use (OFM fallback covers those).
  */
-describe('outdoor-mtk basemap style', () => {
+describe('wd-outdoor-base-mtk basemap style', () => {
   const style: StyleSpecification = JSON.parse(readFileSync(STYLE_PATH, 'utf8'));
   const layerIds = style.layers.map(l => l.id);
 
@@ -25,7 +25,7 @@ describe('outdoor-mtk basemap style', () => {
   });
 
   it('is the Wodore fork of the Maptoolkit hiking style', () => {
-    expect(style.name).toBe('Wodore Outdoor (Maptoolkit)');
+    expect(style.name).toBe('Wodore Outdoor Base (Maptoolkit)');
   });
 
   it('uses the mtk tiles and the server-side contour tileset', () => {
@@ -231,15 +231,15 @@ describe('outdoor-mtk basemap style', () => {
     const ranked = style.layers.filter(l => /^place_point_label_rank_\d$/.test(l.id));
     expect(ranked.length).toBeGreaterThanOrEqual(5);
     for (const l of ranked) {
-      expect(JSON.stringify(l.layout?.['icon-image']), `${l.id} icon-image`).toContain('wd-ring');
+      expect(JSON.stringify(l.layout?.['icon-image']), `${l.id} icon-image`).toContain('ring');
       expect(l.layout?.['icon-optional'], `${l.id} icon-optional`).toBe(true);
       expect(l.layout?.['text-optional'], `${l.id} text-optional`).toBe(false);
     }
     // the sprite ships with the style (multi-sprite array, relative URL)
     const sprites = Array.isArray(style.sprite) ? style.sprite : [style.sprite];
-    expect(JSON.stringify(sprites)).toContain('../sprites/wd/sprite');
-    expect(existsSync(resolve(process.cwd(), 'public/styles/sprites/wd/sprite.png'))).toBe(true);
-    expect(existsSync(resolve(process.cwd(), 'public/styles/sprites/wd/sprite@2x.png'))).toBe(true);
+    expect(JSON.stringify(sprites)).toContain('../sprites/outdoor-base/sprite');
+    expect(existsSync(resolve(process.cwd(), 'public/styles/sprites/outdoor-base/sprite.png'))).toBe(true);
+    expect(existsSync(resolve(process.cwd(), 'public/styles/sprites/outdoor-base/sprite@2x.png'))).toBe(true);
     const border = style.layers.find(l => l.id === 'border_admin_country');
     expect(JSON.stringify(border?.paint)).toContain('hsla(350, 25%, 58%, 1)');
   });
