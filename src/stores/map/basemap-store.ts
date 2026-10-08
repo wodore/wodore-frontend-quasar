@@ -14,12 +14,12 @@ import { getEnv } from '@services/runtimeEnv';
 import { OUTDOOR_STYLE_PATH, isOutdoorStyle, setupOutdoorContours } from '@services/outdoorContours';
 
 function mtkStylePath(): string {
-  // Served by Martin when available (glyphs/sprites/styles all from
-  // one tile server); falls back to the local public copy for dev
-  // and preview builds without Martin
-  const martinUrl = import.meta.env.VITE_MARTIN_URL as string | undefined;
+  // Served by Martin (same tile server that serves huts/sprites) when
+  // WODORE_TILE_SERVER_URL is set; falls back to the local public copy
+  // for PR previews without Martin
+  const martinUrl = import.meta.env.WODORE_TILE_SERVER_URL as string | undefined;
   if (martinUrl) {
-    return `${martinUrl}/style/outdoor-mtk`;
+    return `${martinUrl.replace(/\/$/, '')}/style/outdoor-mtk`;
   }
   return 'styles/outdoor-mtk/style.json';
 }
