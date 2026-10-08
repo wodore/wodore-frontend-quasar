@@ -13,20 +13,22 @@ import { i18n, currentLocale } from '@services/locale';
 import { getEnv } from '@services/runtimeEnv';
 import { OUTDOOR_STYLE_PATH, isOutdoorStyle, setupOutdoorContours } from '@services/outdoorContours';
 
+// Bump this when the Martin-served basemap style changes (new colors,
+// layers, fonts, sprites). Format: ISO date + optional .N for same-day
+// revisions. The style URL gets ?v={version} — Martin serves the same
+// content regardless; the query param is purely a browser cache buster.
+const STYLE_VERSION = '2026-10-08';
+
 function mtkStylePath(): string {
   // Served by Martin — the same tile server that serves huts/sprites.
   // No local fallback: if Martin is down, the map (hut tiles, hut
   // sprites, basemap) is down anyway. After one visit the style is
-  // service-worker cached.
-  // Cache buster: the frontend git hash forces a fresh fetch after
-  // each deploy (Martin serves the same content regardless of query).
+  // service-worker cached. ?v busts the cache when the style changes.
   const martinUrl = getEnv('WODORE_TILE_SERVER_URL');
   if (!martinUrl) {
     throw new Error('WODORE_TILE_SERVER_URL is not set — Martin is required for the basemap');
   }
-  const gitHash = getEnv('WODORE_GIT_HASH') || '';
-  const version = gitHash ? `?v=${gitHash.slice(0, 8)}` : '';
-  return `${martinUrl.replace(/\/$/, '')}/style/wd-outdoor-base-mtk${version}`;
+  return `${martinUrl.replace(/\/$/, '')}/style/wd-outdoor-base-mtk?v=${STYLE_VERSION}`;
 }
 
 /** Compute absolute glyph/sprite URLs for a style, relative to the
