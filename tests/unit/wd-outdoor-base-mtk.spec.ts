@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 import { validateStyleMin } from '@maplibre/maplibre-gl-style-spec';
 import type { StyleSpecification } from 'maplibre-gl';
 
-const STYLE_DIR = resolve(process.cwd(), 'public/styles/wd-outdoor-base-mtk');
+const STYLE_DIR = resolve(process.cwd(), 'dist/martin/wd-outdoor-base-mtk');
 const STYLE_PATH = resolve(STYLE_DIR, 'style.json');
 
 /**
@@ -110,7 +110,7 @@ describe('wd-outdoor-base-mtk basemap style', () => {
 
   it('speaks Wodore typography: Barlow labels from vendored glyphs', () => {
     // glyphs resolve next to the style (works under any base path)
-    expect(style.glyphs).toBe('../glyphs/{fontstack}/{range}.pbf');
+    expect(style.glyphs).toBe('/font/{fontstack}/{range}.pbf');
     const used = new Set<string>();
     const walk = (node: unknown) => {
       if (Array.isArray(node)) {
@@ -120,21 +120,13 @@ describe('wd-outdoor-base-mtk basemap style', () => {
     };
     for (const l of style.layers) if (l.layout?.['text-font']) walk(l.layout['text-font']);
     // every referenced font is Barlow or vendored Noto (incl. the
-    // serif voice for mountain ranges) — no mtk Ysabeau
+    // serif voice for mountain ranges) — no mtk Ysabeau. Fonts are
+    // served by Martin from TTF (no local PBF files)
     for (const f of used) {
       expect(f, `unexpected font ${f}`).toMatch(/^(Barlow|Noto (Sans|Serif)) /);
     }
-    // …and every used stack has PBFs on disk for the latin ranges
-    expect(used.size).toBeGreaterThan(0);
-    for (const f of used) {
-      if (f === '') continue;
-      for (const range of ['0-255', '256-511']) {
-        expect(
-          existsSync(resolve(process.cwd(), 'public/styles/glyphs', f, `${range}.pbf`)),
-          `missing glyph file ${f}/${range}.pbf — run yarn gen:glyphs`
-        ).toBe(true);
-      }
-    }
+    // …and the glyphs URL points to Martin
+    expect(style.glyphs).toBe('/font/{fontstack}/{range}.pbf');
   });
 
   it('draws swisstopo-style streets when zoomed in: dark casings hug the fills', () => {
@@ -235,11 +227,9 @@ describe('wd-outdoor-base-mtk basemap style', () => {
       expect(l.layout?.['icon-optional'], `${l.id} icon-optional`).toBe(true);
       expect(l.layout?.['text-optional'], `${l.id} text-optional`).toBe(false);
     }
-    // the sprite ships with the style (multi-sprite array, relative URL)
+    // the sprite ships with the style (multi-sprite array, Martin URL)
     const sprites = Array.isArray(style.sprite) ? style.sprite : [style.sprite];
-    expect(JSON.stringify(sprites)).toContain('../sprites/outdoor-base/sprite');
-    expect(existsSync(resolve(process.cwd(), 'public/styles/sprites/outdoor-base/sprite.png'))).toBe(true);
-    expect(existsSync(resolve(process.cwd(), 'public/styles/sprites/outdoor-base/sprite@2x.png'))).toBe(true);
+    expect(JSON.stringify(sprites)).toContain('/sprite/wd-maps');
     const border = style.layers.find(l => l.id === 'border_admin_country');
     expect(JSON.stringify(border?.paint)).toContain('hsla(350, 25%, 58%, 1)');
   });

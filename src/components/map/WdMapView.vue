@@ -144,7 +144,11 @@ const localPropertiesStore = useLocalPropertiesStore();
 // glyph/sprite URLs → 404s on F5 reload, see previous fix). An empty
 // style object is valid, needs no URL pinning, and lets setBasemap()
 // apply the real style through setStyle() with transformStyle.
-const initialMapStyle = ref<import('maplibre-gl').StyleSpecification>({ version: 8 as const, sources: {}, layers: [] });
+const initialMapStyle = ref<import('maplibre-gl').StyleSpecification>({
+  version: 8 as const,
+  sources: {},
+  layers: [],
+});
 
 // Get initial location from store (handles URL hash, storage, defaults)
 const initialLocation = localPropertiesStore.getInitialLocation();

@@ -1,5 +1,5 @@
 /**
- * Build `public/styles/wd-outdoor-base-ofm/style.json` — the keyless "Wodore Outdoor"
+ * Build `dist/martin/wd-outdoor-base-ofm/style.json` — the keyless "Wodore Outdoor"
  * basemap style — from the vendored OpenFreeMap Liberty source
  * (`scripts/style/liberty-src.json`, BSD-licensed fork of OSM Liberty,
  * https://github.com/hyperknot/openfreemap-styles).
@@ -13,7 +13,7 @@
  *
  * Run: node scripts/style/build-outdoor-style.mjs
  * Then fine-tune visually in Maputnik (changes must be ported back here):
- *   maputnik --watch --file public/styles/wd-outdoor-base-ofm/style.json
+ *   maputnik --watch --file dist/martin/wd-outdoor-base-ofm/style.json
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -21,7 +21,15 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SRC = path.join(__dirname, 'liberty-src.json');
-const OUT = path.join(__dirname, '..', '..', 'public', 'styles', 'wd-outdoor-base-ofm', 'style.json');
+const OUT = path.join(
+  __dirname,
+  '..',
+  '..',
+  'dist',
+  'martin',
+  'wd-outdoor-base-ofm',
+  'style.json'
+);
 
 /** JSON.parse that rethrows with context — the build must fail loudly
  * (and legibly) when the vendored source drifts. */
@@ -145,7 +153,7 @@ style.id = 'wodore-outdoor-ofm';
 // dependency on demotiles, service-worker cacheable for offline use.
 // Note: our vendored Noto covers latin/latin-ext/greek/cyrillic only;
 // CJK labels render empty rather than tofu (same trade-off as mtk).
-style.glyphs = '../glyphs/{fontstack}/{range}.pbf';
+style.glyphs = '/font/{fontstack}/{range}.pbf';
 style.sources.openmaptiles.attribution = ATTR_OSM + ATTR_OFM;
 style.sources['dem-mapterhorn'] = {
   type: 'raster-dem',

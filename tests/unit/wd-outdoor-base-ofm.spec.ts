@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 import { validateStyleMin } from '@maplibre/maplibre-gl-style-spec';
 import type { StyleSpecification } from 'maplibre-gl';
 
-const STYLE_PATH = resolve(process.cwd(), 'public/styles/wd-outdoor-base-ofm/style.json');
+const STYLE_PATH = resolve(process.cwd(), 'dist/martin/wd-outdoor-base-ofm/style.json');
 
 /**
  * Guards for the generated outdoor basemap style
@@ -56,7 +56,14 @@ describe('outdoor basemap style', () => {
   });
 
   it('has the hillshade, contour and peak layers the basemap promises', () => {
-    for (const id of ['hillshade', 'contour-lines', 'contour-labels', 'peak-rank1', 'peak-rank2', 'peak-minor']) {
+    for (const id of [
+      'hillshade',
+      'contour-lines',
+      'contour-labels',
+      'peak-rank1',
+      'peak-rank2',
+      'peak-minor',
+    ]) {
       expect(layerIds, `missing layer ${id}`).toContain(id);
     }
     const hillshade = style.layers.find(l => l.id === 'hillshade');
