@@ -14,7 +14,13 @@ import { getEnv } from '@services/runtimeEnv';
 import { OUTDOOR_STYLE_PATH, isOutdoorStyle, setupOutdoorContours } from '@services/outdoorContours';
 
 function mtkStylePath(): string {
-  // single style, local names only (a localized variant can return later)
+  // Served by Martin when available (glyphs/sprites/styles all from
+  // one tile server); falls back to the local public copy for dev
+  // and preview builds without Martin
+  const martinUrl = import.meta.env.VITE_MARTIN_URL as string | undefined;
+  if (martinUrl) {
+    return `${martinUrl}/style/outdoor-mtk`;
+  }
   return 'styles/outdoor-mtk/style.json';
 }
 
