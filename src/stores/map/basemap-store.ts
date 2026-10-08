@@ -11,11 +11,7 @@ import { useOverlayStore } from './overlay-store';
 import { StyleSpecification } from 'maplibre-gl';
 import { i18n, currentLocale } from '@services/locale';
 import { getEnv } from '@services/runtimeEnv';
-import {
-  OUTDOOR_STYLE_PATH,
-  isOutdoorStyle,
-  setupOutdoorContours,
-} from '@services/outdoorContours';
+import { isOutdoorStyle, setupOutdoorContours } from '@services/outdoorContours';
 
 // Bump this when the Martin-served basemap style changes (new colors,
 // layers, fonts, sprites). Format: ISO date + optional .N for same-day
@@ -23,7 +19,7 @@ import {
 // content regardless; the query param is purely a browser cache buster.
 const STYLE_VERSION = '2026-10-08';
 
-function mtkStylePath(): string {
+function martinStylePath(styleId: string): string {
   // Served by Martin — the same tile server that serves huts/sprites.
   // No local fallback: if Martin is down, the map (hut tiles, hut
   // sprites, basemap) is down anyway. After one visit the style is
@@ -32,7 +28,11 @@ function mtkStylePath(): string {
   if (!martinUrl) {
     throw new Error('WODORE_TILE_SERVER_URL is not set — Martin is required for the basemap');
   }
-  return `${martinUrl.replace(/\/$/, '')}/style/wd-outdoor-base-mtk?v=${STYLE_VERSION}`;
+  return `${martinUrl.replace(/\/$/, '')}/style/${styleId}?v=${STYLE_VERSION}`;
+}
+
+function mtkStylePath(): string {
+  return martinStylePath('wd-outdoor-base-mtk');
 }
 
 /** Compute absolute glyph/sprite URLs for a style, relative to the
@@ -723,7 +723,7 @@ export const useBasemapStore = defineStore('basemap', () => {
         // contours, bathymetry, AO hillshade). Community License: <= EUR 1M
         // revenue & < 10 FTE — attribution + logo required, no
         // pre-fetch/offline/print use (that's the OFM fallback's job).
-        // Built by scripts/style/build-mtk-style.mjs.
+        // Style JSON lives in wodore-backend (tile_server/styles/).
         name: 'wd-outdoor-base-mtk',
         label: t('basemaps.outdoor'),
         show: true,
@@ -740,15 +740,16 @@ export const useBasemapStore = defineStore('basemap', () => {
       {
         // Keyless OpenFreeMap outdoor style — the unrestricted fallback
         // (auto-selected when Maptoolkit tiles fail; also the right tiles
-        // for any future offline/print feature). Built by
-        // scripts/style/build-outdoor-style.mjs — fine-tune in Maputnik
-        // and port changes back to the build script.
+        // for any future offline/print feature). Style JSON lives in the
+        // backend repo (tile_server/styles/wd-outdoor-base-ofm.json).
         name: 'outdoor-osm',
         label: t('basemaps.outdoor_ofm'),
         show: false, // picker: only outdoor default (kept as hidden OFM fallback)
         active: false,
         img: getImageUrl('outdoor-v2.png'),
-        style: OUTDOOR_STYLE_PATH,
+        get style() {
+          return martinStylePath('wd-outdoor-base-ofm');
+        },
         layers: {
           ways: { before: undefined },
           background: { before: undefined },

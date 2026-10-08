@@ -10,15 +10,18 @@
  *
  * The DEM (`id: 'dem'`) matches the protocol prefix hardcoded in the
  * style (`dem-contour://{z}/{x}/{y}?...`) — keep both in sync, and keep
- * the thresholds in sync with `scripts/style/build-outdoor-style.mjs`.
+ * the thresholds in sync with the served style JSONs (wodore-backend
+ * `tile_server/styles/wd-outdoor-base-*.json`).
  */
 import { addProtocol } from 'maplibre-gl';
 import mlcontour from 'maplibre-contour';
 
 const { DemSource } = mlcontour;
 
-/** Style path of the outdoor basemap (as referenced in basemap-store). */
-export const OUTDOOR_STYLE_PATH = 'styles/outdoor/style.json';
+/** Style ids of the Wodore outdoor basemaps served by Martin
+ * (`{WODORE_TILE_SERVER_URL}/style/{id}`). The mtk style is the default;
+ * the ofm style is the keyless fallback (Maptoolkit license). */
+export const OUTDOOR_STYLE_IDS = ['wd-outdoor-base-mtk', 'wd-outdoor-base-ofm'] as const;
 
 const MAPTERHORN_DEM = 'https://tiles.mapterhorn.com/{z}/{x}/{y}.webp';
 
@@ -48,7 +51,8 @@ export function setupOutdoorContours(): void {
   console.debug('[outdoorContours] dem-contour protocol registered (Mapterhorn DEM)');
 }
 
-/** True if the given basemap style is the outdoor style needing contours. */
+/** True if the given basemap style is a Martin-served Wodore outdoor
+ * style (the ones that use the dem-contour protocol). */
 export function isOutdoorStyle(style: unknown): boolean {
-  return typeof style === 'string' && style.includes(OUTDOOR_STYLE_PATH);
+  return typeof style === 'string' && OUTDOOR_STYLE_IDS.some(id => style.includes(`/style/${id}`));
 }

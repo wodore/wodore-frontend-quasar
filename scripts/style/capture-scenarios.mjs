@@ -96,7 +96,9 @@ export const SCENARIOS = [
 ];
 
 const VARIANTS = {
-  ours: '/public/styles/outdoor-mtk/style.json',
+  // Ours is served by the local Martin tile server (styles live in the
+  // backend repo); swisstopo reference is a local vendored copy.
+  ours: `${process.env.WODORE_TILE_SERVER_URL ?? 'http://localhost:8075'}/style/wd-outdoor-base-mtk`,
   swz: '/scripts/style/swz-ref.json',
 };
 
