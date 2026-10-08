@@ -47,13 +47,12 @@ export function isCenterInBbox(
  */
 export function withCountryFallback(
   country: StyleSpecification,
-  fallback: StyleSpecification
+  fallback: StyleSpecification,
+  minZoom: number = COUNTRY_BASEMAP_MIN_ZOOM
 ): StyleSpecification {
-  // Country layers stop rendering below country scale — the fallback
+  // Country layers stop rendering below their zoom floor — the fallback
   // shows instead. Layers that already start higher keep their own value.
-  const countryLayers = (country.layers ?? []).map(layer =>
-    clampLayerMinZoom(layer, COUNTRY_BASEMAP_MIN_ZOOM)
-  );
+  const countryLayers = (country.layers ?? []).map(layer => clampLayerMinZoom(layer, minZoom));
 
   return {
     ...country,

@@ -144,7 +144,8 @@ Overlays are **declarative configurations** that include:
 - Country basemaps (`ch-swisstopo-full`, `oe-raster`; flagged
   `countryOnly` + `bbox`) compose the DEFAULT world basemap beneath
   their own layers (`withCountryFallback`, country-fallback.ts). The
-  country layers carry `minzoom: 6`; a `moveend` watcher in
+  country layers carry `minzoom: 6` (swisstopo raster: 7, per-basemap
+  `countryMinZoom`); a `moveend` watcher in
   basemap-store toggles visibility by camera position — outside the
   bbox (or below z6) the default world map shows at every zoom, inside
   it the country raster renders on top. No runtime style switching, no

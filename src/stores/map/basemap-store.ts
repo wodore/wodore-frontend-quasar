@@ -203,6 +203,7 @@ export const useBasemapStore = defineStore('basemap', () => {
   let countryLayerIds: string[] = [];
   let fallbackLayerIds: string[] = [];
   let countryBbox: [number, number, number, number] | undefined;
+  let countryMinZoom = COUNTRY_BASEMAP_MIN_ZOOM;
   let lastCountryVisible: boolean | undefined;
   let lastFallbackVisible: boolean | undefined;
   let countryWatcherRegistered = false;
@@ -220,7 +221,7 @@ export const useBasemapStore = defineStore('basemap', () => {
     const center = map.getCenter();
     const inBbox = isCenterInBbox([center.lng, center.lat], countryBbox);
     const countryVisible = inBbox;
-    const fallbackVisible = !inBbox || map.getZoom() < COUNTRY_BASEMAP_MIN_ZOOM;
+    const fallbackVisible = !inBbox || map.getZoom() < countryMinZoom;
     if (countryVisible !== lastCountryVisible) {
       for (const id of countryLayerIds) {
         if (map.getLayer(id)) {
@@ -273,10 +274,11 @@ export const useBasemapStore = defineStore('basemap', () => {
       const country = typeof s.style === 'string' ? await loadStyleObject(s.style) : s.style;
       const fallback = await loadDefaultStyleObject();
       if (country && fallback) {
-        styleForMap = withCountryFallback(country, fallback);
+        styleForMap = withCountryFallback(country, fallback, s.countryMinZoom);
         countryLayerIds = country.layers.map(l => l.id);
         fallbackLayerIds = fallback.layers.map(l => l.id);
         countryBbox = s.bbox;
+        countryMinZoom = s.countryMinZoom ?? COUNTRY_BASEMAP_MIN_ZOOM;
         lastCountryVisible = undefined; // force re-apply after the swap
         lastFallbackVisible = undefined;
         registerCountryVisibilityWatcher();
@@ -289,11 +291,13 @@ export const useBasemapStore = defineStore('basemap', () => {
         countryLayerIds = [];
         fallbackLayerIds = [];
         countryBbox = undefined;
+        countryMinZoom = COUNTRY_BASEMAP_MIN_ZOOM;
       }
     } else {
       countryLayerIds = [];
       fallbackLayerIds = [];
       countryBbox = undefined;
+      countryMinZoom = COUNTRY_BASEMAP_MIN_ZOOM;
     }
     /*
      * Use transformStyle to preserve custom layers/sources when switching basemaps
@@ -827,6 +831,7 @@ export const useBasemapStore = defineStore('basemap', () => {
         show: true, // raster topo stays selectable alongside the outdoor default
         active: false,
         countryOnly: true, // CH-only tiles — world fallback via default basemap
+        countryMinZoom: 7, // pixelkarte hides one level earlier than the default floor
         bbox: [5.7, 45.6, 10.9, 48.1], // CH + border strips (pixelkarte covers them)
         img: getImageUrl('swiss-raster.png'),
         style: swissTopoRasterStyle,

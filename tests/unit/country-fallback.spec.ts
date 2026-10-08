@@ -85,6 +85,14 @@ describe('country-fallback', () => {
     expect(Array.isArray(merged.sprite)).toBe(true);
   });
 
+  it('accepts a per-basemap zoom floor (swisstopo hides one level earlier)', () => {
+    const merged = withCountryFallback(countryStyle(), fallbackStyle(), 7);
+
+    expect(merged.layers.find(l => l.id === 'ch-raster')?.minzoom).toBe(7);
+    // layers that already start higher keep their own value
+    expect(merged.layers.find(l => l.id === 'ch-overlay')?.minzoom).toBe(9);
+  });
+
   it('keeps the country floor above the overlay floor', () => {
     // overlays appear from OVERLAY_MIN_ZOOM — the country basemap must
     // still be part of the picture there; the fallback only takes over
