@@ -657,7 +657,7 @@ export const useBasemapStore = defineStore('basemap', () => {
         // basemap. No API key, CORS-open tiles/fonts/sprite.
         name: 'ch-swisstopo-light',
         label: t('basemaps.swiss_light'),
-        show: true,
+        show: false, // replaced by outdoor-mtk as THE vector map (user call)
         active: false,
         img: getImageUrl('swiss-vector.png'),
         // Weak-GPU raster variant: keyless OSM raster (the vector style
