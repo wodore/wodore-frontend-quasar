@@ -21,15 +21,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SRC = path.join(__dirname, 'liberty-src.json');
-const OUT = path.join(
-  __dirname,
-  '..',
-  '..',
-  'dist',
-  'martin',
-  'wd-outdoor-base-ofm',
-  'style.json'
-);
+const OUT = path.join(__dirname, '..', '..', 'dist', 'martin', 'wd-outdoor-base-ofm', 'style.json');
 
 /** JSON.parse that rethrows with context — the build must fail loudly
  * (and legibly) when the vendored source drifts. */

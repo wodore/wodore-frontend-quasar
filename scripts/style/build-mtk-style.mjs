@@ -226,24 +226,33 @@ for (const [id, defer] of [
     ['literal', ['Barlow SemiBold Italic']],
     ['literal', ['Noto Sans Italic']],
   ];
-  // TRIANGLE + name + elevation, ONE centered text block (user spec):
-  //     Matterhorn
-  //         ▲
-  //       4401
-  // The ▲ (U+25B2) is a text glyph in Noto Sans — perfectly centered,
-  // coupled in one collision box, same ink color as the name.
+  // TRIANGLE + name + elevation (user spec):
+  //     ▲
+  // Matterhorn
+  //   4401
+  // The ▲ is a SPRITE icon (wd-maps:peak) — the text-glyph approach
+  // (U+25B2 in Noto Sans) failed because Google Fonts subsets don't
+  // include Geometric Shapes. The sprite triangle always renders.
+  // Icon centered on the summit; text (name + elevation) flows below.
   // Only rank_1/rank_2 peaks get the triangle; rank_3 is text-only.
-  const hasTriangle = id !== 'place_peak_label_rank_3';
-  const triSection = hasTriangle
-    ? [
-        '\u25B2\n',
-        {
-          'font-scale': 0.55,
-          'text-font': ['literal', ['Noto Sans Regular']],
-          'text-color': 'hsla(28, 14%, 42%, 1)',
-        },
-      ]
-    : [];
+  if (id !== 'place_peak_label_rank_3') {
+    l.layout['icon-image'] = 'wd-maps:peak';
+    l.layout['icon-optional'] = true; // text can show without triangle
+    l.layout['text-optional'] = true;
+    l.layout['icon-size'] = [
+      'interpolate',
+      ['linear'],
+      ['zoom'],
+      l.minzoom,
+      0.5,
+      12,
+      0.6,
+      14,
+      0.7,
+    ];
+    // triangle sits on the summit point, text flows below
+    l.layout['text-offset'] = [0, 1.1];
+  }
   l.layout['text-field'] = [
     'case',
     ['!', ['has', 'is_nonlatin']],
@@ -253,7 +262,6 @@ for (const [id, defer] of [
       {},
       '\n',
       {},
-      ...triSection,
       ['to-string', ['get', 'ele']],
       { 'font-scale': 0.76, 'text-color': 'hsla(28, 10%, 48%, 1)' },
     ],
@@ -270,7 +278,6 @@ for (const [id, defer] of [
       {},
       '\n',
       {},
-      ...triSection,
       ['to-string', ['get', 'ele']],
       { 'font-scale': 0.76, 'text-color': 'hsla(28, 10%, 48%, 1)' },
     ],

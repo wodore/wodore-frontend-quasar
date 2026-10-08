@@ -1,5 +1,5 @@
 /**
- * Build `public/styles/sprites/outdoor-base/sprite{,@2x}.{png,json}` — the
+ * Build `public/styles/sprites/wd-maps/sprite{,@2x}.{png,json}` — the
  * settlement dot icons used INSIDE the place-label symbol layers
  * (icon + text share one collision box, so a dot never renders without
  * its label — user directive).
@@ -23,7 +23,7 @@ import { Buffer } from 'node:buffer';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const OUT = path.join(__dirname, '..', '..', 'public', 'styles', 'sprites', 'outdoor-base');
+const OUT = path.join(__dirname, '..', '..', 'public', 'styles', 'sprites', 'wd-maps');
 
 const INK = [0x1d, 0x1d, 0x1d]; // border + center marks (near-black)
 const FILL = [255, 255, 255]; // ring interior
