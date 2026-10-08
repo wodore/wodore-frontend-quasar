@@ -33,13 +33,19 @@ const attachmentMeta = attachments.map(f => {
   const stat = statSync(full);
   const ext = f.split('.').pop()?.toLowerCase() || '';
   const type =
-    ext === 'png' ? 'image/png' :
-    ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' :
-    ext === 'zip' ? 'application/zip' :
-    ext === 'json' ? 'application/json' :
-    ext === 'md' ? 'text/markdown' :
-    ext === 'txt' ? 'text/plain' :
-    'application/octet-stream';
+    ext === 'png'
+      ? 'image/png'
+      : ext === 'jpg' || ext === 'jpeg'
+        ? 'image/jpeg'
+        : ext === 'zip'
+          ? 'application/zip'
+          : ext === 'json'
+            ? 'application/json'
+            : ext === 'md'
+              ? 'text/markdown'
+              : ext === 'txt'
+                ? 'text/plain'
+                : 'application/octet-stream';
   return {
     name: f.replace(/-attachment\./, '.').replace(/\.[^.]+$/, ''),
     source: basename(f),
@@ -68,9 +74,7 @@ for (const rf of results) {
 
   // Find attachments created during this test's execution
   // (allow 2s tolerance for file system timing)
-  const matching = attachmentMeta.filter(a =>
-    a.mtime >= start - 2000 && a.mtime <= stop + 2000
-  );
+  const matching = attachmentMeta.filter(a => a.mtime >= start - 2000 && a.mtime <= stop + 2000);
 
   if (matching.length > 0) {
     result.attachments = matching.map(a => ({
@@ -87,8 +91,8 @@ for (const rf of results) {
 
 console.log(
   `link-allure-attachments: ${linked} attachments linked to results, ` +
-  `${alreadyLinked} results already had attachments, ` +
-  `${unmatched} results had no matching attachments.`
+    `${alreadyLinked} results already had attachments, ` +
+    `${unmatched} results had no matching attachments.`
 );
 
 // Warn about completely orphaned attachments

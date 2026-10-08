@@ -1434,7 +1434,9 @@ watch(
 // ── Actions ───────────────────────────────────────────────────────────────
 
 function openConfig(overlayName: string, tab?: string): void {
-  const overlay = overlayStore.overlays.find(o => o.name === overlayName);
+  const overlay = (overlayStore.overlays as unknown as OverlaySwitchItem[]).find(
+    (o: OverlaySwitchItem) => o.name === overlayName
+  );
   menuStore.openOverlayConfig(overlayName, tab);
   menuStore.menuData.title = overlay?.label ?? overlayName;
 }
@@ -1450,7 +1452,9 @@ function hasFilterConfig(overlayName: string): boolean {
 }
 
 function hasActiveFilters(overlayName: string): boolean {
-  const overlay = overlayStore.overlays.find(o => o.name === overlayName);
+  const overlay = (overlayStore.overlays as unknown as OverlaySwitchItem[]).find(
+    (o: OverlaySwitchItem) => o.name === overlayName
+  );
   const config = overlay?.config;
   if (!config?.filters?.length) return false;
   return config.filters.some(f => {

@@ -9,6 +9,7 @@
 import { ref, watch, computed, onBeforeUnmount } from 'vue';
 import { LocalStorage } from 'quasar';
 import { useBasemapStore } from '@stores/map/basemap-store';
+import type { BasemapSwitchItem } from '@stores/map/utils/interfaces';
 
 const basemapStore = useBasemapStore();
 
@@ -20,6 +21,9 @@ watch(open, v => LocalStorage.set('wd_bm_open', v));
 // Reactive: track the store's current basemap (also updates after
 // initial style load / persisted state restoration)
 const activeName = computed(() => basemapStore.getBasemap()?.name);
+// Typed alias: keeps template iteration inference shallow (TS2589 guard
+// after the store's setup return type grew with the outdoor basemaps)
+const visibleBasemaps = computed(() => basemapStore.basemaps as unknown as BasemapSwitchItem[]);
 
 /** Click outside the control closes the rail */
 function onDocClick(ev: Event): void {
@@ -35,7 +39,9 @@ watch(open, v => {
 onBeforeUnmount(() => document.removeEventListener('click', onDocClick, { capture: true }));
 
 function selectBasemap(bm: { name: string }): void {
-  const item = basemapStore.basemaps.find(b => b.name === bm.name);
+  const item = (basemapStore.basemaps as unknown as BasemapSwitchItem[]).find(
+    (b: BasemapSwitchItem) => b.name === bm.name
+  );
   if (item) basemapStore.setBasemap(item);
   // stays open — the owner closes it via outside-click or the toggle
 }
@@ -56,7 +62,7 @@ const iconClose = new URL(
     <Transition name="wd-bm-rail">
       <div v-if="open" class="wd-bm__rail" role="group" aria-label="Basemap">
         <button
-          v-for="bm in basemapStore.basemaps.filter(b => b.show)"
+          v-for="bm in visibleBasemaps.filter(b => b.show)"
           :key="bm.name"
           class="wd-bm__btn"
           :class="{

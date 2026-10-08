@@ -422,9 +422,9 @@
     "swiss_light": "Svizzera Topo Light",
     "swiss_raster": "Svizzera Topo Raster",
     "satellite": "Satellite",
-    "outdoor": "Outdoor OSM",
-    "austria_vector": "Austria Topo Vector",
-    "austria_raster": "Austria Topo Raster"
+    "outdoor": "Outdoor",
+    "austria_raster": "Austria Topo Raster",
+    "outdoor_ofm": "Outdoor (OSM)"
   },
   "multi_select": {
     "select_all": "Seleziona tutto",
