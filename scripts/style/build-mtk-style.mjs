@@ -239,17 +239,7 @@ for (const [id, defer] of [
     l.layout['icon-image'] = 'wd-maps:peak';
     l.layout['icon-optional'] = true; // text can show without triangle
     l.layout['text-optional'] = true;
-    l.layout['icon-size'] = [
-      'interpolate',
-      ['linear'],
-      ['zoom'],
-      l.minzoom,
-      0.5,
-      12,
-      0.6,
-      14,
-      0.7,
-    ];
+    l.layout['icon-size'] = ['interpolate', ['linear'], ['zoom'], l.minzoom, 0.5, 12, 0.6, 14, 0.7];
     // triangle sits on the summit point, text flows below
     l.layout['text-offset'] = [0, 1.1];
   }
