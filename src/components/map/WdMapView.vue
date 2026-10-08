@@ -239,11 +239,20 @@ function onMapLoad(e: MglEvent<'load'>) {
   // via transformStyle (GLOBE_SKY), same as the projection.
   e.map.setSky(GLOBE_SKY);
 
-  // Minimal world underlay (country contours + names) below the basemap
-  // layers — regional basemaps (swisstopo/basemap.at raster) leave the
-  // rest of the planet blank; the underlay shows through those gaps
-  // (basemap switches get it via transformStyle / withWorldUnderlay)
+  // World underlay (cheap colored OSM raster) below the basemap layers —
+  // regional basemaps (swisstopo/basemap.at raster) leave the rest of the
+  // planet blank; the underlay shows through those gaps (basemap switches
+  // get it via transformStyle / withWorldUnderlay)
   ensureWorldUnderlay(e.map);
+
+  // Country basemap restored from a previous session: the raw initial
+  // style carries no world fallback (composing it needs an async style
+  // fetch) — re-apply the active basemap once, which merges the default
+  // beneath the country layers (see setBasemap / country-fallback.ts)
+  const activeBasemap = basemapStore.getBasemap();
+  if (activeBasemap?.countryOnly) {
+    void basemapStore.setBasemap(activeBasemap, true);
+  }
 
   // Space backdrop gate: the dark backdrop (.wd-map-space — an opacity-
   // faded gradient layer, see SCSS below) only applies once the camera is

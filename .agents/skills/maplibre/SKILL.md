@@ -136,16 +136,25 @@ Overlays are **declarative configurations** that include:
   every basemap switch.
 - Camera floor: `MAP_MIN_ZOOM = 2` (planet stays comfortably in view);
   no max zoom (sources overzoom to MapLibre's z22).
-- World underlay (`src/stores/map/utils/world-underlay.ts`): a minimal
-  demotiles world (Natural Earth country contours + names) merged below
-  every basemap via `withWorldUnderlay` (transformStyle) /
-  `ensureWorldUnderlay` (initial load). Regional basemaps
-  (swisstopo/basemap.at) leave the rest of the planet blank — the
-  underlay shows through those gaps. Capped at z7.
-- Overlay layers are clamped to `OVERLAY_MIN_ZOOM = 7`
+- World underlay (`src/stores/map/utils/world-underlay.ts`): a cheap
+  colored OSM raster (tile.openstreetmap.org) merged below every
+  basemap via `withWorldUnderlay` (transformStyle) /
+  `ensureWorldUnderlay` (initial load) — final safety net where NO
+  basemap has data. Capped at z7.
+- Country basemaps (`ch-swisstopo-full`, `oe-raster`; flagged
+  `countryOnly`) compose the DEFAULT world basemap beneath their own
+  layers (`withCountryFallback`, country-fallback.ts): the country
+  layers stop rendering below `COUNTRY_BASEMAP_MIN_ZOOM = 6` and the
+  default (wd-outdoor-base-mtk) shows instead — no runtime style
+  switching. `setBasemap` builds the merged style (async style fetch,
+  session-cached); onMapLoad re-applies when a country basemap was
+  restored from a previous session.
+- Overlay layers are clamped to `OVERLAY_MIN_ZOOM = 5`
   (`src/stores/map/utils/map-constants.ts`, applied in `addOverlayLayer`
   and `transformStyle`) — overlays never render at planet scale and
-  reappear automatically when zooming back in.
+  reappear automatically when zooming back in. The overlay paint ramps
+  (opacity/size in overlay-*.ts) are aligned: overlays fade in from z5
+  (−2 levels vs the pre-globe app).
 - First-visit initial position: timezone-based guess
   (`src/services/timezone-location.ts`) → region-level coordinates, no
   permission/network. Lifecycle lives in `local-properties-store

@@ -10,10 +10,10 @@ import type { SkySpecification } from 'maplibre-gl';
  * regional and would clutter the planet-scale view. Implemented as a
  * layer-level `minzoom` (see `withOverlayMinZoom`) so it composes with the
  * per-overlay visibility toggles — layers reappear automatically when the
- * camera zooms back in. Equals the app's previous minimum zoom, i.e. the
- * farthest zoom-out at which overlays were ever visible.
+ * camera zooms back in. Overlay paint ramps (opacity/size) are shifted to
+ * match: overlays fade in from this zoom.
  */
-export const OVERLAY_MIN_ZOOM = 7;
+export const OVERLAY_MIN_ZOOM = 5;
 
 /**
  * Clamp a style layer's `minzoom` up to the overlay zoom floor. Layers

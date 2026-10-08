@@ -14,7 +14,6 @@ const baseStyle = (): StyleSpecification => ({
   sources: {
     osm: { type: 'raster', tiles: ['https://example.com/{z}/{x}/{y}.png'], tileSize: 256 },
   },
-  glyphs: 'https://example.com/fonts/{fontstack}/{range}.pbf',
   layers: [
     { id: 'bg', type: 'background', paint: { 'background-color': '#fff' } },
     { id: 'osm', type: 'raster', source: 'osm' },
@@ -22,19 +21,19 @@ const baseStyle = (): StyleSpecification => ({
 });
 
 describe('world-underlay', () => {
-  it('merges source and layers below all data layers', () => {
+  it('merges a colored raster world source below all data layers', () => {
     const merged = withWorldUnderlay(baseStyle());
 
-    expect(merged.sources[WORLD_UNDERLAY_SOURCE_ID]).toBeDefined();
+    const source = merged.sources[WORLD_UNDERLAY_SOURCE_ID];
+    expect(source).toBeDefined();
+    expect(source.type).toBe('raster');
+    expect(JSON.stringify(source)).toContain('openstreetmap.org');
+
     const underlay = merged.layers.filter(l => l.id.startsWith('wd-world-underlay-'));
-    expect(underlay).toHaveLength(2);
-    // both inserted after the background, before the raster data layer
-    expect(merged.layers.map(l => l.id)).toEqual([
-      'bg',
-      'wd-world-underlay-boundaries',
-      'wd-world-underlay-labels',
-      'osm',
-    ]);
+    expect(underlay).toHaveLength(1);
+    expect(underlay[0].type).toBe('raster');
+    // inserted after the background, before the basemap's data layer
+    expect(merged.layers.map(l => l.id)).toEqual(['bg', 'wd-world-underlay-raster', 'osm']);
   });
 
   it('inserts at index 0 when the style has no background layer', () => {
@@ -42,7 +41,7 @@ describe('world-underlay', () => {
     style.layers = style.layers.filter(l => l.type !== 'background');
 
     const merged = withWorldUnderlay(style);
-    expect(merged.layers[0].id).toBe('wd-world-underlay-boundaries');
+    expect(merged.layers[0].id).toBe('wd-world-underlay-raster');
   });
 
   it('is idempotent', () => {
@@ -52,16 +51,7 @@ describe('world-underlay', () => {
     expect(twice).toBe(once);
   });
 
-  it('keeps existing glyphs and defaults them when missing', () => {
-    expect(withWorldUnderlay(baseStyle()).glyphs).toContain('example.com');
-
-    const style = baseStyle();
-    delete style.glyphs;
-    const merged = withWorldUnderlay(style);
-    expect(merged.glyphs).toContain('demotiles.maplibre.org');
-  });
-
-  it('caps underlay layers at the world-underlay max zoom', () => {
+  it('caps the underlay layer at the world-underlay max zoom', () => {
     const merged = withWorldUnderlay(baseStyle());
     for (const layer of merged.layers.filter(l => l.id.startsWith('wd-world-underlay-'))) {
       expect(layer.maxzoom).toBe(WORLD_UNDERLAY_MAX_ZOOM);

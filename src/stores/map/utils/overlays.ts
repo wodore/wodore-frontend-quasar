@@ -23,17 +23,19 @@ export function opacityLevels({
   zoomMain = 0.8,
   zoomIn = 0.3,
 }: opacityLevelsArgs): PropertyValueSpecification<number> {
+  // Zoom stops aligned with OVERLAY_MIN_ZOOM (5): overlays fade in two
+  // levels earlier than they used to (was 10/11/15/18)
   return [
     'interpolate',
     ['linear'],
     ['zoom'],
-    10,
+    8,
     zoomOut,
-    11,
+    9,
     zoomMain * 0.8,
-    15,
+    13,
     zoomMain,
-    18,
+    16,
     zoomIn,
   ];
 }

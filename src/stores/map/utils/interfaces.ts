@@ -23,6 +23,11 @@ export interface BasemapSwitchItem {
   show?: boolean;
   style: StyleSpecification | string;
   layers: Layers;
+  /** Country-scale basemap: tiles only cover one country. When composed
+   *  into the map, the DEFAULT basemap (wd-outdoor-base-mtk) is merged
+   *  beneath and the country layers stop rendering below
+   *  COUNTRY_BASEMAP_MIN_ZOOM (see country-fallback.ts). */
+  countryOnly?: boolean;
 }
 
 export interface OverlaySwitchItem {

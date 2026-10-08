@@ -3,25 +3,25 @@ import { OVERLAY_MIN_ZOOM, withOverlayMinZoom } from '@stores/map/utils/map-cons
 
 describe('map-constants', () => {
   it('exposes the overlay zoom floor', () => {
-    // The app's previous minimum zoom — overlays were never visible below
-    expect(OVERLAY_MIN_ZOOM).toBe(7);
+    // Two levels below the previous floor of 7 — overlays fade in earlier
+    expect(OVERLAY_MIN_ZOOM).toBe(5);
   });
 
   it('clamps layers that start below the overlay zoom floor', () => {
     expect(withOverlayMinZoom({ id: 'wd-huts', type: 'circle' })).toEqual({
       id: 'wd-huts',
       type: 'circle',
-      minzoom: 7,
+      minzoom: 5,
     });
   });
 
   it('keeps layers that already start at or above the floor', () => {
-    const layer = { id: 'wd-huts-occupation-day0', type: 'symbol', minzoom: 8 };
+    const layer = { id: 'wd-huts-occupation-day0', type: 'symbol', minzoom: 6 };
     expect(withOverlayMinZoom(layer)).toBe(layer);
-    expect(withOverlayMinZoom({ ...layer, minzoom: 7 })).toEqual({
+    expect(withOverlayMinZoom({ ...layer, minzoom: 5 })).toEqual({
       id: 'wd-huts-occupation-day0',
       type: 'symbol',
-      minzoom: 7,
+      minzoom: 5,
     });
   });
 

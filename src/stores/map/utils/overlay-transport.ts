@@ -29,21 +29,21 @@ function getRadius(): ExpressionSpecification {
     'interpolate',
     ['linear'],
     ['zoom'],
-    7,
+    5,
     matchType(3, 2, 1),
-    9,
+    7,
     matchType(4, 3, 3),
-    16,
+    14,
     matchType(9, 8, 8),
   ];
 }
 const transportStopsLayerPaint: CircleLayerSpecification['paint'] = {
   'circle-color': matchType('#C60018', '#2d327d', '#0079C7'), //getAvailColors(0),
   'circle-stroke-color': '#F6F6F6',
-  'circle-stroke-width': ['interpolate', ['linear'], ['zoom'], 10, 0, 12, 1, 16, 2],
+  'circle-stroke-width': ['interpolate', ['linear'], ['zoom'], 8, 0, 10, 1, 16, 2],
   //'circle-opacity': 0.6,
   'circle-radius': getRadius(),
-  'circle-opacity': ['interpolate', ['linear'], ['zoom'], 6, 0, 7, 0.3, 10, 0.6, 14, 1],
+  'circle-opacity': ['interpolate', ['linear'], ['zoom'], 4, 0, 5, 0.3, 8, 0.6, 12, 1],
 };
 
 export const transportStyle: StyleSpecification = {
