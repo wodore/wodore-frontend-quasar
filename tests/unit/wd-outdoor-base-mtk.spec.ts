@@ -1,27 +1,33 @@
 import { describe, it, expect } from 'vitest';
 import * as allure from 'allure-js-commons';
-import { readFileSync, existsSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { validateStyleMin } from '@maplibre/maplibre-gl-style-spec';
 import type { StyleSpecification } from 'maplibre-gl';
 
-const STYLE_DIR = resolve(process.cwd(), 'dist/martin/wd-outdoor-base-mtk');
-const STYLE_PATH = resolve(STYLE_DIR, 'style.json');
-
 /**
- * Guards for the Maptoolkit-based default outdoor basemap
- * (scripts/style/build-mtk-style.mjs). Community License: attribution
- * via TileJSON, logo overlay required in the app, no pre-fetch/offline/
- * print use (OFM fallback covers those).
+ * Guards for the Maptoolkit-based default outdoor basemap, served by
+ * the backend Martin tile server (wodore-backend,
+ * tile_server/styles/wd-outdoor-base-mtk.json).
+ *
+ * Community License: attribution via TileJSON, logo overlay required
+ * in the app, no pre-fetch/offline/print use (OFM fallback covers
+ * those).
+ *
+ * The style is fetched from Martin at test time; the suite skips when
+ * the tile server is unreachable (e.g. CI). Run Martin locally
+ * (backend: docker compose up martin + martin_sync) for coverage.
  */
-// The built style lives in the backend repo (tile_server/styles/); dist/
-// only exists after a local build, so CI skips this suite.
-const hasStyle = existsSync(STYLE_PATH);
-const style: StyleSpecification = hasStyle
-  ? JSON.parse(readFileSync(STYLE_PATH, 'utf8'))
-  : ({ layers: [] } as unknown as StyleSpecification);
+const TILE_SERVER = process.env.WODORE_TILE_SERVER_URL ?? 'http://localhost:8075';
 
-describe.skipIf(!hasStyle)('wd-outdoor-base-mtk basemap style', () => {
+let fetched: StyleSpecification | undefined;
+try {
+  const res = await fetch(`${TILE_SERVER}/style/wd-outdoor-base-mtk`);
+  if (res.ok) fetched = await res.json();
+} catch {
+  // Martin not running — the suite skips below.
+}
+const style = fetched ?? ({ layers: [] } as unknown as StyleSpecification);
+
+describe.skipIf(!fetched)('wd-outdoor-base-mtk basemap style', () => {
   const layerIds = style.layers.map(l => l.id);
 
   it('validates against the MapLibre style spec', () => {
@@ -115,8 +121,8 @@ describe.skipIf(!hasStyle)('wd-outdoor-base-mtk basemap style', () => {
   });
 
   it('speaks Wodore typography: Barlow labels from vendored glyphs', () => {
-    // glyphs resolve next to the style (works under any base path)
-    expect(style.glyphs).toBe('/font/{fontstack}/{range}.pbf');
+    // glyphs resolve on the Martin tile server (same origin as the style)
+    expect(style.glyphs).toBe(`${TILE_SERVER}/font/{fontstack}/{range}.pbf`);
     const used = new Set<string>();
     const walk = (node: unknown) => {
       if (Array.isArray(node)) {
@@ -132,7 +138,7 @@ describe.skipIf(!hasStyle)('wd-outdoor-base-mtk basemap style', () => {
       expect(f, `unexpected font ${f}`).toMatch(/^(Barlow|Noto (Sans|Serif)) /);
     }
     // …and the glyphs URL points to Martin
-    expect(style.glyphs).toBe('/font/{fontstack}/{range}.pbf');
+    expect(style.glyphs).toBe(`${TILE_SERVER}/font/{fontstack}/{range}.pbf`);
   });
 
   it('draws swisstopo-style streets when zoomed in: dark casings hug the fills', () => {
@@ -204,9 +210,6 @@ describe.skipIf(!hasStyle)('wd-outdoor-base-mtk basemap style', () => {
 
   it('ships a single style with local names only', () => {
     // no per-locale variants — one style, mtk's local name fields
-    for (const loc of ['de', 'en', 'fr', 'it']) {
-      expect(existsSync(resolve(STYLE_DIR, `style.${loc}.json`)), `style.${loc}.json`).toBe(false);
-    }
     const tf = JSON.stringify(style.layers.find(l => l.id === 'place_point_label_rank_1'));
     // primary name is the local one (mtk's own nonlatin latin-second-line
     // ladder may still reference name_en/name_fr/… — that stays)

@@ -1,25 +1,29 @@
 import { describe, it, expect } from 'vitest';
 import * as allure from 'allure-js-commons';
-import { readFileSync, existsSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { validateStyleMin } from '@maplibre/maplibre-gl-style-spec';
 import type { StyleSpecification } from 'maplibre-gl';
 
-const STYLE_PATH = resolve(process.cwd(), 'dist/martin/wd-outdoor-base-ofm/style.json');
-
 /**
- * Guards for the generated outdoor basemap style
- * (scripts/style/build-outdoor-style.mjs). These pin the keyless,
+ * Guards for the keyless OpenFreeMap outdoor fallback style, served by
+ * the backend Martin tile server (wodore-backend,
+ * tile_server/styles/wd-outdoor-base-ofm.json). These pin the keyless,
  * no-MapTiler contract and the layer hooks the app depends on.
+ *
+ * The style is fetched from Martin at test time; the suite skips when
+ * the tile server is unreachable (e.g. CI).
  */
-// The built style lives in the backend repo (tile_server/styles/); dist/
-// only exists after a local build, so CI skips this suite.
-const hasStyle = existsSync(STYLE_PATH);
-const style: StyleSpecification = hasStyle
-  ? JSON.parse(readFileSync(STYLE_PATH, 'utf8'))
-  : ({ layers: [] } as unknown as StyleSpecification);
+const TILE_SERVER = process.env.WODORE_TILE_SERVER_URL ?? 'http://localhost:8075';
 
-describe.skipIf(!hasStyle)('outdoor basemap style', () => {
+let fetched: StyleSpecification | undefined;
+try {
+  const res = await fetch(`${TILE_SERVER}/style/wd-outdoor-base-ofm`);
+  if (res.ok) fetched = await res.json();
+} catch {
+  // Martin not running — the suite skips below.
+}
+const style = fetched ?? ({ layers: [] } as unknown as StyleSpecification);
+
+describe.skipIf(!fetched)('outdoor basemap style', () => {
   const layerIds = style.layers.map(l => l.id);
 
   it('validates against the MapLibre style spec', () => {
