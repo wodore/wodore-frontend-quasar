@@ -5,6 +5,15 @@ import { createPinia, setActivePinia } from 'pinia';
 import { nextTick } from 'vue';
 import { useLocalPropertiesStore } from '@stores/local-properties-store';
 
+// Timezone guess is controlled per test
+const guessMock = vi.fn<() => { lat: number; lng: number } | null>(() => ({
+  lat: 47.3769,
+  lng: 8.5417,
+}));
+vi.mock('@services/timezone-location', () => ({
+  guessLocationFromTimezone: () => guessMock(),
+}));
+
 // Quasar's web storage no-ops under happy-dom; back it with the real DOM storage
 vi.mock('quasar', async importOriginal => {
   const actual = await importOriginal<typeof import('quasar')>();
@@ -44,6 +53,7 @@ describe('local-properties-store', () => {
   beforeEach(() => {
     window.localStorage.clear();
     window.sessionStorage.clear();
+    guessMock.mockReturnValue({ lat: 47.3769, lng: 8.5417 });
     setActivePinia(createPinia());
   });
 
@@ -144,12 +154,58 @@ describe('local-properties-store', () => {
     const initial = store.getInitialLocation();
     expect(initial).toMatchObject({ zoom: 13.77, lat: 46.13591, lng: 6.81813 });
 
-    // Without hash and with a stale stored location, defaults win
+    // Without a hash, the stored position still wins — regardless of age
+    // (the map reopens where the user last looked)
     window.location.hash = '';
     store.persistentState.location.timestamp = Date.now() - 2 * 60 * 60 * 1000;
-    const fallback = store.getInitialLocation();
-    expect(fallback.lat).toBeCloseTo(46.8);
-    expect(fallback.lng).toBeCloseTo(8.2);
+    const stored = store.getInitialLocation();
+    expect(stored.lat).toBeCloseTo(46.5);
+    expect(stored.lng).toBeCloseTo(7.5);
+  });
+
+  it('guesses the initial location from the timezone on first visit', async () => {
+    const store = useLocalPropertiesStore();
+
+    const initial = store.getInitialLocation();
+    expect(guessMock).toHaveBeenCalledOnce();
+    expect(initial).toMatchObject({ lat: 47.3769, lng: 8.5417, zoom: 6, source: 'guess' });
+
+    // The guess is persisted so the next visit starts from the same spot
+    await vi.waitFor(
+      () => {
+        expect(readStored().location?.source).toBe('guess');
+      },
+      { timeout: 2000 }
+    );
+  });
+
+  it('keeps the user position once the map was moved (guess never runs again)', async () => {
+    let store = useLocalPropertiesStore();
+    expect(store.getInitialLocation().source).toBe('guess');
+
+    // Any map movement marks the position as user-set
+    store.updateLocation({ lat: 46.5, lng: 7.5, zoom: 12 });
+    await vi.waitFor(
+      () => {
+        expect(readStored().location?.source).toBe('user');
+      },
+      { timeout: 2000 }
+    );
+
+    guessMock.mockClear();
+    setActivePinia(createPinia());
+    store = useLocalPropertiesStore();
+    const initial = store.getInitialLocation();
+    expect(guessMock).not.toHaveBeenCalled();
+    expect(initial).toMatchObject({ lat: 46.5, lng: 7.5, source: 'user' });
+  });
+
+  it('falls back to the Alps default when the timezone gives no signal', () => {
+    guessMock.mockReturnValue(null);
+    const store = useLocalPropertiesStore();
+
+    const initial = store.getInitialLocation();
+    expect(initial).toMatchObject({ lat: 46.8, lng: 8.2, zoom: 8, source: 'default' });
   });
 
   it('clears all state back to defaults', () => {

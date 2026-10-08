@@ -219,6 +219,12 @@ function onMapLoad(e: MglEvent<'load'>) {
   collapseAutoExpandedAttribution();
   console.debug(`[onMapLoad] Maplibre version ${e.map.version} loaded`);
 
+  // Globe projection: world coverage when zoomed out (the camera shows the
+  // planet below ~z6 and smoothly transitions back to mercator around z12,
+  // so local views render exactly as before). Basemap switches preserve it
+  // via transformStyle, which injects the same projection into the style.
+  e.map.setProjection({ type: 'globe' });
+
   // Dev-only handle for debugging and e2e tests (map.project for exact
   // marker tap positions). Stripped from production behavior by the guard.
   if (process.env.DEV) {
@@ -1296,9 +1302,6 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
         :bearing-snap="15"
         :center="mapCenter"
         :attribution-control="false"
-        :min-zoom="7"
-        :max-zoom="20"
-        :max-bounds="[3.6, 43, 18.7, 49.7]"
         :max-tile-cache-size="400"
         :max-parallel-image-requests="32"
         :render-world-copies="false"

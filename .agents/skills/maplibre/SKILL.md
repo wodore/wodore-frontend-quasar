@@ -118,6 +118,28 @@ Overlays are **declarative configurations** that include:
 
 **See**: Overlay filter application in `src/stores/map/`
 
+### World Coverage (Globe Projection)
+
+**Configuration**: globe projection, no app-level zoom caps
+
+- `WdMapView` sets `map.setProjection({ type: 'globe' })` on load; the
+  camera shows the planet when zoomed out and transitions smoothly back
+  to mercator around z12.
+- `transformStyle` (basemap-store) injects `projection: { type: 'globe' }`
+  into every transformed style — basemap switches preserve the globe.
+- No `min-zoom` / `max-zoom` / `max-bounds` props; the zoom slider spans
+  0–22.
+- Overlay layers are clamped to `OVERLAY_MIN_ZOOM = 7`
+  (`src/stores/map/utils/map-constants.ts`, applied in `addOverlayLayer`
+  and `transformStyle`) — overlays never render at planet scale and
+  reappear automatically when zooming back in.
+- First-visit initial position: timezone-based guess
+  (`src/services/timezone-location.ts`) → region-level coordinates, no
+  permission/network. Lifecycle lives in `local-properties-store
+  .getInitialLocation()`: once the user moves the map the position is
+  stored (`source: 'user'`) and always restored; the guess only runs
+  while the position was never user-moved.
+
 ### Tile Cache Management
 
 **Configuration**:

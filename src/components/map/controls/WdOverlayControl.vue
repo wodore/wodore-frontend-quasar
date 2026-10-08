@@ -23,6 +23,7 @@ import {
   groupDisplayName,
   type LayerGroup,
 } from '@stores/map/utils/layer-groups';
+import { withOverlayMinZoom } from '@stores/map/utils/map-constants';
 import { useI18n } from 'vue-i18n';
 import { LocalStorage } from 'quasar';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
@@ -1273,6 +1274,11 @@ interface AddOverlayLayerArgs {
 }
 
 function addOverlayLayer({ layer, onLayer, defaultOpacity, beforeId }: AddOverlayLayerArgs): void {
+  // World/globe view: overlays never render below the zoom floor — layers
+  // reappear automatically when the camera zooms back in (see
+  // map-constants.ts; the same clamp is applied in transformStyle for
+  // basemap switches)
+  layer = withOverlayMinZoom(layer) as typeof layer;
   const basemap = basemapStore.getBasemap();
   const basemapOpacity =
     basemap && onLayer !== undefined ? basemap.layers[onLayer]?.opacity : undefined;

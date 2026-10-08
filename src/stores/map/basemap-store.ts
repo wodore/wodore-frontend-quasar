@@ -8,6 +8,7 @@ import { Platform } from 'quasar';
 import { storageGet, storageSet } from '@services/storage';
 import { getGPUTier } from '@pmndrs/detect-gpu';
 import { useOverlayStore } from './overlay-store';
+import { withOverlayMinZoom } from './utils/map-constants';
 import { StyleSpecification } from 'maplibre-gl';
 import { i18n, currentLocale } from '@services/locale';
 import { getEnv } from '@services/runtimeEnv';
@@ -291,6 +292,10 @@ export const useBasemapStore = defineStore('basemap', () => {
         const customLayersWithVisibility = customLayers.map(layer => {
           const visibility = layerVisibilityMap[layer.id];
 
+          // World/globe view: clamp overlay layers to the zoom floor (see
+          // map-constants.ts — same clamp as addOverlayLayer at runtime)
+          layer = withOverlayMinZoom(layer) as typeof layer;
+
           if (visibility !== undefined) {
             console.debug(`[transformStyle] Layer '${layer.id}' visibility set to '${visibility}'`);
             return {
@@ -471,6 +476,10 @@ export const useBasemapStore = defineStore('basemap', () => {
 
         const transformedStyle = <StyleSpecification>{
           ...nextStyle,
+          // World coverage: carry the globe projection across basemap
+          // switches (WdMapView sets it on initial load; without this the
+          // next style would silently revert to mercator)
+          projection: { type: 'globe' },
           sources: { ...nextStyle.sources, ...customSources },
           layers: orderedLayers,
           sprite: finalSprite,

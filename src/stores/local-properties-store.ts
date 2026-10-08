@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref, computed, watch } from 'vue';
 import { useDebounceFn, useEventListener } from '@vueuse/core';
 import { LocalStorage, SessionStorage } from 'quasar';
+import { guessLocationFromTimezone } from '@services/timezone-location';
 
 /**
  * Local Properties Store
@@ -28,6 +29,12 @@ export interface LocationState {
   bearing?: number;
   pitch?: number;
   timestamp: number;
+  /** Where this position came from — drives the initial-location lifecycle:
+   *  'guess' (timezone-based first-visit start) and 'default' (Alps) are
+   *  replaced on every user map movement, which persists 'user'. A 'user'
+   *  position is the sticky "where I was last" and wins on every return
+   *  visit. Entries written before this field existed count as 'user'. */
+  source?: 'guess' | 'user' | 'default';
 }
 
 /**
@@ -50,13 +57,18 @@ export interface LocalProperties {
  * Default values
  */
 const defaultLocationState: LocationState = {
-  lat: 46.8, // Switzerland center
+  lat: 46.8, // Switzerland center (Alps)
   lng: 8.2,
   zoom: 8,
   bearing: 0,
   pitch: 0,
   timestamp: Date.now(),
+  source: 'default',
 };
+
+/** Zoom used for the timezone-based first-visit guess — deliberately
+ *  region-level (the guess is timezone-coarse, not user-specific). */
+const GUESS_ZOOM = 6;
 
 const defaultSessionState: SessionState = {
   startTime: Date.now(),
@@ -203,6 +215,7 @@ export const useLocalPropertiesStore = defineStore('localProperties', () => {
   const updateLocation = (location: Partial<LocationState>) => {
     Object.assign(persistentState.value.location, location, {
       timestamp: Date.now(),
+      source: 'user',
     });
     // Watcher will trigger debounced save automatically
   };
@@ -356,9 +369,13 @@ export const useLocalPropertiesStore = defineStore('localProperties', () => {
   /**
    * Get initial location for map
    * Priority:
-   * 1. URL hash location (if present)
-   * 2. Last known location from storage (if not stale)
-   * 3. Default location
+   * 1. URL hash location (shared/deep links)
+   * 2. Last USER position from storage (any age — the map always reopens
+   *    where the user last looked; only movement sets 'user')
+   * 3. First visit / never moved: timezone-based guess, persisted so it
+   *    stays stable within a timezone — replaces the old 60-minute expiry
+   *    that sent every returning user back to the Alps default
+   * 4. Default location (Alps) when the timezone gives no signal
    */
   const getInitialLocation = (): LocationState => {
     // Check URL hash first
@@ -367,15 +384,31 @@ export const useLocalPropertiesStore = defineStore('localProperties', () => {
       return hashLocation;
     }
 
-    // Check last known location
+    // Check last known location — sticky once the user moved the map
     const lastLocation = persistentState.value.location;
-    if (!isLocationStale(60)) {
-      // Location is less than 60 minutes old
-      return lastLocation;
+    const storedSource = lastLocation.source ?? 'user'; // legacy entries
+    if (storedSource === 'user') {
+      return { ...lastLocation, source: storedSource };
     }
 
-    // Use default location
-    return { ...defaultLocationState };
+    // First visit (or user never moved the map yet): guess from the
+    // timezone — permission-free, offline, region-level accuracy. The
+    // guess is persisted so the next visit starts from the same spot
+    // until real map movement takes over.
+    const guess = guessLocationFromTimezone();
+    const initial: LocationState = guess
+      ? {
+          lat: guess.lat,
+          lng: guess.lng,
+          zoom: GUESS_ZOOM,
+          bearing: 0,
+          pitch: 0,
+          timestamp: Date.now(),
+          source: 'guess',
+        }
+      : { ...defaultLocationState, timestamp: Date.now() };
+    setLocation(initial);
+    return initial;
   };
 
   return {
