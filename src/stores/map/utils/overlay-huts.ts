@@ -119,7 +119,9 @@ function getAvailColors(day: number): ExpressionSpecification {
     '#C3731F', // amber-600 - high occupancy
     'full',
     '#961A17', // negative-700 - full occupancy
-    '#575757', // black-100 - unknown/default state
+    // Unknown / missing status renders NO background at all — an availability
+    // the source does not report must not be visualized (not even gray).
+    'rgba(0,0,0,0)',
   ];
 }
 const hutsOccupationLayerPaint = {
@@ -208,7 +210,10 @@ function hutsOccpationDetailLayer(day: number) {
     id: `wd-huts-occupation-day${day}`,
     type: 'symbol',
     source: 'wd-bookings',
-    //filter: hutsOccupationFilter,
+    // Unknown days keep rendering here — the small gray availability dot
+    // ("wd:detailed/availability.unknown") and the "?" free/total label stay
+    // visible. Only the big background circle ("wd-huts-occupation" below)
+    // is suppressed for unknown/missing status via its transparent fallback.
     minzoom: 6,
     layout: getHutsOccupationDayLayout(day),
     paint: getHutsOccupationDayPaint(day),
