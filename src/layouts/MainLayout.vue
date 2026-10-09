@@ -49,12 +49,17 @@ const isMobile = computed(() => $q.screen.lt.md);
 // Topbar utility cluster (feedback / language / theme): desktop-only, and
 // only where it has room. Below 900px the cluster would collide with the
 // side panel as soon as the panel slides it left (panel is ≥ 380px while
-// the viewport is small), so 770-899px hides it from the topbar — the
+// the viewport is small), so it hides from the topbar below 900px — the
 // buttons move into the menu-drawer toolbar, exactly like on mobile.
 const showTopbarUtils = computed(() => $q.screen.width >= 900);
-// Menu-drawer toolbar (logo + language/theme/feedback + close) renders
-// wherever the topbar cluster is hidden: mobile AND small desktops.
-const showDrawerToolbar = computed(() => $q.screen.width < 900);
+// Menu-drawer toolbar (logo + language/theme/feedback + CLOSE) renders on
+// mobile AND across the whole band where the left-aligned pill sits under
+// the open drawer (770-1099px — there the pill's own menu toggle is
+// covered, and a docked ≥ 610px Quasar drawer has no backdrop/ESC, so the
+// toolbar close is the only exit). Deliberately wider than the utils
+// gate: between 900 and 1099 both surfaces show, which is fine — they
+// never overlap each other.
+const showDrawerToolbar = computed(() => $q.screen.width < 1100);
 
 // API request progress (bottom edge of the floating topbar pill, replaces
 // the viewport-top QAjaxBar)
@@ -437,10 +442,12 @@ body.capacitor .preview-badge {
     <!-- FLOATING TOPBAR: search | date (highlight) | avatar ──────────── -->
     <!-- --under-menu: while the menu drawer is open the pill must slide
          UNDER it (Quasar's desktop-mode drawer aside is z 1000, this fixed
-         topbar 2000 — without the drop the left-aligned pill at small
-         desktop widths paints over the drawer toolbar and swallows its
-         taps). Mobile already renders the drawer on top; ≥ 900px there is
-         no overlap, so the drop is invisible there. -->
+         topbar 2000 — without the drop the pill paints over the drawer
+         and swallows its taps). The overlap is real at 770-1099px (the
+         left-aligned pill sits inside the 300px drawer) and, with the
+         panel open, up to ~1265px (the centered pill's left edge stays
+         below 300px); above that the drop is invisible. Mobile already
+         renders its drawer on top (aside z 3000 there). -->
     <div class="wd-topbar" :class="{ 'wd-topbar--under-menu': menuDrawerOpen }">
       <div class="wd-topbar__pill">
         <!-- Search (icon-only, opens search) -->
@@ -513,8 +520,9 @@ body.capacitor .preview-badge {
       class="wd-menu-drawer"
       style="max-width: 80vw; z-index: 3000"
     >
-      <!-- TOOLBAR mobile + small desktop (wherever the topbar utils are
-           hidden, the drawer carries the buttons) -->
+      <!-- TOOLBAR mobile + small desktop: spans every width where the
+           pill hides under the open drawer (< 1100px) — the WdMenuButton
+           close is then the only pointer affordance to dismiss it -->
       <q-toolbar v-if="showDrawerToolbar" class="bg-primary-600 shadow-6">
         <q-toolbar-title>
           <WodoreLogo
@@ -528,8 +536,11 @@ body.capacitor .preview-badge {
         <WdThemeSwitcher size="md" />
         <WdFeedbackButton size="md" />
 
-        <!-- MENU BUTTON mobile close -->
-        <WdMenuButton mobile side="right" v-model="menuDrawerOpen" />
+        <!-- MENU BUTTON close. No `mobile` prop: that gates rendering on
+             $q.screen.xs, which would hide the close at 770-1099px and
+             strand the open drawer. The arrow points out of whichever
+             side the drawer is docked to (right on mobile, left above). -->
+        <WdMenuButton :side="isMobile ? 'right' : 'left'" v-model="menuDrawerOpen" />
       </q-toolbar>
       <router-view name="menu" />
     </q-drawer>

@@ -40,12 +40,13 @@ function handleOverlayConfigClose() {
   menuStore.closeMenu();
 }
 
-// Toolbar-like layout = wherever the menu drawer carries the utility
-// toolbar (MainLayout showDrawerToolbar: mobile AND desktops < 900px,
-// where the topbar utils cluster is hidden). The content must clear the
-// ~50px toolbar — the drawer-mobile offsets below. ≥ 900px has no
-// toolbar: drawer-desktop anchors to the drawer top.
-const toolbarLike = computed(() => $q.screen.width < 900);
+// Toolbar-like layout = the menu drawer carries the utility toolbar
+// (MainLayout showDrawerToolbar: mobile AND the 770-1099px band where the
+// left-aligned pill hides under the open drawer — its WdMenuButton close
+// is the only exit there). The content must clear the ~50px toolbar —
+// the drawer-mobile offsets below. ≥ 1100px has no toolbar:
+// drawer-desktop anchors to the drawer top.
+const toolbarLike = computed(() => $q.screen.width < 1100);
 </script>
 <style scoped>
 .drawer-desktop {

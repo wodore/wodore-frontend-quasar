@@ -28,13 +28,15 @@
 //             body's --wd-drawer-w (0 when closed), and since this
 //             container is inset 12px on BOTH sides, padding-right D
 //             centers the pill exactly at (viewport − D)/2 — the owner
-//             formula. Eases with the panel (0.25s, same curve as the
-//             utils shift in _dark.scss).
+//             formula. The padding eases with the panel (transition
+//             declared in _layout.scss — cascade: app.scss imports
+//             topbar BEFORE layout, so a transition declared here would
+//             be overridden by the focus-mode shorthand and never fire).
 //   770-1099  pill hugs the left edge — a FIXED position that does not
-//             jump when the panel opens; 1100 is the smallest viewport
-//             where the centered pill (286px) still clears the shifted
-//             cluster (90px, right inset 62px) with comfortable air
-//             (≥ 53px gap for the 380px panel).
+//             jump when the panel opens. Any centered width down to
+//             ~1000px would technically clear the shifted cluster; 1100
+//             keeps a comfortable ≥ 53px gap for the 380px panel
+//             (measured, browser-verified).
 @media (min-width: #{$breakpoint-sm + 1}) {
   .wd-topbar {
     justify-content: flex-start;
@@ -45,18 +47,21 @@
   .wd-topbar {
     justify-content: center;
     padding-right: var(--wd-drawer-w, 0px);
-    transition: padding-right 0.25s cubic-bezier(0.2, 0, 0, 1);
+    // transition deliberately NOT declared here — _layout.scss re-declares
+    // the shorthand later in the cascade (app.scss import order) and wins.
   }
 }
 
 // Menu drawer open → the pill slides UNDER the drawer. Quasar's
 // desktop-mode drawer aside sits at z 1000 while this fixed topbar is
-// 2000, so without the drop the left-aligned pill (770-1099px) paints
-// over the drawer's utility toolbar and swallows its taps. Mobile already
-// renders its drawer above the pill (aside z 3000); from 900px up the
-// centered/left pill never overlaps the 300px left drawer, so the drop
-// is invisible there — the class just makes the mobile stacking
-// universal.
+// 2000, so without the drop the pill paints over the drawer and swallows
+// its taps. The overlap is load-bearing at 770-1099px (the left-aligned
+// pill sits inside the 300px drawer) and, with the panel open, up to
+// ~1265px (the centered pill's left edge stays below 300px) — there the
+// drawer's own toolbar carries the close button (MainLayout
+// showDrawerToolbar, < 1100px). Where there is no overlap the drop is
+// invisible; mobile already renders its drawer above the pill (aside
+// z 3000 there).
 .wd-topbar--under-menu {
   z-index: 500;
 }
@@ -426,8 +431,6 @@ body.body--dark .wd-topbar__progress {
     transition: none;
   }
 
-  // ...and the pill's glide to the map-area center while the panel opens
-  .wd-topbar {
-    transition: none;
-  }
+  // The pill's panel-follow glide lives in _layout.scss (cascade wins);
+  // its reduced-motion kill is there too.
 }
