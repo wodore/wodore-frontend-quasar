@@ -205,26 +205,15 @@ function getHutsOccupationDayPaint(day: number) {
     //'icon-opacity': ['step', ['zoom'], 0, 8, 1],
   };
 }
-// Occupancy statuses that carry usable availability information. Days with
-// another status ("unknown") or without a data entry render no background at
-// all — per-feature day layers below filter on this list.
-const KNOWN_OCCUPANCY_STATUSES = ['empty', 'low', 'medium', 'high', 'full', 'free_unknown'];
-
-/** Only render the day icon/label when that day has a known occupancy status. */
-function occupancyDayFilter(day: number): ExpressionSpecification {
-  return [
-    'in',
-    ['get', 'occupancy_status', ['at', day, ['get', 'data']]],
-    ['literal', KNOWN_OCCUPANCY_STATUSES],
-  ];
-}
-
 function hutsOccpationDetailLayer(day: number) {
   return {
     id: `wd-huts-occupation-day${day}`,
     type: 'symbol',
     source: 'wd-bookings',
-    filter: occupancyDayFilter(day),
+    // Unknown days keep rendering here — the small gray availability dot
+    // ("wd:detailed/availability.unknown") and the "?" free/total label stay
+    // visible. Only the big background circle ("wd-huts-occupation" below)
+    // is suppressed for unknown/missing status via its transparent fallback.
     minzoom: 6,
     layout: getHutsOccupationDayLayout(day),
     paint: getHutsOccupationDayPaint(day),

@@ -96,28 +96,19 @@ describe('hutsStyle', () => {
     expect(color[color.length - 1]).toBe('rgba(0,0,0,0)');
   });
 
-  it('filters occupation day layers to known occupancy statuses', () => {
+  it('keeps the small day dots for unknown status and no day-layer filter', () => {
     const { hutsStyle } = overlayHuts;
     for (const day of [0, 1, 2, 3]) {
       const layer = hutsStyle.layers.find(
         l => l.id === `wd-huts-occupation-day${day}`
       ) as unknown as Record<string, unknown>;
-      const filter = layer.filter as unknown[];
-      // ['in', ['get', 'occupancy_status', ['at', day, ['get', 'data']]], ['literal', [...]]]
-      expect(filter?.[0]).toBe('in');
-      const at = filter[1] as unknown[];
-      expect(at[0]).toBe('get');
-      expect(at[1]).toBe('occupancy_status');
-      const atIndex = at[2] as unknown[];
-      expect(atIndex[0]).toBe('at');
-      expect(atIndex[1]).toBe(day);
-      const literal = filter[2] as unknown[];
-      expect(literal[0]).toBe('literal');
-      expect(literal[1]).toEqual(
-        expect.arrayContaining(['empty', 'low', 'medium', 'high', 'full', 'free_unknown'])
-      );
-      // "unknown" and missing entries must not render a background
-      expect(literal[1]).not.toContain('unknown');
+      // No filter: unknown days keep rendering their small gray dot + "?" label.
+      // Only the big background circle is suppressed for unknown (via the
+      // transparent circle-color fallback tested above).
+      expect(layer.filter).toBeUndefined();
+      const layout = layer.layout as Record<string, unknown>;
+      const iconImage = layout['icon-image'] as unknown[];
+      expect(JSON.stringify(iconImage)).toContain('wd:detailed/availability.');
     }
   });
 
