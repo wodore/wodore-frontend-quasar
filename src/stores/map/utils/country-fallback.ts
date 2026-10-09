@@ -58,6 +58,12 @@ export function withCountryFallback(
     ...country,
     glyphs: fallback.glyphs ?? country.glyphs,
     sprite: fallback.sprite ?? country.sprite,
+    // Rendering-relevant top-level properties come from the fallback too:
+    // the fallback must render EXACTLY like the standalone default basemap
+    // (the `light` property drives hillshade shading — the mtk outdoor
+    // style ships a custom one; raster country styles have none).
+    light: fallback.light ?? country.light,
+    terrain: fallback.terrain ?? country.terrain,
     sources: { ...fallback.sources, ...country.sources },
     layers: [...(fallback.layers ?? []), ...countryLayers],
   };
