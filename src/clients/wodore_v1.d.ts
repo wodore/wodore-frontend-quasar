@@ -517,6 +517,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/icons/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * get_icons — Search icons.
+         * @description Ranked icon search (ETag-cached).
+         */
+        get: operations["get_icons"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/meteo/symbol/{collection}/{time}/{code}.svg": {
         parameters: {
             query?: never;
@@ -2338,6 +2358,71 @@ export interface components {
             symbol: {
                 [key: string]: string | null;
             } | null;
+        };
+        /**
+         * IconDto
+         * @description One icon of the registry.
+         */
+        IconDto: {
+            /**
+             * Slug
+             * @description Icon slug, unique within its pack
+             */
+            slug: string;
+            /**
+             * Pack
+             * @description Pack slug
+             */
+            pack: string;
+            /**
+             * Unicode
+             * @description Unicode hexcode(s), variation selectors stripped
+             * @default null
+             */
+            unicode: string | null;
+            /**
+             * Category
+             * @description CLDR group slug
+             * @default null
+             */
+            category: string | null;
+            /**
+             * Subcategory
+             * @description CLDR subgroup slug
+             * @default null
+             */
+            subcategory: string | null;
+            /**
+             * Lists
+             * @description Slugs of curated lists containing this icon
+             */
+            lists: string[];
+            /** @description Per-style asset URLs */
+            urls: components["schemas"]["IconUrls"] | null;
+        };
+        /**
+         * IconUrls
+         * @description Per-style asset URLs of an icon.
+         */
+        IconUrls: {
+            /**
+             * Detailed
+             * @description Detailed style SVG URL
+             * @default null
+             */
+            detailed: string | null;
+            /**
+             * Simple
+             * @description Simple style SVG URL
+             * @default null
+             */
+            simple: string | null;
+            /**
+             * Mono
+             * @description Mono style SVG URL
+             * @default null
+             */
+            mono: string | null;
         };
         /**
          * ImageAttributionSchema
@@ -4427,6 +4512,23 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
+            /** @description Raised when throttling rate was hit */
+            429: {
+                headers: {
+                    /** @description Indicates how long the user agent should wait before making a follow-up request */
+                    "Retry-After": string;
+                    /** @description The maximum number of requests permitted in the current time window */
+                    "X-RateLimit-Limit": string;
+                    /** @description The number of requests remaining in the current time window */
+                    "X-RateLimit-Remaining": string;
+                    /** @description The number of seconds until the current rate limit window resets */
+                    "X-RateLimit-Reset": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
         };
     };
     get_hut_bookings: {
@@ -4988,6 +5090,23 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
+            /** @description Raised when throttling rate was hit */
+            429: {
+                headers: {
+                    /** @description Indicates how long the user agent should wait before making a follow-up request */
+                    "Retry-After": string;
+                    /** @description The maximum number of requests permitted in the current time window */
+                    "X-RateLimit-Limit": string;
+                    /** @description The number of requests remaining in the current time window */
+                    "X-RateLimit-Remaining": string;
+                    /** @description The number of seconds until the current rate limit window resets */
+                    "X-RateLimit-Reset": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
         };
     };
     get_hut_availability_trend: {
@@ -5055,6 +5174,23 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorDetail"];
                 };
             };
+            /** @description Raised when throttling rate was hit */
+            429: {
+                headers: {
+                    /** @description Indicates how long the user agent should wait before making a follow-up request */
+                    "Retry-After": string;
+                    /** @description The maximum number of requests permitted in the current time window */
+                    "X-RateLimit-Limit": string;
+                    /** @description The number of requests remaining in the current time window */
+                    "X-RateLimit-Remaining": string;
+                    /** @description The number of seconds until the current rate limit window resets */
+                    "X-RateLimit-Reset": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
         };
     };
     get_hut_meta: {
@@ -5093,6 +5229,91 @@ export interface operations {
             };
             /** @description Raised when path parameters do not match */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Raised when provided `Accept` header cannot be satisfied */
+            406: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Raised when returned response does not match the response schema */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+        };
+    };
+    get_icons: {
+        parameters: {
+            query?: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /** @description Search term(s); matches localized keywords and slugs with typo tolerance. Empty returns browsable (faceted) results. */
+                search?: string;
+                /** @description Filter by pack slug */
+                pack?: string | null;
+                /** @description Exact icon slug lookup (combine with pack to resolve one stored icon) */
+                slug?: string | null;
+                /** @description Filter by CLDR subgroup slug (a group slug matches all its subgroups) */
+                category?: string | null;
+                /** @description Only icons of this curated list (slug, e.g. 'activities') */
+                list?: string | null;
+                /** @description Page size */
+                limit?: number;
+                /** @description Pagination offset */
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    /** @description Caching policy */
+                    "Cache-Control": string;
+                    /** @description Content hash (API-version keyed) */
+                    ETag: string;
+                    /** @description Last modification date */
+                    "Last-Modified": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IconDto"][];
+                };
+            };
+            /** @description Not Modified */
+            304: {
+                headers: {
+                    /** @description Caching policy */
+                    "Cache-Control": string;
+                    /** @description Content hash (API-version keyed) */
+                    ETag: string;
+                    /** @description Last modification date */
+                    "Last-Modified": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": null;
+                };
+            };
+            /** @description Raised when request components cannot be parsed */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };

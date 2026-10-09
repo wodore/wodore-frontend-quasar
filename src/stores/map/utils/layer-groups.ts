@@ -10,6 +10,7 @@ export interface LayerGroup {
   id: string;
   slug: string;
   name: string; // i18n key for predefined, literal for custom
+  /** Backend icon-library icon slug (default pack: fluent-emoji) */
   icon: string;
   layerSlugs: string[];
   activeLayerSlugs: string[];
@@ -55,8 +56,8 @@ export function createDefaultGroups(): LayerGroup[] {
     {
       slug: 'hiking',
       name: 'overlays.groups.hiking.name',
-      // Fluent Emoji (Flat) — the app's icon family
-      icon: 'fluent-emoji-flat:hiking-boot',
+      // Backend icon library (Fluent Emoji) — openspec: icon-library
+      icon: 'hiking-boot',
       layerSlugs: [SLUGS.huts, SLUGS.hiking, SLUGS.nature, SLUGS.transport],
       activeLayerSlugs: [SLUGS.huts],
       hidden: false,
@@ -67,7 +68,7 @@ export function createDefaultGroups(): LayerGroup[] {
     {
       slug: 'cycling',
       name: 'overlays.groups.cycling.name',
-      icon: 'fluent-emoji-flat:bicycle',
+      icon: 'bicycle',
       // Huts first — every default group leads with the hut layer
       layerSlugs: [SLUGS.huts, SLUGS.mtb, SLUGS.cycling, SLUGS.transport],
       activeLayerSlugs: [SLUGS.huts],
@@ -79,7 +80,7 @@ export function createDefaultGroups(): LayerGroup[] {
     {
       slug: 'snowsport',
       name: 'overlays.groups.snowsport.name',
-      icon: 'fluent-emoji-flat:snowflake',
+      icon: 'snowflake',
       layerSlugs: [
         SLUGS.huts,
         SLUGS.skiTours,
