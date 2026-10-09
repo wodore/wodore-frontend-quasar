@@ -1169,10 +1169,15 @@ function onMapPointerMove(ev: MouseEvent): void {
 }
 
 /** True when a hut symbol renders at the point (canvas features — the
- *  cursor check only helps mouse; touch never hovers). */
+ *  cursor check only helps mouse; touch never hovers). Below the
+ *  hut-click zoom the tap can never open a detail (onHutLayerClick's
+ *  gate) — suppressing focus mode there produced dead taps (hit a hut
+ *  symbol zoomed out → no detail AND no focus toggle). Same gate as
+ *  onLayerEnter's cursor check: reserved-for-detail only above it. */
 function tapHitsHut(x: number, y: number): boolean {
   const map = mapRef.map;
   if (!map) return false;
+  if (map.getZoom() <= MIN_HUT_CLICK_ZOOM) return false;
   try {
     const hits = map.queryRenderedFeatures([x, y], {
       layers: [HUT_LAYER_ID, 'wd-bookings-huts'].filter(id => map.getLayer(id)),
