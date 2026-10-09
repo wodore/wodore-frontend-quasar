@@ -14,8 +14,51 @@
   z-index: 2000;
   display: flex;
   align-items: center;
-  justify-content: center; // pill centered on ALL viewports
+  justify-content: center; // pill centered on mobile
   pointer-events: none;
+}
+
+// ── Desktop alignment ladder ────────────────────────────────────────
+// With the side panel open, a window-centered pill runs INTO the utility
+// cluster (the cluster slides left by the panel width to stay clear of
+// the drawer — measured at 1440px/460px panel: 47px overlap). The fix is
+// a two-step ladder, desktop only (mobile keeps plain centering):
+//
+//   ≥ 1100px  pill centered on the MAP area: the drawer width arrives as
+//             body's --wd-drawer-w (0 when closed), and since this
+//             container is inset 12px on BOTH sides, padding-right D
+//             centers the pill exactly at (viewport − D)/2 — the owner
+//             formula. Eases with the panel (0.25s, same curve as the
+//             utils shift in _dark.scss).
+//   770-1099  pill hugs the left edge — a FIXED position that does not
+//             jump when the panel opens; 1100 is the smallest viewport
+//             where the centered pill (286px) still clears the shifted
+//             cluster (90px, right inset 62px) with comfortable air
+//             (≥ 53px gap for the 380px panel).
+@media (min-width: #{$breakpoint-sm + 1}) {
+  .wd-topbar {
+    justify-content: flex-start;
+  }
+}
+
+@media (min-width: 1100px) {
+  .wd-topbar {
+    justify-content: center;
+    padding-right: var(--wd-drawer-w, 0px);
+    transition: padding-right 0.25s cubic-bezier(0.2, 0, 0, 1);
+  }
+}
+
+// Menu drawer open → the pill slides UNDER the drawer. Quasar's
+// desktop-mode drawer aside sits at z 1000 while this fixed topbar is
+// 2000, so without the drop the left-aligned pill (770-1099px) paints
+// over the drawer's utility toolbar and swallows its taps. Mobile already
+// renders its drawer above the pill (aside z 3000); from 900px up the
+// centered/left pill never overlaps the 300px left drawer, so the drop
+// is invisible there — the class just makes the mobile stacking
+// universal.
+.wd-topbar--under-menu {
+  z-index: 500;
 }
 
 .wd-topbar > * {
@@ -304,26 +347,29 @@ body.body--dark .wd-date-btn__icon {
 }
 
 // ── Desktop utilities: top-right chip cluster (8px radius) ──────────────
-@media (min-width: 900px) {
-  .wd-topbar__utils {
-    position: absolute;
-    top: calc(6px + env(safe-area-inset-top, 0px));
-    right: calc(62px + env(safe-area-inset-right, 0px));
-    background: var(--wd-ctl-bg);
-    border: 1px solid var(--wd-ctl-border);
-    border-radius: 8px;
-    box-shadow: var(--wd-ctl-shadow);
-    height: 44px;
-    padding: 0 6px;
-    display: flex;
-    gap: 2px;
-    align-items: center;
-    color: var(--wd-ctl-ink);
-    flex: none;
+// Rendered from 900px up (v-if in MainLayout): below that the cluster
+// would collide with the side panel once it slides the cluster left, so
+// small desktops hide it like mobile — the buttons live in the
+// menu-drawer toolbar there. (The slide-left itself is gated at the same
+// 900px in _dark.scss.)
+.wd-topbar__utils {
+  position: absolute;
+  top: calc(6px + env(safe-area-inset-top, 0px));
+  right: calc(62px + env(safe-area-inset-right, 0px));
+  background: var(--wd-ctl-bg);
+  border: 1px solid var(--wd-ctl-border);
+  border-radius: 8px;
+  box-shadow: var(--wd-ctl-shadow);
+  height: 44px;
+  padding: 0 6px;
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  color: var(--wd-ctl-ink);
+  flex: none;
 
-    .q-btn {
-      color: var(--wd-ctl-ink) !important;
-    }
+  .q-btn {
+    color: var(--wd-ctl-ink) !important;
   }
 }
 
@@ -377,6 +423,11 @@ body.body--dark .wd-topbar__progress {
 @media (prefers-reduced-motion: reduce) {
   .wd-progress-enter-active,
   .wd-progress-leave-active {
+    transition: none;
+  }
+
+  // ...and the pill's glide to the map-area center while the panel opens
+  .wd-topbar {
     transition: none;
   }
 }

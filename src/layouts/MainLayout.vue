@@ -46,6 +46,16 @@ const router = useRouter();
 
 const isMobile = computed(() => $q.screen.lt.md);
 
+// Topbar utility cluster (feedback / language / theme): desktop-only, and
+// only where it has room. Below 900px the cluster would collide with the
+// side panel as soon as the panel slides it left (panel is ≥ 380px while
+// the viewport is small), so 770-899px hides it from the topbar — the
+// buttons move into the menu-drawer toolbar, exactly like on mobile.
+const showTopbarUtils = computed(() => $q.screen.width >= 900);
+// Menu-drawer toolbar (logo + language/theme/feedback + close) renders
+// wherever the topbar cluster is hidden: mobile AND small desktops.
+const showDrawerToolbar = computed(() => $q.screen.width < 900);
+
 // API request progress (bottom edge of the floating topbar pill, replaces
 // the viewport-top QAjaxBar)
 const { visible: progressVisible } = useRequestProgress();
@@ -425,7 +435,13 @@ body.capacitor .preview-badge {
     <div v-if="isStaging" class="preview-badge">preview</div>
     <WdApiVersionBanner />
     <!-- FLOATING TOPBAR: search | date (highlight) | avatar ──────────── -->
-    <div class="wd-topbar">
+    <!-- --under-menu: while the menu drawer is open the pill must slide
+         UNDER it (Quasar's desktop-mode drawer aside is z 1000, this fixed
+         topbar 2000 — without the drop the left-aligned pill at small
+         desktop widths paints over the drawer toolbar and swallows its
+         taps). Mobile already renders the drawer on top; ≥ 900px there is
+         no overlap, so the drop is invisible there. -->
+    <div class="wd-topbar" :class="{ 'wd-topbar--under-menu': menuDrawerOpen }">
       <div class="wd-topbar__pill">
         <!-- Search (icon-only, opens search) -->
         <div class="wd-topbar__search">
@@ -467,7 +483,7 @@ body.capacitor .preview-badge {
       </div>
 
       <!-- Desktop-only utilities: top-right chip cluster (8px radius) -->
-      <div v-if="!isMobile" class="wd-topbar__utils">
+      <div v-if="showTopbarUtils" class="wd-topbar__utils">
         <WdFeedbackButton size="sm" />
         <WdLanguageSwitcher size="sm" />
         <WdThemeSwitcher size="sm" />
@@ -497,8 +513,9 @@ body.capacitor .preview-badge {
       class="wd-menu-drawer"
       style="max-width: 80vw; z-index: 3000"
     >
-      <!-- TOOLBAR mobile -->
-      <q-toolbar v-if="isMobile" class="bg-primary-600 shadow-6">
+      <!-- TOOLBAR mobile + small desktop (wherever the topbar utils are
+           hidden, the drawer carries the buttons) -->
+      <q-toolbar v-if="showDrawerToolbar" class="bg-primary-600 shadow-6">
         <q-toolbar-title>
           <WodoreLogo
             text
