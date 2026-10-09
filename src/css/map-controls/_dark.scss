@@ -70,9 +70,9 @@ body.body--dark .preview-badge {
   }
 }
 
-/* The utils shift follows the utils STYLING gate (_topbar.scss, 900px):
-   below 900 the utils render un-styled in the centered topbar flow, so
-   sliding them would only push the raw buttons across the pill. */
+/* The utils shift follows the utils RENDER gate (MainLayout.vue
+   showTopbarUtils, >= 900px): below 900 the utils don't render at all,
+   so sliding them would only move a hidden node. */
 @media (min-width: 900px) {
   body.wd-sidepanel-open .wd-topbar__utils {
     transform: translateX(calc(-1 * var(--wd-drawer-w, 0px)));
