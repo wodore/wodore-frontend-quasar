@@ -15,8 +15,8 @@ import type { LayerSpecification, StyleSpecification } from 'maplibre-gl';
  *   so the fallback layers are hidden while the country tiles cover
  *   them — zero hidden GPU/tile work).
  *
- * The world raster underlay (world-underlay.ts) remains the final safety
- * net beneath everything.
+ * The DEFAULT world basemap (wd-outdoor-base-mtk) merged beneath the
+ * country layers is the single world fallback — no raster underlay.
  */
 
 /**

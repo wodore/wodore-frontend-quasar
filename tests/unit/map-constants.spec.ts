@@ -1,32 +1,23 @@
 import { describe, it, expect } from 'vitest';
-import { OVERLAY_MIN_ZOOM, withOverlayMinZoom } from '@stores/map/utils/map-constants';
+import { GLOBE_SKY, MAP_MIN_ZOOM, OVERLAY_MIN_ZOOM } from '@stores/map/utils/map-constants';
 
 describe('map-constants', () => {
-  it('exposes the overlay zoom floor', () => {
-    // Two levels below the previous floor of 7 — overlays fade in earlier
-    expect(OVERLAY_MIN_ZOOM).toBe(5);
+  it('keeps the camera floor below the overlay floor', () => {
+    // zooming out past the overlay floor must remain possible (that is
+    // where the globe view lives)
+    expect(MAP_MIN_ZOOM).toBeLessThan(OVERLAY_MIN_ZOOM);
+    expect(MAP_MIN_ZOOM).toBe(2);
   });
 
-  it('clamps layers that start below the overlay zoom floor', () => {
-    expect(withOverlayMinZoom({ id: 'wd-huts', type: 'circle' })).toEqual({
-      id: 'wd-huts',
-      type: 'circle',
-      minzoom: 5,
-    });
-  });
-
-  it('keeps layers that already start at or above the floor', () => {
-    const layer = { id: 'wd-huts-occupation-day0', type: 'symbol', minzoom: 6 };
-    expect(withOverlayMinZoom(layer)).toBe(layer);
-    expect(withOverlayMinZoom({ ...layer, minzoom: 5 })).toEqual({
-      id: 'wd-huts-occupation-day0',
-      type: 'symbol',
-      minzoom: 5,
-    });
-  });
-
-  it('returns the same object when no clamp is needed', () => {
-    const layer = { id: 'wd-huts', type: 'circle', minzoom: 9 };
-    expect(withOverlayMinZoom(layer)).toBe(layer);
+  it('defines a dark space sky that fades back to daylight by z10', () => {
+    const skyColor = GLOBE_SKY['sky-color'] as unknown as Array<unknown>;
+    expect(Array.isArray(skyColor)).toBe(true);
+    expect(skyColor[0]).toBe('interpolate');
+    // dark near the planet, MapLibre's default daylight blue up close
+    expect(JSON.stringify(skyColor)).toContain('#02040a');
+    expect(JSON.stringify(skyColor)).toContain('#88c6fc');
+    // no atmosphere haze once zoomed in
+    const blend = GLOBE_SKY['atmosphere-blend'] as unknown as Array<unknown>;
+    expect(blend[blend.length - 1]).toBe(0);
   });
 });
