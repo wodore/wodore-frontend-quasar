@@ -76,7 +76,7 @@ describe('hutsStyle', () => {
     expect((huts as Record<string, unknown>)['source-layer']).toBe('huts');
   });
 
-  it('maps occupancy status to availability colors with gray fallback', () => {
+  it('maps occupancy status to availability colors and renders no background for unknown', () => {
     const { hutsStyle } = overlayHuts;
     const occupation = hutsStyle.layers.find(l => l.id === 'wd-huts-occupation');
     const color = (occupation?.paint as Record<string, unknown>)['circle-color'] as unknown[];
@@ -92,8 +92,33 @@ describe('hutsStyle', () => {
     expect(pairs).toContainEqual(['medium', '#EA9A37']);
     expect(pairs).toContainEqual(['high', '#C3731F']);
     expect(pairs).toContainEqual(['full', '#961A17']);
-    // Fallback for missing/unknown status
-    expect(color[color.length - 1]).toBe('#575757');
+    // Fallback for unknown/missing status: fully transparent (no background)
+    expect(color[color.length - 1]).toBe('rgba(0,0,0,0)');
+  });
+
+  it('filters occupation day layers to known occupancy statuses', () => {
+    const { hutsStyle } = overlayHuts;
+    for (const day of [0, 1, 2, 3]) {
+      const layer = hutsStyle.layers.find(
+        l => l.id === `wd-huts-occupation-day${day}`,
+      ) as unknown as Record<string, unknown>;
+      const filter = layer.filter as unknown[];
+      // ['in', ['get', 'occupancy_status', ['at', day, ['get', 'data']]], ['literal', [...]]]
+      expect(filter?.[0]).toBe('in');
+      const at = filter[1] as unknown[];
+      expect(at[0]).toBe('get');
+      expect(at[1]).toBe('occupancy_status');
+      const atIndex = at[2] as unknown[];
+      expect(atIndex[0]).toBe('at');
+      expect(atIndex[1]).toBe(day);
+      const literal = filter[2] as unknown[];
+      expect(literal[0]).toBe('literal');
+      expect(literal[1]).toEqual(
+        expect.arrayContaining(['empty', 'low', 'medium', 'high', 'full', 'free_unknown']),
+      );
+      // "unknown" and missing entries must not render a background
+      expect(literal[1]).not.toContain('unknown');
+    }
   });
 
   it('updates the bookings source when the store geojson changes', async () => {

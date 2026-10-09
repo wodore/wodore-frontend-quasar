@@ -114,6 +114,25 @@ export const useHutsStore = defineStore('huts', () => {
   // UI language changes (remote content is language-dependent)
   const lastBookingsFetchArgs = ref<fetchHutBookingsGeojsonArgs | undefined>(undefined);
 
+  /**
+   * Sort each hut's availability days by date ascending, in place.
+   *
+   * The map overlay reads days by array index (`at 0..3`), so index 0 must
+   * always be the requested date. The released backend delivers days in
+   * order, but the unreleased staging backend currently returns them
+   * unordered — which painted a LATER day's status (e.g. red "full") behind
+   * huts whose requested date was actually unknown. Normalize defensively
+   * so index always means "requested date + i days".
+   */
+  function sortAvailabilityDays(
+    fc: schemasWodore['HutAvailabilityFeatureCollection'],
+  ): schemasWodore['HutAvailabilityFeatureCollection'] {
+    for (const feature of fc.features) {
+      feature.properties?.data?.sort((a, b) => a.date.localeCompare(b.date));
+    }
+    return fc;
+  }
+
   async function fetchHutBookingsGeojson({ date = 'now', days = 8 }: fetchHutBookingsGeojsonArgs) {
     lastBookingsFetchArgs.value = { date, days };
     const token = latestBookings.next();
@@ -133,7 +152,9 @@ export const useHutsStore = defineStore('huts', () => {
       .then(({ data }) => {
         if (!latestBookings.isLatest(token)) return;
         if (data) {
-          bookingsGeojson.value = data as schemasWodore['HutAvailabilityFeatureCollection'];
+          bookingsGeojson.value = sortAvailabilityDays(
+            data as schemasWodore['HutAvailabilityFeatureCollection'],
+          );
         }
       })
       .catch(() => {
