@@ -100,7 +100,7 @@ describe('hutsStyle', () => {
     const { hutsStyle } = overlayHuts;
     for (const day of [0, 1, 2, 3]) {
       const layer = hutsStyle.layers.find(
-        l => l.id === `wd-huts-occupation-day${day}`,
+        l => l.id === `wd-huts-occupation-day${day}`
       ) as unknown as Record<string, unknown>;
       const filter = layer.filter as unknown[];
       // ['in', ['get', 'occupancy_status', ['at', day, ['get', 'data']]], ['literal', [...]]]
@@ -114,7 +114,7 @@ describe('hutsStyle', () => {
       const literal = filter[2] as unknown[];
       expect(literal[0]).toBe('literal');
       expect(literal[1]).toEqual(
-        expect.arrayContaining(['empty', 'low', 'medium', 'high', 'full', 'free_unknown']),
+        expect.arrayContaining(['empty', 'low', 'medium', 'high', 'full', 'free_unknown'])
       );
       // "unknown" and missing entries must not render a background
       expect(literal[1]).not.toContain('unknown');
