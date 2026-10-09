@@ -15,8 +15,8 @@ import type { LayerSpecification, StyleSpecification } from 'maplibre-gl';
  *   so the fallback layers are hidden while the country tiles cover
  *   them — zero hidden GPU/tile work).
  *
- * The world raster underlay (world-underlay.ts) remains the final safety
- * net beneath everything.
+ * The DEFAULT world basemap (wd-outdoor-base-mtk) merged beneath the
+ * country layers is the single world fallback — no raster underlay.
  */
 
 /**
@@ -58,6 +58,12 @@ export function withCountryFallback(
     ...country,
     glyphs: fallback.glyphs ?? country.glyphs,
     sprite: fallback.sprite ?? country.sprite,
+    // Rendering-relevant top-level properties come from the fallback too:
+    // the fallback must render EXACTLY like the standalone default basemap
+    // (the `light` property drives hillshade shading — the mtk outdoor
+    // style ships a custom one; raster country styles have none).
+    light: fallback.light ?? country.light,
+    terrain: fallback.terrain ?? country.terrain,
     sources: { ...fallback.sources, ...country.sources },
     layers: [...(fallback.layers ?? []), ...countryLayers],
   };

@@ -30,7 +30,6 @@ import mapDraw from '@services/draw';
 import { currentLocale } from '@services/locale';
 import { clientWodore } from '@clients/index';
 import { GLOBE_SKY, MAP_MIN_ZOOM } from '@stores/map/utils/map-constants';
-import { ensureWorldUnderlay } from '@stores/map/utils/world-underlay';
 
 // MapLibre v6 resolves its web worker via import.meta.url, which breaks under
 // Vite's dependency optimization: the rewritten worker URL 404s and vector
@@ -238,12 +237,6 @@ function onMapLoad(e: MglEvent<'load'>) {
   // .maplibregl-canvas-container below). Basemap switches carry the sky
   // via transformStyle (GLOBE_SKY), same as the projection.
   e.map.setSky(GLOBE_SKY);
-
-  // World underlay (cheap colored OSM raster) below the basemap layers —
-  // regional basemaps (swisstopo/basemap.at raster) leave the rest of the
-  // planet blank; the underlay shows through those gaps (basemap switches
-  // get it via transformStyle / withWorldUnderlay)
-  ensureWorldUnderlay(e.map);
 
   // Country basemap restored from a previous session: the raw initial
   // style carries no world fallback (composing it needs an async style
