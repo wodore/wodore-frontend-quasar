@@ -242,8 +242,12 @@ function onMapLoad(e: MglEvent<'load'>) {
   // World underlay (cheap colored OSM raster) below the basemap layers —
   // regional basemaps (swisstopo/basemap.at raster) leave the rest of the
   // planet blank; the underlay shows through those gaps (basemap switches
-  // get it via transformStyle / withWorldUnderlay)
-  ensureWorldUnderlay(e.map);
+  // get it via transformStyle / applyWorldUnderlay). Only for basemaps
+  // that declare `worldUnderlay` (topo raster) — global basemaps like the
+  // outdoor default keep their own cartography when zoomed out.
+  if (basemapStore.getBasemap()?.worldUnderlay) {
+    ensureWorldUnderlay(e.map);
+  }
 
   // Country basemap restored from a previous session: the raw initial
   // style carries no world fallback (composing it needs an async style

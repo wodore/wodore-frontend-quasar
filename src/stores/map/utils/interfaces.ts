@@ -36,6 +36,12 @@ export interface BasemapSwitchItem {
   /** [west, south, east, north] — tile coverage of the country basemap
    *  (slightly padded beyond the border so border strips stay covered). */
   bbox?: [number, number, number, number];
+  /** Merge the HOT OSM raster world underlay (world-underlay.ts) beneath
+   *  this basemap — a gap-filler for non-global coverage (topo raster
+   *  maps: swisstopo, basemap.at). Global basemaps (outdoor MTK/OFM,
+   *  satellite, Liberty) must NOT set this: the underlay's raster tiles
+   *  would bleed through the vector cartography when zoomed out. */
+  worldUnderlay?: boolean;
 }
 
 export interface OverlaySwitchItem {

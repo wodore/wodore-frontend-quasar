@@ -126,6 +126,19 @@ function loadDefaultStyleObject(): Promise<StyleSpecification | null> {
   return defaultStylePromise;
 }
 
+/** Merge the HOT raster world underlay only into basemaps that declare
+ *  `worldUnderlay` — a gap-filler for non-global coverage (topo raster
+ *  maps: swisstopo, basemap.at). Global basemaps (outdoor MTK/OFM,
+ *  satellite, Liberty) keep their own worldwide cartography when zoomed
+ *  out: the underlay's raster tiles must not bleed through their vector
+ *  layers below the underlay's maxzoom (WORLD_UNDERLAY_MAX_ZOOM). */
+function applyWorldUnderlay(
+  basemap: BasemapSwitchItem | undefined,
+  style: StyleSpecification
+): StyleSpecification {
+  return basemap?.worldUnderlay ? withWorldUnderlay(style) : style;
+}
+
 const t = i18n.global.t;
 
 /** The default world basemap — also the fallback composed beneath
@@ -195,6 +208,33 @@ export const useBasemapStore = defineStore('basemap', () => {
     return undefined;
   }
 
+  /** Resolve once the MglMap component has registered its MapLibre
+   *  instance in the vue-maplibre-gl registry (mapRef.map). The store
+   *  initializes during page setup — before MglMap mounts — so a startup
+   *  setBasemap call would otherwise find no map and silently no-op:
+   *  the default basemap stayed "selected" while the map kept the empty
+   *  initial style (blank map until a manual basemap switch). */
+  function waitForMap(timeoutMs = 15_000): Promise<boolean> {
+    if (mapRef.map) return Promise.resolve(true);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    return new Promise(resolve => {
+      const stop = watch(
+        () => mapRef.map,
+        map => {
+          if (!map) return;
+          if (timer !== undefined) clearTimeout(timer);
+          stop();
+          resolve(true);
+        },
+        { immediate: true }
+      );
+      timer = setTimeout(() => {
+        stop();
+        resolve(false);
+      }, timeoutMs);
+    });
+  }
+
   // ── Country basemap bbox visibility ─────────────────────────────────
   // Layer ids of the ACTIVE merged country style; a moveend watcher flips
   // visibility between the country raster (inside the bbox at country
@@ -248,6 +288,13 @@ export const useBasemapStore = defineStore('basemap', () => {
     const basemapStyle = getBasemap();
     if (basemapStyle !== undefined && s.name == basemapStyle.name && !force) {
       console.debug('Active baselayer is already set.');
+      return false;
+    }
+    // Startup path: the map may not be mounted yet (the store initializes
+    // before MglMap) — wait for it, otherwise every mapRef.map? call below
+    // silently no-ops and the selected basemap never loads.
+    if (!(await waitForMap())) {
+      console.warn('[basemap-store] No map instance registered — basemap not applied:', s.name);
       return false;
     }
     // The outdoor basemap needs the dem-contour:// protocol registered
@@ -521,21 +568,33 @@ export const useBasemapStore = defineStore('basemap', () => {
           console.warn(
             '[transformStyle] No current basemap found, appending all custom layers at end'
           );
-          return {
-            ...nextStyle,
-            sources: { ...nextStyle.sources, ...customSources },
-            layers: [...nextStyle.layers, ...customLayers],
-            sprite: nextStyle.sprite
-              ? [
-                  ...(Array.isArray(nextStyle.sprite)
-                    ? nextStyle.sprite
-                    : [{ id: 'default', url: nextStyle.sprite }]),
-                  ...customSprites,
-                ]
-              : customSprites.length > 0
-                ? customSprites
-                : undefined,
-          };
+          // Same composition as the main path below (globe projection +
+          // sky carried, per-basemap world underlay, pinned asset URLs) —
+          // this branch is the FIRST-apply path during startup (no active
+          // flags yet), so it must not diverge from later basemap switches.
+          // SAFETY: the spread object is our own StyleSpecification literal
+          // built from spec-shaped nextStyle fields (same construction as
+          // the main path below); the angle-bracket only labels it for
+          // applyWorldUnderlay's parameter type.
+          return pin(
+            applyWorldUnderlay(s, <StyleSpecification>{
+              ...nextStyle,
+              projection: { type: 'globe' },
+              sky: GLOBE_SKY,
+              sources: { ...nextStyle.sources, ...customSources },
+              layers: [...nextStyle.layers, ...customLayers],
+              sprite: nextStyle.sprite
+                ? [
+                    ...(Array.isArray(nextStyle.sprite)
+                      ? nextStyle.sprite
+                      : [{ id: 'default', url: nextStyle.sprite }]),
+                    ...customSprites,
+                  ]
+                : customSprites.length > 0
+                  ? customSprites
+                  : undefined,
+            }) as unknown as Record<string, unknown>
+          );
         }
 
         // Group custom layers by their onLayer property using overlay store
@@ -596,7 +655,7 @@ export const useBasemapStore = defineStore('basemap', () => {
           `[transformStyle] Style transformation complete: ${orderedLayers.length} layers total, ${Object.keys(customSources).length} custom sources, ${customSprites.length} custom sprites`
         );
 
-        const transformedStyle = withWorldUnderlay(<StyleSpecification>{
+        const transformedStyle = applyWorldUnderlay(s, <StyleSpecification>{
           ...nextStyle,
           // World coverage: carry the globe projection across basemap
           // switches (WdMapView sets it on initial load; without this the
@@ -814,6 +873,7 @@ export const useBasemapStore = defineStore('basemap', () => {
         label: t('basemaps.swiss_light'),
         show: false, // replaced by outdoor-mtk as THE vector map (user call)
         active: false,
+        worldUnderlay: true, // Swiss-only coverage — HOT raster gap-filler outside CH
         img: getImageUrl('swiss-vector.png'),
         // Weak-GPU raster variant: keyless OSM raster (the vector style
         // needs WebGL anyway; raster fallback keeps weak devices usable)
@@ -830,6 +890,7 @@ export const useBasemapStore = defineStore('basemap', () => {
         label: t('basemaps.swiss_raster'),
         show: true, // raster topo stays selectable alongside the outdoor default
         active: false,
+        worldUnderlay: true, // HOT raster safety net beneath the country+default stack
         countryOnly: true, // CH-only tiles — world fallback via default basemap
         countryMinZoom: 7, // pixelkarte hides one level earlier than the default floor
         bbox: [5.7, 45.6, 10.9, 48.1], // CH + border strips (pixelkarte covers them)
@@ -897,6 +958,7 @@ export const useBasemapStore = defineStore('basemap', () => {
         label: t('basemaps.austria_raster'),
         show: false,
         active: false,
+        worldUnderlay: true, // HOT raster safety net beneath the country+default stack
         countryOnly: true, // AT-only tiles — world fallback via default basemap
         bbox: [9.3, 46.3, 17.3, 49.1], // AT + border strips (basemap.at covers them)
         img: getImageUrl('oe-raster.png'),
