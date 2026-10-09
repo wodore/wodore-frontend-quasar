@@ -14,8 +14,56 @@
   z-index: 2000;
   display: flex;
   align-items: center;
-  justify-content: center; // pill centered on ALL viewports
+  justify-content: center; // pill centered on mobile
   pointer-events: none;
+}
+
+// ── Desktop alignment ladder ────────────────────────────────────────
+// With the side panel open, a window-centered pill runs INTO the utility
+// cluster (the cluster slides left by the panel width to stay clear of
+// the drawer — measured at 1440px/460px panel: 47px overlap). The fix is
+// a two-step ladder, desktop only (mobile keeps plain centering):
+//
+//   ≥ 1100px  pill centered on the MAP area: the drawer width arrives as
+//             body's --wd-drawer-w (0 when closed), and since this
+//             container is inset 12px on BOTH sides, padding-right D
+//             centers the pill exactly at (viewport − D)/2 — the owner
+//             formula. The padding eases with the panel (transition
+//             declared in _layout.scss — cascade: app.scss imports
+//             topbar BEFORE layout, so a transition declared here would
+//             be overridden by the focus-mode shorthand and never fire).
+//   770-1099  pill hugs the left edge — a FIXED position that does not
+//             jump when the panel opens. Any centered width down to
+//             ~1000px would technically clear the shifted cluster; 1100
+//             keeps a comfortable ≥ 53px gap for the 380px panel
+//             (measured, browser-verified).
+@media (min-width: #{$breakpoint-sm + 1}) {
+  .wd-topbar {
+    justify-content: flex-start;
+  }
+}
+
+@media (min-width: 1100px) {
+  .wd-topbar {
+    justify-content: center;
+    padding-right: var(--wd-drawer-w, 0px);
+    // transition deliberately NOT declared here — _layout.scss re-declares
+    // the shorthand later in the cascade (app.scss import order) and wins.
+  }
+}
+
+// Menu drawer open → the pill slides UNDER the drawer. Quasar's
+// desktop-mode drawer aside sits at z 1000 while this fixed topbar is
+// 2000, so without the drop the pill paints over the drawer and swallows
+// its taps. The overlap is load-bearing at 770-1099px (the left-aligned
+// pill sits inside the 300px drawer) and, with the panel open, up to
+// ~1265px (the centered pill's left edge stays below 300px) — there the
+// drawer's own toolbar carries the close button (MainLayout
+// showDrawerToolbar, < 1100px). Where there is no overlap the drop is
+// invisible; mobile already renders its drawer above the pill (aside
+// z 3000 there).
+.wd-topbar--under-menu {
+  z-index: 500;
 }
 
 .wd-topbar > * {
@@ -304,26 +352,29 @@ body.body--dark .wd-date-btn__icon {
 }
 
 // ── Desktop utilities: top-right chip cluster (8px radius) ──────────────
-@media (min-width: 900px) {
-  .wd-topbar__utils {
-    position: absolute;
-    top: calc(6px + env(safe-area-inset-top, 0px));
-    right: calc(62px + env(safe-area-inset-right, 0px));
-    background: var(--wd-ctl-bg);
-    border: 1px solid var(--wd-ctl-border);
-    border-radius: 8px;
-    box-shadow: var(--wd-ctl-shadow);
-    height: 44px;
-    padding: 0 6px;
-    display: flex;
-    gap: 2px;
-    align-items: center;
-    color: var(--wd-ctl-ink);
-    flex: none;
+// Rendered from 900px up (v-if in MainLayout): below that the cluster
+// would collide with the side panel once it slides the cluster left, so
+// small desktops hide it like mobile — the buttons live in the
+// menu-drawer toolbar there. (The slide-left itself is gated at the same
+// 900px in _dark.scss.)
+.wd-topbar__utils {
+  position: absolute;
+  top: calc(6px + env(safe-area-inset-top, 0px));
+  right: calc(62px + env(safe-area-inset-right, 0px));
+  background: var(--wd-ctl-bg);
+  border: 1px solid var(--wd-ctl-border);
+  border-radius: 8px;
+  box-shadow: var(--wd-ctl-shadow);
+  height: 44px;
+  padding: 0 6px;
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  color: var(--wd-ctl-ink);
+  flex: none;
 
-    .q-btn {
-      color: var(--wd-ctl-ink) !important;
-    }
+  .q-btn {
+    color: var(--wd-ctl-ink) !important;
   }
 }
 
@@ -379,4 +430,7 @@ body.body--dark .wd-topbar__progress {
   .wd-progress-leave-active {
     transition: none;
   }
+
+  // The pill's panel-follow glide lives in _layout.scss (cascade wins);
+  // its reduced-motion kill is there too.
 }

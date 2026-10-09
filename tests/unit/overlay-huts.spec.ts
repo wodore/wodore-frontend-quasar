@@ -76,7 +76,7 @@ describe('hutsStyle', () => {
     expect((huts as Record<string, unknown>)['source-layer']).toBe('huts');
   });
 
-  it('maps occupancy status to availability colors with gray fallback', () => {
+  it('maps occupancy status to availability colors and renders no background for unknown', () => {
     const { hutsStyle } = overlayHuts;
     const occupation = hutsStyle.layers.find(l => l.id === 'wd-huts-occupation');
     const color = (occupation?.paint as Record<string, unknown>)['circle-color'] as unknown[];
@@ -92,8 +92,24 @@ describe('hutsStyle', () => {
     expect(pairs).toContainEqual(['medium', '#EA9A37']);
     expect(pairs).toContainEqual(['high', '#C3731F']);
     expect(pairs).toContainEqual(['full', '#961A17']);
-    // Fallback for missing/unknown status
-    expect(color[color.length - 1]).toBe('#575757');
+    // Fallback for unknown/missing status: fully transparent (no background)
+    expect(color[color.length - 1]).toBe('rgba(0,0,0,0)');
+  });
+
+  it('keeps the small day dots for unknown status and no day-layer filter', () => {
+    const { hutsStyle } = overlayHuts;
+    for (const day of [0, 1, 2, 3]) {
+      const layer = hutsStyle.layers.find(
+        l => l.id === `wd-huts-occupation-day${day}`
+      ) as unknown as Record<string, unknown>;
+      // No filter: unknown days keep rendering their small gray dot + "?" label.
+      // Only the big background circle is suppressed for unknown (via the
+      // transparent circle-color fallback tested above).
+      expect(layer.filter).toBeUndefined();
+      const layout = layer.layout as Record<string, unknown>;
+      const iconImage = layout['icon-image'] as unknown[];
+      expect(JSON.stringify(iconImage)).toContain('wd:detailed/availability.');
+    }
   });
 
   it('updates the bookings source when the store geojson changes', async () => {

@@ -504,6 +504,24 @@ $breakpoint-md: 1439px; // Tablet/Desktop
 $breakpoint-lg: 1919px; // Large desktop
 ```
 
+### Product thresholds (floating topbar)
+
+Beyond the framework breakpoints, the topbar uses two product thresholds
+(kept in sync between `MainLayout.vue` and `src/css/map-controls/_topbar.scss`):
+
+- **900px** — utility cluster (feedback / language / theme) renders
+  top-right only from here; below it hides and the buttons move into the
+  menu-drawer toolbar (same as mobile). Also gates the cluster's
+  slide-left when the side panel opens (`_dark.scss`).
+- **1100px** — the pill centers on the map area from here (center =
+  `(viewport − panel width) / 2` while hut details are open, window
+  center when closed); below it the pill stays fixed to the left edge.
+  The menu-drawer toolbar renders below this width too, since the pill
+  then hides under the open drawer and the toolbar carries the close
+  button.
+- The side panel is 380px wide between 770–1439px and 460px from 1440px
+  (`desktopDrawerWidth` in `MainLayout.vue`).
+
 ### Responsive Classes
 
 ```vue

@@ -86,6 +86,27 @@
     transform 0.3s cubic-bezier(0.2, 0, 0, 1);
 }
 
+// The topbar's panel-follow glide: at ≥ 1100px the pill's padding-right
+// tracks the side panel width (body's --wd-drawer-w, set by MainLayout),
+// easing the centered pill to (viewport − panel)/2 while the drawer
+// opens. Declared HERE, not in _topbar.scss: app.scss imports topbar
+// before layout, so the focus-mode shorthand above would override it and
+// the glide would never fire (independent review 2026-10). Same 0.25s
+// curve as the utils shift in _dark.scss; the drawer itself runs 140ms,
+// so the chrome-follows-panel lag is the established pattern.
+.wd-topbar {
+  transition:
+    opacity 0.3s cubic-bezier(0.2, 0, 0, 1),
+    transform 0.3s cubic-bezier(0.2, 0, 0, 1),
+    padding-right 0.25s cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wd-topbar {
+    transition: none;
+  }
+}
+
 .maplibregl-ctrl-top-left .maplibregl-ctrl-scale {
   transition: top 0.3s cubic-bezier(0.2, 0, 0, 1);
 }

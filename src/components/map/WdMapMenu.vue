@@ -2,7 +2,7 @@
 import { useAuthService } from 'src/composables/useAuthService';
 import { useAuthStore } from '@stores/auth-store';
 import { useMapMenuStore } from '@stores/map/map-menu-store';
-import { LocalStorage } from 'quasar';
+import { LocalStorage, useQuasar } from 'quasar';
 import { ref, computed, watchEffect } from 'vue';
 import AuthService from 'src/services/auth';
 import WdVersionsPanel from 'src/components/version/WdVersionsPanel.vue';
@@ -10,6 +10,7 @@ import WdOverlayConfig from './overlay-config/WdOverlayConfig.vue';
 
 const authStore = useAuthStore();
 const menuStore = useMapMenuStore();
+const $q = useQuasar();
 
 let $auth: AuthService | undefined = undefined;
 if (process.env.CLIENT) {
@@ -38,6 +39,14 @@ const menuTitle = computed(() => menuStore.menuData.title as string | undefined)
 function handleOverlayConfigClose() {
   menuStore.closeMenu();
 }
+
+// Toolbar-like layout = the menu drawer carries the utility toolbar
+// (MainLayout showDrawerToolbar: mobile AND the 770-1099px band where the
+// left-aligned pill hides under the open drawer — its WdMenuButton close
+// is the only exit there). The content must clear the ~50px toolbar —
+// the drawer-mobile offsets below. ≥ 1100px has no toolbar:
+// drawer-desktop anchors to the drawer top.
+const toolbarLike = computed(() => $q.screen.width < 1100);
 </script>
 <style scoped>
 .drawer-desktop {
@@ -75,8 +84,8 @@ function handleOverlayConfigClose() {
 <template>
   <div
     :class="{
-      'drawer-desktop': $q.screen.gt.xs,
-      'drawer-mobile': $q.screen.xs,
+      'drawer-desktop': !toolbarLike,
+      'drawer-mobile': toolbarLike,
     }"
   >
     <!-- DEFAULT MENU -->
