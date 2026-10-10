@@ -43,6 +43,15 @@ export const GLOBE_SKY: SkySpecification = {
 };
 
 /**
+ * Strict lower zoom bound for opening a hut detail from the map
+ * (`zoom > MIN_HUT_CLICK_ZOOM`, both map views). Below it, taps/clicks on
+ * hut symbols fall through — e.g. to focus-mode toggling: the focus tap
+ * guard consults the same gate via interactive-layers.ts, so a tap that
+ * can never open a detail is never swallowed.
+ */
+export const MIN_HUT_CLICK_ZOOM = 8;
+
+/**
  * Zoom floor for the map camera: the globe should stay comfortably in
  * view — below ~z2 the planet shrinks into a dot surrounded by empty
  * space. (MapLibre itself allows far lower zooms in v6.)
