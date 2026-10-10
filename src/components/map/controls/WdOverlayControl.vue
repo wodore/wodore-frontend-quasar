@@ -18,6 +18,7 @@ import WdBackendIcon from '@components/media/WdBackendIcon.vue';
 import {
   DEFAULT_ICON_PACK,
   DEFAULT_ICON_STYLE,
+  availableStyle,
   formatIconRef,
   searchIcons,
   type BackendIcon,
@@ -438,11 +439,10 @@ async function pickIconForNewGroup(groupId: string, name: string): Promise<void>
     icons.find(icon => icon.pack === DEFAULT_ICON_PACK && icon.slug.includes(needle)) ??
     icons.find(icon => icon.slug.includes(needle)) ??
     icons[0];
-  group.icon = formatIconRef({
-    pack: preferred.pack,
-    slug: preferred.slug,
-    style: DEFAULT_ICON_STYLE,
-  });
+  // Store a style the icon actually ships — never silently color.
+  const style = availableStyle(preferred, DEFAULT_ICON_STYLE);
+  if (!style) return;
+  group.icon = formatIconRef({ pack: preferred.pack, slug: preferred.slug, style });
   overlayStore.syncGroupSettings();
   markEdited();
 }
@@ -943,13 +943,17 @@ const iconSearching = ref(false);
 const iconSearchError = ref(false);
 
 /** Result cells for the active picker style: stored-form reference +
- *  pre-resolved URL (requested style first, then any style). */
+ *  pre-resolved URL. Honest previews: under mono, icons without a mono
+ *  asset are hidden (Noto ships detailed only) instead of silently
+ *  showing color. */
 const iconChoices = computed(() =>
-  iconResults.value.map(icon => ({
-    slug: icon.slug,
-    ref: formatIconRef({ pack: icon.pack, slug: icon.slug, style: pickerStyle.value }),
-    url: pickIconUrl(icon, pickerStyle.value),
-  }))
+  iconResults.value
+    .filter(icon => Boolean(icon.urls?.[pickerStyle.value]))
+    .map(icon => ({
+      slug: icon.slug,
+      ref: formatIconRef({ pack: icon.pack, slug: icon.slug, style: pickerStyle.value }),
+      url: pickIconUrl(icon, pickerStyle.value),
+    }))
 );
 const visibleIconResults = computed(() => iconChoices.value.slice(0, iconVisibleCount.value));
 
@@ -2081,51 +2085,58 @@ onBeforeUnmount(() => {
             { value: 'mono', label: t('overlays.icon_style_mono') },
           ]"
         />
-        <!-- Search results (backend icon library) -->
-        <template v-if="iconQuery && iconQuery.trim().length >= 2">
-          <div v-if="iconSearchError" class="wd-ovl__icon-note">
-            {{ t('overlays.icon_search_error') }}
-          </div>
-          <div v-else-if="!iconSearching && iconResults.length === 0" class="wd-ovl__icon-note">
-            {{ t('overlays.icon_none') }}
-          </div>
-          <div v-else class="wd-ovl__icon-grid">
-            <button
-              v-for="choice in visibleIconResults"
-              :key="choice.ref"
-              class="wd-ovl__icon-cell"
-              :class="{ 'wd-ovl__icon-cell--active': choice.ref === activeGroupIconName }"
-              :aria-label="choice.slug"
-              :title="choice.slug"
-              @click.stop="applyGroupIcon(choice.ref)"
-            >
-              <WdBackendIcon :icon="choice.ref" :url="choice.url" :size="26" />
-            </button>
-            <!-- Auto lazy-load sentinel: reveals the next chunk on scroll -->
-            <div
-              v-if="iconVisibleCount < iconResults.length"
-              ref="iconMoreSentinel"
-              class="wd-ovl__icon-sentinel"
-              aria-hidden="true"
-            />
-          </div>
-        </template>
-        <!-- Common set: curated Fluent Emoji (Flat) activities -->
-        <template v-else>
-          <div class="wd-ovl__icon-grid">
-            <button
-              v-for="choice in groupIconChoices"
-              :key="choice.slug"
-              class="wd-ovl__icon-cell"
-              :class="{ 'wd-ovl__icon-cell--active': choice.ref === activeGroupIconName }"
-              :aria-label="choice.slug"
-              :title="choice.slug"
-              @click.stop="applyGroupIcon(choice.ref)"
-            >
-              <WdBackendIcon :icon="choice.ref" :size="26" />
-            </button>
-          </div>
-        </template>
+        <!-- Fixed-height body: backend search can take a moment, so the
+             spinner overlays instead of collapsing the dialog -->
+        <div class="wd-ovl__icon-body">
+          <!-- Search results (backend icon library) -->
+          <template v-if="iconQuery && iconQuery.trim().length >= 2">
+            <div v-if="iconSearchError" class="wd-ovl__icon-note">
+              {{ t('overlays.icon_search_error') }}
+            </div>
+            <div v-else-if="!iconSearching && iconResults.length === 0" class="wd-ovl__icon-note">
+              {{ t('overlays.icon_none') }}
+            </div>
+            <div v-else class="wd-ovl__icon-grid">
+              <button
+                v-for="choice in visibleIconResults"
+                :key="choice.ref"
+                class="wd-ovl__icon-cell"
+                :class="{ 'wd-ovl__icon-cell--active': choice.ref === activeGroupIconName }"
+                :aria-label="choice.slug"
+                :title="choice.slug"
+                @click.stop="applyGroupIcon(choice.ref)"
+              >
+                <WdBackendIcon :icon="choice.ref" :url="choice.url" :size="26" />
+              </button>
+              <!-- Auto lazy-load sentinel: reveals the next chunk on scroll -->
+              <div
+                v-if="iconVisibleCount < iconChoices.length"
+                ref="iconMoreSentinel"
+                class="wd-ovl__icon-sentinel"
+                aria-hidden="true"
+              />
+            </div>
+          </template>
+          <!-- Common set: curated Fluent Emoji (Flat) activities -->
+          <template v-else>
+            <div class="wd-ovl__icon-grid">
+              <button
+                v-for="choice in groupIconChoices"
+                :key="choice.slug"
+                class="wd-ovl__icon-cell"
+                :class="{ 'wd-ovl__icon-cell--active': choice.ref === activeGroupIconName }"
+                :aria-label="choice.slug"
+                :title="choice.slug"
+                @click.stop="applyGroupIcon(choice.ref)"
+              >
+                <WdBackendIcon :icon="choice.ref" :size="26" />
+              </button>
+            </div>
+          </template>
+          <q-inner-loading :showing="iconSearching">
+            <q-spinner-dots size="32px" />
+          </q-inner-loading>
+        </div>
       </div>
     </q-dialog>
   </div>
@@ -3422,12 +3433,37 @@ body.body--dark .wd-ovl__menu .q-item {
 }
 
 // ── Group icon picker dialog ─────────────────────────────────────────────
+// Fixed frame: the dialog must not resize between common set, search
+// results and notes — the grid area scrolls instead.
 .wd-ovl__icon-picker {
+  display: flex;
+  flex-direction: column;
+  width: 320px;
+  height: min(460px, 70dvh);
   padding: 16px;
-  max-width: 320px;
   background: var(--wd-ctl-bg) !important; // opaque panel
   border: 1px solid var(--wd-ctl-border);
   border-radius: 8px;
   box-shadow: 0 10px 30px rgba(10, 20, 15, 0.24) !important;
+}
+
+.wd-ovl__icon-picker .wd-ovl__icon-body {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.wd-ovl__icon-picker .wd-ovl__icon-grid {
+  flex: 1;
+  max-height: none;
+  min-height: 0;
+}
+
+.wd-ovl__icon-picker .wd-ovl__icon-note {
+  display: grid;
+  flex: 1;
+  place-items: center;
 }
 </style>

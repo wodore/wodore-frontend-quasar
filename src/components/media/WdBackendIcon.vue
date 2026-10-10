@@ -21,17 +21,19 @@ const props = withDefaults(
 );
 
 const resolvedUrl = ref<string | null>(props.url ?? null);
+const mono = ref(false);
 let requestSeq = 0;
 
 watch(
   () => [props.icon, props.url] as const,
   async ([icon, url]) => {
     const seq = ++requestSeq;
+    const parsed = parseIconRef(icon);
+    mono.value = parsed?.style === 'mono';
     if (url) {
       resolvedUrl.value = url;
       return;
     }
-    const parsed = parseIconRef(icon);
     if (!parsed) {
       resolvedUrl.value = null;
       return;
@@ -47,6 +49,7 @@ watch(
   <img
     v-if="resolvedUrl"
     class="wd-backend-icon"
+    :class="{ 'wd-backend-icon--mono': mono }"
     :src="resolvedUrl"
     :width="size"
     :height="size"
@@ -68,5 +71,15 @@ watch(
 .wd-backend-icon {
   display: inline-block;
   vertical-align: middle;
+}
+</style>
+
+<style lang="scss">
+// Mono (High Contrast) glyphs are black — invert them on dark surfaces
+// so they stay visible; colored styles render untinted. Global because
+// dark-mode overrides must reach every mount point (map toolbar, menus,
+// teleported dialogs).
+body.body--dark .wd-backend-icon--mono {
+  filter: invert(1);
 }
 </style>

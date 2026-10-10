@@ -50,6 +50,18 @@ export function formatIconRef(ref: IconRef): string {
   return ref.style === DEFAULT_ICON_STYLE ? base : `${base}@${ref.style}`;
 }
 
+/** First style the icon actually has, preferring the requested one.
+ *  Null when the icon exposes no assets at all. */
+export function availableStyle(
+  icon: BackendIcon,
+  preferred: BackendIconStyle = DEFAULT_ICON_STYLE
+): BackendIconStyle | null {
+  const urls = icon.urls;
+  if (!urls) return null;
+  const order: BackendIconStyle[] = [preferred, 'simple', 'detailed', 'mono'];
+  return order.find(style => urls[style]) ?? null;
+}
+
 export interface IconSearchParams {
   /** Ranked search over localized keywords and slugs. */
   search?: string;
@@ -101,8 +113,11 @@ export async function getBackendIconUrl(
       params: { query: { slug, pack, limit: 1 } },
     });
     if (!response.ok) return null;
+    // Strict: render exactly the stored style — a silent fallback would
+    // show a color emoji where the user picked mono (Noto ships
+    // detailed only, Fluent ships all three styles).
     const urls = data?.[0]?.urls ?? null;
-    return urls?.[variant] ?? urls?.simple ?? urls?.detailed ?? urls?.mono ?? null;
+    return urls?.[variant] ?? null;
   } catch {
     return null;
   }
