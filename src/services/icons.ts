@@ -63,7 +63,7 @@ export async function searchIcons(params: IconSearchParams = {}): Promise<Backen
 export async function getBackendIconUrl(
   slug: string,
   variant: BackendIconStyle = 'simple',
-  pack: string = DEFAULT_ICON_PACK,
+  pack: string = DEFAULT_ICON_PACK
 ): Promise<string | null> {
   try {
     const { data, response } = await clientWodore.GET('/v1/icons/', {

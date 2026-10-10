@@ -953,8 +953,6 @@ async function runIconSearch(query: string): Promise<void> {
   }
 }
 
-
-
 /** Auto lazy-load: sentinel enters the viewport → reveal the next chunk */
 const iconMoreSentinel = ref<HTMLElement | null>(null);
 let iconObserver: IntersectionObserver | null = null; // eslint-disable-line no-undef

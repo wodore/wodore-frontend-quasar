@@ -20,7 +20,7 @@ const props = withDefaults(
     pack: DEFAULT_ICON_PACK,
     variant: 'simple',
     size: 20,
-  },
+  }
 );
 
 const resolvedUrl = ref<string | null>(props.url ?? null);
@@ -41,7 +41,7 @@ watch(
     const found = await getBackendIconUrl(slug, variant, pack);
     if (seq === requestSeq) resolvedUrl.value = found;
   },
-  { immediate: true },
+  { immediate: true }
 );
 </script>
 
