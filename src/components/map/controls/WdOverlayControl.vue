@@ -13,9 +13,17 @@
  */
 import { ref, watch, onMounted, onBeforeUnmount, computed, nextTick } from 'vue';
 import { useQuasar } from 'quasar';
-import { Icon as IconifyIcon } from '@iconify/vue';
 import { useDebounceFn } from '@vueuse/core';
-import { currentLocale } from '@services/locale';
+import WdBackendIcon from '@components/media/WdBackendIcon.vue';
+import {
+  DEFAULT_ICON_PACK,
+  DEFAULT_ICON_STYLE,
+  availableStyle,
+  formatIconRef,
+  searchIcons,
+  type BackendIcon,
+  type BackendIconStyle,
+} from '@services/icons';
 import { useConfirmPopover } from '@composables/useConfirmPopover';
 import {
   isDefaultGroupSlug,
@@ -396,7 +404,7 @@ function addGroupWithName(name: string): void {
         : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     slug: name.toLowerCase().replace(/\s+/g, '-'),
     name,
-    icon: 'hiking',
+    icon: 'hiking-boot',
     // New groups start with the huts layer, enabled — like the defaults
     layerSlugs: [HUTS_SLUG],
     activeLayerSlugs: [HUTS_SLUG],
@@ -409,21 +417,32 @@ function addGroupWithName(name: string): void {
   overlayStore.groupSettings.activeGroupId = group.id;
   overlayStore.syncGroupSettings();
   markEdited();
-  // Implicit icon: search by the group name, take the first hit
-  // ('Climbing' → fluent-emoji-flat person-climbing)
+  // Implicit icon: backend search by the group name, take the best hit
+  // ('Climbing' → person-climbing)
   void pickIconForNewGroup(group.id, name);
 }
 
 async function pickIconForNewGroup(groupId: string, name: string): Promise<void> {
-  const hits = await searchIconsDirect(name);
-  if (hits.length === 0) return;
+  let icons: BackendIcon[];
+  try {
+    icons = await searchIcons({ search: name, limit: 20 });
+  } catch {
+    return;
+  }
+  if (icons.length === 0) return;
   const group = overlayStore.groupSettings.groups.find(g => g.id === groupId);
   if (!group || group.id !== overlayStore.groupSettings.activeGroupId) return;
-  // Prefer a hit whose slug CARRIES the query ('Climbing' →
-  // person-climbing, not iconify's first fuzzy match 'leg')
+  // Prefer a Fluent Emoji hit whose slug CARRIES the query ('Climbing' →
+  // person-climbing) — guards against odd fuzzy matches
   const needle = name.trim().toLowerCase().slice(0, 5);
-  const preferred = hits.find(h => h.split(':').pop()?.includes(needle));
-  group.icon = preferred ?? hits[0];
+  const preferred =
+    icons.find(icon => icon.pack === DEFAULT_ICON_PACK && icon.slug.includes(needle)) ??
+    icons.find(icon => icon.slug.includes(needle)) ??
+    icons[0];
+  // Store a style the icon actually ships — never silently color.
+  const style = availableStyle(preferred, DEFAULT_ICON_STYLE);
+  if (!style) return;
+  group.icon = formatIconRef({ pack: preferred.pack, slug: preferred.slug, style });
   overlayStore.syncGroupSettings();
   markEdited();
 }
@@ -877,15 +896,13 @@ function confirmResetGroup(): void {
 // ── Group icon picker (edit mode) ────────────────────────────────────────
 const showIconPicker = ref(false);
 
-/** Group icon symbols — FLUENT EMOJI (Flat style) only, per design
- *  decision: one coherent set, MIT-licensed, reads at small sizes.
- *  Curated activity shortlist for the common grid; everything else via
- *  search (same set). Older saved icons (wd-*, layer, other prefixes)
- *  keep rendering. */
-const FLUENT_FLAT = 'fluent-emoji-flat';
-/** Secondary set: Noto Emoji (Google, Apache-2.0) — same emoji slugs. */
-const NOTO = 'noto';
-const COMMON_FLUENT_ICONS = [
+/** Group icon slugs — Fluent Emoji via the backend icon library
+ *  (openspec: icon-library): one coherent set, MIT-licensed, reads at
+ *  small sizes. Curated activity shortlist for the common grid;
+ *  everything else via localized backend search. A stored group icon is
+ *  a "pack/slug[@style]" reference (see services/icons), rendered by
+ *  WdBackendIcon. */
+const COMMON_ICON_SLUGS = [
   'hiking-boot',
   'tent',
   'camping',
@@ -906,66 +923,42 @@ const COMMON_FLUENT_ICONS = [
   'sled',
 ] as const;
 
-/** Legacy wd-font symbols (saved group icons keep rendering) */
-const WD_GROUP_SYMBOLS = ['sun', 'snow', 'ski', 'bike', 'mountain', 'tent'] as const;
+// ── Picker style (stored with the pick, re-renders the previews) ──────
+const pickerStyle = ref<BackendIconStyle>(DEFAULT_ICON_STYLE);
 
-/** Iconify names (“prefix:name”) load at runtime via @iconify/vue */
-function isIconifyIcon(name: string): boolean {
-  return name.includes(':');
-}
+/** Common set: the curated Fluent Emoji activity shortlist */
+const groupIconChoices = computed(() =>
+  COMMON_ICON_SLUGS.map(slug => ({
+    slug,
+    ref: formatIconRef({ pack: DEFAULT_ICON_PACK, slug, style: pickerStyle.value }),
+  }))
+);
 
-/** Multi-color sets keep their own palette — the dark-mode invert would
- *  wreck them, so they render untinted. */
-const COLOR_PREFIXES = [FLUENT_FLAT, NOTO, 'fluent-emoji', 'fluent-color', 'icon-park'];
-function isColoredIcon(name: string): boolean {
-  return COLOR_PREFIXES.some(p => name.startsWith(`${p}:`));
-}
-
-/** Group icons render from three sources: overlay layer icons (img),
- *  wd symbols (iconify font) and iconify runtime icons — one resolver
- *  for the q-icon path, isIconifyIcon() for the <Icon> branch. */
-function groupIcon(name: string): string {
-  if (isIconifyIcon(name)) return name; // rendered via <Icon>, not q-icon
-  return (WD_GROUP_SYMBOLS as readonly string[]).includes(name) ? `wd-${name}` : layerIcon(name);
-}
-
-/** Common set: the curated Fluent Emoji (Flat) activity shortlist */
-const groupIconChoices = computed(() => COMMON_FLUENT_ICONS.map(n => `${FLUENT_FLAT}:${n}`));
-
-// ── Iconify search (custom icons beyond the common set) ──────────────
+// ── Backend icon search (custom icons beyond the common set) ──────
 const iconQuery = ref('');
-const iconResults = ref<string[]>([]);
-/** Lazy reveal: fetches up to 120, renders in chunks of 32 */
+const iconResults = ref<BackendIcon[]>([]);
+/** Lazy reveal: fetches up to 60, renders in chunks of 32 */
 const iconVisibleCount = ref(32);
 const iconSearching = ref(false);
 const iconSearchError = ref(false);
-const visibleIconResults = computed(() => iconResults.value.slice(0, iconVisibleCount.value));
 
-/** Direct icon search (iconify + localized emoji + stems) — no UI state.
- *  Reused by the picker search and the implicit new-group icon pick. */
-async function searchIconsDirect(query: string): Promise<string[]> {
-  const q = query.trim();
-  if (q.length < 2) return [];
-  // License policy (see .claude/agents/iconify.md): permissive sets only —
-  // Fluent Emoji (Flat, MIT) + Noto Emoji (Apache-2.0)
-  const SAFE_PREFIXES = `${FLUENT_FLAT},${NOTO}`;
-  const search = async (term: string): Promise<string[]> => {
-    const res = await window.fetch(
-      `https://api.iconify.design/search?query=${encodeURIComponent(term)}&limit=120&prefixes=${SAFE_PREFIXES}`
-    );
-    if (!res.ok) throw new Error(`search ${res.status}`);
-    const data = (await res.json()) as { icons?: string[] };
-    return data.icons ?? [];
-  };
-  let icons = await search(q);
-  // The keyword index is stem-based ("skier" matched nothing, "ski"
-  // matched 32) — retry shorter stems before giving up
-  for (let end = q.length - 1; icons.length === 0 && end >= Math.max(3, q.length - 2); end -= 1) {
-    icons = await search(q.slice(0, end));
-  }
-  // Multilingual (de/fr/it): localized emoji keywords → fluent-emoji
-  const localized = await searchLocalizedEmoji(q);
-  return [...new Set([...localized, ...icons])];
+/** Result cells for the active picker style: stored-form reference +
+ *  pre-resolved URL. Honest previews: under mono, icons without a mono
+ *  asset are hidden (Noto ships detailed only) instead of silently
+ *  showing color. */
+const iconChoices = computed(() =>
+  iconResults.value
+    .filter(icon => Boolean(icon.urls?.[pickerStyle.value]))
+    .map(icon => ({
+      slug: icon.slug,
+      ref: formatIconRef({ pack: icon.pack, slug: icon.slug, style: pickerStyle.value }),
+      url: pickIconUrl(icon, pickerStyle.value),
+    }))
+);
+const visibleIconResults = computed(() => iconChoices.value.slice(0, iconVisibleCount.value));
+
+function pickIconUrl(icon: BackendIcon, style: BackendIconStyle): string | null {
+  return icon.urls?.[style] ?? icon.urls?.simple ?? icon.urls?.detailed ?? icon.urls?.mono ?? null;
 }
 
 async function runIconSearch(query: string): Promise<void> {
@@ -979,173 +972,19 @@ async function runIconSearch(query: string): Promise<void> {
   iconSearching.value = true;
   iconSearchError.value = false;
   try {
-    const results = await searchIconsDirect(q);
-    // Fuzzy: typos still find something (montain → mountain)
-    let fuzzy: string[] = [];
-    if (results.length < 8) fuzzy = fuzzyIconNames(q);
-    iconResults.value = [...new Set([...results, ...fuzzy])];
+    // The backend ranks localized keywords and slugs (exact > prefix >
+    // substring > fuzzy) and unions the UI language with English — no
+    // client-side fallbacks needed.
+    // No pack filter: Fluent and Noto results interleave; each pick
+    // stores the pack it came from.
+    const icons = await searchIcons({ search: q, limit: 60 });
+    iconResults.value = icons;
   } catch {
     iconResults.value = [];
     iconSearchError.value = true;
   } finally {
     iconSearching.value = false;
   }
-}
-
-// ── Multilingual search via localized emoji keywords ───────────────────
-// emojibase-data (MIT) ships labels+keywords per locale (~95 KB, lazy,
-// localStorage-cached); the English labels map to fluent-emoji slugs,
-// validated against iconify's collection listing. One-time load.
-interface EmojiBaseEntry {
-  label: string;
-  hexcode: string;
-  tags?: string[];
-}
-const EMOJIBASE_VERSION = '16';
-const EMOJIBASE_LOCALES = ['de', 'en', 'fr', 'it'];
-let emojiLocaleEntries: EmojiBaseEntry[] | null = null;
-let emojiSlugByHex: Map<string, string> | null = null;
-let fluentEmojiNames: Set<string> | null = null;
-/** Locale the keyword pack was loaded for (mid-session language switches
- *  reload it on the next search). */
-let emojiLocaleLoadedFor = '';
-/** Shared in-flight promise — concurrent callers (warm-up + search) must
- *  not trigger parallel duplicate fetches. Tracked per locale: a load for
- *  the previous UI language is not reused for the new one. */
-let emojiDataPromise: Promise<boolean> | null = null;
-let emojiDataPromiseLocale = '';
-
-async function ensureEmojiData(): Promise<boolean> {
-  const wantLocale = EMOJIBASE_LOCALES.includes(currentLocale()) ? currentLocale() : 'en';
-  if (
-    emojiLocaleEntries &&
-    emojiSlugByHex &&
-    fluentEmojiNames &&
-    emojiLocaleLoadedFor === wantLocale
-  ) {
-    return true;
-  }
-  if (emojiDataPromise && emojiDataPromiseLocale === wantLocale) return emojiDataPromise;
-  emojiDataPromiseLocale = wantLocale;
-  emojiDataPromise = (async () => {
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-      const locale = wantLocale;
-      const cacheNs = `wd:iconSearch:${EMOJIBASE_VERSION}`;
-      const [loc, en, coll] = await Promise.all([
-        fetchJsonCached<EmojiBaseEntry[]>(
-          `https://cdn.jsdelivr.net/npm/emojibase-data@${EMOJIBASE_VERSION}/${locale}/data.json`,
-          `${cacheNs}:emoji:${locale}`
-        ),
-        fetchJsonCached<EmojiBaseEntry[]>(
-          `https://cdn.jsdelivr.net/npm/emojibase-data@${EMOJIBASE_VERSION}/en/data.json`,
-          `${cacheNs}:emoji:en`
-        ),
-        fetchJsonCached<Record<string, string[] | number[]>>(
-          'https://api.iconify.design/collection?prefix=fluent-emoji',
-          `${cacheNs}:fluentNames`
-        ),
-      ]);
-      if (loc && en && coll) {
-        emojiLocaleEntries = loc;
-        emojiSlugByHex = new Map(
-          en.map(e => {
-            const slug = fold(e.label)
-              .replace(/[^a-z0-9]+/g, '-')
-              .replace(/^-+|-+$/g, '');
-            return [e.hexcode, slug];
-          })
-        );
-        fluentEmojiNames = new Set(Object.values(coll).flat().map(String));
-        emojiLocaleLoadedFor = locale;
-        return true;
-      }
-    }
-    return false;
-  })();
-  try {
-    return await emojiDataPromise;
-  } finally {
-    // allow a later retry if this load failed
-    if (!(emojiLocaleEntries && emojiSlugByHex && fluentEmojiNames)) emojiDataPromise = null;
-  }
-}
-
-function fold(s: string): string {
-  return s
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase();
-}
-
-async function fetchJsonCached<T>(url: string, cacheKey: string): Promise<T | null> {
-  try {
-    const cached = window.localStorage.getItem(cacheKey);
-    if (cached) return JSON.parse(cached) as T;
-    const res = await window.fetch(url);
-    if (!res.ok) return null;
-    const data = (await res.json()) as T;
-    try {
-      window.localStorage.setItem(cacheKey, JSON.stringify(data));
-    } catch {
-      // storage full — session works without cache
-    }
-    return data;
-  } catch {
-    return null;
-  }
-}
-
-/** Query in the UI language (or English) → fluent-emoji icon names */
-async function searchLocalizedEmoji(q: string): Promise<string[]> {
-  const ok = await ensureEmojiData();
-  if (!ok || !emojiLocaleEntries || !emojiSlugByHex || !fluentEmojiNames) return [];
-  const needle = fold(q);
-  if (needle.length < 2) return [];
-  const hits: string[] = [];
-
-  for (const entry of emojiLocaleEntries) {
-    const haystack = [entry.label, ...(entry.tags ?? [])].map(fold);
-    if (haystack.some(h => h.includes(needle) || (needle.includes(h) && h.length >= 3))) {
-      const slug = emojiSlugByHex.get(entry.hexcode);
-      if (slug && fluentEmojiNames.has(slug)) hits.push(`${FLUENT_FLAT}:${slug}`);
-      if (hits.length >= 24) break;
-    }
-  }
-  return hits;
-}
-
-// ── Fuzzy fallback: typos against the known name pool ────────────────
-function levenshtein(a: string, b: string): number {
-  if (Math.abs(a.length - b.length) > 2) return 3;
-  const row = Array.from({ length: b.length + 1 }, (_, i) => i);
-  for (let i = 1; i <= a.length; i += 1) {
-    let prev = row[0];
-    row[0] = i;
-    for (let j = 1; j <= b.length; j += 1) {
-      const tmp = row[j];
-      row[j] = Math.min(row[j] + 1, row[j - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1));
-      prev = tmp;
-    }
-  }
-  return row[b.length];
-}
-
-function fuzzyIconNames(q: string): string[] {
-  const needle = fold(q.trim());
-  if (needle.length < 3) return [];
-  const pool: string[] = [
-    ...(WD_GROUP_SYMBOLS as readonly string[]),
-    ...(fluentEmojiNames ? [...fluentEmojiNames].map(n => `${FLUENT_FLAT}:${n}`) : []),
-  ];
-  const hits: string[] = [];
-  for (const name of pool) {
-    const words = name.split(/[:-]/).filter(w => w.length >= Math.max(3, needle.length - 2));
-    if (words.some(w => levenshtein(needle, w) <= (needle.length > 5 ? 2 : 1))) {
-      hits.push(name);
-      if (hits.length >= 12) break;
-    }
-  }
-  return hits;
 }
 
 /** Auto lazy-load: sentinel enters the viewport → reveal the next chunk */
@@ -1173,9 +1012,7 @@ const searchIconsDebounced = useDebounceFn((q: string) => runIconSearch(q), 350)
 watch(iconQuery, q => searchIconsDebounced(q));
 watch(showIconPicker, open => {
   if (open) {
-    // Warm the localized-keyword data while the user decides to type —
-    // the first search then matches immediately (cold CDN load ~1-2s)
-    void ensureEmojiData();
+    pickerStyle.value = DEFAULT_ICON_STYLE;
   } else {
     iconQuery.value = '';
     iconResults.value = [];
@@ -1520,15 +1357,7 @@ onBeforeUnmount(() => {
             :disabled="!editMode"
             @click.stop="editMode && (showIconPicker = true)"
           >
-            <IconifyIcon
-              v-if="isIconifyIcon(overlayStore.activeGroupIcon())"
-              :icon="overlayStore.activeGroupIcon()"
-              :height="16"
-              :width="16"
-              class="wd-ovl__ifg"
-              :class="{ 'wd-ovl__ifg--multi': isColoredIcon(overlayStore.activeGroupIcon()) }"
-            />
-            <q-icon v-else :name="groupIcon(overlayStore.activeGroupIcon())" size="16px" />
+            <WdBackendIcon :icon="overlayStore.activeGroupIcon()" :size="16" />
           </button>
           <!-- Group NAME = quick switch dropdown (expanded + edit).
                Icon → change icon (edit); name → switch group. -->
@@ -1567,15 +1396,7 @@ onBeforeUnmount(() => {
                   @click="onGroupMenuSelect(g.id)"
                 >
                   <q-item-section avatar>
-                    <IconifyIcon
-                      v-if="isIconifyIcon(g.icon)"
-                      :icon="g.icon"
-                      :height="16"
-                      :width="16"
-                      class="wd-ovl__ifg"
-                      :class="{ 'wd-ovl__ifg--multi': isColoredIcon(g.icon) }"
-                    />
-                    <q-icon v-else :name="groupIcon(g.icon)" size="16px" />
+                    <WdBackendIcon :icon="g.icon" :size="16" />
                   </q-item-section>
                   <q-item-section>{{ groupDisplayName(g.name, t) }}</q-item-section>
                   <!-- Hidden marker (edit mode lists hidden groups too) -->
@@ -2089,15 +1910,7 @@ onBeforeUnmount(() => {
           </svg>
           <Transition :name="`wd-ovl-gswap-${groupSwapDir}`" mode="out-in">
             <span :key="overlayStore.groupSettings.activeGroupId ?? 'g'" class="wd-ovl__gswap-item">
-              <IconifyIcon
-                v-if="isIconifyIcon(overlayStore.activeGroupIcon())"
-                :icon="overlayStore.activeGroupIcon()"
-                :height="20"
-                :width="20"
-                class="wd-ovl__ifg"
-                :class="{ 'wd-ovl__ifg--multi': isColoredIcon(overlayStore.activeGroupIcon()) }"
-              />
-              <q-icon v-else :name="groupIcon(overlayStore.activeGroupIcon())" size="20px" />
+              <WdBackendIcon :icon="overlayStore.activeGroupIcon()" :size="20" />
             </span>
           </Transition>
           <svg
@@ -2259,62 +2072,71 @@ onBeforeUnmount(() => {
         >
           <template #prepend><q-icon name="wd-search-outline" size="16px" /></template>
         </q-input>
-        <!-- Search results (Iconify, loads at runtime) -->
-        <template v-if="iconQuery && iconQuery.trim().length >= 2">
-          <div v-if="iconSearchError" class="wd-ovl__icon-note">
-            {{ t('overlays.icon_search_error') }}
-          </div>
-          <div v-else-if="!iconSearching && iconResults.length === 0" class="wd-ovl__icon-note">
-            {{ t('overlays.icon_none') }}
-          </div>
-          <div v-else class="wd-ovl__icon-grid">
-            <button
-              v-for="name in visibleIconResults"
-              :key="name"
-              class="wd-ovl__icon-cell"
-              :class="{ 'wd-ovl__icon-cell--active': name === activeGroupIconName }"
-              :aria-label="name"
-              :title="name"
-              @click.stop="applyGroupIcon(name)"
-            >
-              <IconifyIcon
-                :icon="name"
-                :height="26"
-                :width="26"
-                class="wd-ovl__ifg"
-                :class="{ 'wd-ovl__ifg--multi': isColoredIcon(name) }"
+        <!-- Style: re-renders the previews, stored with the pick -->
+        <q-btn-toggle
+          v-model="pickerStyle"
+          dense
+          no-caps
+          unelevated
+          class="wd-ovl__icon-style"
+          :options="[
+            { value: 'simple', label: t('overlays.icon_style_flat') },
+            { value: 'detailed', label: t('overlays.icon_style_detailed') },
+            { value: 'mono', label: t('overlays.icon_style_mono') },
+          ]"
+        />
+        <!-- Fixed-height body: backend search can take a moment, so the
+             spinner overlays instead of collapsing the dialog -->
+        <div class="wd-ovl__icon-body">
+          <!-- Search results (backend icon library) -->
+          <template v-if="iconQuery && iconQuery.trim().length >= 2">
+            <div v-if="iconSearchError" class="wd-ovl__icon-note">
+              {{ t('overlays.icon_search_error') }}
+            </div>
+            <div v-else-if="!iconSearching && iconResults.length === 0" class="wd-ovl__icon-note">
+              {{ t('overlays.icon_none') }}
+            </div>
+            <div v-else class="wd-ovl__icon-grid">
+              <button
+                v-for="choice in visibleIconResults"
+                :key="choice.ref"
+                class="wd-ovl__icon-cell"
+                :class="{ 'wd-ovl__icon-cell--active': choice.ref === activeGroupIconName }"
+                :aria-label="choice.slug"
+                :title="choice.slug"
+                @click.stop="applyGroupIcon(choice.ref)"
+              >
+                <WdBackendIcon :icon="choice.ref" :url="choice.url" :size="26" />
+              </button>
+              <!-- Auto lazy-load sentinel: reveals the next chunk on scroll -->
+              <div
+                v-if="iconVisibleCount < iconChoices.length"
+                ref="iconMoreSentinel"
+                class="wd-ovl__icon-sentinel"
+                aria-hidden="true"
               />
-            </button>
-            <!-- Auto lazy-load sentinel: reveals the next chunk on scroll -->
-            <div
-              v-if="iconVisibleCount < iconResults.length"
-              ref="iconMoreSentinel"
-              class="wd-ovl__icon-sentinel"
-              aria-hidden="true"
-            />
-          </div>
-        </template>
-        <!-- Common set: curated Fluent Emoji (Flat) activities -->
-        <template v-else>
-          <div class="wd-ovl__icon-grid">
-            <button
-              v-for="name in groupIconChoices"
-              :key="name"
-              class="wd-ovl__icon-cell"
-              :class="{ 'wd-ovl__icon-cell--active': name === activeGroupIconName }"
-              :aria-label="name.split(':').pop()"
-              :title="name"
-              @click.stop="applyGroupIcon(name)"
-            >
-              <IconifyIcon
-                :icon="name"
-                :height="26"
-                :width="26"
-                class="wd-ovl__ifg wd-ovl__ifg--multi"
-              />
-            </button>
-          </div>
-        </template>
+            </div>
+          </template>
+          <!-- Common set: curated Fluent Emoji (Flat) activities -->
+          <template v-else>
+            <div class="wd-ovl__icon-grid">
+              <button
+                v-for="choice in groupIconChoices"
+                :key="choice.slug"
+                class="wd-ovl__icon-cell"
+                :class="{ 'wd-ovl__icon-cell--active': choice.ref === activeGroupIconName }"
+                :aria-label="choice.slug"
+                :title="choice.slug"
+                @click.stop="applyGroupIcon(choice.ref)"
+              >
+                <WdBackendIcon :icon="choice.ref" :size="26" />
+              </button>
+            </div>
+          </template>
+          <q-inner-loading :showing="iconSearching">
+            <q-spinner-dots size="32px" />
+          </q-inner-loading>
+        </div>
       </div>
     </q-dialog>
   </div>
@@ -3428,14 +3250,6 @@ body.body--dark .wd-ovl__empty-hint {
   margin-bottom: 12px;
 }
 
-.wd-ovl__ifg--multi {
-  color: inherit;
-}
-
-.wd-ovl__ifg--multi svg {
-  filter: none;
-}
-
 .wd-ovl__icon-sentinel {
   grid-column: 1 / -1;
   height: 2px;
@@ -3563,9 +3377,25 @@ body.body--dark .wd-ovl__menu .q-item {
   color: #cfe8dc;
 }
 
-/* Icon picker search + runtime iconify glyphs (dialog teleports to body) */
+/* Icon picker search (dialog teleports to body) */
 .wd-ovl__icon-search {
   margin-bottom: 12px;
+}
+
+.wd-ovl__icon-style {
+  margin-bottom: 10px;
+
+  .q-btn {
+    min-height: 24px;
+    padding: 3px 10px;
+    font-size: 11.5px;
+    color: var(--wd-ctl-ink-soft);
+  }
+
+  .q-btn--active {
+    color: var(--wd-ctl-ink);
+    background: var(--wd-ctl-hover);
+  }
 }
 
 .wd-ovl__icon-note {
@@ -3574,15 +3404,9 @@ body.body--dark .wd-ovl__menu .q-item {
   color: var(--wd-ctl-ink-soft);
 }
 
-// Runtime iconify glyphs: same ink treatment as the wd silhouettes
-.wd-ovl__ifg {
-  color: #22302a;
-  display: inline-block;
-  vertical-align: middle;
-}
-
 /* Group quick-switch dropdown (title): active item + hidden marker */
-.wd-ovl__group-menu .q-item__section--avatar .q-icon img {
+.wd-ovl__group-menu .q-item__section--avatar .q-icon img,
+.wd-ovl__group-menu .q-item__section--avatar img {
   border-radius: 2px;
 }
 
@@ -3609,52 +3433,37 @@ body.body--dark .wd-ovl__menu .q-item {
 }
 
 // ── Group icon picker dialog ─────────────────────────────────────────────
+// Fixed frame: the dialog must not resize between common set, search
+// results and notes — the grid area scrolls instead.
 .wd-ovl__icon-picker {
+  display: flex;
+  flex-direction: column;
+  width: 320px;
+  height: min(460px, 70dvh);
   padding: 16px;
-  max-width: 320px;
   background: var(--wd-ctl-bg) !important; // opaque panel
   border: 1px solid var(--wd-ctl-border);
   border-radius: 8px;
   box-shadow: 0 10px 30px rgba(10, 20, 15, 0.24) !important;
 }
-body.body--dark .wd-ovl__menu .q-item {
-  color: #cfe8dc;
+
+.wd-ovl__icon-picker .wd-ovl__icon-body {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
 }
 
-/* Icon picker search + runtime iconify glyphs (dialog teleports to body) */
-.wd-ovl__icon-search {
-  margin-bottom: 12px;
+.wd-ovl__icon-picker .wd-ovl__icon-grid {
+  flex: 1;
+  max-height: none;
+  min-height: 0;
 }
 
-.wd-ovl__icon-note {
-  padding: 14px 4px;
-  font-size: 12.5px;
-  color: var(--wd-ctl-ink-soft);
-}
-
-// Runtime iconify glyphs: same ink treatment as the wd silhouettes
-.wd-ovl__ifg {
-  color: #22302a;
-  display: inline-block;
-  vertical-align: middle;
-}
-
-/* Group quick-switch dropdown (title): active item + hidden marker */
-.wd-ovl__group-menu .q-item__section--avatar .q-icon img {
-  border-radius: 2px;
-}
-
-.wd-ovl__group-menu-item--active {
-  font-weight: 600;
-  background: var(--wd-ctl-hover);
-
-  .q-item__section--avatar {
-    color: var(--wd-ctl-ink);
-  }
-}
-
-.wd-ovl__group-menu .q-item__section--side {
-  color: var(--wd-ctl-ink-soft);
-  opacity: 0.7;
+.wd-ovl__icon-picker .wd-ovl__icon-note {
+  display: grid;
+  flex: 1;
+  place-items: center;
 }
 </style>

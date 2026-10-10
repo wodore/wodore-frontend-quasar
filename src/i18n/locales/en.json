@@ -413,6 +413,9 @@
     "icon_none": "No icons found.",
     "icon_search_error": "Icon search is currently unavailable.",
     "icon_more": "Show more",
+    "icon_style_flat": "Flat",
+    "icon_style_detailed": "Detailed",
+    "icon_style_mono": "Monochrome",
     "group_prev": "Previous group ({name})",
     "group_next": "Next group ({name})",
     "edit_keep_editing": "Keep editing"

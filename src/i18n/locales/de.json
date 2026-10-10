@@ -413,6 +413,9 @@
     "icon_none": "Keine Symbole gefunden.",
     "icon_search_error": "Symbolsuche derzeit nicht verfügbar.",
     "icon_more": "Mehr anzeigen",
+    "icon_style_flat": "Flach",
+    "icon_style_detailed": "Detailliert",
+    "icon_style_mono": "Monochrom",
     "group_prev": "Vorherige Gruppe ({name})",
     "group_next": "Nächste Gruppe ({name})",
     "edit_keep_editing": "Weiter bearbeiten"
