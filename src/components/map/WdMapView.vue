@@ -29,11 +29,7 @@ import {
 import mapDraw from '@services/draw';
 import { currentLocale } from '@services/locale';
 import { clientWodore } from '@clients/index';
-import {
-  GLOBE_SKY,
-  MAP_MIN_ZOOM,
-  MIN_HUT_CLICK_ZOOM,
-} from '@stores/map/utils/map-constants';
+import { GLOBE_SKY, MAP_MIN_ZOOM, MIN_HUT_CLICK_ZOOM } from '@stores/map/utils/map-constants';
 import {
   INTERACTIVE_LAYERS,
   tapTargetsInteractiveLayer,
