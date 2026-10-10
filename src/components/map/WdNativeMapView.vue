@@ -46,6 +46,7 @@ import type { LayerSpecification, StyleSpecification } from 'maplibre-gl';
 import { MapLibre } from '@capawesome/capacitor-maplibre';
 import type { PluginListenerHandle } from '@capacitor/core';
 import { useBasemapStore } from '@stores/map/basemap-store';
+import { MIN_HUT_CLICK_ZOOM } from '@stores/map/utils/map-constants';
 import { useOverlayStore } from '@stores/map/overlay-store';
 import { useLocalPropertiesStore } from '@stores/local-properties-store';
 import { useHutsStore } from '@stores/huts-store';
@@ -58,7 +59,6 @@ import WdOverlaySwitch from './WdOverlaySwitch.vue';
 
 const MAP_ID = 'wd-native-map';
 const mapElementId = 'wd-native-map-element';
-const MIN_HUT_CLICK_ZOOM = 8;
 const SELECT_ZOOM = 12;
 const MIN_FLY_ZOOM = 9;
 

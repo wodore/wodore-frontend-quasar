@@ -29,7 +29,11 @@ import {
 import mapDraw from '@services/draw';
 import { currentLocale } from '@services/locale';
 import { clientWodore } from '@clients/index';
-import { GLOBE_SKY, MAP_MIN_ZOOM } from '@stores/map/utils/map-constants';
+import { GLOBE_SKY, MAP_MIN_ZOOM, MIN_HUT_CLICK_ZOOM } from '@stores/map/utils/map-constants';
+import {
+  INTERACTIVE_LAYERS,
+  tapTargetsInteractiveLayer,
+} from '@stores/map/utils/interactive-layers';
 
 // MapLibre v6 resolves its web worker via import.meta.url, which breaks under
 // Vite's dependency optimization: the rewritten worker URL 404s and vector
@@ -44,7 +48,6 @@ setWorkerUrl(maplibreWorkerUrl);
 const MOBILE_DANGER_MARGIN = 100;
 const DESKTOP_DANGER_MARGIN = 150;
 const MOBILE_DRAWER_MARGIN = -75;
-const MIN_HUT_CLICK_ZOOM = 8;
 // Disable map position hash sync in hash routing mode (previews):
 // vue-maplibre-gl appends &p=zoom/lat/lng to the Vue Router hash,
 // breaking route matching on refresh
@@ -272,9 +275,19 @@ function onMapLoad(e: MglEvent<'load'>) {
 
   e.map.scrollZoom.setWheelZoomRate(0.003);
   onMapStyledata(e as unknown as MglEvent<'styledata'>);
-  e.map.on('mouseenter', HUT_LAYER_ID, onLayerEnter);
-  e.map.on('mouseleave', HUT_LAYER_ID, onLayerLeave);
-  e.map.on('click', HUT_LAYER_ID, onHutLayerClick);
+  // Interactive layers: hover cursor + click for every registry entry
+  // (see interactive-layers.ts). The focus tap guard consults the same
+  // list — a new interactive layer only needs a registry entry and a
+  // click handler here; guard and cursor affordance follow automatically.
+  const layerClickHandlers: Record<string, (e: MapLayerEventType['click']) => void> = {
+    [HUT_LAYER_ID]: onHutLayerClick,
+  };
+  for (const { id, minZoom } of INTERACTIVE_LAYERS) {
+    e.map.on('mouseenter', id, ev => onLayerEnter(ev, minZoom));
+    e.map.on('mouseleave', id, ev => onLayerLeave(ev, minZoom));
+    const onClick = layerClickHandlers[id];
+    if (onClick) e.map.on('click', id, onClick);
+  }
 
   // Track location changes with throttling (updates every 1s max)
   // Only when tab is active
@@ -1060,16 +1073,19 @@ watch(
   { immediate: true } // Run on component mount
 );
 
-// Change the cursor to a pointer
-function onLayerEnter(e: MapLayerEventType['mouseenter']) {
-  if (e.target.getZoom() > MIN_HUT_CLICK_ZOOM) {
+/** Pointer cursor while the pointer is over a registered interactive
+ *  layer — but only above the layer's zoom gate: below it the click
+ *  would fall through (e.g. to focus mode), so the affordance must not
+ *  promise interactivity. */
+function onLayerEnter(e: MapLayerEventType['mouseenter'], minZoom?: number) {
+  if (minZoom === undefined || e.target.getZoom() > minZoom) {
     e.target.getCanvas().style.cursor = 'pointer';
   }
 }
 
-// Change it back to a pointer when it leaves.
-function onLayerLeave(e: MapLayerEventType['mouseleave']) {
-  if (e.target.getZoom() > MIN_HUT_CLICK_ZOOM) {
+/** Clear it again when the pointer leaves the layer. */
+function onLayerLeave(e: MapLayerEventType['mouseleave'], minZoom?: number) {
+  if (minZoom === undefined || e.target.getZoom() > minZoom) {
     e.target.getCanvas().style.cursor = '';
   }
 }
@@ -1161,27 +1177,24 @@ function onMapPointerMove(ev: MouseEvent): void {
   }
 }
 
-/** True when a hut symbol renders at the point (canvas features — the
- *  cursor check only helps mouse; touch never hovers). */
-function tapHitsHut(x: number, y: number): boolean {
+/** True when an INTERACTIVE layer claims the tap at the point (canvas
+ *  features — the cursor check only helps mouse; touch never hovers).
+ *  Consults the interactive-layer registry with the same per-layer zoom
+ *  gates as the click handlers: a tap no layer will handle falls through
+ *  and toggles focus mode instead (no dead taps, e.g. hitting a hut
+ *  symbol zoomed out). */
+function tapHitsInteractiveLayer(x: number, y: number): boolean {
   const map = mapRef.map;
   if (!map) return false;
-  try {
-    const hits = map.queryRenderedFeatures([x, y], {
-      layers: [HUT_LAYER_ID, 'wd-bookings-huts'].filter(id => map.getLayer(id)),
-    });
-    return hits.length > 0;
-  } catch {
-    return false;
-  }
+  return tapTargetsInteractiveLayer(map, x, y);
 }
 
 function onMapPointerUp(): void {
   if (!tapDown.active) return;
   tapDown.active = false;
   const now = Date.now();
-  // Taps on hut symbols open the detail — never focus mode
-  if (tapHitsHut(tapDown.x, tapDown.y)) {
+  // Taps an interactive layer will handle — never focus mode
+  if (tapHitsInteractiveLayer(tapDown.x, tapDown.y)) {
     lastMapTapAt = 0;
     cancelPendingTap();
     return;
