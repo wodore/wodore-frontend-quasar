@@ -9,7 +9,6 @@ import { storageGet, storageSet } from '@services/storage';
 import { getGPUTier } from '@pmndrs/detect-gpu';
 import { useOverlayStore } from './overlay-store';
 import { withOverlayMinZoom, GLOBE_SKY } from './utils/map-constants';
-import { withWorldUnderlay } from './utils/world-underlay';
 import {
   withCountryFallback,
   isCenterInBbox,
@@ -195,6 +194,33 @@ export const useBasemapStore = defineStore('basemap', () => {
     return undefined;
   }
 
+  /** Resolve once the MglMap component has registered its MapLibre
+   *  instance in the vue-maplibre-gl registry (mapRef.map). The store
+   *  initializes during page setup — before MglMap mounts — so a startup
+   *  setBasemap call would otherwise find no map and silently no-op:
+   *  the default basemap stayed "selected" while the map kept the empty
+   *  initial style (blank map until a manual basemap switch). */
+  function waitForMap(timeoutMs = 15_000): Promise<boolean> {
+    if (mapRef.map) return Promise.resolve(true);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    return new Promise(resolve => {
+      const stop = watch(
+        () => mapRef.map,
+        map => {
+          if (!map) return;
+          if (timer !== undefined) clearTimeout(timer);
+          stop();
+          resolve(true);
+        },
+        { immediate: true }
+      );
+      timer = setTimeout(() => {
+        stop();
+        resolve(false);
+      }, timeoutMs);
+    });
+  }
+
   // ── Country basemap bbox visibility ─────────────────────────────────
   // Layer ids of the ACTIVE merged country style; a moveend watcher flips
   // visibility between the country raster (inside the bbox at country
@@ -248,6 +274,13 @@ export const useBasemapStore = defineStore('basemap', () => {
     const basemapStyle = getBasemap();
     if (basemapStyle !== undefined && s.name == basemapStyle.name && !force) {
       console.debug('Active baselayer is already set.');
+      return false;
+    }
+    // Startup path: the map may not be mounted yet (the store initializes
+    // before MglMap) — wait for it, otherwise every mapRef.map? call below
+    // silently no-ops and the selected basemap never loads.
+    if (!(await waitForMap())) {
+      console.warn('[basemap-store] No map instance registered — basemap not applied:', s.name);
       return false;
     }
     // The outdoor basemap needs the dem-contour:// protocol registered
@@ -521,8 +554,15 @@ export const useBasemapStore = defineStore('basemap', () => {
           console.warn(
             '[transformStyle] No current basemap found, appending all custom layers at end'
           );
-          return {
+          // Same composition as the main path below (globe projection +
+          // sky carried, pinned asset URLs) — this branch is the
+          // FIRST-apply path during startup (no active flags yet), so it
+          // must not diverge from later basemap switches. The DEFAULT
+          // outdoor basemap is the world fallback; no raster underlay.
+          const fallbackComposed: StyleSpecification = {
             ...nextStyle,
+            projection: { type: 'globe' },
+            sky: GLOBE_SKY,
             sources: { ...nextStyle.sources, ...customSources },
             layers: [...nextStyle.layers, ...customLayers],
             sprite: nextStyle.sprite
@@ -536,6 +576,10 @@ export const useBasemapStore = defineStore('basemap', () => {
                 ? customSprites
                 : undefined,
           };
+          // SAFETY: fallbackComposed is our own StyleSpecification-typed
+          // object built above; the unknown hop only widens it to pin's
+          // record shape (same as the main path below).
+          return pin(fallbackComposed as unknown as Record<string, unknown>);
         }
 
         // Group custom layers by their onLayer property using overlay store
@@ -596,7 +640,10 @@ export const useBasemapStore = defineStore('basemap', () => {
           `[transformStyle] Style transformation complete: ${orderedLayers.length} layers total, ${Object.keys(customSources).length} custom sources, ${customSprites.length} custom sprites`
         );
 
-        const transformedStyle = withWorldUnderlay(<StyleSpecification>{
+        // The DEFAULT outdoor basemap is the world fallback; country
+        // basemaps compose it beneath their layers (country-fallback.ts).
+        // No raster underlay — wd-outdoor is the single gap-filler.
+        const transformedStyle: StyleSpecification = {
           ...nextStyle,
           // World coverage: carry the globe projection across basemap
           // switches (WdMapView sets it on initial load; without this the
@@ -608,7 +655,7 @@ export const useBasemapStore = defineStore('basemap', () => {
           sources: { ...nextStyle.sources, ...customSources },
           layers: orderedLayers,
           sprite: finalSprite,
-        });
+        };
         console.debug(
           `[transformStyle] Returning transformed style with ${Object.keys(transformedStyle.sources).length} sources, ${transformedStyle.layers.length} layers`,
           transformedStyle

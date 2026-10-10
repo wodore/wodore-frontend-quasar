@@ -12,6 +12,12 @@ const fallbackStyle = (): StyleSpecification => ({
   name: 'wd-outdoor-base-mtk',
   glyphs: 'https://tiles.example.com/fonts/{fontstack}/{range}.pbf',
   sprite: [{ id: 'default', url: 'https://tiles.example.com/sprite/default' }],
+  light: {
+    color: 'hsl(60, 90%, 96%)',
+    anchor: 'viewport',
+    intensity: 0.7,
+    position: [1.15, 225, 23],
+  },
   sources: {
     mtk: { type: 'vector', url: 'https://tiles.example.com/tiles.json' },
   },
@@ -83,6 +89,14 @@ describe('country-fallback', () => {
     const merged = withCountryFallback(countryStyle(), fallbackStyle());
     expect(merged.glyphs).toContain('tiles.example.com');
     expect(Array.isArray(merged.sprite)).toBe(true);
+  });
+
+  it('carries the fallback light so the fallback renders exactly as the standalone default', () => {
+    // the `light` property drives hillshade shading — the mtk outdoor
+    // style ships a custom one that raster country styles lack; without
+    // carrying it the fallback cartography differs from the default map
+    const merged = withCountryFallback(countryStyle(), fallbackStyle());
+    expect(merged.light).toEqual(fallbackStyle().light);
   });
 
   it('accepts a per-basemap zoom floor (swisstopo hides one level earlier)', () => {
