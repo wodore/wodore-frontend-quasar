@@ -15,7 +15,14 @@ import { ref, watch, onMounted, onBeforeUnmount, computed, nextTick } from 'vue'
 import { useQuasar } from 'quasar';
 import { useDebounceFn } from '@vueuse/core';
 import WdBackendIcon from '@components/media/WdBackendIcon.vue';
-import { DEFAULT_ICON_PACK, searchIcons, type BackendIcon } from '@services/icons';
+import {
+  DEFAULT_ICON_PACK,
+  DEFAULT_ICON_STYLE,
+  formatIconRef,
+  searchIcons,
+  type BackendIcon,
+  type BackendIconStyle,
+} from '@services/icons';
 import { useConfirmPopover } from '@composables/useConfirmPopover';
 import {
   isDefaultGroupSlug,
@@ -417,18 +424,25 @@ function addGroupWithName(name: string): void {
 async function pickIconForNewGroup(groupId: string, name: string): Promise<void> {
   let icons: BackendIcon[];
   try {
-    icons = await searchIcons({ search: name, pack: DEFAULT_ICON_PACK, limit: 20 });
+    icons = await searchIcons({ search: name, limit: 20 });
   } catch {
     return;
   }
   if (icons.length === 0) return;
   const group = overlayStore.groupSettings.groups.find(g => g.id === groupId);
   if (!group || group.id !== overlayStore.groupSettings.activeGroupId) return;
-  // Prefer a hit whose slug CARRIES the query ('Climbing' →
+  // Prefer a Fluent Emoji hit whose slug CARRIES the query ('Climbing' →
   // person-climbing) — guards against odd fuzzy matches
   const needle = name.trim().toLowerCase().slice(0, 5);
-  const preferred = icons.find(icon => icon.slug.includes(needle));
-  group.icon = (preferred ?? icons[0]).slug;
+  const preferred =
+    icons.find(icon => icon.pack === DEFAULT_ICON_PACK && icon.slug.includes(needle)) ??
+    icons.find(icon => icon.slug.includes(needle)) ??
+    icons[0];
+  group.icon = formatIconRef({
+    pack: preferred.pack,
+    slug: preferred.slug,
+    style: DEFAULT_ICON_STYLE,
+  });
   overlayStore.syncGroupSettings();
   markEdited();
 }
@@ -882,11 +896,12 @@ function confirmResetGroup(): void {
 // ── Group icon picker (edit mode) ────────────────────────────────────────
 const showIconPicker = ref(false);
 
-/** Group icon slugs — Fluent Emoji (Flat/simple style) via the backend
- *  icon library (openspec: icon-library): one coherent set, MIT-licensed,
- *  reads at small sizes. Curated activity shortlist for the common grid;
+/** Group icon slugs — Fluent Emoji via the backend icon library
+ *  (openspec: icon-library): one coherent set, MIT-licensed, reads at
+ *  small sizes. Curated activity shortlist for the common grid;
  *  everything else via localized backend search. A stored group icon is
- *  the bare slug in the default pack, rendered by WdBackendIcon. */
+ *  a "pack/slug[@style]" reference (see services/icons), rendered by
+ *  WdBackendIcon. */
 const COMMON_ICON_SLUGS = [
   'hiking-boot',
   'tent',
@@ -908,25 +923,38 @@ const COMMON_ICON_SLUGS = [
   'sled',
 ] as const;
 
-/** Common set: the curated Fluent Emoji (Flat) activity shortlist */
-const groupIconChoices = COMMON_ICON_SLUGS;
+// ── Picker style (stored with the pick, re-renders the previews) ──────
+const pickerStyle = ref<BackendIconStyle>(DEFAULT_ICON_STYLE);
+
+/** Common set: the curated Fluent Emoji activity shortlist */
+const groupIconChoices = computed(() =>
+  COMMON_ICON_SLUGS.map(slug => ({
+    slug,
+    ref: formatIconRef({ pack: DEFAULT_ICON_PACK, slug, style: pickerStyle.value }),
+  }))
+);
 
 // ── Backend icon search (custom icons beyond the common set) ──────
 const iconQuery = ref('');
-interface IconChoice {
-  slug: string;
-  url: string | null;
-}
-const iconResults = ref<IconChoice[]>([]);
+const iconResults = ref<BackendIcon[]>([]);
 /** Lazy reveal: fetches up to 60, renders in chunks of 32 */
 const iconVisibleCount = ref(32);
 const iconSearching = ref(false);
 const iconSearchError = ref(false);
-const visibleIconResults = computed(() => iconResults.value.slice(0, iconVisibleCount.value));
 
-/** Flat (simple) is the app's emoji look — fall back to any style. */
-function pickIconUrl(icon: BackendIcon): string | null {
-  return icon.urls?.simple ?? icon.urls?.detailed ?? icon.urls?.mono ?? null;
+/** Result cells for the active picker style: stored-form reference +
+ *  pre-resolved URL (requested style first, then any style). */
+const iconChoices = computed(() =>
+  iconResults.value.map(icon => ({
+    slug: icon.slug,
+    ref: formatIconRef({ pack: icon.pack, slug: icon.slug, style: pickerStyle.value }),
+    url: pickIconUrl(icon, pickerStyle.value),
+  }))
+);
+const visibleIconResults = computed(() => iconChoices.value.slice(0, iconVisibleCount.value));
+
+function pickIconUrl(icon: BackendIcon, style: BackendIconStyle): string | null {
+  return icon.urls?.[style] ?? icon.urls?.simple ?? icon.urls?.detailed ?? icon.urls?.mono ?? null;
 }
 
 async function runIconSearch(query: string): Promise<void> {
@@ -943,8 +971,10 @@ async function runIconSearch(query: string): Promise<void> {
     // The backend ranks localized keywords and slugs (exact > prefix >
     // substring > fuzzy) and unions the UI language with English — no
     // client-side fallbacks needed.
-    const icons = await searchIcons({ search: q, pack: DEFAULT_ICON_PACK, limit: 60 });
-    iconResults.value = icons.map(icon => ({ slug: icon.slug, url: pickIconUrl(icon) }));
+    // No pack filter: Fluent and Noto results interleave; each pick
+    // stores the pack it came from.
+    const icons = await searchIcons({ search: q, limit: 60 });
+    iconResults.value = icons;
   } catch {
     iconResults.value = [];
     iconSearchError.value = true;
@@ -977,7 +1007,9 @@ onBeforeUnmount(() => iconObserver?.disconnect());
 const searchIconsDebounced = useDebounceFn((q: string) => runIconSearch(q), 350);
 watch(iconQuery, q => searchIconsDebounced(q));
 watch(showIconPicker, open => {
-  if (!open) {
+  if (open) {
+    pickerStyle.value = DEFAULT_ICON_STYLE;
+  } else {
     iconQuery.value = '';
     iconResults.value = [];
   }
@@ -1321,7 +1353,7 @@ onBeforeUnmount(() => {
             :disabled="!editMode"
             @click.stop="editMode && (showIconPicker = true)"
           >
-            <WdBackendIcon :slug="overlayStore.activeGroupIcon()" :size="16" />
+            <WdBackendIcon :icon="overlayStore.activeGroupIcon()" :size="16" />
           </button>
           <!-- Group NAME = quick switch dropdown (expanded + edit).
                Icon → change icon (edit); name → switch group. -->
@@ -1360,7 +1392,7 @@ onBeforeUnmount(() => {
                   @click="onGroupMenuSelect(g.id)"
                 >
                   <q-item-section avatar>
-                    <WdBackendIcon :slug="g.icon" :size="16" />
+                    <WdBackendIcon :icon="g.icon" :size="16" />
                   </q-item-section>
                   <q-item-section>{{ groupDisplayName(g.name, t) }}</q-item-section>
                   <!-- Hidden marker (edit mode lists hidden groups too) -->
@@ -1874,7 +1906,7 @@ onBeforeUnmount(() => {
           </svg>
           <Transition :name="`wd-ovl-gswap-${groupSwapDir}`" mode="out-in">
             <span :key="overlayStore.groupSettings.activeGroupId ?? 'g'" class="wd-ovl__gswap-item">
-              <WdBackendIcon :slug="overlayStore.activeGroupIcon()" :size="20" />
+              <WdBackendIcon :icon="overlayStore.activeGroupIcon()" :size="20" />
             </span>
           </Transition>
           <svg
@@ -2036,6 +2068,19 @@ onBeforeUnmount(() => {
         >
           <template #prepend><q-icon name="wd-search-outline" size="16px" /></template>
         </q-input>
+        <!-- Style: re-renders the previews, stored with the pick -->
+        <q-btn-toggle
+          v-model="pickerStyle"
+          dense
+          no-caps
+          unelevated
+          class="wd-ovl__icon-style"
+          :options="[
+            { value: 'simple', label: t('overlays.icon_style_flat') },
+            { value: 'detailed', label: t('overlays.icon_style_detailed') },
+            { value: 'mono', label: t('overlays.icon_style_mono') },
+          ]"
+        />
         <!-- Search results (backend icon library) -->
         <template v-if="iconQuery && iconQuery.trim().length >= 2">
           <div v-if="iconSearchError" class="wd-ovl__icon-note">
@@ -2047,14 +2092,14 @@ onBeforeUnmount(() => {
           <div v-else class="wd-ovl__icon-grid">
             <button
               v-for="choice in visibleIconResults"
-              :key="choice.slug"
+              :key="choice.ref"
               class="wd-ovl__icon-cell"
-              :class="{ 'wd-ovl__icon-cell--active': choice.slug === activeGroupIconName }"
+              :class="{ 'wd-ovl__icon-cell--active': choice.ref === activeGroupIconName }"
               :aria-label="choice.slug"
               :title="choice.slug"
-              @click.stop="applyGroupIcon(choice.slug)"
+              @click.stop="applyGroupIcon(choice.ref)"
             >
-              <WdBackendIcon :slug="choice.slug" :url="choice.url" :size="26" />
+              <WdBackendIcon :icon="choice.ref" :url="choice.url" :size="26" />
             </button>
             <!-- Auto lazy-load sentinel: reveals the next chunk on scroll -->
             <div
@@ -2069,15 +2114,15 @@ onBeforeUnmount(() => {
         <template v-else>
           <div class="wd-ovl__icon-grid">
             <button
-              v-for="slug in groupIconChoices"
-              :key="slug"
+              v-for="choice in groupIconChoices"
+              :key="choice.slug"
               class="wd-ovl__icon-cell"
-              :class="{ 'wd-ovl__icon-cell--active': slug === activeGroupIconName }"
-              :aria-label="slug"
-              :title="slug"
-              @click.stop="applyGroupIcon(slug)"
+              :class="{ 'wd-ovl__icon-cell--active': choice.ref === activeGroupIconName }"
+              :aria-label="choice.slug"
+              :title="choice.slug"
+              @click.stop="applyGroupIcon(choice.ref)"
             >
-              <WdBackendIcon :slug="slug" :size="26" />
+              <WdBackendIcon :icon="choice.ref" :size="26" />
             </button>
           </div>
         </template>
@@ -3324,6 +3369,22 @@ body.body--dark .wd-ovl__menu .q-item {
 /* Icon picker search (dialog teleports to body) */
 .wd-ovl__icon-search {
   margin-bottom: 12px;
+}
+
+.wd-ovl__icon-style {
+  margin-bottom: 10px;
+
+  .q-btn {
+    min-height: 24px;
+    padding: 3px 10px;
+    font-size: 11.5px;
+    color: var(--wd-ctl-ink-soft);
+  }
+
+  .q-btn--active {
+    color: var(--wd-ctl-ink);
+    background: var(--wd-ctl-hover);
+  }
 }
 
 .wd-ovl__icon-note {

@@ -413,6 +413,9 @@
     "icon_none": "Aucune icône trouvée.",
     "icon_search_error": "Recherche d'icônes indisponible pour le moment.",
     "icon_more": "Afficher plus",
+    "icon_style_flat": "Plat",
+    "icon_style_detailed": "Détaillé",
+    "icon_style_mono": "Monochrome",
     "group_prev": "Groupe précédent ({name})",
     "group_next": "Groupe suivant ({name})",
     "edit_keep_editing": "Continuer la modification"

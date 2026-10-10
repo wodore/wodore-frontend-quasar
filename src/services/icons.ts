@@ -19,6 +19,37 @@ export type BackendIconStyle = 'detailed' | 'simple' | 'mono';
 /** The app's primary emoji pack (product decision: Fluent Emoji). */
 export const DEFAULT_ICON_PACK = 'fluent-emoji';
 
+/** The app's emoji look: Flat (backend style "simple"). */
+export const DEFAULT_ICON_STYLE: BackendIconStyle = 'simple';
+
+/** Stored icon reference: "pack/slug" with an optional "@style" suffix
+ *  ("@simple" implied). Slugs collide across packs, so the pack is part
+ *  of the stored data; the style records the pick's look. */
+export interface IconRef {
+  pack: string;
+  slug: string;
+  style: BackendIconStyle;
+}
+
+const ICON_REF_RE = /^([a-z0-9-]+)\/([a-z0-9-]+)(?:@([a-z]+))?$/;
+const ICON_STYLES: BackendIconStyle[] = ['detailed', 'simple', 'mono'];
+
+/** Parse a stored icon reference. Returns null for unknown/legacy strings
+ *  (e.g. Iconify "prefix:name" names) — renderers show an empty
+ *  placeholder for those. */
+export function parseIconRef(value: string | null | undefined): IconRef | null {
+  const match = ICON_REF_RE.exec(value ?? '');
+  if (!match) return null;
+  const style = (match[3] ?? DEFAULT_ICON_STYLE) as BackendIconStyle;
+  return ICON_STYLES.includes(style) ? { pack: match[1], slug: match[2], style } : null;
+}
+
+/** Format a reference to its stored string form (omits "@simple"). */
+export function formatIconRef(ref: IconRef): string {
+  const base = `${ref.pack}/${ref.slug}`;
+  return ref.style === DEFAULT_ICON_STYLE ? base : `${base}@${ref.style}`;
+}
+
 export interface IconSearchParams {
   /** Ranked search over localized keywords and slugs. */
   search?: string;
