@@ -147,9 +147,12 @@ watch(
   ([open, mobile, width]) => {
     const shift = open && !mobile;
     document.body.classList.toggle('wd-sidepanel-open', shift);
-    // Actual drawer width — the control shift follows the real panel,
-    // not a hardcoded 330px that mismatched the 380/460px drawers
-    document.body.style.setProperty('--wd-drawer-w', shift ? `${width}px` : '0px');
+    // Panel slot width — ALWAYS set on desktop: the topbar pill reserves
+    // this space in BOTH panel states (it rests at (viewport − panel)/2,
+    // so opening/closing hut details moves nothing). The shift transforms
+    // in _dark.scss additionally require .wd-sidepanel-open, so only the
+    // open state actually displaces chrome. Mobile has no desktop panel.
+    document.body.style.setProperty('--wd-panel-w', mobile ? '0px' : `${width}px`);
   },
   { immediate: true }
 );
@@ -443,10 +446,10 @@ body.capacitor .preview-badge {
     <!-- --under-menu: while the menu drawer is open the pill must slide
          UNDER it (Quasar's desktop-mode drawer aside is z 1000, this fixed
          topbar 2000 — without the drop the pill paints over the drawer
-         and swallows its taps). The overlap is real at 770-1099px (the
-         left-aligned pill sits inside the 300px drawer) and, with the
-         panel open, up to ~1265px (the centered pill's left edge stays
-         below 300px); above that the drop is invisible. Mobile already
+         and swallows its taps). The pill always rests at
+         (viewport − panel)/2, so its left edge sits inside the 300px
+         drawer band at 770-1099px (left-aligned) and at 1100-1265px
+         (centered); above that the drop is invisible. Mobile already
          renders its drawer on top (aside z 3000 there). -->
     <div class="wd-topbar" :class="{ 'wd-topbar--under-menu': menuDrawerOpen }">
       <div class="wd-topbar__pill">
