@@ -1145,7 +1145,12 @@ interface AddOverlayLayerArgs {
   beforeId?: string | undefined;
 }
 
-function addOverlayLayer({ layer, onLayer, defaultOpacity, beforeId }: AddOverlayLayerArgs): void {
+function addOverlayLayer({
+  layer,
+  onLayer,
+  defaultOpacity,
+  beforeId,
+}: AddOverlayLayerArgs): boolean {
   // World/globe view: overlays never render below the zoom floor — layers
   // reappear automatically when the camera zooms back in (see
   // map-constants.ts; the same clamp is applied in transformStyle for
@@ -1159,50 +1164,70 @@ function addOverlayLayer({ layer, onLayer, defaultOpacity, beforeId }: AddOverla
     autoOpacity = true;
     defaultOpacity = ['interpolate', ['linear'], ['zoom'], 8, 0.9, 14, 0.6, 22, 0.5];
   }
-  if (mapRef.map?.getLayer(layer.id) === undefined) {
-    let opacity: PropertyValueSpecification<number> | undefined =
-      defaultOpacity !== false ? defaultOpacity : undefined;
-    let _beforeId = beforeId;
-    if (_beforeId === undefined && onLayer) {
-      _beforeId = basemap?.layers[onLayer]?.before;
-    }
-    if (basemapOpacity !== undefined) {
-      opacity = basemapOpacity;
-    }
-    const _source = 'source' in layer ? layer.source : undefined;
-    if ((_source && mapRef.map?.getSource(_source)) || _source === undefined) {
-      mapRef.map?.addLayer(layer, _beforeId);
-      const opacityPropertiesByType: Record<string, string[]> = {
-        background: ['background-opacity'],
-        fill: ['fill-opacity'],
-        'fill-extrusion': ['fill-extrusion-opacity'],
-        line: ['line-opacity'],
-        circle: ['circle-opacity'],
-        raster: ['raster-opacity'],
-        heatmap: ['heatmap-opacity'],
-        hillshade: ['hillshade-opacity'],
-        symbol: ['icon-opacity', 'text-opacity'],
-      };
-      const opacityProperties = opacityPropertiesByType[layer.type] ?? [];
-      if (layer.paint !== undefined && opacityProperties.some(p => p in layer.paint!)) {
-        defaultOpacity = false;
-      }
-      if (defaultOpacity === false) {
-        opacity = undefined;
-      } else if (autoOpacity === false) {
-        opacity = defaultOpacity;
-      }
-      if (opacity !== undefined && opacityProperties.length > 0) {
-        for (const property of opacityProperties) {
-          mapRef.map?.setPaintProperty(layer.id, property as keyof AllPaintProperties, opacity);
-        }
-      }
-    } else {
-      console.error(
-        `[addOverlayLayer] Source '${_source}' not added, tried to add layer '${layer.id}'.`
-      );
+  if (mapRef.map?.getLayer(layer.id) !== undefined) {
+    return true; // already on the map
+  }
+  let opacity: PropertyValueSpecification<number> | undefined =
+    defaultOpacity !== false ? defaultOpacity : undefined;
+  let _beforeId = beforeId;
+  if (_beforeId === undefined && onLayer) {
+    _beforeId = basemap?.layers[onLayer]?.before;
+  }
+  if (basemapOpacity !== undefined) {
+    opacity = basemapOpacity;
+  }
+  const _source = 'source' in layer ? layer.source : undefined;
+  if (!((_source && mapRef.map?.getSource(_source)) || _source === undefined)) {
+    console.error(
+      `[addOverlayLayer] Source '${_source}' not added, tried to add layer '${layer.id}'.`
+    );
+    return false;
+  }
+  try {
+    mapRef.map?.addLayer(layer, _beforeId);
+  } catch (e) {
+    console.warn(
+      `[addOverlayLayer] addLayer failed for '${layer.id}' (before: ${_beforeId ?? 'top'}):`,
+      e instanceof Error ? e.message : e
+    );
+    return false;
+  }
+  // addLayer can also fail asynchronously (maplibre emits an error event
+  // instead of throwing, e.g. when the beforeId anchor is not in the
+  // active style) — verify the layer actually landed.
+  const added = mapRef.map?.getLayer(layer.id) !== undefined;
+  if (!added) {
+    console.warn(
+      `[addOverlayLayer] layer '${layer.id}' was not added (before: ${_beforeId ?? 'top'}) — will retry when the basemap style is ready`
+    );
+    return false;
+  }
+  const opacityPropertiesByType: Record<string, string[]> = {
+    background: ['background-opacity'],
+    fill: ['fill-opacity'],
+    'fill-extrusion': ['fill-extrusion-opacity'],
+    line: ['line-opacity'],
+    circle: ['circle-opacity'],
+    raster: ['raster-opacity'],
+    heatmap: ['heatmap-opacity'],
+    hillshade: ['hillshade-opacity'],
+    symbol: ['icon-opacity', 'text-opacity'],
+  };
+  const opacityProperties = opacityPropertiesByType[layer.type] ?? [];
+  if (layer.paint !== undefined && opacityProperties.some(p => p in layer.paint!)) {
+    defaultOpacity = false;
+  }
+  if (defaultOpacity === false) {
+    opacity = undefined;
+  } else if (autoOpacity === false) {
+    opacity = defaultOpacity;
+  }
+  if (opacity !== undefined && opacityProperties.length > 0) {
+    for (const property of opacityProperties) {
+      mapRef.map?.setPaintProperty(layer.id, property as keyof AllPaintProperties, opacity);
     }
   }
+  return true;
 }
 
 const addedOverlays = new Set<string>();
@@ -1213,8 +1238,11 @@ function getOverlaysInRenderOrder(): Array<OverlaySwitchItem> {
   const allOverlays = (overlayStore as any).overlays as Array<OverlaySwitchItem>;
   /* eslint-enable @typescript-eslint/no-explicit-any */
   const backOverlays = allOverlays.slice().filter(v => v.onLayer === 'background');
-  const frontOverlays = allOverlays.slice().filter(v => v.onLayer === 'ways');
-  return frontOverlays.concat(backOverlays).reverse();
+  const waysOverlays = allOverlays.slice().filter(v => v.onLayer === 'ways');
+  const placesOverlays = allOverlays.slice().filter(v => v.onLayer === 'places');
+  // Bottom-to-top add order: background → ways → places (data overlays such
+  // as huts render above ways/transport).
+  return backOverlays.concat(waysOverlays).concat(placesOverlays);
 }
 
 function findBeforeLayerId(
@@ -1233,8 +1261,8 @@ function findBeforeLayerId(
   return undefined;
 }
 
-function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwitchItem>): void {
-  if (addedOverlays.has(overlay.name)) return;
+function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwitchItem>): boolean {
+  if (addedOverlays.has(overlay.name)) return true;
   for (const label in overlay.style.sources) {
     if (mapRef.map?.getSource(label) === undefined) {
       mapRef.map?.addSource(label, overlay.style.sources[label]);
@@ -1257,29 +1285,47 @@ function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwit
     }
   }
   const beforeId = findBeforeLayerId(overlay, overlaysOrder);
+  let allAdded = true;
   for (const layer of overlay.style.layers) {
     const layerWithVisibility = {
       ...layer,
       layout: { ...(layer.layout || {}), visibility: overlay.active ? 'visible' : 'none' },
     };
-    addOverlayLayer({
+    const added = addOverlayLayer({
       layer: layerWithVisibility as LayerSpecification,
       defaultOpacity: overlay.opacity as OpacitySpecification,
       onLayer: overlay.onLayer,
       beforeId,
     });
+    if (!added) allAdded = false;
   }
+  if (!allAdded) return false;
   setOverlayVisibility(overlay);
   addedOverlays.add(overlay.name);
+  return true;
 }
 
 function addOverlays(): void {
   addedOverlays.clear();
   const overlaysOrder = getOverlaysInRenderOrder();
+  let pending = false;
   for (const overlay of overlaysOrder) {
-    if (overlay.active) addOverlay(overlay, overlaysOrder);
+    if (overlay.active && !addOverlay(overlay, overlaysOrder)) pending = true;
   }
   configStore.reapplyAllFilters();
+  // Startup race: the first style applied to the map can be the world
+  // fallback (or a cached variant) without the basemap's label anchors —
+  // anchored overlays (huts below town labels) then fail to add and stay
+  // pending. Retry once the resolved basemap style arrives.
+  if (pending) {
+    mapRef.map?.once('styledata', () => {
+      if (mapRef.map?.isStyleLoaded()) {
+        addOverlays();
+      } else {
+        mapRef.map?.once('idle', () => addOverlays());
+      }
+    });
+  }
 }
 
 function toggleLayer(item: OverlaySwitchItem): void {
