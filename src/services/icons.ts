@@ -80,8 +80,13 @@ export interface IconSearchParams {
 }
 
 /** Search the icon library. Results follow the backend's ranking
- *  (exact > prefix > substring > fuzzy, ties by order/slug). */
-export async function searchIcons(params: IconSearchParams = {}): Promise<BackendIcon[]> {
+ *  (exact > prefix > substring > fuzzy, ties by order/slug). The
+ *  optional signal cancels an in-flight request (autocomplete typing:
+ *  a newer keystroke aborts the stale request instead of racing it). */
+export async function searchIcons(
+  params: IconSearchParams = {},
+  signal?: AbortSignal
+): Promise<BackendIcon[]> {
   const { data, response } = await clientWodore.GET('/v1/icons/', {
     params: {
       query: {
@@ -95,6 +100,7 @@ export async function searchIcons(params: IconSearchParams = {}): Promise<Backen
         offset: params.offset,
       },
     },
+    signal,
   });
   if (!response.ok) throw new Error(`GET /v1/icons/ failed: ${response.status}`);
   return data ?? [];
