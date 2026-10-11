@@ -25,6 +25,7 @@ import {
   type BackendIconStyle,
 } from '@services/icons';
 import { useConfirmPopover } from '@composables/useConfirmPopover';
+import { currentLocale } from '@services/locale';
 import {
   isDefaultGroupSlug,
   resetGroupToDefault,
@@ -941,6 +942,11 @@ const iconResults = ref<BackendIcon[]>([]);
 const iconVisibleCount = ref(32);
 const iconSearching = ref(false);
 const iconSearchError = ref(false);
+/** In-flight search — a newer keystroke aborts the stale request. */
+let iconSearchAbort: AbortController | null = null;
+/** Result cache bound (locale, query) pairs; oldest entry evicted. */
+const ICON_SEARCH_CACHE_MAX = 60;
+const iconSearchCache = new Map<string, BackendIcon[]>();
 
 /** Result cells for the active picker style: stored-form reference +
  *  pre-resolved URL. Honest previews: under mono, icons without a mono
@@ -965,25 +971,53 @@ async function runIconSearch(query: string): Promise<void> {
   const q = query.trim();
   iconVisibleCount.value = 32;
   if (q.length < 2) {
+    iconSearchAbort?.abort();
     iconResults.value = [];
     iconSearchError.value = false;
+    iconSearching.value = false;
+    return;
+  }
+  // Per-(locale, query) cache: backspacing re-shows the previous results
+  // instantly instead of re-fetching them. Small LRU via Map re-insert.
+  const cacheKey = `${currentLocale()}:${q}`;
+  const cached = iconSearchCache.get(cacheKey);
+  if (cached) {
+    iconSearchCache.delete(cacheKey);
+    iconSearchCache.set(cacheKey, cached);
+    iconSearchAbort?.abort();
+    iconResults.value = cached;
+    iconSearchError.value = false;
+    iconSearching.value = false;
     return;
   }
   iconSearching.value = true;
   iconSearchError.value = false;
+  // A newer keystroke owns the UI: abort the stale request instead of
+  // letting its (older) response overwrite the fresh one.
+  iconSearchAbort?.abort();
+  const controller = new AbortController();
+  iconSearchAbort = controller;
   try {
     // The backend ranks localized keywords and slugs (exact > prefix >
     // substring > fuzzy) and unions the UI language with English — no
     // client-side fallbacks needed.
     // No pack filter: Fluent and Noto results interleave; each pick
     // stores the pack it came from.
-    const icons = await searchIcons({ search: q, limit: 60 });
+    const icons = await searchIcons({ search: q, limit: 60 }, controller.signal);
+    if (controller.signal.aborted) return; // superseded by a newer search
     iconResults.value = icons;
+    iconSearchCache.set(cacheKey, icons);
+    if (iconSearchCache.size > ICON_SEARCH_CACHE_MAX) {
+      const oldest = iconSearchCache.keys().next().value;
+      if (oldest !== undefined) iconSearchCache.delete(oldest);
+    }
   } catch {
+    if (controller.signal.aborted) return; // superseded, not an error
     iconResults.value = [];
     iconSearchError.value = true;
   } finally {
-    iconSearching.value = false;
+    if (!controller.signal.aborted) iconSearching.value = false;
+    if (iconSearchAbort === controller) iconSearchAbort = null;
   }
 }
 
@@ -1008,12 +1042,13 @@ watch(iconMoreSentinel, el => {
 
 onBeforeUnmount(() => iconObserver?.disconnect());
 
-const searchIconsDebounced = useDebounceFn((q: string) => runIconSearch(q), 350);
+const searchIconsDebounced = useDebounceFn((q: string) => runIconSearch(q), 300);
 watch(iconQuery, q => searchIconsDebounced(q));
 watch(showIconPicker, open => {
   if (open) {
     pickerStyle.value = DEFAULT_ICON_STYLE;
   } else {
+    iconSearchAbort?.abort();
     iconQuery.value = '';
     iconResults.value = [];
   }
