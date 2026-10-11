@@ -586,6 +586,7 @@ export const useBasemapStore = defineStore('basemap', () => {
         // This is generic - reads from overlay definitions instead of hard-coded patterns
         const backgroundLayers: import('maplibre-gl').LayerSpecification[] = [];
         const waysLayers: import('maplibre-gl').LayerSpecification[] = [];
+        const placesLayers: import('maplibre-gl').LayerSpecification[] = [];
         const otherLayers: import('maplibre-gl').LayerSpecification[] = [];
 
         // Build a simple layer-to-onLayer lookup map to avoid type recursion issues
@@ -604,6 +605,8 @@ export const useBasemapStore = defineStore('basemap', () => {
             backgroundLayers.push(layer);
           } else if (onLayer === 'ways') {
             waysLayers.push(layer);
+          } else if (onLayer === 'places') {
+            placesLayers.push(layer);
           } else if (onLayer) {
             console.warn(
               `[transformStyle] Unknown onLayer '${onLayer}' for layer '${layer.id}', adding to 'other' group`
@@ -622,9 +625,12 @@ export const useBasemapStore = defineStore('basemap', () => {
         );
 
         // Insert layers in correct order based on basemap configuration
-        // Order: background layers → basemap layers → ways layers → other layers
+        // Order: background layers → basemap layers → ways layers → places
+        // layers (under high-ranked town labels when the basemap declares an
+        // anchor) → other layers (always on top)
         insertLayersBefore(backgroundLayers, currentBasemap.layers.background.before, 'background');
         insertLayersBefore(waysLayers, currentBasemap.layers.ways.before, 'ways');
+        insertLayersBefore(placesLayers, currentBasemap.layers.places?.before, 'places');
         insertLayersBefore(otherLayers, undefined, 'other');
 
         // Combine sprites
@@ -919,6 +925,10 @@ export const useBasemapStore = defineStore('basemap', () => {
         layers: {
           ways: { before: undefined },
           background: { before: undefined },
+          // Huts sit below high-ranked town labels (rank ≤ 13: Brig/Visp
+          // class and above) but above hamlet/alp labels (rank ≥ 14). The
+          // mtk style stacks place_point_label_rank_5..1, last on top.
+          places: { before: 'place_point_label_rank_2' },
         },
       },
       {
