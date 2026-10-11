@@ -2133,9 +2133,10 @@ onBeforeUnmount(() => {
             </div>
             <div v-else class="wd-ovl__icon-grid">
               <button
-                v-for="choice in visibleIconResults"
+                v-for="(choice, i) in visibleIconResults"
                 :key="choice.ref"
                 class="wd-ovl__icon-cell"
+                :style="{ '--stagger-i': i }"
                 :class="{ 'wd-ovl__icon-cell--active': choice.ref === activeGroupIconName }"
                 :aria-label="choice.slug"
                 :title="choice.slug"
@@ -2156,9 +2157,10 @@ onBeforeUnmount(() => {
           <template v-else>
             <div class="wd-ovl__icon-grid">
               <button
-                v-for="choice in groupIconChoices"
+                v-for="(choice, i) in groupIconChoices"
                 :key="choice.slug"
                 class="wd-ovl__icon-cell"
+                :style="{ '--stagger-i': i }"
                 :class="{ 'wd-ovl__icon-cell--active': choice.ref === activeGroupIconName }"
                 :aria-label="choice.slug"
                 :title="choice.slug"
@@ -2189,6 +2191,8 @@ onBeforeUnmount(() => {
 // ══════════════════════════════════════════════════════════════════════
 
 $ease: cubic-bezier(0.2, 0, 0, 1);
+// Entrances settle on a decelerating tail (ease-out-quint); never bounce
+$ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 
 // ── Container ────────────────────────────────────────────────────────────
 .wd-ovl {
@@ -3293,6 +3297,10 @@ body.body--dark .wd-ovl__empty-hint {
 .wd-ovl__icon-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  // Pack rows to the top. The picker body is a fixed-height flex child;
+  // the default align-content: stretch spreads the surplus across the
+  // row tracks, so short result sets (2 rows) got huge holes between rows.
+  align-content: start;
   gap: 6px;
   max-height: 50dvh;
   overflow-y: auto;
@@ -3306,17 +3314,41 @@ body.body--dark .wd-ovl__empty-hint {
   border-radius: 4px;
   background: transparent;
   cursor: pointer;
+  // Reveal: fade + settle whenever a cell is inserted (search results,
+  // style swap, lazy chunk, open). The keyed v-for inserts fresh nodes
+  // per result set, so swaps animate while in-place updates stay still.
+  // Stagger caps at 12 steps (~150ms) so 60 cells still feel instant.
+  animation: wd-ovl-icon-in 0.18s $ease-out backwards;
+  animation-delay: calc(min(var(--stagger-i, 0), 12) * 12ms);
   transition:
     background-color 0.12s $ease,
-    border-color 0.12s $ease;
+    border-color 0.12s $ease,
+    transform 0.12s $ease;
 
   &:hover {
     background: var(--wd-ctl-hover);
   }
 
+  // Press feedback: instant tactile ack before the dialog closes
+  &:active {
+    transform: scale(0.92);
+  }
+
   &--active {
     border-color: var(--wd-ctl-ring);
     background: var(--wd-ctl-date-bg);
+  }
+}
+
+@keyframes wd-ovl-icon-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 
@@ -3378,15 +3410,23 @@ body.body--dark .wd-ovl__empty-hint {
   }
 
   .wd-ovl__dropline,
-  .wd-ovl__icon--pulse {
+  .wd-ovl__icon--pulse,
+  .wd-ovl__icon-cell,
+  .wd-ovl__icon-note {
     animation: none;
+  }
+
+  .wd-ovl__icon-cell:active {
+    transform: none;
   }
 }
 </style>
 
 <style lang="scss">
-/* q-menu / q-dialog TELEPORT to <body> — scoped selectors never match.
-   These panels need global styles. */
+/* q-menu / q-dialog panels TELEPORT to <body>. This component's own
+   markup keeps its data-v scope attribute, but scoped selectors cannot
+   reach Quasar child-component internals (.q-* classes) — global styles
+   are needed for those. */
 // ── 3-dot menu (header): opaque quiet panel ───────────────────────────
 .wd-ovl__menu {
   background: var(--wd-ctl-bg) !important; // opaque panel — never transparent
@@ -3437,6 +3477,18 @@ body.body--dark .wd-ovl__menu .q-item {
   padding: 14px 4px;
   font-size: 12.5px;
   color: var(--wd-ctl-ink-soft);
+  // Empty/error states fade in instead of snapping after a search
+  animation: wd-ovl-icon-note-in 0.16s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+@keyframes wd-ovl-icon-note-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 /* Group quick-switch dropdown (title): active item + hidden marker */
