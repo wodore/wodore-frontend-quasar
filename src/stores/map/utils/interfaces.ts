@@ -9,9 +9,11 @@ type LayerOptions = {
 type Layers = {
   ways: LayerOptions;
   background: LayerOptions;
+  /** Data overlays (huts) that sit below high-ranked town labels. */
+  places?: LayerOptions;
 };
 
-export type LayerNames = 'ways' | 'background';
+export type LayerNames = 'ways' | 'background' | 'places';
 
 export type OpacitySpecification = PropertyValueSpecification<number> | undefined | boolean;
 

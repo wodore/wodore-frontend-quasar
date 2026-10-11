@@ -40,11 +40,12 @@ const TILE_SERVER_URL = getEnv('WODORE_TILE_SERVER_URL') || 'https://tiles.stg.w
 const imageSwitchZoom = 11;
 const hutsLayerLayout: SymbolLayerSpecification['layout'] = {
   'text-field': ['case', ['>', ['get', 'type_standard_order'], 25], ['get', 'name'], ''],
-  'text-size': ['interpolate', ['linear'], ['zoom'], 7, 7, 9, 10, 22, 16],
-  //'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
-  // OpenFreeMap's glyph server does not host the Open Sans family —
-  // use a Noto Sans stack it serves (see raster.ts glyphs note).
-  'text-font': ['Noto Sans Bold'],
+  // Legible floor (the old 7px was sub-legible), capped like the basemap's
+  // own labels. Design review + wd-outdoor-base-mtk's wd-park-label.
+  'text-size': ['interpolate', ['linear'], ['zoom'], 7, 8.5, 10, 11, 14, 13.5, 17, 15],
+  // The brand label font and the basemap's place/peak label voice; Noto
+  // Sans Bold stays as the non-latin fallback (same glyph server).
+  'text-font': ['Barlow Semi Condensed SemiBold', 'Noto Sans Bold'],
   'text-anchor': 'bottom',
   'icon-allow-overlap': true,
   'text-allow-overlap': false,
@@ -75,8 +76,13 @@ const hutsLayerLayout: SymbolLayerSpecification['layout'] = {
 const hutsLayerPaint: SymbolLayerSpecification['paint'] = {
   'icon-opacity': ['interpolate', ['linear'], ['zoom'], 5, 0.7, 10, 0.8, 22, 0.85],
   'text-opacity': ['step', ['zoom'], 0, 7, 1],
-  'text-halo-width': 2,
-  'text-halo-color': '#ffffff',
+  // Forest-deep (#224E3B) marks hut names as the product's own objects —
+  // same treatment as the basemap style's wd-park-label; AA on light
+  // imagery. Halo = the style's standard pale green-white, 1.2 (the old
+  // 2px pure-white outline was the heaviest in the whole style).
+  'text-color': '#224E3B',
+  'text-halo-width': 1.2,
+  'text-halo-color': 'rgba(242, 247, 244, 0.9)',
   'text-translate': [
     'interpolate',
     ['linear'],
@@ -137,29 +143,36 @@ function getHutsOccupationDayLayout(day: number) {
       'case',
       ['<', day, ['length', ['get', 'data']]],
       [
-        'concat',
-        // free is null if the source does not publish the count (free_unknown)
+        'case',
+        // Unknown day: a single "?" — the source reports free=0/total=0
+        // with no real counts, so "0\n0" would be misleading.
+        ['==', ['get', 'occupancy_status', ['at', day, ['get', 'data']]], 'unknown'],
+        '?',
         [
-          'case',
-          ['==', ['get', 'free', ['at', day, ['get', 'data']]], null],
-          '?',
-          ['to-string', ['get', 'free', ['at', day, ['get', 'data']]]],
-        ],
-        '\n',
-        [
-          'case',
-          ['==', ['get', 'total', ['at', day, ['get', 'data']]], null],
-          '?',
-          ['to-string', ['get', 'total', ['at', day, ['get', 'data']]]],
+          'concat',
+          // free is null if the source does not publish the count (free_unknown)
+          [
+            'case',
+            ['==', ['get', 'free', ['at', day, ['get', 'data']]], null],
+            '?',
+            ['to-string', ['get', 'free', ['at', day, ['get', 'data']]]],
+          ],
+          '\n',
+          [
+            'case',
+            ['==', ['get', 'total', ['at', day, ['get', 'data']]], null],
+            '?',
+            ['to-string', ['get', 'total', ['at', day, ['get', 'data']]]],
+          ],
         ],
       ],
       '',
     ],
     'text-size': ['interpolate', ['linear'], ['zoom'], 12, 7, 14, 10],
-    //'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
-    // OpenFreeMap's glyph server does not host the Open Sans family —
-    // use a Noto Sans stack it serves (see raster.ts glyphs note).
-    'text-font': ['Noto Sans Bold'],
+    // Match the wd-outdoor-base-mtk basemap typography: Barlow Semi
+    // Condensed SemiBold is the style's place-label voice, Noto Sans Bold
+    // is its non-latin fallback. Served by the same Martin glyph endpoint.
+    'text-font': ['Barlow Semi Condensed SemiBold', 'Noto Sans Bold'],
     'icon-allow-overlap': true,
     'text-allow-overlap': true,
     'icon-image': [
@@ -199,6 +212,12 @@ function getHutsOccupationDayPaint(day: number) {
   return {
     'icon-translate': occTranslate(day),
     'text-translate': occTranslate(day),
+    // Text color intentionally left at the maplibre default (black) — the
+    // status colors live in the dots, not the label text.
+    // The wd-outdoor-base-mtk style's standard pale halo — keeps the
+    // numbers readable where dots overlap terrain labels.
+    'text-halo-color': 'rgba(242, 247, 244, 0.9)',
+    'text-halo-width': 0.8,
     //'text-opacity': ['step', ['zoom'], 0, 12, 0.6],
     'text-opacity': ['interpolate', ['linear'], ['zoom'], 9, 0, 10, 0.4, 12, 0.6],
     'icon-opacity': ['interpolate', ['linear'], ['zoom'], 6, 0, 8, 0.8, 9, 1, 11, 1, 13, 0.7],

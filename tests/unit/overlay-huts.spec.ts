@@ -112,6 +112,36 @@ describe('hutsStyle', () => {
     }
   });
 
+  it('labels unknown days with a single ? in the basemap label style', () => {
+    const { hutsStyle } = overlayHuts;
+    const layer = hutsStyle.layers.find(
+      l => l.id === 'wd-huts-occupation-day0'
+    ) as unknown as Record<string, unknown>;
+
+    // text-field: unknown status collapses free/total to a single "?"
+    const textField = layer.layout['text-field'] as unknown[];
+    expect(textField[0]).toBe('case');
+    const innerCase = textField[2] as unknown[];
+    expect(innerCase[0]).toBe('case');
+    // the single "?" branch precedes the free/total concat
+    const unknownBranch = innerCase.indexOf('?');
+    const concatBranch = innerCase.findIndex(part => Array.isArray(part) && part[0] === 'concat');
+    expect(unknownBranch).toBeGreaterThan(-1);
+    expect(concatBranch).toBeGreaterThan(unknownBranch);
+
+    // font: the basemap style's place-label voice (Barlow), Noto fallback
+    const font = layer.layout['text-font'] as string[];
+    expect(font).toContain('Barlow Semi Condensed SemiBold');
+    expect(font).toContain('Noto Sans Bold');
+
+    // paint: no per-status text color (status colors live in the dots),
+    // but the style's pale halo is applied
+    const paint = layer.paint as Record<string, unknown>;
+    expect(paint['text-color']).toBeUndefined();
+    expect(paint['text-halo-color']).toBe('rgba(242, 247, 244, 0.9)');
+    expect(paint['text-halo-width']).toBe(0.8);
+  });
+
   it('updates the bookings source when the store geojson changes', async () => {
     const { useHutsStore } = await import('@stores/huts-store');
     const store = useHutsStore();

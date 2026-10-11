@@ -35,6 +35,7 @@ declare module 'vue' {
     WdAnalytics: typeof import('./src/components/utils/WdAnalytics.vue')['default']
     WdApiVersionBanner: typeof import('./src/components/version/WdApiVersionBanner.vue')['default']
     WdAttributionContent: typeof import('./src/components/utils/WdAttributionContent.vue')['default']
+    WdBackendIcon: typeof import('./src/components/media/WdBackendIcon.vue')['default']
     WdBasemapControl: typeof import('./src/components/map/controls/WdBasemapControl.vue')['default']
     WdBeta: typeof import('./src/components/utils/WdBeta.vue')['default']
     WdBottomSheet: typeof import('./src/components/utils/WdBottomSheet.vue')['default']

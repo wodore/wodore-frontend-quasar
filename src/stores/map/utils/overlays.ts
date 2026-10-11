@@ -44,7 +44,10 @@ export const createHuts = (): OverlaySwitchItem => ({
   label: t('overlays.huts.label'),
   show: true,
   active: true,
-  onLayer: 'ways',
+  // 'places': data overlays that render below high-ranked town labels
+  // (see the basemap's layers.places.before anchor). On basemaps without
+  // an anchor this degrades to "on top" (previous behavior).
+  onLayer: 'places',
   icon: 'huts',
   style: hutsStyle,
 

@@ -270,6 +270,11 @@ export const useBasemapStore = defineStore('basemap', () => {
    * selection — used by the automatic MapTiler-auth fallback so the next
    * session retries the user's chosen basemap instead of starting on the
    * fallback. */
+  // Anchors of the basemap currently being applied — transformStyle runs
+  // during setStyle, before the active flags flip, so getBasemap() would
+  // still return the PREVIOUS basemap there (see setBasemap).
+  let composingLayers: BasemapSwitchItem['layers'] | undefined;
+
   async function setBasemap(s: BasemapSwitchItem, force = false, persist = true): Promise<boolean> {
     const basemapStyle = getBasemap();
     if (basemapStyle !== undefined && s.name == basemapStyle.name && !force) {
@@ -337,6 +342,10 @@ export const useBasemapStore = defineStore('basemap', () => {
      * @see https://github.com/maplibre/maplibre-gl-js/issues/2587
      * Solution from: https://github.com/maplibre/maplibre-gl-js/issues/2587#issuecomment-1996106037
      */
+    // transformStyle runs DURING setStyle — before the active flags below
+    // flip — so it must resolve anchors from the basemap being APPLIED,
+    // not from getBasemap() (still the previous one at that moment).
+    composingLayers = s.layers;
     //mapRef.map?.style.setState(s.style, {
     mapRef.map?.setStyle(styleForMap, {
       diff: true,
@@ -548,8 +557,13 @@ export const useBasemapStore = defineStore('basemap', () => {
           }
         }
 
-        // Get current basemap to find insertion points
-        const currentBasemap = getBasemap();
+        // Get current basemap to find insertion points. transformStyle
+        // runs during setStyle, before the active flags flip — use the
+        // basemap being applied when set.
+        const activeBasemap = getBasemap();
+        const currentBasemap: BasemapSwitchItem | undefined = composingLayers
+          ? ({ ...(activeBasemap ?? {}), layers: composingLayers } as BasemapSwitchItem)
+          : activeBasemap;
         if (!currentBasemap) {
           console.warn(
             '[transformStyle] No current basemap found, appending all custom layers at end'
@@ -586,6 +600,7 @@ export const useBasemapStore = defineStore('basemap', () => {
         // This is generic - reads from overlay definitions instead of hard-coded patterns
         const backgroundLayers: import('maplibre-gl').LayerSpecification[] = [];
         const waysLayers: import('maplibre-gl').LayerSpecification[] = [];
+        const placesLayers: import('maplibre-gl').LayerSpecification[] = [];
         const otherLayers: import('maplibre-gl').LayerSpecification[] = [];
 
         // Build a simple layer-to-onLayer lookup map to avoid type recursion issues
@@ -604,6 +619,8 @@ export const useBasemapStore = defineStore('basemap', () => {
             backgroundLayers.push(layer);
           } else if (onLayer === 'ways') {
             waysLayers.push(layer);
+          } else if (onLayer === 'places') {
+            placesLayers.push(layer);
           } else if (onLayer) {
             console.warn(
               `[transformStyle] Unknown onLayer '${onLayer}' for layer '${layer.id}', adding to 'other' group`
@@ -622,9 +639,12 @@ export const useBasemapStore = defineStore('basemap', () => {
         );
 
         // Insert layers in correct order based on basemap configuration
-        // Order: background layers → basemap layers → ways layers → other layers
+        // Order: background layers → basemap layers → ways layers → places
+        // layers (under high-ranked town labels when the basemap declares an
+        // anchor) → other layers (always on top)
         insertLayersBefore(backgroundLayers, currentBasemap.layers.background.before, 'background');
         insertLayersBefore(waysLayers, currentBasemap.layers.ways.before, 'ways');
+        insertLayersBefore(placesLayers, currentBasemap.layers.places?.before, 'places');
         insertLayersBefore(otherLayers, undefined, 'other');
 
         // Combine sprites
@@ -919,6 +939,10 @@ export const useBasemapStore = defineStore('basemap', () => {
         layers: {
           ways: { before: undefined },
           background: { before: undefined },
+          // Huts sit below high-ranked town labels (rank ≤ 13: Brig/Visp
+          // class and above) but above hamlet/alp labels (rank ≥ 14). The
+          // mtk style stacks place_point_label_rank_5..1, last on top.
+          places: { before: 'place_point_label_rank_2' },
         },
       },
       {
