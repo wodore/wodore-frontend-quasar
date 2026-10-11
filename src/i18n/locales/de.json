@@ -78,6 +78,9 @@
   "jan": "Jan",
   "location": "Lage",
   "map": {
+    "zoom": "Zoomen",
+    "zoomIn": "Hineinzoomen",
+    "zoomOut": "Herauszoomen",
     "error": {
       "title": "Karte Ladefehler",
       "webgl_message": "Die Karte konnte aufgrund von Grafikbeschränkungen nicht initialisiert werden. Bitte verwenden Sie ein anderes Gerät oder einen Browser mit WebGL-Unterstützung.",

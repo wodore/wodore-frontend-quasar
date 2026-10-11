@@ -20,12 +20,21 @@
  *   only serves keyboard activation (event.detail === 0).
  * - The visible pill stays compact; the tuck/fade animation moves the
  *   pill, never the hit band (see _zoom-slider.scss)
+ * - Keyboard (WAI-ARIA slider): arrows step ±0.75, PageUp/Down ±3,
+ *   Home/End jump to the range ends; focus-visible rings mark the band
+ *   and the buttons
+ * - Rapid taps chain onto the previous step TARGET so a quick double-tap
+ *   always advances a full step (the camera's mid-animation value would
+ *   under-step); the chain expires so later taps follow pinch/flyTo again
+ * - Aria labels come from the i18n locales (map.zoom / zoomIn / zoomOut)
  */
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
 import { MAP_MIN_ZOOM } from '@stores/map/utils/map-constants';
 
 const mapRef = useMap();
+const { t } = useI18n();
 
 /** Map zoom range — floor keeps the globe comfortably in view (see
  *  MAP_MIN_ZOOM); no app-level max: sources overzoom past their own
@@ -36,8 +45,12 @@ const MAX_ZOOM = 22;
 const PX_PER_LEVEL = 32;
 /** zoom step of the +/− buttons and of a tap on a track half */
 const STEP = 0.75;
+/** large step of PageUp/PageDown (WAI-ARIA slider large step) */
+const PAGE_STEP = 3;
 /** px of pointer travel that turns a press into a drag (below = tap) */
 const MOVE_THRESHOLD = 5;
+/** rapid taps chain onto the previous step target within this window */
+const STEP_CHAIN_MS = 600;
 
 const zoom = ref(10);
 const dragging = ref(false);
@@ -48,6 +61,10 @@ let dragStartZoom = 0;
 let downStep = 0;
 /** the press travelled — it is a drag, never a tap */
 let didDrag = false;
+/** intended end zoom of the latest step — rapid taps chain from it */
+let targetZoom: number | null = null;
+/** when the last step was requested (chains within STEP_CHAIN_MS) */
+let lastStepAt = 0;
 
 /** Thumb travel 12%..88% — never fully up or down; TOP = max zoom */
 const thumbPos = computed(() => {
@@ -131,14 +148,59 @@ function onStepClick(e: MouseEvent, delta: number): void {
   if (e.detail === 0) stepZoom(delta);
 }
 
-function stepZoom(delta: number): void {
+function applyZoom(value: number): void {
   if (!mapRef.map) return;
-  const next = clamp(zoom.value + delta);
+  const next = clamp(value);
+  targetZoom = next;
+  lastStepAt = Date.now();
   zoom.value = next;
   mapRef.map.zoomTo(next, {
     // snappy step; no camera travel for reduced-motion users
     duration: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 150,
   });
+}
+
+function stepZoom(delta: number): void {
+  if (!mapRef.map) return;
+  // Chain onto the previous step's TARGET, not the camera's current
+  // position: onMapZoom keeps writing mid-animation values into zoom.value
+  // during the 150ms zoomTo, so a rapid second tap would under-step.
+  const now = Date.now();
+  const chain =
+    targetZoom !== null && now - lastStepAt <= STEP_CHAIN_MS ? targetZoom : mapRef.map.getZoom();
+  applyZoom(chain + delta);
+}
+
+/** WAI-ARIA slider keyboard pattern (focused band, and bubbling buttons) */
+function onKeydown(e: KeyboardEvent): void {
+  switch (e.key) {
+    case 'ArrowUp':
+    case 'ArrowRight':
+      e.preventDefault();
+      stepZoom(STEP);
+      break;
+    case 'ArrowDown':
+    case 'ArrowLeft':
+      e.preventDefault();
+      stepZoom(-STEP);
+      break;
+    case 'PageUp':
+      e.preventDefault();
+      stepZoom(PAGE_STEP);
+      break;
+    case 'PageDown':
+      e.preventDefault();
+      stepZoom(-PAGE_STEP);
+      break;
+    case 'Home':
+      e.preventDefault();
+      applyZoom(MIN_ZOOM);
+      break;
+    case 'End':
+      e.preventDefault();
+      applyZoom(MAX_ZOOM);
+      break;
+  }
 }
 
 /** Keep the thumb in sync when zoom changes from elsewhere (pinch etc.) */
@@ -164,10 +226,13 @@ onBeforeUnmount(() => {
     class="wd-zoom"
     :class="{ 'wd-zoom--dragging': dragging }"
     role="slider"
-    :aria-label="'Zoom'"
+    :aria-label="t('map.zoom')"
     :aria-valuemin="MIN_ZOOM"
     :aria-valuemax="MAX_ZOOM"
     :aria-valuenow="Math.round(zoom * 10) / 10"
+    :aria-valuetext="Math.round(((zoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)) * 100) + '%'"
+    tabindex="0"
+    @keydown="onKeydown"
     @pointerdown="onPointerDown"
     @pointermove="onPointerMove"
     @pointerup="onPointerUp"
@@ -178,7 +243,7 @@ onBeforeUnmount(() => {
       <button
         class="wd-zoom__step"
         data-zoom-step="0.75"
-        aria-label="Zoom in"
+        :aria-label="t('map.zoomIn')"
         @click="onStepClick($event, STEP)"
       >
         <q-icon name="wd-plus" size="14px" />
@@ -191,7 +256,7 @@ onBeforeUnmount(() => {
       <button
         class="wd-zoom__step"
         data-zoom-step="-0.75"
-        aria-label="Zoom out"
+        :aria-label="t('map.zoomOut')"
         @click="onStepClick($event, -STEP)"
       >
         <q-icon name="wd-minus" size="14px" />
@@ -248,6 +313,14 @@ onBeforeUnmount(() => {
 
   *:focus {
     outline: none;
+  }
+
+  // Keyboard focus rings (focus-visible only — pointer focus stays clean);
+  // negative offset keeps the ring inside the edge-flush control
+  &:focus-visible,
+  .wd-zoom__step:focus-visible {
+    outline: 2px solid var(--wd-ctl-ink);
+    outline-offset: -2px;
   }
 }
 
