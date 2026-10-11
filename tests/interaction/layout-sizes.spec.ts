@@ -2,15 +2,7 @@
  * Layout and size audit — 48px controls, alignment, pill resting position.
  */
 import { test, expect } from './helpers';
-import {
-  waitForMapIdle,
-  waitForOverlayExpanded,
-  loadMap,
-  pinTheme,
-  tagTest,
-  attachScreenshot,
-  evalJSON,
-} from './helpers';
+import { loadMap, pinTheme, tagTest, attachScreenshot, evalJSON } from './helpers';
 
 const CONFIGS = [
   { theme: 'light', mode: 'mobile' },
@@ -115,6 +107,53 @@ test.describe('layout and sizing', () => {
         const pillCenter = audit.pill!.x + audit.pill!.w / 2;
         expect(Math.abs(pillCenter - expectedCenter)).toBeLessThan(2);
       }
+    });
+  }
+
+  for (const theme of ['light', 'dark'] as const) {
+    test(`${theme}-desktop: pill holds its slot across hut details open/close`, async ({
+      page,
+    }, testInfo) => {
+      tagTest(theme, 'desktop', 'layout');
+      test.setTimeout(90_000);
+
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await loadMap(page);
+
+      const pillRect = () =>
+        page.evaluate(() => {
+          const b = document.querySelector('.wd-topbar__pill')!.getBoundingClientRect();
+          return { x: Math.round(b.x), cx: Math.round(b.x + b.width / 2) };
+        });
+
+      const closed = await pillRect();
+
+      // Open hut details (desktop content drawer). Works regardless of
+      // backend state — the drawer opens even into its error state.
+      const slug = process.env.E2E_HUT_SLUG ?? 'aarbiwak';
+      await page.goto(`/hut/${slug}`, { timeout: 60_000 });
+      await page.waitForFunction(
+        () => document.body.classList.contains('wd-sidepanel-open'),
+        null,
+        {
+          timeout: 30_000,
+        }
+      );
+      await page.waitForTimeout(700); // panel slide + chrome glide settle
+      const open = await pillRect();
+      await attachScreenshot(page, testInfo, `${theme}-pill-slot-open`);
+
+      // Back to the bare map
+      await page.goto('/', { timeout: 60_000 });
+      await page.waitForSelector('.maplibregl-canvas', { timeout: 60_000 });
+      await page.waitForTimeout(500);
+      const reclosed = await pillRect();
+
+      // The owner contract: the pill rests at the reserved panel slot
+      // ((viewport − panel)/2 at 1440px = center 490) and NEVER moves.
+      expect(open.cx).toBe(490);
+      expect(Math.abs(open.x - closed.x)).toBeLessThan(2);
+      expect(Math.abs(reclosed.x - closed.x)).toBeLessThan(2);
     });
   }
 });
