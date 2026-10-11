@@ -134,15 +134,10 @@ describe('hutsStyle', () => {
     expect(font).toContain('Barlow Semi Condensed SemiBold');
     expect(font).toContain('Noto Sans Bold');
 
-    // paint: per-status label colors + the style's pale halo
+    // paint: no per-status text color (status colors live in the dots),
+    // but the style's pale halo is applied
     const paint = layer.paint as Record<string, unknown>;
-    const textColor = paint['text-color'] as unknown[];
-    expect(textColor[0]).toBe('match');
-    const colorJson = JSON.stringify(textColor);
-    expect(colorJson).toContain('"unknown","#4D4D4D"');
-    expect(colorJson).toContain('"full","#FFFFFF"');
-    expect(colorJson).toContain('"high","#FFFFFF"');
-    expect(colorJson).toContain('"#1C1C1C"');
+    expect(paint['text-color']).toBeUndefined();
     expect(paint['text-halo-color']).toBe('rgba(242, 247, 244, 0.9)');
     expect(paint['text-halo-width']).toBe(0.8);
   });

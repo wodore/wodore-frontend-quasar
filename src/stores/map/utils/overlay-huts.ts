@@ -206,21 +206,9 @@ function getHutsOccupationDayPaint(day: number) {
   return {
     'icon-translate': occTranslate(day),
     'text-translate': occTranslate(day),
-    // Label colors follow the wd-outdoor-base-mtk label palette:
-    // #4D4D4D is the style's POI gray (on the light unknown dot), white
-    // reads on the dark full/high dots, #1C1C1C on the light ones.
-    'text-color': [
-      'match',
-      ['get', 'occupancy_status', ['at', day, ['get', 'data']]],
-      'unknown',
-      '#4D4D4D',
-      'full',
-      '#FFFFFF',
-      'high',
-      '#FFFFFF',
-      '#1C1C1C',
-    ],
-    // The style's standard pale halo (rgba(242, 247, 244, .9)) — keeps the
+    // Text color intentionally left at the maplibre default (black) — the
+    // status colors live in the dots, not the label text.
+    // The wd-outdoor-base-mtk style's standard pale halo — keeps the
     // numbers readable where dots overlap terrain labels.
     'text-halo-color': 'rgba(242, 247, 244, 0.9)',
     'text-halo-width': 0.8,
