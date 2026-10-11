@@ -1318,24 +1318,10 @@ function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwit
 function addOverlays(): void {
   addedOverlays.clear();
   const overlaysOrder = getOverlaysInRenderOrder();
-  let pending = false;
   for (const overlay of overlaysOrder) {
-    if (overlay.active && !addOverlay(overlay, overlaysOrder)) pending = true;
+    if (overlay.active) addOverlay(overlay, overlaysOrder);
   }
   configStore.reapplyAllFilters();
-  // Startup race: the first style applied to the map can be the world
-  // fallback (or a cached variant) without the basemap's label anchors —
-  // anchored overlays (huts below town labels) then fail to add and stay
-  // pending. Retry once the resolved basemap style arrives.
-  if (pending) {
-    mapRef.map?.once('styledata', () => {
-      if (mapRef.map?.isStyleLoaded()) {
-        addOverlays();
-      } else {
-        mapRef.map?.once('idle', () => addOverlays());
-      }
-    });
-  }
 }
 
 function toggleLayer(item: OverlaySwitchItem): void {
