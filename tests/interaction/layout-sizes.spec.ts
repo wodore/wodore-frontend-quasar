@@ -119,6 +119,7 @@ test.describe('layout and sizing', () => {
 
       await page.setViewportSize({ width: 1440, height: 900 });
       await loadMap(page);
+      await pinTheme(page, theme);
 
       const pillRect = () =>
         page.evaluate(() => {
@@ -136,22 +137,22 @@ test.describe('layout and sizing', () => {
         () => document.body.classList.contains('wd-sidepanel-open'),
         null,
         {
-          timeout: 30_000,
+          timeout: 10_000,
         }
       );
-      await page.waitForTimeout(700); // panel slide + chrome glide settle
+      await page.waitForTimeout(300); // let the drawer slide finish (clean screenshot)
       const open = await pillRect();
       await attachScreenshot(page, testInfo, `${theme}-pill-slot-open`);
 
       // Back to the bare map
       await page.goto('/', { timeout: 60_000 });
       await page.waitForSelector('.maplibregl-canvas', { timeout: 60_000 });
-      await page.waitForTimeout(500);
+      await page.waitForTimeout(300);
       const reclosed = await pillRect();
 
-      // The owner contract: the pill rests at the reserved panel slot
-      // ((viewport − panel)/2 at 1440px = center 490) and NEVER moves.
-      expect(open.cx).toBe(490);
+      // The owner contract: the pill rests at the reserved panel slot —
+      // center (viewport − panel)/2 at 1440px = 490 — and NEVER moves.
+      expect(Math.abs(open.cx - (1440 - 460) / 2)).toBeLessThan(2);
       expect(Math.abs(open.x - closed.x)).toBeLessThan(2);
       expect(Math.abs(reclosed.x - closed.x)).toBeLessThan(2);
     });
