@@ -3,20 +3,22 @@
 // GLOBAL because: visibility depends on body classes and overlay state
 // that the component cannot scope to from its own scoped styles.
 //
+// Split of concerns (with the component's scoped styles):
+// - The 44px hit BAND (.wd-zoom) only flips display — it must stay at its
+//   resting position and hit-testable from the first frame, so drags and
+//   taps during the show animation never land on empty map.
+// - The visual PILL (.wd-zoom__pill) performs the Mapy-style tuck/fade:
+//   hidden state + 200ms exit live in the component; the 300ms enter
+//   (focus-mode curve, shared with _layout.scss) + @starting-style here.
+// - allow-discrete holds display:flex until the pill's exit fade finished;
+//   entering from display:none flips at transition start. Engines without
+//   @starting-style/allow-discrete fall back to instant toggling.
+//
 // Focus mode: ALWAYS visible (any viewport) — the overlay strip is
 // hidden in focus mode, so they cannot collide.
 // Mobile (no focus): visible when the overlay strip is CLOSED (they
 // interfere otherwise).
 // Desktop (no focus): hidden — the classic zoom buttons serve instead.
-//
-// Motion: docked chrome moves along its dock axis — the handle tucks
-// fully in/out of the right screen edge (100% travel) with a fade.
-// Enter (300ms) shares the focus-mode choreography curve of
-// _layout.scss (cubic-bezier(0.2, 0, 0, 1)); exit (200ms, owned by the
-// scoped base rule) is faster. @starting-style boots the enter
-// transition from display:none; allow-discrete holds display until the
-// exit fade has finished. Engines without these (pre-2023) fall back
-// to instant toggling.
 // ══════════════════════════════════════════════════════════════════════
 .wd-zoom {
   display: none !important;
@@ -26,12 +28,15 @@
 // entering focus
 body.wd-map-focus .wd-zoom {
   display: flex !important;
+  transition: display 300ms allow-discrete;
+}
+
+body.wd-map-focus .wd-zoom__pill {
   opacity: 1;
-  transform: translateY(-50%);
+  transform: none;
   transition:
     opacity 300ms cubic-bezier(0.2, 0, 0, 1),
-    transform 300ms cubic-bezier(0.2, 0, 0, 1),
-    display 300ms allow-discrete;
+    transform 300ms cubic-bezier(0.2, 0, 0, 1);
 }
 
 // Mobile, outside focus mode: visible when overlays are NOT open (the
@@ -40,28 +45,34 @@ body.wd-map-focus .wd-zoom {
 @media (max-width: #{$breakpoint-sm}) {
   body:not(.wd-ovl-strip-open) .wd-zoom {
     display: flex !important;
+    transition: display 300ms allow-discrete;
+  }
+
+  body:not(.wd-ovl-strip-open) .wd-zoom__pill {
     opacity: 1;
-    transform: translateY(-50%);
+    transform: none;
     transition:
       opacity 300ms cubic-bezier(0.2, 0, 0, 1),
-      transform 300ms cubic-bezier(0.2, 0, 0, 1),
-      display 300ms allow-discrete;
+      transform 300ms cubic-bezier(0.2, 0, 0, 1);
   }
 }
 
 // Enter start values — an element first rendered from display:none has
-// no previous style to transition from, so the engine needs these
+// no previous style to transition from, so the engine needs these.
+// Travel mirrors the pill's scoped hidden state (the old band's 44px
+// edge crossing + inset) so the visible glide keeps its original pace.
 @starting-style {
-  body.wd-map-focus .wd-zoom,
-  body:not(.wd-ovl-strip-open) .wd-zoom {
+  body.wd-map-focus .wd-zoom__pill,
+  body:not(.wd-ovl-strip-open) .wd-zoom__pill {
     opacity: 0;
-    transform: translateY(-50%) translateX(100%);
+    transform: translateX(calc(100% + 26px + env(safe-area-inset-right, 0px)));
   }
 }
 
 // Reduced motion: skip the glide entirely
 @media (prefers-reduced-motion: reduce) {
-  .wd-zoom {
+  .wd-zoom,
+  .wd-zoom__pill {
     transition-duration: 0.01ms !important;
   }
 }
