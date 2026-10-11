@@ -270,6 +270,11 @@ export const useBasemapStore = defineStore('basemap', () => {
    * selection — used by the automatic MapTiler-auth fallback so the next
    * session retries the user's chosen basemap instead of starting on the
    * fallback. */
+  // Anchors of the basemap currently being applied — transformStyle runs
+  // during setStyle, before the active flags flip, so getBasemap() would
+  // still return the PREVIOUS basemap there (see setBasemap).
+  let composingLayers: BasemapSwitchItem['layers'] | undefined;
+
   async function setBasemap(s: BasemapSwitchItem, force = false, persist = true): Promise<boolean> {
     const basemapStyle = getBasemap();
     if (basemapStyle !== undefined && s.name == basemapStyle.name && !force) {
@@ -337,6 +342,10 @@ export const useBasemapStore = defineStore('basemap', () => {
      * @see https://github.com/maplibre/maplibre-gl-js/issues/2587
      * Solution from: https://github.com/maplibre/maplibre-gl-js/issues/2587#issuecomment-1996106037
      */
+    // transformStyle runs DURING setStyle — before the active flags below
+    // flip — so it must resolve anchors from the basemap being APPLIED,
+    // not from getBasemap() (still the previous one at that moment).
+    composingLayers = s.layers;
     //mapRef.map?.style.setState(s.style, {
     mapRef.map?.setStyle(styleForMap, {
       diff: true,
@@ -548,8 +557,13 @@ export const useBasemapStore = defineStore('basemap', () => {
           }
         }
 
-        // Get current basemap to find insertion points
-        const currentBasemap = getBasemap();
+        // Get current basemap to find insertion points. transformStyle
+        // runs during setStyle, before the active flags flip — use the
+        // basemap being applied when set.
+        const activeBasemap = getBasemap();
+        const currentBasemap: BasemapSwitchItem | undefined = composingLayers
+          ? ({ ...(activeBasemap ?? {}), layers: composingLayers } as BasemapSwitchItem)
+          : activeBasemap;
         if (!currentBasemap) {
           console.warn(
             '[transformStyle] No current basemap found, appending all custom layers at end'
