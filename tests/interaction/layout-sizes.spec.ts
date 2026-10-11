@@ -1,5 +1,5 @@
 /**
- * Layout and size audit — 48px controls, alignment, pill centering.
+ * Layout and size audit — 48px controls, alignment, pill resting position.
  */
 import { test, expect } from './helpers';
 import {
@@ -106,9 +106,14 @@ test.describe('layout and sizing', () => {
         expect(audit.focus!.y).toBeLessThanOrEqual(16);
         expect(audit.focus!.x).toBeGreaterThan(1300);
 
-        // Pill centered on desktop
+        // Pill rests on the reserved panel slot: center at
+        // (viewport − panel width)/2 in BOTH panel states — zero movement
+        // when hut details open/close (owner 2026-10). 1440px → 460px panel.
         const vw = 1440;
-        expect(Math.abs(audit.pill!.x - (vw - audit.pill!.x - audit.pill!.w))).toBeLessThan(12);
+        const panelW = 460;
+        const expectedCenter = (vw - panelW) / 2;
+        const pillCenter = audit.pill!.x + audit.pill!.w / 2;
+        expect(Math.abs(pillCenter - expectedCenter)).toBeLessThan(2);
       }
     });
   }
