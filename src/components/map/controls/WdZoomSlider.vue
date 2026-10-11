@@ -11,8 +11,15 @@
  * - Drag up/down to zoom in/out; buttons step ±0.75
  * - Track reads top = max zoom (matches the + button on top):
  *   the thumb travels 12% (max) – 88% (min), never touching the ends
- * - The whole pill is the grab target (44px zone), the visible part
- *   stays compact
+ * - Gesture model (one pipeline on the 44px band): EVERY press starts a
+ *   potential drag — including presses on the +/− buttons, which used to
+ *   stop-propagate pointerdown and swallowed drag-starts at the button
+ *   rows. A press that never travels (>5px) is a tap: on a button it
+ *   steps, on the track it steps toward the tapped half. Pointer capture
+ *   retargets the browser's click to the band, so the buttons' @click
+ *   only serves keyboard activation (event.detail === 0).
+ * - The visible pill stays compact; the tuck/fade animation moves the
+ *   pill, never the hit band (see _zoom-slider.scss)
  */
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
@@ -27,11 +34,20 @@ const MIN_ZOOM = MAP_MIN_ZOOM;
 const MAX_ZOOM = 22;
 /** px of drag per full zoom level — lower = more aggressive */
 const PX_PER_LEVEL = 32;
+/** zoom step of the +/− buttons and of a tap on a track half */
+const STEP = 0.75;
+/** px of pointer travel that turns a press into a drag (below = tap) */
+const MOVE_THRESHOLD = 5;
 
 const zoom = ref(10);
 const dragging = ref(false);
+let dragStartX = 0;
 let dragStartY = 0;
 let dragStartZoom = 0;
+/** step direction of the button the press landed on (0 = none/track) */
+let downStep = 0;
+/** the press travelled — it is a drag, never a tap */
+let didDrag = false;
 
 /** Thumb travel 12%..88% — never fully up or down; TOP = max zoom */
 const thumbPos = computed(() => {
@@ -43,18 +59,36 @@ function clamp(v: number): number {
   return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, v));
 }
 
-function onPointerDown(e: MouseEvent): void {
+function onPointerDown(e: PointerEvent): void {
+  // Second finger while already dragging: keep the first gesture's baseline.
+  if (dragging.value) return;
+  // A press on a +/− button ALSO starts here — the buttons used to
+  // stop-propagate pointerdown, which is why grabbing the handle at the
+  // button rows never started a drag.
+  downStep =
+    Number(
+      (e.target as HTMLElement | null)?.closest('[data-zoom-step]')?.getAttribute('data-zoom-step')
+    ) || 0;
   dragging.value = true;
+  didDrag = false;
+  dragStartX = e.clientX;
   dragStartY = e.clientY;
-  dragStartZoom = zoom.value;
-  (e.currentTarget as HTMLElement).setPointerCapture(
-    (e as unknown as { pointerId: number }).pointerId
-  );
+  // Baseline on the LIVE camera — grabbing during a flight (flyTo, pinch)
+  // must not start from a stale animated zoom value or the first movement
+  // reads as a jump and the drag as "not captured".
+  dragStartZoom = mapRef.map ? mapRef.map.getZoom() : zoom.value;
+  try {
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  } catch {
+    // Pointer already inactive — the band-level handlers still work.
+  }
 }
 
-function onPointerMove(e: MouseEvent): void {
+function onPointerMove(e: PointerEvent): void {
   if (!dragging.value || !mapRef.map) return;
+  const dx = e.clientX - dragStartX;
   const dy = dragStartY - e.clientY; // up = zoom in
+  if (Math.abs(dy) > MOVE_THRESHOLD || Math.abs(dx) > MOVE_THRESHOLD) didDrag = true;
   const next = clamp(dragStartZoom + dy / PX_PER_LEVEL);
   if (next !== zoom.value) {
     zoom.value = next;
@@ -62,8 +96,39 @@ function onPointerMove(e: MouseEvent): void {
   }
 }
 
-function onPointerUp(): void {
+function onPointerUp(e: PointerEvent): void {
+  finishDrag(e);
+}
+
+function onPointerCancel(): void {
+  // Cancelled gestures and lost captures must never tap-step.
+  finishDrag();
+}
+
+function finishDrag(tap?: PointerEvent): void {
+  if (!dragging.value) return;
   dragging.value = false;
+  // A press that never travelled is a TAP, not a drag. Pointer capture
+  // retargets the browser's click to the band, so this pipeline replaces
+  // the buttons' pointer @click entirely.
+  if (tap && !didDrag) {
+    if (downStep !== 0) {
+      stepZoom(downStep);
+    } else if (mapRef.map && tap.currentTarget instanceof HTMLElement) {
+      // Tap on the track: step toward the tapped half (top = zoom in,
+      // matching the track's top = max zoom reading).
+      const rect = tap.currentTarget.getBoundingClientRect();
+      stepZoom(tap.clientY < rect.top + rect.height / 2 ? STEP : -STEP);
+    }
+  }
+  downStep = 0;
+}
+
+function onStepClick(e: MouseEvent, delta: number): void {
+  // Pointer taps are owned by the band's gesture pipeline (capture
+  // retargets the click away from the buttons). detail === 0 identifies
+  // keyboard activation (Enter/Space), which still must step.
+  if (e.detail === 0) stepZoom(delta);
 }
 
 function stepZoom(delta: number): void {
@@ -106,14 +171,15 @@ onBeforeUnmount(() => {
     @pointerdown="onPointerDown"
     @pointermove="onPointerMove"
     @pointerup="onPointerUp"
-    @pointercancel="onPointerUp"
+    @pointercancel="onPointerCancel"
+    @lostpointercapture="onPointerCancel"
   >
     <div class="wd-zoom__pill">
       <button
         class="wd-zoom__step"
+        data-zoom-step="0.75"
         aria-label="Zoom in"
-        @click.stop="stepZoom(0.75)"
-        @pointerdown.stop
+        @click="onStepClick($event, STEP)"
       >
         <q-icon name="wd-plus" size="14px" />
       </button>
@@ -124,9 +190,9 @@ onBeforeUnmount(() => {
 
       <button
         class="wd-zoom__step"
+        data-zoom-step="-0.75"
         aria-label="Zoom out"
-        @click.stop="stepZoom(-0.75)"
-        @pointerdown.stop
+        @click="onStepClick($event, -STEP)"
       >
         <q-icon name="wd-minus" size="14px" />
       </button>
@@ -150,29 +216,31 @@ onBeforeUnmount(() => {
   flex-direction: column;
   align-items: flex-end;
   justify-content: center;
-  width: 44px; // touch zone; the visual pill is slimmer
-  min-height: 120px; // vertical grab zone (kept compact)
-  padding: 0;
+  // Touch zone: 44px grab width PLUS the right display-cutout inset. On
+  // notched devices in landscape the outermost strip is owned by the OS
+  // (edge swipe / cutout) — touches there die before they reach us. The
+  // padding lifts the pill out of the dead strip (same convention as the
+  // topbar's right offset); with inset 0 (portrait) border-box keeps the
+  // resting position pixel-identical.
+  width: calc(44px + env(safe-area-inset-right, 0px));
+  min-height: 120px; // vertical grab zone (kept compact — drags now catch
+  // reliably via the gesture pipeline, not via a bigger target)
+  padding-right: env(safe-area-inset-right, 0px);
   background: transparent;
   cursor: grab;
   touch-action: none; // we own the gesture
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 
-  // Hidden state doubles as the slide-out target: tucked fully past the
-  // right screen edge, faded. The global shown rules settle it back —
-  // docked chrome moves along its dock axis (drawer semantics), never
-  // floating over the map. Enter (300ms) shares the focus-mode curve of
-  // _layout.scss so it reads as one choreography; exit (200ms) is faster.
-  // The long travel keeps the edge-crossing visible while the pill fades.
-  // allow-discrete keeps display:flex until the fade has finished;
-  // engines without @starting-style/allow-discrete just toggle instantly.
-  opacity: 0;
-  transform: translateY(-50%) translateX(100%);
-  transition:
-    opacity 200ms cubic-bezier(0.2, 0, 0, 1),
-    transform 200ms cubic-bezier(0.2, 0, 0, 1),
-    display 200ms allow-discrete;
+  // The tuck/fade (translateX + opacity) lives on the __pill, NOT here:
+  // this 44px hit band must stay at its resting position and hit-testable
+  // from the first frame of the enter animation — otherwise drags and taps
+  // during the 300ms slide-in land on empty map. Only the display flip
+  // remains on the band; allow-discrete holds the band rendered until the
+  // pill's exit fade has finished (enter from display:none flips at start).
+  // Engines without @starting-style/allow-discrete just toggle instantly.
+  transform: translateY(-50%);
+  transition: display 200ms allow-discrete;
 
   &--dragging {
     cursor: grabbing;
@@ -195,6 +263,21 @@ onBeforeUnmount(() => {
   border-radius: 999px 0 0 999px;
   background: color-mix(in srgb, var(--wd-ctl-bg) 68%, transparent);
   color: var(--wd-ctl-ink);
+
+  // Hidden state + exit motion (200ms) — the pill tucks past the edge and
+  // fades while the band's allow-discrete display flip keeps it rendered.
+  // Travel = the old band's 44px crossing (100% + 26px, plus the inset so
+  // it clears the screen edge in landscape too): the visible slide stays
+  // the LAST ~18px of a 44px journey, i.e. the same ~120ms glide the band
+  // produced before the hit-band/pill split — not a slowed full-300ms 18px
+  // creep. Enter motion (300ms focus-mode curve) and its @starting-style
+  // live in the global _zoom-slider.scss, keyed off the same body classes
+  // as the band's display flip.
+  opacity: 0;
+  transform: translateX(calc(100% + 26px + env(safe-area-inset-right, 0px)));
+  transition:
+    opacity 200ms cubic-bezier(0.2, 0, 0, 1),
+    transform 200ms cubic-bezier(0.2, 0, 0, 1);
 }
 
 // Dark: mint ridge (the elevation kill strips shadows)
@@ -205,6 +288,7 @@ body.body--dark .wd-zoom__pill {
 .wd-zoom__step {
   display: grid;
   place-items: center;
+  position: relative; // anchors the ::before hit expander
   width: 30px;
   height: 26px;
   border: none;
@@ -214,6 +298,21 @@ body.body--dark .wd-zoom__pill {
   cursor: pointer;
   flex: none;
   transition: color 0.12s ease;
+
+  // Hit expander: presses must land on a full 44×44px target flush to the
+  // (safe-area) edge, even though the visible glyph stays 30px wide inside
+  // the 18px pill — without it the on-screen target is only ~24×26px, the
+  // single biggest "missed tap" of this control. Pseudo-elements are never
+  // event targets; the browser reports the button itself, so the band's
+  // closest('[data-zoom-step]') still resolves.
+  &::before {
+    content: '';
+    position: absolute;
+    top: -9px;
+    bottom: -9px;
+    left: -20px; // 24px glyph inset + 20 = reaches the band's left edge
+    right: -6px; // cancels the glyph's 6px overhang past the pill's edge
+  }
 
   // No bg/hover/active chrome — fg feedback only, desktop only
   @media (min-width: #{$breakpoint-sm + 1}) {
