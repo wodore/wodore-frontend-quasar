@@ -55,6 +55,9 @@
     "departures": "Départs"
   },
   "map": {
+    "zoom": "Zoom",
+    "zoomIn": "Zoom avant",
+    "zoomOut": "Zoom arrière",
     "error": {
       "title": "Erreur de chargement de la carte",
       "webgl_message": "Impossible d'initialiser la carte en raison de limitations graphiques. Veuillez essayer un autre appareil ou un navigateur prenant en charge WebGL.",

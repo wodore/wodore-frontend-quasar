@@ -70,6 +70,9 @@
   "jan": "Jan",
   "location": "Location",
   "map": {
+    "zoom": "Zoom",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
     "layers": "Layers",
     "error": {
       "title": "Map Loading Error",
