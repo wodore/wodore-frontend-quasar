@@ -1173,6 +1173,16 @@ function addOverlayLayer({
   if (_beforeId === undefined && onLayer) {
     _beforeId = basemap?.layers[onLayer]?.before;
   }
+  if (_beforeId !== undefined && mapRef.map?.getLayer(_beforeId) === undefined) {
+    // Startup race: the first style applied to the map can be the world
+    // fallback (or a cached variant) without the basemap's label anchors.
+    // Append at end so the overlay always lands; the next transformStyle
+    // re-inserts preserved layers at the anchored position.
+    console.warn(
+      `[addOverlayLayer] anchor '${_beforeId}' not in active style — appending '${layer.id}' at end`
+    );
+    _beforeId = undefined;
+  }
   if (basemapOpacity !== undefined) {
     opacity = basemapOpacity;
   }
