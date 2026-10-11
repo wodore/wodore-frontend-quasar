@@ -3423,8 +3423,10 @@ body.body--dark .wd-ovl__empty-hint {
 </style>
 
 <style lang="scss">
-/* q-menu / q-dialog TELEPORT to <body> — scoped selectors never match.
-   These panels need global styles. */
+/* q-menu / q-dialog panels TELEPORT to <body>. This component's own
+   markup keeps its data-v scope attribute, but scoped selectors cannot
+   reach Quasar child-component internals (.q-* classes) — global styles
+   are needed for those. */
 // ── 3-dot menu (header): opaque quiet panel ───────────────────────────
 .wd-ovl__menu {
   background: var(--wd-ctl-bg) !important; // opaque panel — never transparent
