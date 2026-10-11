@@ -223,7 +223,8 @@ onBeforeUnmount(() => {
   // topbar's right offset); with inset 0 (portrait) border-box keeps the
   // resting position pixel-identical.
   width: calc(44px + env(safe-area-inset-right, 0px));
-  min-height: 160px; // generous vertical grab zone — drags must catch anywhere
+  min-height: 120px; // vertical grab zone (kept compact — drags now catch
+  // reliably via the gesture pipeline, not via a bigger target)
   padding-right: env(safe-area-inset-right, 0px);
   background: transparent;
   cursor: grab;
