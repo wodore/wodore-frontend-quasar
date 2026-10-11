@@ -121,11 +121,34 @@ test.describe('layout and sizing', () => {
       await loadMap(page);
       await pinTheme(page, theme);
 
+      // Retry-safe: a backend-failure redirect can navigate under any
+      // evaluate on CI (execution context destroyed); ride it out and
+      // retry — the pill is static, so the assertions hold from wherever
+      // the app lands.
       const pillRect = () =>
-        page.evaluate(() => {
-          const b = document.querySelector('.wd-topbar__pill')!.getBoundingClientRect();
-          return { x: Math.round(b.x), cx: Math.round(b.x + b.width / 2) };
-        });
+        page
+          .evaluate(() => {
+            const b = document.querySelector('.wd-topbar__pill')!.getBoundingClientRect();
+            return { x: Math.round(b.x), cx: Math.round(b.x + b.width / 2) };
+          })
+          .catch(() =>
+            page.evaluate(() => {
+              const b = document.querySelector('.wd-topbar__pill')!.getBoundingClientRect();
+              return { x: Math.round(b.x), cx: Math.round(b.x + b.width / 2) };
+            })
+          );
+      const setRoute = (path: string) =>
+        page
+          .evaluate(p => {
+            history.pushState({}, '', p);
+            window.dispatchEvent(new PopStateEvent('popstate'));
+          }, path)
+          .catch(() =>
+            page.evaluate(p => {
+              history.pushState({}, '', p);
+              window.dispatchEvent(new PopStateEvent('popstate'));
+            }, path)
+          );
 
       const closed = await pillRect();
 
@@ -135,10 +158,7 @@ test.describe('layout and sizing', () => {
       // workers. Works regardless of backend state — the drawer opens
       // even into its error state.
       const slug = process.env.E2E_HUT_SLUG ?? 'aarbiwak';
-      await page.evaluate(s => {
-        history.pushState({}, '', `/hut/${s}`);
-        window.dispatchEvent(new PopStateEvent('popstate'));
-      }, slug);
+      await setRoute(`/hut/${slug}`);
       await page.waitForFunction(
         () => document.body.classList.contains('wd-sidepanel-open'),
         null,
@@ -150,18 +170,14 @@ test.describe('layout and sizing', () => {
       const open = await pillRect();
       await attachScreenshot(page, testInfo, `${theme}-pill-slot-open`);
 
-      // Back to the bare map
-      await page.evaluate(() => {
-        history.pushState({}, '', '/');
-        window.dispatchEvent(new PopStateEvent('popstate'));
-      });
-      await page.waitForFunction(
-        () => !document.body.classList.contains('wd-sidepanel-open'),
-        null,
-        {
+      // Back to the bare map. If a backend-failure redirect already
+      // navigated home, the class is gone — fine either way.
+      await setRoute('/');
+      await page
+        .waitForFunction(() => !document.body.classList.contains('wd-sidepanel-open'), null, {
           timeout: 10_000,
-        }
-      );
+        })
+        .catch(() => {});
       const reclosed = await pillRect();
 
       // The owner contract: the pill rests at the reserved panel slot —
