@@ -129,10 +129,16 @@ test.describe('layout and sizing', () => {
 
       const closed = await pillRect();
 
-      // Open hut details (desktop content drawer). Works regardless of
-      // backend state — the drawer opens even into its error state.
+      // Open hut details via the in-app router. A full page.goto here
+      // races the map's own hash-position navigation (interrupted-
+      // navigation on CI) and pays reloads that starve the parallel
+      // workers. Works regardless of backend state — the drawer opens
+      // even into its error state.
       const slug = process.env.E2E_HUT_SLUG ?? 'aarbiwak';
-      await page.goto(`/hut/${slug}`, { timeout: 60_000 });
+      await page.evaluate(s => {
+        history.pushState({}, '', `/hut/${s}`);
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      }, slug);
       await page.waitForFunction(
         () => document.body.classList.contains('wd-sidepanel-open'),
         null,
@@ -140,14 +146,22 @@ test.describe('layout and sizing', () => {
           timeout: 10_000,
         }
       );
-      await page.waitForTimeout(300); // let the drawer slide finish (clean screenshot)
+      await page.waitForTimeout(300); // let the drawer's 140ms slide finish (clean screenshot)
       const open = await pillRect();
       await attachScreenshot(page, testInfo, `${theme}-pill-slot-open`);
 
       // Back to the bare map
-      await page.goto('/', { timeout: 60_000 });
-      await page.waitForSelector('.maplibregl-canvas', { timeout: 60_000 });
-      await page.waitForTimeout(300);
+      await page.evaluate(() => {
+        history.pushState({}, '', '/');
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      });
+      await page.waitForFunction(
+        () => !document.body.classList.contains('wd-sidepanel-open'),
+        null,
+        {
+          timeout: 10_000,
+        }
+      );
       const reclosed = await pillRect();
 
       // The owner contract: the pill rests at the reserved panel slot —
