@@ -19,7 +19,7 @@ importers:
         version: 8.1.0(@capacitor/core@8.5.3)
       '@capawesome/capacitor-maplibre':
         specifier: ^0.2.0
-        version: 0.2.0(@capacitor/core@8.5.3)(maplibre-gl@6.13.0)
+        version: 0.2.0(@capacitor/core@8.5.3)(maplibre-gl@6.14.0)
       '@fontsource/barlow':
         specifier: ^5.3.0
         version: 5.3.0
@@ -34,7 +34,7 @@ importers:
         version: 5.3.0
       '@indoorequal/vue-maplibre-gl':
         specifier: ^9.0.1
-        version: 9.0.1(maplibre-gl@6.13.0)(vue@3.5.43(typescript@5.9.3))
+        version: 9.0.1(maplibre-gl@6.14.0)(vue@3.5.43(typescript@5.9.3))
       '@mapbox/mapbox-gl-draw':
         specifier: ^1.5.2
         version: 1.5.2
@@ -45,8 +45,8 @@ importers:
         specifier: ^26.4.4
         version: 26.4.4
       '@pmndrs/detect-gpu':
-        specifier: ^6.0.25
-        version: 6.0.25
+        specifier: ^6.0.26
+        version: 6.0.26
       '@quasar/extras':
         specifier: ^2.1.0
         version: 2.1.0
@@ -84,8 +84,8 @@ importers:
         specifier: ^0.1.1
         version: 0.1.1
       maplibre-gl:
-        specifier: ^6.13.0
-        version: 6.13.0
+        specifier: ^6.14.0
+        version: 6.14.0
       oidc-client-ts:
         specifier: ^3.5.0
         version: 3.5.0
@@ -2247,8 +2247,8 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
-  '@pmndrs/detect-gpu@6.0.25':
-    resolution: {integrity: sha512-Vchtn1uR+calSXLbgvSn8oC5DAl3MViqsfzW9KwRIB9jJDMa7c4JzTMCzDUN/DgxbyRBO1ET7uu0rbIUEa36UQ==}
+  '@pmndrs/detect-gpu@6.0.26':
+    resolution: {integrity: sha512-bcCsgJkfe7HndAgEwd3oMQbx8Zpkndk4MQamTmEhbaboec+5WN+ZwuZ0nlyHprQCmXfMiDgHmWWvOia+efIsAw==}
 
   '@pnpm/config.env-replace@1.1.0':
     resolution: {integrity: sha512-htyl8TWnKL7K/ESFa1oW2UB5lVDxuF5DpM7tBi6Hu2LNL3mWkIzNLG6N4zoCUP1lCKNxWy/3iu8mS8MvToGd6w==}
@@ -5784,8 +5784,8 @@ packages:
     resolution: {integrity: sha512-GcXT/pYznnw8xwF0x5pxfOn379El5W60+FGydwsYEH4IzI87uLZd5UQFsqSSTWeEU/5UDUaPUQsH06V/ON0STA==}
     engines: {node: '>=18'}
 
-  maplibre-gl@6.13.0:
-    resolution: {integrity: sha512-ELXk4h+xl0URFQEnVbAN6MGn61P6jq4amUWHiskLVsvHCaKdf1Zq6G8UNOD0AQ3UaXoL5ECc8ovz8yqYEBGPKw==}
+  maplibre-gl@6.14.0:
+    resolution: {integrity: sha512-L7U9y9TyPJ3P/JJbW+eH+A3FzdPq+3fnZFqqeCwf/S6cRGganHwVI5b/C8/zOYzreUzsloDPZVVaMQA94wOt4A==}
     engines: {node: '>=16.14.0', npm: '>=8.1.0'}
 
   markdown-it-anchor@9.2.0:
@@ -9707,11 +9707,11 @@ snapshots:
     dependencies:
       '@capacitor/core': 8.5.3
 
-  '@capawesome/capacitor-maplibre@0.2.0(@capacitor/core@8.5.3)(maplibre-gl@6.13.0)':
+  '@capawesome/capacitor-maplibre@0.2.0(@capacitor/core@8.5.3)(maplibre-gl@6.14.0)':
     dependencies:
       '@capacitor/core': 8.5.3
     optionalDependencies:
-      maplibre-gl: 6.13.0
+      maplibre-gl: 6.14.0
 
   '@codemirror/commands@6.10.3':
     dependencies:
@@ -10083,9 +10083,9 @@ snapshots:
       '@iconify/types': 2.0.0
       import-meta-resolve: 4.2.0
 
-  '@indoorequal/vue-maplibre-gl@9.0.1(maplibre-gl@6.13.0)(vue@3.5.43(typescript@5.9.3))':
+  '@indoorequal/vue-maplibre-gl@9.0.1(maplibre-gl@6.14.0)(vue@3.5.43(typescript@5.9.3))':
     dependencies:
-      maplibre-gl: 6.13.0
+      maplibre-gl: 6.14.0
       vue: 3.5.43(typescript@5.9.3)
 
   '@inquirer/external-editor@1.0.3(@types/node@26.6.4)':
@@ -10945,7 +10945,7 @@ snapshots:
     dependencies:
       playwright: 1.58.2
 
-  '@pmndrs/detect-gpu@6.0.25': {}
+  '@pmndrs/detect-gpu@6.0.26': {}
 
   '@pnpm/config.env-replace@1.1.0': {}
 
@@ -15096,7 +15096,7 @@ snapshots:
       yaml: 2.9.1
       zod: 4.6.5
 
-  maplibre-gl@6.13.0:
+  maplibre-gl@6.14.0:
     dependencies:
       '@mapbox/point-geometry': 1.1.0
       '@mapbox/tiny-sdf': 2.2.0
