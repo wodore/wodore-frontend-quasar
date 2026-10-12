@@ -21,7 +21,7 @@
  * images individually (sheets hide small-text contrast failures), and audit
  * contrast per element, not by eye.
  */
-import { chromium } from 'playwright';
+import { chromium } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { mkdirSync, writeFileSync } from 'fs';
 
@@ -39,7 +39,7 @@ const BASE = process.env.VISUAL_BASE_URL || 'http://localhost:9000';
 // 404 (page never loads) - this made every hut state fail on previews.
 const HASH_MODE = /github\.io/.test(BASE);
 const HUT_PATH = '/hut/laemmeren?date=26.09.26';
-const HUT = HASH_MODE ? `#${HUT_PATH}` : `${HUT_PATH}#p=12/46.43749/7.08606`;
+const HUT = HASH_MODE ? `#${HUT_PATH}` : `${HUT_PATH}#map=12/46.43749/7.08606`;
 
 const TS = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
 const OUT = `.visual-tests/${TS}`;
