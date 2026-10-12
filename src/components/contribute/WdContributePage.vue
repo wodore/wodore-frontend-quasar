@@ -15,12 +15,12 @@ const params = computed(() => {
   const hash = route.hash;
   const result: Record<string, string> = {};
 
-  // Parse #p=zoom/lat/lon format from hash
-  const pMatch = hash.match(/#p=([^/]+)\/([^/]+)\/([^/]+)/);
-  if (pMatch) {
-    result.zoom = pMatch[1];
-    result.lat = pMatch[2];
-    result.lon = pMatch[3];
+  // Parse #map=zoom/lat/lon format from hash
+  const mapMatch = hash.match(/#map=([^/]+)\/([^/]+)\/([^/]+)/);
+  if (mapMatch) {
+    result.zoom = mapMatch[1];
+    result.lat = mapMatch[2];
+    result.lon = mapMatch[3];
   }
 
   // Parse lat/lon from query string (overrides hash if provided) - with c_ prefix

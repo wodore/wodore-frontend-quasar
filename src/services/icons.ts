@@ -1,38 +1,50 @@
 /**
  * Backend icon library — GET /v1/icons (openspec: icon-library).
  *
- * The backend serves emoji packs (Fluent Emoji primary, Noto Emoji
- * secondary) with localized keyword search (de/en/fr/it, unioned with
- * English), typo tolerance and per-style asset URLs (detailed/simple/
- * mono → Fluent Color/Flat/High Contrast). Stored icons are bare slugs;
- * this service resolves them to asset URLs — both the lookup responses
- * and the SVG assets are HTTP-cached (ETag / Cache-Control), so there is
- * deliberately no client-side persistence.
+ * The backend serves per-style asset URLs (detailed/simple/mono — e.g.
+ * Fluent Color/Flat/High Contrast). The FRONTEND only distinguishes two
+ * looks — "color" and "mono": the color look resolves to the pack's flat
+ * art (simple) when it has one and falls back to its detailed color art
+ * (Noto and the flag packs ship detailed only), mono resolves strictly to
+ * mono. Stored icons are bare slugs; this service resolves them to asset
+ * URLs — both the lookup responses and the SVG assets are HTTP-cached
+ * (ETag / Cache-Control), so there is deliberately no client-side
+ * persistence.
  */
 
 import { clientWodore, schemasWodore } from '@clients/index';
 import { currentLocale } from '@services/locale';
 
 export type BackendIcon = schemasWodore['IconDto'];
+/** Asset slots the backend serves per icon (wire styles). */
 export type BackendIconStyle = 'detailed' | 'simple' | 'mono';
+/** Looks the frontend offers: color (flat art, detailed fallback) or mono. */
+export type IconLook = 'color' | 'mono';
 
 /** The app's primary emoji pack (product decision: Fluent Emoji). */
 export const DEFAULT_ICON_PACK = 'fluent-emoji';
 
-/** The app's emoji look: Flat (backend style "simple"). */
-export const DEFAULT_ICON_STYLE: BackendIconStyle = 'simple';
+/** The app's icon look: color (flat art, detailed fallback). */
+export const DEFAULT_ICON_LOOK: IconLook = 'color';
 
-/** Stored icon reference: "pack/slug" with an optional "@style" suffix
- *  ("@simple" implied). Slugs collide across packs, so the pack is part
- *  of the stored data; the style records the pick's look. */
+/** Wire style the color look prefers first (Fluent Flat; Noto/flags have
+ *  detailed only and fall through). */
+export const COLOR_WIRE_ORDER: BackendIconStyle[] = ['simple', 'detailed'];
+
+/** Stored icon reference: "pack/slug" with an optional "@mono" suffix
+ *  ("@color" implied). Slugs collide across packs, so the pack is part of
+ *  the stored data; the look records the pick's rendering. Legacy refs
+ *  with "@simple"/"@detailed" parse as color. */
 export interface IconRef {
   pack: string;
   slug: string;
-  style: BackendIconStyle;
+  style: IconLook;
 }
 
 const ICON_REF_RE = /^([a-z0-9-]+)\/([a-z0-9-]+)(?:@([a-z]+))?$/;
-const ICON_STYLES: BackendIconStyle[] = ['detailed', 'simple', 'mono'];
+const LOOKS: IconLook[] = ['color', 'mono'];
+/** Suffixes stored before the color/mono model — all render as color. */
+const LEGACY_COLOR_SUFFIXES = ['simple', 'detailed'];
 
 /** Parse a stored icon reference. Returns null for unknown/legacy strings
  *  (e.g. Iconify "prefix:name" names) — renderers show an empty
@@ -40,25 +52,31 @@ const ICON_STYLES: BackendIconStyle[] = ['detailed', 'simple', 'mono'];
 export function parseIconRef(value: string | null | undefined): IconRef | null {
   const match = ICON_REF_RE.exec(value ?? '');
   if (!match) return null;
-  const style = (match[3] ?? DEFAULT_ICON_STYLE) as BackendIconStyle;
-  return ICON_STYLES.includes(style) ? { pack: match[1], slug: match[2], style } : null;
+  const suffix = match[3];
+  if (suffix === undefined) return { pack: match[1], slug: match[2], style: 'color' };
+  if (suffix === 'mono') return { pack: match[1], slug: match[2], style: 'mono' };
+  if (suffix === 'color' || LEGACY_COLOR_SUFFIXES.includes(suffix)) {
+    return { pack: match[1], slug: match[2], style: 'color' };
+  }
+  return null;
 }
 
-/** Format a reference to its stored string form (omits "@simple"). */
+/** Format a reference to its stored string form (omits "@color"). */
 export function formatIconRef(ref: IconRef): string {
   const base = `${ref.pack}/${ref.slug}`;
-  return ref.style === DEFAULT_ICON_STYLE ? base : `${base}@${ref.style}`;
+  return ref.style === DEFAULT_ICON_LOOK ? base : `${base}@${ref.style}`;
 }
 
-/** First style the icon actually has, preferring the requested one.
- *  Null when the icon exposes no assets at all. */
+/** Wire style an icon actually has for the requested look, preferring the
+ *  color look's flat art. Null when the icon exposes no asset for it
+ *  (mono: Fluent ships it, Noto and the flag packs do not). */
 export function availableStyle(
   icon: BackendIcon,
-  preferred: BackendIconStyle = DEFAULT_ICON_STYLE
+  preferred: IconLook = DEFAULT_ICON_LOOK
 ): BackendIconStyle | null {
   const urls = icon.urls;
   if (!urls) return null;
-  const order: BackendIconStyle[] = [preferred, 'simple', 'detailed', 'mono'];
+  const order: BackendIconStyle[] = preferred === 'mono' ? ['mono'] : COLOR_WIRE_ORDER;
   return order.find(style => urls[style]) ?? null;
 }
 
@@ -67,8 +85,8 @@ export interface IconSearchParams {
   search?: string;
   /** Exact icon slug lookup (resolves one stored icon). */
   slug?: string;
-  /** Pack slug filter. */
-  pack?: string;
+  /** Pack slug filter — one slug or several (comma-joined for the API). */
+  pack?: string | string[];
   /** CLDR subgroup (or group) slug filter. */
   category?: string;
   /** Curated list slug filter (e.g. 'activities'). */
@@ -93,7 +111,7 @@ export async function searchIcons(
         lang: params.lang ?? currentLocale(),
         search: params.search,
         slug: params.slug,
-        pack: params.pack,
+        pack: Array.isArray(params.pack) ? params.pack.join(',') : params.pack,
         category: params.category,
         list: params.list,
         limit: params.limit,
@@ -107,11 +125,13 @@ export async function searchIcons(
 }
 
 /** Resolve one stored icon slug to a single asset URL (exact lookup).
- *  The requested style falls back to simple → detailed → mono so an icon
- *  missing one style still renders. Returns null when unresolvable. */
+ *  The color look falls back simple → detailed (an icon missing the flat
+ *  style still renders in its pack's color art); mono stays strict so a
+ *  color emoji never silently replaces a monochrome pick. Returns null
+ *  when unresolvable. */
 export async function getBackendIconUrl(
   slug: string,
-  variant: BackendIconStyle = 'simple',
+  look: IconLook = DEFAULT_ICON_LOOK,
   pack: string = DEFAULT_ICON_PACK
 ): Promise<string | null> {
   try {
@@ -119,11 +139,10 @@ export async function getBackendIconUrl(
       params: { query: { slug, pack, limit: 1 } },
     });
     if (!response.ok) return null;
-    // Strict: render exactly the stored style — a silent fallback would
-    // show a color emoji where the user picked mono (Noto ships
-    // detailed only, Fluent ships all three styles).
     const urls = data?.[0]?.urls ?? null;
-    return urls?.[variant] ?? null;
+    if (!urls) return null;
+    if (look === 'mono') return urls.mono ?? null;
+    return urls.simple ?? urls.detailed ?? null;
   } catch {
     return null;
   }
