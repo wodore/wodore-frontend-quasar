@@ -63,15 +63,18 @@ describe('getSatelliteHybridStyle', () => {
     expect(ids[ids.length - 1]).toBe('label_village');
   });
 
-  it('uses satellite-readable colors (dark casings, white labels with dark halo)', () => {
+  it('uses satellite-readable colors (translucent streets, white labels with dark halo)', () => {
     const style = getSatelliteHybridStyle(args);
     const byId = Object.fromEntries(style.layers.map(l => [l.id, l]));
 
-    // Dark translucent casing beneath a white road fill
-    expect(byId['road_minor_casing'].paint?.['line-color']).toMatch(/rgba\(/);
+    // Dark translucent casing beneath a SEMI-TRANSPARENT white road fill —
+    // solid streets would cover the imagery (maptiler-style hybrid)
+    expect(byId['road_minor_casing'].paint?.['line-color']).toBe('rgba(16, 22, 26, 0.5)');
     expect(byId['road_minor'].paint?.['line-color']).toBe('#FFFFFF');
-    // Motorways keep their distinct yellow
+    expect(Number(byId['road_minor'].paint?.['line-opacity'])).toBeLessThan(1);
+    // Motorways keep their distinct yellow, a touch more opaque
     expect(byId['road_motorway'].paint?.['line-color']).toBe('#FFDD8A');
+    expect(Number(byId['road_motorway'].paint?.['line-opacity'])).toBeLessThan(1);
 
     // Place labels: white text with a dark halo to read over imagery
     for (const id of ['label_city', 'label_town', 'label_village', 'label_country_1']) {
