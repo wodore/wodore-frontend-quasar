@@ -17,12 +17,12 @@ import { useDebounceFn } from '@vueuse/core';
 import WdBackendIcon from '@components/media/WdBackendIcon.vue';
 import {
   DEFAULT_ICON_PACK,
-  DEFAULT_ICON_STYLE,
+  DEFAULT_ICON_LOOK,
   availableStyle,
   formatIconRef,
   searchIcons,
   type BackendIcon,
-  type BackendIconStyle,
+  type IconLook,
 } from '@services/icons';
 import { useConfirmPopover } from '@composables/useConfirmPopover';
 import { currentLocale } from '@services/locale';
@@ -440,10 +440,14 @@ async function pickIconForNewGroup(groupId: string, name: string): Promise<void>
     icons.find(icon => icon.pack === DEFAULT_ICON_PACK && icon.slug.includes(needle)) ??
     icons.find(icon => icon.slug.includes(needle)) ??
     icons[0];
-  // Store a style the icon actually ships — never silently color.
-  const style = availableStyle(preferred, DEFAULT_ICON_STYLE);
-  if (!style) return;
-  group.icon = formatIconRef({ pack: preferred.pack, slug: preferred.slug, style });
+  // Store the color look only when the icon actually ships color art
+  // — never a broken reference.
+  if (!availableStyle(preferred, DEFAULT_ICON_LOOK)) return;
+  group.icon = formatIconRef({
+    pack: preferred.pack,
+    slug: preferred.slug,
+    style: DEFAULT_ICON_LOOK,
+  });
   overlayStore.syncGroupSettings();
   markEdited();
 }
@@ -924,8 +928,10 @@ const COMMON_ICON_SLUGS = [
   'sled',
 ] as const;
 
-// ── Picker style (stored with the pick, re-renders the previews) ──────
-const pickerStyle = ref<BackendIconStyle>(DEFAULT_ICON_STYLE);
+// ── Picker look (stored with the pick, re-renders the previews) ───────
+// Two looks only: color (flat art, detailed fallback) and mono — flat
+// vs detailed color art is a backend concern the picker does not split.
+const pickerStyle = ref<IconLook>(DEFAULT_ICON_LOOK);
 
 /** Common set: the curated Fluent Emoji activity shortlist */
 const groupIconChoices = computed(() =>
@@ -948,13 +954,13 @@ let iconSearchAbort: AbortController | null = null;
 const ICON_SEARCH_CACHE_MAX = 60;
 const iconSearchCache = new Map<string, BackendIcon[]>();
 
-/** Result cells for the active picker style: stored-form reference +
+/** Result cells for the active picker look: stored-form reference +
  *  pre-resolved URL. Honest previews: under mono, icons without a mono
- *  asset are hidden (Noto ships detailed only) instead of silently
- *  showing color. */
+ *  asset are hidden (Noto and the flag packs ship color only) instead
+ *  of silently showing color. */
 const iconChoices = computed(() =>
   iconResults.value
-    .filter(icon => Boolean(icon.urls?.[pickerStyle.value]))
+    .filter(icon => Boolean(pickIconUrl(icon, pickerStyle.value)))
     .map(icon => ({
       slug: icon.slug,
       ref: formatIconRef({ pack: icon.pack, slug: icon.slug, style: pickerStyle.value }),
@@ -963,8 +969,11 @@ const iconChoices = computed(() =>
 );
 const visibleIconResults = computed(() => iconChoices.value.slice(0, iconVisibleCount.value));
 
-function pickIconUrl(icon: BackendIcon, style: BackendIconStyle): string | null {
-  return icon.urls?.[style] ?? icon.urls?.simple ?? icon.urls?.detailed ?? icon.urls?.mono ?? null;
+function pickIconUrl(icon: BackendIcon, look: IconLook): string | null {
+  // Color never falls through to mono and mono never falls back to
+  // color (services/icons): the preview shows exactly the stored look.
+  if (look === 'mono') return icon.urls?.mono ?? null;
+  return icon.urls?.simple ?? icon.urls?.detailed ?? null;
 }
 
 async function runIconSearch(query: string): Promise<void> {
@@ -1046,7 +1055,7 @@ const searchIconsDebounced = useDebounceFn((q: string) => runIconSearch(q), 300)
 watch(iconQuery, q => searchIconsDebounced(q));
 watch(showIconPicker, open => {
   if (open) {
-    pickerStyle.value = DEFAULT_ICON_STYLE;
+    pickerStyle.value = DEFAULT_ICON_LOOK;
   } else {
     iconSearchAbort?.abort();
     iconQuery.value = '';
@@ -2151,7 +2160,7 @@ onBeforeUnmount(() => {
         >
           <template #prepend><q-icon name="wd-search-outline" size="16px" /></template>
         </q-input>
-        <!-- Style: re-renders the previews, stored with the pick -->
+        <!-- Look: re-renders the previews, stored with the pick -->
         <q-btn-toggle
           v-model="pickerStyle"
           dense
@@ -2159,8 +2168,7 @@ onBeforeUnmount(() => {
           unelevated
           class="wd-ovl__icon-style"
           :options="[
-            { value: 'simple', label: t('overlays.icon_style_flat') },
-            { value: 'detailed', label: t('overlays.icon_style_detailed') },
+            { value: 'color', label: t('overlays.icon_style_color') },
             { value: 'mono', label: t('overlays.icon_style_mono') },
           ]"
         />
