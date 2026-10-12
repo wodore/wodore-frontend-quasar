@@ -122,10 +122,13 @@ describe('overlay-hiking', () => {
   it('shows routes early but calm: rwn from z7, lwn from z8, thin at country zoom', () => {
     const easy = hikingLayersJson.find(l => l.id === 'wd-hiking-easy')!;
     const opacity = JSON.stringify(easy.paint['line-opacity']);
-    // z7.6 stop: international + national + REGIONAL visible, local still 0
-    expect(opacity).toContain('["iwn","nwn","rwn"],0.6,0');
-    // z8.6 stop: local joins slightly fainter (0.75) than the rest (0.9)
-    expect(opacity).toContain('["lwn"],0.75,0.9');
+    // z7 stop: international + national + REGIONAL visible, local still 0
+    expect(opacity).toContain('["iwn","nwn","rwn"],0.7,0');
+    // z7.8 stop: local joins slightly fainter (0.7) than the rest (0.9)
+    expect(opacity).toContain('["lwn"],0.7,0.9');
+    // the mtk tiles carry NO walking networks below z7 anywhere (checked
+    // against live tiles) — nothing renders below the data floor
+    expect(easy.minzoom).toBeLessThanOrEqual(7);
     // thin threads at country zoom growing to the full ribbon
     const width = easy.paint['line-width'];
     const z7 = width[width.indexOf(7) + 1];
