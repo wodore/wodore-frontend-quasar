@@ -17,6 +17,7 @@ import { StyleSpecification } from 'maplibre-gl';
 import { i18n, currentLocale } from '@services/locale';
 import { getEnv } from '@services/runtimeEnv';
 import { isOutdoorStyle, setupOutdoorContours } from '@services/outdoorContours';
+import { getSatelliteHybridStyle } from '@stores/map/utils/satellite-hybrid';
 
 // Bump this when the Martin-served basemap style changes (new colors,
 // layers, fonts, sprites). Format: ISO date + optional .N for same-day
@@ -44,13 +45,30 @@ function mtkStylePath(): string {
  *  /raster facade (WebP, XYZ order, 256px). The URLs are final — the
  *  mapproxy implementation behind them is swappable without URL
  *  changes (see burginfra k8s/apps/wodore/apps/mapproxy). */
-function rasterTilePath(layer: 'world_topo' | 'world_satellite'): string {
+function tileServerBase(): string {
   const tileServerUrl = getEnv('WODORE_TILE_SERVER_URL');
   if (!tileServerUrl) {
     throw new Error('WODORE_TILE_SERVER_URL is not set — raster basemaps need the tile server');
   }
-  return `${tileServerUrl.replace(/\/$/, '')}/raster/tiles/${layer}/webmercator/{z}/{x}/{y}.webp`;
+  return tileServerUrl.replace(/\/$/, '');
 }
+
+function rasterTilePath(layer: 'world_topo' | 'world_satellite'): string {
+  return `${tileServerBase()}/raster/tiles/${layer}/webmercator/{z}/{x}/{y}.webp`;
+}
+
+/** Font endpoint for the satellite hybrid labels (Noto Sans family) —
+ *  the same font server the martin-served styles use. */
+function fontGlyphsPath(): string {
+  return `${tileServerBase()}/font/{fontstack}/{range}.pbf`;
+}
+
+/** Keyless OpenFreeMap planet vector tiles (OpenMapTiles schema) — the
+ *  source of the satellite hybrid street/place overlay and the hidden
+ *  ofm outdoor fallback style. */
+const OFM_PLANET_TILES = 'https://tiles.openfreemap.org/planet';
+/** OpenFreeMap sprite (settlement dots etc.) — matches the ofm style. */
+const OFM_SPRITE = 'https://tiles.openfreemap.org/sprites/ofm_f384/ofm';
 
 /** Both facade layers stop at z19 (OpenTopoMap z17 upscaled by the
  *  proxy in places, merged country sources z19) — source-level maxzoom
@@ -925,23 +943,26 @@ export const useBasemapStore = defineStore('basemap', () => {
         // REPLACES the former key-metered MapTiler hybrid style: Esri
         // World Imagery everywhere, swisstopo swissimage (CH+LI),
         // basemap.at ortho 30cm (AT) and IGN BD ORTHO (FR) merged on
-        // top from z7. Pure raster — no MapTiler label overlay anymore
-        // (hut overlay symbols still render above it). Entry
-        // name/thumbnail unchanged for saved selections; lazy getter
-        // reads the tile server env at selection time.
+        // top from z7. A street/place-name overlay from the OpenFreeMap
+        // planet source restores the former "hybrid" look (basic
+        // streets + town names, satellite-tuned colors — see
+        // utils/satellite-hybrid.ts). Entry name/thumbnail unchanged
+        // for saved selections; lazy getter reads the tile server env
+        // at selection time.
         name: 'Satellite Hybrid',
         label: t('basemaps.satellite'),
         show: true, // raster satellite stays selectable alongside the outdoor default
         active: false,
         img: getImageUrl('satellite.png'),
         get style(): StyleSpecification {
-          return getRasterStyle({
-            name: 'satellite-raster',
+          return getSatelliteHybridStyle({
             tiles: [rasterTilePath('world_satellite')],
             attribution:
-              '<a href="https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer" target="_blank">Esri, Maxar, Earthstar Geographics</a> &#124; <a href="https://www.swisstopo.admin.ch/en/home.html" target="_blank">&copy; swisstopo</a> &#124; <a href="https://www.basemap.at/en/" target="_blank">&copy; basemap.at</a> &#124; <a href="https://www.ign.fr" target="_blank">&copy; IGN</a>',
-            suffix: '',
+              '<a href="https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer" target="_blank">Esri, Maxar, Earthstar Geographics</a> &#124; <a href="https://www.swisstopo.admin.ch/en/home.html" target="_blank">&copy; swisstopo</a> &#124; <a href="https://www.basemap.at/en/" target="_blank">&copy; basemap.at</a> &#124; <a href="https://www.ign.fr" target="_blank">&copy; IGN</a> &#124; <a href="https://www.openstreetmap.org/copyright" target="_blank"> &copy; OpenStreetMap contributors</a>',
             sourceMaxZoom: RASTER_SOURCE_MAX_ZOOM,
+            vectorUrl: OFM_PLANET_TILES,
+            glyphs: fontGlyphsPath(),
+            spriteUrl: OFM_SPRITE,
           });
         },
         layers: {
