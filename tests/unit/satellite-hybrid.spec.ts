@@ -53,7 +53,9 @@ describe('getSatelliteHybridStyle', () => {
     }
 
     // All street layers below every place/water label
-    const lastStreet = Math.max(...ids.map(id => ids.indexOf(id)).filter(i => !ids[i].includes('label')));
+    const lastStreet = Math.max(
+      ...ids.map(id => ids.indexOf(id)).filter(i => !ids[i].includes('label'))
+    );
     const firstLabel = ids.findIndex(id => id.includes('label'));
     expect(firstLabel).toBeGreaterThan(lastStreet);
 
