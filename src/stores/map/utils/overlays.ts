@@ -3,6 +3,7 @@ import { getRasterStyle, getSwisstopoOverlay } from './raster';
 import { OverlaySwitchItem } from './interfaces';
 import { transportStyle } from './overlay-transport';
 import { hutsStyle } from './overlay-huts';
+import { hikingStyle } from './overlay-hiking';
 import { i18n } from '@services/locale';
 
 /**
@@ -469,13 +470,19 @@ export const createSkislopes = (): OverlaySwitchItem => ({
     },
   },
 });
+/** Global hiking routes from the Maptoolkit vector tiles (OSM walking
+ * networks, Swiss trail color code, difficulty as dash/dot grammar —
+ * see overlay-hiking.ts). */
 export const createHiking = (): OverlaySwitchItem => ({
-  ...getSwisstopoOverlay({
-    name: 'ch.swisstopo.swisstlm3d-wanderwege',
-    label: t('overlays.hiking.label'),
-    icon: 'hiking',
-    opacity: opacityLevels({ zoomOut: 0.4, zoomMain: 0.9, zoomIn: 0.7 }),
-  }),
+  name: 'hiking',
+  label: t('overlays.hiking.label'),
+  onLayer: 'ways',
+  show: true,
+  active: false,
+  icon: 'hiking',
+  // Opacity is self-managed inside the layer paint (zoom + network
+  // fades) — no overlay-level opacity expression.
+  style: hikingStyle,
 
   config: {
     legend: {
@@ -490,6 +497,7 @@ export const createHiking = (): OverlaySwitchItem => ({
               description: t('overlays.hiking.wanderweg_desc'),
               identifier: 'hiking.wanderweg',
               color: '#fdc200',
+              dash: 'solid',
             },
             {
               slug: 'bergwanderweg',
@@ -497,6 +505,7 @@ export const createHiking = (): OverlaySwitchItem => ({
               description: t('overlays.hiking.bergwanderweg_desc'),
               identifier: 'hiking.bergwanderweg',
               color: '#ff0000',
+              dash: 'dashed',
             },
             {
               slug: 'alpinwanderweg',
@@ -504,6 +513,15 @@ export const createHiking = (): OverlaySwitchItem => ({
               description: t('overlays.hiking.alpinwanderweg_desc'),
               identifier: 'hiking.alpinwanderweg',
               color: '#0000ff',
+              dash: 'dashed',
+            },
+            {
+              slug: 'alpinwanderweg_extreme',
+              name: t('overlays.hiking.alpinwanderweg_extreme'),
+              description: t('overlays.hiking.alpinwanderweg_extreme_desc'),
+              identifier: 'hiking.alpinwanderweg_extreme',
+              color: '#0000ff',
+              dash: 'dotted',
             },
           ],
           type: 'line',
@@ -522,13 +540,78 @@ export const createHiking = (): OverlaySwitchItem => ({
       ],
       attribution: [
         {
-          name: 'swisstopo',
-          url: 'https://www.swisstopo.admin.ch',
+          name: t('overlays.hiking.attr_osm'),
+          url: 'https://www.openstreetmap.org/copyright',
+        },
+        {
+          name: t('overlays.hiking.attr_mtk'),
+          url: 'https://www.maptoolkit.org',
         },
       ],
     },
   },
 });
+
+//export const createHikingSwiss = (): OverlaySwitchItem => ({
+//  ...getSwisstopoOverlay({
+//    name: 'ch.swisstopo.swisstlm3d-wanderwege',
+//    label: t('overlays.hiking.label'),
+//    icon: 'hiking',
+//    opacity: opacityLevels({ zoomOut: 0.4, zoomMain: 0.9, zoomIn: 0.7 }),
+//  }),
+//
+//  config: {
+//    legend: {
+//      sections: [
+//        {
+//          title: t('overlays.hiking.legend_title'),
+//          description: t('overlays.hiking.desc'),
+//          category: [
+//            {
+//              slug: 'wanderweg',
+//              name: t('overlays.hiking.wanderweg'),
+//              description: t('overlays.hiking.wanderweg_desc'),
+//              identifier: 'hiking.wanderweg',
+//              color: '#fdc200',
+//            },
+//            {
+//              slug: 'bergwanderweg',
+//              name: t('overlays.hiking.bergwanderweg'),
+//              description: t('overlays.hiking.bergwanderweg_desc'),
+//              identifier: 'hiking.bergwanderweg',
+//              color: '#ff0000',
+//            },
+//            {
+//              slug: 'alpinwanderweg',
+//              name: t('overlays.hiking.alpinwanderweg'),
+//              description: t('overlays.hiking.alpinwanderweg_desc'),
+//              identifier: 'hiking.alpinwanderweg',
+//              color: '#0000ff',
+//            },
+//          ],
+//          type: 'line',
+//          items: [],
+//        },
+//      ],
+//      links: [
+//        {
+//          name: t('overlays.hiking.link_wanderland'),
+//          url: 'https://www.schweizmobil.ch/de/wanderland.html',
+//        },
+//        {
+//          name: t('overlays.hiking.link_sac_scale'),
+//          url: 'https://www.sac-cas.ch/de/huetten-und-touren/sac-tourenportal/schwierigkeitsskala/',
+//        },
+//      ],
+//      attribution: [
+//        {
+//          name: 'swisstopo',
+//          url: 'https://www.swisstopo.admin.ch',
+//        },
+//      ],
+//    },
+//  },
+//});
 
 //const public_transport_stops = getSwisstopoOverlay({
 //  name: 'ch.bav.haltestellen-oev',

@@ -55,6 +55,9 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
     // Break the type inference chain (OverlaySwitchItem -> maplibre style
     // specs triggers TS2589 through the store ref) — same pattern as
     // getOverlaysInRenderOrder in WdOverlayControl.
+    // SAFETY: the overlay store's real shape is
+    // { overlays: OverlaySwitchItem[] }; this narrowing cast only reads
+    // name/config off each item — fields every factory guarantees.
     const overlays = (
       overlayStore as unknown as {
         overlays: Array<{ name: string; config?: OverlayConfig }>;
@@ -268,6 +271,7 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
       description: category.description || undefined,
       icon: category.symbol_detailed || category.symbol_simple || category.symbol_mono || undefined,
       color: category.color || undefined,
+      dash: category.dash || undefined,
       metadata: {
         iconDetailed: category.symbol_detailed,
         iconSimple: category.symbol_simple,

@@ -11,6 +11,7 @@ import {
   groupDisplayName,
   defaultOverlayGroupSettings,
   mergeGroups,
+  RENAMED_SLUGS,
   type LayerGroup,
   type OverlayGroupSettings,
 } from '@stores/map/utils/layer-groups';
@@ -48,6 +49,12 @@ export const useOverlayStore = defineStore('overlay', () => {
   const savedOverlaysRecord = savedOverlays.reduce(
     (acc: Record<string, OverlaySwitchItem>, obj: OverlaySwitchItem) => {
       acc[obj.name] = obj;
+      // Overlay renamed by an app update (RENAMED_SLUGS, e.g. the Swiss
+      // raster hiking overlay → global 'hiking'): carry the persisted
+      // active/show state over to the new name — unless a record under
+      // the new name already exists.
+      const renamedTo = RENAMED_SLUGS[obj.name];
+      if (renamedTo && !(renamedTo in acc)) acc[renamedTo] = obj;
       return acc;
     },
     {}
@@ -106,14 +113,24 @@ export const useOverlayStore = defineStore('overlay', () => {
   /** Layers of the active group (for the mini strip) */
   function activeGroupLayers(): OverlaySwitchItem[] {
     const group = getActiveGroup(groupSettings);
+    // SAFETY: overlays is Array<OverlaySwitchItem>; the widened casts
+    // break the reactive-array type recursion (TS2589) that maplibre's
+    // style types trigger — same pattern as WdOverlayControl.
     const list = overlays as unknown as Array<{ name: string; show?: boolean; active?: boolean }>;
-    if (!group) return (overlays as unknown as OverlaySwitchItem[]).filter(o => o.show);
+    if (!group) {
+      // SAFETY: same TS2589 cast as `list` above — the reactive array IS
+      // OverlaySwitchItem[], only the inferred type is too deep.
+      const shown = overlays as unknown as OverlaySwitchItem[];
+      return shown.filter(o => o.show);
+    }
+    // SAFETY: `list` items are OverlaySwitchItem (see cast above).
     return getGroupLayers(group, list as unknown as OverlaySwitchItem[]);
   }
 
   /** All layers NOT in the active group (for the expanded "All layers" section) */
   function otherLayers(): OverlaySwitchItem[] {
     const group = getActiveGroup(groupSettings);
+    // SAFETY: same TS2589 recursion break as activeGroupLayers above.
     return getOtherLayers(group, overlays as unknown as OverlaySwitchItem[]);
   }
 
@@ -126,6 +143,8 @@ export const useOverlayStore = defineStore('overlay', () => {
     const currentGroup = getActiveGroup(groupSettings);
     if (currentGroup && currentGroup.id !== group.id) {
       // cast: reactive array + filter explodes TS instantiation depth
+      // SAFETY: each item is an OverlaySwitchItem; reading .active/.name
+      // only — fields every factory sets.
       const flat = overlays as unknown as Array<{ name: string; active?: boolean }>;
       currentGroup.activeLayerSlugs = flat.filter(o => o.active).map(o => o.name);
     }
@@ -188,10 +207,19 @@ export const useOverlayStore = defineStore('overlay', () => {
 
   /** Merge groups when the layer list changes */
   function mergeLayerGroups(): void {
+    // SAFETY: overlays items are OverlaySwitchItem — reading .name only,
+    // a field every factory sets; the cast breaks the TS2589 recursion.
     const allSlugs = (overlays as unknown as Array<{ name: string }>).map(o => o.name);
     Object.assign(groupSettings, mergeGroups(groupSettings, allSlugs));
     syncGroupSettings();
   }
+
+  // Run the merge ONCE at store setup: rewrites overlay slugs renamed by
+  // app updates (RENAMED_SLUGS — e.g. swiss raster hiking → global
+  // 'hiking') in the persisted group settings, and adds predefined
+  // groups the user doesn't have yet. Without this, a renamed overlay
+  // drops out of every group and lands in "All layers".
+  mergeLayerGroups();
 
   return {
     overlays,

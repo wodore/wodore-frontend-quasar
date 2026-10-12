@@ -32,7 +32,9 @@ export interface OverlayGroupSettings {
 const SLUGS = {
   huts: 'huts',
   transport: 'transport-stops',
-  hiking: 'ch.swisstopo.swisstlm3d-wanderwege',
+  // Was 'ch.swisstopo.swisstlm3d-wanderwege' (Swiss raster overlay) —
+  // renamed when hiking went global on Maptoolkit vector tiles.
+  hiking: 'hiking',
   mtb: 'mtb',
   cycling: 'cycling',
   slopeAngle: 'ch.swisstopo.hangneigung-ueber_30',
@@ -42,6 +44,19 @@ const SLUGS = {
   nature: 'wildruhe_und_jagdbann',
   sheepdogs: 'ch.bafu.alpweiden-herdenschutzhunde',
 } as const;
+
+/** Overlay slugs renamed by app updates — user-persisted group settings
+ * (layerSlugs / activeLayerSlugs / ungroupedActiveSlugs) are rewritten
+ * through this map in mergeGroups so no layer falls out of its group.
+ * ALSO used by the overlay store to carry persisted active/show state
+ * over to the new overlay name. */
+export const RENAMED_SLUGS: Record<string, string> = {
+  'ch.swisstopo.swisstlm3d-wanderwege': SLUGS.hiking,
+};
+
+function renameSlug(slug: string): string {
+  return RENAMED_SLUGS[slug] ?? slug;
+}
 
 // ─── Default groups ───────────────────────────────────────────────────────
 
@@ -140,6 +155,14 @@ export function mergeGroups(
   settings: OverlayGroupSettings,
   allLayerSlugs: string[]
 ): OverlayGroupSettings {
+  // Rewrite renamed slugs first — groups keep their layers across the
+  // rename (otherwise the renamed overlay drops out of every group).
+  settings.groups.forEach(g => {
+    g.layerSlugs = g.layerSlugs.map(renameSlug);
+    g.activeLayerSlugs = g.activeLayerSlugs.map(renameSlug);
+  });
+  settings.ungroupedActiveSlugs = settings.ungroupedActiveSlugs.map(renameSlug);
+
   const groups = settings.groups.map(g => ({ ...g, layerSlugs: [...g.layerSlugs] }));
 
   // Add new predefined groups (from app updates) that the user doesn't have

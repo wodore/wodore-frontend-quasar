@@ -361,15 +361,19 @@
     "hiking": {
       "label": "Sentiers de randonnée",
       "legend_title": "Catégories de sentiers",
-      "desc": "Catégories officielles de sentiers de Swisstopo",
+      "desc": "Itinéraires de randonnée dans le monde (OpenStreetMap) selon le code couleur suisse — plus c'est difficile, plus les tirets sont courts",
       "wanderweg": "Sentier de randonnée",
-      "wanderweg_desc": "Sentiers faciles, adaptés à la plupart des âges",
+      "wanderweg_desc": "Sentiers faciles (CAS T1), ligne continue",
       "bergwanderweg": "Sentier de montagne",
-      "bergwanderweg_desc": "Itinéraires plus exigeants, peuvent inclure pentes raides ou ponts suspendus",
+      "bergwanderweg_desc": "Sentiers de montagne (CAS T2–T3), ligne tiretée",
       "alpinwanderweg": "Sentier alpin",
-      "alpinwanderweg_desc": "Itinéraires les plus difficiles, expérience et équipement alpins requis",
+      "alpinwanderweg_desc": "Sentiers alpins (CAS T4), ligne finement tiretée",
+      "alpinwanderweg_extreme": "Sentier alpin exigeant",
+      "alpinwanderweg_extreme_desc": "Sentiers alpins (CAS T5–T6) et via ferratas, ligne pointillée",
       "link_wanderland": "Réseau Randonnée Suisse",
-      "link_sac_scale": "Échelle de randonnée CAS"
+      "link_sac_scale": "Échelle de randonnée CAS",
+      "attr_osm": "Contributeurs OpenStreetMap",
+      "attr_mtk": "Maptoolkit"
     },
     "cycling": {
       "label": "Vélo",

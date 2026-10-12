@@ -361,15 +361,19 @@
     "hiking": {
       "label": "Hiking trails",
       "legend_title": "Trail categories",
-      "desc": "Official hiking trail categories by Swisstopo",
+      "desc": "Hiking routes worldwide (OpenStreetMap) in the Swiss color code — the harder the trail, the shorter the dashes",
       "wanderweg": "Hiking trail",
-      "wanderweg_desc": "Easy trails, suitable for most age groups",
+      "wanderweg_desc": "Easy trails (SAC T1), solid line",
       "bergwanderweg": "Mountain trail",
-      "bergwanderweg_desc": "More demanding routes, may include steep slopes or suspension bridges",
+      "bergwanderweg_desc": "Mountain trails (SAC T2–T3), dashed line",
       "alpinwanderweg": "Alpine trail",
-      "alpinwanderweg_desc": "Most difficult routes, alpine experience and equipment required",
+      "alpinwanderweg_desc": "Alpine trails (SAC T4), finely dashed line",
+      "alpinwanderweg_extreme": "Demanding alpine trail",
+      "alpinwanderweg_extreme_desc": "Alpine trails (SAC T5–T6) and via ferratas, dotted line",
       "link_wanderland": "Switzerland hiking network",
-      "link_sac_scale": "SAC hiking scale"
+      "link_sac_scale": "SAC hiking scale",
+      "attr_osm": "OpenStreetMap contributors",
+      "attr_mtk": "Maptoolkit"
     },
     "cycling": {
       "label": "Cycling",

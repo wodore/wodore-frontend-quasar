@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Wodore global hiking overlay preview</title>
+    <link rel="stylesheet" href="/node_modules/maplibre-gl/dist/maplibre-gl.css" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+      #map {
+        position: absolute;
+        inset: 0;
+      }
+      #panel {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        z-index: 10;
+        font:
+          12px/1.5 ui-sans-serif,
+          system-ui,
+          sans-serif;
+        color: #1c1c1c;
+        background: rgba(255, 255, 255, 0.92);
+        padding: 10px 12px;
+        border-radius: 8px;
+        box-shadow: 0 1px 6px rgba(0, 0, 0, 0.18);
+        max-width: 300px;
+      }
+      #panel h1 {
+        font-size: 13px;
+        margin: 0 0 6px;
+      }
+      #panel fieldset {
+        border: 0;
+        padding: 0;
+        margin: 6px 0;
+      }
+      #panel label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+      }
+      .swatch {
+        display: inline-block;
+        width: 26px;
+        height: 3px;
+        border-radius: 1.5px;
+      }
+      .swatch--dashed {
+        background: repeating-linear-gradient(to right, #000 0 5px, transparent 5px 9px);
+      }
+      .swatch--dotted {
+        background-image: radial-gradient(circle, #000 1.4px, transparent 1.5px);
+        background-size: 6px 3px;
+        background-repeat: repeat-x;
+      }
+      #places button {
+        margin: 2px 2px 2px 0;
+        font: inherit;
+        cursor: pointer;
+      }
+      #status {
+        position: absolute;
+        bottom: 8px;
+        left: 8px;
+        z-index: 10;
+        font:
+          12px/1.4 ui-monospace,
+          monospace;
+        color: #333;
+        background: rgba(255, 255, 255, 0.85);
+        padding: 6px 8px;
+        border-radius: 6px;
+        pointer-events: none;
+        white-space: pre;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <div id="panel">
+      <h1>Global hiking overlay (mtk · Swiss colors)</h1>
+      <fieldset id="tiers"></fieldset>
+      <fieldset id="places"></fieldset>
+    </div>
+    <div id="status">loading…</div>
+    <script type="module">
+      // Web preview for the global hiking overlay: renders the
+      // wd-outdoor-base-mtk basemap plus the overlay layers from
+      // src/stores/map/utils/overlay-hiking.json — the SAME JSON the app
+      // imports (overlay-hiking.ts), so preview and app cannot drift.
+      //
+      // Serve from the repo root, with Martin running:
+      //   python3 -m http.server 8330
+      //   → http://localhost:8330/scripts/style/preview/hiking.html
+      import * as maplibregl from '/node_modules/maplibre-gl/dist/maplibre-gl.mjs';
+      import mlcontour from '/node_modules/maplibre-contour/dist/index.mjs';
+
+      const { Map, addProtocol } = maplibregl;
+
+      const params = new URLSearchParams(location.search);
+      const styleUrl = params.get('style') || 'http://localhost:8075/style/wd-outdoor-base-mtk';
+      // Default: Zermatt — yellow valley routes, red T2/T3, blue alpinists
+      const lon = parseFloat(params.get('lon') ?? '7.7471');
+      const lat = parseFloat(params.get('lat') ?? '46.0207');
+      const zoom = parseFloat(params.get('z') ?? '12.5');
+      const routesUrl = params.get('routes') || '/src/stores/map/utils/overlay-hiking.json';
+
+      // Register the client-side contour protocol exactly like the app
+      // (src/services/outdoorContours.ts) — only used when pointing this
+      // preview at the OFM style.
+      const demSource = new mlcontour.DemSource({
+        id: 'dem',
+        url: 'https://tiles.mapterhorn.com/{z}/{x}/{y}.webp',
+        encoding: 'terrarium',
+        maxzoom: 15,
+        worker: true,
+        cacheSize: 100,
+      });
+      demSource.setupMaplibre({ addProtocol });
+
+      // Same asset pinning as preview/index.html: MapLibre requires
+      // ABSOLUTE sprite/glyph URLs; {fontstack}/{range} must stay verbatim.
+      const styleResponse = await fetch(styleUrl);
+      const styleJson = await styleResponse.json();
+      const styleBase = new URL(styleUrl, location.href);
+      const abs = u => new URL(u, styleBase).href.replaceAll('%7B', '{').replaceAll('%7D', '}');
+      if (typeof styleJson.glyphs === 'string') {
+        styleJson.glyphs = abs(styleJson.glyphs);
+      }
+      const pinSprite = s => (typeof s === 'string' ? abs(s) : { ...s, url: abs(s.url) });
+      if (Array.isArray(styleJson.sprite)) {
+        styleJson.sprite = styleJson.sprite.map(pinSprite);
+      } else if (typeof styleJson.sprite === 'string') {
+        styleJson.sprite = abs(styleJson.sprite);
+      }
+
+      // no-store: when iterating on the JSON you want every reload to
+      // pick it up — the browser cache would happily serve yesterday's
+      // grammar and MapLibre would reject layers that are already fixed.
+      const hikingLayers = await (await fetch(routesUrl, { cache: 'no-store' })).json();
+
+      const map = new Map({
+        container: 'map',
+        style: styleJson,
+        center: [lon, lat],
+        zoom,
+        attributionControl: { compact: false },
+      });
+      window.map = map;
+      window.__flyTo = (flon, flat, z) => map.flyTo({ center: [flon, flat], zoom: z });
+
+      let errors = 0;
+      const status = document.getElementById('status');
+      map.on('error', e => {
+        errors++;
+        console.warn('[map error]', e?.error?.message ?? e);
+      });
+
+      map.on('load', () => {
+        status.dataset.loaded = '1';
+
+        // Source: reuse the basemap's own mtk source when present (the
+        // app does the same — no duplicate tile downloads); otherwise
+        // add it like the overlay does on non-mtk basemaps.
+        // KEEP IN SYNC with overlay-hiking.ts (MTK_TILES_URL, maxzoom)
+        // — layers come from the shared JSON, these constants are the
+        // only thing this page hardcodes.
+        const needsSource = map.getSource('mtk') === undefined;
+        if (needsSource) {
+          map.addSource('mtk', {
+            type: 'vector',
+            url: 'https://tiles.maptoolkit.org/mtk.json',
+            maxzoom: 15,
+          });
+        }
+        // Shields use the mtk SDF sprite (yellow square); the mtk
+        // basemap style already carries it (see KEEP IN SYNC above).
+        const sprites = map.getStyle().sprite;
+        const spriteList = Array.isArray(sprites) ? sprites : sprites ? [sprites] : [];
+        if (!spriteList.some(s => s.id === 'sdf')) {
+          map.addSprite('sdf', 'https://icons.maptoolkit.org/sprite');
+        }
+
+        // Append at end — same z-position the app gives the hiking
+        // overlay on the mtk basemap (onLayer 'ways', no anchor → top).
+        for (const layer of hikingLayers) {
+          map.addLayer(layer);
+        }
+
+        buildTierToggles();
+      });
+
+      // ── Tier checkboxes: one per wd:tier, switching layer visibility ──
+      function buildTierToggles() {
+        const TIER_LABELS = {
+          easy: 'T1 Wanderweg (yellow, solid)',
+          mountain: 'T2–T3 Bergwanderweg (red, dashed)',
+          alpine: 'T4–T6 Alpinwanderweg (blue, dashed/dotted)',
+          label: 'Trail names (italic)',
+          shield: 'Route-number shields (yellow)',
+        };
+        const SWATCH_COLOR = {
+          easy: '#fdc200',
+          mountain: '#ff0000',
+          alpine: '#0000ff',
+        };
+        const tiers = [...new Set(hikingLayers.map(l => l.metadata?.['wd:tier']))];
+        const box = document.getElementById('tiers');
+        for (const tier of tiers) {
+          const label = document.createElement('label');
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.checked = true;
+          cb.onchange = () => {
+            for (const layer of hikingLayers) {
+              if (layer.metadata?.['wd:tier'] === tier) {
+                map.setLayoutProperty(layer.id, 'visibility', cb.checked ? 'visible' : 'none');
+              }
+            }
+          };
+          label.appendChild(cb);
+          const color = SWATCH_COLOR[tier];
+          if (color) {
+            const sw = document.createElement('span');
+            sw.className = 'swatch' + (tier === 'easy' ? '' : ' swatch--dashed');
+            sw.style.color = color;
+            sw.style.backgroundColor = color;
+            if (tier !== 'easy') sw.style.backgroundColor = 'transparent';
+            label.appendChild(sw);
+          }
+          label.appendChild(document.createTextNode(TIER_LABELS[tier] ?? tier));
+          box.appendChild(label);
+        }
+      }
+
+      // ── Sample locations across the globe ──
+      const PLACES = [
+        ['Zermatt CH', 7.7471, 46.0207, 12.5],
+        ['Chamonix FR', 6.8657, 45.9237, 12.5],
+        ['Dolomites IT', 11.8421, 46.4952, 12.5],
+        ['Tourelles CH (via ferrata)', 7.1226, 46.0439, 14],
+        ['Yosemite US', -119.5383, 37.8651, 12],
+        ['Table Mountain ZA', 18.4749, -33.9628, 13],
+        ['Fuji JP', 138.7274, 35.3606, 12.5],
+      ];
+      const places = document.getElementById('places');
+      for (const [name, plon, plat, pz] of PLACES) {
+        const btn = document.createElement('button');
+        btn.textContent = name;
+        btn.onclick = () => map.flyTo({ center: [plon, plat], zoom: pz });
+        places.appendChild(btn);
+      }
+
+      const render = () => {
+        const z = map.getZoom().toFixed(2);
+        const c = map.getCenter();
+        status.textContent = `z ${z}  lon ${c.lng.toFixed(4)} lat ${c.lat.toFixed(4)}  errors ${errors}  loaded ${status.dataset.loaded ? 'yes' : 'no'}`;
+        requestAnimationFrame(render);
+      };
+      render();
+    </script>
+  </body>
+</html>

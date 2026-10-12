@@ -361,15 +361,19 @@
     "hiking": {
       "label": "Wanderwege",
       "legend_title": "Wegkategorien",
-      "desc": "Offizielle Wanderwegkategorien von Swisstopo",
+      "desc": "Wanderrouten weltweit (OpenStreetMap) in der Schweizer Farbcode-Skala — je schwieriger, desto kürzer die Strichelung",
       "wanderweg": "Wanderweg",
-      "wanderweg_desc": "Einfache Wanderwege, für die meisten Altersgruppen geeignet",
+      "wanderweg_desc": "Leichte Wege (SAC T1), durchgezogene Linie",
       "bergwanderweg": "Bergwanderweg",
-      "bergwanderweg_desc": "Anspruchsvollere Routen, können Steilhänge oder Hängebrücken beinhalten",
+      "bergwanderweg_desc": "Bergwege (SAC T2–T3), gestrichelte Linie",
       "alpinwanderweg": "Alpinwanderweg",
-      "alpinwanderweg_desc": "Schwierigste Routen, alpine Erfahrung und Ausrüstung erforderlich",
+      "alpinwanderweg_desc": "Alpine Wege (SAC T4), kurz gestrichelte Linie",
+      "alpinwanderweg_extreme": "Schwieriger Alpinweg",
+      "alpinwanderweg_extreme_desc": "Alpine Wege (SAC T5–T6) und Klettersteige, punktierte Linie",
       "link_wanderland": "Wanderland Schweiz",
-      "link_sac_scale": "SAC Wanderskala"
+      "link_sac_scale": "SAC Wanderskala",
+      "attr_osm": "OpenStreetMap-Mitwirkende",
+      "attr_mtk": "Maptoolkit"
     },
     "cycling": {
       "label": "Fahrrad",

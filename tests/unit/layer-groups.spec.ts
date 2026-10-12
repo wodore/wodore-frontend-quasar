@@ -20,7 +20,7 @@ const makeOverlay = (name: string, active = false): OverlaySwitchItem =>
 const mockOverlays = [
   makeOverlay('huts', true),
   makeOverlay('transport-stops'),
-  makeOverlay('ch.swisstopo.swisstlm3d-wanderwege'),
+  makeOverlay('hiking'),
   makeOverlay('mtb'),
   makeOverlay('cycling'),
   makeOverlay('ch.swisstopo.hangneigung-ueber_30'),
@@ -155,7 +155,7 @@ describe('layer-groups', () => {
       const others = getOtherLayers(hiking, mockOverlays);
       const othersSlugs = others.map(o => o.name);
       expect(othersSlugs).not.toContain('huts');
-      expect(othersSlugs).not.toContain('ch.swisstopo.swisstlm3d-wanderwege');
+      expect(othersSlugs).not.toContain('hiking');
       expect(othersSlugs).toContain('mtb');
       expect(othersSlugs).toContain('ch.swisstopo-karto.skitouren');
     });
@@ -202,6 +202,27 @@ describe('layer-groups', () => {
         mockOverlays.map(o => o.name)
       );
       expect(merged.groups.find(g => g.slug === 'hiking')).toBeUndefined();
+    });
+
+    it('rewrites renamed overlay slugs in persisted settings (swiss raster hiking → hiking)', () => {
+      const OLD = 'ch.swisstopo.swisstlm3d-wanderwege';
+      const settings = defaultOverlayGroupSettings();
+      // simulate persisted settings that still carry the old slug
+      const hikingGroup = settings.groups.find(g => g.slug === 'hiking')!;
+      hikingGroup.layerSlugs = hikingGroup.layerSlugs.map(s => (s === 'hiking' ? OLD : s));
+      hikingGroup.activeLayerSlugs = [OLD, 'huts'];
+      settings.ungroupedActiveSlugs = [OLD];
+
+      const merged = mergeGroups(
+        settings,
+        mockOverlays.map(o => o.name)
+      );
+
+      const mergedHiking = merged.groups.find(g => g.slug === 'hiking')!;
+      expect(mergedHiking.layerSlugs).toContain('hiking');
+      expect(mergedHiking.layerSlugs).not.toContain(OLD);
+      expect(mergedHiking.activeLayerSlugs).toEqual(['hiking', 'huts']);
+      expect(merged.ungroupedActiveSlugs).toEqual(['hiking']);
     });
   });
 });
