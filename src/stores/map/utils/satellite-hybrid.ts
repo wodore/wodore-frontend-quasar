@@ -15,11 +15,12 @@ import { getRasterStyle } from './raster';
  * src/assets/map-styles/satellite-hybrid-overlay.json: they are derived
  * from wd-outdoor-base-ofm (tile_server styles in wodore-backend) —
  * same filters, zoom ramps and layout — with colors re-tuned for
- * readability on aerial imagery: semi-transparent white and yellow
- * road fills over lighter dark casings (solid streets would cover the
- * imagery — the maptiler-style hybrid keeps streets ~50-65% see-through),
- * white labels with a dark halo (the ofm palette is designed for light
- * map backgrounds and disappears on photos).
+ * readability on aerial imagery: semi-transparent street lines over
+ * light dark casings (white fills 0.4, links 0.5, motorways capped at
+ * 0.65 — never solid paint over the imagery) that FADE OUT at street
+ * level (to 0 by z17, motorways by z18) so the imagery takes over up
+ * close. White labels with a dark halo (the ofm palette is designed
+ * for light map backgrounds and disappears on photos).
  * Tunnels (invisible on imagery), rail, trails, service tracks and
  * road-name labels are deliberately left out to keep the overlay lean;
  * hut overlay layers still render above everything.

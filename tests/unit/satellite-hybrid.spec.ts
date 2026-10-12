@@ -63,18 +63,43 @@ describe('getSatelliteHybridStyle', () => {
     expect(ids[ids.length - 1]).toBe('label_village');
   });
 
-  it('uses satellite-readable colors (translucent streets, white labels with dark halo)', () => {
+  it('uses satellite-readable colors (translucent streets fading out at street level)', () => {
     const style = getSatelliteHybridStyle(args);
     const byId = Object.fromEntries(style.layers.map(l => [l.id, l]));
 
-    // Dark translucent casing beneath a SEMI-TRANSPARENT white road fill —
-    // solid streets would cover the imagery (maptiler-style hybrid)
+    // Street fills are zoom-ramped: constant while zoomed out, fading to
+    // 0 at street level so the imagery takes over
+    const ramp = (id: string): Array<[number, number]> => {
+      const expr = byId[id].paint?.['line-opacity'] as unknown[];
+      const pairs: Array<[number, number]> = [];
+      for (let i = 3; i + 1 < expr.length; i += 2) {
+        pairs.push([expr[i] as number, expr[i + 1] as number]);
+      }
+      return pairs;
+    };
+
+    // White fills: 0.4 from outside, gone by z17
+    expect(ramp('road_minor')[0]).toEqual([14.5, 0.4]);
+    expect(ramp('road_minor').at(-1)).toEqual([17, 0]);
+    // Motorways: capped at 0.65, gone by z18
+    expect(ramp('road_motorway')[0]).toEqual([15.5, 0.65]);
+    expect(ramp('road_motorway').at(-1)).toEqual([18, 0]);
+
+    // No street line exceeds 0.65 effective opacity (ramp max × casing alpha)
+    for (const layer of style.layers) {
+      if (layer.type !== 'line') continue;
+      const values = ramp(layer.id).map(([, v]) => v);
+      const color = String(layer.paint?.['line-color']);
+      const alpha = color.startsWith('rgba') ? Number(color.split(',')[3]?.replace(')', '')) : 1;
+      for (const v of values) {
+        expect(v * alpha, `layer ${layer.id}`).toBeLessThanOrEqual(0.66);
+      }
+    }
+
+    // Dark translucent casing beneath the fills
     expect(byId['road_minor_casing'].paint?.['line-color']).toBe('rgba(16, 22, 26, 0.5)');
     expect(byId['road_minor'].paint?.['line-color']).toBe('#FFFFFF');
-    expect(Number(byId['road_minor'].paint?.['line-opacity'])).toBeLessThan(1);
-    // Motorways keep their distinct yellow, a touch more opaque
     expect(byId['road_motorway'].paint?.['line-color']).toBe('#FFDD8A');
-    expect(Number(byId['road_motorway'].paint?.['line-opacity'])).toBeLessThan(1);
 
     // Place labels: white text with a dark halo to read over imagery
     for (const id of ['label_city', 'label_town', 'label_village', 'label_country_1']) {
