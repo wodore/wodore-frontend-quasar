@@ -52,18 +52,13 @@ node scripts/style/capture-scenarios.mjs --only ours --out /tmp/shots
 
 ### Global hiking overlay preview
 
-`preview/hiking.html` renders the basemap PLUS the global hiking overlay
-(Maptoolkit route networks in the Swiss color code) from
-`src/stores/map/utils/overlay-hiking.json` — the same JSON the app
-imports (`overlay-hiking.ts`), so preview and app cannot drift.
-Tier checkboxes toggle difficulty groups, buttons jump to sample
-locations worldwide (Zermatt, Dolomites, Yosemite, Fuji …).
-
-```bash
-# Backend Martin running, then from the frontend repo root:
-python3 -m http.server 8330
-# → http://localhost:8330/scripts/style/preview/hiking.html?style=http%3A%2F%2Flocalhost%3A8075%2Fstyle%2Fwd-outdoor-base-mtk&lon=7.747&lat=46.021&z=12.5
-```
+The hiking overlay (Maptoolkit route networks in the Swiss color
+scheme) is part of the APP — preview it in a deployed PR preview
+(`PREVIEW:web` label, see `.github/workflows/preview.yml`): toggle
+the overlay on the map and check the legend (yellow/red/blue tiers,
+dash/dot difficulty). Its layer definitions live in
+`src/stores/map/utils/overlay-hiking.json`, shared 1:1 with the app
+(`overlay-hiking.ts`).
 
 The harness (`preview/index.html`) runs the REAL `dem-contour://`
 protocol — Maputnik cannot render custom protocols, and `outdoor-mtk`

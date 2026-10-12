@@ -18,9 +18,10 @@
  * lozenge, the Swiss trail marker) come from the road_label layer.
  *
  * The layer definitions live in overlay-hiking.json — pure MapLibre
- * style JSON, shared with the web preview (scripts/style/preview/
- * hiking.html) so app and preview cannot drift. Edit BOTH grammar
- * table (above) and the JSON together.
+ * style JSON, loaded 1:1 here (see HIKING_LAYER_IDS' contract tests).
+ * Edit BOTH grammar table (above) and the JSON together; the PR web
+ * preview (PREVIEW:web label, .github/workflows/preview.yml) renders
+ * the result in the deployed app.
  *
  * The source is deliberately named `mtk`: when the wd-outdoor-base-mtk
  * basemap is active the overlay REUSES its already-loaded source (no
