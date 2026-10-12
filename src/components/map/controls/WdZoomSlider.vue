@@ -36,7 +36,7 @@ import { MAP_MIN_ZOOM } from '@stores/map/utils/map-constants';
 const mapRef = useMap();
 const { t } = useI18n();
 
-/** Map zoom range — floor keeps the globe comfortably in view (see
+/** Map zoom range — floor bounds how far the camera zooms out (see
  *  MAP_MIN_ZOOM); no app-level max: sources overzoom past their own
  *  tile max up to MapLibre's z22. */
 const MIN_ZOOM = MAP_MIN_ZOOM;

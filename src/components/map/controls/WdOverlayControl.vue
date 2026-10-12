@@ -1151,7 +1151,7 @@ function addOverlayLayer({
   defaultOpacity,
   beforeId,
 }: AddOverlayLayerArgs): boolean {
-  // World/globe view: overlays never render below the zoom floor — layers
+  // Far zoomed-out view: overlays never render below the zoom floor — layers
   // reappear automatically when the camera zooms back in (see
   // map-constants.ts; the same clamp is applied in transformStyle for
   // basemap switches)
