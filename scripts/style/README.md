@@ -50,6 +50,16 @@ python3 -m http.server 8330
 node scripts/style/capture-scenarios.mjs --only ours --out /tmp/shots
 ```
 
+### Global hiking overlay preview
+
+The hiking overlay (Maptoolkit route networks in the Swiss color
+scheme) is part of the APP — preview it in a deployed PR preview
+(`PREVIEW:web` label, see `.github/workflows/preview.yml`): toggle
+the overlay on the map and check the legend (yellow/red/blue tiers,
+dash/dot difficulty). Its layer definitions live in
+`src/stores/map/utils/overlay-hiking.json`, shared 1:1 with the app
+(`overlay-hiking.ts`).
+
 The harness (`preview/index.html`) runs the REAL `dem-contour://`
 protocol — Maputnik cannot render custom protocols, and `outdoor-mtk`
 cannot be previewed in Maputnik at all (multi-sprite arrays, custom

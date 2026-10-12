@@ -156,6 +156,9 @@ export interface LinkItem {
 export interface LegendItem {
   icon?: string;
   color?: string;
+  /** Line-type legends only: render the swatch solid, dashed or dotted
+   * (difficulty grammar of the hiking overlay). */
+  dash?: 'solid' | 'dashed' | 'dotted';
   label: string;
   description?: string;
   metadata?: {
@@ -228,6 +231,10 @@ export interface CategoryItem {
   symbol_mono?: string | null;
   color?: string | null;
   color_text?: string | null;
+  /** Line-type legends only: render the swatch solid, dashed or dotted
+   * (difficulty grammar of the hiking overlay). Flows into LegendItem
+   * when category items populate a legend section. */
+  dash?: 'solid' | 'dashed' | 'dotted';
 }
 
 // Legacy type aliases for backward compatibility

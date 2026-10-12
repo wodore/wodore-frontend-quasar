@@ -6,13 +6,22 @@
  * Supports multiple rendering modes for symbols and geometric shapes.
  */
 
-import type { LegendSection } from '@stores/map/overlay-configs/types';
+import type { LegendItem, LegendSection } from '@stores/map/overlay-configs/types';
 
 interface Props {
   section: LegendSection;
 }
 
 defineProps<Props>();
+
+/** Solid swatches paint the background; dashed/dotted swatches paint a
+ * repeating gradient of the item color (currentColor of the wrapper). */
+function dashStyle(item: LegendItem): Record<string, string> {
+  if (!item.dash || item.dash === 'solid') {
+    return { backgroundColor: item.color || '#000' };
+  }
+  return { color: item.color || '#000' };
+}
 </script>
 
 <template>
@@ -67,9 +76,14 @@ defineProps<Props>();
             </div>
           </template>
 
-          <!-- Line: Colored line -->
+          <!-- Line: Colored line (solid, dashed or dotted — dash encodes
+               difficulty for overlays like hiking) -->
           <template v-else-if="section.type === 'line'">
-            <div class="line-indicator" :style="{ backgroundColor: item.color || '#000' }" />
+            <div
+              class="line-indicator"
+              :class="item.dash && item.dash !== 'solid' ? `line-indicator--${item.dash}` : ''"
+              :style="dashStyle(item)"
+            />
           </template>
 
           <!-- Area: Colored rectangle -->
@@ -124,6 +138,17 @@ defineProps<Props>();
   width: 40px;
   height: 3px;
   border-radius: 1.5px;
+}
+
+.line-indicator--dashed {
+  background: repeating-linear-gradient(to right, currentColor 0 6px, transparent 6px 10px);
+}
+
+.line-indicator--dotted {
+  background-image: radial-gradient(circle, currentColor 1.5px, transparent 1.6px);
+  background-size: 7px 3px;
+  background-repeat: repeat-x;
+  background-position: center;
 }
 
 .area-indicator {

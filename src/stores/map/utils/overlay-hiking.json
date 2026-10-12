@@ -1,0 +1,411 @@
+[
+  {
+    "id": "wd-hiking-easy",
+    "type": "line",
+    "source": "mtk",
+    "source-layer": "road",
+    "minzoom": 6,
+    "metadata": {
+      "wd:tier": "easy",
+      "wd:legend": "hiking.wanderweg"
+    },
+    "filter": [
+      "all",
+      ["match", ["get", "walking_network"], ["iwn", "nwn", "rwn", "lwn"], true, false],
+      ["any", ["!", ["has", "sac_scale"]], ["==", ["get", "sac_scale"], "T1"]],
+      ["!=", ["get", "type"], "via_ferrata"]
+    ],
+    "layout": {
+      "line-cap": "round",
+      "line-join": "round"
+    },
+    "paint": {
+      "line-color": "#fdc200",
+      "line-width": [
+        "interpolate",
+        ["linear"],
+        ["zoom"],
+        7,
+        0.75,
+        8,
+        0.95,
+        9,
+        1.2,
+        10,
+        1.5,
+        11,
+        2,
+        12,
+        2.6,
+        13,
+        3.3,
+        15,
+        4.2,
+        16,
+        4.8,
+        20,
+        9
+      ],
+      "line-opacity": [
+        "interpolate",
+        ["linear"],
+        ["zoom"],
+        6.2,
+        0,
+        7,
+        ["match", ["get", "walking_network"], ["iwn", "nwn", "rwn"], 0.7, 0],
+        7.8,
+        ["match", ["get", "walking_network"], ["lwn"], 0.7, 0.9],
+        10,
+        0.95,
+        14,
+        0.95,
+        17,
+        0.85
+      ]
+    }
+  },
+  {
+    "id": "wd-hiking-mountain-dashed",
+    "type": "line",
+    "source": "mtk",
+    "source-layer": "road",
+    "minzoom": 6,
+    "metadata": {
+      "wd:tier": "mountain",
+      "wd:legend": "hiking.bergwanderweg"
+    },
+    "filter": [
+      "all",
+      ["match", ["get", "walking_network"], ["iwn", "nwn", "rwn", "lwn"], true, false],
+      ["==", ["get", "sac_scale"], "T2"]
+    ],
+    "layout": {
+      "line-cap": "butt",
+      "line-join": "round"
+    },
+    "paint": {
+      "line-color": "#ff0000",
+      "line-dasharray": [3, 2],
+      "line-width": [
+        "interpolate",
+        ["linear"],
+        ["zoom"],
+        7,
+        0.75,
+        8,
+        0.95,
+        9,
+        1.2,
+        10,
+        1.5,
+        11,
+        2,
+        12,
+        2.6,
+        13,
+        3.3,
+        15,
+        4.2,
+        16,
+        4.8,
+        20,
+        9
+      ],
+      "line-opacity": [
+        "interpolate",
+        ["linear"],
+        ["zoom"],
+        6.2,
+        0,
+        7,
+        ["match", ["get", "walking_network"], ["iwn", "nwn", "rwn"], 0.7, 0],
+        7.8,
+        ["match", ["get", "walking_network"], ["lwn"], 0.7, 0.9],
+        10,
+        0.95,
+        14,
+        0.95,
+        17,
+        0.85
+      ]
+    }
+  },
+  {
+    "id": "wd-hiking-mountain-sparse",
+    "type": "line",
+    "source": "mtk",
+    "source-layer": "road",
+    "minzoom": 6,
+    "metadata": {
+      "wd:tier": "mountain",
+      "wd:legend": "hiking.bergwanderweg"
+    },
+    "filter": [
+      "all",
+      ["match", ["get", "walking_network"], ["iwn", "nwn", "rwn", "lwn"], true, false],
+      ["==", ["get", "sac_scale"], "T3"]
+    ],
+    "layout": {
+      "line-cap": "butt",
+      "line-join": "round"
+    },
+    "paint": {
+      "line-color": "#ff0000",
+      "line-dasharray": [2, 2.5],
+      "line-width": [
+        "interpolate",
+        ["linear"],
+        ["zoom"],
+        7,
+        0.75,
+        8,
+        0.95,
+        9,
+        1.2,
+        10,
+        1.5,
+        11,
+        2,
+        12,
+        2.6,
+        13,
+        3.3,
+        15,
+        4.2,
+        16,
+        4.8,
+        20,
+        9
+      ],
+      "line-opacity": [
+        "interpolate",
+        ["linear"],
+        ["zoom"],
+        6.2,
+        0,
+        7,
+        ["match", ["get", "walking_network"], ["iwn", "nwn", "rwn"], 0.7, 0],
+        7.8,
+        ["match", ["get", "walking_network"], ["lwn"], 0.7, 0.9],
+        10,
+        0.95,
+        14,
+        0.95,
+        17,
+        0.85
+      ]
+    }
+  },
+  {
+    "id": "wd-hiking-alpine-dashed",
+    "type": "line",
+    "source": "mtk",
+    "source-layer": "road",
+    "minzoom": 6,
+    "metadata": {
+      "wd:tier": "alpine",
+      "wd:legend": "hiking.alpinwanderweg"
+    },
+    "filter": [
+      "all",
+      ["match", ["get", "walking_network"], ["iwn", "nwn", "rwn", "lwn"], true, false],
+      ["==", ["get", "sac_scale"], "T4"]
+    ],
+    "layout": {
+      "line-cap": "butt",
+      "line-join": "round"
+    },
+    "paint": {
+      "line-color": "#0000ff",
+      "line-dasharray": [1.5, 3],
+      "line-width": [
+        "interpolate",
+        ["linear"],
+        ["zoom"],
+        7,
+        0.75,
+        8,
+        0.95,
+        9,
+        1.2,
+        10,
+        1.5,
+        11,
+        2,
+        12,
+        2.6,
+        13,
+        3.3,
+        15,
+        4.2,
+        16,
+        4.8,
+        20,
+        9
+      ],
+      "line-opacity": [
+        "interpolate",
+        ["linear"],
+        ["zoom"],
+        6.2,
+        0,
+        7,
+        ["match", ["get", "walking_network"], ["iwn", "nwn", "rwn"], 0.7, 0],
+        7.8,
+        ["match", ["get", "walking_network"], ["lwn"], 0.7, 0.9],
+        10,
+        0.95,
+        14,
+        0.95,
+        17,
+        0.85
+      ]
+    }
+  },
+  {
+    "id": "wd-hiking-alpine-dots",
+    "type": "line",
+    "source": "mtk",
+    "source-layer": "road",
+    "minzoom": 6,
+    "metadata": {
+      "wd:tier": "alpine",
+      "wd:legend": "hiking.alpinwanderweg_extreme"
+    },
+    "filter": [
+      "all",
+      ["match", ["get", "walking_network"], ["iwn", "nwn", "rwn", "lwn"], true, false],
+      [
+        "any",
+        ["in", ["get", "sac_scale"], ["literal", ["T5", "T6"]]],
+        ["==", ["get", "type"], "via_ferrata"]
+      ]
+    ],
+    "layout": {
+      "line-cap": "round",
+      "line-join": "round"
+    },
+    "paint": {
+      "line-color": "#0000ff",
+      "line-dasharray": [0.1, 2],
+      "line-width": [
+        "interpolate",
+        ["linear"],
+        ["zoom"],
+        7,
+        0.75,
+        8,
+        0.95,
+        9,
+        1.2,
+        10,
+        1.5,
+        11,
+        2,
+        12,
+        2.6,
+        13,
+        3.3,
+        15,
+        4.2,
+        16,
+        4.8,
+        20,
+        9
+      ],
+      "line-opacity": [
+        "interpolate",
+        ["linear"],
+        ["zoom"],
+        6.2,
+        0,
+        7,
+        ["match", ["get", "walking_network"], ["iwn", "nwn", "rwn"], 0.7, 0],
+        7.8,
+        ["match", ["get", "walking_network"], ["lwn"], 0.7, 0.9],
+        10,
+        0.95,
+        14,
+        0.95,
+        17,
+        0.85
+      ]
+    }
+  },
+  {
+    "id": "wd-hiking-name",
+    "type": "symbol",
+    "source": "mtk",
+    "source-layer": "road_label",
+    "minzoom": 12,
+    "metadata": {
+      "wd:tier": "label"
+    },
+    "filter": ["in", ["get", "network"], ["literal", ["iwn", "nwn", "rwn", "lwn"]]],
+    "layout": {
+      "symbol-placement": "line",
+      "symbol-spacing": ["interpolate", ["linear"], ["zoom"], 10, 120, 19, 500],
+      "symbol-sort-key": ["match", ["get", "network"], "iwn", 1, "nwn", 2, "rwn", 3, 4],
+      "text-field": ["get", "name"],
+      "text-font": ["Barlow Italic", "Noto Sans Italic"],
+      "text-size": ["interpolate", ["linear"], ["zoom"], 12, 10, 16, 13],
+      "text-padding": 8,
+      "text-pitch-alignment": "viewport"
+    },
+    "paint": {
+      "text-color": "#262626",
+      "text-halo-color": "rgba(242, 247, 244, 0.9)",
+      "text-halo-width": 1.2,
+      "text-opacity": ["interpolate", ["linear"], ["zoom"], 12, 0, 12.5, 1]
+    }
+  },
+  {
+    "id": "wd-hiking-shield",
+    "type": "symbol",
+    "source": "mtk",
+    "source-layer": "road_label",
+    "minzoom": 11,
+    "metadata": {
+      "wd:tier": "shield"
+    },
+    "filter": [
+      "all",
+      ["==", ["geometry-type"], "LineString"],
+      ["has", "ref"],
+      ["in", ["get", "network"], ["literal", ["iwn", "nwn", "rwn", "lwn"]]]
+    ],
+    "layout": {
+      "symbol-placement": "line",
+      "symbol-spacing": ["interpolate", ["linear"], ["zoom"], 10, 140, 19, 600],
+      "symbol-sort-key": ["match", ["get", "network"], "iwn", 1, "nwn", 2, "rwn", 3, 4],
+      "icon-image": "sdf:square",
+      "icon-text-fit": "both",
+      "icon-text-fit-padding": [
+        "interpolate",
+        ["linear"],
+        ["zoom"],
+        11,
+        ["literal", [2.5, 6, 2.5, 6]],
+        16,
+        ["literal", [3, 8, 3, 8]]
+      ],
+      "icon-optional": true,
+      "text-field": ["get", "ref"],
+      "text-font": ["Barlow Semi Condensed SemiBold", "Noto Sans Bold"],
+      "text-size": ["interpolate", ["linear"], ["zoom"], 11, 10, 16, 13],
+      "text-padding": 6,
+      "text-pitch-alignment": "viewport",
+      "text-rotation-alignment": "viewport",
+      "icon-rotation-alignment": "viewport"
+    },
+    "paint": {
+      "text-color": "#1C1C1C",
+      "icon-color": "#fdc200",
+      "icon-halo-color": "#FFFFFF",
+      "icon-halo-width": 1.25,
+      "text-opacity": ["interpolate", ["linear"], ["zoom"], 11, 0, 11.7, 1],
+      "icon-opacity": ["interpolate", ["linear"], ["zoom"], 11, 0, 11.7, 1]
+    }
+  }
+]

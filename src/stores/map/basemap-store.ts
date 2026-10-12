@@ -7,7 +7,7 @@ import { useMap } from '@indoorequal/vue-maplibre-gl';
 import { storageGet, storageSet } from '@services/storage';
 import { getGPUTier } from '@pmndrs/detect-gpu';
 import { useOverlayStore } from './overlay-store';
-import { withOverlayMinZoom, GLOBE_SKY } from './utils/map-constants';
+import { withOverlayMinZoom } from './utils/map-constants';
 import {
   withCountryFallback,
   isCenterInBbox,
@@ -471,7 +471,7 @@ export const useBasemapStore = defineStore('basemap', () => {
         const customLayersWithVisibility = customLayers.map(layer => {
           const visibility = layerVisibilityMap[layer.id];
 
-          // World/globe view: clamp overlay layers to the zoom floor (see
+          // Far zoomed-out view: clamp overlay layers to the zoom floor (see
           // map-constants.ts — same clamp as addOverlayLayer at runtime)
           layer = withOverlayMinZoom(layer) as typeof layer;
 
@@ -583,15 +583,13 @@ export const useBasemapStore = defineStore('basemap', () => {
           console.warn(
             '[transformStyle] No current basemap found, appending all custom layers at end'
           );
-          // Same composition as the main path below (globe projection +
-          // sky carried, pinned asset URLs) — this branch is the
+          // Same composition as the main path below (pinned asset
+          // URLs) — this branch is the
           // FIRST-apply path during startup (no active flags yet), so it
           // must not diverge from later basemap switches. The DEFAULT
           // outdoor basemap is the world fallback; no raster underlay.
           const fallbackComposed: StyleSpecification = {
             ...nextStyle,
-            projection: { type: 'globe' },
-            sky: GLOBE_SKY,
             sources: { ...nextStyle.sources, ...customSources },
             layers: [...nextStyle.layers, ...customLayers],
             sprite: nextStyle.sprite
@@ -614,6 +612,7 @@ export const useBasemapStore = defineStore('basemap', () => {
         // Group custom layers by their onLayer property using overlay store
         // This is generic - reads from overlay definitions instead of hard-coded patterns
         const backgroundLayers: import('maplibre-gl').LayerSpecification[] = [];
+        const routesLayers: import('maplibre-gl').LayerSpecification[] = [];
         const waysLayers: import('maplibre-gl').LayerSpecification[] = [];
         const placesLayers: import('maplibre-gl').LayerSpecification[] = [];
         const otherLayers: import('maplibre-gl').LayerSpecification[] = [];
@@ -632,6 +631,8 @@ export const useBasemapStore = defineStore('basemap', () => {
 
           if (onLayer === 'background') {
             backgroundLayers.push(layer);
+          } else if (onLayer === 'routes') {
+            routesLayers.push(layer);
           } else if (onLayer === 'ways') {
             waysLayers.push(layer);
           } else if (onLayer === 'places') {
@@ -654,10 +655,12 @@ export const useBasemapStore = defineStore('basemap', () => {
         );
 
         // Insert layers in correct order based on basemap configuration
-        // Order: background layers → basemap layers → ways layers → places
-        // layers (under high-ranked town labels when the basemap declares an
-        // anchor) → other layers (always on top)
+        // Order: background layers → basemap layers → routes layers (under
+        // ALL labels/POIs when the basemap declares an anchor) → ways
+        // layers → places layers (under high-ranked town labels) → other
+        // layers (always on top)
         insertLayersBefore(backgroundLayers, currentBasemap.layers.background.before, 'background');
+        insertLayersBefore(routesLayers, currentBasemap.layers.routes?.before, 'routes');
         insertLayersBefore(waysLayers, currentBasemap.layers.ways.before, 'ways');
         insertLayersBefore(placesLayers, currentBasemap.layers.places?.before, 'places');
         insertLayersBefore(otherLayers, undefined, 'other');
@@ -680,13 +683,6 @@ export const useBasemapStore = defineStore('basemap', () => {
         // No raster underlay — wd-outdoor is the single gap-filler.
         const transformedStyle: StyleSpecification = {
           ...nextStyle,
-          // World coverage: carry the globe projection across basemap
-          // switches (WdMapView sets it on initial load; without this the
-          // next style would silently revert to mercator)
-          projection: { type: 'globe' },
-          // Dark space around the globe (WdMapView sets it on initial
-          // load; same persistence rationale as the projection)
-          sky: GLOBE_SKY,
           sources: { ...nextStyle.sources, ...customSources },
           layers: orderedLayers,
           sprite: finalSprite,
@@ -905,6 +901,8 @@ export const useBasemapStore = defineStore('basemap', () => {
         layers: {
           ways: { before: useRaster ? undefined : 'Other place labels' },
           background: { before: useRaster ? undefined : 'Building line' },
+          // routes under the OSM-style label stack
+          routes: { before: useRaster ? undefined : 'Other place labels' },
         },
       },
       {
@@ -966,8 +964,13 @@ export const useBasemapStore = defineStore('basemap', () => {
           });
         },
         layers: {
+          // #269 replaced the old OSM-style satellite hybrid (Tunnel/State
+          // labels anchors) with merged world layers — no stable label-layer
+          // ids to anchor against, so routes degrade to top here (the mtk
+          // default basemap carries the proper under-labels anchor).
           ways: { before: undefined },
           background: { before: undefined },
+          routes: { before: undefined },
         },
       },
       {
@@ -992,6 +995,10 @@ export const useBasemapStore = defineStore('basemap', () => {
           // class and above) but above hamlet/alp labels (rank ≥ 14). The
           // mtk style stacks place_point_label_rank_5..1, last on top.
           places: { before: 'place_point_label_rank_2' },
+          // Route lines (hiking/cycling) render under EVERY symbol layer
+          // (wd-station-label is the style's first) — above paths/roads,
+          // behind all labels and POI icons.
+          routes: { before: 'wd-station-label' },
         },
       },
       {

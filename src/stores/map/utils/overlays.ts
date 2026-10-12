@@ -3,6 +3,7 @@ import { getRasterStyle, getSwisstopoOverlay } from './raster';
 import { OverlaySwitchItem } from './interfaces';
 import { transportStyle } from './overlay-transport';
 import { hutsStyle } from './overlay-huts';
+import { hikingStyle } from './overlay-hiking';
 import { i18n } from '@services/locale';
 
 /**
@@ -469,13 +470,19 @@ export const createSkislopes = (): OverlaySwitchItem => ({
     },
   },
 });
+/** Global hiking routes from the Maptoolkit vector tiles (OSM walking
+ * networks, Swiss trail color code, difficulty as dash/dot grammar —
+ * see overlay-hiking.ts). */
 export const createHiking = (): OverlaySwitchItem => ({
-  ...getSwisstopoOverlay({
-    name: 'ch.swisstopo.swisstlm3d-wanderwege',
-    label: t('overlays.hiking.label'),
-    icon: 'hiking',
-    opacity: opacityLevels({ zoomOut: 0.4, zoomMain: 0.9, zoomIn: 0.7 }),
-  }),
+  name: 'hiking',
+  label: t('overlays.hiking.label'),
+  onLayer: 'routes',
+  show: true,
+  active: false,
+  icon: 'hiking',
+  // Opacity is self-managed inside the layer paint (zoom + network
+  // fades) — no overlay-level opacity expression.
+  style: hikingStyle,
 
   config: {
     legend: {
@@ -490,6 +497,7 @@ export const createHiking = (): OverlaySwitchItem => ({
               description: t('overlays.hiking.wanderweg_desc'),
               identifier: 'hiking.wanderweg',
               color: '#fdc200',
+              dash: 'solid',
             },
             {
               slug: 'bergwanderweg',
@@ -497,12 +505,169 @@ export const createHiking = (): OverlaySwitchItem => ({
               description: t('overlays.hiking.bergwanderweg_desc'),
               identifier: 'hiking.bergwanderweg',
               color: '#ff0000',
+              dash: 'dashed',
             },
             {
               slug: 'alpinwanderweg',
               name: t('overlays.hiking.alpinwanderweg'),
               description: t('overlays.hiking.alpinwanderweg_desc'),
               identifier: 'hiking.alpinwanderweg',
+              color: '#0000ff',
+              dash: 'dashed',
+            },
+            {
+              slug: 'alpinwanderweg_extreme',
+              name: t('overlays.hiking.alpinwanderweg_extreme'),
+              description: t('overlays.hiking.alpinwanderweg_extreme_desc'),
+              identifier: 'hiking.alpinwanderweg_extreme',
+              color: '#0000ff',
+              dash: 'dotted',
+            },
+          ],
+          type: 'line',
+          items: [],
+        },
+      ],
+      links: [
+        {
+          name: t('overlays.hiking.link_wanderland'),
+          url: 'https://www.schweizmobil.ch/de/wanderland.html',
+        },
+        {
+          name: t('overlays.hiking.link_sac_scale'),
+          url: 'https://www.sac-cas.ch/de/huetten-und-touren/sac-tourenportal/schwierigkeitsskala/',
+        },
+      ],
+      attribution: [
+        {
+          name: t('overlays.hiking.attr_osm'),
+          url: 'https://www.openstreetmap.org/copyright',
+        },
+        {
+          name: t('overlays.hiking.attr_mtk'),
+          url: 'https://www.maptoolkit.org',
+        },
+      ],
+    },
+  },
+});
+
+/** Signed hiking routes worldwide as RASTER overlay from Waymarked
+ * Trails (same OSM route relations, their own coloring by network).
+ * Complements the vector overlay: independent of mtk tile
+ * generalization, so it also covers regions where the vector source
+ * carries networks late (e.g. remote areas). Usage terms (help →
+ * Legal): moderate rates, cache tiles, attribution required. */
+export const createHikingWaymarked = (): OverlaySwitchItem => ({
+  name: 'hiking-routes',
+  label: t('overlays.hiking_routes.label'),
+  opacity: opacityLevels({ zoomOut: 0.6, zoomMain: 0.9, zoomIn: 0.7 }),
+  icon: 'hiking',
+  onLayer: 'routes',
+  show: true,
+  style: getRasterStyle({
+    name: 'hiking-routes',
+    tiles: ['https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png'],
+  }),
+
+  config: {
+    legend: {
+      sections: [
+        {
+          title: t('overlays.hiking_routes.legend_title'),
+          description: t('overlays.hiking_routes.desc'),
+          category: [
+            {
+              slug: 'routes',
+              name: t('overlays.hiking_routes.legend_routes'),
+              description: t('overlays.hiking_routes.legend_routes_desc'),
+              identifier: 'hiking-routes.routes',
+              // dominant route red sampled from live tiles — actual route
+              // colors vary: they follow each route's local marking
+              color: '#cc1f0c',
+            },
+          ],
+          type: 'line',
+          items: [],
+        },
+        {
+          title: t('overlays.hiking_routes.legend_guideposts'),
+          description: t('overlays.hiking_routes.legend_guideposts_desc'),
+          category: [
+            {
+              slug: 'guideposts',
+              name: t('overlays.hiking_routes.legend_guideposts'),
+              description: '',
+              identifier: 'hiking-routes.guideposts',
+              color: '#795548',
+            },
+          ],
+          type: 'point',
+          items: [],
+        },
+      ],
+      links: [
+        {
+          name: t('overlays.hiking_routes.link'),
+          url: 'https://hiking.waymarkedtrails.org/',
+        },
+      ],
+      attribution: [
+        {
+          name: 'OpenStreetMap',
+          url: 'https://www.openstreetmap.org/copyright',
+        },
+        {
+          name: 'Waymarked Trails',
+          url: 'https://hiking.waymarkedtrails.org/',
+        },
+      ],
+    },
+  },
+});
+
+/** Swiss national hiking trails (swisstopo raster) — Switzerland only.
+ * Kept OUT of the default hiking group (the group rides the global
+ * layers); available under "All layers" for the reference/CH case. */
+export const createHikingSwiss = (): OverlaySwitchItem => ({
+  ...getSwisstopoOverlay({
+    name: 'hiking-swiss',
+    // The WMTS layer identifier — NOT the overlay slug. It used to double
+    // as the overlay name; renaming the slug without this param made the
+    // tile URL request 'hiking-swiss' as the WMTS layer → 400, no tiles.
+    layers: 'ch.swisstopo.swisstlm3d-wanderwege',
+    label: t('overlays.hiking_swiss.label'),
+    icon: 'hiking',
+    opacity: opacityLevels({ zoomOut: 0.4, zoomMain: 0.9, zoomIn: 0.7 }),
+  }),
+  onLayer: 'routes',
+
+  config: {
+    legend: {
+      sections: [
+        {
+          title: t('overlays.hiking.legend_title'),
+          description: t('overlays.hiking_swiss.desc'),
+          category: [
+            {
+              slug: 'wanderweg',
+              name: t('overlays.hiking.wanderweg'),
+              description: t('overlays.hiking_swiss.wanderweg_desc'),
+              identifier: 'hiking-swiss.wanderweg',
+              color: '#fdc200',
+            },
+            {
+              slug: 'bergwanderweg',
+              name: t('overlays.hiking.bergwanderweg'),
+              description: t('overlays.hiking_swiss.bergwanderweg_desc'),
+              identifier: 'hiking-swiss.bergwanderweg',
+              color: '#ff0000',
+            },
+            {
+              slug: 'alpinwanderweg',
+              name: t('overlays.hiking.alpinwanderweg'),
+              description: t('overlays.hiking_swiss.alpinwanderweg_desc'),
+              identifier: 'hiking-swiss.alpinwanderweg',
               color: '#0000ff',
             },
           ],
@@ -665,9 +830,14 @@ export const createMtb = (): OverlaySwitchItem => ({
 
 /** Overlay factories in menu/store order. */
 export const overlayFactories = [
+  // Hiking layers FIRST: within the 'routes' anchor (and on native, where
+  // store order is the z-order) hikes render below huts — waymark at the
+  // bottom, vector above it, Swiss on top when stacked.
+  createHikingWaymarked,
+  createHiking,
+  createHikingSwiss,
   createHuts,
   createPublicTransportStops,
-  createHiking,
   createMtb,
   createCycling,
   createHillslope,

@@ -359,17 +359,38 @@
       "black_desc": "Difficult slopes with steep sections"
     },
     "hiking": {
-      "label": "Hiking trails",
+      "label": "Hiking base",
       "legend_title": "Trail categories",
-      "desc": "Official hiking trail categories by Swisstopo",
+      "desc": "Hiking routes worldwide (OpenStreetMap) in the Swiss color code — the harder the trail, the shorter the dashes; yellow badges show the route number",
       "wanderweg": "Hiking trail",
-      "wanderweg_desc": "Easy trails, suitable for most age groups",
+      "wanderweg_desc": "Easy trails (SAC T1), solid line",
       "bergwanderweg": "Mountain trail",
-      "bergwanderweg_desc": "More demanding routes, may include steep slopes or suspension bridges",
+      "bergwanderweg_desc": "Mountain trails (SAC T2–T3), dashed line",
       "alpinwanderweg": "Alpine trail",
-      "alpinwanderweg_desc": "Most difficult routes, alpine experience and equipment required",
+      "alpinwanderweg_desc": "Alpine trails (SAC T4), finely dashed line",
+      "alpinwanderweg_extreme": "Demanding alpine trail",
+      "alpinwanderweg_extreme_desc": "Alpine trails (SAC T5–T6) and via ferratas, dotted line",
       "link_wanderland": "Switzerland hiking network",
-      "link_sac_scale": "SAC hiking scale"
+      "link_sac_scale": "SAC hiking scale",
+      "attr_osm": "OpenStreetMap contributors",
+      "attr_mtk": "Maptoolkit"
+    },
+    "hiking_routes": {
+      "label": "Hiking",
+      "desc": "Sign-posted hiking routes worldwide from OpenStreetMap — colors follow local trail markings, with route numbers and guideposts",
+      "legend_title": "Routes",
+      "legend_routes": "Hiking routes",
+      "legend_routes_desc": "Colored by local trail marking (e.g. red, blue, yellow) — varies by region",
+      "legend_guideposts": "Guideposts",
+      "legend_guideposts_desc": "Named signposts along the routes",
+      "link": "Waymarked Trails Hiking"
+    },
+    "hiking_swiss": {
+      "label": "Hiking CH",
+      "desc": "Official Swiss hiking trail categories by Swisstopo — Switzerland only",
+      "wanderweg_desc": "Easy trails (SAC T1)",
+      "bergwanderweg_desc": "More demanding routes (SAC T2–T3)",
+      "alpinwanderweg_desc": "Most difficult routes (SAC T4–T6)"
     },
     "cycling": {
       "label": "Cycling",
