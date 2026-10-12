@@ -361,7 +361,7 @@
     "hiking": {
       "label": "Hiking trails",
       "legend_title": "Trail categories",
-      "desc": "Hiking routes worldwide (OpenStreetMap) in the Swiss color code — the harder the trail, the shorter the dashes",
+      "desc": "Hiking routes worldwide (OpenStreetMap) in the Swiss color code — the harder the trail, the shorter the dashes; yellow badges show the route number",
       "wanderweg": "Hiking trail",
       "wanderweg_desc": "Easy trails (SAC T1), solid line",
       "bergwanderweg": "Mountain trail",

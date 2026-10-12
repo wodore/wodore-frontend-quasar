@@ -119,6 +119,32 @@ describe('overlay-hiking', () => {
     expect(shield.layout['icon-optional']).toBe(true);
   });
 
+  it('shows routes early but calm: rwn from z7, lwn from z8, thin at country zoom', () => {
+    const easy = hikingLayersJson.find(l => l.id === 'wd-hiking-easy')!;
+    const opacity = JSON.stringify(easy.paint['line-opacity']);
+    // z7.6 stop: international + national + REGIONAL visible, local still 0
+    expect(opacity).toContain('["iwn","nwn","rwn"],0.6,0');
+    // z8.6 stop: local joins slightly fainter (0.75) than the rest (0.9)
+    expect(opacity).toContain('["lwn"],0.75,0.9');
+    // thin threads at country zoom growing to the full ribbon
+    const width = easy.paint['line-width'];
+    const z7 = width[width.indexOf(7) + 1];
+    const z13 = width[width.indexOf(13) + 1];
+    expect(z7).toBeLessThanOrEqual(0.8);
+    expect(z13).toBeGreaterThanOrEqual(3);
+  });
+
+  it('route-number badges (Wanderland Routenfeld style) only at reading zoom', () => {
+    const shield = hikingLayersJson.find(l => l.id === 'wd-hiking-shield')!;
+    // yellow badge, upright along the line, from hiking zoom — earlier it
+    // floats without context (mapy.cz / SchweizMobil show numbers only
+    // when the trail mesh is distinguishable)
+    expect(shield.minzoom).toBeGreaterThanOrEqual(11);
+    expect(shield.layout['symbol-placement']).toBe('line');
+    expect(shield.layout['icon-rotation-alignment']).toBe('viewport');
+    expect(shield.paint['icon-color']).toBe('#fdc200');
+  });
+
   it('composes a valid style for the overlay switch', () => {
     expect(hikingStyle.version).toBe(8);
     expect(hikingStyle.name).toBe('hiking');

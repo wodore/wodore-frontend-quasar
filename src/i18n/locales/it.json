@@ -361,7 +361,7 @@
     "hiking": {
       "label": "Sentieri",
       "legend_title": "Categorie dei sentieri",
-      "desc": "Itinerari escursionistici in tutto il mondo (OpenStreetMap) secondo il codice colore svizzero — quanto più è difficile, tanto più corti sono i trattini",
+      "desc": "Itinerari escursionistici in tutto il mondo (OpenStreetMap) secondo il codice colore svizzero — quanto più è difficile, tanto più corti sono i trattini; le targhette gialle indicano il numero dell'itinerario",
       "wanderweg": "Sentiero escursionistico",
       "wanderweg_desc": "Sentieri facili (CAS T1), linea continua",
       "bergwanderweg": "Sentiero di montagna",

@@ -361,7 +361,7 @@
     "hiking": {
       "label": "Wanderwege",
       "legend_title": "Wegkategorien",
-      "desc": "Wanderrouten weltweit (OpenStreetMap) in der Schweizer Farbcode-Skala — je schwieriger, desto kürzer die Strichelung",
+      "desc": "Wanderrouten weltweit (OpenStreetMap) in der Schweizer Farbcode-Skala — je schwieriger, desto kürzer die Strichelung; gelbe Tafeln zeigen die Routennummer",
       "wanderweg": "Wanderweg",
       "wanderweg_desc": "Leichte Wege (SAC T1), durchgezogene Linie",
       "bergwanderweg": "Bergwanderweg",

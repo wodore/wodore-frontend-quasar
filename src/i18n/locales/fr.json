@@ -361,7 +361,7 @@
     "hiking": {
       "label": "Sentiers de randonnée",
       "legend_title": "Catégories de sentiers",
-      "desc": "Itinéraires de randonnée dans le monde (OpenStreetMap) selon le code couleur suisse — plus c'est difficile, plus les tirets sont courts",
+      "desc": "Itinéraires de randonnée dans le monde (OpenStreetMap) selon le code couleur suisse — plus c'est difficile, plus les tirets sont courts ; les écussons jaunes indiquent le numéro d'itinéraire",
       "wanderweg": "Sentier de randonnée",
       "wanderweg_desc": "Sentiers faciles (CAS T1), ligne continue",
       "bergwanderweg": "Sentier de montagne",
