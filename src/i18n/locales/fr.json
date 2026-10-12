@@ -375,6 +375,11 @@
       "attr_osm": "Contributeurs OpenStreetMap",
       "attr_mtk": "Maptoolkit"
     },
+    "hiking_routes": {
+      "label": "Itinéraires de randonnée (Waymarked Trails)",
+      "desc": "Itinéraires de randonnée balisés dans le monde (OpenStreetMap), rendus par Waymarked Trails — complément indépendant des sentiers vectoriels, avec une coloration propre par réseau d'itinéraire",
+      "link": "Waymarked Trails Randonnée"
+    },
     "cycling": {
       "label": "Vélo",
       "desc": "Itinéraires vélo d’OpenStreetMap, affichés via Waymarked Trails",

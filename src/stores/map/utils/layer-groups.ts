@@ -35,6 +35,7 @@ const SLUGS = {
   // Was 'ch.swisstopo.swisstlm3d-wanderwege' (Swiss raster overlay) —
   // renamed when hiking went global on Maptoolkit vector tiles.
   hiking: 'hiking',
+  hikingRoutes: 'hiking-routes',
   mtb: 'mtb',
   cycling: 'cycling',
   slopeAngle: 'ch.swisstopo.hangneigung-ueber_30',
@@ -73,7 +74,7 @@ export function createDefaultGroups(): LayerGroup[] {
       name: 'overlays.groups.hiking.name',
       // Backend icon library (Fluent Emoji) — openspec: icon-library
       icon: 'fluent-emoji/hiking-boot',
-      layerSlugs: [SLUGS.huts, SLUGS.hiking, SLUGS.nature, SLUGS.transport],
+      layerSlugs: [SLUGS.huts, SLUGS.hiking, SLUGS.hikingRoutes, SLUGS.nature, SLUGS.transport],
       activeLayerSlugs: [SLUGS.huts],
       hidden: false,
       removed: false,

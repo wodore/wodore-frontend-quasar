@@ -375,6 +375,11 @@
       "attr_osm": "Contributori OpenStreetMap",
       "attr_mtk": "Maptoolkit"
     },
+    "hiking_routes": {
+      "label": "Itinerari escursionistici (Waymarked Trails)",
+      "desc": "Itinerari escursionistici segnalati in tutto il mondo (OpenStreetMap), resi da Waymarked Trails — complemento indipendente ai sentieri vettoriali, con una colorazione propria per rete di itinerario",
+      "link": "Waymarked Trails Escursionismo"
+    },
     "cycling": {
       "label": "Bicicletta",
       "desc": "Itinerari in bici da OpenStreetMap, mostrati via Waymarked Trails",

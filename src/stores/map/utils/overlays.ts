@@ -552,6 +552,53 @@ export const createHiking = (): OverlaySwitchItem => ({
   },
 });
 
+/** Signed hiking routes worldwide as RASTER overlay from Waymarked
+ * Trails (same OSM route relations, their own coloring by network).
+ * Complements the vector overlay: independent of mtk tile
+ * generalization, so it also covers regions where the vector source
+ * carries networks late (e.g. remote areas). Usage terms (help →
+ * Legal): moderate rates, cache tiles, attribution required. */
+export const createHikingWaymarked = (): OverlaySwitchItem => ({
+  name: 'hiking-routes',
+  label: t('overlays.hiking_routes.label'),
+  opacity: opacityLevels({ zoomOut: 0.6, zoomMain: 0.9, zoomIn: 0.7 }),
+  icon: 'hiking',
+  onLayer: 'ways',
+  show: true,
+  style: getRasterStyle({
+    name: 'hiking-routes',
+    tiles: ['https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png'],
+  }),
+
+  config: {
+    legend: {
+      sections: [
+        {
+          title: t('overlays.info'),
+          description: t('overlays.hiking_routes.desc'),
+          items: [],
+        },
+      ],
+      links: [
+        {
+          name: t('overlays.hiking_routes.link'),
+          url: 'https://hiking.waymarkedtrails.org/',
+        },
+      ],
+      attribution: [
+        {
+          name: 'OpenStreetMap',
+          url: 'https://www.openstreetmap.org/copyright',
+        },
+        {
+          name: 'Waymarked Trails',
+          url: 'https://hiking.waymarkedtrails.org/',
+        },
+      ],
+    },
+  },
+});
+
 //export const createHikingSwiss = (): OverlaySwitchItem => ({
 //  ...getSwisstopoOverlay({
 //    name: 'ch.swisstopo.swisstlm3d-wanderwege',
@@ -751,6 +798,7 @@ export const overlayFactories = [
   createHuts,
   createPublicTransportStops,
   createHiking,
+  createHikingWaymarked,
   createMtb,
   createCycling,
   createHillslope,

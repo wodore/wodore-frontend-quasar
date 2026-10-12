@@ -375,6 +375,11 @@
       "attr_osm": "OpenStreetMap-Mitwirkende",
       "attr_mtk": "Maptoolkit"
     },
+    "hiking_routes": {
+      "label": "Wander-Routen (Waymarked Trails)",
+      "desc": "Beschilderte Wander-Routen weltweit (OpenStreetMap), gerendert von Waymarked Trails – unabhängige Ergänzung zu den Vektor-Wanderwegen, eigene Farbgebung nach Routennetz",
+      "link": "Waymarked Trails Hiking"
+    },
     "cycling": {
       "label": "Fahrrad",
       "desc": "Fahrradrouten aus OpenStreetMap, angezeigt über Waymarked Trails",

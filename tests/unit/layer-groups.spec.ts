@@ -21,6 +21,7 @@ const mockOverlays = [
   makeOverlay('huts', true),
   makeOverlay('transport-stops'),
   makeOverlay('hiking'),
+  makeOverlay('hiking-routes'),
   makeOverlay('mtb'),
   makeOverlay('cycling'),
   makeOverlay('ch.swisstopo.hangneigung-ueber_30'),
@@ -126,7 +127,7 @@ describe('layer-groups', () => {
       const groups = createDefaultGroups();
       const hiking = groups.find(g => g.slug === 'hiking')!;
       const layers = getGroupLayers(hiking, mockOverlays);
-      expect(layers.length).toBe(4); // huts, hiking, nature, transport
+      expect(layers.length).toBe(5); // huts, hiking, hiking-routes, nature, transport
       expect(layers.map(l => l.name)).toContain('huts');
     });
 
