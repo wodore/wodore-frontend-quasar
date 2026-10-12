@@ -599,6 +599,7 @@ export const useBasemapStore = defineStore('basemap', () => {
         // Group custom layers by their onLayer property using overlay store
         // This is generic - reads from overlay definitions instead of hard-coded patterns
         const backgroundLayers: import('maplibre-gl').LayerSpecification[] = [];
+        const routesLayers: import('maplibre-gl').LayerSpecification[] = [];
         const waysLayers: import('maplibre-gl').LayerSpecification[] = [];
         const placesLayers: import('maplibre-gl').LayerSpecification[] = [];
         const otherLayers: import('maplibre-gl').LayerSpecification[] = [];
@@ -617,6 +618,8 @@ export const useBasemapStore = defineStore('basemap', () => {
 
           if (onLayer === 'background') {
             backgroundLayers.push(layer);
+          } else if (onLayer === 'routes') {
+            routesLayers.push(layer);
           } else if (onLayer === 'ways') {
             waysLayers.push(layer);
           } else if (onLayer === 'places') {
@@ -639,10 +642,12 @@ export const useBasemapStore = defineStore('basemap', () => {
         );
 
         // Insert layers in correct order based on basemap configuration
-        // Order: background layers → basemap layers → ways layers → places
-        // layers (under high-ranked town labels when the basemap declares an
-        // anchor) → other layers (always on top)
+        // Order: background layers → basemap layers → routes layers (under
+        // ALL labels/POIs when the basemap declares an anchor) → ways
+        // layers → places layers (under high-ranked town labels) → other
+        // layers (always on top)
         insertLayersBefore(backgroundLayers, currentBasemap.layers.background.before, 'background');
+        insertLayersBefore(routesLayers, currentBasemap.layers.routes?.before, 'routes');
         insertLayersBefore(waysLayers, currentBasemap.layers.ways.before, 'ways');
         insertLayersBefore(placesLayers, currentBasemap.layers.places?.before, 'places');
         insertLayersBefore(otherLayers, undefined, 'other');
@@ -890,6 +895,8 @@ export const useBasemapStore = defineStore('basemap', () => {
         layers: {
           ways: { before: useRaster ? undefined : 'Other place labels' },
           background: { before: useRaster ? undefined : 'Building line' },
+          // routes under the OSM-style label stack
+          routes: { before: useRaster ? undefined : 'Other place labels' },
         },
       },
       {
@@ -919,6 +926,7 @@ export const useBasemapStore = defineStore('basemap', () => {
         layers: {
           ways: { before: 'Tunnel' },
           background: { before: 'State labels' },
+          routes: { before: 'Tunnel' },
         },
       },
       {
@@ -943,6 +951,10 @@ export const useBasemapStore = defineStore('basemap', () => {
           // class and above) but above hamlet/alp labels (rank ≥ 14). The
           // mtk style stacks place_point_label_rank_5..1, last on top.
           places: { before: 'place_point_label_rank_2' },
+          // Route lines (hiking/cycling) render under EVERY symbol layer
+          // (wd-station-label is the style's first) — above paths/roads,
+          // behind all labels and POI icons.
+          routes: { before: 'wd-station-label' },
         },
       },
       {

@@ -359,7 +359,7 @@
       "black_desc": "Difficult slopes with steep sections"
     },
     "hiking": {
-      "label": "Hiking trails",
+      "label": "Hiking base",
       "legend_title": "Trail categories",
       "desc": "Hiking routes worldwide (OpenStreetMap) in the Swiss color code — the harder the trail, the shorter the dashes; yellow badges show the route number",
       "wanderweg": "Hiking trail",
@@ -376,12 +376,17 @@
       "attr_mtk": "Maptoolkit"
     },
     "hiking_routes": {
-      "label": "Hiking routes (Waymarked Trails)",
-      "desc": "Sign-posted hiking routes worldwide (OpenStreetMap), rendered by Waymarked Trails — an independent complement to the vector hiking trails with its own coloring by route network",
+      "label": "Waymark",
+      "desc": "Sign-posted hiking routes worldwide from OpenStreetMap — colors follow local trail markings, with route numbers and guideposts",
+      "legend_title": "Routes",
+      "legend_routes": "Hiking routes",
+      "legend_routes_desc": "Colored by local trail marking (e.g. red, blue, yellow) — varies by region",
+      "legend_guideposts": "Guideposts",
+      "legend_guideposts_desc": "Named signposts along the routes",
       "link": "Waymarked Trails Hiking"
     },
     "hiking_swiss": {
-      "label": "Hiking trails CH (swisstopo)",
+      "label": "Hiking CH",
       "desc": "Official Swiss hiking trail categories by Swisstopo — Switzerland only",
       "wanderweg_desc": "Easy trails (SAC T1)",
       "bergwanderweg_desc": "More demanding routes (SAC T2–T3)",

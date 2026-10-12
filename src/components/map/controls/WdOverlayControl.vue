@@ -1248,11 +1248,13 @@ function getOverlaysInRenderOrder(): Array<OverlaySwitchItem> {
   const allOverlays = (overlayStore as any).overlays as Array<OverlaySwitchItem>;
   /* eslint-enable @typescript-eslint/no-explicit-any */
   const backOverlays = allOverlays.slice().filter(v => v.onLayer === 'background');
+  const routesOverlays = allOverlays.slice().filter(v => v.onLayer === 'routes');
   const waysOverlays = allOverlays.slice().filter(v => v.onLayer === 'ways');
   const placesOverlays = allOverlays.slice().filter(v => v.onLayer === 'places');
-  // Bottom-to-top add order: background → ways → places (data overlays such
-  // as huts render above ways/transport).
-  return backOverlays.concat(waysOverlays).concat(placesOverlays);
+  // Bottom-to-top add order: background → routes (hiking lines, under
+  // labels) → ways → places (data overlays such as huts render above
+  // ways/transport).
+  return backOverlays.concat(routesOverlays).concat(waysOverlays).concat(placesOverlays);
 }
 
 function findBeforeLayerId(

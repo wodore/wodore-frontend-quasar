@@ -476,7 +476,7 @@ export const createSkislopes = (): OverlaySwitchItem => ({
 export const createHiking = (): OverlaySwitchItem => ({
   name: 'hiking',
   label: t('overlays.hiking.label'),
-  onLayer: 'ways',
+  onLayer: 'routes',
   show: true,
   active: false,
   icon: 'hiking',
@@ -563,7 +563,7 @@ export const createHikingWaymarked = (): OverlaySwitchItem => ({
   label: t('overlays.hiking_routes.label'),
   opacity: opacityLevels({ zoomOut: 0.6, zoomMain: 0.9, zoomIn: 0.7 }),
   icon: 'hiking',
-  onLayer: 'ways',
+  onLayer: 'routes',
   show: true,
   style: getRasterStyle({
     name: 'hiking-routes',
@@ -574,8 +574,35 @@ export const createHikingWaymarked = (): OverlaySwitchItem => ({
     legend: {
       sections: [
         {
-          title: t('overlays.info'),
+          title: t('overlays.hiking_routes.legend_title'),
           description: t('overlays.hiking_routes.desc'),
+          category: [
+            {
+              slug: 'routes',
+              name: t('overlays.hiking_routes.legend_routes'),
+              description: t('overlays.hiking_routes.legend_routes_desc'),
+              identifier: 'hiking-routes.routes',
+              // dominant route red sampled from live tiles — actual route
+              // colors vary: they follow each route's local marking
+              color: '#cc1f0c',
+            },
+          ],
+          type: 'line',
+          items: [],
+        },
+        {
+          title: t('overlays.hiking_routes.legend_guideposts'),
+          description: t('overlays.hiking_routes.legend_guideposts_desc'),
+          category: [
+            {
+              slug: 'guideposts',
+              name: t('overlays.hiking_routes.legend_guideposts'),
+              description: '',
+              identifier: 'hiking-routes.guideposts',
+              color: '#795548',
+            },
+          ],
+          type: 'point',
           items: [],
         },
       ],
@@ -605,10 +632,15 @@ export const createHikingWaymarked = (): OverlaySwitchItem => ({
 export const createHikingSwiss = (): OverlaySwitchItem => ({
   ...getSwisstopoOverlay({
     name: 'hiking-swiss',
+    // The WMTS layer identifier — NOT the overlay slug. It used to double
+    // as the overlay name; renaming the slug without this param made the
+    // tile URL request 'hiking-swiss' as the WMTS layer → 400, no tiles.
+    layers: 'ch.swisstopo.swisstlm3d-wanderwege',
     label: t('overlays.hiking_swiss.label'),
     icon: 'hiking',
     opacity: opacityLevels({ zoomOut: 0.4, zoomMain: 0.9, zoomIn: 0.7 }),
   }),
+  onLayer: 'routes',
 
   config: {
     legend: {
@@ -798,11 +830,14 @@ export const createMtb = (): OverlaySwitchItem => ({
 
 /** Overlay factories in menu/store order. */
 export const overlayFactories = [
-  createHuts,
-  createPublicTransportStops,
+  // Hiking layers FIRST: within the 'routes' anchor (and on native, where
+  // store order is the z-order) hikes render below huts — waymark at the
+  // bottom, vector above it, Swiss on top when stacked.
   createHikingWaymarked,
   createHiking,
   createHikingSwiss,
+  createHuts,
+  createPublicTransportStops,
   createMtb,
   createCycling,
   createHillslope,

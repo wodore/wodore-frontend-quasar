@@ -359,7 +359,7 @@
       "black_desc": "Schwierige Pisten mit steilen Abschnitten"
     },
     "hiking": {
-      "label": "Wanderwege",
+      "label": "Wanderwege (Basis)",
       "legend_title": "Wegkategorien",
       "desc": "Wanderrouten weltweit (OpenStreetMap) in der Schweizer Farbcode-Skala — je schwieriger, desto kürzer die Strichelung; gelbe Tafeln zeigen die Routennummer",
       "wanderweg": "Wanderweg",
@@ -376,12 +376,17 @@
       "attr_mtk": "Maptoolkit"
     },
     "hiking_routes": {
-      "label": "Wander-Routen (Waymarked Trails)",
-      "desc": "Beschilderte Wander-Routen weltweit (OpenStreetMap), gerendert von Waymarked Trails – unabhängige Ergänzung zu den Vektor-Wanderwegen, eigene Farbgebung nach Routennetz",
+      "label": "Waymark",
+      "desc": "Beschilderte Wander-Routen weltweit aus OpenStreetMap – Farben folgen der lokalen Wegmarkierung, mit Routennummern und Wegweisern",
+      "legend_title": "Routen",
+      "legend_routes": "Wander-Routen",
+      "legend_routes_desc": "Farbe nach lokaler Wegmarkierung (z. B. rot, blau, gelb) – je nach Region unterschiedlich",
+      "legend_guideposts": "Wegweiser",
+      "legend_guideposts_desc": "Beschriftete Wegweiser an den Routen",
       "link": "Waymarked Trails Hiking"
     },
     "hiking_swiss": {
-      "label": "Wanderwege CH (swisstopo)",
+      "label": "Wanderwege CH",
       "desc": "Offizielle Schweizer Wanderwegkategorien von Swisstopo – nur Schweiz",
       "wanderweg_desc": "Einfache Wanderwege (SAC T1)",
       "bergwanderweg_desc": "Anspruchsvollere Routen (SAC T2–T3)",

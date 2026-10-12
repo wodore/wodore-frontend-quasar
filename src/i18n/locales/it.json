@@ -359,7 +359,7 @@
       "black_desc": "Piste difficili con tratti ripidi"
     },
     "hiking": {
-      "label": "Sentieri",
+      "label": "Sentieri (base)",
       "legend_title": "Categorie dei sentieri",
       "desc": "Itinerari escursionistici in tutto il mondo (OpenStreetMap) secondo il codice colore svizzero — quanto più è difficile, tanto più corti sono i trattini; le targhette gialle indicano il numero dell'itinerario",
       "wanderweg": "Sentiero escursionistico",
@@ -376,12 +376,17 @@
       "attr_mtk": "Maptoolkit"
     },
     "hiking_routes": {
-      "label": "Itinerari escursionistici (Waymarked Trails)",
-      "desc": "Itinerari escursionistici segnalati in tutto il mondo (OpenStreetMap), resi da Waymarked Trails — complemento indipendente ai sentieri vettoriali, con una colorazione propria per rete di itinerario",
+      "label": "Waymark",
+      "desc": "Itinerari escursionistici segnalati in tutto il mondo da OpenStreetMap – i colori seguono la segnaletica locale, con numeri di itinerario e cartelli indicatori",
+      "legend_title": "Itinerari",
+      "legend_routes": "Itinerari escursionistici",
+      "legend_routes_desc": "Colorati secondo la segnaletica locale (rosso, blu, giallo…) — variabili per regione",
+      "legend_guideposts": "Cartelli indicatori",
+      "legend_guideposts_desc": "Cartelli con nome lungo gli itinerari",
       "link": "Waymarked Trails Escursionismo"
     },
     "hiking_swiss": {
-      "label": "Sentieri CH (swisstopo)",
+      "label": "Sentieri CH",
       "desc": "Categorie ufficiali dei sentieri svizzeri di Swisstopo — solo Svizzera",
       "wanderweg_desc": "Sentieri facili (CAS T1)",
       "bergwanderweg_desc": "Itinerari più impegnativi (CAS T2–T3)",
