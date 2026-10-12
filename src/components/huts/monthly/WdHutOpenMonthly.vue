@@ -2,6 +2,8 @@
 import { computed } from 'vue';
 import { useQuasar } from 'quasar';
 import getImageUrl from '@services/imageService';
+import unknownDetailed from '@assets/symbols/unknown-detailed.svg';
+import unknownSimple from '@assets/symbols/unknown-simple.svg';
 const $q = useQuasar();
 //import { HutTypeSchema, OpenMonthlySchema } from '@/clients/wodore_v1';
 //import { storeToRefs } from 'pinia';
@@ -86,11 +88,11 @@ function getIconAnswer(answer: TypeIconText, size: string = '48x48'): string | u
 
 function getClosedIcon(): string {
   if (isMobile.value) {
-    if (props.type_closed?.symbol?.detailed) {
+    if (props.type_closed?.symbol?.color) {
       return props.type_closed.symbol.detailed as string;
     }
   } else {
-    if (props.type_closed?.symbol?.simple) {
+    if (props.type_closed?.symbol?.primitive) {
       return props.type_closed.symbol.simple as string;
     }
   }
@@ -99,12 +101,12 @@ function getClosedIcon(): string {
 
 function getOpenIcon(): string {
   if (isMobile.value) {
-    if (props.type_open?.symbol?.detailed) {
-      return props.type_open.symbol.detailed;
+    if (props.type_open?.symbol?.color) {
+      return props.type_open.symbol.color;
     }
   } else {
-    if (props.type_open?.symbol?.simple) {
-      return props.type_open.symbol.simple;
+    if (props.type_open?.symbol?.primitive) {
+      return props.type_open.symbol.primitive;
     }
   }
   return getUnknownIcon();
@@ -112,9 +114,9 @@ function getOpenIcon(): string {
 
 function getUnknownIcon(): string {
   if (isMobile.value) {
-    return 'https://hub.wodore.com/media/huts/types/symbols/detailed/unknown.png';
+    return unknownDetailed;
   } else {
-    return 'https://hub.wodore.com/media/huts/types/symbols/simple/unknown.png';
+    return unknownSimple;
   }
 }
 </script>

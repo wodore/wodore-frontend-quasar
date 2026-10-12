@@ -36,16 +36,16 @@ function dashStyle(item: LegendItem): Record<string, string> {
       <q-item v-for="(item, index) in section.items" :key="index" class="q-px-none">
         <q-item-section side>
           <!-- Symbol: Detailed Icon Only -->
-          <template v-if="section.type === 'symbol_detailed'">
-            <q-avatar v-if="item.metadata?.iconDetailed || item.icon" size="38px" square>
-              <img :src="item.metadata?.iconDetailed || item.icon" :alt="item.label" />
+          <template v-if="section.type === 'symbol_color'">
+            <q-avatar v-if="item.metadata?.iconColor || item.icon" size="38px" square>
+              <img :src="item.metadata?.iconColor || item.icon" :alt="item.label" />
             </q-avatar>
           </template>
 
           <!-- Symbol: Simple Icon Only -->
-          <template v-else-if="section.type === 'symbol_simple'">
-            <q-avatar v-if="item.metadata?.iconSimple || item.icon" size="28px" square>
-              <img :src="item.metadata?.iconSimple || item.icon" :alt="item.label" />
+          <template v-else-if="section.type === 'symbol_primitive'">
+            <q-avatar v-if="item.metadata?.iconPrimitive || item.icon" size="28px" square>
+              <img :src="item.metadata?.iconPrimitive || item.icon" :alt="item.label" />
             </q-avatar>
           </template>
 
@@ -59,17 +59,17 @@ function dashStyle(item: LegendItem): Record<string, string> {
           <!-- Symbol: Dual Icons (detailed + simple side-by-side) -->
           <template v-else-if="section.type === 'symbol_dual'">
             <div class="row items-center q-gutter-sm">
-              <q-avatar v-if="item.metadata?.iconDetailed" size="38px" square>
-                <img :src="item.metadata.iconDetailed" :alt="`${item.label} (detailed)`" />
+              <q-avatar v-if="item.metadata?.iconColor" size="38px" square>
+                <img :src="item.metadata.iconColor" :alt="`${item.label} (color)`" />
               </q-avatar>
 
-              <q-avatar v-if="item.metadata?.iconSimple" size="28px" square>
-                <img :src="item.metadata.iconSimple" :alt="`${item.label} (simple)`" />
+              <q-avatar v-if="item.metadata?.iconPrimitive" size="28px" square>
+                <img :src="item.metadata.iconPrimitive" :alt="`${item.label} (primitive)`" />
               </q-avatar>
 
               <!-- Fallback: Show color if icons not available -->
               <div
-                v-if="!item.metadata?.iconDetailed && !item.metadata?.iconSimple && item.color"
+                v-if="!item.metadata?.iconColor && !item.metadata?.iconPrimitive && item.color"
                 class="point-indicator"
                 :style="{ backgroundColor: item.color }"
               />
@@ -100,12 +100,12 @@ function dashStyle(item: LegendItem): Record<string, string> {
           <template v-else>
             <!-- Show icon if available -->
             <q-avatar
-              v-if="item.icon || item.metadata?.iconDetailed || item.metadata?.iconSimple"
+              v-if="item.icon || item.metadata?.iconColor || item.metadata?.iconPrimitive"
               size="32px"
               square
             >
               <img
-                :src="(item.icon || item.metadata?.iconDetailed || item.metadata?.iconSimple) ?? ''"
+                :src="(item.icon || item.metadata?.iconColor || item.metadata?.iconPrimitive) ?? ''"
                 :alt="item.label"
               />
             </q-avatar>

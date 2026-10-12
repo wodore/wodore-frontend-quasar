@@ -31,7 +31,7 @@ const color_bg = computed(() => (props.color2 ? props.color2 : ''));
         :name="
           'img:' +
           getImageUrl(
-            ($q.platform.is.mobile ? type.symbol?.detailed : type.symbol?.simple) as string,
+            ($q.platform.is.mobile ? type.symbol?.color : type.symbol?.primitive) as string,
             { fit: true, size: '48x48' }
           )
         "

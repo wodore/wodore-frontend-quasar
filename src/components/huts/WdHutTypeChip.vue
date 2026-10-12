@@ -113,7 +113,7 @@ body.body--dark .wd-type-chip.bg-primary-100 {
         :name="
           'img:' +
           getImageUrl(
-            ($q.platform.is.mobile ? type.symbol?.detailed : type.symbol?.simple) as string,
+            ($q.platform.is.mobile ? type.symbol?.color : type.symbol?.primitive) as string,
             { fit: true, size: '48x48' }
           )
         "

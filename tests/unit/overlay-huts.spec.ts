@@ -44,6 +44,7 @@ describe('hutsStyle', () => {
     const { hutsStyle } = overlayHuts;
     expect(hutsStyle.sprite).toEqual([
       { id: 'wd', url: 'http://tiles.test/sprite/accommodation,availability' },
+      { id: 'wd-sdf', url: 'http://tiles.test/sdf_sprite/accommodation' },
     ]);
   });
 
@@ -108,7 +109,7 @@ describe('hutsStyle', () => {
       expect(layer.filter).toBeUndefined();
       const layout = layer.layout as Record<string, unknown>;
       const iconImage = layout['icon-image'] as unknown[];
-      expect(JSON.stringify(iconImage)).toContain('wd:detailed/availability.');
+      expect(JSON.stringify(iconImage)).toContain('wd:color/availability.');
     }
   });
 

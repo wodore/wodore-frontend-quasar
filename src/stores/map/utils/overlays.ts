@@ -111,7 +111,7 @@ export const createHuts = (): OverlaySwitchItem => ({
           category: 'availability',
 
           // Render as detailed symbols with color indicators
-          type: 'symbol_detailed',
+          type: 'symbol_color',
 
           // Items will be populated automatically from category API
           items: [],
