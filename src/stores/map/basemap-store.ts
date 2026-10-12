@@ -53,8 +53,20 @@ function tileServerBase(): string {
   return tileServerUrl.replace(/\/$/, '');
 }
 
+/** Raster tile versions — bump the affected layer when its SOURCE
+ *  changes mapproxy-side (runbook: burginfra
+ *  k8s/apps/wodore/apps/mapproxy/README.md). MapProxy ignores the
+ *  param, but the nginx tier cache key and the browsers' immutable
+ *  caches key on the full URL — one bump flushes both at once.
+ *  world_topo v2: Austria overlay switched basemap.at geolandbasemap
+ *  → BEV Austrian Map (ÖK). */
+const RASTER_TILE_VERSIONS: Record<'world_topo' | 'world_satellite', number> = {
+  world_topo: 2,
+  world_satellite: 1,
+};
+
 function rasterTilePath(layer: 'world_topo' | 'world_satellite'): string {
-  return `${tileServerBase()}/raster/tiles/${layer}/webmercator/{z}/{x}/{y}.webp`;
+  return `${tileServerBase()}/raster/tiles/${layer}/webmercator/{z}/{x}/{y}.webp?v=${RASTER_TILE_VERSIONS[layer]}`;
 }
 
 /** Font endpoint for the satellite hybrid labels (Noto Sans family) —
@@ -70,11 +82,14 @@ const OFM_PLANET_TILES = 'https://tiles.openfreemap.org/planet';
 /** OpenFreeMap sprite (settlement dots etc.) — matches the ofm style. */
 const OFM_SPRITE = 'https://tiles.openfreemap.org/sprites/ofm_f384/ofm';
 
-/** Both facade layers stop at z19 (OpenTopoMap z17 upscaled by the
- *  proxy in places, merged country sources z19) — source-level maxzoom
- *  lets MapLibre overzoom to the app's zoom cap instead of requesting
- *  404 tiles beyond the server's range. */
-const RASTER_SOURCE_MAX_ZOOM = 19;
+/** Source-level maxzoom caps: MapLibre overzooms the last available
+ *  level instead of requesting tiles the server cannot serve well.
+ *  world_topo caps at z16 — the BEV Austrian Map (ÖK) overlay tops out
+ *  at z16, and uncapped z17+ requests would fall through to
+ *  OpenTopoMap underneath (mid-zoom style jump). world_satellite keeps
+ *  z19 (Esri / basemap.at ortho / swissimage / IGN all reach z19). */
+const RASTER_TOPO_SOURCE_MAX_ZOOM = 16;
+const RASTER_SATELLITE_SOURCE_MAX_ZOOM = 19;
 
 /** Compute absolute glyph/sprite URLs for a style, relative to the
  * style's own URL. With setStyle(..., { transformStyle }) MapLibre loses
@@ -908,14 +923,14 @@ export const useBasemapStore = defineStore('basemap', () => {
       {
         // Worldwide merged TOPO raster on our own /raster facade —
         // REPLACES the former CH-only direct swisstopo WMTS tiles:
-        // OpenTopoMap everywhere, basemap.at (AT) + swisstopo pixelkarte
-        // (CH+LI) + IGN Plan IGN (FR) composited on top from z7 with
-        // pixel-clipped country borders. Full world coverage, so no
-        // countryOnly/bbox fallback composition anymore. Entry
-        // name/thumbnail unchanged so saved selections and the
-        // preferred-basemap defaults keep resolving. Style is a lazy
-        // getter — the tile server env is read at selection time (same
-        // pattern as wd-outdoor-base-mtk).
+        // OpenTopoMap everywhere, BEV Austrian Map (AT, z7–16) +
+        // swisstopo pixelkarte (CH+LI) + IGN Plan IGN (FR) composited
+        // on top from z7 with pixel-clipped country borders. Full
+        // world coverage, so no countryOnly/bbox fallback composition
+        // anymore. Entry name/thumbnail unchanged so saved selections
+        // and the preferred-basemap defaults keep resolving. Style is
+        // a lazy getter — the tile server env is read at selection time
+        // (same pattern as wd-outdoor-base-mtk).
         name: 'ch-swisstopo-full',
         label: t('basemaps.swiss_raster'),
         show: true, // raster topo stays selectable alongside the outdoor default
@@ -926,9 +941,9 @@ export const useBasemapStore = defineStore('basemap', () => {
             name: 'ch-swisstopo-raster',
             tiles: [rasterTilePath('world_topo')],
             attribution:
-              '<a href="https://opentopomap.org" target="_blank">&copy; OpenTopoMap</a> (CC-BY-SA) &#124; <a href="https://www.basemap.at/en/" target="_blank">&copy; basemap.at</a> &#124; <a href="https://www.swisstopo.admin.ch/en/home.html" target="_blank">&copy; swisstopo</a> &#124; <a href="https://www.ign.fr" target="_blank">&copy; IGN</a>',
+              '<a href="https://opentopomap.org" target="_blank">&copy; OpenTopoMap</a> (CC-BY-SA) &#124; Datenquelle: <a href="https://www.bev.gv.at" target="_blank">BEV</a> &#124; <a href="https://www.swisstopo.admin.ch/en/home.html" target="_blank">&copy; swisstopo</a> &#124; <a href="https://www.ign.fr" target="_blank">&copy; IGN</a>',
             suffix: '',
-            sourceMaxZoom: RASTER_SOURCE_MAX_ZOOM,
+            sourceMaxZoom: RASTER_TOPO_SOURCE_MAX_ZOOM,
           });
         },
         layers: {
@@ -957,7 +972,7 @@ export const useBasemapStore = defineStore('basemap', () => {
             tiles: [rasterTilePath('world_satellite')],
             attribution:
               '<a href="https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer" target="_blank">Esri, Maxar, Earthstar Geographics</a> &#124; <a href="https://www.swisstopo.admin.ch/en/home.html" target="_blank">&copy; swisstopo</a> &#124; <a href="https://www.basemap.at/en/" target="_blank">&copy; basemap.at</a> &#124; <a href="https://www.ign.fr" target="_blank">&copy; IGN</a> &#124; <a href="https://www.openstreetmap.org/copyright" target="_blank"> &copy; OpenStreetMap contributors</a>',
-            sourceMaxZoom: RASTER_SOURCE_MAX_ZOOM,
+            sourceMaxZoom: RASTER_SATELLITE_SOURCE_MAX_ZOOM,
             vectorUrl: OFM_PLANET_TILES,
             glyphs: fontGlyphsPath(),
             spriteUrl: OFM_SPRITE,
