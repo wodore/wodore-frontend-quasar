@@ -26,7 +26,7 @@ A self-generated route tileset removes those limits. Feasibility was measured li
 
 Planetiler is single-pass PBF→MBTiles with no database; measured on our schema (see Context). Tilemaker (Lua) handles relations but has a smaller ecosystem for relation→way tagging; the osm2pgsql→PostGIS route trades a nightly batch file for a permanently-operated database — that is the diff-update path (D5), not the baseline. The YAML "configurable schema" cannot merge route relations onto ways ("only a subset of the Java API is exposed"), so the generator is a small **Java profile** in `planetiler-examples` style using `relationInfos` (planetiler ships `example-bikeroutes` as a working reference for exactly this pattern).
 
-*Alternative rejected:* OpenMapTiles/PR #1169 (hiking networks in the standard schema) — unmerged since 2021.
+_Alternative rejected:_ OpenMapTiles/PR #1169 (hiking networks in the standard schema) — unmerged since 2021.
 
 ### D2: Schema — way-based, one shared layer shape per activity
 
@@ -44,7 +44,7 @@ Start with priority regions (alps, ch, at, it, fr, si …), grow to planet. Merg
 
 ### D5: Updates — nightly full rebuild (no differential)
 
-Planetiler is stateless by design; a nightly rebuild *is* the update (CH ≈ 2–3 min; planet basemap benchmark: 3h35m on 8 CPU/16 GB). Geofabrik extracts refresh daily. If near-real-time is ever needed: `osmium apply-changes` on the extract (cheap freshness, full re-tile) or osm2pgsql-replication → PostGIS → Martin-on-request (the backend's existing huts stack) — documented, deliberately not built.
+Planetiler is stateless by design; a nightly rebuild _is_ the update (CH ≈ 2–3 min; planet basemap benchmark: 3h35m on 8 CPU/16 GB). Geofabrik extracts refresh daily. If near-real-time is ever needed: `osmium apply-changes` on the extract (cheap freshness, full re-tile) or osm2pgsql-replication → PostGIS → Martin-on-request (the backend's existing huts stack) — documented, deliberately not built.
 
 ### D6: Frontend — source URL becomes env-driven with provider fallback
 
