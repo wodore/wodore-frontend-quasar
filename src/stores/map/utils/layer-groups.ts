@@ -33,9 +33,11 @@ const SLUGS = {
   huts: 'huts',
   transport: 'transport-stops',
   // Was 'ch.swisstopo.swisstlm3d-wanderwege' (Swiss raster overlay) —
-  // renamed when hiking went global on Maptoolkit vector tiles.
+  // renamed when hiking went global; the Swiss raster layer is BACK as
+  // its own overlay ('hiking-swiss'), so old persisted state maps there.
   hiking: 'hiking',
   hikingRoutes: 'hiking-routes',
+  hikingSwiss: 'hiking-swiss',
   mtb: 'mtb',
   cycling: 'cycling',
   slopeAngle: 'ch.swisstopo.hangneigung-ueber_30',
@@ -46,13 +48,24 @@ const SLUGS = {
   sheepdogs: 'ch.bafu.alpweiden-herdenschutzhunde',
 } as const;
 
+/** App-level group restructures (group slug → members to ensure /
+ * remove), applied to PERSISTED groups in mergeGroups so existing users
+ * follow the new arrangement: the hiking group rides the Waymarked
+ * Trails raster as its layer; the vector overlay and the Swiss raster
+ * live outside the group ("All layers"). Unconditional until
+ * superseded by a later entry — user-added members of OTHER groups and
+ * custom groups are untouched. */
+const GROUP_MEMBERSHIP_MIGRATIONS: Record<string, { add?: string[]; remove?: string[] }> = {
+  hiking: { add: [SLUGS.hikingRoutes], remove: [SLUGS.hiking] },
+};
+
 /** Overlay slugs renamed by app updates — user-persisted group settings
  * (layerSlugs / activeLayerSlugs / ungroupedActiveSlugs) are rewritten
  * through this map in mergeGroups so no layer falls out of its group.
  * ALSO used by the overlay store to carry persisted active/show state
  * over to the new overlay name. */
 export const RENAMED_SLUGS: Record<string, string> = {
-  'ch.swisstopo.swisstlm3d-wanderwege': SLUGS.hiking,
+  'ch.swisstopo.swisstlm3d-wanderwege': SLUGS.hikingSwiss,
 };
 
 function renameSlug(slug: string): string {
@@ -74,7 +87,7 @@ export function createDefaultGroups(): LayerGroup[] {
       name: 'overlays.groups.hiking.name',
       // Backend icon library (Fluent Emoji) — openspec: icon-library
       icon: 'fluent-emoji/hiking-boot',
-      layerSlugs: [SLUGS.huts, SLUGS.hiking, SLUGS.hikingRoutes, SLUGS.nature, SLUGS.transport],
+      layerSlugs: [SLUGS.huts, SLUGS.hikingRoutes, SLUGS.nature, SLUGS.transport],
       activeLayerSlugs: [SLUGS.huts],
       hidden: false,
       removed: false,
@@ -163,6 +176,19 @@ export function mergeGroups(
     g.activeLayerSlugs = g.activeLayerSlugs.map(renameSlug);
   });
   settings.ungroupedActiveSlugs = settings.ungroupedActiveSlugs.map(renameSlug);
+
+  // App-level group restructures: ensure/remove members of predefined
+  // groups (removed members also leave the saved active view — a layer
+  // outside its group must not stay activated through stale group state).
+  settings.groups.forEach(g => {
+    const mig = GROUP_MEMBERSHIP_MIGRATIONS[g.slug];
+    if (!mig || g.removed) return;
+    g.layerSlugs = g.layerSlugs.filter(s => !(mig.remove ?? []).includes(s));
+    for (const slug of mig.add ?? []) {
+      if (!g.layerSlugs.includes(slug)) g.layerSlugs.push(slug);
+    }
+    g.activeLayerSlugs = g.activeLayerSlugs.filter(s => !(mig.remove ?? []).includes(s));
+  });
 
   const groups = settings.groups.map(g => ({ ...g, layerSlugs: [...g.layerSlugs] }));
 

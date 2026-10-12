@@ -380,6 +380,13 @@
       "desc": "Beschilderte Wander-Routen weltweit (OpenStreetMap), gerendert von Waymarked Trails – unabhängige Ergänzung zu den Vektor-Wanderwegen, eigene Farbgebung nach Routennetz",
       "link": "Waymarked Trails Hiking"
     },
+    "hiking_swiss": {
+      "label": "Wanderwege CH (swisstopo)",
+      "desc": "Offizielle Schweizer Wanderwegkategorien von Swisstopo – nur Schweiz",
+      "wanderweg_desc": "Einfache Wanderwege (SAC T1)",
+      "bergwanderweg_desc": "Anspruchsvollere Routen (SAC T2–T3)",
+      "alpinwanderweg_desc": "Schwierigste Routen (SAC T4–T6)"
+    },
     "cycling": {
       "label": "Fahrrad",
       "desc": "Fahrradrouten aus OpenStreetMap, angezeigt über Waymarked Trails",

@@ -380,6 +380,13 @@
       "desc": "Sign-posted hiking routes worldwide (OpenStreetMap), rendered by Waymarked Trails — an independent complement to the vector hiking trails with its own coloring by route network",
       "link": "Waymarked Trails Hiking"
     },
+    "hiking_swiss": {
+      "label": "Hiking trails CH (swisstopo)",
+      "desc": "Official Swiss hiking trail categories by Swisstopo — Switzerland only",
+      "wanderweg_desc": "Easy trails (SAC T1)",
+      "bergwanderweg_desc": "More demanding routes (SAC T2–T3)",
+      "alpinwanderweg_desc": "Most difficult routes (SAC T4–T6)"
+    },
     "cycling": {
       "label": "Cycling",
       "desc": "Cycling routes from OpenStreetMap, shown via Waymarked Trails",

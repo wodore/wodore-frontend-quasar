@@ -380,6 +380,13 @@
       "desc": "Itinéraires de randonnée balisés dans le monde (OpenStreetMap), rendus par Waymarked Trails — complément indépendant des sentiers vectoriels, avec une coloration propre par réseau d'itinéraire",
       "link": "Waymarked Trails Randonnée"
     },
+    "hiking_swiss": {
+      "label": "Sentiers CH (swisstopo)",
+      "desc": "Catégories officielles de sentiers suisses de Swisstopo — Suisse uniquement",
+      "wanderweg_desc": "Sentiers faciles (CAS T1)",
+      "bergwanderweg_desc": "Itinéraires plus exigeants (CAS T2–T3)",
+      "alpinwanderweg_desc": "Itinéraires les plus difficiles (CAS T4–T6)"
+    },
     "cycling": {
       "label": "Vélo",
       "desc": "Itinéraires vélo d’OpenStreetMap, affichés via Waymarked Trails",

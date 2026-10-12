@@ -599,66 +599,69 @@ export const createHikingWaymarked = (): OverlaySwitchItem => ({
   },
 });
 
-//export const createHikingSwiss = (): OverlaySwitchItem => ({
-//  ...getSwisstopoOverlay({
-//    name: 'ch.swisstopo.swisstlm3d-wanderwege',
-//    label: t('overlays.hiking.label'),
-//    icon: 'hiking',
-//    opacity: opacityLevels({ zoomOut: 0.4, zoomMain: 0.9, zoomIn: 0.7 }),
-//  }),
-//
-//  config: {
-//    legend: {
-//      sections: [
-//        {
-//          title: t('overlays.hiking.legend_title'),
-//          description: t('overlays.hiking.desc'),
-//          category: [
-//            {
-//              slug: 'wanderweg',
-//              name: t('overlays.hiking.wanderweg'),
-//              description: t('overlays.hiking.wanderweg_desc'),
-//              identifier: 'hiking.wanderweg',
-//              color: '#fdc200',
-//            },
-//            {
-//              slug: 'bergwanderweg',
-//              name: t('overlays.hiking.bergwanderweg'),
-//              description: t('overlays.hiking.bergwanderweg_desc'),
-//              identifier: 'hiking.bergwanderweg',
-//              color: '#ff0000',
-//            },
-//            {
-//              slug: 'alpinwanderweg',
-//              name: t('overlays.hiking.alpinwanderweg'),
-//              description: t('overlays.hiking.alpinwanderweg_desc'),
-//              identifier: 'hiking.alpinwanderweg',
-//              color: '#0000ff',
-//            },
-//          ],
-//          type: 'line',
-//          items: [],
-//        },
-//      ],
-//      links: [
-//        {
-//          name: t('overlays.hiking.link_wanderland'),
-//          url: 'https://www.schweizmobil.ch/de/wanderland.html',
-//        },
-//        {
-//          name: t('overlays.hiking.link_sac_scale'),
-//          url: 'https://www.sac-cas.ch/de/huetten-und-touren/sac-tourenportal/schwierigkeitsskala/',
-//        },
-//      ],
-//      attribution: [
-//        {
-//          name: 'swisstopo',
-//          url: 'https://www.swisstopo.admin.ch',
-//        },
-//      ],
-//    },
-//  },
-//});
+/** Swiss national hiking trails (swisstopo raster) — Switzerland only.
+ * Kept OUT of the default hiking group (the group rides the global
+ * layers); available under "All layers" for the reference/CH case. */
+export const createHikingSwiss = (): OverlaySwitchItem => ({
+  ...getSwisstopoOverlay({
+    name: 'hiking-swiss',
+    label: t('overlays.hiking_swiss.label'),
+    icon: 'hiking',
+    opacity: opacityLevels({ zoomOut: 0.4, zoomMain: 0.9, zoomIn: 0.7 }),
+  }),
+
+  config: {
+    legend: {
+      sections: [
+        {
+          title: t('overlays.hiking.legend_title'),
+          description: t('overlays.hiking_swiss.desc'),
+          category: [
+            {
+              slug: 'wanderweg',
+              name: t('overlays.hiking.wanderweg'),
+              description: t('overlays.hiking_swiss.wanderweg_desc'),
+              identifier: 'hiking-swiss.wanderweg',
+              color: '#fdc200',
+            },
+            {
+              slug: 'bergwanderweg',
+              name: t('overlays.hiking.bergwanderweg'),
+              description: t('overlays.hiking_swiss.bergwanderweg_desc'),
+              identifier: 'hiking-swiss.bergwanderweg',
+              color: '#ff0000',
+            },
+            {
+              slug: 'alpinwanderweg',
+              name: t('overlays.hiking.alpinwanderweg'),
+              description: t('overlays.hiking_swiss.alpinwanderweg_desc'),
+              identifier: 'hiking-swiss.alpinwanderweg',
+              color: '#0000ff',
+            },
+          ],
+          type: 'line',
+          items: [],
+        },
+      ],
+      links: [
+        {
+          name: t('overlays.hiking.link_wanderland'),
+          url: 'https://www.schweizmobil.ch/de/wanderland.html',
+        },
+        {
+          name: t('overlays.hiking.link_sac_scale'),
+          url: 'https://www.sac-cas.ch/de/huetten-und-touren/sac-tourenportal/schwierigkeitsskala/',
+        },
+      ],
+      attribution: [
+        {
+          name: 'swisstopo',
+          url: 'https://www.swisstopo.admin.ch',
+        },
+      ],
+    },
+  },
+});
 
 //const public_transport_stops = getSwisstopoOverlay({
 //  name: 'ch.bav.haltestellen-oev',
@@ -797,8 +800,9 @@ export const createMtb = (): OverlaySwitchItem => ({
 export const overlayFactories = [
   createHuts,
   createPublicTransportStops,
-  createHiking,
   createHikingWaymarked,
+  createHiking,
+  createHikingSwiss,
   createMtb,
   createCycling,
   createHillslope,
