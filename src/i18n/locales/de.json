@@ -376,7 +376,7 @@
       "attr_mtk": "Maptoolkit"
     },
     "hiking_routes": {
-      "label": "Waymark",
+      "label": "Wandern",
       "desc": "Beschilderte Wander-Routen weltweit aus OpenStreetMap – Farben folgen der lokalen Wegmarkierung, mit Routennummern und Wegweisern",
       "legend_title": "Routen",
       "legend_routes": "Wander-Routen",

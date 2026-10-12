@@ -376,7 +376,7 @@
       "attr_mtk": "Maptoolkit"
     },
     "hiking_routes": {
-      "label": "Waymark",
+      "label": "Escursionismo",
       "desc": "Itinerari escursionistici segnalati in tutto il mondo da OpenStreetMap – i colori seguono la segnaletica locale, con numeri di itinerario e cartelli indicatori",
       "legend_title": "Itinerari",
       "legend_routes": "Itinerari escursionistici",

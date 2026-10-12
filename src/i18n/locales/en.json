@@ -376,7 +376,7 @@
       "attr_mtk": "Maptoolkit"
     },
     "hiking_routes": {
-      "label": "Waymark",
+      "label": "Hiking",
       "desc": "Sign-posted hiking routes worldwide from OpenStreetMap — colors follow local trail markings, with route numbers and guideposts",
       "legend_title": "Routes",
       "legend_routes": "Hiking routes",

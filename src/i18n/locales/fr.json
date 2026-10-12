@@ -376,7 +376,7 @@
       "attr_mtk": "Maptoolkit"
     },
     "hiking_routes": {
-      "label": "Waymark",
+      "label": "Randonnée",
       "desc": "Itinéraires de randonnée balisés dans le monde, issus d'OpenStreetMap – les couleurs suivent le balisage local, avec numéros d'itinéraire et panneaux directionnels",
       "legend_title": "Itinéraires",
       "legend_routes": "Itinéraires de randonnée",
