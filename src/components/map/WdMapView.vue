@@ -49,7 +49,7 @@ const MOBILE_DANGER_MARGIN = 100;
 const DESKTOP_DANGER_MARGIN = 150;
 const MOBILE_DRAWER_MARGIN = -75;
 // Disable map position hash sync in hash routing mode (previews):
-// vue-maplibre-gl appends &p=zoom/lat/lng to the Vue Router hash,
+// vue-maplibre-gl appends &map=zoom/lat/lng to the Vue Router hash,
 // breaking route matching on refresh
 const isHashMode = process.env.VUE_ROUTER_MODE !== 'history';
 const MIN_FLY_ZOOM = 9;
@@ -1319,7 +1319,7 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
         @map:load="onMapLoad"
         @map:error="onMapError"
         @map:styledata="onMapStyledata"
-        :hash="isHashMode ? false : 'p'"
+        :hash="isHashMode ? false : 'map'"
         :map-style="initialMapStyle"
         :zoom="mapZoom"
         :bearing-snap="15"

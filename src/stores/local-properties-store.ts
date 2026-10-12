@@ -329,17 +329,17 @@ export const useLocalPropertiesStore = defineStore('localProperties', () => {
 
   /**
    * Parse location from URL hash
-   * Format: #p=zoom/lat/lng
-   * Example: #p=13.77/46.13591/6.81813
+   * Format: #map=zoom/lat/lng
+   * Example: #map=13.77/46.13591/6.81813
    */
   const parseLocationFromHash = (): LocationState | null => {
     const hash = window.location.hash;
-    if (!hash || !hash.startsWith('#p=')) {
+    if (!hash || !hash.startsWith('#map=')) {
       return null;
     }
 
     try {
-      const parts = hash.substring(3).split('/');
+      const parts = hash.substring('#map='.length).split('/');
       if (parts.length !== 3) {
         return null;
       }

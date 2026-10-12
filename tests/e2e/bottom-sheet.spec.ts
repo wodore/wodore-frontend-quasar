@@ -167,7 +167,7 @@ test('dismissed sheet reopens when tapping the same hut marker again', async ({ 
   test.skip(!hut.exists, 'Hut broch not found - start the backend with seed data');
 
   // Zoomed in on the hut so its marker sits at the map center
-  await openHutSheet(page, `${BASE_URL}/hut/broch#p=13/46.68051/8.13895`);
+  await openHutSheet(page, `${BASE_URL}/hut/broch#map=13/46.68051/8.13895`);
   await expect(page.getByText('Brochhütte').first()).toBeVisible({ timeout: 30_000 });
 
   // Dismiss the sheet by dragging it down
@@ -267,7 +267,7 @@ test('sheet keeps its snap position when another hut is opened', async ({ page }
 
   // Centered between two huts ~700m apart; at zoom 14 both markers are
   // visible near the map center, above the sheet
-  await openHutSheet(page, `${BASE_URL}/hut/bivacco-kima#p=14/46.27462/9.72851`);
+  await openHutSheet(page, `${BASE_URL}/hut/bivacco-kima#map=14/46.27462/9.72851`);
   await expect(page.getByText('Kima').first()).toBeVisible({ timeout: 30_000 });
   await page.waitForTimeout(1000);
 

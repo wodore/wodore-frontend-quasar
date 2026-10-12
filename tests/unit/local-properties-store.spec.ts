@@ -135,11 +135,11 @@ describe('local-properties-store', () => {
   it('parses location from the URL hash', () => {
     const store = useLocalPropertiesStore();
 
-    window.location.hash = '#p=13.77/46.13591/6.81813';
+    window.location.hash = '#map=13.77/46.13591/6.81813';
     const parsed = store.parseLocationFromHash();
     expect(parsed).toMatchObject({ zoom: 13.77, lat: 46.13591, lng: 6.81813 });
 
-    window.location.hash = '#p=invalid';
+    window.location.hash = '#map=invalid';
     expect(store.parseLocationFromHash()).toBeNull();
 
     window.location.hash = '';
@@ -150,7 +150,7 @@ describe('local-properties-store', () => {
     const store = useLocalPropertiesStore();
     store.setLocation({ lat: 46.5, lng: 7.5, zoom: 12, timestamp: Date.now() });
 
-    window.location.hash = '#p=13.77/46.13591/6.81813';
+    window.location.hash = '#map=13.77/46.13591/6.81813';
     const initial = store.getInitialLocation();
     expect(initial).toMatchObject({ zoom: 13.77, lat: 46.13591, lng: 6.81813 });
 
