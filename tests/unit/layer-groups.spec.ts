@@ -20,7 +20,9 @@ const makeOverlay = (name: string, active = false): OverlaySwitchItem =>
 const mockOverlays = [
   makeOverlay('huts', true),
   makeOverlay('transport-stops'),
-  makeOverlay('ch.swisstopo.swisstlm3d-wanderwege'),
+  makeOverlay('hiking-routes'),
+  makeOverlay('hiking'),
+  makeOverlay('hiking-swiss'),
   makeOverlay('mtb'),
   makeOverlay('cycling'),
   makeOverlay('ch.swisstopo.hangneigung-ueber_30'),
@@ -126,7 +128,7 @@ describe('layer-groups', () => {
       const groups = createDefaultGroups();
       const hiking = groups.find(g => g.slug === 'hiking')!;
       const layers = getGroupLayers(hiking, mockOverlays);
-      expect(layers.length).toBe(4); // huts, hiking, nature, transport
+      expect(layers.length).toBe(4); // huts, hiking-routes (waymark default), nature, transport
       expect(layers.map(l => l.name)).toContain('huts');
     });
 
@@ -155,7 +157,11 @@ describe('layer-groups', () => {
       const others = getOtherLayers(hiking, mockOverlays);
       const othersSlugs = others.map(o => o.name);
       expect(othersSlugs).not.toContain('huts');
-      expect(othersSlugs).not.toContain('ch.swisstopo.swisstlm3d-wanderwege');
+      // the vector layer and the Swiss raster live OUTSIDE the hiking
+      // group ("All layers") — waymarked is the group's hiking layer
+      expect(othersSlugs).toContain('hiking');
+      expect(othersSlugs).toContain('hiking-swiss');
+      expect(othersSlugs).not.toContain('hiking-routes');
       expect(othersSlugs).toContain('mtb');
       expect(othersSlugs).toContain('ch.swisstopo-karto.skitouren');
     });
@@ -202,6 +208,56 @@ describe('layer-groups', () => {
         mockOverlays.map(o => o.name)
       );
       expect(merged.groups.find(g => g.slug === 'hiking')).toBeUndefined();
+    });
+
+    it('rewrites renamed overlay slugs in persisted settings (swiss raster hiking → hiking-swiss)', () => {
+      const OLD = 'ch.swisstopo.swisstlm3d-wanderwege';
+      const settings = defaultOverlayGroupSettings();
+      // simulate persisted settings that still carry the old slug in a
+      // CUSTOM group (the swiss layer lives outside the default groups now)
+      settings.groups.push({
+        id: 'custom-1',
+        slug: 'my-group',
+        name: 'My Group',
+        icon: 'fluent-emoji/hiking-boot',
+        layerSlugs: [OLD],
+        activeLayerSlugs: [OLD, 'huts'],
+        hidden: false,
+        removed: false,
+        locked: false,
+        sortOrder: 9,
+      });
+      settings.ungroupedActiveSlugs = [OLD];
+
+      const merged = mergeGroups(
+        settings,
+        mockOverlays.map(o => o.name)
+      );
+
+      const custom = merged.groups.find(g => g.slug === 'my-group')!;
+      expect(custom.layerSlugs).toEqual(['hiking-swiss']);
+      expect(custom.activeLayerSlugs).toEqual(['hiking-swiss', 'huts']);
+      expect(merged.ungroupedActiveSlugs).toEqual(['hiking-swiss']);
+    });
+
+    it('restructures the persisted hiking group: waymark in, vector out', () => {
+      const settings = defaultOverlayGroupSettings();
+      const hikingGroup = settings.groups.find(g => g.slug === 'hiking')!;
+      // simulate a user from the old arrangement: vector layer in the
+      // group and active, waymarked not yet a member
+      hikingGroup.layerSlugs = ['huts', 'hiking', 'nature', 'transport'];
+      hikingGroup.activeLayerSlugs = ['huts', 'hiking'];
+
+      const merged = mergeGroups(
+        settings,
+        mockOverlays.map(o => o.name)
+      );
+
+      const mergedHiking = merged.groups.find(g => g.slug === 'hiking')!;
+      expect(mergedHiking.layerSlugs).toContain('hiking-routes');
+      expect(mergedHiking.layerSlugs).not.toContain('hiking');
+      // the removed member also leaves the saved active view
+      expect(mergedHiking.activeLayerSlugs).toEqual(['huts']);
     });
   });
 });

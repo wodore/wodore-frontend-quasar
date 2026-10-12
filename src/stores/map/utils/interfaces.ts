@@ -11,9 +11,12 @@ type Layers = {
   background: LayerOptions;
   /** Data overlays (huts) that sit below high-ranked town labels. */
   places?: LayerOptions;
+  /** Route overlays (hiking/cycling lines) — above the basemap's ways,
+   * below every label/POI layer, below the ways-anchored overlays. */
+  routes?: LayerOptions;
 };
 
-export type LayerNames = 'ways' | 'background' | 'places';
+export type LayerNames = 'ways' | 'background' | 'places' | 'routes';
 
 export type OpacitySpecification = PropertyValueSpecification<number> | undefined | boolean;
 

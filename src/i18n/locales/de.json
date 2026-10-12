@@ -359,17 +359,38 @@
       "black_desc": "Schwierige Pisten mit steilen Abschnitten"
     },
     "hiking": {
-      "label": "Wanderwege",
+      "label": "Wanderwege (Basis)",
       "legend_title": "Wegkategorien",
-      "desc": "Offizielle Wanderwegkategorien von Swisstopo",
+      "desc": "Wanderrouten weltweit (OpenStreetMap) in der Schweizer Farbcode-Skala — je schwieriger, desto kürzer die Strichelung; gelbe Tafeln zeigen die Routennummer",
       "wanderweg": "Wanderweg",
-      "wanderweg_desc": "Einfache Wanderwege, für die meisten Altersgruppen geeignet",
+      "wanderweg_desc": "Leichte Wege (SAC T1), durchgezogene Linie",
       "bergwanderweg": "Bergwanderweg",
-      "bergwanderweg_desc": "Anspruchsvollere Routen, können Steilhänge oder Hängebrücken beinhalten",
+      "bergwanderweg_desc": "Bergwege (SAC T2–T3), gestrichelte Linie",
       "alpinwanderweg": "Alpinwanderweg",
-      "alpinwanderweg_desc": "Schwierigste Routen, alpine Erfahrung und Ausrüstung erforderlich",
+      "alpinwanderweg_desc": "Alpine Wege (SAC T4), kurz gestrichelte Linie",
+      "alpinwanderweg_extreme": "Schwieriger Alpinweg",
+      "alpinwanderweg_extreme_desc": "Alpine Wege (SAC T5–T6) und Klettersteige, punktierte Linie",
       "link_wanderland": "Wanderland Schweiz",
-      "link_sac_scale": "SAC Wanderskala"
+      "link_sac_scale": "SAC Wanderskala",
+      "attr_osm": "OpenStreetMap-Mitwirkende",
+      "attr_mtk": "Maptoolkit"
+    },
+    "hiking_routes": {
+      "label": "Wandern",
+      "desc": "Beschilderte Wander-Routen weltweit aus OpenStreetMap – Farben folgen der lokalen Wegmarkierung, mit Routennummern und Wegweisern",
+      "legend_title": "Routen",
+      "legend_routes": "Wander-Routen",
+      "legend_routes_desc": "Farbe nach lokaler Wegmarkierung (z. B. rot, blau, gelb) – je nach Region unterschiedlich",
+      "legend_guideposts": "Wegweiser",
+      "legend_guideposts_desc": "Beschriftete Wegweiser an den Routen",
+      "link": "Waymarked Trails Hiking"
+    },
+    "hiking_swiss": {
+      "label": "Wanderwege CH",
+      "desc": "Offizielle Schweizer Wanderwegkategorien von Swisstopo – nur Schweiz",
+      "wanderweg_desc": "Einfache Wanderwege (SAC T1)",
+      "bergwanderweg_desc": "Anspruchsvollere Routen (SAC T2–T3)",
+      "alpinwanderweg_desc": "Schwierigste Routen (SAC T4–T6)"
     },
     "cycling": {
       "label": "Fahrrad",

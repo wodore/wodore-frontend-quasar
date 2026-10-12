@@ -70,3 +70,36 @@ describe('overlay config sanity', () => {
     expect(huts.style.version).toBe(8);
   });
 });
+
+describe('hiking overlays', () => {
+  let overlays: typeof import('@stores/map/utils/overlays');
+
+  beforeAll(async () => {
+    setActivePinia(createPinia());
+    overlays = await import('@stores/map/utils/overlays');
+  });
+
+  it('render on the routes anchor — below huts/ways overlays, under labels', () => {
+    allure.label('feature', 'map-overlays');
+    for (const item of [
+      overlays.createHikingWaymarked(),
+      overlays.createHiking(),
+      overlays.createHikingSwiss(),
+    ]) {
+      expect(item.onLayer).toBe('routes');
+    }
+    expect(overlays.createHuts().onLayer).toBe('places');
+  });
+
+  it('swiss overlay requests the WMTS layer identifier, not its slug', () => {
+    // regression: renaming the overlay slug to 'hiking-swiss' without the
+    // explicit layers param made the WMTS URL 400 (no tiles at all)
+    allure.label('feature', 'map-overlays');
+    const swiss = overlays.createHikingSwiss();
+    const source = Object.values(swiss.style.sources)[0] as {
+      tiles: string[];
+    };
+    expect(source.tiles[0]).toContain('ch.swisstopo.swisstlm3d-wanderwege');
+    expect(source.tiles[0]).not.toContain('hiking-swiss/default');
+  });
+});
