@@ -9,6 +9,7 @@ export default defineConfig({
       '@stores': fileURLToPath(new URL('./src/stores', import.meta.url)),
       '@clients': fileURLToPath(new URL('./src/clients', import.meta.url)),
       '@components': fileURLToPath(new URL('./src/components', import.meta.url)),
+      '@assets': fileURLToPath(new URL('./src/assets', import.meta.url)),
       '@services': fileURLToPath(new URL('./src/services', import.meta.url)),
       '@composables': fileURLToPath(new URL('./src/composables', import.meta.url)),
     },

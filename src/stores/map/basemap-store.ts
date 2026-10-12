@@ -3,7 +3,6 @@ import { reactive, watch } from 'vue';
 import { BasemapSwitchItem } from '@stores/map/utils/interfaces';
 import { getRasterStyle } from '@stores/map/utils/raster';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
-import { Platform } from 'quasar';
 //import type { Emitter } from 'mitt';
 import { storageGet, storageSet } from '@services/storage';
 import { getGPUTier } from '@pmndrs/detect-gpu';
@@ -18,6 +17,7 @@ import { StyleSpecification } from 'maplibre-gl';
 import { i18n, currentLocale } from '@services/locale';
 import { getEnv } from '@services/runtimeEnv';
 import { isOutdoorStyle, setupOutdoorContours } from '@services/outdoorContours';
+import { getSatelliteHybridStyle } from '@stores/map/utils/satellite-hybrid';
 
 // Bump this when the Martin-served basemap style changes (new colors,
 // layers, fonts, sprites). Format: ISO date + optional .N for same-day
@@ -40,6 +40,41 @@ function martinStylePath(styleId: string): string {
 function mtkStylePath(): string {
   return martinStylePath('wd-outdoor-base-mtk');
 }
+
+/** Tile template for a wodore-merged raster layer behind the stable
+ *  /raster facade (WebP, XYZ order, 256px). The URLs are final — the
+ *  mapproxy implementation behind them is swappable without URL
+ *  changes (see burginfra k8s/apps/wodore/apps/mapproxy). */
+function tileServerBase(): string {
+  const tileServerUrl = getEnv('WODORE_TILE_SERVER_URL');
+  if (!tileServerUrl) {
+    throw new Error('WODORE_TILE_SERVER_URL is not set — raster basemaps need the tile server');
+  }
+  return tileServerUrl.replace(/\/$/, '');
+}
+
+function rasterTilePath(layer: 'world_topo' | 'world_satellite'): string {
+  return `${tileServerBase()}/raster/tiles/${layer}/webmercator/{z}/{x}/{y}.webp`;
+}
+
+/** Font endpoint for the satellite hybrid labels (Noto Sans family) —
+ *  the same font server the martin-served styles use. */
+function fontGlyphsPath(): string {
+  return `${tileServerBase()}/font/{fontstack}/{range}.pbf`;
+}
+
+/** Keyless OpenFreeMap planet vector tiles (OpenMapTiles schema) — the
+ *  source of the satellite hybrid street/place overlay and the hidden
+ *  ofm outdoor fallback style. */
+const OFM_PLANET_TILES = 'https://tiles.openfreemap.org/planet';
+/** OpenFreeMap sprite (settlement dots etc.) — matches the ofm style. */
+const OFM_SPRITE = 'https://tiles.openfreemap.org/sprites/ofm_f384/ofm';
+
+/** Both facade layers stop at z19 (OpenTopoMap z17 upscaled by the
+ *  proxy in places, merged country sources z19) — source-level maxzoom
+ *  lets MapLibre overzoom to the app's zoom cap instead of requesting
+ *  404 tiles beyond the server's range. */
+const RASTER_SOURCE_MAX_ZOOM = 19;
 
 /** Compute absolute glyph/sprite URLs for a style, relative to the
  * style's own URL. With setStyle(..., { transformStyle }) MapLibre loses
@@ -130,26 +165,6 @@ const t = i18n.global.t;
 /** The default world basemap — also the fallback composed beneath
  *  country basemaps (see country-fallback.ts). */
 const DEFAULT_BASEMAP_NAME = 'wd-outdoor-base-mtk';
-
-const swissTopoRasterStyle = getRasterStyle({
-  name: 'ch-swisstopo-raster',
-  tiles: [
-    'https://wmts0.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
-    'https://wmts1.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
-    'https://wmts2.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
-    'https://wmts3.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
-    'https://wmts4.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
-    'https://wmts5.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
-    'https://wmts6.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
-    'https://wmts7.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
-    'https://wmts8.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
-    'https://wmts9.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
-  ],
-  attribution:
-    '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> &#124; <a href="https://www.openstreetmap.org/copyright" target="_blank"> &copy; OpenStreetMap contributors</a> &#124; <a href="https://www.swisstopo.admin.ch/en/home.html" target="_blank">&copy; swisstopo</a>',
-  suffix: '',
-  tileSize: Platform.is.mobile ? 128 : 156,
-});
 
 // Keyless plain OSM raster (tile.openstreetmap.org) — style for the weak-GPU
 // raster variant of "Switzerland Topo Light". Deliberately NOT MapTiler
@@ -900,33 +915,71 @@ export const useBasemapStore = defineStore('basemap', () => {
         },
       },
       {
+        // Worldwide merged TOPO raster on our own /raster facade —
+        // REPLACES the former CH-only direct swisstopo WMTS tiles:
+        // OpenTopoMap everywhere, basemap.at (AT) + swisstopo pixelkarte
+        // (CH+LI) + IGN Plan IGN (FR) composited on top from z7 with
+        // pixel-clipped country borders. Full world coverage, so no
+        // countryOnly/bbox fallback composition anymore. Entry
+        // name/thumbnail unchanged so saved selections and the
+        // preferred-basemap defaults keep resolving. Style is a lazy
+        // getter — the tile server env is read at selection time (same
+        // pattern as wd-outdoor-base-mtk).
         name: 'ch-swisstopo-full',
         label: t('basemaps.swiss_raster'),
         show: true, // raster topo stays selectable alongside the outdoor default
         active: false,
-        countryOnly: true, // CH-only tiles — world fallback via default basemap
-        countryMinZoom: 7, // pixelkarte hides one level earlier than the default floor
-        bbox: [5.7, 45.6, 10.9, 48.1], // CH + border strips (pixelkarte covers them)
         img: getImageUrl('swiss-raster.png'),
-        style: swissTopoRasterStyle,
+        get style(): StyleSpecification {
+          return getRasterStyle({
+            name: 'ch-swisstopo-raster',
+            tiles: [rasterTilePath('world_topo')],
+            attribution:
+              '<a href="https://opentopomap.org" target="_blank">&copy; OpenTopoMap</a> (CC-BY-SA) &#124; <a href="https://www.basemap.at/en/" target="_blank">&copy; basemap.at</a> &#124; <a href="https://www.swisstopo.admin.ch/en/home.html" target="_blank">&copy; swisstopo</a> &#124; <a href="https://www.ign.fr" target="_blank">&copy; IGN</a>',
+            suffix: '',
+            sourceMaxZoom: RASTER_SOURCE_MAX_ZOOM,
+          });
+        },
         layers: {
           ways: { before: undefined },
           background: { before: undefined },
         },
       },
       {
+        // Worldwide merged AERIAL raster on our own /raster facade —
+        // REPLACES the former key-metered MapTiler hybrid style: Esri
+        // World Imagery everywhere, swisstopo swissimage (CH+LI),
+        // basemap.at ortho 30cm (AT) and IGN BD ORTHO (FR) merged on
+        // top from z7. A street/place-name overlay from the OpenFreeMap
+        // planet source restores the former "hybrid" look (basic
+        // streets + town names, satellite-tuned colors — see
+        // utils/satellite-hybrid.ts). Entry name/thumbnail unchanged
+        // for saved selections; lazy getter reads the tile server env
+        // at selection time.
         name: 'Satellite Hybrid',
         label: t('basemaps.satellite'),
-        show: true, // raster topo stays selectable alongside the outdoor default
+        show: true, // raster satellite stays selectable alongside the outdoor default
         active: false,
         img: getImageUrl('satellite.png'),
-        style:
-          'https://api.maptiler.com/maps/hybrid/style.json?key=' +
-          getEnv('WODORE_MAPTILER_API_KEY'),
+        get style(): StyleSpecification {
+          return getSatelliteHybridStyle({
+            tiles: [rasterTilePath('world_satellite')],
+            attribution:
+              '<a href="https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer" target="_blank">Esri, Maxar, Earthstar Geographics</a> &#124; <a href="https://www.swisstopo.admin.ch/en/home.html" target="_blank">&copy; swisstopo</a> &#124; <a href="https://www.basemap.at/en/" target="_blank">&copy; basemap.at</a> &#124; <a href="https://www.ign.fr" target="_blank">&copy; IGN</a> &#124; <a href="https://www.openstreetmap.org/copyright" target="_blank"> &copy; OpenStreetMap contributors</a>',
+            sourceMaxZoom: RASTER_SOURCE_MAX_ZOOM,
+            vectorUrl: OFM_PLANET_TILES,
+            glyphs: fontGlyphsPath(),
+            spriteUrl: OFM_SPRITE,
+          });
+        },
         layers: {
-          ways: { before: 'Tunnel' },
-          background: { before: 'State labels' },
-          routes: { before: 'Tunnel' },
+          // #269 replaced the old OSM-style satellite hybrid (Tunnel/State
+          // labels anchors) with merged world layers — no stable label-layer
+          // ids to anchor against, so routes degrade to top here (the mtk
+          // default basemap carries the proper under-labels anchor).
+          ways: { before: undefined },
+          background: { before: undefined },
+          routes: { before: undefined },
         },
       },
       {
