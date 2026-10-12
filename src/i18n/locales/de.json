@@ -430,7 +430,9 @@
     "satellite": "Satellit",
     "outdoor": "Outdoor",
     "austria_raster": "Österreich Topo Raster",
-    "outdoor_ofm": "Outdoor (OSM)"
+    "outdoor_ofm": "Outdoor (OSM)",
+    "world_topo": "Welt Topo",
+    "world_satellite": "Welt Satellit"
   },
   "multi_select": {
     "select_all": "Alle auswählen",
