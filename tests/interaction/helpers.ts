@@ -60,6 +60,9 @@ const STYLE_URL_RE = /\/v1\/map\/styles\/([^/?]+)\.json/;
 // atomic (tmp + rename) and additive by construction.
 const INDEX_DIR = path.join(CACHE_DIR, 'catalog-index');
 
+/** Recent [map-catalog] console lines from the current page (diagnostics). */
+const catalogConsole: string[] = [];
+
 function styleCacheKeyFor(url: string): string | null {
   const match = STYLE_URL_RE.exec(url);
   if (!match) return null;
@@ -143,6 +146,15 @@ function buildCatalogSeed(): { catalog: unknown; styles: Record<string, unknown>
 export const test = baseTest.extend<{ stagingCache: void }>({
   stagingCache: [
     async ({ page }, use) => {
+      // Keep the app's map-catalog console output for boot diagnostics —
+      // the caught fetch error is otherwise invisible in CI logs.
+      page.on('console', msg => {
+        const text = msg.text();
+        if (text.includes('[map-catalog]')) {
+          catalogConsole.push(`${new Date().toISOString().slice(11, 19)} ${text.slice(0, 200)}`);
+          if (catalogConsole.length > 20) catalogConsole.shift();
+        }
+      });
       // Seed the app's persisted map-catalog caches (production boot path,
       // near-zero per-test network footprint) once the warmup spec has
       // populated the disk cache.
@@ -415,7 +427,11 @@ export async function waitForCatalogLayers(page: Page): Promise<void> {
         }))()`
       )
       .then(state =>
-        console.warn('[interaction] catalog boot incomplete after waits:', JSON.stringify(state))
+        console.warn(
+          '[interaction] catalog boot incomplete after waits:',
+          JSON.stringify(state),
+          '\n  app console:\n  ' + (catalogConsole.join('\n  ') || '(no map-catalog output)')
+        )
       )
       .catch(() => undefined);
   });

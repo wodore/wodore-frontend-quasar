@@ -11,8 +11,12 @@ export default defineConfig({
   timeout: 90_000,
   retries: process.env.CI ? 1 : 0,
   // e2e specs (bottom sheet, navigation) share app state — serial.
-  // Interaction specs are independent browser contexts — parallel.
-  workers: process.env.CI ? 4 : 2,
+  // Interaction specs are independent browser contexts — parallel. CI
+  // runs 2 (not the 4 measured for pre-catalog boots): every boot now
+  // loads the map catalog from seeded storage + a background refresh,
+  // and four concurrent cold boots starved the 2-core runner enough to
+  // fail catalog fetches outright.
+  workers: process.env.CI ? 2 : 2,
   use: {
     baseURL: BASE_URL,
     screenshot: 'only-on-failure',
