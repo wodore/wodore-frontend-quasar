@@ -52,7 +52,13 @@ function readCached(url: string): CachedResponse | null {
 // boot the production cache-first path with ~one replayed request.
 const CATALOG_URL_RE = /\/v1\/map\/catalog/;
 const STYLE_URL_RE = /\/v1\/map\/styles\/([^/?]+)\.json/;
-const INDEX_FILE = path.join(CACHE_DIR, 'catalog-index.json');
+// The index is a DIRECTORY of per-URL marker files: playwright runs spec
+// files in parallel workers (4 on CI), and a single JSON index would be a
+// read-modify-write race across processes — a worker could clobber the
+// catalog URL another worker recorded, silently disabling the seeding
+// for every later test in that worker. One marker file per URL is
+// atomic (tmp + rename) and additive by construction.
+const INDEX_DIR = path.join(CACHE_DIR, 'catalog-index');
 
 function styleCacheKeyFor(url: string): string | null {
   const match = STYLE_URL_RE.exec(url);
@@ -64,20 +70,27 @@ function styleCacheKeyFor(url: string): string | null {
 
 function readIndex(): string[] {
   try {
-    return JSON.parse(fs.readFileSync(INDEX_FILE, 'utf8')).urls as string[];
+    return fs
+      .readdirSync(INDEX_DIR)
+      .filter(f => f.endsWith('.json'))
+      .map(
+        f => (JSON.parse(fs.readFileSync(path.join(INDEX_DIR, f), 'utf8')) as { url: string }).url
+      );
   } catch {
     return [];
   }
 }
 
 function appendIndex(url: string): void {
-  const urls = readIndex();
-  if (urls.includes(url)) return;
-  urls.push(url);
-  fs.mkdirSync(CACHE_DIR, { recursive: true });
-  const tmp = `${INDEX_FILE}.${process.pid}.tmp`;
-  fs.writeFileSync(tmp, JSON.stringify({ urls }));
-  fs.renameSync(tmp, INDEX_FILE);
+  const marker = path.join(
+    INDEX_DIR,
+    `${crypto.createHash('sha256').update(url).digest('hex')}.json`
+  );
+  if (fs.existsSync(marker)) return;
+  fs.mkdirSync(INDEX_DIR, { recursive: true });
+  const tmp = `${marker}.${process.pid}.tmp`;
+  fs.writeFileSync(tmp, JSON.stringify({ url }));
+  fs.renameSync(tmp, marker);
 }
 
 /** Build the app's persisted localStorage caches from the disk cache. */
@@ -152,6 +165,19 @@ export const test = baseTest.extend<{ stagingCache: void }>({
         const req = route.request();
         const url = req.url();
         if (req.method() !== 'GET') return route.fallback();
+
+        // Style-endpoint resilience: with the real document cached, serve
+        // it; on a cache miss NEVER touch a slow/dead endpoint — a minimal
+        // valid style keeps the suite independent of style-serving health
+        // (catalog-driven rows still render; the overlay's map layers stay
+        // empty for that slug — chrome assertions do not depend on them).
+        if (styleCacheKeyFor(url) && !readCached(url)) {
+          return route.fulfill({
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ version: 8, sources: {}, layers: [] }),
+          });
+        }
 
         const hit = readCached(url);
         if (hit) {
@@ -374,8 +400,19 @@ export async function waitForCatalogLayers(page: Page): Promise<void> {
   await page.waitForSelector('.wd-ovl__row, .wd-ovl__status', { timeout: 60_000 });
   // Loading state → wait until it resolves (row appears or error stays)
   await page.waitForSelector('.wd-ovl__row', { timeout: 60_000 }).catch(() => {
-    // Cold-boot failure keeps the error row — tests that need layers
-    // will fail on their own assertions with a clearer message.
+    // Cold-boot failure keeps the error row — log the app's catalog state
+    // so downstream assertion failures have actionable context.
+    void page
+      .evaluate(
+        `(() => ({
+          rows: document.querySelectorAll('.wd-ovl__row').length,
+          status: document.querySelector('.wd-ovl__status')?.textContent ?? null,
+        }))()`
+      )
+      .then(state =>
+        console.warn('[interaction] catalog boot incomplete after waits:', JSON.stringify(state))
+      )
+      .catch(() => undefined);
   });
 }
 

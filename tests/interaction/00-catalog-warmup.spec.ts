@@ -15,12 +15,12 @@ import { test, expect } from './helpers';
 import { loadMap } from './helpers';
 
 test('map catalog layers load', async ({ page }) => {
-  test.setTimeout(300_000);
+  test.setTimeout(420_000);
   await loadMap(page);
   // Rows render (or the explicit error state shows when staging is
   // down — either way the response cache is populated).
   const state = await page
-    .waitForSelector('.wd-ovl__row', { timeout: 240_000 })
+    .waitForSelector('.wd-ovl__row', { timeout: 300_000 })
     .then(() => 'rows')
     .catch(() => 'error-state');
   expect(['rows', 'error-state']).toContain(state);
