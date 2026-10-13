@@ -246,10 +246,7 @@ export async function loadMap(page: Page): Promise<void> {
  * or the explicit error state; a warm cache renders instantly.
  */
 export async function waitForCatalogLayers(page: Page): Promise<void> {
-  await page.waitForSelector(
-    '.wd-ovl__row, .wd-ovl__status',
-    { timeout: 60_000 }
-  );
+  await page.waitForSelector('.wd-ovl__row, .wd-ovl__status', { timeout: 60_000 });
   // Loading state → wait until it resolves (row appears or error stays)
   await page.waitForSelector('.wd-ovl__row', { timeout: 60_000 }).catch(() => {
     // Cold-boot failure keeps the error row — tests that need layers
