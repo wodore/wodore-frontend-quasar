@@ -170,10 +170,6 @@ async function probeStyleUrl(styleUrl: string): Promise<Response | null> {
 
 function prewarmOutdoorMtk(): void {
   void fetch(mtkStylePath()).catch(() => undefined);
-  // Catalog path: the style endpoint serves the seeded style once the
-  // backend retires Martin's style routes (design.md D1 deploy ordering —
-  // pre-cutover this 404s harmlessly).
-  void fetch(styleEndpointUrl('wd-outdoor-base-mtk')).catch(() => undefined);
   for (const u of MTK_STATIC_URLS) void fetch(u, { mode: 'cors' }).catch(() => undefined);
 }
 
@@ -1153,6 +1149,14 @@ export const useBasemapStore = defineStore('basemap', () => {
       ]);
     } catch (error) {
       console.warn('[basemap-store] map catalog unavailable — factory basemaps stay:', error);
+    }
+    if (catalog) {
+      // Prewarm ONLY the style URL actually used: the catalog-applied mtk
+      // entry points at the API style endpoint (post-cutover serving).
+      // Prewarming it unconditionally fires a request that is never used
+      // when the catalog is unreachable — and races teardown under the
+      // interaction suite's route interception.
+      void fetch(styleEndpointUrl('wd-outdoor-base-mtk')).catch(() => undefined);
     }
 
     let items: BasemapSwitchItem[];
