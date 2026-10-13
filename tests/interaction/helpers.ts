@@ -235,7 +235,26 @@ export async function loadMap(page: Page): Promise<void> {
   // optimization on a busy 2-core runner — give that burst real headroom.
   await page.waitForSelector('.maplibregl-canvas', { timeout: 60_000 });
   await waitForMapIdle(page, 30_000);
+  await waitForCatalogLayers(page);
   await page.waitForTimeout(500); // brief paint settle for overlay chrome
+}
+
+/**
+ * Overlay/basemap definitions load from the backend map catalog — on a
+ * cold cache (fresh CI storage) that is a catalog + style round-trip
+ * before the first overlay row renders. Wait for either a rendered row
+ * or the explicit error state; a warm cache renders instantly.
+ */
+export async function waitForCatalogLayers(page: Page): Promise<void> {
+  await page.waitForSelector(
+    '.wd-ovl__row, .wd-ovl__status',
+    { timeout: 60_000 }
+  );
+  // Loading state → wait until it resolves (row appears or error stays)
+  await page.waitForSelector('.wd-ovl__row', { timeout: 60_000 }).catch(() => {
+    // Cold-boot failure keeps the error row — tests that need layers
+    // will fail on their own assertions with a clearer message.
+  });
 }
 
 /**
