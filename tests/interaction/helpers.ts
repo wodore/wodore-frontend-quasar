@@ -155,6 +155,12 @@ export const test = baseTest.extend<{ stagingCache: void }>({
 
         const hit = readCached(url);
         if (hit) {
+          // Record catalog/style URLs on HITS too — the CI-restored cache
+          // replays without writes, and the boot-cache seeding below keys
+          // off the index (without this it would never activate there).
+          if (CATALOG_URL_RE.test(url) || styleCacheKeyFor(url)) {
+            appendIndex(url);
+          }
           return route.fulfill({
             status: hit.status,
             headers: hit.headers,
