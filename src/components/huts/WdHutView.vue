@@ -73,7 +73,7 @@ const symbolMap = computed<Record<string, { detailed: string; simple: string }>>
       if (type?.slug) {
         map[type.slug] = {
           detailed: type.symbol?.color ?? unknownDetailed,
-          simple: type.symbol?.primitive ?? unknownSimple,
+          simple: type.symbol?.mono ?? type.symbol?.primitive ?? unknownSimple,
         };
       }
     }

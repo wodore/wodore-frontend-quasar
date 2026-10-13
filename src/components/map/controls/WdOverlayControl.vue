@@ -1307,7 +1307,7 @@ function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwit
       // addSprite is async but has no completion callback in this MapLibre
       // version — poll for a known image from this sprite to detect load
       const probeImage =
-        id === 'wd-sdf' ? 'wd-sdf/mono/accommodation.unknown' : `${id}/color/accommodation.unknown`;
+        id === 'wd-sdf' ? 'wd-sdf:mono/accommodation.unknown' : `${id}/color/accommodation.unknown`;
       pendingSprites.push(
         new Promise<void>(resolve => {
           const check = () => {
@@ -1333,19 +1333,24 @@ function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwit
         addSprite(spriteId, spriteUrl as string);
       }
     }
-    // Once all sprites are loaded, nudge MapLibre to re-evaluate
-    // layout properties (icon-image) that reference sprite images.
+    // Once all sprites are loaded, force MapLibre to re-evaluate
+    // LAYOUT properties (icon-image). Setting a paint property does NOT
+    // re-evaluate layout properties — we must explicitly re-set the
+    // layout property or remove/re-add the layer. Re-setting via
+    // setLayoutProperty is the least disruptive.
     if (pendingSprites.length > 0) {
       Promise.all(pendingSprites).then(() => {
-        // Force a re-render of the layers by updating a benign paint
-        // property — this triggers MapLibre's internal style diff,
-        // which re-evaluates the icon-image expression with the now-
-        // loaded sprite images.
         for (const layer of overlay.style.layers) {
           if (layer.type === 'symbol' && mapRef.map?.getLayer(layer.id)) {
-            const currentOpacity = mapRef.map.getPaintProperty(layer.id, 'icon-opacity');
-            if (currentOpacity !== undefined) {
-              mapRef.map.setPaintProperty(layer.id, 'icon-opacity', currentOpacity);
+            const layerSpec = layer as { layout?: Record<string, unknown> };
+            const iconImage = layerSpec.layout?.['icon-image'];
+            if (iconImage !== undefined) {
+              // Re-set the icon-image layout property — this forces
+              // MapLibre to re-evaluate the expression with the
+              // now-loaded sprite images (paint-property updates do NOT
+              // trigger layout-property re-evaluation).
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (mapRef.map as any).setLayoutProperty(layer.id, 'icon-image', iconImage);
             }
           }
         }

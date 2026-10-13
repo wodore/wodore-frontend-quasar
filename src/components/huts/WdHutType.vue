@@ -52,7 +52,13 @@ const openColor = computed(() => {
     :class="['bg-' + color, 'q-pa-sm', 'row content', 'items-center']"
     v-if="type || (capacity && capacity > 0)"
   >
-    <q-icon v-if="type" :name="'img:' + type.symbol?.color" size="38px" />
+    <WdCategoryIcon
+      v-if="type"
+      :identifier="type ? 'accommodation.' + type.slug : 'accommodation.hut'"
+      :href="type?.symbol?.color"
+      variant="color"
+      :size="38"
+    />
     <div class="col q-ml-sm">
       <div :class="['text-h5', 'text-accent-700']" style="font-weight: 500">
         {{ capacity !== null ? capacity : '?' }}
