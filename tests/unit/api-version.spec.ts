@@ -35,8 +35,8 @@ describe('PINNED_API_VERSION', () => {
   // literal "unreleased" while a breaking change is unfrozen. Carries
   // unreleased contract features (e.g. the gallery static-map fallback);
   // the next coordinated backend api-release re-pins via a routine gen:api.
-  it('is pinned to the backend current version (unreleased tip)', () => {
-    expect(PINNED_API_VERSION).toBe('unreleased');
+  it('is pinned to the frozen backend version', () => {
+    expect(PINNED_API_VERSION).toBe('2026-10-13');
   });
 });
 
