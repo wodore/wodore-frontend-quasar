@@ -973,7 +973,7 @@ function pickIconUrl(icon: BackendIcon, look: IconLook): string | null {
   // Color never falls through to mono and mono never falls back to
   // color (services/icons): the preview shows exactly the stored look.
   if (look === 'mono') return icon.urls?.mono ?? null;
-  return icon.urls?.simple ?? icon.urls?.detailed ?? null;
+  return icon.urls?.primitive ?? icon.urls?.color ?? null;
 }
 
 async function runIconSearch(query: string): Promise<void> {
@@ -1289,7 +1289,7 @@ function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwit
       mapRef.map?.addSource(label, overlay.style.sources[label]);
     }
   }
-  // Add sprites if defined (loads e.g. wd:detailed/* hut symbols)
+  // Add sprites if defined (loads e.g. wd:color/* hut symbols)
   const spriteData = overlay.style.sprite;
   if (spriteData) {
     const existingSprites = mapRef.map?.getSprite() || [];

@@ -537,6 +537,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/map/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * map-catalog — Map layer catalog (overlays and basemaps).
+         * @description Metadata index for map clients: identities, labels in the
+         *     request language, icons, parameter schemas, device-tier
+         *     variants, category projections and coverage bounds. Large
+         *     styles are referenced by URL, small ones inlined.
+         */
+        get: operations["map-catalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/meteo/symbol/{collection}/{time}/{code}.svg": {
         parameters: {
             query?: never;
@@ -1088,15 +1111,15 @@ export interface components {
             /** Children */
             children: boolean;
             /**
-             * Symbol Detailed
+             * Symbol Color
              * @default null
              */
-            symbol_detailed: string | null;
+            symbol_color: string | null;
             /**
-             * Symbol Simple
+             * Symbol Primitive
              * @default null
              */
-            symbol_simple: string | null;
+            symbol_primitive: string | null;
             /**
              * Symbol Mono
              * @default null
@@ -1133,15 +1156,15 @@ export interface components {
             /** Children Count */
             children_count: number;
             /**
-             * Symbol Detailed
+             * Symbol Color
              * @default null
              */
-            symbol_detailed: string | null;
+            symbol_color: string | null;
             /**
-             * Symbol Simple
+             * Symbol Primitive
              * @default null
              */
-            symbol_simple: string | null;
+            symbol_primitive: string | null;
             /**
              * Symbol Mono
              * @default null
@@ -1205,15 +1228,15 @@ export interface components {
             /** Color */
             color: string;
             /**
-             * Symbol Detailed
+             * Symbol Color
              * @default null
              */
-            symbol_detailed: string | null;
+            symbol_color: string | null;
             /**
-             * Symbol Simple
+             * Symbol Primitive
              * @default null
              */
-            symbol_simple: string | null;
+            symbol_primitive: string | null;
             /**
              * Symbol Mono
              * @default null
@@ -1246,15 +1269,15 @@ export interface components {
              */
             parent: string | null;
             /**
-             * Symbol Detailed
+             * Symbol Color
              * @default null
              */
-            symbol_detailed: string | null;
+            symbol_color: string | null;
             /**
-             * Symbol Simple
+             * Symbol Primitive
              * @default null
              */
-            symbol_simple: string | null;
+            symbol_primitive: string | null;
             /**
              * Symbol Mono
              * @default null
@@ -2406,17 +2429,17 @@ export interface components {
          */
         IconUrls: {
             /**
-             * Detailed
-             * @description Detailed style SVG URL
+             * Color
+             * @description Color style SVG URL
              * @default null
              */
-            detailed: string | null;
+            color: string | null;
             /**
-             * Simple
-             * @description Simple style SVG URL
+             * Primitive
+             * @description Primitive style SVG URL
              * @default null
              */
-            simple: string | null;
+            primitive: string | null;
             /**
              * Mono
              * @description Mono style SVG URL
@@ -2917,6 +2940,174 @@ export interface components {
             xl: string;
         };
         /**
+         * LayerSummary
+         * @description Catalog entry for one layer (all its variants share the identity).
+         */
+        LayerSummary: {
+            /** Slug */
+            slug: string;
+            /** Role */
+            role: string;
+            /**
+             * Name
+             * @default
+             */
+            name: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Icon
+             * @default
+             */
+            icon: string;
+            /**
+             * Icon Badge
+             * @default
+             */
+            icon_badge: string;
+            /**
+             * Slot
+             * @default null
+             */
+            slot: string | null;
+            /**
+             * Order
+             * @default 0
+             */
+            order: number;
+            /**
+             * Show
+             * @default true
+             */
+            show: boolean;
+            /**
+             * Is Default
+             * @default false
+             */
+            is_default: boolean;
+            /**
+             * Min Zoom
+             * @default null
+             */
+            min_zoom: number | null;
+            /**
+             * Max Zoom
+             * @default null
+             */
+            max_zoom: number | null;
+            /**
+             * Coverage Bbox
+             * @default null
+             */
+            coverage_bbox: number[] | null;
+            /**
+             * Fallback Min Zoom
+             * @default null
+             */
+            fallback_min_zoom: number | null;
+            /**
+             * Fallback
+             * @default null
+             */
+            fallback: string | null;
+            /**
+             * Anchors
+             * @default null
+             */
+            anchors: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Preview Url
+             * @default null
+             */
+            preview_url: string | null;
+            /**
+             * Config
+             * @default null
+             */
+            config: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Interaction
+             * @default null
+             */
+            interaction: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Parameters
+             * @default []
+             */
+            parameters: components["schemas"]["ParameterSummary"][];
+            /**
+             * Categories
+             * @default []
+             */
+            categories: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * Attributions
+             * @default []
+             */
+            attributions: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * License
+             * @default null
+             */
+            license: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Legend
+             * @default null
+             */
+            legend: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Version
+             * @default null
+             */
+            version: string | null;
+            /**
+             * Variants
+             * @default []
+             */
+            variants: components["schemas"]["LayerVariant"][];
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * LayerVariant
+         * @description One device-tier variant of a layer.
+         */
+        LayerVariant: {
+            /** Spec */
+            spec: string;
+            /**
+             * Style Url
+             * @default null
+             */
+            style_url: string | null;
+            /**
+             * Inline Style
+             * @default null
+             */
+            inline_style: {
+                [key: string]: unknown;
+            } | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
          * LicenseInfoSchema
          * @description Important information, for example for an image
          */
@@ -2988,6 +3179,24 @@ export interface components {
              * @example 7.6496971
              */
             lon: number;
+        };
+        /**
+         * MapCatalogResponse
+         * @description Top-level catalog payload.
+         */
+        MapCatalogResponse: {
+            /**
+             * Slots
+             * @default []
+             */
+            slots: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * Layers
+             * @default []
+             */
+            layers: components["schemas"]["LayerSummary"][];
         };
         /**
          * MediaUrlModeEnum
@@ -3226,6 +3435,40 @@ export interface components {
             url: string | null;
         };
         /**
+         * ParameterSummary
+         * @description Parameter schema entry (drives the client settings UI).
+         */
+        ParameterSummary: {
+            /** Slug */
+            slug: string;
+            /** Kind */
+            kind: string;
+            /**
+             * Label
+             * @default
+             */
+            label: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Default
+             * @default null
+             */
+            default: unknown;
+            /**
+             * Constraints
+             * @default null
+             */
+            constraints: {
+                [key: string]: unknown;
+            } | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
          * PhoneSchema
          * @description Schema for phone number with optional label.
          */
@@ -3413,7 +3656,7 @@ export interface components {
          * @description Symbol variant types for categories.
          * @enum {string}
          */
-        SymbolVariantEnum: "detailed" | "simple" | "mono";
+        SymbolVariantEnum: "color" | "primitive" | "mono";
         /**
          * TristateEnum
          * @description Tristate enum with `true`, `false` and `unset`.
@@ -5263,7 +5506,7 @@ export interface operations {
                 lang?: string;
                 /** @description Search term(s); matches localized keywords and slugs with typo tolerance. Empty returns browsable (faceted) results. */
                 search?: string;
-                /** @description Filter by pack slug */
+                /** @description Filter by pack slug; comma-separated slugs filter to the union of those packs */
                 pack?: string | null;
                 /** @description Exact icon slug lookup (combine with pack to resolve one stored icon) */
                 slug?: string | null;
@@ -5310,6 +5553,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": null;
+                };
+            };
+            /** @description Raised when request components cannot be parsed */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Raised when provided `Accept` header cannot be satisfied */
+            406: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Raised when returned response does not match the response schema */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+        };
+    };
+    "map-catalog": {
+        parameters: {
+            query?: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /** @description Filter by layer role (basemap | overlay) */
+                role?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    "Cache-Control": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MapCatalogResponse"];
                 };
             };
             /** @description Raised when request components cannot be parsed */

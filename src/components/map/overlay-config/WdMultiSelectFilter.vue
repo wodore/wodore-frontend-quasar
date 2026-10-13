@@ -48,11 +48,11 @@ onUnmounted(() => {
 });
 
 // Use simple icon at low zoom (< 11), detailed at high zoom (>= 11)
-const getDisplayIcon = (option: { iconSimple?: string; iconDetailed?: string }) => {
+const getDisplayIcon = (option: { iconPrimitive?: string; iconColor?: string }) => {
   if (currentZoom.value >= 11) {
-    return option.iconDetailed || option.iconSimple;
+    return option.iconColor || option.iconPrimitive;
   } else {
-    return option.iconSimple || option.iconDetailed;
+    return option.iconPrimitive || option.iconColor;
   }
 };
 
@@ -142,7 +142,7 @@ function getIconUrl(iconUrl: string | undefined): string | undefined {
         :class="{ 'option-inactive': !selectedValues.includes(option.value as string) }"
         @click="toggleOption(option.value as string)"
       >
-        <q-item-section avatar v-if="option.iconDetailed || option.iconSimple">
+        <q-item-section avatar v-if="option.iconColor || option.iconPrimitive">
           <q-avatar size="32px" square class="icon-container">
             <transition name="fade">
               <img

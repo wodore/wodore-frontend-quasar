@@ -37,7 +37,6 @@ const TILE_SERVER_URL = getEnv('WODORE_TILE_SERVER_URL') || 'https://tiles.stg.w
 //}
 // HUTS
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-const imageSwitchZoom = 11;
 const hutsLayerLayout: SymbolLayerSpecification['layout'] = {
   'text-field': ['case', ['>', ['get', 'type_standard_order'], 25], ['get', 'name'], ''],
   // Legible floor (the old 7px was sub-legible), capped like the basemap's
@@ -54,27 +53,41 @@ const hutsLayerLayout: SymbolLayerSpecification['layout'] = {
   'text-overlap': 'never',
   'text-optional': true,
   'icon-image': [
-    'step',
-    ['zoom'],
-    [
-      'coalesce',
-      ['image', ['concat', 'wd:simple/', ['get', 'type_standard_identifier']]],
-      ['image', 'wd:simple/accommodation.unknown'],
-    ],
-    imageSwitchZoom,
-    [
-      'coalesce',
-      ['image', ['concat', 'wd:detailed/', ['get', 'type_standard_identifier']]],
-      ['image', 'wd:detailed/accommodation.unknown'],
-    ],
+    'coalesce',
+    ['image', ['concat', 'wd-sdf/mono/', ['get', 'type_standard_identifier']]],
+    ['image', 'wd-sdf/mono/accommodation.unknown'],
+    // Legacy fallback while a tile server without the mono/ variant is in use
+    ['image', ['concat', 'wd:primitive/', ['get', 'type_standard_identifier']]],
+    ['image', 'wd:primitive/accommodation.unknown'],
   ],
-  //'icon-size': ['interpolate', ['linear'], ['zoom'], 7, 0.05, 9, 0.1, 20, 1],
-  'icon-size': ['interpolate', ['linear'], ['zoom'], 7, 0.1, 9, 0.3, 20, 2],
+  // 48px SDF art: legible floor ~0.45 (≈22px) at z7, growing with zoom
+  'icon-size': [
+    'interpolate',
+    ['linear'],
+    ['zoom'],
+    7,
+    0.45,
+    9,
+    0.55,
+    11,
+    0.65,
+    13,
+    0.8,
+    16,
+    1.0,
+    20,
+    1.25,
+  ],
   visibility: 'visible',
 };
 
 const hutsLayerPaint: SymbolLayerSpecification['paint'] = {
-  'icon-opacity': ['interpolate', ['linear'], ['zoom'], 5, 0.7, 10, 0.8, 22, 0.85],
+  // SDF runtime tinting: type color from the tiles, white border around it
+  'icon-color': ['coalesce', ['get', 'type_standard_color'], '#718096'],
+  'icon-halo-color': '#ffffff',
+  'icon-halo-width': 2,
+  'icon-halo-blur': 0.15,
+  'icon-opacity': 1,
   'text-opacity': ['step', ['zoom'], 0, 7, 1],
   // Forest-deep (#224E3B) marks hut names as the product's own objects —
   // same treatment as the basemap style's wd-park-label; AA on light
@@ -181,7 +194,7 @@ function getHutsOccupationDayLayout(day: number) {
         'image',
         [
           'concat',
-          'wd:detailed/availability.',
+          'wd:color/availability.',
           [
             'case',
             ['<', day, ['length', ['get', 'data']]],
@@ -190,7 +203,7 @@ function getHutsOccupationDayLayout(day: number) {
           ],
         ],
       ],
-      ['image', 'wd:detailed/availability.unknown'],
+      ['image', 'wd:color/availability.unknown'],
     ],
     'icon-size': ['interpolate', ['linear'], ['zoom'], 7, 0.1, 12, 0.3, 15, 0.6],
   };
@@ -230,7 +243,7 @@ function hutsOccpationDetailLayer(day: number) {
     type: 'symbol',
     source: 'wd-bookings',
     // Unknown days keep rendering here — the small gray availability dot
-    // ("wd:detailed/availability.unknown") and the "?" free/total label stay
+    // ("wd:color/availability.unknown") and the "?" free/total label stay
     // visible. Only the big background circle ("wd-huts-occupation" below)
     // is suppressed for unknown/missing status via its transparent fallback.
     minzoom: 6,
@@ -253,7 +266,13 @@ export const hutsStyle: StyleSpecification = {
       promoteId: 'hut_id',
     },
   },
-  sprite: [{ id: 'wd', url: `${TILE_SERVER_URL}/sprite/accommodation,availability` }],
+  sprite: [
+    { id: 'wd', url: `${TILE_SERVER_URL}/sprite/accommodation,availability` },
+    // SDF variant (Martin /sdf_sprite): mono silhouettes, runtime-tinted via
+    // icon-color + icon-halo-* (see hutsLayerPaint). Per-icon `sdf: true` is
+    // delivered by Martin's sprite index.
+    { id: 'wd-sdf', url: `${TILE_SERVER_URL}/sdf_sprite/accommodation` },
+  ],
   layers: [
     hutsOccpationDetailLayer(0),
     hutsOccpationDetailLayer(1),

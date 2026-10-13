@@ -17,7 +17,7 @@ import { currentLocale } from '@services/locale';
 
 export type BackendIcon = schemasWodore['IconDto'];
 /** Asset slots the backend serves per icon (wire styles). */
-export type BackendIconStyle = 'detailed' | 'simple' | 'mono';
+export type BackendIconStyle = 'color' | 'primitive' | 'mono';
 /** Looks the frontend offers: color (flat art, detailed fallback) or mono. */
 export type IconLook = 'color' | 'mono';
 
@@ -29,7 +29,7 @@ export const DEFAULT_ICON_LOOK: IconLook = 'color';
 
 /** Wire style the color look prefers first (Fluent Flat; Noto/flags have
  *  detailed only and fall through). */
-export const COLOR_WIRE_ORDER: BackendIconStyle[] = ['simple', 'detailed'];
+export const COLOR_WIRE_ORDER: BackendIconStyle[] = ['primitive', 'color'];
 
 /** Stored icon reference: "pack/slug" with an optional "@mono" suffix
  *  ("@color" implied). Slugs collide across packs, so the pack is part of
@@ -77,7 +77,13 @@ export function availableStyle(
   const urls = icon.urls;
   if (!urls) return null;
   const order: BackendIconStyle[] = preferred === 'mono' ? ['mono'] : COLOR_WIRE_ORDER;
-  return order.find(style => urls[style]) ?? null;
+  const found = order.find(style => urls[style]) ?? null;
+  if (found) return found;
+  // Legacy backend still serving detailed/simple slots (rollout window)
+  const legacyUrls = urls as Record<string, string | null | undefined>;
+  const legacy = preferred === 'mono' ? ['mono'] : ['simple', 'detailed'];
+  const hit = legacy.find(style => legacyUrls[style]);
+  return (hit as BackendIconStyle | undefined) ?? null;
 }
 
 export interface IconSearchParams {
@@ -142,7 +148,7 @@ export async function getBackendIconUrl(
     const urls = data?.[0]?.urls ?? null;
     if (!urls) return null;
     if (look === 'mono') return urls.mono ?? null;
-    return urls.simple ?? urls.detailed ?? null;
+    return urls.primitive ?? urls.color ?? null;
   } catch {
     return null;
   }

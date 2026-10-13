@@ -79,8 +79,8 @@ export interface FilterOption {
   icon?: string;
   description?: string;
   color?: string;
-  iconDetailed?: string;
-  iconSimple?: string;
+  iconColor?: string;
+  iconPrimitive?: string;
 }
 
 export interface FilterDefinition {
@@ -128,8 +128,8 @@ export interface SettingDefinition {
 
 /**
  * How to render legend items:
- * - symbol_detailed: Show detailed icon only
- * - symbol_simple: Show simple icon only
+ * - symbol_color: Show color icon only
+ * - symbol_primitive: Show primitive icon only
  * - symbol_mono: Show monochrome icon only
  * - symbol_dual: Show both detailed and simple icons side-by-side
  * - line: Show colored line
@@ -137,8 +137,8 @@ export interface SettingDefinition {
  * - point: Show colored circle
  */
 export type InfoItemType =
-  | 'symbol_detailed'
-  | 'symbol_simple'
+  | 'symbol_color'
+  | 'symbol_primitive'
   | 'symbol_mono'
   | 'symbol_dual'
   | 'line'
@@ -162,8 +162,8 @@ export interface LegendItem {
   label: string;
   description?: string;
   metadata?: {
-    iconDetailed?: string | null;
-    iconSimple?: string | null;
+    iconColor?: string | null;
+    iconPrimitive?: string | null;
     iconMono?: string | null;
     type?: InfoItemType;
     [key: string]: unknown;
@@ -226,8 +226,8 @@ export interface CategoryItem {
   parent?: string | null;
   identifier: string;
   children?: boolean;
-  symbol_detailed?: string | null;
-  symbol_simple?: string | null;
+  symbol_color?: string | null;
+  symbol_primitive?: string | null;
   symbol_mono?: string | null;
   color?: string | null;
   color_text?: string | null;
