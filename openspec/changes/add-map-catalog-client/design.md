@@ -28,6 +28,14 @@ What changes instead of the factories:
   overlay/basemap controls until the catalog answers; a failure is an
   error state + user-visible notice. Never factories, never a blank
   silent fallback.
+- **Metadata-first, progressive styles**: overlay rows apply as
+  PLACEHOLDER items the moment the catalog is known (labels, icons,
+  settings render from metadata with an empty style — addOverlay is a
+  no-op on it), and each resolved style bundle replaces its placeholder
+  through a progressive re-apply (catalog order). One slow, hung or
+  dead style fetch therefore never blocks the menu; style fetches abort
+  after 30 s and the layer skips loudly (D8) — the interaction suite's
+  chrome assertions are independent of style-endpoint health.
 - **Version sync**: after the cached render, a fresh catalog is fetched
   in the background. Per layer, the style is refetched ONLY when its
   `version` changed (or the entry is missing/invalid); otherwise the

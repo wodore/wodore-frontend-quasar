@@ -3073,6 +3073,11 @@ export interface components {
                 [key: string]: unknown;
             } | null;
             /**
+             * Version
+             * @default null
+             */
+            version: string | null;
+            /**
              * Variants
              * @default []
              */

@@ -116,6 +116,34 @@ const catalogFor = (mtbVersion: string | undefined) => ({
   ],
   layers: [
     {
+      slug: 'transport-stops',
+      role: 'overlay',
+      name: 'Public transport stops',
+      description: '',
+      icon: 'transport',
+      icon_badge: '',
+      slot: 'ways',
+      order: 2,
+      show: true,
+      is_default: false,
+      min_zoom: null,
+      max_zoom: null,
+      coverage_bbox: null,
+      fallback_min_zoom: null,
+      fallback: null,
+      anchors: null,
+      preview_url: null,
+      config: null,
+      interaction: null,
+      parameters: [],
+      categories: [],
+      attributions: [],
+      license: null,
+      legend: null,
+      ...(mtbVersion !== undefined ? { version: mtbVersion } : {}),
+      variants: [{ spec: 'medium' as const }],
+    },
+    {
       slug: 'mtb',
       role: 'overlay',
       name: 'Mountain bike routes',
@@ -145,34 +173,6 @@ const catalogFor = (mtbVersion: string | undefined) => ({
           constraints: null,
         },
       ],
-      categories: [],
-      attributions: [],
-      license: null,
-      legend: null,
-      ...(mtbVersion !== undefined ? { version: mtbVersion } : {}),
-      variants: [{ spec: 'medium' as const }],
-    },
-    {
-      slug: 'transport-stops',
-      role: 'overlay',
-      name: 'Public transport stops',
-      description: '',
-      icon: 'transport',
-      icon_badge: '',
-      slot: 'ways',
-      order: 2,
-      show: true,
-      is_default: false,
-      min_zoom: null,
-      max_zoom: null,
-      coverage_bbox: null,
-      fallback_min_zoom: null,
-      fallback: null,
-      anchors: null,
-      preview_url: null,
-      config: null,
-      interaction: null,
-      parameters: [],
       categories: [],
       attributions: [],
       license: null,
@@ -244,7 +244,7 @@ describe('map catalog store (boot cache + version sync)', () => {
     await store.initOverlays();
 
     expect(store.status).toBe('ready');
-    expect(overlaysOf().map(o => o.name)).toEqual(['mtb', 'transport-stops']);
+    expect(overlaysOf().map(o => o.name)).toEqual(['transport-stops', 'mtb']);
     // Persisted: catalog snapshot + one style entry per layer (tokenized
     // for the parameterized layer, resolved for the plain one).
     const persistedCatalog = JSON.parse(window.localStorage.getItem('mapCatalogCache')!);
@@ -269,7 +269,7 @@ describe('map catalog store (boot cache + version sync)', () => {
     styleFetches.length = 0;
     await store.refreshCatalog({ background: true });
     expect(styleFetches).toHaveLength(0);
-    expect(overlaysOf().map(o => o.name)).toEqual(['mtb', 'transport-stops']);
+    expect(overlaysOf().map(o => o.name)).toEqual(['transport-stops', 'mtb']);
   });
 
   it('version change: only the changed layer refetches', async () => {
@@ -342,6 +342,52 @@ describe('map catalog store (boot cache + version sync)', () => {
 
     expect(overlaysOf().map(o => o.name)).toEqual(['mtb']);
     expect(notifyCalls.some(n => n.message === 'Public transport stops')).toBe(true);
+  });
+
+  it('metadata-first: placeholder rows apply before styles resolve; skipped layers drop', async () => {
+    // mtb's style fetch hangs until released; transport resolves instantly.
+    let releaseMtb: (() => void) | undefined;
+    catalogFetch.mockResolvedValue(catalogFor(VERSION_A));
+    styleFetch.mockImplementation(async (url: string) => {
+      if (url.includes('mtb')) {
+        await new Promise<void>(resolve => {
+          releaseMtb = resolve;
+        });
+      }
+      return url.includes('mode=tokenized')
+        ? structuredClone(MTB_TOKENIZED)
+        : structuredClone(TRANSPORT_STYLE);
+    });
+
+    const store = stores.useMapCatalogStore();
+    const overlayStore = overlayStores.useOverlayStore();
+    const applied: string[][] = [];
+    // Track every progressive application the store pushes out.
+    const orig = overlayStore.applyCatalogOverlays.bind(overlayStore);
+    (
+      overlayStore as unknown as { applyCatalogOverlays: (i: never[]) => void }
+    ).applyCatalogOverlays = (items: never[]) => {
+      applied.push((items as unknown as Array<{ name: string }>).map(i => i.name));
+      orig(items as never);
+    };
+
+    const initDone = store.initOverlays();
+    // Let the catalog + instant transport style settle, mtb still pending.
+    await new Promise(resolve => setTimeout(resolve, 30));
+
+    // Metadata-first: BOTH rows exist already (mtb as a placeholder with
+    // an empty style) — the menu never waits on the style endpoint.
+    expect(applied.length).toBeGreaterThan(0);
+    const firstNames = [...applied[0]!].sort();
+    expect(firstNames).toEqual(['mtb', 'transport-stops']);
+    expect(overlaysOf().map(o => o.name)).toEqual(['transport-stops', 'mtb']);
+
+    releaseMtb?.();
+    await initDone;
+    // Final list: both layers with real styles (placeholder replaced).
+    expect(overlaysOf().map(o => o.name)).toEqual(['transport-stops', 'mtb']);
+    const mtb = overlaysOf().find(o => o.name === 'mtb') as { tokenizedStyle?: unknown };
+    expect(mtb.tokenizedStyle).toBeTruthy();
   });
 
   it('parameter overrides apply live from the tokenized cache (no style reload)', async () => {

@@ -216,6 +216,11 @@ export function absolutizeStyleUrl(url: string): string {
  *  the spec are part of the URL, so one entry per concrete document. */
 const styleCache = new Map<string, Promise<StyleSpecification>>();
 
+/** Upper bound for one style document fetch. A hung/gateway-timeouting
+ *  style endpoint must not block the overlay list forever — the fetch
+ *  aborts and the layer skips loudly (map-catalog-store). */
+const STYLE_FETCH_TIMEOUT_MS = 30_000;
+
 export class MapStyleUnavailableError extends Error {
   constructor(
     public readonly slug: string,
@@ -226,11 +231,15 @@ export class MapStyleUnavailableError extends Error {
   }
 }
 
-/** Fetch a style document from the style endpoint (or an absolute URL). */
+/** Fetch a style document from the style endpoint (or an absolute URL).
+ *  Aborts after STYLE_FETCH_TIMEOUT_MS — see map-catalog-store for the
+ *  skip-with-notice handling of failed fetches. */
 export function fetchMapStyle(url: string, slug = url): Promise<StyleSpecification> {
   const cached = styleCache.get(url);
   if (cached) return cached;
-  const promise = fetch(url, { headers: { Accept: 'application/json' } })
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), STYLE_FETCH_TIMEOUT_MS);
+  const promise = fetch(url, { headers: { Accept: 'application/json' }, signal: controller.signal })
     .then(res => {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return res.json() as Promise<StyleSpecification>;
@@ -238,7 +247,8 @@ export function fetchMapStyle(url: string, slug = url): Promise<StyleSpecificati
     .catch(cause => {
       styleCache.delete(url);
       throw new MapStyleUnavailableError(slug, cause);
-    });
+    })
+    .finally(() => clearTimeout(timer));
   styleCache.set(url, promise);
   return promise;
 }

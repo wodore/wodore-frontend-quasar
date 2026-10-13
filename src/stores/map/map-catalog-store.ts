@@ -429,28 +429,69 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     return resolvedParameterValues(layer.slug, layer.parameters);
   }
 
-  /** Compile catalog overlay layers into swap items. */
-  async function compileCatalogOverlays(catalog: {
-    slots: MapCatalog['slots'];
-    layers: MapCatalogLayer[];
-  }): Promise<OverlaySwitchItem[]> {
+  /** Placeholder style for metadata-first rows (design.md D1): the row
+   *  renders from catalog metadata before its style document arrives —
+   *  addOverlay on an empty style is a no-op, the real bundle replaces
+   *  it on the next progressive apply. */
+  const PLACEHOLDER_STYLE: StyleSpecification = { version: 8, sources: {}, layers: [] };
+
+  /**
+   * Compile catalog overlay layers into swap items. METADATA-FIRST and
+   * PROGRESSIVE: an initial batch of placeholder rows applies as soon as
+   * the catalog is known (labels/icons/settings render immediately, even
+   * when the style endpoint is slow or dead); every resolved bundle then
+   * replaces its placeholder through `onItems` (catalog order), and a
+   * layer whose style fails validation or fetch DROPS from the list
+   * (skip loudly — design.md D8). Returns the final list.
+   */
+  async function compileCatalogOverlays(
+    catalog: {
+      slots: MapCatalog['slots'];
+      layers: MapCatalogLayer[];
+    },
+    onItems?: (items: OverlaySwitchItem[]) => void
+  ): Promise<OverlaySwitchItem[]> {
     const slotSlugs = new Set(catalog.slots.map(s => s.slug));
     const spec = overlaySpec();
     const styleCache = loadStyleCache();
-    const items: OverlaySwitchItem[] = [];
-    await Promise.all(
-      catalog.layers
-        .filter(l => l.role === 'overlay')
-        .map(async layer => {
-          const bundle = await loadStyleBundle(layer, spec, styleCache);
-          if (!bundle) return undefined;
-          items.push(mapCatalogOverlay(layer, slotSlugs, bundle));
-          return undefined;
-        })
+    const overlayLayers = catalog.layers.filter(l => l.role === 'overlay');
+    // Catalog order (role, order, slug — the backend sorts): progressive
+    // batches resolve in network order; this lookup keeps the list stable.
+    // (Plain record — the maplibre `Map` type import shadows the global.)
+    const orderOf: Record<string, number> = Object.fromEntries(
+      overlayLayers.map((l, i) => [l.slug, l.order * 1000 + i])
     );
-    mergeSpritePacks(items);
-    wireCatalogSources(items);
-    return items;
+    const placeholders: Record<string, OverlaySwitchItem> = Object.fromEntries(
+      overlayLayers.map(l => [
+        l.slug,
+        mapCatalogOverlay(l, slotSlugs, { style: PLACEHOLDER_STYLE }),
+      ])
+    );
+    /** Resolved items by slug; null = skipped (invalid/unfetchable style). */
+    const settled: Record<string, OverlaySwitchItem | null> = {};
+    const emit = () => {
+      const snapshot = overlayLayers
+        .filter(l => settled[l.slug] !== null)
+        .map(l => settled[l.slug] ?? placeholders[l.slug]!)
+        .sort((a, b) => (orderOf[a.name] ?? 0) - (orderOf[b.name] ?? 0));
+      mergeSpritePacks(snapshot);
+      wireCatalogSources(snapshot);
+      onItems?.(snapshot);
+    };
+    emit(); // metadata-first: rows before any style fetch settles
+    await Promise.all(
+      overlayLayers.map(async layer => {
+        const bundle = await loadStyleBundle(layer, spec, styleCache);
+        settled[layer.slug] = bundle ? mapCatalogOverlay(layer, slotSlugs, bundle) : null;
+        emit();
+        return undefined;
+      })
+    );
+    emit();
+    return overlayLayers
+      .filter(l => settled[l.slug])
+      .map(l => settled[l.slug]!)
+      .sort((a, b) => (orderOf[a.name] ?? 0) - (orderOf[b.name] ?? 0));
   }
 
   /** Wire live geojson sources the catalog styles reference by URL token:
@@ -475,10 +516,9 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     const cached = loadPersistedCatalog();
     if (cached) {
       try {
-        // Cache-first render; missing/invalid style entries are fetched
-        // (bounded by the network) before the first paint of those layers.
-        const items = await compileCatalogOverlays(cached);
-        overlayStore.applyCatalogOverlays(items);
+        // Cache-first render; cached styles apply synchronously, missing
+        // entries stream in progressively (see compileCatalogOverlays).
+        await compileCatalogOverlays(cached, items => overlayStore.applyCatalogOverlays(items));
         status.value = 'ready';
       } catch (error) {
         console.warn('[map-catalog] persisted catalog could not be rendered:', error);
@@ -497,8 +537,7 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
       const catalog = await fetchMapCatalog();
       persistCatalog(catalog, currentLocale());
       pruneStyleCache(new Set(catalog.layers.map(l => l.slug)));
-      const items = await compileCatalogOverlays(catalog);
-      overlayStore.applyCatalogOverlays(items);
+      await compileCatalogOverlays(catalog, items => overlayStore.applyCatalogOverlays(items));
       status.value = 'ready';
       // Basemaps ride the same catalog: refresh their list (keeping the
       // active selection) so metadata/coverage changes flow through.
@@ -527,8 +566,9 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
   async function rebuildOverlaysFromCatalog(): Promise<void> {
     if (status.value !== 'ready') return;
     try {
-      const items = await compileCatalogOverlays((await fetchMapCatalog()) as MapCatalog);
-      overlayStore.applyCatalogOverlays(items);
+      await compileCatalogOverlays((await fetchMapCatalog()) as MapCatalog, items =>
+        overlayStore.applyCatalogOverlays(items)
+      );
     } catch (error) {
       console.warn('[map-catalog] catalog rebuild failed — keeping current overlays:', error);
     }
