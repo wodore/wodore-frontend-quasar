@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia';
-import { reactive } from 'vue';
+import { reactive, ref } from 'vue';
 import { OverlaySwitchItem } from '@stores/map/utils/interfaces';
 import { overlayFactories } from '@stores/map/utils/overlays';
+import { mergeSwitchItems } from '@stores/map/utils/catalog-mapping';
 import {
   getActiveGroup,
   getVisibleGroups,
@@ -42,6 +43,58 @@ export const useOverlayStore = defineStore('overlay', () => {
     return s.active;
   }
   const overlays = reactive<Array<OverlaySwitchItem>>(overlayFactories.map(factory => factory()));
+
+  // ── Catalog swap epoch ────────────────────────────────────────────────────
+  // Bumped whenever the overlay items are replaced from the backend map
+  // catalog (map-catalog-store): renderers watch it to drop stale factory
+  // layers/sources and re-add the catalog ones (WdOverlayControl), or to
+  // recompose the native style (WdNativeMapView). Parameter-only changes
+  // bump `parametersEpoch` instead (paint re-resolution, no re-add).
+  const overlaysEpoch = ref(0);
+  const parametersEpoch = ref(0);
+
+  /**
+   * Replace the overlay list with catalog-compiled items (map-catalog-store
+   * owns the fetching): catalog items replace same-slug factory entries and
+   * append; factory entries the catalog does not serve stay (transition
+   * crutch until the seed reaches parity). The CURRENT active/show state
+   * survives the swap; group settings re-merge so new slugs join groups.
+   */
+  function applyCatalogOverlays(catalogItems: OverlaySwitchItem[]): void {
+    // SAFETY: overlays is the reactive OverlaySwitchItem[] below; the
+    // widened cast breaks the maplibre-style TS2589 recursion (same
+    // pattern as activeGroupLayers) — items are OverlaySwitchItem.
+    const state = new Map(
+      (overlays as unknown as OverlaySwitchItem[]).map(o => [
+        o.name,
+        { active: o.active, show: o.show },
+      ])
+    );
+    const merged = mergeSwitchItems(
+      overlayFactories.map(factory => factory()),
+      catalogItems
+    );
+    // SAFETY: `overlays` is the reactive OverlaySwitchItem[] declared above;
+    // splice keeps the array identity (component references stay valid) —
+    // the cast breaks the same TS2589 recursion the other widened casts in
+    // this file work around.
+    (overlays as unknown as OverlaySwitchItem[]).splice(
+      0,
+      overlays.length,
+      ...(merged as OverlaySwitchItem[])
+    );
+    // SAFETY: same widened cast as above — reading/writing active/show,
+    // fields every factory and catalog item sets.
+    for (const o of overlays as unknown as OverlaySwitchItem[]) {
+      const s = state.get(o.name);
+      if (s) {
+        o.active = s.active;
+        o.show = s.show;
+      }
+    }
+    mergeLayerGroups();
+    overlaysEpoch.value += 1;
+  }
 
   const savedOverlays: Array<OverlaySwitchItem> = storageHas('overlays')
     ? (storageGet('overlays') as Array<OverlaySwitchItem>)
@@ -95,6 +148,8 @@ export const useOverlayStore = defineStore('overlay', () => {
   }
 
   // ── Layer groups ──────────────────────────────────────────────────────
+  // SAFETY: the user-settings store exposes its map settings as a JSON
+  // blob; the structural cast narrows the two members this store uses.
   const settingsStore = useUserSettingsStore() as unknown as {
     settings: { map: Record<string, unknown> };
     updateMapSetting: (k: string, v: unknown) => void;
@@ -227,6 +282,9 @@ export const useOverlayStore = defineStore('overlay', () => {
     setActiveGroup,
     stepGroup,
     rebuildOverlays,
+    applyCatalogOverlays,
+    overlaysEpoch,
+    parametersEpoch,
     // Layer groups
     groupSettings,
     activeGroupLayers,

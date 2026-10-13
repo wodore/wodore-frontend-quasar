@@ -283,7 +283,9 @@
     "settings_placeholder": "Settings will be implemented in phase 4+.",
     "settings": "Settings",
     "tab_legend": "Info",
-    "further_links": "Further links"
+    "further_links": "Further links",
+    "curve_zoom": "Zoom level",
+    "settings_date_hint": "Driven by the date picker on the map."
   },
   "beta": {
     "caption": "This page is still under construction, {feedback} is welcome!",
@@ -441,7 +443,10 @@
     "icon_style_mono": "Monochrome",
     "group_prev": "Previous group ({name})",
     "group_next": "Next group ({name})",
-    "edit_keep_editing": "Keep editing"
+    "edit_keep_editing": "Keep editing",
+    "huts_availability": {
+      "label": "Hut availability"
+    }
   },
   "basemap": "Basemap",
   "basemaps": {

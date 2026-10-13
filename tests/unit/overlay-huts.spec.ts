@@ -9,18 +9,21 @@ vi.mock('@indoorequal/vue-maplibre-gl', () => ({
   useMap: () => ({ map: null }),
 }));
 
+// The huts overlay split into huts + huts-availability (backend catalog
+// parity): hutsStyle carries the hut symbols, availabilityStyle the
+// occupation layers over the bookings geojson source. ONE pinia/module
+// boot is shared by both describes — the module-level wiring binds to
+// the huts store of the pinia active at import time.
+let overlayHuts: typeof import('@stores/map/utils/overlay-huts');
+
+beforeAll(async () => {
+  process.env.WODORE_TILE_SERVER_URL = 'http://tiles.test';
+  setActivePinia(createPinia());
+  overlayHuts = await import('@stores/map/utils/overlay-huts');
+});
+
 describe('hutsStyle', () => {
-  let overlayHuts: typeof import('@stores/map/utils/overlay-huts');
-
-  // The module evaluates Pinia + tile-server env at import time, so pinia must
-  // be active and the env fixed BEFORE the dynamic import.
-  beforeAll(async () => {
-    process.env.WODORE_TILE_SERVER_URL = 'http://tiles.test';
-    setActivePinia(createPinia());
-    overlayHuts = await import('@stores/map/utils/overlay-huts');
-  });
-
-  it('builds vector hut and geojson bookings sources', () => {
+  it('builds the vector hut source only (bookings split out)', () => {
     allure.label('feature', 'map-overlays');
     allure.severity('critical');
 
@@ -28,11 +31,36 @@ describe('hutsStyle', () => {
     expect(hutsStyle.version).toBe(8);
 
     const sources = hutsStyle.sources as Record<string, Record<string, unknown>>;
+    expect(Object.keys(sources)).toEqual(['wd-huts']);
     const huts = sources['wd-huts'];
     expect(huts.type).toBe('vector');
     expect(huts.promoteId).toBe('slug');
     expect(huts.url).toBe('http://tiles.test/huts');
+  });
 
+  it('registers the wd accommodation sprite from the tile server', () => {
+    const { hutsStyle } = overlayHuts;
+    expect(hutsStyle.sprite).toEqual([{ id: 'wd', url: 'http://tiles.test/sprite/accommodation' }]);
+  });
+
+  it('orders layers: selected, huts', () => {
+    const { hutsStyle } = overlayHuts;
+    const layerIds = hutsStyle.layers.map(l => l.id);
+    expect(layerIds).toEqual(['wd-huts-selected', 'wd-huts']);
+
+    const huts = hutsStyle.layers.find(l => l.id === 'wd-huts');
+    expect(huts?.type).toBe('symbol');
+    expect((huts as Record<string, unknown>)['source-layer']).toBe('huts');
+  });
+});
+
+describe('availabilityStyle', () => {
+  it('builds the geojson bookings source', () => {
+    const { availabilityStyle } = overlayHuts;
+    expect(availabilityStyle.version).toBe(8);
+
+    const sources = availabilityStyle.sources as Record<string, Record<string, unknown>>;
+    expect(Object.keys(sources)).toEqual(['wd-bookings']);
     const bookings = sources['wd-bookings'];
     expect(bookings.type).toBe('geojson');
     expect(bookings.promoteId).toBe('hut_id');
@@ -40,45 +68,39 @@ describe('hutsStyle', () => {
     expect(bookings.data).toMatchObject({ type: 'FeatureCollection', features: [] });
   });
 
-  it('registers the wd sprite from the tile server', () => {
-    const { hutsStyle } = overlayHuts;
-    expect(hutsStyle.sprite).toEqual([
-      { id: 'wd', url: 'http://tiles.test/sprite/accommodation,availability' },
+  it('registers the wd availability sprite from the tile server', () => {
+    const { availabilityStyle } = overlayHuts;
+    expect(availabilityStyle.sprite).toEqual([
+      { id: 'wd', url: 'http://tiles.test/sprite/availability' },
     ]);
   });
 
-  it('orders layers: occupation days, occupation, selected, huts', () => {
-    const { hutsStyle } = overlayHuts;
-    const layerIds = hutsStyle.layers.map(l => l.id);
+  it('orders layers: occupation days, occupation', () => {
+    const { availabilityStyle } = overlayHuts;
+    const layerIds = availabilityStyle.layers.map(l => l.id);
     expect(layerIds).toEqual([
       'wd-huts-occupation-day0',
       'wd-huts-occupation-day1',
       'wd-huts-occupation-day2',
       'wd-huts-occupation-day3',
       'wd-huts-occupation',
-      'wd-huts-selected',
-      'wd-huts',
     ]);
   });
 
   it('configures zoom ranges for occupation and detail layers', () => {
-    const { hutsStyle } = overlayHuts;
-    const day0 = hutsStyle.layers.find(l => l.id === 'wd-huts-occupation-day0');
+    const { availabilityStyle } = overlayHuts;
+    const day0 = availabilityStyle.layers.find(l => l.id === 'wd-huts-occupation-day0');
     expect(day0?.type).toBe('symbol');
     expect(day0?.source).toBe('wd-bookings');
     expect(day0?.minzoom).toBe(6);
 
-    const occupation = hutsStyle.layers.find(l => l.id === 'wd-huts-occupation');
+    const occupation = availabilityStyle.layers.find(l => l.id === 'wd-huts-occupation');
     expect(occupation?.maxzoom).toBe(13);
-
-    const huts = hutsStyle.layers.find(l => l.id === 'wd-huts');
-    expect(huts?.type).toBe('symbol');
-    expect((huts as Record<string, unknown>)['source-layer']).toBe('huts');
   });
 
   it('maps occupancy status to availability colors and renders no background for unknown', () => {
-    const { hutsStyle } = overlayHuts;
-    const occupation = hutsStyle.layers.find(l => l.id === 'wd-huts-occupation');
+    const { availabilityStyle } = overlayHuts;
+    const occupation = availabilityStyle.layers.find(l => l.id === 'wd-huts-occupation');
     const color = (occupation?.paint as Record<string, unknown>)['circle-color'] as unknown[];
     expect(color[0]).toBe('match');
 
@@ -97,9 +119,9 @@ describe('hutsStyle', () => {
   });
 
   it('keeps the small day dots for unknown status and no day-layer filter', () => {
-    const { hutsStyle } = overlayHuts;
+    const { availabilityStyle } = overlayHuts;
     for (const day of [0, 1, 2, 3]) {
-      const layer = hutsStyle.layers.find(
+      const layer = availabilityStyle.layers.find(
         l => l.id === `wd-huts-occupation-day${day}`
       ) as unknown as Record<string, unknown>;
       // No filter: unknown days keep rendering their small gray dot + "?" label.
@@ -113,8 +135,8 @@ describe('hutsStyle', () => {
   });
 
   it('labels unknown days with a single ? in the basemap label style', () => {
-    const { hutsStyle } = overlayHuts;
-    const layer = hutsStyle.layers.find(
+    const { availabilityStyle } = overlayHuts;
+    const layer = availabilityStyle.layers.find(
       l => l.id === 'wd-huts-occupation-day0'
     ) as unknown as Record<string, unknown>;
 
@@ -160,7 +182,7 @@ describe('hutsStyle', () => {
 
     await nextTick();
 
-    const source = overlayHuts.hutsStyle.sources['wd-bookings'] as { data: unknown };
+    const source = overlayHuts.availabilityStyle.sources['wd-bookings'] as { data: unknown };
     const data = source.data as { type: string; features: unknown[] };
     expect(data.type).toBe('FeatureCollection');
     expect(data.features).toHaveLength(1);

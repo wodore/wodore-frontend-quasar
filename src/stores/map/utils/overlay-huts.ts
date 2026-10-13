@@ -247,29 +247,9 @@ export const hutsStyle: StyleSpecification = {
       url: `${TILE_SERVER_URL}/huts`,
       promoteId: 'slug',
     },
-    'wd-bookings': {
-      type: 'geojson',
-      data: bookingsGeojson.value as GeoJSON.GeoJSON,
-      promoteId: 'hut_id',
-    },
   },
-  sprite: [{ id: 'wd', url: `${TILE_SERVER_URL}/sprite/accommodation,availability` }],
+  sprite: [{ id: 'wd', url: `${TILE_SERVER_URL}/sprite/accommodation` }],
   layers: [
-    hutsOccpationDetailLayer(0),
-    hutsOccpationDetailLayer(1),
-    hutsOccpationDetailLayer(2),
-    hutsOccpationDetailLayer(3),
-    {
-      id: 'wd-huts-occupation',
-      type: 'circle',
-      source: 'wd-bookings',
-      maxzoom: 13,
-      //filter: hutsOccupationFilter,
-      layout: {
-        visibility: 'visible',
-      },
-      paint: hutsOccupationLayerPaint,
-    },
     {
       id: 'wd-huts-selected',
       type: 'circle',
@@ -288,23 +268,74 @@ export const hutsStyle: StyleSpecification = {
     },
   ],
 };
-watchEffect(() => {
-  console.debug('Booking geojson updated');
-  const source = hutsStyle.sources['wd-bookings'] as GeoJSONSourceSpecification;
-  source.data = bookingsGeojson.value as GeoJSON.GeoJSON;
 
-  // Check if map is available and style is loaded before trying to access sources
-  if (!mapRef.map || !mapRef.map.isStyleLoaded()) {
-    console.debug('Map or style not yet loaded, skipping booking data update');
-    return;
-  }
+/**
+ * The availability overlay (backend catalog slug `huts-availability`):
+ * the occupation layers split out of the former combined huts overlay.
+ * The `wd-bookings` geojson source is WIRED to the huts store's
+ * bookingsGeojson (see wireBookingsSource) — the date-picker flow
+ * refetches with auth/lang/days query params a raw MapLibre URL fetch
+ * would not carry.
+ */
+export const availabilityStyle: StyleSpecification = {
+  version: 8,
+  name: 'huts-availability',
+  sources: {
+    'wd-bookings': {
+      type: 'geojson',
+      data: bookingsGeojson.value as GeoJSON.GeoJSON,
+      promoteId: 'hut_id',
+    },
+  },
+  sprite: [{ id: 'wd', url: `${TILE_SERVER_URL}/sprite/availability` }],
+  layers: [
+    hutsOccpationDetailLayer(0),
+    hutsOccpationDetailLayer(1),
+    hutsOccpationDetailLayer(2),
+    hutsOccpationDetailLayer(3),
+    {
+      id: 'wd-huts-occupation',
+      type: 'circle',
+      source: 'wd-bookings',
+      maxzoom: 13,
+      //filter: hutsOccupationFilter,
+      layout: {
+        visibility: 'visible',
+      },
+      paint: hutsOccupationLayerPaint,
+    },
+  ],
+};
 
-  const mapSource = mapRef.map.getSource('wd-bookings') as GeoJSONSource | undefined;
-  // Source may not exist if basemap was just changed
-  if (mapSource && bookingsGeojson.value !== undefined) {
-    mapSource.setData(bookingsGeojson.value as GeoJSON.GeoJSON);
-  }
-});
+/**
+ * Wire a style's `wd-bookings` source to the huts store's live
+ * bookingsGeojson: keeps the style object and (once the map carries
+ * the source) the MapLibre source in sync on every availability
+ * refetch (date change, locale change). Shared by the bundled factory
+ * fallback (availabilityStyle) and the catalog-driven layer
+ * (map-catalog-store) — the catalog style's geojson URL carries the
+ * `{{date}}` runtime token; this object wiring stays the data path.
+ */
+export function wireBookingsSource(style: StyleSpecification): void {
+  const source = style.sources['wd-bookings'] as GeoJSONSourceSpecification | undefined;
+  if (!source) return;
+  watchEffect(() => {
+    source.data = bookingsGeojson.value as GeoJSON.GeoJSON;
+
+    // Check if map is available and style is loaded before trying to access sources
+    if (!mapRef.map || !mapRef.map.isStyleLoaded()) {
+      return;
+    }
+
+    const mapSource = mapRef.map.getSource('wd-bookings') as GeoJSONSource | undefined;
+    // Source may not exist if basemap was just changed
+    if (mapSource && bookingsGeojson.value !== undefined) {
+      mapSource.setData(bookingsGeojson.value as GeoJSON.GeoJSON);
+    }
+  });
+}
+
+wireBookingsSource(availabilityStyle);
 //console.log('Hut type keys: ', Object.keys(hutTypesRecords.value));
 //export function hutsRegisterMap(map: Map) {
 //  watchDebounced(

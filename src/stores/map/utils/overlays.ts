@@ -2,7 +2,7 @@ import { PropertyValueSpecification } from 'maplibre-gl';
 import { getRasterStyle, getSwisstopoOverlay } from './raster';
 import { OverlaySwitchItem } from './interfaces';
 import { transportStyle } from './overlay-transport';
-import { hutsStyle } from './overlay-huts';
+import { hutsStyle, availabilityStyle } from './overlay-huts';
 import { hikingStyle } from './overlay-hiking';
 import { i18n } from '@services/locale';
 
@@ -103,6 +103,28 @@ export const createHuts = (): OverlaySwitchItem => ({
           // Items will be populated automatically from category API
           items: [],
         },
+      ],
+    },
+  },
+});
+
+/** Bed availability per hut — split from the huts overlay to mirror the
+ *  backend catalog (`huts-availability`): the occupation dots/labels for
+ *  the date-picker-selected day. The `wd-bookings` source is wired to the
+ *  huts store (see overlay-huts.ts wireBookingsSource). */
+export const createHutsAvailability = (): OverlaySwitchItem => ({
+  name: 'huts-availability',
+  label: t('overlays.huts_availability.label'),
+  show: true,
+  active: true,
+  // Data overlays render below high-ranked town labels, same as huts
+  onLayer: 'places',
+  icon: 'huts',
+  style: availabilityStyle,
+
+  config: {
+    legend: {
+      sections: [
         {
           title: t('overlays.huts.legend_availability'),
           description: t('overlays.huts.legend_availability_desc'),
@@ -837,6 +859,7 @@ export const overlayFactories = [
   createHiking,
   createHikingSwiss,
   createHuts,
+  createHutsAvailability,
   createPublicTransportStops,
   createMtb,
   createCycling,

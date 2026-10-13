@@ -1250,6 +1250,11 @@ function addOverlayLayer({
 }
 
 const addedOverlays = new Set<string>();
+/** Every layer/source id THIS control added to the map — the catalog
+ *  swap (overlaysEpoch) removes exactly these before re-adding, so stale
+ *  factory layers never linger under catalog-compiled ones. */
+const addedLayerIds = new Set<string>();
+const addedSourceIds = new Set<string>();
 
 function getOverlaysInRenderOrder(): Array<OverlaySwitchItem> {
   // Break type inference chain to avoid "excessively deep" TypeScript error
@@ -1287,6 +1292,7 @@ function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwit
   for (const label in overlay.style.sources) {
     if (mapRef.map?.getSource(label) === undefined) {
       mapRef.map?.addSource(label, overlay.style.sources[label]);
+      addedSourceIds.add(label);
     }
   }
   // Add sprites if defined (loads e.g. wd:detailed/* hut symbols)
@@ -1318,7 +1324,8 @@ function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwit
       onLayer: overlay.onLayer,
       beforeId,
     });
-    if (!added) allAdded = false;
+    if (added) addedLayerIds.add(layer.id);
+    else allAdded = false;
   }
   if (!allAdded) return false;
   setOverlayVisibility(overlay);
@@ -1328,11 +1335,33 @@ function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwit
 
 function addOverlays(): void {
   addedOverlays.clear();
+  addedLayerIds.clear();
+  addedSourceIds.clear();
   const overlaysOrder = getOverlaysInRenderOrder();
   for (const overlay of overlaysOrder) {
     if (overlay.active) addOverlay(overlay, overlaysOrder);
   }
   configStore.reapplyAllFilters();
+}
+
+/** Catalog swap (overlay store bumps overlaysEpoch when items are
+ *  replaced from the backend catalog): drop every layer/source this
+ *  control added — factory-era and catalog-era alike — and re-add the
+ *  (possibly replaced) active overlays. Sprites cannot be removed; the
+ *  catalog build merges same-id sprite packs so the first-added URL
+ *  stays valid (catalog-mapping mergeSpritePacks). */
+function reapplyOverlaysAfterCatalogSwap(): void {
+  const map = mapRef.map;
+  if (!map) return;
+  for (const layerId of addedLayerIds) {
+    if (map.getLayer(layerId)) map.removeLayer(layerId);
+  }
+  // Sources first added by a previous overlay may be shared — remove
+  // each tracked source once no remaining tracked layer references it.
+  for (const sourceId of addedSourceIds) {
+    if (map.getSource(sourceId)) map.removeSource(sourceId);
+  }
+  addOverlays();
 }
 
 function toggleLayer(item: OverlaySwitchItem): void {
@@ -1360,6 +1389,14 @@ watch(
     if (map) bindMap(map);
   },
   { immediate: true }
+);
+
+// Catalog swap → full remove + re-add (see reapplyOverlaysAfterCatalogSwap)
+watch(
+  () => overlayStore.overlaysEpoch,
+  () => {
+    reapplyOverlaysAfterCatalogSwap();
+  }
 );
 
 // ── Actions ───────────────────────────────────────────────────────────────

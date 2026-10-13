@@ -283,7 +283,9 @@
     "settings_placeholder": "Le impostazioni saranno implementate nella fase 4+.",
     "settings": "Impostazioni",
     "tab_legend": "Info",
-    "further_links": "Link utili"
+    "further_links": "Link utili",
+    "curve_zoom": "Livello di zoom",
+    "settings_date_hint": "Controllato dal selettore della data sulla mappa."
   },
   "beta": {
     "caption": "Questa pagina è ancora in costruzione, i {feedback} sono benvenuti!",
@@ -441,7 +443,10 @@
     "icon_style_mono": "Monocromo",
     "group_prev": "Gruppo precedente ({name})",
     "group_next": "Gruppo successivo ({name})",
-    "edit_keep_editing": "Continua a modificare"
+    "edit_keep_editing": "Continua a modificare",
+    "huts_availability": {
+      "label": "Disponibilità dei rifugi"
+    }
   },
   "basemap": "Mappa di base",
   "basemaps": {

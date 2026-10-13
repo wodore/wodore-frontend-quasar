@@ -18,12 +18,30 @@ import { i18n, currentLocale } from '@services/locale';
 import { getEnv } from '@services/runtimeEnv';
 import { isOutdoorStyle, setupOutdoorContours } from '@services/outdoorContours';
 import { getSatelliteHybridStyle } from '@stores/map/utils/satellite-hybrid';
+import {
+  fetchMapCatalog,
+  gpuSpec,
+  pickVariant,
+  styleEndpointUrl,
+  type MapCatalog,
+} from '@services/map-catalog';
+import {
+  LEGACY_BASEMAP_FALLBACKS,
+  RENAMED_BASEMAP_SLUGS,
+  mapCatalogBasemap,
+  mergeSwitchItems,
+} from './utils/catalog-mapping';
 
 // Bump this when the Martin-served basemap style changes (new colors,
 // layers, fonts, sprites). Format: ISO date + optional .N for same-day
 // revisions. The style URL gets ?v={version} — Martin serves the same
 // content regardless; the query param is purely a browser cache buster.
 const STYLE_VERSION = '2026-10-08';
+
+/** Bounded wait for the map catalog during basemap init (design.md D1):
+ * slow networks fall back to the factory definitions rather than
+ * blocking the first map render indefinitely. */
+const CATALOG_WAIT_MS = 5000;
 
 function martinStylePath(styleId: string): string {
   // Served by Martin — the same tile server that serves huts/sprites.
@@ -141,6 +159,10 @@ const MTK_STATIC_URLS = [
 
 function prewarmOutdoorMtk(): void {
   void fetch(mtkStylePath()).catch(() => undefined);
+  // Catalog path: the style endpoint serves the seeded style once the
+  // backend retires Martin's style routes (design.md D1 deploy ordering —
+  // pre-cutover this 404s harmlessly).
+  void fetch(styleEndpointUrl('wd-outdoor-base-mtk')).catch(() => undefined);
   for (const u of MTK_STATIC_URLS) void fetch(u, { mode: 'cors' }).catch(() => undefined);
 }
 
@@ -166,11 +188,19 @@ async function loadStyleObject(styleUrl: string): Promise<StyleSpecification | n
   }
 }
 
+/** Late-bound accessor for the reactive basemap list (set by the store
+ *  once the array exists — loadDefaultStyleObject below reads it). */
+let activeBasemapList: () => BasemapSwitchItem[] = () => [];
+
 /** The DEFAULT basemap's style object (wd-outdoor-base-mtk) — the world
- *  fallback merged beneath country basemaps (see country-fallback.ts). */
+ *  fallback merged beneath country basemaps (see country-fallback.ts).
+ *  Prefers the active list's style URL (catalog-served after the backend
+ *  cutover, Martin-served before it). */
 function loadDefaultStyleObject(): Promise<StyleSpecification | null> {
   if (!defaultStylePromise) {
-    defaultStylePromise = loadStyleObject(mtkStylePath());
+    const source = activeBasemapList().find(b => b.name === DEFAULT_BASEMAP_NAME)?.style;
+    const url = typeof source === 'string' && source ? source : mtkStylePath();
+    defaultStylePromise = loadStyleObject(url);
   }
   return defaultStylePromise;
 }
@@ -767,6 +797,11 @@ export const useBasemapStore = defineStore('basemap', () => {
 
   // Initialize as empty reactive array
   const basemaps = reactive<Array<BasemapSwitchItem>>([]);
+  // Bind the late-bound accessor (loadDefaultStyleObject reads the list).
+  // SAFETY: basemaps is the reactive BasemapSwitchItem[] just declared;
+  // the widened cast breaks the maplibre-style TS2589 recursion — reading
+  // .name/.style only via the accessor.
+  activeBasemapList = () => basemaps as unknown as BasemapSwitchItem[];
 
   // i18n keys per basemap name — labels are re-applied in place when the
   // UI language changes (styles depend on async GPU detection and are NOT
@@ -777,6 +812,9 @@ export const useBasemapStore = defineStore('basemap', () => {
     'Satellite Hybrid': 'basemaps.satellite',
     'wd-outdoor-base-mtk': 'basemaps.outdoor',
     'outdoor-osm': 'basemaps.outdoor_ofm',
+    // Catalog identities (renamed slugs — see RENAMED_BASEMAP_SLUGS)
+    'wd-outdoor-base-ofm': 'basemaps.outdoor_ofm',
+    'maptiler-hybrid': 'basemaps.satellite',
     'oe-raster': 'basemaps.austria_raster',
   };
 
@@ -800,18 +838,34 @@ export const useBasemapStore = defineStore('basemap', () => {
   // and a failed run resets the cache so the next call can retry
   let basemapInitPromise: Promise<void> | null = null;
 
-  // Get saved basemap name from localStorage (not the full object)
-  const savedBasemapName = storageGet('basemapName') as string | null;
+  // Get saved basemap name from localStorage (not the full object),
+  // normalized through the rename table (catalog identities: e.g. the
+  // old 'outdoor-osm' selection is 'wd-outdoor-base-ofm' in the catalog).
+  const savedBasemapName = (() => {
+    const raw = storageGet('basemapName') as string | null;
+    return raw ? (RENAMED_BASEMAP_SLUGS[raw] ?? raw) : null;
+  })();
 
-  // Helper to get basemap by name
-  function getBasemapByName(name: string): BasemapSwitchItem | undefined {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    for (const basemap of basemaps as any[]) {
-      if (basemap.name === name) {
-        return basemap;
-      }
-    }
-    return undefined;
+  /** Resolve a basemap by slug, accepting the pre-catalog alias names
+   *  (factory 'outdoor-osm' vs catalog 'wd-outdoor-base-ofm'). */
+  function findBasemapBySlug(slug: string): BasemapSwitchItem | undefined {
+    const alias = RENAMED_BASEMAP_SLUGS[slug] ?? slug;
+    // SAFETY: basemaps is the reactive BasemapSwitchItem[] populated during
+    // init; the widened cast breaks the TS2589 recursion — reading .name only.
+    return (
+      (basemaps as unknown as BasemapSwitchItem[]).find(
+        b => b.name === slug || b.name === alias || RENAMED_BASEMAP_SLUGS[b.name] === slug
+      ) ?? undefined
+    );
+  }
+
+  /** Resolve the auto-switch target for a failing basemap: its catalog
+   *  `fallback` field first, then the legacy defaults. */
+  function resolveFallbackBasemap(failingSlug: string): BasemapSwitchItem | undefined {
+    const active = getBasemap();
+    const target =
+      active?.fallback ?? LEGACY_BASEMAP_FALLBACKS[failingSlug] ?? LEGACY_BASEMAP_FALLBACKS.maptiler;
+    return findBasemapBySlug(target);
   }
 
   // Helper to determine if we should use raster basemaps based on GPU capabilities
@@ -1003,6 +1057,10 @@ export const useBasemapStore = defineStore('basemap', () => {
         get style() {
           return mtkStylePath();
         },
+        // Auto-switch target when Maptoolkit tiles fail (WdMapView
+        // onMapError); the catalog entry's `fallback` field wins once the
+        // catalog serves this basemap.
+        fallback: 'outdoor-osm',
         layers: {
           ways: { before: undefined },
           background: { before: undefined },
@@ -1068,24 +1126,65 @@ export const useBasemapStore = defineStore('basemap', () => {
       },
     ];
 
+    // ── Backend map catalog (design.md D1) ─────────────────────────
+    // Bounded wait: the catalog decides which definitions win over the
+    // factories. On timeout/failure the factories serve (correct on
+    // pre-cutover environments where Martin still serves styles — the
+    // backend seeds styles into the registry BEFORE dropping Martin's
+    // style routes, so a reachable catalog is guaranteed post-cutover).
+    let catalog: MapCatalog | null = null;
+    try {
+      catalog = await Promise.race([
+        fetchMapCatalog(),
+        new Promise<null>(resolve => setTimeout(() => resolve(null), CATALOG_WAIT_MS)),
+      ]);
+    } catch (error) {
+      console.warn('[basemap-store] map catalog unavailable — factory basemaps stay:', error);
+    }
+
+    let items: BasemapSwitchItem[];
+    if (catalog) {
+      const spec = gpuSpec(useRaster);
+      const catalogLayers = catalog.layers.filter(l => l.role === 'basemap');
+      const styleUrls = new Map<string, string>();
+      for (const layer of catalogLayers) {
+        const variant = pickVariant(layer.variants, spec);
+        const raw = variant?.style_url;
+        // External styles arrive env-resolved (MapTiler key baked in);
+        // everything else goes through the style endpoint with `spec=`.
+        styleUrls.set(
+          layer.slug,
+          raw && /^https?:\/\//i.test(raw) ? raw : styleEndpointUrl(layer.slug, { spec })
+        );
+      }
+      const catalogItems = catalogLayers.map(layer => mapCatalogBasemap(layer, spec, styleUrls));
+      items = mergeSwitchItems(basemapItems, catalogItems);
+      console.debug(
+        `[basemap-store] map catalog applied: ${catalogItems.length} basemaps (spec=${spec})`
+      );
+    } else {
+      items = basemapItems;
+    }
+
     // Add all items to the reactive array
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (basemaps as any).push(...basemapItems);
+    // SAFETY: basemaps is the reactive BasemapSwitchItem[] declared above;
+    // the widened cast breaks the TS2589 recursion (same pattern as
+    // findBasemapBySlug) — items are BasemapSwitchItem.
+    (basemaps as unknown as BasemapSwitchItem[]).push(...items);
 
     // Determine which basemap to use
     let basemapToSet: BasemapSwitchItem | undefined;
 
     if (savedBasemapName) {
-      // Try to find the saved basemap by name
-      basemapToSet = getBasemapByName(savedBasemapName);
+      // Try to find the saved basemap by name (renames normalized above)
+      basemapToSet = findBasemapBySlug(savedBasemapName);
       if (basemapToSet) {
         console.debug('Restoring saved basemap:', savedBasemapName);
       } else {
         console.debug('Saved basemap not found, using default');
         // Saved name unknown (e.g. renamed basemap) — use the fresh-install
         // default too, not the first array entry (which needs a MapTiler key)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        basemapToSet = (basemaps as any[]).find(b => b.name === DEFAULT_BASEMAP_NAME);
+        basemapToSet = findBasemapBySlug(DEFAULT_BASEMAP_NAME);
       }
     } else {
       // No saved basemap: default to the Maptoolkit-based outdoor style
@@ -1114,7 +1213,7 @@ export const useBasemapStore = defineStore('basemap', () => {
       try {
         const probe = await fetch(basemapToSet.style);
         if (!probe.ok) {
-          const fallback = getBasemapByName('openfreemap-liberty');
+          const fallback = findBasemapBySlug('openfreemap-liberty');
           if (fallback) {
             console.warn(
               `[basemap] Tile host rejected the style (HTTP ${probe.status}) - starting on OpenFreeMap Liberty`
@@ -1157,6 +1256,8 @@ export const useBasemapStore = defineStore('basemap', () => {
     setBasemap,
     getBasemap,
     initializeBasemaps,
+    findBasemapBySlug,
+    resolveFallbackBasemap,
     //setEmitter,
   };
 });

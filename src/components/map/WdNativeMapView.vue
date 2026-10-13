@@ -46,6 +46,7 @@ import type { LayerSpecification, StyleSpecification } from 'maplibre-gl';
 import { MapLibre } from '@capawesome/capacitor-maplibre';
 import type { PluginListenerHandle } from '@capacitor/core';
 import { useBasemapStore } from '@stores/map/basemap-store';
+import { useMapCatalogStore } from '@stores/map/map-catalog-store';
 import { MIN_HUT_CLICK_ZOOM } from '@stores/map/utils/map-constants';
 import { useOverlayStore } from '@stores/map/overlay-store';
 import { useLocalPropertiesStore } from '@stores/local-properties-store';
@@ -69,6 +70,10 @@ const basemapStore = useBasemapStore();
 const overlayStore = useOverlayStore();
 const localPropertiesStore = useLocalPropertiesStore();
 const hutsStore = useHutsStore();
+// Backend map catalog: swap catalog-compiled overlays in once the catalog
+// answers (idempotent — the web view's init shares the same store).
+const mapCatalogStore = useMapCatalogStore();
+void mapCatalogStore.initOverlays();
 
 const scaleWidth = ref(80);
 const scaleLabel = ref('');
@@ -559,11 +564,14 @@ watch(
 // a two-phase reveal: first pass applies them with 0 opacity (the
 // layer is visible -> its tiles pre-load invisibly, skipping the ugly
 // stretched parent tile), then ~300ms later the final style swaps in
-// the real opacity.
+// the real opacity. The overlaysEpoch (backend catalog swap) and
+// parametersEpoch (live parameter re-resolution) ride the same key so
+// composed native style always reflects the current catalog items.
 let lastOverlayState = overlayStore.overlays.map(o => `${o.name}:${o.active ? 1 : 0}`).join('|');
 let revealTimer: ReturnType<typeof setTimeout> | undefined;
 watch(
-  () => overlayStore.overlays.map(o => `${o.name}:${o.active ? 1 : 0}`).join('|'),
+  () =>
+    `${overlayStore.overlays.map(o => `${o.name}:${o.active ? 1 : 0}`).join('|')}#${overlayStore.overlaysEpoch}#${overlayStore.parametersEpoch}`,
   next => {
     const prevState = lastOverlayState;
     lastOverlayState = next;

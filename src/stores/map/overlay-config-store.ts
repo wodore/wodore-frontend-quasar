@@ -13,6 +13,7 @@ import { useMap } from '@indoorequal/vue-maplibre-gl';
 import type { ExpressionSpecification } from 'maplibre-gl';
 
 import { useOverlayStore } from '@stores/map/overlay-store';
+import { useMapCatalogStore } from '@stores/map/map-catalog-store';
 import { currentLocale } from '@services/locale';
 import type {
   OverlayPreferences,
@@ -505,6 +506,9 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
       delete preferences.value[overlayName];
       storageSet(PREFERENCES_KEY, preferences.value);
     }
+
+    // Map-catalog parameters (settings tab) reset with the same action.
+    useMapCatalogStore().resetLayerParameters(overlayName);
 
     // Reapply default filters/settings
     reapplyAllFilters();
