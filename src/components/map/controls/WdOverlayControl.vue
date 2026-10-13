@@ -1289,20 +1289,67 @@ function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwit
       mapRef.map?.addSource(label, overlay.style.sources[label]);
     }
   }
-  // Add sprites if defined (loads e.g. wd:color/* hut symbols)
+  // Add sprites if defined (loads e.g. wd:color/* and wd-sdf/mono/* hut symbols).
+  // addSprite is ASYNC — the sprite JSON+PNG load in the background. The
+  // completion callback triggers a style update once loaded, so layers
+  // using `['image', 'wd-sdf/...']` expressions re-evaluate and switch
+  // from the fallback icon to the SDF glyph (fixes the race where the
+  // icon-image coalesce fell through to the primitive before the SDF
+  // sprite was available).
   const spriteData = overlay.style.sprite;
   if (spriteData) {
     const existingSprites = mapRef.map?.getSprite() || [];
+    const pendingSprites: Array<Promise<void>> = [];
+    const addSprite = (id: string, url: string) => {
+      const alreadyAdded = existingSprites.some(e => e.id === id);
+      if (alreadyAdded) return;
+      mapRef.map?.addSprite(id, url);
+      // addSprite is async but has no completion callback in this MapLibre
+      // version — poll for a known image from this sprite to detect load
+      const probeImage =
+        id === 'wd-sdf' ? 'wd-sdf/mono/accommodation.unknown' : `${id}/color/accommodation.unknown`;
+      pendingSprites.push(
+        new Promise<void>(resolve => {
+          const check = () => {
+            if (mapRef.map?.hasImage(probeImage)) {
+              console.debug(`[overlay] sprite ${id} loaded (${probeImage} available)`);
+              resolve();
+            } else {
+              setTimeout(check, 50);
+            }
+          };
+          // Give the sprite ~5s max, then resolve anyway (fallbacks handle it)
+          setTimeout(resolve, 5000);
+          check();
+        })
+      );
+    };
     if (Array.isArray(spriteData)) {
       for (const sprite of spriteData) {
-        const alreadyAdded = existingSprites.some(e => e.id === sprite.id);
-        if (!alreadyAdded) mapRef.map?.addSprite(sprite.id, sprite.url);
+        addSprite(sprite.id, sprite.url);
       }
     } else if (typeof spriteData === 'object') {
       for (const [spriteId, spriteUrl] of Object.entries(spriteData)) {
-        const alreadyAdded = existingSprites.some(e => e.id === spriteId);
-        if (!alreadyAdded) mapRef.map?.addSprite(spriteId, spriteUrl as string);
+        addSprite(spriteId, spriteUrl as string);
       }
+    }
+    // Once all sprites are loaded, nudge MapLibre to re-evaluate
+    // layout properties (icon-image) that reference sprite images.
+    if (pendingSprites.length > 0) {
+      Promise.all(pendingSprites).then(() => {
+        // Force a re-render of the layers by updating a benign paint
+        // property — this triggers MapLibre's internal style diff,
+        // which re-evaluates the icon-image expression with the now-
+        // loaded sprite images.
+        for (const layer of overlay.style.layers) {
+          if (layer.type === 'symbol' && mapRef.map?.getLayer(layer.id)) {
+            const currentOpacity = mapRef.map.getPaintProperty(layer.id, 'icon-opacity');
+            if (currentOpacity !== undefined) {
+              mapRef.map.setPaintProperty(layer.id, 'icon-opacity', currentOpacity);
+            }
+          }
+        }
+      });
     }
   }
   const beforeId = findBeforeLayerId(overlay, overlaysOrder);
