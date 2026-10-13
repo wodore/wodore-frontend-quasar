@@ -695,6 +695,11 @@ export const useBasemapStore = defineStore('basemap', () => {
         style.active = false;
       }
     }
+    // Record the applied style source: refreshFromCatalog re-applies only
+    // when it actually changes — a redundant setStyle at boot would
+    // restart every tile load (mtk carries nine sources; on a slow link
+    // that alone can exceed the interaction suite's map-idle budget).
+    activeStyleUrl = s.style;
     if (persist) {
       storageSet('basemapName', s.name);
     }

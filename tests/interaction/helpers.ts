@@ -234,7 +234,9 @@ export async function loadMap(page: Page): Promise<void> {
   // First load after the dev server boots pays vite's on-demand dependency
   // optimization on a busy 2-core runner — give that burst real headroom.
   await page.waitForSelector('.maplibregl-canvas', { timeout: 60_000 });
-  await waitForMapIdle(page, 30_000);
+  // Generous budget: the default basemap pulls nine sources (mtk vector
+  // + raster terrain/hillshade sets) — a throttled CI network needs room.
+  await waitForMapIdle(page, 60_000);
   await waitForCatalogLayers(page);
   await page.waitForTimeout(500); // brief paint settle for overlay chrome
 }
