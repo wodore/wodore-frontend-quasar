@@ -446,7 +446,9 @@
     "edit_keep_editing": "Continua a modificare",
     "huts_availability": {
       "label": "Disponibilità dei rifugi"
-    }
+    },
+    "catalog_loading": "Caricamento dei livelli mappa…",
+    "catalog_error": "Impossibile caricare i livelli mappa"
   },
   "basemap": "Mappa di base",
   "basemaps": {
@@ -457,7 +459,8 @@
     "austria_raster": "Austria Topo Raster",
     "outdoor_ofm": "Outdoor (OSM)",
     "world_topo": "Topo mondo",
-    "world_satellite": "Satellite mondo"
+    "world_satellite": "Satellite mondo",
+    "load_error": "Impossibile caricare le mappe base"
   },
   "multi_select": {
     "select_all": "Seleziona tutto",

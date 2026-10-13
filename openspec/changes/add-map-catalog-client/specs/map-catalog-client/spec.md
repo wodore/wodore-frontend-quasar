@@ -2,36 +2,54 @@
 
 ## ADDED Requirements
 
-### Requirement: Catalog-driven overlay and basemap definitions
+### Requirement: Catalog as the single layer source
 
-The app SHALL load overlay and basemap definitions from
-`GET /v1/map/catalog` (in the active UI language) and SHALL fall back to
-the bundled factory definitions when the catalog is unreachable. Catalog
-layers replace factory entries with the same slug (after alias
-normalization), append catalog-only layers, and factory entries for
-slugs the catalog does not serve SHALL remain until the seed reaches
-parity.
+The app SHALL load overlay and basemap definitions exclusively from
+`GET /v1/map/catalog` (in the active UI language) — there SHALL be no
+bundled factory definitions. Layers the catalog does not serve are
+absent. A cold first run shows an explicit loading state until the
+catalog answers; a failure is an error state with a user-visible
+notice.
 
-#### Scenario: Catalog unreachable
+#### Scenario: Catalog unreachable on a cold first run
 
-- **WHEN** the catalog request fails or times out
-- **THEN** overlays and basemaps render from the bundled factories with
-  today's behavior and no error surfaces to the user
-
-#### Scenario: Catalog layer replaces a factory layer
-
-- **WHEN** the catalog serves a layer whose slug (after alias mapping)
-  matches a factory entry
-- **THEN** the overlay/basemap item's style, parameters, legend and
-  config come from the catalog while the user's persisted active/show
-  state and selection survive the swap
+- **WHEN** no catalog has been persisted and the fetch fails
+- **THEN** the overlay/basemap controls show an error notice and no
+  layers render, without factories or silent fallbacks
 
 #### Scenario: New catalog layer
 
-- **WHEN** the catalog serves a slug the factories do not know (e.g.
+- **WHEN** the catalog serves a slug the app has not seen (e.g.
   `huts-availability`)
 - **THEN** the layer appears in the overlay list and joins the layer
   group merge (predefined groups keep working via slugs)
+
+### Requirement: Boot cache and version sync
+
+The app SHALL persist the last catalog snapshot and the fetched style
+documents (keyed by slug, spec and mode with their layer `version`) via
+the storage service, and SHALL boot by rendering that cache
+synchronously. In the background a fresh catalog is fetched; a layer's
+style is refetched only when its `version` changed (or its cache entry
+is missing or invalid). Cache entries of removed layers are pruned.
+
+#### Scenario: Offline boot
+
+- **WHEN** the app boots with a persisted catalog and no network
+- **THEN** overlays and basemaps render from the cache with the user's
+  persisted active/show state and selection
+
+#### Scenario: Version bump
+
+- **WHEN** the fresh catalog carries a new `version` for a layer
+- **THEN** only that layer's style is refetched; unchanged layers serve
+  from the cache without network requests
+
+#### Scenario: Version-less backend (pre-#315)
+
+- **WHEN** catalog layers carry no `version` field
+- **THEN** cached entries without a version stay valid; the first
+  version-bearing catalog invalidates each entry exactly once
 
 ### Requirement: Style fetching with device-tier variants
 
@@ -95,10 +113,9 @@ existing category-API fetch while projections carry no symbol URLs.
 
 The app SHALL compile country-basemap behavior from catalog fields:
 `coverage_bbox` drives the bounding-box watcher and `fallback_min_zoom`
-the zoom floor (replacing the hardcoded `countryOnly`/`bbox`/
-`countryMinZoom` values), and a basemap's `fallback` field names the
-auto-switch target on tile-host failures (legacy defaults apply to
-factory entries without the field).
+the zoom floor, and a basemap's `fallback` field names the auto-switch
+target on tile-host failures (legacy defaults apply to entries without
+the field).
 
 #### Scenario: Country basemap from the catalog
 
@@ -106,3 +123,14 @@ factory entries without the field).
   `fallback_min_zoom`
 - **THEN** the world fallback composition and the moveend visibility
   watcher behave exactly as with the hardcoded values they replace
+
+### Requirement: Invalid remote styles skip loudly
+
+The app SHALL skip the layer of a served or persisted style that fails MapLibre structural validation (the resolved output, for tokenized documents), surfacing a console warning plus a user-visible notice, rather than blanking the map or falling back silently.
+
+#### Scenario: Invalid authored expression
+
+- **WHEN** the served style nests a zoom expression where MapLibre
+  requires a top-level step/interpolate input
+- **THEN** that layer is skipped with a visible notice and every other
+  layer renders normally

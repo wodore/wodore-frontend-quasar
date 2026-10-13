@@ -1,8 +1,6 @@
 import { defineStore } from 'pinia';
 import { reactive, ref } from 'vue';
 import { OverlaySwitchItem } from '@stores/map/utils/interfaces';
-import { overlayFactories } from '@stores/map/utils/overlays';
-import { mergeSwitchItems } from '@stores/map/utils/catalog-mapping';
 import {
   getActiveGroup,
   getVisibleGroups,
@@ -42,7 +40,11 @@ export const useOverlayStore = defineStore('overlay', () => {
     }
     return s.active;
   }
-  const overlays = reactive<Array<OverlaySwitchItem>>(overlayFactories.map(factory => factory()));
+  // Overlays boot EMPTY — the backend map catalog is the single source
+  // (map-catalog-store loads it from the persisted cache or the network;
+  // an explicit loading state covers the cold first run). There are no
+  // bundled factory definitions anymore (design.md D1).
+  const overlays = reactive<Array<OverlaySwitchItem>>([]);
 
   // ── Catalog swap epoch ────────────────────────────────────────────────────
   // Bumped whenever the overlay items are replaced from the backend map
@@ -55,38 +57,26 @@ export const useOverlayStore = defineStore('overlay', () => {
 
   /**
    * Replace the overlay list with catalog-compiled items (map-catalog-store
-   * owns the fetching): catalog items replace same-slug factory entries and
-   * append; factory entries the catalog does not serve stay (transition
-   * crutch until the seed reaches parity). The CURRENT active/show state
-   * survives the swap; group settings re-merge so new slugs join groups.
+   * owns loading + persistence). On the FIRST application (empty list) the
+   * persisted active/show state (localStorage 'overlays', legacy slugs
+   * migrated through RENAMED_SLUGS) applies; later swaps preserve the
+   * CURRENT live state. Group settings re-merge so new slugs join groups.
    */
   function applyCatalogOverlays(catalogItems: OverlaySwitchItem[]): void {
-    // SAFETY: overlays is the reactive OverlaySwitchItem[] below; the
+    // SAFETY: overlays is the reactive OverlaySwitchItem[] above; the
     // widened cast breaks the maplibre-style TS2589 recursion (same
     // pattern as activeGroupLayers) — items are OverlaySwitchItem.
-    const state = new Map(
-      (overlays as unknown as OverlaySwitchItem[]).map(o => [
-        o.name,
-        { active: o.active, show: o.show },
-      ])
-    );
-    const merged = mergeSwitchItems(
-      overlayFactories.map(factory => factory()),
-      catalogItems
-    );
-    // SAFETY: `overlays` is the reactive OverlaySwitchItem[] declared above;
-    // splice keeps the array identity (component references stay valid) —
-    // the cast breaks the same TS2589 recursion the other widened casts in
-    // this file work around.
-    (overlays as unknown as OverlaySwitchItem[]).splice(
-      0,
-      overlays.length,
-      ...(merged as OverlaySwitchItem[])
-    );
+    const live = overlays as unknown as OverlaySwitchItem[];
+    const state = new Map(live.map(o => [o.name, { active: o.active, show: o.show }]));
+    // splice keeps the array identity (component references stay valid).
+    live.splice(0, overlays.length, ...(catalogItems as OverlaySwitchItem[]));
+    // First application: adopt the persisted state; later swaps keep the
+    // live state (the user may have toggled since boot).
+    const adoptPersisted = state.size === 0;
     // SAFETY: same widened cast as above — reading/writing active/show,
-    // fields every factory and catalog item sets.
+    // fields every catalog item sets.
     for (const o of overlays as unknown as OverlaySwitchItem[]) {
-      const s = state.get(o.name);
+      const s = adoptPersisted ? savedOverlayState(o.name) : state.get(o.name);
       if (s) {
         o.active = s.active;
         o.show = s.show;
@@ -102,10 +92,11 @@ export const useOverlayStore = defineStore('overlay', () => {
   const savedOverlaysRecord = savedOverlays.reduce(
     (acc: Record<string, OverlaySwitchItem>, obj: OverlaySwitchItem) => {
       acc[obj.name] = obj;
-      // Overlay renamed by an app update (RENAMED_SLUGS, e.g. the Swiss
-      // raster hiking overlay → global 'hiking'): carry the persisted
-      // active/show state over to the new name — unless a record under
-      // the new name already exists.
+      // Slug renamed between app versions (RENAMED_SLUGS — e.g. the
+      // factory-era 'hiking-swiss' is the catalog slug
+      // 'ch.swisstopo.swisstlm3d-wanderwege'): carry the persisted
+      // active/show state over — unless a record under the new name
+      // already exists.
       const renamedTo = RENAMED_SLUGS[obj.name];
       if (renamedTo && !(renamedTo in acc)) acc[renamedTo] = obj;
       return acc;
@@ -113,38 +104,10 @@ export const useOverlayStore = defineStore('overlay', () => {
     {}
   );
 
-  const applySavedOverlayState = () => {
-    for (const o of overlays) {
-      const name = o.name;
-      if (name in savedOverlaysRecord) {
-        o.active = savedOverlaysRecord[name].active;
-        o.show = savedOverlaysRecord[name].show;
-      }
-    }
-  };
-  applySavedOverlayState();
-
-  /**
-   * Rebuild all overlays from their factories with the ACTIVE locale
-   * (labels, legends, category names are resolved at build time) while
-   * preserving the user's current active/show state. Called when the UI
-   * language changes.
-   */
-  function rebuildOverlays(): void {
-    // Factories are listed in the same order as the store array (1:1 — a
-    // new overlay requires a page load until this gains an append path,
-    // because pushing onto the reactive array trips TS2589 with the
-    // maplibre-heavy OverlaySwitchItem type). In-place Object.assign keeps
-    // the reactive item identity stable (references held by components stay
-    // valid) and avoids the deep type instantiation of array spread/push.
-    const rebuilt = overlayFactories.map(factory => factory());
-    const count = Math.min(overlays.length, rebuilt.length);
-    for (let i = 0; i < count; i++) {
-      const { active, show } = overlays[i];
-      Object.assign(overlays[i], rebuilt[i]);
-      overlays[i].active = active;
-      overlays[i].show = show;
-    }
+  /** Persisted active/show state for a slug (after rename migration). */
+  function savedOverlayState(name: string): { active?: boolean; show?: boolean } | undefined {
+    const saved = savedOverlaysRecord[name];
+    return saved ? { active: saved.active, show: saved.show } : undefined;
   }
 
   // ── Layer groups ──────────────────────────────────────────────────────
@@ -281,7 +244,6 @@ export const useOverlayStore = defineStore('overlay', () => {
     toggleOverlay,
     setActiveGroup,
     stepGroup,
-    rebuildOverlays,
     applyCatalogOverlays,
     overlaysEpoch,
     parametersEpoch,

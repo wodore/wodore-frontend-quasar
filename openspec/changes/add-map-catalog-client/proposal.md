@@ -21,23 +21,25 @@ catalog makes layers data.
   `?spec=` mapped from the GPU tier (`shouldUseRaster` → `low`, else
   `high` — the server falls back nearest-tier). Client-side token
   resolver mirrors the backend walk: whole-node tokens may be subtrees,
-  inline tokens substitute scalars, unknown tokens pass through.
-- **Overlay store**: initializes from the bundled factories (instant
-  first paint / offline fallback), then swaps in catalog layers when the
-  catalog arrives — replacing matching slugs (catalog slug aliases map
-  `ch.swisstopo.swisstlm3d-wanderwege` → `hiking-swiss`), appending new
-  ones (`huts-availability`), keeping factory entries for slugs the
-  catalog does not serve yet (transition crutch until the seed reaches
-  parity). Map re-application happens through an `overlaysEpoch` counter
-  the overlay control watches.
+  inline tokens substitute scalars, unknown tokens pass through. The
+  catalog snapshot and style documents persist to localStorage (boot
+  cache) keyed by slug × spec × mode with their layer `version`
+  (backend #315) — styles refetch only when the version changes.
+- **No factory fallbacks (owner decision)**: overlay/basemap factory
+  definitions are REMOVED — the backend owns the catalog, missing seed
+  layers are absent. Boot renders the persisted cache synchronously
+  (offline/instant); a cold first run shows an explicit loading state,
+  failures an error notice. Map re-application happens through an
+  `overlaysEpoch` counter the overlay control watches. Persisted user
+  state keeps resolving through one-time slug renames (`hiking-swiss` →
+  `ch.swisstopo.swisstlm3d-wanderwege`, `outdoor-osm` →
+  `wd-outdoor-base-ofm`, `Satellite Hybrid` → `maptiler-hybrid`).
 - **Basemap store**: builds the basemap list from the catalog after GPU
-  detection (bounded wait, factory fallback on timeout). Country
-  fallback compiles from `coverage_bbox` + `fallback_min_zoom`; the
-  mtk→ofm and MapTiler auto-switches resolve their target from the
-  basemap's `fallback` field (legacy defaults for factory entries).
-  Persisted basemap names normalize through a rename table
-  (`outdoor-osm` → `wd-outdoor-base-ofm`, `Satellite Hybrid` →
-  `maptiler-hybrid`).
+  detection (cache-first; cold boot awaits the fetch with an error
+  notice on failure). Country fallback compiles from `coverage_bbox` +
+  `fallback_min_zoom`; the mtk→ofm and MapTiler auto-switches resolve
+  their target from the basemap's `fallback` field (legacy defaults when
+  absent). Catalog refreshes rebuild the list keeping the selection.
 - **Parameters / settings tab**: catalog `parameters` render as controls
   in the overlay config settings tab — sliders/pickers/toggles for
   scalars, a zoom-stop editor for `opacity-curve`. Values persist to the
@@ -54,7 +56,8 @@ catalog makes layers data.
   symbol URLs keep fetching the category API (bridge until the backend
   projection includes symbols).
 - **Generated API client**: regenerated from the backend's unreleased
-  OpenAPI schema (adds `/v1/map/catalog`; pin stays `unreleased`).
+  OpenAPI schema (adds `/v1/map/catalog`; pin stays `unreleased`;
+  `version` typed locally until #315 deploys).
 
 ## Non-goals
 
@@ -67,9 +70,9 @@ catalog makes layers data.
 
 ### New Capabilities
 
-- `map-catalog-client`: load overlays/basemaps from the backend catalog
-  with factory fallback, style/variant/parameter resolution, and
-  catalog-driven legends.
+- `map-catalog-client`: load overlays/basemaps exclusively from the
+  backend catalog with a persisted boot cache, version sync,
+  style/variant/parameter resolution, and catalog-driven legends.
 
 ### Modified Capabilities
 

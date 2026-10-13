@@ -2,45 +2,69 @@
  * Map catalog store — orchestrates the backend map layer catalog
  * (services/map-catalog.ts) over the overlay store:
  *
- * * loads the catalog and swaps catalog-compiled overlays into the
- *   overlay store (factory fallback stays until the catalog answers);
- * * owns per-layer PARAMETER values (settings tab): authored defaults,
+ * * BOOT renders the persisted catalog + style cache synchronously
+ *   (localStorage via the storage service); a cold first run shows an
+ *   explicit loading state — there are NO bundled factory fallbacks
+ *   (design.md D1, owner decision).
+ * * SYNC: a fresh catalog is fetched in the background; per layer the
+ *   style is refetched ONLY when its `version` (backend #315,
+ *   layer.modified) changed — otherwise the persisted document serves.
+ * * Owns per-layer PARAMETER values (settings tab): authored defaults,
  *   persisted user overrides (localStorage), runtime values ({{date}});
- * * re-resolves tokenized styles on parameter changes and applies the
+ *   re-resolves tokenized styles on parameter changes and applies the
  *   token-bearing paint/layout/source properties live — no style reload.
+ * * An invalid served/persisted style SKIPS that layer with a loud,
+ *   user-visible error (never a silent fallback).
  *
- * Basemaps compile from the catalog inside the basemap store (bounded
- * wait at init — see basemap-store.ts); this store only shares the
- * catalog fetch cache.
+ * Basemaps compile from the same catalog inside the basemap store; this
+ * store hands it the refreshed catalog (refreshFromCatalog).
  */
 import { defineStore } from 'pinia';
 import { ref, watch } from 'vue';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
-import type { GeoJSONSource, GeoJSONSourceSpecification, StyleSpecification } from 'maplibre-gl';
-import type { AllLayoutProperties, AllPaintProperties, Map } from 'maplibre-gl';
+import { Notify } from 'quasar';
+import type {
+  AllLayoutProperties,
+  AllPaintProperties,
+  GeoJSONSource,
+  GeoJSONSourceSpecification,
+  Map,
+  StyleSpecification,
+} from 'maplibre-gl';
 import { useOverlayStore } from './overlay-store';
+import { useBasemapStore } from './basemap-store';
 import { useHutsStore } from '@stores/huts-store';
 import { currentLocale } from '@services/locale';
 import { storageGet, storageSet } from '@services/storage';
 import {
   fetchMapCatalog,
+  fetchMapStyle,
   gpuSpec,
   isOpacityCurve,
+  loadPersistedCatalog,
+  loadStyleCache,
   parseOpacityCurve,
+  persistCatalog,
+  persistStyleEntry,
+  pruneStyleCache,
   resolveTokens,
   collectTokens,
   serializeOpacityCurve,
+  styleCacheKey,
+  styleEndpointUrl,
+  type MapCatalog,
+  type MapCatalogLayer,
   type MapLayerParameter,
   type MapSpecTier,
   type OpacityCurve,
+  type PersistedStyleCache,
+  type PersistedStyleEntry,
 } from '@services/map-catalog';
 import {
   authoredParameterValues,
-  fetchOverlayStyles,
-  isUsableStyle,
+  isUsableStyle as styleValid,
   mapCatalogOverlay,
   mergeSpritePacks,
-  CATALOG_OVERLAY_SLUG_ALIASES,
 } from './utils/catalog-mapping';
 import { wireBookingsSource } from './utils/overlay-huts';
 import type { OverlaySwitchItem } from './utils/interfaces';
@@ -49,11 +73,6 @@ const PARAMS_KEY = 'mapParameterValues';
 
 /** A validated parameter value: scalar or a parsed opacity curve. */
 export type ParameterValue = number | string | boolean | OpacityCurve;
-
-/** Catalog slugs whose app identity differs (parameter-value keys use
- *  the APP slug — catalog-mapping's CATALOG_OVERLAY_SLUG_ALIASES is the
- *  single source for the mapping). */
-const CATALOG_NAME_FIXUP = CATALOG_OVERLAY_SLUG_ALIASES;
 
 /** Styles whose geojson source is already wired (once per style object). */
 const wiredStyles = new WeakSet<object>();
@@ -64,7 +83,8 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
 
   // ── State ─────────────────────────────────────────────────────────────
 
-  const status = ref<'idle' | 'loading' | 'ready' | 'fallback'>('idle');
+  /** 'loading' = cold boot, catalog being fetched (no cache to render). */
+  const status = ref<'idle' | 'loading' | 'ready' | 'error'>('idle');
 
   /** Persisted per-layer parameter overrides: {overlayName: {paramSlug: value}}. */
   const parameterValues = ref<Record<string, Record<string, unknown>>>(
@@ -73,6 +93,8 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
 
   /** Runtime-scope values ({{date}}) — never persisted. */
   const runtimeValues = ref<Record<string, string>>({});
+
+  let refreshing = false;
 
   // ── Value resolution ──────────────────────────────────────────────────
 
@@ -298,7 +320,7 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     applyRuntimeValueToLayers('date');
   }
 
-  // ── Catalog load ──────────────────────────────────────────────────────
+  // ── Style loading with the persisted cache + version sync ─────────────
 
   /** Overlay-layer spec: the cached GPU tier (basemap-store detects and
    *  stores it; tier < 2 is the weak-GPU raster path). */
@@ -307,48 +329,128 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     return gpuSpec((tier?.tier ?? 3) < 2);
   }
 
-  /** Compile catalog overlay layers into swap items (styles resolved). */
-  async function compileCatalogOverlays(): Promise<OverlaySwitchItem[]> {
-    const catalog = await fetchMapCatalog();
-    const layers = catalog.layers.filter(l => l.role === 'overlay');
+  interface LoadedBundle {
+    style: StyleSpecification;
+    tokenizedStyle?: StyleSpecification;
+  }
+
+  /** Loud, user-visible skip: the layer is absent until the backend fixes it. */
+  function skipLayer(layer: MapCatalogLayer, reason: string, detail: unknown): void {
+    console.warn(`[map-catalog] skipping layer '${layer.slug}': ${reason}`, detail ?? '');
+    Notify.create({
+      type: 'negative',
+      position: 'bottom',
+      message: `${layer.name || layer.slug}`,
+      caption: reason,
+      timeout: 4000,
+    });
+  }
+
+  /** Whether a style document is structurally usable. Tokenized
+   *  documents carry `{{param}}` strings (invalid paint values by
+   *  design) — their RESOLVED output is what renderers consume, so that
+   *  is validated instead. */
+  function bundleIsValid(doc: StyleSpecification, layer: MapCatalogLayer): boolean {
+    const tokenized = layer.parameters.length > 0;
+    const validated = tokenized
+      ? (resolveTokens(doc, valuesFor(layer)) as StyleSpecification)
+      : doc;
+    return styleValid(validated);
+  }
+
+  /** Whether a cached entry can serve this layer (version + validity). */
+  function cacheServes(
+    entry: PersistedStyleEntry | undefined,
+    layer: MapCatalogLayer,
+    tokenized: boolean
+  ): entry is PersistedStyleEntry {
+    if (!entry) return false;
+    if ((entry.version ?? null) !== (layer.version ?? null)) return false;
+    const doc = tokenized ? entry.tokenized : entry.style;
+    if (!doc) return false;
+    return bundleIsValid(doc, layer);
+  }
+
+  /**
+   * Load one layer's style bundle: the persisted cache serves when the
+   * version matches; otherwise the style endpoint is fetched (tokenized
+   * for parameterized layers, resolved otherwise) and persisted.
+   */
+  async function loadStyleBundle(
+    layer: MapCatalogLayer,
+    spec: MapSpecTier,
+    cache: PersistedStyleCache
+  ): Promise<LoadedBundle | undefined> {
+    const tokenized = layer.parameters.length > 0;
+    const key = styleCacheKey(layer.slug, spec, tokenized);
+    const cached = cache[key];
+    if (cacheServes(cached, layer, tokenized)) {
+      if (tokenized && cached.tokenized) {
+        return {
+          style: resolveTokens(cached.tokenized, valuesFor(layer)) as StyleSpecification,
+          tokenizedStyle: cached.tokenized,
+        };
+      }
+      if (!tokenized && cached.style) return { style: cached.style };
+    }
+
+    try {
+      const tokenizedDoc = tokenized
+        ? ((await fetchMapStyle(
+            styleEndpointUrl(layer.slug, { spec, tokenized: true }),
+            layer.slug
+          )) as StyleSpecification)
+        : undefined;
+      const resolvedDoc = tokenizedDoc
+        ? (resolveTokens(tokenizedDoc, valuesFor(layer)) as StyleSpecification)
+        : ((await fetchMapStyle(
+            styleEndpointUrl(layer.slug, { spec }),
+            layer.slug
+          )) as StyleSpecification);
+      // Remote-data guard: an invalid document must not blank the layer —
+      // the RESOLVED output is validated (tokenized docs carry invalid
+      // paint tokens by design until resolved).
+      if (!bundleIsValid(resolvedDoc, layer)) {
+        skipLayer(layer, 'invalid style document', undefined);
+        return undefined;
+      }
+      persistStyleEntry(key, {
+        ...(tokenized ? { tokenized: tokenizedDoc } : { style: resolvedDoc }),
+        version: layer.version ?? null,
+      });
+      return { style: resolvedDoc, tokenizedStyle: tokenizedDoc };
+    } catch (error) {
+      skipLayer(layer, 'style could not be loaded', error);
+      return undefined;
+    }
+  }
+
+  function valuesFor(layer: MapCatalogLayer): Record<string, unknown> {
+    return resolvedParameterValues(layer.slug, layer.parameters);
+  }
+
+  /** Compile catalog overlay layers into swap items. */
+  async function compileCatalogOverlays(catalog: {
+    slots: MapCatalog['slots'];
+    layers: MapCatalogLayer[];
+  }): Promise<OverlaySwitchItem[]> {
     const slotSlugs = new Set(catalog.slots.map(s => s.slug));
     const spec = overlaySpec();
-    const bundles = await fetchOverlayStyles(layers, spec, async (layer, tokenized) => {
-      const overlayName = CATALOG_NAME_FIXUP[layer.slug] ?? layer.slug;
-      return resolveTokens(
-        tokenized,
-        resolvedParameterValues(overlayName, layer.parameters)
-      ) as StyleSpecification;
-    });
-    const items = layers
-      .filter(layer => bundles.has(layer.slug))
-      .map(layer => mapCatalogOverlay(layer, slotSlugs, bundles.get(layer.slug)!))
-      .filter(item => {
-        // Remote data guard: an invalid served style would fail addLayer
-        // (blank layer on the map) — drop the item, factory fallback stays.
-        if (isUsableStyle(item.style)) return true;
-        console.warn(
-          `[map-catalog] dropping catalog layer '${item.catalogSlug}' — invalid style, factory fallback stays`
-        );
-        return false;
-      });
+    const styleCache = loadStyleCache();
+    const items: OverlaySwitchItem[] = [];
+    await Promise.all(
+      catalog.layers
+        .filter(l => l.role === 'overlay')
+        .map(async layer => {
+          const bundle = await loadStyleBundle(layer, spec, styleCache);
+          if (!bundle) return undefined;
+          items.push(mapCatalogOverlay(layer, slotSlugs, bundle));
+          return undefined;
+        })
+    );
     mergeSpritePacks(items);
     wireCatalogSources(items);
     return items;
-  }
-
-  /** Fetch the catalog and swap catalog-compiled overlays in. */
-  async function initOverlays(): Promise<void> {
-    if (status.value === 'loading' || status.value === 'ready') return;
-    status.value = 'loading';
-    try {
-      const items = await compileCatalogOverlays();
-      overlayStore.applyCatalogOverlays(items);
-      status.value = 'ready';
-    } catch (error) {
-      status.value = 'fallback';
-      console.warn('[map-catalog] catalog unavailable — factory overlays stay:', error);
-    }
   }
 
   /** Wire live geojson sources the catalog styles reference by URL token:
@@ -362,12 +464,70 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     }
   }
 
+  // ── Boot + background sync ────────────────────────────────────────────
+
+  /**
+   * Boot: render the persisted catalog immediately (if any), then fetch a
+   * fresh catalog in the background and refetch only layers whose version
+   * changed. Cold first run: explicit loading state, never factories.
+   */
+  async function initOverlays(): Promise<void> {
+    const cached = loadPersistedCatalog();
+    if (cached) {
+      try {
+        // Cache-first render; missing/invalid style entries are fetched
+        // (bounded by the network) before the first paint of those layers.
+        const items = await compileCatalogOverlays(cached);
+        overlayStore.applyCatalogOverlays(items);
+        status.value = 'ready';
+      } catch (error) {
+        console.warn('[map-catalog] persisted catalog could not be rendered:', error);
+      }
+    } else {
+      status.value = 'loading';
+    }
+    await refreshCatalog({ background: cached !== null });
+  }
+
+  /** Fetch the fresh catalog, sync changed styles, apply, persist. */
+  async function refreshCatalog({ background }: { background: boolean }): Promise<void> {
+    if (refreshing) return;
+    refreshing = true;
+    try {
+      const catalog = await fetchMapCatalog();
+      persistCatalog(catalog, currentLocale());
+      pruneStyleCache(new Set(catalog.layers.map(l => l.slug)));
+      const items = await compileCatalogOverlays(catalog);
+      overlayStore.applyCatalogOverlays(items);
+      status.value = 'ready';
+      // Basemaps ride the same catalog: refresh their list (keeping the
+      // active selection) so metadata/coverage changes flow through.
+      useBasemapStore().refreshFromCatalog(catalog);
+    } catch (error) {
+      console.warn('[map-catalog] catalog refresh failed:', error);
+      if (!background && status.value !== 'ready') {
+        status.value = 'error';
+        Notify.create({
+          type: 'negative',
+          position: 'bottom',
+          message:
+            currentLocale() === 'de'
+              ? 'Kartenebenen konnten nicht geladen werden'
+              : 'Map layers could not be loaded',
+          timeout: 4000,
+        });
+      }
+    } finally {
+      refreshing = false;
+    }
+  }
+
   /** Locale switch: refetch (labels/legends localize server-side) and
-   *  re-swap — style documents come from the fetch cache (locale-free). */
+   *  re-swap — unchanged styles come from the persisted cache. */
   async function rebuildOverlaysFromCatalog(): Promise<void> {
     if (status.value !== 'ready') return;
     try {
-      const items = await compileCatalogOverlays();
+      const items = await compileCatalogOverlays((await fetchMapCatalog()) as MapCatalog);
       overlayStore.applyCatalogOverlays(items);
     } catch (error) {
       console.warn('[map-catalog] catalog rebuild failed — keeping current overlays:', error);
@@ -390,6 +550,7 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     parameterValues,
     runtimeValues,
     initOverlays,
+    refreshCatalog,
     rebuildOverlaysFromCatalog,
     getParameterValue,
     setParameterValue,

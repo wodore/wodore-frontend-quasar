@@ -38,6 +38,7 @@ import { LocalStorage } from 'quasar';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
 import type { AllPaintProperties } from '@maplibre/maplibre-gl-style-spec';
 import { useOverlayStore } from '@stores/map/overlay-store';
+import { useMapCatalogStore } from '@stores/map/map-catalog-store';
 import { useBasemapStore } from '@stores/map/basemap-store';
 import { useOverlayConfigStore } from '@stores/map/overlay-config-store';
 import { useMapMenuStore } from '@stores/map/map-menu-store';
@@ -51,6 +52,9 @@ import type {
 const { t } = useI18n();
 const $q = useQuasar();
 const overlayStore = useOverlayStore();
+// Catalog boot status drives the loading/error rows (cold first run).
+const mapCatalogStore = useMapCatalogStore();
+const catalogStatus = computed(() => mapCatalogStore.status);
 const basemapStore = useBasemapStore();
 const configStore = useOverlayConfigStore();
 const menuStore = useMapMenuStore();
@@ -1746,6 +1750,16 @@ onBeforeUnmount(() => {
             @pointerup="onRowsPointerUp"
             @pointerleave="onRowsPointerUp"
           >
+            <!-- Catalog boot states: cold first run (loading) / unreachable
+                 (error) — there are no bundled factory fallbacks. -->
+            <div v-if="catalogStatus === 'loading'" class="wd-ovl__status">
+              <q-spinner-dots size="20px" color="primary" />
+              <span class="text-caption">{{ t('overlays.catalog_loading') }}</span>
+            </div>
+            <div v-else-if="catalogStatus === 'error'" class="wd-ovl__status">
+              <q-icon name="warning" color="negative" size="20px" />
+              <span class="text-caption">{{ t('overlays.catalog_error') }}</span>
+            </div>
             <!-- Empty group (edit mode): a quiet pointer to the + buttons below -->
             <div v-if="editMode && miniLayers.length === 0" class="wd-ovl__empty-hint">
               {{ t('overlays.group_empty_hint') }}
@@ -3366,6 +3380,16 @@ body.body--dark .wd-ovl__toolbar-btn--add {
 
 body.body--dark .wd-ovl__empty-hint {
   color: #9fc3b2;
+}
+
+// ── Catalog boot states (loading / unreachable) ──────────────────────
+.wd-ovl__status {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 10px 6px;
+  color: var(--wd-ctl-ink-soft);
 }
 
 .wd-ovl__icon-picker-title {

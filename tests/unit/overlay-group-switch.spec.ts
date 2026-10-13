@@ -54,6 +54,39 @@ describe('overlay group switching (store state)', () => {
     const { useOverlayStore } = await import('@stores/map/overlay-store');
     store = useOverlayStore();
     window.localStorage.clear();
+    // The store boots EMPTY (no factory overlays — the backend map catalog
+    // owns the layers): seed catalog-compiled items the way
+    // map-catalog-store.applyCatalogOverlays does.
+    const slugs = [
+      'huts',
+      'transport-stops',
+      'hiking-routes',
+      'hiking',
+      'ch.swisstopo.swisstlm3d-wanderwege',
+      'mtb',
+      'cycling',
+      'ch.swisstopo.hangneigung-ueber_30',
+      'ch.swisstopo-karto.skitouren',
+      'ch.swisstopo.schneeschuhwandern',
+      'slopes',
+      'wildruhe_und_jagdbann',
+      'ch.bafu.alpweiden-herdenschutzhunde',
+    ];
+    const items = slugs.map(
+      name =>
+        ({
+          name,
+          label: name,
+          active: false,
+          show: true,
+          onLayer: 'ways',
+          icon: 'huts',
+          style: { version: 8, sources: {}, layers: [] },
+        }) as never
+    );
+    (store as unknown as { applyCatalogOverlays: (items: never[]) => void }).applyCatalogOverlays(
+      items
+    );
   });
 
   it('cycleGroup applies the incoming group’s saved active layers', () => {

@@ -16,11 +16,9 @@ vi.mock('@indoorequal/vue-maplibre-gl', () => ({
 import {
   mapCatalogOverlay,
   mapCatalogBasemap,
-  mergeSwitchItems,
   mergeSpritePacks,
   opacityFromParameters,
   isUsableStyle,
-  CATALOG_OVERLAY_SLUG_ALIASES,
 } from '@stores/map/utils/catalog-mapping';
 import type { MapCatalogLayer, MapLayerParameter } from '@services/map-catalog';
 
@@ -81,15 +79,14 @@ describe('mapCatalogOverlay', () => {
     expect(item.parameters).toBeUndefined();
   });
 
-  it('aliases the Swiss hiking slug to the app identity', () => {
+  it('uses the catalog slug as the item identity (no aliases)', () => {
     const item = mapCatalogOverlay(
       layer({ slug: 'ch.swisstopo.swisstlm3d-wanderwege' }),
       new Set(['background', 'ways']),
       { style: style() }
     );
-    expect(item.name).toBe('hiking-swiss');
+    expect(item.name).toBe('ch.swisstopo.swisstlm3d-wanderwege');
     expect(item.catalogSlug).toBe('ch.swisstopo.swisstlm3d-wanderwege');
-    expect(CATALOG_OVERLAY_SLUG_ALIASES['ch.swisstopo.swisstlm3d-wanderwege']).toBe('hiking-swiss');
   });
 
   it('moves huts to the places anchor while the seed lacks the slot', () => {
@@ -260,22 +257,6 @@ describe('isUsableStyle', () => {
       'icon-size': ['*', 1, ['interpolate', ['linear'], ['zoom'], 7, 0.1, 20, 2]],
     };
     expect(isUsableStyle(broken)).toBe(false);
-  });
-});
-
-describe('mergeSwitchItems', () => {
-  it('replaces same-slug factory items, appends catalog-only ones, keeps factory leftovers', () => {
-    const factories = [
-      { name: 'a', img: 'a.png' },
-      { name: 'b', img: 'b.png' },
-    ];
-    const catalog = [
-      { name: 'b', img: '' }, // replaces b, keeps factory img
-      { name: 'c' }, // appends
-    ];
-    const merged = mergeSwitchItems(factories, catalog);
-    expect(merged.map(m => m.name)).toEqual(['a', 'b', 'c']);
-    expect(merged[1]!.img).toBe('b.png');
   });
 });
 

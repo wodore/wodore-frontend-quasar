@@ -446,7 +446,9 @@
     "edit_keep_editing": "Keep editing",
     "huts_availability": {
       "label": "Hut availability"
-    }
+    },
+    "catalog_loading": "Loading map layers…",
+    "catalog_error": "Map layers could not be loaded"
   },
   "basemap": "Basemap",
   "basemaps": {
@@ -457,7 +459,8 @@
     "austria_raster": "Austria Topo Raster",
     "outdoor_ofm": "Outdoor (OSM)",
     "world_topo": "World Topo",
-    "world_satellite": "World Satellite"
+    "world_satellite": "World Satellite",
+    "load_error": "Basemaps could not be loaded"
   },
   "multi_select": {
     "select_all": "Select all",

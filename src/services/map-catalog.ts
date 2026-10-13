@@ -58,6 +58,10 @@ export interface MapCatalogLayer {
   order: number;
   show: boolean;
   is_default: boolean;
+  /** Layer content version (ISO timestamp = layer.modified; backend
+   *  wodore-backend#315). Absent on older backends — treated as
+   *  "unknown" (cache entries without a version stay valid). */
+  version?: string | null;
   min_zoom: number | null;
   max_zoom: number | null;
   coverage_bbox: number[] | null;
@@ -237,6 +241,85 @@ export function fetchMapStyle(url: string, slug = url): Promise<StyleSpecificati
     });
   styleCache.set(url, promise);
   return promise;
+}
+
+// ── Persistence (boot cache + version sync, design.md D1) ────────────────
+
+import { storageGet, storageSet } from '@services/storage';
+
+const CATALOG_CACHE_KEY = 'mapCatalogCache';
+const STYLE_CACHE_KEY = 'mapCatalogStyleCache';
+
+/** Persisted catalog snapshot (last successful fetch, any locale). */
+export interface PersistedCatalog {
+  savedAt: string;
+  lang: string;
+  slots: MapCatalogSlot[];
+  layers: MapCatalogLayer[];
+}
+
+export function persistCatalog(catalog: MapCatalog, lang: string): void {
+  storageSet(CATALOG_CACHE_KEY, {
+    savedAt: new Date().toISOString(),
+    lang,
+    slots: catalog.slots,
+    layers: catalog.layers,
+  } satisfies PersistedCatalog);
+}
+
+/** Last persisted catalog (synchronous — the storage service preloads
+ *  its cache at boot). Null on a cold first run. */
+export function loadPersistedCatalog(): PersistedCatalog | null {
+  const cached = storageGet(CATALOG_CACHE_KEY) as PersistedCatalog | null;
+  if (!cached || !Array.isArray(cached.layers)) return null;
+  return cached;
+}
+
+/** A persisted style document + the layer version it was built from. */
+export interface PersistedStyleEntry {
+  /** Resolved-mode document (non-parameterized layers). */
+  style?: StyleSpecification | null;
+  /** Tokenized document (parameterized layers — resolved client-side). */
+  tokenized?: StyleSpecification | null;
+  /** `version` of the catalog layer this was fetched for (null when the
+   *  backend served no version — pre-#315 backends). */
+  version?: string | null;
+}
+
+export type PersistedStyleCache = Record<string, PersistedStyleEntry>;
+
+/** Cache key: one entry per slug × spec × mode. */
+export function styleCacheKey(slug: string, spec: MapSpecTier, tokenized: boolean): string {
+  return `${slug}|${spec}|${tokenized ? 'tokenized' : 'resolved'}`;
+}
+
+export function loadStyleCache(): PersistedStyleCache {
+  return (storageGet(STYLE_CACHE_KEY) as PersistedStyleCache | null) ?? {};
+}
+
+export function persistStyleEntry(
+  key: string,
+  entry: PersistedStyleEntry,
+  cache: PersistedStyleCache = loadStyleCache()
+): void {
+  cache[key] = entry;
+  storageSet(STYLE_CACHE_KEY, cache);
+}
+
+/** Drop cached style entries that no longer match any catalog layer
+ *  (removed layers) — keeps the persisted cache from growing forever.
+ *  Keys are `slug|spec|mode`; the slug segment decides membership. */
+export function pruneStyleCache(validSlugs: Set<string>): void {
+  const cache = loadStyleCache();
+  const stale = Object.keys(cache).filter(k => {
+    const slug = k.split('|')[0];
+    return slug !== undefined && !validSlugs.has(slug);
+  });
+  if (stale.length === 0) return;
+  for (const k of stale) {
+    delete cache[k];
+  }
+  storageSet(STYLE_CACHE_KEY, cache);
 }
 
 // ── Variant selection (mirrors backend MapLayer.pick_variant) ────────────

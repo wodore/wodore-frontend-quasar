@@ -446,7 +446,9 @@
     "edit_keep_editing": "Continuer la modification",
     "huts_availability": {
       "label": "Disponibilité des cabanes"
-    }
+    },
+    "catalog_loading": "Chargement des couches cartographiques…",
+    "catalog_error": "Impossible de charger les couches cartographiques"
   },
   "basemap": "Fond de carte",
   "basemaps": {
@@ -457,7 +459,8 @@
     "austria_raster": "Autriche Topo Raster",
     "outdoor_ofm": "Plein air (OSM)",
     "world_topo": "Topo monde",
-    "world_satellite": "Satellite monde"
+    "world_satellite": "Satellite monde",
+    "load_error": "Impossible de charger les cartes de base"
   },
   "multi_select": {
     "select_all": "Tout sélectionner",

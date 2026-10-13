@@ -1,26 +1,18 @@
 /**
  * Catalog → switch-item mapping — compiles backend map catalog layers
  * (services/map-catalog.ts DTOs) into the OverlaySwitchItem /
- * BasemapSwitchItem shapes the stores and controls consume, and merges
- * them with the bundled factory definitions (the offline / first-paint
- * fallback — see overlays.ts and basemap-store.ts).
+ * BasemapSwitchItem shapes the stores and controls consume. Pure
+ * mapping: fetching, the persistence cache and version sync live in
+ * map-catalog-store / basemap-store.
  *
- * Transition tables (design.md D6): the backend seed is still reaching
- * parity with the frontend factories. Slug aliases map catalog slugs to
- * the app identities persisted state and layer groups know; slot/anchor
- * crutches keep the render order unchanged until the catalog carries
- * them. Every table is keyed so catalog data supersedes it the moment it
- * appears.
+ * The backend owns the catalog — no factory fallbacks, no slug aliases.
+ * Persisted basemap-name renames keep pre-catalog selections resolving
+ * (design.md D4), and the slot/anchor tables preserve the render order
+ * for anchors the seed does not carry yet (design.md D6).
  */
 import type { LayerSpecification, StyleSpecification } from 'maplibre-gl';
 import { validateStyleMin } from '@maplibre/maplibre-gl-style-spec';
 import type { MapCatalogLayer, MapLayerParameter, MapSpecTier } from '@services/map-catalog';
-import {
-  fetchMapStyle,
-  pickVariant,
-  styleEndpointUrl,
-  absolutizeStyleUrl,
-} from '@services/map-catalog';
 import type {
   BasemapSwitchItem,
   LayerNames,
@@ -35,17 +27,7 @@ import type {
 import { COUNTRY_BASEMAP_MIN_ZOOM } from './country-fallback';
 import { i18n } from '@services/locale';
 
-// ── Slug aliases (catalog slug → app slug) ───────────────────────────────
-
-/**
- * Catalog slugs that differ from the app's overlay identities. The
- * backend seed uses the swisstopo WMTS layer id where the app renamed
- * the overlay to `hiking-swiss` (RENAMED_SLUGS in layer-groups.ts maps
- * persisted state in the same direction).
- */
-export const CATALOG_OVERLAY_SLUG_ALIASES: Record<string, string> = {
-  'ch.swisstopo.swisstlm3d-wanderwege': 'hiking-swiss',
-};
+// ── Persisted-name renames (pre-catalog selections → catalog slugs) ──────
 
 /** Persisted basemap names → catalog identities (selection renames). */
 export const RENAMED_BASEMAP_SLUGS: Record<string, string> = {
@@ -351,16 +333,15 @@ export interface OverlayStyleBundle {
 
 /**
  * Compile one catalog overlay layer into an OverlaySwitchItem. The style
- * comes pre-fetched (fetchMapOverlayStyles) — mapping stays synchronous
- * so the store can rebuild labels/legends on locale switches without
- * refetching (styles are language-independent).
+ * comes pre-fetched (map-catalog-store owns loading + persistence) —
+ * mapping stays synchronous so the store can rebuild labels/legends on
+ * locale switches without refetching (styles are language-independent).
  */
 export function mapCatalogOverlay(
   layer: MapCatalogLayer,
   slotSlugs: Set<string>,
   styles: OverlayStyleBundle
 ): OverlaySwitchItem {
-  const appSlug = CATALOG_OVERLAY_SLUG_ALIASES[layer.slug] ?? layer.slug;
   let onLayer: LayerNames = SLOT_TO_ONLAYER[layer.slot ?? 'ways'] ?? 'ways';
   const override = SLOT_OVERRIDES[layer.slug];
   if (override && !slotSlugs.has(override)) onLayer = override;
@@ -370,8 +351,8 @@ export function mapCatalogOverlay(
   // bundle carries a tokenized style (client-resolved with defaults ∪
   // user overrides by the store), otherwise the server-resolved document.
   const item: OverlaySwitchItem = {
-    name: appSlug,
-    label: localizedLayerLabel(appSlug, layer.name),
+    name: layer.slug,
+    label: localizedLayerLabel(layer.slug, layer.name),
     show: layer.show,
     active: false,
     onLayer,
@@ -403,46 +384,6 @@ export function mapCatalogOverlay(
 function clampMinZoom(layer: LayerSpecification, minZoom: number): LayerSpecification {
   if ((layer.minzoom ?? 0) >= minZoom) return layer;
   return { ...layer, minzoom: minZoom } as LayerSpecification;
-}
-
-/**
- * Fetch the style bundle(s) for catalog overlay layers: tokenized when
- * the layer declares parameters (client-side resolution), resolved
- * otherwise. Returns bundles keyed by layer slug.
- */
-export async function fetchOverlayStyles(
-  layers: MapCatalogLayer[],
-  spec: MapSpecTier,
-  resolve: (layer: MapCatalogLayer, tokenized: StyleSpecification) => Promise<StyleSpecification>
-): Promise<Map<string, OverlayStyleBundle>> {
-  const bundles = new Map<string, OverlayStyleBundle>();
-  await Promise.all(
-    layers.map(async layer => {
-      const variant = pickVariant(layer.variants, spec);
-      // Inline catalog styles are authored documents (tokens/env
-      // unresolved) — always go through the style endpoint (design.md D2).
-      const wantsTokens = layer.parameters.length > 0;
-      const url = variant?.style_url
-        ? absolutizeStyleUrl(variant.style_url)
-        : styleEndpointUrl(layer.slug, { spec });
-      try {
-        const tokenized = wantsTokens
-          ? ((await fetchMapStyle(
-              styleEndpointUrl(layer.slug, { spec, tokenized: true }),
-              layer.slug
-            )) as StyleSpecification)
-          : undefined;
-        const style = tokenized
-          ? await resolve(layer, tokenized)
-          : ((await fetchMapStyle(url, layer.slug)) as StyleSpecification);
-        bundles.set(layer.slug, { style, tokenizedStyle: tokenized });
-      } catch (error) {
-        console.warn(`[map-catalog] style fetch failed for '${layer.slug}':`, error);
-      }
-      return undefined;
-    })
-  );
-  return bundles;
 }
 
 // ── Basemap mapping ─────────────────────────────────────────────────────
@@ -499,38 +440,4 @@ export function mapCatalogBasemap(
         }
       : {}),
   };
-}
-
-// ── Factory merge ───────────────────────────────────────────────────────
-
-/**
- * Merge catalog items over the factory baseline: catalog items replace
- * same-slug entries and append (in catalog order); factory entries for
- * slugs the catalog does not serve remain (transition crutch, design.md
- * D1 — flips to strict catalog mode when the seed reaches parity).
- * Factory `img`/icon survive when the catalog item carries none.
- */
-export function mergeSwitchItems<T extends { name: string; img?: string; icon?: string }>(
-  factoryItems: T[],
-  catalogItems: T[]
-): T[] {
-  const catalogNames = new Set(catalogItems.map(item => item.name));
-  const byName = new Map(catalogItems.map(item => [item.name, item]));
-  const merged: T[] = [];
-  for (const factoryItem of factoryItems) {
-    const catalogItem = byName.get(factoryItem.name);
-    if (catalogItem) {
-      merged.push({
-        ...catalogItem,
-        img: catalogItem.img || factoryItem.img,
-        icon: catalogItem.icon || factoryItem.icon,
-      });
-      byName.delete(factoryItem.name);
-    } else if (!catalogNames.has(factoryItem.name)) {
-      merged.push(factoryItem);
-    }
-  }
-  // Catalog-only slugs (e.g. huts-availability) append in catalog order.
-  merged.push(...byName.values());
-  return merged;
 }
