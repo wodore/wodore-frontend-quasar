@@ -52,27 +52,47 @@ const hutsLayerLayout: SymbolLayerSpecification['layout'] = {
   'icon-overlap': 'always',
   'text-overlap': 'never',
   'text-optional': true,
+  // Zoom ladder: primitive (far out, tiny) → mono SDF (zoomed in, colored).
+  // Below z9 the primitive sprite (small colored shape) reads better than
+  // a glyph at ~5px; from z9 up the SDF mono glyph with runtime tinting
+  // and a white halo border is the workhorse. Sizes tuned to the original
+  // feel: small and semi-transparent when zoomed out, growing to full.
   'icon-image': [
-    'coalesce',
-    ['image', ['concat', 'wd-sdf/mono/', ['get', 'type_standard_identifier']]],
-    ['image', 'wd-sdf/mono/accommodation.unknown'],
-    // Legacy fallback while a tile server without the mono/ variant is in use
-    ['image', ['concat', 'wd:primitive/', ['get', 'type_standard_identifier']]],
-    ['image', 'wd:primitive/accommodation.unknown'],
+    'step',
+    ['zoom'],
+    // z < 9: primitive (small colored shape on white ring)
+    [
+      'coalesce',
+      ['image', ['concat', 'wd:primitive/', ['get', 'type_standard_identifier']]],
+      ['image', 'wd:primitive/accommodation.unknown'],
+      // Fallback to mono if primitive isn't served yet
+      ['image', ['concat', 'wd-sdf/mono/', ['get', 'type_standard_identifier']]],
+      ['image', 'wd-sdf/mono/accommodation.unknown'],
+    ],
+    9,
+    // z >= 9: mono SDF (runtime-tinted glyph with white halo border)
+    [
+      'coalesce',
+      ['image', ['concat', 'wd-sdf/mono/', ['get', 'type_standard_identifier']]],
+      ['image', 'wd-sdf/mono/accommodation.unknown'],
+      ['image', ['concat', 'wd:primitive/', ['get', 'type_standard_identifier']]],
+      ['image', 'wd:primitive/accommodation.unknown'],
+    ],
   ],
-  // 48px SDF art: legible floor ~0.45 (≈22px) at z7, growing with zoom
+  // 48px art. Far out: small (0.1–0.3 like the original). Zoomed in:
+  // the glyph fills the space (0.5–1.25).
   'icon-size': [
     'interpolate',
     ['linear'],
     ['zoom'],
     7,
-    0.45,
+    0.1,
     9,
-    0.55,
+    0.3,
     11,
-    0.65,
+    0.55,
     13,
-    0.8,
+    0.75,
     16,
     1.0,
     20,
@@ -87,7 +107,9 @@ const hutsLayerPaint: SymbolLayerSpecification['paint'] = {
   'icon-halo-color': '#ffffff',
   'icon-halo-width': 2,
   'icon-halo-blur': 0.15,
-  'icon-opacity': 1,
+  // Semi-transparent when zoomed out (like the original 0.7–0.85),
+  // full opacity when zoomed in
+  'icon-opacity': ['interpolate', ['linear'], ['zoom'], 5, 0.7, 10, 0.8, 13, 0.9, 16, 1],
   'text-opacity': ['step', ['zoom'], 0, 7, 1],
   // Forest-deep (#224E3B) marks hut names as the product's own objects —
   // same treatment as the basemap style's wd-park-label; AA on light
