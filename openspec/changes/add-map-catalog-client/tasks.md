@@ -1,5 +1,6 @@
 # Tasks: Consume the backend map layer catalog
 
+
 ## Phase 0: Contract
 
 - [x] Regenerate the typed API client from the backend's unreleased
@@ -57,6 +58,9 @@
 
 - [x] Unit tests: mapping, merge, parameter application, curve helpers
 - [x] `pnpm lint` + `npx vue-tsc --noEmit` clean
-- [ ] Manual smoke against a catalog-serving backend (staged for the
-      infra handoff's deploy — factory fallback verified locally)
-- [ ] Draft PR
+- [x] Manual smoke against a catalog-serving backend (staging deployed
+      mid-review: catalog + style endpoints verified live — resolved and
+      tokenized modes, X-Map-Spec nearest-tier fallback, `{{date}}` token
+      passthrough; the CI interaction suite exercised the app end-to-end
+      against the live catalog)
+- [x] Draft PR
