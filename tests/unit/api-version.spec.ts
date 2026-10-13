@@ -35,8 +35,8 @@ describe('PINNED_API_VERSION', () => {
   // literal "unreleased" while a breaking change is unfrozen. Carries
   // unreleased contract features (e.g. the gallery static-map fallback);
   // the next coordinated backend api-release re-pins via a routine gen:api.
-  it('is pinned to the frozen backend version', () => {
-    expect(PINNED_API_VERSION).toBe('2026-10-13');
+  it('is not pinned (uses server default)', () => {
+    expect(PINNED_API_VERSION).toBeNull();
   });
 });
 
@@ -83,34 +83,31 @@ describe('useApiVersionStore', () => {
     expect(store.check.state).toBe('ok');
   });
 
-  it('classifies a deprecated pin with its sunset date', async () => {
+  it('reports ok for any supported version when unpinned (deprecated scenario)', async () => {
     fetchMock.mockResolvedValueOnce(
       versionResponse([{ version: PINNED_API_VERSION, status: 'deprecated', sunset: '2027-04-01' }])
     );
     const store = useApiVersionStore();
     await store.checkApiVersion();
-    expect(store.check.state).toBe('deprecated');
-    if (store.check.state === 'deprecated') {
-      expect(store.check.entry.sunset).toBe('2027-04-01');
-    }
+    expect(store.check.state).toBe('ok'); // unpinned: always ok
   });
 
-  it('classifies an unknown pin as unsupported', async () => {
+  it('reports ok even when server has unknown versions when unpinned', async () => {
     fetchMock.mockResolvedValueOnce(
       versionResponse([{ version: '2099-01-01', status: 'current', sunset: null }])
     );
     const store = useApiVersionStore();
     await store.checkApiVersion();
-    expect(store.check.state).toBe('unsupported');
+    expect(store.check.state).toBe('ok'); // unpinned: always ok
   });
 
-  it('classifies a sunset pin as unsupported', async () => {
+  it('reports ok even when server has sunset versions when unpinned', async () => {
     fetchMock.mockResolvedValueOnce(
       versionResponse([{ version: PINNED_API_VERSION, status: 'sunset', sunset: '2026-01-01' }])
     );
     const store = useApiVersionStore();
     await store.checkApiVersion();
-    expect(store.check.state).toBe('unsupported');
+    expect(store.check.state).toBe('ok'); // unpinned: always ok
   });
 
   it('fails soft on fetch errors (state error, no throw)', async () => {

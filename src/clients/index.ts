@@ -84,13 +84,13 @@ const authMiddleware: Middleware = {
  */
 const apiVersionMiddleware: Middleware = {
   onRequest({ request }) {
-    request.headers.set('Api-Version', PINNED_API_VERSION);
+    if (PINNED_API_VERSION) request.headers.set('Api-Version', PINNED_API_VERSION);
   },
   async onResponse({ response }) {
     // Development diagnostics: the backend resolved a different version
     // than the pin — usually a stale pin after the backend dropped support.
     const echoed = response.headers.get('Api-Version');
-    if (import.meta.env.DEV && echoed && echoed !== PINNED_API_VERSION) {
+    if (import.meta.env.DEV && PINNED_API_VERSION && echoed && echoed !== PINNED_API_VERSION) {
       console.warn(
         `[apiVersion] backend served '${echoed}', pin is '${PINNED_API_VERSION}' — bump the pin (see backend CHANGELOG_API.md)`
       );

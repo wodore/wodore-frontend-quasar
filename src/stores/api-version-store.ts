@@ -40,9 +40,21 @@ export const useApiVersionStore = defineStore('apiVersion', () => {
         throw new Error(error ? JSON.stringify(error) : 'no api block');
       }
       const supported = (data.api.supported ?? []) as ApiVersionEntry[];
-      check.value = classify(
-        supported.find((entry: ApiVersionEntry) => entry.version === PINNED_API_VERSION)
-      );
+      if (!PINNED_API_VERSION) {
+        // Unpinned: always on the server's current version — nothing to check
+        check.value = {
+          state: 'ok',
+          entry: supported[supported.length - 1] ?? {
+            version: 'current',
+            status: 'current',
+            sunset: null,
+          },
+        };
+      } else {
+        check.value = classify(
+          supported.find((entry: ApiVersionEntry) => entry.version === PINNED_API_VERSION)
+        );
+      }
     } catch (err) {
       // Offline / old backend without the api block: no banner — the app
       // still works; the middleware surfacing handles hard failures.
