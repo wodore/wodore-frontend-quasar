@@ -13,6 +13,7 @@
  * appears.
  */
 import type { LayerSpecification, StyleSpecification } from 'maplibre-gl';
+import { validateStyleMin } from '@maplibre/maplibre-gl-style-spec';
 import type { MapCatalogLayer, MapLayerParameter, MapSpecTier } from '@services/map-catalog';
 import {
   fetchMapStyle,
@@ -311,6 +312,35 @@ export function mergeSpritePacks(overlays: OverlaySwitchItem[]): void {
 }
 
 // ── Overlay mapping ─────────────────────────────────────────────────────
+
+// ── Style usability guard ──────────────────────────────────────────────
+
+/**
+ * Structural MapLibre validation of a served catalog style. Catalog
+ * documents are remote data — an invalid authored style (e.g. the seeded
+ * huts `icon-size` nesting a zoom expression inside a `*` product, which
+ * MapLibre rejects at addLayer) must not blank the layer: the caller
+ * drops the item and the bundled factory fallback stays.
+ */
+export function isUsableStyle(style: StyleSpecification): boolean {
+  try {
+    const errors = validateStyleMin(style);
+    const fatal = errors.filter(e => e.severity === 'error');
+    if (fatal.length > 0) {
+      console.warn(
+        '[map-catalog] style failed MapLibre validation:',
+        fatal.map(e => e.message).join('; ')
+      );
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.warn('[map-catalog] style validation threw:', error);
+    return false;
+  }
+}
+
+// ── Overlay mapping ─────────────────────────────────────────────────────────────
 
 export interface OverlayStyleBundle {
   /** Resolved style (what all renderers consume). */

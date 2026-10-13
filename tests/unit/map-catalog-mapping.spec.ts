@@ -19,6 +19,7 @@ import {
   mergeSwitchItems,
   mergeSpritePacks,
   opacityFromParameters,
+  isUsableStyle,
   CATALOG_OVERLAY_SLUG_ALIASES,
 } from '@stores/map/utils/catalog-mapping';
 import type { MapCatalogLayer, MapLayerParameter } from '@services/map-catalog';
@@ -239,6 +240,26 @@ describe('mapCatalogBasemap', () => {
     );
     expect(item.layers.ways.before).toBe('Other place labels');
     expect(item.layers.background.before).toBe('Building line');
+  });
+});
+
+describe('isUsableStyle', () => {
+  beforeAll(() => {
+    setActivePinia(createPinia());
+  });
+
+  it('accepts a structurally valid style', () => {
+    expect(isUsableStyle(style())).toBe(true);
+  });
+
+  it('rejects an invalid authored expression (zoom inside a product)', () => {
+    // The seeded huts icon-size: ["*", scale, ["interpolate", …, ["zoom"], …]]
+    // — MapLibre rejects it at addLayer; the catalog item must fall back.
+    const broken = style();
+    (broken.layers[0] as unknown as { layout: Record<string, unknown> }).layout = {
+      'icon-size': ['*', 1, ['interpolate', ['linear'], ['zoom'], 7, 0.1, 20, 2]],
+    };
+    expect(isUsableStyle(broken)).toBe(false);
   });
 });
 

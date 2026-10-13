@@ -91,6 +91,12 @@ export const test = baseTest.extend<{ stagingCache: void }>({
         return route.fulfill({ response: resp });
       });
       await use();
+      // App background work (map catalog + style fetches at boot) can still
+      // be in flight when the test ends — an in-flight route.fetch() throws
+      // "Target page, context or browser has been closed" and fails the
+      // otherwise-passing test. Ignore those teardown races explicitly
+      // (the documented Playwright remedy).
+      await page.unrouteAll({ behavior: 'ignoreErrors' });
     },
     { auto: true },
   ],

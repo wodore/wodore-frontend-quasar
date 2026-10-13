@@ -37,6 +37,7 @@ import {
 import {
   authoredParameterValues,
   fetchOverlayStyles,
+  isUsableStyle,
   mapCatalogOverlay,
   mergeSpritePacks,
   CATALOG_OVERLAY_SLUG_ALIASES,
@@ -321,7 +322,16 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     });
     const items = layers
       .filter(layer => bundles.has(layer.slug))
-      .map(layer => mapCatalogOverlay(layer, slotSlugs, bundles.get(layer.slug)!));
+      .map(layer => mapCatalogOverlay(layer, slotSlugs, bundles.get(layer.slug)!))
+      .filter(item => {
+        // Remote data guard: an invalid served style would fail addLayer
+        // (blank layer on the map) — drop the item, factory fallback stays.
+        if (isUsableStyle(item.style)) return true;
+        console.warn(
+          `[map-catalog] dropping catalog layer '${item.catalogSlug}' — invalid style, factory fallback stays`
+        );
+        return false;
+      });
     mergeSpritePacks(items);
     wireCatalogSources(items);
     return items;
