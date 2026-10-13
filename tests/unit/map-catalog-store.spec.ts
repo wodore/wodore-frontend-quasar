@@ -15,9 +15,8 @@ vi.mock('@indoorequal/vue-maplibre-gl', () => ({
 // The storage service writes through @capacitor/preferences (a no-op
 // under happy-dom) — back it with the real DOM storage for assertions.
 vi.mock('@services/storage', async () => {
-  const { storageGet, storageSet, storageHas, storageRemove } = await import(
-    './helpers/storage-mock'
-  );
+  const { storageGet, storageSet, storageHas, storageRemove } =
+    await import('./helpers/storage-mock');
   return { storageGet, storageSet, storageHas, storageRemove };
 });
 
@@ -51,8 +50,10 @@ const dataCalls: Array<[string, unknown]> = [];
 const fakeMap = {
   getLayer: (id: string) => ({ id }),
   getSource: (id: string) => ({ setData: (v: unknown) => dataCalls.push([id, v]) }),
-  setPaintProperty: (id: string, prop: string, value: unknown) => paintCalls.push([id, prop, value]),
-  setLayoutProperty: (id: string, prop: string, value: unknown) => layoutCalls.push([id, prop, value]),
+  setPaintProperty: (id: string, prop: string, value: unknown) =>
+    paintCalls.push([id, prop, value]),
+  setLayoutProperty: (id: string, prop: string, value: unknown) =>
+    layoutCalls.push([id, prop, value]),
   isStyleLoaded: () => true,
 };
 
@@ -60,7 +61,11 @@ const TOKENIZED_STYLE = {
   version: 8,
   name: 'mtb',
   sources: {
-    'wd-mtb': { type: 'raster', tiles: ['https://tile.waymarkedtrails.org/mtb/{z}/{x}/{y}.png'], tileSize: 256 },
+    'wd-mtb': {
+      type: 'raster',
+      tiles: ['https://tile.waymarkedtrails.org/mtb/{z}/{x}/{y}.png'],
+      tileSize: 256,
+    },
   },
   layers: [
     {
@@ -126,11 +131,13 @@ describe('map catalog store parameters', () => {
     const mtb = overlayStore.overlays.find(o => o.name === 'mtb')!;
     paintCalls.length = 0;
 
-    const curve = { stops: [
-      { zoom: 8, opacity: 0 },
-      { zoom: 13, opacity: 0.5 },
-      { zoom: 16, opacity: 1 },
-    ] };
+    const curve = {
+      stops: [
+        { zoom: 8, opacity: 0 },
+        { zoom: 13, opacity: 0.5 },
+        { zoom: 16, opacity: 1 },
+      ],
+    };
     store.setParameterValue('mtb', 'mtb.opacity', curve);
 
     // Persisted (localStorage) and served

@@ -55,7 +55,7 @@ parameters fetch resolved.
 to `spec=low` (raster path) / `spec=high`. The server picks the nearest
 available variant (exact → nearest → single) and reports it via
 `X-Map-Spec`; the client does not need its own fallback logic for
-served styles. When selecting between catalog *variant entries*
+served styles. When selecting between catalog _variant entries_
 (external `style_url`s differ per spec), the client mirrors the
 server's exact→nearest→single rule.
 

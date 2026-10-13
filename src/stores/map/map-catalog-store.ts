@@ -111,7 +111,10 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     return sanitizeParameterValue(param, param.default);
   }
 
-  function persistedValue(overlayName: string, param: MapLayerParameter): ParameterValue | undefined {
+  function persistedValue(
+    overlayName: string,
+    param: MapLayerParameter
+  ): ParameterValue | undefined {
     const raw = parameterValues.value[overlayName]?.[param.slug];
     return raw === undefined ? undefined : sanitizeParameterValue(param, raw);
   }

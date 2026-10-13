@@ -115,11 +115,13 @@ describe('map catalog URLs', () => {
 });
 
 describe('opacity curve helpers', () => {
-  const curve = { stops: [
-    { zoom: 8, opacity: 0 },
-    { zoom: 13, opacity: 0.8 },
-    { zoom: 16, opacity: 0.3 },
-  ] };
+  const curve = {
+    stops: [
+      { zoom: 8, opacity: 0 },
+      { zoom: 13, opacity: 0.8 },
+      { zoom: 16, opacity: 0.3 },
+    ],
+  };
 
   it('parses the interpolate expression into stops', () => {
     const expr = ['interpolate', ['linear'], ['zoom'], 8, 0, 13, 0.8, 16, 0.3];
@@ -145,12 +147,22 @@ describe('opacity curve helpers', () => {
   it('guards persisted curve values structurally', () => {
     expect(isOpacityCurve(curve)).toBe(true);
     expect(isOpacityCurve({ stops: [{ zoom: 5, opacity: 0.5 }] })).toBe(false); // < 2 stops
-    expect(isOpacityCurve({ stops: [{ zoom: 5, opacity: 0.5 }, { zoom: 5, opacity: 1 }] })).toBe(
-      false
-    ); // non-ascending
-    expect(isOpacityCurve({ stops: [{ zoom: 5, opacity: 2 }, { zoom: 9, opacity: 1 }] })).toBe(
-      false
-    ); // out of range
+    expect(
+      isOpacityCurve({
+        stops: [
+          { zoom: 5, opacity: 0.5 },
+          { zoom: 5, opacity: 1 },
+        ],
+      })
+    ).toBe(false); // non-ascending
+    expect(
+      isOpacityCurve({
+        stops: [
+          { zoom: 5, opacity: 2 },
+          { zoom: 9, opacity: 1 },
+        ],
+      })
+    ).toBe(false); // out of range
     expect(isOpacityCurve(null)).toBe(false);
     expect(isOpacityCurve(['interpolate'])).toBe(false);
   });

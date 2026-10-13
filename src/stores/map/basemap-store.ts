@@ -157,6 +157,17 @@ const MTK_STATIC_URLS = [
   'https://tiles.maptoolkit.org/rocks.json',
 ];
 
+/** Probe a style URL's reachability (e.g. a MapTiler-hosted style with
+ *  a possibly suspended key). Returns the response, or null on network
+ *  errors — callers keep the configured basemap in that case. */
+async function probeStyleUrl(styleUrl: string): Promise<Response | null> {
+  try {
+    return await fetch(styleUrl);
+  } catch {
+    return null;
+  }
+}
+
 function prewarmOutdoorMtk(): void {
   void fetch(mtkStylePath()).catch(() => undefined);
   // Catalog path: the style endpoint serves the seeded style once the
@@ -864,7 +875,9 @@ export const useBasemapStore = defineStore('basemap', () => {
   function resolveFallbackBasemap(failingSlug: string): BasemapSwitchItem | undefined {
     const active = getBasemap();
     const target =
-      active?.fallback ?? LEGACY_BASEMAP_FALLBACKS[failingSlug] ?? LEGACY_BASEMAP_FALLBACKS.maptiler;
+      active?.fallback ??
+      LEGACY_BASEMAP_FALLBACKS[failingSlug] ??
+      LEGACY_BASEMAP_FALLBACKS.maptiler;
     return findBasemapBySlug(target);
   }
 
@@ -1211,8 +1224,8 @@ export const useBasemapStore = defineStore('basemap', () => {
       basemapToSet.style.includes('api.maptiler.com')
     ) {
       try {
-        const probe = await fetch(basemapToSet.style);
-        if (!probe.ok) {
+        const probe = await probeStyleUrl(basemapToSet.style);
+        if (probe && !probe.ok) {
           const fallback = findBasemapBySlug('openfreemap-liberty');
           if (fallback) {
             console.warn(

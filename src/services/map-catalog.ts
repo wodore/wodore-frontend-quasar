@@ -36,14 +36,7 @@ export interface MapLayerVariant {
 /** Parameter schema entry — drives the settings-tab controls. */
 export interface MapLayerParameter {
   slug: string;
-  kind:
-    | 'number'
-    | 'color'
-    | 'boolean'
-    | 'enum'
-    | 'string'
-    | 'date'
-    | 'opacity-curve';
+  kind: 'number' | 'color' | 'boolean' | 'enum' | 'string' | 'date' | 'opacity-curve';
   label: string;
   description: string;
   /** Default value — a whole MapLibre expression subtree for widget
@@ -340,7 +333,10 @@ function resolveNode(value: TokenTree, values: Record<string, TokenTree>): Token
   if (Array.isArray(value)) return value.map(item => resolveNode(item, values));
   if (value !== null && typeof value === 'object') {
     return Object.fromEntries(
-      Object.entries(value as Record<string, TokenTree>).map(([k, v]) => [k, resolveNode(v, values)])
+      Object.entries(value as Record<string, TokenTree>).map(([k, v]) => [
+        k,
+        resolveNode(v, values),
+      ])
     );
   }
   return value;
@@ -403,10 +399,5 @@ export function parseOpacityCurve(expr: unknown): OpacityCurve | undefined {
 
 /** Serialize editable stops back into the interpolate expression. */
 export function serializeOpacityCurve(curve: OpacityCurve): unknown[] {
-  return [
-    'interpolate',
-    ['linear'],
-    ['zoom'],
-    ...curve.stops.flatMap(s => [s.zoom, s.opacity]),
-  ];
+  return ['interpolate', ['linear'], ['zoom'], ...curve.stops.flatMap(s => [s.zoom, s.opacity])];
 }

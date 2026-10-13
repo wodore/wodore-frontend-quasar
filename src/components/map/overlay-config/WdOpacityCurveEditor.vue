@@ -53,15 +53,10 @@ function setStopOpacity(index: number, opacity: number): void {
     </div>
 
     <div class="row items-center q-mt-xs">
-      <div class="wd-curve__axis text-caption wd-ink-soft-text">{{ t('overlay_config.curve_zoom') }}</div>
-      <q-btn
-        flat
-        dense
-        size="sm"
-        :label="t('reset')"
-        class="q-ml-auto"
-        @click="emit('reset')"
-      />
+      <div class="wd-curve__axis text-caption wd-ink-soft-text">
+        {{ t('overlay_config.curve_zoom') }}
+      </div>
+      <q-btn flat dense size="sm" :label="t('reset')" class="q-ml-auto" @click="emit('reset')" />
     </div>
   </div>
 </template>

@@ -13,11 +13,7 @@
  * appears.
  */
 import type { LayerSpecification, StyleSpecification } from 'maplibre-gl';
-import type {
-  MapCatalogLayer,
-  MapLayerParameter,
-  MapSpecTier,
-} from '@services/map-catalog';
+import type { MapCatalogLayer, MapLayerParameter, MapSpecTier } from '@services/map-catalog';
 import {
   fetchMapStyle,
   pickVariant,
@@ -149,7 +145,10 @@ export function authoredParameterValues(parameters: MapLayerParameter[]): Record
 // ── Legend / config mapping ─────────────────────────────────────────────
 
 /** Map a catalog legend payload onto the frontend legend shape. */
-export function mapLegend(layer: MapCatalogLayer, values: Record<string, unknown>): LegendDefinition {
+export function mapLegend(
+  layer: MapCatalogLayer,
+  values: Record<string, unknown>
+): LegendDefinition {
   const legend = layer.legend;
   const definition: LegendDefinition = { sections: [] };
   if (!legend) return definition;
@@ -177,7 +176,10 @@ export function mapLegend(layer: MapCatalogLayer, values: Record<string, unknown
 }
 
 /** Resolve `{{token}}` occurrences inside a single string (legend colors). */
-function resolveTokenString(value: string | undefined, values: Record<string, unknown>): string | undefined {
+function resolveTokenString(
+  value: string | undefined,
+  values: Record<string, unknown>
+): string | undefined {
   if (!value || !value.includes('{{')) return value;
   const usable = Object.fromEntries(
     Object.entries(values).filter(([, v]) => v !== undefined && v !== null)
@@ -300,9 +302,7 @@ export function mergeSpritePacks(overlays: OverlaySwitchItem[]): void {
     for (const { overlay } of entries) {
       const sprite = overlay.style.sprite;
       if (Array.isArray(sprite)) {
-        overlay.style.sprite = sprite.map(e =>
-          typeof e === 'string' ? e : { ...e, url: merged }
-        );
+        overlay.style.sprite = sprite.map(e => (typeof e === 'string' ? e : { ...e, url: merged }));
       } else if (typeof sprite === 'string') {
         overlay.style.sprite = merged;
       }

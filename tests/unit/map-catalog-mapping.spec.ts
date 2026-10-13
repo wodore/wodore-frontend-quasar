@@ -210,7 +210,9 @@ describe('mapCatalogBasemap', () => {
         anchors: { ways: { before: null }, background: { before: null } },
       }),
       'high',
-      new Map([['wd-outdoor-base-mtk', 'https://hub/v1/map/styles/wd-outdoor-base-mtk.json?spec=high']])
+      new Map([
+        ['wd-outdoor-base-mtk', 'https://hub/v1/map/styles/wd-outdoor-base-mtk.json?spec=high'],
+      ])
     );
     expect(item.fallback).toBe('wd-outdoor-base-ofm');
     // Catalog anchors win for their slots…
@@ -225,10 +227,15 @@ describe('mapCatalogBasemap', () => {
       layer({
         slug: 'ch-swisstopo-light',
         role: 'basemap',
-        anchors: { ways: { before: 'Other place labels' }, background: { before: 'Building line' } },
+        anchors: {
+          ways: { before: 'Other place labels' },
+          background: { before: 'Building line' },
+        },
       }),
       'low',
-      new Map([['ch-swisstopo-light', 'https://hub/v1/map/styles/ch-swisstopo-light.json?spec=low']])
+      new Map([
+        ['ch-swisstopo-light', 'https://hub/v1/map/styles/ch-swisstopo-light.json?spec=low'],
+      ])
     );
     expect(item.layers.ways.before).toBe('Other place labels');
     expect(item.layers.background.before).toBe('Building line');
@@ -270,8 +277,12 @@ describe('mergeSpritePacks', () => {
       } as StyleSpecification,
     };
     mergeSpritePacks([a, b]);
-    expect(a.style.sprite).toEqual([{ id: 'wd', url: 'https://tiles/sprite/accommodation,availability' }]);
-    expect(b.style.sprite).toEqual([{ id: 'wd', url: 'https://tiles/sprite/accommodation,availability' }]);
+    expect(a.style.sprite).toEqual([
+      { id: 'wd', url: 'https://tiles/sprite/accommodation,availability' },
+    ]);
+    expect(b.style.sprite).toEqual([
+      { id: 'wd', url: 'https://tiles/sprite/accommodation,availability' },
+    ]);
   });
 
   it('leaves foreign sprite URLs alone', () => {

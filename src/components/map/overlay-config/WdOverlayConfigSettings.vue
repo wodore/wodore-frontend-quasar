@@ -91,7 +91,9 @@ function numberStep(param: MapLayerParameter): number {
       <WdOpacityCurveEditor
         v-if="param.kind === 'opacity-curve'"
         :model-value="curveValue(param)"
-        @update:model-value="(v: OpacityCurve) => catalogStore.setParameterValue(overlayName, param.slug, v)"
+        @update:model-value="
+          (v: OpacityCurve) => catalogStore.setParameterValue(overlayName, param.slug, v)
+        "
         @reset="catalogStore.resetLayerParameters(overlayName)"
       />
 
@@ -106,7 +108,10 @@ function numberStep(param: MapLayerParameter): number {
         label-always
         dense
         color="primary"
-        @update:model-value="(v: number | null) => v !== null && catalogStore.setParameterValue(overlayName, param.slug, v)"
+        @update:model-value="
+          (v: number | null) =>
+            v !== null && catalogStore.setParameterValue(overlayName, param.slug, v)
+        "
       />
 
       <!-- boolean toggle -->
@@ -115,7 +120,9 @@ function numberStep(param: MapLayerParameter): number {
         :model-value="boolValue(param) ?? false"
         color="primary"
         dense
-        @update:model-value="(v: boolean) => catalogStore.setParameterValue(overlayName, param.slug, v)"
+        @update:model-value="
+          (v: boolean) => catalogStore.setParameterValue(overlayName, param.slug, v)
+        "
       />
 
       <!-- enum select -->
@@ -128,7 +135,10 @@ function numberStep(param: MapLayerParameter): number {
         dense
         outlined
         color="primary"
-        @update:model-value="(v: unknown) => v !== null && catalogStore.setParameterValue(overlayName, param.slug, String(v))"
+        @update:model-value="
+          (v: unknown) =>
+            v !== null && catalogStore.setParameterValue(overlayName, param.slug, String(v))
+        "
       />
 
       <!-- color picker -->
@@ -139,7 +149,9 @@ function numberStep(param: MapLayerParameter): number {
         no-footer
         default-view="palette"
         class="wd-color-picker"
-        @update:model-value="(v: string | null) => v && catalogStore.setParameterValue(overlayName, param.slug, v)"
+        @update:model-value="
+          (v: string | null) => v && catalogStore.setParameterValue(overlayName, param.slug, v)
+        "
       />
 
       <!-- runtime date: driven by the map date picker -->
@@ -153,7 +165,10 @@ function numberStep(param: MapLayerParameter): number {
         :model-value="stringValue(param) ?? ''"
         dense
         outlined
-        @update:model-value="(v: string | number | null) => v !== null && catalogStore.setParameterValue(overlayName, param.slug, String(v))"
+        @update:model-value="
+          (v: string | number | null) =>
+            v !== null && catalogStore.setParameterValue(overlayName, param.slug, String(v))
+        "
       />
     </div>
   </div>

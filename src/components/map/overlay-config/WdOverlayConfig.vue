@@ -49,8 +49,7 @@ const overlayConfig = computed(() => overlay.value?.config);
 const hasFilters = computed(() => (overlayConfig.value?.filters?.length ?? 0) > 0);
 const hasSettings = computed(
   () =>
-    (overlayConfig.value?.settings?.length ?? 0) > 0 ||
-    (overlay.value?.parameters?.length ?? 0) > 0
+    (overlayConfig.value?.settings?.length ?? 0) > 0 || (overlay.value?.parameters?.length ?? 0) > 0
 );
 const hasLegend = computed(() => overlayConfig.value?.legend !== undefined);
 
