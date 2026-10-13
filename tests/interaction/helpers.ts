@@ -407,6 +407,11 @@ export async function waitForCatalogLayers(page: Page): Promise<void> {
         `(() => ({
           rows: document.querySelectorAll('.wd-ovl__row').length,
           status: document.querySelector('.wd-ovl__status')?.textContent ?? null,
+          apiHost: window.__WODORE_RUNTIME_ENV__?.WODORE_API_HOST ?? null,
+          catalogReqs: performance
+            .getEntriesByType('resource')
+            .filter(r => r.name.includes('/v1/map/'))
+            .map(r => r.name.split('?')[0]?.split('/').pop() + ':' + Math.round(r.duration)),
         }))()`
       )
       .then(state =>
