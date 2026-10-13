@@ -42,6 +42,87 @@ function readCached(url: string): CachedResponse | null {
   }
 }
 
+// ── map-catalog boot-cache seeding ──────────────────────────────────────────
+// The app boots overlays/basemaps from the backend map catalog (persisted
+// to localStorage + a background refresh). Fresh Playwright contexts have
+// cold storage, so EVERY test would refetch the catalog and ~26 style
+// documents through the route interception — a heavy per-test footprint
+// on a 2-core CI runner. The fixture seeds the app's persisted caches
+// from the disk cache (recorded by the route handler below), so tests
+// boot the production cache-first path with ~one replayed request.
+const CATALOG_URL_RE = /\/v1\/map\/catalog/;
+const STYLE_URL_RE = /\/v1\/map\/styles\/([^/?]+)\.json/;
+const INDEX_FILE = path.join(CACHE_DIR, 'catalog-index.json');
+
+function styleCacheKeyFor(url: string): string | null {
+  const match = STYLE_URL_RE.exec(url);
+  if (!match) return null;
+  const spec = new URL(url).searchParams.get('spec') ?? 'high';
+  const tokenized = new URL(url).searchParams.get('mode') === 'tokenized';
+  return `${match[1]}|${spec}|${tokenized ? 'tokenized' : 'resolved'}`;
+}
+
+function readIndex(): string[] {
+  try {
+    return JSON.parse(fs.readFileSync(INDEX_FILE, 'utf8')).urls as string[];
+  } catch {
+    return [];
+  }
+}
+
+function appendIndex(url: string): void {
+  const urls = readIndex();
+  if (urls.includes(url)) return;
+  urls.push(url);
+  fs.mkdirSync(CACHE_DIR, { recursive: true });
+  const tmp = `${INDEX_FILE}.${process.pid}.tmp`;
+  fs.writeFileSync(tmp, JSON.stringify({ urls }));
+  fs.renameSync(tmp, INDEX_FILE);
+}
+
+/** Build the app's persisted localStorage caches from the disk cache. */
+function buildCatalogSeed(): { catalog: unknown; styles: Record<string, unknown> } | null {
+  const catalogUrl = readIndex().find(u => CATALOG_URL_RE.test(u));
+  if (!catalogUrl) return null;
+  const catalogEntry = readCached(catalogUrl);
+  if (!catalogEntry) return null;
+  let catalog: { slots: unknown; layers: Array<{ slug: string; version?: string | null }> };
+  try {
+    catalog = JSON.parse(Buffer.from(catalogEntry.body, 'base64').toString('utf8'));
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(catalog.layers)) return null;
+  const versions = new Map(catalog.layers.map(l => [l.slug, l.version ?? null]));
+  const styles: Record<string, unknown> = {};
+  for (const url of readIndex()) {
+    const key = styleCacheKeyFor(url);
+    if (!key) continue;
+    const entry = readCached(url);
+    if (!entry) continue;
+    let doc: unknown;
+    try {
+      doc = JSON.parse(Buffer.from(entry.body, 'base64').toString('utf8'));
+    } catch {
+      continue;
+    }
+    const slug = key.split('|')[0]!;
+    const version = versions.get(slug) ?? null;
+    styles[key] = key.endsWith('|tokenized')
+      ? { tokenized: doc, version }
+      : { style: doc, version };
+  }
+  return {
+    catalog: {
+      savedAt: new Date().toISOString(),
+      lang: 'en',
+      slots: catalog.slots,
+      layers: catalog.layers,
+    },
+    styles,
+  };
+}
+
 /**
  * The `test` export every interaction spec should use: auto-installs the
  * staging response cache into each page. Re-exports `expect`.
@@ -49,6 +130,21 @@ function readCached(url: string): CachedResponse | null {
 export const test = baseTest.extend<{ stagingCache: void }>({
   stagingCache: [
     async ({ page }, use) => {
+      // Seed the app's persisted map-catalog caches (production boot path,
+      // near-zero per-test network footprint) once the warmup spec has
+      // populated the disk cache.
+      const seed = buildCatalogSeed();
+      if (seed) {
+        await page.addInitScript(
+          ([catalog, styles]: unknown[]) => {
+            localStorage.setItem('mapCatalogCache', JSON.stringify(catalog));
+            if (styles && Object.keys(styles as object).length > 0) {
+              localStorage.setItem('mapCatalogStyleCache', JSON.stringify(styles));
+            }
+          },
+          [seed.catalog, seed.styles] as unknown[]
+        );
+      }
       // Intercept cross-origin GETs only — localhost (dev server) requests never
       // enter the handler at all: the initial 4-file burst of cold app loads
       // must not queue behind Node-side interception on a 2-core runner.
@@ -83,6 +179,9 @@ export const test = baseTest.extend<{ stagingCache: void }>({
               const tmp = `${cacheFileFor(url)}.${process.pid}.tmp`;
               fs.writeFileSync(tmp, JSON.stringify(entry));
               fs.renameSync(tmp, cacheFileFor(url));
+              if (CATALOG_URL_RE.test(url) || styleCacheKeyFor(url)) {
+                appendIndex(url);
+              }
             }
           }
         } catch {
@@ -229,7 +328,25 @@ export async function waitForOverlayExpanded(page: Page): Promise<void> {
  * Navigate to the map and wait for it to settle: MapLibre idle (tiles,
  * style, overlays) instead of the old fixed 14-second sleep.
  */
+/** Optional API-host rewrite for local interaction runs: the dev
+ *  server bakes WODORE_API_HOST from .env.local (often a LAN backend);
+ *  E2E_API_HOST rewrites the inline runtime env in-flight so the suite
+ *  can run against staging without touching local env files (CI needs
+ *  neither — its dev server already gets WODORE_API_HOST).
+ */
+const API_REWRITE_HOST = process.env.E2E_API_HOST;
+
 export async function loadMap(page: Page): Promise<void> {
+  if (API_REWRITE_HOST) {
+    await page.route(/localhost:\d+\/$|localhost:\d+\/index\.html/, async route => {
+      const resp = await route.fetch();
+      const html = (await resp.text()).replace(
+        /(WODORE_API_HOST: ')[^']*(')/g,
+        `$1${API_REWRITE_HOST}$2`
+      );
+      return route.fulfill({ response: resp, body: html });
+    });
+  }
   await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 60_000 });
   // First load after the dev server boots pays vite's on-demand dependency
   // optimization on a busy 2-core runner — give that burst real headroom.

@@ -73,6 +73,7 @@ export const useOverlayStore = defineStore('overlay', () => {
     // First application: adopt the persisted state; later swaps keep the
     // live state (the user may have toggled since boot).
     const adoptPersisted = state.size === 0;
+    const activeGroupView = adoptPersisted ? getActiveGroup(groupSettings) : null;
     // SAFETY: same widened cast as above — reading/writing active/show,
     // fields every catalog item sets.
     for (const o of overlays as unknown as OverlaySwitchItem[]) {
@@ -80,6 +81,15 @@ export const useOverlayStore = defineStore('overlay', () => {
       if (s) {
         o.active = s.active;
         o.show = s.show;
+      } else if (
+        activeGroupView &&
+        activeGroupView.activeLayerSlugs.includes(o.name) &&
+        savedOverlayState(o.name) === undefined
+      ) {
+        // Fresh install (no persisted overlay state): the ACTIVE group's
+        // saved view activates — the catalog items default to inactive,
+        // so without this a first-time user would see no layers at all.
+        o.active = true;
       }
     }
     mergeLayerGroups();
