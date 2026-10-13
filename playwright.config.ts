@@ -5,6 +5,9 @@ const BASE_URL =
 
 export default defineConfig({
   testDir: './tests',
+  // Prime the staging cache + catalog index once, before any worker:
+  // parallel cold boots must not depend on style-endpoint health.
+  globalSetup: './tests/interaction/global-setup.ts',
   timeout: 90_000,
   retries: process.env.CI ? 1 : 0,
   // e2e specs (bottom sheet, navigation) share app state — serial.
