@@ -1,6 +1,5 @@
 # Tasks: Consume the backend map layer catalog
 
-
 ## Phase 0: Contract
 
 - [x] Regenerate the typed API client from the backend's unreleased
