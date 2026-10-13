@@ -145,24 +145,35 @@ export function fetchMapCatalog(lang?: string, role?: 'overlay' | 'basemap'): Pr
   const cached = catalogCache.get(key);
   if (cached) return cached;
   const promise = (async () => {
-    const { data, error } = await clientWodore.GET('/v1/map/catalog', {
-      params: {
-        query: {
-          lang: locale,
-          ...(role ? { role } : {}),
+    // One retry with a short backoff: transient boot-time failures (dev
+    // server compile contention, runner hiccups) must not hard-fail the
+    // catalog boot — the second attempt usually succeeds. The fetchOnce
+    // helper keeps the per-endpoint response narrowing in the loop.
+    const fetchOnce = () =>
+      clientWodore.GET('/v1/map/catalog', {
+        params: {
+          query: {
+            lang: locale,
+            ...(role ? { role } : {}),
+          },
         },
-      },
-    });
-    if (error || !data) {
-      throw new MapCatalogUnavailableError(error ?? 'empty response');
+      });
+    let lastError: unknown = 'empty response';
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const { data, error } = await fetchOnce();
+      if (!error && data) {
+        // SAFETY: MapCatalogResponse types slots/layers as loose dict lists
+        // (backend dict[str, Any] passthrough); the serializer's actual rows
+        // carry the fields MapCatalogSlot/MapCatalogLayer describe.
+        return {
+          slots: (data.slots ?? []) as unknown as MapCatalogSlot[],
+          layers: ((data.layers ?? []) as schemasWodore['LayerSummary'][]).map(toCatalogLayer),
+        } satisfies MapCatalog;
+      }
+      lastError = error ?? 'empty response';
+      if (attempt === 0) await new Promise(resolve => setTimeout(resolve, 1500));
     }
-    // SAFETY: MapCatalogResponse types slots/layers as loose dict lists
-    // (backend dict[str, Any] passthrough); the serializer's actual rows
-    // carry the fields MapCatalogSlot/MapCatalogLayer describe.
-    return {
-      slots: (data.slots ?? []) as unknown as MapCatalogSlot[],
-      layers: ((data.layers ?? []) as schemasWodore['LayerSummary'][]).map(toCatalogLayer),
-    } satisfies MapCatalog;
+    throw new MapCatalogUnavailableError(lastError);
   })();
   catalogCache.set(key, promise);
   promise.catch(() => catalogCache.delete(key));
