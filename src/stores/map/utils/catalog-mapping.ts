@@ -194,8 +194,8 @@ function categoryProjectionToItems(
 
 function projectionHasSymbols(node: Record<string, unknown>): boolean {
   if (
-    node.symbol_detailed !== undefined ||
-    node.symbol_simple !== undefined ||
+    node.symbol_color !== undefined ||
+    node.symbol_primitive !== undefined ||
     node.symbol_mono !== undefined ||
     node.icon !== undefined
   ) {

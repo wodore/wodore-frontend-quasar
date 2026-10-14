@@ -46,9 +46,16 @@ const fetchAvailabilityIcons = async () => {
     if (error || !data) return;
     const icons: Record<string, string> = {};
     for (const [slug, cat] of Object.entries(data)) {
-      const entry = cat as { symbol_detailed?: string | null };
-      if (entry.symbol_detailed) {
-        icons[slug] = entry.symbol_detailed;
+      const entry = cat as {
+        symbol_color?: string | null;
+        symbol_mono?: string | null;
+        identifier?: string;
+        color?: string;
+      };
+      if (entry.symbol_color) {
+        icons[slug] = entry.symbol_color;
+      } else if (entry.symbol_mono) {
+        icons[slug] = entry.symbol_mono;
       }
     }
     availabilityIcons.value = icons;

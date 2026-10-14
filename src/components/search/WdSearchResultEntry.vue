@@ -43,15 +43,15 @@ const placeTypeIcon = computed<string | undefined>(() => {
 
   const placeType = category as schemasWodore['CategoryPlaceTypeSchema'];
 
-  // Check for symbol.detailed (nested structure for GeoPlaces)
+  // Check for symbol.color (nested structure for GeoPlaces)
   if (placeType.symbol && typeof placeType.symbol === 'object') {
     const symbol = placeType.symbol as {
+      color?: string;
+      primitive?: string;
       mono?: string;
-      detailed?: string;
-      simple?: string;
     };
-    if (symbol.detailed) {
-      return getImageUrl(symbol.detailed, { fit: true, size: '36x36' });
+    if (symbol.color) {
+      return getImageUrl(symbol.color, { fit: true, size: '36x36' });
     }
   }
 

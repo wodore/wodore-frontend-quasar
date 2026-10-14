@@ -210,10 +210,10 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
         // SAFETY: same dynamic labelField access as the value mapping above
         label:
           ((category as unknown as Record<string, unknown>)[labelField] as string) || category.slug,
-        icon: category.symbol_detailed || category.symbol_simple || undefined,
+        icon: category.symbol_color || category.symbol_primitive || undefined,
         description: category.description || undefined,
-        iconDetailed: category.symbol_detailed || undefined,
-        iconSimple: category.symbol_simple || undefined,
+        iconColor: category.symbol_color || undefined,
+        iconPrimitive: category.symbol_primitive || undefined,
         color: category.color || undefined,
       })
     );
@@ -270,12 +270,12 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
       label:
         ((category as unknown as Record<string, unknown>)[labelField] as string) || category.slug,
       description: category.description || undefined,
-      icon: category.symbol_detailed || category.symbol_simple || category.symbol_mono || undefined,
+      icon: category.symbol_color || category.symbol_primitive || category.symbol_mono || undefined,
       color: category.color || undefined,
       dash: category.dash || undefined,
       metadata: {
-        iconDetailed: category.symbol_detailed,
-        iconSimple: category.symbol_simple,
+        iconColor: category.symbol_color,
+        iconPrimitive: category.symbol_primitive,
         iconMono: category.symbol_mono,
         type: section.type,
       },

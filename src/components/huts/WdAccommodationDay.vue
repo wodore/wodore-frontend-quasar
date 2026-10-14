@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import WdCategoryIcon from '@components/categories/WdCategoryIcon.vue';
 import { useI18n } from 'vue-i18n';
 import WdDayLabel from '@components/content/place/WdDayLabel.vue';
 
@@ -82,13 +83,6 @@ const statusLabel = computed(() => {
   return map[props.day.occupancy_status] ?? '';
 });
 
-/** Hut type icon URL based on per-day type_slug */
-const hutTypeIconUrl = computed(() => {
-  const slug = props.day.type_slug;
-  if (!slug) return null;
-  return props.hutTypeIcons[slug] ?? null;
-});
-
 /** Free count for display: '?' if not published by the source (free_unknown) */
 const freeLabel = computed(() =>
   props.day.free == null || isUnknown.value ? '?' : String(props.day.free)
@@ -99,17 +93,12 @@ const totalLabel = computed(() =>
   props.day.total == null || isUnknown.value ? '?' : String(props.day.total)
 );
 
-/** Badge style derived from hut type color (like PlaceTypeBadge) */
+/** Badge style: saturated chip in the hut type color. The color is exposed
+ * as a custom property — the CSS derives a light-mode-deepened background
+ * via color-mix so white content stays readable in both modes. */
 const badgeStyle = computed(() => {
   if (!props.hutTypeColor) return undefined;
-  const hex = props.hutTypeColor;
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return {
-    borderLeftColor: hex,
-    backgroundColor: `rgba(${r}, ${g}, ${b}, 0.10)`,
-  };
+  return { '--badge-color': props.hutTypeColor };
 });
 
 // Full date for tooltip
@@ -203,14 +192,14 @@ const tooltipLines = computed(() => {
         class="wd-accommodation-day__badge"
         :style="badgeStyle"
       >
-        <img
-          v-if="hutTypeIconUrl"
-          :src="hutTypeIconUrl"
-          width="14"
-          height="14"
-          style="object-fit: contain; flex-shrink: 0; opacity: 0.75"
-          loading="eager"
-          class="wd-accommodation-day__badge-icon"
+        <WdCategoryIcon
+          v-if="day.type_slug"
+          :identifier="'accommodation.' + day.type_slug"
+          :href="day.type_slug ? hutTypeIcons[day.type_slug] : undefined"
+          variant="mono"
+          :size="14"
+          color="rgba(255,255,255,0.92)"
+          style="flex-shrink: 0"
         />
         <span class="wd-accommodation-day__badge-total">{{ day.total }}</span>
       </div>
@@ -276,13 +265,20 @@ const tooltipLines = computed(() => {
   gap: 3px;
   padding: 2px 5px 2px 4px;
   border-radius: 4px;
-  border: 1px solid var(--wd-ridge, rgba(0, 0, 0, 0.12));
+  // Saturated chip: deepen slightly in light mode so white content keeps
+  // contrast; pure category color in dark mode (brighter against dark).
+  background: color-mix(in srgb, var(--badge-color) 88%, black);
+  border: none;
+}
+
+:global(body.body--dark) .wd-accommodation-day__badge {
+  background: var(--badge-color);
 }
 
 .wd-accommodation-day__badge-total {
   font-size: 11px;
   line-height: 1.1;
-  color: var(--wd-ink-soft);
+  color: rgba(255, 255, 255, 0.95);
   font-weight: 600;
 }
 

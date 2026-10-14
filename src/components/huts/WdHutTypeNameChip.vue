@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { schemasWodore } from '@clients/index';
-import getImageUrl from '@services/imageService';
 
 interface Props {
   type:
@@ -26,15 +25,12 @@ const color_bg = computed(() => (props.color2 ? props.color2 : ''));
     style="min-width: 40px; max-width: 200px; max-height: 30px"
   >
     <q-avatar :class="'bg-' + color" text-color="primary-500">
-      <q-icon
-        size="24px"
-        :name="
-          'img:' +
-          getImageUrl(
-            ($q.platform.is.mobile ? type.symbol?.detailed : type.symbol?.simple) as string,
-            { fit: true, size: '48x48' }
-          )
-        "
+      <WdCategoryIcon
+        :identifier="type ? 'accommodation.' + type.slug : 'accommodation.hut'"
+        :href="type?.symbol?.mono"
+        variant="mono"
+        :size="24"
+        color="white"
       />
     </q-avatar>
     <span class="wd-ink-text">{{ name }}</span>

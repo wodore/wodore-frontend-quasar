@@ -35,7 +35,7 @@ describe('PINNED_API_VERSION', () => {
   // literal "unreleased" while a breaking change is unfrozen. Carries
   // unreleased contract features (e.g. the gallery static-map fallback);
   // the next coordinated backend api-release re-pins via a routine gen:api.
-  it('is pinned to the backend current version (unreleased tip)', () => {
+  it("is pinned to the backend's unreleased tip", () => {
     expect(PINNED_API_VERSION).toBe('unreleased');
   });
 });
@@ -45,7 +45,7 @@ describe('apiVersionMiddleware (clientWodore)', () => {
     fetchMock.mockResolvedValueOnce(new Response('{}', { status: 200 }));
     await clientWodore.GET('/v1/version', {});
     const [req] = fetchMock.mock.lastCall as [Request];
-    expect(req.headers.get('Api-Version')).toBe(PINNED_API_VERSION);
+    expect(req.headers.get('Api-Version')).toBe('unreleased');
   });
 
   it('emits api_version_sunset on a 410 with the matching code', async () => {

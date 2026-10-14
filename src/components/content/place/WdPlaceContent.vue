@@ -69,8 +69,8 @@ const hutTypeIcons = computed<Record<string, string>>(() => {
   const icons: Record<string, string> = {};
   const placeValue = place.value;
   for (const type of [placeValue?.type_open, placeValue?.type_closed]) {
-    if (type?.slug && type.symbol?.simple) {
-      icons[type.slug] = type.symbol.simple;
+    if (type?.slug && type.symbol?.mono) {
+      icons[type.slug] = type.symbol.mono;
     }
   }
   return icons;
@@ -280,9 +280,8 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
         <WdPlaceTypeBadge
           v-if="place.type_open?.name"
           :color="place.type_open.color"
-          :icon="
-            place.type_open.symbol?.detailed ? 'img:' + place.type_open.symbol.detailed : undefined
-          "
+          :icon-identifier="'accommodation.' + place.type_open.slug"
+          :icon-href="place.type_open.symbol?.mono"
           :label="$t('standard')"
         >
           {{ place.type_open.name }}
@@ -300,11 +299,8 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
         <WdPlaceTypeBadge
           v-if="place.type_closed?.name"
           :color="place.type_closed.color"
-          :icon="
-            place.type_closed.symbol?.detailed
-              ? 'img:' + place.type_closed.symbol.detailed
-              : undefined
-          "
+          :icon-identifier="'accommodation.' + place.type_closed.slug"
+          :icon-href="place.type_closed.symbol?.mono"
           :label="$t('reduced')"
         >
           {{ place.type_closed.name }}
@@ -360,27 +356,7 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
         <WdTextClamp :max-lines="5" :text="place.description" />
       </div>
 
-      <!-- Availabilities -->
-      <!--
-      <WdHutAvailabilities :slug="slug" :has-availability="place.has_availability ?? undefined" :symbol-map="{
-        ...(place.type_open?.slug
-          ? {
-            [place.type_open.slug]: {
-              detailed: `https://hub.wodore.com/media/huts/types/symbols/detailed/${place.type_open.slug}.png`,
-              simple: `https://hub.wodore.com/media/huts/types/symbols/simple/${place.type_open.slug}.png`,
-            },
-          }
-          : {}),
-        ...(place.type_closed?.slug
-          ? {
-            [place.type_closed.slug]: {
-              detailed: `https://hub.wodore.com/media/huts/types/symbols/detailed/${place.type_closed.slug}.png`,
-              simple: `https://hub.wodore.com/media/huts/types/symbols/simple/${place.type_closed.slug}.png`,
-            },
-          }
-          : {}),
-      }" />
--->
+      <!-- Availabilities (legacy block removed: hardcoded hub.wodore.com media URLs) -->
 
       <!-- New Availability (Swiper-based, for comparison) -->
       <WdAccommodationAvailabilities

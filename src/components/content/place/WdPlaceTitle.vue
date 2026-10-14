@@ -21,7 +21,7 @@ const { place } = usePlace(computed(() => props.slug));
       <div class="wd-place-title__avatar col-auto q-mr-sm">
         <q-icon
           v-if="place.type_open && place.type_open.symbol"
-          :name="'img:' + place.type_open?.symbol.detailed"
+          :name="'img:' + place.type_open?.symbol.color"
           size="44px"
         />
       </div>

@@ -61,21 +61,19 @@ let activeHutRequest: AbortController | null = null;
 // computed so the object identity is stable between renders - an inline object
 // in the template would be rebuilt every render and defeat the child's
 // memoization.
-const SYMBOL_BASE_URL = 'https://hub.wodore.com/media/huts/types/symbols';
+import unknownDetailed from '@assets/symbols/unknown-detailed.svg';
+import unknownSimple from '@assets/symbols/unknown-simple.svg';
 const symbolMap = computed<Record<string, { detailed: string; simple: string }>>(() => {
   const map: Record<string, { detailed: string; simple: string }> = {
-    unknown: {
-      detailed: `${SYMBOL_BASE_URL}/detailed/unknown.png`,
-      simple: `${SYMBOL_BASE_URL}/simple/unknown.png`,
-    },
+    unknown: { detailed: unknownDetailed, simple: unknownSimple },
   };
   const hutValue = hut.value;
   if (hutValue) {
     for (const type of [hutValue.type_open, hutValue.type_closed]) {
       if (type?.slug) {
         map[type.slug] = {
-          detailed: `${SYMBOL_BASE_URL}/detailed/${type.slug}.png`,
-          simple: `${SYMBOL_BASE_URL}/simple/${type.slug}.png`,
+          detailed: type.symbol?.color ?? unknownDetailed,
+          simple: type.symbol?.mono ?? type.symbol?.primitive ?? unknownSimple,
         };
       }
     }

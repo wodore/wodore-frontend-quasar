@@ -61,8 +61,8 @@ export interface paths {
         };
         /**
          * get_category_symbol_svg_with_parent — Redirect to a category SVG (with parent).
-         * @description Variant options: detailed, simple, mono
-         *     Example: /v1/categories/symbol/detailed/map/transport.svg
+         * @description Variant options: color, primitive, mono
+         *     Example: /v1/categories/symbol/color/map/transport.svg
          *
          *     If the category doesn't have a symbol for the variant, returns 404.
          */
@@ -84,7 +84,7 @@ export interface paths {
         };
         /**
          * get_category_symbol_svg — Redirect to the SVG icon for a category.
-         * @description Variant options: detailed, simple, mono
+         * @description Variant options: color, primitive, mono
          *     Slug can be a simple slug (e.g., 'transport') or root category
          *
          *     If the category doesn't have a symbol for the variant, returns 404.
@@ -1111,15 +1111,15 @@ export interface components {
             /** Children */
             children: boolean;
             /**
-             * Symbol Detailed
+             * Symbol Color
              * @default null
              */
-            symbol_detailed: string | null;
+            symbol_color: string | null;
             /**
-             * Symbol Simple
+             * Symbol Primitive
              * @default null
              */
-            symbol_simple: string | null;
+            symbol_primitive: string | null;
             /**
              * Symbol Mono
              * @default null
@@ -1156,15 +1156,15 @@ export interface components {
             /** Children Count */
             children_count: number;
             /**
-             * Symbol Detailed
+             * Symbol Color
              * @default null
              */
-            symbol_detailed: string | null;
+            symbol_color: string | null;
             /**
-             * Symbol Simple
+             * Symbol Primitive
              * @default null
              */
-            symbol_simple: string | null;
+            symbol_primitive: string | null;
             /**
              * Symbol Mono
              * @default null
@@ -1228,15 +1228,15 @@ export interface components {
             /** Color */
             color: string;
             /**
-             * Symbol Detailed
+             * Symbol Color
              * @default null
              */
-            symbol_detailed: string | null;
+            symbol_color: string | null;
             /**
-             * Symbol Simple
+             * Symbol Primitive
              * @default null
              */
-            symbol_simple: string | null;
+            symbol_primitive: string | null;
             /**
              * Symbol Mono
              * @default null
@@ -1269,15 +1269,15 @@ export interface components {
              */
             parent: string | null;
             /**
-             * Symbol Detailed
+             * Symbol Color
              * @default null
              */
-            symbol_detailed: string | null;
+            symbol_color: string | null;
             /**
-             * Symbol Simple
+             * Symbol Primitive
              * @default null
              */
-            symbol_simple: string | null;
+            symbol_primitive: string | null;
             /**
              * Symbol Mono
              * @default null
@@ -2429,17 +2429,17 @@ export interface components {
          */
         IconUrls: {
             /**
-             * Detailed
-             * @description Detailed style SVG URL
+             * Color
+             * @description Color style SVG URL
              * @default null
              */
-            detailed: string | null;
+            color: string | null;
             /**
-             * Simple
-             * @description Simple style SVG URL
+             * Primitive
+             * @description Primitive style SVG URL
              * @default null
              */
-            simple: string | null;
+            primitive: string | null;
             /**
              * Mono
              * @description Mono style SVG URL
@@ -3656,7 +3656,7 @@ export interface components {
          * @description Symbol variant types for categories.
          * @enum {string}
          */
-        SymbolVariantEnum: "detailed" | "simple" | "mono";
+        SymbolVariantEnum: "color" | "primitive" | "mono";
         /**
          * TristateEnum
          * @description Tristate enum with `true`, `false` and `unset`.
@@ -3913,6 +3913,17 @@ export interface operations {
                     "application/json": null;
                 };
             };
+            /** @description Found */
+            302: {
+                headers: {
+                    "Cache-Control": string;
+                    Location: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": null;
+                };
+            };
             /** @description Raised when request components cannot be parsed */
             400: {
                 headers: {
@@ -3969,6 +3980,17 @@ export interface operations {
             200: {
                 headers: {
                     "Cache-Control": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": null;
+                };
+            };
+            /** @description Found */
+            302: {
+                headers: {
+                    "Cache-Control": string;
+                    Location: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -5657,6 +5679,17 @@ export interface operations {
             200: {
                 headers: {
                     "Cache-Control": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": null;
+                };
+            };
+            /** @description Found */
+            302: {
+                headers: {
+                    "Cache-Control": string;
+                    Location: string;
                     [name: string]: unknown;
                 };
                 content: {
