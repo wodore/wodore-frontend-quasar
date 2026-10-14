@@ -69,8 +69,8 @@ const hutTypeIcons = computed<Record<string, string>>(() => {
   const icons: Record<string, string> = {};
   const placeValue = place.value;
   for (const type of [placeValue?.type_open, placeValue?.type_closed]) {
-    if (type?.slug && type.symbol?.primitive) {
-      icons[type.slug] = type.symbol.primitive;
+    if (type?.slug && type.symbol?.mono) {
+      icons[type.slug] = type.symbol.mono;
     }
   }
   return icons;
@@ -280,7 +280,8 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
         <WdPlaceTypeBadge
           v-if="place.type_open?.name"
           :color="place.type_open.color"
-          :icon="place.type_open.symbol?.color ? 'img:' + place.type_open.symbol.color : undefined"
+          :icon-identifier="'accommodation.' + place.type_open.slug"
+          :icon-href="place.type_open.symbol?.mono"
           :label="$t('standard')"
         >
           {{ place.type_open.name }}
@@ -298,9 +299,8 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
         <WdPlaceTypeBadge
           v-if="place.type_closed?.name"
           :color="place.type_closed.color"
-          :icon="
-            place.type_closed.symbol?.color ? 'img:' + place.type_closed.symbol.detailed : undefined
-          "
+          :icon-identifier="'accommodation.' + place.type_closed.slug"
+          :icon-href="place.type_closed.symbol?.mono"
           :label="$t('reduced')"
         >
           {{ place.type_closed.name }}

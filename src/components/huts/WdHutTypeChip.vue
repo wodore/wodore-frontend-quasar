@@ -4,6 +4,7 @@ import { schemasWodore } from '@clients/index';
 import getImageUrl from '@services/imageService';
 
 import IconCheckmarkFill from '~icons/eva/checkmark-fill';
+import WdCategoryIcon from '@components/categories/WdCategoryIcon.vue';
 import IconQuestionMarkFill from '~icons/eva/question-mark-fill';
 import IconCloseFill from '~icons/eva/close-fill';
 //import IconMinusOutline from '~icons/eva/minus-outline';
@@ -108,15 +109,12 @@ body.body--dark .wd-type-chip.bg-primary-100 {
     "
   >
     <q-avatar :class="'bg-' + color_bg_avantar" text-color="white">
-      <q-icon
-        size="24px"
-        :name="
-          'img:' +
-          getImageUrl(
-            ($q.platform.is.mobile ? type.symbol?.color : type.symbol?.primitive) as string,
-            { fit: true, size: '48x48' }
-          )
-        "
+      <WdCategoryIcon
+        :identifier="type ? 'accommodation.' + type.slug : 'accommodation.hut'"
+        :href="type?.symbol?.mono"
+        variant="mono"
+        :size="24"
+        color="white"
       />
     </q-avatar>
     <!-- style="filter: invert(1)" -->

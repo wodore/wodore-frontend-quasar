@@ -89,11 +89,11 @@ function getIconAnswer(answer: TypeIconText, size: string = '48x48'): string | u
 function getClosedIcon(): string {
   if (isMobile.value) {
     if (props.type_closed?.symbol?.color) {
-      return props.type_closed.symbol.detailed as string;
+      return props.type_closed.symbol.color;
     }
   } else {
     if (props.type_closed?.symbol?.primitive) {
-      return props.type_closed.symbol.simple as string;
+      return props.type_closed.symbol.mono ?? props.type_closed.symbol.primitive;
     }
   }
   return getUnknownIcon();
@@ -106,7 +106,7 @@ function getOpenIcon(): string {
     }
   } else {
     if (props.type_open?.symbol?.primitive) {
-      return props.type_open.symbol.primitive;
+      return props.type_open.symbol.mono ?? props.type_open.symbol.primitive;
     }
   }
   return getUnknownIcon();

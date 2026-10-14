@@ -66,15 +66,15 @@ const hutsLayerLayout: SymbolLayerSpecification['layout'] = {
       ['image', ['concat', 'wd:primitive/', ['get', 'type_standard_identifier']]],
       ['image', 'wd:primitive/accommodation.unknown'],
       // Fallback to mono if primitive isn't served yet
-      ['image', ['concat', 'wd-sdf/mono/', ['get', 'type_standard_identifier']]],
-      ['image', 'wd-sdf/mono/accommodation.unknown'],
+      ['image', ['concat', 'wd-sdf:mono/', ['get', 'type_standard_identifier']]],
+      ['image', 'wd-sdf:mono/accommodation.unknown'],
     ],
     9,
     // z >= 9: mono SDF (runtime-tinted glyph with white halo border)
     [
       'coalesce',
-      ['image', ['concat', 'wd-sdf/mono/', ['get', 'type_standard_identifier']]],
-      ['image', 'wd-sdf/mono/accommodation.unknown'],
+      ['image', ['concat', 'wd-sdf:mono/', ['get', 'type_standard_identifier']]],
+      ['image', 'wd-sdf:mono/accommodation.unknown'],
       ['image', ['concat', 'wd:primitive/', ['get', 'type_standard_identifier']]],
       ['image', 'wd:primitive/accommodation.unknown'],
     ],
