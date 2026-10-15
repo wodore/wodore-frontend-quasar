@@ -17,9 +17,9 @@ import { StyleSpecification } from 'maplibre-gl';
 import { i18n, currentLocale } from '@services/locale';
 import { isOutdoorStyle, setupOutdoorContours } from '@services/outdoorContours';
 import {
-  STYLE_VERSION,
   fetchBasemapCatalog,
   gpuSpec,
+  martinEntryStyleUrl,
   loadPersistedBasemapCatalog,
   persistBasemapCatalog,
   type BasemapCatalog,
@@ -814,12 +814,12 @@ export const useBasemapStore = defineStore('basemap', () => {
   // Async function to initialize basemaps based on GPU tier
 
   /** Basemap style URL for one Martin-catalog entry: the spec-resolved
-   *  `path` straight from the catalog plus the STYLE_VERSION cache
-   *  buster (the endpoint ignores unknown params — the query only busts
-   *  browser/CDN caches). */
+   *  `path` from the catalog, cache-busted and ABSOLUTIZED to the API
+   *  host (the frontend origin serves no /v1 — a root-relative path
+   *  fetches the SPA shell and the basemap stays blank; see
+   *  martinEntryStyleUrl). */
   function styleUrlFor(entry: BasemapCatalogEntry): string {
-    const sep = entry.path.includes('?') ? '&' : '?';
-    return `${entry.path}${sep}v=${STYLE_VERSION}`;
+    return martinEntryStyleUrl(entry.path);
   }
 
   /**

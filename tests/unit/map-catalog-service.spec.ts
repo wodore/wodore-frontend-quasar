@@ -7,6 +7,8 @@ import {
   gpuSpec,
   styleEndpointUrl,
   absolutizeStyleUrl,
+  martinEntryStyleUrl,
+  STYLE_VERSION,
   isOpacityCurve,
   parseOpacityCurve,
   serializeOpacityCurve,
@@ -113,6 +115,25 @@ describe('map catalog URLs', () => {
     // External (env-resolved) URLs pass through untouched
     expect(absolutizeStyleUrl('https://api.maptiler.com/maps/x?key=k')).toBe(
       'https://api.maptiler.com/maps/x?key=k'
+    );
+    delete process.env.WODORE_API_HOST;
+  });
+
+  it('builds absolute, cache-busted style URLs for Martin-catalog entries', () => {
+    // Regression: the picker fed the entry's root-relative `path` to
+    // MapLibre as-is — the browser resolved it against the PAGE origin
+    // (no /v1 on the frontend host → SPA shell instead of the style →
+    // blank basemaps). The URL must carry the API origin.
+    process.env.WODORE_API_HOST = 'https://hub.example.com/';
+    expect(martinEntryStyleUrl('/v1/map/styles/wd-outdoor-base-mtk.json')).toBe(
+      `https://hub.example.com/v1/map/styles/wd-outdoor-base-mtk.json?v=${STYLE_VERSION}`
+    );
+    expect(martinEntryStyleUrl('/v1/map/styles/wd-outdoor-base-mtk.json?spec=high')).toBe(
+      `https://hub.example.com/v1/map/styles/wd-outdoor-base-mtk.json?spec=high&v=${STYLE_VERSION}`
+    );
+    // External styles (env-resolved by the backend) stay untouched
+    expect(martinEntryStyleUrl('https://api.maptiler.com/maps/hybrid/style.json')).toBe(
+      `https://api.maptiler.com/maps/hybrid/style.json?v=${STYLE_VERSION}`
     );
     delete process.env.WODORE_API_HOST;
   });
