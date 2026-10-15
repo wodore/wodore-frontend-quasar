@@ -2,6 +2,44 @@
 
 ## ADDED Requirements
 
+### Requirement: Martin-compatible basemap catalog
+
+The app SHALL fetch the basemap selector data from the
+Martin-compatible index `GET /v1/map/catalog` (flat `styles` map:
+`path`, `name`, `icon`, `role`, `is_default`, `fallback`, coverage),
+with `?lang=` for localized labels and `?spec=` for device-tier
+resolution of the style `path`s. Basemap entries SHALL use the served
+`path` as the complete style URL — no client-side style composition
+(the backend serves `world-topo` and `world-satellite-hybrid` rasters
+and all other basemaps). The rich overlay catalog SHALL come from
+`GET /v1/map/config` (unchanged shape: slots, layers, parameters,
+variants, legends).
+
+#### Scenario: Basemap list from the Martin index
+
+- **WHEN** the basemap store initializes or refreshes
+- **THEN** entries compile from the index ordered by `order`, the
+  style is the served `path` plus the `STYLE_VERSION` cache buster,
+  and the default is the `is_default` entry (falling back to the
+  compiled default `wd-outdoor-base-mtk-hill`)
+
+### Requirement: Cache-key rotation (STYLE_VERSION)
+
+The app SHALL append a `v=` query parameter (STYLE_VERSION, bumped
+with each deploy that changes served map content) to every map
+response request — the Martin catalog, the rich config, and style
+documents. The API ignores the parameter; it rotates the 6-hour
+view-cache and browser cache keys so re-seeds and style changes
+propagate without waiting for TTLs.
+
+#### Scenario: Re-seed visible immediately
+
+- **WHEN** the backend re-seeds layers (new `version`) and the
+  frontend STYLE_VERSION is bumped or first used
+- **THEN** all map requests hit fresh cache keys and the origin serves
+  the updated documents (e.g. the fixed `huts` style validates and the
+  row renders without waiting for the previous TTL)
+
 ### Requirement: Catalog as the single layer source
 
 The app SHALL load overlay and basemap definitions exclusively from
@@ -94,6 +132,10 @@ then runtime value (most specific wins).
 - **WHEN** the availability layer's `{{date}}` token resolves
 - **THEN** the selected date from the date picker drives the source
   update (the existing availability fetch flow stays the data path)
+- **AND** the occupation layers' visibility binds to the picked date:
+  hidden until a date is selected, visible afterwards (baked into the
+  style spec for basemap switches, applied live via
+  `setLayoutProperty`)
 
 ### Requirement: Catalog-driven legends and configuration
 

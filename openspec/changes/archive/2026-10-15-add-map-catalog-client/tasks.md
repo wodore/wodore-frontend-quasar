@@ -71,7 +71,25 @@
 - [x] Dev-server smoke; staging live-verified (resolved + tokenized
       modes, `X-Map-Spec` nearest-tier fallback, `{{date}}` passthrough)
 - [x] Draft PR (#278) with CI green
-- [ ] After backend #315 deploys: regenerate the client (`gen:api` —
-      `version` field + huts icon-size fix + `{API_URL}` substitution
-      land server-side), verify the huts style validates and the
+- [x] Backend #315 deployed → client regenerated (`gen:api` — `version`
+      field + huts icon-size fix + `{API_URL}` substitution landed
+      server-side), verified live: the huts style validates and the
       availability URL arrives absolute
+
+## Phase 6: Backend #292 — Martin-compatible basemap catalog
+
+- [x] Basemap selector consumes the Martin index
+      (`GET /v1/map/catalog` — flat `styles` map, spec-resolved
+      `path`s); rich overlay catalog moves to `GET /v1/map/config`
+- [x] Client-side raster/satellite-hybrid composition dropped
+      (`utils/raster.ts` deleted; backend serves `world-topo` /
+      `world-satellite-hybrid`; POC page self-contained)
+- [x] `STYLE_VERSION` cache-key rotation (`v=`) on catalog, config and
+      style requests — re-seeds and style changes propagate without
+      waiting for the 6-hour view-cache TTLs
+- [x] Default basemap: catalog `is_default` (seed:
+      `wd-outdoor-base-mtk-hill`); legacy fallback chain
+      `wd-outdoor-base-ofm-hill` → `openfreemap-liberty`
+- [x] Availability occupation layers' visibility bound to the picked
+      date (hidden until a date is selected), unit-tested
+- [x] martinCatalogBasemap builder unit tests; full suite green

@@ -24,7 +24,14 @@ const wiredStyle = (): StyleSpecification => ({
       promoteId: 'hut_id',
     },
   },
-  layers: [{ id: 'wd-huts-occupation', type: 'circle', source: 'wd-bookings' }],
+  layers: [
+    {
+      id: 'wd-huts-occupation',
+      type: 'circle',
+      source: 'wd-bookings',
+      layout: { visibility: 'visible' },
+    },
+  ],
 });
 
 describe('wireBookingsSource', () => {
@@ -72,5 +79,22 @@ describe('wireBookingsSource', () => {
   it('no-ops for styles without a wd-bookings source', () => {
     const style: StyleSpecification = { version: 8, sources: {}, layers: [] };
     expect(() => overlayHuts.wireBookingsSource(style)).not.toThrow();
+  });
+
+  it('hides occupation layers until a date is picked, then shows them', async () => {
+    const style = wiredStyle();
+    overlayHuts.wireBookingsSource(style);
+    const layer = style.layers[0] as { layout: Record<string, string> };
+
+    // No date picked → availability layers baked hidden
+    expect(layer.layout.visibility).toBe('none');
+
+    const { useHutsStore } = await import('@stores/huts-store');
+    const store = useHutsStore();
+    store.selectedDate = '2026-10-20';
+    await nextTick();
+
+    // Date picked → visible
+    expect(layer.layout.visibility).toBe('visible');
   });
 });
