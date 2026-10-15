@@ -102,12 +102,28 @@ jobs:
           done
           curl -sf http://localhost:9000/ > /dev/null || (echo "Dev server not ready" && exit 1)
 
+      # Diagnostics for the catalog boot-cache chain: if the runner cannot
+      # reach the staging API, the 00-warmup caches nothing and every
+      # downstream spec boots catalog-less (rows:0). A 401/403 here still
+      # proves reachability — only timeouts/refused prove blockage.
+      - name: Probe staging reachability
+        env:
+          WODORE_API_HOST: ${{ vars.WODORE_API_HOST }}
+        run: |
+          # Shell default keeps the fallback next to the probe.
+          PROBE_HOST="${WODORE_API_HOST:-https://hub.stg.wodore.com}"
+          curl -sS -o /dev/null --max-time 15 \
+            -w "catalog endpoint: HTTP %{http_code} in %{time_total}s\n" \
+            "$PROBE_HOST/v1/map/catalog?lang=en" \
+            || echo "catalog endpoint UNREACHABLE from runner (curl exit $?)"
+
       - name: Run interaction tests (map controls)
         run: |
           # Exclude visual-regression: reference screenshots are
           # environment-specific (fonts, GPU, antialiasing differ between
           # local and CI) — run locally with: pnpm test:interaction
-          pnpm exec playwright test tests/interaction/ --project=interaction --grep-invert "visual regression"
+          pnpm exec playwright test tests/interaction/ \
+            --project=interaction --grep-invert "visual regression"
           node scripts/link-allure-attachments.mjs allure-results/e2e
         env:
           INTERACTION_BASE_URL: http://localhost:9000

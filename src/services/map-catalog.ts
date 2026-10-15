@@ -135,6 +135,15 @@ function toCatalogLayer(raw: schemasWodore['LayerSummary']): MapCatalogLayer {
 }
 
 /**
+ * Upper bound for one catalog fetch attempt (two attempts total, 1.5 s
+ * backoff between). A hung/blackholed catalog endpoint must not leave
+ * the boot in 'loading' forever with no error surfaced — the abort
+ * rejects and map-catalog-store logs + shows the error state, exactly
+ * like the style fetches (STYLE_FETCH_TIMEOUT_MS).
+ */
+const CATALOG_FETCH_TIMEOUT_MS = 30_000;
+
+/**
  * Fetch the map layer catalog in the given language (default: the active
  * UI locale). Rejects with MapCatalogUnavailableError on failure —
  * callers fall back to the bundled factories.
@@ -157,20 +166,27 @@ export function fetchMapCatalog(lang?: string, role?: 'overlay' | 'basemap'): Pr
             ...(role ? { role } : {}),
           },
         },
+        signal: AbortSignal.timeout(CATALOG_FETCH_TIMEOUT_MS),
       });
     let lastError: unknown = 'empty response';
     for (let attempt = 0; attempt < 2; attempt++) {
-      const { data, error } = await fetchOnce();
-      if (!error && data) {
-        // SAFETY: MapCatalogResponse types slots/layers as loose dict lists
-        // (backend dict[str, Any] passthrough); the serializer's actual rows
-        // carry the fields MapCatalogSlot/MapCatalogLayer describe.
-        return {
-          slots: (data.slots ?? []) as unknown as MapCatalogSlot[],
-          layers: ((data.layers ?? []) as schemasWodore['LayerSummary'][]).map(toCatalogLayer),
-        } satisfies MapCatalog;
+      try {
+        const { data, error } = await fetchOnce();
+        if (!error && data) {
+          // SAFETY: MapCatalogResponse types slots/layers as loose dict lists
+          // (backend dict[str, Any] passthrough); the serializer's actual rows
+          // carry the fields MapCatalogSlot/MapCatalogLayer describe.
+          return {
+            slots: (data.slots ?? []) as unknown as MapCatalogSlot[],
+            layers: ((data.layers ?? []) as schemasWodore['LayerSummary'][]).map(toCatalogLayer),
+          } satisfies MapCatalog;
+        }
+        lastError = error ?? 'empty response';
+      } catch (e) {
+        // Network throw or CATALOG_FETCH_TIMEOUT_MS abort — retry, then
+        // reject loudly (the store's catch logs + shows the error row).
+        lastError = e;
       }
-      lastError = error ?? 'empty response';
       if (attempt === 0) await new Promise(resolve => setTimeout(resolve, 1500));
     }
     throw new MapCatalogUnavailableError(lastError);

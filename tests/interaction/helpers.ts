@@ -140,6 +140,24 @@ function buildCatalogSeed(): { catalog: unknown; styles: Record<string, unknown>
 }
 
 /**
+ * Number of URLs recorded in the staging-cache index (0 = nothing was
+ * ever recorded — on CI that means the warmup cached no responses, e.g.
+ * staging unreachable from the runner).
+ */
+export function stagingCacheIndexCount(): number {
+  try {
+    return fs.readdirSync(INDEX_DIR).filter(f => f.endsWith('.json')).length;
+  } catch {
+    return 0;
+  }
+}
+
+/** Recent [map-catalog] console lines from the current page (diagnostics). */
+export function catalogConsoleLines(): string[] {
+  return [...catalogConsole];
+}
+
+/**
  * The `test` export every interaction spec should use: auto-installs the
  * staging response cache into each page. Re-exports `expect`.
  */
@@ -206,7 +224,21 @@ export const test = baseTest.extend<{ stagingCache: void }>({
           });
         }
 
-        const resp = await route.fetch();
+        let resp: import('@playwright/test').APIResponse;
+        try {
+          resp = await route.fetch();
+        } catch (e) {
+          // Upstream unreachable (backend down, LAN host gone, runner
+          // network blip): a thrown route.fetch fails the whole test AND
+          // can block app boot — degrade to a 503 so the app's own error
+          // states render and tests fail on assertions, not transport.
+          console.warn(`[staging-cache] upstream fetch failed: ${url} (${String(e)})`);
+          return route.fulfill({
+            status: 503,
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ detail: 'upstream unavailable (interaction fallback)' }),
+          });
+        }
         try {
           if (resp.ok()) {
             const body = await resp.body();
