@@ -254,6 +254,16 @@ export function absolutizeStyleUrl(url: string): string {
   return new URL(url, base).href;
 }
 
+/** Absolute style URL for a Martin-catalog entry: the spec-resolved
+ *  root-relative `path` plus the deploy cache buster. MapLibre/browser
+ *  fetch resolve relative URLs against the PAGE origin — the frontend
+ *  host serves no /v1 (the SPA shell comes back instead of the style) —
+ *  so catalog paths MUST be absolutized to the API origin. */
+export function martinEntryStyleUrl(path: string): string {
+  const sep = path.includes('?') ? '&' : '?';
+  return absolutizeStyleUrl(`${path}${sep}v=${STYLE_VERSION}`);
+}
+
 /** Style fetch cache keyed by URL — tokenized/resolved distinction and
  *  the spec are part of the URL, so one entry per concrete document. */
 const styleCache = new Map<string, Promise<StyleSpecification>>();
