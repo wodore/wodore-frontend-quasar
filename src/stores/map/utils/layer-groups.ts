@@ -32,12 +32,11 @@ export interface OverlayGroupSettings {
 const SLUGS = {
   huts: 'huts',
   transport: 'transport-stops',
-  // Was 'ch.swisstopo.swisstlm3d-wanderwege' (Swiss raster overlay) —
-  // renamed when hiking went global; the Swiss raster layer is BACK as
-  // its own overlay ('hiking-swiss'), so old persisted state maps there.
   hiking: 'hiking',
   hikingRoutes: 'hiking-routes',
-  hikingSwiss: 'hiking-swiss',
+  // Catalog slug of the Swiss raster hiking overlay (the factory era
+  // called it 'hiking-swiss' — RENAMED_SLUGS migrates that once).
+  hikingSwiss: 'ch.swisstopo.swisstlm3d-wanderwege',
   mtb: 'mtb',
   cycling: 'cycling',
   slopeAngle: 'ch.swisstopo.hangneigung-ueber_30',
@@ -59,13 +58,13 @@ const GROUP_MEMBERSHIP_MIGRATIONS: Record<string, { add?: string[]; remove?: str
   hiking: { add: [SLUGS.hikingRoutes], remove: [SLUGS.hiking] },
 };
 
-/** Overlay slugs renamed by app updates — user-persisted group settings
- * (layerSlugs / activeLayerSlugs / ungroupedActiveSlugs) are rewritten
- * through this map in mergeGroups so no layer falls out of its group.
- * ALSO used by the overlay store to carry persisted active/show state
- * over to the new overlay name. */
+/** Slug renames — the factory-era app slug 'hiking-swiss' maps ONCE to
+ *  the catalog slug (the backend owns identities; pre-catalog persisted
+ *  group settings and overlay state keep resolving after the switch).
+ *  Older persisted 'ch.swisstopo.swisstlm3d-wanderwege' records are
+ *  already catalog slugs — no migration needed. */
 export const RENAMED_SLUGS: Record<string, string> = {
-  'ch.swisstopo.swisstlm3d-wanderwege': SLUGS.hikingSwiss,
+  'hiking-swiss': SLUGS.hikingSwiss,
 };
 
 function renameSlug(slug: string): string {

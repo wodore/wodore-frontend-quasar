@@ -283,7 +283,9 @@
     "settings_placeholder": "Einstellungen werden in Phase 4+ implementiert.",
     "settings": "Einstellungen",
     "tab_legend": "Info",
-    "further_links": "Weiterführende Links"
+    "further_links": "Weiterführende Links",
+    "curve_zoom": "Zoomstufe",
+    "settings_date_hint": "Wird über die Datumsauswahl auf der Karte gesteuert."
   },
   "beta": {
     "caption": "Die Seite ist noch im Aufbau, {feedback} ist willkommen!",
@@ -441,7 +443,12 @@
     "icon_style_mono": "Monochrom",
     "group_prev": "Vorherige Gruppe ({name})",
     "group_next": "Nächste Gruppe ({name})",
-    "edit_keep_editing": "Weiter bearbeiten"
+    "edit_keep_editing": "Weiter bearbeiten",
+    "huts_availability": {
+      "label": "Hütten-Verfügbarkeit"
+    },
+    "catalog_loading": "Kartenebenen werden geladen…",
+    "catalog_error": "Kartenebenen konnten nicht geladen werden"
   },
   "basemap": "Basiskarte",
   "basemaps": {
@@ -452,7 +459,8 @@
     "austria_raster": "Österreich Topo Raster",
     "outdoor_ofm": "Outdoor (OSM)",
     "world_topo": "Welt Topo",
-    "world_satellite": "Welt Satellit"
+    "world_satellite": "Welt Satellit",
+    "load_error": "Basiskarten konnten nicht geladen werden"
   },
   "multi_select": {
     "select_all": "Alle auswählen",

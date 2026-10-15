@@ -65,8 +65,13 @@ jobs:
       # tests themselves (tests/interaction/helpers.ts) — first fetch per
       # URL hits staging (drift detection stays), the rest replay local.
       # Daily key rotation keeps the data reasonably fresh.
-      - name: Cache staging responses (rotates daily)
-        uses: actions/cache@v4
+      # Save is split from restore: a run whose interaction suite failed
+      # must NOT persist its cache — failing desktop tests record churning
+      # map/tile state, and a bloated cache then starves later runs of
+      # map idle (2026-10-15: 18 MB of recorded churn vs the healthy
+      # ~5 MB steady state).
+      - name: Restore staging responses (rotates daily)
+        uses: actions/cache/restore@v4
         with:
           path: tests/interaction/.staging-cache
           key: staging-cache-v1-${{ steps.date.outputs.day }}
@@ -78,7 +83,8 @@ jobs:
       - name: Start dev server for interaction tests
         run: pnpm run dev --port 9000 &
         env:
-          WODORE_API_HOST: ${{ vars.WODORE_API_HOST || 'https://hub.stg.wodore.com' }}
+          WODORE_API_HOST: >-
+            ${{ vars.WODORE_API_HOST || 'https://hub.stg.wodore.com' }}
 
       - name: Run unit tests
         run: rm -rf allure-results && pnpm test:unit
@@ -100,17 +106,44 @@ jobs:
             curl -sf http://localhost:9000/ > /dev/null && break
             sleep 5
           done
-          curl -sf http://localhost:9000/ > /dev/null || (echo "Dev server not ready" && exit 1)
+          curl -sf http://localhost:9000/ > /dev/null \
+            || (echo "Dev server not ready" && exit 1)
+
+      # Diagnostics for the catalog boot-cache chain: if the runner cannot
+      # reach the staging API, the 00-warmup caches nothing and every
+      # downstream spec boots catalog-less (rows:0). A 401/403 here still
+      # proves reachability — only timeouts/refused prove blockage.
+      - name: Probe staging reachability
+        env:
+          WODORE_API_HOST: ${{ vars.WODORE_API_HOST }}
+        run: |
+          # Shell default keeps the fallback next to the probe.
+          PROBE_HOST="${WODORE_API_HOST:-https://hub.stg.wodore.com}"
+          curl -sS -o /dev/null --max-time 15 \
+            -w "catalog endpoint: HTTP %{http_code} in %{time_total}s\n" \
+            "$PROBE_HOST/v1/map/catalog?lang=en" \
+            || echo "catalog endpoint UNREACHABLE from runner (curl exit $?)"
 
       - name: Run interaction tests (map controls)
+        id: interaction
         run: |
           # Exclude visual-regression: reference screenshots are
           # environment-specific (fonts, GPU, antialiasing differ between
           # local and CI) — run locally with: pnpm test:interaction
-          pnpm exec playwright test tests/interaction/ --project=interaction --grep-invert "visual regression"
+          pnpm exec playwright test tests/interaction/ \
+            --project=interaction --grep-invert "visual regression"
           node scripts/link-allure-attachments.mjs allure-results/e2e
         env:
           INTERACTION_BASE_URL: http://localhost:9000
+
+      # Only a green interaction run may persist the staging cache —
+      # see the restore step above for why failed runs must not.
+      - name: Save staging responses (green runs only)
+        if: always() && steps.interaction.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: tests/interaction/.staging-cache
+          key: staging-cache-v1-${{ steps.date.outputs.day }}
 
       # Raw Allure results for the MANUAL report workflow
       # (.github/workflows/allure-report.yml) — cheap to upload, no

@@ -10,7 +10,7 @@ import {
 } from '@vueuse/core';
 import { useQuasar } from 'quasar';
 import { useBasemapStore } from '@stores/map/basemap-store';
-import type { BasemapSwitchItem } from '@stores/map/utils/interfaces';
+import { useMapCatalogStore } from '@stores/map/map-catalog-store';
 import { useLocalPropertiesStore } from '@stores/local-properties-store';
 import { showErrorDialogPersistent, ErrorCode } from '@components/error';
 import type { Map, PaddingOptions } from 'maplibre-gl';
@@ -137,6 +137,10 @@ const route = useRoute();
 const basemapStore = useBasemapStore();
 const mapRef = useMap();
 const localPropertiesStore = useLocalPropertiesStore();
+// Backend map catalog: swap catalog-compiled overlays in once the
+// catalog answers (factory definitions render until then).
+const mapCatalogStore = useMapCatalogStore();
+void mapCatalogStore.initOverlays();
 
 // Use a static ref for initial map style to prevent vue-maplibre-gl's reactive watcher
 // from overriding our transformStyle callback when basemap changes
@@ -352,11 +356,12 @@ function onMapError(e: unknown) {
   // change" — the user must always be able to re-select and get the
   // graceful keyless fallback again.
   if (isTileAuthFailure(errorObj) && activeBasemapUsesMapTiler()) {
-    const candidates = basemapStore.basemaps as BasemapSwitchItem[];
-    const fallback = candidates.find(b => b.name === 'openfreemap-liberty');
+    // Target: the active basemap's catalog `fallback` field, legacy
+    // default (keyless Liberty) when absent.
+    const fallback = basemapStore.resolveFallbackBasemap('maptiler');
     if (fallback) {
       console.warn(
-        '[onMapError] Tile host rejected requests - falling back to OpenFreeMap Liberty'
+        '[onMapError] Tile host rejected requests - falling back to the keyless fallback basemap'
       );
       // Not persisted: the next session retries the user's chosen basemap
       void basemapStore.setBasemap(fallback, true, false);
@@ -371,11 +376,12 @@ function onMapError(e: unknown) {
   // Same re-trigger guard idea as above: once on outdoor-osm, its own
   // errors cannot re-arm this path.
   if (isMtkTileFailure(errorObj) && activeBasemapIsMtkOutdoor()) {
-    const candidates = basemapStore.basemaps as BasemapSwitchItem[];
-    const fallback = candidates.find(b => b.name === 'outdoor-osm');
+    // Target: the active basemap's catalog `fallback` field (the seeded
+    // mtk entry names wd-outdoor-base-ofm), legacy default otherwise.
+    const fallback = basemapStore.resolveFallbackBasemap('wd-outdoor-base-mtk');
     if (fallback) {
       console.warn(
-        '[onMapError] Maptoolkit tiles unavailable - falling back to OpenFreeMap outdoor'
+        '[onMapError] Maptoolkit tiles unavailable - falling back to the keyless outdoor basemap'
       );
       void basemapStore.setBasemap(fallback, true, false);
     }
@@ -432,7 +438,7 @@ function isMtkTileFailure(errorObj: Record<string, unknown> | undefined): boolea
 }
 
 function activeBasemapIsMtkOutdoor(): boolean {
-  return basemapStore.getBasemap()?.name === 'outdoor-mtk';
+  return basemapStore.getBasemap()?.name === 'wd-outdoor-base-mtk';
 }
 
 /**

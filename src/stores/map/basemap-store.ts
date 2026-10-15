@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { reactive, watch } from 'vue';
+import { Notify } from 'quasar';
 import { BasemapSwitchItem } from '@stores/map/utils/interfaces';
-import { getRasterStyle } from '@stores/map/utils/raster';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
 //import type { Emitter } from 'mitt';
 import { storageGet, storageSet } from '@services/storage';
@@ -15,81 +15,25 @@ import {
 } from './utils/country-fallback';
 import { StyleSpecification } from 'maplibre-gl';
 import { i18n, currentLocale } from '@services/locale';
-import { getEnv } from '@services/runtimeEnv';
 import { isOutdoorStyle, setupOutdoorContours } from '@services/outdoorContours';
-import { getSatelliteHybridStyle } from '@stores/map/utils/satellite-hybrid';
+import {
+  STYLE_VERSION,
+  fetchBasemapCatalog,
+  gpuSpec,
+  loadPersistedBasemapCatalog,
+  persistBasemapCatalog,
+  type BasemapCatalog,
+  type BasemapCatalogEntry,
+} from '@services/map-catalog';
+import {
+  LEGACY_BASEMAP_FALLBACKS,
+  RENAMED_BASEMAP_SLUGS,
+  martinCatalogBasemap,
+} from './utils/catalog-mapping';
 
-// Bump this when the Martin-served basemap style changes (new colors,
-// layers, fonts, sprites). Format: ISO date + optional .N for same-day
-// revisions. The style URL gets ?v={version} — Martin serves the same
-// content regardless; the query param is purely a browser cache buster.
-const STYLE_VERSION = '2026-10-08';
-
-function martinStylePath(styleId: string): string {
-  // Served by Martin — the same tile server that serves huts/sprites.
-  // No local fallback: if Martin is down, the map (hut tiles, hut
-  // sprites, basemap) is down anyway. After one visit the style is
-  // service-worker cached. ?v busts the cache when the style changes.
-  const martinUrl = getEnv('WODORE_TILE_SERVER_URL');
-  if (!martinUrl) {
-    throw new Error('WODORE_TILE_SERVER_URL is not set — Martin is required for the basemap');
-  }
-  return `${martinUrl.replace(/\/$/, '')}/style/${styleId}?v=${STYLE_VERSION}`;
-}
-
-function mtkStylePath(): string {
-  return martinStylePath('wd-outdoor-base-mtk');
-}
-
-/** Tile template for a wodore-merged raster layer behind the stable
- *  /raster facade (WebP, XYZ order, 256px). The URLs are final — the
- *  mapproxy implementation behind them is swappable without URL
- *  changes (see burginfra k8s/apps/wodore/apps/mapproxy). */
-function tileServerBase(): string {
-  const tileServerUrl = getEnv('WODORE_TILE_SERVER_URL');
-  if (!tileServerUrl) {
-    throw new Error('WODORE_TILE_SERVER_URL is not set — raster basemaps need the tile server');
-  }
-  return tileServerUrl.replace(/\/$/, '');
-}
-
-/** Raster tile versions — bump the affected layer when its SOURCE
- *  changes mapproxy-side (runbook: burginfra
- *  k8s/apps/wodore/apps/mapproxy/README.md). MapProxy ignores the
- *  param, but the nginx tier cache key and the browsers' immutable
- *  caches key on the full URL — one bump flushes both at once.
- *  world_topo v2: Austria overlay switched basemap.at geolandbasemap
- *  → BEV Austrian Map (ÖK). */
-const RASTER_TILE_VERSIONS: Record<'world_topo' | 'world_satellite', number> = {
-  world_topo: 2,
-  world_satellite: 1,
-};
-
-function rasterTilePath(layer: 'world_topo' | 'world_satellite'): string {
-  return `${tileServerBase()}/raster/tiles/${layer}/webmercator/{z}/{x}/{y}.webp?v=${RASTER_TILE_VERSIONS[layer]}`;
-}
-
-/** Font endpoint for the satellite hybrid labels (Noto Sans family) —
- *  the same font server the martin-served styles use. */
-function fontGlyphsPath(): string {
-  return `${tileServerBase()}/font/{fontstack}/{range}.pbf`;
-}
-
-/** Keyless OpenFreeMap planet vector tiles (OpenMapTiles schema) — the
- *  source of the satellite hybrid street/place overlay and the hidden
- *  ofm outdoor fallback style. */
-const OFM_PLANET_TILES = 'https://tiles.openfreemap.org/planet';
-/** OpenFreeMap sprite (settlement dots etc.) — matches the ofm style. */
-const OFM_SPRITE = 'https://tiles.openfreemap.org/sprites/ofm_f384/ofm';
-
-/** Source-level maxzoom caps: MapLibre overzooms the last available
- *  level instead of requesting tiles the server cannot serve well.
- *  world_topo caps at z16 — the BEV Austrian Map (ÖK) overlay tops out
- *  at z16, and uncapped z17+ requests would fall through to
- *  OpenTopoMap underneath (mid-zoom style jump). world_satellite keeps
- *  z19 (Esri / basemap.at ortho / swissimage / IGN all reach z19). */
-const RASTER_TOPO_SOURCE_MAX_ZOOM = 16;
-const RASTER_SATELLITE_SOURCE_MAX_ZOOM = 19;
+/** Cache-buster for basemap style URLs — see STYLE_VERSION in
+ *  services/map-catalog (single source; rotates all map cache keys on
+ *  deploys that change served map content). */
 
 /** Compute absolute glyph/sprite URLs for a style, relative to the
  * style's own URL. With setStyle(..., { transformStyle }) MapLibre loses
@@ -139,8 +83,18 @@ const MTK_STATIC_URLS = [
   'https://tiles.maptoolkit.org/rocks.json',
 ];
 
+/** Probe a style URL's reachability (e.g. a MapTiler-hosted style with
+ *  a possibly suspended key). Returns the response, or null on network
+ *  errors — callers keep the configured basemap in that case. */
+async function probeStyleUrl(styleUrl: string): Promise<Response | null> {
+  try {
+    return await fetch(styleUrl);
+  } catch {
+    return null;
+  }
+}
+
 function prewarmOutdoorMtk(): void {
-  void fetch(mtkStylePath()).catch(() => undefined);
   for (const u of MTK_STATIC_URLS) void fetch(u, { mode: 'cors' }).catch(() => undefined);
 }
 
@@ -166,11 +120,20 @@ async function loadStyleObject(styleUrl: string): Promise<StyleSpecification | n
   }
 }
 
+/** Late-bound accessor for the reactive basemap list (set by the store
+ *  once the array exists — loadDefaultStyleObject below reads it). */
+let activeBasemapList: () => BasemapSwitchItem[] = () => [];
+
 /** The DEFAULT basemap's style object (wd-outdoor-base-mtk) — the world
- *  fallback merged beneath country basemaps (see country-fallback.ts). */
+ *  fallback merged beneath country basemaps (see country-fallback.ts).
+ *  Prefers the active list's style URL (catalog-served after the backend
+ *  cutover, Martin-served before it). */
 function loadDefaultStyleObject(): Promise<StyleSpecification | null> {
   if (!defaultStylePromise) {
-    defaultStylePromise = loadStyleObject(mtkStylePath());
+    const source = activeBasemapList().find(b => b.name === DEFAULT_BASEMAP_NAME)?.style;
+    const url = typeof source === 'string' && source ? source : '';
+    if (!url) return Promise.resolve(null);
+    defaultStylePromise = loadStyleObject(url);
   }
   return defaultStylePromise;
 }
@@ -178,36 +141,15 @@ function loadDefaultStyleObject(): Promise<StyleSpecification | null> {
 const t = i18n.global.t;
 
 /** The default world basemap — also the fallback composed beneath
- *  country basemaps (see country-fallback.ts). */
-const DEFAULT_BASEMAP_NAME = 'wd-outdoor-base-mtk';
+ *  country basemaps (see country-fallback.ts). Backend PR #292 moved
+ *  the default to the hill variant (client raster-dem relief, per
+ *  user decision); the fallback is its OpenFreeMap twin. */
+const DEFAULT_BASEMAP_NAME = 'wd-outdoor-base-mtk-hill';
 
 // Keyless plain OSM raster (tile.openstreetmap.org) — style for the weak-GPU
 // raster variant of "Switzerland Topo Light". Deliberately NOT MapTiler
 // raster tiles: those are key-metered and exhausted the free quota —
 // weak-GPU devices must never touch MapTiler.
-const osmRasterStyle = getRasterStyle({
-  name: 'osm-raster',
-  tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-  attribution:
-    '<a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
-  suffix: '',
-  // OSM tiles stop at z19 — source maxzoom lets MapLibre overzoom to the
-  // app's z20 cap instead of requesting missing tiles
-  sourceMaxZoom: 19,
-});
-
-const oeLayer: 'geolandbasemap' | 'bmaphidpi' = 'bmaphidpi';
-const oeExt: 'png' | 'jpeg' = 'jpeg';
-const oeTopoRasterStyle = getRasterStyle({
-  name: 'oe-raster',
-  tiles: [
-    'https://maps1.wien.gv.at/basemap/' + oeLayer + '/normal/google3857/{z}/{y}/{x}.' + oeExt,
-    'https://maps2.wien.gv.at/basemap/' + oeLayer + '/normal/google3857/{z}/{y}/{x}.' + oeExt,
-    'https://maps3.wien.gv.at/basemap/' + oeLayer + '/normal/google3857/{z}/{y}/{x}.' + oeExt,
-  ],
-  attribution: 'basemap.at',
-  tileSize: 512,
-});
 function getImageUrl(name: string): string {
   return new URL(`/src/assets/wodore-design/map/switch/${name}`, import.meta.url).href;
 }
@@ -758,6 +700,11 @@ export const useBasemapStore = defineStore('basemap', () => {
         style.active = false;
       }
     }
+    // Record the applied style source: refreshFromCatalog re-applies only
+    // when it actually changes — a redundant setStyle at boot would
+    // restart every tile load (mtk carries nine sources; on a slow link
+    // that alone can exceed the interaction suite's map-idle budget).
+    activeStyleUrl = s.style;
     if (persist) {
       storageSet('basemapName', s.name);
     }
@@ -767,6 +714,11 @@ export const useBasemapStore = defineStore('basemap', () => {
 
   // Initialize as empty reactive array
   const basemaps = reactive<Array<BasemapSwitchItem>>([]);
+  // Bind the late-bound accessor (loadDefaultStyleObject reads the list).
+  // SAFETY: basemaps is the reactive BasemapSwitchItem[] just declared;
+  // the widened cast breaks the maplibre-style TS2589 recursion — reading
+  // .name/.style only via the accessor.
+  activeBasemapList = () => basemaps as unknown as BasemapSwitchItem[];
 
   // i18n keys per basemap name — labels are re-applied in place when the
   // UI language changes (styles depend on async GPU detection and are NOT
@@ -777,6 +729,9 @@ export const useBasemapStore = defineStore('basemap', () => {
     'Satellite Hybrid': 'basemaps.satellite',
     'wd-outdoor-base-mtk': 'basemaps.outdoor',
     'outdoor-osm': 'basemaps.outdoor_ofm',
+    // Catalog identities (renamed slugs — see RENAMED_BASEMAP_SLUGS)
+    'wd-outdoor-base-ofm': 'basemaps.outdoor_ofm',
+    'maptiler-hybrid': 'basemaps.satellite',
     'oe-raster': 'basemaps.austria_raster',
   };
 
@@ -800,18 +755,36 @@ export const useBasemapStore = defineStore('basemap', () => {
   // and a failed run resets the cache so the next call can retry
   let basemapInitPromise: Promise<void> | null = null;
 
-  // Get saved basemap name from localStorage (not the full object)
-  const savedBasemapName = storageGet('basemapName') as string | null;
+  // Get saved basemap name from localStorage (not the full object),
+  // normalized through the rename table (catalog identities: e.g. the
+  // old 'outdoor-osm' selection is 'wd-outdoor-base-ofm' in the catalog).
+  const savedBasemapName = (() => {
+    const raw = storageGet('basemapName') as string | null;
+    return raw ? (RENAMED_BASEMAP_SLUGS[raw] ?? raw) : null;
+  })();
 
-  // Helper to get basemap by name
-  function getBasemapByName(name: string): BasemapSwitchItem | undefined {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    for (const basemap of basemaps as any[]) {
-      if (basemap.name === name) {
-        return basemap;
-      }
-    }
-    return undefined;
+  /** Resolve a basemap by slug, accepting the pre-catalog alias names
+   *  (factory 'outdoor-osm' vs catalog 'wd-outdoor-base-ofm'). */
+  function findBasemapBySlug(slug: string): BasemapSwitchItem | undefined {
+    const alias = RENAMED_BASEMAP_SLUGS[slug] ?? slug;
+    // SAFETY: basemaps is the reactive BasemapSwitchItem[] populated during
+    // init; the widened cast breaks the TS2589 recursion — reading .name only.
+    return (
+      (basemaps as unknown as BasemapSwitchItem[]).find(
+        b => b.name === slug || b.name === alias || RENAMED_BASEMAP_SLUGS[b.name] === slug
+      ) ?? undefined
+    );
+  }
+
+  /** Resolve the auto-switch target for a failing basemap: its catalog
+   *  `fallback` field first, then the legacy defaults. */
+  function resolveFallbackBasemap(failingSlug: string): BasemapSwitchItem | undefined {
+    const active = getBasemap();
+    const target =
+      active?.fallback ??
+      LEGACY_BASEMAP_FALLBACKS[failingSlug] ??
+      LEGACY_BASEMAP_FALLBACKS.maptiler;
+    return findBasemapBySlug(target);
   }
 
   // Helper to determine if we should use raster basemaps based on GPU capabilities
@@ -839,6 +812,102 @@ export const useBasemapStore = defineStore('basemap', () => {
   }
 
   // Async function to initialize basemaps based on GPU tier
+
+  /** Basemap style URL for one Martin-catalog entry: the spec-resolved
+   *  `path` straight from the catalog plus the STYLE_VERSION cache
+   *  buster (the endpoint ignores unknown params — the query only busts
+   *  browser/CDN caches). */
+  function styleUrlFor(entry: BasemapCatalogEntry): string {
+    const sep = entry.path.includes('?') ? '&' : '?';
+    return `${entry.path}${sep}v=${STYLE_VERSION}`;
+  }
+
+  /**
+   * Compile the Martin-compatible catalog (backend PR #292) into switch
+   * items. Called from the init path AND from refreshBasemaps (the
+   * map-catalog store's background refresh) — a refresh keeps the ACTIVE
+   * basemap selected (and re-applies it with force only when its style
+   * URL changed); labels re-localize via applyBasemapLabels.
+   */
+  function refreshFromCatalog(catalog: BasemapCatalog): void {
+    const entries = Object.entries(catalog.styles)
+      .filter(([, entry]) => entry.role === 'basemap')
+      .sort(([, a], [, b]) => (a.order ?? 0) - (b.order ?? 0));
+    catalogDefaultSlug = entries.find(([, entry]) => entry.is_default)?.[0] ?? DEFAULT_BASEMAP_NAME;
+    const items = entries.map(([slug, entry]) =>
+      martinCatalogBasemap(slug, entry, styleUrlFor(entry), slug => localBasemapThumb(slug))
+    );
+    // Keep the ACTIVE selection across the refresh (same slug stays on).
+    const activeName = getBasemap()?.name;
+    // SAFETY: basemaps is the reactive BasemapSwitchItem[] above; splice
+    // keeps the array identity — the TS2589-breaking widened cast matches
+    // the other casts in this file.
+    (basemaps as unknown as BasemapSwitchItem[]).splice(0, basemaps.length, ...items);
+    if (activeName) {
+      // SAFETY: basemaps is the reactive BasemapSwitchItem[] spliced above;
+      // the widened cast breaks the TS2589 recursion — reading .name/.style only.
+      const active = (basemaps as unknown as BasemapSwitchItem[]).find(b => b.name === activeName);
+      if (active) {
+        active.active = true;
+        // Style URL change (spec/variant switch) → re-apply so the map
+        // renders the new document; metadata-only changes keep the map.
+        if (active.style !== activeStyleUrl) {
+          activeStyleUrl = active.style;
+          void setBasemap(active, true);
+        }
+      }
+    }
+    applyBasemapLabels();
+  }
+
+  /** Style source of the currently applied basemap (refresh bookkeeping;
+   *  catalog items carry URL strings — the union only matches
+   *  BasemapSwitchItem['style']). */
+  let activeStyleUrl: BasemapSwitchItem['style'] | undefined;
+
+  /** The catalog's `is_default` basemap slug (set by refreshFromCatalog;
+   *  backend PR #292 seed: wd-outdoor-base-mtk-hill). */
+  let catalogDefaultSlug: string | undefined;
+
+  /** Resolve the default basemap: the catalog's is_default entry, else
+   *  the compile-time DEFAULT_BASEMAP_NAME. */
+  function findDefaultBasemap(): BasemapSwitchItem | undefined {
+    return findBasemapBySlug(catalogDefaultSlug ?? DEFAULT_BASEMAP_NAME);
+  }
+
+  /** Local thumbnails by slug (the seed carries no preview URLs yet). */
+  function localBasemapThumb(slug: string): string | undefined {
+    const thumbs: Record<string, string> = {
+      'ch-swisstopo-light': getImageUrl('swiss-vector.png'),
+      'ch-swisstopo-full': getImageUrl('swiss-raster.png'),
+      'maptiler-hybrid': getImageUrl('satellite.png'),
+      'wd-outdoor-base-mtk': getImageUrl('outdoor-v2.png'),
+      'wd-outdoor-base-mtk-hill': getImageUrl('outdoor-v2.png'),
+      'wd-outdoor-base-ofm': getImageUrl('outdoor-v2.png'),
+      'wd-outdoor-base-ofm-hill': getImageUrl('outdoor-v2.png'),
+      'mtk-outdoor': getImageUrl('outdoor-v2.png'),
+      'openfreemap-liberty': getImageUrl('outdoor-v2.png'),
+      'oe-raster': getImageUrl('oe-raster.png'),
+      'world-topo': getImageUrl('swiss-raster.png'),
+      'world-satellite-hybrid': getImageUrl('satellite.png'),
+    };
+    return thumbs[slug];
+  }
+
+  /** Fetch the Martin-compatible basemap catalog (backend PR #292) and
+   *  rebuild the basemap list — called by the map-catalog store's
+   *  background refresh. Keeps the active selection; re-applies only
+   *  when the style URL changed. Failures log and keep current state. */
+  async function refreshBasemaps(): Promise<void> {
+    try {
+      const catalog = await fetchBasemapCatalog(currentLocale(), gpuSpec(weakGpu));
+      persistBasemapCatalog(catalog, currentLocale());
+      refreshFromCatalog(catalog);
+    } catch (error) {
+      console.warn('[basemap-store] basemap catalog refresh failed:', error);
+    }
+  }
+
   async function runBasemapInit() {
     // Check if we have a cached GPU tier result (valid for 2 days)
     const cachedGpuTier = storageGet('gpuTier');
@@ -897,207 +966,58 @@ export const useBasemapStore = defineStore('basemap', () => {
       useRaster
     );
 
-    // Populate basemaps array (labels resolved via i18n — see applyBasemapLabels)
-    const basemapItems: BasemapSwitchItem[] = [
-      {
-        // Official free swisstopo Light Base Map (vector) — the visual
-        // reference for our outdoor style; also handy as a comparison
-        // basemap. No API key, CORS-open tiles/fonts/sprite.
-        name: 'ch-swisstopo-light',
-        label: t('basemaps.swiss_light'),
-        show: false, // replaced by outdoor-mtk as THE vector map (user call)
-        active: false,
-        img: getImageUrl('swiss-vector.png'),
-        // Weak-GPU raster variant: keyless OSM raster (the vector style
-        // needs WebGL anyway; raster fallback keeps weak devices usable)
-        style: useRaster
-          ? osmRasterStyle
-          : 'https://vectortiles.geo.admin.ch/styles/ch.swisstopo.lightbasemap.vt/style.json',
-        layers: {
-          ways: { before: useRaster ? undefined : 'Other place labels' },
-          background: { before: useRaster ? undefined : 'Building line' },
-          // routes under the OSM-style label stack
-          routes: { before: useRaster ? undefined : 'Other place labels' },
-        },
-      },
-      {
-        // Worldwide merged TOPO raster on our own /raster facade —
-        // REPLACES the former CH-only direct swisstopo WMTS tiles:
-        // OpenTopoMap everywhere, BEV Austrian Map (AT, z7–16) +
-        // swisstopo pixelkarte (CH+LI) + IGN Plan IGN (FR) composited
-        // on top from z7 with pixel-clipped country borders. Full
-        // world coverage, so no countryOnly/bbox fallback composition
-        // anymore. Entry name/thumbnail unchanged so saved selections
-        // and the preferred-basemap defaults keep resolving. Style is
-        // a lazy getter — the tile server env is read at selection time
-        // (same pattern as wd-outdoor-base-mtk).
-        name: 'ch-swisstopo-full',
-        label: t('basemaps.swiss_raster'),
-        show: true, // raster topo stays selectable alongside the outdoor default
-        active: false,
-        img: getImageUrl('swiss-raster.png'),
-        get style(): StyleSpecification {
-          return getRasterStyle({
-            name: 'ch-swisstopo-raster',
-            tiles: [rasterTilePath('world_topo')],
-            attribution:
-              '<a href="https://opentopomap.org" target="_blank">&copy; OpenTopoMap</a> (CC-BY-SA) &#124; Datenquelle: <a href="https://www.bev.gv.at" target="_blank">BEV</a> &#124; <a href="https://www.swisstopo.admin.ch/en/home.html" target="_blank">&copy; swisstopo</a> &#124; <a href="https://www.ign.fr" target="_blank">&copy; IGN</a>',
-            suffix: '',
-            sourceMaxZoom: RASTER_TOPO_SOURCE_MAX_ZOOM,
-          });
-        },
-        layers: {
-          ways: { before: undefined },
-          background: { before: undefined },
-        },
-      },
-      {
-        // Worldwide merged AERIAL raster on our own /raster facade —
-        // REPLACES the former key-metered MapTiler hybrid style: Esri
-        // World Imagery everywhere, swisstopo swissimage (CH+LI),
-        // basemap.at ortho 30cm (AT) and IGN BD ORTHO (FR) merged on
-        // top from z7. A street/place-name overlay from the OpenFreeMap
-        // planet source restores the former "hybrid" look (basic
-        // streets + town names, satellite-tuned colors — see
-        // utils/satellite-hybrid.ts). Entry name/thumbnail unchanged
-        // for saved selections; lazy getter reads the tile server env
-        // at selection time.
-        name: 'Satellite Hybrid',
-        label: t('basemaps.satellite'),
-        show: true, // raster satellite stays selectable alongside the outdoor default
-        active: false,
-        img: getImageUrl('satellite.png'),
-        get style(): StyleSpecification {
-          return getSatelliteHybridStyle({
-            tiles: [rasterTilePath('world_satellite')],
-            attribution:
-              '<a href="https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer" target="_blank">Esri, Maxar, Earthstar Geographics</a> &#124; <a href="https://www.swisstopo.admin.ch/en/home.html" target="_blank">&copy; swisstopo</a> &#124; <a href="https://www.basemap.at/en/" target="_blank">&copy; basemap.at</a> &#124; <a href="https://www.ign.fr" target="_blank">&copy; IGN</a> &#124; <a href="https://www.openstreetmap.org/copyright" target="_blank"> &copy; OpenStreetMap contributors</a>',
-            sourceMaxZoom: RASTER_SATELLITE_SOURCE_MAX_ZOOM,
-            vectorUrl: OFM_PLANET_TILES,
-            glyphs: fontGlyphsPath(),
-            spriteUrl: OFM_SPRITE,
-          });
-        },
-        layers: {
-          // #269 replaced the old OSM-style satellite hybrid (Tunnel/State
-          // labels anchors) with merged world layers — no stable label-layer
-          // ids to anchor against, so routes degrade to top here (the mtk
-          // default basemap carries the proper under-labels anchor).
-          ways: { before: undefined },
-          background: { before: undefined },
-          routes: { before: undefined },
-        },
-      },
-      {
-        // DEFAULT outdoor basemap: Maptoolkit hiking style fork
-        // (routes + shields, sac_scale/via ferrata, rock drawing, server
-        // contours, bathymetry, AO hillshade). Community License: <= EUR 1M
-        // revenue & < 10 FTE — attribution + logo required, no
-        // pre-fetch/offline/print use (that's the OFM fallback's job).
-        // Style JSON lives in wodore-backend (tile_server/styles/).
-        name: 'wd-outdoor-base-mtk',
-        label: t('basemaps.outdoor'),
-        show: true,
-        active: false,
-        img: getImageUrl('outdoor-v2.png'),
-        get style() {
-          return mtkStylePath();
-        },
-        layers: {
-          ways: { before: undefined },
-          background: { before: undefined },
-          // Huts sit below high-ranked town labels (rank ≤ 13: Brig/Visp
-          // class and above) but above hamlet/alp labels (rank ≥ 14). The
-          // mtk style stacks place_point_label_rank_5..1, last on top.
-          places: { before: 'place_point_label_rank_2' },
-          // Route lines (hiking/cycling) render under EVERY symbol layer
-          // (wd-station-label is the style's first) — above paths/roads,
-          // behind all labels and POI icons.
-          routes: { before: 'wd-station-label' },
-        },
-      },
-      {
-        // Keyless OpenFreeMap outdoor style — the unrestricted fallback
-        // (auto-selected when Maptoolkit tiles fail; also the right tiles
-        // for any future offline/print feature). Style JSON lives in the
-        // backend repo (tile_server/styles/wd-outdoor-base-ofm.json).
-        name: 'outdoor-osm',
-        label: t('basemaps.outdoor_ofm'),
-        show: false, // picker: only outdoor default (kept as hidden OFM fallback)
-        active: false,
-        img: getImageUrl('outdoor-v2.png'),
-        get style() {
-          return martinStylePath('wd-outdoor-base-ofm');
-        },
-        layers: {
-          ways: { before: undefined },
-          background: { before: undefined },
-        },
-      },
-      {
-        name: 'oe-raster',
-        label: t('basemaps.austria_raster'),
-        show: false,
-        active: false,
-        countryOnly: true, // AT-only tiles — world fallback via default basemap
-        bbox: [9.3, 46.3, 17.3, 49.1], // AT + border strips (basemap.at covers them)
-        img: getImageUrl('oe-raster.png'),
-        style: oeTopoRasterStyle,
-        layers: {
-          ways: { before: undefined },
-          background: { before: undefined },
-        },
-      },
-      {
-        // Keyless OpenFreeMap vector basemap (openfreemap.org). Hidden
-        // from the picker — it is the automatic fallback when MapTiler-based
-        // basemaps are rejected (suspended/rotated/exhausted key).
-        // Liberty style: full-featured vector cartography with labels;
-        // glyphs are served keylessly by OpenFreeMap itself
-        // (https://tiles.openfreemap.org/fonts/...).
-        name: 'openfreemap-liberty',
-        label: 'OpenFreeMap Liberty',
-        show: false,
-        active: false,
-        img: getImageUrl('outdoor-v2.png'),
-        style: 'https://tiles.openfreemap.org/styles/liberty',
-        layers: {
-          ways: { before: undefined },
-          background: { before: undefined },
-        },
-      },
-    ];
-
-    // Add all items to the reactive array
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (basemaps as any).push(...basemapItems);
+    // ── Backend map catalog (backend PR #292 — Martin-compatible index) ─
+    // Cache-first: the persisted catalog renders instantly; a cold first
+    // run awaits the network (explicit loading state upstream) — there
+    // are NO bundled factory basemaps anymore.
+    const cachedCatalog = loadPersistedBasemapCatalog();
+    if (cachedCatalog) {
+      refreshFromCatalog(cachedCatalog);
+      // Warm boot: refresh in the background — metadata/style changes
+      // flow through (the active selection is kept; a changed style URL
+      // re-applies with force).
+      void refreshBasemaps();
+    } else {
+      // Cold first run: await the network so the map has a style at all.
+      try {
+        const catalog = await fetchBasemapCatalog(currentLocale(), gpuSpec(useRaster));
+        persistBasemapCatalog(catalog, currentLocale());
+        refreshFromCatalog(catalog);
+      } catch (error) {
+        console.error('[basemap-store] map catalog unavailable — no basemaps:', error);
+        Notify.create({
+          type: 'negative',
+          position: 'bottom',
+          message: t('basemaps.load_error'),
+          timeout: 4000,
+        });
+        return;
+      }
+    }
 
     // Determine which basemap to use
     let basemapToSet: BasemapSwitchItem | undefined;
 
     if (savedBasemapName) {
-      // Try to find the saved basemap by name
-      basemapToSet = getBasemapByName(savedBasemapName);
+      // Try to find the saved basemap by name (renames normalized above)
+      basemapToSet = findBasemapBySlug(savedBasemapName);
       if (basemapToSet) {
         console.debug('Restoring saved basemap:', savedBasemapName);
       } else {
         console.debug('Saved basemap not found, using default');
-        // Saved name unknown (e.g. renamed basemap) — use the fresh-install
-        // default too, not the first array entry (which needs a MapTiler key)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        basemapToSet = (basemaps as any[]).find(b => b.name === DEFAULT_BASEMAP_NAME);
+        // Saved name unknown (e.g. renamed basemap) — use the catalog's
+        // default flag, falling back to the compile-time default slug.
+        basemapToSet = findDefaultBasemap();
       }
     } else {
-      // No saved basemap: default to the Maptoolkit-based outdoor style
-      // (routes/sac/rock/contours). The keyless OpenFreeMap style is the
-      // hidden fallback for when Maptoolkit tiles are unreachable.
+      // No saved basemap: the catalog's is_default (backend PR #292 seed:
+      // wd-outdoor-base-mtk-hill — client relief variant). The keyless
+      // OpenFreeMap style is the hidden fallback for when Maptoolkit
+      // tiles are unreachable.
       // SAFETY: basemaps is a reactive Pinia array of BasemapSwitchItem at
       // runtime; the `unknown` hop only sidesteps the reactive-proxy type
       // mismatch between the store's declaration and the switch API.
-      basemapToSet =
-        (basemaps as unknown as Array<BasemapSwitchItem>).find(
-          b => b.name === DEFAULT_BASEMAP_NAME
-        ) || (basemaps as unknown as Array<BasemapSwitchItem>)[0];
+      basemapToSet = findDefaultBasemap() || (basemaps as unknown as Array<BasemapSwitchItem>)[0];
     }
 
     // A MapTiler-based basemap with a rejected key (suspended/exhausted)
@@ -1112,9 +1032,9 @@ export const useBasemapStore = defineStore('basemap', () => {
       basemapToSet.style.includes('api.maptiler.com')
     ) {
       try {
-        const probe = await fetch(basemapToSet.style);
-        if (!probe.ok) {
-          const fallback = getBasemapByName('openfreemap-liberty');
+        const probe = await probeStyleUrl(basemapToSet.style);
+        if (probe && !probe.ok) {
+          const fallback = findBasemapBySlug('openfreemap-liberty');
           if (fallback) {
             console.warn(
               `[basemap] Tile host rejected the style (HTTP ${probe.status}) - starting on OpenFreeMap Liberty`
@@ -1157,6 +1077,9 @@ export const useBasemapStore = defineStore('basemap', () => {
     setBasemap,
     getBasemap,
     initializeBasemaps,
+    refreshBasemaps,
+    findBasemapBySlug,
+    resolveFallbackBasemap,
     //setEmitter,
   };
 });

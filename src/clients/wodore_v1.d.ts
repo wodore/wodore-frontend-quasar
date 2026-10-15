@@ -61,8 +61,8 @@ export interface paths {
         };
         /**
          * get_category_symbol_svg_with_parent — Redirect to a category SVG (with parent).
-         * @description Variant options: detailed, simple, mono
-         *     Example: /v1/categories/symbol/detailed/map/transport.svg
+         * @description Variant options: color, primitive, mono
+         *     Example: /v1/categories/symbol/color/map/transport.svg
          *
          *     If the category doesn't have a symbol for the variant, returns 404.
          */
@@ -84,7 +84,7 @@ export interface paths {
         };
         /**
          * get_category_symbol_svg — Redirect to the SVG icon for a category.
-         * @description Variant options: detailed, simple, mono
+         * @description Variant options: color, primitive, mono
          *     Slug can be a simple slug (e.g., 'transport') or root category
          *
          *     If the category doesn't have a symbol for the variant, returns 404.
@@ -544,14 +544,31 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** map-catalog — Martin-compatible catalog with selector metadata. */
+        get: operations["map-catalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/map/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
         /**
-         * map-catalog — Map layer catalog (overlays and basemaps).
+         * map-config — Map layer catalog (overlays and basemaps).
          * @description Metadata index for map clients: identities, labels in the
          *     request language, icons, parameter schemas, device-tier
          *     variants, category projections and coverage bounds. Large
          *     styles are referenced by URL, small ones inlined.
          */
-        get: operations["map-catalog"];
+        get: operations["map-config"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3913,6 +3930,17 @@ export interface operations {
                     "application/json": null;
                 };
             };
+            /** @description Found */
+            302: {
+                headers: {
+                    "Cache-Control": string;
+                    Location: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": null;
+                };
+            };
             /** @description Raised when request components cannot be parsed */
             400: {
                 headers: {
@@ -3969,6 +3997,17 @@ export interface operations {
             200: {
                 headers: {
                     "Cache-Control": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": null;
+                };
+            };
+            /** @description Found */
+            302: {
+                headers: {
+                    "Cache-Control": string;
+                    Location: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -5589,6 +5628,61 @@ export interface operations {
             query?: {
                 /** @description Select language code: de, en, fr, it. */
                 lang?: string;
+                /** @description Device-tier spec (low | medium | high); self-resolves to nearest */
+                spec?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    "Cache-Control": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Raised when request components cannot be parsed */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Raised when provided `Accept` header cannot be satisfied */
+            406: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Raised when returned response does not match the response schema */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+        };
+    };
+    "map-config": {
+        parameters: {
+            query?: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
                 /** @description Filter by layer role (basemap | overlay) */
                 role?: string | null;
             };
@@ -5657,6 +5751,17 @@ export interface operations {
             200: {
                 headers: {
                     "Cache-Control": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": null;
+                };
+            };
+            /** @description Found */
+            302: {
+                headers: {
+                    "Cache-Control": string;
+                    Location: string;
                     [name: string]: unknown;
                 };
                 content: {

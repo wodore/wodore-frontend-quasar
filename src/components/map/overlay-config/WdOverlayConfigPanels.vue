@@ -11,6 +11,7 @@ import type { OverlayConfig } from '@stores/map/overlay-configs/types';
 import WdLegendSection from './WdLegendSection.vue';
 import WdOverlayConfigLinks from './WdOverlayConfigLinks.vue';
 import WdOverlayConfigAttribution from './WdOverlayConfigAttribution.vue';
+import WdOverlayConfigSettings from './WdOverlayConfigSettings.vue';
 
 interface Props {
   activeTab: string;
@@ -133,7 +134,7 @@ function handleReset() {
 
     <!-- Settings Panel -->
     <q-tab-panel name="settings" v-if="hasSettings" class="bg-transparent">
-      <div class="text-body2 wd-ink-soft-text">{{ $t('overlay_config.settings_placeholder') }}</div>
+      <WdOverlayConfigSettings :overlay-name="overlayName" />
     </q-tab-panel>
   </q-tab-panels>
 </template>

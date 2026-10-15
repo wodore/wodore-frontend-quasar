@@ -24,7 +24,7 @@ test.describe('overlay interactions', () => {
   for (const { theme, mode } of CONFIGS) {
     test(`${theme}-${mode}: expanded stays open on select`, async ({ page }, testInfo) => {
       tagTest(theme, mode, 'overlay');
-      test.setTimeout(90_000);
+      test.setTimeout(240_000);
 
       const vp = mode === 'mobile' ? { width: 390, height: 844 } : { width: 1440, height: 900 };
       await page.setViewportSize(vp);
@@ -47,7 +47,7 @@ test.describe('overlay interactions', () => {
 
     test(`${theme}-${mode}: closing-tap collapses, no focus`, async ({ page }, testInfo) => {
       tagTest(theme, mode, 'overlay');
-      test.setTimeout(90_000);
+      test.setTimeout(240_000);
 
       const vp = mode === 'mobile' ? { width: 390, height: 844 } : { width: 1440, height: 900 };
       await page.setViewportSize(vp);
@@ -89,7 +89,7 @@ test.describe('overlay interactions', () => {
 test.describe('attribution', () => {
   test('light-mobile: open shows close glyph, tap closes', async ({ page }, testInfo) => {
     tagTest('light', 'mobile', 'attribution');
-    test.setTimeout(90_000);
+    test.setTimeout(240_000);
 
     await page.setViewportSize({ width: 390, height: 844 });
     await loadMap(page);

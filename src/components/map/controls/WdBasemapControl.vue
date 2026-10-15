@@ -61,6 +61,10 @@ const iconClose = new URL(
     <!-- Rail: opens to the LEFT of the toggle -->
     <Transition name="wd-bm-rail">
       <div v-if="open" class="wd-bm__rail" role="group" aria-label="Basemap">
+        <!-- Cold first run: the catalog is loading — no basemaps yet. -->
+        <div v-if="visibleBasemaps.length === 0" class="wd-bm__loading">
+          <q-spinner-dots size="22px" color="primary" />
+        </div>
         <button
           v-for="bm in visibleBasemaps.filter(b => b.show)"
           :key="bm.name"
@@ -122,6 +126,15 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 }
 
 // ── Rail (opens LEFT) ────────────────────────────────────────────────────
+// Cold first run: catalog loading, no basemaps yet
+.wd-bm__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+}
+
 .wd-bm__rail {
   display: flex;
   flex-direction: row;

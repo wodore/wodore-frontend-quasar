@@ -36,7 +36,6 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { onMounted, onUnmounted, ref } from 'vue';
 import { MapLibre, MarkerIconAnchor } from '@capawesome/capacitor-maplibre';
 import type { PluginListenerHandle } from '@capacitor/core';
-import { getRasterStyle } from 'stores/map/utils/raster';
 
 const MAP_ID = 'poc-map';
 const MARKER_ID = 'poc-marker';
@@ -54,16 +53,25 @@ function say(message: string) {
 
 async function createMap() {
   try {
-    // Reuse the app's keyless Swiss raster basemap style (geo.admin.ch
-    // WMTS tiles + OpenMapTiles glyphs — no API key needed).
-    const style = getRasterStyle({
-      name: 'ch.swisstopo.pixelkarte-farbe',
-      tiles: [
-        'https://wmts0.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
-      ],
-      attribution: '© swisstopo',
-      maxZoom: 18,
-    });
+    // Keyless Swiss raster basemap (geo.admin.ch WMTS tiles — no API
+    // key needed). Self-contained inline style: client-side raster
+    // composition was dropped with backend PR #292 (all basemap styles
+    // now come from /v1/map/styles/{slug}.json; this POC predates it
+    // and only exists to smoke-test the native WebView rendering).
+    const style = {
+      version: 8,
+      sources: {
+        'ch.swisstopo.pixelkarte-farbe': {
+          type: 'raster',
+          tiles: [
+            'https://wmts0.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg',
+          ],
+          attribution: '© swisstopo',
+          maxzoom: 18,
+        },
+      },
+      layers: [{ id: 'wd-poc-raster', type: 'raster', source: 'ch.swisstopo.pixelkarte-farbe' }],
+    };
     await MapLibre.createMap({
       mapId: MAP_ID,
       elementId: 'poc-map',

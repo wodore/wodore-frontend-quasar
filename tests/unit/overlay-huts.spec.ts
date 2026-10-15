@@ -1,7 +1,13 @@
+// @vitest-environment happy-dom
+//
+// wireBookingsSource — the availability overlay's `wd-bookings` geojson
+// source rides the huts store's live bookingsGeojson (date-picker flow).
+// The former factory styles are gone; the backend map catalog owns the
+// layer definitions (see map-catalog-store / catalog-mapping).
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import * as allure from 'allure-js-commons';
 import { createPinia, setActivePinia } from 'pinia';
 import { nextTick } from 'vue';
+import type { StyleSpecification } from 'maplibre-gl';
 
 // overlay-huts registers a map watcher at module scope; useMap must be mocked
 // (hoisted, so it also applies to the dynamic import below).
@@ -9,144 +15,48 @@ vi.mock('@indoorequal/vue-maplibre-gl', () => ({
   useMap: () => ({ map: null }),
 }));
 
-describe('hutsStyle', () => {
+const wiredStyle = (): StyleSpecification => ({
+  version: 8,
+  sources: {
+    'wd-bookings': {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] },
+      promoteId: 'hut_id',
+    },
+  },
+  layers: [
+    {
+      id: 'wd-huts-occupation',
+      type: 'circle',
+      source: 'wd-bookings',
+      layout: { visibility: 'visible' },
+    },
+  ],
+});
+
+describe('wireBookingsSource', () => {
   let overlayHuts: typeof import('@stores/map/utils/overlay-huts');
 
-  // The module evaluates Pinia + tile-server env at import time, so pinia must
-  // be active and the env fixed BEFORE the dynamic import.
+  // The module evaluates Pinia at import time — pinia must be active
+  // BEFORE the dynamic import.
   beforeAll(async () => {
-    process.env.WODORE_TILE_SERVER_URL = 'http://tiles.test';
     setActivePinia(createPinia());
     overlayHuts = await import('@stores/map/utils/overlay-huts');
   });
 
-  it('builds vector hut and geojson bookings sources', () => {
-    allure.label('feature', 'map-overlays');
-    allure.severity('critical');
-
-    const { hutsStyle } = overlayHuts;
-    expect(hutsStyle.version).toBe(8);
-
-    const sources = hutsStyle.sources as Record<string, Record<string, unknown>>;
-    const huts = sources['wd-huts'];
-    expect(huts.type).toBe('vector');
-    expect(huts.promoteId).toBe('slug');
-    expect(huts.url).toBe('http://tiles.test/huts');
-
-    const bookings = sources['wd-bookings'];
-    expect(bookings.type).toBe('geojson');
-    expect(bookings.promoteId).toBe('hut_id');
-    // Initial data comes from the empty bookings geojson of the huts store
-    expect(bookings.data).toMatchObject({ type: 'FeatureCollection', features: [] });
+  it('wires the wd-bookings source to the huts store geojson', () => {
+    const style = wiredStyle();
+    overlayHuts.wireBookingsSource(style);
+    const source = style.sources['wd-bookings'] as { data: unknown };
+    expect(source.data).toMatchObject({ type: 'FeatureCollection' });
   });
 
-  it('registers the wd sprite from the tile server', () => {
-    const { hutsStyle } = overlayHuts;
-    expect(hutsStyle.sprite).toEqual([
-      { id: 'wd', url: 'http://tiles.test/sprite/accommodation,availability' },
-      { id: 'wd-sdf', url: 'http://tiles.test/sdf_sprite/accommodation' },
-    ]);
-  });
+  it('updates the wired source when the store geojson changes', async () => {
+    const style = wiredStyle();
+    overlayHuts.wireBookingsSource(style);
 
-  it('orders layers: occupation days, occupation, selected, huts', () => {
-    const { hutsStyle } = overlayHuts;
-    const layerIds = hutsStyle.layers.map(l => l.id);
-    expect(layerIds).toEqual([
-      'wd-huts-occupation-day0',
-      'wd-huts-occupation-day1',
-      'wd-huts-occupation-day2',
-      'wd-huts-occupation-day3',
-      'wd-huts-occupation',
-      'wd-huts-selected',
-      'wd-huts',
-    ]);
-  });
-
-  it('configures zoom ranges for occupation and detail layers', () => {
-    const { hutsStyle } = overlayHuts;
-    const day0 = hutsStyle.layers.find(l => l.id === 'wd-huts-occupation-day0');
-    expect(day0?.type).toBe('symbol');
-    expect(day0?.source).toBe('wd-bookings');
-    expect(day0?.minzoom).toBe(6);
-
-    const occupation = hutsStyle.layers.find(l => l.id === 'wd-huts-occupation');
-    expect(occupation?.maxzoom).toBe(13);
-
-    const huts = hutsStyle.layers.find(l => l.id === 'wd-huts');
-    expect(huts?.type).toBe('symbol');
-    expect((huts as Record<string, unknown>)['source-layer']).toBe('huts');
-  });
-
-  it('maps occupancy status to availability colors and renders no background for unknown', () => {
-    const { hutsStyle } = overlayHuts;
-    const occupation = hutsStyle.layers.find(l => l.id === 'wd-huts-occupation');
-    const color = (occupation?.paint as Record<string, unknown>)['circle-color'] as unknown[];
-    expect(color[0]).toBe('match');
-
-    const flat = color.slice(2);
-    const pairs: Array<[unknown, unknown]> = [];
-    for (let i = 0; i + 1 < flat.length; i += 2) {
-      pairs.push([flat[i], flat[i + 1]]);
-    }
-    expect(pairs).toContainEqual(['empty', '#25BF5E']);
-    expect(pairs).toContainEqual(['low', '#F6AD4B']);
-    expect(pairs).toContainEqual(['medium', '#EA9A37']);
-    expect(pairs).toContainEqual(['high', '#C3731F']);
-    expect(pairs).toContainEqual(['full', '#961A17']);
-    // Fallback for unknown/missing status: fully transparent (no background)
-    expect(color[color.length - 1]).toBe('rgba(0,0,0,0)');
-  });
-
-  it('keeps the small day dots for unknown status and no day-layer filter', () => {
-    const { hutsStyle } = overlayHuts;
-    for (const day of [0, 1, 2, 3]) {
-      const layer = hutsStyle.layers.find(
-        l => l.id === `wd-huts-occupation-day${day}`
-      ) as unknown as Record<string, unknown>;
-      // No filter: unknown days keep rendering their small gray dot + "?" label.
-      // Only the big background circle is suppressed for unknown (via the
-      // transparent circle-color fallback tested above).
-      expect(layer.filter).toBeUndefined();
-      const layout = layer.layout as Record<string, unknown>;
-      const iconImage = layout['icon-image'] as unknown[];
-      expect(JSON.stringify(iconImage)).toContain('wd:color/availability.');
-    }
-  });
-
-  it('labels unknown days with a single ? in the basemap label style', () => {
-    const { hutsStyle } = overlayHuts;
-    const layer = hutsStyle.layers.find(
-      l => l.id === 'wd-huts-occupation-day0'
-    ) as unknown as Record<string, unknown>;
-
-    // text-field: unknown status collapses free/total to a single "?"
-    const textField = layer.layout['text-field'] as unknown[];
-    expect(textField[0]).toBe('case');
-    const innerCase = textField[2] as unknown[];
-    expect(innerCase[0]).toBe('case');
-    // the single "?" branch precedes the free/total concat
-    const unknownBranch = innerCase.indexOf('?');
-    const concatBranch = innerCase.findIndex(part => Array.isArray(part) && part[0] === 'concat');
-    expect(unknownBranch).toBeGreaterThan(-1);
-    expect(concatBranch).toBeGreaterThan(unknownBranch);
-
-    // font: the basemap style's place-label voice (Barlow), Noto fallback
-    const font = layer.layout['text-font'] as string[];
-    expect(font).toContain('Barlow Semi Condensed SemiBold');
-    expect(font).toContain('Noto Sans Bold');
-
-    // paint: no per-status text color (status colors live in the dots),
-    // but the style's pale halo is applied
-    const paint = layer.paint as Record<string, unknown>;
-    expect(paint['text-color']).toBeUndefined();
-    expect(paint['text-halo-color']).toBe('rgba(242, 247, 244, 0.9)');
-    expect(paint['text-halo-width']).toBe(0.8);
-  });
-
-  it('updates the bookings source when the store geojson changes', async () => {
     const { useHutsStore } = await import('@stores/huts-store');
     const store = useHutsStore();
-
     store.bookingsGeojson = {
       type: 'FeatureCollection',
       features: [
@@ -161,9 +71,30 @@ describe('hutsStyle', () => {
 
     await nextTick();
 
-    const source = overlayHuts.hutsStyle.sources['wd-bookings'] as { data: unknown };
-    const data = source.data as { type: string; features: unknown[] };
-    expect(data.type).toBe('FeatureCollection');
-    expect(data.features).toHaveLength(1);
+    const source = style.sources['wd-bookings'] as { data: { type: string; features: unknown[] } };
+    expect(source.data.type).toBe('FeatureCollection');
+    expect(source.data.features).toHaveLength(1);
+  });
+
+  it('no-ops for styles without a wd-bookings source', () => {
+    const style: StyleSpecification = { version: 8, sources: {}, layers: [] };
+    expect(() => overlayHuts.wireBookingsSource(style)).not.toThrow();
+  });
+
+  it('hides occupation layers until a date is picked, then shows them', async () => {
+    const style = wiredStyle();
+    overlayHuts.wireBookingsSource(style);
+    const layer = style.layers[0] as { layout: Record<string, string> };
+
+    // No date picked → availability layers baked hidden
+    expect(layer.layout.visibility).toBe('none');
+
+    const { useHutsStore } = await import('@stores/huts-store');
+    const store = useHutsStore();
+    store.selectedDate = '2026-10-20';
+    await nextTick();
+
+    // Date picked → visible
+    expect(layer.layout.visibility).toBe('visible');
   });
 });

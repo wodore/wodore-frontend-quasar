@@ -13,6 +13,7 @@ import { useMap } from '@indoorequal/vue-maplibre-gl';
 import type { ExpressionSpecification } from 'maplibre-gl';
 
 import { useOverlayStore } from '@stores/map/overlay-store';
+import { useMapCatalogStore } from '@stores/map/map-catalog-store';
 import { currentLocale } from '@services/locale';
 import type {
   OverlayPreferences,
@@ -506,6 +507,9 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
       storageSet(PREFERENCES_KEY, preferences.value);
     }
 
+    // Map-catalog parameters (settings tab) reset with the same action.
+    useMapCatalogStore().resetLayerParameters(overlayName);
+
     // Reapply default filters/settings
     reapplyAllFilters();
     reapplyAllSettings();
@@ -537,13 +541,12 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
   // Auto-initialize on store creation
   initializeAllOverlays();
 
-  // Refetch localized categories when the UI language changes. Rebuild the
-  // overlays FIRST (fresh translated labels/legends/config objects), then
-  // clear the category cache and repopulate all overlay filters/legends
-  // against the new configs — deterministic order, single watcher.
+  // Refetch localized categories when the UI language changes. The map
+  // catalog store rebuilds the overlays itself (fresh localized catalog);
+  // this watcher only clears the category cache and repopulates all
+  // overlay filters/legends against the new configs.
   watch(currentLocale, () => {
-    console.debug('[OverlayConfigStore] Locale changed — rebuilding overlays and category cache');
-    overlayStore.rebuildOverlays();
+    console.debug('[OverlayConfigStore] Locale changed — clearing category cache');
     categoryCache.value.clear();
     void initializeAllOverlays();
   });

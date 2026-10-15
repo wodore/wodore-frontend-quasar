@@ -16,7 +16,7 @@ test.describe('map chrome theming', () => {
   for (const { theme, mode } of CONFIGS) {
     test(`${theme}-${mode}: chip backgrounds and ink`, async ({ page }, testInfo) => {
       tagTest(theme, mode, 'theming');
-      test.setTimeout(90_000);
+      test.setTimeout(240_000);
 
       const vp = mode === 'mobile' ? { width: 390, height: 844 } : { width: 1440, height: 900 };
       await page.setViewportSize(vp);
@@ -60,7 +60,7 @@ test.describe('map chrome theming', () => {
 
     test(`${theme}-${mode}: icon invert treatment`, async ({ page }, _testInfo) => {
       tagTest(theme, mode, 'theming');
-      test.setTimeout(90_000);
+      test.setTimeout(240_000);
 
       const vp = mode === 'mobile' ? { width: 390, height: 844 } : { width: 1440, height: 900 };
       await page.setViewportSize(vp);

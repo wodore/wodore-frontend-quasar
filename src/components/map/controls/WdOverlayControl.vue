@@ -38,6 +38,7 @@ import { LocalStorage } from 'quasar';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
 import type { AllPaintProperties } from '@maplibre/maplibre-gl-style-spec';
 import { useOverlayStore } from '@stores/map/overlay-store';
+import { useMapCatalogStore } from '@stores/map/map-catalog-store';
 import { useBasemapStore } from '@stores/map/basemap-store';
 import { useOverlayConfigStore } from '@stores/map/overlay-config-store';
 import { useMapMenuStore } from '@stores/map/map-menu-store';
@@ -51,6 +52,9 @@ import type {
 const { t } = useI18n();
 const $q = useQuasar();
 const overlayStore = useOverlayStore();
+// Catalog boot status drives the loading/error rows (cold first run).
+const mapCatalogStore = useMapCatalogStore();
+const catalogStatus = computed(() => mapCatalogStore.status);
 const basemapStore = useBasemapStore();
 const configStore = useOverlayConfigStore();
 const menuStore = useMapMenuStore();
@@ -1250,6 +1254,11 @@ function addOverlayLayer({
 }
 
 const addedOverlays = new Set<string>();
+/** Every layer/source id THIS control added to the map — the catalog
+ *  swap (overlaysEpoch) removes exactly these before re-adding, so stale
+ *  factory layers never linger under catalog-compiled ones. */
+const addedLayerIds = new Set<string>();
+const addedSourceIds = new Set<string>();
 
 function getOverlaysInRenderOrder(): Array<OverlaySwitchItem> {
   // Break type inference chain to avoid "excessively deep" TypeScript error
@@ -1287,6 +1296,7 @@ function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwit
   for (const label in overlay.style.sources) {
     if (mapRef.map?.getSource(label) === undefined) {
       mapRef.map?.addSource(label, overlay.style.sources[label]);
+      addedSourceIds.add(label);
     }
   }
   // Add sprites if defined (loads e.g. wd:color/* and wd-sdf/mono/* hut symbols).
@@ -1370,7 +1380,8 @@ function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwit
       onLayer: overlay.onLayer,
       beforeId,
     });
-    if (!added) allAdded = false;
+    if (added) addedLayerIds.add(layer.id);
+    else allAdded = false;
   }
   if (!allAdded) return false;
   setOverlayVisibility(overlay);
@@ -1380,11 +1391,33 @@ function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwit
 
 function addOverlays(): void {
   addedOverlays.clear();
+  addedLayerIds.clear();
+  addedSourceIds.clear();
   const overlaysOrder = getOverlaysInRenderOrder();
   for (const overlay of overlaysOrder) {
     if (overlay.active) addOverlay(overlay, overlaysOrder);
   }
   configStore.reapplyAllFilters();
+}
+
+/** Catalog swap (overlay store bumps overlaysEpoch when items are
+ *  replaced from the backend catalog): drop every layer/source this
+ *  control added — factory-era and catalog-era alike — and re-add the
+ *  (possibly replaced) active overlays. Sprites cannot be removed; the
+ *  catalog build merges same-id sprite packs so the first-added URL
+ *  stays valid (catalog-mapping mergeSpritePacks). */
+function reapplyOverlaysAfterCatalogSwap(): void {
+  const map = mapRef.map;
+  if (!map) return;
+  for (const layerId of addedLayerIds) {
+    if (map.getLayer(layerId)) map.removeLayer(layerId);
+  }
+  // Sources first added by a previous overlay may be shared — remove
+  // each tracked source once no remaining tracked layer references it.
+  for (const sourceId of addedSourceIds) {
+    if (map.getSource(sourceId)) map.removeSource(sourceId);
+  }
+  addOverlays();
 }
 
 function toggleLayer(item: OverlaySwitchItem): void {
@@ -1412,6 +1445,14 @@ watch(
     if (map) bindMap(map);
   },
   { immediate: true }
+);
+
+// Catalog swap → full remove + re-add (see reapplyOverlaysAfterCatalogSwap)
+watch(
+  () => overlayStore.overlaysEpoch,
+  () => {
+    reapplyOverlaysAfterCatalogSwap();
+  }
 );
 
 // ── Actions ───────────────────────────────────────────────────────────────
@@ -1761,6 +1802,16 @@ onBeforeUnmount(() => {
             @pointerup="onRowsPointerUp"
             @pointerleave="onRowsPointerUp"
           >
+            <!-- Catalog boot states: cold first run (loading) / unreachable
+                 (error) — there are no bundled factory fallbacks. -->
+            <div v-if="catalogStatus === 'loading'" class="wd-ovl__status">
+              <q-spinner-dots size="20px" color="primary" />
+              <span class="text-caption">{{ t('overlays.catalog_loading') }}</span>
+            </div>
+            <div v-else-if="catalogStatus === 'error'" class="wd-ovl__status">
+              <q-icon name="warning" color="negative" size="20px" />
+              <span class="text-caption">{{ t('overlays.catalog_error') }}</span>
+            </div>
             <!-- Empty group (edit mode): a quiet pointer to the + buttons below -->
             <div v-if="editMode && miniLayers.length === 0" class="wd-ovl__empty-hint">
               {{ t('overlays.group_empty_hint') }}
@@ -3381,6 +3432,16 @@ body.body--dark .wd-ovl__toolbar-btn--add {
 
 body.body--dark .wd-ovl__empty-hint {
   color: #9fc3b2;
+}
+
+// ── Catalog boot states (loading / unreachable) ──────────────────────
+.wd-ovl__status {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 10px 6px;
+  color: var(--wd-ctl-ink-soft);
 }
 
 .wd-ovl__icon-picker-title {

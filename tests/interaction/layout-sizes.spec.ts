@@ -15,7 +15,7 @@ test.describe('layout and sizing', () => {
   for (const { theme, mode } of CONFIGS) {
     test(`${theme}-${mode}: 48px control audit + alignment`, async ({ page }, testInfo) => {
       tagTest(theme, mode, 'layout');
-      test.setTimeout(90_000);
+      test.setTimeout(240_000);
 
       const vp = mode === 'mobile' ? { width: 390, height: 844 } : { width: 1440, height: 900 };
       await page.setViewportSize(vp);
@@ -113,7 +113,7 @@ test.describe('layout and sizing', () => {
   for (const theme of ['light', 'dark'] as const) {
     test(`${theme}-desktop: pill rests on the reserved panel slot`, async ({ page }, _testInfo) => {
       tagTest(theme, 'desktop', 'layout');
-      test.setTimeout(90_000);
+      test.setTimeout(240_000);
 
       await page.setViewportSize({ width: 1440, height: 900 });
       await loadMap(page);

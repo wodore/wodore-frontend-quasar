@@ -1,6 +1,7 @@
 import { StyleSpecification } from 'maplibre-gl';
 import { PropertyValueSpecification } from 'maplibre-gl';
 import type { OverlayConfig } from '@stores/map/overlay-configs/types';
+import type { MapLayerParameter } from '@services/map-catalog';
 
 type LayerOptions = {
   before: string | undefined;
@@ -28,18 +29,24 @@ export interface BasemapSwitchItem {
   show?: boolean;
   style: StyleSpecification | string;
   layers: Layers;
+  /** Auto-switch target on tile/style host failure (catalog `fallback`
+   *  field): the slug of the basemap to switch to when this one's host
+   *  rejects requests — see WdMapView onMapError. */
+  fallback?: string;
   /** Country-scale basemap: tiles only cover one country. When composed
    *  into the map, the DEFAULT basemap (wd-outdoor-base-mtk) is merged
    *  beneath and the country layers stop rendering below
    *  COUNTRY_BASEMAP_MIN_ZOOM (or `countryMinZoom`) or outside `bbox` —
-   *  whichever hits first (see country-fallback.ts). */
+   *  whichever hits first (see country-fallback.ts). Compiled from the
+   *  catalog `coverage_bbox` when the layer comes from the backend. */
   countryOnly?: boolean;
   /** Per-basemap zoom floor for the country layers — overrides
    *  COUNTRY_BASEMAP_MIN_ZOOM when the raster needs to hide earlier
-   *  (e.g. swisstopo raster: 7). */
+   *  (e.g. swisstopo raster: 7). Catalog `fallback_min_zoom`. */
   countryMinZoom?: number;
   /** [west, south, east, north] — tile coverage of the country basemap
-   *  (slightly padded beyond the border so border strips stay covered). */
+   *  (slightly padded beyond the border so border strips stay covered).
+   *  Catalog `coverage_bbox`. */
   bbox?: [number, number, number, number];
 }
 
@@ -56,6 +63,14 @@ export interface OverlaySwitchItem {
 
   // Overlay configuration (filters, settings, legend)
   config?: OverlayConfig;
+
+  // Backend map catalog (see services/map-catalog.ts): parameter
+  // schemas + the tokenized style kept for client-side re-resolution
+  // when the user overrides parameters. `catalogSlug` is the backend
+  // identity (differs from `name` for aliased slugs).
+  parameters?: MapLayerParameter[];
+  tokenizedStyle?: StyleSpecification;
+  catalogSlug?: string;
 
   //registerMapFn?: CallableFunction | undefined;
   //deregisterMapFn?: CallableFunction | undefined;
