@@ -89,15 +89,19 @@ describe('map catalog URLs', () => {
     expect(gpuSpec(false)).toBe('high');
   });
 
-  it('builds the style endpoint with spec and mode params', () => {
+  it('builds the style endpoint with spec, mode and version params', () => {
     process.env.WODORE_API_HOST = 'https://hub.example.com';
+    // v= rotates the API/browser cache keys on deploy (STYLE_VERSION) —
+    // the API ignores the undeclared parameter.
     expect(styleEndpointUrl('mtb', { spec: 'low' })).toBe(
-      'https://hub.example.com/v1/map/styles/mtb.json?spec=low'
+      'https://hub.example.com/v1/map/styles/mtb.json?spec=low&v=2026-10-16'
     );
     expect(styleEndpointUrl('mtb', { spec: 'high', tokenized: true })).toBe(
-      'https://hub.example.com/v1/map/styles/mtb.json?spec=high&mode=tokenized'
+      'https://hub.example.com/v1/map/styles/mtb.json?spec=high&mode=tokenized&v=2026-10-16'
     );
-    expect(styleEndpointUrl('mtb')).toBe('https://hub.example.com/v1/map/styles/mtb.json');
+    expect(styleEndpointUrl('mtb')).toBe(
+      'https://hub.example.com/v1/map/styles/mtb.json?v=2026-10-16'
+    );
     delete process.env.WODORE_API_HOST;
   });
 

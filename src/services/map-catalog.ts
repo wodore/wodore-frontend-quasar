@@ -107,6 +107,16 @@ export interface MapCatalog {
 
 // ── Fetching ─────────────────────────────────────────────────────────────
 
+/**
+ * Cache-key rotation for every map response (catalog, config, styles).
+ * The API caches these views for 6 h keyed by URL — a re-seed changes the
+ * DB but not the URL, so clients would keep stale bodies until the TTL
+ * expires. Bump this (ISO date + optional .N) with each deploy that
+ * changes served map content: the `v=` query param rotates every cache
+ * key (server + browser), while the API ignores the unknown parameter.
+ */
+export const STYLE_VERSION = '2026-10-16';
+
 /** In-session catalog cache per (lang, role) — concurrent callers share
  *  one request; a failed fetch clears the slot so the next call retries. */
 const catalogCache = new Map<string, Promise<MapCatalog>>();
@@ -161,10 +171,13 @@ export function fetchMapCatalog(lang?: string, role?: 'overlay' | 'basemap'): Pr
     const fetchOnce = () =>
       clientWodore.GET('/v1/map/config', {
         params: {
+          // v rotates the server/browser cache keys on deploy (see
+          // STYLE_VERSION); the API ignores the undeclared parameter.
           query: {
             lang: locale,
             ...(role ? { role } : {}),
-          },
+            v: STYLE_VERSION,
+          } as { lang: string; role?: string; v: string },
         },
         signal: AbortSignal.timeout(CATALOG_FETCH_TIMEOUT_MS),
       });
@@ -224,6 +237,8 @@ export function styleEndpointUrl(slug: string, opts: StyleRequestOptions = {}): 
   const params = new URLSearchParams();
   if (opts.spec) params.set('spec', opts.spec);
   if (opts.tokenized) params.set('mode', 'tokenized');
+  // Cache-key rotation (see STYLE_VERSION) — the API ignores the param.
+  params.set('v', STYLE_VERSION);
   const qs = params.toString();
   const path = `/v1/map/styles/${slug}.json${qs ? `?${qs}` : ''}`;
   const base = apiBase();
@@ -378,10 +393,13 @@ export function fetchBasemapCatalog(lang?: string, spec?: MapSpecTier): Promise<
     const fetchOnce = () =>
       clientWodore.GET('/v1/map/catalog', {
         params: {
+          // v rotates the server/browser cache keys on deploy (see
+          // STYLE_VERSION); the API ignores the undeclared parameter.
           query: {
             lang: locale,
             ...(spec ? { spec } : {}),
-          },
+            v: STYLE_VERSION,
+          } as { lang: string; spec?: string; v: string },
         },
         signal: AbortSignal.timeout(CATALOG_FETCH_TIMEOUT_MS),
       });

@@ -17,6 +17,7 @@ import { StyleSpecification } from 'maplibre-gl';
 import { i18n, currentLocale } from '@services/locale';
 import { isOutdoorStyle, setupOutdoorContours } from '@services/outdoorContours';
 import {
+  STYLE_VERSION,
   fetchBasemapCatalog,
   gpuSpec,
   loadPersistedBasemapCatalog,
@@ -30,12 +31,9 @@ import {
   martinCatalogBasemap,
 } from './utils/catalog-mapping';
 
-/** Cache-buster for basemap style URLs — bump when the served style
- *  documents change (backend PR #292: hill variants, world raster
- *  basemaps, re-ported overlay layers). The style endpoint ignores the
- *  param; the query purely busts browser/CDN caches so clients pick up
- *  new style content without touching persisted state. */
-const STYLE_VERSION = '2026-10-16';
+/** Cache-buster for basemap style URLs — see STYLE_VERSION in
+ *  services/map-catalog (single source; rotates all map cache keys on
+ *  deploys that change served map content). */
 
 /** Compute absolute glyph/sprite URLs for a style, relative to the
  * style's own URL. With setStyle(..., { transformStyle }) MapLibre loses
