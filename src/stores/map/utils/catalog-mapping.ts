@@ -12,7 +12,12 @@
  */
 import type { LayerSpecification, StyleSpecification } from 'maplibre-gl';
 import { validateStyleMin } from '@maplibre/maplibre-gl-style-spec';
-import type { MapCatalogLayer, MapLayerParameter, MapSpecTier } from '@services/map-catalog';
+import type {
+  BasemapCatalogEntry,
+  MapCatalogLayer,
+  MapLayerParameter,
+  MapSpecTier,
+} from '@services/map-catalog';
 import type {
   BasemapSwitchItem,
   LayerNames,
@@ -76,6 +81,10 @@ export const LEGACY_BASEMAP_ANCHORS: Record<
 /** Legacy fallback targets for basemaps without a catalog `fallback`. */
 export const LEGACY_BASEMAP_FALLBACKS: Record<string, string> = {
   'wd-outdoor-base-mtk': 'wd-outdoor-base-ofm',
+  // Backend PR #292 hill variants (their seed rows carry no fallback —
+  // the chain mirrors the non-hill pair and ends keyless).
+  'wd-outdoor-base-mtk-hill': 'wd-outdoor-base-ofm-hill',
+  'wd-outdoor-base-ofm-hill': 'openfreemap-liberty',
   maptiler: 'openfreemap-liberty', // MapTiler-hosted styles
 };
 
@@ -437,6 +446,52 @@ export function mapCatalogBasemap(
           countryOnly: true,
           bbox: coverage,
           countryMinZoom: layer.fallback_min_zoom ?? COUNTRY_BASEMAP_MIN_ZOOM,
+        }
+      : {}),
+  };
+}
+
+/**
+ * Compile one Martin-compatible catalog entry (backend PR #292) into a
+ * switch item — the basemap picker's data source. Unlike the rich catalog
+ * there are no variants or anchors: `path` IS the style URL (spec
+ * resolved server-side); anchors default and pick up the legacy table
+ * for known country basemaps; coverage_bbox drives country composition.
+ */
+export function martinCatalogBasemap(
+  slug: string,
+  entry: BasemapCatalogEntry,
+  styleUrl: string,
+  imgFallback?: (appSlug: string) => string | undefined
+): BasemapSwitchItem {
+  const anchors: BasemapSwitchItem['layers'] = {
+    ways: { before: undefined },
+    background: { before: undefined },
+  };
+  const legacy = LEGACY_BASEMAP_ANCHORS[slug];
+  if (legacy) {
+    for (const [onLayer, opts] of Object.entries(legacy)) {
+      anchors[onLayer as LayerNames] = opts as { before: string | undefined };
+    }
+  }
+  const coverage =
+    Array.isArray(entry.coverage_bbox) && entry.coverage_bbox.length === 4
+      ? (entry.coverage_bbox as [number, number, number, number])
+      : undefined;
+  return {
+    name: slug,
+    label: localizedLayerLabel(slug, entry.name),
+    show: entry.show,
+    active: false,
+    img: entry.preview_url ?? imgFallback?.(slug) ?? '',
+    style: styleUrl,
+    layers: anchors,
+    ...(entry.fallback ? { fallback: entry.fallback } : {}),
+    ...(coverage
+      ? {
+          countryOnly: true,
+          bbox: coverage,
+          countryMinZoom: COUNTRY_BASEMAP_MIN_ZOOM,
         }
       : {}),
   };

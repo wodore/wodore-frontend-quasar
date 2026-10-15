@@ -539,9 +539,11 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
       pruneStyleCache(new Set(catalog.layers.map(l => l.slug)));
       await compileCatalogOverlays(catalog, items => overlayStore.applyCatalogOverlays(items));
       status.value = 'ready';
-      // Basemaps ride the same catalog: refresh their list (keeping the
-      // active selection) so metadata/coverage changes flow through.
-      useBasemapStore().refreshFromCatalog(catalog);
+      // Basemaps ride the Martin-compatible index (backend PR #292):
+      // refreshBasemaps fetches it itself (spec-resolved style paths)
+      // and keeps the active selection — fire-and-forget so overlay
+      // refresh failures stay independent of basemap fetches.
+      void useBasemapStore().refreshBasemaps();
     } catch (error) {
       console.warn('[map-catalog] catalog refresh failed:', error);
       if (!background && status.value !== 'ready') {

@@ -50,7 +50,7 @@ function readCached(url: string): CachedResponse | null {
 // on a 2-core CI runner. The fixture seeds the app's persisted caches
 // from the disk cache (recorded by the route handler below), so tests
 // boot the production cache-first path with ~one replayed request.
-const CATALOG_URL_RE = /\/v1\/map\/catalog/;
+const CATALOG_URL_RE = /\/v1\/map\/config/;
 const STYLE_URL_RE = /\/v1\/map\/styles\/([^/?]+)\.json/;
 /** Only /v1/ API documents are recorded into the staging cache — map
  *  tiles, fonts, sprites and imagery always refetch live (see the route

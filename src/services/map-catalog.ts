@@ -1,17 +1,17 @@
 /**
  * Map layer catalog — the client side of the backend-defined layer
- * registry (wodore-backend `apps/basemaps`, PR #313).
+ * registry (wodore-backend `apps/basemaps`, PR #313 + #292).
  *
- * * `GET /v1/map/catalog?lang=…[&role=…]` — light metadata index:
- *   identity, i18n labels, parameters, device-tier variants, legends,
- *   coverage bounds. Styles are referenced, not inlined.
+ * * `GET /v1/map/config?lang=…` — RICH catalog (overlays): identity,
+ *   i18n labels, parameters, device-tier variants, legends, coverage
+ *   bounds, slot wiring. Styles are referenced, not inlined.
+ * * `GET /v1/map/catalog?lang=…&spec=…` — Martin-compatible index
+ *   (#292): flat `styles` map (slug → {path, name, icon, role,
+ *   is_default, fallback, …}) with spec-resolved style paths — the
+ *   basemap picker's data source (basemap-store).
  * * `GET /v1/map/styles/{slug}.json?spec=&mode=&v=` — the style itself:
  *   resolved by default (a plain MapLibre style any client can use),
  *   `?mode=tokenized` keeps `{{param}}` tokens for customizing clients.
- *
- * The catalog may not be deployed on every environment yet — callers
- * treat it as an UPGRADE over the bundled factory definitions, never as
- * a hard dependency (see map-catalog-store / overlay-store).
  */
 import type { StyleSpecification } from 'maplibre-gl';
 import { clientWodore } from '@clients/index';
@@ -159,7 +159,7 @@ export function fetchMapCatalog(lang?: string, role?: 'overlay' | 'basemap'): Pr
     // catalog boot — the second attempt usually succeeds. The fetchOnce
     // helper keeps the per-endpoint response narrowing in the loop.
     const fetchOnce = () =>
-      clientWodore.GET('/v1/map/catalog', {
+      clientWodore.GET('/v1/map/config', {
         params: {
           query: {
             lang: locale,
@@ -310,6 +310,102 @@ export function loadPersistedCatalog(): PersistedCatalog | null {
   const cached = storageGet(CATALOG_CACHE_KEY) as PersistedCatalog | null;
   if (!cached || !Array.isArray(cached.layers)) return null;
   return cached;
+}
+
+// ── Martin-compatible basemap catalog (backend PR #292) ───────────────
+
+/** One entry of the Martin-compatible style index: flat, selector-ready,
+ *  with a spec-resolved style `path` (a complete MapLibre style document
+ *  served by the backend — no client-side composition). */
+export interface BasemapCatalogEntry {
+  path: string;
+  name: string;
+  description?: string;
+  icon?: string;
+  icon_badge?: string;
+  role: 'basemap' | 'overlay';
+  order?: number;
+  slot?: string | null;
+  is_default?: boolean;
+  show?: boolean;
+  min_zoom?: number | null;
+  max_zoom?: number | null;
+  preview_url?: string | null;
+  /** Auto-switch target on tile/style host failure (WdMapView onMapError). */
+  fallback?: string | null;
+  coverage_bbox?: unknown;
+}
+
+/** Martin-compatible catalog response — the basemap picker's data source. */
+export interface BasemapCatalog {
+  styles: Record<string, BasemapCatalogEntry>;
+  savedAt?: string;
+  lang?: string;
+}
+
+const BASEMAP_CATALOG_CACHE_KEY = 'mapBasemapCatalogCache';
+
+export function persistBasemapCatalog(catalog: BasemapCatalog, lang: string): void {
+  storageSet(BASEMAP_CATALOG_CACHE_KEY, {
+    savedAt: new Date().toISOString(),
+    lang,
+    styles: catalog.styles,
+  } satisfies BasemapCatalog);
+}
+
+/** Last persisted basemap catalog (synchronous boot cache). */
+export function loadPersistedBasemapCatalog(): BasemapCatalog | null {
+  const cached = storageGet(BASEMAP_CATALOG_CACHE_KEY) as BasemapCatalog | null;
+  if (!cached || typeof cached.styles !== 'object' || cached.styles === null) return null;
+  return cached;
+}
+
+/** In-session cache per (lang, spec) — concurrent callers share one
+ *  request; a failed fetch clears the slot so the next call retries. */
+const basemapCatalogCache = new Map<string, Promise<BasemapCatalog>>();
+
+/**
+ * Fetch the Martin-compatible basemap catalog (backend PR #292): a flat
+ * map of style-slug → selector entry whose `path`s are spec-resolved
+ * style endpoint URLs. Rejects with MapCatalogUnavailableError.
+ */
+export function fetchBasemapCatalog(lang?: string, spec?: MapSpecTier): Promise<BasemapCatalog> {
+  const locale = lang ?? currentLocale();
+  const key = `${locale}:${spec ?? '*'}`;
+  const cached = basemapCatalogCache.get(key);
+  if (cached) return cached;
+  const promise = (async () => {
+    const fetchOnce = () =>
+      clientWodore.GET('/v1/map/catalog', {
+        params: {
+          query: {
+            lang: locale,
+            ...(spec ? { spec } : {}),
+          },
+        },
+        signal: AbortSignal.timeout(CATALOG_FETCH_TIMEOUT_MS),
+      });
+    let lastError: unknown = 'empty response';
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const { data, error } = await fetchOnce();
+        const styles = (data as { styles?: Record<string, BasemapCatalogEntry> } | undefined)
+          ?.styles;
+        if (!error && data && styles && typeof styles === 'object') {
+          return { styles } satisfies BasemapCatalog;
+        }
+        lastError = error ?? 'empty response';
+      } catch (e) {
+        // Network throw or timeout abort — retry, then reject loudly.
+        lastError = e;
+      }
+      if (attempt === 0) await new Promise(resolve => setTimeout(resolve, 1500));
+    }
+    throw new MapCatalogUnavailableError(lastError);
+  })();
+  basemapCatalogCache.set(key, promise);
+  promise.catch(() => basemapCatalogCache.delete(key));
+  return promise;
 }
 
 /** A persisted style document + the layer version it was built from. */

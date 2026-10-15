@@ -544,14 +544,31 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** map-catalog — Martin-compatible catalog with selector metadata. */
+        get: operations["map-catalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/map/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
         /**
-         * map-catalog — Map layer catalog (overlays and basemaps).
+         * map-config — Map layer catalog (overlays and basemaps).
          * @description Metadata index for map clients: identities, labels in the
          *     request language, icons, parameter schemas, device-tier
          *     variants, category projections and coverage bounds. Large
          *     styles are referenced by URL, small ones inlined.
          */
-        get: operations["map-catalog"];
+        get: operations["map-config"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5607,6 +5624,61 @@ export interface operations {
         };
     };
     "map-catalog": {
+        parameters: {
+            query?: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /** @description Device-tier spec (low | medium | high); self-resolves to nearest */
+                spec?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    "Cache-Control": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Raised when request components cannot be parsed */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Raised when provided `Accept` header cannot be satisfied */
+            406: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Raised when returned response does not match the response schema */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+        };
+    };
+    "map-config": {
         parameters: {
             query?: {
                 /** @description Select language code: de, en, fr, it. */

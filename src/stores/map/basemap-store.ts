@@ -17,20 +17,25 @@ import { StyleSpecification } from 'maplibre-gl';
 import { i18n, currentLocale } from '@services/locale';
 import { isOutdoorStyle, setupOutdoorContours } from '@services/outdoorContours';
 import {
-  fetchMapCatalog,
+  fetchBasemapCatalog,
   gpuSpec,
-  loadPersistedCatalog,
-  pickVariant,
-  styleEndpointUrl,
-  type MapCatalog,
-  type MapCatalogLayer,
-  type MapSpecTier,
+  loadPersistedBasemapCatalog,
+  persistBasemapCatalog,
+  type BasemapCatalog,
+  type BasemapCatalogEntry,
 } from '@services/map-catalog';
 import {
   LEGACY_BASEMAP_FALLBACKS,
   RENAMED_BASEMAP_SLUGS,
-  mapCatalogBasemap,
+  martinCatalogBasemap,
 } from './utils/catalog-mapping';
+
+/** Cache-buster for basemap style URLs — bump when the served style
+ *  documents change (backend PR #292: hill variants, world raster
+ *  basemaps, re-ported overlay layers). The style endpoint ignores the
+ *  param; the query purely busts browser/CDN caches so clients pick up
+ *  new style content without touching persisted state. */
+const STYLE_VERSION = '2026-10-16';
 
 /** Compute absolute glyph/sprite URLs for a style, relative to the
  * style's own URL. With setStyle(..., { transformStyle }) MapLibre loses
@@ -138,8 +143,10 @@ function loadDefaultStyleObject(): Promise<StyleSpecification | null> {
 const t = i18n.global.t;
 
 /** The default world basemap — also the fallback composed beneath
- *  country basemaps (see country-fallback.ts). */
-const DEFAULT_BASEMAP_NAME = 'wd-outdoor-base-mtk';
+ *  country basemaps (see country-fallback.ts). Backend PR #292 moved
+ *  the default to the hill variant (client raster-dem relief, per
+ *  user decision); the fallback is its OpenFreeMap twin. */
+const DEFAULT_BASEMAP_NAME = 'wd-outdoor-base-mtk-hill';
 
 // Keyless plain OSM raster (tile.openstreetmap.org) — style for the weak-GPU
 // raster variant of "Switzerland Topo Light". Deliberately NOT MapTiler
@@ -807,37 +814,30 @@ export const useBasemapStore = defineStore('basemap', () => {
   }
 
   // Async function to initialize basemaps based on GPU tier
-  /** Latest catalog build (filled by refreshFromCatalog; pushed into the
-   *  reactive array by the init path). */
-  let pendingBasemapItems: BasemapSwitchItem[] = [];
 
-  /** Device spec of the last build (refresh reuses it when not given). */
-  let lastSpec: MapSpecTier = 'high';
-
-  /** Style URL for one catalog basemap layer: external env-resolved
-   *  style_urls pass through, everything else goes through the style
-   *  endpoint with `spec=` (MapLibre loads the document; ETag caching
-   *  revalidates it). */
-  function styleUrlFor(layer: MapCatalogLayer, spec: MapSpecTier): string {
-    const variant = pickVariant(layer.variants, spec);
-    const raw = variant?.style_url;
-    return raw && /^https?:\/\//i.test(raw) ? raw : styleEndpointUrl(layer.slug, { spec });
+  /** Basemap style URL for one Martin-catalog entry: the spec-resolved
+   *  `path` straight from the catalog plus the STYLE_VERSION cache
+   *  buster (the endpoint ignores unknown params — the query only busts
+   *  browser/CDN caches). */
+  function styleUrlFor(entry: BasemapCatalogEntry): string {
+    const sep = entry.path.includes('?') ? '&' : '?';
+    return `${entry.path}${sep}v=${STYLE_VERSION}`;
   }
 
   /**
-   * Compile the catalog's basemap layers into switch items. Called from
-   * the init path AND from the map-catalog store's background refresh —
-   * a refresh keeps the ACTIVE basemap selected (and re-applies it with
-   * force only when its style URL changed); labels re-localize via
-   * applyBasemapLabels.
+   * Compile the Martin-compatible catalog (backend PR #292) into switch
+   * items. Called from the init path AND from refreshBasemaps (the
+   * map-catalog store's background refresh) — a refresh keeps the ACTIVE
+   * basemap selected (and re-applies it with force only when its style
+   * URL changed); labels re-localize via applyBasemapLabels.
    */
-  function refreshFromCatalog(catalog: MapCatalog, spec?: MapSpecTier): void {
-    const tier = spec ?? lastSpec;
-    lastSpec = tier;
-    const layers = catalog.layers.filter(l => l.role === 'basemap');
-    const styleUrls = new Map(layers.map(l => [l.slug, styleUrlFor(l, tier)]));
-    const items = layers.map(layer =>
-      mapCatalogBasemap(layer, tier, styleUrls, slug => localBasemapThumb(slug))
+  function refreshFromCatalog(catalog: BasemapCatalog): void {
+    const entries = Object.entries(catalog.styles)
+      .filter(([, entry]) => entry.role === 'basemap')
+      .sort(([, a], [, b]) => (a.order ?? 0) - (b.order ?? 0));
+    catalogDefaultSlug = entries.find(([, entry]) => entry.is_default)?.[0] ?? DEFAULT_BASEMAP_NAME;
+    const items = entries.map(([slug, entry]) =>
+      martinCatalogBasemap(slug, entry, styleUrlFor(entry), slug => localBasemapThumb(slug))
     );
     // Keep the ACTIVE selection across the refresh (same slug stays on).
     const activeName = getBasemap()?.name;
@@ -859,7 +859,6 @@ export const useBasemapStore = defineStore('basemap', () => {
         }
       }
     }
-    pendingBasemapItems = items;
     applyBasemapLabels();
   }
 
@@ -868,6 +867,16 @@ export const useBasemapStore = defineStore('basemap', () => {
    *  BasemapSwitchItem['style']). */
   let activeStyleUrl: BasemapSwitchItem['style'] | undefined;
 
+  /** The catalog's `is_default` basemap slug (set by refreshFromCatalog;
+   *  backend PR #292 seed: wd-outdoor-base-mtk-hill). */
+  let catalogDefaultSlug: string | undefined;
+
+  /** Resolve the default basemap: the catalog's is_default entry, else
+   *  the compile-time DEFAULT_BASEMAP_NAME. */
+  function findDefaultBasemap(): BasemapSwitchItem | undefined {
+    return findBasemapBySlug(catalogDefaultSlug ?? DEFAULT_BASEMAP_NAME);
+  }
+
   /** Local thumbnails by slug (the seed carries no preview URLs yet). */
   function localBasemapThumb(slug: string): string | undefined {
     const thumbs: Record<string, string> = {
@@ -875,11 +884,30 @@ export const useBasemapStore = defineStore('basemap', () => {
       'ch-swisstopo-full': getImageUrl('swiss-raster.png'),
       'maptiler-hybrid': getImageUrl('satellite.png'),
       'wd-outdoor-base-mtk': getImageUrl('outdoor-v2.png'),
+      'wd-outdoor-base-mtk-hill': getImageUrl('outdoor-v2.png'),
       'wd-outdoor-base-ofm': getImageUrl('outdoor-v2.png'),
+      'wd-outdoor-base-ofm-hill': getImageUrl('outdoor-v2.png'),
+      'mtk-outdoor': getImageUrl('outdoor-v2.png'),
       'openfreemap-liberty': getImageUrl('outdoor-v2.png'),
       'oe-raster': getImageUrl('oe-raster.png'),
+      'world-topo': getImageUrl('swiss-raster.png'),
+      'world-satellite-hybrid': getImageUrl('satellite.png'),
     };
     return thumbs[slug];
+  }
+
+  /** Fetch the Martin-compatible basemap catalog (backend PR #292) and
+   *  rebuild the basemap list — called by the map-catalog store's
+   *  background refresh. Keeps the active selection; re-applies only
+   *  when the style URL changed. Failures log and keep current state. */
+  async function refreshBasemaps(): Promise<void> {
+    try {
+      const catalog = await fetchBasemapCatalog(currentLocale(), gpuSpec(weakGpu));
+      persistBasemapCatalog(catalog, currentLocale());
+      refreshFromCatalog(catalog);
+    } catch (error) {
+      console.warn('[basemap-store] basemap catalog refresh failed:', error);
+    }
   }
 
   async function runBasemapInit() {
@@ -940,14 +968,23 @@ export const useBasemapStore = defineStore('basemap', () => {
       useRaster
     );
 
-    // ── Backend map catalog (design.md D1) ────────────────────────────
+    // ── Backend map catalog (backend PR #292 — Martin-compatible index) ─
     // Cache-first: the persisted catalog renders instantly; a cold first
     // run awaits the network (explicit loading state upstream) — there
     // are NO bundled factory basemaps anymore.
-    let catalog: MapCatalog | null = loadPersistedCatalog();
-    if (!catalog) {
+    const cachedCatalog = loadPersistedBasemapCatalog();
+    if (cachedCatalog) {
+      refreshFromCatalog(cachedCatalog);
+      // Warm boot: refresh in the background — metadata/style changes
+      // flow through (the active selection is kept; a changed style URL
+      // re-applies with force).
+      void refreshBasemaps();
+    } else {
+      // Cold first run: await the network so the map has a style at all.
       try {
-        catalog = await fetchMapCatalog();
+        const catalog = await fetchBasemapCatalog(currentLocale(), gpuSpec(useRaster));
+        persistBasemapCatalog(catalog, currentLocale());
+        refreshFromCatalog(catalog);
       } catch (error) {
         console.error('[basemap-store] map catalog unavailable — no basemaps:', error);
         Notify.create({
@@ -960,13 +997,6 @@ export const useBasemapStore = defineStore('basemap', () => {
       }
     }
 
-    const spec = gpuSpec(useRaster);
-    refreshFromCatalog(catalog, spec);
-    // SAFETY: basemaps is the reactive BasemapSwitchItem[] declared above;
-    // the widened cast breaks the TS2589 recursion (same pattern as
-    // findBasemapBySlug) — items are BasemapSwitchItem.
-    (basemaps as unknown as BasemapSwitchItem[]).push(...pendingBasemapItems);
-
     // Determine which basemap to use
     let basemapToSet: BasemapSwitchItem | undefined;
 
@@ -978,27 +1008,18 @@ export const useBasemapStore = defineStore('basemap', () => {
       } else {
         console.debug('Saved basemap not found, using default');
         // Saved name unknown (e.g. renamed basemap) — use the catalog's
-        // default flag, falling back to the known default slug.
-        basemapToSet =
-          findBasemapBySlug(
-            catalog?.layers.find(l => l.role === 'basemap' && l.is_default)?.slug ?? ''
-          ) ?? findBasemapBySlug(DEFAULT_BASEMAP_NAME);
+        // default flag, falling back to the compile-time default slug.
+        basemapToSet = findDefaultBasemap();
       }
     } else {
-      // No saved basemap: default to the Maptoolkit-based outdoor style
-      // (routes/sac/rock/contours). The keyless OpenFreeMap style is the
-      // hidden fallback for when Maptoolkit tiles are unreachable.
+      // No saved basemap: the catalog's is_default (backend PR #292 seed:
+      // wd-outdoor-base-mtk-hill — client relief variant). The keyless
+      // OpenFreeMap style is the hidden fallback for when Maptoolkit
+      // tiles are unreachable.
       // SAFETY: basemaps is a reactive Pinia array of BasemapSwitchItem at
       // runtime; the `unknown` hop only sidesteps the reactive-proxy type
       // mismatch between the store's declaration and the switch API.
-      const defaultSlug =
-        catalog?.layers.find(l => l.role === 'basemap' && l.is_default)?.slug ??
-        DEFAULT_BASEMAP_NAME;
-      // SAFETY: same widened cast as above — basemaps holds catalog-compiled
-      // BasemapSwitchItem entries; reading .name only.
-      basemapToSet =
-        (basemaps as unknown as Array<BasemapSwitchItem>).find(b => b.name === defaultSlug) ||
-        (basemaps as unknown as Array<BasemapSwitchItem>)[0];
+      basemapToSet = findDefaultBasemap() || (basemaps as unknown as Array<BasemapSwitchItem>)[0];
     }
 
     // A MapTiler-based basemap with a rejected key (suspended/exhausted)
@@ -1058,7 +1079,7 @@ export const useBasemapStore = defineStore('basemap', () => {
     setBasemap,
     getBasemap,
     initializeBasemaps,
-    refreshFromCatalog,
+    refreshBasemaps,
     findBasemapBySlug,
     resolveFallbackBasemap,
     //setEmitter,
