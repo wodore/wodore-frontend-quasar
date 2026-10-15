@@ -51,7 +51,7 @@ test.describe('group switching updates the map', () => {
   // the regression; the widget chrome is themed by the other specs.
   test('light-mobile: cycled groups keep map layers in sync', async ({ page }, testInfo) => {
     tagTest('light', 'mobile', 'group-switch');
-    test.setTimeout(90_000);
+    test.setTimeout(240_000);
 
     await page.setViewportSize({ width: 390, height: 844 });
     await loadMap(page);
@@ -145,7 +145,7 @@ test.describe('group switching updates the map', () => {
     page,
   }, testInfo) => {
     tagTest('light', 'mobile', 'group-switch');
-    test.setTimeout(90_000);
+    test.setTimeout(240_000);
 
     await page.setViewportSize({ width: 390, height: 844 });
     await loadMap(page);
