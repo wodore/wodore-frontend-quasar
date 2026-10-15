@@ -52,6 +52,10 @@ function readCached(url: string): CachedResponse | null {
 // boot the production cache-first path with ~one replayed request.
 const CATALOG_URL_RE = /\/v1\/map\/catalog/;
 const STYLE_URL_RE = /\/v1\/map\/styles\/([^/?]+)\.json/;
+/** Only /v1/ API documents are recorded into the staging cache — map
+ *  tiles, fonts, sprites and imagery always refetch live (see the route
+ *  handler's recording branch for why). */
+const RECORDABLE_URL_RE = /\/v1\//;
 // The index is a DIRECTORY of per-URL marker files: playwright runs spec
 // files in parallel workers (4 on CI), and a single JSON index would be a
 // read-modify-write race across processes — a worker could clobber the
@@ -240,7 +244,17 @@ export const test = baseTest.extend<{ stagingCache: void }>({
           });
         }
         try {
-          if (resp.ok()) {
+          // Record ONLY /v1/ API documents (catalog, styles, categories,
+          // icons) — never map tiles, fonts or sprites. The catalog-era
+          // suite recorded every tile response and the restored cache
+          // grew to ~18 MB: every replayed tile then passes through a
+          // sync readFileSync on the Playwright process, starving
+          // map-idle waits on 2-core CI runners (desktop viewports
+          // request the most tiles and failed first, mobile passed).
+          // Tiles/sprites/fonts refetch live from the CDN each run — it
+          // is fast, CORS-open, and keeps the cache to the boot-critical
+          // ~100 KB of documents.
+          if (resp.ok() && RECORDABLE_URL_RE.test(url)) {
             const body = await resp.body();
             if (body && body.length <= MAX_ENTRY_BYTES) {
               const headers = { ...resp.headers() };
