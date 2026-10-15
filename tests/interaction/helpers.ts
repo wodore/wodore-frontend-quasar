@@ -378,8 +378,14 @@ export async function pinTheme(page: Page, theme: 'light' | 'dark'): Promise<voi
  * Wait until MapLibre settles: style loaded, tiles loaded, not moving —
  * with one extra 'idle' round as a safety net for data overlays landing
  * after the first settle. Replaces the fixed sleeps these specs used.
+ *
+ * Default budget 30 s: a catalog style swap now loads sprite packs
+ * asynchronously (addSprite probing + icon-image re-set), so the settle
+ * after an overlay select legitimately exceeds the old 10 s on 2-core
+ * CI runners. The promise resolves as soon as the map idles — the
+ * budget only bounds pathological cases.
  */
-export async function waitForMapIdle(page: Page, timeout = 10_000): Promise<void> {
+export async function waitForMapIdle(page: Page, timeout = 30_000): Promise<void> {
   const settled = `(function() {
     const map = ${GET_MAP};
     if (!map) return false;
