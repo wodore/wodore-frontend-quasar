@@ -39,6 +39,7 @@ declare module 'vue' {
     WdBasemapControl: typeof import('./src/components/map/controls/WdBasemapControl.vue')['default']
     WdBeta: typeof import('./src/components/utils/WdBeta.vue')['default']
     WdBottomSheet: typeof import('./src/components/utils/WdBottomSheet.vue')['default']
+    WdCategoryIcon: typeof import('./src/components/categories/WdCategoryIcon.vue')['default']
     WdConfirmPopover: typeof import('./src/components/quasar/WdConfirmPopover.vue')['default']
     WdContributeButton: typeof import('./src/components/contribute/WdContributeButton.vue')['default']
     WdContributePage: typeof import('./src/components/contribute/WdContributePage.vue')['default']
