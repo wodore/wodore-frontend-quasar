@@ -2,8 +2,8 @@
 //
 // Map catalog store — boot cache + version sync + parameter application.
 // The overlay store boots EMPTY (no factories): the catalog renders from
-// the persisted cache or the network; styles refetch only when a layer's
-// `version` changes (backend #315).
+// the persisted layers cache or the network; styles refetch only when a
+// layer's `modified` timestamp changes (backend #331).
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import type { StyleSpecification } from 'maplibre-gl';
@@ -24,10 +24,11 @@ vi.mock('@indoorequal/vue-maplibre-gl', () => ({
   useMap: () => ({ map: fakeMap }),
 }));
 
-// The basemap store self-initializes (GPU detection, its own catalog
-// fetch) — the catalog store only calls refreshFromCatalog on it.
+// The basemap store self-initializes (GPU detection, its own picker
+// compile) — the catalog store only awaits its GPU-tier promise so one
+// shared layers fetch carries the right spec.
 vi.mock('@stores/map/basemap-store', () => ({
-  useBasemapStore: () => ({ refreshFromCatalog: vi.fn() }),
+  useBasemapStore: () => ({ gpuSpecReady: Promise.resolve('high' as const) }),
 }));
 
 // Quasar: LocalStorage no-ops under happy-dom; Notify records calls.
@@ -109,12 +110,10 @@ const TRANSPORT_STYLE = {
 const VERSION_A = '2026-10-14T10:00:00+00:00';
 const VERSION_B = '2026-10-14T12:00:00+00:00';
 
-const catalogFor = (mtbVersion: string | undefined) => ({
-  slots: [
-    { slug: 'background', label: 'Background', order: 0 },
-    { slug: 'ways', label: 'Ways', order: 1 },
-  ],
-  layers: [
+/** A resolved layers envelope (backend #331): `{data, count}`, one
+ *  layer per slug with the served spec + spec-resolved style_url. */
+const catalogFor = (mtbModified: string | undefined) => {
+  const layers = [
     {
       slug: 'transport-stops',
       role: 'overlay',
@@ -126,6 +125,8 @@ const catalogFor = (mtbVersion: string | undefined) => ({
       order: 2,
       show: true,
       is_default: false,
+      spec: 'high' as const,
+      style_url: '/v1/map/styles/transport-stops.json?spec=high',
       min_zoom: null,
       max_zoom: null,
       coverage_bbox: null,
@@ -140,8 +141,7 @@ const catalogFor = (mtbVersion: string | undefined) => ({
       attributions: [],
       license: null,
       legend: null,
-      ...(mtbVersion !== undefined ? { version: mtbVersion } : {}),
-      variants: [{ spec: 'medium' as const }],
+      ...(mtbModified !== undefined ? { modified: mtbModified } : {}),
     },
     {
       slug: 'mtb',
@@ -154,6 +154,8 @@ const catalogFor = (mtbVersion: string | undefined) => ({
       order: 4,
       show: true,
       is_default: false,
+      spec: 'high' as const,
+      style_url: '/v1/map/styles/mtb.json?spec=high',
       min_zoom: null,
       max_zoom: null,
       coverage_bbox: null,
@@ -177,14 +179,15 @@ const catalogFor = (mtbVersion: string | undefined) => ({
       attributions: [],
       license: null,
       legend: null,
-      ...(mtbVersion !== undefined ? { version: mtbVersion } : {}),
-      variants: [{ spec: 'medium' as const }],
+      ...(mtbModified !== undefined ? { modified: mtbModified } : {}),
     },
-  ],
-});
+  ];
+  return { data: layers, count: layers.length };
+};
 
 const styleFetches: string[] = [];
 const catalogFetch = vi.fn();
+const slotsFetch = vi.fn();
 const styleFetch = vi.fn();
 
 vi.mock('@services/locale', async importOriginal => {
@@ -197,6 +200,7 @@ vi.mock('@services/map-catalog', async importOriginal => {
   return {
     ...actual,
     fetchMapCatalog: (...args: unknown[]) => catalogFetch(...(args as [])),
+    fetchMapSlots: (...args: unknown[]) => slotsFetch(...(args as [])),
     fetchMapStyle: (url: string) => {
       styleFetches.push(url);
       return styleFetch(url);
@@ -227,7 +231,13 @@ describe('map catalog store (boot cache + version sync)', () => {
     styleFetches.length = 0;
     paintCalls.length = 0;
     catalogFetch.mockReset();
+    slotsFetch.mockReset();
     styleFetch.mockReset();
+    catalogFetch.mockReset();
+    slotsFetch.mockResolvedValue([
+      { slug: 'background', label: 'Background', order: 0 },
+      { slug: 'ways', label: 'Ways', order: 1 },
+    ]);
     styleFetch.mockImplementation(async (url: string) =>
       url.includes('mode=tokenized')
         ? structuredClone(MTB_TOKENIZED)
@@ -245,19 +255,21 @@ describe('map catalog store (boot cache + version sync)', () => {
 
     expect(store.status).toBe('ready');
     expect(overlaysOf().map(o => o.name)).toEqual(['transport-stops', 'mtb']);
-    // Persisted: catalog snapshot + one style entry per layer (tokenized
-    // for the parameterized layer, resolved for the plain one).
-    const persistedCatalog = JSON.parse(window.localStorage.getItem('mapCatalogCache')!);
-    expect(persistedCatalog.layers).toHaveLength(2);
+    // Persisted: layers snapshot ({savedAt, lang, data}) + one style
+    // entry per layer (tokenized for the parameterized layer, resolved
+    // for the plain one).
+    const persistedLayers = JSON.parse(window.localStorage.getItem('mapLayersCache')!);
+    expect(persistedLayers.data).toHaveLength(2);
+    expect(persistedLayers.lang).toBe('en');
     const styleCache = JSON.parse(window.localStorage.getItem('mapCatalogStyleCache')!);
     expect(Object.keys(styleCache).sort()).toEqual([
       'mtb|high|tokenized',
       'transport-stops|high|resolved',
     ]);
-    expect(styleCache['mtb|high|tokenized'].version).toBe(VERSION_A);
+    expect(styleCache['mtb|high|tokenized'].modified).toBe(VERSION_A);
   });
 
-  it('warm boot: the persisted cache serves unchanged versions without refetching', async () => {
+  it('warm boot: the persisted cache serves unchanged modified timestamps without refetching', async () => {
     // First session populates the cache
     catalogFetch.mockResolvedValue(catalogFor(VERSION_A));
     const store = stores.useMapCatalogStore();
@@ -265,14 +277,14 @@ describe('map catalog store (boot cache + version sync)', () => {
     const firstSessionFetches = styleFetches.length;
     expect(firstSessionFetches).toBeGreaterThan(0);
 
-    // Second session: same versions — no style fetches at all
+    // Second session: same modified timestamps — no style fetches at all
     styleFetches.length = 0;
     await store.refreshCatalog({ background: true });
     expect(styleFetches).toHaveLength(0);
     expect(overlaysOf().map(o => o.name)).toEqual(['transport-stops', 'mtb']);
   });
 
-  it('version change: only the changed layer refetches', async () => {
+  it('modified change: only the changed layer refetches', async () => {
     catalogFetch.mockResolvedValue(catalogFor(VERSION_A));
     const store = stores.useMapCatalogStore();
     await store.initOverlays();
@@ -280,8 +292,8 @@ describe('map catalog store (boot cache + version sync)', () => {
 
     // Fresh catalog: the transport layer bumped, mtb unchanged
     const next = catalogFor(VERSION_A);
-    const transport = next.layers.find(l => l.slug === 'transport-stops')!;
-    transport.version = VERSION_B;
+    const transport = next.data.find(l => l.slug === 'transport-stops')!;
+    transport.modified = VERSION_B;
     catalogFetch.mockResolvedValue(next);
     await store.refreshCatalog({ background: true });
 
@@ -291,20 +303,20 @@ describe('map catalog store (boot cache + version sync)', () => {
     expect(styleFetches[0]).toContain('spec=');
     expect(styleFetches[0]).not.toContain('tokenized');
     const styleCache = JSON.parse(window.localStorage.getItem('mapCatalogStyleCache')!);
-    expect(styleCache['transport-stops|high|resolved'].version).toBe(VERSION_B);
-    expect(styleCache['mtb|high|tokenized'].version).toBe(VERSION_A);
+    expect(styleCache['transport-stops|high|resolved'].modified).toBe(VERSION_B);
+    expect(styleCache['mtb|high|tokenized'].modified).toBe(VERSION_A);
   });
 
-  it('missing version (pre-#315 backend): cached null-version entries stay valid', async () => {
+  it('missing modified (pre-#331 backend): cached null-modified entries stay valid', async () => {
     catalogFetch.mockResolvedValue(catalogFor(undefined));
     const store = stores.useMapCatalogStore();
     await store.initOverlays();
     styleFetches.length = 0;
 
-    // Same version-less catalog again → cache serves
+    // Same modified-less catalog again → cache serves
     await store.refreshCatalog({ background: true });
     expect(styleFetches).toHaveLength(0);
-    // The first version-bearing catalog invalidates the cache once
+    // The first modified-bearing catalog invalidates the cache once
     styleFetches.length = 0;
     catalogFetch.mockResolvedValue(catalogFor(VERSION_A));
     await store.refreshCatalog({ background: true });

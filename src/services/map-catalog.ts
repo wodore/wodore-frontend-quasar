@@ -1,37 +1,28 @@
 /**
  * Map layer catalog — the client side of the backend-defined layer
- * registry (wodore-backend `apps/basemaps`, PR #313 + #292).
+ * registry (wodore-backend `apps/basemaps`, PR #331 + #313 + #292).
  *
- * * `GET /v1/map/config?lang=…` — RICH catalog (overlays): identity,
- *   i18n labels, parameters, device-tier variants, legends, coverage
- *   bounds, slot wiring. Styles are referenced, not inlined.
- * * `GET /v1/map/catalog?lang=…&spec=…` — Martin-compatible index
- *   (#292): flat `styles` map (slug → {path, name, icon, role,
- *   is_default, fallback, …}) with spec-resolved style paths — the
- *   basemap picker's data source (basemap-store).
- * * `GET /v1/map/styles/{slug}.json?spec=&mode=&v=` — the style itself:
+ * * `GET /v1/map/layers?lang=…&spec=…` — the RESOLVED catalog: one
+ *   layer per slug (the backend applies the spec fallback chain and
+ *   answers with the served `spec` + spec-resolved `style_url`),
+ *   `{data: [...], count: N}` envelope, ETag + revalidate-always
+ *   caching (one online reload is always fresh — no cache-busting
+ *   params, the browser revalidates via If-None-Match).
+ * * `GET /v1/map/slots?lang=…` — `{data: [{slug, label, order}]}` —
+ *   the render-slot list that left the layers payload (#331).
+ * * `GET /v1/map/styles/{slug}.json?spec=&mode=` — the style itself:
  *   resolved by default (a plain MapLibre style any client can use),
- *   `?mode=tokenized` keeps `{{param}}` tokens for customizing clients.
+ *   `?mode=tokenized` keeps `{{param}}` tokens for customizing
+ *   clients.
  */
 import type { StyleSpecification } from 'maplibre-gl';
-import { clientWodore } from '@clients/index';
+import { clientMapLayers, type MapLayerSummary } from '@clients/index';
 import { getEnv } from '@services/runtimeEnv';
 import { currentLocale } from '@services/locale';
-import type { schemasWodore } from '@clients/index';
 
 // ── DTO types (narrowed views of the generated client shapes) ────────────
 
 export type MapSpecTier = 'low' | 'medium' | 'high';
-
-/** One device-tier variant of a layer (catalog entry). */
-export interface MapLayerVariant {
-  spec: MapSpecTier;
-  /** Style endpoint URL (root-relative) or an env-resolved external URL. */
-  style_url?: string | null;
-  /** Authored style document — tokens/env NOT resolved (we use the style
-   *  endpoint instead; kept for type completeness). */
-  inline_style?: Record<string, unknown> | null;
-}
 
 /** Parameter schema entry — drives the settings-tab controls. */
 export interface MapLayerParameter {
@@ -46,7 +37,9 @@ export interface MapLayerParameter {
   constraints?: Record<string, unknown> | null;
 }
 
-/** Catalog entry for one layer (all variants share the identity). */
+/** Catalog entry for ONE resolved layer (backend #331): no
+ *  `variants[]` — the backend resolved the wanted `spec` and serves
+ *  the winning row's fields directly. */
 export interface MapCatalogLayer {
   slug: string;
   role: 'basemap' | 'overlay' | string;
@@ -58,10 +51,17 @@ export interface MapCatalogLayer {
   order: number;
   show: boolean;
   is_default: boolean;
-  /** Layer content version (ISO timestamp = layer.modified; backend
-   *  wodore-backend#315). Absent on older backends — treated as
-   *  "unknown" (cache entries without a version stay valid). */
-  version?: string | null;
+  /** The SERVED device tier (after the backend's fallback chain
+   *  resolved the wanted `?spec=`). */
+  spec: MapSpecTier;
+  /** Spec-resolved style URL — root-relative for owned styles
+   *  (absolutize against WODORE_API_HOST, see `absolutizeStyleUrl` —
+   *  the #285 bug class), absolute for external styles. */
+  style_url: string | null;
+  /** Layer content version (ISO timestamp = layer.modified) — the
+   *  client's style-cache comparison key (replaces the old `version`
+   *  field name, backend #331). */
+  modified?: string | null;
   min_zoom: number | null;
   max_zoom: number | null;
   coverage_bbox: number[] | null;
@@ -91,7 +91,6 @@ export interface MapCatalogLayer {
     }>;
     links?: Array<{ name: string; url: string }>;
   } | null;
-  variants: MapLayerVariant[];
 }
 
 export interface MapCatalogSlot {
@@ -100,26 +99,20 @@ export interface MapCatalogSlot {
   order: number;
 }
 
-export interface MapCatalog {
-  slots: MapCatalogSlot[];
-  layers: MapCatalogLayer[];
+/** `GET /v1/map/layers` response — the generic collection envelope
+ *  (one resolved layer per slug; `count` mirrors `data.length`). */
+export interface MapLayersResponse {
+  data: MapCatalogLayer[];
+  count: number;
 }
 
-// ── Fetching ─────────────────────────────────────────────────────────────
+// ── Fetching ─────────────────────────────────────────────────────────────────────
 
-/**
- * Cache-key rotation for every map response (catalog, config, styles).
- * The API caches these views for 6 h keyed by URL — a re-seed changes the
- * DB but not the URL, so clients would keep stale bodies until the TTL
- * expires. Bump this (ISO date + optional .N) with each deploy that
- * changes served map content: the `v=` query param rotates every cache
- * key (server + browser), while the API ignores the unknown parameter.
- */
-export const STYLE_VERSION = '2026-10-16';
-
-/** In-session catalog cache per (lang, role) — concurrent callers share
- *  one request; a failed fetch clears the slot so the next call retries. */
-const catalogCache = new Map<string, Promise<MapCatalog>>();
+/** In-session catalog cache per (lang, spec, role) — concurrent callers
+ *  (overlay compile + basemap picker) share ONE request; a failed fetch
+ *  clears the slot so the next call retries. Server ETags own freshness
+ *  (revalidate-always) — no cache-busting params, ever. */
+const catalogCache = new Map<string, Promise<MapLayersResponse>>();
 
 export class MapCatalogUnavailableError extends Error {
   constructor(cause: unknown) {
@@ -128,20 +121,16 @@ export class MapCatalogUnavailableError extends Error {
   }
 }
 
-/** Normalize a generated-client layer into the narrow DTO (defensive:
- *  the backend serializes loose dicts for config/legend/categories). */
-function toCatalogLayer(raw: schemasWodore['LayerSummary']): MapCatalogLayer {
-  // SAFETY: the backend LayerSummary pydantic model guarantees the
-  // scalar/array fields the generated client types as loose dicts
-  // (config, legend, categories, anchors) — the DTO only narrows shapes
-  // the serializer emits; no runtime transformation happens here.
-  const narrowed = raw as unknown as MapCatalogLayer;
-  // SAFETY: ParameterSummary/LayerVariant are fully typed in the schema —
-  // the cast only narrows the generated `extra: allow` passthroughs.
-  narrowed.parameters = (raw.parameters ?? []) as unknown as MapLayerParameter[];
-  // SAFETY: same schema-typed list as parameters above.
-  narrowed.variants = (raw.variants ?? []) as unknown as MapLayerVariant[];
-  return narrowed;
+/** Normalize a served layer into the narrow DTO (defensive: the
+ *  backend serializes loose dicts for config/legend/categories). */
+function toCatalogLayer(raw: MapLayerSummary): MapCatalogLayer {
+  // SAFETY: the served LayerSummary carries the scalar/array fields the
+  // DTO describes (backend #331 contract); the cast only narrows the
+  // loose `parameters` list into its typed shape — no runtime transform.
+  return {
+    ...(raw as unknown as MapCatalogLayer),
+    parameters: (raw.parameters ?? []) as unknown as MapLayerParameter[],
+  };
 }
 
 /**
@@ -153,65 +142,106 @@ function toCatalogLayer(raw: schemasWodore['LayerSummary']): MapCatalogLayer {
  */
 const CATALOG_FETCH_TIMEOUT_MS = 30_000;
 
-/**
- * Fetch the map layer catalog in the given language (default: the active
- * UI locale). Rejects with MapCatalogUnavailableError on failure —
- * callers fall back to the bundled factories.
- */
-export function fetchMapCatalog(lang?: string, role?: 'overlay' | 'basemap'): Promise<MapCatalog> {
-  const locale = lang ?? currentLocale();
-  const key = `${locale}:${role ?? '*'}`;
-  const cached = catalogCache.get(key);
-  if (cached) return cached;
-  const promise = (async () => {
-    // One retry with a short backoff: transient boot-time failures (dev
-    // server compile contention, runner hiccups) must not hard-fail the
-    // catalog boot — the second attempt usually succeeds. The fetchOnce
-    // helper keeps the per-endpoint response narrowing in the loop.
-    const fetchOnce = () =>
-      clientWodore.GET('/v1/map/config', {
-        params: {
-          // v rotates the server/browser cache keys on deploy (see
-          // STYLE_VERSION); the API ignores the undeclared parameter.
-          query: {
-            lang: locale,
-            ...(role ? { role } : {}),
-            v: STYLE_VERSION,
-          } as { lang: string; role?: string; v: string },
-        },
+/** One retrying `GET /v1/map/layers` attempt pair — shared by the layers
+ *  fetch below. Returns the normalized envelope. */
+async function fetchLayersOnce(query: MapLayersQuery): Promise<MapLayersResponse> {
+  let lastError: unknown = 'empty response';
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const { data, error } = await clientMapLayers.GET('/v1/map/layers', {
+        params: { query },
         signal: AbortSignal.timeout(CATALOG_FETCH_TIMEOUT_MS),
       });
+      if (!error && data && Array.isArray(data.data)) {
+        return {
+          data: data.data.map(toCatalogLayer),
+          count: data.count ?? data.data.length,
+        };
+      }
+      lastError = error ?? 'empty response';
+    } catch (e) {
+      // Network throw or CATALOG_FETCH_TIMEOUT_MS abort — retry, then
+      // reject loudly (the store's catch logs + shows the error row).
+      lastError = e;
+    }
+    if (attempt === 0) await new Promise(resolve => setTimeout(resolve, 1500));
+  }
+  throw new MapCatalogUnavailableError(lastError);
+}
+
+/** Query params shared by the map collection endpoints. */
+interface MapLayersQuery {
+  lang: string;
+  spec?: MapSpecTier;
+  role?: 'basemap' | 'overlay';
+}
+
+/**
+ * Fetch the resolved map layer catalog in the given language (default:
+ * the active UI locale). The backend resolves `spec` server-side and
+ * serves ONE layer per slug (`spec` + `style_url` embedded per entry).
+ * Rejects with MapCatalogUnavailableError on failure — callers fall
+ * back to their persisted caches.
+ */
+export function fetchMapCatalog(
+  lang?: string,
+  spec?: MapSpecTier,
+  role?: 'basemap' | 'overlay'
+): Promise<MapLayersResponse> {
+  const locale = lang ?? currentLocale();
+  const key = `${locale}:${spec ?? '*'}:${role ?? '*'}`;
+  const cached = catalogCache.get(key);
+  if (cached) return cached;
+  const promise = fetchLayersOnce({
+    lang: locale,
+    ...(spec ? { spec } : {}),
+    ...(role ? { role } : {}),
+  });
+  catalogCache.set(key, promise);
+  promise.catch(() => catalogCache.delete(key));
+  return promise;
+}
+
+/** In-session slot cache per lang — one request per locale per session. */
+const slotsCache = new Map<string, Promise<MapCatalogSlot[]>>();
+
+/**
+ * Fetch the render-slot list (`GET /v1/map/slots`, backend #331) —
+ * `{data: [{slug, label, order}]}`. Rejects with
+ * MapCatalogUnavailableError; callers degrade to the seeded slot set.
+ */
+export function fetchMapSlots(lang?: string): Promise<MapCatalogSlot[]> {
+  const locale = lang ?? currentLocale();
+  const cached = slotsCache.get(locale);
+  if (cached) return cached;
+  const promise = (async () => {
     let lastError: unknown = 'empty response';
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        const { data, error } = await fetchOnce();
-        if (!error && data) {
-          // SAFETY: MapCatalogResponse types slots/layers as loose dict lists
-          // (backend dict[str, Any] passthrough); the serializer's actual rows
-          // carry the fields MapCatalogSlot/MapCatalogLayer describe.
-          return {
-            slots: (data.slots ?? []) as unknown as MapCatalogSlot[],
-            layers: ((data.layers ?? []) as schemasWodore['LayerSummary'][]).map(toCatalogLayer),
-          } satisfies MapCatalog;
-        }
+        const { data, error } = await clientMapLayers.GET('/v1/map/slots', {
+          params: { query: { lang: locale } },
+          signal: AbortSignal.timeout(CATALOG_FETCH_TIMEOUT_MS),
+        });
+        if (!error && data && Array.isArray(data.data)) return data.data;
         lastError = error ?? 'empty response';
       } catch (e) {
-        // Network throw or CATALOG_FETCH_TIMEOUT_MS abort — retry, then
-        // reject loudly (the store's catch logs + shows the error row).
         lastError = e;
       }
       if (attempt === 0) await new Promise(resolve => setTimeout(resolve, 1500));
     }
     throw new MapCatalogUnavailableError(lastError);
   })();
-  catalogCache.set(key, promise);
-  promise.catch(() => catalogCache.delete(key));
+  slotsCache.set(locale, promise);
+  promise.catch(() => slotsCache.delete(locale));
   return promise;
 }
 
-/** Drop cached catalogs (e.g. after a locale switch round trip). */
+/** Drop cached catalogs (e.g. before a tab-focus revalidation or a
+ *  locale round trip) so the next fetch issues a conditional GET (the
+ *  browser revalidates the ETag — cheap when unchanged). */
 export function clearMapCatalogCache(): void {
   catalogCache.clear();
+  slotsCache.clear();
 }
 
 // ── Style endpoint ───────────────────────────────────────────────────────
@@ -237,8 +267,6 @@ export function styleEndpointUrl(slug: string, opts: StyleRequestOptions = {}): 
   const params = new URLSearchParams();
   if (opts.spec) params.set('spec', opts.spec);
   if (opts.tokenized) params.set('mode', 'tokenized');
-  // Cache-key rotation (see STYLE_VERSION) — the API ignores the param.
-  params.set('v', STYLE_VERSION);
   const qs = params.toString();
   const path = `/v1/map/styles/${slug}.json${qs ? `?${qs}` : ''}`;
   const base = apiBase();
@@ -252,16 +280,6 @@ export function absolutizeStyleUrl(url: string): string {
   const base = apiBase();
   if (!base) return url;
   return new URL(url, base).href;
-}
-
-/** Absolute style URL for a Martin-catalog entry: the spec-resolved
- *  root-relative `path` plus the deploy cache buster. MapLibre/browser
- *  fetch resolve relative URLs against the PAGE origin — the frontend
- *  host serves no /v1 (the SPA shell comes back instead of the style) —
- *  so catalog paths MUST be absolutized to the API origin. */
-export function martinEntryStyleUrl(path: string): string {
-  const sep = path.includes('?') ? '&' : '?';
-  return absolutizeStyleUrl(`${path}${sep}v=${STYLE_VERSION}`);
 }
 
 /** Style fetch cache keyed by URL — tokenized/resolved distinction and
@@ -307,134 +325,44 @@ export function fetchMapStyle(url: string, slug = url): Promise<StyleSpecificati
 
 // ── Persistence (boot cache + version sync, design.md D1) ────────────────
 
-import { storageGet, storageSet } from '@services/storage';
+import { storageGet, storageRemove, storageSet } from '@services/storage';
 
-const CATALOG_CACHE_KEY = 'mapCatalogCache';
-const STYLE_CACHE_KEY = 'mapCatalogStyleCache';
+const LAYERS_CACHE_KEY = 'mapLayersCache';
 
-/** Persisted catalog snapshot (last successful fetch, any locale). */
-export interface PersistedCatalog {
+/** Pre-#331 cache keys (config-catalog split) — removed on first read
+ *  so stale shapes never shadow the new layers cache. */
+const LEGACY_CACHE_KEYS = ['mapCatalogCache', 'mapBasemapCatalogCache'];
+
+/** Persisted layers snapshot (last successful fetch, any locale):
+ *  `{savedAt, lang, data}` — renders instantly on warm boot, the
+ *  background refresh revalidates after (server ETags own freshness). */
+export interface PersistedLayers {
   savedAt: string;
   lang: string;
-  slots: MapCatalogSlot[];
-  layers: MapCatalogLayer[];
+  data: MapCatalogLayer[];
 }
 
-export function persistCatalog(catalog: MapCatalog, lang: string): void {
-  storageSet(CATALOG_CACHE_KEY, {
+export function persistLayers(layers: MapCatalogLayer[], lang: string): void {
+  storageSet(LAYERS_CACHE_KEY, {
     savedAt: new Date().toISOString(),
     lang,
-    slots: catalog.slots,
-    layers: catalog.layers,
-  } satisfies PersistedCatalog);
+    data: layers,
+  } satisfies PersistedLayers);
 }
 
-/** Last persisted catalog (synchronous — the storage service preloads
- *  its cache at boot). Null on a cold first run. */
-export function loadPersistedCatalog(): PersistedCatalog | null {
-  const cached = storageGet(CATALOG_CACHE_KEY) as PersistedCatalog | null;
-  if (!cached || !Array.isArray(cached.layers)) return null;
+/** Last persisted layers snapshot (synchronous — the storage service
+ *  preloads its cache at boot). Null on a cold first run; migrates away
+ *  the legacy pre-#331 cache keys when present. */
+export function loadPersistedLayers(): PersistedLayers | null {
+  for (const legacy of LEGACY_CACHE_KEYS) {
+    if (storageGet(legacy) !== null) storageRemove(legacy);
+  }
+  const cached = storageGet(LAYERS_CACHE_KEY) as PersistedLayers | null;
+  if (!cached || !Array.isArray(cached.data)) return null;
   return cached;
 }
 
-// ── Martin-compatible basemap catalog (backend PR #292) ───────────────
-
-/** One entry of the Martin-compatible style index: flat, selector-ready,
- *  with a spec-resolved style `path` (a complete MapLibre style document
- *  served by the backend — no client-side composition). */
-export interface BasemapCatalogEntry {
-  path: string;
-  name: string;
-  description?: string;
-  icon?: string;
-  icon_badge?: string;
-  role: 'basemap' | 'overlay';
-  order?: number;
-  slot?: string | null;
-  is_default?: boolean;
-  show?: boolean;
-  min_zoom?: number | null;
-  max_zoom?: number | null;
-  preview_url?: string | null;
-  /** Auto-switch target on tile/style host failure (WdMapView onMapError). */
-  fallback?: string | null;
-  coverage_bbox?: unknown;
-}
-
-/** Martin-compatible catalog response — the basemap picker's data source. */
-export interface BasemapCatalog {
-  styles: Record<string, BasemapCatalogEntry>;
-  savedAt?: string;
-  lang?: string;
-}
-
-const BASEMAP_CATALOG_CACHE_KEY = 'mapBasemapCatalogCache';
-
-export function persistBasemapCatalog(catalog: BasemapCatalog, lang: string): void {
-  storageSet(BASEMAP_CATALOG_CACHE_KEY, {
-    savedAt: new Date().toISOString(),
-    lang,
-    styles: catalog.styles,
-  } satisfies BasemapCatalog);
-}
-
-/** Last persisted basemap catalog (synchronous boot cache). */
-export function loadPersistedBasemapCatalog(): BasemapCatalog | null {
-  const cached = storageGet(BASEMAP_CATALOG_CACHE_KEY) as BasemapCatalog | null;
-  if (!cached || typeof cached.styles !== 'object' || cached.styles === null) return null;
-  return cached;
-}
-
-/** In-session cache per (lang, spec) — concurrent callers share one
- *  request; a failed fetch clears the slot so the next call retries. */
-const basemapCatalogCache = new Map<string, Promise<BasemapCatalog>>();
-
-/**
- * Fetch the Martin-compatible basemap catalog (backend PR #292): a flat
- * map of style-slug → selector entry whose `path`s are spec-resolved
- * style endpoint URLs. Rejects with MapCatalogUnavailableError.
- */
-export function fetchBasemapCatalog(lang?: string, spec?: MapSpecTier): Promise<BasemapCatalog> {
-  const locale = lang ?? currentLocale();
-  const key = `${locale}:${spec ?? '*'}`;
-  const cached = basemapCatalogCache.get(key);
-  if (cached) return cached;
-  const promise = (async () => {
-    const fetchOnce = () =>
-      clientWodore.GET('/v1/map/catalog', {
-        params: {
-          // v rotates the server/browser cache keys on deploy (see
-          // STYLE_VERSION); the API ignores the undeclared parameter.
-          query: {
-            lang: locale,
-            ...(spec ? { spec } : {}),
-            v: STYLE_VERSION,
-          } as { lang: string; spec?: string; v: string },
-        },
-        signal: AbortSignal.timeout(CATALOG_FETCH_TIMEOUT_MS),
-      });
-    let lastError: unknown = 'empty response';
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
-        const { data, error } = await fetchOnce();
-        const styles = (data as { styles?: Record<string, BasemapCatalogEntry> } | undefined)
-          ?.styles;
-        if (!error && data && styles && typeof styles === 'object') {
-          return { styles } satisfies BasemapCatalog;
-        }
-        lastError = error ?? 'empty response';
-      } catch (e) {
-        // Network throw or timeout abort — retry, then reject loudly.
-        lastError = e;
-      }
-      if (attempt === 0) await new Promise(resolve => setTimeout(resolve, 1500));
-    }
-    throw new MapCatalogUnavailableError(lastError);
-  })();
-  basemapCatalogCache.set(key, promise);
-  promise.catch(() => basemapCatalogCache.delete(key));
-  return promise;
-}
+const STYLE_CACHE_KEY = 'mapCatalogStyleCache';
 
 /** A persisted style document + the layer version it was built from. */
 export interface PersistedStyleEntry {
@@ -442,9 +370,10 @@ export interface PersistedStyleEntry {
   style?: StyleSpecification | null;
   /** Tokenized document (parameterized layers — resolved client-side). */
   tokenized?: StyleSpecification | null;
-  /** `version` of the catalog layer this was fetched for (null when the
-   *  backend served no version — pre-#315 backends). */
-  version?: string | null;
+  /** `modified` of the catalog layer this was fetched from (ISO
+   *  timestamp, backend #331 — was `version`; absent on pre-#331
+   *  persisted entries, which simply revalidate once). */
+  modified?: string | null;
 }
 
 export type PersistedStyleCache = Record<string, PersistedStyleEntry>;
@@ -481,34 +410,6 @@ export function pruneStyleCache(validSlugs: Set<string>): void {
     delete cache[k];
   }
   storageSet(STYLE_CACHE_KEY, cache);
-}
-
-// ── Variant selection (mirrors backend MapLayer.pick_variant) ────────────
-
-const TIER_ORDER: Record<MapSpecTier, number> = { low: 0, medium: 1, high: 2 };
-
-/**
- * Select the catalog variant for a requested spec: exact match, else the
- * nearest available tier (ties → the lower/simpler tier), else the single
- * existing variant. Mirrors the backend rule so client-side selection
- * between variant entries (external style URLs) agrees with the server.
- */
-export function pickVariant(
-  variants: MapLayerVariant[],
-  spec: MapSpecTier | undefined
-): MapLayerVariant | undefined {
-  if (variants.length === 0) return undefined;
-  if (spec) {
-    const exact = variants.find(v => v.spec === spec);
-    if (exact) return exact;
-    const wanted = TIER_ORDER[spec];
-    return [...variants].sort(
-      (a, b) =>
-        Math.abs(TIER_ORDER[a.spec] - wanted) - Math.abs(TIER_ORDER[b.spec] - wanted) ||
-        TIER_ORDER[a.spec] - TIER_ORDER[b.spec]
-    )[0];
-  }
-  return variants[0];
 }
 
 /** GPU tier → style `spec` param. `shouldUseRaster` (basemap-store) stays

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { reactive, watch } from 'vue';
 import { Notify } from 'quasar';
+import { useEventListener } from '@vueuse/core';
 import { BasemapSwitchItem } from '@stores/map/utils/interfaces';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
 //import type { Emitter } from 'mitt';
@@ -17,23 +18,19 @@ import { StyleSpecification } from 'maplibre-gl';
 import { i18n, currentLocale } from '@services/locale';
 import { isOutdoorStyle, setupOutdoorContours } from '@services/outdoorContours';
 import {
-  fetchBasemapCatalog,
+  absolutizeStyleUrl,
+  clearMapCatalogCache,
+  fetchMapCatalog,
   gpuSpec,
-  martinEntryStyleUrl,
-  loadPersistedBasemapCatalog,
-  persistBasemapCatalog,
-  type BasemapCatalog,
-  type BasemapCatalogEntry,
+  loadPersistedLayers,
+  type MapCatalogLayer,
+  type MapSpecTier,
 } from '@services/map-catalog';
 import {
   LEGACY_BASEMAP_FALLBACKS,
   RENAMED_BASEMAP_SLUGS,
-  martinCatalogBasemap,
+  mapCatalogBasemap,
 } from './utils/catalog-mapping';
-
-/** Cache-buster for basemap style URLs — see STYLE_VERSION in
- *  services/map-catalog (single source; rotates all map cache keys on
- *  deploys that change served map content). */
 
 /** Compute absolute glyph/sprite URLs for a style, relative to the
  * style's own URL. With setStyle(..., { transformStyle }) MapLibre loses
@@ -99,8 +96,8 @@ function prewarmOutdoorMtk(): void {
 }
 
 /** Fetched default-basemap style object, shared by every country-basemap
- *  composition (cached for the session — the style changes at most per
- *  deploy, see STYLE_VERSION). */
+ *  composition (cached for the session — the style changes at most when
+ *  the backend bumps the layer's `modified`, which revalidates via ETag). */
 let defaultStylePromise: Promise<StyleSpecification | null> | null = null;
 
 /** Fetch a style URL into an object (assets resolved against the URL).
@@ -751,6 +748,15 @@ export const useBasemapStore = defineStore('basemap', () => {
   // Weak-GPU flag for style-level degradation (set during init)
   let weakGpu = false;
 
+  /** Resolves once GPU detection settled, with the wanted catalog tier —
+   *  the map-catalog store awaits it so overlays + basemaps share ONE
+   *  layers fetch with the correct `?spec=` (no early high-spec fetch
+   *  racing the detector on weak devices). */
+  let resolveGpuSpec: (tier: MapSpecTier) => void = () => {};
+  const gpuSpecReady = new Promise<MapSpecTier>(resolve => {
+    resolveGpuSpec = resolve;
+  });
+
   // Cached initialization promise - concurrent callers share one init run,
   // and a failed run resets the cache so the next call can retry
   let basemapInitPromise: Promise<void> | null = null;
@@ -813,29 +819,25 @@ export const useBasemapStore = defineStore('basemap', () => {
 
   // Async function to initialize basemaps based on GPU tier
 
-  /** Basemap style URL for one Martin-catalog entry: the spec-resolved
-   *  `path` from the catalog, cache-busted and ABSOLUTIZED to the API
-   *  host (the frontend origin serves no /v1 — a root-relative path
-   *  fetches the SPA shell and the basemap stays blank; see
-   *  martinEntryStyleUrl). */
-  function styleUrlFor(entry: BasemapCatalogEntry): string {
-    return martinEntryStyleUrl(entry.path);
-  }
-
   /**
-   * Compile the Martin-compatible catalog (backend PR #292) into switch
-   * items. Called from the init path AND from refreshBasemaps (the
-   * map-catalog store's background refresh) — a refresh keeps the ACTIVE
-   * basemap selected (and re-applies it with force only when its style
-   * URL changed); labels re-localize via applyBasemapLabels.
+   * Compile the RESOLVED layers response (backend #331 `/v1/map/layers`)
+   * into switch items: one basemap layer per slug, style URL = the
+   * entry's `style_url` (served spec already embedded) absolutized
+   * against the API origin — root-relative URLs must never resolve
+   * against the page origin (#285). Hidden fallbacks (show=false) stay
+   * in the list — the picker filters them, the fallback chain resolves
+   * them. Keeps the ACTIVE selection; re-applies only when its style
+   * URL changed; labels re-localize via applyBasemapLabels.
    */
-  function refreshFromCatalog(catalog: BasemapCatalog): void {
-    const entries = Object.entries(catalog.styles)
-      .filter(([, entry]) => entry.role === 'basemap')
-      .sort(([, a], [, b]) => (a.order ?? 0) - (b.order ?? 0));
-    catalogDefaultSlug = entries.find(([, entry]) => entry.is_default)?.[0] ?? DEFAULT_BASEMAP_NAME;
-    const items = entries.map(([slug, entry]) =>
-      martinCatalogBasemap(slug, entry, styleUrlFor(entry), slug => localBasemapThumb(slug))
+  function refreshFromLayers(layers: MapCatalogLayer[]): void {
+    const entries = layers
+      .filter(layer => layer.role === 'basemap')
+      .sort((a, b) => a.order - b.order);
+    catalogDefaultSlug = entries.find(l => l.is_default)?.slug ?? DEFAULT_BASEMAP_NAME;
+    const items = entries.map(layer =>
+      mapCatalogBasemap(layer, layer.style_url ? absolutizeStyleUrl(layer.style_url) : '', slug =>
+        localBasemapThumb(slug)
+      )
     );
     // Keep the ACTIVE selection across the refresh (same slug stays on).
     const activeName = getBasemap()?.name;
@@ -894,17 +896,22 @@ export const useBasemapStore = defineStore('basemap', () => {
     return thumbs[slug];
   }
 
-  /** Fetch the Martin-compatible basemap catalog (backend PR #292) and
-   *  rebuild the basemap list — called by the map-catalog store's
-   *  background refresh. Keeps the active selection; re-applies only
-   *  when the style URL changed. Failures log and keep current state. */
-  async function refreshBasemaps(): Promise<void> {
+  /** Fetch the RESOLVED layers catalog and rebuild the basemap list.
+   *  Keeps the active selection; re-applies only when the style URL
+   *  changed. `revalidate` drops the in-session promise cache first so
+   *  the fetch is a true conditional GET (the browser revalidates the
+   *  server ETag — cheap when unchanged). Failures log and keep current
+   *  state. The service dedupes concurrent callers (overlay compile +
+   *  picker) onto ONE request per (lang, spec). */
+  async function refreshLayers(options: { revalidate?: boolean } = {}): Promise<MapCatalogLayer[]> {
     try {
-      const catalog = await fetchBasemapCatalog(currentLocale(), gpuSpec(weakGpu));
-      persistBasemapCatalog(catalog, currentLocale());
-      refreshFromCatalog(catalog);
+      if (options.revalidate) clearMapCatalogCache();
+      const { data } = await fetchMapCatalog(currentLocale(), gpuSpec(weakGpu));
+      refreshFromLayers(data);
+      return data;
     } catch (error) {
       console.warn('[basemap-store] basemap catalog refresh failed:', error);
+      return [];
     }
   }
 
@@ -932,6 +939,9 @@ export const useBasemapStore = defineStore('basemap', () => {
 
     const useRaster = shouldUseRaster(gpuTier);
     weakGpu = useRaster;
+    // Unblocks the map-catalog store's layers fetch (one shared request
+    // with the correct spec — see gpuSpecReady).
+    resolveGpuSpec(gpuSpec(useRaster));
 
     // GPU + optimization status (user-facing console diagnostics)
     {
@@ -966,25 +976,24 @@ export const useBasemapStore = defineStore('basemap', () => {
       useRaster
     );
 
-    // ── Backend map catalog (backend PR #292 — Martin-compatible index) ─
-    // Cache-first: the persisted catalog renders instantly; a cold first
-    // run awaits the network (explicit loading state upstream) — there
-    // are NO bundled factory basemaps anymore.
-    const cachedCatalog = loadPersistedBasemapCatalog();
-    if (cachedCatalog) {
-      refreshFromCatalog(cachedCatalog);
-      // Warm boot: refresh in the background — metadata/style changes
-      // flow through (the active selection is kept; a changed style URL
-      // re-applies with force).
-      void refreshBasemaps();
+    // ── Backend map layers (backend #331 — resolved `/v1/map/layers`) ─
+    // Cache-first: the persisted layers snapshot renders instantly; a
+    // cold first run awaits the network (explicit loading state
+    // upstream) — there are NO bundled factory basemaps anymore.
+    const cachedLayers = loadPersistedLayers();
+    if (cachedLayers) {
+      refreshFromLayers(cachedLayers.data);
+      // Warm boot: refresh in the background — the server ETag makes it
+      // a cheap conditional GET; metadata/style changes flow through
+      // (the active selection is kept; a changed style URL re-applies
+      // with force). Dedupes with the overlay store's fetch.
+      void refreshLayers();
     } else {
       // Cold first run: await the network so the map has a style at all.
-      try {
-        const catalog = await fetchBasemapCatalog(currentLocale(), gpuSpec(useRaster));
-        persistBasemapCatalog(catalog, currentLocale());
-        refreshFromCatalog(catalog);
-      } catch (error) {
-        console.error('[basemap-store] map catalog unavailable — no basemaps:', error);
+      // (The map-catalog store persists the shared snapshot.)
+      const layers = await refreshLayers();
+      if (layers.length === 0) {
+        console.error('[basemap-store] map layers unavailable — no basemaps');
         Notify.create({
           type: 'negative',
           position: 'bottom',
@@ -1072,12 +1081,22 @@ export const useBasemapStore = defineStore('basemap', () => {
   // Call initialization immediately
   void initializeBasemaps();
 
+  // Long-lived tabs: the boot fetch's in-session promise would keep
+  // serving stale data — one conditional GET per tab focus (the server
+  // ETag makes it a 304 when nothing changed; the browser revalidates
+  // automatically). Applies via the splice path, keeping the selection.
+  useEventListener(document, 'visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    if (!basemapInitPromise) return; // still booting — the init fetch is fresh
+    void refreshLayers({ revalidate: true });
+  });
+
   return {
     basemaps,
     setBasemap,
     getBasemap,
     initializeBasemaps,
-    refreshBasemaps,
+    gpuSpecReady,
     findBasemapBySlug,
     resolveFallbackBasemap,
     //setEmitter,
