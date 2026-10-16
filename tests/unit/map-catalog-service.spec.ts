@@ -1,17 +1,59 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as allure from 'allure-js-commons';
 import {
   resolveTokens,
   collectTokens,
-  pickVariant,
   gpuSpec,
   styleEndpointUrl,
   absolutizeStyleUrl,
+  fetchMapCatalog,
+  clearMapCatalogCache,
   isOpacityCurve,
   parseOpacityCurve,
   serializeOpacityCurve,
-  type MapLayerVariant,
 } from '@services/map-catalog';
+
+// The layers/slots fetches ride the hand-declared clientMapLayers —
+// mock the transport so the specs pin paths, params and envelopes.
+vi.mock('@clients/index', () => ({
+  clientMapLayers: { GET: vi.fn() },
+}));
+import { clientMapLayers } from '@clients/index';
+
+const layersGet = vi.mocked(clientMapLayers.GET);
+
+function layerSummary(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    slug: 'mtb',
+    role: 'overlay',
+    name: 'Mountain bike routes',
+    description: '',
+    icon: 'mtb',
+    icon_badge: '',
+    slot: 'ways',
+    order: 4,
+    show: true,
+    is_default: false,
+    spec: 'high',
+    style_url: '/v1/map/styles/mtb.json?spec=high',
+    modified: '2026-10-15T22:29:11.528Z',
+    min_zoom: null,
+    max_zoom: null,
+    coverage_bbox: null,
+    fallback_min_zoom: null,
+    fallback: null,
+    anchors: null,
+    preview_url: null,
+    config: null,
+    interaction: null,
+    parameters: [],
+    categories: [],
+    attributions: [],
+    license: null,
+    legend: null,
+    ...overrides,
+  };
+}
 
 describe('map catalog token resolver', () => {
   it('substitutes whole-node tokens with scalars', () => {
@@ -58,50 +100,81 @@ describe('map catalog token resolver', () => {
   });
 });
 
-describe('map catalog variant selection', () => {
-  it('prefers the exact spec', () => {
-    const variants: MapLayerVariant[] = [
-      { spec: 'high', style_url: '/x?spec=high' },
-      { spec: 'low', inline_style: {} },
-    ];
-    expect(pickVariant(variants, 'low')?.spec).toBe('low');
-    expect(pickVariant(variants, 'high')?.spec).toBe('high');
-  });
-
-  it('falls back to the nearest tier in both directions', () => {
-    const variants: MapLayerVariant[] = [{ spec: 'high', style_url: '/x' }];
-    expect(pickVariant(variants, 'low')?.spec).toBe('high');
-
-    const lowOnly: MapLayerVariant[] = [{ spec: 'low', style_url: '/x' }];
-    expect(pickVariant(lowOnly, 'high')?.spec).toBe('low');
-
-    const ends: MapLayerVariant[] = [
-      { spec: 'low', style_url: '/x' },
-      { spec: 'high', style_url: '/x' },
-    ];
-    expect(pickVariant(ends, 'medium')?.spec).toBe('low');
-  });
-});
-
-describe('map catalog URLs', () => {
+describe('map catalog spec tiers', () => {
   it('maps the GPU raster flag onto spec tiers', () => {
     expect(gpuSpec(true)).toBe('low');
     expect(gpuSpec(false)).toBe('high');
   });
+});
 
-  it('builds the style endpoint with spec, mode and version params', () => {
+describe('fetchMapCatalog (resolved layers API, backend #331)', () => {
+  beforeEach(() => {
+    layersGet.mockReset();
+    // The service dedupes in-session per (lang, spec, role) — a clean
+    // slate keeps the specs independent.
+    clearMapCatalogCache();
+  });
+
+  it('fetches /v1/map/layers with lang + spec and consumes the {data, count} envelope', async () => {
+    layersGet.mockResolvedValueOnce({
+      data: { data: [layerSummary()], count: 1 },
+      error: undefined,
+      response: new Response(),
+    });
+    const res = await fetchMapCatalog('de', 'low');
+    expect(layersGet).toHaveBeenCalledWith(
+      '/v1/map/layers',
+      expect.objectContaining({ params: { query: { lang: 'de', spec: 'low' } } })
+    );
+    expect(res.count).toBe(1);
+    expect(res.data).toHaveLength(1);
+    expect(res.data[0]!.slug).toBe('mtb');
+    // ONE resolved layer per slug — served spec + style_url embedded,
+    // no variants[] anymore.
+    expect(res.data[0]!.spec).toBe('high');
+    expect(res.data[0]!.style_url).toBe('/v1/map/styles/mtb.json?spec=high');
+    expect('variants' in res.data[0]!).toBe(false);
+  });
+
+  it('sends no cache-busting params (server ETags own freshness)', async () => {
+    layersGet.mockResolvedValueOnce({
+      data: { data: [], count: 0 },
+      error: undefined,
+      response: new Response(),
+    });
+    await fetchMapCatalog('en');
+    const query = layersGet.mock.calls[0]![1]!.params!.query as Record<string, unknown>;
+    expect(query.v).toBeUndefined();
+    expect(Object.keys(query)).toEqual(['lang']);
+  });
+
+  it('shares one in-session request across concurrent callers', async () => {
+    let resolveFetch: (value: unknown) => void = () => {};
+    layersGet.mockReturnValue(
+      new Promise(resolve => {
+        resolveFetch = resolve;
+      }) as never
+    );
+    const a = fetchMapCatalog('fr', 'high');
+    const b = fetchMapCatalog('fr', 'high');
+    resolveFetch({ data: { data: [], count: 0 }, error: undefined });
+    await expect(a).resolves.toBe(await b);
+    expect(layersGet).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('map catalog URLs', () => {
+  it('builds the style endpoint with spec and mode params (no cache busters)', () => {
     process.env.WODORE_API_HOST = 'https://hub.example.com';
-    // v= rotates the API/browser cache keys on deploy (STYLE_VERSION) —
-    // the API ignores the undeclared parameter.
+    // Server ETags + revalidate-always own freshness (backend #331) —
+    // the client must never rotate cache keys itself.
     expect(styleEndpointUrl('mtb', { spec: 'low' })).toBe(
-      'https://hub.example.com/v1/map/styles/mtb.json?spec=low&v=2026-10-16'
+      'https://hub.example.com/v1/map/styles/mtb.json?spec=low'
     );
     expect(styleEndpointUrl('mtb', { spec: 'high', tokenized: true })).toBe(
-      'https://hub.example.com/v1/map/styles/mtb.json?spec=high&mode=tokenized&v=2026-10-16'
+      'https://hub.example.com/v1/map/styles/mtb.json?spec=high&mode=tokenized'
     );
-    expect(styleEndpointUrl('mtb')).toBe(
-      'https://hub.example.com/v1/map/styles/mtb.json?v=2026-10-16'
-    );
+    expect(styleEndpointUrl('mtb')).toBe('https://hub.example.com/v1/map/styles/mtb.json');
     delete process.env.WODORE_API_HOST;
   });
 
@@ -113,6 +186,25 @@ describe('map catalog URLs', () => {
     // External (env-resolved) URLs pass through untouched
     expect(absolutizeStyleUrl('https://api.maptiler.com/maps/x?key=k')).toBe(
       'https://api.maptiler.com/maps/x?key=k'
+    );
+    delete process.env.WODORE_API_HOST;
+  });
+
+  it('regression #285: style_url from /v1/map/layers resolves against WODORE_API_HOST, never the page origin', () => {
+    // The #285 incident: catalog-served style URLs resolved against the
+    // FRONTEND origin (blank basemaps on subpath deploys). The layers
+    // entries carry root-relative style_urls — they must absolutize
+    // against the API host before reaching MapLibre.
+    process.env.WODORE_API_HOST = 'https://hub.example.com';
+    const entry = layerSummary({
+      slug: 'wd-outdoor-base-mtk-hill',
+      role: 'basemap',
+      style_url: '/v1/map/styles/wd-outdoor-base-mtk-hill.json?spec=high',
+    }) as { style_url: string };
+    const url = absolutizeStyleUrl(entry.style_url);
+    expect(new URL(url).origin).toBe('https://hub.example.com');
+    expect(url).toBe(
+      'https://hub.example.com/v1/map/styles/wd-outdoor-base-mtk-hill.json?spec=high'
     );
     delete process.env.WODORE_API_HOST;
   });

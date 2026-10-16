@@ -12,12 +12,7 @@
  */
 import type { LayerSpecification, StyleSpecification } from 'maplibre-gl';
 import { validateStyleMin } from '@maplibre/maplibre-gl-style-spec';
-import type {
-  BasemapCatalogEntry,
-  MapCatalogLayer,
-  MapLayerParameter,
-  MapSpecTier,
-} from '@services/map-catalog';
+import type { MapCatalogLayer, MapLayerParameter } from '@services/map-catalog';
 import type {
   BasemapSwitchItem,
   LayerNames,
@@ -398,19 +393,20 @@ function clampMinZoom(layer: LayerSpecification, minZoom: number): LayerSpecific
 // ── Basemap mapping ─────────────────────────────────────────────────────
 
 /**
- * Compile one catalog basemap layer into a BasemapSwitchItem. The style
- * is a URL string (style endpoint with `spec=`, or the external
- * env-resolved `style_url`) so MapLibre loads it directly.
- * `imgFallback` supplies the local thumbnail for slugs whose catalog
- * `preview_url` is empty (the store owns the asset URLs).
+ * Compile one RESOLVED catalog basemap layer (backend #331 — one layer
+ * per slug, served spec + style_url embedded) into a switch item. The
+ * style is a URL string — the store passes the entry's `style_url`
+ * ALREADY absolutized against WODORE_API_HOST (`absolutizeStyleUrl`:
+ * root-relative URLs must resolve against the API origin, not the page
+ * origin — the #285 bug class). `imgFallback` supplies the local
+ * thumbnail for slugs whose catalog `preview_url` is empty (the store
+ * owns the asset URLs).
  */
 export function mapCatalogBasemap(
   layer: MapCatalogLayer,
-  spec: MapSpecTier,
-  styleUrls: Map<string, string>,
+  styleUrl: string,
   imgFallback?: (appSlug: string) => string | undefined
 ): BasemapSwitchItem {
-  const appSlug = RENAMED_BASEMAP_SLUGS[layer.slug] === layer.slug ? layer.slug : layer.slug;
   const anchors: BasemapSwitchItem['layers'] = {
     ways: { before: undefined },
     background: { before: undefined },
@@ -433,12 +429,12 @@ export function mapCatalogBasemap(
       ? (layer.coverage_bbox as [number, number, number, number])
       : undefined;
   return {
-    name: appSlug,
-    label: localizedLayerLabel(appSlug, layer.name),
+    name: layer.slug,
+    label: localizedLayerLabel(layer.slug, layer.name),
     show: layer.show,
     active: false,
-    img: layer.preview_url ?? imgFallback?.(appSlug) ?? '',
-    style: styleUrls.get(layer.slug) ?? '',
+    img: layer.preview_url ?? imgFallback?.(layer.slug) ?? '',
+    style: styleUrl,
     layers: anchors,
     ...(layer.fallback ? { fallback: layer.fallback } : {}),
     ...(coverage
@@ -446,52 +442,6 @@ export function mapCatalogBasemap(
           countryOnly: true,
           bbox: coverage,
           countryMinZoom: layer.fallback_min_zoom ?? COUNTRY_BASEMAP_MIN_ZOOM,
-        }
-      : {}),
-  };
-}
-
-/**
- * Compile one Martin-compatible catalog entry (backend PR #292) into a
- * switch item — the basemap picker's data source. Unlike the rich catalog
- * there are no variants or anchors: `path` IS the style URL (spec
- * resolved server-side); anchors default and pick up the legacy table
- * for known country basemaps; coverage_bbox drives country composition.
- */
-export function martinCatalogBasemap(
-  slug: string,
-  entry: BasemapCatalogEntry,
-  styleUrl: string,
-  imgFallback?: (appSlug: string) => string | undefined
-): BasemapSwitchItem {
-  const anchors: BasemapSwitchItem['layers'] = {
-    ways: { before: undefined },
-    background: { before: undefined },
-  };
-  const legacy = LEGACY_BASEMAP_ANCHORS[slug];
-  if (legacy) {
-    for (const [onLayer, opts] of Object.entries(legacy)) {
-      anchors[onLayer as LayerNames] = opts as { before: string | undefined };
-    }
-  }
-  const coverage =
-    Array.isArray(entry.coverage_bbox) && entry.coverage_bbox.length === 4
-      ? (entry.coverage_bbox as [number, number, number, number])
-      : undefined;
-  return {
-    name: slug,
-    label: localizedLayerLabel(slug, entry.name),
-    show: entry.show,
-    active: false,
-    img: entry.preview_url ?? imgFallback?.(slug) ?? '',
-    style: styleUrl,
-    layers: anchors,
-    ...(entry.fallback ? { fallback: entry.fallback } : {}),
-    ...(coverage
-      ? {
-          countryOnly: true,
-          bbox: coverage,
-          countryMinZoom: COUNTRY_BASEMAP_MIN_ZOOM,
         }
       : {}),
   };

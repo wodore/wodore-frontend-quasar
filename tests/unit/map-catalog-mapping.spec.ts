@@ -47,7 +47,9 @@ function layer(partial: Partial<MapCatalogLayer> & { slug: string }): MapCatalog
     attributions: [],
     license: null,
     legend: null,
-    variants: [],
+    spec: 'high',
+    style_url: '/v1/map/styles/x.json?spec=high',
+    modified: null,
     ...partial,
   };
 }
@@ -190,8 +192,7 @@ describe('mapCatalogBasemap', () => {
         coverage_bbox: [5.9, 45.8, 10.5, 47.9],
         fallback_min_zoom: 7,
       }),
-      'high',
-      new Map([['ch-swisstopo-full', 'https://hub/v1/map/styles/ch-swisstopo-full.json?spec=high']])
+      'https://hub/v1/map/styles/ch-swisstopo-full.json?spec=high'
     );
     expect(item.countryOnly).toBe(true);
     expect(item.bbox).toEqual([5.9, 45.8, 10.5, 47.9]);
@@ -207,10 +208,7 @@ describe('mapCatalogBasemap', () => {
         fallback: 'wd-outdoor-base-ofm',
         anchors: { ways: { before: null }, background: { before: null } },
       }),
-      'high',
-      new Map([
-        ['wd-outdoor-base-mtk', 'https://hub/v1/map/styles/wd-outdoor-base-mtk.json?spec=high'],
-      ])
+      'https://hub/v1/map/styles/wd-outdoor-base-mtk.json?spec=high'
     );
     expect(item.fallback).toBe('wd-outdoor-base-ofm');
     // Catalog anchors win for their slots…
@@ -230,10 +228,7 @@ describe('mapCatalogBasemap', () => {
           background: { before: 'Building line' },
         },
       }),
-      'low',
-      new Map([
-        ['ch-swisstopo-light', 'https://hub/v1/map/styles/ch-swisstopo-light.json?spec=low'],
-      ])
+      'https://hub/v1/map/styles/ch-swisstopo-light.json?spec=low'
     );
     expect(item.layers.ways.before).toBe('Other place labels');
     expect(item.layers.background.before).toBe('Building line');

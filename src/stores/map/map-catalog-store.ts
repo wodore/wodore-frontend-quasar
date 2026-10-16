@@ -2,13 +2,15 @@
  * Map catalog store — orchestrates the backend map layer catalog
  * (services/map-catalog.ts) over the overlay store:
  *
- * * BOOT renders the persisted catalog + style cache synchronously
- *   (localStorage via the storage service); a cold first run shows an
- *   explicit loading state — there are NO bundled factory fallbacks
- *   (design.md D1, owner decision).
- * * SYNC: a fresh catalog is fetched in the background; per layer the
- *   style is refetched ONLY when its `version` (backend #315,
- *   layer.modified) changed — otherwise the persisted document serves.
+ * * BOOT renders the persisted layers snapshot + style cache
+ *   synchronously (localStorage via the storage service); a cold first
+ *   run shows an explicit loading state — there are NO bundled factory
+ *   fallbacks (design.md D1, owner decision).
+ * * SYNC: a fresh `GET /v1/map/layers` is fetched in the background
+ *   (server ETag + revalidate-always — one online reload is fresh);
+ *   per layer the style is refetched ONLY when its `modified` (ISO
+ *   timestamp, backend #331) changed — otherwise the persisted
+ *   document serves.
  * * Owns per-layer PARAMETER values (settings tab): authored defaults,
  *   persisted user overrides (localStorage), runtime values ({{date}});
  *   re-resolves tokenized styles on parameter changes and applies the
@@ -16,8 +18,8 @@
  * * An invalid served/persisted style SKIPS that layer with a loud,
  *   user-visible error (never a silent fallback).
  *
- * Basemaps compile from the same catalog inside the basemap store; this
- * store hands it the refreshed catalog (refreshFromCatalog).
+ * Basemaps compile from the SAME layers response inside the basemap
+ * store (it fetches through the same deduplicated service call).
  */
 import { defineStore } from 'pinia';
 import { ref, watch } from 'vue';
@@ -38,13 +40,14 @@ import { currentLocale } from '@services/locale';
 import { storageGet, storageSet } from '@services/storage';
 import {
   fetchMapCatalog,
+  fetchMapSlots,
   fetchMapStyle,
   gpuSpec,
   isOpacityCurve,
-  loadPersistedCatalog,
+  loadPersistedLayers,
   loadStyleCache,
   parseOpacityCurve,
-  persistCatalog,
+  persistLayers,
   persistStyleEntry,
   pruneStyleCache,
   resolveTokens,
@@ -52,8 +55,8 @@ import {
   serializeOpacityCurve,
   styleCacheKey,
   styleEndpointUrl,
-  type MapCatalog,
   type MapCatalogLayer,
+  type MapCatalogSlot,
   type MapLayerParameter,
   type MapSpecTier,
   type OpacityCurve,
@@ -358,14 +361,14 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     return styleValid(validated);
   }
 
-  /** Whether a cached entry can serve this layer (version + validity). */
+  /** Whether a cached entry can serve this layer (modified + validity). */
   function cacheServes(
     entry: PersistedStyleEntry | undefined,
     layer: MapCatalogLayer,
     tokenized: boolean
   ): entry is PersistedStyleEntry {
     if (!entry) return false;
-    if ((entry.version ?? null) !== (layer.version ?? null)) return false;
+    if ((entry.modified ?? null) !== (layer.modified ?? null)) return false;
     const doc = tokenized ? entry.tokenized : entry.style;
     if (!doc) return false;
     return bundleIsValid(doc, layer);
@@ -416,7 +419,7 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
       }
       persistStyleEntry(key, {
         ...(tokenized ? { tokenized: tokenizedDoc } : { style: resolvedDoc }),
-        version: layer.version ?? null,
+        modified: layer.modified ?? null,
       });
       return { style: resolvedDoc, tokenizedStyle: tokenizedDoc };
     } catch (error) {
@@ -435,6 +438,23 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
    *  it on the next progressive apply. */
   const PLACEHOLDER_STYLE: StyleSpecification = { version: 8, sources: {}, layers: [] };
 
+  /** Slot slugs the backend seed carries (backend #331 `map_seed`) —
+   *  the persisted-snapshot compile's fallback while `/v1/map/slots`
+   *  resolves; the fresh compile always uses the fetched list. */
+  const SEED_SLOT_SLUGS = new Set(['background', 'ways']);
+
+  /** The slot slugs for a compile — fetched list, degraded to the seed
+   *  set when the slots endpoint is unreachable (the anchor-override
+   *  behavior then matches the seed exactly). */
+  async function slotSlugsFor(lang: string): Promise<Set<string>> {
+    try {
+      const slots: MapCatalogSlot[] = await fetchMapSlots(lang);
+      return new Set(slots.map(s => s.slug));
+    } catch {
+      return SEED_SLOT_SLUGS;
+    }
+  }
+
   /**
    * Compile catalog overlay layers into swap items. METADATA-FIRST and
    * PROGRESSIVE: an initial batch of placeholder rows applies as soon as
@@ -445,16 +465,13 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
    * (skip loudly — design.md D8). Returns the final list.
    */
   async function compileCatalogOverlays(
-    catalog: {
-      slots: MapCatalog['slots'];
-      layers: MapCatalogLayer[];
-    },
+    layers: MapCatalogLayer[],
+    slotSlugs: Set<string>,
     onItems?: (items: OverlaySwitchItem[]) => void
   ): Promise<OverlaySwitchItem[]> {
-    const slotSlugs = new Set(catalog.slots.map(s => s.slug));
     const spec = overlaySpec();
     const styleCache = loadStyleCache();
-    const overlayLayers = catalog.layers.filter(l => l.role === 'overlay');
+    const overlayLayers = layers.filter(l => l.role === 'overlay');
     // Catalog order (role, order, slug — the backend sorts): progressive
     // batches resolve in network order; this lookup keeps the list stable.
     // (Plain record — the maplibre `Map` type import shadows the global.)
@@ -508,20 +525,25 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
   // ── Boot + background sync ────────────────────────────────────────────
 
   /**
-   * Boot: render the persisted catalog immediately (if any), then fetch a
-   * fresh catalog in the background and refetch only layers whose version
-   * changed. Cold first run: explicit loading state, never factories.
+   * Boot: render the persisted layers snapshot immediately (if any),
+   * then fetch a fresh catalog in the background and refetch only layers
+   * whose `modified` changed. Cold first run: explicit loading state,
+   * never factories.
    */
   async function initOverlays(): Promise<void> {
-    const cached = loadPersistedCatalog();
+    const cached = loadPersistedLayers();
     if (cached) {
       try {
         // Cache-first render; cached styles apply synchronously, missing
         // entries stream in progressively (see compileCatalogOverlays).
-        await compileCatalogOverlays(cached, items => overlayStore.applyCatalogOverlays(items));
+        // Slots are not persisted — the seed set matches the backend seed
+        // and the fresh compile below switches to the fetched list.
+        await compileCatalogOverlays(cached.data, SEED_SLOT_SLUGS, items =>
+          overlayStore.applyCatalogOverlays(items)
+        );
         status.value = 'ready';
       } catch (error) {
-        console.warn('[map-catalog] persisted catalog could not be rendered:', error);
+        console.warn('[map-catalog] persisted layers could not be rendered:', error);
       }
     } else {
       status.value = 'loading';
@@ -529,21 +551,28 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     await refreshCatalog({ background: cached !== null });
   }
 
-  /** Fetch the fresh catalog, sync changed styles, apply, persist. */
+  /** Fetch the fresh layers catalog, sync changed styles, apply,
+   *  persist. The basemap store compiles its picker from the same
+   *  deduplicated service fetch (it never needs a handoff). */
   async function refreshCatalog({ background }: { background: boolean }): Promise<void> {
     if (refreshing) return;
     refreshing = true;
     try {
-      const catalog = await fetchMapCatalog();
-      persistCatalog(catalog, currentLocale());
-      pruneStyleCache(new Set(catalog.layers.map(l => l.slug)));
-      await compileCatalogOverlays(catalog, items => overlayStore.applyCatalogOverlays(items));
+      const lang = currentLocale();
+      // One shared layers fetch for overlays + basemaps: await the GPU
+      // tier so `?spec=` matches the basemap store's request (the
+      // service dedupes concurrent callers onto a single request).
+      const spec = await useBasemapStore().gpuSpecReady;
+      const [{ data: layers }, slotSlugs] = await Promise.all([
+        fetchMapCatalog(lang, spec),
+        slotSlugsFor(lang),
+      ]);
+      persistLayers(layers, lang);
+      pruneStyleCache(new Set(layers.map(l => l.slug)));
+      await compileCatalogOverlays(layers, slotSlugs, items =>
+        overlayStore.applyCatalogOverlays(items)
+      );
       status.value = 'ready';
-      // Basemaps ride the Martin-compatible index (backend PR #292):
-      // refreshBasemaps fetches it itself (spec-resolved style paths)
-      // and keeps the active selection — fire-and-forget so overlay
-      // refresh failures stay independent of basemap fetches.
-      void useBasemapStore().refreshBasemaps();
     } catch (error) {
       console.warn('[map-catalog] catalog refresh failed:', error);
       if (!background && status.value !== 'ready') {
@@ -568,7 +597,13 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
   async function rebuildOverlaysFromCatalog(): Promise<void> {
     if (status.value !== 'ready') return;
     try {
-      await compileCatalogOverlays((await fetchMapCatalog()) as MapCatalog, items =>
+      const lang = currentLocale();
+      const spec = await useBasemapStore().gpuSpecReady;
+      const [{ data: layers }, slotSlugs] = await Promise.all([
+        fetchMapCatalog(lang, spec),
+        slotSlugsFor(lang),
+      ]);
+      await compileCatalogOverlays(layers, slotSlugs, items =>
         overlayStore.applyCatalogOverlays(items)
       );
     } catch (error) {
