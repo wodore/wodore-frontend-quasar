@@ -126,13 +126,14 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 }
 
 // ── Rail (opens LEFT) ────────────────────────────────────────────────────
-// Cold first run: catalog loading, no basemaps yet
+// Cold first run: catalog loading, no basemaps yet — same footprint as
+// one picker button (40px; the rail padding provides the rest)
 .wd-bm__loading {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
 }
 
 .wd-bm__rail {
