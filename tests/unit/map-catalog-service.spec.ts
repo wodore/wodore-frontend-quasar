@@ -13,14 +13,14 @@ import {
   serializeOpacityCurve,
 } from '@services/map-catalog';
 
-// The layers/slots fetches ride the hand-declared clientMapLayers —
-// mock the transport so the specs pin paths, params and envelopes.
+// The layers/slots fetches ride the generated clientWodore — mock
+// the transport so the specs pin paths, params and envelopes.
 vi.mock('@clients/index', () => ({
-  clientMapLayers: { GET: vi.fn() },
+  clientWodore: { GET: vi.fn() },
 }));
-import { clientMapLayers } from '@clients/index';
+import { clientWodore } from '@clients/index';
 
-const layersGet = vi.mocked(clientMapLayers.GET);
+const layersGet = vi.mocked(clientWodore.GET);
 
 function layerSummary(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {

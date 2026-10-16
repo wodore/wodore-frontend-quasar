@@ -16,7 +16,7 @@
  *   clients.
  */
 import type { StyleSpecification } from 'maplibre-gl';
-import { clientMapLayers, type MapLayerSummary } from '@clients/index';
+import { clientWodore } from '@clients/index';
 import { getEnv } from '@services/runtimeEnv';
 import { currentLocale } from '@services/locale';
 
@@ -122,11 +122,12 @@ export class MapCatalogUnavailableError extends Error {
 }
 
 /** Normalize a served layer into the narrow DTO (defensive: the
- *  backend serializes loose dicts for config/legend/categories). */
-function toCatalogLayer(raw: MapLayerSummary): MapCatalogLayer {
-  // SAFETY: the served LayerSummary carries the scalar/array fields the
-  // DTO describes (backend #331 contract); the cast only narrows the
-  // loose `parameters` list into its typed shape — no runtime transform.
+ *  generated envelope types entries as loose dicts — the backend
+ *  serializes config/legend/categories that way). */
+function toCatalogLayer(raw: Record<string, unknown>): MapCatalogLayer {
+  // SAFETY: the served entries carry the scalar/array fields the DTO
+  // describes (backend #331 contract); the cast only narrows the loose
+  // dicts into the typed shape — no runtime transform.
   return {
     ...(raw as unknown as MapCatalogLayer),
     parameters: (raw.parameters ?? []) as unknown as MapLayerParameter[],
@@ -148,7 +149,7 @@ async function fetchLayersOnce(query: MapLayersQuery): Promise<MapLayersResponse
   let lastError: unknown = 'empty response';
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const { data, error } = await clientMapLayers.GET('/v1/map/layers', {
+      const { data, error } = await clientWodore.GET('/v1/map/layers', {
         params: { query },
         signal: AbortSignal.timeout(CATALOG_FETCH_TIMEOUT_MS),
       });
@@ -169,7 +170,8 @@ async function fetchLayersOnce(query: MapLayersQuery): Promise<MapLayersResponse
   throw new MapCatalogUnavailableError(lastError);
 }
 
-/** Query params shared by the map collection endpoints. */
+/** Query params for the layers collection — a typed subset of the
+ *  generated operation's query (lang/spec/role/show/fields). */
 interface MapLayersQuery {
   lang: string;
   spec?: MapSpecTier;
@@ -218,11 +220,15 @@ export function fetchMapSlots(lang?: string): Promise<MapCatalogSlot[]> {
     let lastError: unknown = 'empty response';
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        const { data, error } = await clientMapLayers.GET('/v1/map/slots', {
+        const { data, error } = await clientWodore.GET('/v1/map/slots', {
           params: { query: { lang: locale } },
           signal: AbortSignal.timeout(CATALOG_FETCH_TIMEOUT_MS),
         });
-        if (!error && data && Array.isArray(data.data)) return data.data;
+        if (!error && data && Array.isArray(data.data)) {
+          // SAFETY: the generated slots response is a loose dict; the
+          // rows carry {slug, label, order} (backend #331 contract).
+          return data.data as unknown as MapCatalogSlot[];
+        }
         lastError = error ?? 'empty response';
       } catch (e) {
         lastError = e;
