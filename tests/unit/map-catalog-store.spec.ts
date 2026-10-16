@@ -112,7 +112,7 @@ const VERSION_B = '2026-10-14T12:00:00+00:00';
 
 /** A resolved layers envelope (backend #331): `{data, count}`, one
  *  layer per slug with the served spec + spec-resolved style_url. */
-const catalogFor = (mtbModified: string | undefined) => {
+const catalogFor = (mtbModified: string | undefined, extraLayer?: Record<string, unknown>) => {
   const layers = [
     {
       slug: 'transport-stops',
@@ -143,6 +143,7 @@ const catalogFor = (mtbModified: string | undefined) => {
       legend: null,
       ...(mtbModified !== undefined ? { modified: mtbModified } : {}),
     },
+    ...(extraLayer ? [extraLayer as never] : []),
     {
       slug: 'mtb',
       role: 'overlay',
@@ -425,5 +426,79 @@ describe('map catalog store (boot cache + version sync)', () => {
     // Persisted to the parameter preferences
     const prefs = JSON.parse(window.localStorage.getItem('mapParameterValues')!);
     expect(prefs.mtb['mtb.opacity']).toEqual(curve);
+  });
+
+  it('date params default to today at boot — tokenized geojson URLs never fetch a literal {{date}}', async () => {
+    // Staging incident 2026-10-16: the huts overlay's wd-bookings
+    // geojson source carried {{date}} (tokenized) and no runtime value
+    // was set until the user picked a date — MapLibre fetched
+    // /v1/huts/availability/{{date}}.geojson (404/500 retries).
+    catalogFetch.mockResolvedValue(
+      catalogFor(VERSION_A, {
+        slug: 'huts',
+        role: 'overlay',
+        name: 'Huts',
+        icon: 'huts',
+        icon_badge: '',
+        slot: 'ways',
+        order: 0,
+        show: true,
+        is_default: false,
+        spec: 'high' as const,
+        style_url: '/v1/map/styles/huts.json?spec=high',
+        min_zoom: null,
+        max_zoom: null,
+        coverage_bbox: null,
+        fallback_min_zoom: null,
+        fallback: null,
+        anchors: null,
+        preview_url: null,
+        config: null,
+        interaction: null,
+        categories: [],
+        attributions: [],
+        license: null,
+        legend: null,
+        parameters: [
+          {
+            slug: 'date',
+            kind: 'date',
+            label: 'Availability date',
+            description: '',
+            default: null,
+            constraints: null,
+          },
+        ],
+      })
+    );
+    styleFetch.mockImplementation(async (url: string) => {
+      if (url.includes('/v1/map/styles/huts.json')) {
+        return Promise.resolve({
+          version: 8,
+          sources: {
+            'wd-bookings': {
+              type: 'geojson',
+              data: 'https://hub.example.com/v1/huts/availability/{{date}}.geojson',
+            },
+          },
+          layers: [{ id: 'wd-huts', type: 'symbol', source: 'wd-bookings' }],
+        } as StyleSpecification);
+      }
+      return Promise.resolve(TRANSPORT_STYLE);
+    });
+    const store = stores.useMapCatalogStore();
+    await store.initOverlays();
+
+    const overlays = (
+      overlayStores.useOverlayStore() as unknown as {
+        overlays: Array<{ name: string; style?: StyleSpecification }>;
+      }
+    ).overlays;
+    const huts = overlays.find(o => o.name === 'huts');
+    expect(huts).toBeTruthy();
+    const data = (huts!.style!.sources as Record<string, { data?: string }>)['wd-bookings']
+      ?.data as string;
+    expect(data).toMatch(/\/v1\/huts\/availability\/\d{4}-\d{2}-\d{2}\.geojson$/);
+    expect(data).not.toContain('{{date}}');
   });
 });
