@@ -165,7 +165,15 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
             : persisted;
       }
       const runtime = runtimeValues.value[param.slug];
-      if (runtime !== undefined) values[param.slug] = runtime;
+      if (runtime !== undefined) {
+        values[param.slug] = runtime;
+      } else if (param.kind === 'date' && values[param.slug] == null) {
+        // Boot default: the backend substitutes the same serve-time
+        // default in resolved mode; tokenized mode leaves {{date}} for
+        // the client. Without this the geojson source URL fetches a
+        // literal {{date}} (staging incident 2026-10-16).
+        values[param.slug] = new Date().toISOString().slice(0, 10);
+      }
     }
     return values;
   }
