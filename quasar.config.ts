@@ -184,7 +184,22 @@ export default configure(ctx => {
       // polyfillModulePreload: true,
       // distDir
 
-      // extendViteConf (viteConf) {},
+      extendViteConf(viteConf) {
+        // Dev server host allowlist: Vite blocks non-localhost Host
+        // headers. To expose the dev server on a machine name (e.g. a
+        // Tailscale MagicDNS name), list it in WODORE_DEV_ALLOWED_HOSTS
+        // (.env.local, comma-separated; subdomain wildcards with a
+        // leading dot, e.g. ".ts.net"). IP hosts are always allowed;
+        // unset/empty = Vite defaults (localhost only).
+        const devHosts = (process.env.WODORE_DEV_ALLOWED_HOSTS ?? '')
+          .split(',')
+          .map(host => host.trim())
+          .filter(Boolean);
+        if (devHosts.length > 0) {
+          viteConf.server ??= {};
+          viteConf.server.allowedHosts = devHosts;
+        }
+      },
       // viteVuePluginOptions: {},
 
       vitePlugins: [
