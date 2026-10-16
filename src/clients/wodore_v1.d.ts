@@ -544,7 +544,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** map-catalog — Martin-compatible catalog with selector metadata. */
+        /** map-catalog — Martin-parity catalog: slug → {name, path} only. */
         get: operations["map-catalog"];
         put?: never;
         post?: never;
@@ -554,7 +554,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/map/config": {
+    "/v1/map/layers": {
         parameters: {
             query?: never;
             header?: never;
@@ -562,13 +562,50 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * map-config — Map layer catalog (overlays and basemaps).
-         * @description Metadata index for map clients: identities, labels in the
-         *     request language, icons, parameter schemas, device-tier
-         *     variants, category projections and coverage bounds. Large
-         *     styles are referenced by URL, small ones inlined.
+         * map-layers — List resolved map layers (generic collection envelope).
+         * @description The backend resolves the wanted ``spec`` per layer (exact →
+         *     explicit chain → single) and reports the served tier — clients
+         *     never select among variants. Sparse fieldsets narrow entries.
          */
-        get: operations["map-config"];
+        get: operations["map-layers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/map/layers/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * map-layer-detail — Get one resolved layer (same shape as the collection entries).
+         * @description Per-layer ETag folds the layer's ``modified``, the served
+         *     ``spec`` and ``lang`` — unchanged layers answer 304.
+         */
+        get: operations["map-layer-detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/map/slots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** map-slots — List map slots (generic collection envelope). */
+        get: operations["map-slots"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1518,12 +1555,25 @@ export interface components {
         /**
          * ErrorDetail
          * @description Error body: ``code`` for clients, ``detail`` for humans.
+         *
+         *     RFC 9457 problem members are merged in at the ``to_error``
+         *     boundary on every error (openspec: api-errors): ``type``, ``title``
+         *     and ``status`` always; ``instance`` only for resource-scoped codes
+         *     (``not_found``, ``gone``) where a request path exists.
          */
         ErrorDetail: {
             /** Code */
             code?: string;
             /** Detail */
             detail?: string;
+            /** Type */
+            type?: string;
+            /** Title */
+            title?: string;
+            /** Status */
+            status?: number;
+            /** Instance */
+            instance?: string;
         };
         /**
          * Feature
@@ -2957,174 +3007,6 @@ export interface components {
             xl: string;
         };
         /**
-         * LayerSummary
-         * @description Catalog entry for one layer (all its variants share the identity).
-         */
-        LayerSummary: {
-            /** Slug */
-            slug: string;
-            /** Role */
-            role: string;
-            /**
-             * Name
-             * @default
-             */
-            name: string;
-            /**
-             * Description
-             * @default
-             */
-            description: string;
-            /**
-             * Icon
-             * @default
-             */
-            icon: string;
-            /**
-             * Icon Badge
-             * @default
-             */
-            icon_badge: string;
-            /**
-             * Slot
-             * @default null
-             */
-            slot: string | null;
-            /**
-             * Order
-             * @default 0
-             */
-            order: number;
-            /**
-             * Show
-             * @default true
-             */
-            show: boolean;
-            /**
-             * Is Default
-             * @default false
-             */
-            is_default: boolean;
-            /**
-             * Min Zoom
-             * @default null
-             */
-            min_zoom: number | null;
-            /**
-             * Max Zoom
-             * @default null
-             */
-            max_zoom: number | null;
-            /**
-             * Coverage Bbox
-             * @default null
-             */
-            coverage_bbox: number[] | null;
-            /**
-             * Fallback Min Zoom
-             * @default null
-             */
-            fallback_min_zoom: number | null;
-            /**
-             * Fallback
-             * @default null
-             */
-            fallback: string | null;
-            /**
-             * Anchors
-             * @default null
-             */
-            anchors: {
-                [key: string]: unknown;
-            } | null;
-            /**
-             * Preview Url
-             * @default null
-             */
-            preview_url: string | null;
-            /**
-             * Config
-             * @default null
-             */
-            config: {
-                [key: string]: unknown;
-            } | null;
-            /**
-             * Interaction
-             * @default null
-             */
-            interaction: {
-                [key: string]: unknown;
-            } | null;
-            /**
-             * Parameters
-             * @default []
-             */
-            parameters: components["schemas"]["ParameterSummary"][];
-            /**
-             * Categories
-             * @default []
-             */
-            categories: {
-                [key: string]: unknown;
-            }[];
-            /**
-             * Attributions
-             * @default []
-             */
-            attributions: {
-                [key: string]: unknown;
-            }[];
-            /**
-             * License
-             * @default null
-             */
-            license: {
-                [key: string]: unknown;
-            } | null;
-            /**
-             * Legend
-             * @default null
-             */
-            legend: {
-                [key: string]: unknown;
-            } | null;
-            /**
-             * Version
-             * @default null
-             */
-            version: string | null;
-            /**
-             * Variants
-             * @default []
-             */
-            variants: components["schemas"]["LayerVariant"][];
-        } & {
-            [key: string]: unknown;
-        };
-        /**
-         * LayerVariant
-         * @description One device-tier variant of a layer.
-         */
-        LayerVariant: {
-            /** Spec */
-            spec: string;
-            /**
-             * Style Url
-             * @default null
-             */
-            style_url: string | null;
-            /**
-             * Inline Style
-             * @default null
-             */
-            inline_style: {
-                [key: string]: unknown;
-            } | null;
-        } & {
-            [key: string]: unknown;
-        };
-        /**
          * LicenseInfoSchema
          * @description Important information, for example for an image
          */
@@ -3198,22 +3080,16 @@ export interface components {
             lon: number;
         };
         /**
-         * MapCatalogResponse
-         * @description Top-level catalog payload.
+         * MapLayersEnvelope
+         * @description Generic collection envelope (api-conventions).
          */
-        MapCatalogResponse: {
-            /**
-             * Slots
-             * @default []
-             */
-            slots: {
+        MapLayersEnvelope: {
+            /** Data */
+            data: {
                 [key: string]: unknown;
             }[];
-            /**
-             * Layers
-             * @default []
-             */
-            layers: components["schemas"]["LayerSummary"][];
+            /** Count */
+            count: number;
         };
         /**
          * MediaUrlModeEnum
@@ -3450,40 +3326,6 @@ export interface components {
              * @default null
              */
             url: string | null;
-        };
-        /**
-         * ParameterSummary
-         * @description Parameter schema entry (drives the client settings UI).
-         */
-        ParameterSummary: {
-            /** Slug */
-            slug: string;
-            /** Kind */
-            kind: string;
-            /**
-             * Label
-             * @default
-             */
-            label: string;
-            /**
-             * Description
-             * @default
-             */
-            description: string;
-            /**
-             * Default
-             * @default null
-             */
-            default: unknown;
-            /**
-             * Constraints
-             * @default null
-             */
-            constraints: {
-                [key: string]: unknown;
-            } | null;
-        } & {
-            [key: string]: unknown;
         };
         /**
          * PhoneSchema
@@ -5628,7 +5470,7 @@ export interface operations {
             query?: {
                 /** @description Select language code: de, en, fr, it. */
                 lang?: string;
-                /** @description Device-tier spec (low | medium | high); self-resolves to nearest */
+                /** @description Device-tier spec (low | medium | high); resolved into path */
                 spec?: string | null;
             };
             header?: never;
@@ -5678,13 +5520,21 @@ export interface operations {
             };
         };
     };
-    "map-config": {
+    "map-layers": {
         parameters: {
             query?: {
+                /** @description Sparse fieldsets (JSON:API): `fields[TYPE]=name1,name2` narrows the response to the selected fields (`__all__` = every field). Valid TYPEs: map_layers. */
+                fields?: {
+                    [key: string]: string;
+                } | null;
                 /** @description Select language code: de, en, fr, it. */
                 lang?: string;
+                /** @description Device-tier spec the client WANTS (low | medium | high); the backend resolves exact → explicit chain → single and reports the served spec per entry */
+                spec?: string | null;
                 /** @description Filter by layer role (basemap | overlay) */
                 role?: string | null;
+                /** @description Opt-in visibility filter (true | false). Default: all layers — hidden fallback basemaps stay resolvable for client-side fallback chains */
+                show?: boolean | null;
             };
             header?: never;
             path?: never;
@@ -5699,7 +5549,135 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MapCatalogResponse"];
+                    "application/json": components["schemas"]["MapLayersEnvelope"];
+                };
+            };
+            /** @description Raised when request components cannot be parsed */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Raised when provided `Accept` header cannot be satisfied */
+            406: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Raised when returned response does not match the response schema */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+        };
+    };
+    "map-layer-detail": {
+        parameters: {
+            query?: {
+                /** @description Sparse fieldsets (JSON:API): `fields[TYPE]=name1,name2` narrows the response to the selected fields (`__all__` = every field). Valid TYPEs: map_layers. */
+                fields?: {
+                    [key: string]: string;
+                } | null;
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+                /** @description Device-tier spec the client WANTS (low | medium | high); the backend resolves exact → explicit chain → single and reports the served spec per entry */
+                spec?: string | null;
+                /** @description Filter by layer role (basemap | overlay) */
+                role?: string | null;
+                /** @description Opt-in visibility filter (true | false). Default: all layers — hidden fallback basemaps stay resolvable for client-side fallback chains */
+                show?: boolean | null;
+            };
+            header?: never;
+            path: {
+                /** @description Path params for the layer detail endpoint. */
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    "Cache-Control": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Raised when request components cannot be parsed */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Raised when path parameters do not match */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Raised when provided `Accept` header cannot be satisfied */
+            406: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Raised when returned response does not match the response schema */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+        };
+    };
+    "map-slots": {
+        parameters: {
+            query?: {
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    "Cache-Control": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Raised when request components cannot be parsed */
