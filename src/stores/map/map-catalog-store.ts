@@ -69,7 +69,7 @@ import {
   mapCatalogOverlay,
   mergeSpritePacks,
 } from './utils/catalog-mapping';
-import { wireBookingsSource, unwireBookingsSource } from './utils/overlay-huts';
+import { fixupBookingsStyle, applyBookingsToMap } from './utils/overlay-huts';
 import type { OverlaySwitchItem } from './utils/interfaces';
 
 const PARAMS_KEY = 'mapParameterValues';
@@ -299,14 +299,13 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
         mapSource.setData(resolvedData);
       }
     }
-    const previousStyle = overlay.style;
     overlay.style = resolved;
-    if ('wd-bookings' in resolved.sources) {
-      // The resolved doc is a fresh object — re-attach the availability
-      // wiring (live object data + date-gated visibility bake) and stop
-      // the replaced document's watchers.
-      unwireBookingsSource(previousStyle);
-      wireBookingsSource(resolved);
+    // The availability source rides the huts store's live object — a
+    // resolved URL would drop the date-picker flow's auth/lang/days
+    // params and fetch without a picked date. Synchronous fixup: bake
+    // the live data + date-gated visibility, then apply to the live map.
+    if (fixupBookingsStyle(resolved)) {
+      applyBookingsToMap(map, Boolean(overlay.active));
     }
     const curve = overlay.parameters.find(p => p.kind === 'opacity-curve');
     if (curve && values[curve.slug] !== undefined) {
@@ -509,7 +508,7 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
         .map(l => settled[l.slug] ?? placeholders[l.slug]!)
         .sort((a, b) => (orderOf[a.name] ?? 0) - (orderOf[b.name] ?? 0));
       mergeSpritePacks(snapshot);
-      wireCatalogSources(snapshot);
+      fixupCatalogStyles(snapshot);
       onItems?.(snapshot);
     };
     emit(); // metadata-first: rows before any style fetch settles
@@ -528,15 +527,13 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
       .sort((a, b) => (orderOf[a.name] ?? 0) - (orderOf[b.name] ?? 0));
   }
 
-  /** Wire live geojson sources the catalog styles reference by URL token:
-   *  the availability `wd-bookings` source rides the huts-store flow.
-   *  Detected by source, not slug — backend #327 merged
+  /** Fix up live geojson sources the catalog styles reference by URL
+   *  token: the availability `wd-bookings` source rides the huts-store
+   *  flow. Detected by source, not slug — backend #327 merged
    *  `huts-availability` into `huts` (the slug is retired). */
-  function wireCatalogSources(items: OverlaySwitchItem[]): void {
+  function fixupCatalogStyles(items: OverlaySwitchItem[]): void {
     for (const item of items) {
-      if ('wd-bookings' in item.style.sources) {
-        wireBookingsSource(item.style);
-      }
+      fixupBookingsStyle(item.style);
     }
   }
 
@@ -638,6 +635,21 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
   watch(
     () => hutsStore.selectedDate,
     date => setRuntimeDate(date)
+  );
+
+  // Availability data arrival (date picked → fetch settled, or cleared):
+  // push the live bookings object into the current huts overlay's style
+  // spec (re-adds and basemap switches carry it) and the live map source.
+  // ONE watch for all styles — there is no per-style wiring to leak.
+  watch(
+    () => hutsStore.bookingsGeojson,
+    () => {
+      for (const overlay of catalogOverlays()) {
+        if (fixupBookingsStyle(overlay.style)) {
+          applyBookingsToMap(mapRef.map, Boolean(overlay.active));
+        }
+      }
+    }
   );
 
   return {
