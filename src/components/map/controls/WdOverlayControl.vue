@@ -39,6 +39,7 @@ import { LocalStorage } from 'quasar';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
 import type { AllPaintProperties } from '@maplibre/maplibre-gl-style-spec';
 import { useOverlayStore } from '@stores/map/overlay-store';
+import { useHutsStore } from '@stores/huts-store';
 import { useMapCatalogStore } from '@stores/map/map-catalog-store';
 import { useBasemapStore } from '@stores/map/basemap-store';
 import { useOverlayConfigStore } from '@stores/map/overlay-config-store';
@@ -1474,6 +1475,22 @@ watch(
   () => overlayStore.overlaysEpoch,
   () => {
     reapplyOverlaysAfterCatalogSwap();
+  }
+);
+
+// Picking a date means the user wants hut availability: enable the
+// overlay owning the wd-bookings source through the normal toggle path
+// (persist + group view + map add + visibility). One-directional —
+// clearing the date never disables the overlay again (the date-gated
+// occupation layers hide on their own).
+watch(
+  () => useHutsStore().selectedDate,
+  date => {
+    if (date === undefined) return;
+    const huts = (overlayStore.overlays as unknown as OverlaySwitchItem[]).find(
+      o => !o.active && o.style && 'wd-bookings' in o.style.sources
+    );
+    if (huts) toggleLayer(huts);
   }
 );
 
