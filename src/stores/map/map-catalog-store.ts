@@ -69,16 +69,13 @@ import {
   mapCatalogOverlay,
   mergeSpritePacks,
 } from './utils/catalog-mapping';
-import { wireBookingsSource } from './utils/overlay-huts';
+import { wireBookingsSource, unwireBookingsSource } from './utils/overlay-huts';
 import type { OverlaySwitchItem } from './utils/interfaces';
 
 const PARAMS_KEY = 'mapParameterValues';
 
 /** A validated parameter value: scalar or a parsed opacity curve. */
 export type ParameterValue = number | string | boolean | OpacityCurve;
-
-/** Styles whose geojson source is already wired (once per style object). */
-const wiredStyles = new WeakSet<object>();
 
 export const useMapCatalogStore = defineStore('mapCatalog', () => {
   const overlayStore = useOverlayStore();
@@ -292,13 +289,25 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     for (const [id, source] of Object.entries(overlay.tokenizedStyle.sources)) {
       const data = (source as GeoJSONSourceSpecification).data;
       if (typeof data !== 'string' || !data.includes('{{')) continue;
+      // The availability source is wired to the huts store's live
+      // object — a resolved URL would drop the date-picker flow's
+      // auth/lang/days params and fetch without a picked date.
+      if (id === 'wd-bookings') continue;
       const resolvedData = (resolved.sources[id] as GeoJSONSourceSpecification).data;
       const mapSource = map?.getSource(id) as GeoJSONSource | undefined;
       if (typeof resolvedData === 'string' && mapSource?.setData) {
         mapSource.setData(resolvedData);
       }
     }
+    const previousStyle = overlay.style;
     overlay.style = resolved;
+    if ('wd-bookings' in resolved.sources) {
+      // The resolved doc is a fresh object — re-attach the availability
+      // wiring (live object data + date-gated visibility bake) and stop
+      // the replaced document's watchers.
+      unwireBookingsSource(previousStyle);
+      wireBookingsSource(resolved);
+    }
     const curve = overlay.parameters.find(p => p.kind === 'opacity-curve');
     if (curve && values[curve.slug] !== undefined) {
       // SAFETY: opacity-curve resolution values are the authored
@@ -520,12 +529,13 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
   }
 
   /** Wire live geojson sources the catalog styles reference by URL token:
-   *  the availability layer's `wd-bookings` rides the huts-store flow. */
+   *  the availability `wd-bookings` source rides the huts-store flow.
+   *  Detected by source, not slug — backend #327 merged
+   *  `huts-availability` into `huts` (the slug is retired). */
   function wireCatalogSources(items: OverlaySwitchItem[]): void {
     for (const item of items) {
-      if (item.catalogSlug === 'huts-availability' && !wiredStyles.has(item.style)) {
+      if ('wd-bookings' in item.style.sources) {
         wireBookingsSource(item.style);
-        wiredStyles.add(item.style);
       }
     }
   }

@@ -33,6 +33,7 @@ import {
   type LayerGroup,
 } from '@stores/map/utils/layer-groups';
 import { withOverlayMinZoom } from '@stores/map/utils/map-constants';
+import { isDateGatedLayer, dateGatedVisibility } from '@stores/map/utils/overlay-huts';
 import { useI18n } from 'vue-i18n';
 import { LocalStorage } from 'quasar';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
@@ -1145,6 +1146,18 @@ function setOverlayVisibility(overlay: OverlaySwitchItem): boolean {
   if (mapRef.map === undefined) return false;
   for (const layer of overlay.style.layers) {
     if (mapRef.map.getLayer(layer.id)) {
+      if (isDateGatedLayer(layer.id)) {
+        // Availability layers follow the PICKED DATE (the bookings
+        // wiring owns their visibility — hidden until a date is
+        // picked), not the overlay switch; hiding the whole overlay
+        // still hides them.
+        mapRef.map.setLayoutProperty(
+          layer.id,
+          'visibility',
+          overlay.active ? dateGatedVisibility() : 'none'
+        );
+        continue;
+      }
       mapRef.map.setLayoutProperty(layer.id, 'visibility', overlay.active ? 'visible' : 'none');
     }
   }
@@ -1370,9 +1383,18 @@ function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwit
   const beforeId = findBeforeLayerId(overlay, overlaysOrder);
   let allAdded = true;
   for (const layer of overlay.style.layers) {
+    // Date-gated availability layers carry the PICKED-DATE visibility
+    // (hidden until a date is picked — the bookings wiring owns it);
+    // every other layer follows the overlay switch.
+    const layout: Record<string, unknown> = { ...(layer.layout || {}) };
+    layout['visibility'] = overlay.active
+      ? isDateGatedLayer(layer.id)
+        ? dateGatedVisibility()
+        : 'visible'
+      : 'none';
     const layerWithVisibility = {
       ...layer,
-      layout: { ...(layer.layout || {}), visibility: overlay.active ? 'visible' : 'none' },
+      layout,
     };
     const added = addOverlayLayer({
       layer: layerWithVisibility as LayerSpecification,
