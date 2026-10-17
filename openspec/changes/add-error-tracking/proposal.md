@@ -31,8 +31,10 @@ destination — sentry.io or Better Stack — never a code change).
   `WODORE_SENTRY_TRACES_SAMPLE_RATE` (runtime env, default `0`) can
   enable pageload/navigation transactions later — the Vue Router tracing
   integration is only wired when the rate is > 0.
-- **Privacy-safe defaults**: `sendDefaultPii: false` (no user identities,
-  IPs, cookies, or request bodies attached to events).
+- **Privacy-safe defaults**: v11 `dataCollection` pinned to the v10
+  "no default PII" posture (no user identities, IPs, cookies, or HTTP
+  bodies; IP-bearing and OIDC authorization params filtered from
+  collected URLs).
 
 Non-goals: service-worker-side error capture (the SW is a separate
 JS context; page-level hooks cannot see it), sourcemap upload to a

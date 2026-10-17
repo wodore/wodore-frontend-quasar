@@ -101,6 +101,15 @@ in docker and baked for Capacitor. The package semver rides along as an
 (the JS SDK has no `defaultTags` init option — same workaround as the
 backend's `_stamp_app_version`).
 
+Resolution boundary (review B1): git hash and semver are build identity
+and MUST be read via *static* `process.env.X` expressions (Vite inlines
+only static text; `WdVersionsPanel.vue` is the established pattern) —
+`getEnv`'s dynamic `process.env[name]` fallback cannot reach them in
+the browser bundle (its stand-in for `process.env` compiles to an empty
+object), and the two keys are deliberately absent from `env.js`/the
+inline EJS because they are not runtime-swappable. Runtime-swappable
+values (DSN, rate, environment) go through `getEnv`.
+
 **D5 — Errors-only default; tracing integration wired only when the
 rate is > 0.**
 `WODORE_SENTRY_TRACES_SAMPLE_RATE` (runtime env, string → parsed float,
@@ -115,10 +124,15 @@ flip the rate per environment at container start; Capacitor builds bake
 it (enabling tracing for Android requires a rebuild).
 
 **D6 — PII off; no user identification.**
-`sendDefaultPii: false` (no IPs, cookies, request bodies). The frontend
-additionally never calls `Sentry.setUser` — authenticated users stay
-anonymous. Same residual caveat as the backend: PII that app code writes
-*into* error messages or URLs still flows into events.
+v11 removed `sendDefaultPii` (its `dataCollection` defaults COLLECT),
+so the init pins the migration guide's v10-parity recipe: `userInfo`/
+`cookies`/`httpBodies` off; `httpHeaders`/`urlQueryParams` as deny-lists
+filtering IP-bearing keys and the OIDC authorization params (`code`,
+`state`, `iss` — the SDK's built-in sensitive-key filter misses those,
+and they sit in `window.location` right after the OIDC redirect). The
+frontend additionally never calls `Sentry.setUser` — authenticated
+users stay anonymous. Same residual caveat as the backend: PII that app
+code writes *into* error messages or URLs still flows into events.
 
 **D7 — Static import, console breadcrumbs stay on.**
 The SDK is imported statically (~40 KB gz) so hooks install

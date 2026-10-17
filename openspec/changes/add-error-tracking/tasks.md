@@ -24,7 +24,15 @@
 - [ ] 4.2 Verify a Vue component error carries component + route context, and that no telemetry leaves a no-DSN deployment (dev/preview)
 - [ ] 4.3 Android: build an RC/preview variant with the DSN set; verify WebView errors arrive tagged with the build's commit hash
 
-## 5. Vendor Decision & Rollout
+## 6. Review Fixes (Claude Opus advisor review — blocker + should-fixes, addressed)
+
+- [x] 6.1 B1: `release`/`app_version` were read via dynamic `getEnv`, which resolves to `undefined` in the browser bundle (Vite inlines only static `process.env.X`; keys absent from env.js by design) — tests passed only under live Node env. Fixed with static `process.env` reads (pattern: `WdVersionsPanel.vue`) + regression tests that mock `runtimeEnv` to the browser reality (getEnv serves runtime keys only)
+- [x] 6.2 S1: OIDC authorization params (`code`/`state`/`iss`) added to the `urlQueryParams` deny-list — the SDK's built-in sensitive-key filter misses them and they sit in `window.location` after the OIDC redirect
+- [x] 6.3 S2: unrewritten `@@…@@` DSN now logs a console.warn naming the cause ("key missing from the env defaults file for replace_vars") instead of failing silently
+- [x] 6.4 N1/N2: header vs URL-param deny-lists split into dedicated constants; comments corrected to "migration-guide v10-parity recipe" (deny-lists are collect-all-except, not strict-off)
+- [x] 6.5 N3: spec/proposal/design wording updated from the removed `sendDefaultPii` option to the actual v11 `dataCollection` posture; spec gained an OIDC-redirect scenario
+
+## 7. Vendor Decision & Rollout
 
 - [ ] 5.1 Align with the backend's vendor trial (sentry.io vs Better Stack) — shared account hosts both backend and frontend projects; record the decision
 - [ ] 5.2 Configure alert routing and inbound filters (bots/4xx noise) at the chosen vendor

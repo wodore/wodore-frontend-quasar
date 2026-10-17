@@ -104,15 +104,22 @@ are sampled at that rate.
 - **THEN** pageload and navigation transactions are sampled at 5% with route context from the Vue Router
 
 ### Requirement: No personally identifiable information is sent
-The SDK SHALL be configured with `sendDefaultPii: false` so user
-identities, IP addresses, cookies, and request bodies are not attached
-to events. The application SHALL NOT identify users to the
+The SDK SHALL be configured so that user identities, cookies, HTTP
+bodies, and IP-bearing headers/params are not attached to events (the
+SDK v11 `dataCollection` option: `userInfo`/`cookies`/`httpBodies` off,
+header and URL-param deny-lists for IP-bearing and OIDC authorization
+params), and the application SHALL NOT identify users to the
 error-tracking vendor (no user IDs, emails, or account data on events).
 
 #### Scenario: Error during an authenticated session
 
 - **WHEN** an error is captured while a user is signed in
 - **THEN** the event contains no user identifier, IP address, or session data
+
+#### Scenario: OIDC redirect URL captured
+
+- **WHEN** an error or breadcrumb is captured on a URL still carrying OIDC authorization params (`code`, `state`, `iss`)
+- **THEN** those params are filtered from the collected URL
 
 ### Requirement: Rollback by configuration only
 Disabling error tracking SHALL require only removing (or emptying)
