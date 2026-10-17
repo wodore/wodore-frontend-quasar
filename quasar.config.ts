@@ -66,6 +66,10 @@ export default configure(ctx => {
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
     /// axios
     boot: [
+      // Error tracking first (client-only): installs the global error
+      // hooks before any later boot file runs — DSN-gated, inert without
+      // WODORE_SENTRY_DSN (openspec: add-error-tracking).
+      { server: false, path: 'sentry' },
       'i18n',
       'storage',
       'storage',
@@ -159,6 +163,10 @@ export default configure(ctx => {
         WODORE_OICD_RESOURCE_ID: process.env.WODORE_OICD_RESOURCE_ID,
         WODORE_MAPTILER_API_KEY: process.env.WODORE_MAPTILER_API_KEY,
         WODORE_TILE_SERVER_URL: process.env.WODORE_TILE_SERVER_URL,
+        // Error tracking (openspec: add-error-tracking) — runtime-swappable
+        // in docker via /env.js; empty/unset = fully inert.
+        WODORE_SENTRY_DSN: process.env.WODORE_SENTRY_DSN,
+        WODORE_SENTRY_TRACES_SAMPLE_RATE: process.env.WODORE_SENTRY_TRACES_SAMPLE_RATE,
         WODORE_OFFICIAL_URL: process.env.WODORE_OFFICIAL_URL,
         // Build flag, not a runtime value: bakes a robots noindex meta into
         // index.html for static deployments that cannot decide at runtime —

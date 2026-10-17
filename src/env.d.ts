@@ -21,6 +21,8 @@ declare namespace NodeJS {
     WODORE_OICD_RESOURCE_ID: string;
     WODORE_MAPTILER_API_KEY: string;
     WODORE_OFFICIAL_URL: string;
+    WODORE_SENTRY_DSN: string;
+    WODORE_SENTRY_TRACES_SAMPLE_RATE: string;
     TIMESTAMP_VERSION_HEX: string;
   }
 }

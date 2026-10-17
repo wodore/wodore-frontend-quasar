@@ -404,6 +404,37 @@ Environment files are loaded in this order (later files override earlier ones):
 
 See `.env` file for all available variables
 
+### Error tracking (Sentry protocol)
+
+`@sentry/vue` initialized in `src/services/sentry.ts` via the `sentry` boot
+file (FIRST in the boot list, client-only — hooks installed before later
+boot files run). Mirrors the backend's setup (`server/settings/components/
+sentry.py`). Rules:
+
+- **DSN-gated**: no `WODORE_SENTRY_DSN` runtime env → `Sentry.init` is never
+  called (dev/test/CI/PR previews are always telemetry-free). Values flow
+  through `getEnv` (`services/runtimeEnv.ts`): docker swaps the DSN per
+  environment at container start (`/env.js` + replace_vars, no rebuild),
+  Capacitor builds bake it at build time (inline EJS in index.html).
+- **Vendor-neutral**: the DSN decides the destination — sentry.io or Better
+  Stack (Sentry-SDK-compatible ingestion). Switching vendors = swap DSN,
+  never a code change. Rollback = unset the DSN.
+- **Release = `WODORE_GIT_HASH`** (baked at build) in every environment;
+  package semver rides along as an `app_version` event tag.
+- **`WODORE_SENTRY_TRACES_SAMPLE_RATE`** (default `0` = errors-only; e.g.
+  `0.05` enables pageload/navigation tracing via the Vue Router) — docker
+  can flip it at runtime, Android needs a rebuild.
+- **PII stays off**: the SDK v11 `dataCollection` option is pinned to the
+  v10 `sendDefaultPii=false` defaults (no user identities, cookies, HTTP
+  bodies; IP-bearing headers/params filtered) — do not loosen without a
+  privacy review, and never call `setUser`. Caveat: PII that app code
+  writes *into* error messages or URLs still flows into events.
+- Unhandled Vue errors (app error handler), `window.onerror` and
+  `unhandledrejection` are captured with component/route context. The
+  service worker's own errors are NOT captured (separate JS context).
+- Stack traces are minified until a sourcemap upload strategy is decided
+  (vendor-dependent; see the openspec `add-error-tracking` rollout tasks).
+
 ## Common Patterns
 
 ### i18n / Language Switch
