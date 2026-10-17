@@ -33,11 +33,13 @@ import {
   type LayerGroup,
 } from '@stores/map/utils/layer-groups';
 import { withOverlayMinZoom } from '@stores/map/utils/map-constants';
+import { isDateGatedLayer, dateGatedVisibility } from '@stores/map/utils/overlay-huts';
 import { useI18n } from 'vue-i18n';
 import { LocalStorage } from 'quasar';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
 import type { AllPaintProperties } from '@maplibre/maplibre-gl-style-spec';
 import { useOverlayStore } from '@stores/map/overlay-store';
+import { useHutsStore } from '@stores/huts-store';
 import { useMapCatalogStore } from '@stores/map/map-catalog-store';
 import { useBasemapStore } from '@stores/map/basemap-store';
 import { useOverlayConfigStore } from '@stores/map/overlay-config-store';
@@ -1145,6 +1147,18 @@ function setOverlayVisibility(overlay: OverlaySwitchItem): boolean {
   if (mapRef.map === undefined) return false;
   for (const layer of overlay.style.layers) {
     if (mapRef.map.getLayer(layer.id)) {
+      if (isDateGatedLayer(layer.id)) {
+        // Availability layers follow the PICKED DATE (the bookings
+        // wiring owns their visibility — hidden until a date is
+        // picked), not the overlay switch; hiding the whole overlay
+        // still hides them.
+        mapRef.map.setLayoutProperty(
+          layer.id,
+          'visibility',
+          overlay.active ? dateGatedVisibility() : 'none'
+        );
+        continue;
+      }
       mapRef.map.setLayoutProperty(layer.id, 'visibility', overlay.active ? 'visible' : 'none');
     }
   }
@@ -1370,9 +1384,18 @@ function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwit
   const beforeId = findBeforeLayerId(overlay, overlaysOrder);
   let allAdded = true;
   for (const layer of overlay.style.layers) {
+    // Date-gated availability layers carry the PICKED-DATE visibility
+    // (hidden until a date is picked — the bookings wiring owns it);
+    // every other layer follows the overlay switch.
+    const layout: Record<string, unknown> = { ...(layer.layout || {}) };
+    layout['visibility'] = overlay.active
+      ? isDateGatedLayer(layer.id)
+        ? dateGatedVisibility()
+        : 'visible'
+      : 'none';
     const layerWithVisibility = {
       ...layer,
-      layout: { ...(layer.layout || {}), visibility: overlay.active ? 'visible' : 'none' },
+      layout,
     };
     const added = addOverlayLayer({
       layer: layerWithVisibility as LayerSpecification,
@@ -1452,6 +1475,22 @@ watch(
   () => overlayStore.overlaysEpoch,
   () => {
     reapplyOverlaysAfterCatalogSwap();
+  }
+);
+
+// Picking a date means the user wants hut availability: enable the
+// overlay owning the wd-bookings source through the normal toggle path
+// (persist + group view + map add + visibility). One-directional —
+// clearing the date never disables the overlay again (the date-gated
+// occupation layers hide on their own).
+watch(
+  () => useHutsStore().selectedDate,
+  date => {
+    if (date === undefined) return;
+    const huts = (overlayStore.overlays as unknown as OverlaySwitchItem[]).find(
+      o => !o.active && o.style && 'wd-bookings' in o.style.sources
+    );
+    if (huts) toggleLayer(huts);
   }
 );
 

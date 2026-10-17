@@ -6,18 +6,24 @@
 // layer's `modified` timestamp changes (backend #331).
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
+import { nextTick } from 'vue';
 import type { StyleSpecification } from 'maplibre-gl';
+import { useHutsStore } from '@stores/huts-store';
 
 const notifyCalls: Array<{ message: string; caption?: string }> = [];
 
 // Fake MapLibre map recording paint/layout/setData calls
 const paintCalls: Array<[string, string, unknown]> = [];
+const layoutCalls: Array<[string, string, unknown]> = [];
+const setDataCalls: Array<unknown> = [];
 const fakeMap = {
   getLayer: (id: string) => ({ id }),
-  getSource: () => undefined,
+  getSource: (id: string) =>
+    id === 'wd-bookings' ? { setData: (data: unknown) => setDataCalls.push(data) } : undefined,
   setPaintProperty: (id: string, prop: string, value: unknown) =>
     paintCalls.push([id, prop, value]),
-  setLayoutProperty: () => undefined,
+  setLayoutProperty: (id: string, prop: string, value: unknown) =>
+    layoutCalls.push([id, prop, value]),
   isStyleLoaded: () => true,
 };
 vi.mock('@indoorequal/vue-maplibre-gl', () => ({
@@ -103,6 +109,64 @@ const TRANSPORT_STYLE = {
       type: 'circle',
       source: 'transport-stops',
       paint: { 'circle-color': '#0079C7' },
+    },
+  ],
+} as StyleSpecification;
+
+/** Huts overlay layer + tokenized style: the availability source carries
+ *  the {{date}} token (boot-defaulted to today) and an occupation layer
+ *  that must bake hidden until a date is picked. */
+const HUTS_LAYER: Record<string, unknown> = {
+  slug: 'huts',
+  role: 'overlay',
+  name: 'Huts',
+  icon: 'huts',
+  icon_badge: '',
+  slot: 'ways',
+  order: 0,
+  show: true,
+  is_default: false,
+  spec: 'high' as const,
+  style_url: '/v1/map/styles/huts.json?spec=high',
+  min_zoom: null,
+  max_zoom: null,
+  coverage_bbox: null,
+  fallback_min_zoom: null,
+  fallback: null,
+  anchors: null,
+  preview_url: null,
+  config: null,
+  interaction: null,
+  categories: [],
+  attributions: [],
+  license: null,
+  legend: null,
+  parameters: [
+    {
+      slug: 'date',
+      kind: 'date',
+      label: 'Availability date',
+      description: '',
+      default: null,
+      constraints: null,
+    },
+  ],
+};
+const HUTS_STYLE = {
+  version: 8,
+  sources: {
+    'wd-bookings': {
+      type: 'geojson',
+      data: 'https://hub.example.com/v1/huts/availability/{{date}}.geojson',
+    },
+  },
+  layers: [
+    { id: 'wd-huts', type: 'symbol', source: 'wd-bookings' },
+    {
+      id: 'wd-huts-occupation',
+      type: 'circle',
+      source: 'wd-bookings',
+      layout: { visibility: 'visible' },
     },
   ],
 } as StyleSpecification;
@@ -219,8 +283,8 @@ describe('map catalog store (boot cache + version sync)', () => {
   };
 
   beforeAll(async () => {
-    // The wireBookingsSource helper evaluates Pinia at import time — one
-    // pinia must be active BEFORE the dynamic imports.
+    // One pinia must be active before the dynamic imports (the overlay
+    // utilities resolve stores per call against the active instance).
     setActivePinia(createPinia());
     stores = await import('@stores/map/map-catalog-store');
     overlayStores = await import('@stores/map/overlay-store');
@@ -231,6 +295,8 @@ describe('map catalog store (boot cache + version sync)', () => {
     notifyCalls.length = 0;
     styleFetches.length = 0;
     paintCalls.length = 0;
+    layoutCalls.length = 0;
+    setDataCalls.length = 0;
     catalogFetch.mockReset();
     slotsFetch.mockReset();
     styleFetch.mockReset();
@@ -428,64 +494,19 @@ describe('map catalog store (boot cache + version sync)', () => {
     expect(prefs.mtb['mtb.opacity']).toEqual(curve);
   });
 
-  it('date params default to today at boot — tokenized geojson URLs never fetch a literal {{date}}', async () => {
+  it('date params default to today at boot and the bookings source is wired to the live store geojson — no URL fetch, no {{date}}', async () => {
     // Staging incident 2026-10-16: the huts overlay's wd-bookings
     // geojson source carried {{date}} (tokenized) and no runtime value
     // was set until the user picked a date — MapLibre fetched
-    // /v1/huts/availability/{{date}}.geojson (404/500 retries).
-    catalogFetch.mockResolvedValue(
-      catalogFor(VERSION_A, {
-        slug: 'huts',
-        role: 'overlay',
-        name: 'Huts',
-        icon: 'huts',
-        icon_badge: '',
-        slot: 'ways',
-        order: 0,
-        show: true,
-        is_default: false,
-        spec: 'high' as const,
-        style_url: '/v1/map/styles/huts.json?spec=high',
-        min_zoom: null,
-        max_zoom: null,
-        coverage_bbox: null,
-        fallback_min_zoom: null,
-        fallback: null,
-        anchors: null,
-        preview_url: null,
-        config: null,
-        interaction: null,
-        categories: [],
-        attributions: [],
-        license: null,
-        legend: null,
-        parameters: [
-          {
-            slug: 'date',
-            kind: 'date',
-            label: 'Availability date',
-            description: '',
-            default: null,
-            constraints: null,
-          },
-        ],
-      })
+    // /v1/huts/availability/{{date}}.geojson (404/500 retries). The
+    // boot default resolves the token, and the source wiring replaces
+    // the URL with the huts store's live object (auth/lang/days flow).
+    catalogFetch.mockResolvedValue(catalogFor(VERSION_A, HUTS_LAYER));
+    styleFetch.mockImplementation(async (url: string) =>
+      url.includes('/v1/map/styles/huts.json')
+        ? Promise.resolve(structuredClone(HUTS_STYLE))
+        : Promise.resolve(TRANSPORT_STYLE)
     );
-    styleFetch.mockImplementation(async (url: string) => {
-      if (url.includes('/v1/map/styles/huts.json')) {
-        return Promise.resolve({
-          version: 8,
-          sources: {
-            'wd-bookings': {
-              type: 'geojson',
-              data: 'https://hub.example.com/v1/huts/availability/{{date}}.geojson',
-            },
-          },
-          layers: [{ id: 'wd-huts', type: 'symbol', source: 'wd-bookings' }],
-        } as StyleSpecification);
-      }
-      return Promise.resolve(TRANSPORT_STYLE);
-    });
     const store = stores.useMapCatalogStore();
     await store.initOverlays();
 
@@ -496,9 +517,66 @@ describe('map catalog store (boot cache + version sync)', () => {
     ).overlays;
     const huts = overlays.find(o => o.name === 'huts');
     expect(huts).toBeTruthy();
-    const data = (huts!.style!.sources as Record<string, { data?: string }>)['wd-bookings']
-      ?.data as string;
-    expect(data).toMatch(/\/v1\/huts\/availability\/\d{4}-\d{2}-\d{2}\.geojson$/);
-    expect(data).not.toContain('{{date}}');
+    const source = (huts!.style!.sources as Record<string, { data?: unknown }>)['wd-bookings'];
+    // Wired to the huts store's live geojson OBJECT — never the
+    // resolved URL (and never a literal {{date}}).
+    expect(source?.data).toMatchObject({ type: 'FeatureCollection', features: [] });
+    // Occupation layers bake hidden until a date is picked — the
+    // availability strip must not render date-less.
+    const occupation = huts!.style!.layers.find(l => l.id === 'wd-huts-occupation') as unknown as {
+      layout: Record<string, string>;
+    };
+    expect(occupation.layout['visibility']).toBe('none');
+  });
+
+  it('date pick re-resolves {{date}} but keeps the bookings source on the live object and applies the date gate live', async () => {
+    catalogFetch.mockResolvedValue(catalogFor(VERSION_A, HUTS_LAYER));
+    styleFetch.mockImplementation(async (url: string) =>
+      url.includes('/v1/map/styles/huts.json')
+        ? Promise.resolve(structuredClone(HUTS_STYLE))
+        : Promise.resolve(TRANSPORT_STYLE)
+    );
+    const store = stores.useMapCatalogStore();
+    await store.initOverlays();
+
+    const overlays = (
+      overlayStores.useOverlayStore() as unknown as {
+        overlays: Array<{ name: string; style?: StyleSpecification; active?: boolean }>;
+      }
+    ).overlays;
+    const huts = overlays.find(o => o.name === 'huts');
+    expect(huts).toBeTruthy();
+    // Overlay switched on: the live visibility may follow the date.
+    huts!.active = true;
+    layoutCalls.length = 0;
+
+    useHutsStore().selectedDate = '2026-10-20';
+    await nextTick();
+
+    // The re-resolved style keeps riding the live object — the resolved
+    // URL (…/2026-10-20.geojson) must NOT be pushed onto the source
+    // (the URL-skip in applyOverlayParameters + synchronous fixup
+    // replaced the former per-style watcher wiring).
+    const source = (huts!.style!.sources as Record<string, { data?: unknown }>)['wd-bookings'];
+    expect(source?.data).toMatchObject({ type: 'FeatureCollection' });
+    // Occupation layer baked visible in the re-resolved spec …
+    const occupation = huts!.style!.layers.find(l => l.id === 'wd-huts-occupation') as unknown as {
+      layout: Record<string, string>;
+    };
+    expect(occupation.layout['visibility']).toBe('visible');
+    // … and applied to the live map.
+    expect(layoutCalls).toContainEqual(['wd-huts-occupation', 'visibility', 'visible']);
+
+    // Bookings data arrival pushes the live object through the ONE
+    // store-level watch (no per-style wiring to leak).
+    setDataCalls.length = 0;
+    const hutsStore = useHutsStore();
+    hutsStore.bookingsGeojson = {
+      type: 'FeatureCollection',
+      features: [],
+    } as unknown as typeof hutsStore.bookingsGeojson;
+    await nextTick();
+    expect(setDataCalls).toHaveLength(1);
+    expect(setDataCalls[0]).toMatchObject({ type: 'FeatureCollection' });
   });
 });
