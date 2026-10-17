@@ -28,6 +28,7 @@ dist-ssr
 # Generated files
 *.min.js
 *.min.css
+components.d.ts
 src/clients/wodore_v1.d.ts
 src/extras/icons/dist
 
