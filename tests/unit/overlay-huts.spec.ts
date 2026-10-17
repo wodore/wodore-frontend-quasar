@@ -4,7 +4,7 @@
 // source rides the huts store's live bookingsGeojson (date-picker flow).
 // The former factory styles are gone; the backend map catalog owns the
 // layer definitions (see map-catalog-store / catalog-mapping).
-import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { nextTick } from 'vue';
 import type { StyleSpecification } from 'maplibre-gl';
@@ -44,6 +44,15 @@ describe('wireBookingsSource', () => {
     overlayHuts = await import('@stores/map/utils/overlay-huts');
   });
 
+  // The wiring binds to the import-time pinia's huts store — reset its
+  // state between tests so each wires against “no date picked”.
+  beforeEach(async () => {
+    const { useHutsStore } = await import('@stores/huts-store');
+    const store = useHutsStore();
+    store.selectedDate = undefined;
+    store.removeBookings();
+  });
+
   it('wires the wd-bookings source to the huts store geojson', () => {
     const style = wiredStyle();
     overlayHuts.wireBookingsSource(style);
@@ -79,6 +88,55 @@ describe('wireBookingsSource', () => {
   it('no-ops for styles without a wd-bookings source', () => {
     const style: StyleSpecification = { version: 8, sources: {}, layers: [] };
     expect(() => overlayHuts.wireBookingsSource(style)).not.toThrow();
+  });
+
+  it('is idempotent per style object (double wiring keeps one live watcher pair)', async () => {
+    const style = wiredStyle();
+    overlayHuts.wireBookingsSource(style);
+    overlayHuts.wireBookingsSource(style);
+
+    const { useHutsStore } = await import('@stores/huts-store');
+    const store = useHutsStore();
+    store.selectedDate = '2026-10-21';
+    await nextTick();
+
+    // Still wired exactly once — the baked state is current either way
+    const layer = style.layers[0] as { layout: Record<string, string> };
+    expect(layer.layout.visibility).toBe('visible');
+  });
+
+  it('unwireBookingsSource stops the watchers and is a no-op for unwired styles', async () => {
+    const style = wiredStyle();
+    overlayHuts.wireBookingsSource(style);
+
+    const { useHutsStore } = await import('@stores/huts-store');
+    const store = useHutsStore();
+    overlayHuts.unwireBookingsSource(style);
+
+    store.selectedDate = '2026-10-22';
+    await nextTick();
+
+    // Unwired before the change → the bake keeps the boot state
+    const layer = style.layers[0] as { layout: Record<string, string> };
+    expect(layer.layout.visibility).toBe('none');
+    // No throw for never-wired styles
+    expect(() =>
+      overlayHuts.unwireBookingsSource({ version: 8, sources: {}, layers: [] })
+    ).not.toThrow();
+  });
+
+  it('exposes the date-gate predicate for the overlay control', () => {
+    expect(overlayHuts.isDateGatedLayer('wd-huts-occupation')).toBe(true);
+    expect(overlayHuts.isDateGatedLayer('wd-huts-occupation-day2')).toBe(true);
+    expect(overlayHuts.isDateGatedLayer('wd-huts')).toBe(false);
+  });
+
+  it('dateGatedVisibility mirrors the picked date', async () => {
+    expect(overlayHuts.dateGatedVisibility()).toBe('none');
+    const { useHutsStore } = await import('@stores/huts-store');
+    useHutsStore().selectedDate = '2026-10-23';
+    await nextTick();
+    expect(overlayHuts.dateGatedVisibility()).toBe('visible');
   });
 
   it('hides occupation layers until a date is picked, then shows them', async () => {

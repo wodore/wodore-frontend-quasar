@@ -428,11 +428,13 @@ describe('map catalog store (boot cache + version sync)', () => {
     expect(prefs.mtb['mtb.opacity']).toEqual(curve);
   });
 
-  it('date params default to today at boot — tokenized geojson URLs never fetch a literal {{date}}', async () => {
+  it('date params default to today at boot and the bookings source is wired to the live store geojson — no URL fetch, no {{date}}', async () => {
     // Staging incident 2026-10-16: the huts overlay's wd-bookings
     // geojson source carried {{date}} (tokenized) and no runtime value
     // was set until the user picked a date — MapLibre fetched
-    // /v1/huts/availability/{{date}}.geojson (404/500 retries).
+    // /v1/huts/availability/{{date}}.geojson (404/500 retries). The
+    // boot default resolves the token, and the source wiring replaces
+    // the URL with the huts store's live object (auth/lang/days flow).
     catalogFetch.mockResolvedValue(
       catalogFor(VERSION_A, {
         slug: 'huts',
@@ -481,7 +483,15 @@ describe('map catalog store (boot cache + version sync)', () => {
               data: 'https://hub.example.com/v1/huts/availability/{{date}}.geojson',
             },
           },
-          layers: [{ id: 'wd-huts', type: 'symbol', source: 'wd-bookings' }],
+          layers: [
+            { id: 'wd-huts', type: 'symbol', source: 'wd-bookings' },
+            {
+              id: 'wd-huts-occupation',
+              type: 'circle',
+              source: 'wd-bookings',
+              layout: { visibility: 'visible' },
+            },
+          ],
         } as StyleSpecification);
       }
       return Promise.resolve(TRANSPORT_STYLE);
@@ -496,9 +506,16 @@ describe('map catalog store (boot cache + version sync)', () => {
     ).overlays;
     const huts = overlays.find(o => o.name === 'huts');
     expect(huts).toBeTruthy();
-    const data = (huts!.style!.sources as Record<string, { data?: string }>)['wd-bookings']
-      ?.data as string;
-    expect(data).toMatch(/\/v1\/huts\/availability\/\d{4}-\d{2}-\d{2}\.geojson$/);
-    expect(data).not.toContain('{{date}}');
+    const source = (huts!.style!.sources as Record<string, { data?: unknown }>)['wd-bookings'];
+    // Wired to the huts store's live geojson OBJECT — never the
+    // resolved URL (and never a literal {{date}}). The date-picked
+    // transition lives in overlay-huts.spec (single-pinia).
+    expect(source?.data).toMatchObject({ type: 'FeatureCollection', features: [] });
+    // Occupation layers bake hidden until a date is picked — the
+    // availability strip must not render date-less.
+    const occupation = huts!.style!.layers.find(l => l.id === 'wd-huts-occupation') as unknown as {
+      layout: Record<string, string>;
+    };
+    expect(occupation.layout['visibility']).toBe('none');
   });
 });
