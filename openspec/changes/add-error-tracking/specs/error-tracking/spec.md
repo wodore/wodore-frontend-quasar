@@ -90,6 +90,18 @@ range.
 - **WHEN** `WODORE_SENTRY_TRACES_SAMPLE_RATE` is set to a non-numeric string
 - **THEN** the rate falls back to the default (`0`) and no crash or tracing occurs
 
+### Requirement: Events carry a platform tag
+
+Every captured event SHALL carry a `platform` tag set from the runtime
+platform detection (`web` for browser deployments, `android`/`ios` for
+Capacitor builds), so browser and WebView events are distinguishable
+within the single frontend project.
+
+#### Scenario: Distinguishing web from Android
+
+- **WHEN** errors from the same release arrive from both the PWA and the Android app
+- **THEN** each event carries a `platform` tag (`web` vs `android`) usable as a Sentry query/filter dimension
+
 ### Requirement: Performance tracing is opt-in and off by default
 
 Performance tracing SHALL be governed by `WODORE_SENTRY_TRACES_SAMPLE_RATE`

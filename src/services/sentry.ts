@@ -29,6 +29,7 @@
  */
 
 import * as Sentry from '@sentry/vue';
+import { Capacitor } from '@capacitor/core';
 import type { App } from 'vue';
 import type { Router } from 'vue-router';
 
@@ -112,6 +113,10 @@ export function initErrorTracking(app: App, router: Router): void {
     // in the browser bundle.
     release: process.env.WODORE_GIT_HASH || undefined,
     environment: getEnv('WODORE_ENV') || 'development',
+    // Runtime platform ('web' | 'android' | 'ios') on every event:
+    // distinguishes browser from Capacitor-WebView events inside the one
+    // frontend project (one codebase, one SDK, one DSN — by design).
+    initialScope: { tags: { platform: Capacitor.getPlatform() } },
     // GDPR-safe privacy posture — the SDK v10→v11 migration guide's
     // "keep v10 defaults" recipe (v11 removed `sendDefaultPii` and its
     // defaults COLLECT): no user identities, no cookies, no HTTP

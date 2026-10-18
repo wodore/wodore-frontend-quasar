@@ -27,6 +27,15 @@ vi.mock('@services/runtimeEnv', () => ({
   getEnv: (name: string) => runtimeEnvValues[name],
 }));
 
+// Platform detection (@capacitor/core): 'web' by default, steerable per
+// case to simulate the Android WebView build.
+let capacitorPlatform = 'web';
+vi.mock('@capacitor/core', () => ({
+  Capacitor: {
+    getPlatform: () => capacitorPlatform,
+  },
+}));
+
 import { initErrorTracking } from '@services/sentry';
 
 const app = {} as never; // opaque to the service
@@ -38,6 +47,7 @@ const STATIC_KEYS = ['WODORE_GIT_HASH', 'WODORE_APP_VERSION'] as const;
 beforeEach(() => {
   initMock.mockReset();
   browserTracingIntegrationMock.mockClear();
+  capacitorPlatform = 'web';
   for (const key of Object.keys(runtimeEnvValues)) delete runtimeEnvValues[key];
   // Static-read keys: unset unless a test sets them (simulating the
   // build-time defines Vite bakes in).
@@ -111,6 +121,21 @@ describe('attribution', () => {
   it('falls back to development when WODORE_ENV is unset', () => {
     initErrorTrackingWith();
     expect(initMock.mock.calls[0][0].environment).toBe('development');
+  });
+
+  it('tags events with the runtime platform (web by default)', () => {
+    initErrorTrackingWith();
+    expect(initMock.mock.calls[0][0].initialScope).toEqual({
+      tags: { platform: 'web' },
+    });
+  });
+
+  it('tags events with the platform on Capacitor builds (android)', () => {
+    capacitorPlatform = 'android';
+    initErrorTrackingWith();
+    expect(initMock.mock.calls[0][0].initialScope).toEqual({
+      tags: { platform: 'android' },
+    });
   });
 
   it('stamps app_version from the STATIC build define via beforeSend (regression: review B1)', () => {
