@@ -428,7 +428,7 @@ sentry.py`). Rules:
   v10 `sendDefaultPii=false` defaults (no user identities, cookies, HTTP
   bodies; IP-bearing headers/params filtered) — do not loosen without a
   privacy review, and never call `setUser`. Caveat: PII that app code
-  writes *into* error messages or URLs still flows into events.
+  writes _into_ error messages or URLs still flows into events.
 - Unhandled Vue errors (app error handler), `window.onerror` and
   `unhandledrejection` are captured with component/route context. The
   service worker's own errors are NOT captured (separate JS context).

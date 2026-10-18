@@ -17,8 +17,7 @@ const browserTracingIntegrationMock = vi.fn(() => ({ name: 'browserTracing' }));
 
 vi.mock('@sentry/vue', () => ({
   init: (...args: unknown[]) => initMock(...args),
-  browserTracingIntegration: (...args: unknown[]) =>
-    browserTracingIntegrationMock(...args),
+  browserTracingIntegration: (...args: unknown[]) => browserTracingIntegrationMock(...args),
 }));
 
 // Browser-realistic runtime env: only what /env.js (or the inline EJS)

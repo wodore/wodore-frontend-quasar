@@ -1,6 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Error tracking activation is DSN-gated
+
 The frontend SHALL initialize the error-tracking SDK only when a
 non-empty, usable `WODORE_SENTRY_DSN` runtime env value is present;
 without it, the SDK SHALL NOT be initialized and no telemetry SHALL
@@ -23,6 +24,7 @@ DSN and SHALL behave exactly as before this change existed.
 - **THEN** the SDK initializes once at boot and routes error events to that DSN
 
 ### Requirement: Unhandled errors are captured with Vue context
+
 The SDK SHALL be initialized with the Quasar Vue app instance so that
 unhandled component render/lifecycle errors are captured via the Vue
 error handler, and global `window.onerror` / `unhandledrejection`
@@ -45,6 +47,7 @@ route context where available.
 - **THEN** the error is captured (the error-tracking boot runs first in the boot list)
 
 ### Requirement: Release and environment attribution
+
 Every captured event SHALL carry `release` set to the build's
 `WODORE_GIT_HASH` and `environment` set to the deployment's
 `WODORE_ENV`, identically in staging and production (one release scheme
@@ -63,6 +66,7 @@ SHALL be required.
 - **THEN** the events share the same `release` value (differing only in `environment`) and both carry the same `app_version` tag
 
 ### Requirement: Configuration flows through the runtime env plumbing
+
 The DSN and tracing rate SHALL be read via the runtime env accessor
 (`getEnv`), giving docker deployments per-environment values at
 container start (`/env.js`, no rebuild) and dev/Capacitor builds
@@ -87,6 +91,7 @@ range.
 - **THEN** the rate falls back to the default (`0`) and no crash or tracing occurs
 
 ### Requirement: Performance tracing is opt-in and off by default
+
 Performance tracing SHALL be governed by `WODORE_SENTRY_TRACES_SAMPLE_RATE`
 (default `0` = errors-only mode: no tracing integration is attached and
 no transactions are created). A rate greater than 0 SHALL attach the
@@ -104,6 +109,7 @@ are sampled at that rate.
 - **THEN** pageload and navigation transactions are sampled at 5% with route context from the Vue Router
 
 ### Requirement: No personally identifiable information is sent
+
 The SDK SHALL be configured so that user identities, cookies, HTTP
 bodies, and IP-bearing headers/params are not attached to events (the
 SDK v11 `dataCollection` option: `userInfo`/`cookies`/`httpBodies` off,
@@ -122,6 +128,7 @@ error-tracking vendor (no user IDs, emails, or account data on events).
 - **THEN** those params are filtered from the collected URL
 
 ### Requirement: Rollback by configuration only
+
 Disabling error tracking SHALL require only removing (or emptying)
 `WODORE_SENTRY_DSN` and redeploying — no code change. Switching between
 Sentry-protocol-compatible vendors SHALL require only changing the DSN.

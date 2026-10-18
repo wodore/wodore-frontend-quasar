@@ -165,8 +165,11 @@ export default configure(ctx => {
         WODORE_TILE_SERVER_URL: process.env.WODORE_TILE_SERVER_URL,
         // Error tracking (openspec: add-error-tracking) — runtime-swappable
         // in docker via /env.js; empty/unset = fully inert.
-        WODORE_SENTRY_DSN: process.env.WODORE_SENTRY_DSN,
-        WODORE_SENTRY_TRACES_SAMPLE_RATE: process.env.WODORE_SENTRY_TRACES_SAMPLE_RATE,
+        // The `|| ''` fallbacks matter: esbuild's dev-server define
+        // requires strings, and these keys are absent from the env
+        // defaults until rollout (empty string = fully inert).
+        WODORE_SENTRY_DSN: process.env.WODORE_SENTRY_DSN || '',
+        WODORE_SENTRY_TRACES_SAMPLE_RATE: process.env.WODORE_SENTRY_TRACES_SAMPLE_RATE || '',
         WODORE_OFFICIAL_URL: process.env.WODORE_OFFICIAL_URL,
         // Build flag, not a runtime value: bakes a robots noindex meta into
         // index.html for static deployments that cannot decide at runtime —

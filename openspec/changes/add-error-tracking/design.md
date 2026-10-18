@@ -74,7 +74,7 @@ before later boot files run — the frontend equivalent of the backend
 loading its sentry settings component FIRST. `{ server: false }` keeps
 SSR builds safe (the SDK is browser-only; an SSR server would need
 `@sentry/node`, out of scope). Limitation accepted: module-evaluation
-errors that occur *before* the boot phase are not captured — boot is the
+errors that occur _before_ the boot phase are not captured — boot is the
 earliest app-level hook Quasar offers; global hooks installed there still
 catch everything from that point on.
 
@@ -102,7 +102,7 @@ in docker and baked for Capacitor. The package semver rides along as an
 backend's `_stamp_app_version`).
 
 Resolution boundary (review B1): git hash and semver are build identity
-and MUST be read via *static* `process.env.X` expressions (Vite inlines
+and MUST be read via _static_ `process.env.X` expressions (Vite inlines
 only static text; `WdVersionsPanel.vue` is the established pattern) —
 `getEnv`'s dynamic `process.env[name]` fallback cannot reach them in
 the browser bundle (its stand-in for `process.env` compiles to an empty
@@ -115,7 +115,7 @@ rate is > 0.**
 `WODORE_SENTRY_TRACES_SAMPLE_RATE` (runtime env, string → parsed float,
 default `0`; invalid values clamp to `0`). At `0` no tracing integration
 is attached and no transactions are created — exactly the backend's
-"errors-only mode", chosen as the *default* here (product call): web
+"errors-only mode", chosen as the _default_ here (product call): web
 traffic volume and privacy posture make tracing a deliberate later
 opt-in, and RUM-quality data is not needed to fix crashes. When enabled
 later, `browserTracingIntegration({ router })` provides pageload and
@@ -132,7 +132,7 @@ filtering IP-bearing keys and the OIDC authorization params (`code`,
 and they sit in `window.location` right after the OIDC redirect). The
 frontend additionally never calls `Sentry.setUser` — authenticated
 users stay anonymous. Same residual caveat as the backend: PII that app
-code writes *into* error messages or URLs still flows into events.
+code writes _into_ error messages or URLs still flows into events.
 
 **D7 — Static import, console breadcrumbs stay on.**
 The SDK is imported statically (~40 KB gz) so hooks install
