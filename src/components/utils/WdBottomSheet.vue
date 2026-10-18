@@ -15,8 +15,21 @@ const emit = defineEmits<{
 
 const internalOpen = ref(false);
 
-// Toolbar height (from Quasar toolbar)
-const toolbarHeight = 50;
+// Topbar pill geometry — the floating search/date/menu pill the sheet
+// must stop BELOW (see src/css/map-controls/_topbar.scss): 10px top
+// offset + 52px pill height = the pill's bottom edge sits 62px below
+// the top of the viewport (plus the safe-area inset). Keep in sync.
+const topbarPillTop = 10;
+const topbarPillHeight = 52;
+
+// Deliberate breathing room between the pill's bottom edge and the
+// sheet's top edge at the expanded snap (owner decision + UX consult,
+// 2026-10-18): the expanded sheet reads as a layered floating card
+// under the pill instead of a failed zero-gap tuck (subpixel and
+// safe-area rounding made the old tuck render as an accidental
+// sliver). 14px clears the pill's soft shadow and optically matches
+// the pill's lateral edge insets.
+const topbarGap = 14;
 
 // Safe area insets (native app: bottom nav bar, status bar). In the PWA
 // these evaluate to 0 and all snap points reduce to their base values.
@@ -30,12 +43,19 @@ const safeBottom = 'var(--q-safe-area-inset-bottom, env(safe-area-inset-bottom, 
 // Index 0 (collapsed/dismissed): handled by swipe-to-dismiss
 const defaultSnap = `calc(330px + ${safeBottom})`;
 
-// Max height: visible viewport minus toolbar (dvh = dynamic viewport, so the
-// sheet stops right at the app toolbar on mobile instead of overshooting
-// it). In the native app the header sits below the status bar
-// (edge-to-edge), so its safe-area inset must be subtracted too — in the
-// PWA the inset is 0 and the behavior is unchanged.
-const maxSnap = `calc(100dvh - ${toolbarHeight}px - var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px)))`;
+// NOTE: on very short viewports (landscape phones, 100dvh < ~406px) the
+// 330px initial snap exceeds maxSnap — the web component clamps it to
+// the maximum instead (verified on a 390x375 viewport: the sheet opens
+// expanded and fully visible, nothing breaks). Pre-existing behavior,
+// slightly widened by the 76px topbar reservation.
+
+// Max height: visible viewport minus the topbar pill and a deliberate
+// gap below it (dvh = dynamic viewport, so the sheet follows viewport
+// resizes). The pill itself sits at 10px + safe-area-inset-top with a
+// 52px height, so subtracting the same inset here keeps the gap
+// constant regardless of notch/status-bar size — in the PWA the inset
+// is 0 and the behavior is unchanged.
+const maxSnap = `calc(100dvh - ${topbarPillTop + topbarPillHeight + topbarGap}px - var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px)))`;
 
 // Sync with v-model
 watch(
@@ -215,6 +235,14 @@ bottom-sheet {
   z-index: 3000;
 }
 
+/* While the site-menu drawer is open the sheet drops below the drawer
+ * (aside z 3000 + its backdrop): with both at 3000 the sheet, later in
+ * the DOM, would paint over the menu. Mirrors the topbar pill's
+ * wd-topbar--under-menu drop; the class is toggled by MainLayout. */
+bottom-sheet.under-menu {
+  z-index: 2500;
+}
+
 /* Sheet TOP edge: fine hairline against the map — without it the sheet
    surface merges with the content behind (owner report). */
 bottom-sheet::part(content) {
@@ -275,26 +303,21 @@ bottom-sheet[expand-to-scroll][data-sheet-state='expanded']::part(content) {
 }
 
 /*
- * Rounded top corners while partially open, square top edge when expanded.
- * The border-radius transition animates the change; the :host shadow rules
- * use the same properties, document styles on the host element win.
+ * Rounded top corners at EVERY snap state, including expanded: the
+ * sheet is a layered floating card under the topbar pill, never a
+ * full-bleed surface (16px = the design-system radius ramp's
+ * dialog/sheet step). The constant radius also overrides the web
+ * component's own state-based :host radius animation — document
+ * styles on the host element win.
  */
 bottom-sheet {
-  border-top-left-radius: 24px;
-  border-top-right-radius: 24px;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
   /* Theme the sheet surface: the web component defaults to light grey
      (#f2f2f2) via --sheet-background; route it through the surface token
      so the mobile hut sheet follows Day/Night. */
   --sheet-background: var(--wd-surface);
   color: var(--wd-ink);
-  transition:
-    border-top-left-radius 0.25s ease,
-    border-top-right-radius 0.25s ease;
-}
-
-bottom-sheet[data-sheet-state='expanded'] {
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
 }
 
 /*
