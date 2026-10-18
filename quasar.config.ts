@@ -183,6 +183,14 @@ export default configure(ctx => {
       },
       // rawDefine: {}
       // ignorePublicFolder: true,
+      // Public source maps (repo is open source, GPL-3.0): Sentry
+      // symbolicates stack traces by fetching the .map files referenced
+      // by the bundles' sourceMappingURL comments — no upload step, no
+      // auth token, no vendor lock-in. Quasar's build.sourcemap would
+      // force 'inline' (base64 maps bloat every chunk users download),
+      // so the Vite-native external maps are set in extendViteConf
+      // below instead. The APK also carries the maps (inert until a
+      // future upload-from-CI for Android, which scraping cannot reach).
       minify: true,
       htmlMinifyOptions: {
         removeComments: true,
@@ -195,6 +203,13 @@ export default configure(ctx => {
       // distDir
 
       extendViteConf(viteConf) {
+        // External source maps with sourceMappingURL comments (see the
+        // comment at build.minify above) — 'true' at the Vite level;
+        // quasar.config's build.sourcemap would translate `true` to
+        // 'inline' instead.
+        viteConf.build ??= {};
+        viteConf.build.sourcemap = true;
+
         // Dev server host allowlist: Vite blocks non-localhost Host
         // headers. To expose the dev server on a machine name (e.g. a
         // Tailscale MagicDNS name), list it in WODORE_DEV_ALLOWED_HOSTS
@@ -344,10 +359,13 @@ export default configure(ctx => {
         // Same for env.js (runtime env, rewritten at container start):
         // a precached env.js would serve stale env values to offline/PWA
         // clients — it must always come from the network (no-store).
+        // Source maps too: they exist for Sentry symbolication and
+        // devtools, not for app runtime — precaching them would make
+        // every PWA install download the full map payload.
         if (!options.globIgnores) {
           options.globIgnores = [];
         }
-        options.globIgnores.push('index.html', 'env.js');
+        options.globIgnores.push('index.html', 'env.js', '**/*.map');
       },
       // swFilename: 'sw.js',
       // manifestFilename: 'manifest.json'
