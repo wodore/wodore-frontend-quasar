@@ -114,7 +114,11 @@ function toggleOption(value: string) {
       >
         <q-item-section avatar v-if="option.iconColor || option.iconPrimitive">
           <q-avatar size="32px" square class="icon-container">
-            <img :src="option.iconColor || option.iconPrimitive" :alt="option.label" class="icon-img" />
+            <img
+              :src="option.iconColor || option.iconPrimitive"
+              :alt="option.label"
+              class="icon-img"
+            />
           </q-avatar>
         </q-item-section>
 
@@ -146,9 +150,7 @@ function toggleOption(value: string) {
               self="top left"
               :offset="[8, 0]"
               class="wd-filter-info"
-              @update:model-value="
-                (open: boolean) => (openInfoKey = open ? option.value : null)
-              "
+              @update:model-value="(open: boolean) => (openInfoKey = open ? option.value : null)"
             >
               <div class="wd-filter-info__head">
                 <img

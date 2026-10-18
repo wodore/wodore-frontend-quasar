@@ -144,11 +144,16 @@ function hutsOverlayItem(): Record<string, unknown> {
 
 describe('overlay config store (category-driven filters)', () => {
   let overlayStore: ReturnType<typeof import('@stores/map/overlay-store').useOverlayStore>;
-  let configStore: ReturnType<typeof import('@stores/map/overlay-config-store').useOverlayConfigStore>;
+  let configStore: ReturnType<
+    typeof import('@stores/map/overlay-config-store').useOverlayConfigStore
+  >;
 
   function hutTypesFilter(): FilterDef | undefined {
     const huts = (
-      overlayStore.overlays as unknown as Array<{ name: string; config?: { filters?: FilterDef[] } }>
+      overlayStore.overlays as unknown as Array<{
+        name: string;
+        config?: { filters?: FilterDef[] };
+      }>
     ).find(o => o.name === 'huts');
     return huts?.config?.filters?.find(f => f.id === 'hutTypes');
   }
@@ -242,10 +247,7 @@ describe('overlay config store (category-driven filters)', () => {
     expect(configStore.getFilterValue('huts', 'hutTypes')).toEqual([]);
 
     // Select all (full array) lifts the filter again.
-    configStore.setFilterValue('huts', 'hutTypes', [
-      'accommodation.hut',
-      'accommodation.bivouac',
-    ]);
+    configStore.setFilterValue('huts', 'hutTypes', ['accommodation.hut', 'accommodation.bivouac']);
     await vi.advanceTimersByTimeAsync(200);
     expect(setFilterCalls).toContainEqual(['wd-huts', null]);
   });
@@ -255,7 +257,10 @@ describe('overlay config store (category-driven filters)', () => {
     configStore.resetAllPreferences();
 
     const huts = (
-      overlayStore.overlays as unknown as Array<{ name: string; config?: { filters?: FilterDef[] } }>
+      overlayStore.overlays as unknown as Array<{
+        name: string;
+        config?: { filters?: FilterDef[] };
+      }>
     ).find(o => o.name === 'huts');
     const multi = huts?.config?.filters?.find(f => f.id === 'hutTypes');
     const single = huts?.config?.filters?.find(f => f.id === 'mode');
@@ -284,9 +289,9 @@ describe('overlay config store (category-driven filters)', () => {
     // hides the layer), full array inactive.
     expect(configStore.isFilterActive(['accommodation.hut'], multi!)).toBe(true);
     expect(configStore.isFilterActive([], multi!)).toBe(true);
-    expect(
-      configStore.isFilterActive(['accommodation.hut', 'accommodation.bivouac'], multi!)
-    ).toBe(false);
+    expect(configStore.isFilterActive(['accommodation.hut', 'accommodation.bivouac'], multi!)).toBe(
+      false
+    );
   });
 
   it('reapplyAllFilters re-applies a persisted empty selection (legacy deselect state)', async () => {
