@@ -72,7 +72,6 @@ export default configure(ctx => {
       { server: false, path: 'sentry' },
       'i18n',
       'storage',
-      'storage',
       'theme',
       'icons',
       { server: false, path: 'auth' },
