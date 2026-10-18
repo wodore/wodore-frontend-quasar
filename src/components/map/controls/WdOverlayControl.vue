@@ -1520,13 +1520,9 @@ function hasActiveFilters(overlayName: string): boolean {
   );
   const config = overlay?.config;
   if (!config?.filters?.length) return false;
-  return config.filters.some(f => {
-    const value = configStore.getFilterValue(overlayName, f.id);
-    if (Array.isArray(value)) {
-      return value.length > 0 && value.length < (f.options?.length ?? 0);
-    }
-    return value !== f.defaultValue;
-  });
+  return config.filters.some(f =>
+    configStore.isFilterActive(configStore.getFilterValue(overlayName, f.id), f)
+  );
 }
 
 onMounted(() => {

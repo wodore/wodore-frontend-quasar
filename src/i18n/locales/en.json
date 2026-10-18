@@ -466,7 +466,8 @@
     "select_all": "Select all",
     "deselect_all": "Deselect all",
     "selected_count": "{selected} of {total} selected",
-    "no_filter_active": "No filter active"
+    "no_filter_active": "No filter active",
+    "info": "Show description"
   },
   "error_notfound": {
     "title": "Oops. Lost your way ...",

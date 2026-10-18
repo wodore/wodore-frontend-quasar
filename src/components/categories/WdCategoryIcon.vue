@@ -56,6 +56,10 @@ async function fetchSvg(url: string): Promise<string | null> {
 
 // ---- Inline SVG for mono (currentColor needs inline rendering) ----
 const inlineSvg = ref<string | null>(null);
+// 'loading' keeps the color-fallback <img> from flashing while the mono
+// SVG is still in flight; 'failed' switches to the fallback.
+const monoState = ref<'loading' | 'ok' | 'failed'>('loading');
+
 const svgUrl = computed(() => {
   // Direct URL from an API response always wins (better caching, no redirect)
   if (props.href) return props.href;
@@ -67,11 +71,32 @@ const svgUrl = computed(() => {
   return `${getEnv('WODORE_API_HOST')}/v1/categories/symbol/${props.variant}/${parent}/${slug}.svg`;
 });
 
+// The mono inline fetch requires CORS on the media target of the symbol
+// redirect — origins the media server does not allowlist (e.g. a dev
+// server running against staging) fail opaquely. Degrade to the COLOR
+// symbol as a plain <img> (image loads need no CORS) instead of an
+// empty placeholder: the type stays recognizable in both themes.
+const fallbackImgSrc = computed(() => {
+  if (props.variant !== 'mono' || !props.identifier) return undefined;
+  if (monoState.value !== 'failed') return undefined;
+  const [parent, ...rest] = props.identifier.split('.');
+  const slug = rest.join('.') || parent;
+  return `${getEnv('WODORE_API_HOST')}/v1/categories/symbol/color/${parent}/${slug}.svg`;
+});
+
 watch(
   () => svgUrl.value,
   async url => {
     if (props.variant === 'mono') {
-      inlineSvg.value = await fetchSvg(url);
+      monoState.value = 'loading';
+      const svg = await fetchSvg(url);
+      if (svg) {
+        inlineSvg.value = svg;
+        monoState.value = 'ok';
+      } else {
+        inlineSvg.value = null;
+        monoState.value = 'failed';
+      }
     } else {
       inlineSvg.value = null;
     }
@@ -79,9 +104,10 @@ watch(
   { immediate: true }
 );
 
-// For non-mono variants, use the img URL directly from the API
+// For non-mono variants, use the img URL directly from the API; for a
+// FAILED mono fetch, the color fallback (see fallbackImgSrc).
 const imgSrc = computed(() => {
-  if (props.variant === 'mono') return undefined;
+  if (props.variant === 'mono') return fallbackImgSrc.value;
   return svgUrl.value;
 });
 
