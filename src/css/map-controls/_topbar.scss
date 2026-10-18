@@ -8,7 +8,11 @@
 
 .wd-topbar {
   position: fixed;
-  top: calc(10px + env(safe-area-inset-top, 0px));
+  // Safe-area expression intentionally matches WdBottomSheet's maxSnap
+  // (var chain, not bare env()) so the pill and the sheet's expanded top
+  // edge always shift by the same inset — a mismatch here would reopen
+  // the "wrong gap to the topbar" drift on notched devices.
+  top: calc(10px + var(--q-safe-area-inset-top, env(safe-area-inset-top, 0px)));
   left: calc(12px + env(safe-area-inset-left, 0px));
   right: calc(12px + env(safe-area-inset-right, 0px));
   z-index: 2000;
