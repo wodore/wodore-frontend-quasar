@@ -466,7 +466,8 @@
     "select_all": "Seleziona tutto",
     "deselect_all": "Deseleziona tutto",
     "selected_count": "{selected} di {total} selezionati",
-    "no_filter_active": "Nessun filtro attivo"
+    "no_filter_active": "Nessun filtro attivo",
+    "info": "Mostra la descrizione"
   },
   "error_notfound": {
     "title": "Ops. Ti sei perso ...",

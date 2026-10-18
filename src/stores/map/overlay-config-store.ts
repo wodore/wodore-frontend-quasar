@@ -329,8 +329,35 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
     const config = getOverlayConfig(overlayName);
     const filterDef = config?.filters?.find((f: FilterDefinition) => f.id === filterId);
 
-    const raw = preferences.value[overlayName]?.filters?.[filterId] ?? filterDef?.defaultValue;
+    let raw: unknown = preferences.value[overlayName]?.filters?.[filterId];
+    if (raw === undefined) {
+      const def = filterDef?.defaultValue;
+      // A multi-select `[]` default is the legacy "everything selected /
+      // no filter" convention (backend seed) — surfaced as undefined so a
+      // genuine empty selection (Deselect all) stays distinguishable from
+      // the no-preference default.
+      raw = Array.isArray(def) && def.length === 0 ? undefined : def;
+    }
     return isOverlayValue(raw) ? raw : undefined;
+  }
+
+  /**
+   * Whether a filter's current value differs from its "no filter" state.
+   * Shared by the config dialog's tab badge and the overlay control's row
+   * indicator — ONE definition (the former per-component copies had
+   * drifted, and both mis-reported the no-preference default as active).
+   *
+   * Multi-select: undefined (no preference, or the seed's [] default) and
+   * a FULL selection mean no filter. An EMPTY selection hides the layer
+   * (Deselect all) and counts as active, as does any subset.
+   */
+  function isFilterActive(value: OverlayValue | undefined, filter: FilterDefinition): boolean {
+    if (value === undefined) return false;
+    if (Array.isArray(value)) {
+      const allValues = filter.options?.map(option => option.value) ?? [];
+      return value.length !== allValues.length;
+    }
+    return value !== filter.defaultValue;
   }
 
   function setFilterValue(overlayName: string, filterId: string, value: unknown) {
@@ -401,11 +428,13 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
     let filterExpr: ExpressionSpecification | null = null;
 
     if (filter.type === 'multi-select' && Array.isArray(value)) {
-      // If empty or all selected, show all
-      if (!value || value.length === 0 || value.length === filter.options?.length) {
+      // Full selection = no filter (explicit Select all).
+      if (value.length === filter.options?.length) {
         filterExpr = null;
       } else {
-        // Show only selected values
+        // Subset — or an EMPTY selection (Deselect all): `in` over an
+        // empty haystack matches nothing, hiding the layers until
+        // types are picked again.
         filterExpr = [
           'in',
           ['get', filter.mapProperty],
@@ -541,6 +570,33 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
   // Auto-initialize on store creation
   initializeAllOverlays();
 
+  // Catalog swaps replace the overlay items AFTER this store's
+  // creation-time init: the backend map catalog loads asynchronously
+  // (map-catalog-store) and re-applies items progressively, so at store
+  // creation `overlays` is typically still empty and the loop above
+  // populated nothing. The swapped-in configs start with empty filter
+  // options — without repopulating on every swap, category-driven
+  // filters (e.g. the accommodation types) and legends stay empty.
+  // Progressive emits bump the epoch once per settled style — debounce
+  // to repopulate once per burst instead of per emit.
+  const debouncedInitializeAllOverlays = useDebounceFn(async () => {
+    await initializeAllOverlays();
+    // Options (re)populated — re-evaluate saved filters now that the
+    // option count is known: the epoch-driven reapply in WdOverlayControl
+    // ran BEFORE these options loaded, so a persisted full selection
+    // could not collapse to the null fast-path yet (and a persisted
+    // subset stays correct — the in-expression is value-driven).
+    reapplyAllFilters();
+  }, 250);
+
+  watch(
+    () => overlayStore.overlaysEpoch,
+    () => {
+      console.debug('[OverlayConfigStore] Overlay catalog swapped — repopulating categories');
+      debouncedInitializeAllOverlays();
+    }
+  );
+
   // Refetch localized categories when the UI language changes. The map
   // catalog store rebuilds the overlays itself (fresh localized catalog);
   // this watcher only clears the category cache and repopulates all
@@ -567,6 +623,7 @@ export const useOverlayConfigStore = defineStore('overlayConfig', () => {
 
     // Filters
     getFilterValue,
+    isFilterActive,
     setFilterValue,
     reapplyAllFilters,
 

@@ -4,6 +4,7 @@ import { useQuasar } from 'quasar';
 import { useOverlayConfigStore } from '@stores/map/overlay-config-store';
 import { useOverlayStore } from '@stores/map/overlay-store';
 import { useI18n } from 'vue-i18n';
+import type { FilterDefinition } from '@stores/map/overlay-configs/types';
 
 const { t } = useI18n();
 import WdOverlayConfigFilter from './WdOverlayConfigFilter.vue';
@@ -58,33 +59,9 @@ const hasActiveFilters = computed(() => {
     return false;
   }
 
-  for (const filter of overlayConfig.value.filters) {
-    const value = configStore.getFilterValue(props.overlayName, filter.id);
-
-    if (Array.isArray(value)) {
-      // @ts-expect-error - filter.options types are inferred correctly at runtime
-      const allOptions = filter.options?.map(opt => opt.value) || [];
-      // Empty array means all selected (default), full array also means all selected
-      if (!value || value.length === 0 || value.length === allOptions.length) {
-        continue;
-      }
-      console.debug(
-        '[WdOverlayConfig] Active filter detected:',
-        filter.id,
-        value.length,
-        'of',
-        allOptions.length
-      );
-      return true;
-    }
-
-    if (value !== filter.defaultValue) {
-      console.debug('[WdOverlayConfig] Active filter detected:', filter.id, value);
-      return true;
-    }
-  }
-
-  return false;
+  return overlayConfig.value.filters.some((filter: FilterDefinition) =>
+    configStore.isFilterActive(configStore.getFilterValue(props.overlayName, filter.id), filter)
+  );
 });
 
 // Determine initial tab based on prop or default logic
