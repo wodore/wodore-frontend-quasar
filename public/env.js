@@ -31,4 +31,8 @@ window.__WODORE_RUNTIME_ENV__ = {
   WODORE_OICD_CLIENT_ID: '@@WODORE_OICD_CLIENT_ID@@',
   WODORE_OICD_RESOURCE_ID: '@@WODORE_OICD_RESOURCE_ID@@',
   WODORE_MAPTILER_API_KEY: '@@WODORE_MAPTILER_API_KEY@@',
+  // Error tracking (openspec: add-error-tracking) — empty = fully inert;
+  // tracing rate is a string here, parsed tolerantly by services/sentry.ts.
+  WODORE_SENTRY_DSN: '@@WODORE_SENTRY_DSN@@',
+  WODORE_SENTRY_TRACES_SAMPLE_RATE: '@@WODORE_SENTRY_TRACES_SAMPLE_RATE@@',
 };

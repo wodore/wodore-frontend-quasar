@@ -466,7 +466,8 @@
     "select_all": "Alle auswählen",
     "deselect_all": "Alle abwählen",
     "selected_count": "{selected} von {total} ausgewählt",
-    "no_filter_active": "Kein Filter aktiv"
+    "no_filter_active": "Kein Filter aktiv",
+    "info": "Beschreibung anzeigen"
   },
   "error_notfound": {
     "title": "Oops. Verlaufen ...",

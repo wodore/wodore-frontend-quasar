@@ -78,6 +78,7 @@
     "@maplibre/maplibre-gl-style-spec": "^26.4.4",
     "@pmndrs/detect-gpu": "^6.0.26",
     "@quasar/extras": "^2.1.0",
+    "@sentry/vue": "^11.8.0",
     "@stripe/stripe-js": "^10.0.0",
     "@types/mapbox__mapbox-gl-draw": "^1.4.7",
     "@types/umami": "^2.10.0",

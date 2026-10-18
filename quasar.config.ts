@@ -66,8 +66,11 @@ export default configure(ctx => {
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
     /// axios
     boot: [
+      // Error tracking first (client-only): installs the global error
+      // hooks before any later boot file runs — DSN-gated, inert without
+      // WODORE_SENTRY_DSN (openspec: add-error-tracking).
+      { server: false, path: 'sentry' },
       'i18n',
-      'storage',
       'storage',
       'theme',
       'icons',
@@ -159,6 +162,13 @@ export default configure(ctx => {
         WODORE_OICD_RESOURCE_ID: process.env.WODORE_OICD_RESOURCE_ID,
         WODORE_MAPTILER_API_KEY: process.env.WODORE_MAPTILER_API_KEY,
         WODORE_TILE_SERVER_URL: process.env.WODORE_TILE_SERVER_URL,
+        // Error tracking (openspec: add-error-tracking) — runtime-swappable
+        // in docker via /env.js; empty/unset = fully inert.
+        // The `|| ''` fallbacks matter: esbuild's dev-server define
+        // requires strings, and these keys are absent from the env
+        // defaults until rollout (empty string = fully inert).
+        WODORE_SENTRY_DSN: process.env.WODORE_SENTRY_DSN || '',
+        WODORE_SENTRY_TRACES_SAMPLE_RATE: process.env.WODORE_SENTRY_TRACES_SAMPLE_RATE || '',
         WODORE_OFFICIAL_URL: process.env.WODORE_OFFICIAL_URL,
         // Build flag, not a runtime value: bakes a robots noindex meta into
         // index.html for static deployments that cannot decide at runtime —
@@ -173,6 +183,14 @@ export default configure(ctx => {
       },
       // rawDefine: {}
       // ignorePublicFolder: true,
+      // Public source maps (repo is open source, GPL-3.0): Sentry
+      // symbolicates stack traces by fetching the .map files referenced
+      // by the bundles' sourceMappingURL comments — no upload step, no
+      // auth token, no vendor lock-in. Quasar's build.sourcemap would
+      // force 'inline' (base64 maps bloat every chunk users download),
+      // so the Vite-native external maps are set in extendViteConf
+      // below instead. The APK also carries the maps (inert until a
+      // future upload-from-CI for Android, which scraping cannot reach).
       minify: true,
       htmlMinifyOptions: {
         removeComments: true,
@@ -185,6 +203,13 @@ export default configure(ctx => {
       // distDir
 
       extendViteConf(viteConf) {
+        // External source maps with sourceMappingURL comments (see the
+        // comment at build.minify above) — 'true' at the Vite level;
+        // quasar.config's build.sourcemap would translate `true` to
+        // 'inline' instead.
+        viteConf.build ??= {};
+        viteConf.build.sourcemap = true;
+
         // Dev server host allowlist: Vite blocks non-localhost Host
         // headers. To expose the dev server on a machine name (e.g. a
         // Tailscale MagicDNS name), list it in WODORE_DEV_ALLOWED_HOSTS
@@ -334,10 +359,13 @@ export default configure(ctx => {
         // Same for env.js (runtime env, rewritten at container start):
         // a precached env.js would serve stale env values to offline/PWA
         // clients — it must always come from the network (no-store).
+        // Source maps too: they exist for Sentry symbolication and
+        // devtools, not for app runtime — precaching them would make
+        // every PWA install download the full map payload.
         if (!options.globIgnores) {
           options.globIgnores = [];
         }
-        options.globIgnores.push('index.html', 'env.js');
+        options.globIgnores.push('index.html', 'env.js', '**/*.map');
       },
       // swFilename: 'sw.js',
       // manifestFilename: 'manifest.json'
