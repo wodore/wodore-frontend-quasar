@@ -7,7 +7,7 @@
 ## 2. Configuration & Docs
 
 - [x] 2.1 Plumb the env vars: `quasar.config.ts` `build.env` (`WODORE_SENTRY_DSN`, `WODORE_SENTRY_TRACES_SAMPLE_RATE`), `public/env.js` `@@VAR@@` placeholders, `index.html` inline-EJS entries, `src/env.d.ts` ProcessEnv types
-- [ ] 2.2 User adds the empty-default keys to the protected `.env` (`WODORE_SENTRY_DSN=`, `WODORE_SENTRY_TRACES_SAMPLE_RATE=0`) — required for `replace_vars` (agent sessions cannot write `.env`)
+- [x] 2.2 Add the empty-default keys to the protected `.env` (`WODORE_SENTRY_DSN=`, `WODORE_SENTRY_TRACES_SAMPLE_RATE=0`) — required for `replace_vars` (added via a user-directed delegated Claude session; pi agent sessions cannot write `.env`)
 - [x] 2.3 Document the error-tracking setup in `AGENTS.md`: env vars, boot-first ordering, PII-off rule, vendor-neutrality, rollback = unset DSN, errors-only default
 - [x] 2.4 Update the openspec change to complete and validate (`openspec status`)
 
