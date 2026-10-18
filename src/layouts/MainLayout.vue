@@ -638,10 +638,15 @@ body.capacitor .preview-badge {
   </q-layout>
 
   <!-- Mobile Bottom Sheet (OUTSIDE QLayout, only on mobile) -->
+  <!-- under-menu: the sheet drops below the site-menu drawer while it is
+       open (same pattern as the pill's wd-topbar--under-menu) — the drawer
+       aside sits at z 3000 and would otherwise tie with the sheet, which
+       comes later in the DOM and paints over it. -->
   <WdBottomSheet
     v-if="isMobile"
     ref="bottomSheetRef"
     v-model="contentDrawerOpen"
+    :class="{ 'under-menu': menuDrawerOpen }"
     @close="closeContent"
   >
     <!-- Close button (top-right corner) -->

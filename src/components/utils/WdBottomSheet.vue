@@ -235,6 +235,14 @@ bottom-sheet {
   z-index: 3000;
 }
 
+/* While the site-menu drawer is open the sheet drops below the drawer
+ * (aside z 3000 + its backdrop): with both at 3000 the sheet, later in
+ * the DOM, would paint over the menu. Mirrors the topbar pill's
+ * wd-topbar--under-menu drop; the class is toggled by MainLayout. */
+bottom-sheet.under-menu {
+  z-index: 2500;
+}
+
 /* Sheet TOP edge: fine hairline against the map — without it the sheet
    surface merges with the content behind (owner report). */
 bottom-sheet::part(content) {
