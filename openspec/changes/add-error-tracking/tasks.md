@@ -24,6 +24,10 @@
 - [ ] 4.2 Verify a Vue component error carries component + route context, and that no telemetry leaves a no-DSN deployment (dev/preview)
 - [ ] 4.3 Android: build an RC/preview variant with the DSN set; verify WebView errors arrive tagged with the build's commit hash
 
+## 5. Platform Attribution
+
+- [x] 5.1 Tag every event with the runtime `platform` (`web`/`android`/`ios` via `Capacitor.getPlatform()`, set through `initialScope`) — browser vs WebView distinguishable inside the one frontend project; the native-SDK question (`@sentry/capacitor`) stays a separate later decision (own project, own costs)
+
 ## 6. Review Fixes (Claude Opus advisor review — blocker + should-fixes, addressed)
 
 - [x] 6.1 B1: `release`/`app_version` were read via dynamic `getEnv`, which resolves to `undefined` in the browser bundle (Vite inlines only static `process.env.X`; keys absent from env.js by design) — tests passed only under live Node env. Fixed with static `process.env` reads (pattern: `WdVersionsPanel.vue`) + regression tests that mock `runtimeEnv` to the browser reality (getEnv serves runtime keys only)

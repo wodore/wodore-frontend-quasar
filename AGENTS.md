@@ -420,7 +420,10 @@ sentry.py`). Rules:
   Stack (Sentry-SDK-compatible ingestion). Switching vendors = swap DSN,
   never a code change. Rollback = unset the DSN.
 - **Release = `WODORE_GIT_HASH`** (baked at build) in every environment;
-  package semver rides along as an `app_version` event tag.
+  package semver rides along as an `app_version` event tag, and every
+  event carries a `platform` tag (`web`/`android`/`ios`, from
+  `Capacitor.getPlatform()` via `initialScope`) — one frontend project
+  for browser + Capacitor builds, distinguishable in Sentry queries.
 - **`WODORE_SENTRY_TRACES_SAMPLE_RATE`** (default `0` = errors-only; e.g.
   `0.05` enables pageload/navigation tracing via the Vue Router) — docker
   can flip it at runtime, Android needs a rebuild.
