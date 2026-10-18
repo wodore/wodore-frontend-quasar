@@ -123,10 +123,12 @@ test('sheet expands to fullscreen first, then content scrolls', async ({ page })
   const expanded = await getSheetState(page);
   expect(expanded.sheetState).toBe('expanded');
 
-  // The sheet stops at the toolbar (50px), it must not cover or overshoot it
+  // The sheet stops below the topbar pill (76px = 10 top + 52 height + 14
+  // deliberate gap; desktop Playwright has no safe-area inset), it must
+  // not cover or overshoot the pill
   const sheetTop = (await getSheetTop(page)) ?? -1;
-  expect(sheetTop).toBeGreaterThanOrEqual(45);
-  expect(sheetTop).toBeLessThanOrEqual(60);
+  expect(sheetTop).toBeGreaterThanOrEqual(70);
+  expect(sheetTop).toBeLessThanOrEqual(82);
 
   // The content must be scrollable at the expanded state. The library drives
   // overflow-y with a scroll-timeline animation that can fail to complete on

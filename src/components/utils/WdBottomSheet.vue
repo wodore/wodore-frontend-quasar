@@ -43,6 +43,12 @@ const safeBottom = 'var(--q-safe-area-inset-bottom, env(safe-area-inset-bottom, 
 // Index 0 (collapsed/dismissed): handled by swipe-to-dismiss
 const defaultSnap = `calc(330px + ${safeBottom})`;
 
+// NOTE: on very short viewports (landscape phones, 100dvh < ~406px) the
+// 330px initial snap exceeds maxSnap — the web component clamps it to
+// the maximum instead (verified on a 390x375 viewport: the sheet opens
+// expanded and fully visible, nothing breaks). Pre-existing behavior,
+// slightly widened by the 76px topbar reservation.
+
 // Max height: visible viewport minus the topbar pill and a deliberate
 // gap below it (dvh = dynamic viewport, so the sheet follows viewport
 // resizes). The pill itself sits at 10px + safe-area-inset-top with a
