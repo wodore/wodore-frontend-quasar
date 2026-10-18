@@ -432,8 +432,15 @@ sentry.py`). Rules:
 - Unhandled Vue errors (app error handler), `window.onerror` and
   `unhandledrejection` are captured with component/route context. The
   service worker's own errors are NOT captured (separate JS context).
-- Stack traces are minified until a sourcemap upload strategy is decided
-  (vendor-dependent; see the openspec `add-error-tracking` rollout tasks).
+- **Sourcemaps are published** (repo is open source, GPL-3.0): external
+  `.map` files with `sourceMappingURL` comments — Sentry symbolicates by
+  fetching them from the deployed URLs (no upload step, no auth token).
+  Vite-native maps are enabled via `extendViteConf` (NOT quasar's
+  `build.sourcemap` — quasar translates `true` to inline base64 maps that
+  bloat every chunk), and `**/*.map` is excluded from the SW precache
+  (clients must not download maps). Android remains the exception: the
+  APK's maps can't be scraped (device-internal origin) — upload-from-CI
+  is the follow-up if WebView stacks need symbolication.
 
 ## Common Patterns
 

@@ -37,4 +37,4 @@
 - [ ] 5.1 Align with the backend's vendor trial (sentry.io vs Better Stack) — shared account hosts both backend and frontend projects; record the decision
 - [ ] 5.2 Configure alert routing and inbound filters (bots/4xx noise) at the chosen vendor
 - [ ] 5.3 Set `WODORE_SENTRY_DSN` in production; decide whether/when to enable `WODORE_SENTRY_TRACES_SAMPLE_RATE` (docker: runtime flip; Android: rebuild)
-- [ ] 5.4 Decide sourcemap strategy per vendor (CI upload for docker builds; Capacitor map handling) — until then stacks are minified but component names identify the source
+- [x] 5.4 Sourcemap strategy decided: **publish** (repo is open source, GPL-3.0) — external `.map` files + `sourceMappingURL` comments; Sentry symbolicates by scraping the deployed URLs, no CI upload/token needed. Vite-native maps set via `extendViteConf` (quasar's `build.sourcemap: true` would force inline base64 maps); `**/*.map` excluded from the SW precache. Follow-up (optional): upload-from-CI for Capacitor/Android only — the APK's device-internal origin cannot be scraped
