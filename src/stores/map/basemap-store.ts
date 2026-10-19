@@ -262,12 +262,16 @@ export const useBasemapStore = defineStore('basemap', () => {
     if (isOutdoorStyle(s.style)) {
       setupOutdoorContours();
     }
-    // Weak GPUs: drop the second ambient-occlusion pass after the style
-    // loads (the heavy ao_max/dramatic passes are already removed from
-    // the built style for everyone).
+    // Weak GPUs: hide the second ambient-occlusion pass after the style
+    // loads, when the served style still has one (older styles shipped two
+    // ao passes; maplibre 5+ throws on unknown layer ids, so guard — the
+    // current backend style no longer contains these layers at all).
     if (s.name === DEFAULT_BASEMAP_NAME && weakGpu) {
       mapRef.map?.once('style.load', () => {
-        mapRef.map?.setLayoutProperty('relief_hillshade_ao_med', 'visibility', 'none');
+        const layerIds: string[] = mapRef.map?.getStyle().layers.map(l => l.id) ?? [];
+        if (layerIds.includes('relief_hillshade_ao_med')) {
+          mapRef.map?.setLayoutProperty('relief_hillshade_ao_med', 'visibility', 'none');
+        }
       });
     }
 
