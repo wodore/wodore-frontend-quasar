@@ -143,6 +143,56 @@ const t = i18n.global.t;
  *  user decision); the fallback is its OpenFreeMap twin. */
 const DEFAULT_BASEMAP_NAME = 'wd-outdoor-base-mtk-hill';
 
+// ── Tier-adaptive render profile ─────────────────────────────────────────
+
+const SOFTWARE_GPU_NAMES = ['swiftshader', 'llvmpipe', 'software', 'mesa offscreen', 'softpipe'];
+
+export interface MapRenderProfile {
+  pixelRatio: number;
+  fadeDuration: number;
+  maxTileCacheSize: number;
+  maxParallelImageRequests: number;
+}
+
+/**
+ * Returns the MapLibre render profile for the detected GPU tier.
+ * Pass null (first visit, no cached tier) to get HIGH defaults — real
+ * basemap tiles only load after gpuSpecReady resolves, so the HIGH
+ * window on first visit is effectively zero.
+ */
+export function mapProfileForTier(
+  gpuTier: { tier: number; gpu?: string | null } | null,
+  dpr = typeof window !== 'undefined' ? window.devicePixelRatio : 1
+): MapRenderProfile {
+  if (!gpuTier) {
+    return { pixelRatio: dpr, fadeDuration: 300, maxTileCacheSize: 400, maxParallelImageRequests: 32 };
+  }
+
+  const gpuName = gpuTier.gpu?.toLowerCase() ?? '';
+  if (!gpuTier.gpu || SOFTWARE_GPU_NAMES.some(s => gpuName.includes(s))) {
+    // No GPU name (detect-gpu couldn't identify) or a known software renderer — treat as lowest-spec
+    return { pixelRatio: 1, fadeDuration: 0, maxTileCacheSize: 100, maxParallelImageRequests: 8 };
+  }
+
+  if (gpuTier.tier < 0) {
+    // Detection failure — capable hardware that detect-gpu couldn't classify
+    return { pixelRatio: Math.min(dpr, 2), fadeDuration: 0, maxTileCacheSize: 100, maxParallelImageRequests: 8 };
+  }
+
+  if (gpuTier.tier <= 1) {
+    // LOW: confirmed weak GPU hardware
+    return { pixelRatio: Math.min(dpr, 1.5), fadeDuration: 0, maxTileCacheSize: 100, maxParallelImageRequests: 8 };
+  }
+
+  if (gpuTier.tier === 2) {
+    // MEDIUM
+    return { pixelRatio: Math.min(dpr, 2), fadeDuration: 300, maxTileCacheSize: 200, maxParallelImageRequests: 16 };
+  }
+
+  // HIGH (tier 3+)
+  return { pixelRatio: dpr, fadeDuration: 300, maxTileCacheSize: 400, maxParallelImageRequests: 32 };
+}
+
 // Keyless plain OSM raster (tile.openstreetmap.org) — style for the weak-GPU
 // raster variant of "Switzerland Topo Light". Deliberately NOT MapTiler
 // raster tiles: those are key-metered and exhausted the free quota —
@@ -268,6 +318,20 @@ export const useBasemapStore = defineStore('basemap', () => {
     if (s.name === DEFAULT_BASEMAP_NAME && weakGpu) {
       mapRef.map?.once('style.load', () => {
         mapRef.map?.setLayoutProperty('relief_hillshade_ao_med', 'visibility', 'none');
+      });
+    }
+    // Weak GPUs: eliminate raster tile crossfade on all raster basemap
+    // layers (the map-level fadeDuration:0 covers symbol fades; this
+    // covers the raster transition).
+    if (weakGpu) {
+      mapRef.map?.once('style.load', () => {
+        const map = mapRef.map;
+        if (!map) return;
+        map.getStyle()?.layers.forEach(layer => {
+          if (layer.type === 'raster') {
+            map.setPaintProperty(layer.id, 'raster-fade-duration', 0);
+          }
+        });
       });
     }
 
@@ -795,26 +859,10 @@ export const useBasemapStore = defineStore('basemap', () => {
 
   // Helper to determine if we should use raster basemaps based on GPU capabilities
   function shouldUseRaster(gpuTier: Awaited<ReturnType<typeof getGPUTier>>): boolean {
-    if (!gpuTier.gpu) {
-      // No GPU info → assume low capability
-      return true;
-    }
-
+    if (!gpuTier.gpu) return true;
     const gpuName = gpuTier.gpu.toLowerCase();
-
-    // Software / VM renderers → raster
-    if (
-      gpuName.includes('swiftshader') ||
-      gpuName.includes('llvmpipe') ||
-      gpuName.includes('software') ||
-      gpuName.includes('mesa offscreen') ||
-      gpuName.includes('softpipe')
-    ) {
-      return true;
-    }
-
-    // Use raster if tier is less than 1 (tier 0)
-    return gpuTier.tier < 2; // tier 2+: full vector; tier 0-1: weak-GPU path (user call)
+    if (SOFTWARE_GPU_NAMES.some(s => gpuName.includes(s))) return true;
+    return gpuTier.tier < 2;
   }
 
   // Async function to initialize basemaps based on GPU tier
