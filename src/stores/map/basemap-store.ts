@@ -165,7 +165,12 @@ export function mapProfileForTier(
   dpr = typeof window !== 'undefined' ? window.devicePixelRatio : 1
 ): MapRenderProfile {
   if (!gpuTier) {
-    return { pixelRatio: dpr, fadeDuration: 300, maxTileCacheSize: 400, maxParallelImageRequests: 32 };
+    return {
+      pixelRatio: dpr,
+      fadeDuration: 300,
+      maxTileCacheSize: 400,
+      maxParallelImageRequests: 32,
+    };
   }
 
   const gpuName = gpuTier.gpu?.toLowerCase() ?? '';
@@ -176,21 +181,41 @@ export function mapProfileForTier(
 
   if (gpuTier.tier < 0) {
     // Detection failure — capable hardware that detect-gpu couldn't classify
-    return { pixelRatio: Math.min(dpr, 2), fadeDuration: 0, maxTileCacheSize: 100, maxParallelImageRequests: 8 };
+    return {
+      pixelRatio: Math.min(dpr, 2),
+      fadeDuration: 0,
+      maxTileCacheSize: 100,
+      maxParallelImageRequests: 8,
+    };
   }
 
   if (gpuTier.tier <= 1) {
     // LOW: confirmed weak GPU hardware
-    return { pixelRatio: Math.min(dpr, 1.5), fadeDuration: 0, maxTileCacheSize: 100, maxParallelImageRequests: 8 };
+    return {
+      pixelRatio: Math.min(dpr, 1.5),
+      fadeDuration: 0,
+      maxTileCacheSize: 100,
+      maxParallelImageRequests: 8,
+    };
   }
 
   if (gpuTier.tier === 2) {
     // MEDIUM
-    return { pixelRatio: Math.min(dpr, 2), fadeDuration: 300, maxTileCacheSize: 200, maxParallelImageRequests: 16 };
+    return {
+      pixelRatio: Math.min(dpr, 2),
+      fadeDuration: 300,
+      maxTileCacheSize: 200,
+      maxParallelImageRequests: 16,
+    };
   }
 
   // HIGH (tier 3+)
-  return { pixelRatio: dpr, fadeDuration: 300, maxTileCacheSize: 400, maxParallelImageRequests: 32 };
+  return {
+    pixelRatio: dpr,
+    fadeDuration: 300,
+    maxTileCacheSize: 400,
+    maxParallelImageRequests: 32,
+  };
 }
 
 // Keyless plain OSM raster (tile.openstreetmap.org) — style for the weak-GPU
