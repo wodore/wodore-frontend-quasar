@@ -9,12 +9,19 @@ import {
   useMediaQuery,
 } from '@vueuse/core';
 import { useQuasar } from 'quasar';
-import { useBasemapStore } from '@stores/map/basemap-store';
+import { useBasemapStore, mapProfileForTier } from '@stores/map/basemap-store';
 import { useMapCatalogStore } from '@stores/map/map-catalog-store';
 import { useLocalPropertiesStore } from '@stores/local-properties-store';
 import { showErrorDialogPersistent, ErrorCode } from '@components/error';
 import type { Map, PaddingOptions } from 'maplibre-gl';
-import { LngLatLike, MapGeoJSONFeature, MapLayerEventType, Point, setWorkerUrl } from 'maplibre-gl';
+import {
+  LngLatLike,
+  MapGeoJSONFeature,
+  MapLayerEventType,
+  Point,
+  setMaxParallelImageRequests,
+  setWorkerUrl,
+} from 'maplibre-gl';
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import {
   MglMap,
@@ -28,6 +35,8 @@ import {
 
 import mapDraw from '@services/draw';
 import { currentLocale } from '@services/locale';
+import { getEnv } from '@services/runtimeEnv';
+import { storageGet } from '@services/storage';
 import { clientWodore } from '@clients/index';
 import { MAP_MIN_ZOOM, MIN_HUT_CLICK_ZOOM } from '@stores/map/utils/map-constants';
 import {
@@ -141,6 +150,17 @@ const localPropertiesStore = useLocalPropertiesStore();
 // catalog answers (factory definitions render until then).
 const mapCatalogStore = useMapCatalogStore();
 void mapCatalogStore.initOverlays();
+
+// ── Tier-adaptive render profile ────────────────────────────────────────
+// Read the cached GPU tier synchronously (null on first visit).
+// First visit: HIGH defaults — basemap tiles only load after gpuSpecReady
+// resolves, so the high-spec window is ~nil. Subsequent visits: the
+// cached tier gives correct constructor values immediately.
+const _cachedGpuTier = storageGet('gpuTier') as { tier: number; gpu?: string | null } | null;
+const initialMapProfile = mapProfileForTier(_cachedGpuTier);
+
+// validateStyle: schema validation only in non-production envs
+const validateStyle = getEnv('WODORE_ENV') !== 'production';
 
 // Use a static ref for initial map style to prevent vue-maplibre-gl's reactive watcher
 // from overriding our transformStyle callback when basemap changes
@@ -321,6 +341,17 @@ function onMapLoad(e: MglEvent<'load'>) {
     }
     // TODO: improve styling of routing, points, drag, delete, etc.
   }
+
+  // Apply tier-dependent setters once GPU detection has settled.
+  // gpuSpecReady resolves after detect-gpu (fast from localStorage cache on
+  // revisits); real basemap tiles only start loading after it, so the
+  // first-visit window with HIGH defaults is effectively zero.
+  void basemapStore.gpuSpecReady.then(() => {
+    const detectedTier = storageGet('gpuTier') as { tier: number; gpu?: string | null } | null;
+    const profile = mapProfileForTier(detectedTier);
+    e.map.setPixelRatio(profile.pixelRatio);
+    setMaxParallelImageRequests(profile.maxParallelImageRequests);
+  });
 }
 
 function onMapError(e: unknown) {
@@ -1332,9 +1363,15 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
         :center="mapCenter"
         :attribution-control="false"
         :min-zoom="MAP_MIN_ZOOM"
-        :max-tile-cache-size="400"
-        :max-parallel-image-requests="32"
         :render-world-copies="false"
+        :max-pitch="0"
+        :pitch-with-rotate="false"
+        :touch-pitch="false"
+        :validate-style="validateStyle"
+        :pixel-ratio="initialMapProfile.pixelRatio"
+        :fade-duration="initialMapProfile.fadeDuration"
+        :max-tile-cache-size="initialMapProfile.maxTileCacheSize"
+        :max-parallel-image-requests="initialMapProfile.maxParallelImageRequests"
       >
         <!-- ── Map controls (v2 clean layout) ──────────────────────────── -->
         <!-- Bottom-right: overlay strip above basemap (basemap opens LEFT).
