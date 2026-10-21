@@ -212,8 +212,13 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     const param = overlay?.parameters?.find(p => p.slug === paramSlug);
     if (!overlay || !param) return;
     if (param.kind === 'date') {
-      // Runtime-scope: live value only, nothing persisted.
-      runtimeValues.value = { ...runtimeValues.value, [paramSlug]: String(value) };
+      // Runtime-scope: live value only, nothing persisted. Normalized to
+      // ISO — tile URLs reject picker formats with an empty tile.
+      const next = { ...runtimeValues.value };
+      const iso = toIsoDate(String(value));
+      if (iso === undefined) delete next[paramSlug];
+      else next[paramSlug] = iso;
+      runtimeValues.value = next;
       applyRuntimeValueToLayers(paramSlug);
       return;
     }
@@ -343,14 +348,36 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     }
   }
 
+  /** Normalize a picker/deep-link date into ISO `YYYY-MM-DD`.
+ *
+ *  The huts store's `selectedDate` carries the date-picker formats
+ *  (`DD.MM.YY` from the picker, `DD.MM.YYYY` from the `?date=` deep
+ *  link) — the old availability GeoJSON endpoint parsed those
+ *  server-side. The Martin availability tile function requires an
+ *  explicit ISO date (anything else is an intentional 204), so the
+ *  runtime `{{date}}` token must be normalized before it lands in tile
+ *  URLs. Unparseable input yields undefined (token stays unresolved →
+ *  the date-gated layers stay hidden). */
+  function toIsoDate(input: string | undefined): string | undefined {
+    if (!input) return undefined;
+    const euro = input.match(/^(\d{2})\.(\d{2})\.(\d{2}|\d{4})$/);
+    if (euro) {
+      const year = euro[3]!.length === 2 ? `20${euro[3]}` : euro[3]!;
+      return `${year}-${euro[2]}-${euro[1]}`;
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(input)) return input;
+    return undefined;
+  }
+
   /** Mirror the selected availability date into the runtime values. */
   function setRuntimeDate(date: string | undefined): void {
-    if (date === undefined) {
+    const iso = toIsoDate(date);
+    if (iso === undefined) {
       const next = { ...runtimeValues.value };
       delete next.date;
       runtimeValues.value = next;
     } else {
-      runtimeValues.value = { ...runtimeValues.value, date };
+      runtimeValues.value = { ...runtimeValues.value, date: iso };
     }
     applyRuntimeValueToLayers('date');
   }
