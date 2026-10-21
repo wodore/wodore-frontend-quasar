@@ -210,10 +210,107 @@ body.body--dark .wd-topbar__menu .text-icon {
   height: 100%;
 }
 
-/* Steppers (desktop prev/next) stay hidden in the pill; kill the dashed
-   field border WdSelectDate draws on its stepper wrapper */
+/* Legacy stepper wrapper class is retired (the chips below replaced it);
+   kill any dashed field border WdSelectDate might still draw. */
 .wd-topbar__date .wd-input-button {
   display: none !important;
+}
+
+// ── Desktop date steppers: ghost arrows hugging the date sub-pill ────
+// Design: Alpine Instrument — slim full-height capsules (half-circle
+// ends, like the date pill itself) flush against the hero, GHOST in
+// BOTH themes (owner call): no surface, ink chevrons, brand green /
+// ice mint + directional lean on hover. The wash belongs to the hero
+// date pill alone.
+.wd-date-step {
+  flex: none;
+  width: 40px;
+  height: 44px; // full sub-zone height — half-circle ends like the hero
+  margin: 0;
+  align-self: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: $wd-day-ink;
+  cursor: pointer;
+  transition:
+    color 0.12s ease-out,
+    transform 0.12s ease-out;
+  -webkit-tap-highlight-color: transparent;
+
+  // Directional affordance: the arrow leans INTO its direction on hover
+  // and presses further on click — physical, no bounce.
+  &:hover {
+    color: $primary; // brand forest green
+  }
+  &:active {
+    color: #224e3b; // forest-green-deep
+  }
+  &--prev:hover {
+    transform: translateX(-1.5px);
+  }
+  &--prev:active {
+    transform: translateX(-3px);
+  }
+  &--next:hover {
+    transform: translateX(1.5px);
+  }
+  &--next:active {
+    transform: translateX(3px);
+  }
+  &:disabled {
+    cursor: default;
+    pointer-events: none;
+    .text-icon {
+      opacity: 0.3;
+    }
+  }
+
+  // Keyboard: same hairline-ink focus the chip system uses.
+  &:focus-visible {
+    outline: 2px solid rgba(52, 103, 81, 0.55);
+    outline-offset: 2px;
+  }
+
+  .text-icon {
+    color: inherit;
+  }
+}
+
+body.body--dark .wd-date-step {
+  color: $wd-paper;
+
+  &:hover {
+    color: $icon; // the incumbent mint hover ink for icon controls
+  }
+  &:active {
+    color: #8fd6b7; // forest-green-ice
+  }
+  &:focus-visible {
+    outline-color: rgba(169, 240, 210, 0.55);
+  }
+}
+
+// Reduced motion: the directional lean is decorative — keep the color
+// feedback (it IS the state), drop the travel.
+@media (prefers-reduced-motion: reduce) {
+  .wd-date-step {
+    transform: none !important;
+    transition: color 0.12s ease-out;
+  }
+}
+
+// Availability date-load spinner (inside the date pill, at the calendar
+// icon's place): same ink as the icon it replaces, both lightings.
+.wd-date-btn__spin {
+  color: $wd-day-ink;
+}
+
+body.body--dark .wd-date-btn__spin {
+  color: $wd-paper;
 }
 
 .wd-topbar__date .wd-date-stepper,
@@ -232,15 +329,22 @@ body.body--dark .wd-topbar__menu .text-icon {
   height: 44px;
 
   padding: 0 16px 0 16px;
-  border: 1px;
+  border: none;
   border-radius: 999px; // second full-radius panel
   background: rgba(17, 33, 25, 0.07); // light: pine wash
   cursor: pointer;
   transition: background-color 0.12s ease-out;
   -webkit-tap-highlight-color: transparent;
 
+  &:hover {
+    background: rgba(17, 33, 25, 0.11); // hover sits between rest 0.07 and active 0.14
+  }
   &:active {
     background: rgba(17, 33, 25, 0.14);
+  }
+  &:focus-visible {
+    outline: 2px solid rgba(52, 103, 81, 0.55);
+    outline-offset: 1px;
   }
 
   .text-icon {
@@ -257,8 +361,14 @@ body.body--dark .wd-date-btn {
   // crisp tonal step (solid pine lift) — alpha washes read as murk
   background: #1a3a2b;
 
+  &:hover {
+    background: #1f4433;
+  }
   &:active {
     background: #20472f;
+  }
+  &:focus-visible {
+    outline-color: rgba(169, 240, 210, 0.55);
   }
   .text-icon {
     color: $wd-paper !important;
@@ -309,7 +419,7 @@ body.body--dark .wd-date-btn:has(.wd-date-btn__day--empty) {
 }
 
 body.body--dark .wd-date-btn__day {
-  color: #ffffff;
+  color: $wd-paper; // one white for the whole group (chevrons/search use paper)
 
   &--empty {
     opacity: 0.78;
@@ -334,7 +444,7 @@ body.body--dark .wd-date-btn__date {
 }
 
 body.body--dark .wd-date-btn__icon {
-  color: #ffffff; // match the avatar icon brightness
+  color: $wd-paper; // one white for the whole group (chevrons/search use paper)
 }
 
 // ── Avatar / menu button (right edge) ───────────────────────────────────
@@ -441,6 +551,63 @@ body.body--dark .wd-topbar__progress {
 @media (prefers-reduced-motion: reduce) {
   .wd-progress-enter-active,
   .wd-progress-leave-active {
+    transition: none;
+  }
+}
+
+// ── Desktop presence step: taller pill for the stepper row ────────────
+// Mobile keeps the compact 52px capsule; from sm+1 (where the topbar's
+// desktop alignment ladder starts) the pill grows 4px so the steppers +
+// date sub-pill get breathing room: a uniform 44px sub-zone row (6px
+// inset all around).
+@media (min-width: #{$breakpoint-sm + 1}) {
+  .wd-topbar__pill {
+    height: 56px;
+  }
+
+  .wd-topbar__date {
+    height: 44px; // uniform 44px sub-zone row in the 56px pill
+  }
+
+  .wd-date-btn {
+    height: 44px; // height parity with the steppers — one sub-panel row
+    width: 200px;
+  }
+}
+
+// Mouse pointers: slimmer capsule (32px) hugging the hero; touch keeps
+// the wider 40px target. Same shape, same token — only the width steps.
+@media (hover: hover) and (pointer: fine) {
+  .wd-date-step {
+    width: 32px;
+  }
+}
+
+// Glyph slot (22px, fixed — no text reflow during the loading swap).
+// The calendar ↔ dots-spinner swap fades via the wd-glyph-fade Vue
+// transition: opacity ONLY (150ms) — during the swap the browser is
+// fetching tiles, so the transition must cost as little paint as
+// possible. No transform, no second mounted glyph.
+.wd-date-btn__cal,
+.wd-date-btn__spin {
+  flex: none;
+  width: 22px;
+  height: 22px;
+}
+
+.wd-glyph-fade-enter-active,
+.wd-glyph-fade-leave-active {
+  transition: opacity 150ms ease-out;
+}
+
+.wd-glyph-fade-enter-from,
+.wd-glyph-fade-leave-to {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wd-glyph-fade-enter-active,
+  .wd-glyph-fade-leave-active {
     transition: none;
   }
 }

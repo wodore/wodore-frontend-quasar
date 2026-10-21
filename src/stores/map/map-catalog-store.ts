@@ -96,6 +96,66 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
   /** Runtime-scope values ({{date}}) — never persisted. */
   const runtimeValues = ref<Record<string, string>>({});
 
+  /** ── Availability date-load spinner state ────────────────────────────
+   *
+   * The date pick swaps the wd-bookings vector tile URLs (setTiles);
+   * maplibre then loads the visible tiles so fast that nothing visibly
+   * happens. The spinner next to the date runs from the setTiles call
+   * until the source settles (`sourcedata` with isSourceLoaded — empty
+   * 204 tiles included), held for a 600ms minimum so the user always
+   * sees the state change. Native builds get the fixed minimum (the
+   * Capacitor bridge does not forward sourcedata events; the date
+   * change recomposes the whole style there anyway). */
+  const availabilityLoading = ref(false);
+  let availabilityLoadGen = 0;
+  let availabilityShownAt = 0;
+  let availabilityListenersBound = false;
+  const AVAILABILITY_MIN_SPIN_MS = 600;
+
+  function settleAvailabilityLoad(gen: number): void {
+    if (gen !== availabilityLoadGen) return; // superseded by a newer date pick
+    const elapsed = performance.now() - availabilityShownAt;
+    const remaining = AVAILABILITY_MIN_SPIN_MS - elapsed;
+    if (remaining > 0) {
+      setTimeout(() => {
+        if (gen === availabilityLoadGen) availabilityLoading.value = false;
+      }, remaining);
+    } else {
+      availabilityLoading.value = false;
+    }
+  }
+
+  function beginAvailabilityLoad(): void {
+    const gen = ++availabilityLoadGen;
+    availabilityLoading.value = true;
+    availabilityShownAt = performance.now();
+    const map = mapRef.map as unknown as
+      | { on?: (ev: string, fn: (e: unknown) => void) => void }
+      | undefined;
+    if (!map?.on) {
+      // Native bridge (no sourcedata forwarding): run the fixed minimum.
+      setTimeout(() => settleAvailabilityLoad(gen), AVAILABILITY_MIN_SPIN_MS);
+      return;
+    }
+    if (!availabilityListenersBound) {
+      availabilityListenersBound = true;
+      const onSourceData = (e: { sourceId?: string; isSourceLoaded?: boolean; type?: string }) => {
+        if (e.sourceId !== 'wd-bookings') return;
+        if (e.isSourceLoaded || e.type === 'sourcedataabort') {
+          settleAvailabilityLoad(availabilityLoadGen);
+        }
+      };
+      (mapRef.map as unknown as { on: (ev: string, fn: (e: never) => void) => void }).on(
+        'sourcedata',
+        onSourceData as (e: never) => void
+      );
+      (mapRef.map as unknown as { on: (ev: string, fn: (e: never) => void) => void }).on(
+        'sourcedataabort',
+        onSourceData as (e: never) => void
+      );
+    }
+  }
+
   let refreshing = false;
 
   // ── Value resolution ──────────────────────────────────────────────────
@@ -318,6 +378,7 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
         const vectorSource = map?.getSource(id) as VectorTileSource | undefined;
         if (Array.isArray(resolvedTiles) && vectorSource?.setTiles) {
           vectorSource.setTiles(resolvedTiles);
+          if (id === 'wd-bookings') beginAvailabilityLoad();
         }
       }
     }
@@ -708,5 +769,6 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     resetLayerParameters,
     applyOverlayParameters,
     setRuntimeDate,
+    availabilityLoading,
   };
 });

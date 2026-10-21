@@ -28,7 +28,16 @@ const vectorBookingsStub = {
   setTiles: (tiles: string[]) => setTilesCalls.push(tiles),
 };
 let bookingsSourceStub: Record<string, unknown> = geojsonBookingsStub;
+// Minimal event bus: the store binds sourcedata/sourcedataabort for the
+// availability loading state — specs emit to drive it.
+const mapListeners = new Map<string, Array<(e: unknown) => void>>();
+function emitMapEvent(event: string, e: unknown): void {
+  for (const fn of mapListeners.get(event) ?? []) fn(e);
+}
 const fakeMap = {
+  on: (event: string, fn: (e: unknown) => void) => {
+    mapListeners.set(event, [...(mapListeners.get(event) ?? []), fn]);
+  },
   getLayer: (id: string) => ({ id }),
   getSource: (id: string) => (id === 'wd-bookings' ? bookingsSourceStub : undefined),
   setPaintProperty: (id: string, prop: string, value: unknown) =>
@@ -310,6 +319,7 @@ describe('map catalog store (boot cache + version sync)', () => {
     setDataCalls.length = 0;
     setTilesCalls.length = 0;
     bookingsSourceStub = geojsonBookingsStub;
+    mapListeners.clear();
     catalogFetch.mockReset();
     slotsFetch.mockReset();
     styleFetch.mockReset();
@@ -625,6 +635,57 @@ describe('map catalog store (boot cache + version sync)', () => {
     ]);
     // The vector path never touches the geojson bridge.
     expect(setDataCalls).toHaveLength(0);
+  });
+
+  it('runs the date-load spinner until the source settles, min 600ms', async () => {
+    vi.useFakeTimers();
+    try {
+      const vectorStyle = structuredClone(HUTS_STYLE);
+      vectorStyle.sources['wd-bookings'] = {
+        type: 'vector',
+        tiles: ['https://tiles.example.com/availability/{z}/{x}/{y}?date={{date}}&days=4'],
+      };
+      for (const layer of vectorStyle.layers) {
+        (layer as Record<string, unknown>)['source-layer'] = 'availability';
+      }
+      catalogFetch.mockResolvedValue(catalogFor(VERSION_A, HUTS_LAYER));
+      styleFetch.mockImplementation(async (url: string) =>
+        url.includes('/v1/map/styles/huts.json')
+          ? Promise.resolve(vectorStyle)
+          : Promise.resolve(TRANSPORT_STYLE)
+      );
+      bookingsSourceStub = vectorBookingsStub;
+      const store = stores.useMapCatalogStore();
+      await store.initOverlays();
+
+      // Date pick → tiles swap → spinner starts immediately.
+      useHutsStore().selectedDate = '2026-10-20';
+      await nextTick();
+      expect(store.availabilityLoading).toBe(true);
+
+      // Source settles fast (empty tiles load instantly) — the 600ms
+      // minimum still holds the spinner.
+      emitMapEvent('sourcedata', { sourceId: 'wd-bookings', isSourceLoaded: true });
+      vi.advanceTimersByTime(300);
+      expect(store.availabilityLoading).toBe(true);
+      vi.advanceTimersByTime(400);
+      expect(store.availabilityLoading).toBe(false);
+
+      // Events from other sources never settle the spinner.
+      useHutsStore().selectedDate = '2026-10-21';
+      await nextTick();
+      expect(store.availabilityLoading).toBe(true);
+      emitMapEvent('sourcedata', { sourceId: 'wd-huts', isSourceLoaded: true });
+      vi.advanceTimersByTime(300);
+      expect(store.availabilityLoading).toBe(true);
+
+      // …only the wd-bookings settle does.
+      emitMapEvent('sourcedata', { sourceId: 'wd-bookings', isSourceLoaded: true });
+      vi.advanceTimersByTime(400);
+      expect(store.availabilityLoading).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('normalizes picker and deep-link date formats to ISO in tile URLs', async () => {

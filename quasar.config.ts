@@ -211,8 +211,8 @@ export default configure(ctx => {
         viteConf.build.sourcemap = true;
 
         // Dev server host allowlist: Vite blocks non-localhost Host
-        // headers. To expose the dev server on a machine name (e.g. a
-        // Tailscale MagicDNS name), list it in WODORE_DEV_ALLOWED_HOSTS
+        // headers. To expose the dev server on a machine name,
+        // list it in WODORE_DEV_ALLOWED_HOSTS
         // (.env.local, comma-separated; subdomain wildcards with a
         // leading dot, e.g. ".ts.net"). IP hosts are always allowed;
         // unset/empty = Vite defaults (localhost only).
@@ -270,6 +270,9 @@ export default configure(ctx => {
     devServer: {
       // https: true
       open: false, // opens browser window automatically
+      // Dev host allowlist: see extendViteConf → WODORE_DEV_ALLOWED_HOSTS
+      // (set in .env.local, e.g. a Tailscale MagicDNS name; unset =
+      // localhost only, IPs always allowed).
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#framework

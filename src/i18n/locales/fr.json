@@ -286,7 +286,9 @@
     "placeholder_short": "Disponibilité",
     "today": "Aujourd'hui",
     "tomorrow": "Demain",
-    "choose_hint": "Choisir une date"
+    "choose_hint": "Choisir une date",
+    "previous_day": "Jour précédent",
+    "next_day": "Jour suivant"
   },
   "overlay_config": {
     "reset_done": "Paramètres réinitialisés",

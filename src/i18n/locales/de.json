@@ -286,7 +286,9 @@
     "placeholder_short": "Verfügbarkeit",
     "today": "Heute",
     "tomorrow": "Morgen",
-    "choose_hint": "Datum wählen"
+    "choose_hint": "Datum wählen",
+    "previous_day": "Voriger Tag",
+    "next_day": "Nächster Tag"
   },
   "overlay_config": {
     "reset_done": "Einstellungen zurückgesetzt",
