@@ -286,7 +286,9 @@
     "placeholder_short": "Disponibilità",
     "today": "Oggi",
     "tomorrow": "Domani",
-    "choose_hint": "Scegli una data"
+    "choose_hint": "Scegli una data",
+    "previous_day": "Giorno precedente",
+    "next_day": "Giorno successivo"
   },
   "overlay_config": {
     "reset_done": "Impostazioni ripristinate",

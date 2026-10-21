@@ -3,11 +3,14 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue';
 
 import { useQuasar, QDate, TouchSwipeValue } from 'quasar';
 import { useHutsStore } from '@stores/huts-store';
+import { useMapCatalogStore } from '@stores/map/map-catalog-store';
 // import { useAuthStore } from '@stores/auth-store';
 import { date } from 'quasar';
 const { formatDate, addToDate, extractDate } = date;
 const { selectedDate } = storeToRefs(useHutsStore());
 const { removeBookings, fetchHutBookingsGeojson } = useHutsStore();
+/** Availability date-load spinner state (tile URL swap → sourcedata). */
+const availabilityLoading = useMapCatalogStore().availabilityLoading;
 import { useRouter, useRoute, RouteLocationRaw } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
@@ -535,31 +538,22 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
       >
     </q-btn> -->
     <!-- DESKTOP - textfiled -->
-    <div class="wd-date-stepper row no-wrap items-start cursor-pointer">
-      <!--
-      <div
-        v-if="!isMobile"
+    <div class="wd-date-stepper row no-wrap items-center cursor-pointer">
+      <!-- Desktop-only day steppers: tonal chips flanking the date pill
+           (mobile keeps swipe). One tonal step deeper than the date
+           wash — see .wd-date-step in _topbar.scss. -->
+      <button
+        v-if="!_isMobile"
+        type="button"
+        class="wd-date-step"
+        :disabled="decrementDisabled"
+        :aria-label="t('select_date.previous_day')"
         @click="decrementDate"
-        class="q-field row no-wrap items-start q-field--standout q-field--dense q-field--dark q-field--readonly wd-input-button"
-        :class="{
-          'wd-input-button--disabled': decrementDisabled,
-          'cursor-pointer': !decrementDisabled,
-        }"
-        style="width: 22px; min-width: 22px; max-width: 22px"
       >
-        <div class="q-field__inner relative-position col self-stretch">
-          <div class="q-field__control relative-position row no-wrap">
-            <div
-              class="q-field__control-container col relative-position row items-center justify-center no-wrap q-anchor--skip"
-            >
-              <q-icon size="26px" class="text-icon">
-                <IconEvaArrowIosBackOutline />
-              </q-icon>
-            </div>
-          </div>
-        </div>
-      </div>
-      -->
+        <q-icon size="22px">
+          <IconEvaArrowIosBackOutline />
+        </q-icon>
+      </button>
       <div id="select-date-huts-location" style="flex: 1; position: relative">
         <!-- class="gt-xs" -->
         <!-- Plain 2-line button (no input field): day name + date -->
@@ -575,7 +569,9 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
         <!---->
         <!-- </q-btn> -->
         <button type="button" class="wd-date-btn" @click="showMenu = true">
+          <q-spinner-dots v-if="availabilityLoading" size="18px" class="wd-date-btn__spin" />
           <q-icon
+            v-else
             name="wd-calendar"
             size="sm"
             class="text-icon"
@@ -611,22 +607,17 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
           @click="showMenu = true"
         ></div>
       </div>
-      <!--
-      <div v-if="!isMobile" @click="incrementDate"
-        class="q-field row no-wrap items-start q-field--standout q-field--dense q-field--dark q-field--readonly cursor-pointer wd-input-button"
-        style="width: 22px; min-width: 22px; max-width: 22px">
-        <div class="q-field__inner relative-position col self-stretch">
-          <div class="q-field__control relative-position row no-wrap">
-            <div
-              class="q-field__control-container col relative-position row items-center justify-center no-wrap q-anchor--skip">
-              <q-icon size="26px" class="text-icon">
-                <IconEvaArrowIosForwardOutline />
-              </q-icon>
-            </div>
-          </div>
-        </div>
-      </div>
-      -->
+      <button
+        v-if="!_isMobile"
+        type="button"
+        class="wd-date-step"
+        :aria-label="t('select_date.next_day')"
+        @click="incrementDate"
+      >
+        <q-icon size="22px">
+          <IconEvaArrowIosForwardOutline />
+        </q-icon>
+      </button>
     </div>
   </div>
 </template>

@@ -210,10 +210,100 @@ body.body--dark .wd-topbar__menu .text-icon {
   height: 100%;
 }
 
-/* Steppers (desktop prev/next) stay hidden in the pill; kill the dashed
-   field border WdSelectDate draws on its stepper wrapper */
+/* Legacy stepper wrapper class is retired (the chips below replaced it);
+   kill any dashed field border WdSelectDate might still draw. */
 .wd-topbar__date .wd-input-button {
   display: none !important;
+}
+
+// ── Desktop date steppers: tonal chips flanking the date sub-pill ───────
+// Design: Alpine Instrument — same "the wash IS the shape" vocabulary as
+// the date sub-pill, one tonal step deeper: light = pine wash 0.12 (vs
+// the date pill's 0.07), dark = the empty-state pine #163024 (vs #1a3a2b).
+// Chips sit OUTSIDE the date button so the mobile swipe overlay never
+// swallows their clicks; hidden below sm (swipe owns touch).
+.wd-date-step {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  margin: 0 2px;
+  align-self: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 999px;
+  background: rgba(17, 33, 25, 0.12); // light: one step deeper than the date wash
+  color: $wd-day-ink;
+  cursor: pointer;
+  transition: background-color 0.12s ease-out;
+  -webkit-tap-highlight-color: transparent;
+
+  &:hover {
+    background: rgba(17, 33, 25, 0.18);
+  }
+  &:active {
+    background: rgba(17, 33, 25, 0.22);
+  }
+  &:disabled {
+    opacity: 0.35;
+    cursor: default;
+    pointer-events: none;
+  }
+
+  .text-icon {
+    color: $wd-day-ink;
+  }
+}
+
+body.body--dark .wd-date-step {
+  background: #163024; // the empty-state pine step — darker than #1a3a2b
+  color: $wd-paper;
+
+  &:hover {
+    background: #1c3f2c;
+  }
+  &:active {
+    background: #20472f;
+  }
+  .text-icon {
+    color: $wd-paper;
+  }
+}
+
+// Availability date-load spinner (inside the date pill, at the calendar
+// icon's place): same ink as the icon it replaces, both lightings.
+.wd-date-btn__spin {
+  color: $wd-day-ink;
+}
+
+body.body--dark .wd-date-btn__spin {
+  color: $wd-paper;
+}
+
+// ── Desktop presence step: taller pill for the stepper row ────────────
+// Mobile keeps the compact 52px capsule; from sm+1 (where the topbar's
+// desktop alignment ladder starts) the pill grows 4px so the steppers +
+// date sub-pill get breathing room. Inset ladder preserved: 56 - 50 =
+// 2×3px like 52 - 46 below.
+@media (min-width: #{$breakpoint-sm + 1}) {
+  .wd-topbar__pill {
+    height: 56px;
+  }
+
+  .wd-topbar__date {
+    height: 50px;
+  }
+
+  .wd-date-btn {
+    height: 48px;
+    width: 200px;
+  }
+
+  .wd-date-step {
+    width: 40px;
+    height: 40px;
+  }
 }
 
 .wd-topbar__date .wd-date-stepper,
