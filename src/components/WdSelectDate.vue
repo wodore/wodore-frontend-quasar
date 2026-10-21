@@ -550,7 +550,7 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
         :aria-label="t('select_date.previous_day')"
         @click="decrementDate"
       >
-        <q-icon size="22px">
+        <q-icon size="20px">
           <IconEvaArrowIosBackOutline />
         </q-icon>
       </button>
@@ -569,11 +569,11 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
         <!---->
         <!-- </q-btn> -->
         <button type="button" class="wd-date-btn" @click="showMenu = true">
-          <q-spinner-dots v-if="availabilityLoading" size="18px" class="wd-date-btn__spin" />
+          <q-spinner-dots v-if="availabilityLoading" size="22px" class="wd-date-btn__spin" />
           <q-icon
             v-else
             name="wd-calendar"
-            size="sm"
+            size="22px"
             class="text-icon"
             :class="{ 'wd-date-btn__icon--empty': selectedDate === undefined }"
           />
@@ -614,7 +614,7 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
         :aria-label="t('select_date.next_day')"
         @click="incrementDate"
       >
-        <q-icon size="22px">
+        <q-icon size="20px">
           <IconEvaArrowIosForwardOutline />
         </q-icon>
       </button>

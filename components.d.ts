@@ -11,16 +11,13 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    IconEvaArrowIosBackOutline: typeof import('~icons/eva/arrow-ios-back-outline')['default']
+    IconEvaArrowIosForwardOutline: typeof import('~icons/eva/arrow-ios-forward-outline')['default']
     IconEvaCloseOutline: typeof import('~icons/eva/close-outline')['default']
-    IconEvaExternalLinkFill: typeof import('~icons/eva/external-link-fill')['default']
     IconEvaEyeOutline: typeof import('~icons/eva/eye-outline')['default']
     IconEvaMoveOutline: typeof import('~icons/eva/move-outline')['default']
     IconEvaSearchOutline: typeof import('~icons/eva/search-outline')['default']
     IconEvaUnlockOutline: typeof import('~icons/eva/unlock-outline')['default']
-    IconFa6SolidCopy: typeof import('~icons/fa6-solid/copy')['default']
-    IconFa6SolidLocationCrosshairs: typeof import('~icons/fa6-solid/location-crosshairs')['default']
-    IconMdiAnonymousCircle: typeof import('~icons/mdi/anonymous-circle')['default']
-    IconMdiAnonymousCircleOff: typeof import('~icons/mdi/anonymous-circle-off')['default']
     IconMdiThemeLightDark: typeof import('~icons/mdi/theme-light-dark')['default']
     IconMdiTranslate: typeof import('~icons/mdi/translate')['default']
     IconMdiWeatherNight: typeof import('~icons/mdi/weather-night')['default']

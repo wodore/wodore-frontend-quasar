@@ -224,9 +224,9 @@ body.body--dark .wd-topbar__menu .text-icon {
 // swallows their clicks; hidden below sm (swipe owns touch).
 .wd-date-step {
   flex: none;
-  width: 36px;
-  height: 36px;
-  margin: 0 2px;
+  width: 44px;
+  height: 44px; // square at touch widths (tablet): 44px touch target
+  margin: 0 1px;
   align-self: center;
   display: flex;
   align-items: center;
@@ -246,9 +246,19 @@ body.body--dark .wd-topbar__menu .text-icon {
     background: rgba(17, 33, 25, 0.22);
   }
   &:disabled {
-    opacity: 0.35;
     cursor: default;
     pointer-events: none;
+    // Keep the chip surface — a fully faded chip reads as a glitch, not
+    // a disabled control. Only the glyph dims.
+    .text-icon {
+      opacity: 0.3;
+    }
+  }
+
+  // Keyboard: same hairline-ink focus the chip system uses.
+  &:focus-visible {
+    outline: 2px solid rgba(52, 103, 81, 0.55);
+    outline-offset: 1px;
   }
 
   .text-icon {
@@ -257,14 +267,19 @@ body.body--dark .wd-topbar__menu .text-icon {
 }
 
 body.body--dark .wd-date-step {
-  background: #163024; // the empty-state pine step — darker than #1a3a2b
+  // "One tonal step deeper" on the dark pine pill means MORE lift, not
+  // a darker hex (darker recedes below the hero): lifted above #1a3a2b.
+  background: #1f4433;
   color: $wd-paper;
 
   &:hover {
-    background: #1c3f2c;
+    background: #244d39;
   }
   &:active {
-    background: #20472f;
+    background: #285841;
+  }
+  &:focus-visible {
+    outline-color: rgba(169, 240, 210, 0.55);
   }
   .text-icon {
     color: $wd-paper;
@@ -279,31 +294,6 @@ body.body--dark .wd-date-step {
 
 body.body--dark .wd-date-btn__spin {
   color: $wd-paper;
-}
-
-// ── Desktop presence step: taller pill for the stepper row ────────────
-// Mobile keeps the compact 52px capsule; from sm+1 (where the topbar's
-// desktop alignment ladder starts) the pill grows 4px so the steppers +
-// date sub-pill get breathing room. Inset ladder preserved: 56 - 50 =
-// 2×3px like 52 - 46 below.
-@media (min-width: #{$breakpoint-sm + 1}) {
-  .wd-topbar__pill {
-    height: 56px;
-  }
-
-  .wd-topbar__date {
-    height: 50px;
-  }
-
-  .wd-date-btn {
-    height: 48px;
-    width: 200px;
-  }
-
-  .wd-date-step {
-    width: 40px;
-    height: 40px;
-  }
 }
 
 .wd-topbar__date .wd-date-stepper,
@@ -322,15 +312,22 @@ body.body--dark .wd-date-btn__spin {
   height: 44px;
 
   padding: 0 16px 0 16px;
-  border: 1px;
+  border: none;
   border-radius: 999px; // second full-radius panel
   background: rgba(17, 33, 25, 0.07); // light: pine wash
   cursor: pointer;
   transition: background-color 0.12s ease-out;
   -webkit-tap-highlight-color: transparent;
 
+  &:hover {
+    background: rgba(17, 33, 25, 0.11); // hover sits between rest 0.07 and active 0.14
+  }
   &:active {
     background: rgba(17, 33, 25, 0.14);
+  }
+  &:focus-visible {
+    outline: 2px solid rgba(52, 103, 81, 0.55);
+    outline-offset: 1px;
   }
 
   .text-icon {
@@ -347,8 +344,14 @@ body.body--dark .wd-date-btn {
   // crisp tonal step (solid pine lift) — alpha washes read as murk
   background: #1a3a2b;
 
+  &:hover {
+    background: #1f4433;
+  }
   &:active {
     background: #20472f;
+  }
+  &:focus-visible {
+    outline-color: rgba(169, 240, 210, 0.55);
   }
   .text-icon {
     color: $wd-paper !important;
@@ -399,7 +402,7 @@ body.body--dark .wd-date-btn:has(.wd-date-btn__day--empty) {
 }
 
 body.body--dark .wd-date-btn__day {
-  color: #ffffff;
+  color: $wd-paper; // one white for the whole group (chevrons/search use paper)
 
   &--empty {
     opacity: 0.78;
@@ -424,7 +427,7 @@ body.body--dark .wd-date-btn__date {
 }
 
 body.body--dark .wd-date-btn__icon {
-  color: #ffffff; // match the avatar icon brightness
+  color: $wd-paper; // one white for the whole group (chevrons/search use paper)
 }
 
 // ── Avatar / menu button (right edge) ───────────────────────────────────
@@ -533,4 +536,44 @@ body.body--dark .wd-topbar__progress {
   .wd-progress-leave-active {
     transition: none;
   }
+}
+
+// ── Desktop presence step: taller pill for the stepper row ────────────
+// Mobile keeps the compact 52px capsule; from sm+1 (where the topbar's
+// desktop alignment ladder starts) the pill grows 4px so the steppers +
+// date sub-pill get breathing room: a uniform 44px sub-zone row (6px
+// inset all around).
+@media (min-width: #{$breakpoint-sm + 1}) {
+  .wd-topbar__pill {
+    height: 56px;
+  }
+
+  .wd-topbar__date {
+    height: 44px; // uniform 44px sub-zone row in the 56px pill
+  }
+
+  .wd-date-btn {
+    height: 44px; // height parity with the steppers — one sub-panel row
+    width: 200px;
+  }
+}
+
+// Narrow mouse-precision chips: gated on POINTER, not width — iPads and
+// other wide touch devices keep the 44×44 touch target; only real mouse
+// setups get the 32px chip hugging the date pill.
+@media (hover: hover) and (pointer: fine) and (min-width: #{$breakpoint-sm + 1}) {
+  .wd-date-step {
+    width: 32px;
+    height: 44px;
+    margin: 0 1px; // keeps the ~2px rhythm at the chip↔date seam
+  }
+}
+
+// Spinner/icon slot: fixed 22px square so the loading swap never
+// reflows the day/date lines (wide dots row vs square glyph).
+.wd-date-btn > .text-icon,
+.wd-date-btn__spin {
+  flex: none;
+  width: 22px;
+  height: 22px;
 }
