@@ -216,12 +216,11 @@ body.body--dark .wd-topbar__menu .text-icon {
   display: none !important;
 }
 
-// ── Desktop date steppers: tonal chips flanking the date sub-pill ───────
-// Design: Alpine Instrument — same "the wash IS the shape" vocabulary as
-// the date sub-pill, one tonal step deeper: light = pine wash 0.12 (vs
-// the date pill's 0.07), dark = the empty-state pine #163024 (vs #1a3a2b).
-// Chips sit OUTSIDE the date button so the mobile swipe overlay never
-// swallows their clicks; hidden below sm (swipe owns touch).
+// ── Desktop date steppers: ghost arrows flanking the date sub-pill ────
+// Design: Alpine Instrument — no chip surface at all (the bookends' icon
+// vocabulary): just the chevrons, resting in the control ink, picking up
+// the brand green / ice mint on hover. The wash stays reserved for the
+// hero date pill. Hidden below sm (swipe owns touch).
 .wd-date-step {
   flex: none;
   width: 44px;
@@ -232,24 +231,22 @@ body.body--dark .wd-topbar__menu .text-icon {
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: 999px;
-  background: rgba(17, 33, 25, 0.12); // light: one step deeper than the date wash
+  background: transparent;
   color: $wd-day-ink;
   cursor: pointer;
-  transition: background-color 0.12s ease-out;
+  transition: color 0.12s ease-out;
   -webkit-tap-highlight-color: transparent;
 
   &:hover {
-    background: rgba(17, 33, 25, 0.18);
+    color: $primary; // brand forest green — the arrows light up, nothing else
   }
   &:active {
-    background: rgba(17, 33, 25, 0.22);
+    color: #224e3b; // forest-green-deep
   }
   &:disabled {
     cursor: default;
     pointer-events: none;
-    // Keep the chip surface — a fully faded chip reads as a glitch, not
-    // a disabled control. Only the glyph dims.
+    // Glyph-only dim: a faded chip surface reads as a glitch.
     .text-icon {
       opacity: 0.3;
     }
@@ -259,30 +256,25 @@ body.body--dark .wd-topbar__menu .text-icon {
   &:focus-visible {
     outline: 2px solid rgba(52, 103, 81, 0.55);
     outline-offset: 1px;
+    border-radius: 999px;
   }
 
   .text-icon {
-    color: $wd-day-ink;
+    color: inherit;
   }
 }
 
 body.body--dark .wd-date-step {
-  // "One tonal step deeper" on the dark pine pill means MORE lift, not
-  // a darker hex (darker recedes below the hero): lifted above #1a3a2b.
-  background: #1f4433;
   color: $wd-paper;
 
   &:hover {
-    background: #244d39;
+    color: $icon; // the incumbent mint hover ink for icon controls
   }
   &:active {
-    background: #285841;
+    color: #8fd6b7; // forest-green-ice
   }
   &:focus-visible {
     outline-color: rgba(169, 240, 210, 0.55);
-  }
-  .text-icon {
-    color: $wd-paper;
   }
 }
 
