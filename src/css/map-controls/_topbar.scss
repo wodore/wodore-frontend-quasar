@@ -231,21 +231,26 @@ body.body--dark .wd-topbar__menu .text-icon {
   align-items: center;
   justify-content: center;
   border: none;
-  background: transparent;
+  border-radius: 999px;
+  // Tonal ladder: main pill (0) → ARROWS (faint step) → date wash (0.07)
+  background: rgba(17, 33, 25, 0.045);
   color: $wd-day-ink;
   cursor: pointer;
   transition:
     color 0.12s ease-out,
+    background-color 0.12s ease-out,
     transform 0.12s ease-out;
   -webkit-tap-highlight-color: transparent;
 
   // Directional affordance: the arrow leans INTO its direction on hover
   // and presses further on click — physical, no surfaces, no bounce.
   &:hover {
-    color: $primary; // brand forest green — the arrows light up, nothing else
+    color: $primary; // brand forest green — the arrows light up
+    background: rgba(17, 33, 25, 0.08); // deepens toward the date wash
   }
   &:active {
     color: #224e3b; // forest-green-deep
+    background: rgba(17, 33, 25, 0.11);
   }
   &--prev:hover {
     transform: translateX(-1.5px);
@@ -282,12 +287,16 @@ body.body--dark .wd-topbar__menu .text-icon {
 
 body.body--dark .wd-date-step {
   color: $wd-paper;
+  // Tonal ladder (night): main pine #112119 → ARROWS → date #1a3a2b.
+  background: #16281f;
 
   &:hover {
     color: $icon; // the incumbent mint hover ink for icon controls
+    background: #1a3227;
   }
   &:active {
     color: #8fd6b7; // forest-green-ice
+    background: #20472f;
   }
   &:focus-visible {
     outline-color: rgba(169, 240, 210, 0.55);

@@ -270,6 +270,10 @@ export default configure(ctx => {
     devServer: {
       // https: true
       open: false, // opens browser window automatically
+      // LAN/Tailscale dev access (home host MagicDNS name); IPs are
+      // allowed by default, hostnames are not. Env-driven so the repo
+      // stays free of personal hostnames: QUASAR_DEV_ALLOWED_HOSTS=home
+      allowedHosts: (process.env.QUASAR_DEV_ALLOWED_HOSTS ?? 'home').split(','),
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#framework

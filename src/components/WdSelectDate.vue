@@ -9,8 +9,10 @@ import { date } from 'quasar';
 const { formatDate, addToDate, extractDate } = date;
 const { selectedDate } = storeToRefs(useHutsStore());
 const { removeBookings, fetchHutBookingsGeojson } = useHutsStore();
-/** Availability date-load spinner state (tile URL swap → sourcedata). */
-const availabilityLoading = useMapCatalogStore().availabilityLoading;
+/** Availability date-load spinner state (tile URL swap → sourcedata).
+ *  storeToRefs is REQUIRED — a plain store property access unwraps the
+ *  ref to a frozen boolean and the spinner never re-renders. */
+const { availabilityLoading } = storeToRefs(useMapCatalogStore());
 import { useRouter, useRoute, RouteLocationRaw } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
