@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n';
 import { usePlace } from '@composables/usePlace';
 import { useHutAvailabilityStatus } from '@composables/useHutAvailabilityStatus';
 import { useHutsStore } from '@stores/huts-store';
+import { useWeatherPossible } from '@composables/useWeatherPossible';
 import WdWeatherSelect from '@components/huts/WdWeatherSelect.vue';
 import WdCategoryIcon from '@components/categories/WdCategoryIcon.vue';
 import track from '@services/analytics';
@@ -29,6 +30,13 @@ const { place } = usePlace(computed(() => props.slug));
 // card (display-only in the mobile sheet, where no maximize exists).
 const maximize = inject<(() => void) | null>('wdContentPanelMaximize', null);
 const { selectedDateOrToday } = storeToRefs(useHutsStore());
+
+// Whether the briefing row's weather read can exist for the selected
+// date (±14 days, no date = today). Mirrors WdWeatherSelect's `canShow`
+// so the row's dot separators stay honest: weather absent → the row
+// reads `▲ elev • ● avail` — one dot (owner 2026-10).
+const weatherPossible = useWeatherPossible();
+const weatherShown = computed(() => !!place.value?.location && weatherPossible.value);
 
 const selectedDateISO = computed(() => {
   // DD.MM.YY (store) → YYYY-MM-DD (API) — same conversion the
@@ -117,12 +125,12 @@ const availTooltip = computed(() => {
                 {{ place.elevation }}m
               </span>
               <span
-                v-if="place.elevation && (place.location || showAvail)"
+                v-if="place.elevation && (weatherShown || showAvail)"
                 class="wd-place-title__dot"
                 >•</span
               >
               <WdWeatherSelect
-                v-if="place.location"
+                v-if="weatherShown && place.location"
                 :latitude="place.location.lat"
                 :longitude="place.location.lon"
                 collection="weather-icons-outlined-mono"
@@ -134,7 +142,7 @@ const availTooltip = computed(() => {
                 no-shadow
               />
               <template v-if="showAvail">
-                <span v-if="place.location" class="wd-place-title__dot">•</span>
+                <span v-if="weatherShown" class="wd-place-title__dot">•</span>
                 <button
                   type="button"
                   class="wd-place-title__avail"

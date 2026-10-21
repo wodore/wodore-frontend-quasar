@@ -100,15 +100,16 @@ watchEffect(() => {
 });
 
 // Set up router guards to track navigation source
-router.beforeEach((to, from, next) => {
+// Guard only tracks the dialog→route transition source; nothing to
+// allow/deny — modernized to the return-style guard (no `next()` callback,
+// vue-router R0025 deprecation, owner console 2026-10).
+router.beforeEach((to, from) => {
   const fromDialog = from.meta?.dialog as boolean;
   const toDialog = to.meta?.dialog as boolean;
 
   if (fromDialog && !toDialog) {
     shouldNavigateOnHide = false;
   }
-
-  next();
 });
 
 // Handle dialog close via backdrop click, ESC key, or close button

@@ -55,6 +55,7 @@ export function openContentPanelMaximized(): void {
 import { ref, computed, watch, nextTick, provide, type Ref } from 'vue';
 import { useEventListener, useResizeObserver, useWindowSize } from '@vueuse/core';
 import { usePlace } from '@composables/usePlace';
+import { useWeatherPossible } from '@composables/useWeatherPossible';
 import { useI18n } from 'vue-i18n';
 import { useQuasar } from 'quasar';
 
@@ -129,6 +130,14 @@ const FOOTER_FALLBACK = 50;
 const panelWidthPx = computed(() => ($q.screen.gt.md ? 460 : 380));
 const galleryBlockPx = computed(() => ((panelWidthPx.value - 24) * 2) / 3); // 3:2
 
+// Weather exists only within ±14 days of the selected date (no date =
+// today → exists). When the picked date is outside that horizon, the
+// weather block never renders — the expanded floor must drop its
+// height too, or every far-date hut opens ~157px too tall (owner
+// 2026-10).
+const weatherPossible = useWeatherPossible();
+const weatherBlockPx = computed(() => (weatherPossible.value ? WEATHER_BLOCK : 0));
+
 const headerH = ref(0);
 const footerH = ref(0);
 const contentH = ref(0);
@@ -171,7 +180,7 @@ const knownFloor = computed(
     STRIPE_BLOCK +
     BADGES_BLOCK +
     galleryBlockPx.value +
-    WEATHER_BLOCK +
+    weatherBlockPx.value +
     LOCATION_BLOCK +
     Math.max(footerH.value, FOOTER_FALLBACK) +
     BLOCK_GAPS

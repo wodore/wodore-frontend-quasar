@@ -14,6 +14,7 @@ import WdAccommodationAvailabilities from '@components/huts/WdAccommodationAvail
 // import WdHutOpenMonthly from '@components/huts/monthly/WdHutOpenMonthly.vue';
 import WdWeatherForecast from '@components/content/place/WdWeatherForecast.vue';
 import WdTextClamp from '@components/utils/WdTextClamp.vue';
+import { useWeatherPossible } from '@composables/useWeatherPossible';
 import WdPlaceTypeBadge from '@components/content/place/WdPlaceTypeBadge.vue';
 import WdStatBox from '@components/content/WdStatBox.vue';
 import WdYearStripe from '@components/content/place/WdYearStripe.vue';
@@ -33,6 +34,11 @@ const {
   error: placeError,
   refetch: refetchPlace,
 } = usePlace(computed(() => props.slug));
+
+// Weather exists only within the forecast horizon of the selected date
+// (±14 days, no date = today) — gates the reserved weather block
+// (owner 2026-10)
+const weatherPossible = useWeatherPossible();
 
 // Live connectivity: a stored error replays as 'offline' whenever the
 // browser reports no connection — accurate guidance for the retry the
@@ -388,7 +394,7 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
           class="attribution attr_link text-right"
           v-html="place.description_attribution"
         />
-        <WdTextClamp :max-lines="5" :text="place.description" />
+        <WdTextClamp :max-lines="5" :text="place.description ?? ''" />
       </div>
 
       <!-- New Availability (Swiper-based): optional — the place payload
@@ -403,8 +409,15 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
       </div>
 
       <!-- Weather (lazy loaded): always shown once the place exists —
-           157px reserved so the lazy load cannot shift the layout -->
-      <div v-if="place" ref="weatherSection" class="wd-place-block wd-place-block--weather">
+           157px reserved so the lazy load cannot shift the layout.
+           Collapses entirely when NO weather exists for the selected
+           date (±14 days; owner 2026-10) — the card's floor drops the
+           block too, see WdContentPanel. -->
+      <div
+        v-if="place && weatherPossible"
+        ref="weatherSection"
+        class="wd-place-block wd-place-block--weather"
+      >
         <WdWeatherForecast
           v-if="weatherSectionVisible && place.location"
           :latitude="place.location.lat"
