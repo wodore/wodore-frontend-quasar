@@ -349,15 +349,15 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
   }
 
   /** Normalize a picker/deep-link date into ISO `YYYY-MM-DD`.
- *
- *  The huts store's `selectedDate` carries the date-picker formats
- *  (`DD.MM.YY` from the picker, `DD.MM.YYYY` from the `?date=` deep
- *  link) — the old availability GeoJSON endpoint parsed those
- *  server-side. The Martin availability tile function requires an
- *  explicit ISO date (anything else is an intentional 204), so the
- *  runtime `{{date}}` token must be normalized before it lands in tile
- *  URLs. Unparseable input yields undefined (token stays unresolved →
- *  the date-gated layers stay hidden). */
+   *
+   *  The huts store's `selectedDate` carries the date-picker formats
+   *  (`DD.MM.YY` from the picker, `DD.MM.YYYY` from the `?date=` deep
+   *  link) — the old availability GeoJSON endpoint parsed those
+   *  server-side. The Martin availability tile function requires an
+   *  explicit ISO date (anything else is an intentional 204), so the
+   *  runtime `{{date}}` token must be normalized before it lands in tile
+   *  URLs. Unparseable input yields undefined (token stays unresolved →
+   *  the date-gated layers stay hidden). */
   function toIsoDate(input: string | undefined): string | undefined {
     if (!input) return undefined;
     const euro = input.match(/^(\d{2})\.(\d{2})\.(\d{2}|\d{4})$/);
