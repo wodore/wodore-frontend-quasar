@@ -316,7 +316,7 @@ async function fetchPlanIgn(): Promise<AdaptedNationalStyle | undefined> {
 }
 
 // Border-merged raster from the local MapProxy example stack
-// (docker/mapproxy-eu-topo). Demo URL — point it at your VPS in production.
+// (mapproxy-eu-topo stack in wodore-backend docker/). Demo URL — point it at your VPS in production.
 const mapproxyTopoStyle = getRasterStyle({
   name: 'mapproxy-topo',
   tiles: ['http://localhost:8090/mapproxy/tiles/europe_topo/webmercator/{z}/{x}/{y}.png'],
