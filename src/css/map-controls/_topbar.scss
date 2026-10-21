@@ -216,50 +216,54 @@ body.body--dark .wd-topbar__menu .text-icon {
   display: none !important;
 }
 
-// ── Desktop date steppers: ghost arrows flanking the date sub-pill ────
-// Design: Alpine Instrument — no chip surface at all (the bookends' icon
-// vocabulary): just the chevrons, resting in the control ink, picking up
-// the brand green / ice mint on hover. The wash stays reserved for the
-// hero date pill. Hidden below sm (swipe owns touch).
+// ── Desktop date steppers: capsule chips hugging the date sub-pill ────
+// Design: Alpine Instrument — ONE structure in both themes, only the
+// surface TOKEN differs (the whole point): slim full-height capsules
+// (half-circle ends, like the date pill itself) flush against the hero.
+// Light token = a wash one step darker than the main pill; dark token =
+// transparent (the approved ghost). No circles, no rings, no per-theme
+// redesigns — swap the token, done.
+body {
+  --wd-step-bg: rgba(17, 33, 25, 0.05); // light: slightly darker than the pill
+  --wd-step-bg-hover: rgba(17, 33, 25, 0.09);
+  --wd-step-bg-active: rgba(17, 33, 25, 0.12);
+
+  &.body--dark {
+    --wd-step-bg: transparent; // dark: ghost (owner-approved)
+    --wd-step-bg-hover: transparent;
+    --wd-step-bg-active: transparent;
+  }
+}
+
 .wd-date-step {
   flex: none;
-  width: 44px;
-  height: 44px; // square at touch widths (tablet): 44px touch target
-  margin: 0 1px;
+  width: 40px;
+  height: 44px; // full sub-zone height — half-circle ends like the hero
+  margin: 0;
   align-self: center;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1.5px solid rgba(17, 33, 25, 0.18); // hairline ring ≈ #d2d6d4 —
-  // the day theme's own hairline vocabulary; line, never fill: a filled
-  // disc reads as a dot regardless of alpha (shape problem, not weight)
-  border-radius: 999px; // square button → true circle
-  // Rest = zero tonal mass: the ladder stays strictly pill 0 → hero 0.07
-  // (the "wash belongs to the hero" rule that made dark work). Dark
-  // keeps GHOST arrows (owner call): ring + bg transparent, ink + lean.
-  background: transparent;
+  border: none;
+  border-radius: 999px;
+  background: var(--wd-step-bg);
   color: $wd-day-ink;
   cursor: pointer;
   transition:
     color 0.12s ease-out,
     background-color 0.12s ease-out,
-    border-color 0.12s ease-out,
     transform 0.12s ease-out;
   -webkit-tap-highlight-color: transparent;
 
   // Directional affordance: the arrow leans INTO its direction on hover
-  // and presses further on click — physical, no bounce. Hover dissolves
-  // the ring into a soft wash (below the hero's rest wash, so the arrow
-  // never out-weighs the hero mid-interaction).
+  // and presses further on click — physical, no bounce.
   &:hover {
-    color: $primary; // brand forest green — the arrows light up
-    border-color: transparent;
-    background: rgba(17, 33, 25, 0.06);
+    color: $primary; // brand forest green
+    background: var(--wd-step-bg-hover);
   }
   &:active {
     color: #224e3b; // forest-green-deep
-    border-color: transparent;
-    background: rgba(17, 33, 25, 0.1);
+    background: var(--wd-step-bg-active);
   }
   &--prev:hover {
     transform: translateX(-1.5px);
@@ -276,20 +280,15 @@ body.body--dark .wd-topbar__menu .text-icon {
   &:disabled {
     cursor: default;
     pointer-events: none;
-    // Ring dims with the glyph: a full-contrast ring around a dimmed
-    // chevron would read as an active button that does nothing.
-    border-color: rgba(17, 33, 25, 0.08);
     .text-icon {
       opacity: 0.3;
     }
   }
 
-  // Keyboard: same hairline-ink focus the chip system uses. 2px offset
-  // so the focus ring clears the new resting ring.
+  // Keyboard: same hairline-ink focus the chip system uses.
   &:focus-visible {
     outline: 2px solid rgba(52, 103, 81, 0.55);
     outline-offset: 2px;
-    border-radius: 999px;
   }
 
   .text-icon {
@@ -299,10 +298,6 @@ body.body--dark .wd-topbar__menu .text-icon {
 
 body.body--dark .wd-date-step {
   color: $wd-paper;
-  // Night keeps the ghost arrows (owner call): no surface, no ring —
-  // the wash stays reserved for the hero date pill; hover is ink + lean.
-  background: transparent;
-  border-color: transparent;
 
   &:hover {
     color: $icon; // the incumbent mint hover ink for icon controls
@@ -596,15 +591,11 @@ body.body--dark .wd-topbar__progress {
   }
 }
 
-// Mouse-precision round chips: square so the wash renders as a true
-// circle (36px — compact next to the hero, comfortable click target);
-// touch keeps the 44×44 circle.
+// Mouse pointers: slimmer capsule (32px) hugging the hero; touch keeps
+// the wider 40px target. Same shape, same token — only the width steps.
 @media (hover: hover) and (pointer: fine) {
   .wd-date-step {
-    width: 36px;
-    height: 36px;
-    align-self: center;
-    margin: 0;
+    width: 32px;
   }
 }
 
