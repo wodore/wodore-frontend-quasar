@@ -234,14 +234,30 @@ body.body--dark .wd-topbar__menu .text-icon {
   background: transparent;
   color: $wd-day-ink;
   cursor: pointer;
-  transition: color 0.12s ease-out;
+  transition:
+    color 0.12s ease-out,
+    transform 0.12s ease-out;
   -webkit-tap-highlight-color: transparent;
 
+  // Directional affordance: the arrow leans INTO its direction on hover
+  // and presses further on click — physical, no surfaces, no bounce.
   &:hover {
     color: $primary; // brand forest green — the arrows light up, nothing else
   }
   &:active {
     color: #224e3b; // forest-green-deep
+  }
+  &--prev:hover {
+    transform: translateX(-1.5px);
+  }
+  &--prev:active {
+    transform: translateX(-3px);
+  }
+  &--next:hover {
+    transform: translateX(1.5px);
+  }
+  &--next:active {
+    transform: translateX(3px);
   }
   &:disabled {
     cursor: default;
@@ -275,6 +291,15 @@ body.body--dark .wd-date-step {
   }
   &:focus-visible {
     outline-color: rgba(169, 240, 210, 0.55);
+  }
+}
+
+// Reduced motion: the directional lean is decorative — keep the color
+// feedback (it IS the state), drop the travel.
+@media (prefers-reduced-motion: reduce) {
+  .wd-date-step {
+    transform: none !important;
+    transition: color 0.12s ease-out;
   }
 }
 
@@ -550,14 +575,15 @@ body.body--dark .wd-topbar__progress {
   }
 }
 
-// Narrow mouse-precision chips: gated on POINTER, not width — iPads and
+// Narrow mouse-precision arrows: gated on POINTER, not width — iPads and
 // other wide touch devices keep the 44×44 touch target; only real mouse
-// setups get the 32px chip hugging the date pill.
+// setups get the slim 24px arrow slot hugging the date pill (24px is the
+// WCAG 2.5.8 AA target minimum for fine pointers).
 @media (hover: hover) and (pointer: fine) and (min-width: #{$breakpoint-sm + 1}) {
   .wd-date-step {
-    width: 32px;
+    width: 24px;
     height: 44px;
-    margin: 0 1px; // keeps the ~2px rhythm at the chip↔date seam
+    margin: 0; // slimmer arrows sit tight against the hero pill
   }
 }
 

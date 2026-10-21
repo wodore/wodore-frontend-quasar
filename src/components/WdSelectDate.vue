@@ -539,13 +539,12 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
     </q-btn> -->
     <!-- DESKTOP - textfiled -->
     <div class="wd-date-stepper row no-wrap items-center cursor-pointer">
-      <!-- Desktop-only day steppers: tonal chips flanking the date pill
-           (mobile keeps swipe). One tonal step deeper than the date
-           wash — see .wd-date-step in _topbar.scss. -->
+      <!-- Desktop-only day steppers: ghost arrows flanking the date pill
+           (mobile keeps swipe). See .wd-date-step in _topbar.scss. -->
       <button
         v-if="!_isMobile"
         type="button"
-        class="wd-date-step"
+        class="wd-date-step wd-date-step--prev"
         :disabled="decrementDisabled"
         :aria-label="t('select_date.previous_day')"
         @click="decrementDate"
@@ -610,7 +609,7 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
       <button
         v-if="!_isMobile"
         type="button"
-        class="wd-date-step"
+        class="wd-date-step wd-date-step--next"
         :aria-label="t('select_date.next_day')"
         @click="incrementDate"
       >
