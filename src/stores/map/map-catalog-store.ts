@@ -32,6 +32,8 @@ import type {
   GeoJSONSourceSpecification,
   Map,
   StyleSpecification,
+  VectorTileSource,
+  VectorSourceSpecification,
 } from 'maplibre-gl';
 import { useOverlayStore } from './overlay-store';
 import { useBasemapStore } from './basemap-store';
@@ -288,22 +290,36 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     }
     for (const [id, source] of Object.entries(overlay.tokenizedStyle.sources)) {
       const data = (source as GeoJSONSourceSpecification).data;
-      if (typeof data !== 'string' || !data.includes('{{')) continue;
-      // The availability source is wired to the huts store's live
-      // object — a resolved URL would drop the date-picker flow's
-      // auth/lang/days params and fetch without a picked date.
-      if (id === 'wd-bookings') continue;
-      const resolvedData = (resolved.sources[id] as GeoJSONSourceSpecification).data;
-      const mapSource = map?.getSource(id) as GeoJSONSource | undefined;
-      if (typeof resolvedData === 'string' && mapSource?.setData) {
-        mapSource.setData(resolvedData);
+      if (typeof data === 'string' && data.includes('{{')) {
+        // The legacy availability geojson source is wired to the huts
+        // store's live object — a resolved URL would drop the date-picker
+        // flow's auth/lang/days params and fetch without a picked date.
+        // (The vector wd-bookings source takes the tiles branch below.)
+        if (id !== 'wd-bookings') {
+          const resolvedData = (resolved.sources[id] as GeoJSONSourceSpecification).data;
+          const mapSource = map?.getSource(id) as GeoJSONSource | undefined;
+          if (typeof resolvedData === 'string' && mapSource?.setData) {
+            mapSource.setData(resolvedData);
+          }
+        }
+      }
+      // Vector sources: substitute {{token}} templates inside the tile
+      // URLs (the availability source's {{date}}) and hot-swap them —
+      // maplibre aborts in-flight tile requests of the old URL and only
+      // fetches tiles whose URL actually changed.
+      const tiles = (source as VectorSourceSpecification).tiles;
+      if (Array.isArray(tiles) && tiles.some(t => t.includes('{{'))) {
+        const resolvedTiles = (resolved.sources[id] as VectorSourceSpecification).tiles;
+        const vectorSource = map?.getSource(id) as VectorTileSource | undefined;
+        if (Array.isArray(resolvedTiles) && vectorSource?.setTiles) {
+          vectorSource.setTiles(resolvedTiles);
+        }
       }
     }
     overlay.style = resolved;
-    // The availability source rides the huts store's live object — a
-    // resolved URL would drop the date-picker flow's auth/lang/days
-    // params and fetch without a picked date. Synchronous fixup: bake
-    // the live data + date-gated visibility, then apply to the live map.
+    // The availability source (geojson: store-injected data; vector:
+    // token-resolved tile URLs, swapped above) — synchronous fixup:
+    // bake the date-gated visibility, then apply to the live map.
     if (fixupBookingsStyle(resolved)) {
       applyBookingsToMap(map, Boolean(overlay.active));
     }

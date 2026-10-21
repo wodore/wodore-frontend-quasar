@@ -264,6 +264,11 @@ function applyOverlayOpacity(
   (layer as { paint?: Record<string, unknown> }).paint = nextPaint;
 }
 
+// Whether the composed style's wd-bookings source is the legacy geojson
+// one (store-driven) — set during compose; the Martin vector source
+// fetches its own tiles and needs no live data pushes.
+let bookingsSourceIsGeojson = true;
+
 async function composeStyle(revealZero?: Set<string>): Promise<StyleSpecification> {
   const style = await resolveBasemapStyle();
   style.sources = { ...(style.sources ?? {}) };
@@ -293,6 +298,10 @@ async function composeStyle(revealZero?: Set<string>): Promise<StyleSpecificatio
   for (const overlay of overlayStore.overlays) {
     if (!overlay.active || !overlay.style) continue;
     for (const [id, source] of Object.entries(overlay.style.sources)) {
+      if (id === 'wd-bookings') {
+        // Vector (Martin) availability source: no live geojson pushes.
+        bookingsSourceIsGeojson = source.type === 'geojson';
+      }
       if (!(id in style.sources!)) {
         style.sources![id] = JSON.parse(JSON.stringify(source));
       }
@@ -618,11 +627,14 @@ watch(
 
 // Bookings/occupation overlay: the style snapshot carries the data at
 // compose time; between rebuilds push updates through the GeoJSON
-// source API (no map rebuild needed)
+// source API (no map rebuild needed). Only the LEGACY geojson source
+// needs this — the Martin `availability` vector source (backend #341)
+// fetches its own tiles and picks date changes up on recompose (the
+// parametersEpoch watch re-resolves the {{date}} tile URLs).
 watch(
   () => hutsStore.bookingsGeojson,
   data => {
-    if (!mapReady || !data) return;
+    if (!mapReady || !data || !bookingsSourceIsGeojson) return;
     MapLibre.updateGeoJsonSourceById({
       mapId: MAP_ID,
       sourceId: 'wd-bookings',
