@@ -1,12 +1,18 @@
 /**
  * Availability overlay wiring — any catalog style that declares a
- * `wd-bookings` geojson source (the `huts` overlay since the backend
- * merged `huts-availability` into it — backend #327) rides the huts
- * store's live `bookingsGeojson` instead of the style's
- * `…/{{date}}.geojson` URL: the URL fetch would drop the date-picker
- * flow's auth/lang/days query params and the latest-wins guard, and
- * would load data even when no date is picked (the `{{date}}` token
- * boot-defaults to today).
+ * `wd-bookings` source (the `huts` overlay since the backend merged
+ * `huts-availability` into it — backend #327) gets its availability data
+ * wired here. Two shapes, picked by the served style:
+ *
+ * - **vector** (Martin `availability` function source, backend #341):
+ *   nothing is injected — tile URLs carry the resolved `{{date}}` token
+ *   and maplibre fetches per-viewport MVT; date changes hot-swap the URLs
+ *   via applyOverlayParameters (setTiles in map-catalog-store).
+ * - **geojson** (legacy): rides the huts store's live `bookingsGeojson`
+ *   instead of the style's `…/{{date}}.geojson` URL — the URL fetch would
+ *   drop the date-picker flow's auth/lang/days query params and the
+ *   latest-wins guard, and would load data even when no date is picked
+ *   (the `{{date}}` token boot-defaults to today).
  *
  * Pure synchronous fixups — no per-style watchers: date changes already
  * flow through applyOverlayParameters (map-catalog-store re-resolves
@@ -18,6 +24,7 @@ import type {
   GeoJSONSourceSpecification,
   Map as MlMap,
   StyleSpecification,
+  VectorSourceSpecification,
 } from 'maplibre-gl';
 import { useHutsStore } from '@stores/huts-store';
 
@@ -46,10 +53,15 @@ export function dateGatedVisibility(): 'visible' | 'none' {
   return useHutsStore().selectedDate ? 'visible' : 'none';
 }
 
-/** A style's `wd-bookings` geojson source, if it declares one. */
-function bookingsSourceOf(style: StyleSpecification): GeoJSONSourceSpecification | undefined {
-  const source = style.sources['wd-bookings'] as GeoJSONSourceSpecification | undefined;
-  return source?.type === 'geojson' ? source : undefined;
+/** A style's `wd-bookings` source, in either shape (see header). */
+function bookingsSourceOf(style: StyleSpecification): {
+  vector?: VectorSourceSpecification;
+  geojson?: GeoJSONSourceSpecification;
+} {
+  const source = style.sources['wd-bookings'];
+  if (source?.type === 'vector') return { vector: source as VectorSourceSpecification };
+  if (source?.type === 'geojson') return { geojson: source as GeoJSONSourceSpecification };
+  return {};
 }
 
 /** Bake the date-gated visibility into a style spec (add-time state
@@ -75,12 +87,18 @@ function bakeOccupationVisibility(style: StyleSpecification): void {
  * the source. Live map updates: applyBookingsToMap.
  */
 export function fixupBookingsStyle(style: StyleSpecification): boolean {
-  const source = bookingsSourceOf(style);
-  if (!source) return false;
-  const store = useHutsStore();
-  // SAFETY: the generated availability schema follows RFC 7946 nullable
-  // geometry/properties; the live object is a valid FeatureCollection.
-  source.data = store.bookingsGeojson as GeoJSON.GeoJSON;
+  const { vector, geojson } = bookingsSourceOf(style);
+  if (!vector && !geojson) return false;
+  // Legacy geojson source: ride the store's live bookings object
+  // (never the style's URL). SAFETY: the generated availability schema
+  // follows RFC 7946 nullable geometry/properties; the live object is a
+  // valid FeatureCollection.
+  if (geojson) {
+    geojson.data = useHutsStore().bookingsGeojson as GeoJSON.GeoJSON;
+  }
+  // Vector source: tile URLs already carry the resolved {{date}} —
+  // nothing to inject; live date changes go through setTiles in
+  // applyOverlayParameters (map-catalog-store).
   bakeOccupationVisibility(style);
   return true;
 }
@@ -99,9 +117,12 @@ export function applyBookingsToMap(map: MlMap | undefined, overlayActive: boolea
       map.setLayoutProperty(id, 'visibility', visibility);
     }
   }
-  const mapSource = map.getSource('wd-bookings') as GeoJSONSource | undefined;
-  if (mapSource) {
+  const mapSource = map.getSource('wd-bookings');
+  if (mapSource?.type === 'geojson') {
     // SAFETY: same RFC 7946 → maplibre GeoJSON bridge as the fixup.
-    mapSource.setData(useHutsStore().bookingsGeojson as GeoJSON.GeoJSON);
+    (mapSource as GeoJSONSource).setData(useHutsStore().bookingsGeojson as GeoJSON.GeoJSON);
   }
+  // Vector source needs no live push: date changes swap the tile URLs
+  // via applyOverlayParameters (setTiles); visibility above is all that
+  // applies per-overlay-toggle.
 }

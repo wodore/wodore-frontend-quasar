@@ -32,6 +32,8 @@ import type {
   GeoJSONSourceSpecification,
   Map,
   StyleSpecification,
+  VectorTileSource,
+  VectorSourceSpecification,
 } from 'maplibre-gl';
 import { useOverlayStore } from './overlay-store';
 import { useBasemapStore } from './basemap-store';
@@ -210,8 +212,13 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     const param = overlay?.parameters?.find(p => p.slug === paramSlug);
     if (!overlay || !param) return;
     if (param.kind === 'date') {
-      // Runtime-scope: live value only, nothing persisted.
-      runtimeValues.value = { ...runtimeValues.value, [paramSlug]: String(value) };
+      // Runtime-scope: live value only, nothing persisted. Normalized to
+      // ISO — tile URLs reject picker formats with an empty tile.
+      const next = { ...runtimeValues.value };
+      const iso = toIsoDate(String(value));
+      if (iso === undefined) delete next[paramSlug];
+      else next[paramSlug] = iso;
+      runtimeValues.value = next;
       applyRuntimeValueToLayers(paramSlug);
       return;
     }
@@ -288,22 +295,36 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     }
     for (const [id, source] of Object.entries(overlay.tokenizedStyle.sources)) {
       const data = (source as GeoJSONSourceSpecification).data;
-      if (typeof data !== 'string' || !data.includes('{{')) continue;
-      // The availability source is wired to the huts store's live
-      // object — a resolved URL would drop the date-picker flow's
-      // auth/lang/days params and fetch without a picked date.
-      if (id === 'wd-bookings') continue;
-      const resolvedData = (resolved.sources[id] as GeoJSONSourceSpecification).data;
-      const mapSource = map?.getSource(id) as GeoJSONSource | undefined;
-      if (typeof resolvedData === 'string' && mapSource?.setData) {
-        mapSource.setData(resolvedData);
+      if (typeof data === 'string' && data.includes('{{')) {
+        // The legacy availability geojson source is wired to the huts
+        // store's live object — a resolved URL would drop the date-picker
+        // flow's auth/lang/days params and fetch without a picked date.
+        // (The vector wd-bookings source takes the tiles branch below.)
+        if (id !== 'wd-bookings') {
+          const resolvedData = (resolved.sources[id] as GeoJSONSourceSpecification).data;
+          const mapSource = map?.getSource(id) as GeoJSONSource | undefined;
+          if (typeof resolvedData === 'string' && mapSource?.setData) {
+            mapSource.setData(resolvedData);
+          }
+        }
+      }
+      // Vector sources: substitute {{token}} templates inside the tile
+      // URLs (the availability source's {{date}}) and hot-swap them —
+      // maplibre aborts in-flight tile requests of the old URL and only
+      // fetches tiles whose URL actually changed.
+      const tiles = (source as VectorSourceSpecification).tiles;
+      if (Array.isArray(tiles) && tiles.some(t => t.includes('{{'))) {
+        const resolvedTiles = (resolved.sources[id] as VectorSourceSpecification).tiles;
+        const vectorSource = map?.getSource(id) as VectorTileSource | undefined;
+        if (Array.isArray(resolvedTiles) && vectorSource?.setTiles) {
+          vectorSource.setTiles(resolvedTiles);
+        }
       }
     }
     overlay.style = resolved;
-    // The availability source rides the huts store's live object — a
-    // resolved URL would drop the date-picker flow's auth/lang/days
-    // params and fetch without a picked date. Synchronous fixup: bake
-    // the live data + date-gated visibility, then apply to the live map.
+    // The availability source (geojson: store-injected data; vector:
+    // token-resolved tile URLs, swapped above) — synchronous fixup:
+    // bake the date-gated visibility, then apply to the live map.
     if (fixupBookingsStyle(resolved)) {
       applyBookingsToMap(map, Boolean(overlay.active));
     }
@@ -327,14 +348,36 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     }
   }
 
+  /** Normalize a picker/deep-link date into ISO `YYYY-MM-DD`.
+   *
+   *  The huts store's `selectedDate` carries the date-picker formats
+   *  (`DD.MM.YY` from the picker, `DD.MM.YYYY` from the `?date=` deep
+   *  link) — the old availability GeoJSON endpoint parsed those
+   *  server-side. The Martin availability tile function requires an
+   *  explicit ISO date (anything else is an intentional 204), so the
+   *  runtime `{{date}}` token must be normalized before it lands in tile
+   *  URLs. Unparseable input yields undefined (token stays unresolved →
+   *  the date-gated layers stay hidden). */
+  function toIsoDate(input: string | undefined): string | undefined {
+    if (!input) return undefined;
+    const euro = input.match(/^(\d{2})\.(\d{2})\.(\d{2}|\d{4})$/);
+    if (euro) {
+      const year = euro[3]!.length === 2 ? `20${euro[3]}` : euro[3]!;
+      return `${year}-${euro[2]}-${euro[1]}`;
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(input)) return input;
+    return undefined;
+  }
+
   /** Mirror the selected availability date into the runtime values. */
   function setRuntimeDate(date: string | undefined): void {
-    if (date === undefined) {
+    const iso = toIsoDate(date);
+    if (iso === undefined) {
       const next = { ...runtimeValues.value };
       delete next.date;
       runtimeValues.value = next;
     } else {
-      runtimeValues.value = { ...runtimeValues.value, date };
+      runtimeValues.value = { ...runtimeValues.value, date: iso };
     }
     applyRuntimeValueToLayers('date');
   }

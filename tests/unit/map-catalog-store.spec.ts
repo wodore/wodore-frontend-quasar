@@ -12,14 +12,25 @@ import { useHutsStore } from '@stores/huts-store';
 
 const notifyCalls: Array<{ message: string; caption?: string }> = [];
 
-// Fake MapLibre map recording paint/layout/setData calls
+// Fake MapLibre map recording paint/layout/setData calls. The
+// wd-bookings source stub is switchable: legacy geojson (setData) or
+// Martin vector (setTiles) — the tests flip it per scenario.
 const paintCalls: Array<[string, string, unknown]> = [];
 const layoutCalls: Array<[string, string, unknown]> = [];
 const setDataCalls: Array<unknown> = [];
+const setTilesCalls: Array<string[]> = [];
+const geojsonBookingsStub = {
+  type: 'geojson',
+  setData: (data: unknown) => setDataCalls.push(data),
+};
+const vectorBookingsStub = {
+  type: 'vector',
+  setTiles: (tiles: string[]) => setTilesCalls.push(tiles),
+};
+let bookingsSourceStub: Record<string, unknown> = geojsonBookingsStub;
 const fakeMap = {
   getLayer: (id: string) => ({ id }),
-  getSource: (id: string) =>
-    id === 'wd-bookings' ? { setData: (data: unknown) => setDataCalls.push(data) } : undefined,
+  getSource: (id: string) => (id === 'wd-bookings' ? bookingsSourceStub : undefined),
   setPaintProperty: (id: string, prop: string, value: unknown) =>
     paintCalls.push([id, prop, value]),
   setLayoutProperty: (id: string, prop: string, value: unknown) =>
@@ -297,6 +308,8 @@ describe('map catalog store (boot cache + version sync)', () => {
     paintCalls.length = 0;
     layoutCalls.length = 0;
     setDataCalls.length = 0;
+    setTilesCalls.length = 0;
+    bookingsSourceStub = geojsonBookingsStub;
     catalogFetch.mockReset();
     slotsFetch.mockReset();
     styleFetch.mockReset();
@@ -578,5 +591,89 @@ describe('map catalog store (boot cache + version sync)', () => {
     await nextTick();
     expect(setDataCalls).toHaveLength(1);
     expect(setDataCalls[0]).toMatchObject({ type: 'FeatureCollection' });
+  });
+
+  it('date pick hot-swaps a vector bookings source\u2019s tile URLs via setTiles', async () => {
+    // Martin `availability` vector source (backend #341): tile URLs
+    // carry the {{date}} token; the runtime date re-resolve pushes the
+    // resolved URLs onto the live source instead of any geojson data.
+    const vectorStyle = structuredClone(HUTS_STYLE);
+    vectorStyle.sources['wd-bookings'] = {
+      type: 'vector',
+      tiles: ['https://tiles.example.com/availability/{z}/{x}/{y}?date={{date}}&days=4'],
+    };
+    // Vector sources need a source-layer on every layer (MapLibre
+    // validation rejects the style otherwise).
+    for (const layer of vectorStyle.layers) {
+      (layer as Record<string, unknown>)['source-layer'] = 'availability';
+    }
+    catalogFetch.mockResolvedValue(catalogFor(VERSION_A, HUTS_LAYER));
+    styleFetch.mockImplementation(async (url: string) =>
+      url.includes('/v1/map/styles/huts.json')
+        ? Promise.resolve(vectorStyle)
+        : Promise.resolve(TRANSPORT_STYLE)
+    );
+    bookingsSourceStub = vectorBookingsStub;
+    const store = stores.useMapCatalogStore();
+    await store.initOverlays();
+
+    useHutsStore().selectedDate = '2026-10-20';
+    await nextTick();
+    expect(setTilesCalls).toHaveLength(1);
+    expect(setTilesCalls[0]).toEqual([
+      'https://tiles.example.com/availability/{z}/{x}/{y}?date=2026-10-20&days=4',
+    ]);
+    // The vector path never touches the geojson bridge.
+    expect(setDataCalls).toHaveLength(0);
+  });
+
+  it('normalizes picker and deep-link date formats to ISO in tile URLs', async () => {
+    // The huts store carries DD.MM.YY from the picker and DD.MM.YYYY
+    // from the ?date= deep link; the availability tile function only
+    // accepts ISO dates (anything else is an intentional empty tile).
+    const vectorStyle = structuredClone(HUTS_STYLE);
+    vectorStyle.sources['wd-bookings'] = {
+      type: 'vector',
+      tiles: ['https://tiles.example.com/availability/{z}/{x}/{y}?date={{date}}&days=4'],
+    };
+    for (const layer of vectorStyle.layers) {
+      (layer as Record<string, unknown>)['source-layer'] = 'availability';
+    }
+    catalogFetch.mockResolvedValue(catalogFor(VERSION_A, HUTS_LAYER));
+    styleFetch.mockImplementation(async (url: string) =>
+      url.includes('/v1/map/styles/huts.json')
+        ? Promise.resolve(vectorStyle)
+        : Promise.resolve(TRANSPORT_STYLE)
+    );
+    bookingsSourceStub = vectorBookingsStub;
+    const store = stores.useMapCatalogStore();
+    await store.initOverlays();
+
+    // Picker format (DD.MM.YY)
+    useHutsStore().selectedDate = '31.10.26';
+    await nextTick();
+    expect(setTilesCalls.at(-1)).toEqual([
+      'https://tiles.example.com/availability/{z}/{x}/{y}?date=2026-10-31&days=4',
+    ]);
+
+    // Deep-link format (DD.MM.YYYY)
+    useHutsStore().selectedDate = '01.11.2026';
+    await nextTick();
+    expect(setTilesCalls.at(-1)).toEqual([
+      'https://tiles.example.com/availability/{z}/{x}/{y}?date=2026-11-01&days=4',
+    ]);
+
+    // Garbage clears the runtime value — the token falls back to its
+    // boot default (today), never a broken/picker-format tile URL.
+    useHutsStore().selectedDate = 'sommer';
+    await nextTick();
+    const huts = (
+      overlayStores.useOverlayStore() as unknown as {
+        overlays: Array<{ style?: StyleSpecification }>;
+      }
+    ).overlays.find(o => o.name === 'huts');
+    expect(JSON.stringify(huts?.style?.sources['wd-bookings'])).toMatch(
+      /date=\d{4}-\d{2}-\d{2}&days=4/
+    );
   });
 });
