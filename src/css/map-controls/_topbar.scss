@@ -231,8 +231,10 @@ body.body--dark .wd-topbar__menu .text-icon {
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: 999px;
-  // Tonal ladder: main pill (0) → ARROWS (faint step) → date wash (0.07)
+  border-radius: 999px; // square button → true circle
+  // Light carries a round tonal chip — one step brighter than the date
+  // wash, one step darker than the main pill (main 0 → arrows → date
+  // 0.07). Dark stays GHOST (owner call): no bg, ink + lean only.
   background: rgba(17, 33, 25, 0.045);
   color: $wd-day-ink;
   cursor: pointer;
@@ -243,7 +245,7 @@ body.body--dark .wd-topbar__menu .text-icon {
   -webkit-tap-highlight-color: transparent;
 
   // Directional affordance: the arrow leans INTO its direction on hover
-  // and presses further on click — physical, no surfaces, no bounce.
+  // and presses further on click — physical, no bounce.
   &:hover {
     color: $primary; // brand forest green — the arrows light up
     background: rgba(17, 33, 25, 0.08); // deepens toward the date wash
@@ -287,16 +289,15 @@ body.body--dark .wd-topbar__menu .text-icon {
 
 body.body--dark .wd-date-step {
   color: $wd-paper;
-  // Tonal ladder (night): main pine #112119 → ARROWS → date #1a3a2b.
-  background: #16281f;
+  // Night keeps the ghost arrows (owner call): no surface at all — the
+  // wash stays reserved for the hero date pill; hover is ink + lean.
+  background: transparent;
 
   &:hover {
     color: $icon; // the incumbent mint hover ink for icon controls
-    background: #1a3227;
   }
   &:active {
     color: #8fd6b7; // forest-green-ice
-    background: #20472f;
   }
   &:focus-visible {
     outline-color: rgba(169, 240, 210, 0.55);
@@ -584,23 +585,59 @@ body.body--dark .wd-topbar__progress {
   }
 }
 
-// Slim mouse-precision arrows: gated on POINTER alone — every fine-pointer
-// viewport gets the 24px slot (24px = WCAG 2.5.8 AA minimum for fine
-// pointers), touch devices keep the 44×44 target, and no width condition
-// can re-inflate the arrows on narrow desktop windows (600-769px).
+// Mouse-precision round chips: square so the wash renders as a true
+// circle (36px — compact next to the hero, comfortable click target);
+// touch keeps the 44×44 circle.
 @media (hover: hover) and (pointer: fine) {
   .wd-date-step {
-    width: 24px;
-    height: 44px;
-    margin: 0; // slim arrows sit tight against the hero pill
+    width: 36px;
+    height: 36px;
+    align-self: center;
+    margin: 0;
   }
 }
 
-// Spinner/icon slot: fixed 22px square so the loading swap never
-// reflows the day/date lines (wide dots row vs square glyph).
-.wd-date-btn > .text-icon,
-.wd-date-btn__spin {
+// Glyph slot (22px): the calendar morphs into a round ring spinner and
+// back — both live in the slot, cross-faded with a scale so the swap
+// reads as one glyph transforming (220ms ease-out-quart). The fixed slot
+// keeps the day/date lines from reflowing.
+.wd-date-btn__glyph {
+  position: relative;
   flex: none;
   width: 22px;
   height: 22px;
+
+  .wd-date-btn__cal,
+  .wd-date-btn__spin {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    transition:
+      opacity 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .wd-date-btn__spin {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+
+  &--loading .wd-date-btn__cal {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+
+  &--loading .wd-date-btn__spin {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// Reduced motion: the cross-fade stays (it IS the state), the travel drops.
+@media (prefers-reduced-motion: reduce) {
+  .wd-date-btn__glyph .wd-date-btn__cal,
+  .wd-date-btn__glyph .wd-date-btn__spin {
+    transition: opacity 220ms;
+    transform: none;
+  }
 }

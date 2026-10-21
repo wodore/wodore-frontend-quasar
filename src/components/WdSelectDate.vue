@@ -570,14 +570,21 @@ const handleDateInputSwipe: TouchSwipeValue = e => {
         <!---->
         <!-- </q-btn> -->
         <button type="button" class="wd-date-btn" @click="showMenu = true">
-          <q-spinner-dots v-if="availabilityLoading" size="22px" class="wd-date-btn__spin" />
-          <q-icon
-            v-else
-            name="wd-calendar"
-            size="22px"
-            class="text-icon"
-            :class="{ 'wd-date-btn__icon--empty': selectedDate === undefined }"
-          />
+          <!-- Glyph slot: the calendar MORPHS into a round ring spinner on
+               availability loads and back — cross-fade + scale, 220ms
+               ease-out (see .wd-date-btn__glyph in _topbar.scss). -->
+          <span
+            class="wd-date-btn__glyph"
+            :class="{ 'wd-date-btn__glyph--loading': availabilityLoading }"
+          >
+            <q-icon
+              name="wd-calendar"
+              size="22px"
+              class="text-icon wd-date-btn__cal"
+              :class="{ 'wd-date-btn__icon--empty': selectedDate === undefined }"
+            />
+            <q-spinner size="22px" class="wd-date-btn__spin" />
+          </span>
           <span class="wd-date-btn__lines">
             <span
               class="wd-date-btn__day"
