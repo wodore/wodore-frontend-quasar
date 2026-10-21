@@ -61,13 +61,6 @@ function getReviewText(status: string | null | undefined): string {
   return getReviewInfo(status, 1);
 }
 
-// Watch and star state
-//const watchHut = ref(false);
-const starHut = ref(false);
-function toggleHutStar() {
-  starHut.value = !starHut.value;
-}
-
 // Fly-to map functionality
 function flyTo() {
   if (mapRef?.map !== undefined && place.value !== undefined) {
@@ -78,7 +71,7 @@ function flyTo() {
         center: [loc.lon, loc.lat],
         zoom: zoom > 12 ? zoom : 12,
         padding: {
-          right: $q.screen.xs ? 0 : 400,
+          left: $q.screen.xs ? 0 : 400,
           bottom: $q.screen.xs ? 300 : 0,
         },
       });
@@ -118,13 +111,19 @@ watch(menuOpen, () => {
 
 <style scoped>
 .footer-toolbar {
+  /* Tonal footer (design review 2026-10): the deep surface step + ridge
+     hairline carry the separation — panel-on-panel shadows are banned by
+     the Tonal Layer Rule (the card's one over-map shadow is the only
+     sanctioned one). Shares the token with the scrolled header, so chrome
+     bars read as one family. */
+  background: var(--wd-surface-deep);
   border-top: 1px solid var(--wd-ridge);
-  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+  min-height: 48px;
 }
 </style>
 
 <template>
-  <q-toolbar class="footer-toolbar wd-surface q-pr-sm wd-drawer-actions">
+  <q-toolbar class="footer-toolbar q-pr-sm wd-drawer-actions">
     <!-- Geo location link (mobile only - a geo: URL is not useful on the
          desktop planning context) -->
     <WdToolbarButton
@@ -139,13 +138,12 @@ watch(menuOpen, () => {
     <WdSourceButtons v-if="place" :hut="place" />
     <q-space />
 
-    <q-badge v-if="place" class="q-mr-xs review-badge">
-      {{ getReviewText(place.review_status) }}
-    </q-badge>
-
-    <!-- <WdToolbarButton size="md" :color="watchHut ? 'accent' : 'primary-900'" -->
-    <!--   :icon="watchHut ? 'wd-eye' : 'wd-eye-outline'" style="opacity: 0.5; cursor: not-allowed" /> -->
-
+    <!-- Kebab: kept for CURRENT and future overflow items (owner 2026-10:
+         "currently we do not have anything there, but might have in
+         future") — always rendered; review status and edit are
+         editor-gated inside, show-on-map for everyone. Availability
+         moved to the header briefing row; the favorite heart is HIDDEN
+         until the shortlist ships (owner 2026-10). -->
     <WdToolbarButton size="md" class="wd-ink-text" icon="wd-more-vertical">
       <q-menu
         class="bg-primary-100 q-menu--quasar wd-menu"
@@ -155,12 +153,11 @@ watch(menuOpen, () => {
       >
         <q-list style="min-width: 100px">
           <WdToolbarExtraButton
-            @click="toggleHutStar"
-            :icon="starHut ? 'wd-favorite' : 'wd-favorite-outline'"
-            :icon-color="starHut ? 'accent' : undefined"
+            v-if="place && authStore.hasRole('editor')"
+            icon="wd-eye-outline"
             :disabled="true"
           >
-            {{ $t('favorite') }}
+            {{ getReviewText(place.review_status) }}
           </WdToolbarExtraButton>
           <WdToolbarExtraButton
             v-if="mapRef?.map && place?.location"
@@ -172,11 +169,11 @@ watch(menuOpen, () => {
             {{ $t('show_map') }}
           </WdToolbarExtraButton>
           <WdToolbarExtraButton
+            v-if="authStore.hasRole('editor')"
             icon="wd-edit-outline"
             :href="place?.edit_link"
             target="_blank"
             v-close-popup
-            v-if="authStore.hasRole('editor')"
           >
             {{ $t('edit') }}
           </WdToolbarExtraButton>

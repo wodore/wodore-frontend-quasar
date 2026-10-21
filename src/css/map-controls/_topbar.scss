@@ -23,47 +23,56 @@
 }
 
 // ── Desktop alignment ladder ────────────────────────────────────────
-// With the side panel open, a window-centered pill runs INTO the utility
-// cluster (the cluster slides left by the panel width to stay clear of
-// the drawer — measured at 1440px/460px panel: 47px overlap). The fix is
-// a two-step ladder, desktop only (mobile keeps plain centering):
+// The details panel docks LEFT, the menu RIGHT (mirrored layout, owner
+// 2026-10). The pill therefore centers on the MAP area, ALWAYS — desktop
+// only (mobile keeps plain viewport centering):
 //
-//   ≥ 1100px  pill centered on the MAP area, ALWAYS: the panel slot
-//             width (380/460px) arrives as body's --wd-panel-w whether
-//             or not the panel is open, and since this container is
-//             inset 12px on BOTH sides, padding-right D centers the pill
-//             exactly at (viewport − D)/2 — the owner formula — in BOTH
-//             panel states. Opening/closing hut details moves NOTHING:
-//             the resting place is simply reserved (owner call 2026-10,
-//             replaced the earlier re-centering whose slide read as
-//             jumpy). No transition: the position never changes.
-//   770-1099  pill hugs the left edge — a FIXED position, same deal.
-//             Any centered width down to ~1000px would technically clear
-//             the shifted cluster; 1100 keeps a comfortable ≥ 53px gap
-//             for the 380px panel (measured, browser-verified).
+//   ≥ 770px   pill centered on the map area via padding-left:
+//             --wd-panel-w reserves the LEFT panel slot (set in BOTH
+//             panel states by MainLayout), so the pill rests at
+//             (viewport + panel)/2 — opening/closing hut details moves
+//             NOTHING. padding-right keeps the pill's right tip clear of
+//             the desktop focus toggle (right:14px + 48px wide → its
+//             inner edge sits 62px from the viewport edge).
+//   ≥ 900px   padding-right grows to also clear the top-right utility
+//             cluster (absolute, right:62px — .wd-topbar__utils below;
+//             measured 90px wide, left edge 164px from the viewport
+//             right). Below 900px the cluster does not render at all
+//             (MainLayout showTopbarUtils), so only the focus toggle
+//             needs the gap.
+// The pill never hugs an edge: a left-hug would sit under the LEFT panel
+// (and paint over it, z 2000 vs drawer z 1000), a right-hug under the
+// menu drawer + utils. While the menu drawer is open the pill's right
+// end does reach into its 300px band at ~770-1070px — the
+// .wd-topbar--under-menu z-drop plus the drawer toolbar close cover
+// that band. No transition anywhere: the resting place never changes
+// with the panel state.
 @media (min-width: #{$breakpoint-sm + 1}) {
   .wd-topbar {
-    justify-content: flex-start;
+    justify-content: center;
+    padding-left: var(--wd-panel-w, 0px);
+    padding-right: 66px; // focus toggle: 62px inner edge + 4px gap
+    // transition deliberately NOT declared here — the position never
+    // changes with the panel state, so there is nothing to animate.
   }
 }
 
-@media (min-width: 1100px) {
+@media (min-width: 900px) {
   .wd-topbar {
-    justify-content: center;
-    padding-right: var(--wd-panel-w, 0px);
-    // transition deliberately NOT declared here — the position never
-    // changes with the panel state, so there is nothing to animate.
+    padding-right: 176px; // utils cluster (measured 90px, left edge 164px
+    // from the viewport right) + 12px gap
   }
 }
 
 // Menu drawer open → the pill slides UNDER the drawer. Quasar's
 // desktop-mode drawer aside sits at z 1000 while this fixed topbar is
 // 2000, so without the drop the pill paints over the drawer and swallows
-// its taps. The pill always rests at (viewport − panel)/2, so its left
-// edge sits inside the 300px drawer band at 770-1099px (left-aligned)
-// and at 1100-1265px (centered) — there the drawer's own toolbar carries
-// the close button (MainLayout showDrawerToolbar, < 1100px). Where there
-// is no overlap the drop is invisible; mobile already renders its drawer
+// its taps. The pill rests centered on the map area ((viewport +
+// panel)/2), so from ~770px up to ~1070px its right end — the menu
+// toggle — reaches into the 300px right drawer band while the drawer is
+// open; there the drawer's own toolbar carries the close button
+// (MainLayout showDrawerToolbar — always rendered). Where there is no
+// overlap the drop is invisible; mobile already renders its drawer
 // above the pill (aside z 3000 there).
 .wd-topbar--under-menu {
   z-index: 500;
@@ -355,11 +364,12 @@ body.body--dark .wd-date-btn__icon {
 }
 
 // ── Desktop utilities: top-right chip cluster (8px radius) ──────────────
-// Rendered from 900px up (v-if in MainLayout): below that the cluster
-// would collide with the side panel once it slides the cluster left, so
-// small desktops hide it like mobile — the buttons live in the
-// menu-drawer toolbar there. (The slide-left itself is gated at the same
-// 900px in _dark.scss.)
+// Rendered from 900px up (v-if in MainLayout): below that the centered
+// pill's reserves would squeeze the viewport too hard — small desktops
+// hide the cluster like mobile; the buttons live in the menu-drawer
+// toolbar there. (While the RIGHT menu drawer is open the cluster sits
+// under it — the drawer toolbar duplicates every button and carries the
+// close.)
 .wd-topbar__utils {
   position: absolute;
   top: calc(6px + env(safe-area-inset-top, 0px));

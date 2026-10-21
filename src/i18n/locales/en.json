@@ -176,6 +176,8 @@
   "show_map": "Map",
   "search": "Search",
   "close": "Close",
+  "minimize": "Minimize",
+  "maximize": "Maximize",
   "pin_something": "Pin",
   "unpin_something": "Unpin",
   "drag_to_move": "Drag to move",
@@ -195,6 +197,14 @@
       "full": "FULL",
       "free_unknown": "FREE ?",
       "unknown": "unknown"
+    },
+    "glance": {
+      "empty": "free",
+      "low": "many free",
+      "medium": "limited",
+      "high": "almost full",
+      "full": "full",
+      "free_unknown": "some free"
     }
   },
   "reset": "Reset",

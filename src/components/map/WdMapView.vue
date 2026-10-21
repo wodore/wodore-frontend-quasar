@@ -38,6 +38,7 @@ import { currentLocale } from '@services/locale';
 import { getEnv } from '@services/runtimeEnv';
 import { storageGet } from '@services/storage';
 import { clientWodore } from '@clients/index';
+import { seedPlaceFromMap } from '@composables/usePlace';
 import { MAP_MIN_ZOOM, MIN_HUT_CLICK_ZOOM } from '@stores/map/utils/map-constants';
 import {
   INTERACTIVE_LAYERS,
@@ -213,6 +214,10 @@ if ($layout === undefined) {
     if (process.env.CLIENT && $layout.footer.offset < window.innerHeight - 250) {
       bottom.value = `${$layout.footer.offset}px`;
     }
+    // Left inset: the Quasar left-drawer offset (0 today — the menu docks
+    // right). The floating content card needs NO inset: its max height
+    // stops above the bottom-left chrome (scale + attribution), so those
+    // stay visible in place (owner 2026-10).
     left.value = `${$layout.left.offset}px`;
 
     // Track mobile drawer height when it's open (> threshold)
@@ -563,6 +568,16 @@ function onHutLayerClick(e: MapLayerEventType['click']) {
       );
       selectedHutFeature.value = <MapGeoJSONFeature>(feature as unknown);
 
+      // Instant identity: seed name/elevation/owner/location from the
+      // tile properties so the panel header paints before the details
+      // request resolves (owner 2026-10)
+      if (feature.geometry.type === 'Point') {
+        const [lon, lat] = feature.geometry.coordinates as [number, number];
+        seedPlaceFromMap(String(slug), { ...feature.properties }, { lat, lon });
+      } else {
+        seedPlaceFromMap(String(slug), { ...feature.properties });
+      }
+
       // Smart fly to hut location
       if (feature.geometry.type === 'Point') {
         const coordinates = feature.geometry.coordinates as [number, number];
@@ -633,22 +648,23 @@ function getMapPadding(assumeDrawerOpen: boolean = false): PaddingOptions {
       right: parseInt(right.value) || 0,
     };
   } else {
-    // Desktop: drawer opens on right side
-    const currentRight = parseInt(right.value) || 0;
+    // Desktop: content drawer docks on the LEFT side (mirrored layout —
+    // menu right, details left, owner 2026-10)
+    const currentLeftInset = parseInt(left.value) || 0;
     const expectedDrawerWidth = getExpectedDesktopDrawerWidth();
-    const rightPadding = assumeDrawerOpen
-      ? Math.max(currentRight, expectedDrawerWidth)
-      : currentRight;
+    const leftPadding = assumeDrawerOpen
+      ? Math.max(currentLeftInset, expectedDrawerWidth)
+      : currentLeftInset;
 
     debugLog(
-      `[getMapPadding] Desktop - assumeDrawerOpen: ${assumeDrawerOpen}, currentRight: ${currentRight}, expectedDrawerWidth: ${expectedDrawerWidth}, using: ${rightPadding}`
+      `[getMapPadding] Desktop - assumeDrawerOpen: ${assumeDrawerOpen}, currentLeft: ${currentLeftInset}, expectedDrawerWidth: ${expectedDrawerWidth}, using: ${leftPadding}`
     );
 
     return {
       top: currentTop,
       bottom: parseInt(bottom.value) || 31,
-      left: currentLeft,
-      right: rightPadding,
+      left: leftPadding,
+      right: parseInt(right.value) || 0,
     };
   }
 }
@@ -924,6 +940,15 @@ async function selectHutBySlug(slug: string, isInitialLoad: boolean = false): Pr
       { selected: true }
     );
     selectedHutFeature.value = feature as MapGeoJSONFeature;
+
+    // Instant identity seed (tile properties + geometry) — same as the
+    // click path (owner 2026-10)
+    if (feature.geometry.type === 'Point') {
+      const [lon, lat] = feature.geometry.coordinates as [number, number];
+      seedPlaceFromMap(slug, { ...feature.properties }, { lat, lon });
+    } else {
+      seedPlaceFromMap(slug, { ...feature.properties });
+    }
 
     // Smart fly to hut location (only for user interactions, not initial load)
     if (!isInitialLoad && feature.geometry.type === 'Point') {

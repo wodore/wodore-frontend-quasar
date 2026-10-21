@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, watchEffect, onMounted, type Component } from 'vue';
+import { ref, computed, watch, watchEffect, onMounted, inject, type Component, type Ref } from 'vue';
 import { useTimeoutFn } from '@vueuse/core';
 import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
@@ -116,13 +116,23 @@ const openDialog = (originalIndex: number) => {
 //   return window.devicePixelRatio && window.devicePixelRatio >= 1.5;
 // });
 
+// Desktop content panel minimized? While the WdContentPanel card is
+// minimized it renders the MOBILE gallery stripe regardless of viewport;
+// maximized shows the desktop gallery (owner 2026-10).
+const panelMinimized = inject<Ref<boolean> | null>('wdContentPanelMinimized', null);
+const forceMobileGallery = computed(() => panelMinimized?.value === true);
+
 const isDesktopWidth = computed(() => {
-  // Desktop breakpoint (width >= 1024px)
-  return $q.screen.width >= 1024;
+  // Desktop breakpoint (width >= 1024px) — suppressed while the content
+  // panel is minimized (mobile stripe gallery instead)
+  return !forceMobileGallery.value && $q.screen.width >= 1024;
 });
 
-// Check if mobile view (for backward compatibility)
-const isMobile = computed(() => $q.screen.xs);
+// Check if mobile view: the mobile stripe renders below md (770px) —
+// that covers real phones AND narrow desktop windows where the app
+// already switches to the bottom sheet (owner 2026-10: key off WIDTH,
+// not the xs/platform check) — plus inside a minimized content panel.
+const isMobile = computed(() => $q.screen.lt.md || forceMobileGallery.value);
 
 // Show thumbnails: desktop width AND has multiple images
 const showThumbnails = computed(() => {
@@ -153,15 +163,39 @@ watchEffect(() => {
   }
 });
 
-// Set swiper instance
+// Set swiper instance; link thumbs live as soon as both exist (see
+// linkThumbs)
 const onSwiper = (swiper: SwiperType) => {
   swiperRef.value = swiper;
+  linkThumbs();
 };
 
 // Set thumbs swiper instance
 const onThumbsSwiper = (swiper: SwiperType) => {
   thumbsSwiperRef.value = swiper;
+  linkThumbs();
 };
+
+// Live thumbs linking on the persistent main swiper. The old approach
+// re-mounted the main swiper via a :key flip ('solo' → 'with-thumbs') once
+// the thumbs instance existed — one extra full Swiper init per maximize,// and combined with the v-if branch swap it produced ~13× the expected
+// init count (231 swiper onLoad calls in a 6-open session, perf profile
+// 2026-10-21). The branches now stay mounted (v-show) and thumbs link
+// through Swiper's API instead: whichever of main/thumbs mounts last
+// completes the link — no remount, no stale-instance race.
+function linkThumbs(): void {
+  const main = swiperRef.value;
+  const thumbs = thumbsSwiperRef.value;
+  // Link whenever both instances exist — even while hidden (v-show keeps
+  // both mounted); visibility is not a precondition, and guarding on it
+  // left the pair unlinked when the desktop branch mounted while minimized
+  // (nothing re-triggered on the maximize toggle).
+  if (!main || !thumbs) return;
+  if (main.thumbs?.swiper === thumbs) return; // already linked
+  main.thumbs.swiper = thumbs;
+  main.thumbs.init();
+  main.thumbs.update(true);
+}
 
 // Handle slide change
 const onSlideChange = (swiper: SwiperType) => {
@@ -195,7 +229,18 @@ const visibleImagesWithIndex = computed(() =>
 );
 const visibleImages = computed(() => filterOutFailed(props.images, failedImageIds.value));
 
+// Re-link when thumbnails become (re-)enabled — e.g. after the image
+// count crosses the >1 threshold or a remount of the thumbs container.
+// Declared AFTER visibleImages: evaluating showThumbnails during setup
+// must not run before that const initializes (TDZ crash, owner session
+// 2026-10).
+watch(showThumbnails, () => linkThumbs());
+
 // Preload only the current image for gallery (simplified - no prev/next)
+// DEFERRED off the card-open path (perf profile 2026-10-21): this is the
+// fullscreen-dialog-sized (md/lg) URL — most opens never open the dialog,
+// so prefetching it on every mount wasted ~3× the pixels. It now warms on
+// hover intent over the hero and at dialog-open time (handleImageClick).
 const preloadCurrentImageForGallery = () => {
   const image = visibleImages.value[currentSlide.value];
   if (image) {
@@ -212,26 +257,18 @@ const { start: startPreloadAfterSlide } = useTimeoutFn(() => {
   preloadCurrentImageForGallery();
 }, 200);
 
-const { start: startInitialPreload } = useTimeoutFn(() => {
-  preloadCurrentImageForGallery();
-}, 300);
-
-// Watch for slide changes and preload new image
-watch(currentSlide, () => {
-  startPreloadAfterSlide();
-});
-
-// Initial preload when component mounts
+// Initial preload when component mounts — thumbnails only. The
+// gallery-sized (fullscreen) image is warmed on hover/click instead
+// (see preloadCurrentImageForGallery).
 onMounted(() => {
-  // Preload thumbnails in background (small, fast, with retry logic)
   preloadThumbnailImages();
-
-  // Preload current image for gallery
-  startInitialPreload();
 });
 
 // Handle image click
 const handleImageClick = () => {
+  // Warm the fullscreen-sized image right away — a click without a prior
+  // hover (touch) still gets an instant dialog (deferred preload policy)
+  preloadCurrentImageForGallery();
   // Map rendered (filtered) slide index to the original list index
   const originalIndex =
     visibleImagesWithIndex.value[currentSlide.value]?.index ?? currentSlide.value;
@@ -458,7 +495,13 @@ const thumbnailContainerStyle = computed(() => {
 </script>
 
 <template>
-  <div v-if="loading && !hasImages" class="flex flex-center no-image-mobile-wrapper">
+  <!-- Single root: this component used to render a fragment (loading /
+     gallery / no-image roots), which silently dropped the class attr
+     passed from WdHutImageGallery ("extraneous non-props attributes"
+     warning on every remount — owner report 2026-10). One wrapper root
+     restores normal attribute inheritance. -->
+  <div class="wd-media-preview">
+    <div v-if="loading && !hasImages" class="flex flex-center no-image-mobile-wrapper">
     <WdNoImage
       :message="emptyStateMessage"
       :icon="emptyStateIcon ?? IconAddPhoto"
@@ -468,9 +511,16 @@ const thumbnailContainerStyle = computed(() => {
     />
   </div>
 
-  <div v-else-if="hasImages">
-    <!-- Mobile: horizontal image stripe -->
-    <div v-if="isMobile" class="mobile-stripe-container">
+  <div v-else-if="hasImages" class="wd-gallery-variants">
+    <!-- Both variants stay MOUNTED and crossfade (owner 2026-10: "better
+         morph the gallery change") — the wrapper reserves the height,
+         the inactive variant is opacity-0 + visibility-hidden after a
+         delay so the swap reads as a morph, not a hard cut. -->
+    <div
+      class="wd-gallery-variant mobile-stripe-container"
+        :class="isMobile ? 'wd-gallery-variant--active' : 'wd-gallery-variant--inactive'"
+        :aria-hidden="!isMobile"
+      >
       <swiper
         :modules="[FreeMode, Scrollbar, Mousewheel]"
         :slides-per-view="'auto'"
@@ -548,14 +598,22 @@ const thumbnailContainerStyle = computed(() => {
     </div>
 
     <!-- Desktop: main image swiper with thumbnails overlay -->
-    <div v-else class="media-preview-container">
+    <div
+      class="wd-gallery-variant media-preview-container"
+      :class="!isMobile ? 'wd-gallery-variant--active' : 'wd-gallery-variant--inactive'"
+      :aria-hidden="isMobile"
+    >
       <div
         class="media-preview-wrapper"
-        style="border-radius: 16px; overflow: hidden; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1)"
+        style="border-radius: 16px; overflow: hidden"
       >
-        <!-- Navigation buttons - desktop only, no touch -->
-        <div v-if="showNavigation" class="swiper-button-prev"></div>
-        <div v-if="showNavigation" class="swiper-button-next"></div>
+        <!-- Navigation buttons - desktop only, no touch. ALWAYS rendered
+             (visibility-hidden when off): the swiper resolves these
+             selectors at init/update, and v-if'ing them raced the config
+             flip on re-target — el undefined → classList crash (owner
+             report 2026-10). -->
+        <div class="swiper-button-prev" :class="{ 'nav-off': !showNavigation }"></div>
+        <div class="swiper-button-next" :class="{ 'nav-off': !showNavigation }"></div>
 
         <!-- Attribution badge (top-right) - stationary -->
         <div class="license-badge-custom stationary">
@@ -586,9 +644,9 @@ const thumbnailContainerStyle = computed(() => {
               : false
           "
           :pagination="!showThumbnails && visibleImages.length > 1"
-          :thumbs="{ swiper: thumbsSwiperRef as SwiperType | null }"
           :initial-slide="0"
           class="preview-swiper"
+          @mouseenter="startPreloadAfterSlide"
           @swiper="onSwiper"
           @slide-change="onSlideChange"
         >
@@ -609,8 +667,11 @@ const thumbnailContainerStyle = computed(() => {
           </swiper-slide>
         </swiper>
 
-        <!-- Thumbnail Swiper - overlaid on image (outside main swiper) -->
-        <div v-if="showThumbnails" class="thumbs-swiper-container" :style="thumbnailContainerStyle">
+        <!-- Thumbnail Swiper - overlaid on image (outside main swiper).
+             v-show: stays initialized across minimize/maximize toggles
+             (showThumbnails flips with the branch) — thumbs linking is
+             redone live via linkThumbs when it becomes visible again. -->
+        <div v-show="showThumbnails" class="thumbs-swiper-container" :style="thumbnailContainerStyle">
           <swiper
             :modules="[Thumbs]"
             :watch-slides-progress="true"
@@ -672,9 +733,59 @@ const thumbnailContainerStyle = computed(() => {
       />
     </div>
   </slot>
+  </div>
 </template>
 
 <style lang="scss" scoped>
+.wd-media-preview {
+  width: 100%;
+  // Height-defined chain (fix 2026-10: images vanished): the slot's
+  // absolute-inset box sizes `.image-gallery-container`; this root must
+  // pass the height down so the crossfade wrapper's 100% + overflow clip
+  // don't collapse to 0 and hide the gallery.
+  height: 100%;
+}
+
+// ── Gallery variant crossfade (owner 2026-10: "morph the gallery
+//    change"). Both variants stay mounted, absolutely stacked inside the
+//    reserved slot; the inactive one fades out and hides AFTER the fade
+//    (visibility transition-delay) so minimize/maximize reads as one
+//    morph — no hard cut, no remount (Swipers stay alive).
+.wd-gallery-variants {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.wd-gallery-variant {
+  position: absolute;
+  inset: 0;
+  transition:
+    opacity 180ms cubic-bezier(0.2, 0, 0, 1),
+    visibility 0s linear 180ms;
+}
+
+.wd-gallery-variant--active {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 180ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.wd-gallery-variant--inactive {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+// Navigation buttons stay in the DOM when off (visibility, not v-if) so
+// the swiper's selector resolution can never race their patch order.
+.swiper-button-prev.nav-off,
+.swiper-button-next.nav-off {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .media-preview-container {
   // Remove max-width to let Quasar grid control width
   width: 100%;
@@ -732,7 +843,7 @@ const thumbnailContainerStyle = computed(() => {
 
     // Focus state for accessibility
     &:focus {
-      outline: 2px solid rgba(100, 181, 246, 0.6) !important;
+      outline: 2px solid rgba(169, 240, 210, 0.8) !important;
       outline-offset: 2px !important;
     }
 
@@ -979,8 +1090,10 @@ const thumbnailContainerStyle = computed(() => {
 
   :deep(.swiper-slide-thumb-active) {
     opacity: 1 !important;
-    border: 2px solid #64b5f6;
-    box-shadow: 0 4px 12px rgba(100, 181, 246, 0.5);
+    // Tonal selection (design review 2026-10): ink border, no glow —
+    // panel-on-panel shadows and off-palette Material blue are both
+    // DESIGN.md violations (Tonal Layer Rule; selection = glacier/ink)
+    border: 2px solid var(--wd-ink);
   }
 
   :deep(.swiper-slide-visible) {
@@ -1133,8 +1246,8 @@ const thumbnailContainerStyle = computed(() => {
   }
 
   :deep(a:hover) {
-    color: #64b5f6;
-    text-decoration-color: #64b5f6;
+    color: #ffffff;
+    text-decoration-color: currentColor;
     text-decoration: underline dotted;
   }
 
@@ -1182,7 +1295,8 @@ const thumbnailContainerStyle = computed(() => {
   }
 
   :deep(.swiper-pagination-bullet-active) {
-    background: #64b5f6 !important;
+    // Neutral solid white over imagery (was off-palette Material blue)
+    background: rgba(255, 255, 255, 0.95) !important;
     width: 8px !important;
   }
 
@@ -1245,7 +1359,7 @@ const thumbnailContainerStyle = computed(() => {
 
     // Focus state for accessibility
     &:focus {
-      outline: 2px solid rgba(100, 181, 246, 0.6) !important;
+      outline: 2px solid rgba(169, 240, 210, 0.8) !important;
       outline-offset: 2px !important;
     }
 

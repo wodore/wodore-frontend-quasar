@@ -1,4 +1,4 @@
-import { ref, type Ref } from 'vue';
+import { getCurrentScope, onScopeDispose, type Ref } from 'vue';
 import type { HutImage } from './useHutImages';
 
 /**
@@ -13,8 +13,33 @@ export function getRetryDelayMs(attemptNumber: number): number {
   return RETRY_DELAYS_MS[Math.min(attemptNumber, RETRY_DELAYS_MS.length - 1)];
 }
 
+// ── Shared preload memo (MODULE scope) ──────────────────────────────
+// Survives component mounts. Every WdMediaPreview/WdMediaGallery mount
+// used to start with an empty per-instance memo, so re-opening the same
+// hut re-issued the full speculative preload wave (perf profile
+// 2026-10-21: image requests grew on the second visit round). Keyed by
+// the FINAL URL — size variants have distinct URLs — and it only gates
+// speculative new Image() prefetches, never rendered <img> tags, so
+// sharing across contexts (card vs fullscreen dialog) is safe: the
+// worst case is a skipped prefetch that the real <img> covers on
+// demand. Capped FIFO so a long session cannot grow it unbounded.
+const PRELOADED_URLS_CAP = 800;
+const preloadedUrls = new Set<string>();
+
+/** Test-only: the memo is module state and persists across spec files. */
+export function __resetPreloadedUrlsForTests(): void {
+  preloadedUrls.clear();
+}
+
+function rememberPreloadedUrl(url: string): void {
+  if (preloadedUrls.size >= PRELOADED_URLS_CAP) {
+    const oldest = preloadedUrls.values().next().value;
+    if (oldest !== undefined) preloadedUrls.delete(oldest);
+  }
+  preloadedUrls.add(url);
+}
+
 export function useMediaPreload(images: Ref<HutImage[]>, currentSlide: Ref<number>) {
-  const preloadedUrls = ref<Set<string>>(new Set());
 
   // Get optimal image size based on screen size - NEVER upscale
   const LADDER = ['xs', 'sm', 'md', 'lg', 'xl'] as const;
@@ -97,11 +122,35 @@ export function useMediaPreload(images: Ref<HutImage[]>, currentSlide: Ref<numbe
     return urls.sm || urls.md || '';
   };
 
+  // ── Timer lifecycle ──────────────────────────────────────────────
+  // All stagger/retry timers run through `schedule` and are cleared when
+  // the owning component's scope dies. Raw timers outlived unmounts and
+  // their 1s/3s/7s retry ladders fired against dead instances — piling
+  // new preload waves on top of still-pending old ones (perf profile
+  // 2026-10-21).
+  const pendingTimers = new Set<ReturnType<typeof setTimeout>>();
+  const schedule = (fn: () => void, delay: number): void => {
+    const id = setTimeout(() => {
+      pendingTimers.delete(id);
+      fn();
+    }, delay);
+    pendingTimers.add(id);
+  };
+  // Only register disposal inside a component/effect scope — the
+  // composable is also called directly in unit tests (no scope → Vue
+  // warns) and cleanup is irrelevant there.
+  if (getCurrentScope()) {
+    onScopeDispose(() => {
+      for (const id of pendingTimers) clearTimeout(id);
+      pendingTimers.clear();
+    });
+  }
+
   // Preload single image with retry logic for rate limiting
   // Fixed backoff schedule (1s/3s/7s, max 3 retries). Note: Retry-After is
   // NOT honored - new Image() cannot read response headers (cross-origin).
   const preloadImage = (imageUrl: string, options: { maxRetries?: number } = {}): void => {
-    if (!imageUrl || preloadedUrls.value.has(imageUrl)) return;
+    if (!imageUrl || preloadedUrls.has(imageUrl)) return;
 
     const { maxRetries = 3 } = options;
 
@@ -109,7 +158,7 @@ export function useMediaPreload(images: Ref<HutImage[]>, currentSlide: Ref<numbe
       const img = new window.Image();
 
       img.onload = () => {
-        preloadedUrls.value.add(imageUrl);
+        rememberPreloadedUrl(imageUrl);
       };
 
       img.onerror = () => {
@@ -117,7 +166,7 @@ export function useMediaPreload(images: Ref<HutImage[]>, currentSlide: Ref<numbe
         if (attemptNumber < maxRetries) {
           // Fixed schedule: 1s, 3s, 7s (see RETRY_DELAYS_MS)
           const delay = getRetryDelayMs(attemptNumber);
-          setTimeout(() => attemptLoad(attemptNumber + 1), delay);
+          schedule(() => attemptLoad(attemptNumber + 1), delay);
         }
         // If max retries reached, silently fail - the browser will handle it naturally
       };
@@ -155,7 +204,7 @@ export function useMediaPreload(images: Ref<HutImage[]>, currentSlide: Ref<numbe
         // Stagger requests slightly to avoid hitting rate limits (5 images / 3 concurrent)
         // Reduced spread since we have retry logic: 0ms, 50ms, 100ms, 150ms, 200ms
         const delay = i * 50;
-        setTimeout(() => {
+        schedule(() => {
           preloadImage(galleryImageUrl, { maxRetries: 3 });
         }, delay);
       }
@@ -181,13 +230,13 @@ export function useMediaPreload(images: Ref<HutImage[]>, currentSlide: Ref<numbe
           // Delay: 0ms, 50ms, 100ms, 150ms, 200ms...
           const delay = i * 50;
 
-          setTimeout(() => {
+          schedule(() => {
             // Use fetch-based approach to detect errors and retry
             const attemptLoad = (attemptNumber: number): void => {
               const img = new window.Image();
 
               img.onload = () => {
-                preloadedUrls.value.add(thumbUrl);
+                rememberPreloadedUrl(thumbUrl);
                 resolve();
               };
 
@@ -195,7 +244,7 @@ export function useMediaPreload(images: Ref<HutImage[]>, currentSlide: Ref<numbe
                 if (attemptNumber < 3) {
                   // Fixed retry schedule: 1s, 3s, 7s (see RETRY_DELAYS_MS)
                   const retryDelay = getRetryDelayMs(attemptNumber);
-                  setTimeout(() => attemptLoad(attemptNumber + 1), retryDelay);
+                  schedule(() => attemptLoad(attemptNumber + 1), retryDelay);
                 } else {
                   // Resolve anyway - thumbnail will show broken or browser will retry
                   resolve();
@@ -219,6 +268,8 @@ export function useMediaPreload(images: Ref<HutImage[]>, currentSlide: Ref<numbe
   };
 
   return {
+    // The shared memo (read-only for consumers; plain Set, not reactive —
+    // nothing reads it reactively)
     preloadedUrls,
     getOptimalImageSize,
     getGalleryImageUrl,

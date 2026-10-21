@@ -46,6 +46,8 @@
   },
   "search": "Suchen",
   "close": "Schliessen",
+  "minimize": "Minimieren",
+  "maximize": "Maximieren",
   "missing": "Fehlende",
   "pin_something": "Anheften",
   "unpin_something": "Loslösen",
@@ -136,6 +138,14 @@
       "full": "VOLL",
       "free_unknown": "FREI ?",
       "unknown": "unbekannt"
+    },
+    "glance": {
+      "empty": "frei",
+      "low": "viel frei",
+      "medium": "begrenzt",
+      "high": "fast voll",
+      "full": "voll",
+      "free_unknown": "teilweise frei"
     }
   },
   "weather": {

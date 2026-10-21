@@ -161,6 +161,8 @@
   "show_map": "Carte",
   "search": "Rechercher",
   "close": "Fermer",
+  "minimize": "Réduire",
+  "maximize": "Agrandir",
   "pin_something": "Épingler",
   "unpin_something": "Détacher",
   "drag_to_move": "Faire glisser pour déplacer",
@@ -183,6 +185,14 @@
       "full": "COMPLET",
       "free_unknown": "LIBRE ?",
       "unknown": "inconnu"
+    },
+    "glance": {
+      "empty": "libre",
+      "low": "beaucoup de places",
+      "medium": "limitées",
+      "high": "presque complet",
+      "full": "complet",
+      "free_unknown": "quelques places"
     }
   },
   "jan": "Janv",
