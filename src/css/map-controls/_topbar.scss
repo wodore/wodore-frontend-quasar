@@ -597,47 +597,31 @@ body.body--dark .wd-topbar__progress {
   }
 }
 
-// Glyph slot (22px): the calendar morphs into a round ring spinner and
-// back — both live in the slot, cross-faded with a scale so the swap
-// reads as one glyph transforming (220ms ease-out-quart). The fixed slot
-// keeps the day/date lines from reflowing.
-.wd-date-btn__glyph {
-  position: relative;
+// Glyph slot (22px, fixed — no text reflow during the loading swap).
+// The calendar ↔ dots-spinner swap fades via the wd-glyph-fade Vue
+// transition: opacity ONLY (150ms) — during the swap the browser is
+// fetching tiles, so the transition must cost as little paint as
+// possible. No transform, no second mounted glyph.
+.wd-date-btn__cal,
+.wd-date-btn__spin {
   flex: none;
   width: 22px;
   height: 22px;
-
-  .wd-date-btn__cal,
-  .wd-date-btn__spin {
-    position: absolute;
-    inset: 0;
-    margin: auto;
-    transition:
-      opacity 220ms cubic-bezier(0.22, 1, 0.36, 1),
-      transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
-  }
-
-  .wd-date-btn__spin {
-    opacity: 0;
-    transform: scale(0.55);
-  }
-
-  &--loading .wd-date-btn__cal {
-    opacity: 0;
-    transform: scale(0.55);
-  }
-
-  &--loading .wd-date-btn__spin {
-    opacity: 1;
-    transform: scale(1);
-  }
 }
 
-// Reduced motion: the cross-fade stays (it IS the state), the travel drops.
+.wd-glyph-fade-enter-active,
+.wd-glyph-fade-leave-active {
+  transition: opacity 150ms ease-out;
+}
+
+.wd-glyph-fade-enter-from,
+.wd-glyph-fade-leave-to {
+  opacity: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .wd-date-btn__glyph .wd-date-btn__cal,
-  .wd-date-btn__glyph .wd-date-btn__spin {
-    transition: opacity 220ms;
-    transform: none;
+  .wd-glyph-fade-enter-active,
+  .wd-glyph-fade-leave-active {
+    transition: none;
   }
 }
