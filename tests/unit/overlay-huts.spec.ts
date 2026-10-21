@@ -46,7 +46,7 @@ const recordingMap = (layerIds: string[]) => {
     isStyleLoaded: () => true,
     getLayer: (id: string) => layerIds.includes(id),
     setLayoutProperty,
-    getSource: (id: string) => (id === 'wd-bookings' ? { setData } : undefined),
+    getSource: (id: string) => (id === 'wd-bookings' ? { type: 'geojson', setData } : undefined),
   };
   return { map: map as unknown as MlMap, setLayoutProperty, setData };
 };
@@ -61,6 +61,17 @@ describe('availability overlay fixups', () => {
     expect(fixupBookingsStyle(style)).toBe(true);
     const source = style.sources['wd-bookings'] as { data: unknown };
     expect(source.data).toMatchObject({ type: 'FeatureCollection', features: [] });
+  });
+
+  it('fixupBookingsStyle leaves a vector source\u2019s tile URLs alone but bakes visibility', () => {
+    const style = bookingsStyle();
+    const tiles = ['https://tiles.example.com/availability/{z}/{x}/{y}?date=2026-10-20&days=4'];
+    style.sources['wd-bookings'] = { type: 'vector', tiles };
+    expect(fixupBookingsStyle(style)).toBe(true);
+    // No data injection — the tiles drive themselves.
+    expect(style.sources['wd-bookings']).toMatchObject({ type: 'vector', tiles });
+    const layer = style.layers[1] as unknown as { layout: Record<string, string> };
+    expect(layer.layout['visibility']).toBe('none');
   });
 
   it('bakes occupation layers hidden until a date is picked, then visible', () => {
@@ -122,6 +133,22 @@ describe('availability overlay fixups', () => {
       applyBookingsToMap(map, true);
       expect(setLayoutProperty).not.toHaveBeenCalled();
       expect(setData).toHaveBeenCalledWith(expect.objectContaining({ type: 'FeatureCollection' }));
+    });
+
+    it('leaves a vector wd-bookings source untouched (tiles drive themselves)', () => {
+      const setTiles = vi.fn();
+      const setData = vi.fn();
+      const map = {
+        isStyleLoaded: () => true,
+        getLayer: () => false,
+        getSource: (id: string) =>
+          id === 'wd-bookings' ? { type: 'vector', setTiles, setData } : undefined,
+      } as unknown as MlMap;
+      applyBookingsToMap(map, true);
+      // Vector sources fetch their own tiles; date changes go through
+      // applyOverlayParameters (setTiles), never setData.
+      expect(setData).not.toHaveBeenCalled();
+      expect(setTiles).not.toHaveBeenCalled();
     });
 
     it('no-ops without a map or while the style is loading', () => {
