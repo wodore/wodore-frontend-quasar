@@ -230,29 +230,36 @@ body.body--dark .wd-topbar__menu .text-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: none;
+  border: 1.5px solid rgba(17, 33, 25, 0.18); // hairline ring ≈ #d2d6d4 —
+  // the day theme's own hairline vocabulary; line, never fill: a filled
+  // disc reads as a dot regardless of alpha (shape problem, not weight)
   border-radius: 999px; // square button → true circle
-  // Light carries a round tonal chip — one step brighter than the date
-  // wash, one step darker than the main pill (main 0 → arrows → date
-  // 0.07). Dark stays GHOST (owner call): no bg, ink + lean only.
-  background: rgba(17, 33, 25, 0.045);
+  // Rest = zero tonal mass: the ladder stays strictly pill 0 → hero 0.07
+  // (the "wash belongs to the hero" rule that made dark work). Dark
+  // keeps GHOST arrows (owner call): ring + bg transparent, ink + lean.
+  background: transparent;
   color: $wd-day-ink;
   cursor: pointer;
   transition:
     color 0.12s ease-out,
     background-color 0.12s ease-out,
+    border-color 0.12s ease-out,
     transform 0.12s ease-out;
   -webkit-tap-highlight-color: transparent;
 
   // Directional affordance: the arrow leans INTO its direction on hover
-  // and presses further on click — physical, no bounce.
+  // and presses further on click — physical, no bounce. Hover dissolves
+  // the ring into a soft wash (below the hero's rest wash, so the arrow
+  // never out-weighs the hero mid-interaction).
   &:hover {
     color: $primary; // brand forest green — the arrows light up
-    background: rgba(17, 33, 25, 0.08); // deepens toward the date wash
+    border-color: transparent;
+    background: rgba(17, 33, 25, 0.06);
   }
   &:active {
     color: #224e3b; // forest-green-deep
-    background: rgba(17, 33, 25, 0.11);
+    border-color: transparent;
+    background: rgba(17, 33, 25, 0.1);
   }
   &--prev:hover {
     transform: translateX(-1.5px);
@@ -269,16 +276,19 @@ body.body--dark .wd-topbar__menu .text-icon {
   &:disabled {
     cursor: default;
     pointer-events: none;
-    // Glyph-only dim: a faded chip surface reads as a glitch.
+    // Ring dims with the glyph: a full-contrast ring around a dimmed
+    // chevron would read as an active button that does nothing.
+    border-color: rgba(17, 33, 25, 0.08);
     .text-icon {
       opacity: 0.3;
     }
   }
 
-  // Keyboard: same hairline-ink focus the chip system uses.
+  // Keyboard: same hairline-ink focus the chip system uses. 2px offset
+  // so the focus ring clears the new resting ring.
   &:focus-visible {
     outline: 2px solid rgba(52, 103, 81, 0.55);
-    outline-offset: 1px;
+    outline-offset: 2px;
     border-radius: 999px;
   }
 
@@ -289,9 +299,10 @@ body.body--dark .wd-topbar__menu .text-icon {
 
 body.body--dark .wd-date-step {
   color: $wd-paper;
-  // Night keeps the ghost arrows (owner call): no surface at all — the
-  // wash stays reserved for the hero date pill; hover is ink + lean.
+  // Night keeps the ghost arrows (owner call): no surface, no ring —
+  // the wash stays reserved for the hero date pill; hover is ink + lean.
   background: transparent;
+  border-color: transparent;
 
   &:hover {
     color: $icon; // the incumbent mint hover ink for icon controls
