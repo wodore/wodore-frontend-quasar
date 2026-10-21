@@ -575,15 +575,15 @@ body.body--dark .wd-topbar__progress {
   }
 }
 
-// Narrow mouse-precision arrows: gated on POINTER, not width — iPads and
-// other wide touch devices keep the 44×44 touch target; only real mouse
-// setups get the slim 24px arrow slot hugging the date pill (24px is the
-// WCAG 2.5.8 AA target minimum for fine pointers).
-@media (hover: hover) and (pointer: fine) and (min-width: #{$breakpoint-sm + 1}) {
+// Slim mouse-precision arrows: gated on POINTER alone — every fine-pointer
+// viewport gets the 24px slot (24px = WCAG 2.5.8 AA minimum for fine
+// pointers), touch devices keep the 44×44 target, and no width condition
+// can re-inflate the arrows on narrow desktop windows (600-769px).
+@media (hover: hover) and (pointer: fine) {
   .wd-date-step {
     width: 24px;
     height: 44px;
-    margin: 0; // slimmer arrows sit tight against the hero pill
+    margin: 0; // slim arrows sit tight against the hero pill
   }
 }
 
