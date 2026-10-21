@@ -319,7 +319,7 @@ async function fetchPlanIgn(): Promise<AdaptedNationalStyle | undefined> {
 // (mapproxy-eu-topo stack in wodore-backend docker/). Demo URL — point it at your VPS in production.
 const mapproxyTopoStyle = getRasterStyle({
   name: 'mapproxy-topo',
-  tiles: ['http://localhost:8090/mapproxy/tiles/europe_topo/webmercator/{z}/{x}/{y}.png'],
+  tiles: ['http://localhost:8091/mapproxy/tiles/europe_topo/webmercator/{z}/{x}/{y}.png'],
   attribution:
     '&copy; swisstopo &copy; basemap.at &copy; OpenTopoMap (CC-BY-SA) &copy; OpenStreetMap contributors',
   suffix: '',
