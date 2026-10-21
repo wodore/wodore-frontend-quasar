@@ -99,11 +99,13 @@ test.describe('layout and sizing', () => {
         expect(audit.focus!.x).toBeGreaterThan(1300);
 
         // Pill rests on the reserved panel slot: center at
-        // (viewport − panel width)/2 in BOTH panel states — zero movement
-        // when hut details open/close (owner 2026-10). 1440px → 460px panel.
+        // (viewport + panel width − right reserve)/2 in BOTH panel states
+        // — zero movement when hut details open/close (owner 2026-10;
+        // mirrored layout: panel LEFT, menu RIGHT). 1440px → 460px panel,
+        // 176px reserve for the top-right utils cluster (≥ 900px).
         const vw = 1440;
         const panelW = 460;
-        const expectedCenter = (vw - panelW) / 2;
+        const expectedCenter = (vw + panelW - 176) / 2;
         const pillCenter = audit.pill!.x + audit.pill!.w / 2;
         expect(Math.abs(pillCenter - expectedCenter)).toBeLessThan(2);
       }
@@ -136,22 +138,23 @@ test.describe('layout and sizing', () => {
           return Math.round(b.x + b.width / 2);
         });
 
-      // Resting place: (viewport − panel)/2 = 490 at 1440px.
+      // Resting place: (viewport + panel − reserve)/2 = 862 at 1440px
+      // (panel 460 LEFT, utils reserve 176px RIGHT — mirrored layout).
       const closed = await pillCenter();
-      expect(Math.abs(closed - (1440 - 460) / 2)).toBeLessThan(2);
+      expect(Math.abs(closed - (1440 + 460 - 176) / 2)).toBeLessThan(2);
 
       // The CSS ladder responds to the slot variable alone: a probe width
-      // moves the pill exactly to the new (viewport − W)/2 ...
+      // moves the pill exactly to the new (viewport + W − reserve)/2 ...
       await page.evaluate(() => document.body.style.setProperty('--wd-panel-w', '1000px'));
       const probed = await pillCenter();
-      expect(Math.abs(probed - (1440 - 1000) / 2)).toBeLessThan(2);
+      expect(Math.abs(probed - (1440 + 1000 - 176) / 2)).toBeLessThan(2);
 
       // ...and restoring the real value returns the pill to its resting
       // place. Opening/closing hut details only ever changes this
       // variable, so it can never move the pill.
       await page.evaluate(() => document.body.style.setProperty('--wd-panel-w', '460px'));
       const restored = await pillCenter();
-      expect(Math.abs(restored - (1440 - 460) / 2)).toBeLessThan(2);
+      expect(Math.abs(restored - (1440 + 460 - 176) / 2)).toBeLessThan(2);
       expect(restored).toBe(closed);
     });
   }

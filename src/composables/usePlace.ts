@@ -35,12 +35,74 @@ function toPlaceError(err: unknown): PlaceError {
   return { kind: 'unreachable' };
 }
 
+// ── MVT identity seeds (module scope) ────────────────────────────────
+// Hut name/elevation/owner/location are already in the map's vector-tile
+// properties. Seeding usePlace from the selected feature lets the panel
+// header paint instantly; the details request overwrites the seed on
+// arrival (owner 2026-10: "we have this info from the mvt properties").
+const seededPlaces = new Map<string, Partial<schemasWodore['HutSchemaDetails']>>();
+
+/** Seed a hut's identity from a map feature (tile properties + geometry). */
+export function seedPlaceFromMap(
+  slug: string,
+  properties: Record<string, unknown>,
+  location?: { lat: number; lon: number }
+): void {
+  if (!slug) return;
+  const localeName = String(properties[`name_${currentLocale()}`] ?? properties.name ?? '');
+  const elevationRaw = properties.elevation;
+  const ownerName = properties.owner_name;
+
+  const seed: Partial<schemasWodore['HutSchemaDetails']> = {};
+  if (localeName) seed.name = localeName;
+  if (typeof properties.has_availability === 'boolean') {
+    seed.has_availability = properties.has_availability;
+  }
+  if (elevationRaw !== undefined && elevationRaw !== null) {
+    const elevation = Number(elevationRaw);
+    if (!Number.isNaN(elevation)) seed.elevation = elevation;
+  }
+  if (typeof ownerName === 'string' && ownerName) {
+    seed.owner = { name: ownerName } as schemasWodore['HutSchemaDetails']['owner'];
+  }
+  // Geometry-derived location: enables the weather read + forecast while
+  // details load
+  if (location && Number.isFinite(location.lat) && Number.isFinite(location.lon)) {
+    seed.location = location as schemasWodore['HutSchemaDetails']['location'];
+  }
+  if (typeof properties.type_standard_slug === 'string') {
+    // Partial type: consumers guard on `.name`/`.symbol`, so badges still
+    // wait for the full payload. The title avatar renders instantly from
+    // `slug` (WdCategoryIcon derives 'accommodation.{slug}' → direct SVG
+    // URL, module-cached); the payload's symbol URL takes over later.
+    seed.type_open = {
+      slug: properties.type_standard_slug,
+      color:
+        typeof properties.type_standard_color === 'string'
+          ? properties.type_standard_color
+          : undefined,
+    } as schemasWodore['HutSchemaDetails']['type_open'];
+  }
+
+  seededPlaces.set(slug, seed);
+}
+
 export function usePlace(slug: Ref<string | undefined>) {
   const place = ref<schemasWodore['HutSchemaDetails'] | undefined>(undefined);
   const loading = ref(false);
   const error = ref<PlaceError | null>(null);
 
   let abortController: AbortController | null = null;
+
+  function applySeed(newSlug: string): void {
+    const seed = seededPlaces.get(newSlug);
+    if (seed) {
+      // Deliberate partial cast: every consumer guards the fields it
+      // reads (type_open?.name, location, symbol, …) — the seed only
+      // fills what the tiles carry.
+      place.value = seed as schemasWodore['HutSchemaDetails'];
+    }
+  }
 
   async function fetchPlace(newSlug: string) {
     // Cancel previous request
@@ -139,8 +201,10 @@ export function usePlace(slug: Ref<string | undefined>) {
     [slug, currentLocale],
     ([newSlug]) => {
       if (newSlug) {
-        // Refetches both on slug change and UI language change (hut details
+        // Paint the MVT seed (if any) immediately, then fetch the real
+        // details (refetches on slug AND UI language change — hut details
         // are localized server-side via the lang param)
+        applySeed(newSlug);
         fetchPlace(newSlug);
       } else {
         place.value = undefined;

@@ -14,6 +14,7 @@ import WdAccommodationAvailabilities from '@components/huts/WdAccommodationAvail
 // import WdHutOpenMonthly from '@components/huts/monthly/WdHutOpenMonthly.vue';
 import WdWeatherForecast from '@components/content/place/WdWeatherForecast.vue';
 import WdTextClamp from '@components/utils/WdTextClamp.vue';
+import { useWeatherPossible } from '@composables/useWeatherPossible';
 import WdPlaceTypeBadge from '@components/content/place/WdPlaceTypeBadge.vue';
 import WdStatBox from '@components/content/WdStatBox.vue';
 import WdYearStripe from '@components/content/place/WdYearStripe.vue';
@@ -33,6 +34,11 @@ const {
   error: placeError,
   refetch: refetchPlace,
 } = usePlace(computed(() => props.slug));
+
+// Weather exists only within the forecast horizon of the selected date
+// (±14 days, no date = today) — gates the reserved weather block
+// (owner 2026-10)
+const weatherPossible = useWeatherPossible();
 
 // Live connectivity: a stored error replays as 'offline' whenever the
 // browser reports no connection — accurate guidance for the retry the
@@ -153,6 +159,30 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
 </script>
 
 <style scoped lang="scss">
+// ── Reserved-height scaffold (owner 2026-10: "as little flickering as
+//    possible"). Heights measured on the live panel at 460px and 380px;
+//    they are layout constants — if a section's design changes, re-measure
+//    and update BOTH this file and WdContentPanel's minimized budget.
+.wd-place-block--stripe {
+  min-height: 20px; // year stripe row (18px) + rounding
+}
+
+.wd-place-block--badges {
+  min-height: 32px; // one badge line (badges may wrap → block grows)
+}
+
+.wd-place-block--availability {
+  min-height: 128px; // availability strip (reserved when has_availability)
+}
+
+.wd-place-block--weather {
+  min-height: 157px; // forecast block (always shown once the place loads)
+}
+
+.wd-place-block--gallery {
+  margin-top: 8px;
+}
+
 .attribution {
   font-size: x-small;
   color: rgb(171, 171, 171);
@@ -239,15 +269,8 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
 
 <template>
   <div class="wd-place-content">
-    <!-- Loading state -->
-    <div v-if="placeLoading" class="q-pa-md">
-      <q-skeleton type="rect" height="200px" />
-      <q-skeleton type="text" class="q-mt-md" />
-      <q-skeleton type="text" />
-    </div>
-
     <!-- Error state: calm recovery block, retry is the one action -->
-    <div v-else-if="placeError" class="wd-place-error" role="alert">
+    <div v-if="placeError" class="wd-place-error" role="alert">
       <div class="wd-place-error__icon" aria-hidden="true">
         <q-icon name="wd-cloud-offline-outline" size="28px" />
       </div>
@@ -266,64 +289,82 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
       <q-btn unelevated color="primary" :label="$t('hut.load_error_retry')" @click="refetchPlace" />
     </div>
 
-    <!-- Content -->
-    <div v-else-if="place" class="q-pb-md">
-      <!-- Year Stripe -->
-      <WdYearStripe
-        :rows="yearStripeRows"
-        :selected-month="selectedMonth ? parseInt(selectedMonth) : undefined"
-        :stacked="false"
-      />
-
-      <!-- Type Badges -->
-      <div class="row q-gutter-sm q-mb-md">
-        <WdPlaceTypeBadge
-          v-if="place.type_open?.name"
-          :color="place.type_open.color"
-          :icon-identifier="'accommodation.' + place.type_open.slug"
-          :icon-href="place.type_open.symbol?.mono"
-          :label="$t('standard')"
-        >
-          {{ place.type_open.name }}
-          <template #append>
-            <WdStatBox
-              v-if="place.capacity_open != null"
-              icon="wd-bed-flat"
-              zero-icon="wd-no-bed-flat"
-              :zero="place.capacity_open === 0"
-            >
-              {{ place.capacity_open }}
-            </WdStatBox>
-          </template>
-        </WdPlaceTypeBadge>
-        <WdPlaceTypeBadge
-          v-if="place.type_closed?.name"
-          :color="place.type_closed.color"
-          :icon-identifier="'accommodation.' + place.type_closed.slug"
-          :icon-href="place.type_closed.symbol?.mono"
-          :label="$t('reduced')"
-        >
-          {{ place.type_closed.name }}
-          <template #append>
-            <WdStatBox
-              v-if="place.capacity_closed != null"
-              icon="wd-bed-flat"
-              zero-icon="wd-no-bed-flat"
-              :zero="place.capacity_closed === 0"
-            >
-              {{ place.capacity_closed }}
-            </WdStatBox>
-          </template>
-        </WdPlaceTypeBadge>
+    <!-- Reserved-height scaffold (owner 2026-10: "as little flickering as
+         possible"). Every block below reserves its FINAL height from the
+         first paint — loading, loaded and no-data states share one layout,
+         so the panel never toggles sizes while data arrives. Empty space is
+         the reserved state; skeletons only where a glanceable signal helps
+         (the gallery). -->
+    <div v-else class="wd-place-scaffold q-pb-md">
+      <!-- Year stripe (open-monthly): 20px reserved; renders with place -->
+      <div class="wd-place-block wd-place-block--stripe">
+        <WdYearStripe
+          v-if="place"
+          :rows="yearStripeRows"
+          :selected-month="selectedMonth ? parseInt(selectedMonth) : undefined"
+          :stacked="false"
+        />
       </div>
 
-      <!-- Gallery and Type Chips -->
-      <div class="row items-start q-gutter-sm">
-        <div class="col-md-12 col-sm-7 col-12">
-          <WdHutImageGallery :images="images" :loading="imagesLoading" :hut="place" />
+      <!-- Type badges (bed counts): one line (32px) reserved, may grow
+           when wrapping — the panel's minimized height budget includes
+           slack for it -->
+      <div class="wd-place-block wd-place-block--badges wd-place-badges">
+        <div v-if="place" class="row q-gutter-sm q-mb-sm">
+          <WdPlaceTypeBadge
+            v-if="place.type_open?.name"
+            :color="place.type_open.color"
+            :icon-identifier="'accommodation.' + place.type_open.slug"
+            :icon-href="place.type_open.symbol?.mono"
+            :label="$t('standard')"
+          >
+            {{ place.type_open.name }}
+            <template #append>
+              <WdStatBox
+                v-if="place.capacity_open != null"
+                icon="wd-bed-flat"
+                zero-icon="wd-no-bed-flat"
+                :zero="place.capacity_open === 0"
+              >
+                {{ place.capacity_open }}
+              </WdStatBox>
+            </template>
+          </WdPlaceTypeBadge>
+          <WdPlaceTypeBadge
+            v-if="place.type_closed?.name"
+            :color="place.type_closed.color"
+            :icon-identifier="'accommodation.' + place.type_closed.slug"
+            :icon-href="place.type_closed.symbol?.mono"
+            :label="$t('reduced')"
+          >
+            {{ place.type_closed.name }}
+            <template #append>
+              <WdStatBox
+                v-if="place.capacity_closed != null"
+                icon="wd-bed-flat"
+                zero-icon="wd-no-bed-flat"
+                :zero="place.capacity_closed === 0"
+              >
+                {{ place.capacity_closed }}
+              </WdStatBox>
+            </template>
+          </WdPlaceTypeBadge>
         </div>
+      </div>
 
-        <!-- <div class="col-md-12 col-sm-4 col-4">
+      <!-- Gallery: reserved slot (variant-aware height: mobile stripe vs
+           desktop 3:2) — the wrapper always occupies the final height;
+           skeleton while the place loads, gallery/no-image inside after.
+           See WdHutImageGallery .wd-gallery-slot. -->
+      <div class="wd-place-block wd-place-block--gallery">
+        <WdHutImageGallery
+          :images="place ? images : []"
+          :loading="placeLoading || imagesLoading"
+          :hut="place ?? undefined"
+        />
+      </div>
+
+      <!-- <div class="col-md-12 col-sm-4 col-4">
           <div class="row items-start justify-start q-gutter-sm" :class="{
             'q-gutter-lg': $q.screen.gt.sm,
           }">
@@ -331,8 +372,8 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
               :capacity="place.capacity_open" :open="isHutOpen" />
             <WdHutTypeChip class="shadow-0 col-md-6 col-sm-12 col-12" :type="place.type_closed"
               :capacity="place.capacity_closed" :open="isHutClosed" /> -->
-        <!-- Elevation chip -->
-        <!--
+      <!-- Elevation chip -->
+      <!--
             <q-chip v-if="place.elevation" size="md" class="wd-surface-deep q-mr-none shadow-0 col-md-6 col-sm-12 col-12"
               style="min-width: 90px; max-width: 90px; max-height: 30px">
               <q-avatar class="wd-ridge-bg" text-color="primary-500">
@@ -344,34 +385,39 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
             </q-chip>
           </div>
         </div> -->
-      </div>
 
-      <!-- Description -->
-      <div class="text-body2 q-my-sm">
+      <!-- Description: arrives atomically with the place payload — no
+           reservation needed before that (owner 2026-10) -->
+      <div v-if="place" class="text-body2 q-my-sm">
         <div
           v-if="place.description_attribution"
           class="attribution attr_link text-right"
           v-html="place.description_attribution"
         />
-        <WdTextClamp :max-lines="5" :text="place.description" />
+        <WdTextClamp :max-lines="5" :text="place.description ?? ''" />
       </div>
 
-      <!-- Availabilities (legacy block removed: hardcoded hub.wodore.com media URLs) -->
+      <!-- New Availability (Swiper-based): optional — the place payload
+           tells us (has_availability), so the 128px slot is reserved
+           BEFORE the (lazily fetched) data arrives (owner 2026-10) -->
+      <div v-if="place?.has_availability" class="wd-place-block wd-place-block--availability">
+        <WdAccommodationAvailabilities
+          :slug="slug"
+          :has-availability="place.has_availability ?? undefined"
+          :hut-type-icons="hutTypeIcons"
+        />
+      </div>
 
-      <!-- New Availability (Swiper-based, for comparison) -->
-      <WdAccommodationAvailabilities
-        :slug="slug"
-        :has-availability="place.has_availability ?? undefined"
-        :hut-type-icons="hutTypeIcons"
-      />
-
-      <!-- Open Monthly -->
-      <!--
-      <WdHutOpenMonthly :open_monthly="place.open_monthly" :type_open="place.type_open"
-        :type_closed="place.type_closed" /> -->
-
-      <!-- Weather (lazy loaded) -->
-      <div ref="weatherSection">
+      <!-- Weather (lazy loaded): always shown once the place exists —
+           157px reserved so the lazy load cannot shift the layout.
+           Collapses entirely when NO weather exists for the selected
+           date (±14 days; owner 2026-10) — the card's floor drops the
+           block too, see WdContentPanel. -->
+      <div
+        v-if="place && weatherPossible"
+        ref="weatherSection"
+        class="wd-place-block wd-place-block--weather"
+      >
         <WdWeatherForecast
           v-if="weatherSectionVisible && place.location"
           :latitude="place.location.lat"
@@ -382,45 +428,47 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
       </div>
 
       <!-- Location -->
-      <div class="wd-section-title q-mt-md">{{ $t('location') }}</div>
-      <q-list dense>
-        <q-item v-if="place.location">
-          <q-item-section side>
-            <q-icon size="xs">
-              <IconFa6SolidLocationCrosshairs />
-            </q-icon>
-          </q-item-section>
-          <q-item-section>
-            <q-item-label>
-              <a
-                :href="`geo:${place.location.lat},${place.location.lon}`"
-                target="_blank"
-                class="text-primary"
-              >
-                {{ place.location.lat.toPrecision(7) }},
-                {{ place.location.lon.toPrecision(6) }}
-              </a>
-            </q-item-label>
-          </q-item-section>
-          <q-item-section side>
-            <q-btn
-              flat
-              dense
-              round
-              size="10pt"
-              @click="
-                copyToClipboard(
-                  `${place.location.lat.toPrecision(7)}, ${place.location.lon.toPrecision(6)}`
-                )
-              "
-            >
-              <q-icon size="10pt">
-                <IconFa6SolidCopy />
+      <div v-if="place">
+        <div class="wd-section-title q-mt-md">{{ $t('location') }}</div>
+        <q-list dense>
+          <q-item v-if="place.location">
+            <q-item-section side>
+              <q-icon size="xs">
+                <IconFa6SolidLocationCrosshairs />
               </q-icon>
-            </q-btn>
-          </q-item-section>
-        </q-item>
-      </q-list>
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>
+                <a
+                  :href="`geo:${place.location.lat},${place.location.lon}`"
+                  target="_blank"
+                  class="text-primary"
+                >
+                  {{ place.location.lat.toPrecision(7) }},
+                  {{ place.location.lon.toPrecision(6) }}
+                </a>
+              </q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-btn
+                flat
+                dense
+                round
+                size="10pt"
+                @click="
+                  copyToClipboard(
+                    `${place.location.lat.toPrecision(7)}, ${place.location.lon.toPrecision(6)}`
+                  )
+                "
+              >
+                <q-icon size="10pt">
+                  <IconFa6SolidCopy />
+                </q-icon>
+              </q-btn>
+            </q-item-section>
+          </q-item>
+        </q-list>
+      </div>
     </div>
   </div>
 </template>

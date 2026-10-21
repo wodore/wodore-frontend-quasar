@@ -161,6 +161,8 @@
   "show_map": "Mappa",
   "search": "Cerca",
   "close": "Chiudi",
+  "minimize": "Riduci",
+  "maximize": "Ingrandisci",
   "pin_something": "Fissa",
   "unpin_something": "Sblocca",
   "drag_to_move": "Trascina per spostare",
@@ -183,6 +185,14 @@
       "full": "PIENO",
       "free_unknown": "LIBERI ?",
       "unknown": "sconosciuto"
+    },
+    "glance": {
+      "empty": "libero",
+      "low": "molto libero",
+      "medium": "limitato",
+      "high": "quasi pieno",
+      "full": "pieno",
+      "free_unknown": "qualche posto"
     }
   },
   "jan": "Gen",

@@ -1,7 +1,12 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ref } from 'vue';
-import { useMediaPreload, RETRY_DELAYS_MS, getRetryDelayMs } from '@composables/useMediaPreload';
+import {
+  useMediaPreload,
+  RETRY_DELAYS_MS,
+  getRetryDelayMs,
+  __resetPreloadedUrlsForTests,
+} from '@composables/useMediaPreload';
 import type { HutImage } from '@composables/useHutImages';
 import type { ImageVariantUrls } from 'src/types/geo';
 
@@ -53,6 +58,9 @@ describe('useMediaPreload.preloadImage', () => {
     vi.useFakeTimers();
     FakeImage.instances = [];
     vi.stubGlobal('Image', FakeImage);
+    // The preload memo is module state shared across specs — reset for
+    // deterministic per-test behavior
+    __resetPreloadedUrlsForTests();
   });
 
   afterEach(() => {
@@ -82,7 +90,7 @@ describe('useMediaPreload.preloadImage', () => {
 
     // Attempt 3 succeeds -> marked preloaded, no further attempts
     FakeImage.instances[2].onload?.();
-    expect(preloadedUrls.value.has('http://img.test/a.jpg')).toBe(true);
+    expect(preloadedUrls.has('http://img.test/a.jpg')).toBe(true);
     vi.advanceTimersByTime(60000);
     expect(FakeImage.instances).toHaveLength(3);
   });

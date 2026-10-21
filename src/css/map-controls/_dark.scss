@@ -53,29 +53,34 @@ body.body--dark .preview-badge {
   opacity: 0.75;
 }
 
-/* ── Side panel opens: bottom-right controls + top-right utility cluster
-      shift left so they stay clear of the drawer (desktop). The flag is
-      only set while the DESKTOP drawer is present — the mobile bottom
-      sheet overlays and must not shift anything. The media gate mirrors
-      Quasar's md-min ($q.screen lt.md = width < $breakpoint-sm + 1,
-      MainLayout keys the flag off the same boundary). The MapLibre
-      top-right cluster needs NO shift: its fixed .maplibregl-control-
-      container already follows the drawer via WdMapView's v-bind right
-      inset, and the focus toggle anchors to the page, which Quasar
-      shrinks by the panel width — shifting either moved them TWICE the
-      panel width (owner report 2026-10). */
+/* ── Mirrored layout (owner 2026-10): details panel LEFT, menu RIGHT.
+      An open details panel never displaces right-side chrome — the
+      bottom-right control column and the top-right utility cluster sit
+      on the OPPOSITE side from it (and the details panel became a
+      floating card, WdContentPanel, which takes no layout space at
+      all). The MapLibre corner clusters follow the drawers via
+      WdMapView's v-bind left/right insets; the focus toggle anchors to
+      the page Quasar shrinks — shifting either moved them TWICE the
+      panel width (owner report 2026-10), so they are never shifted for
+      a panel.
+
+      The MENU drawer (right, owner decision) gets the step-aside
+      treatment the details drawer used to have: while it is open on
+      desktop, the bottom-right control column and the top-right utils
+      slide left by the drawer width so the map's controls stay
+      reachable while configuring layers — the drawer toolbar (always
+      rendered) still carries the close. MainLayout toggles
+      body.wd-menu-open; the media gates mirror the elements' render
+      gates (utils ≥ 900px, control column desktop-only). */
 @media (min-width: #{$breakpoint-sm + 1}) {
-  body.wd-sidepanel-open .wd-map-ctl-sticky {
-    transform: translateX(calc(-1 * var(--wd-panel-w, 0px))) !important;
+  body.wd-menu-open .wd-map-ctl-sticky {
+    transform: translateX(calc(-1 * var(--wd-menu-w, 300px))) !important;
   }
 }
 
-/* The utils shift follows the utils RENDER gate (MainLayout.vue
-   showTopbarUtils, >= 900px): below 900 the utils don't render at all,
-   so sliding them would only move a hidden node. */
 @media (min-width: 900px) {
-  body.wd-sidepanel-open .wd-topbar__utils {
-    transform: translateX(calc(-1 * var(--wd-panel-w, 0px)));
+  body.wd-menu-open .wd-topbar__utils {
+    transform: translateX(calc(-1 * var(--wd-menu-w, 300px)));
   }
 }
 

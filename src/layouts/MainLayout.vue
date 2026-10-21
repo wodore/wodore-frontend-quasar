@@ -24,6 +24,7 @@ import WodoreLogo from 'components/wodore/WodoreLogo.vue';
 import WdPlaceSearchMenu from 'components/search/WdPlaceSearchMenu.vue';
 import WdPlaceSearchDialog from 'components/search/WdPlaceSearchDialog.vue';
 import WdBottomSheet from '@components/utils/WdBottomSheet.vue';
+import WdContentPanel, { openContentPanelMaximized } from '@components/content/WdContentPanel.vue';
 import { useRequestProgress } from '@composables/useRequestProgress';
 import { getEnv } from '@services/runtimeEnv';
 
@@ -44,22 +45,32 @@ const $q = useQuasar();
 const route = useRoute();
 const router = useRouter();
 
+// Deep-link entry (owner 2026-10): a page load landing directly on a hut
+// route (shared link, search engine result) opens the card MAXIMIZED;
+// map-first sessions keep the minimized default (and the sticky state).
+if (route.name === 'map-hut') {
+  openContentPanelMaximized();
+}
+
 const isMobile = computed(() => $q.screen.lt.md);
 
 // Topbar utility cluster (feedback / language / theme): desktop-only, and
-// only where it has room. Below 900px the cluster would collide with the
-// side panel as soon as the panel slides it left (panel is ≥ 380px while
-// the viewport is small), so it hides from the topbar below 900px — the
-// buttons move into the menu-drawer toolbar, exactly like on mobile.
+// only where it has room. Below 900px the centered pill would run into
+// the cluster (the pill reserves the panel slot on the left plus the
+// cluster's zone on the right while the viewport is small), so it hides
+// from the topbar below 900px — the buttons move into the menu-drawer
+// toolbar, exactly like on mobile.
 const showTopbarUtils = computed(() => $q.screen.width >= 900);
-// Menu-drawer toolbar (logo + language/theme/feedback + CLOSE) renders on
-// mobile AND across the whole band where the left-aligned pill sits under
-// the open drawer (770-1099px — there the pill's own menu toggle is
-// covered, and a docked ≥ 610px Quasar drawer has no backdrop/ESC, so the
-// toolbar close is the only exit). Deliberately wider than the utils
-// gate: between 900 and 1099 both surfaces show, which is fine — they
-// never overlap each other.
-const showDrawerToolbar = computed(() => $q.screen.width < 1100);
+// Menu-drawer toolbar (logo + language/theme/feedback + CLOSE): rendered
+// on mobile AND at EVERY desktop width. The menu docks RIGHT (mirror of
+// the left-docked details panel, owner 2026-10): its 300px band covers
+// the topbar utils wherever they render, and across 770-~1070px it also
+// covers the pill's own menu toggle (the pill rests centered on the map
+// area, its right end reaching into the drawer band there) — a docked
+// Quasar drawer has no backdrop/ESC, so the toolbar close is the only
+// exit in those bands. The toolbar's util buttons duplicate the covered
+// topbar cluster everywhere.
+const showDrawerToolbar = computed(() => true);
 
 // API request progress (bottom edge of the floating topbar pill, replaces
 // the viewport-top QAjaxBar)
@@ -89,15 +100,16 @@ watchEffect(() => {
 });
 
 // Set up router guards to track navigation source
-router.beforeEach((to, from, next) => {
+// Guard only tracks the dialog→route transition source; nothing to
+// allow/deny — modernized to the return-style guard (no `next()` callback,
+// vue-router R0025 deprecation, owner console 2026-10).
+router.beforeEach((to, from) => {
   const fromDialog = from.meta?.dialog as boolean;
   const toDialog = to.meta?.dialog as boolean;
 
   if (fromDialog && !toDialog) {
     shouldNavigateOnHide = false;
   }
-
-  next();
 });
 
 // Handle dialog close via backdrop click, ESC key, or close button
@@ -134,25 +146,32 @@ const contentDrawerOpen = computed({
   },
 });
 
-// Side panel (content drawer, desktop): flag on <body> so map controls
-// and the utility cluster can shift left and stay clear of the drawer.
-// Only the DESKTOP drawer (≥ md, !isMobile — Quasar md starts at
-// $breakpoint-sm + 1 = 770px here) takes layout space — the mobile
-// bottom sheet overlays, so it must NOT set the flag. Watching isMobile
-// too means crossing the breakpoint while open removes (or adds) the
-// flag together with the drawer/sheet swap.
+// Side panel (desktop): hut details float in a LEFT-anchored card
+// (WdContentPanel — owner + UX consult 2026-10) that OVERLAYS the map;
+// the map canvas never reflows. Its slot width is ALWAYS set on desktop:
+// the topbar pill reserves this space in BOTH panel states (it rests
+// centered on the map area, i.e. at (viewport + panel)/2, so
+// opening/closing hut details moves nothing) and the panel takes the
+// same width. Mobile has no desktop panel (bottom sheet) and reserves
+// nothing.
 const desktopDrawerWidth = computed(() => ($q.screen.gt.md ? 460 : 380));
 watch(
-  [contentDrawerOpen, isMobile, desktopDrawerWidth],
-  ([open, mobile, width]) => {
-    const shift = open && !mobile;
-    document.body.classList.toggle('wd-sidepanel-open', shift);
-    // Panel slot width — ALWAYS set on desktop: the topbar pill reserves
-    // this space in BOTH panel states (it rests at (viewport − panel)/2,
-    // so opening/closing hut details moves nothing). The shift transforms
-    // in _dark.scss additionally require .wd-sidepanel-open, so only the
-    // open state actually displaces chrome. Mobile has no desktop panel.
+  [isMobile, desktopDrawerWidth],
+  ([mobile, width]) => {
     document.body.style.setProperty('--wd-panel-w', mobile ? '0px' : `${width}px`);
+  },
+  { immediate: true }
+);
+
+// Menu drawer (RIGHT): flag on <body> while it is open on DESKTOP so the
+// right-side map chrome (bottom control column, top-right utils) can
+// step aside — the same treatment the details drawer used to have. The
+// MapLibre corner clusters follow automatically via the Quasar drawer
+// offsets; the pill keeps its position (z-drops under the drawer).
+watch(
+  [menuDrawerOpen, isMobile],
+  ([open, mobile]) => {
+    document.body.classList.toggle('wd-menu-open', open && !mobile);
   },
   { immediate: true }
 );
@@ -160,20 +179,13 @@ watch(
 // Mobile bottom sheet ref (for programmatic snap control)
 const bottomSheetRef = ref<InstanceType<typeof WdBottomSheet> | null>(null);
 
-// Desktop drawer: shadow the header once the content is scrolled
-const drawerContentScrolled = ref(false);
+// Desktop content panel ref (scroll reset on re-target)
+const contentPanelRef = ref<InstanceType<typeof WdContentPanel> | null>(null);
+
 const headerScrolled = ref(false);
 
 function onLayoutScroll(info: { position: number }): void {
   headerScrolled.value = (info.position ?? 0) > 2;
-}
-
-interface DrawerScrollInfo {
-  verticalPosition?: number;
-}
-
-function onDrawerScroll(info: DrawerScrollInfo): void {
-  drawerContentScrolled.value = (info.verticalPosition ?? 0) > 2;
 }
 
 // When new content is opened while the sheet is already showing (e.g. another
@@ -186,6 +198,7 @@ watch(
   () => {
     if (contentStore.contentOpen) {
       bottomSheetRef.value?.onContentChanged();
+      contentPanelRef.value?.onContentChanged();
     }
   }
 );
@@ -393,63 +406,25 @@ body.capacitor .preview-badge {
   top: 8px;
 }
 
-// Critical CSS for nested QLayout in container mode (inside drawer)
-// Without this, the layout wrappers collapse to 0 height
-.q-layout-container > div > div {
-  min-height: 0;
-  max-height: 100%;
-  height: 100%;
-}
-
-.q-layout-container .q-layout {
-  min-height: 100%;
-  height: 100%;
-}
-
-// Prevent wide content (e.g. Swiper sliders) from pushing the
-// content drawer wider than its configured :width prop.
-//
-// Quasar's QDrawer sets inline width but no max-width or overflow.
-// Wide children with large intrinsic min-width can push the aside
-// element wider. These rules enforce containment on the drawer itself
-// and its content wrapper.
-// The content drawer's user classes (content-drawer) land on Quasar's inner
-// .q-drawer__content div (NOT the aside) - target that element.
-.q-drawer__content.content-drawer {
-  overflow: hidden !important;
-  background: var(--wd-surface);
-  color: var(--wd-ink);
-
-  // Drawer header scrolled state (owner 2026-09-28): a separation line
-  // plus a solid surface - content visibly slides UNDER the header. The
-  // old drop shadow was both rule-violating (panel-on-panel) and hard
-  // to see against the pine tones.
-  .q-header {
-    border-bottom: 1px solid transparent;
-    transition:
-      border-color 0.15s ease,
-      background-color 0.15s ease;
-  }
-
-  .q-header.content-drawer-header-scrolled {
-    background: var(--wd-surface-deep);
-    border-bottom-color: rgba(var(--wd-ink-rgb), 0.16);
-  }
-}
+// (Retired with the docked content drawer, 2026-10: hut details now
+// float in WdContentPanel, a fixed-position card — no nested QLayout,
+// no drawer containment rules needed. The menu drawer hosts plain
+// content only.)
 </style>
 <template>
   <WdAnalytics />
   <q-layout view="hHh LpR fFf" class="overflow-hidden" @scroll="onLayoutScroll">
     <div v-if="isStaging" class="preview-badge">preview</div>
     <WdApiVersionBanner />
-    <!-- FLOATING TOPBAR: search | date (highlight) | avatar ──────────── -->
-    <!-- --under-menu: while the menu drawer is open the pill must slide
-         UNDER it (Quasar's desktop-mode drawer aside is z 1000, this fixed
-         topbar 2000 — without the drop the pill paints over the drawer
-         and swallows its taps). The pill always rests at
-         (viewport − panel)/2, so its left edge sits inside the 300px
-         drawer band at 770-1099px (left-aligned) and at 1100-1265px
-         (centered); above that the drop is invisible. Mobile already
+    <!-- FLOATING TOPBAR: search | date (highlight) | menu ──────────────── -->
+    <!-- --under-menu: while the menu drawer (RIGHT) is open the pill must
+         slide UNDER it (Quasar's desktop-mode drawer aside is z 1000, this
+         fixed topbar 2000 — without the drop the pill paints over the
+         drawer and swallows its taps). The pill rests centered on the map
+         area ((viewport + panel)/2, panel reserved on the LEFT), so from
+         ~770px up to ~1070px its right end — the menu toggle — reaches
+         into the 300px right drawer band while the drawer is open; the
+         drawer toolbar's close button covers that band. Mobile already
          renders its drawer on top (aside z 3000 there). -->
     <div class="wd-topbar" :class="{ 'wd-topbar--under-menu': menuDrawerOpen }">
       <div class="wd-topbar__pill">
@@ -517,14 +492,15 @@ body.capacitor .preview-badge {
     <!-- MENU -->
     <q-drawer
       v-model="menuDrawerOpen"
-      :side="isMobile ? 'right' : 'left'"
+      side="right"
       :width="300"
       :breakpoint="610"
       class="wd-menu-drawer"
       style="max-width: 80vw; z-index: 3000"
     >
-      <!-- TOOLBAR mobile + small desktop: spans every width where the
-           pill hides under the open drawer (< 1100px) — the WdMenuButton
+      <!-- TOOLBAR mobile + all desktop widths: the menu docks RIGHT, so
+           its band covers the topbar utils wherever they render, and at
+           770-~1070px also the pill's menu toggle — the WdMenuButton
            close is then the only pointer affordance to dismiss it -->
       <q-toolbar v-if="showDrawerToolbar" class="bg-primary-600 shadow-6">
         <q-toolbar-title>
@@ -540,10 +516,10 @@ body.capacitor .preview-badge {
         <WdFeedbackButton size="md" />
 
         <!-- MENU BUTTON close. No `mobile` prop: that gates rendering on
-             $q.screen.xs, which would hide the close at 770-1099px and
-             strand the open drawer. The arrow points out of whichever
-             side the drawer is docked to (right on mobile, left above). -->
-        <WdMenuButton :side="isMobile ? 'right' : 'left'" v-model="menuDrawerOpen" />
+             $q.screen.xs, which would hide the close on desktop. The
+             arrow points out of whichever side the drawer is docked to
+             (right on every screen — the menu docks right everywhere). -->
+        <WdMenuButton side="right" v-model="menuDrawerOpen" />
       </q-toolbar>
       <router-view name="menu" />
     </q-drawer>
@@ -555,86 +531,42 @@ body.capacitor .preview-badge {
       </router-view>
     </q-page-container>
 
-    <!-- Content Drawer (Desktop) -->
-    <q-drawer
+    <!-- Content Drawer (Desktop): docks LEFT — mirrored layout (menu
+         right, details left), owner 2026-10 -->
+    <!-- Content Panel (Desktop): LEFT-anchored floating card that
+         OVERLAYS the map — replaces the docked drawer (owner + UX
+         consult 2026-10). Same slot composition as the mobile sheet:
+         title header top, content middle (scrollable), actions footer
+         bottom. Width follows the reserved panel slot (--wd-panel-w);
+         height choreography, minimize and a11y live in the component. -->
+    <WdContentPanel
       v-if="!isMobile"
+      ref="contentPanelRef"
       v-model="contentDrawerOpen"
-      side="right"
-      :width="$q.screen.gt.md ? 460 : 380"
-      :breakpoint="0"
-      class="shadow-2 content-drawer"
+      :slug="contentStore.contentSlug"
     >
-      <q-layout
-        view="lhh LpR lff"
-        container
-        class="no-background wd-surface overflow-hidden"
-        style="height: 100%"
-      >
-        <!-- Close button (top-LEFT, gold chip - reference design; the
-             top-right corner belongs to the 3-dot actions menu) -->
-        <div class="absolute z-max" style="top: 10px; left: 10px; pointer-events: none">
-          <q-btn
-            round
-            dense
-            icon="wd-close"
-            @click="closeContent"
-            class="wd-drawer-close"
-            size="md"
-            style="pointer-events: auto"
-          />
-        </div>
+      <template #header>
+        <component
+          v-if="contentTitleComponent"
+          :is="contentTitleComponent"
+          :slug="contentStore.contentSlug"
+        />
+      </template>
 
-        <!-- Sticky Header (Actions + Title) -->
-        <q-header
-          class="wd-drawer-header"
-          :class="{ 'content-drawer-header-scrolled': drawerContentScrolled }"
-        >
-          <!-- Actions Toolbar (Desktop only) -->
-          <component
-            v-if="contentActionsComponent && $q.screen.gt.sm"
-            :is="contentActionsComponent"
-            :slug="contentStore.contentSlug"
-          />
-          <!-- Title -->
-          <component
-            v-if="contentTitleComponent"
-            :is="contentTitleComponent"
-            :slug="contentStore.contentSlug"
-          />
-        </q-header>
+      <router-view name="content" v-slot="{ Component, route: contentRoute }">
+        <transition name="fade" mode="out-in">
+          <component :is="Component" :key="contentRoute.path" />
+        </transition>
+      </router-view>
 
-        <!-- Scrollable Content -->
-        <q-page-container class="fit" style="height: 100%">
-          <q-scroll-area
-            visible
-            @scroll="onDrawerScroll"
-            :thumb-style="{
-              width: '6px',
-              backgroundColor: '#998019',
-              opacity: '0.5',
-              borderRadius: '8px 0 0 8px',
-            }"
-            class="fit"
-          >
-            <q-page
-              class="q-px-md"
-              :style="{ height: '100%', maxWidth: ($q.screen.gt.md ? 460 : 380) + 'px' }"
-            >
-              <router-view name="content" v-slot="{ Component, route: contentRoute }">
-                <transition name="fade" mode="out-in">
-                  <component :is="Component" :key="contentRoute.path" />
-                </transition>
-              </router-view>
-            </q-page>
-          </q-scroll-area>
-        </q-page-container>
-
-        <!-- Footer (Actions for smaller desktop screens) -->
-        <q-footer v-if="contentActionsComponent && !$q.screen.gt.sm" class="footer-toolbar">
-          <component :is="contentActionsComponent" :slug="contentStore.contentSlug" />
-        </q-footer>
-      </q-layout>
-    </q-drawer>
+      <template #footer>
+        <component
+          v-if="contentActionsComponent"
+          :is="contentActionsComponent"
+          :slug="contentStore.contentSlug"
+        />
+      </template>
+    </WdContentPanel>
   </q-layout>
 
   <!-- Mobile Bottom Sheet (OUTSIDE QLayout, only on mobile) -->

@@ -5,7 +5,7 @@
 // (network rejection while the browser reports online), and the user is
 // offline (navigator.onLine false at failure time).
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ref } from 'vue';
+import { ref, nextTick } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 
 vi.mock('@stores/auth-store', () => ({
@@ -24,7 +24,7 @@ vi.hoisted(() => {
   );
 });
 
-import { usePlace } from '@composables/usePlace';
+import { usePlace, seedPlaceFromMap } from '@composables/usePlace';
 
 // The mock instance openapi-fetch actually captured (stubbed in hoisted).
 const fetchMock = vi.mocked(globalThis.fetch);
@@ -61,5 +61,79 @@ describe('usePlace error classification', () => {
     vi.stubGlobal('navigator', { onLine: false });
     fetchMock.mockImplementation(async () => Promise.reject(new TypeError('Failed to fetch')));
     await expect(errorForSlug('spec-offline')).resolves.toEqual({ kind: 'offline' });
+  });
+});
+
+describe('usePlace MVT identity seed', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    fetchMock.mockReset();
+    fetchMock.mockImplementation(async () => new Response('{}', { status: 200 }));
+  });
+
+  it('paints identity from tile properties before the details request resolves', async () => {
+    // Details request never resolves — only the seed may paint
+    fetchMock.mockImplementation(() => new Promise(() => {}));
+
+    seedPlaceFromMap(
+      'seeded-hut',
+      {
+        name: 'Aarbiwak SAC',
+        name_de: 'Aarbiwak SAC',
+        name_en: 'Aarbiwak SAC',
+        elevation: '2731.0',
+        owner_name: 'SAC Pilatus',
+        type_standard_slug: 'bivouac',
+        type_standard_color: '#6B46C1',
+      },
+      { lat: 46.555, lon: 8.152 }
+    );
+
+    const { place, loading } = usePlace(ref('seeded-hut'));
+    await nextTick();
+
+    expect(place.value?.name).toBe('Aarbiwak SAC');
+    expect(place.value?.elevation).toBe(2731);
+    expect(place.value?.owner?.name).toBe('SAC Pilatus');
+    expect(place.value?.location?.lat).toBeCloseTo(46.555);
+    expect(place.value?.location?.lon).toBeCloseTo(8.152);
+    expect(place.value?.type_open?.color).toBe('#6B46C1');
+    // Guarded fields stay unset — icons/badges still wait for the payload
+    expect(place.value?.type_open?.name).toBeUndefined();
+    expect(place.value?.type_open?.symbol).toBeUndefined();
+    // The real request is still pending
+    expect(loading.value).toBe(true);
+  });
+
+  it('is overwritten by the real payload when it arrives', async () => {
+    seedPlaceFromMap(
+      'overwritten-hut',
+      { name: 'Seed Name', elevation: '1000.0' },
+      { lat: 1, lon: 2 }
+    );
+
+    fetchMock.mockImplementation(
+      async () =>
+        new Response(JSON.stringify({ name: 'Real Name', elevation: 2000 }), {
+          status: 200,
+        })
+    );
+
+    const { place, loading } = usePlace(ref('overwritten-hut'));
+    await nextTick();
+    expect(place.value?.name).toBe('Seed Name'); // seed paints first
+
+    await vi.waitFor(() => expect(loading.value).toBe(false));
+    expect(place.value?.name).toBe('Real Name'); // payload wins
+    expect(place.value?.elevation).toBe(2000);
+  });
+
+  it('does not paint a seed for a different slug', async () => {
+    fetchMock.mockImplementation(() => new Promise(() => {}));
+    seedPlaceFromMap('other-hut', { name: 'Other Hut' }, { lat: 1, lon: 2 });
+
+    const { place } = usePlace(ref('unseeded-hut'));
+    await nextTick();
+    expect(place.value).toBeUndefined();
   });
 });
