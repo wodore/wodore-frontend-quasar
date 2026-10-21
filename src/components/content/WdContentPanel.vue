@@ -83,7 +83,9 @@ const panelEl = ref<HTMLElement | null>(null);
 const headerEl = ref<HTMLElement | null>(null);
 const footerEl = ref<HTMLElement | null>(null);
 const contentEl = ref<HTMLElement | null>(null);
-const scrollRef = ref<{ setScrollPosition: (axis: 'vertical', offset: number, duration?: number) => void } | null>(null);
+const scrollRef = ref<{
+  setScrollPosition: (axis: 'vertical', offset: number, duration?: number) => void;
+} | null>(null);
 
 function toggleMinimized(): void {
   minimized.value = !minimized.value;
@@ -151,8 +153,8 @@ const minimizedH = computed(() =>
   Math.min(
     Math.max(
       305, // "normal view, small height": stripe + badges + gallery stripe
-           // (owner revision 2026-10: −15px — the minimized footer's
-           // availability dots now carry part of the glance signal)
+      // (owner revision 2026-10: −15px — the minimized footer's
+      // availability dots now carry part of the glance signal)
       Math.max(headerH.value, HEADER_FALLBACK) +
         STRIPE_BLOCK +
         BADGES_BLOCK +
@@ -175,10 +177,7 @@ const knownFloor = computed(
     BLOCK_GAPS
 );
 const expandedH = computed(() =>
-  Math.min(
-    Math.max(knownFloor.value, headerH.value + contentH.value + footerH.value),
-    maxCap.value
-  )
+  Math.min(Math.max(knownFloor.value, headerH.value + contentH.value + footerH.value), maxCap.value)
 );
 const panelHeight = computed(() => (minimized.value ? minimizedH.value : expandedH.value));
 
@@ -325,7 +324,8 @@ watch(
   () => props.modelValue,
   open => {
     if (open) {
-      previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      previouslyFocused =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null;
       // NOTE: the minimized state intentionally persists — a fresh open
       // starts the way the previous card was left (owner 2026-10).
       nextTick(() => panelEl.value?.focus({ preventScroll: true }));
@@ -389,14 +389,7 @@ const panelLabel = computed(() => place.value?.name ?? t('hut.hut'));
           <!-- Close is the header's ONLY verb now (UX consult 2026-10): a
                minimize chevron next to close was a mis-click footgun —
                collapse lives on the footer handle + scroll gestures. -->
-          <q-btn
-            flat
-            round
-            dense
-            icon="wd-close"
-            :aria-label="$t('close')"
-            @click="close"
-          />
+          <q-btn flat round dense icon="wd-close" :aria-label="$t('close')" @click="close" />
         </div>
       </div>
 
@@ -475,7 +468,9 @@ const panelLabel = computed(() => place.value?.name ?? t('hut.hut'));
   gap: 4px;
   padding: 10px 6px 4px 12px;
   border-bottom: 1px solid transparent;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
 }
 
 // Content visibly slides UNDER the header once scrolled (port of the

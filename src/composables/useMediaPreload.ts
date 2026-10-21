@@ -40,7 +40,6 @@ function rememberPreloadedUrl(url: string): void {
 }
 
 export function useMediaPreload(images: Ref<HutImage[]>, currentSlide: Ref<number>) {
-
   // Get optimal image size based on screen size - NEVER upscale
   const LADDER = ['xs', 'sm', 'md', 'lg', 'xl'] as const;
 

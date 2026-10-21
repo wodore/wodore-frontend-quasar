@@ -358,7 +358,7 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
         />
       </div>
 
-        <!-- <div class="col-md-12 col-sm-4 col-4">
+      <!-- <div class="col-md-12 col-sm-4 col-4">
           <div class="row items-start justify-start q-gutter-sm" :class="{
             'q-gutter-lg': $q.screen.gt.sm,
           }">
@@ -366,8 +366,8 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
               :capacity="place.capacity_open" :open="isHutOpen" />
             <WdHutTypeChip class="shadow-0 col-md-6 col-sm-12 col-12" :type="place.type_closed"
               :capacity="place.capacity_closed" :open="isHutClosed" /> -->
-        <!-- Elevation chip -->
-        <!--
+      <!-- Elevation chip -->
+      <!--
             <q-chip v-if="place.elevation" size="md" class="wd-surface-deep q-mr-none shadow-0 col-md-6 col-sm-12 col-12"
               style="min-width: 90px; max-width: 90px; max-height: 30px">
               <q-avatar class="wd-ridge-bg" text-color="primary-500">
@@ -418,42 +418,42 @@ const yearStripeRows = computed<WdYearStripeRow[]>(() => {
       <div v-if="place">
         <div class="wd-section-title q-mt-md">{{ $t('location') }}</div>
         <q-list dense>
-        <q-item v-if="place.location">
-          <q-item-section side>
-            <q-icon size="xs">
-              <IconFa6SolidLocationCrosshairs />
-            </q-icon>
-          </q-item-section>
-          <q-item-section>
-            <q-item-label>
-              <a
-                :href="`geo:${place.location.lat},${place.location.lon}`"
-                target="_blank"
-                class="text-primary"
-              >
-                {{ place.location.lat.toPrecision(7) }},
-                {{ place.location.lon.toPrecision(6) }}
-              </a>
-            </q-item-label>
-          </q-item-section>
-          <q-item-section side>
-            <q-btn
-              flat
-              dense
-              round
-              size="10pt"
-              @click="
-                copyToClipboard(
-                  `${place.location.lat.toPrecision(7)}, ${place.location.lon.toPrecision(6)}`
-                )
-              "
-            >
-              <q-icon size="10pt">
-                <IconFa6SolidCopy />
+          <q-item v-if="place.location">
+            <q-item-section side>
+              <q-icon size="xs">
+                <IconFa6SolidLocationCrosshairs />
               </q-icon>
-            </q-btn>
-          </q-item-section>
-        </q-item>
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>
+                <a
+                  :href="`geo:${place.location.lat},${place.location.lon}`"
+                  target="_blank"
+                  class="text-primary"
+                >
+                  {{ place.location.lat.toPrecision(7) }},
+                  {{ place.location.lon.toPrecision(6) }}
+                </a>
+              </q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-btn
+                flat
+                dense
+                round
+                size="10pt"
+                @click="
+                  copyToClipboard(
+                    `${place.location.lat.toPrecision(7)}, ${place.location.lon.toPrecision(6)}`
+                  )
+                "
+              >
+                <q-icon size="10pt">
+                  <IconFa6SolidCopy />
+                </q-icon>
+              </q-btn>
+            </q-item-section>
+          </q-item>
         </q-list>
       </div>
     </div>

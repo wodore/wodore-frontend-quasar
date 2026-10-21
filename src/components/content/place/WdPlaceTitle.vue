@@ -79,8 +79,7 @@ const availColor = computed(
 const availTooltip = computed(() => {
   const s = availStatus.value;
   if (!s) return '';
-  const counts =
-    s.free != null && s.total != null ? ` (${s.free}/${s.total})` : '';
+  const counts = s.free != null && s.total != null ? ` (${s.free}/${s.total})` : '';
   return `${t('availability.title')}${counts}`;
 });
 </script>
@@ -89,97 +88,101 @@ const availTooltip = computed(() => {
   <q-no-ssr>
     <transition v-if="place" name="wd-title-swap" mode="out-in">
       <div :key="place.name ?? 'untitled'" class="wd-place-title row no-wrap">
-      <!-- Avatar (type icon). Renders INSTANTLY from the MVT seed's
+        <!-- Avatar (type icon). Renders INSTANTLY from the MVT seed's
            identifier (WdCategoryIcon: direct SVG URL, module-cached);
            the payload's direct symbol URL takes over when it arrives —
            same look, no layout shift (fixed 44px box). -->
-      <div class="wd-place-title__avatar col-auto q-mr-sm">
-        <WdCategoryIcon
-          v-if="place.type_open"
-          :identifier="'accommodation.' + place.type_open.slug"
-          :href="place.type_open.symbol?.color ?? null"
-          variant="color"
-          :size="44"
-        />
-      </div>
+        <div class="wd-place-title__avatar col-auto q-mr-sm">
+          <WdCategoryIcon
+            v-if="place.type_open"
+            :identifier="'accommodation.' + place.type_open.slug"
+            :href="place.type_open.symbol?.color ?? null"
+            variant="color"
+            :size="44"
+          />
+        </div>
 
-      <!-- Title block: briefing / title / owner. Availability rides
+        <!-- Title block: briefing / title / owner. Availability rides
            INLINE in the briefing row after the weather (owner 2026-10) —
            status dot + short label, click maximizes. -->
-      <div class="wd-place-title__text col self-center">
-        <!-- Briefing row: elevation · weather · availability -->
-        <div
-          class="wd-place-title__overline text-caption wd-ink-soft-text"
-          :class="{ invisible: !place.elevation && !place.location && !showAvail }"
-        >
-          <template v-if="place.elevation || place.location || showAvail">
-            <span v-if="place.elevation" class="wd-place-title__elevation">
-              <q-icon size="14px" name="wd-elevation-outline" />
-              {{ place.elevation }}m
-            </span>
-            <span v-if="place.elevation && (place.location || showAvail)" class="wd-place-title__dot">•</span>
-            <WdWeatherSelect
-              v-if="place.location"
-              :latitude="place.location.lat"
-              :longitude="place.location.lon"
-              collection="weather-icons-outlined-mono"
-              :elevation="place.elevation ?? undefined"
-              :size="18"
-              :color="$q.dark.isActive ? 'accent-100' : 'accent-800'"
-              :label="true"
-              class="wd-place-title__weather"
-              no-shadow
-            />
-            <template v-if="showAvail">
-              <span v-if="place.location" class="wd-place-title__dot">•</span>
-              <button
-                type="button"
-                class="wd-place-title__avail"
-                :title="availTooltip"
-                @click="maximize?.()"
-              >
-                <span
-                  class="wd-place-title__avail-dot"
-                  :style="{ backgroundColor: availColor }"
-                  aria-hidden="true"
-                />
-                <span class="wd-place-title__avail-label">{{ availLabel }}</span>
-              </button>
-            </template>
-          </template>
-          <span v-else>&ZeroWidthSpace;</span>
-        </div>
-
-        <!-- Title -->
-        <div
-          class="wd-place-title__name"
-          :class="$q.screen.xs || $q.platform.is.mobile ? 'text-h6' : 'text-h5'"
-        >
-          <a
-            v-if="place.url"
-            :href="place.url"
-            target="_blank"
-            @click="track('hut link click')"
-            class="wd-ink-text"
+        <div class="wd-place-title__text col self-center">
+          <!-- Briefing row: elevation · weather · availability -->
+          <div
+            class="wd-place-title__overline text-caption wd-ink-soft-text"
+            :class="{ invisible: !place.elevation && !place.location && !showAvail }"
           >
-            {{ place.name }}
-            <q-icon size="10pt" class="wd-ink-soft-text" style="transform: translateY(-6px)">
-              <IconEvaExternalLinkFill />
-            </q-icon>
-          </a>
-          <span v-else class="wd-ink-text">{{ place.name }}</span>
-        </div>
+            <template v-if="place.elevation || place.location || showAvail">
+              <span v-if="place.elevation" class="wd-place-title__elevation">
+                <q-icon size="14px" name="wd-elevation-outline" />
+                {{ place.elevation }}m
+              </span>
+              <span
+                v-if="place.elevation && (place.location || showAvail)"
+                class="wd-place-title__dot"
+                >•</span
+              >
+              <WdWeatherSelect
+                v-if="place.location"
+                :latitude="place.location.lat"
+                :longitude="place.location.lon"
+                collection="weather-icons-outlined-mono"
+                :elevation="place.elevation ?? undefined"
+                :size="18"
+                :color="$q.dark.isActive ? 'accent-100' : 'accent-800'"
+                :label="true"
+                class="wd-place-title__weather"
+                no-shadow
+              />
+              <template v-if="showAvail">
+                <span v-if="place.location" class="wd-place-title__dot">•</span>
+                <button
+                  type="button"
+                  class="wd-place-title__avail"
+                  :title="availTooltip"
+                  @click="maximize?.()"
+                >
+                  <span
+                    class="wd-place-title__avail-dot"
+                    :style="{ backgroundColor: availColor }"
+                    aria-hidden="true"
+                  />
+                  <span class="wd-place-title__avail-label">{{ availLabel }}</span>
+                </button>
+              </template>
+            </template>
+            <span v-else>&ZeroWidthSpace;</span>
+          </div>
 
-        <!-- Subtitle: owner (3rd line, restored per owner 2026-10) -->
-        <div
-          class="wd-place-title__subtitle text-caption wd-ink-soft-text"
-          :class="{ invisible: !place.owner }"
-        >
-          <template v-if="place.owner">{{ place.owner.name }}</template>
-          <span v-else>&ZeroWidthSpace;</span>
+          <!-- Title -->
+          <div
+            class="wd-place-title__name"
+            :class="$q.screen.xs || $q.platform.is.mobile ? 'text-h6' : 'text-h5'"
+          >
+            <a
+              v-if="place.url"
+              :href="place.url"
+              target="_blank"
+              @click="track('hut link click')"
+              class="wd-ink-text"
+            >
+              {{ place.name }}
+              <q-icon size="10pt" class="wd-ink-soft-text" style="transform: translateY(-6px)">
+                <IconEvaExternalLinkFill />
+              </q-icon>
+            </a>
+            <span v-else class="wd-ink-text">{{ place.name }}</span>
+          </div>
+
+          <!-- Subtitle: owner (3rd line, restored per owner 2026-10) -->
+          <div
+            class="wd-place-title__subtitle text-caption wd-ink-soft-text"
+            :class="{ invisible: !place.owner }"
+          >
+            <template v-if="place.owner">{{ place.owner.name }}</template>
+            <span v-else>&ZeroWidthSpace;</span>
+          </div>
         </div>
       </div>
-    </div>
     </transition>
   </q-no-ssr>
 </template>

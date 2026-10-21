@@ -20,10 +20,7 @@ export interface HutAvailabilityDayStatus {
 const cache = new Map<string, HutAvailabilityDayStatus>();
 const pending = new Map<string, Promise<HutAvailabilityDayStatus>>();
 
-async function fetchStatus(
-  slug: string,
-  dateISO: string
-): Promise<HutAvailabilityDayStatus> {
+async function fetchStatus(slug: string, dateISO: string): Promise<HutAvailabilityDayStatus> {
   const { data, error } = await clientWodore.GET('/v1/huts/{slug}/availability/{date}', {
     params: {
       path: { slug, date: dateISO },

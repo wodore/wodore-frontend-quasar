@@ -49,9 +49,7 @@ export function seedPlaceFromMap(
   location?: { lat: number; lon: number }
 ): void {
   if (!slug) return;
-  const localeName = String(
-    properties[`name_${currentLocale()}`] ?? properties.name ?? ''
-  );
+  const localeName = String(properties[`name_${currentLocale()}`] ?? properties.name ?? '');
   const elevationRaw = properties.elevation;
   const ownerName = properties.owner_name;
 
@@ -79,7 +77,10 @@ export function seedPlaceFromMap(
     // URL, module-cached); the payload's symbol URL takes over later.
     seed.type_open = {
       slug: properties.type_standard_slug,
-      color: typeof properties.type_standard_color === 'string' ? properties.type_standard_color : undefined,
+      color:
+        typeof properties.type_standard_color === 'string'
+          ? properties.type_standard_color
+          : undefined,
     } as schemasWodore['HutSchemaDetails']['type_open'];
   }
 

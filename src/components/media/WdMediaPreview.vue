@@ -1,5 +1,14 @@
 <script setup lang="ts">
-import { ref, computed, watch, watchEffect, onMounted, inject, type Component, type Ref } from 'vue';
+import {
+  ref,
+  computed,
+  watch,
+  watchEffect,
+  onMounted,
+  inject,
+  type Component,
+  type Ref,
+} from 'vue';
 import { useTimeoutFn } from '@vueuse/core';
 import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
@@ -502,237 +511,238 @@ const thumbnailContainerStyle = computed(() => {
      restores normal attribute inheritance. -->
   <div class="wd-media-preview">
     <div v-if="loading && !hasImages" class="flex flex-center no-image-mobile-wrapper">
-    <WdNoImage
-      :message="emptyStateMessage"
-      :icon="emptyStateIcon ?? IconAddPhoto"
-      :on-contribute="handleAddImageClick"
-      :reduced-height="reducedHeightNoImage"
-      :loading="true"
-    />
-  </div>
-
-  <div v-else-if="hasImages" class="wd-gallery-variants">
-    <!-- Both variants stay MOUNTED and crossfade (owner 2026-10: "better
-         morph the gallery change") — the wrapper reserves the height,
-         the inactive variant is opacity-0 + visibility-hidden after a
-         delay so the swap reads as a morph, not a hard cut. -->
-    <div
-      class="wd-gallery-variant mobile-stripe-container"
-        :class="isMobile ? 'wd-gallery-variant--active' : 'wd-gallery-variant--inactive'"
-        :aria-hidden="!isMobile"
-      >
-      <swiper
-        :modules="[FreeMode, Scrollbar, Mousewheel]"
-        :slides-per-view="'auto'"
-        :space-between="4"
-        :free-mode="{
-          enabled: true,
-          sticky: false,
-          momentum: true,
-          momentumRatio: 1,
-          momentumBounce: false,
-          minimumVelocity: 0.3,
-        }"
-        :scrollbar="{
-          draggable: false,
-          hide: true,
-          snapOnRelease: false,
-        }"
-        :mousewheel="{
-          enabled: true,
-          forceToAxis: false,
-          releaseOnEdges: false,
-          sensitivity: 0.22,
-        }"
-        :grab-cursor="true"
-        class="mobile-stripe-swiper"
-      >
-        <swiper-slide
-          v-for="(slide, index) in mobileStripeSlides"
-          :key="slide.type === 'image' ? slide.image.id : `add-image-${index}`"
-          class="mobile-stripe-slide"
-          @click="slide.type === 'image' ? openDialog(slide.imageIndex) : handleAddImageClick()"
-        >
-          <!-- Add-image slide -->
-          <div v-if="slide.type === 'add-image'" class="stripe-add-image-wrapper">
-            <q-iconify :is="IconAddPhoto" size="36px" color="grey-5" class="add-image-icon" />
-          </div>
-          <!-- Image slide -->
-          <div
-            v-else
-            class="stripe-image-wrapper"
-            :class="{ 'stripe-error': isStripeImageError(slide.image.id) }"
-            :style="getStripeThumbhashStyle(slide.image)"
-          >
-            <img
-              loading="lazy"
-              :src="getStripeImageUrl(slide.image)"
-              class="stripe-image"
-              :class="{ 'stripe-loaded': isStripeImageLoaded(slide.image.id) }"
-              :alt="`Image by ${slide.image.attribution?.short || 'unknown'}`"
-              @load="onStripeImageLoad(slide.image.id)"
-              @error="onStripeImageError(slide.image.id, $event)"
-              v-show="!isStripeImageError(slide.image.id)"
-            />
-            <div v-if="!isStripeImageLoaded(slide.image.id)" class="stripe-number">
-              {{ slide.imageIndex + 1 }}
-            </div>
-            <!-- Per-image attribution overlay -->
-            <div
-              v-if="getImageAuthor(slide.image) || getProviderIcon(slide.image)"
-              class="stripe-attribution"
-            >
-              <span v-if="getImageAuthor(slide.image)" class="stripe-author">{{
-                getImageAuthor(slide.image)
-              }}</span>
-              <img
-                v-if="getProviderIcon(slide.image)"
-                :src="getProviderIcon(slide.image)"
-                class="stripe-provider-icon"
-                alt="Provider icon"
-              />
-            </div>
-          </div>
-        </swiper-slide>
-      </swiper>
-    </div>
-
-    <!-- Desktop: main image swiper with thumbnails overlay -->
-    <div
-      class="wd-gallery-variant media-preview-container"
-      :class="!isMobile ? 'wd-gallery-variant--active' : 'wd-gallery-variant--inactive'"
-      :aria-hidden="isMobile"
-    >
-      <div
-        class="media-preview-wrapper"
-        style="border-radius: 16px; overflow: hidden"
-      >
-        <!-- Navigation buttons - desktop only, no touch. ALWAYS rendered
-             (visibility-hidden when off): the swiper resolves these
-             selectors at init/update, and v-if'ing them raced the config
-             flip on re-target — el undefined → classList crash (owner
-             report 2026-10). -->
-        <div class="swiper-button-prev" :class="{ 'nav-off': !showNavigation }"></div>
-        <div class="swiper-button-next" :class="{ 'nav-off': !showNavigation }"></div>
-
-        <!-- Attribution badge (top-right) - stationary -->
-        <div class="license-badge-custom stationary">
-          <span v-if="getCurrentImageAuthor()" v-html="sanitizeHtml(getCurrentImageAuthor())" />
-          <img
-            v-if="getCurrentImageProviderIcon()"
-            :src="getCurrentImageProviderIcon()"
-            class="provider-icon"
-            alt="Provider icon"
-          />
-        </div>
-
-        <swiper
-          :modules="[EffectFade, Keyboard, Navigation, Pagination, Thumbs]"
-          :slides-per-view="1"
-          :space-between="0"
-          :effect="'fade'"
-          :fade-effect="{ crossFade: true }"
-          :keyboard="{ enabled: true }"
-          :loop="true"
-          :speed="600"
-          :navigation="
-            showNavigation
-              ? {
-                  nextEl: '.swiper-button-next',
-                  prevEl: '.swiper-button-prev',
-                }
-              : false
-          "
-          :pagination="!showThumbnails && visibleImages.length > 1"
-          :initial-slide="0"
-          class="preview-swiper"
-          @mouseenter="startPreloadAfterSlide"
-          @swiper="onSwiper"
-          @slide-change="onSlideChange"
-        >
-          <swiper-slide
-            v-for="image in visibleImages"
-            :key="image.id"
-            class="preview-slide"
-            :style="getMainThumbhashStyle(image)"
-          >
-            <img
-              loading="lazy"
-              :src="getMainImageUrl(image)"
-              :alt="`Image by ${image.attribution?.short || 'unknown'}`"
-              class="preview-image"
-              @click="handleImageClick"
-              @error="onMainImageError(image.id, $event)"
-            />
-          </swiper-slide>
-        </swiper>
-
-        <!-- Thumbnail Swiper - overlaid on image (outside main swiper).
-             v-show: stays initialized across minimize/maximize toggles
-             (showThumbnails flips with the branch) — thumbs linking is
-             redone live via linkThumbs when it becomes visible again. -->
-        <div v-show="showThumbnails" class="thumbs-swiper-container" :style="thumbnailContainerStyle">
-          <swiper
-            :modules="[Thumbs]"
-            :watch-slides-progress="true"
-            :slides-per-view="'auto'"
-            :space-between="4"
-            :resistance-ratio="0"
-            class="thumbs-swiper-inline"
-            @swiper="onThumbsSwiper"
-            :style="{ '--thumbnail-size': `${thumbnailSize}px` }"
-          >
-            <swiper-slide
-              v-for="(item, index) in visibleImagesWithIndex"
-              :key="item.image.id"
-              class="thumb-slide-inline"
-            >
-              <div
-                class="thumb-content-wrapper"
-                :class="{ 'thumb-error': isThumbnailError(item.image.id) }"
-                :style="getThumbnailThumbhashStyle(item.image)"
-              >
-                <img
-                  loading="lazy"
-                  :src="getThumbnailUrl(item.image)"
-                  class="thumb-image-inline"
-                  :class="{ 'thumb-loaded': isThumbnailLoaded(item.image.id) }"
-                  :alt="`Thumbnail by ${item.image.attribution?.short || 'unknown'}`"
-                  @load="onThumbnailLoad(item.image.id)"
-                  @error="onThumbnailError(item.image.id, $event)"
-                  v-show="!isThumbnailError(item.image.id)"
-                />
-                <div v-if="!isThumbnailLoaded(item.image.id)" class="thumb-number">
-                  {{ index + 1 }}
-                </div>
-                <div v-if="getProviderIcon(item.image)" class="thumb-provider-icon-bg">
-                  <img
-                    :src="getProviderIcon(item.image)"
-                    class="thumb-provider-icon-small"
-                    alt="Provider icon"
-                  />
-                </div>
-              </div>
-            </swiper-slide>
-          </swiper>
-        </div>
-      </div>
-    </div>
-
-    <!-- Media Dialog is now invoked via Quasar Dialog plugin -->
-  </div>
-
-  <!-- No images state - use slot for customization -->
-  <slot name="no-image">
-    <div v-if="!loading && !hasImages" class="no-image-mobile-wrapper">
       <WdNoImage
         :message="emptyStateMessage"
         :icon="emptyStateIcon ?? IconAddPhoto"
         :on-contribute="handleAddImageClick"
         :reduced-height="reducedHeightNoImage"
+        :loading="true"
       />
     </div>
-  </slot>
+
+    <div v-else-if="hasImages" class="wd-gallery-variants">
+      <!-- Both variants stay MOUNTED and crossfade (owner 2026-10: "better
+         morph the gallery change") — the wrapper reserves the height,
+         the inactive variant is opacity-0 + visibility-hidden after a
+         delay so the swap reads as a morph, not a hard cut. -->
+      <div
+        class="wd-gallery-variant mobile-stripe-container"
+        :class="isMobile ? 'wd-gallery-variant--active' : 'wd-gallery-variant--inactive'"
+        :aria-hidden="!isMobile"
+      >
+        <swiper
+          :modules="[FreeMode, Scrollbar, Mousewheel]"
+          :slides-per-view="'auto'"
+          :space-between="4"
+          :free-mode="{
+            enabled: true,
+            sticky: false,
+            momentum: true,
+            momentumRatio: 1,
+            momentumBounce: false,
+            minimumVelocity: 0.3,
+          }"
+          :scrollbar="{
+            draggable: false,
+            hide: true,
+            snapOnRelease: false,
+          }"
+          :mousewheel="{
+            enabled: true,
+            forceToAxis: false,
+            releaseOnEdges: false,
+            sensitivity: 0.22,
+          }"
+          :grab-cursor="true"
+          class="mobile-stripe-swiper"
+        >
+          <swiper-slide
+            v-for="(slide, index) in mobileStripeSlides"
+            :key="slide.type === 'image' ? slide.image.id : `add-image-${index}`"
+            class="mobile-stripe-slide"
+            @click="slide.type === 'image' ? openDialog(slide.imageIndex) : handleAddImageClick()"
+          >
+            <!-- Add-image slide -->
+            <div v-if="slide.type === 'add-image'" class="stripe-add-image-wrapper">
+              <q-iconify :is="IconAddPhoto" size="36px" color="grey-5" class="add-image-icon" />
+            </div>
+            <!-- Image slide -->
+            <div
+              v-else
+              class="stripe-image-wrapper"
+              :class="{ 'stripe-error': isStripeImageError(slide.image.id) }"
+              :style="getStripeThumbhashStyle(slide.image)"
+            >
+              <img
+                loading="lazy"
+                :src="getStripeImageUrl(slide.image)"
+                class="stripe-image"
+                :class="{ 'stripe-loaded': isStripeImageLoaded(slide.image.id) }"
+                :alt="`Image by ${slide.image.attribution?.short || 'unknown'}`"
+                @load="onStripeImageLoad(slide.image.id)"
+                @error="onStripeImageError(slide.image.id, $event)"
+                v-show="!isStripeImageError(slide.image.id)"
+              />
+              <div v-if="!isStripeImageLoaded(slide.image.id)" class="stripe-number">
+                {{ slide.imageIndex + 1 }}
+              </div>
+              <!-- Per-image attribution overlay -->
+              <div
+                v-if="getImageAuthor(slide.image) || getProviderIcon(slide.image)"
+                class="stripe-attribution"
+              >
+                <span v-if="getImageAuthor(slide.image)" class="stripe-author">{{
+                  getImageAuthor(slide.image)
+                }}</span>
+                <img
+                  v-if="getProviderIcon(slide.image)"
+                  :src="getProviderIcon(slide.image)"
+                  class="stripe-provider-icon"
+                  alt="Provider icon"
+                />
+              </div>
+            </div>
+          </swiper-slide>
+        </swiper>
+      </div>
+
+      <!-- Desktop: main image swiper with thumbnails overlay -->
+      <div
+        class="wd-gallery-variant media-preview-container"
+        :class="!isMobile ? 'wd-gallery-variant--active' : 'wd-gallery-variant--inactive'"
+        :aria-hidden="isMobile"
+      >
+        <div class="media-preview-wrapper" style="border-radius: 16px; overflow: hidden">
+          <!-- Navigation buttons - desktop only, no touch. ALWAYS rendered
+             (visibility-hidden when off): the swiper resolves these
+             selectors at init/update, and v-if'ing them raced the config
+             flip on re-target — el undefined → classList crash (owner
+             report 2026-10). -->
+          <div class="swiper-button-prev" :class="{ 'nav-off': !showNavigation }"></div>
+          <div class="swiper-button-next" :class="{ 'nav-off': !showNavigation }"></div>
+
+          <!-- Attribution badge (top-right) - stationary -->
+          <div class="license-badge-custom stationary">
+            <span v-if="getCurrentImageAuthor()" v-html="sanitizeHtml(getCurrentImageAuthor())" />
+            <img
+              v-if="getCurrentImageProviderIcon()"
+              :src="getCurrentImageProviderIcon()"
+              class="provider-icon"
+              alt="Provider icon"
+            />
+          </div>
+
+          <swiper
+            :modules="[EffectFade, Keyboard, Navigation, Pagination, Thumbs]"
+            :slides-per-view="1"
+            :space-between="0"
+            :effect="'fade'"
+            :fade-effect="{ crossFade: true }"
+            :keyboard="{ enabled: true }"
+            :loop="true"
+            :speed="600"
+            :navigation="
+              showNavigation
+                ? {
+                    nextEl: '.swiper-button-next',
+                    prevEl: '.swiper-button-prev',
+                  }
+                : false
+            "
+            :pagination="!showThumbnails && visibleImages.length > 1"
+            :initial-slide="0"
+            class="preview-swiper"
+            @mouseenter="startPreloadAfterSlide"
+            @swiper="onSwiper"
+            @slide-change="onSlideChange"
+          >
+            <swiper-slide
+              v-for="image in visibleImages"
+              :key="image.id"
+              class="preview-slide"
+              :style="getMainThumbhashStyle(image)"
+            >
+              <img
+                loading="lazy"
+                :src="getMainImageUrl(image)"
+                :alt="`Image by ${image.attribution?.short || 'unknown'}`"
+                class="preview-image"
+                @click="handleImageClick"
+                @error="onMainImageError(image.id, $event)"
+              />
+            </swiper-slide>
+          </swiper>
+
+          <!-- Thumbnail Swiper - overlaid on image (outside main swiper).
+             v-show: stays initialized across minimize/maximize toggles
+             (showThumbnails flips with the branch) — thumbs linking is
+             redone live via linkThumbs when it becomes visible again. -->
+          <div
+            v-show="showThumbnails"
+            class="thumbs-swiper-container"
+            :style="thumbnailContainerStyle"
+          >
+            <swiper
+              :modules="[Thumbs]"
+              :watch-slides-progress="true"
+              :slides-per-view="'auto'"
+              :space-between="4"
+              :resistance-ratio="0"
+              class="thumbs-swiper-inline"
+              @swiper="onThumbsSwiper"
+              :style="{ '--thumbnail-size': `${thumbnailSize}px` }"
+            >
+              <swiper-slide
+                v-for="(item, index) in visibleImagesWithIndex"
+                :key="item.image.id"
+                class="thumb-slide-inline"
+              >
+                <div
+                  class="thumb-content-wrapper"
+                  :class="{ 'thumb-error': isThumbnailError(item.image.id) }"
+                  :style="getThumbnailThumbhashStyle(item.image)"
+                >
+                  <img
+                    loading="lazy"
+                    :src="getThumbnailUrl(item.image)"
+                    class="thumb-image-inline"
+                    :class="{ 'thumb-loaded': isThumbnailLoaded(item.image.id) }"
+                    :alt="`Thumbnail by ${item.image.attribution?.short || 'unknown'}`"
+                    @load="onThumbnailLoad(item.image.id)"
+                    @error="onThumbnailError(item.image.id, $event)"
+                    v-show="!isThumbnailError(item.image.id)"
+                  />
+                  <div v-if="!isThumbnailLoaded(item.image.id)" class="thumb-number">
+                    {{ index + 1 }}
+                  </div>
+                  <div v-if="getProviderIcon(item.image)" class="thumb-provider-icon-bg">
+                    <img
+                      :src="getProviderIcon(item.image)"
+                      class="thumb-provider-icon-small"
+                      alt="Provider icon"
+                    />
+                  </div>
+                </div>
+              </swiper-slide>
+            </swiper>
+          </div>
+        </div>
+      </div>
+
+      <!-- Media Dialog is now invoked via Quasar Dialog plugin -->
+    </div>
+
+    <!-- No images state - use slot for customization -->
+    <slot name="no-image">
+      <div v-if="!loading && !hasImages" class="no-image-mobile-wrapper">
+        <WdNoImage
+          :message="emptyStateMessage"
+          :icon="emptyStateIcon ?? IconAddPhoto"
+          :on-contribute="handleAddImageClick"
+          :reduced-height="reducedHeightNoImage"
+        />
+      </div>
+    </slot>
   </div>
 </template>
 
