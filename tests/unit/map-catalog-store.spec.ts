@@ -617,11 +617,6 @@ describe('map catalog store (boot cache + version sync)', () => {
     const store = stores.useMapCatalogStore();
     await store.initOverlays();
 
-    const allOverlays = (
-      overlayStores.useOverlayStore() as unknown as {
-        overlays: Array<{ name: string }>;
-      }
-    ).overlays.map(o => o.name);
     useHutsStore().selectedDate = '2026-10-20';
     await nextTick();
     expect(setTilesCalls).toHaveLength(1);
@@ -630,5 +625,55 @@ describe('map catalog store (boot cache + version sync)', () => {
     ]);
     // The vector path never touches the geojson bridge.
     expect(setDataCalls).toHaveLength(0);
+  });
+
+  it('normalizes picker and deep-link date formats to ISO in tile URLs', async () => {
+    // The huts store carries DD.MM.YY from the picker and DD.MM.YYYY
+    // from the ?date= deep link; the availability tile function only
+    // accepts ISO dates (anything else is an intentional empty tile).
+    const vectorStyle = structuredClone(HUTS_STYLE);
+    vectorStyle.sources['wd-bookings'] = {
+      type: 'vector',
+      tiles: ['https://tiles.example.com/availability/{z}/{x}/{y}?date={{date}}&days=4'],
+    };
+    for (const layer of vectorStyle.layers) {
+      (layer as Record<string, unknown>)['source-layer'] = 'availability';
+    }
+    catalogFetch.mockResolvedValue(catalogFor(VERSION_A, HUTS_LAYER));
+    styleFetch.mockImplementation(async (url: string) =>
+      url.includes('/v1/map/styles/huts.json')
+        ? Promise.resolve(vectorStyle)
+        : Promise.resolve(TRANSPORT_STYLE)
+    );
+    bookingsSourceStub = vectorBookingsStub;
+    const store = stores.useMapCatalogStore();
+    await store.initOverlays();
+
+    // Picker format (DD.MM.YY)
+    useHutsStore().selectedDate = '31.10.26';
+    await nextTick();
+    expect(setTilesCalls.at(-1)).toEqual([
+      'https://tiles.example.com/availability/{z}/{x}/{y}?date=2026-10-31&days=4',
+    ]);
+
+    // Deep-link format (DD.MM.YYYY)
+    useHutsStore().selectedDate = '01.11.2026';
+    await nextTick();
+    expect(setTilesCalls.at(-1)).toEqual([
+      'https://tiles.example.com/availability/{z}/{x}/{y}?date=2026-11-01&days=4',
+    ]);
+
+    // Garbage clears the runtime value — the token falls back to its
+    // boot default (today), never a broken/picker-format tile URL.
+    useHutsStore().selectedDate = 'sommer';
+    await nextTick();
+    const huts = (
+      overlayStores.useOverlayStore() as unknown as {
+        overlays: Array<{ style?: StyleSpecification }>;
+      }
+    ).overlays.find(o => o.name === 'huts');
+    expect(JSON.stringify(huts?.style?.sources['wd-bookings'])).toMatch(
+      /date=\d{4}-\d{2}-\d{2}&days=4/
+    );
   });
 });
