@@ -281,7 +281,13 @@ onMounted(() => {
       progress: true,
       position: 'bottom',
       actions: [
-        { icon: 'wd-close', color: 'white', dense: true, round: true, 'aria-label': i18n.global.t('close') },
+        {
+          icon: 'wd-close',
+          color: 'white',
+          dense: true,
+          round: true,
+          'aria-label': i18n.global.t('close'),
+        },
       ],
     });
   }
