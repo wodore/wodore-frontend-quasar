@@ -84,7 +84,12 @@ function outdoorStyle(): StyleSpecification {
         type: 'symbol',
         source: 'mtk',
         layout: {
-          'icon-image': ['case', ['==', ['get', 'category'], 'capital'], 'wd-maps:star', 'wd-maps:ring-dot'],
+          'icon-image': [
+            'case',
+            ['==', ['get', 'category'], 'capital'],
+            'wd-maps:star',
+            'wd-maps:ring-dot',
+          ],
           'text-font': ['literal', ['Barlow Regular']],
         },
       } as LayerSpecification,
@@ -125,20 +130,72 @@ beforeEach(() => {
 
 describe('isDeferredTerrainLayer', () => {
   it('classifies hillshade, color-relief, contour and raster relief layers', () => {
-    expect(isDeferredTerrainLayer({ id: 'x', type: 'hillshade', source: 'dem' } as LayerSpecification)).toBe(true);
-    expect(isDeferredTerrainLayer({ id: 'x', type: 'color-relief', source: 'dem' } as LayerSpecification)).toBe(true);
-    expect(isDeferredTerrainLayer({ id: 'relief_contour_x', type: 'line', source: 'c' } as LayerSpecification)).toBe(true);
-    expect(isDeferredTerrainLayer({ id: 'contour-labels', type: 'symbol', source: 'c' } as LayerSpecification)).toBe(true);
-    expect(isDeferredTerrainLayer({ id: 'swiss-relief', type: 'raster', source: 'r' } as LayerSpecification)).toBe(true);
+    expect(
+      isDeferredTerrainLayer({ id: 'x', type: 'hillshade', source: 'dem' } as LayerSpecification)
+    ).toBe(true);
+    expect(
+      isDeferredTerrainLayer({ id: 'x', type: 'color-relief', source: 'dem' } as LayerSpecification)
+    ).toBe(true);
+    expect(
+      isDeferredTerrainLayer({
+        id: 'relief_contour_x',
+        type: 'line',
+        source: 'c',
+      } as LayerSpecification)
+    ).toBe(true);
+    expect(
+      isDeferredTerrainLayer({
+        id: 'contour-labels',
+        type: 'symbol',
+        source: 'c',
+      } as LayerSpecification)
+    ).toBe(true);
+    expect(
+      isDeferredTerrainLayer({
+        id: 'swiss-relief',
+        type: 'raster',
+        source: 'r',
+      } as LayerSpecification)
+    ).toBe(true);
   });
 
   it('keeps the base map: fills, lines, labels, non-relief rasters', () => {
-    expect(isDeferredTerrainLayer({ id: 'water_area', type: 'fill', source: 'mtk' } as LayerSpecification)).toBe(false);
-    expect(isDeferredTerrainLayer({ id: 'road_major', type: 'line', source: 'mtk' } as LayerSpecification)).toBe(false);
-    expect(isDeferredTerrainLayer({ id: 'place_point_label_rank_1', type: 'symbol', source: 'mtk' } as LayerSpecification)).toBe(false);
+    expect(
+      isDeferredTerrainLayer({
+        id: 'water_area',
+        type: 'fill',
+        source: 'mtk',
+      } as LayerSpecification)
+    ).toBe(false);
+    expect(
+      isDeferredTerrainLayer({
+        id: 'road_major',
+        type: 'line',
+        source: 'mtk',
+      } as LayerSpecification)
+    ).toBe(false);
+    expect(
+      isDeferredTerrainLayer({
+        id: 'place_point_label_rank_1',
+        type: 'symbol',
+        source: 'mtk',
+      } as LayerSpecification)
+    ).toBe(false);
     // rocks raster is imagery, not relief; naturalearth is the z0-5 base paper
-    expect(isDeferredTerrainLayer({ id: 'nature_rocks', type: 'raster', source: 'rocks' } as LayerSpecification)).toBe(false);
-    expect(isDeferredTerrainLayer({ id: 'nature_naturalearth', type: 'raster', source: 'ne' } as LayerSpecification)).toBe(false);
+    expect(
+      isDeferredTerrainLayer({
+        id: 'nature_rocks',
+        type: 'raster',
+        source: 'rocks',
+      } as LayerSpecification)
+    ).toBe(false);
+    expect(
+      isDeferredTerrainLayer({
+        id: 'nature_naturalearth',
+        type: 'raster',
+        source: 'ne',
+      } as LayerSpecification)
+    ).toBe(false);
   });
 });
 
@@ -190,9 +247,7 @@ describe('stageStyleEnhancements', () => {
 
   it('computes re-insertion anchors from the original layer order', () => {
     const staged = stageStyleEnhancements(outdoorStyle())!;
-    const anchors = Object.fromEntries(
-      staged.deferred.layers.map(l => [l.layer.id, l.beforeId])
-    );
+    const anchors = Object.fromEntries(staged.deferred.layers.map(l => [l.layer.id, l.beforeId]));
     // hillshade sat before naturalearth; bathymetry, contours and
     // swiss-relief all sit before the place labels (their anchor)
     expect(anchors['relief_hillshade_lowzoom']).toBe('nature_naturalearth');
@@ -251,6 +306,21 @@ describe('stageStyleEnhancements', () => {
     expect(staged.initial.sources['rgb-tiles']).toBeUndefined();
   });
 
+  it('bails out of staging when a top-level terrain references a deferred raster-dem (review B1)', () => {
+    // A style-level terrain whose DEM source would be deferred must not
+    // produce an initial style referencing a deleted source — staging is
+    // skipped entirely and the caller applies the full style.
+    const style = outdoorStyle();
+    (style as { terrain?: unknown }).terrain = { source: 'rgb-tiles', exaggeration: 1.2 };
+    expect(stageStyleEnhancements(style)).toBeNull();
+
+    // Terrain over a RETAINED source (the vector basemap) does not block staging.
+    const retainedDem = outdoorStyle();
+    (retainedDem as { terrain?: unknown }).terrain = { source: 'mtk', exaggeration: 1.0 };
+    const staged = stageStyleEnhancements(retainedDem)!;
+    expect(staged.initial.sources['rgb-tiles']).toBeUndefined();
+  });
+
   it('binds a sprite to the first render only via sub-z13 icon layers', () => {
     // a sprite whose icon refs all sit at z13+ defers (nature trees);
     // one referenced below z13 (poi icons at z7, place labels at z1) stays
@@ -263,7 +333,9 @@ describe('stageStyleEnhancements', () => {
 
     // same sprite referenced at z12.9 → essential again
     const boundary = outdoorStyle();
-    const poi = boundary.layers.find(l => l.id === 'poi_generic_label_rank_2') as LayerSpecification;
+    const poi = boundary.layers.find(
+      l => l.id === 'poi_generic_label_rank_2'
+    ) as LayerSpecification;
     (poi as { minzoom?: number }).minzoom = 12.9;
     const stagedBoundary = stageStyleEnhancements(boundary)!;
     expect(stagedBoundary.deferred.sprites.map(s => s.id)).not.toContain('sdf');
@@ -272,7 +344,9 @@ describe('stageStyleEnhancements', () => {
 });
 
 describe('attachStagedEnhancements', () => {
-  function stubMap(opts: { existingLayers?: string[]; existingSources?: string[]; existingSprites?: string[] } = {}) {
+  function stubMap(
+    opts: { existingLayers?: string[]; existingSources?: string[]; existingSprites?: string[] } = {}
+  ) {
     const layers = new Set(opts.existingLayers ?? []);
     const sources = new Set(opts.existingSources ?? []);
     const sprites = new Set(opts.existingSprites ?? []);
@@ -309,9 +383,13 @@ describe('attachStagedEnhancements', () => {
     expect(ops).toContain('addLayer:relief_hillshade_lowzoom');
     expect(ops).toContain('addSprite:nature');
     // layer insertions use their captured anchors
-    const hillshade = map.calls.find(c => c.op === 'addLayer' && c.args[0] === 'relief_hillshade_lowzoom')!;
+    const hillshade = map.calls.find(
+      c => c.op === 'addLayer' && c.args[0] === 'relief_hillshade_lowzoom'
+    )!;
     expect(hillshade.args[1]).toBe('nature_naturalearth');
-    const contours = map.calls.find(c => c.op === 'addLayer' && c.args[0] === 'relief_contour_multicolored')!;
+    const contours = map.calls.find(
+      c => c.op === 'addLayer' && c.args[0] === 'relief_contour_multicolored'
+    )!;
     expect(contours.args[1]).toBe('place_point_label_rank_1');
     // swiss-relief sat before the place labels → anchored there
     const swiss = map.calls.find(c => c.op === 'addLayer' && c.args[0] === 'swiss-relief')!;

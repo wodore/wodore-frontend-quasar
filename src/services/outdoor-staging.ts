@@ -22,11 +22,7 @@
  * declares is classified the same way — no hardcoded style or host
  * lists. Styles without deferrable parts stage as null (no-op).
  */
-import type {
-  LayerSpecification,
-  SourceSpecification,
-  StyleSpecification,
-} from 'maplibre-gl';
+import type { LayerSpecification, SourceSpecification, StyleSpecification } from 'maplibre-gl';
 import { setupOutdoorContours } from './outdoorContours';
 
 /** URL prefix of the client-side contour protocol (maplibre-contour). */
@@ -62,10 +58,7 @@ export function isDeferredTerrainLayer(layer: LayerSpecification): boolean {
  *  missing simply skips its texture layer until the sprite arrives (the
  *  plain fills beneath stay), and addSprite re-evaluates icon layers
  *  once its images registered. */
-function isEssentialSprite(
-  entry: { id?: string },
-  iconRefLayers: { minzoom?: number }[]
-): boolean {
+function isEssentialSprite(entry: { id?: string }, iconRefLayers: { minzoom?: number }[]): boolean {
   // the 'default' sprite carries bare icon names — always essential
   if (!entry.id || entry.id === 'default') return true;
   return iconRefLayers.some(l => (l.minzoom ?? 0) < SPRITE_ICON_DEFER_MINZOOM);
@@ -132,6 +125,17 @@ export function stageStyleEnhancements(style: StyleSpecification): StagedStyle |
     return deferredLayers.some(l => 'source' in l && l.source === id);
   });
 
+  // 3D terrain safety (review B1): a top-level `style.terrain` pointing
+  // at a raster-dem source would survive into the initial style with its
+  // source deleted — MapLibre would error on the FIRST setStyle, on the
+  // boot critical path. No served staging style declares `terrain` today
+  // (wd-outdoor-base-* v8 verified), and country-fallback.ts propagates
+  // it if one ever does — so bail out of staging entirely in that case:
+  // the full style applies unsplit (no perf win, no breakage).
+  if (style.terrain && deferredSourceIds.includes(style.terrain.source)) {
+    return null;
+  }
+
   // Re-insertion anchors: walk back-to-front, tracking the next
   // retained layer id after each deferred layer.
   const layersWithAnchors: DeferredTerrainLayer[] = [];
@@ -152,9 +156,7 @@ export function stageStyleEnhancements(style: StyleSpecification): StagedStyle |
   const iconRefLayers = (prefix: string): { minzoom?: number }[] =>
     layers.filter(l =>
       (
-        JSON.stringify(
-          (l.layout as Record<string, unknown> | undefined)?.['icon-image']
-        ) ?? ''
+        JSON.stringify((l.layout as Record<string, unknown> | undefined)?.['icon-image']) ?? ''
       ).includes(`"${prefix}:`)
     );
   const keptSprites: typeof spriteArray = [];
@@ -187,9 +189,7 @@ export function stageStyleEnhancements(style: StyleSpecification): StagedStyle |
     ...style,
     sources: initialSources,
     layers: layers.filter(l => !isDeferredTerrainLayer(l)),
-    ...(spriteArray
-      ? { sprite: keptSprites.length > 0 ? keptSprites : undefined }
-      : {}),
+    ...(spriteArray ? { sprite: keptSprites.length > 0 ? keptSprites : undefined } : {}),
   };
 
   return {

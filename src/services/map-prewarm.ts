@@ -66,16 +66,24 @@ export function prewarmStyleAssets(style: StyleSpecification | null | undefined)
 /** Warm every catalog layer's STYLE DOCUMENT except the critical one:
  *  the selected-or-default basemap style stays alone on the boot
  *  critical path, everything else (basemaps and overlays alike — the
- *  switcher's per-style JSONs) warms the HTTP cache from an idle slot
- *  (call via whenIdle; the catalog compile later reads them as cache
- *  hits). */
+ *  switcher's per-style JSONs) warms the HTTP cache AFTER the map's
+ *  first render settles (the caller schedules this on map 'idle' —
+ *  firing it earlier starves the first render; the catalog compile
+ *  later reads these as cache hits). */
 export function prewarmCatalogStyles(layers: MapCatalogLayer[], exceptStyleUrl?: string): void {
-  const skip = exceptStyleUrl ? absolutizeStyleUrl(exceptStyleUrl) : undefined;
+  // Skip by BOTH the raw and the absolutized form: the persisted
+  // selection and the catalog's style_url can differ in resolution
+  // (root-relative vs absolute), and a miss meant the critical style
+  // was fetched twice — once by this warm, once by the renderer.
+  const skip = exceptStyleUrl
+    ? new Set([exceptStyleUrl, absolutizeStyleUrl(exceptStyleUrl)])
+    : undefined;
   const urls: string[] = [];
   for (const layer of layers) {
     if (!layer.style_url) continue;
     const url = absolutizeStyleUrl(layer.style_url);
-    if (url !== skip) urls.push(url);
+    if (skip?.has(layer.style_url) || skip?.has(url)) continue;
+    urls.push(url);
   }
   warm(urls);
 }

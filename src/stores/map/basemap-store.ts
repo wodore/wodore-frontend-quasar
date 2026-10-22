@@ -32,13 +32,15 @@ import {
   type MapCatalogLayer,
   type MapSpecTier,
 } from '@services/map-catalog';
-import { whenIdle } from '@services/idle';
 import { prewarmCatalogStyles, prewarmStyleAssets } from '@services/map-prewarm';
 import {
   LEGACY_BASEMAP_FALLBACKS,
   RENAMED_BASEMAP_SLUGS,
   mapCatalogBasemap,
 } from './utils/catalog-mapping';
+// NOTE: whenIdle is no longer imported here — the catalog style wave
+// fired at boot idle exactly when the map's first render runs and
+// starved it (see the catalog warm-up comment in runBasemapInit).
 
 /** Compute absolute glyph/sprite URLs for a style, relative to the
  * style's own URL. With setStyle(..., { transformStyle }) MapLibre loses
@@ -92,9 +94,7 @@ async function probeStyleUrl(styleUrl: string): Promise<Response | null> {
  *  carries deferrable enhancements. Returns null when the fetch fails
  *  (callers then apply the URL as-is) or when the style has nothing
  *  worth staging (satellite/topo/raster styles). */
-async function prepareStagedStyle(
-  style: StyleSpecification | string
-): Promise<StagedStyle | null> {
+async function prepareStagedStyle(style: StyleSpecification | string): Promise<StagedStyle | null> {
   const styleObject = typeof style === 'string' ? await loadStyleObject(style) : style;
   if (!styleObject) return null;
   return stageStyleEnhancements(styleObject);
@@ -938,14 +938,18 @@ export const useBasemapStore = defineStore('basemap', () => {
   }
 
   /** Resolve the auto-switch target for a failing basemap: its catalog
-   *  `fallback` field first, then the legacy defaults. */
+   *  `fallback` field first, then the legacy defaults — and when the
+   *  target slug left the catalog (layer deactivated server-side), the
+   *  catalog default as the terminal answer. Callers skip the switch
+   *  when the resolved target IS the failing basemap itself (dead-end
+   *  chain) — see the onMapError guards in WdMapView. */
   function resolveFallbackBasemap(failingSlug: string): BasemapSwitchItem | undefined {
     const active = getBasemap();
     const target =
       active?.fallback ??
       LEGACY_BASEMAP_FALLBACKS[failingSlug] ??
       LEGACY_BASEMAP_FALLBACKS.maptiler;
-    return findBasemapBySlug(target);
+    return findBasemapBySlug(target) ?? findDefaultBasemap();
   }
 
   // Helper to determine if we should use raster basemaps based on GPU capabilities
@@ -995,6 +999,28 @@ export const useBasemapStore = defineStore('basemap', () => {
         if (active.style !== activeStyleUrl) {
           activeStyleUrl = active.style;
           void setBasemap(active, true);
+        }
+      } else {
+        // The active basemap left the catalog (deactivated server-side
+        // — e.g. staging 2026-10: a stale persisted layers snapshot had
+        // booted onto wd-outdoor-base-mtk's style URL, which then 404'd
+        // with "No active map layer with slug"). Without this, the
+        // splice leaves NO active item while the map keeps the dead
+        // style for the whole session — the map only recovered after a
+        // reload rewrote the snapshot. Switch to the catalog default
+        // (first remaining basemap when even that slug is gone — the
+        // same terminal as the boot selection) so the next refresh
+        // heals the map.
+        // SAFETY: basemaps is the reactive BasemapSwitchItem[] spliced
+        // above; the widened cast breaks the TS2589 recursion — reading
+        // the order-sorted head only (same terminal as the boot selection).
+        const listHead = (basemaps as unknown as BasemapSwitchItem[])[0];
+        const revived = findDefaultBasemap() ?? listHead;
+        if (revived) {
+          console.warn(
+            `[basemap-store] Active basemap '${activeName}' no longer in the catalog - switching to '${revived.name}'`
+          );
+          void setBasemap(revived);
         }
       }
     }
@@ -1205,13 +1231,31 @@ export const useBasemapStore = defineStore('basemap', () => {
       void setBasemap(basemapToSet, false, !sessionFallback);
     }
 
-    // Idle warm-up (perf/fast-first-paint): every OTHER layer's style
-    // document — basemaps and overlays alike, straight from the catalog
-    // — warms the HTTP cache in the next idle slot; the selected style
-    // above stays alone on the critical path. Derived entirely from the
-    // catalog data, so any provider content warms the same way.
+    // Catalog warm-up (perf/fast-first-paint, RE-TIMED after staging
+    // profiling): every OTHER layer's style document — basemaps and
+    // overlays alike, straight from the catalog — warms the HTTP cache
+    // for the switcher. This originally fired at boot idle, which is
+    // exactly when the map's first render runs: the ~20 style fetches
+    // starved the default style + first setStyle and DELAYED the first
+    // map render by seconds. Warm only after the first render settles
+    // (map 'idle', fired once), with a timeout fallback so a never-idle
+    // session still warms eventually.
     const criticalStyle = typeof basemapToSet?.style === 'string' ? basemapToSet.style : undefined;
-    void whenIdle(() => prewarmCatalogStyles(bootLayers, criticalStyle));
+    let catalogWarmDone = false;
+    const warmCatalogStyles = (): void => {
+      if (catalogWarmDone) return;
+      catalogWarmDone = true;
+      prewarmCatalogStyles(bootLayers, criticalStyle);
+    };
+    void waitForMap().then(hasMap => {
+      // Hermetic tests (services/idle.ts NODE_ENV precedent): the warm
+      // fetches and the 20s fallback timer must not race the catalog
+      // refresh assertions in the store specs — prewarm behavior is
+      // covered by its own unit spec.
+      if (process.env.NODE_ENV === 'test') return;
+      if (hasMap) mapRef.map?.once('idle', warmCatalogStyles);
+      window.setTimeout(warmCatalogStyles, 20_000);
+    });
   }
 
   // Share one initialization run across concurrent callers. The catch keeps
