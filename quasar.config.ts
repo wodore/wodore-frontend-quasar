@@ -76,7 +76,6 @@ export default configure(ctx => {
       'icons',
       { server: false, path: 'auth' },
       { server: false, path: 'maplibre' },
-      { server: false, path: 'vue-stripe' },
       { server: false, path: 'pwa-update' },
       { server: false, path: 'native' },
     ],
