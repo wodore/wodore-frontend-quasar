@@ -40,6 +40,7 @@ import { storageGet } from '@services/storage';
 import { clientWodore } from '@clients/index';
 import { seedPlaceFromMap } from '@composables/usePlace';
 import { MAP_MIN_ZOOM, MIN_HUT_CLICK_ZOOM } from '@stores/map/utils/map-constants';
+import { isBasemapStyleGone } from '@stores/map/utils/basemap-fallback';
 import {
   INTERACTIVE_LAYERS,
   tapTargetsInteractiveLayer,
@@ -379,6 +380,36 @@ function onMapError(e: unknown) {
     }
   }
 
+  // Basemap style 404/410: the ACTIVE basemap's own style document was
+  // rejected definitively (e.g. the backend deactivated the layer while
+  // the persisted layers snapshot still carried it — staging 2026-10:
+  // "No active map layer with slug 'wd-outdoor-base-mtk'"). No style
+  // means no tiles are ever requested, so the tile fallbacks below
+  // cannot fire and the map would stay blank until a reload. Switch
+  // once down the fallback chain: the active basemap's catalog
+  // `fallback` field, then the legacy chain, ending at the catalog
+  // default. The name guard keeps a dead-end chain (target === the
+  // failing basemap itself) from looping.
+  const styleFailureSource = basemapStore.getBasemap();
+  if (
+    styleFailureSource &&
+    typeof styleFailureSource.style === 'string' &&
+    isBasemapStyleGone(errorObj, styleFailureSource.style)
+  ) {
+    const fallback = basemapStore.resolveFallbackBasemap(styleFailureSource.name);
+    if (fallback && fallback.name !== styleFailureSource.name) {
+      console.warn(
+        `[onMapError] Basemap style unavailable (HTTP ${String(errorObj?.status)}) - switching from '${styleFailureSource.name}' to '${fallback.name}'`
+      );
+      // Session-only (not persisted): the next session retries the
+      // user's selection — the background catalog refresh rewrites the
+      // persisted layers snapshot, so a removed layer resolves to the
+      // default at boot anyway.
+      void basemapStore.setBasemap(fallback, true, false);
+    }
+    return;
+  }
+
   // Basemap fallback: an auth failure from the tile/style host (e.g. a
   // suspended or exhausted MapTiler key) would otherwise leave a blank,
   // broken map. Silently switch once to the keyless OpenFreeMap Liberty
@@ -392,10 +423,11 @@ function onMapError(e: unknown) {
   // change" — the user must always be able to re-select and get the
   // graceful keyless fallback again.
   if (isTileAuthFailure(errorObj) && activeBasemapUsesMapTiler()) {
-    // Target: the active basemap's catalog `fallback` field, legacy
+    // Target: the active basemap's catalog `fallback` field first, legacy
     // default (keyless Liberty) when absent.
-    const fallback = basemapStore.resolveFallbackBasemap('maptiler');
-    if (fallback) {
+    const active = basemapStore.getBasemap();
+    const fallback = active ? basemapStore.resolveFallbackBasemap(active.name) : undefined;
+    if (fallback && fallback.name !== active?.name) {
       console.warn(
         '[onMapError] Tile host rejected requests - falling back to the keyless fallback basemap'
       );
@@ -409,13 +441,14 @@ function onMapError(e: unknown) {
   // Community-License tile service (best effort, fair-use limits). If
   // its tiles are rejected or throttled, silently switch to our own
   // keyless OpenFreeMap outdoor style — visually as close as possible.
-  // Same re-trigger guard idea as above: once on outdoor-osm, its own
-  // errors cannot re-arm this path.
+  // Same re-trigger guard idea as above: once on the ofm fallback, its
+  // own errors cannot re-arm this path.
   if (isMtkTileFailure(errorObj) && activeBasemapIsMtkOutdoor()) {
     // Target: the active basemap's catalog `fallback` field (the seeded
-    // mtk entry names wd-outdoor-base-ofm), legacy default otherwise.
-    const fallback = basemapStore.resolveFallbackBasemap('wd-outdoor-base-mtk');
-    if (fallback) {
+    // mtk entries name their ofm twins), legacy chain otherwise.
+    const active = basemapStore.getBasemap();
+    const fallback = active ? basemapStore.resolveFallbackBasemap(active.name) : undefined;
+    if (fallback && fallback.name !== active?.name) {
       console.warn(
         '[onMapError] Maptoolkit tiles unavailable - falling back to the keyless outdoor basemap'
       );
@@ -474,7 +507,10 @@ function isMtkTileFailure(errorObj: Record<string, unknown> | undefined): boolea
 }
 
 function activeBasemapIsMtkOutdoor(): boolean {
-  return basemapStore.getBasemap()?.name === 'wd-outdoor-base-mtk';
+  // Both Maptoolkit-based outdoor variants — the plain entry and the
+  // client-relief hill twin (the default since backend PR #292).
+  const name = basemapStore.getBasemap()?.name;
+  return name === 'wd-outdoor-base-mtk' || name === 'wd-outdoor-base-mtk-hill';
 }
 
 /**

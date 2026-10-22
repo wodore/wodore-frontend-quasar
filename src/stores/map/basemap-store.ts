@@ -869,14 +869,18 @@ export const useBasemapStore = defineStore('basemap', () => {
   }
 
   /** Resolve the auto-switch target for a failing basemap: its catalog
-   *  `fallback` field first, then the legacy defaults. */
+   *  `fallback` field first, then the legacy defaults — and when the
+   *  target slug left the catalog (layer deactivated server-side), the
+   *  catalog default as the terminal answer. Callers skip the switch
+   *  when the resolved target IS the failing basemap itself (dead-end
+   *  chain) — see the onMapError guards in WdMapView. */
   function resolveFallbackBasemap(failingSlug: string): BasemapSwitchItem | undefined {
     const active = getBasemap();
     const target =
       active?.fallback ??
       LEGACY_BASEMAP_FALLBACKS[failingSlug] ??
       LEGACY_BASEMAP_FALLBACKS.maptiler;
-    return findBasemapBySlug(target);
+    return findBasemapBySlug(target) ?? findDefaultBasemap();
   }
 
   // Helper to determine if we should use raster basemaps based on GPU capabilities
@@ -926,6 +930,28 @@ export const useBasemapStore = defineStore('basemap', () => {
         if (active.style !== activeStyleUrl) {
           activeStyleUrl = active.style;
           void setBasemap(active, true);
+        }
+      } else {
+        // The active basemap left the catalog (deactivated server-side
+        // — e.g. staging 2026-10: a stale persisted layers snapshot had
+        // booted onto wd-outdoor-base-mtk's style URL, which then 404'd
+        // with "No active map layer with slug"). Without this, the
+        // splice leaves NO active item while the map keeps the dead
+        // style for the whole session — the map only recovered after a
+        // reload rewrote the snapshot. Switch to the catalog default
+        // (first remaining basemap when even that slug is gone — the
+        // same terminal as the boot selection) so the next refresh
+        // heals the map.
+        // SAFETY: basemaps is the reactive BasemapSwitchItem[] spliced
+        // above; the widened cast breaks the TS2589 recursion — reading
+        // the order-sorted head only (same terminal as the boot selection).
+        const listHead = (basemaps as unknown as BasemapSwitchItem[])[0];
+        const revived = findDefaultBasemap() ?? listHead;
+        if (revived) {
+          console.warn(
+            `[basemap-store] Active basemap '${activeName}' no longer in the catalog - switching to '${revived.name}'`
+          );
+          void setBasemap(revived);
         }
       }
     }
