@@ -6,6 +6,18 @@
  * Stack), DSN-gated, release = commit hash in every environment, semver
  * as an `app_version` tag, PII off, tracing strictly opt-in.
  *
+ * Performance (perf/defer-sentry-init): this module is loaded at browser
+ * idle via dynamic import from the sentry boot file, NOT during app
+ * startup — the boot file buffers pre-init errors natively and flushes
+ * them here after init (see flushBufferedErrors). On init, the SDK's
+ * default global wrappers are trimmed: the timers/rAF/addEventListener-
+ * wrapping integration (browserApiErrors) is removed entirely, and fetch
+ * + XHR breadcrumbs are disabled (~200 early fetches would each run
+ * through sentry-closured instrumentation; dom/history breadcrumbs stay
+ * on, console breadcrumbs live in the untouched consoleIntegration).
+ * On 4x-throttled mobile these wrappers billed 7.2s of scripting on
+ * staging while tracing was OFF — the cost was the wrappers, not spans.
+ *
  * Activation is DSN-gated: no usable `WODORE_SENTRY_DSN` (unset, empty
  * or an unrewritten `@@…@@` placeholder) → `Sentry.init` is never called
  * and no telemetry leaves the browser. Dev/test/CI/preview set no DSN
@@ -40,6 +52,20 @@ const DEFAULT_TRACES_SAMPLE_RATE = 0;
 
 /** IP-bearing HTTP header keys (SDK v10→v11 migration guide recipe). */
 const HEADER_DENY_KEYS = ['forwarded', '-ip', 'remote-', 'via', '-user'];
+
+/**
+ * v11 runtime integration identifiers, verified against the installed
+ * @sentry/vue 11.8 (v11 integrations carry a `name`, no v7-style `id`):
+ * `browserApiErrorsIntegration()` returns `{ name: 'BrowserApiErrors' }`.
+ * Its setupOnce patches setTimeout/setInterval/requestAnimationFrame/
+ * EventTarget.addEventListener — after that, MapLibre's rAF render loop
+ * and every timer/listener callback execute inside sentry-closured
+ * functions. Removed from the defaults (see file header).
+ */
+const BROWSER_API_ERRORS_INTEGRATION_NAME = 'BrowserApiErrors';
+
+/** Same check for the default breadcrumbs instance it replaces. */
+const BREADCRUMBS_INTEGRATION_NAME = 'Breadcrumbs';
 
 /**
  * URL query params never worth collecting: the IP-bearing set above plus
@@ -81,9 +107,10 @@ function stampAppVersion<T extends Sentry.Event>(event: T): T {
 
 /**
  * Initialize Sentry-protocol error tracking when a DSN is configured.
- * Called from the `sentry` boot file (first in the boot list, so errors
- * raised by later boot files are captured — the frontend equivalent of
- * the backend loading its sentry settings component FIRST).
+ * Called from the `sentry` boot file at browser idle via dynamic import
+ * (perf/defer-sentry-init): pre-init errors — including those raised by
+ * later boot files — are buffered natively by the boot file and flushed
+ * through flushBufferedErrors right after this returns.
  */
 export function initErrorTracking(app: App, router: Router): void {
   const dsn = getEnv('WODORE_SENTRY_DSN');
@@ -136,11 +163,31 @@ export function initErrorTracking(app: App, router: Router): void {
     },
     beforeSend: stampAppVersion,
     beforeSendTransaction: stampAppVersion,
+    // Trim the default integrations (perf/defer-sentry-init, see file
+    // header): drop the timers/rAF/addEventListener wrappers entirely,
+    // replace the default breadcrumbs with an instance that leaves
+    // fetch/XHR un-instrumented (dom/history stay on; console rides on
+    // the untouched consoleIntegration default). The function form is
+    // the SDK's documented way to filter the defaults — @sentry/vue's
+    // init feeds them in, vueIntegration included (app wiring reads the
+    // `app` init option, so post-mount init stays fully functional).
+    integrations: defaults => {
+      const trimmed = defaults.filter(
+        integration =>
+          integration.name !== BROWSER_API_ERRORS_INTEGRATION_NAME &&
+          integration.name !== BREADCRUMBS_INTEGRATION_NAME
+      );
+      trimmed.push(Sentry.breadcrumbsIntegration({ fetch: false, xhr: false }));
+      // Tracing opt-in, appended only at a positive rate (below).
+      if (sampleRate > 0) {
+        trimmed.push(Sentry.browserTracingIntegration({ router }));
+      }
+      return trimmed;
+    },
   };
   // Tracing opt-in: only wired when a rate > 0 is configured —
-  // 0 means errors-only mode with no integration attached.
+  // 0 means errors-only mode with no tracing integration attached.
   if (sampleRate > 0) {
-    options.integrations = [Sentry.browserTracingIntegration({ router })];
     options.tracesSampleRate = sampleRate;
   }
 
@@ -149,3 +196,48 @@ export function initErrorTracking(app: App, router: Router): void {
 
 /** The vue SDK's own init options (includes the `app` instances) — not exported by name. */
 type VueInitOptions = NonNullable<Parameters<typeof Sentry.init>[0]>;
+
+/**
+ * One boot-buffered pre-init error — structural mirror of the boot
+ * file's `BufferedError` (kept compatible by the flush call site; the
+ * boot file deliberately has no static import of this module).
+ */
+export interface BufferedErrorEntry {
+  /** Human-readable error text (message / stringified reason). */
+  message: string;
+  /** Script origin — uncaught script errors only. */
+  filename?: string;
+  lineno?: number;
+  colno?: number;
+  /** Raw promise rejection reason — unhandled rejections only. */
+  reason?: unknown;
+  /** The original Error when available — preferred for captureException. */
+  error?: unknown;
+  timeStamp: number;
+}
+
+/**
+ * Flush errors the sentry boot file buffered natively before the SDK
+ * chunk was dynamically imported (perf/defer-sentry-init): Error
+ * instances keep their stack via captureException; everything else
+ * becomes a captureMessage carrying the buffered metadata as scope
+ * extras. Safe to call when init was DSN-gated away — the capture*
+ * calls no-op without an initialized client, nothing leaves the
+ * browser (dev/test/CI/preview).
+ */
+export function flushBufferedErrors(entries: readonly BufferedErrorEntry[]): void {
+  for (const entry of entries) {
+    if (entry.error instanceof Error) {
+      Sentry.captureException(entry.error);
+      continue;
+    }
+    const extra: Record<string, unknown> = { timeStamp: entry.timeStamp };
+    if (entry.filename !== undefined) {
+      extra.filename = entry.filename;
+      extra.lineno = entry.lineno;
+      extra.colno = entry.colno;
+    }
+    if (entry.reason !== undefined) extra.reason = entry.reason;
+    Sentry.captureMessage(entry.message, { extra });
+  }
+}
