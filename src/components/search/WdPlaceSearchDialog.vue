@@ -18,7 +18,7 @@ function onSearchClose() {
 
 <template>
   <div>
-    <q-btn flat round dense @click="showDialog = true">
+    <q-btn flat round dense :aria-label="$t('search')" @click="showDialog = true">
       <q-icon size="sm" class="text-icon" name="wd-search-outline" />
     </q-btn>
 

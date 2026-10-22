@@ -280,7 +280,15 @@ onMounted(() => {
       timeout: 10000,
       progress: true,
       position: 'bottom',
-      actions: [{ icon: 'wd-close', color: 'white', dense: true, round: true }],
+      actions: [
+        {
+          icon: 'wd-close',
+          color: 'white',
+          dense: true,
+          round: true,
+          'aria-label': i18n.global.t('close'),
+        },
+      ],
     });
   }
 });
