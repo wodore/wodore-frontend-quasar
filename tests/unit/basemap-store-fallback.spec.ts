@@ -12,6 +12,7 @@
 // the selection (without re-applying) when nothing changed.
 import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
+import { effectScope } from 'vue';
 import type { MapCatalogLayer } from '@services/map-catalog';
 
 const API_HOST = 'https://hub.stg.wodore.com';
@@ -82,6 +83,25 @@ vi.mock('@services/map-catalog', async importOriginal => {
   };
 });
 
+// ── Deterministic style fetch ─────────────────────────────────────
+// The staged boot path (prepareStagedStyle → loadStyleObject) fetches
+// the style document via global fetch — without a stub every test does
+// REAL network I/O to the staging host and the boot waitFor flakes with
+// network latency (locally AND on CI). The stubbed style has nothing
+// deferrable (no raster-dem/hillshade), so the splitter returns null
+// and boot applies the style URL as-is — exactly the behavior the
+// original assertions were written against.
+const styleDoc = {
+  version: 8,
+  name: 'test-style',
+  sources: { mtk: { type: 'vector', url: 'https://tiles.example.com/mtk.json' } },
+  layers: [{ id: 'background', type: 'background' }],
+};
+vi.stubGlobal(
+  'fetch',
+  vi.fn(async () => ({ ok: true, json: async () => styleDoc }))
+);
+
 // ── Catalog fixtures ────────────────────────────────────────────────────
 
 function layer(partial: Partial<MapCatalogLayer> & { slug: string }): MapCatalogLayer {
@@ -128,6 +148,13 @@ const style = (slug: string) => `${API_HOST}/v1/map/styles/${slug}.json?spec=hig
 describe('basemap store — catalog refresh recovery', () => {
   let stores: typeof import('@stores/map/basemap-store');
   let warnSpy: ReturnType<typeof vi.spyOn>;
+  // The store registers a document-level visibilitychange listener via
+  // useEventListener; without an active scope it is never disposed and
+  // EVERY test's store piles another listener onto the shared document —
+  // stale stores then race on the hoisted fixtures and the file flakes.
+  // Running each store inside an effectScope (stopped in afterEach)
+  // makes vueuse dispose the listener with the test.
+  let scope: ReturnType<typeof effectScope>;
 
   beforeAll(async () => {
     stores = await import('@stores/map/basemap-store');
@@ -142,14 +169,16 @@ describe('basemap store — catalog refresh recovery', () => {
     storageState.set('basemapName', 'wd-outdoor-base-mtk');
     catalogResponse.layers = [HILL(), MTK(), OFM()];
     process.env.WODORE_API_HOST = API_HOST;
-    stores.useBasemapStore();
+    scope = effectScope();
+    scope.run(() => stores.useBasemapStore());
     // Cold boot: the saved selection resolves from the catalog and is
     // applied exactly once.
-    await vi.waitFor(() => expect(setStyleCalls.length).toBe(1));
+    await vi.waitFor(() => expect(setStyleCalls.length).toBe(1), { timeout: 4000 });
     expect(setStyleCalls[0]!.style).toBe(style('wd-outdoor-base-mtk'));
   });
 
   afterEach(() => {
+    scope?.stop();
     warnSpy.mockRestore();
     delete process.env.WODORE_API_HOST;
   });
@@ -166,8 +195,11 @@ describe('basemap store — catalog refresh recovery', () => {
     // Backend deactivated the layer — the fresh catalog drops the slug.
     catalogResponse.layers = [HILL(), OFM()];
     document.dispatchEvent(new Event('visibilitychange'));
-    await vi.waitFor(() =>
-      expect(setStyleCalls.at(-1)?.style).toBe(style('wd-outdoor-base-mtk-hill'))
+    await vi.waitFor(
+      () => expect(setStyleCalls.at(-1)?.style).toBe(style('wd-outdoor-base-mtk-hill')),
+      // Loaded CI runners need more than the 1s default for the
+      // visibilitychange → refresh → fallback chain.
+      { timeout: 4000 }
     );
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining("no longer in the catalog - switching to 'wd-outdoor-base-mtk-hill'")
@@ -191,8 +223,9 @@ describe('basemap store — catalog refresh recovery', () => {
       OFM(),
     ];
     document.dispatchEvent(new Event('visibilitychange'));
-    await vi.waitFor(() =>
-      expect(setStyleCalls.at(-1)?.style).toBe(style('wd-outdoor-base-ofm-hill'))
+    await vi.waitFor(
+      () => expect(setStyleCalls.at(-1)?.style).toBe(style('wd-outdoor-base-ofm-hill')),
+      { timeout: 4000 }
     );
   });
 });
