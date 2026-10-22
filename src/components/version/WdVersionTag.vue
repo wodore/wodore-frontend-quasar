@@ -26,10 +26,18 @@ const tooltip = computed(() => {
   return props.type.charAt(0).toUpperCase() + props.type.slice(1);
 });
 const url = computed(() => {
+  // getEnv — NOT static process.env: these are volatile per-environment
+  // values (docker builds bake @@ placeholders for static reads; the
+  // build guard in quasar.config.ts fails the build on such hashed-chunk
+  // placeholders because their .gz/.br siblings would serve stale
+  // values forever — WdMapMenu shipped exactly that, breaking the
+  // Docker image build).
   if (props.type === 'frontend') {
-    return process.env.WODORE_FRONTEND_GITHUB ? process.env.WODORE_FRONTEND_GITHUB : undefined;
+    const link = getEnv('WODORE_FRONTEND_GITHUB');
+    return link ? link : undefined;
   } else if (props.type === 'backend') {
-    return process.env.WODORE_BACKEND_GITHUB ? process.env.WODORE_BACKEND_GITHUB : undefined;
+    const link = getEnv('WODORE_BACKEND_GITHUB');
+    return link ? link : undefined;
   }
   return undefined;
 });
