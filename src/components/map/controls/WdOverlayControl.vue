@@ -1305,6 +1305,45 @@ function findBeforeLayerId(
   return undefined;
 }
 
+// Sprite-load waiting (perf profile 2026-10-21): the old poll ran a
+// fixed 50ms setTimeout chain per sprite (up to 100 ticks per 5s window,
+// ~350 timer callbacks across the profiled session) plus a parallel 5s
+// deadline timer each. Every tick is trivial, but each enters/exits the
+// VM during boot — the busiest main-thread phase — and one tick absorbed
+// 683ms of batched V8 interrupt work (StackGuard → InvokeApiInterrupt-
+// Callbacks) as the profile's worst task before any hut was opened. This
+// MapLibre version exposes no sprite-loaded event, so the poll stays —
+// but as ONE shared waiter per probe image with exponential backoff
+// (50→500ms, ~13 ticks per 5s window instead of 100) and a single
+// inline deadline (no parallel timer). Same probe images, same ~5s cap,
+// same on-loaded layout re-evaluation.
+const spriteWaiters = new Map<string, Promise<void>>();
+
+function waitForSpriteImage(probeImage: string, spriteId: string): Promise<void> {
+  const cached = spriteWaiters.get(probeImage);
+  if (cached) return cached; // deduped across overlays sharing the sprite
+  const promise = new Promise<void>(resolve => {
+    const deadline = Date.now() + 5000; // ~5s cap, then fallbacks handle it
+    let delay = 50;
+    const check = () => {
+      if (mapRef.map?.hasImage(probeImage)) {
+        console.debug(`[overlay] sprite ${spriteId} loaded (${probeImage} available)`);
+        resolve();
+        return;
+      }
+      if (Date.now() >= deadline) {
+        resolve();
+        return;
+      }
+      delay = Math.min(delay * 2, 500);
+      setTimeout(check, delay);
+    };
+    check();
+  });
+  spriteWaiters.set(probeImage, promise);
+  return promise;
+}
+
 function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwitchItem>): boolean {
   if (addedOverlays.has(overlay.name)) return true;
   for (const label in overlay.style.sources) {
@@ -1329,24 +1368,11 @@ function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwit
       if (alreadyAdded) return;
       mapRef.map?.addSprite(id, url);
       // addSprite is async but has no completion callback in this MapLibre
-      // version — poll for a known image from this sprite to detect load
+      // version — wait for a known image from this sprite (shared, backed
+      // off; see waitForSpriteImage)
       const probeImage =
         id === 'wd-sdf' ? 'wd-sdf:mono/accommodation.unknown' : `${id}/color/accommodation.unknown`;
-      pendingSprites.push(
-        new Promise<void>(resolve => {
-          const check = () => {
-            if (mapRef.map?.hasImage(probeImage)) {
-              console.debug(`[overlay] sprite ${id} loaded (${probeImage} available)`);
-              resolve();
-            } else {
-              setTimeout(check, 50);
-            }
-          };
-          // Give the sprite ~5s max, then resolve anyway (fallbacks handle it)
-          setTimeout(resolve, 5000);
-          check();
-        })
-      );
+      pendingSprites.push(waitForSpriteImage(probeImage, id));
     };
     if (Array.isArray(spriteData)) {
       for (const sprite of spriteData) {
