@@ -53,18 +53,12 @@ importers:
       '@sentry/vue':
         specifier: ^11.8.0
         version: 11.8.0(pinia@4.0.3(@vue/devtools-api@8.2.1)(typescript@5.9.3)(vue@3.5.44(typescript@5.9.3)))(vue@3.5.44(typescript@5.9.3))
-      '@stripe/stripe-js':
-        specifier: ^10.0.0
-        version: 10.0.0
       '@types/mapbox__mapbox-gl-draw':
         specifier: ^1.4.7
         version: 1.4.9
       '@types/umami':
         specifier: ^2.10.0
         version: 2.10.1
-      '@vue-stripe/vue-stripe':
-        specifier: ^5.7.0
-        version: 5.7.0(@stripe/stripe-js@10.0.0)(vue@3.5.44(typescript@5.9.3))
       '@vueuse/core':
         specifier: ^15.0.0
         version: 15.0.0(vue@3.5.44(typescript@5.9.3))
@@ -273,6 +267,9 @@ importers:
       vite-plugin-checker:
         specifier: ^0.14.5
         version: 0.14.5(eslint@10.12.0(jiti@2.7.0))(optionator@0.9.4)(typescript@5.9.3)(vite@7.3.1(@types/node@26.6.4)(jiti@2.7.0)(sass-embedded@1.97.3)(sass@1.97.3)(terser@5.46.0)(yaml@2.9.1))(vue-tsc@3.2.3(typescript@5.9.3))
+      vite-plugin-compression2:
+        specifier: ^2.5.3
+        version: 2.5.3(rollup@2.79.2)
       vite-tsconfig-paths:
         specifier: ^6.0.5
         version: 6.0.5(typescript@5.9.3)(vite@7.3.1(@types/node@26.6.4)(jiti@2.7.0)(sass-embedded@1.97.3)(sass@1.97.3)(terser@5.46.0)(yaml@2.9.1))
@@ -2756,10 +2753,6 @@ packages:
       storybook: ^10.3.3
       vue: ^3.0.0
 
-  '@stripe/stripe-js@10.0.0':
-    resolution: {integrity: sha512-y5LKFTtnz1ciM+IQfrDfHcpjGlsm5Ao4onaUn4scurI/B6rNhrmV+ScTPDo+3Ges5oF8ol4tBkBAIZyVXVBIXw==}
-    engines: {node: '>=12.16'}
-
   '@surma/rollup-plugin-off-main-thread@2.2.3':
     resolution: {integrity: sha512-lR8q/9W7hZpMWweNiAKU7NQerBnzQQLvi8qnTDU/fxItPhtZVMbPV3lbCwjhIlNBe9Bbr5V+KHshvWmVSG9cxQ==}
 
@@ -3118,12 +3111,6 @@ packages:
     peerDependenciesMeta:
       vue:
         optional: true
-
-  '@vue-stripe/vue-stripe@5.7.0':
-    resolution: {integrity: sha512-2h5jT8vlI1075fNvM4upmRRix/yqUNY/PkHKn7BV+ZfrhfY2XQ7t6SMEhikArFspZ6JSmi8Wz1CGN9RVsBNX0Q==}
-    peerDependencies:
-      '@stripe/stripe-js': ^7.5.0 || ^8.5.3
-      vue: ^2.6.0 || ^3.0.0
 
   '@vue/compiler-core@3.5.43':
     resolution: {integrity: sha512-zdiLhnbe1QQqgDT8xZMpNmyqZ3qlI+/Q/FHQco57Kwl/b05HhCzN6eVGN9QU9rbga4CrS0H5SYY8VGHZCt/1Hg==}
@@ -7685,6 +7672,9 @@ packages:
   tar-fs@3.1.1:
     resolution: {integrity: sha512-LZA0oaPOc2fVo82Txf3gw+AkEd38szODlptMYejQUhndHMLQ9M059uXR+AfS7DNo0NpINvSqDsvyaCrBVkptWg==}
 
+  tar-mini@0.2.0:
+    resolution: {integrity: sha512-+qfUHz700DWnRutdUsxRRVZ38G1Qr27OetwaMYTdg8hcPxf46U0S1Zf76dQMWRBmusOt2ZCK5kbIaiLkoGO7WQ==}
+
   tar-stream@1.6.2:
     resolution: {integrity: sha512-rzS0heiNf8Xn7/mpdSVVSMAWAoy9bfb1WOTYC78Z0UQKeKa/CWS8FOq0lKGNa8DWKAn9gxjCvMLYc5PGXYlK2A==}
     engines: {node: '>= 0.8.0'}
@@ -8225,6 +8215,9 @@ packages:
       vue-tsc:
         optional: true
 
+  vite-plugin-compression2@2.5.3:
+    resolution: {integrity: sha512-ItPgqQWkcnBbVw7is9OKwiZ8v6+ju9rYROl5Lp6QfQDEx/d55AwJQb/KLpsQqsU9HoigYBsZ8tK6I02UwJNvEw==}
+
   vite-tsconfig-paths@6.0.5:
     resolution: {integrity: sha512-f/WvY6ekHykUF1rWJUAbCU7iS/5QYDIugwpqJA+ttwKbxSbzNlqlE8vZSrsnxNQciUW+z6lvhlXMaEyZn9MSig==}
     peerDependencies:
@@ -8331,17 +8324,6 @@ packages:
 
   vue-component-type-helpers@3.3.13:
     resolution: {integrity: sha512-02KCxSmKDhIITjKyJ4QT5csP6L0WoRborLqY/34a40+S9uvMvdNgMV0yVjO3p2Gkz3ZoPmFz/0JsGHacwJYTxw==}
-
-  vue-demi@0.14.10:
-    resolution: {integrity: sha512-nMZBOwuzabUO0nLgIcc6rycZEebF6eeUfaiQx9+WSk8e29IbLvPU9feI6tqW4kTo3hvoYAJkMh8n8D0fuISphg==}
-    engines: {node: '>=12'}
-    hasBin: true
-    peerDependencies:
-      '@vue/composition-api': ^1.0.0-rc.1
-      vue: ^3.0.0-0 || ^2.6.0
-    peerDependenciesMeta:
-      '@vue/composition-api':
-        optional: true
 
   vue-docgen-api@4.79.2:
     resolution: {integrity: sha512-n9ENAcs+40awPZMsas7STqjkZiVlIjxIKgiJr5rSohDP0/JCrD9VtlzNojafsA1MChm/hz2h3PDtUedx3lbgfA==}
@@ -11511,8 +11493,6 @@ snapshots:
       vue: 3.5.44(typescript@5.9.3)
       vue-component-type-helpers: 3.3.13
 
-  '@stripe/stripe-js@10.0.0': {}
-
   '@surma/rollup-plugin-off-main-thread@2.2.3':
     dependencies:
       ejs: 3.1.10
@@ -11982,14 +11962,6 @@ snapshots:
       unplugin-utils: 0.3.2
     optionalDependencies:
       vue: 3.5.44(typescript@5.9.3)
-
-  '@vue-stripe/vue-stripe@5.7.0(@stripe/stripe-js@10.0.0)(vue@3.5.44(typescript@5.9.3))':
-    dependencies:
-      '@stripe/stripe-js': 10.0.0
-      vue: 3.5.44(typescript@5.9.3)
-      vue-demi: 0.14.10(vue@3.5.44(typescript@5.9.3))
-    transitivePeerDependencies:
-      - '@vue/composition-api'
 
   '@vue/compiler-core@3.5.43':
     dependencies:
@@ -17205,6 +17177,8 @@ snapshots:
       - bare-buffer
       - react-native-b4a
 
+  tar-mini@0.2.0: {}
+
   tar-stream@1.6.2:
     dependencies:
       bl: 1.2.3
@@ -17728,6 +17702,13 @@ snapshots:
       typescript: 5.9.3
       vue-tsc: 3.2.3(typescript@5.9.3)
 
+  vite-plugin-compression2@2.5.3(rollup@2.79.2):
+    dependencies:
+      '@rollup/pluginutils': 5.3.0(rollup@2.79.2)
+      tar-mini: 0.2.0
+    transitivePeerDependencies:
+      - rollup
+
   vite-tsconfig-paths@6.0.5(typescript@5.9.3)(vite@7.3.1(@types/node@26.6.4)(jiti@2.7.0)(sass-embedded@1.97.3)(sass@1.97.3)(terser@5.46.0)(yaml@2.9.1)):
     dependencies:
       debug: 4.4.3(supports-color@10.2.2)
@@ -17801,10 +17782,6 @@ snapshots:
   vue-component-type-helpers@2.2.12: {}
 
   vue-component-type-helpers@3.3.13: {}
-
-  vue-demi@0.14.10(vue@3.5.44(typescript@5.9.3)):
-    dependencies:
-      vue: 3.5.44(typescript@5.9.3)
 
   vue-docgen-api@4.79.2(vue@3.5.44(typescript@5.9.3)):
     dependencies:
