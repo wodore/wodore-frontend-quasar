@@ -688,6 +688,13 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
       ]);
       persistLayers(layers, lang);
       pruneStyleCache(new Set(layers.map(l => l.slug)));
+      // The per-style documents are switcher data, not first-render
+      // data — they are already deferred off the first-paint critical
+      // path by MapPage's idle-gated map mount (WdMapView setup is what
+      // triggers this compile), and the basemap store's idle prewarm
+      // warms their URLs meanwhile so this mostly reads HTTP-cache hits
+      // (perf/fast-first-paint). No additional idle hop here: stacking a
+      // second deadline behind the mount gate only delays the styles.
       await compileCatalogOverlays(layers, slotSlugs, items =>
         overlayStore.applyCatalogOverlays(items)
       );

@@ -26,6 +26,8 @@ import {
   type MapCatalogLayer,
   type MapSpecTier,
 } from '@services/map-catalog';
+import { whenIdle } from '@services/idle';
+import { prewarmCatalogStyles, prewarmStyleAssets } from '@services/map-prewarm';
 import {
   LEGACY_BASEMAP_FALLBACKS,
   RENAMED_BASEMAP_SLUGS,
@@ -69,17 +71,6 @@ function absoluteStyleAssets(
   return out;
 }
 
-/** Static Maptoolkit endpoints (immutable, CDN-cached) — prefetched at
- * boot so the first map load doesn't pay ~8 serial round-trips. */
-const MTK_STATIC_URLS = [
-  'https://tiles.maptoolkit.org/mtk.json',
-  'https://tiles.maptoolkit.org/contours.json',
-  'https://tiles.maptoolkit.org/raster_bathymetry.json',
-  'https://tiles.maptoolkit.org/terrainrgb.json',
-  'https://tiles.maptoolkit.org/naturalearth.json',
-  'https://tiles.maptoolkit.org/rocks.json',
-];
-
 /** Probe a style URL's reachability (e.g. a MapTiler-hosted style with
  *  a possibly suspended key). Returns the response, or null on network
  *  errors — callers keep the configured basemap in that case. */
@@ -89,10 +80,6 @@ async function probeStyleUrl(styleUrl: string): Promise<Response | null> {
   } catch {
     return null;
   }
-}
-
-function prewarmOutdoorMtk(): void {
-  for (const u of MTK_STATIC_URLS) void fetch(u, { mode: 'cors' }).catch(() => undefined);
 }
 
 /** Fetched default-basemap style object, shared by every country-basemap
@@ -107,10 +94,16 @@ async function loadStyleObject(styleUrl: string): Promise<StyleSpecification | n
     const res = await fetch(styleUrl);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const styleObj = (await res.json()) as StyleSpecification;
-    return {
+    const resolved = {
       ...styleObj,
       ...absoluteStyleAssets(styleObj, styleUrl),
     } as StyleSpecification;
+    // Catalog-derived prewarm: warm the TileJSON/sprite endpoints this
+    // style references while the renderer walks its serial style→assets
+    // chain — the generic replacement for the retired hardcoded mtk
+    // prefetch list (perf/fast-first-paint).
+    prewarmStyleAssets(resolved);
+    return resolved;
   } catch (error) {
     console.warn(`[basemap] Style fetch failed (${styleUrl}):`, error);
     return null;
@@ -1035,14 +1028,11 @@ export const useBasemapStore = defineStore('basemap', () => {
             weakGpu ? 'ao_med hidden (weak GPU)' : 'ao_med active',
             weakGpu ? 'raster basemap (weak GPU)' : 'vector basemap',
             'local glyphs/sprites (SW-cacheable)',
-            'boot prefetch (style + TileJSONs)',
+            'idle style prewarm (catalog-derived)',
           ].join(', ')}`
       );
       if (gl) gl.getExtension('WEBGL_lose_context')?.loseContext();
     }
-
-    // Warm the HTTP cache for the default basemap's static assets
-    prewarmOutdoorMtk();
 
     console.debug(
       'GPU Tier detected:',
@@ -1058,6 +1048,10 @@ export const useBasemapStore = defineStore('basemap', () => {
     // cold first run awaits the network (explicit loading state
     // upstream) — there are NO bundled factory basemaps anymore.
     const cachedLayers = loadPersistedLayers();
+    // Layers known at boot — persisted snapshot first; the cold path
+    // replaces them with the fresh catalog (the idle prewarm below
+    // reads them).
+    let bootLayers: MapCatalogLayer[] = cachedLayers?.data ?? [];
     if (cachedLayers) {
       refreshFromLayers(cachedLayers.data);
       // Warm boot: refresh in the background — the server ETag makes it
@@ -1069,6 +1063,7 @@ export const useBasemapStore = defineStore('basemap', () => {
       // Cold first run: await the network so the map has a style at all.
       // (The map-catalog store persists the shared snapshot.)
       const layers = await refreshLayers();
+      bootLayers = layers;
       if (layers.length === 0) {
         console.error('[basemap-store] map layers unavailable — no basemaps');
         Notify.create({
@@ -1140,6 +1135,14 @@ export const useBasemapStore = defineStore('basemap', () => {
     if (basemapToSet) {
       void setBasemap(basemapToSet, false, !sessionFallback);
     }
+
+    // Idle warm-up (perf/fast-first-paint): every OTHER layer's style
+    // document — basemaps and overlays alike, straight from the catalog
+    // — warms the HTTP cache in the next idle slot; the selected style
+    // above stays alone on the critical path. Derived entirely from the
+    // catalog data, so any provider content warms the same way.
+    const criticalStyle = typeof basemapToSet?.style === 'string' ? basemapToSet.style : undefined;
+    void whenIdle(() => prewarmCatalogStyles(bootLayers, criticalStyle));
   }
 
   // Share one initialization run across concurrent callers. The catch keeps
