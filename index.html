@@ -242,8 +242,158 @@
       href="/apple-touch-icon.png?v=<%= faviconVersion %>"
     />
     <% } %>
+
+    <!-- Static boot shell (perf/fast-first-paint) — styles for the
+         #wd-boot-shell markup at the top of <body>. Inline CSS only,
+         system fonts, no network: first paint must come from this HTML
+         while the main bundle downloads. The SEO edge caches this
+         document, so nothing volatile may live here beyond the
+         build-time productName the <title>/meta already use. -->
+    <!-- Theme sniff (review: light-theme flicker) — runs parser-blocking
+         so the shell paints in the user's persisted theme instead of
+         flashing light first. Mirrors services/theme.ts resolveTheme:
+         ui.theme 'light' | 'dark' | 'auto' (default/unknown = auto → OS),
+         persisted via @capacitor/preferences on web as
+         localStorage['CapacitorStorage.wodore:userSettings'] (JSON,
+         storageSet stringifies — see services/storage.ts). Read-only,
+         try/catch-guarded: any miss simply stays light and the app's
+         theme boot applies the real theme moments later. -->
+    <script>
+      (function () {
+        try {
+          var raw = localStorage.getItem('CapacitorStorage.wodore:userSettings');
+          var theme = raw ? ((JSON.parse(raw) || {}).ui || {}).theme : undefined;
+          var mode = theme === 'light' || theme === 'dark' ? theme : 'auto';
+          var dark =
+            mode === 'dark' ||
+            (mode === 'auto' &&
+              window.matchMedia &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (dark) document.documentElement.setAttribute('data-wd-shell', 'dark');
+        } catch (e) {
+          /* corrupt/absent storage — light shell, app theme boot corrects */
+        }
+      })();
+    </script>
+    <style id="wd-boot-shell-style">
+      /* Grid mirrors .background-map (src/pages/MapPage.vue) pixel for
+         pixel so the shell → app placeholder handover is invisible;
+         the pill skeleton mirrors the fixed .wd-topbar pill
+         (src/css/map-controls/_topbar.scss: 10px + safe-area inset,
+         52px tall) so nothing shifts when the real topbar appears.
+         App.vue fades the shell out and removes it once mounted. */
+      #wd-boot-shell {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 3000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        padding-top: 42px;
+        pointer-events: none;
+        background-color: #dddddd;
+        background-image:
+          linear-gradient(#d0d0d0 1.6px, transparent 1.6px),
+          linear-gradient(90deg, #d0d0d0 1.6px, transparent 1.6px),
+          linear-gradient(#d0d0d0 0.8px, transparent 0.8px),
+          linear-gradient(90deg, #d0d0d0 0.8px, #dddddd 0.8px);
+        background-size:
+          40px 40px,
+          40px 40px,
+          8px 8px,
+          8px 8px;
+        background-position:
+          -1.6px -1.6px,
+          -1.6px -1.6px,
+          -0.8px -0.8px,
+          -0.8px -0.8px;
+        transition: opacity 0.25s ease;
+      }
+      #wd-boot-shell.wd-boot-shell--out {
+        opacity: 0;
+      }
+      .wd-boot-shell__pill {
+        position: absolute;
+        top: calc(10px + env(safe-area-inset-top, 0px));
+        left: 12px;
+        right: 12px;
+        margin: 0 auto;
+        width: min(340px, calc(100vw - 24px));
+        height: 52px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.6);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+      }
+      .wd-boot-shell__name {
+        font-family:
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+        font-size: 22px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        color: #1a4231;
+      }
+      .wd-boot-shell__spinner {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        border: 3px solid rgba(26, 66, 49, 0.25);
+        border-top-color: #1a4231;
+        animation: wd-boot-shell-spin 0.9s linear infinite;
+      }
+      @keyframes wd-boot-shell-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .wd-boot-shell__spinner {
+          animation: none;
+        }
+      }
+      /* Dark theme (set pre-paint by the sniff script above) — palette
+         from the design tokens' night surfaces (app.scss .body--dark:
+         page #0a140f, ridge #1c3629, ink #f2f7f4, surface #112119). */
+      html[data-wd-shell='dark'] #wd-boot-shell {
+        background-color: #0a140f;
+        background-image:
+          linear-gradient(#1c3629 1.6px, transparent 1.6px),
+          linear-gradient(90deg, #1c3629 1.6px, transparent 1.6px),
+          linear-gradient(#1c3629 0.8px, transparent 0.8px),
+          linear-gradient(90deg, #1c3629 0.8px, #0a140f 0.8px);
+      }
+      html[data-wd-shell='dark'] .wd-boot-shell__pill {
+        background: rgba(17, 33, 25, 0.7);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+      }
+      html[data-wd-shell='dark'] .wd-boot-shell__name {
+        color: #f2f7f4;
+      }
+      html[data-wd-shell='dark'] .wd-boot-shell__spinner {
+        border-color: rgba(242, 247, 244, 0.25);
+        border-top-color: #f2f7f4;
+      }
+    </style>
   </head>
   <body class="overflow-hidden">
+    <!-- Static boot shell: grid + topbar skeleton + spinner + app name,
+         painted straight from the HTML before any JS parses (see the
+         <style id="wd-boot-shell-style"> block in <head>). App.vue
+         removes it once the Vue app has mounted. The name uses the same
+         EJS expression as <title>. -->
+    <div id="wd-boot-shell" aria-hidden="true">
+      <div class="wd-boot-shell__pill"></div>
+      <div class="wd-boot-shell__name"><%= productName %></div>
+      <div class="wd-boot-shell__spinner"></div>
+    </div>
     <!-- quasar:entry-point -->
   </body>
 </html>
