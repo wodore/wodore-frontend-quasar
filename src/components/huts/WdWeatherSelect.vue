@@ -134,11 +134,15 @@ const scrollToForecast = () => {
 
 // Fetch weather codes for this component's own collection (independent of the global store)
 watchEffect(async () => {
-  const codes = await meteoStore.getWeatherCodes(quasarLang.value, {
-    collection: collection.value,
-  });
-  if (codes) {
-    localWeatherCodes.value = codes;
+  try {
+    const codes = await meteoStore.getWeatherCodes(quasarLang.value, {
+      collection: collection.value,
+    });
+    if (codes) {
+      localWeatherCodes.value = codes;
+    }
+  } catch {
+    // Codes are cache-backed; a failed fetch just keeps the previous icons
   }
 });
 
@@ -170,6 +174,11 @@ watchEffect(() => {
             is_day_majority: items[0].is_day_majority,
           }
         : null;
+    })
+    .catch(() => {
+      // e.g. Open-Meteo 429 "Daily API request limit exceeded" (FRONTEND-WEB-1):
+      // degrade to no weather icon instead of an unhandled rejection
+      summary.value = null;
     })
     .finally(() => {
       loading.value = false;
