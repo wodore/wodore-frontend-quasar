@@ -1,0 +1,290 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Wodore</title>
+    
+    <meta name="llms" content="Wodore serves structured Markdown alongside this app: /llms.txt lists every surface; each hut is available as Markdown at /hut/{slug}.md (Accept: text/markdown or the .md suffix).">
+    
+     
+    <script>
+      window.__WODORE_RUNTIME_ENV__ = {
+        WODORE_APP_NAME: 'Wodore',
+        WODORE_ENV: 'preview',
+        WODORE_DOMAIN: 'wodore.github.io',
+        WODORE_URL: 'https://wodore.github.io/wodore-frontend-quasar/pr-317/4b4bc1d/',
+        WODORE_OFFICIAL_URL: 'https://wodo.re',
+        WODORE_API_HOST: 'https://hub.stg.wodore.com',
+        WODORE_API_VERSION: 'v1',
+        WODORE_TILE_SERVER_URL: 'https://tiles.stg.wodore.com',
+        WODORE_IMAGOR_KEY: '4dBvaAemV3dwrjYcZ81GUeQ7nwErbZTQ',
+        WODORE_IMAGOR_URL: 'https://img.stg.wodore.com',
+        WODORE_IMAGOR_REPLACE_API_HOST_MEDIA:
+          'wd',
+        WODORE_CLOUDINARY_ENV: '',
+        WODORE_UMAMI_WEBSITE_ID: '',
+        WODORE_UMAMI_WEBSITE_URL: '',
+        WODORE_OICD_ISSUER_URL: '',
+        WODORE_OICD_CLIENT_ID: '',
+        WODORE_OICD_RESOURCE_ID: '',
+        WODORE_MAPTILER_API_KEY: 'yYYuZy3hwmMjY087FDvY',
+        // Error tracking (openspec: add-error-tracking) — empty = inert;
+        // same entries as public/env.js for the docker placeholder path.
+        WODORE_SENTRY_DSN: '',
+        WODORE_SENTRY_TRACES_SAMPLE_RATE: '0',
+      };
+    </script>
+    
+    <script>
+      // Preconnect to the cross-origin hosts the app will talk to: the
+      // map tile origins are CORS-fetched by MapLibre (~600 ms measured
+      // TTFB per origin) and the API host is otherwise only contacted
+      // after JS boot. Runs in BOTH env modes — the env above is either
+      // baked inline or loaded by the blocking /env.js script, so
+      // __WODORE_RUNTIME_ENV__ is already populated here. Missing,
+      // empty, @@placeholder@@ or non-URL env values are skipped;
+      // origins are deduplicated.
+      (() => {
+        const env = window.__WODORE_RUNTIME_ENV__ || {};
+        const urls = [
+          'https://icons.maptoolkit.org',
+          'https://tiles.maptoolkit.org',
+          'https://tiles.mapterhorn.com',
+          env.WODORE_API_HOST,
+          env.WODORE_TILE_SERVER_URL,
+        ];
+        const seen = new Set();
+        for (const url of urls) {
+          if (!url || url.startsWith('@@')) continue;
+          let origin;
+          try {
+            origin = new URL(url).origin;
+          } catch {
+            continue;
+          }
+          if (seen.has(origin)) continue;
+          seen.add(origin);
+          const link = document.createElement('link');
+          link.rel = 'preconnect';
+          link.href = origin;
+          link.setAttribute('crossorigin', '');
+          document.head.appendChild(link);
+        }
+      })();
+    </script>
+    <meta charset="utf-8">
+    <meta name="application-name" content="Wodore">
+    <meta name="theme-color" content="#1a4231">
+    
+    
+    <meta name="robots" content="noindex, nofollow">
+    
+
+    <meta name="format-detection" content="telephone=no">
+    <meta name="viewport" content="user-scalable=no,initial-scale=1,maximum-scale=1,minimum-scale=1,width=device-width">
+
+    <meta name="title" content="Wodore">
+    <meta name="description" content="Wohin gipfelt deine nächste Tour?">
+    
+    <meta property="og:site_name" content="Wodore">
+    <meta property="og:title" content="Wodore">
+    <meta property="og:description" content="Wohin gipfelt deine nächste Tour?">
+    <meta property="og:image" content="https://wodore.com/meta/meta.jpg">
+    <meta property="og:image:url" content="https://wodore.com/meta/meta.jpg">
+    <meta property="og:url" content="https://wodore.com">
+    <meta property="og:type" content="website">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="628">
+    
+    <meta itemprop="name" content="Wodore">
+    <meta itemprop="description" content="Wohin gipfelt deine nächste Tour?">
+    <meta itemprop="image" content="https://wodore.com/meta/meta.jpg">
+    
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://wodore.com">
+    <meta property="twitter:title" content="Wodore">
+    <meta property="twitter:description" content="Wohin gipfelt deine nächste Tour?">
+    <meta property="twitter:image" content="https://wodore.com/meta/meta.jpg">
+
+    <link rel="icon" type="image/png" sizes="32x32" href="/wodore-frontend-quasar/pr-317/4b4bc1d/favicon-32x32.png?v=3">
+    <link rel="icon" type="image/png" sizes="16x16" href="/wodore-frontend-quasar/pr-317/4b4bc1d/favicon-16x16.png?v=3">
+
+    
+    <link rel="apple-touch-startup-image" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" href="/wodore-frontend-quasar/pr-317/4b4bc1d/icons/apple-launch-1290x2796.png?v=3">
+    
+    <link rel="apple-touch-startup-image" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" href="/wodore-frontend-quasar/pr-317/4b4bc1d/icons/apple-launch-1179x2556.png?v=3">
+    
+    <link rel="apple-touch-startup-image" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)" href="/wodore-frontend-quasar/pr-317/4b4bc1d/icons/apple-launch-1284x2778.png?v=3">
+    
+    <link rel="apple-touch-startup-image" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" href="/wodore-frontend-quasar/pr-317/4b4bc1d/icons/apple-launch-1170x2532.png?v=3">
+    
+    <link rel="apple-touch-startup-image" media="(device-width: 360px) and (device-height: 780px) and (-webkit-device-pixel-ratio: 3)" href="/wodore-frontend-quasar/pr-317/4b4bc1d/icons/apple-launch-1080x2340.png?v=3">
+    
+    <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)" href="/wodore-frontend-quasar/pr-317/4b4bc1d/icons/apple-launch-828x1792.png?v=3">
+    
+    <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" href="/wodore-frontend-quasar/pr-317/4b4bc1d/icons/apple-launch-1125x2436.png?v=3">
+    
+    <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)" href="/wodore-frontend-quasar/pr-317/4b4bc1d/icons/apple-launch-1242x2688.png?v=3">
+    
+    <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" href="/wodore-frontend-quasar/pr-317/4b4bc1d/icons/apple-launch-750x1334.png?v=3">
+    
+    <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3)" href="/wodore-frontend-quasar/pr-317/4b4bc1d/icons/apple-launch-1242x2208.png?v=3">
+    
+    <link rel="apple-touch-startup-image" media="(device-width: 810px) and (device-height: 1080px) and (-webkit-device-pixel-ratio: 2)" href="/wodore-frontend-quasar/pr-317/4b4bc1d/icons/apple-launch-1620x2160.png?v=3">
+    
+    <link rel="apple-touch-startup-image" media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)" href="/wodore-frontend-quasar/pr-317/4b4bc1d/icons/apple-launch-1536x2048.png?v=3">
+    
+    <link rel="apple-touch-startup-image" media="(device-width: 834px) and (device-height: 1112px) and (-webkit-device-pixel-ratio: 2)" href="/wodore-frontend-quasar/pr-317/4b4bc1d/icons/apple-launch-1668x2224.png?v=3">
+    
+    <link rel="apple-touch-startup-image" media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)" href="/wodore-frontend-quasar/pr-317/4b4bc1d/icons/apple-launch-1668x2388.png?v=3">
+    
+    <link rel="apple-touch-startup-image" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)" href="/wodore-frontend-quasar/pr-317/4b4bc1d/icons/apple-launch-2048x2732.png?v=3">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="mask-icon" href="/wodore-frontend-quasar/pr-317/4b4bc1d/safari-pinned-tab.svg?v=3" color="#315e47">
+    
+    <meta name="msapplication-TileColor" content="#315e47">
+    <meta name="apple-mobile-web-app-title" content="Wodore">
+    <link rel="apple-touch-icon" sizes="180x180" href="/wodore-frontend-quasar/pr-317/4b4bc1d/apple-touch-icon.png?v=3">
+    
+
+    
+    
+    <script>
+      (function () {
+        try {
+          var raw = localStorage.getItem('CapacitorStorage.wodore:userSettings');
+          var theme = raw ? ((JSON.parse(raw) || {}).ui || {}).theme : undefined;
+          var mode = theme === 'light' || theme === 'dark' ? theme : 'auto';
+          var dark =
+            mode === 'dark' ||
+            (mode === 'auto' &&
+              window.matchMedia &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (dark) document.documentElement.setAttribute('data-wd-shell', 'dark');
+        } catch (e) {
+          /* corrupt/absent storage — light shell, app theme boot corrects */
+        }
+      })();
+    </script>
+    <style id="wd-boot-shell-style">
+      /* Grid mirrors .background-map (src/pages/MapPage.vue) pixel for
+         pixel so the shell → app placeholder handover is invisible;
+         the pill skeleton mirrors the fixed .wd-topbar pill
+         (src/css/map-controls/_topbar.scss: 10px + safe-area inset,
+         52px tall) so nothing shifts when the real topbar appears.
+         App.vue fades the shell out and removes it once mounted. */
+      #wd-boot-shell {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 3000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        padding-top: 42px;
+        pointer-events: none;
+        background-color: #dddddd;
+        background-image:
+          linear-gradient(#d0d0d0 1.6px, transparent 1.6px),
+          linear-gradient(90deg, #d0d0d0 1.6px, transparent 1.6px),
+          linear-gradient(#d0d0d0 0.8px, transparent 0.8px),
+          linear-gradient(90deg, #d0d0d0 0.8px, #dddddd 0.8px);
+        background-size:
+          40px 40px,
+          40px 40px,
+          8px 8px,
+          8px 8px;
+        background-position:
+          -1.6px -1.6px,
+          -1.6px -1.6px,
+          -0.8px -0.8px,
+          -0.8px -0.8px;
+        transition: opacity 0.25s ease;
+      }
+      #wd-boot-shell.wd-boot-shell--out {
+        opacity: 0;
+      }
+      .wd-boot-shell__pill {
+        position: absolute;
+        top: calc(10px + env(safe-area-inset-top, 0px));
+        left: 12px;
+        right: 12px;
+        margin: 0 auto;
+        width: min(340px, calc(100vw - 24px));
+        height: 52px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.6);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+      }
+      .wd-boot-shell__name {
+        font-family:
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+        font-size: 22px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        color: #1a4231;
+      }
+      .wd-boot-shell__spinner {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        border: 3px solid rgba(26, 66, 49, 0.25);
+        border-top-color: #1a4231;
+        animation: wd-boot-shell-spin 0.9s linear infinite;
+      }
+      @keyframes wd-boot-shell-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .wd-boot-shell__spinner {
+          animation: none;
+        }
+      }
+      /* Dark theme (set pre-paint by the sniff script above) — palette
+         from the design tokens' night surfaces (app.scss .body--dark:
+         page #0a140f, ridge #1c3629, ink #f2f7f4, surface #112119). */
+      html[data-wd-shell='dark'] #wd-boot-shell {
+        background-color: #0a140f;
+        background-image:
+          linear-gradient(#1c3629 1.6px, transparent 1.6px),
+          linear-gradient(90deg, #1c3629 1.6px, transparent 1.6px),
+          linear-gradient(#1c3629 0.8px, transparent 0.8px),
+          linear-gradient(90deg, #1c3629 0.8px, #0a140f 0.8px);
+      }
+      html[data-wd-shell='dark'] .wd-boot-shell__pill {
+        background: rgba(17, 33, 25, 0.7);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+      }
+      html[data-wd-shell='dark'] .wd-boot-shell__name {
+        color: #f2f7f4;
+      }
+      html[data-wd-shell='dark'] .wd-boot-shell__spinner {
+        border-color: rgba(242, 247, 244, 0.25);
+        border-top-color: #f2f7f4;
+      }
+    </style>
+    <script type="module" crossorigin src="/wodore-frontend-quasar/pr-317/4b4bc1d/assets/index-Cu3jhRs6.js"></script>
+    <link rel="stylesheet" crossorigin href="/wodore-frontend-quasar/pr-317/4b4bc1d/assets/index-Ayz6Anyt.css">
+  <link rel="manifest" href="/wodore-frontend-quasar/pr-317/4b4bc1d/manifest.json"></head>
+  <body class="overflow-hidden">
+    
+    <div id="wd-boot-shell" aria-hidden="true">
+      <div class="wd-boot-shell__pill"></div>
+      <div class="wd-boot-shell__name">Wodore</div>
+      <div class="wd-boot-shell__spinner"></div>
+    </div>
+    <div id="q-app"></div>
+  </body>
+</html>
