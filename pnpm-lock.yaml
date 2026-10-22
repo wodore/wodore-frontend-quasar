@@ -267,6 +267,9 @@ importers:
       vite-plugin-checker:
         specifier: ^0.14.5
         version: 0.14.5(eslint@10.12.0(jiti@2.7.0))(optionator@0.9.4)(typescript@5.9.3)(vite@7.3.1(@types/node@26.6.4)(jiti@2.7.0)(sass-embedded@1.97.3)(sass@1.97.3)(terser@5.46.0)(yaml@2.9.1))(vue-tsc@3.2.3(typescript@5.9.3))
+      vite-plugin-compression2:
+        specifier: ^2.5.3
+        version: 2.5.3(rollup@2.79.2)
       vite-tsconfig-paths:
         specifier: ^6.0.5
         version: 6.0.5(typescript@5.9.3)(vite@7.3.1(@types/node@26.6.4)(jiti@2.7.0)(sass-embedded@1.97.3)(sass@1.97.3)(terser@5.46.0)(yaml@2.9.1))
@@ -7669,6 +7672,9 @@ packages:
   tar-fs@3.1.1:
     resolution: {integrity: sha512-LZA0oaPOc2fVo82Txf3gw+AkEd38szODlptMYejQUhndHMLQ9M059uXR+AfS7DNo0NpINvSqDsvyaCrBVkptWg==}
 
+  tar-mini@0.2.0:
+    resolution: {integrity: sha512-+qfUHz700DWnRutdUsxRRVZ38G1Qr27OetwaMYTdg8hcPxf46U0S1Zf76dQMWRBmusOt2ZCK5kbIaiLkoGO7WQ==}
+
   tar-stream@1.6.2:
     resolution: {integrity: sha512-rzS0heiNf8Xn7/mpdSVVSMAWAoy9bfb1WOTYC78Z0UQKeKa/CWS8FOq0lKGNa8DWKAn9gxjCvMLYc5PGXYlK2A==}
     engines: {node: '>= 0.8.0'}
@@ -8208,6 +8214,9 @@ packages:
         optional: true
       vue-tsc:
         optional: true
+
+  vite-plugin-compression2@2.5.3:
+    resolution: {integrity: sha512-ItPgqQWkcnBbVw7is9OKwiZ8v6+ju9rYROl5Lp6QfQDEx/d55AwJQb/KLpsQqsU9HoigYBsZ8tK6I02UwJNvEw==}
 
   vite-tsconfig-paths@6.0.5:
     resolution: {integrity: sha512-f/WvY6ekHykUF1rWJUAbCU7iS/5QYDIugwpqJA+ttwKbxSbzNlqlE8vZSrsnxNQciUW+z6lvhlXMaEyZn9MSig==}
@@ -17168,6 +17177,8 @@ snapshots:
       - bare-buffer
       - react-native-b4a
 
+  tar-mini@0.2.0: {}
+
   tar-stream@1.6.2:
     dependencies:
       bl: 1.2.3
@@ -17690,6 +17701,13 @@ snapshots:
       optionator: 0.9.4
       typescript: 5.9.3
       vue-tsc: 3.2.3(typescript@5.9.3)
+
+  vite-plugin-compression2@2.5.3(rollup@2.79.2):
+    dependencies:
+      '@rollup/pluginutils': 5.3.0(rollup@2.79.2)
+      tar-mini: 0.2.0
+    transitivePeerDependencies:
+      - rollup
 
   vite-tsconfig-paths@6.0.5(typescript@5.9.3)(vite@7.3.1(@types/node@26.6.4)(jiti@2.7.0)(sass-embedded@1.97.3)(sass@1.97.3)(terser@5.46.0)(yaml@2.9.1)):
     dependencies:

@@ -48,6 +48,43 @@
     <% } else { %>
     <script src="/env.js"></script>
     <% } %>
+    <script>
+      // Preconnect to the cross-origin hosts the app will talk to: the
+      // map tile origins are CORS-fetched by MapLibre (~600 ms measured
+      // TTFB per origin) and the API host is otherwise only contacted
+      // after JS boot. Runs in BOTH env modes — the env above is either
+      // baked inline or loaded by the blocking /env.js script, so
+      // __WODORE_RUNTIME_ENV__ is already populated here. Missing,
+      // empty, @@placeholder@@ or non-URL env values are skipped;
+      // origins are deduplicated.
+      (() => {
+        const env = window.__WODORE_RUNTIME_ENV__ || {};
+        const urls = [
+          'https://icons.maptoolkit.org',
+          'https://tiles.maptoolkit.org',
+          'https://tiles.mapterhorn.com',
+          env.WODORE_API_HOST,
+          env.WODORE_TILE_SERVER_URL,
+        ];
+        const seen = new Set();
+        for (const url of urls) {
+          if (!url || url.startsWith('@@')) continue;
+          let origin;
+          try {
+            origin = new URL(url).origin;
+          } catch {
+            continue;
+          }
+          if (seen.has(origin)) continue;
+          seen.add(origin);
+          const link = document.createElement('link');
+          link.rel = 'preconnect';
+          link.href = origin;
+          link.setAttribute('crossorigin', '');
+          document.head.appendChild(link);
+        }
+      })();
+    </script>
     <meta charset="utf-8" />
     <meta name="application-name" content="<%= productName %>" />
     <meta name="theme-color" content="#1a4231" />

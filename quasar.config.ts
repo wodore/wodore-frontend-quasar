@@ -4,12 +4,14 @@
 import { configure } from 'quasar/wrappers';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { readdirSync, readFileSync } from 'node:fs';
 // import git from 'git-rev-sync';
 
 import { date } from 'quasar';
 const { formatDate } = date;
 
 import IconsResolver from 'unplugin-icons/resolver';
+import { compression } from 'vite-plugin-compression2';
 
 import { execSync } from 'child_process';
 let gitHash = process.env.GIT_HASH || '';
@@ -223,6 +225,84 @@ export default configure(ctx => {
           viteConf.server ??= {};
           viteConf.server.allowedHosts = devHosts;
         }
+
+        // Build-time precompression: emit .gz (gzip level 9) and .br
+        // siblings next to the hashed js/css (and svg) assets so nginx
+        // serves them via `gzip_static on` (docker/nginx-default.conf)
+        // instead of compressing on every request. The originals stay in
+        // place — index.html and the SW precache reference them — and the
+        // precache skips the siblings via globIgnores (see
+        // pwa.extendInjectManifestOptions). Web (pwa/spa) builds only:
+        // the Capacitor/APK bundle would carry dead weight and SSR output
+        // is not served by nginx.
+        //
+        // SAFETY INVARIANT — only deployment-invariant bytes may be
+        // precompressed: replace_vars rewrites @@VAR@@ placeholders in
+        // *.js/*.css/*.html/*.json at container start (docker/entrypoint.sh)
+        // but never touches .gz/.br siblings, while nginx gzip_static
+        // PREFERS the sibling. env.js (hardcoded @@ placeholders),
+        // index.html (mutated by the staging noindex sed) and
+        // manifest.json (@@WODORE_APP_NAME@@) are therefore excluded —
+        // html/json by the include filter, env.js explicitly. Hashed
+        // chunks/sw.js only bake build-time constants
+        // (WODORE_APP_VERSION/WODORE_GIT_HASH); NEVER add static
+        // `process.env.WODORE_*` references to volatile runtime vars in
+        // src/ (use services/runtimeEnv.ts getEnv instead) — they would
+        // bake @@ placeholders into hashed chunks whose precompressed
+        // siblings would then serve stale values forever.
+        if (ctx.modeName === 'pwa' || ctx.modeName === 'spa') {
+          viteConf.plugins ??= [];
+          viteConf.plugins.push(
+            compression({
+              include: [/\.(js|mjs|css|svg)$/],
+              exclude: [/env\.js$/],
+              algorithms: [['gzip', { level: 9 }], 'br'],
+              deleteOriginalAssets: false,
+            })
+          );
+
+          // Enforce the SAFETY INVARIANT above at build time: a hashed
+          // js/css asset carrying an @@VAR@@ placeholder would get a
+          // precompressed sibling that replace_vars never rewrites —
+          // nginx gzip_static would then serve stale values forever.
+          // Fail the build loudly instead of shipping the footgun.
+          // env.js/index.html/manifest.json are not in assets/ and are
+          // not scanned (they legitimately carry placeholders).
+          let guardOutDir = 'dist';
+          viteConf.plugins.push({
+            name: 'wodore:assert-no-unrewritten-placeholders',
+            apply: 'build',
+            configResolved(config) {
+              guardOutDir = config.build.outDir;
+            },
+            closeBundle() {
+              const assetsDir = path.join(guardOutDir, 'assets');
+              let files: string[];
+              try {
+                files = readdirSync(assetsDir);
+              } catch {
+                return; // no assets dir — nothing to assert
+              }
+              const offenders = files
+                .filter(f => /\.(js|mjs|css)$/.test(f))
+                // Mirror replace_vars' exact placeholder shape (@@KEY@@);
+                // bare '@@' literals are legitimate code (placeholder
+                // checks, @@iterator/@@toPrimitive polyfills).
+                .filter(f =>
+                  /@@[A-Za-z0-9_]+@@/.test(readFileSync(path.join(assetsDir, f), 'utf8'))
+                );
+              if (offenders.length > 0) {
+                throw new Error(
+                  'Build invariant violated: hashed assets contain unrewritten @@VAR@@ ' +
+                    `placeholders (their stale .gz/.br siblings would be served forever by ` +
+                    `nginx gzip_static): ${offenders.join(', ')}. Use ` +
+                    'services/runtimeEnv.ts getEnv for volatile values instead of static ' +
+                    'process.env reads in src/.'
+                );
+              }
+            },
+          });
+        }
       },
       // viteVuePluginOptions: {},
 
@@ -363,11 +443,15 @@ export default configure(ctx => {
         // clients — it must always come from the network (no-store).
         // Source maps too: they exist for Sentry symbolication and
         // devtools, not for app runtime — precaching them would make
-        // every PWA install download the full map payload.
+        // every PWA install download the full map payload. Same for the
+        // precompressed .gz/.br siblings (see extendViteConf →
+        // vite-plugin-compression2): the precache must reference the
+        // original files — caching both doubles the download and defeats
+        // nginx gzip_static.
         if (!options.globIgnores) {
           options.globIgnores = [];
         }
-        options.globIgnores.push('index.html', 'env.js', '**/*.map');
+        options.globIgnores.push('index.html', 'env.js', '**/*.map', '**/*.gz', '**/*.br');
       },
       // swFilename: 'sw.js',
       // manifestFilename: 'manifest.json'
