@@ -80,14 +80,19 @@ RUN --mount=type=cache,target=/app/.quasar --mount=type=cache,target=/app/node_m
 # image builds nginx from source and apk refuses the version-pinned module
 # (verified ABI conflict: "breaks: nginx-mod-http-js-...[nginx=...]").
 # njs powers the SEO edge injection (docker/seo.js).
+# nginx-mod-http-brotli adds brotli_static for the precompressed .br
+# assets (same auto-loaded /etc/nginx/modules/*.conf mechanism as njs).
 FROM alpine:3.24 AS serve
 
-# Upgrade base system for security patches, then install nginx + njs.
+# Upgrade base system for security patches, then install nginx + njs +
+# brotli. nginx-mod-http-brotli ships both ngx_http_brotli_{filter,static}
+# modules plus /etc/nginx/modules/10_http_brotli.conf, which Alpine's
+# nginx.conf loads automatically — no load_module wiring needed.
 # /var/cache/nginx/seo is the SEO meta cache (~1 KB per hut, capped at
 # 64 MB by nginx): back it with a volume, or with memory via
 # --tmpfs /var/cache/nginx/seo:rw,noexec,nosuid,size=64m (the entrypoint
 # fixes tmpfs ownership either way).
-RUN apk --no-cache add nginx nginx-mod-http-js \
+RUN apk --no-cache add nginx nginx-mod-http-js nginx-mod-http-brotli \
   && apk --no-cache upgrade \
   && rm -rf /var/cache/apk/* \
   && rm -f /etc/nginx/http.d/default.conf \
