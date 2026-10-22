@@ -2,6 +2,7 @@
     font-family: "icons";
     src: url("./icons.woff?0ba47cb2d826e9e9629dd00b0061656b") format("woff"),
 url("./icons.woff2?0ba47cb2d826e9e9629dd00b0061656b") format("woff2");
+    font-display: swap;
 }
 
 i[class^="wd-"]:before, i[class*=" wd-"]:before {

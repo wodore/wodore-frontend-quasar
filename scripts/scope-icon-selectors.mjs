@@ -9,7 +9,12 @@
  *    so `i.` scoping keeps every icon working while making glyph leaks
  *    onto divs/spans structurally impossible.
  *
- * 2. Warns when a non-icon element in src/ uses a class whose name equals
+ * 2. Ensures every @font-face block in the generated icons.css carries
+ *    `font-display: swap` — fantasticon emits no font-display descriptor,
+ *    so without it icons render as invisible text until the font loads
+ *    (~615 ms measured on stg).
+ *
+ * 3. Warns when a non-icon element in src/ uses a class whose name equals
  *    an icon name (e.g. class="wd-menu" on a card) - these trip the
  *    `.wd-menu:not(i)` guards in app.scss and should be renamed.
  */
@@ -24,9 +29,18 @@ let scoped = 0;
 // Only lines whose selector STARTS with `.wd-` (fresh fantasticon output).
 // Lines already scoped (`i.wd-`) and the `i[class^="wd-"]` base rule are
 // skipped by the negative lookahead - makes the script idempotent.
-const out = css.replace(/^(?!\s*i[.[])(\s*)\.wd-([a-z0-9-]+):before/gm, (_m, indent, name) => {
+let out = css.replace(/^(?!\s*i[.[])(\s*)\.wd-([a-z0-9-]+):before/gm, (_m, indent, name) => {
   scoped++;
   return `${indent}i.wd-${name}:before`;
+});
+
+// Ensure `font-display: swap` in every @font-face block (idempotent:
+// blocks already carrying a font-display descriptor are untouched).
+let fontDisplay = 0;
+out = out.replace(/@font-face\s*\{([^}]*)\}/g, (block, body) => {
+  if (/font-display\s*:/.test(body)) return block;
+  fontDisplay++;
+  return block.replace(/\s*\}$/, '\n    font-display: swap;\n}');
 });
 writeFileSync(cssPath, out);
 
@@ -61,6 +75,7 @@ function scan(dir) {
 scan(srcDir);
 
 console.log(`[scope-icon-selectors] scoped ${scoped} glyph rules to i.<class> selectors`);
+console.log(`[scope-icon-selectors] font-display: swap ensured in ${fontDisplay} @font-face block(s)`);
 
 if (collisions.length) {
   console.warn(
