@@ -18,6 +18,12 @@ import { StyleSpecification } from 'maplibre-gl';
 import { i18n, currentLocale } from '@services/locale';
 import { isOutdoorStyle, setupOutdoorContours } from '@services/outdoorContours';
 import {
+  attachStagedEnhancements,
+  stageStyleEnhancements,
+  type StagedEnhancements,
+  type StagedStyle,
+} from '@services/outdoor-staging';
+import {
   absolutizeStyleUrl,
   clearMapCatalogCache,
   fetchMapCatalog,
@@ -80,6 +86,18 @@ async function probeStyleUrl(styleUrl: string): Promise<Response | null> {
   } catch {
     return null;
   }
+}
+
+/** Fetch a style URL into a staged (base-only) style object when it
+ *  carries deferrable enhancements. Returns null when the fetch fails
+ *  (callers then apply the URL as-is) or when the style has nothing
+ *  worth staging (satellite/topo/raster styles). */
+async function prepareStagedStyle(
+  style: StyleSpecification | string
+): Promise<StagedStyle | null> {
+  const styleObject = typeof style === 'string' ? await loadStyleObject(style) : style;
+  if (!styleObject) return null;
+  return stageStyleEnhancements(styleObject);
 }
 
 /** Fetched default-basemap style object, shared by every country-basemap
@@ -312,6 +330,40 @@ export const useBasemapStore = defineStore('basemap', () => {
   // still return the PREVIOUS basemap there (see setBasemap).
   let composingLayers: BasemapSwitchItem['layers'] | undefined;
 
+  // One staging attempt per session (perf/staged-map-load): only the
+  // FIRST basemap apply loads base-first; every later apply is complete.
+  let stagingAttempted = false;
+
+  /** Attach deferred style enhancements (terrain stack, pattern
+   *  sprites) once the staged base style has rendered — the map goes
+   *  idle after its first complete render, and THAT is when the DEM /
+   *  contour / texture requests may start loading off the critical
+   *  path. A safety timer also fires for never-idle maps (slow or
+   *  erroring tiles). Idempotent at every level. */
+  function scheduleStagedAttach(deferred: StagedEnhancements, basemapName: string): void {
+    const map = mapRef.map;
+    if (!map) return;
+    map.once('style.load', () => {
+      const attach = () => {
+        // Basemap switched while the base rendered — the new basemap
+        // owns the style now; the staged parts are stale.
+        if (getBasemap()?.name !== basemapName) return;
+        // The map may have been unmounted (route left) while the timer
+        // waited — calls on a removed Map throw.
+        try {
+          attachStagedEnhancements(map, deferred);
+        } catch {
+          /* map gone — nothing to attach */
+        }
+      };
+      map.once('idle', attach);
+      setTimeout(() => {
+        map.off('idle', attach);
+        attach();
+      }, 10_000);
+    });
+  }
+
   async function setBasemap(s: BasemapSwitchItem, force = false, persist = true): Promise<boolean> {
     const basemapStyle = getBasemap();
     if (basemapStyle !== undefined && s.name == basemapStyle.name && !force) {
@@ -391,6 +443,23 @@ export const useBasemapStore = defineStore('basemap', () => {
       fallbackLayerIds = [];
       countryBbox = undefined;
       countryMinZoom = COUNTRY_BASEMAP_MIN_ZOOM;
+    }
+    // ── Staged enhancement load (perf/staged-map-load) ──────────────
+    // The FIRST style application of the session strips the terrain
+    // stack (raster-DEM sources, hillshade/contour/relief layers) and
+    // pattern-only sprite sets (e.g. the 2.3 MB maptoolkit nature
+    // sprite) from the initial style: the base map renders first, the
+    // deferred parts attach once the map goes idle after that first
+    // render (owner guidance 2026-10: the first render may start
+    // minimal). Only the boot apply stages — later applies (menu
+    // switches, catalog refreshes, fallbacks) run in full.
+    if (!stagingAttempted) {
+      stagingAttempted = true;
+      const staged = await prepareStagedStyle(styleForMap);
+      if (staged) {
+        styleForMap = staged.initial;
+        scheduleStagedAttach(staged.deferred, s.name);
+      }
     }
     /*
      * Use transformStyle to preserve custom layers/sources when switching basemaps

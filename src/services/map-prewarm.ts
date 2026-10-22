@@ -39,10 +39,20 @@ export function styleAssetUrls(style: StyleSpecification): string[] {
       : (style.sprite ?? []).map(entry => entry?.url);
   for (const sprite of spriteUrls) {
     if (typeof sprite === 'string' && sprite) {
-      urls.push(`${sprite}.json`, `${sprite}@2x.json`);
+      urls.push(spriteVariantUrl(sprite, '.json'), spriteVariantUrl(sprite, '@2x.json'));
     }
   }
   return urls;
+}
+
+/** MapLibre loads `sprite.json` / `sprite@2x.json` — the suffix goes
+ *  BEFORE any query string. Naive string concat (`${sprite}.json`)
+ *  produced `sprite?v=hash.json`, a URL nobody serves (silent warm
+ *  no-op / failed fetch for every versioned sprite URL). */
+export function spriteVariantUrl(spriteUrl: string, suffix: string): string {
+  const queryAt = spriteUrl.indexOf('?');
+  if (queryAt === -1) return `${spriteUrl}${suffix}`;
+  return `${spriteUrl.slice(0, queryAt)}${suffix}${spriteUrl.slice(queryAt)}`;
 }
 
 /** Warm the TileJSON/sprite endpoints a style document references.
