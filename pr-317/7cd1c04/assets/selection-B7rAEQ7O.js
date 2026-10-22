@@ -1,0 +1,2 @@
+import{a5 as o}from"./index-D3H1N2mM.js";function t(){if(window.getSelection!==void 0){const e=window.getSelection();e.empty!==void 0?e.empty():e.removeAllRanges!==void 0&&(e.removeAllRanges(),o.is.mobile||e.addRange(document.createRange()))}else document.selection!==void 0&&document.selection.empty()}export{t as c};
+//# sourceMappingURL=selection-B7rAEQ7O.js.map
