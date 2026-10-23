@@ -66,6 +66,7 @@ declare module 'vue' {
     WdIcon: typeof import('./src/components/utils/WdIcon.vue')['default']
     WdLanguageSwitcher: typeof import('./src/components/toolbar/WdLanguageSwitcher.vue')['default']
     WdLegendSection: typeof import('./src/components/map/overlay-config/WdLegendSection.vue')['default']
+    WdMapLoader: typeof import('./src/components/map/WdMapLoader.vue')['default']
     WdMapMenu: typeof import('./src/components/map/WdMapMenu.vue')['default']
     WdMapView: typeof import('./src/components/map/WdMapView.vue')['default']
     WdMediaDialog: typeof import('./src/components/media/WdMediaDialog.vue')['default']
