@@ -18,8 +18,8 @@ importers:
         specifier: ^8.1.0
         version: 8.1.0(@capacitor/core@8.5.3)
       '@capawesome/capacitor-maplibre':
-        specifier: ^0.2.1
-        version: 0.2.1(@capacitor/core@8.5.3)(maplibre-gl@6.14.0)
+        specifier: ^0.2.3
+        version: 0.2.3(@capacitor/core@8.5.3)(maplibre-gl@6.14.0)
       '@fontsource/barlow':
         specifier: ^5.3.0
         version: 5.3.0
@@ -919,8 +919,8 @@ packages:
     resolution: {integrity: sha512-05WQkdpL9COIMz4LjTxGpPNCdlpyimKppYNoJ5Di5EUObifl8t4tuLuUBBZEpoLYOmfvIWrsp9fCl0HoPRVTdA==}
     engines: {node: '>=6.9.0'}
 
-  '@babel/runtime@7.29.7':
-    resolution: {integrity: sha512-Nq8OhGWiZIZGV6hLHoyAKLLcJihP/xFeBMGJoUrxTX2psI8dCifzLhZISFb+VWS3wFMRDmCGw5R+dOySCqPLhw==}
+  '@babel/runtime@7.29.10':
+    resolution: {integrity: sha512-NpugTzbKgGrNe45Ui32cN8vCFFMxVtP/9rtfwv0nP5FRDAjvYBxJcLVpYA9mr1jxP6cnIT7x9LUzuDTbWYYNRA==}
     engines: {node: '>=6.9.0'}
 
   '@babel/template@7.28.6':
@@ -965,8 +965,8 @@ packages:
     peerDependencies:
       '@capacitor/core': '>=8.0.0'
 
-  '@capawesome/capacitor-maplibre@0.2.1':
-    resolution: {integrity: sha512-ZGxuynXGj+LkKqCRy1hNp94fiEWqWo2Vzq/ISLHESaf3H/ejwmBv/1bUM6z+0/5+yFd2+tBAeYsPysWX2B7iuA==}
+  '@capawesome/capacitor-maplibre@0.2.3':
+    resolution: {integrity: sha512-Etc4L+akqvn8K3pv+jMDE6MgHVJHQ4QeGKTexaLfCBNweHb89ySV/Q2uLQjf/vda8cBUWRQBT0aCTkrqx2N4ZQ==}
     peerDependencies:
       '@capacitor/core': '>=8.0.0'
       maplibre-gl: ^6.4.1
@@ -9693,7 +9693,7 @@ snapshots:
 
   '@babel/runtime@7.28.6': {}
 
-  '@babel/runtime@7.29.7': {}
+  '@babel/runtime@7.29.10': {}
 
   '@babel/template@7.28.6':
     dependencies:
@@ -9751,7 +9751,7 @@ snapshots:
     dependencies:
       '@capacitor/core': 8.5.3
 
-  '@capawesome/capacitor-maplibre@0.2.1(@capacitor/core@8.5.3)(maplibre-gl@6.14.0)':
+  '@capawesome/capacitor-maplibre@0.2.3(@capacitor/core@8.5.3)(maplibre-gl@6.14.0)':
     dependencies:
       '@capacitor/core': 8.5.3
     optionalDependencies:
@@ -11500,7 +11500,7 @@ snapshots:
   '@testing-library/dom@10.4.2':
     dependencies:
       '@babel/code-frame': 7.29.7
-      '@babel/runtime': 7.29.7
+      '@babel/runtime': 7.29.10
       '@types/aria-query': 5.0.4
       aria-query: 5.3.0
       dom-accessibility-api: 0.5.16
