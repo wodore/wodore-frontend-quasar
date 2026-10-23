@@ -418,6 +418,44 @@ export function pruneStyleCache(validSlugs: Set<string>): void {
   storageSet(STYLE_CACHE_KEY, cache);
 }
 
+// ── Persisted BASEMAP styles (SWR for the boot-critical style) ────────────
+
+const BASEMAP_STYLE_CACHE_KEY = 'basemapStyleCache';
+
+/** Bounded so a long session hopping basemaps can't grow the store
+ *  unbounded (style docs run 100-300 kB each; localStorage is ~5 MB). */
+const BASEMAP_STYLE_CACHE_MAX = 6;
+
+export interface PersistedBasemapStyle {
+  savedAt: string;
+  /** RAW style document (URL resolution is deterministic, recomputed
+   *  on read — see basemap-store's loadStyleObject). */
+  style: StyleSpecification;
+}
+
+export function loadBasemapStyleCache(): Record<string, PersistedBasemapStyle> {
+  const raw = storageGet(BASEMAP_STYLE_CACHE_KEY);
+  // Runtime guard (review finding): a corrupted or schema-drifted entry
+  // from an older build must degrade to a cache MISS, never leak a
+  // wrong-shaped value through the cast.
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  return raw as Record<string, PersistedBasemapStyle>;
+}
+
+/** Store one style document (keyed by its URL). SWR semantics: an
+ *  entry may go stale if the backend updates the style under an
+ *  unchanged URL (the URL carries slug+spec, not the layer's
+ *  `modified`) — the background revalidate in basemap-store refreshes
+ *  the copy so at latest the NEXT warm boot serves fresh content.
+ *  Prunes to the newest MAX entries by savedAt. */
+export function persistBasemapStyle(url: string, style: StyleSpecification): void {
+  const cache = loadBasemapStyleCache();
+  cache[url] = { savedAt: new Date().toISOString(), style };
+  const entries = Object.entries(cache).sort((a, b) => b[1].savedAt.localeCompare(a[1].savedAt));
+  const pruned = Object.fromEntries(entries.slice(0, BASEMAP_STYLE_CACHE_MAX));
+  storageSet(BASEMAP_STYLE_CACHE_KEY, pruned);
+}
+
 /** GPU tier → style `spec` param. `shouldUseRaster` (basemap-store) stays
  *  the single detector; this maps its boolean onto the catalog tiers. */
 export function gpuSpec(useRaster: boolean): MapSpecTier {

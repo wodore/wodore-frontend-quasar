@@ -274,8 +274,12 @@ function scheduleReveal(map: Map): void {
         }
       };
       map.once('idle', tryReveal);
-      // Safety: reveal even if the map never settles (slow tiles) —
-      // a partially rendered map beats an infinite spinner.
+      // Safety: reveal even if the map never settles (slow tiles, or
+      // the catalog compile stuck in 'loading') — an intentionally
+      // SPEC-DEVIATING fallback: after 8s we show whatever state the
+      // map is in (basemap-only, no overlays) rather than an infinite
+      // loader. The overlays still attach when they arrive; the next
+      // map render includes them.
       setTimeout(() => revealMap(map), 8000);
     },
     { immediate: true }

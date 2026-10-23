@@ -66,11 +66,6 @@ export default [
         HTMLDivElement: 'readonly',
         HTMLInputElement: 'readonly',
         AbortController: 'readonly',
-        AbortSignal: 'readonly',
-        fetch: 'readonly',
-        Request: 'readonly',
-        Response: 'readonly',
-        Headers: 'readonly',
 
         // Custom globals
         ga: 'readonly',
@@ -102,6 +97,17 @@ export default [
         sourceType: 'module',
         extraFileExtensions: ['.vue'],
         parser: tsParser,
+      },
+      // Native fetch globals for .vue script blocks (perf/bundle-trim:
+      // axios was replaced with fetch). Declared HERE, not in the base
+      // block — a base-level `fetch` global collides with `/* global
+      // fetch */` comments in .mjs scripts (no-redeclare).
+      globals: {
+        fetch: 'readonly',
+        AbortSignal: 'readonly',
+        Request: 'readonly',
+        Response: 'readonly',
+        Headers: 'readonly',
       },
     },
     rules: {
