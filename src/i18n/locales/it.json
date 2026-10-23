@@ -65,7 +65,8 @@
       "generic_message": "Si è verificato un errore durante il caricamento della mappa",
       "reload": "Ricarica la pagina"
     },
-    "layers": "Livelli"
+    "layers": "Livelli",
+    "loading": "Caricamento della mappa"
   },
   "map_style": "Carta geografica",
   "location": "Posizione",

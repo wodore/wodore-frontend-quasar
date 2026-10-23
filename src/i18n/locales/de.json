@@ -90,7 +90,8 @@
       "generic_message": "Beim Laden der Karte ist ein Fehler aufgetreten",
       "reload": "Seite neu laden"
     },
-    "layers": "Ebenen"
+    "layers": "Ebenen",
+    "loading": "Karte wird geladen"
   },
   "favorites": "Favoriten",
   "layers": "Layers",
