@@ -94,6 +94,19 @@
   transition: opacity 0.3s cubic-bezier(0.2, 0, 0, 1);
 }
 
+/* Boot phase (splash up): everything chrome-like is hidden, INCLUDING
+ * the focus-mode exit button — it must not float over the splash. The
+ * map reveal removes wd-booting immediately and releases wd-map-focus
+ * ~120ms later (WdMapView.revealMap). */
+body.wd-booting {
+  .wd-focus-toggle,
+  .wd-zoom,
+  .wd-zoom__pill {
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+}
+
 body.wd-map-focus {
   .wd-map-ctl-sticky,
   .wd-map-ctl-col {

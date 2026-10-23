@@ -59,98 +59,119 @@ const getWaitingSwVersion = async (
   });
 };
 
-register(process.env.SERVICE_WORKER_FILE, {
-  // The registrationOptions object will be passed as the second argument
-  // to ServiceWorkerContainer.register()
-  // https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerContainer/register#Parameter
-
-  // registrationOptions: { scope: './' },
-
-  ready(/* registration */) {
-    // console.log('Service worker is active.')
-  },
-
-  registered(registration) {
-    console.log('[PWA] Service worker registered:', registration?.scope);
-
-    // Periodically check for updates (every hour)
-    // This helps detect updates even if the user doesn't navigate
-    setInterval(
-      () => {
-        console.log('[PWA] Checking for updates...');
-        registration?.update();
-      },
-      60 * 60 * 1000
-    );
-  },
-
-  cached(/* registration */) {
-    console.log('[PWA] Content has been cached for offline use.');
-  },
-
-  updatefound(registration) {
-    console.log('[PWA] New content is downloading...', {
-      installing: registration?.installing?.state,
-      waiting: registration?.waiting?.state,
-      active: registration?.active?.scriptURL,
-    });
-
-    // Track the installing service worker
-    const newWorker = registration?.installing;
-    if (!newWorker) {
-      console.log('[PWA] No installing worker found');
-      return;
+if (
+  typeof navigator !== 'undefined' &&
+  document.cookie.split(';').some(part => part.trim().startsWith('wd-cache=off'))
+) {
+  // Cable-less cold-load testing (?cache=off on the preview server,
+  // sticky via cookie): no service worker, no CacheStorage — every
+  // load is a true cold load (pairs with the server's ?net= throttle).
+  // Skips register() entirely instead of unregister-racing it.
+  void (async () => {
+    try {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+      console.info('[PWA] cache=off: service worker bypassed, caches cleared');
+    } catch {
+      /* SW unsupported/blocked — nothing to do */
     }
+  })();
+} else {
+  register(process.env.SERVICE_WORKER_FILE, {
+    // The registrationOptions object will be passed as the second argument
+    // to ServiceWorkerContainer.register()
+    // https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerContainer/register#Parameter
 
-    newWorker.addEventListener('statechange', async () => {
-      console.log('[PWA] Worker state changed:', {
-        state: newWorker.state,
-        hasController: !!navigator.serviceWorker.controller,
+    // registrationOptions: { scope: './' },
+
+    ready(/* registration */) {
+      // console.log('Service worker is active.')
+    },
+
+    registered(registration) {
+      console.log('[PWA] Service worker registered:', registration?.scope);
+
+      // Periodically check for updates (every hour)
+      // This helps detect updates even if the user doesn't navigate
+      setInterval(
+        () => {
+          console.log('[PWA] Checking for updates...');
+          registration?.update();
+        },
+        60 * 60 * 1000
+      );
+    },
+
+    cached(/* registration */) {
+      console.log('[PWA] Content has been cached for offline use.');
+    },
+
+    updatefound(registration) {
+      console.log('[PWA] New content is downloading...', {
+        installing: registration?.installing?.state,
+        waiting: registration?.waiting?.state,
+        active: registration?.active?.scriptURL,
       });
 
-      if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-        // A new service worker is available and waiting
-        // This means we have a newer version than what's currently running
-        console.log('[PWA] New service worker is waiting to activate');
+      // Track the installing service worker
+      const newWorker = registration?.installing;
+      if (!newWorker) {
+        console.log('[PWA] No installing worker found');
+        return;
+      }
 
-        const waitingWorker = registration?.waiting;
-        const nextVersion = waitingWorker ? await getWaitingSwVersion(waitingWorker) : null;
-
-        console.log('[PWA] Version comparison:', {
-          current: APP_VERSION,
-          next: nextVersion,
-          shouldNotify: !nextVersion || shouldPromptUpdate(APP_VERSION, nextVersion),
+      newWorker.addEventListener('statechange', async () => {
+        console.log('[PWA] Worker state changed:', {
+          state: newWorker.state,
+          hasController: !!navigator.serviceWorker.controller,
         });
 
-        if (!nextVersion || shouldPromptUpdate(APP_VERSION, nextVersion)) {
-          // Wait a bit for the user to settle, then show notification
-          setTimeout(() => {
-            console.log('[PWA] Showing update notification to user');
-            if (showUpdateCallback) {
-              showUpdateCallback();
-            } else {
-              console.warn('[PWA] No update callback set yet - will notify when app is ready');
-            }
-          }, 2000);
+        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+          // A new service worker is available and waiting
+          // This means we have a newer version than what's currently running
+          console.log('[PWA] New service worker is waiting to activate');
+
+          const waitingWorker = registration?.waiting;
+          const nextVersion = waitingWorker ? await getWaitingSwVersion(waitingWorker) : null;
+
+          console.log('[PWA] Version comparison:', {
+            current: APP_VERSION,
+            next: nextVersion,
+            shouldNotify: !nextVersion || shouldPromptUpdate(APP_VERSION, nextVersion),
+          });
+
+          if (!nextVersion || shouldPromptUpdate(APP_VERSION, nextVersion)) {
+            // Wait a bit for the user to settle, then show notification
+            setTimeout(() => {
+              console.log('[PWA] Showing update notification to user');
+              if (showUpdateCallback) {
+                showUpdateCallback();
+              } else {
+                console.warn('[PWA] No update callback set yet - will notify when app is ready');
+              }
+            }, 2000);
+          }
         }
-      }
-    });
-  },
+      });
+    },
 
-  updated(/* registration */) {
-    // console.log('New content is available; please refresh.')
-    // This is called when the new SW becomes active
-    // We handle the notification in updatefound instead
-  },
+    updated(/* registration */) {
+      // console.log('New content is available; please refresh.')
+      // This is called when the new SW becomes active
+      // We handle the notification in updatefound instead
+    },
 
-  offline() {
-    // console.log('No internet connection found. App is running in offline mode.')
-  },
+    offline() {
+      // console.log('No internet connection found. App is running in offline mode.')
+    },
 
-  error(/* err */) {
-    // console.error('Error during service worker registration:', err)
-  },
-});
+    error(/* err */) {
+      // console.error('Error during service worker registration:', err)
+    },
+  });
+}
 
 /**
  * Set the callback to show update notifications

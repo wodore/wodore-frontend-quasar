@@ -1,5 +1,14 @@
 <script setup lang="ts">
-import { ref, inject, watchEffect, watch, onErrorCaptured, computed, onMounted } from 'vue';
+import {
+  ref,
+  inject,
+  watchEffect,
+  watch,
+  onErrorCaptured,
+  computed,
+  onMounted,
+  onScopeDispose,
+} from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import {
   useResizeObserver,
@@ -11,6 +20,7 @@ import {
 import { useQuasar } from 'quasar';
 import { useBasemapStore, mapProfileForTier } from '@stores/map/basemap-store';
 import { useMapCatalogStore } from '@stores/map/map-catalog-store';
+import { startRevealLoop } from './reveal-scheduler';
 import { useLocalPropertiesStore } from '@stores/local-properties-store';
 import { showErrorDialogPersistent, ErrorCode } from '@components/error';
 import type { Map, PaddingOptions } from 'maplibre-gl';
@@ -248,48 +258,89 @@ const mapDiv = ref<HTMLElement | null>(null);
 // empty — its idle must not reveal an empty map; a background-only
 // style (<2 layers) is treated as not-yet). A safety timer never lets
 // a never-settling map (slow/erroring tiles) hold the loader hostage.
-const emit = defineEmits<{ (e: 'rendered'): void }>();
+const emit = defineEmits<{ (e: 'rendered'): void; (e: 'mapready'): void }>();
 const mapRendered = ref(false);
+/** Reveal timers (settled-class + chrome release) — tracked so a scope
+ * dispose can cancel them (review N1: the dispose contract must hold
+ * for EVERY reveal side effect, not just the scheduler's). */
+const revealTimers: number[] = [];
 
 function revealMap(_map: Map): void {
   if (mapRendered.value) return;
   mapRendered.value = true;
   emit('rendered');
+  // Blur-reveal cleanup: once the 900ms unblur transition has run,
+  // drop the filter entirely (a standing blur(0) keeps the canvas
+  // composited — see the reveal-choreography comment in the styles).
+  revealTimers.push(
+    window.setTimeout(() => mapDiv.value?.classList.add('wd-map-fill--settled'), 1000)
+  );
+  // Chrome entrance (owner brief): the page boots in map-focus mode
+  // (index.html body class) so the topbar/controls stay hidden behind
+  // the splash — releasing it here makes the chrome fly IN (existing
+  // focus-mode transitions) staggered with the splash fade-out.
+  // `wd-booting` must come off WITH the focus release, not before: an
+  // overlay strip left open across a refresh must never flash the
+  // zoom handle in (boot hides it via opacity 0; removing booting
+  // while focus is still on would fade it in for 120ms only to tuck
+  // it out again — owner report).
+  document.documentElement.classList.remove('wd-map-focus', 'wd-booting');
+  if (document.body.classList.contains('wd-map-focus')) {
+    // Delay the release ~120ms so the 300ms chrome transitions LAND as
+    // the splash surface clears — chrome settles onto the open stage,
+    // not over a half-green one (design verdict fix #2).
+    revealTimers.push(
+      window.setTimeout(() => {
+        document.body.classList.remove('wd-map-focus', 'wd-booting');
+        mapFocus.value = false;
+      }, 120)
+    );
+  } else {
+    document.body.classList.remove('wd-booting');
+  }
 }
 
 function scheduleReveal(map: Map): void {
   if (mapRendered.value) return;
+  // Reveal logic lives in reveal-scheduler.ts (unit-tested for both
+  // catalog-vs-idle orderings + the safety ladder; the original
+  // inline version had a TDZ crash on the synchronous path — see
+  // tests/unit/reveal-scheduler.spec.ts). Safety: at 8 s the splash
+  // drops only if the map has PAINTED (style + tiles) — the
+  // catalog-stuck case reveals a basemap-only map, while a cold start
+  // with slow tiles keeps the branded splash instead of flashing a
+  // white canvas. Absolute hard cap 20 s: a partial/empty map still
+  // beats an infinite splash; overlays attach whenever they arrive.
+  const scheduler = startRevealLoop(
+    {
+      styleReady: () => (map.getStyle()?.layers?.length ?? 0) >= 2,
+      painted: () => (map.getStyle()?.layers?.length ?? 0) >= 2 && map.areTilesLoaded(),
+      onIdleOnce: cb => map.once('idle', cb),
+    },
+    () => revealMap(map)
+  );
+  onScopeDispose(() => {
+    scheduler.dispose();
+    for (const t of revealTimers) clearTimeout(t);
+    revealTimers.length = 0;
+  });
+  // notifyOverlaysDone is idempotent — no need to stop this watcher
+  // from inside its own callback (that exact pattern was the TDZ
+  // regression); the scope dispose cleans it up.
   let stopStatusWatch: (() => void) | undefined;
   stopStatusWatch = watch(
     () => mapCatalogStore.status === 'ready' || mapCatalogStore.status === 'error',
     overlaysDone => {
       if (!overlaysDone) return;
-      // With immediate:true this callback can run synchronously BEFORE
-      // the assignment above completes — calling the stop function
-      // directly is a TDZ ReferenceError that kills the whole reveal
-      // chain (observed live: loader stuck forever). Stop it from a
-      // microtask, after the assignment has landed.
-      void Promise.resolve().then(() => stopStatusWatch?.());
-      // First idle with a REAL style (not the empty boot style):
-      const tryReveal = () => {
-        if (mapRendered.value) return;
-        if ((map.getStyle()?.layers?.length ?? 0) >= 2) {
-          revealMap(map);
-        } else {
-          map.once('idle', tryReveal);
-        }
-      };
-      map.once('idle', tryReveal);
-      // Safety: reveal even if the map never settles (slow tiles, or
-      // the catalog compile stuck in 'loading') — an intentionally
-      // SPEC-DEVIATING fallback: after 8s we show whatever state the
-      // map is in (basemap-only, no overlays) rather than an infinite
-      // loader. The overlays still attach when they arrive; the next
-      // map render includes them.
-      setTimeout(() => revealMap(map), 8000);
+      scheduler.notifyOverlaysDone();
+      // One-shot: stop the watcher once it fired (idempotent anyway, but
+      // no reason to keep tracking catalog changes — review N4).
+      stopStatusWatch?.();
+      stopStatusWatch = undefined;
     },
     { immediate: true }
   );
+  onScopeDispose(() => stopStatusWatch?.());
 }
 
 const mapResize = useDebounceFn(() => {
@@ -306,6 +357,10 @@ useResizeObserver(mapDiv, () => {
 function onMapLoad(e: MglEvent<'load'>) {
   collapseAutoExpandedAttribution();
   console.debug(`[onMapLoad] Maplibre version ${e.map.version} loaded`);
+  // MapLibre READY (style + first render done — the "painting" stage
+  // begins): the splash ends its words immediately and blocks new
+  // hills (owner stage spec).
+  emit('mapready');
 
   scheduleReveal(e.map);
 
@@ -1443,16 +1498,37 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
   background-color: #f6f9f7;
 }
 
-// Loader reveal (owner spec): the map renders hidden while the branded
-// loader covers it, then fades in over 250 ms — no white window, no
-// half-built map flashing tile by tile.
+// Reveal choreography (owner spec, ~900ms total):
+//   1. map fades in while BLURRED (opacity 0→1 over 320ms)
+//   2. the blur resolves (blur(14px)→0 over 900ms)
+//   3. the splash clears last (surface gone by ~900ms, see WdMapLoader)
+// The map MUST reach opacity 1 BEFORE the splash starts fading
+// (splash fade is delayed to match): two half-transparent layers
+// stacked let the white page bleed through — visible behind the hut
+// sheet's corner radius on mobile (owner-reported).
 .wd-map-fill .maplibregl-map {
   opacity: 0;
-  transition: opacity 0.25s ease-out;
+  filter: blur(14px);
+  transition:
+    opacity 0.32s ease-out,
+    filter 0.9s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .wd-map-fill--rendered .maplibregl-map {
   opacity: 1;
+  filter: blur(0);
+}
+
+.wd-map-fill--settled .maplibregl-map {
+  filter: none;
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wd-map-fill .maplibregl-map {
+    filter: none;
+    transition: opacity 0.3s ease-out;
+  }
 }
 
 .maplibregl-control-container {

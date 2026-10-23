@@ -19,6 +19,9 @@ const WdMapView = defineAsyncComponent(() => import('components/map/WdMapView.vu
 // the chunk-loading phase is visually identical.
 const mapReady = ref(false);
 const mapRendered = ref(false);
+/** MapLibre `load` fired — pre-reveal signal for the splash (words fade
+ * out, no new hills). */
+const mapLibreReady = ref(false);
 onMounted(() => {
   void whenIdle(() => {
     mapReady.value = true;
@@ -28,18 +31,19 @@ onMounted(() => {
 
 <template>
   <q-page class="map-page">
-    <WdMapLoader v-if="!mapReady" />
-    <template v-else>
-      <Suspense>
-        <q-no-ssr>
-          <WdMapView @rendered="mapRendered = true" />
-        </q-no-ssr>
-        <template #fallback>
-          <WdMapLoader />
-        </template>
-      </Suspense>
-      <WdMapLoader :rendered="mapRendered" />
-    </template>
+    <!-- ONE splash instance spans the whole boot → reveal. The earlier
+         v-if/v-else pair mounted a SECOND WdMapLoader when mapReady
+         flipped — restarting the entrance choreography (wordmark
+         vanished and rose again, mountains replayed) mid-boot. The map
+         mounts INSIDE the same tree; the loader stays on top until
+         `rendered`, no Suspense fallback needed (it covers that phase
+         too). -->
+    <Suspense v-if="mapReady">
+      <q-no-ssr>
+        <WdMapView @rendered="mapRendered = true" @mapready="mapLibreReady = true" />
+      </q-no-ssr>
+    </Suspense>
+    <WdMapLoader :rendered="mapRendered" :map-ready="mapLibreReady" />
   </q-page>
 </template>
 

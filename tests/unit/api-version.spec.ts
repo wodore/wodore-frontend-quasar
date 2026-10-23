@@ -25,6 +25,7 @@ const fetchMock = vi.mocked(globalThis.fetch);
 
 import { clientWodore } from '@clients/index';
 import { PINNED_API_VERSION, onApiVersionError, emitApiVersionError } from '@services/apiVersion';
+import { resetBackendVersionCache } from '@services/backendVersion';
 import { useApiVersionStore } from '@stores/api-version-store';
 
 const versionResponse = (supported: unknown[] = []) =>
@@ -70,6 +71,7 @@ describe('apiVersionMiddleware (clientWodore)', () => {
 describe('useApiVersionStore', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
+    resetBackendVersionCache(); // the shared 5min cache must not leak across tests
     fetchMock.mockReset();
     fetchMock.mockImplementation(async () => new Response('{}', { status: 200 }));
   });

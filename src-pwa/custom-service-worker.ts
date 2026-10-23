@@ -35,7 +35,15 @@ if (process.env.MODE !== 'ssr' || process.env.PROD) {
   });
 
   const navigationRoute = new NavigationRoute(networkFirstHandler, {
-    denylist: [new RegExp(process.env.PWA_SERVICE_WORKER_REGEX), /workbox-(.)*\.js$/],
+    denylist: [
+      new RegExp(process.env.PWA_SERVICE_WORKER_REGEX),
+      /workbox-(.)*\.js$/,
+      // Cache knob (preview cold-load testing): navigations carrying
+      // ?cache=off|on bypass the SW entirely, so the network shell can
+      // unregister/re-register it — breaks the "SW serves the shell
+      // that should disable the SW" cycle.
+      /[?&]cache=(off|on)([&#]|$)/,
+    ],
   });
 
   registerRoute(navigationRoute);

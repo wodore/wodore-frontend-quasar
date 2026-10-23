@@ -66,7 +66,8 @@
       "reload": "Ricarica la pagina"
     },
     "layers": "Livelli",
-    "loading": "Caricamento della mappa"
+    "loading": "Caricamento della mappa",
+    "loadingWords": "Zaino allacciato~Carta spiegata~Percorso in testa~Meteo letto~Scarponi stretti~Borracce piene~Bastoni pronti~Primi metri guadagnati~La mappa si disegna~Curve di livello~Le valli appaiono~Bosco alle spalle~I ruscelli mormorano~Rododendri in fiore~Le vette si avvicinano~Primi rifugi~Le nuvole passano~Le marmotte fischiano~Il panorama si apre~Meta in vista"
   },
   "map_style": "Carta geografica",
   "location": "Posizione",

@@ -19,6 +19,7 @@ import { i18n, currentLocale } from '@services/locale';
 import { isOutdoorStyle, setupOutdoorContours } from '@services/outdoorContours';
 import {
   attachStagedEnhancements,
+  attachStagedSprites,
   stageStyleEnhancements,
   type StagedEnhancements,
   type StagedStyle,
@@ -387,6 +388,37 @@ export const useBasemapStore = defineStore('basemap', () => {
         } catch {
           /* map gone — nothing to attach */
         }
+        // Heavy sprite packs (nature/water, ~2.3 MB @2x): their icons
+        // only draw at deep zoom — attach on demand at zoom ≥ 13, with
+        // a long-settle fallback so a static deep-zoom view still gets
+        // them eventually (owner, 2026-10: "not needed for a first view").
+        const SPRITE_ATTACH_MIN_ZOOM = 13;
+        const SPRITE_ATTACH_SETTLE_MS = 6_000;
+        const trySprites = () => {
+          if (getBasemap()?.name !== basemapName) return;
+          if ((map.getZoom() ?? 0) >= SPRITE_ATTACH_MIN_ZOOM) {
+            try {
+              attachStagedSprites(map, deferred);
+            } catch {
+              /* map gone */
+            }
+          } else {
+            map.once('zoomend', trySprites);
+          }
+        };
+        map.once('zoomend', trySprites);
+        setTimeout(() => {
+          // Same staleness guard as trySprites: a basemap swapped within
+          // the settle window must not get the OLD basemap's sprites
+          // attached (review finding — the closure-captured deferred
+          // belongs to this basemap load only).
+          if (getBasemap()?.name !== basemapName) return;
+          try {
+            attachStagedSprites(map, deferred);
+          } catch {
+            /* map gone */
+          }
+        }, SPRITE_ATTACH_SETTLE_MS);
       };
       map.once('idle', attach);
       setTimeout(() => {

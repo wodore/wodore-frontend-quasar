@@ -1,12 +1,12 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
-import { clientWodore } from '@clients/index';
 import {
   PINNED_API_VERSION,
   onApiVersionError,
   type ApiVersionCheck,
   type ApiVersionEntry,
 } from '@services/apiVersion';
+import { getBackendVersion } from '@services/backendVersion';
 
 /**
  * API version lifecycle state: pins `PINNED_API_VERSION` against the
@@ -35,11 +35,13 @@ export const useApiVersionStore = defineStore('apiVersion', () => {
     check.value = { state: 'checking' };
 
     try {
-      const { data, error } = await clientWodore.GET('/v1/version', {});
-      if (error || !data?.api) {
-        throw new Error(error ? JSON.stringify(error) : 'no api block');
+      // Shared 5-min cached fetch (one /v1/version per session — the
+      // versions panel reuses the same response; owner request).
+      const info = await getBackendVersion();
+      if (!info.api) {
+        throw new Error('no api block');
       }
-      const supported = (data.api.supported ?? []) as ApiVersionEntry[];
+      const supported = (info.api.supported ?? []) as ApiVersionEntry[];
       check.value = classify(
         supported.find((entry: ApiVersionEntry) => entry.version === PINNED_API_VERSION)
       );
