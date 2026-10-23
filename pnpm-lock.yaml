@@ -45,8 +45,8 @@ importers:
         specifier: ^26.4.4
         version: 26.4.4
       '@pmndrs/detect-gpu':
-        specifier: ^6.0.26
-        version: 6.0.26
+        specifier: ^6.0.27
+        version: 6.0.27
       '@quasar/extras':
         specifier: ^2.1.0
         version: 2.1.0
@@ -919,8 +919,8 @@ packages:
     resolution: {integrity: sha512-05WQkdpL9COIMz4LjTxGpPNCdlpyimKppYNoJ5Di5EUObifl8t4tuLuUBBZEpoLYOmfvIWrsp9fCl0HoPRVTdA==}
     engines: {node: '>=6.9.0'}
 
-  '@babel/runtime@7.29.7':
-    resolution: {integrity: sha512-Nq8OhGWiZIZGV6hLHoyAKLLcJihP/xFeBMGJoUrxTX2psI8dCifzLhZISFb+VWS3wFMRDmCGw5R+dOySCqPLhw==}
+  '@babel/runtime@7.29.10':
+    resolution: {integrity: sha512-NpugTzbKgGrNe45Ui32cN8vCFFMxVtP/9rtfwv0nP5FRDAjvYBxJcLVpYA9mr1jxP6cnIT7x9LUzuDTbWYYNRA==}
     engines: {node: '>=6.9.0'}
 
   '@babel/template@7.28.6':
@@ -2244,8 +2244,8 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
-  '@pmndrs/detect-gpu@6.0.26':
-    resolution: {integrity: sha512-bcCsgJkfe7HndAgEwd3oMQbx8Zpkndk4MQamTmEhbaboec+5WN+ZwuZ0nlyHprQCmXfMiDgHmWWvOia+efIsAw==}
+  '@pmndrs/detect-gpu@6.0.27':
+    resolution: {integrity: sha512-NEXcRZDBTwFaZABSmLsdvznKqMpekQ9cLX2vds6oEG2dMOA+CmWJpMeI72SS5R4oymwy8es+KsDRDEkKhGtfww==}
 
   '@pnpm/config.env-replace@1.1.0':
     resolution: {integrity: sha512-htyl8TWnKL7K/ESFa1oW2UB5lVDxuF5DpM7tBi6Hu2LNL3mWkIzNLG6N4zoCUP1lCKNxWy/3iu8mS8MvToGd6w==}
@@ -9693,7 +9693,7 @@ snapshots:
 
   '@babel/runtime@7.28.6': {}
 
-  '@babel/runtime@7.29.7': {}
+  '@babel/runtime@7.29.10': {}
 
   '@babel/template@7.28.6':
     dependencies:
@@ -10989,7 +10989,7 @@ snapshots:
     dependencies:
       playwright: 1.58.2
 
-  '@pmndrs/detect-gpu@6.0.26': {}
+  '@pmndrs/detect-gpu@6.0.27': {}
 
   '@pnpm/config.env-replace@1.1.0': {}
 
@@ -11500,7 +11500,7 @@ snapshots:
   '@testing-library/dom@10.4.2':
     dependencies:
       '@babel/code-frame': 7.29.7
-      '@babel/runtime': 7.29.7
+      '@babel/runtime': 7.29.10
       '@types/aria-query': 5.0.4
       aria-query: 5.3.0
       dom-accessibility-api: 0.5.16
