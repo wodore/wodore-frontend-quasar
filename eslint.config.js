@@ -66,6 +66,11 @@ export default [
         HTMLDivElement: 'readonly',
         HTMLInputElement: 'readonly',
         AbortController: 'readonly',
+        AbortSignal: 'readonly',
+        fetch: 'readonly',
+        Request: 'readonly',
+        Response: 'readonly',
+        Headers: 'readonly',
 
         // Custom globals
         ga: 'readonly',
