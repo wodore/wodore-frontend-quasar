@@ -65,7 +65,8 @@
       "generic_message": "Une erreur s'est produite lors du chargement de la carte",
       "reload": "Recharger la page"
     },
-    "layers": "Couches"
+    "layers": "Couches",
+    "loading": "Chargement de la carte"
   },
   "map_style": "Carte",
   "location": "Lieu",

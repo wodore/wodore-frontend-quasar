@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import WodoreLogo from 'components/wodore/WodoreLogo.vue';
 
 /** The single map-loading placeholder (owner spec, 2026-10): the
@@ -15,6 +16,8 @@ interface Props {
 }
 
 withDefaults(defineProps<Props>(), { rendered: false });
+
+const { t } = useI18n();
 </script>
 
 <template>
@@ -22,7 +25,7 @@ withDefaults(defineProps<Props>(), { rendered: false });
     class="wd-map-loader background-map"
     :class="{ 'wd-map-loader--out': rendered }"
     role="status"
-    aria-label="Loading map"
+    :aria-label="t('map.loading')"
   >
     <div class="wd-map-loader__inner">
       <WodoreLogo :icon="true" />
