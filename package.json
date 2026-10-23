@@ -92,7 +92,7 @@
     "openapi-fetch": "^0.17.0",
     "openapi-typescript": "^7.13.0",
     "openmeteo": "^1.2.3",
-    "pinia": "^4.0.3",
+    "pinia": "^4.1.0",
     "pure-web-bottom-sheet": "^1.1.1",
     "quasar": "^2.35.1",
     "register-service-worker": "^1.0.0",
