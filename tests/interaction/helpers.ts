@@ -423,6 +423,16 @@ export async function waitForMapIdle(page: Page, timeout = 30_000): Promise<void
     // maps still surface through the downstream assertions.
     console.warn(`[waitForMapIdle] map did not settle within ${timeout}ms — continuing`);
   }
+  // The map splash (WdMapLoader) absorbs pointer events until the map
+  // has rendered with overlays and faded out — wait for the fade before
+  // any interaction (its own 8s safety reveal bounds this wait).
+  await page
+    .waitForFunction('!document.querySelector(".wd-splash:not(.wd-splash--out)")', null, {
+      timeout: 20_000,
+    })
+    .catch(() => {
+      console.warn('[waitForMapIdle] splash did not fade in time — continuing');
+    });
 }
 
 /** Wait for the expanded overlay panel (after the "more" chevron click). */
