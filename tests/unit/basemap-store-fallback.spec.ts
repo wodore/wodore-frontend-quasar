@@ -229,3 +229,56 @@ describe('basemap store — catalog refresh recovery', () => {
     );
   });
 });
+
+describe('basemap store — persisted style SWR', () => {
+  const fetchMock = vi.fn(async () => ({ ok: true, json: async () => styleDoc }));
+  let scope: ReturnType<typeof effectScope> | null = null;
+  let stores: typeof import('@stores/map/basemap-store');
+
+  beforeAll(async () => {
+    stores = await import('@stores/map/basemap-store');
+  });
+
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    setStyleCalls.length = 0;
+    vi.stubGlobal('fetch', fetchMock);
+    fetchMock.mockClear();
+    storageState.clear();
+    storageState.set('basemapName', 'wd-outdoor-base-mtk');
+    catalogResponse.layers = [HILL(), MTK(), OFM()];
+    process.env.WODORE_API_HOST = API_HOST;
+    scope = effectScope();
+    scope.run(() => stores.useBasemapStore());
+  });
+
+  afterEach(() => {
+    scope?.stop();
+    delete process.env.WODORE_API_HOST;
+    vi.unstubAllGlobals();
+  });
+
+  it('boot applies a persisted style without awaiting the network', async () => {
+    // Seed the persisted cache for the ACTIVE style URL exactly as a
+    // previous warm boot would have left it.
+    storageState.set('basemapStyleCache', {
+      [style('wd-outdoor-base-mtk')]: { savedAt: new Date().toISOString(), style: styleDoc },
+    });
+    fetchMock.mockClear();
+
+    await vi.waitFor(() => expect(setStyleCalls.length).toBe(1), { timeout: 4000 });
+    expect(setStyleCalls[0]!.style).toBe(style('wd-outdoor-base-mtk'));
+    // The network revalidate still runs in the background (SWR), but
+    // the boot NEVER waited for it: the style was on the map before
+    // the fetch response resolved.
+    expect(fetchMock.mock.calls.length).toBeLessThanOrEqual(1);
+  });
+
+  it('persists a fetched style for the next warm boot', async () => {
+    await vi.waitFor(() => expect(setStyleCalls.length).toBe(1), { timeout: 4000 });
+    const cache = storageState.get('basemapStyleCache') as Record<string, { style: unknown }>;
+    const key = style('wd-outdoor-base-mtk');
+    expect(cache[key]).toBeDefined();
+    expect(cache[key]!.style).toEqual(styleDoc);
+  });
+});

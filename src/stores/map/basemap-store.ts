@@ -28,7 +28,9 @@ import {
   clearMapCatalogCache,
   fetchMapCatalog,
   gpuSpec,
+  loadBasemapStyleCache,
   loadPersistedLayers,
+  persistBasemapStyle,
   type MapCatalogLayer,
   type MapSpecTier,
 } from '@services/map-catalog';
@@ -108,24 +110,54 @@ let defaultStylePromise: Promise<StyleSpecification | null> | null = null;
 /** Fetch a style URL into an object (assets resolved against the URL).
  *  Returns null on failure — callers degrade to the unmerged style. */
 async function loadStyleObject(styleUrl: string): Promise<StyleSpecification | null> {
+  // Stale-while-revalidate (perf/warm-style-cache): a warm boot reads
+  // the persisted style document synchronously and paints the map from
+  // it while a background revalidate refreshes the entry. This removes
+  // the last boot-critical network round-trip on warm visits (~0.5-0.8s
+  // measured on staging — the tiles are already content-versioned
+  // HTTP-cache hits, the style was the only fetch left). The URL embeds
+  // the layer's updated_at cache-buster, so a CHANGED style always
+  // arrives as a different key — a stale entry can never shadow new
+  // content, the revalidate just keeps the copy fresh.
+  const stale = loadBasemapStyleCache()[styleUrl]?.style ?? null;
+  const fresh = fetchStyleObject(styleUrl);
+  if (stale) {
+    void fresh.catch(() => undefined);
+    return resolveStyleForMap(stale, styleUrl);
+  }
   try {
-    const res = await fetch(styleUrl);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const styleObj = (await res.json()) as StyleSpecification;
-    const resolved = {
-      ...styleObj,
-      ...absoluteStyleAssets(styleObj, styleUrl),
-    } as StyleSpecification;
-    // Catalog-derived prewarm: warm the TileJSON/sprite endpoints this
-    // style references while the renderer walks its serial style→assets
-    // chain — the generic replacement for the retired hardcoded mtk
-    // prefetch list (perf/fast-first-paint).
-    prewarmStyleAssets(resolved);
-    return resolved;
+    return await fresh;
   } catch (error) {
     console.warn(`[basemap] Style fetch failed (${styleUrl}):`, error);
     return null;
   }
+}
+
+/** Fetch + absolutize + prewarm one style document; persists the raw
+ *  document for the next warm boot. */
+async function fetchStyleObject(styleUrl: string): Promise<StyleSpecification> {
+  const res = await fetch(styleUrl);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const styleObj = (await res.json()) as StyleSpecification;
+  try {
+    persistBasemapStyle(styleUrl, styleObj);
+  } catch {
+    /* quota/storage failures never block the style apply */
+  }
+  return resolveStyleForMap(styleObj, styleUrl);
+}
+
+function resolveStyleForMap(styleObj: StyleSpecification, styleUrl: string): StyleSpecification {
+  const resolved = {
+    ...styleObj,
+    ...absoluteStyleAssets(styleObj, styleUrl),
+  } as StyleSpecification;
+  // Catalog-derived prewarm: warm the TileJSON/sprite endpoints this
+  // style references while the renderer walks its serial style→assets
+  // chain — the generic replacement for the retired hardcoded mtk
+  // prefetch list (perf/fast-first-paint).
+  prewarmStyleAssets(resolved);
+  return resolved;
 }
 
 /** Late-bound accessor for the reactive basemap list (set by the store

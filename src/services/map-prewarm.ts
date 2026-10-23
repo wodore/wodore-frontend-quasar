@@ -18,7 +18,10 @@ function warm(urls: Iterable<string>): void {
   for (const url of urls) {
     if (!url || warmed.has(url)) continue;
     warmed.add(url);
-    void fetch(url, { mode: 'cors' }).catch(() => undefined);
+    // Low priority: the warm-up must never contend with tiles or the
+    // active style — browsers schedule 'low' fetches behind interactive
+    // requests on the same connection pool.
+    void fetch(url, { mode: 'cors', priority: 'low' }).catch(() => undefined);
   }
 }
 
