@@ -259,11 +259,17 @@ function revealMap(_map: Map): void {
 
 function scheduleReveal(map: Map): void {
   if (mapRendered.value) return;
-  const stopStatusWatch = watch(
+  let stopStatusWatch: (() => void) | undefined;
+  stopStatusWatch = watch(
     () => mapCatalogStore.status === 'ready' || mapCatalogStore.status === 'error',
     overlaysDone => {
       if (!overlaysDone) return;
-      stopStatusWatch();
+      // With immediate:true this callback can run synchronously BEFORE
+      // the assignment above completes — calling the stop function
+      // directly is a TDZ ReferenceError that kills the whole reveal
+      // chain (observed live: loader stuck forever). Stop it from a
+      // microtask, after the assignment has landed.
+      void Promise.resolve().then(() => stopStatusWatch?.());
       // First idle with a REAL style (not the empty boot style):
       const tryReveal = () => {
         if (mapRendered.value) return;
