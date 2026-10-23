@@ -238,6 +238,50 @@ if ($layout === undefined) {
 }
 
 const mapDiv = ref<HTMLElement | null>(null);
+
+// ── Loader reveal (owner spec, 2026-10) ─────────────────────────────────
+// The branded loader (WdMapLoader) covers the map until the base
+// basemap AND the overlays have rendered; then the map fades in.
+// Signal: the first map 'idle' AFTER the overlay compile finished
+// (catalog 'ready'; 'error' reveals too — the catalog row shows the
+// error itself) AND with a real style applied (the initial style is
+// empty — its idle must not reveal an empty map; a background-only
+// style (<2 layers) is treated as not-yet). A safety timer never lets
+// a never-settling map (slow/erroring tiles) hold the loader hostage.
+const emit = defineEmits<{ (e: 'rendered'): void }>();
+const mapRendered = ref(false);
+
+function revealMap(_map: Map): void {
+  if (mapRendered.value) return;
+  mapRendered.value = true;
+  emit('rendered');
+}
+
+function scheduleReveal(map: Map): void {
+  if (mapRendered.value) return;
+  const stopStatusWatch = watch(
+    () => mapCatalogStore.status === 'ready' || mapCatalogStore.status === 'error',
+    overlaysDone => {
+      if (!overlaysDone) return;
+      stopStatusWatch();
+      // First idle with a REAL style (not the empty boot style):
+      const tryReveal = () => {
+        if (mapRendered.value) return;
+        if ((map.getStyle()?.layers?.length ?? 0) >= 2) {
+          revealMap(map);
+        } else {
+          map.once('idle', tryReveal);
+        }
+      };
+      map.once('idle', tryReveal);
+      // Safety: reveal even if the map never settles (slow tiles) —
+      // a partially rendered map beats an infinite spinner.
+      setTimeout(() => revealMap(map), 8000);
+    },
+    { immediate: true }
+  );
+}
+
 const mapResize = useDebounceFn(() => {
   mapRef.map?.resize();
 }, 50);
@@ -252,6 +296,8 @@ useResizeObserver(mapDiv, () => {
 function onMapLoad(e: MglEvent<'load'>) {
   collapseAutoExpandedAttribution();
   console.debug(`[onMapLoad] Maplibre version ${e.map.version} loaded`);
+
+  scheduleReveal(e.map);
 
   // Country basemap restored from a previous session: the raw initial
   // style carries no world fallback (composing it needs an async style
@@ -1387,6 +1433,18 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
   background-color: #f6f9f7;
 }
 
+// Loader reveal (owner spec): the map renders hidden while the branded
+// loader covers it, then fades in over 250 ms — no white window, no
+// half-built map flashing tile by tile.
+.wd-map-fill .maplibregl-map {
+  opacity: 0;
+  transition: opacity 0.25s ease-out;
+}
+
+.wd-map-fill--rendered .maplibregl-map {
+  opacity: 1;
+}
+
 .maplibregl-control-container {
   // from https://github.com/quasarframework/quasar/blob/dev/ui/src/components/layout/QLayout.sass .q-body--layout-animate .q-page-sticky
   //@extend .q-body--layout-animate, .q-page-sticky; // not found
@@ -1411,7 +1469,7 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
 <template>
   <!-- @map:render="onMapRender" -->
   <q-no-ssr>
-    <div ref="mapDiv" class="wd-map-fill">
+    <div ref="mapDiv" class="wd-map-fill" :class="{ 'wd-map-fill--rendered': mapRendered }">
       <MglMap
         v-if="webglSupported"
         @map:load="onMapLoad"
