@@ -81,6 +81,15 @@ export function prewarmCatalogStyles(layers: MapCatalogLayer[], exceptStyleUrl?:
   const urls: string[] = [];
   for (const layer of layers) {
     if (!layer.style_url) continue;
+    // Only layers the user can actually select: hidden layers
+    // (show=false — keyless fallbacks, retired variants, provider
+    // alternates like maptiler-hybrid with an unresolved
+    // {{env:…}} key template) are never compiled by the picker, so
+    // warming them is pure waste. Measured on staging: 7 of the 21
+    // catalog layers are hidden — the wave shrank from 20 style
+    // fetches to the visible 11 overlays + 3 basemaps (minus the
+    // active one).
+    if (layer.show === false) continue;
     const url = absolutizeStyleUrl(layer.style_url);
     if (skip?.has(layer.style_url) || skip?.has(url)) continue;
     urls.push(url);
