@@ -66,7 +66,6 @@ export default configure(ctx => {
     // app boot file (/src/boot)
     // --> boot files are part of "main.js"
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
-    /// axios
     boot: [
       // Error tracking first (client-only): installs the global error
       // hooks before any later boot file runs — DSN-gated, inert without
@@ -210,6 +209,57 @@ export default configure(ctx => {
         // 'inline' instead.
         viteConf.build ??= {};
         viteConf.build.sourcemap = true;
+
+        // Stable long-lived vendor chunks: without pinning, rollup's
+        // chunk graph is sensitive — one new dynamic import anywhere
+        // rehashes unchanged vendor code, forcing returning visitors to
+        // re-download MapLibre/Vue/Quasar after every app deploy. With
+        // pinned chunks, app deploys only ship the (small) app chunk
+        // delta; the worker file stays excluded so its separate rollup
+        // build is untouched.
+        viteConf.build.rollupOptions ??= {};
+        const chunkFn = (id: string): string | undefined => {
+          if (!id.includes('node_modules')) return undefined;
+          // Keep rollup's worker builds out of the main graph — a named
+          // chunk assignment here would inline/break the separate worker
+          // bundle. Match the actual worker artifact patterns, not a bare
+          // 'worker' substring (review nit).
+          if (id.includes('maplibre-gl-worker') || id.includes('?worker')) {
+            return undefined;
+          }
+          if (id.includes('maplibre-gl') || id.includes('vue-maplibre-gl')) {
+            return 'maplibre';
+          }
+          // Contour protocol lib: its ONLY importer is a dynamic import
+          // (outdoorContours.ts) — pinning it to a chunk of its own keeps
+          // that boundary lazy. Rollup otherwise merges it into the
+          // eager index chunk (verified via sourcemaps), which would put
+          // ~20 kB gz on the boot path for a feature no served style
+          // uses today.
+          if (id.includes('maplibre-contour')) {
+            return 'maplibre-contour';
+          }
+          if (id.includes('@quasar') || /node_modules\/quasar\//.test(id)) {
+            return 'quasar';
+          }
+          if (
+            /node_modules\/vue\//.test(id) ||
+            id.includes('@vue/') ||
+            id.includes('/vue-router/') ||
+            id.includes('/pinia/') ||
+            id.includes('@intlify') ||
+            id.includes('vue-i18n')
+          ) {
+            return 'vue';
+          }
+          return undefined;
+        };
+        const outputs = (viteConf.build.rollupOptions.output ??= {});
+        if (Array.isArray(outputs)) {
+          outputs.push({ manualChunks: chunkFn });
+        } else {
+          outputs.manualChunks = chunkFn;
+        }
 
         // Dev server host allowlist: Vite blocks non-localhost Host
         // headers. To expose the dev server on a machine name,

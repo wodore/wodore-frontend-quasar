@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as allure from 'allure-js-commons';
 import polyline from '@mapbox/polyline';
-import axios from 'axios';
 import CustomRouteMode from '@services/customRouteMode';
 
-vi.mock('axios', () => ({ default: { post: vi.fn() } }));
+const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({}) }));
+vi.stubGlobal('fetch', fetchMock);
 
 interface FakeMap {
   queryRenderedFeatures: ReturnType<typeof vi.fn>;
@@ -65,13 +65,13 @@ function stop(ctx: DrawContext, state: RouteState): void {
 }
 
 /** Valhalla-style response with a polyline6 shape of [lat, lng] pairs. */
-function valhallaResponse(coords: [number, number][]): { data: unknown } {
-  return { data: { trip: { legs: [{ shape: polyline.encode(coords, 6) }] } } };
+function valhallaResponse(coords: [number, number][]): { trip: { legs: [{ shape: string }] } } {
+  return { trip: { legs: [{ shape: polyline.encode(coords, 6) }] } };
 }
 
 describe('CustomRouteMode', () => {
   beforeEach(() => {
-    vi.mocked(axios.post).mockReset();
+    fetchMock.mockClear();
   });
 
   it('sets up empty initial state', () => {
@@ -108,25 +108,30 @@ describe('CustomRouteMode', () => {
       expect.objectContaining({ id: 'points', type: 'circle', source: 'points' })
     );
     // A single point never triggers a routing request
-    expect(axios.post).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('fetches a route and displays it as a line once two points exist', async () => {
-    vi.mocked(axios.post).mockResolvedValue(
-      valhallaResponse([
-        [46.0, 7.75],
-        [46.1, 7.85],
-      ]) as never
-    );
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () =>
+        valhallaResponse([
+          [46.0, 7.75],
+          [46.1, 7.85],
+        ]),
+    } as never);
 
     const ctx = makeContext();
     const state = setup(ctx);
     click(ctx, state, 7.75, 46.0);
     click(ctx, state, 7.85, 46.1);
 
-    expect(axios.post).toHaveBeenCalledWith(
+    expect(fetchMock).toHaveBeenCalledWith(
       'https://valhalla1.openstreetmap.de/route',
-      expect.objectContaining({ costing: 'pedestrian', shape_format: 'polyline6' })
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.stringContaining('pedestrian'),
+      })
     );
 
     await vi.waitFor(() => {

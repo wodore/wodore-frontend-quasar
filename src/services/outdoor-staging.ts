@@ -179,7 +179,7 @@ export function stageStyleEnhancements(style: StyleSpecification): StagedStyle |
   // tiles from such URLs (retained sources now, deferred ones later).
   const allSources = Object.values(sources);
   if (allSources.some(src => sourceUrls(src).some(u => u.startsWith(DEM_CONTOUR_PROTOCOL)))) {
-    setupOutdoorContours();
+    void setupOutdoorContours();
   }
 
   const initialSources = { ...sources };
@@ -233,7 +233,7 @@ export function attachStagedEnhancements(
   // The dem-contour:// protocol must exist before its sources load.
   for (const source of Object.values(deferred.sources)) {
     if (sourceUrls(source).some(u => u.startsWith(DEM_CONTOUR_PROTOCOL))) {
-      setupOutdoorContours();
+      void setupOutdoorContours();
       break;
     }
   }

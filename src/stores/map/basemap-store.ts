@@ -412,7 +412,7 @@ export const useBasemapStore = defineStore('basemap', () => {
     // The outdoor basemap needs the dem-contour:// protocol registered
     // before MapLibre starts requesting contour tiles.
     if (isOutdoorStyle(s.style)) {
-      setupOutdoorContours();
+      void setupOutdoorContours();
     }
     // Weak GPUs: hide the second ambient-occlusion pass after the style
     // loads, when the served style still has one (older styles shipped two

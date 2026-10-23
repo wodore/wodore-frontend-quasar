@@ -52,7 +52,6 @@ import { useOverlayStore } from '@stores/map/overlay-store';
 import { useLocalPropertiesStore } from '@stores/local-properties-store';
 import { useHutsStore } from '@stores/huts-store';
 import { clientWodore } from '@clients/index';
-import axios from 'axios';
 import openfreemapBrightStyle from '@assets/map-styles/openfreemap-bright.json';
 import type { Feature, FeatureCollection, Point } from 'geojson';
 import WdBasemapSwitch from './WdBasemapSwitch.vue';
@@ -98,14 +97,13 @@ const remoteStyleCache = new Map<string, StyleSpecification>();
 // every MapTiler tile will fail -> use the fallback chain.
 let maptilerProbe: Promise<boolean> | undefined;
 function probeMaptiler(): Promise<boolean> {
-  maptilerProbe ??= axios
-    .get('https://api.maptiler.com/maps/ch-swisstopo-lbm/1/1/0.png', {
-      timeout: 8000,
-      responseType: 'arraybuffer',
-      validateStatus: () => true,
-    })
-    .then(res => {
-      const ok = res.status < 400;
+  maptilerProbe ??= fetch('https://api.maptiler.com/maps/ch-swisstopo-lbm/1/1/0.png', {
+    signal: AbortSignal.timeout(8000),
+  })
+    .then(async res => {
+      const ok = res.ok;
+      // Status-only probe — drop the tile body without decoding it.
+      await res.body?.cancel().catch(() => undefined);
       console.debug(
         `[WdNativeMapView] MapTiler probe: ${res.status} -> ${ok ? 'usable' : 'dead key'}`
       );
@@ -163,10 +161,11 @@ async function resolveBasemapStyleInner(): Promise<StyleSpecification> {
       return JSON.parse(JSON.stringify(cached));
     }
     try {
-      const res = await axios.get<StyleSpecification>(style, {
-        headers: { Accept: 'application/json' },
-      });
-      cached = res.data;
+      const res = await fetch(style, { headers: { Accept: 'application/json' } });
+      if (!res.ok) {
+        throw new Error(`HTTP ${String(res.status)}`);
+      }
+      cached = (await res.json()) as StyleSpecification;
     } catch (e) {
       // MapTiler-hosted styles 403 when the API key is suspended —
       // the web flow falls back via map error events which don't fire
