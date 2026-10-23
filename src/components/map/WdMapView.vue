@@ -1,5 +1,14 @@
 <script setup lang="ts">
-import { ref, inject, watchEffect, watch, onErrorCaptured, computed, onMounted } from 'vue';
+import {
+  ref,
+  inject,
+  watchEffect,
+  watch,
+  onErrorCaptured,
+  computed,
+  onMounted,
+  onScopeDispose,
+} from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import {
   useResizeObserver,
@@ -11,6 +20,7 @@ import {
 import { useQuasar } from 'quasar';
 import { useBasemapStore, mapProfileForTier } from '@stores/map/basemap-store';
 import { useMapCatalogStore } from '@stores/map/map-catalog-store';
+import { startRevealLoop } from './reveal-scheduler';
 import { useLocalPropertiesStore } from '@stores/local-properties-store';
 import { showErrorDialogPersistent, ErrorCode } from '@components/error';
 import type { Map, PaddingOptions } from 'maplibre-gl';
@@ -259,37 +269,33 @@ function revealMap(_map: Map): void {
 
 function scheduleReveal(map: Map): void {
   if (mapRendered.value) return;
+  // Reveal logic lives in reveal-scheduler.ts (unit-tested for both
+  // catalog-vs-idle orderings + the safety fallback; the original
+  // inline version had a TDZ crash on the synchronous path — see
+  // tests/unit/reveal-scheduler.spec.ts). Safety: after 8s we reveal
+  // whatever state the map is in (basemap-only if the catalog compile
+  // is stuck) — an intentional spec deviation: a partial map beats an
+  // infinite splash; overlays still attach when they arrive.
+  const scheduler = startRevealLoop(
+    {
+      styleReady: () => (map.getStyle()?.layers?.length ?? 0) >= 2,
+      onIdleOnce: cb => map.once('idle', cb),
+    },
+    () => revealMap(map)
+  );
+  onScopeDispose(() => scheduler.dispose());
+  // notifyOverlaysDone is idempotent — no need to stop this watcher
+  // from inside its own callback (that exact pattern was the TDZ
+  // regression); the scope dispose cleans it up.
   let stopStatusWatch: (() => void) | undefined;
   stopStatusWatch = watch(
     () => mapCatalogStore.status === 'ready' || mapCatalogStore.status === 'error',
     overlaysDone => {
-      if (!overlaysDone) return;
-      // With immediate:true this callback can run synchronously BEFORE
-      // the assignment above completes — calling the stop function
-      // directly is a TDZ ReferenceError that kills the whole reveal
-      // chain (observed live: loader stuck forever). Stop it from a
-      // microtask, after the assignment has landed.
-      void Promise.resolve().then(() => stopStatusWatch?.());
-      // First idle with a REAL style (not the empty boot style):
-      const tryReveal = () => {
-        if (mapRendered.value) return;
-        if ((map.getStyle()?.layers?.length ?? 0) >= 2) {
-          revealMap(map);
-        } else {
-          map.once('idle', tryReveal);
-        }
-      };
-      map.once('idle', tryReveal);
-      // Safety: reveal even if the map never settles (slow tiles, or
-      // the catalog compile stuck in 'loading') — an intentionally
-      // SPEC-DEVIATING fallback: after 8s we show whatever state the
-      // map is in (basemap-only, no overlays) rather than an infinite
-      // loader. The overlays still attach when they arrive; the next
-      // map render includes them.
-      setTimeout(() => revealMap(map), 8000);
+      if (overlaysDone) scheduler.notifyOverlaysDone();
     },
     { immediate: true }
   );
+  onScopeDispose(() => stopStatusWatch?.());
 }
 
 const mapResize = useDebounceFn(() => {
