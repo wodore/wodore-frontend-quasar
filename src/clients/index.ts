@@ -31,7 +31,9 @@ export type Sparse<T, K extends keyof T> = Pick<T, K>;
 const PROGRESS_SKIP = ['/geo/places/search', '/availability/', '/meteo/weather_codes'];
 const skipProgress = (url: string): boolean => PROGRESS_SKIP.some(u => url.includes(u));
 
-export const progressMiddleware: Middleware = {
+// (review n3: module-local on purpose — no external consumer; export
+// only when a test actually needs to import it.)
+const progressMiddleware: Middleware = {
   async onRequest({ request }) {
     if (skipProgress(request.url)) {
       return;

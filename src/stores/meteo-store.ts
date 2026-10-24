@@ -749,7 +749,12 @@ export const useMeteoStore = defineStore('meteo', () => {
    * instantly instead of eating the ~1s cold /v1/meteo/weather_codes
    * round-trip. Called from MapPage once the map has settled (idle slot) —
    * never on the boot critical path. Once per store lifetime; the
-   * in-flight dedupe inside getWeatherCodes makes double-calls safe. */
+   * (review n2: the in-flight branch of getWeatherCodes returns the
+   * current (possibly empty) codes map, NOT the pending result — safe
+   * only because every widget consumer drives it from a watchEffect,
+   * which re-triggers when the in-flight Set deletes the key and the
+   * codes land. Never rely on the synchronous return from a
+   * non-reactive context.) */
   let weatherCodesPrefetched = false;
   const prefetchWeatherCodes = (lang?: string): void => {
     if (weatherCodesPrefetched) return;
