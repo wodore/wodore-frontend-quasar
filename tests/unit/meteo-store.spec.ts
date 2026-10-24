@@ -88,17 +88,27 @@ describe('meteo store weather-code context', () => {
     setActivePinia(createPinia());
   });
 
-  it('runs the fetch context exactly once per store init (no effect re-runs)', async () => {
+  it('does NOT fetch on store init (background contract) — only prefetch or widget demand', async () => {
     const { useMeteoStore } = await import('@stores/meteo-store');
-    const store = useMeteoStore();
+    useMeteoStore();
 
     await settle();
 
+    // Owner spec 2026-10: store init must never start a network request;
+    // the ~1s cold lookup moved to MapPage's post-reveal idle prefetch.
+    expect(weatherCodeFetches()).toBe(0);
+  });
+
+  it('prefetchWeatherCodes warms the cache exactly once', async () => {
+    const { useMeteoStore } = await import('@stores/meteo-store');
+    const store = useMeteoStore();
+    await settle();
+
+    store.prefetchWeatherCodes();
+    store.prefetchWeatherCodes(); // second call must be a no-op
+    await settle();
+
     expect(weatherCodeFetches()).toBe(1);
-    // Exactly two cache reads per context run: one in the watcher, one at
-    // the top of getWeatherCodes. The old watchEffect re-ran the watcher
-    // body per reactive trigger (>=3 reads per fetch).
-    expect(weatherCodeCacheReads(getItemSpy)).toBe(2);
     expect(store.weatherCodes['0'].description).toBe('Clear');
   });
 
@@ -106,16 +116,15 @@ describe('meteo store weather-code context', () => {
     const { useMeteoStore } = await import('@stores/meteo-store');
     const store = useMeteoStore();
     await settle();
-    expect(weatherCodeFetches()).toBe(1);
+    expect(weatherCodeFetches()).toBe(0);
 
     store.setWeatherCodesContext('de');
     await settle();
-    expect(weatherCodeFetches()).toBe(2);
-    expect(weatherCodeCacheReads(getItemSpy)).toBe(4);
+    expect(weatherCodeFetches()).toBe(1);
     expect(store.weatherCodesLang).toBe('de');
 
     // No further spontaneous runs
     await settle();
-    expect(weatherCodeFetches()).toBe(2);
+    expect(weatherCodeFetches()).toBe(1);
   });
 });

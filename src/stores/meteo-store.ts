@@ -429,8 +429,13 @@ export const useMeteoStore = defineStore('meteo', () => {
       void getWeatherCodes(weatherCodesLang.value, {
         collection: weatherCodesCollection.value,
       }).catch(() => {});
-    },
-    { immediate: true }
+    }
+    // NOT immediate (owner spec 2026-10: "weather codes in the
+    // background"): store init must never start a network request —
+    // MapPage warms the cache in a post-reveal idle slot
+    // (prefetchWeatherCodes), and widgets self-serve via
+    // getWeatherCodes (in-memory/localStorage SWR) when they open.
+    // Language/collection switches still refetch here as before.
   );
 
   const fetchHourly = async ({
@@ -738,12 +743,29 @@ export const useMeteoStore = defineStore('meteo', () => {
     return results;
   };
 
+  /** One-shot background prefetch (owner spec: "fetch in the background"):
+   * fills the in-memory + localStorage SWR cache for the CURRENT locale
+   * and default symbol collection, so the first weather widget opens
+   * instantly instead of eating the ~1s cold /v1/meteo/weather_codes
+   * round-trip. Called from MapPage once the map has settled (idle slot) —
+   * never on the boot critical path. Once per store lifetime; the
+   * in-flight dedupe inside getWeatherCodes makes double-calls safe. */
+  let weatherCodesPrefetched = false;
+  const prefetchWeatherCodes = (lang?: string): void => {
+    if (weatherCodesPrefetched) return;
+    weatherCodesPrefetched = true;
+    void getWeatherCodes(lang ?? currentLocale(), {
+      collection: weatherCodesCollection.value,
+    });
+  };
+
   return {
     forecastPossible,
     fetchCachedHourly,
     fetchHourly,
     getDaily,
     getWeatherCodes,
+    prefetchWeatherCodes,
     setWeatherCodesContext,
     weatherCodes,
     weatherCodesCollection,

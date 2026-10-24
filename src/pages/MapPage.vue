@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { defineAsyncComponent, onMounted, ref } from 'vue';
+import { defineAsyncComponent, onMounted, ref, watch } from 'vue';
 import { whenIdle } from '@services/idle';
+import { useMeteoStore } from '@stores/meteo-store';
 import WdMapLoader from 'components/map/WdMapLoader.vue';
 
 const WdMapView = defineAsyncComponent(() => import('components/map/WdMapView.vue'));
@@ -27,6 +28,21 @@ onMounted(() => {
     mapReady.value = true;
   });
 });
+
+// Background weather-code prefetch (owner spec: "frontend in the
+// background"): once the splash has fully revealed, the next idle slot
+// fills the /v1/meteo/weather_codes SWR cache (progress-bar skipped) —
+// the first weather widget then opens instantly instead of eating the
+// ~1s cold lookup. Never on the boot critical path; once per visit.
+const meteoStore = useMeteoStore();
+watch(
+  mapRendered,
+  revealed => {
+    if (!revealed) return;
+    void whenIdle(() => meteoStore.prefetchWeatherCodes());
+  },
+  { once: true }
+);
 </script>
 
 <template>
