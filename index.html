@@ -626,7 +626,10 @@
             el.setAttribute('aria-label', LABELS[mode] || 'Loading map');
           }
         } catch (e) {
-          /* sniff miss — the en group shows (fallback locale) */
+          /* sniff THROW — data-wd-words stays unset, so NO word group
+             shows (all groups require the attribute). Deliberate: a
+             broken sniff must not flash the wrong language; the Vue
+             splash takes over with the persisted locale anyway. */
         }
       })();
     </script>

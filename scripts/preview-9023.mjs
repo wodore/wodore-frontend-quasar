@@ -74,10 +74,12 @@ function parseCookies(req) {
   return jar;
 }
 
-/** Sticky debug knobs: query param sets the cookie (24h), the knob's
- *  reset value clears it. Note cache's ON value is literally 'off'
- *  (caching disabled) — validation is per knob, a shared off/on reset
- *  sentinel would eat `cache=off` (bug caught live). */
+/** Sticky debug knobs: query param sets the cookie (SESSION cookie —
+ *  no Max-Age, matching the client-side knob cookies in debug-tools.ts;
+ *  must never outlive the browser session), the knob's reset value
+ *  clears it. Note cache's ON value is literally 'off' (caching
+ *  disabled) — validation is per knob, a shared off/on reset sentinel
+ *  would eat `cache=off` (bug caught live). */
 const KNOBS = [
   { param: 'net', cookie: 'wd-net', valid: v => NET_PROFILES[v] != null, resets: ['off', 'on'] },
   { param: 'cache', cookie: 'wd-cache', valid: v => v === 'off', resets: ['on'] },

@@ -61,7 +61,7 @@ const getWaitingSwVersion = async (
 
 if (
   typeof navigator !== 'undefined' &&
-  document.cookie.split(';').some(part => part.trim().startsWith('wd-cache=off'))
+  document.cookie.split(';').some(part => part.trim() === 'wd-cache=off')
 ) {
   // Cable-less cold-load testing (?cache=off on the preview server,
   // sticky via cookie): no service worker, no CacheStorage — every

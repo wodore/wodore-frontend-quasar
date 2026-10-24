@@ -43,7 +43,9 @@ const colorIn = ref(false);
 const ENTRANCE_AT_MS = 2000;
 const HILLS_AFTER_ENTRANCE_MS = 1000;
 const COLOR_DELAY_S = 0; // color starts WITH the entrance (owner: earlier)
-const logoDelaySec = ref(COLOR_DELAY_S);
+/** Plain constant (review n7): never mutated, no reactivity needed —
+ * the CSS var only offsets the mono/color crossfade + wordmark delays. */
+const logoDelaySec = COLOR_DELAY_S;
 
 // ── Status words (one stage-independent pool, ~20 phrases) ───────────────
 // STAGE-1 content (owner spec): they start at the 2s page-time mark —
@@ -69,6 +71,11 @@ const pickNext = () => {
 let wordTimer: ReturnType<typeof setInterval> | undefined;
 let wordDelayTimer: ReturnType<typeof setTimeout> | undefined;
 let hillsTimer: ReturnType<typeof setTimeout> | undefined;
+/** Review n1: the 2s entrance timer + a disposed flag so NO async
+ * callback (font-gate promise, rAF, hills timer) writes a ref after
+ * unmount — the dispose contract holds for every reveal side effect. */
+let entranceTimer: number | undefined;
+let disposed = false;
 const stopWords = () => {
   if (wordTimer !== undefined) {
     clearInterval(wordTimer);
@@ -130,14 +137,16 @@ onMounted(() => {
   // the first ~500ms instead of holding the mono mark until 2s.
   void fontsReady.then(() => {
     requestAnimationFrame(() => {
+      if (disposed) return; // review n1: no post-unmount ref writes
       colorIn.value = true;
     });
   });
   // Stage 2 — brand entrance (wordmark) at the 2s PAGE-TIME budget (a
   // slow JS boot already consumed it and enters immediately).
   const entranceDelay = Math.max(0, ENTRANCE_AT_MS - window.performance.now());
-  window.setTimeout(() => {
+  entranceTimer = window.setTimeout(() => {
     void fontsReady.then(() => {
+      if (disposed) return; // review n1: unmount during the entrance wait
       requestAnimationFrame(() => {
         entered.value = true;
       });
@@ -163,8 +172,10 @@ onMounted(() => {
   );
 });
 onBeforeUnmount(() => {
+  disposed = true; // review n1: async callbacks must not run past unmount
   stopWords();
   if (hillsTimer !== undefined) clearTimeout(hillsTimer);
+  if (entranceTimer !== undefined) clearTimeout(entranceTimer);
 });
 </script>
 
@@ -407,11 +418,12 @@ onBeforeUnmount(() => {
    300ms, matching the layer fade) instead of popping to full — and a
    still-pending entrance (delay not yet elapsed) is re-targeted to the
    base state, so those layers simply never become visible.
-   SPECIFICITY CONTRACT (review n4): this rule (0,2,0) must stay MORE
-   specific than the entrance rules `.wd-splash--in
-   .wd-splash__mtn-wrap[data-i='N']` below (0,2,1 — class+class+attr) —
-   it currently wins only by source order, so it must be declared
-   AFTER them to cover the mid-entrance interrupt. */
+   SPECIFICITY CONTRACT (review n4): this rule (0,3,0 — three classes)
+   is EXACTLY EQUAL in specificity to the entrance rules
+   `.wd-splash--hills .wd-splash__mtn-wrap[data-i='N']` (0,3,0 — two
+   classes + one attribute selector, which weighs the same as a class).
+   It wins ONLY by source order, so it MUST stay declared after them
+   to cover the mid-entrance interrupt — do not move it above. */
 .wd-splash.wd-splash--out .wd-splash__mtn-wrap {
   opacity: 0;
   transform: translateY(64px);

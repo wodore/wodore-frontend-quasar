@@ -148,6 +148,45 @@ describe('reveal scheduler', () => {
     expect(reveal).toHaveBeenCalledTimes(1);
   });
 
+  it('armed listener + safety ticks never stack idle listeners (review n5)', () => {
+    // notifyOverlaysDone() arms an idle listener BEFORE the safety
+    // ladder kicks in; every 2s poll tick must NOT register another
+    // one (MapLibre allows duplicate once() registrations — the
+    // doReveal guard hid the accumulation). At most ONE listener may
+    // be live at any time.
+    let listeners = 0;
+    let fired = 0;
+    const state = { styleReady: false, painted: false };
+    const signals: RevealSignals = {
+      styleReady: () => state.styleReady,
+      painted: () => state.painted,
+      onIdleOnce: cb => {
+        listeners++;
+        queue.push(() => {
+          listeners--;
+          fired++;
+          cb();
+        });
+      },
+    };
+    const queue: (() => void)[] = [];
+    const reveal = vi.fn();
+    const handle = startRevealLoop(signals, reveal, 8000, 20000);
+
+    handle.notifyOverlaysDone(); // arms the first listener
+    expect(listeners).toBe(1);
+
+    vi.advanceTimersByTime(8000 + 5 * 2000); // safety + 5 poll ticks, still unpainted
+    expect(listeners).toBe(1); // no stacking — the invariant this test guards
+    expect(reveal).not.toHaveBeenCalled();
+
+    // The single armed listener fires → reveals via the style check.
+    state.styleReady = true;
+    queue.splice(0).forEach(fn => fn());
+    expect(fired).toBe(1);
+    expect(reveal).toHaveBeenCalledTimes(1);
+  });
+
   it('reveals exactly once even if idle and safety race', () => {
     const { signals, fireIdle } = makeSignals({ styleReady: true, painted: true });
     const reveal = vi.fn();

@@ -97,9 +97,15 @@ export function startRevealLoop(
       return;
     }
     // Not painted yet (cold start, slow tiles): keep the splash. The
-    // re-armed idle fires as soon as the map settles — tryReveal then
+    // armed idle fires as soon as the map settles — tryReveal then
     // reveals with the style check alone (idle == painted for MapLibre).
-    signals.onIdleOnce(tryReveal);
+    // review n5: respect `armed` — arm() may already have registered the
+    // listener (notifyOverlaysDone), and every 2s tick must not pile on
+    // more; at most ONE idle listener is live at any time.
+    if (!armed) {
+      armed = true;
+      signals.onIdleOnce(tryReveal);
+    }
     pollTimer = setTimeout(safetyTick, Math.min(2000, hardCapMs - elapsed));
   };
   const safetyTimer = setTimeout(safetyTick, safetyMs);
