@@ -19,6 +19,42 @@ jobs:
     steps:
       - id: is_draft
         run: echo "draft=${{ github.event.pull_request.draft || false }}" >> "$GITHUB_OUTPUT"
+  # Bundle budget guard: builds the PWA and fails when the initial
+  # (critical-path) JS or the SPA shell exceed their budgets — catches a
+  # wrongly-eager import in the PR instead of in production. Lazy route
+  # chunks are immutable and cached; they are intentionally not budgeted.
+  bundle-budget:
+    needs: check-draft
+    if: needs.check-draft.outputs.draft != 'true' && (github.event_name != 'pull_request' || github.event.action != 'closed')
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Read Node.js version from .nvmrc
+        id: nvmrc
+        run: echo "NODE_VERSION=$(cat .nvmrc)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ steps.nvmrc.outputs.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build PWA
+        run: pnpm build:pwa
+        env:
+          WODORE_EXTERNAL_ENV: '1'
+
+      - name: Check bundle budgets
+        run: node scripts/check-bundle-budget.mjs
+
   # Skip ALL jobs when the PR is a draft (no tests, no preview, no APK)
   unit-tests:
     needs: check-draft
