@@ -81,6 +81,10 @@ export default configure(ctx => {
       'theme',
       'icons',
       { server: false, path: 'auth' },
+      // Umami analytics (client-only): injects the script at browser idle
+      // when env + opt-out + DNT gates pass — never on the boot critical
+      // path (see boot/analytics.ts).
+      { server: false, path: 'analytics' },
       { server: false, path: 'maplibre' },
       { server: false, path: 'pwa-update' },
       { server: false, path: 'native' },
