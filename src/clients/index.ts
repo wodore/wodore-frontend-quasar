@@ -24,11 +24,18 @@ export type schemasWodore = compWodore['schemas'];
  */
 export type Sparse<T, K extends keyof T> = Pick<T, K>;
 
-const loadingMiddleware: Middleware = {
+/** Progress-bar skip-list (owner spec): infrastructure traffic that
+ * must never flash the header bar — per-keystroke search, availability
+ * polling, and the background weather-code lookup prefetch. Keep this
+ * list synced across onRequest/onResponse/onError or the counter leaks. */
+const PROGRESS_SKIP = ['/geo/places/search', '/availability/', '/meteo/weather_codes'];
+const skipProgress = (url: string): boolean => PROGRESS_SKIP.some(u => url.includes(u));
+
+// (review n3: module-local on purpose — no external consumer; export
+// only when a test actually needs to import it.)
+const progressMiddleware: Middleware = {
   async onRequest({ request }) {
-    // Skip the progress bar for search and availability requests
-    // (per-keystroke / polling traffic must not flash the header bar)
-    if (request.url.includes('/geo/places/search') || request.url.includes('/availability/')) {
+    if (skipProgress(request.url)) {
       return;
     }
 
@@ -36,7 +43,7 @@ const loadingMiddleware: Middleware = {
   },
   async onResponse({ request }) {
     // Keep start/stop balanced for the skipped URLs too
-    if (request.url.includes('/geo/places/search') || request.url.includes('/availability/')) {
+    if (skipProgress(request.url)) {
       return;
     }
 
@@ -45,7 +52,7 @@ const loadingMiddleware: Middleware = {
   onError({ request }) {
     // Network-level failures never reach onResponse — decrement here
     // too or the progress counter leaks and the bar sticks visible
-    if (request.url.includes('/geo/places/search') || request.url.includes('/availability/')) {
+    if (skipProgress(request.url)) {
       return;
     }
 
@@ -114,6 +121,6 @@ export const clientWodore = createClient<pathsWodore>({
   baseUrl: getEnv('WODORE_API_HOST'),
 });
 
-clientWodore.use(loadingMiddleware);
+clientWodore.use(progressMiddleware);
 clientWodore.use(authMiddleware);
 clientWodore.use(apiVersionMiddleware);
