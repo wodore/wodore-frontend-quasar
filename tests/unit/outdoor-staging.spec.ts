@@ -22,6 +22,7 @@ vi.mock('@services/outdoorContours', () => ({
 import {
   stageStyleEnhancements,
   attachStagedEnhancements,
+  attachStagedSprites,
   isDeferredTerrainLayer,
   type StagingMapLike,
 } from '@services/outdoor-staging';
@@ -374,14 +375,19 @@ describe('attachStagedEnhancements', () => {
 
   const anchors = ['background', 'nature_naturalearth', 'place_point_label_rank_1'];
 
-  it('re-adds sources, layers at their anchors and sprites', () => {
+  it('re-adds sources, layers at their anchors (sprites attach on demand)', () => {
     const staged = stageStyleEnhancements(outdoorStyle())!;
     const map = stubMap({ existingLayers: anchors });
     expect(attachStagedEnhancements(map, staged.deferred)).toBe(true);
     const ops = map.calls.map(c => `${c.op}:${String(c.args[0])}`);
     expect(ops).toContain('addSource:rgb-tiles');
     expect(ops).toContain('addLayer:relief_hillshade_lowzoom');
-    expect(ops).toContain('addSprite:nature');
+    // Sprites are split out of the terrain attach (zoom >= 13 / settle):
+    // the base attach must NOT add them, the dedicated call does.
+    expect(ops).not.toContain('addSprite:nature');
+    attachStagedSprites(map, staged.deferred);
+    const opsAfter = map.calls.map(c => `${c.op}:${String(c.args[0])}`);
+    expect(opsAfter).toContain('addSprite:nature');
     // layer insertions use their captured anchors
     const hillshade = map.calls.find(
       c => c.op === 'addLayer' && c.args[0] === 'relief_hillshade_lowzoom'

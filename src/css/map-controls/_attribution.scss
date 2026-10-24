@@ -12,6 +12,14 @@
   }
 }
 
+// The chip is appended to <body> — OUTSIDE the opacity-gated map
+// container — so without this it would float ABOVE the splash
+// (z-index 2010 > splash 10) during the whole boot. `wd-booting` lives
+// on <body> from index.html until the splash reveal (revealMap).
+body.wd-booting .wd-attrib {
+  display: none;
+}
+
 // ── Collapsed: round ⓘ chip beside the GPS cluster ──────────────────────
 .wd-attrib {
   animation: wd-attrib-in 0.25s ease-out; /* fade in when ready */

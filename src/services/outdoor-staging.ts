@@ -244,9 +244,18 @@ export function attachStagedEnhancements(
   for (const { layer, beforeId } of deferred.layers) {
     if (!map.getLayer(layer.id)) map.addLayer(layer, beforeId);
   }
+  return true;
+}
+
+/** Attach the deferred sprite packs (nature/water pattern icons — the
+ *  ~2.3 MB @2x packs). Split from the terrain attach on purpose
+ *  (owner, 2026-10): the first view never needs them — their icons only
+ *  draw at deep zoom — so they load on demand (zoom ≥ 13) or after a
+ *  long settle, never competing with the first renders or the first
+ *  zoom gestures. */
+export function attachStagedSprites(map: StagingMapLike, deferred: StagedEnhancements): void {
   const present = new Set((map.getSprite() ?? []).map(s => s.id));
   for (const sprite of deferred.sprites) {
     if (!present.has(sprite.id)) map.addSprite(sprite.id, sprite.url);
   }
-  return true;
 }

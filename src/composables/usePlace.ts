@@ -1,4 +1,5 @@
 import { ref, watch, onScopeDispose, type Ref } from 'vue';
+import { consumePrefetchedHut } from '@services/hut-prefetch';
 import { clientWodore, type schemasWodore } from '@clients/index';
 import { currentLocale } from '@services/locale';
 
@@ -136,12 +137,35 @@ export function usePlace(slug: Ref<string | undefined>) {
     loading.value = true;
     error.value = null;
 
-    // Create request promise
-    const requestPromise = clientWodore
-      .GET('/v1/huts/{slug}', {
-        params: { path: { slug: newSlug }, query: { lang: currentLocale() } },
-        signal: controller.signal,
-      })
+    // Deep-link prefetch handoff (perf/hut-fast-first-paint): if the
+    // boot already fired this exact request, await its response instead
+    // of a second round-trip; a mismatch/miss fetches normally. The
+    // prefetch promise must be CHAINED — its resolved value unwrapped
+    // into `data` — wrapping it as Promise.resolve({ data: promise })
+    // would pass the live Promise object through as the place payload
+    // (review blocker). A REJECTED prefetch (e.g. transient boot
+    // network error) falls back to a normal GET — a miss fetches
+    // normally.
+    const prefetched = consumePrefetchedHut(newSlug, currentLocale());
+    const requestPromise = (
+      prefetched
+        ? prefetched.then(
+            hutData => ({
+              data: hutData as never,
+              error: undefined as never,
+              response: undefined as never,
+            }),
+            () =>
+              clientWodore.GET('/v1/huts/{slug}', {
+                params: { path: { slug: newSlug }, query: { lang: currentLocale() } },
+                signal: controller.signal,
+              })
+          )
+        : clientWodore.GET('/v1/huts/{slug}', {
+            params: { path: { slug: newSlug }, query: { lang: currentLocale() } },
+            signal: controller.signal,
+          })
+    )
       .then(({ data, error: apiError, response }) => {
         // Only update if this request was not superseded
         if (controller.signal.aborted) {
@@ -151,7 +175,9 @@ export function usePlace(slug: Ref<string | undefined>) {
         // Read before the union narrows: past the apiError check, the
         // success member makes `!data` an unreachable state for TS and
         // `response` collapses to never.
-        const status = response.status;
+        // Prefetch handoff path has no response object — a sane 200
+        // stand-in keeps the destructure below total.
+        const status = response?.status ?? 200;
         if (apiError) {
           throw new PlaceRequestError(
             { kind: 'http', status },

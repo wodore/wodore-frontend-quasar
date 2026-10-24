@@ -12,6 +12,14 @@ vi.mock('@stores/auth-store', () => ({
   useAuthStore: () => ({ access_token: '' }),
 }));
 
+// Prefetch handoff regression coverage: the real service no-ops under
+// NODE_ENV=test, so the handoff branch is only reachable via this mock
+// (controllable per test; default null = miss → normal fetch).
+const consumePrefetch = vi.hoisted(() => vi.fn((): unknown => null));
+vi.mock('@services/hut-prefetch', () => ({
+  consumePrefetchedHut: consumePrefetch,
+}));
+
 // clientWodore captures WODORE_API_HOST and the global fetch at import
 // time — both must be in place before the module graph evaluates
 // (same pattern as api-version.spec.ts). Tests must mutate THIS mock
@@ -135,5 +143,40 @@ describe('usePlace MVT identity seed', () => {
     const { place } = usePlace(ref('unseeded-hut'));
     await nextTick();
     expect(place.value).toBeUndefined();
+  });
+});
+
+describe('deep-link prefetch handoff', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    fetchMock.mockReset();
+    fetchMock.mockImplementation(async () => new Response('{}', { status: 200 }));
+    consumePrefetch.mockReset();
+    consumePrefetch.mockReturnValue(null);
+  });
+
+  it('unwraps the prefetched promise into the place payload (regression: the live Promise object was passed through as data)', async () => {
+    consumePrefetch.mockReturnValue(Promise.resolve({ name: 'Prefetched Hut', elevation: 2500 }));
+    const { place, loading } = usePlace(ref('prefetched-hut'));
+
+    await vi.waitFor(() => expect(loading.value).toBe(false));
+    expect(place.value).toEqual({ name: 'Prefetched Hut', elevation: 2500 });
+    expect(place.value instanceof Promise).toBe(false);
+  });
+
+  it('falls back to a normal fetch when the prefetch request itself failed', async () => {
+    consumePrefetch.mockReturnValue(Promise.reject(new Error('Hut prefetch HTTP 500')));
+    fetchMock.mockImplementation(
+      async () =>
+        new Response(JSON.stringify({ name: 'Fallback Hut' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+    );
+    const { place, loading, error } = usePlace(ref('fallback-hut'));
+
+    await vi.waitFor(() => expect(loading.value).toBe(false));
+    expect(error.value).toBeNull();
+    expect((place.value as { name?: string })?.name).toBe('Fallback Hut');
   });
 });

@@ -33,6 +33,7 @@ export type IconsId =
   | "elevation-outline"
   | "edit"
   | "edit-outline"
+  | "debug"
   | "copyright"
   | "cloud-offline-outline"
   | "close"
@@ -90,6 +91,7 @@ export type IconsKey =
   | "ElevationOutline"
   | "Edit"
   | "EditOutline"
+  | "Debug"
   | "Copyright"
   | "CloudOfflineOutline"
   | "Close"
@@ -147,6 +149,7 @@ export enum Icons {
   ElevationOutline = "elevation-outline",
   Edit = "edit",
   EditOutline = "edit-outline",
+  Debug = "debug",
   Copyright = "copyright",
   CloudOfflineOutline = "cloud-offline-outline",
   Close = "close",
@@ -205,25 +208,26 @@ export const ICONS_CODEPOINTS: { [key in Icons]: string } = {
   [Icons.ElevationOutline]: "61728",
   [Icons.Edit]: "61729",
   [Icons.EditOutline]: "61730",
-  [Icons.Copyright]: "61731",
-  [Icons.CloudOfflineOutline]: "61732",
-  [Icons.Close]: "61733",
-  [Icons.Checkmark]: "61734",
-  [Icons.Calendar]: "61735",
-  [Icons.Browser]: "61736",
-  [Icons.Bike]: "61737",
-  [Icons.Bell]: "61738",
-  [Icons.BellOutline]: "61739",
-  [Icons.BedFlat]: "61740",
-  [Icons.BedFlatOutline]: "61741",
-  [Icons.At]: "61742",
-  [Icons.ArrowheadUp]: "61743",
-  [Icons.ArrowheadRight]: "61744",
-  [Icons.ArrowheadLeft]: "61745",
-  [Icons.ArrowheadDown]: "61746",
-  [Icons.ArrowUpDown]: "61747",
-  [Icons.Api]: "61748",
-  [Icons.AlertTriangleOutline]: "61749",
-  [Icons.Add]: "61750",
-  [Icons.AddOutline]: "61751",
+  [Icons.Debug]: "61731",
+  [Icons.Copyright]: "61732",
+  [Icons.CloudOfflineOutline]: "61733",
+  [Icons.Close]: "61734",
+  [Icons.Checkmark]: "61735",
+  [Icons.Calendar]: "61736",
+  [Icons.Browser]: "61737",
+  [Icons.Bike]: "61738",
+  [Icons.Bell]: "61739",
+  [Icons.BellOutline]: "61740",
+  [Icons.BedFlat]: "61741",
+  [Icons.BedFlatOutline]: "61742",
+  [Icons.At]: "61743",
+  [Icons.ArrowheadUp]: "61744",
+  [Icons.ArrowheadRight]: "61745",
+  [Icons.ArrowheadLeft]: "61746",
+  [Icons.ArrowheadDown]: "61747",
+  [Icons.ArrowUpDown]: "61748",
+  [Icons.Api]: "61749",
+  [Icons.AlertTriangleOutline]: "61750",
+  [Icons.Add]: "61751",
+  [Icons.AddOutline]: "61752",
 };

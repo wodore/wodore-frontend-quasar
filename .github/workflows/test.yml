@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   check-draft:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # 26.04 runners break Playwright chromium install (pinned 2026-10)
     steps:
       - id: is_draft
         run: echo "draft=${{ github.event.pull_request.draft || false }}" >> "$GITHUB_OUTPUT"
@@ -23,7 +23,7 @@ jobs:
   unit-tests:
     needs: check-draft
     if: needs.check-draft.outputs.draft != 'true' && (github.event_name != 'pull_request' || github.event.action != 'closed')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # 26.04 runners break Playwright chromium install (pinned 2026-10)
 
     steps:
       - name: Check out

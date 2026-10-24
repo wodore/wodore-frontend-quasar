@@ -104,6 +104,7 @@ export default [
       // fetch */` comments in .mjs scripts (no-redeclare).
       globals: {
         fetch: 'readonly',
+        requestAnimationFrame: 'readonly',
         AbortSignal: 'readonly',
         Request: 'readonly',
         Response: 'readonly',

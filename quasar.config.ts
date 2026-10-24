@@ -71,6 +71,11 @@ export default configure(ctx => {
       // hooks before any later boot file runs — DSN-gated, inert without
       // WODORE_SENTRY_DSN (openspec: add-error-tracking).
       { server: false, path: 'sentry' },
+      // eruda + plugins when the debug flag/param is set — fire-and-forget:
+      // debug tooling loads in the background and never blocks the app
+      // mount (owner report: boot must not wait on it).
+      { server: false, path: 'debug-tools' },
+      { server: false, path: 'hut-prefetch' },
       'i18n',
       'storage',
       'theme',
@@ -419,7 +424,7 @@ export default configure(ctx => {
       // directives: [],
 
       // Quasar plugins
-      plugins: ['Dark', 'Notify', 'Dialog', 'LocalStorage', 'LoadingBar', 'Meta'],
+      plugins: ['Dark', 'Notify', 'Dialog', 'LocalStorage', 'Meta'],
       config: {
         // Light default; the theme boot applies the persisted setting
         // ('light' | 'dark' | 'auto' in user settings).
