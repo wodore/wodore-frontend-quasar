@@ -34,7 +34,6 @@ declare module 'vue' {
     RouterView: typeof import('vue-router')['RouterView']
     WdAccommodationAvailabilities: typeof import('./src/components/huts/WdAccommodationAvailabilities.vue')['default']
     WdAccommodationDay: typeof import('./src/components/huts/WdAccommodationDay.vue')['default']
-    WdAnalytics: typeof import('./src/components/utils/WdAnalytics.vue')['default']
     WdApiVersionBanner: typeof import('./src/components/version/WdApiVersionBanner.vue')['default']
     WdAttributionContent: typeof import('./src/components/utils/WdAttributionContent.vue')['default']
     WdBackendIcon: typeof import('./src/components/media/WdBackendIcon.vue')['default']

@@ -49,7 +49,7 @@ export const Aarbiwak = meta.story({
     longitude: 7.7534,
     elevation: 2508,
   },
-  render: args => ({
+  render: (args: { latitude: number; longitude: number; elevation: number }) => ({
     components: { WdHutWeatherForecast },
     setup() {
       return { args };

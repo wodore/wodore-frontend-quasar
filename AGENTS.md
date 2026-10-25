@@ -492,6 +492,34 @@ sentry.py`). Rules:
   APK's maps can't be scraped (device-internal origin) — upload-from-CI
   is the follow-up if WebView stacks need symbolication.
 
+### Analytics (Umami)
+
+Tracker `script.js` is injected client-only at browser idle by
+`src/boot/analytics.ts`, gated on (1) `WODORE_UMAMI_WEBSITE_ID` +
+`WODORE_UMAMI_WEBSITE_URL` env, (2) the user's `umami.disabled`
+localStorage opt-out (WdUser/WdMapMenu toggle), (3) DNT
+(`data-do-not-track`). Custom events go through the typed `track()` in
+`src/services/analytics.ts`. `WdAnalytics.vue` was REMOVED (it
+injected a second tracker per session) — never re-add a second
+injection point.
+
+- `data-performance="true"` collects real-user Core Web Vitals
+  (Umami ≥3.1) — inside the ~2.3 KB tracker, no extra download.
+- `WODORE_UMAMI_RECORDER=on` additionally loads `recorder.js` (replays
+  ≥3.1 / heatmaps ≥3.2; rrweb, ~59 KB gzip + a config GET; then the
+  SERVER-side per-website sample rate/mask level decides what records).
+  recorder.js has NO own DNT/opt-out support — it must only ever load
+  through the boot gates, never a pasted index.html tag. A mid-session
+  opt-out stops custom events immediately, but a recorder.js that
+  already loaded keeps recording the CURRENT visit — full stop needs
+  the next visit (same as the tracker's auto pageviews). Session
+  replays are individual recordings (30-day retention) — the data
+  policy (DataPolicy.vue) must cover them before enabling in prod.
+- Umami's heatmap view iframes the site from the dashboard: nginx ships
+  `Content-Security-Policy: frame-ancestors 'self'
+https://stats.wodore.com` (repeat it in any HTML location that adds
+  its own add_header — nginx drops server-level headers there).
+
 ## Common Patterns
 
 ### i18n / Language Switch

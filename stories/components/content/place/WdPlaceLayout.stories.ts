@@ -26,7 +26,7 @@ export default meta;
 export const Desktop = meta.story({
   args: { slug: 'aarbiwak' },
   globals: { viewport: { value: 'desktop' } },
-  render: args => ({
+  render: (args: { slug: string }) => ({
     components: { WdPlaceTitle, WdPlaceContent, WdPlaceActions },
     setup() {
       return { args };
@@ -68,7 +68,7 @@ export const Desktop = meta.story({
 export const Mobile = meta.story({
   args: { slug: 'aarbiwak' },
   globals: { viewport: { value: 'mobile' }, platform: 'mobile' },
-  render: args => ({
+  render: (args: { slug: string }) => ({
     components: { WdPlaceTitle, WdPlaceContent, WdPlaceActions },
     setup() {
       return { args };
