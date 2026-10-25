@@ -181,6 +181,33 @@ function serve(r, body, noStore) {
   r.finish();
 }
 
+// 308 to the canonical .md document for Accept: text/markdown clients.
+// The response MUST stay uncacheable by shared caches (no-store): the
+// CDN does not key its cache on Accept (nor honor Vary), so a CACHED
+// redirect under the bare URL would funnel every browser deep link to
+// the raw Markdown document one hop later — the poisoning bug again,
+// just redirected. Vary: Accept is still sent for caches that honor
+// it (defense in depth). The target is always the un-prefixed
+// /hut/{slug}.md — the only .md proxy location; the raw query string
+// (?lang=...) is preserved, and a stray .md suffix on the slug (a
+// locale-prefixed /de/hut/{slug}.md reaches njs, unlike a bare .md,
+// which the regex location wins) is normalized away instead of
+// doubling up into {slug}.md.md.
+function redirectMarkdown(r, slug) {
+  var target = '/hut/' + slug.replace(/\.md$/, '') + '.md';
+  var qs = r.variables.args;
+  if (qs) {
+    target += '?' + qs;
+  }
+  r.status = 308;
+  r.headersOut.Location = target;
+  r.headersOut.Vary = 'Accept';
+  r.headersOut['Cache-Control'] =
+    'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0';
+  r.sendHeader();
+  r.finish();
+}
+
 function hut(r) {
   // Locale prefix: /en|/de|/fr|/it/hut/{slug} - every language is
   // prefixed (the indexed, self-canonical URLs). The prefix localizes and becomes the
@@ -198,12 +225,20 @@ function hut(r) {
     return;
   }
   // Content negotiation: clients explicitly asking for Markdown (Accept:
-  // text/markdown) get the .md document instead of the HTML shell — same
-  // URL, no suffix needed. The .md location then proxies to the backend.
-  // Checked before any redirect so it wins for every UA, crawler or not.
+  // text/markdown) are redirected PERMANENTLY to the .md document.
+  // Never serve the Markdown inline under the bare URL: this handler
+  // used to internalRedirect to the .md location, which proxied the
+  // backend document (Cache-Control: public, max-age=3600, no Vary)
+  // straight out under the bare /hut/{slug} URL — and the CDN, which
+  // does not key its cache on Accept, then served raw Markdown to every
+  // browser deep link for the cache TTL (cache poisoning, reproduced
+  // live on staging 2026-10-25). With the redirect the bare URL keeps a
+  // single uncacheable behavior for Markdown clients while LLM crawlers
+  // still reach the cacheable .md document in one hop. Checked before
+  // any other redirect so it wins for every UA, crawler or not.
   var accept = r.headersIn.Accept || '';
   if (accept.indexOf('text/markdown') !== -1) {
-    r.internalRedirect('/hut/' + slug + '.md');
+    redirectMarkdown(r, slug);
     return;
   }
   var ua = r.headersIn['User-Agent'] || '';
