@@ -15,7 +15,9 @@
  * concern). UA sniffing is acceptable at this trust level — a spoofed
  * bot UA at worst gets a mapless page.
  */
-const CRAWLER_UA_RE =
+/** Index-crawler UA pattern — mirrors SEARCHBOT_RE in docker/seo.js
+ * (a unit test asserts token parity; keep both lists in sync). */
+export const CRAWLER_UA_RE =
   /Googlebot|bingbot|Slurp|DuckDuckBot|Baiduspider|YandexBot|ia_archiver|GPTBot|ClaudeBot|PerplexityBot/i;
 
 /**

@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { isCrawlerUA } from '@services/crawler-ua';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { CRAWLER_UA_RE, isCrawlerUA } from '@services/crawler-ua';
 
 /** UA list must stay in sync with SEARCHBOT_RE in docker/seo.js. */
 describe('isCrawlerUA', () => {
@@ -44,5 +46,31 @@ describe('isCrawlerUA', () => {
     expect(isCrawlerUA('mozilla/5.0 (compatible; googlebot/2.1)')).toBe(true);
     expect(isCrawlerUA('')).toBe(false);
     expect(isCrawlerUA(undefined)).toBe(false);
+  });
+});
+
+/** The SPA gate and the SEO edge must agree on who is a crawler: this
+ * reads SEARCHBOT_RE straight out of docker/seo.js and asserts token
+ * parity with CRAWLER_UA_RE, so adding a bot to the edge list without
+ * the SPA (or vice versa) fails CI instead of drifting silently. */
+describe('crawler-ua parity with the SEO edge', () => {
+  it('mirrors every SEARCHBOT_RE token from docker/seo.js', () => {
+    const seoPath = fileURLToPath(new URL('../../docker/seo.js', import.meta.url));
+    const src = readFileSync(seoPath, 'utf8');
+    const decl = src.match(/SEARCHBOT_RE\s*=\s*new RegExp\(([\s\S]*?)\)\s*;/);
+    expect(decl, 'SEARCHBOT_RE declaration found in docker/seo.js').not.toBeNull();
+    // Drop the trailing flags argument (', "i"') before extracting tokens.
+    const patternSource = decl![1].replace(/,\s*'[^']*'\s*$/, '');
+    const edgeTokens = (patternSource.match(/'([^']*)'/g) ?? [])
+      .flatMap(segment => segment.slice(1, -1).split('|'))
+      .map(token => token.trim())
+      .filter(Boolean)
+      .sort();
+    const spaTokens = CRAWLER_UA_RE.source
+      .split('|')
+      .map(token => token.trim())
+      .sort();
+    expect(edgeTokens).toEqual(spaTokens);
+    expect(CRAWLER_UA_RE.flags).toContain('i');
   });
 });

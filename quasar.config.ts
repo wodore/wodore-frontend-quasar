@@ -89,8 +89,9 @@ export default configure(ctx => {
       // unused — WdMapView imports its Mgl* components directly — and the
       // static import put the ~327 kB gz MapLibre chunk on the pre-mount
       // critical path of every route. MapLibre now loads with the
-      // WdMapView chunk graph; crawlers skip it entirely, see
-      // services/crawler-ua.ts.)
+      // WdMapView chunk graph; crawlers never BOOT it (they still
+      // download the vendor chunk via the map-store cluster edge —
+      // known follow-up), see services/crawler-ua.ts.)
       { server: false, path: 'pwa-update' },
       { server: false, path: 'native' },
     ],
