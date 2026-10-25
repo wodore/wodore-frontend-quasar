@@ -391,6 +391,29 @@ Services are defined in `../wodore-backend/docker-compose.yml`:
 
 - Imagor (Image Processing)
 
+### nginx runtime env (Docker/Kubernetes)
+
+`docker/entrypoint.sh` substitutes the `__WODORE_*__` placeholders in
+`docker/nginx-default.conf` at container start: `WODORE_API_HOST` (API
+origin for the SEO proxies — sitemaps, llms.txt, hut `.md`, hut meta
+subrequests — and, via replace_vars/env.js, the SPA's own API base URL),
+`WODORE_SEO_CACHE_TTL`, `WODORE_SEO_PAGE_TTL`, `WODORE_DEFAULT_LANG`,
+`WODORE_LANG_PREFIXES`, `WODORE_NGINX_CONFIG`.
+
+`WODORE_API_UPSTREAM` (host[:port], fully qualified — nginx's resolver
+ignores resolv.conf search domains; e.g.
+`wd-backend-api.staging.svc.cluster.local:8008`) redirects only nginx's
+SEO proxy_pass targets to an in-cluster service, resolved at request
+time via the cluster DNS. A static proxy_pass hostname is resolved at
+config-load time, and a DNS outage then crash-loops the pod
+(`[emerg] host not found in upstream` — staging incident 2026-10-25).
+The backend still receives the public Host (`WODORE_API_HOST`'s
+host[:port] — Django `ALLOWED_HOSTS` matches it) and
+`X-Forwarded-Proto: https`. Browser-facing env.js is NOT redirected: the
+SPA keeps calling the public hub. Note: Traefik's api-compress/CORS
+middlewares do not apply to the bypassed path (accepted — compress moves
+to the in-cluster hop, CORS is irrelevant for same-origin SEO paths).
+
 ## Environment Variables
 
 Environment files are loaded in this order (later files override earlier ones):

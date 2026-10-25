@@ -40,7 +40,44 @@ fi
 # and the hut-meta cache TTL with WODORE_SEO_CACHE_TTL (seconds).
 # (No load_module needed: Alpine's nginx-mod-http-js ships its own
 # /etc/nginx/modules/10_http_js.conf which nginx.conf loads.)
-sed -i "s|__WODORE_API_HOST__|${WODORE_API_HOST:-http://localhost:8000}|g" "/etc/nginx/http.d/${CONFIG_FILE}.conf"
+#
+# WODORE_API_UPSTREAM (Kubernetes) overrides ONLY nginx's own proxy_pass
+# targets: host[:port] of an in-cluster backend service (e.g.
+# wd-backend-api.staging.svc.cluster.local:8008 — fully qualified, nginx's
+# resolver ignores resolv.conf search domains). nginx resolves a static
+# proxy_pass host at CONFIG-LOAD time — the 2026-10-25 public-DNS outage
+# crash-looped the deployment ([emerg] host not found in upstream). With
+# the override the proxies target http://$wodore_api_upstream, resolved
+# at REQUEST time (resolver = cluster DNS nameserver from
+# /etc/resolv.conf), and keep sending the public Host (from
+# WODORE_API_HOST — Django ALLOWED_HOSTS matches it) plus
+# X-Forwarded-Proto https (Traefik's TLS edge is bypassed, but Django
+# must keep building https URLs). Empty/unset = public hostname,
+# byte-for-byte the previous behavior; browser-facing env.js keeps the
+# public WODORE_API_HOST either way (that is replace_vars, below —
+# deliberately not overridden).
+if [ -n "${WODORE_API_UPSTREAM:-}" ]; then
+  # Tolerate a scheme or trailing path in the value; nginx wants host[:port].
+  UPSTREAM="${WODORE_API_UPSTREAM#http://}"
+  UPSTREAM="${UPSTREAM#https://}"
+  UPSTREAM="${UPSTREAM%%/*}"
+  RESOLVER="$(awk '/^nameserver/ {print $2; exit}' /etc/resolv.conf)"
+  # Host header exactly as the backend receives it today: nginx defaults
+  # to $proxy_host, i.e. the host[:port] of WODORE_API_HOST.
+  PUBLIC_HOST="${WODORE_API_HOST:-http://localhost:8000}"
+  PUBLIC_HOST="${PUBLIC_HOST#http://}"
+  PUBLIC_HOST="${PUBLIC_HOST#https://}"
+  PUBLIC_HOST="${PUBLIC_HOST%%/*}"
+  sed -i "s|__WODORE_API_HOST__|http://\$wodore_api_upstream|g" "/etc/nginx/http.d/${CONFIG_FILE}.conf"
+  sed -i "s|__WODORE_API_UPSTREAM_RESOLVER__|resolver ${RESOLVER:-127.0.0.11} valid=10s;|" "/etc/nginx/http.d/${CONFIG_FILE}.conf"
+  sed -i "s|__WODORE_API_UPSTREAM_SET__|set \$wodore_api_upstream ${UPSTREAM};|" "/etc/nginx/http.d/${CONFIG_FILE}.conf"
+  sed -i "s|__WODORE_API_UPSTREAM_HEADERS__|proxy_set_header Host ${PUBLIC_HOST}; proxy_set_header X-Forwarded-Proto https;|g" "/etc/nginx/http.d/${CONFIG_FILE}.conf"
+else
+  # No override: public API host as before, and drop the override
+  # placeholder lines the template carries for Kubernetes mode.
+  sed -i "s|__WODORE_API_HOST__|${WODORE_API_HOST:-http://localhost:8000}|g" "/etc/nginx/http.d/${CONFIG_FILE}.conf"
+  sed -i "/__WODORE_API_UPSTREAM_/d" "/etc/nginx/http.d/${CONFIG_FILE}.conf"
+fi
 sed -i "s|__WODORE_SEO_CACHE_TTL__|${WODORE_SEO_CACHE_TTL:-604800}|g" "/etc/nginx/http.d/${CONFIG_FILE}.conf"
 # Page cache for /hut/*: 0 (default) = no-store like index.html. Only set
 # >0 when a CDN sits in front AND deploys purge it — see docker/seo.js.
