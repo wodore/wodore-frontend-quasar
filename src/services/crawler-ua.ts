@@ -23,7 +23,6 @@ const CRAWLER_UA_RE =
  * search/LLM crawler. SSR/test-safe: no navigator → false.
  */
 export function isCrawlerUA(userAgent?: string): boolean {
-  const ua =
-    userAgent ?? (typeof navigator === 'undefined' ? '' : navigator.userAgent);
+  const ua = userAgent ?? (typeof navigator === 'undefined' ? '' : navigator.userAgent);
   return ua.length > 0 && CRAWLER_UA_RE.test(ua);
 }
