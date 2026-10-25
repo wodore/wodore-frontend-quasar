@@ -31,9 +31,13 @@ if [ "${WODORE_ENV}" != "production" ]; then
   # Bake a noindex into the HTML shell for crawlers that do not run JS
   # (the app sets the same via useMeta client-side, this covers the rest).
   sed -i 's|<head>|<head><meta name="robots" content="noindex, nofollow">|' /usr/share/nginx/html/index.html
-  # Uncomment all directives below "# Staging" sections
-  sed -i '/# Staging/{n;s/^    # //}' "/etc/nginx/http.d/${CONFIG_FILE}.conf"
 fi
+
+# CDN pull origins (orig.*): always a deny-all robots.txt, independent
+# of WODORE_ENV — nginx picks this file via the $robots_txt $host map
+# (nginx-default.conf), so the origin hosts never serve the crawlable
+# production robots.txt even though they serve the same content.
+printf 'User-agent: *\nDisallow: /\n' > /usr/share/nginx/html/robots-origin.txt
 
 # SEO proxies: replace the API host placeholder with the runtime API host
 # (same source of truth as the @@WODORE_API_HOST@@ placeholders in index.html)
@@ -79,6 +83,17 @@ else
   sed -i "/__WODORE_API_UPSTREAM_/d" "/etc/nginx/http.d/${CONFIG_FILE}.conf"
 fi
 sed -i "s|__WODORE_SEO_CACHE_TTL__|${WODORE_SEO_CACHE_TTL:-604800}|g" "/etc/nginx/http.d/${CONFIG_FILE}.conf"
+# X-Robots-Tag value for non-origin hosts (the $x_robots_tag map's
+# default branch, nginx-default.conf): the staging public host gets
+# "noindex, nofollow" as defense-in-depth next to its robots.txt
+# Disallow; production public hosts get "" — nginx emits no header for
+# an empty add_header value, so they are unchanged.
+if [ "${WODORE_ENV}" != "production" ]; then
+  X_ROBOTS_TAG_VALUE='"noindex, nofollow"'
+else
+  X_ROBOTS_TAG_VALUE='""'
+fi
+sed -i "s|__WODORE_STAGING_X_ROBOTS__|${X_ROBOTS_TAG_VALUE}|g" "/etc/nginx/http.d/${CONFIG_FILE}.conf"
 # Page cache for /hut/*: 0 (default) = no-store like index.html. Only set
 # >0 when a CDN sits in front AND deploys purge it — see docker/seo.js.
 sed -i "s|__WODORE_SEO_PAGE_TTL__|${WODORE_SEO_PAGE_TTL:-0}|g" "/etc/nginx/http.d/${CONFIG_FILE}.conf" /etc/nginx/seo.js
