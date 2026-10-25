@@ -400,7 +400,7 @@ subrequests — and, via replace_vars/env.js, the SPA's own API base URL),
 `WODORE_SEO_CACHE_TTL`, `WODORE_SEO_PAGE_TTL`, `WODORE_DEFAULT_LANG`,
 `WODORE_LANG_PREFIXES`, `WODORE_NGINX_CONFIG`.
 
-### Hidden CDN origin hosts (orig.*)
+### Hidden CDN origin hosts (orig.\*)
 
 The same server block (`server_name _`) also answers for the CDN pull
 origins `orig.wodore.com` / `orig.wodo.re` (+ `orig.stg.*`) — publicly
