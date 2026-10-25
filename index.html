@@ -27,6 +27,10 @@
         WODORE_OFFICIAL_URL: '<%= process.env.WODORE_OFFICIAL_URL %>',
         WODORE_API_HOST: '<%= process.env.WODORE_API_HOST %>',
         WODORE_API_VERSION: '<%= process.env.WODORE_API_VERSION %>',
+        // Optional CDN base for public/unauthenticated GETs (empty = off).
+        // The `|| ''` matters: without a .env entry EJS would bake the
+        // literal string "undefined".
+        WODORE_PUBLIC_API_URL: '<%= process.env.WODORE_PUBLIC_API_URL || "" %>',
         WODORE_TILE_SERVER_URL: '<%= process.env.WODORE_TILE_SERVER_URL %>',
         WODORE_IMAGOR_KEY: '<%= process.env.WODORE_IMAGOR_KEY %>',
         WODORE_IMAGOR_URL: '<%= process.env.WODORE_IMAGOR_URL %>',
@@ -76,6 +80,9 @@
         const urls = [
           ...(extra.length ? extra : defaults),
           env.WODORE_API_HOST,
+          // Public CDN base (anonymous GET traffic) when configured —
+          // deduplicated with the API host origin by the loop below.
+          env.WODORE_PUBLIC_API_URL,
           env.WODORE_TILE_SERVER_URL,
         ];
         const seen = new Set();

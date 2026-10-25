@@ -12,7 +12,7 @@
  */
 import { computed, ref, watch } from 'vue';
 
-import { getEnv } from '@services/runtimeEnv';
+import { publicApiBase } from '@services/apiBase';
 
 interface Props {
   /** Category identifier: `{parent}.{slug}` (e.g. `accommodation.hut`) */
@@ -66,9 +66,11 @@ const svgUrl = computed(() => {
   // Symbol endpoint URL schema (fetch/img follow its 302 to media):
   // /v1/categories/symbol/{variant}/{parent}/{slug}.svg
   // 'accommodation.hut' → parent 'accommodation', slug 'hut'
+  // Public unauthenticated GETs — served from the CDN base when one is
+  // configured (services/apiBase.ts).
   const [parent, ...rest] = props.identifier.split('.');
   const slug = rest.join('.') || parent;
-  return `${getEnv('WODORE_API_HOST')}/v1/categories/symbol/${props.variant}/${parent}/${slug}.svg`;
+  return `${publicApiBase()}/v1/categories/symbol/${props.variant}/${parent}/${slug}.svg`;
 });
 
 // The mono inline fetch requires CORS on the media target of the symbol
@@ -81,7 +83,7 @@ const fallbackImgSrc = computed(() => {
   if (monoState.value !== 'failed') return undefined;
   const [parent, ...rest] = props.identifier.split('.');
   const slug = rest.join('.') || parent;
-  return `${getEnv('WODORE_API_HOST')}/v1/categories/symbol/color/${parent}/${slug}.svg`;
+  return `${publicApiBase()}/v1/categories/symbol/color/${parent}/${slug}.svg`;
 });
 
 watch(

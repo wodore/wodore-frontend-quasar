@@ -397,8 +397,13 @@ Services are defined in `../wodore-backend/docker-compose.yml`:
 `docker/nginx-default.conf` at container start: `WODORE_API_HOST` (API
 origin for the SEO proxies — sitemaps, llms.txt, hut `.md`, hut meta
 subrequests — and, via replace_vars/env.js, the SPA's own API base URL),
-`WODORE_SEO_CACHE_TTL`, `WODORE_SEO_PAGE_TTL`, `WODORE_DEFAULT_LANG`,
-`WODORE_LANG_PREFIXES`, `WODORE_NGINX_CONFIG`.
+`WODORE_PUBLIC_API_URL` (optional CDN base for PUBLIC traffic — when
+set, the SPA routes all unauthenticated GETs through it, authenticated
+requests keep `WODORE_API_HOST`, and the SEO proxies fetch via it too
+unless `WODORE_API_UPSTREAM` is set; empty = single host everywhere —
+see `src/services/apiBase.ts`), `WODORE_SEO_CACHE_TTL`,
+`WODORE_SEO_PAGE_TTL`, `WODORE_DEFAULT_LANG`, `WODORE_LANG_PREFIXES`,
+`WODORE_NGINX_CONFIG`.
 
 ### Hidden CDN origin hosts (orig.\*)
 

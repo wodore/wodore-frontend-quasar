@@ -106,4 +106,18 @@ describe('getImageUrl', () => {
 
     expect(url).toContain(encodeURIComponent('http://api.test/media/huts/photo.jpg'));
   });
+
+  it('strips the CDN (public API base) media prefix too — responses fetched via the CDN carry CDN-absolutized media URLs', () => {
+    setEnv({
+      WODORE_API_HOST: 'http://api.test',
+      WODORE_PUBLIC_API_URL: 'https://cdn.test',
+      WODORE_IMAGOR_REPLACE_API_HOST_MEDIA: 'media-cdn',
+    });
+
+    const url = getImageUrl('https://cdn.test/media/huts/photo.jpg');
+
+    expect(url).toContain('/600x400/' + encodeURIComponent('media-cdn/huts/photo.jpg'));
+
+    setEnv({ WODORE_PUBLIC_API_URL: undefined, WODORE_IMAGOR_REPLACE_API_HOST_MEDIA: undefined });
+  });
 });

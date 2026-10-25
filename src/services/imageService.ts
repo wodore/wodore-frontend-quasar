@@ -1,6 +1,7 @@
 import hmacSHA256 from 'crypto-js/hmac-sha256';
 import Base64 from 'crypto-js/enc-base64';
 import { getEnv } from '@services/runtimeEnv';
+import { publicApiBase } from '@services/apiBase';
 
 function signPath(path: string, secret: string) {
   return hmacSHA256(path, secret).toString(Base64).replace(/\+/g, '-').replace(/\//g, '_');
@@ -33,17 +34,26 @@ export default function getImageUrl(
     size: '600x400',
   }
 ): string {
-  // Replace API host + /media URLs with configured value if enabled
+  // Replace API host + /media URLs with configured value if enabled.
+  // Both possible API origins are matched: the direct WODORE_API_HOST
+  // and the public/CDN base (services/apiBase.ts) — responses fetched
+  // through the CDN can carry media URLs absolutized against either.
   const replaceWith = getEnv('WODORE_IMAGOR_REPLACE_API_HOST_MEDIA');
   const apiHost = getEnv('WODORE_API_HOST');
 
   if (replaceWith !== 'disabled' && apiHost) {
-    const apiHostWithMedia = apiHost + '/media/';
+    const mediaPrefixes = new Set(
+      [apiHost, publicApiBase()].filter(Boolean).map(host => `${host!.replace(/\/+$/, '')}/media/`)
+    );
 
-    if (path.startsWith(apiHostWithMedia)) {
-      // Strip API host + /media/ prefix and replace with configured value
-      const pathWithoutPrefix = path.substring(apiHostWithMedia.length);
-      path = replaceWith ? replaceWith + '/' + pathWithoutPrefix : pathWithoutPrefix;
+    for (const prefix of mediaPrefixes) {
+      if (path.startsWith(prefix)) {
+        // Strip the matched host + /media/ prefix and replace with
+        // the configured value
+        const pathWithoutPrefix = path.substring(prefix.length);
+        path = replaceWith ? replaceWith + '/' + pathWithoutPrefix : pathWithoutPrefix;
+        break;
+      }
     }
   }
 
