@@ -17,7 +17,7 @@
  */
 import type { StyleSpecification } from 'maplibre-gl';
 import { clientWodore } from '@clients/index';
-import { getEnv } from '@services/runtimeEnv';
+import { publicApiBase } from '@services/apiBase';
 import { currentLocale } from '@services/locale';
 
 // ── DTO types (narrowed views of the generated client shapes) ────────────
@@ -252,10 +252,12 @@ export function clearMapCatalogCache(): void {
 
 // ── Style endpoint ───────────────────────────────────────────────────────
 
-/** API origin for root-relative style URLs (catalog `style_url`s are
- *  root-relative paths like `/v1/map/styles/x.json?spec=high`). */
+/** Public origin for root-relative style URLs (catalog `style_url`s
+ *  are root-relative paths like `/v1/map/styles/x.json?spec=high`)
+ *  — CDN base when one is configured: styles are unauthenticated raw
+ *  fetches (services/apiBase.ts). */
 function apiBase(): string {
-  return (getEnv('WODORE_API_HOST') || '').replace(/\/$/, '');
+  return publicApiBase() || '';
 }
 
 export interface StyleRequestOptions {

@@ -5,6 +5,7 @@ import { requestStart, requestStop } from '@composables/useRequestProgress';
 
 import { useAuthStore } from '@stores/auth-store';
 import { getEnv } from '@services/runtimeEnv';
+import { publicApiBase } from '@services/apiBase';
 import { PINNED_API_VERSION, emitApiVersionError } from '@services/apiVersion';
 
 export type schemasWodore = compWodore['schemas'];
@@ -84,6 +85,41 @@ const authMiddleware: Middleware = {
 };
 
 /**
+ * Public CDN base (WODORE_PUBLIC_API_URL): when set, unauthenticated
+ * GETs are rewritten to the CDN origin (see services/apiBase.ts). Every
+ * other request keeps the direct WODORE_API_HOST — a Bearer token makes
+ * the response potentially personalized (never share-cacheable), and
+ * non-GET methods cover auth flows and mutations. Unset/empty = no
+ * rewrite at all, byte-identical to the single-host behavior.
+ *
+ * Registered AFTER authMiddleware on purpose: it decides the
+ * Authorization header, so by the time this runs, "authenticated" is
+ * simply "the header is present". Runs BEFORE apiVersionMiddleware so
+ * the Api-Version header is set on the rewritten request either way.
+ */
+const publicBaseMiddleware: Middleware = {
+  onRequest({ request }) {
+    const publicBase = publicApiBase();
+    if (!publicBase) return;
+    if (request.headers.get('Authorization') || request.method !== 'GET') {
+      return;
+    }
+    try {
+      const url = new URL(request.url);
+      const base = new URL(publicBase);
+      if (url.origin === base.origin) return; // already the public base
+      // Path + query stay untouched — same URL shape, different origin,
+      // so the browser HTTP cache and ETag revalidation keep working.
+      return new Request(new URL(url.pathname + url.search, base).href, request);
+    } catch {
+      // Unparsable base/request URL (e.g. relative baseUrl) — keep the
+      // direct request rather than breaking the call.
+      return;
+    }
+  },
+};
+
+/**
  * Pins every API request to the contract version this app is built for
  * (see `src/services/apiVersion.ts`). The backend echoes the resolved
  * version in the `Api-Version` response header and sends lifecycle headers
@@ -123,4 +159,5 @@ export const clientWodore = createClient<pathsWodore>({
 
 clientWodore.use(progressMiddleware);
 clientWodore.use(authMiddleware);
+clientWodore.use(publicBaseMiddleware);
 clientWodore.use(apiVersionMiddleware);

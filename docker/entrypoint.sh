@@ -60,6 +60,17 @@ printf 'User-agent: *\nDisallow: /\n' > /usr/share/nginx/html/robots-origin.txt
 # byte-for-byte the previous behavior; browser-facing env.js keeps the
 # public WODORE_API_HOST either way (that is replace_vars, below —
 # deliberately not overridden).
+#
+# WODORE_PUBLIC_API_URL (optional CDN base, Kubernetes) splits PUBLIC
+# traffic onto the CDN name (see services/apiBase.ts for the SPA side):
+# when set AND no WODORE_API_UPSTREAM override, the SEO proxies below
+# (sitemaps, llms.txt, hut .md, hut meta subrequests) fetch through the
+# CDN base too — the same public/unauthenticated GETs the SPA routes
+# there, and the only server-side fetches whose API-host-relative
+# content (og:image media URLs in hut meta) would otherwise leak the
+# direct host onto public pages. WODORE_API_UPSTREAM wins when both
+# are set: the in-cluster fetch bypasses CDN + Traefik on purpose and
+# nginx already disk-caches the hut meta.
 if [ -n "${WODORE_API_UPSTREAM:-}" ]; then
   # Tolerate a scheme or trailing path in the value; nginx wants host[:port].
   UPSTREAM="${WODORE_API_UPSTREAM#http://}"
@@ -77,9 +88,17 @@ if [ -n "${WODORE_API_UPSTREAM:-}" ]; then
   sed -i "s|__WODORE_API_UPSTREAM_SET__|set \$wodore_api_upstream ${UPSTREAM};|" "/etc/nginx/http.d/${CONFIG_FILE}.conf"
   sed -i "s|__WODORE_API_UPSTREAM_HEADERS__|proxy_set_header Host ${PUBLIC_HOST}; proxy_set_header X-Forwarded-Proto https;|g" "/etc/nginx/http.d/${CONFIG_FILE}.conf"
 else
-  # No override: public API host as before, and drop the override
-  # placeholder lines the template carries for Kubernetes mode.
-  sed -i "s|__WODORE_API_HOST__|${WODORE_API_HOST:-http://localhost:8000}|g" "/etc/nginx/http.d/${CONFIG_FILE}.conf"
+  # Public CDN base set and no in-cluster upstream: the SEO proxies
+  # fetch through the CDN. Trailing slash trimmed — /llms.txt appends
+  # its path to the proxy_pass URL and must not become //llms.txt.
+  if [ -n "${WODORE_PUBLIC_API_URL:-}" ]; then
+    CDN_BASE="${WODORE_PUBLIC_API_URL%/}"
+    sed -i "s|__WODORE_API_HOST__|${CDN_BASE}|g" "/etc/nginx/http.d/${CONFIG_FILE}.conf"
+  else
+    sed -i "s|__WODORE_API_HOST__|${WODORE_API_HOST:-http://localhost:8000}|g" "/etc/nginx/http.d/${CONFIG_FILE}.conf"
+  fi
+  # No upstream override: drop the override placeholder lines the
+  # template carries for Kubernetes mode.
   sed -i "/__WODORE_API_UPSTREAM_/d" "/etc/nginx/http.d/${CONFIG_FILE}.conf"
 fi
 sed -i "s|__WODORE_SEO_CACHE_TTL__|${WODORE_SEO_CACHE_TTL:-604800}|g" "/etc/nginx/http.d/${CONFIG_FILE}.conf"

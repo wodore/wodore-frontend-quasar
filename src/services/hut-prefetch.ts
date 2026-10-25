@@ -13,7 +13,7 @@
  * and Capacitor — no nginx/edge involvement.
  */
 
-import { getEnv } from './runtimeEnv';
+import { publicApiBase } from './apiBase';
 
 interface PrefetchedHut {
   slug: string;
@@ -49,8 +49,11 @@ export function startHutPrefetch(): void {
   const slug = match[1]!.toLowerCase();
   const lang = sniffLang();
   // Same URL shape usePlace builds (clientWodore baseUrl + the literal
-  // /v1 path): a miss still warms the shared HTTP cache entry.
-  const url = `${getEnv('WODORE_API_HOST')}/v1/huts/${slug}?lang=${lang}`;
+  // /v1 path): a miss still warms the shared HTTP cache entry. The
+  // prefetch is an unauthenticated raw fetch, so it uses the public
+  // base (CDN when WODORE_PUBLIC_API_URL is set) — the same origin the
+  // anonymous clientWodore request would be rewritten to.
+  const url = `${publicApiBase()}/v1/huts/${slug}?lang=${lang}`;
   prefetched = {
     slug,
     lang,

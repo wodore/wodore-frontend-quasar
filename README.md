@@ -271,6 +271,9 @@ Required environment variables for production:
 - `WODORE_DOMAIN` - Domain name (e.g., `wodore.com`)
 - `WODORE_URL` - Full URL with protocol (e.g., `https://wodore.com`)
 - `WODORE_API_HOST` - Backend API URL (e.g., `https://hub.wodore.com`)
+- `WODORE_PUBLIC_API_URL` - Optional CDN base for public/unauthenticated
+  GETs (e.g., `https://hub.cdn.wodore.com` on Kubernetes); authenticated
+  requests always use `WODORE_API_HOST`. Empty/omitted = single API host.
 - `WODORE_IMAGOR_KEY` - Imagor secret key for image signing
 - `WODORE_IMAGOR_URL` - Imagor service URL
 - `WODORE_MAPTILER_API_KEY` - MapTiler API key

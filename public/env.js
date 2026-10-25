@@ -20,6 +20,9 @@ window.__WODORE_RUNTIME_ENV__ = {
   WODORE_OFFICIAL_URL: '@@WODORE_OFFICIAL_URL@@',
   WODORE_API_HOST: '@@WODORE_API_HOST@@',
   WODORE_API_VERSION: '@@WODORE_API_VERSION@@',
+  // Optional CDN base for public/unauthenticated GETs (empty = off —
+  // single API host). See services/apiBase.ts.
+  WODORE_PUBLIC_API_URL: '@@WODORE_PUBLIC_API_URL@@',
   WODORE_TILE_SERVER_URL: '@@WODORE_TILE_SERVER_URL@@',
   WODORE_IMAGOR_KEY: '@@WODORE_IMAGOR_KEY@@',
   WODORE_IMAGOR_URL: '@@WODORE_IMAGOR_URL@@',

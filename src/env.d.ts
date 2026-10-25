@@ -11,6 +11,8 @@ declare namespace NodeJS {
     WODORE_DOMAIN: string;
     WODORE_API_HOST: string;
     WODORE_API_VERSION: string;
+    /** Optional CDN base for public/unauthenticated GETs (empty = off). */
+    WODORE_PUBLIC_API_URL: string;
     WODORE_IMAGOR_KEY: string;
     WODORE_IMAGOR_URL: string;
     WODORE_IMAGOR_REPLACE_API_HOST_MEDIA: string;

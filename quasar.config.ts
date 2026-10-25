@@ -161,6 +161,10 @@ export default configure(ctx => {
         WODORE_DOMAIN: process.env.WODORE_DOMAIN,
         WODORE_API_HOST: process.env.WODORE_API_HOST,
         WODORE_API_VERSION: process.env.WODORE_API_VERSION,
+        // Optional CDN base for public/unauthenticated GETs — runtime-
+        // swappable in docker via /env.js; `|| ''` keeps the define a
+        // string when the var is absent from older env files.
+        WODORE_PUBLIC_API_URL: process.env.WODORE_PUBLIC_API_URL || '',
         WODORE_IMAGOR_KEY: process.env.WODORE_IMAGOR_KEY,
         WODORE_IMAGOR_URL: process.env.WODORE_IMAGOR_URL,
         WODORE_IMAGOR_REPLACE_API_HOST_MEDIA: process.env.WODORE_IMAGOR_REPLACE_API_HOST_MEDIA,
