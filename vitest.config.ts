@@ -33,7 +33,11 @@ export default defineConfig({
       // (mikepenz/action-junit-report) in test.yml: a GitLab-style test
       // view without any external service. Allure itself is generated
       // on demand from the uploaded results (allure-report.yml).
-      ...(process.env.CI ? [['junit', { outputFile: 'junit-results/unit.xml' }]] : []),
+      // The tuple cast keeps the array literal from widening to
+      // (string | {…})[][] — the Reporter union wants [name, options].
+      ...(process.env.CI
+        ? [['junit', { outputFile: 'junit-results/unit.xml' }] as ['junit', { outputFile: string }]]
+        : []),
     ],
     coverage: {
       provider: 'v8',
