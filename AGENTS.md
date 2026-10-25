@@ -514,7 +514,7 @@ injection point.
   policy (DataPolicy.vue) must cover them before enabling in prod.
 - Umami's heatmap view iframes the site from the dashboard: nginx ships
   `Content-Security-Policy: frame-ancestors 'self'
-  https://stats.wodore.com` (repeat it in any HTML location that adds
+https://stats.wodore.com` (repeat it in any HTML location that adds
   its own add_header — nginx drops server-level headers there).
 
 ## Common Patterns

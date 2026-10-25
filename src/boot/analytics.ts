@@ -69,6 +69,12 @@ export default boot(() => {
     script.dataset.websiteId = websiteId;
     script.dataset.doNotTrack = 'true'; // gate 3: browser DNT
     script.dataset.performance = 'true';
+    // Drop the URL hash from tracked URLs: the map's #map=zoom/lat/lon
+    // viewport state is pure noise — high-cardinality, zero analytical
+    // value — and fragments every pageview into per-viewport rows in
+    // Umami (regression from #27: WdAnalytics.vue set this, the boot
+    // file that replaced it didn't).
+    script.dataset.excludeHash = 'true';
     document.head.appendChild(script);
 
     // Session recording is opt-in per environment: strictly 'on' — any

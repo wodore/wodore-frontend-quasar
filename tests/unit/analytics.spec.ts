@@ -47,6 +47,7 @@ describe('umami analytics boot', () => {
     expect(s?.getAttribute('data-website-id')).toBe('test-site-id');
     expect(s?.getAttribute('data-do-not-track')).toBe('true');
     expect(s?.getAttribute('data-performance')).toBe('true');
+    expect(s?.getAttribute('data-exclude-hash')).toBe('true');
   });
 
   it('never injects without env vars (telemetry-free builds)', async () => {

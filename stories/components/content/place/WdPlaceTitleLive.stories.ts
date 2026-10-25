@@ -35,7 +35,7 @@ export const Interactive = meta.story({
   args: {
     slug: 'aarbiwak',
   },
-  render: args => ({
+  render: (args: { slug: string }) => ({
     components: { WdPlaceTitle },
     setup() {
       return { args };
