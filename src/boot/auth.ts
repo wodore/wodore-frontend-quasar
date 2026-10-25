@@ -17,7 +17,17 @@ export default boot(async (/* { app, router, ... } */) => {
   // the token; authenticated calls fetch on demand) — but UserManager
   // setup + the hidden iframe cost main-thread time during boot.
   // Defer to the first idle slot (perf/boot-parallel).
-  void whenIdle(() => $auth.signinSilent()).catch(error =>
-    console.warn('Could not silent login', error)
-  );
+  void whenIdle(async () => {
+    // Zitadel answers its authorize endpoints with
+    // `Content-Security-Policy: frame-ancestors 'none'`, so the hidden
+    // iframe oidc-client-ts spins up in signinSilent WITHOUT a stored
+    // refresh token is always blocked by the browser — an anonymous
+    // visitor's probe can only ever log a CSP violation + a dead
+    // request. Keep only the path that works: with a stored refresh
+    // token (offline_access scope) signinSilent takes the token grant
+    // directly, no iframe involved.
+    const user = await $auth.userManager.getUser();
+    if (!user?.refresh_token) return;
+    await $auth.signinSilent();
+  }).catch(error => console.warn('Could not silent login', error));
 });
