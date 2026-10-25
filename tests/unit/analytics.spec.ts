@@ -31,8 +31,7 @@ describe('umami analytics boot', () => {
     await new Promise(r => setTimeout(r, 5));
   };
 
-  const tracker = () =>
-    document.head.querySelector('script[src*="umami.example.com/script.js"]');
+  const tracker = () => document.head.querySelector('script[src*="umami.example.com/script.js"]');
   const recorder = () =>
     document.head.querySelector('script[src*="umami.example.com/recorder.js"]');
 
