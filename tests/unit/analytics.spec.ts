@@ -68,6 +68,19 @@ describe('umami analytics boot', () => {
     expect(recorder()).toBeNull();
   });
 
+  it('opts out with the real quasar-encoded toggle value (__q_bool|1)', async () => {
+    // The WdUser/WdMapMenu toggles write via quasar LocalStorage, which
+    // serializes true as `__q_bool|1` — the gate's raw read must treat
+    // that encoded value (any non-null, non-'false' value) as opted out.
+    vi.stubGlobal('__WODORE_RUNTIME_ENV__', {
+      WODORE_UMAMI_WEBSITE_ID: 'test-site-id',
+      WODORE_UMAMI_WEBSITE_URL: 'https://umami.example.com',
+    });
+    localStorage.setItem('umami.disabled', '__q_bool|1');
+    await runIdle();
+    expect(tracker()).toBeNull();
+  });
+
   it('injects recorder.js only when WODORE_UMAMI_RECORDER is strictly "on"', async () => {
     vi.stubGlobal('__WODORE_RUNTIME_ENV__', {
       WODORE_UMAMI_WEBSITE_ID: 'test-site-id',

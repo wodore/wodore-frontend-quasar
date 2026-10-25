@@ -509,7 +509,10 @@ injection point.
   ≥3.1 / heatmaps ≥3.2; rrweb, ~59 KB gzip + a config GET; then the
   SERVER-side per-website sample rate/mask level decides what records).
   recorder.js has NO own DNT/opt-out support — it must only ever load
-  through the boot gates, never a pasted index.html tag. Session
+  through the boot gates, never a pasted index.html tag. A mid-session
+  opt-out stops custom events immediately, but a recorder.js that
+  already loaded keeps recording the CURRENT visit — full stop needs
+  the next visit (same as the tracker's auto pageviews). Session
   replays are individual recordings (30-day retention) — the data
   policy (DataPolicy.vue) must cover them before enabling in prod.
 - Umami's heatmap view iframes the site from the dashboard: nginx ships
