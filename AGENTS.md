@@ -442,9 +442,14 @@ to the in-cluster hop, CORS is irrelevant for same-origin SEO paths).
 
 The SPA shell is edge-cacheable ("edge-hot index.html"): `= /index.html`
 AND the `@spa` try_files fallback serve
-`Cache-Control: public, max-age=300, s-maxage=600` + `CDN-Tag:
-frontend-html`; `/env.js` serves `public, max-age=60, s-maxage=120` +
-`CDN-Tag: frontend-env`. Bunny (the CDN in front) honors origin
+`Cache-Control: public, max-age=0, s-maxage=600,
+stale-while-revalidate=86400` + `CDN-Tag: frontend-html`; `/env.js`
+serves `public, max-age=0, s-maxage=120, stale-while-revalidate=3600` +
+`CDN-Tag: frontend-env`. Browsers revalidate on every navigation
+(`max-age=0`, cheap conditional GETs answered 304 by the CDN's fresh
+edge copy) while the edge keeps its window (`s-maxage`);
+`stale-while-revalidate` lets supporting browsers serve stale and
+refresh in the background. Bunny (the CDN in front) honors origin
 Cache-Control and keys tag purges off the `CDN-Tag` response header.
 Rationale: with the old no-store policy every page view was a full
 origin round trip (`cdn-cache: MISS`, ~1s+ for overseas visitors);
@@ -454,12 +459,17 @@ hashed assets were already edge-cached immutable-1y.
 purge tags `frontend-html` + `frontend-env` (Bunny dashboard → Purge by
 tag, or Core API `POST /pullzone/{id}/purgeCache` with
 `{"CacheTag": "frontend-html"}`) — instant global invalidation. Skip
-the purge and the worst case is 10 min of stale shell (browsers 5 min)
-referencing hashed chunks the deploy deleted. Hashed assets never need
+the purge and the worst case is 10 min of stale shell on the edge,
+referencing hashed chunks the deploy deleted (browsers revalidate on
+their next navigation; SWR-savvy ones converge in the background).
+Hashed assets never need
 purging. Untouched on purpose: hut pages (njs per-hut shell stays
 no-store — `WODORE_SEO_PAGE_TTL` is the opt-in), llms/sitemap/hut `.md`
 proxies (backend Cache-Control), manifest.json + sw.js (no-store).
 Caveat: Bunny tag purging does not apply to Perma-Cache content.
+Caveat: if the CDN ever stops edge-caching (a non-standard CDN honoring
+`max-age=0` over `s-maxage` would make every view a MISS), revert the
+browser half to `max-age=300`.
 Guarded by `tests/unit/nginx-cache-headers.spec.ts`.
 
 ## Environment Variables
