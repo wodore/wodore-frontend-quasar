@@ -16,7 +16,10 @@ import '@quasar/extras/material-icons/material-icons.css';
 import '@quasar/extras/eva-icons/eva-icons.css';
 import './storybook.scss';
 
-import messages from '@/i18n';
+// Relative on purpose: resolves without the `@/` path alias, so the
+// file type-checks under any project settings (it lives under
+// tsconfig.storybook-tempaths.json, which TS servers don't auto-associate).
+import messages from '../src/i18n';
 
 const i18n = createI18n({
   locale: 'de',

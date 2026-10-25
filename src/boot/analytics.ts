@@ -1,6 +1,6 @@
 import { boot } from 'quasar/wrappers';
-import { LocalStorage } from 'quasar';
 import { getEnv } from '@services/runtimeEnv';
+import { umamiOptedOut } from '@services/analytics';
 
 /**
  * Umami analytics boot — wires the actual script tag (the typed track()
@@ -22,9 +22,32 @@ import { getEnv } from '@services/runtimeEnv';
  *
  * Injection runs at browser idle (requestIdleCallback, ~2s timeout) so
  * the third-party script never contends with first paint or the
- * MapLibre boot — the same lesson that deferrred the Sentry SDK chunk.
+ * MapLibre boot — the same lesson that deferred the Sentry SDK chunk.
+ *
+ * Tracker extras:
+ *  - data-performance="true": real-user Core Web Vitals (Umami ≥3.1 —
+ *    LCP/INP/CLS/FCP/TTFB via PerformanceObservers inside the 2.3 KB
+ *    tracker; no extra download).
+ *
+ * Session recording (replays ≥3.1 / heatmaps ≥3.2, WODORE_UMAMI_RECORDER
+ * = 'on'): a SECOND script, recorder.js — an rrweb-based recorder
+ * (~59 KB gzip) that DOM-snapshots and streams sampled sessions. It
+ * must never be pasted into index.html: unlike script.js it has NO
+ * data-do-not-track support, so the only DNT/opt-out protection it gets
+ * is loading through these gates (opt-out + env above; DNT checked
+ * below). Recording itself is decided server-side — the dashboard's
+ * sample rate / mask level / block selector per website travel to the
+ * client via a config GET the recorder makes on boot.
  */
 let injected = false;
+
+/** Browsers signaling Do-Not-Track. The tracker covers this itself via
+ * its data-do-not-track attribute (gate 3); recorder.js has no such
+ * attribute, so its gate lives here — same exclusion, same signal. */
+function dntEnabled(): boolean {
+  const dnt = navigator.doNotTrack ?? (window as { doNotTrack?: string }).doNotTrack;
+  return dnt === '1' || dnt === 'yes';
+}
 
 export default boot(() => {
   if (injected) return; // HMR/SSR re-entry guard
@@ -35,18 +58,30 @@ export default boot(() => {
     const websiteUrl = getEnv('WODORE_UMAMI_WEBSITE_URL');
     if (!websiteId || !websiteUrl) return; // gate 1: no env, no telemetry
 
-    const optedOut = LocalStorage.hasItem('umami.disabled')
-      ? Boolean(LocalStorage.getItem('umami.disabled'))
-      : false;
-    if (optedOut) return; // gate 2: user said no
+    const base = websiteUrl.replace(/\/$/, '');
+
+    if (umamiOptedOut()) return; // gate 2: user said no
 
     const script = document.createElement('script');
     script.defer = true;
     script.async = true;
-    script.src = `${websiteUrl.replace(/\/$/, '')}/script.js`;
+    script.src = `${base}/script.js`;
     script.dataset.websiteId = websiteId;
     script.dataset.doNotTrack = 'true'; // gate 3: browser DNT
+    script.dataset.performance = 'true';
     document.head.appendChild(script);
+
+    // Session recording is opt-in per environment: strictly 'on' — any
+    // other value (unset, empty, or an unrewritten @@…@@ docker
+    // placeholder) keeps it off.
+    if (getEnv('WODORE_UMAMI_RECORDER') === 'on' && !dntEnabled()) {
+      const recorder = document.createElement('script');
+      recorder.defer = true;
+      recorder.async = true;
+      recorder.src = `${base}/recorder.js`;
+      recorder.dataset.websiteId = websiteId;
+      document.head.appendChild(recorder);
+    }
   };
 
   if (typeof window.requestIdleCallback === 'function') {

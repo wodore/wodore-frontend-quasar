@@ -281,6 +281,12 @@ Required environment variables for production:
 - `WODORE_OICD_CLIENT_ID` - OIDC client ID
 - `WODORE_STRIPE_ID` - Stripe publishable key
 - `WODORE_UMAMI_WEBSITE_ID` - Umami analytics website ID (optional)
+- `WODORE_UMAMI_WEBSITE_URL` - Umami instance base URL, e.g. `https://stats.wodore.com` (optional)
+- `WODORE_UMAMI_RECORDER` - Umami session recording (replays/heatmaps):
+  `on` loads `recorder.js` behind the same gates as the tracker (env,
+  user opt-out, DNT). Recording must ALSO be enabled per website in the
+  Umami dashboard (sample rate / mask level / block selector are
+  server-side config).
 
 ### Docker Deployment
 
