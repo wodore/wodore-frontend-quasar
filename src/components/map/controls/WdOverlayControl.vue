@@ -1455,9 +1455,31 @@ function addOverlays(): void {
  *  (possibly replaced) active overlays. Sprites cannot be removed; the
  *  catalog build merges same-id sprite packs so the first-added URL
  *  stays valid (catalog-mapping mergeSpritePacks). */
+// One deferred catalog-swap retry while a style swap is in flight
+// (see reapplyOverlaysAfterCatalogSwap) — flag prevents stacking
+// listeners when several epoch bumps land in the same window.
+let catalogSwapRetryBound = false;
+
 function reapplyOverlaysAfterCatalogSwap(): void {
   const map = mapRef.map;
   if (!map) return;
+  // Style swap in flight (boot basemap apply, user basemap switch, or
+  // MapLibre's diff-rebuild fallback): addSource/addLayer would throw
+  // "Style is not done loading", and the swap wipes everything this
+  // control added anyway. Defer ONE retry to the next idle frame — by
+  // then either the style finished loading (its 'load' handler already
+  // re-added overlays from the new catalog; this pass is a harmless
+  // idempotent remove+re-add) or the style is still busy and the next
+  // style load takes over.
+  if (!map.isStyleLoaded()) {
+    if (catalogSwapRetryBound) return;
+    catalogSwapRetryBound = true;
+    map.once('idle', () => {
+      catalogSwapRetryBound = false;
+      if (map.isStyleLoaded()) reapplyOverlaysAfterCatalogSwap();
+    });
+    return;
+  }
   for (const layerId of addedLayerIds) {
     if (map.getLayer(layerId)) map.removeLayer(layerId);
   }
