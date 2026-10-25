@@ -438,6 +438,14 @@ SPA keeps calling the public hub. Note: Traefik's api-compress/CORS
 middlewares do not apply to the bypassed path (accepted — compress moves
 to the in-cluster hop, CORS is irrelevant for same-origin SEO paths).
 
+`WODORE_SENTRY_DSN` additionally drives the first-party ingest tunnel:
+entrypoint.sh parses it (`scheme://publicKey@host/projectId`) into the
+`__WODORE_SENTRY_INGEST_{HOST,PROJECT,KEY}__` placeholders of nginx's
+`location = /sentry-ingest` (see 'Error tracking' above). Missing,
+unrewritten `@@…@@` or malformed DSNs → the location becomes `return
+404;` (inert; the proxy target degrades to a literal 127.0.0.1 purely to
+keep the config loadable — the return short-circuits first).
+
 ### Edge-cached SPA shell (CDN-Tag purge)
 
 The SPA shell is edge-cacheable ("edge-hot index.html"): `= /index.html`
@@ -497,6 +505,16 @@ sentry.py`). Rules:
   through `getEnv` (`services/runtimeEnv.ts`): docker swaps the DSN per
   environment at container start (`/env.js` + replace_vars, no rebuild),
   Capacitor builds bake it at build time (inline EJS in index.html).
+- **Web ingest tunnel**: on web builds the SDK's `tunnel: '/sentry-ingest'`
+  option (services/sentry.ts) POSTs envelopes same-origin; nginx
+  (`location = /sentry-ingest`) proxies them to the ingest host — Brave and
+  uBlock/EasyPrivacy-style blockers block cross-origin `*.ingest.*.sentry.io`
+  (`net::ERR_BLOCKED_BY_CLIENT`, observed on staging), first-party URLs are
+  never blocked. The proxy target (ingest host/project/key) is derived by
+  `docker/entrypoint.sh` from the SAME `WODORE_SENTRY_DSN`, so the vendor
+  swap stays DSN-change + container restart; no DSN → the location returns
+  404 (inert). POST only, other methods 405. Capacitor keeps the direct DSN
+  (no blockers in the WebView, no nginx on the Capacitor origin).
 - **Vendor-neutral**: the DSN decides the destination — sentry.io or Better
   Stack (Sentry-SDK-compatible ingestion). Switching vendors = swap DSN,
   never a code change. Rollback = unset the DSN.
