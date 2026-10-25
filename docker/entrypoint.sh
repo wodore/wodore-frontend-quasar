@@ -89,8 +89,9 @@ if [ -n "${WODORE_API_UPSTREAM:-}" ]; then
   sed -i "s|__WODORE_API_UPSTREAM_HEADERS__|proxy_set_header Host ${PUBLIC_HOST}; proxy_set_header X-Forwarded-Proto https;|g" "/etc/nginx/http.d/${CONFIG_FILE}.conf"
 else
   # Public CDN base set and no in-cluster upstream: the SEO proxies
-  # fetch through the CDN. Trailing slash trimmed — /llms.txt appends
-  # its path to the proxy_pass URL and must not become //llms.txt.
+  # fetch through the CDN. Trailing slash trimmed — a trailing / would
+  # become a URI part in proxy_pass (rejected inside the regex
+  # locations) and double-slash path-appending proxy_passes elsewhere.
   if [ -n "${WODORE_PUBLIC_API_URL:-}" ]; then
     CDN_BASE="${WODORE_PUBLIC_API_URL%/}"
     sed -i "s|__WODORE_API_HOST__|${CDN_BASE}|g" "/etc/nginx/http.d/${CONFIG_FILE}.conf"
