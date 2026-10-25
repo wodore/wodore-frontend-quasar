@@ -400,6 +400,25 @@ subrequests — and, via replace_vars/env.js, the SPA's own API base URL),
 `WODORE_SEO_CACHE_TTL`, `WODORE_SEO_PAGE_TTL`, `WODORE_DEFAULT_LANG`,
 `WODORE_LANG_PREFIXES`, `WODORE_NGINX_CONFIG`.
 
+### Hidden CDN origin hosts (orig.*)
+
+The same server block (`server_name _`) also answers for the CDN pull
+origins `orig.wodore.com` / `orig.wodo.re` (+ `orig.stg.*`) — publicly
+resolvable via the `*.wodore.com` wildcard DNS, so they would be
+crawlable duplicates of the real sites. Two `$host` maps in
+`docker/nginx-default.conf` neutralize them per request:
+`$robots_txt` serves the entrypoint-written deny-all
+`robots-origin.txt` on `orig.*` (any environment) and
+`$x_robots_tag` adds `X-Robots-Tag: noindex, nofollow` on `orig.*`
+plus — via the `__WODORE_STAGING_X_ROBOTS__` placeholder the entrypoint
+fills from `WODORE_ENV` — on the staging public host. Production public
+hosts map to `""`, and nginx emits **no header** for an empty
+`add_header` value. Because nginx drops server-level `add_header` in
+any location declaring its own, the `X-Robots-Tag` line is repeated in
+every content location. Assumption: the CDN fetches the origin with the
+**public** Host header — if it ever forwarded `orig.*`, cached public
+responses would carry noindex.
+
 `WODORE_API_UPSTREAM` (host[:port], fully qualified — nginx's resolver
 ignores resolv.conf search domains; e.g.
 `wd-backend-api.staging.svc.cluster.local:8008`) redirects only nginx's
