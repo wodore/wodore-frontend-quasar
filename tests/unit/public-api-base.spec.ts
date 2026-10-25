@@ -98,4 +98,10 @@ describe('publicBaseMiddleware (clientWodore)', () => {
     await clientWodore.GET('/v1/huts/huts', {});
     expect(lastRequest().url).toBe('http://api.test/v1/huts/huts');
   });
+
+  it('keeps /v1/version on the direct API host (deployment identity, never CDN-cached)', async () => {
+    process.env.WODORE_PUBLIC_API_URL = 'https://cdn.test';
+    await clientWodore.GET('/v1/version', {});
+    expect(lastRequest().url).toBe('http://api.test/v1/version');
+  });
 });

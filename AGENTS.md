@@ -405,6 +405,18 @@ see `src/services/apiBase.ts`), `WODORE_SEO_CACHE_TTL`,
 `WODORE_SEO_PAGE_TTL`, `WODORE_DEFAULT_LANG`, `WODORE_LANG_PREFIXES`,
 `WODORE_NGINX_CONFIG`.
 
+**CDN CORS caveat (found on staging 2026-10):** the CDN host
+(`hub.cdn.stg.wodore.com`) must forward the browser `Origin` request
+header to the origin and honor `Vary: Origin` — the backend
+(django-cors-headers) emits `Access-Control-Allow-Origin` only for
+requests carrying an allowed Origin, so a CDN cache variant fetched
+without Origin serves browser requests header-less and the SPA's
+fetches fail CORS (`/v1/version` was hit exactly this way; same
+cache-variance class as PR #341). The frontend exempts `/v1/version`
+from the CDN rewrite (`publicBaseMiddleware`) — deployment identity
+must not be CDN-cached anyway — but every other public GET still
+depends on the CDN getting Origin/Vary right.
+
 ### Hidden CDN origin hosts (orig.\*)
 
 The same server block (`server_name _`) also answers for the CDN pull
