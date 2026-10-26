@@ -774,5 +774,9 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     resetLayerParameters,
     applyOverlayParameters,
     setRuntimeDate,
+    // Re-exported for API stability (specs + any store consumers read it
+    // here); the ref itself lives in ./availability-loading so eager
+    // chunk consumers (WdSelectDate) need no cluster import.
+    availabilityLoading,
   };
 });
