@@ -69,8 +69,6 @@ import 'leaflet.markercluster';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
-import { clientWodore } from '@clients/index';
-import { currentLocale } from '@services/locale';
 import { getEnv } from '@services/runtimeEnv';
 import { useLocalPropertiesStore } from '@stores/local-properties-store';
 import { useHutsStore } from '@stores/huts-store';
@@ -243,15 +241,29 @@ let map: L.Map | undefined;
 let tileLayer: L.TileLayer | undefined;
 let clusterAvail: L.MarkerClusterGroup | undefined;
 let clusterPlain: L.MarkerClusterGroup | undefined;
-/** Latest-wins guards — SEPARATE per fetch family: a tile response must
- *  never invalidate a concurrent availability response (the shared
- *  counter dropped every availability payload while tiles loaded). */
+/** Latest-wins guard for hut tile fetches (the availability tiles keep
+ *  their own counter — see availTileGeneration). */
 let tileGeneration = 0;
-let availGeneration = 0;
 /** Loaded hut tiles, keyed `z/x/y` (buffer features dedup by slug at
  *  rebuild). Evicted when outside the padded viewport. */
 const hutTiles = new Map<string, FbHut[]>();
 const fetchingTiles = new Set<string>();
+/**
+ * Availability now comes from the SAME Martin source MapLibre renders
+ * (wd-bookings): `{TILE_SERVER}/availability/{z}/{x}/{y}.mlt?date=…&days=4`
+ * — MLT-decoded like the huts tiles. NOTE: the seeded maplibre style
+ * currently serves the extension-less (MVT) form — a backend seed fix
+ * is pending (owner is checking); the fallback already targets .mlt,
+ * so both maps converge on the MLT URLs once the seed lands.
+ */
+const AVAIL_TILE_MIN_ZOOM = 5; // wd-bookings source pyramid (style minzoom)
+const AVAIL_TILE_MAX_ZOOM = 9; // (style maxzoom)
+/** z/x/y → decoded slug→day-0 status map (d0_status). */
+const availTiles = new Map<string, Map<string, string>>();
+const fetchingAvailTiles = new Set<string>();
+let availTileGeneration = 0;
+/** The date the current availability tiles were fetched for (ISO). */
+let availFetchedForDate: string | undefined;
 /** slug → day-0 availability status. */
 const availBySlug = new Map<string, FbAvail>();
 /** Martin sprite pack (accommodation,availability) — the SAME icons the
@@ -951,46 +963,132 @@ async function fetchHutTile(
 
 const refreshTilesDebounced = useDebounceFn(() => void refreshTiles(), 400);
 
-/** Day-0 availability for the effective date (status colors the ring).
- *  The calendar-icon spinner (map-catalog-store availabilityLoading — the
- *  same signal the MapLibre map drives via sourcedata) runs from begin to
- *  RENDERED-settle here; the store's 600ms minimum spin still applies.
- *  The boot fetch ('now') does not spin — same as the main map, where the
- *  spinner belongs to the date PICK, not the initial load. */
+/** Day-0 availability from the wd-bookings MLT tiles (viewport-scoped,
+ *  like the huts tiles). The spinner runs from begin to RENDERED-settle;
+ *  the store's 600ms minimum spin still applies. */
 let firstAvailLoad = true;
 
-async function loadAvailability(dateISO: string): Promise<void> {
-  const generation = ++availGeneration;
+/** DD.MM.YY picker format → ISO (mirrors map-catalog-store.toIsoDate —
+ *  Martin's availability source needs ISO dates in the tile URLs). */
+function toIsoDate(input: string): string | undefined {
+  const euro = input.match(/^(\d{2})\.(\d{2})\.(\d{2}|\d{4})$/);
+  if (euro) {
+    const year = euro[3]!.length === 2 ? `20${euro[3]}` : euro[3]!;
+    return `${year}-${euro[2]}-${euro[1]}`;
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(input)) return input;
+  return undefined;
+}
+
+function availTileZoom(): number {
+  return Math.min(
+    AVAIL_TILE_MAX_ZOOM,
+    Math.max(AVAIL_TILE_MIN_ZOOM, Math.round(map?.getZoom() ?? AVAIL_TILE_MAX_ZOOM))
+  );
+}
+
+async function refreshAvailTiles(picked: string): Promise<void> {
+  const dateISO = toIsoDate(picked);
+  if (!dateISO) return;
+  const activeMap = map;
+  if (!activeMap) return;
+  const generation = ++availTileGeneration;
   const spin = !firstAvailLoad;
   firstAvailLoad = false;
   if (spin) catalogStore.beginAvailabilityLoadManual();
-  try {
-    const { data, error } = await clientWodore.GET('/v1/huts/availability/{date}.geojson', {
-      params: {
-        path: { date: dateISO },
-        // days=4 matches the MapLibre wd-bookings source — same request
-        // shape, shared browser-cache entry with the main map's fetches.
-        query: { days: 4, lang: currentLocale() },
-      },
-    });
-    if (!error && data && 'features' in data && generation === availGeneration) {
-      availBySlug.clear();
-      for (const feature of data.features ?? []) {
-        const properties = feature.properties as {
-          slug?: string;
-          data?: Array<{ occupancy_status?: string | null }> | null;
-        } | null;
-        if (!properties?.slug) continue;
-        availBySlug.set(properties.slug, {
-          statuses: (properties.data ?? []).map(day => day.occupancy_status ?? 'unknown'),
-        });
+  const tileZoom = availTileZoom();
+  const bounds = activeMap.getBounds().pad(0.25);
+  const n = 2 ** tileZoom;
+  const x1 = Math.floor(lngToTileX(bounds.getWest(), tileZoom));
+  const x2 = Math.floor(lngToTileX(bounds.getEast(), tileZoom));
+  const y1 = Math.floor(latToTileY(bounds.getNorth(), tileZoom));
+  const y2 = Math.floor(latToTileY(bounds.getSouth(), tileZoom));
+  const needed = new Set<string>();
+  const jobs: Array<Promise<void>> = [];
+  // Date change ⇒ new URLs ⇒ full swap; same date ⇒ viewport top-up.
+  const dateChanged = availFetchedForDate !== dateISO;
+  if (dateChanged) {
+    availTiles.clear();
+    availFetchedForDate = dateISO;
+  }
+  for (let x = x1; x <= x2; x++) {
+    for (let y = y1; y <= y2; y++) {
+      if (y < 0 || y >= n) continue;
+      const wrappedX = ((x % n) + n) % n;
+      const key = `${tileZoom}/${wrappedX}/${y}`;
+      needed.add(key);
+      if (!availTiles.has(key) && !fetchingAvailTiles.has(key)) {
+        jobs.push(fetchAvailTile(key, tileZoom, wrappedX, y, dateISO, generation));
       }
-      rebuildMarkers(); // recolor rings — settle AFTER the new render
     }
+  }
+  for (const key of availTiles.keys()) {
+    if (!needed.has(key)) availTiles.delete(key);
+  }
+  try {
+    await Promise.all(jobs);
   } finally {
-    if (spin) catalogStore.settleAvailabilityLoadManual();
+    if (generation === availTileGeneration) {
+      // Rebuild FIRST (settle when rendered — owner spec), then settle.
+      applyAvailTiles();
+      if (spin) catalogStore.settleAvailabilityLoadManual();
+    }
   }
 }
+
+async function fetchAvailTile(
+  key: string,
+  z: number,
+  x: number,
+  y: number,
+  dateISO: string,
+  generation: number
+): Promise<void> {
+  fetchingAvailTiles.add(key);
+  try {
+    // Same wd-bookings source MapLibre renders — .mlt (the seeded style
+    // serves extension-less MVT today; seed fix pending, see header).
+    const res = await fetch(
+      `${TILE_SERVER}/availability/${z}/${x}/${y}.mlt?date=${dateISO}&days=4`
+    );
+    if (!res.ok) return;
+    const buf = new Uint8Array(await res.arrayBuffer());
+    if (buf.byteLength < 2) {
+      if (generation === availTileGeneration) availTiles.set(key, new Map());
+      return;
+    }
+    const statuses = new Map<string, string>();
+    for (const table of decodeTile(buf)) {
+      if (table.name !== 'availability') continue;
+      for (const feature of table.getFeatures()) {
+        const properties = feature.properties as { slug?: unknown; d0_status?: unknown } | null;
+        if (!properties?.slug) continue;
+        statuses.set(String(properties.slug), String(properties.d0_status ?? 'unknown'));
+      }
+    }
+    if (generation === availTileGeneration) availTiles.set(key, statuses);
+  } catch {
+    /* offline/decode failure — tile absent, retried next move */
+  } finally {
+    fetchingAvailTiles.delete(key);
+  }
+}
+
+/** Fold the decoded tiles into availBySlug and recolor the markers. */
+function applyAvailTiles(): void {
+  availBySlug.clear();
+  for (const tile of availTiles.values()) {
+    for (const [slug, status] of tile) {
+      if (!availBySlug.has(slug)) availBySlug.set(slug, { statuses: [status] });
+    }
+  }
+  rebuildMarkers(); // recolor rings + labels
+}
+
+const refreshAvailTilesDebounced = useDebounceFn(
+  (date: string) => void refreshAvailTiles(date),
+  400
+);
 
 /** "Zoom in to see availabilities" hint: shown while a DATE is selected
  *  and the camera is at z <= 9 (below the marker floor — nothing is
@@ -1028,12 +1126,14 @@ watch(
     // Owner spec: resetting the date REMOVES the availability display
     // (same date-gating as the MapLibre occupation layers) — no rings,
     // labels or zoom hint until a date is picked again.
-    if (date === undefined) {
+    if (date === undefined || toIsoDate(date) === undefined) {
       availBySlug.clear();
+      availTiles.clear();
+      availFetchedForDate = undefined;
       rebuildMarkers();
       updateZoomHint();
     } else {
-      void loadAvailability(date);
+      void refreshAvailTiles(date);
       updateZoomHint();
     }
   },
@@ -1093,6 +1193,8 @@ function onMoveEnd(): void {
     bearing: 0,
   });
   syncHash();
+  const pickedDate = hutsStore.selectedDate;
+  if (pickedDate) refreshAvailTilesDebounced(pickedDate);
   markerOpacity = markerOpacityFor(map.getZoom());
   shieldPx = shieldPxFor(map.getZoom());
   fallbackEl.value?.style.setProperty('--wd-fb-o', String(markerOpacity));
@@ -1220,8 +1322,9 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   tileGeneration++; // invalidate any in-flight tile/symbol callbacks
-  availGeneration++;
+  availTileGeneration++;
   fetchingTiles.clear();
+  fetchingAvailTiles.clear();
   catalogStore.setAvailabilityManualSettle(false);
   document.body.classList.remove('wd-fb-active');
   zoomHintDismiss?.();
