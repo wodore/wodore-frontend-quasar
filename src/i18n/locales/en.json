@@ -83,7 +83,12 @@
     },
     "loading": "Loading map",
     "loadingWords": "Rucksack buckled~Map unfolded~Route in mind~Weather read~Boots tight~Bottles full~Poles at hand~First metres gained~Map filling in~Contour lines tracing~Valleys appearing~Treeline behind~Brooks babbling~Alpenroses in bloom~Summits drawing near~Huts in sight~Clouds drifting past~Marmots whistling~View opening wide~The peak awaits",
-    "fallbackNote": "Simplified map view (WebGL unavailable)"
+    "fallbackNote": "Simplified map active — reduced functionality (no WebGL).",
+    "fallbackBasemaps": {
+      "osm": "OSM (OpenStreetMap)",
+      "satellite": "Satellite",
+      "topo": "World Topo"
+    }
   },
   "layers": "Layers",
   "maps": "Maps",

@@ -76,6 +76,7 @@
     "@mapbox/mapbox-gl-draw": "^1.5.2",
     "@mapbox/polyline": "^1.2.1",
     "@maplibre/maplibre-gl-style-spec": "^26.4.4",
+    "@maplibre/mlt": "^1.3.0",
     "@pmndrs/detect-gpu": "^6.0.26",
     "@quasar/extras": "^2.1.0",
     "@sentry/vue": "^11.8.0",

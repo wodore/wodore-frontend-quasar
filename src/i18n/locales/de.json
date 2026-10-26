@@ -93,7 +93,12 @@
     "layers": "Ebenen",
     "loading": "Karte wird geladen",
     "loadingWords": "Rucksack geschnürt~Karte aufgeschlagen~Route im Kopf~Wetter gelesen~Stiefel fest~Flaschen voll~Stöcke bereit~Erste Höhenmeter~Karte füllt sich~Höhenlinien zeichnen sich~Täler tauchen auf~Baumgrenze erreicht~Bäche plätschern~Alpenrosen blühen~Gipfel rücken näher~Hütten in Sicht~Wolken ziehen vorbei~Murmeltiere pfeifen~Blick wird frei~Ziel in Sicht",
-    "fallbackNote": "Vereinfachte Kartenansicht (WebGL nicht verfügbar)"
+    "fallbackNote": "Vereinfachte Karte aktiv – eingeschränkte Funktionalität (kein WebGL).",
+    "fallbackBasemaps": {
+      "osm": "OSM (OpenStreetMap)",
+      "satellite": "Satellit",
+      "topo": "Welt-Topo"
+    }
   },
   "favorites": "Favoriten",
   "layers": "Layers",
