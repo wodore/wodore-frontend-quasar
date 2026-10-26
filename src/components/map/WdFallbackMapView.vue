@@ -1822,7 +1822,7 @@ body.wd-map-focus {
 // Desktop: zoom below the focus toggle, 14px inset (main map parity)
 @media (min-width: 769px) {
   .wd-fallback-map .leaflet-top.leaflet-right .leaflet-control-zoom {
-    margin: 58px 14px 0 0;
+    margin: 92px 14px 0 0; /* below the locate button (58+29+5) */
     float: right;
   }
 }
