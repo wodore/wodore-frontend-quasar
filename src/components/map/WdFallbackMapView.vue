@@ -109,10 +109,17 @@ function markerOpacityFor(zoom: number): number {
 /** Current marker opacity — the canvas draw reads it synchronously
  *  (CSS var for the DOM cluster icons, module var for canvas). */
 let markerOpacity = 1;
-/** Canvas marker geometry (fixed sizes — owner spec). */
-const SHIELD_PX = 19;
-const DISC_PX = 27;
+/** Canvas marker geometry. Shield size ramps 12px at z7 → 19px from z10
+ *  (owner: z8-9 icons too large); the occupation disc is 1.56x the shield
+ *  (owner: clearly visible behind the icon). Module vars — the canvas
+ *  draw reads them synchronously, refreshed on camera settle. */
+let shieldPx = 19;
+const SHIELD_MAX_PX = 19;
 const OCC_LABEL_FONT = '600 9px "Barlow Semi Condensed", "Barlow", sans-serif';
+
+function shieldPxFor(zoom: number): number {
+  return Math.min(12 + (zoom - HUT_MIN_ZOOM) * 2.4, SHIELD_MAX_PX);
+}
 /** Huts WITH availability uncluster from here (owner spec; +1 vs the
  *  first iteration — caps the unclustered marker count, see the profile
  *  note in the header). */
@@ -625,10 +632,13 @@ class WdCanvasDot extends L.CircleMarker {
       ringRadius: number;
       fillColor: string;
     };
-    // Occupation disc behind everything (status color, ghost ramp).
+    // Occupation disc behind everything (status color, ghost ramp) —
+    // sized RELATIVE to the shield so it always peeks clearly.
+    const baseSize = shieldPx;
+    const discR = baseSize * 0.78;
     if (options.ringColor) {
       ctx.beginPath();
-      ctx.arc(point.x, point.y, DISC_PX / 2, 0, Math.PI * 2);
+      ctx.arc(point.x, point.y, discR, 0, Math.PI * 2);
       ctx.globalAlpha = 0.85 * markerOpacity;
       ctx.fillStyle = options.ringColor;
       ctx.fill();
@@ -638,7 +648,7 @@ class WdCanvasDot extends L.CircleMarker {
     if (icon) {
       // LOW-SPEC canvas shield: rounded rect + cached white bitmap —
       // one fill, one stroke, one drawImage per hut.
-      const size = options.hovered ? SHIELD_PX * 1.15 : SHIELD_PX;
+      const size = options.hovered ? baseSize * 1.15 : baseSize;
       WdCanvasDot.shieldPath(ctx, point.x, point.y, size, size, size * 0.22);
       ctx.fillStyle = options.typeColor;
       ctx.fill();
@@ -650,7 +660,7 @@ class WdCanvasDot extends L.CircleMarker {
       if (options.occLabel) {
         ctx.font = OCC_LABEL_FONT;
         ctx.textAlign = 'center';
-        const labelY = point.y + DISC_PX / 2 + 11;
+        const labelY = point.y + discR + 11;
         ctx.globalAlpha = 0.95 * markerOpacity;
         ctx.lineWidth = 3;
         ctx.strokeStyle = '#ffffff';
@@ -733,14 +743,15 @@ function clusterIcon(cluster: L.MarkerCluster): L.DivIcon {
         'mono/accommodation.unknown',
         'wd-fb-cluster__icon',
         '--wd-fb-c',
-        Math.round(13 * scale0)
+        Math.round(15 * scale0)
       )
     : '';
   // Member-count sizing (owner spec): 0.8x at 2 members growing to a
-  // REDUCED max of 1.25x at 40+ (low-spec: smaller bubbles = less paint).
+  // REDUCED max of 1.25x at 40+; base 24px keeps bubbles a bit larger
+  // than the 19px shields (owner spec).
   const count = cluster.getChildCount();
   const scale = Math.min(0.8 + ((count - 2) / 38) * 0.45, 1.25);
-  const discPx = Math.round(20 * scale);
+  const discPx = Math.round(24 * scale);
   return L.divIcon({
     // Icon-only bubble (owner: "less interested in the number") — the
     // count was a tiny badge that drowned the glyph; dropped.
@@ -781,7 +792,6 @@ function rebuildMarkers(): void {
     const layer = new WdCanvasDot([hut.lat, hut.lon], {
       renderer: dotRenderer,
       dotRadius: 6.5, // pre-sprite fallback dot only
-      ringRadius: DISC_PX / 2,
       ringColor: status ? STATUS_COLORS[status] : undefined,
       fillColor: style.typeColor,
       typeColor: style.typeColor,
@@ -1015,8 +1025,17 @@ function updateZoomHint(): void {
 watch(
   () => hutsStore.selectedDate,
   date => {
-    void loadAvailability(date ?? 'now');
-    updateZoomHint();
+    // Owner spec: resetting the date REMOVES the availability display
+    // (same date-gating as the MapLibre occupation layers) — no rings,
+    // labels or zoom hint until a date is picked again.
+    if (date === undefined) {
+      availBySlug.clear();
+      rebuildMarkers();
+      updateZoomHint();
+    } else {
+      void loadAvailability(date);
+      updateZoomHint();
+    }
   },
   { immediate: true }
 );
@@ -1075,6 +1094,7 @@ function onMoveEnd(): void {
   });
   syncHash();
   markerOpacity = markerOpacityFor(map.getZoom());
+  shieldPx = shieldPxFor(map.getZoom());
   fallbackEl.value?.style.setProperty('--wd-fb-o', String(markerOpacity));
   refreshTilesDebounced();
 }
@@ -1153,6 +1173,7 @@ onMounted(() => {
   sliderZoom.value = map.getZoom();
   fallbackEl.value?.style.setProperty('--wd-fb-g', String(glyphScale(map.getZoom())));
   markerOpacity = markerOpacityFor(map.getZoom());
+  shieldPx = shieldPxFor(map.getZoom());
   fallbackEl.value?.style.setProperty('--wd-fb-o', String(markerOpacity));
   updateZoomHint();
   void loadSprite();
@@ -1453,6 +1474,14 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   opacity: var(--wd-fb-o, 1);
 }
 
+// Icons above clusters (owner spec): hut shields live on the CANVAS
+// (overlay pane, z 400) while cluster bubbles are DOM markers (z 600) —
+// lift the overlay pane above the marker pane so shields paint over
+// bubbles at their shared edges.
+.wd-fallback-map .leaflet-overlay-pane {
+  z-index: 650;
+}
+
 // ── Locate button: maplibre ctrl-group language (29px white square,
 //    shadow ring, #333 icon) ────────────────────────────────────────────
 .wd-fb-locate {
@@ -1539,11 +1568,15 @@ body.wd-fb-active .wd-zoom {
 }
 
 .wd-fb-cluster__icon {
-  --wd-fb-c: 1; // fixed (inline geometry is pre-normalized to 13px)
+  --wd-fb-c: 1; // fixed (inline geometry is pre-normalized)
   position: relative;
   z-index: 1;
   // GRAY silhouette (owner: black or better gray) — visible on white.
   filter: brightness(0) opacity(0.8);
+  background-repeat: no-repeat;
+  background-image: var(--wd-fb-sheet);
+  image-rendering: auto;
+  display: block;
 }
 
 // ── Controls: MapLibre parity ─────────────────────────────────────────────
