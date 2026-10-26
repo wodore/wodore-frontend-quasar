@@ -95,12 +95,21 @@ const fallbackEl = ref<HTMLDivElement>();
 
 // ── Zoom model ───────────────────────────────────────────────────────────
 
-/** Dots render from this zoom up (owner: one level earlier than z9). */
-const HUT_MIN_ZOOM = 8;
+/** Dots render from this zoom up (owner: down to z7, ghosted — see
+ *  markerOpacityFor; solid again from z9). */
+const HUT_MIN_ZOOM = 7;
 /** Dots upgrade to category symbols (mono SVG on a colored shield). */
 const SYMBOL_MIN_ZOOM = 11;
 /** Occupation status word appears from here (owner spec). */
 const OCC_LABEL_MIN_ZOOM = 12;
+/** Marker transparency ramp (owner spec): 50% opaque at z7, solid by
+ *  z9 — z7 markers are ghost hints of where the huts cluster. */
+function markerOpacityFor(zoom: number): number {
+  return Math.min(0.5 + ((zoom - HUT_MIN_ZOOM) / 2) * 0.5, 1);
+}
+/** Current marker opacity — the canvas draw reads it synchronously
+ *  (CSS var for the DOM tiers, module var for canvas). */
+let markerOpacity = 1;
 /** Huts WITH availability uncluster from here (owner spec; +1 vs the
  *  first iteration — caps the unclustered marker count, see the profile
  *  note in the header). */
@@ -421,10 +430,10 @@ class WdCanvasDot extends L.CircleMarker {
     if (options.ringColor) {
       ctx.beginPath();
       ctx.arc(point.x, point.y, options.ringRadius, 0, Math.PI * 2);
-      ctx.globalAlpha = 0.9;
+      ctx.globalAlpha = 0.9 * markerOpacity;
       ctx.fillStyle = options.ringColor;
       ctx.fill();
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = markerOpacity;
     }
     ctx.beginPath();
     ctx.arc(point.x, point.y, options.dotRadius, 0, Math.PI * 2);
@@ -926,6 +935,8 @@ function onMoveEnd(): void {
     bearing: 0,
   });
   syncHash();
+  markerOpacity = markerOpacityFor(map.getZoom());
+  fallbackEl.value?.style.setProperty('--wd-fb-o', String(markerOpacity));
   refreshTilesDebounced();
 }
 
@@ -999,6 +1010,8 @@ onMounted(() => {
 
   map.on('moveend zoomend', onMoveEnd);
   fallbackEl.value?.style.setProperty('--wd-fb-g', String(glyphScale(map.getZoom())));
+  markerOpacity = markerOpacityFor(map.getZoom());
+  fallbackEl.value?.style.setProperty('--wd-fb-o', String(markerOpacity));
   updateZoomHint();
   void loadSprite();
 
@@ -1244,6 +1257,12 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
      override keys off a body class set by this component. -->
 <style lang="scss">
 // ── Hut markers: 36px hit box, 13px type-colored dot, status ring ──────
+.wd-fb-marker,
+.wd-fb-cluster-icon {
+  // z7 ghost ramp (owner spec) — 50% at z7, solid by z9.
+  opacity: var(--wd-fb-o, 1);
+}
+
 .wd-fb-marker {
   width: 36px;
   height: 36px;
