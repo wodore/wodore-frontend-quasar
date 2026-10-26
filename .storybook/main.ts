@@ -29,6 +29,7 @@ export default defineMain({
     options: {
       docgen: {
         plugin: 'vue-component-meta',
+        tsconfig: 'tsconfig.storybook-tempaths.json',
       },
     },
   },
@@ -96,10 +97,10 @@ export default defineMain({
       ...config.css,
       preprocessorOptions: {
         scss: {
-          includePaths: [path.resolve(__dirname, '..')],
+          loadPaths: [path.resolve(__dirname, '..')],
         },
         sass: {
-          includePaths: [path.resolve(__dirname, '..')],
+          loadPaths: [path.resolve(__dirname, '..')],
         },
       },
     };

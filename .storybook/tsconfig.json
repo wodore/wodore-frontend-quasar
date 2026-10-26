@@ -1,0 +1,7 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["unplugin-icons/types/vue", "../components.d.ts", "node"]
+  },
+  "include": ["**/*"]
+}

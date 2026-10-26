@@ -85,7 +85,13 @@ export default configure(ctx => {
       // when env + opt-out + DNT gates pass — never on the boot critical
       // path (see boot/analytics.ts).
       { server: false, path: 'analytics' },
-      { server: false, path: 'maplibre' },
+      // (No maplibre boot: the plugin's global component registration was
+      // unused — WdMapView imports its Mgl* components directly — and the
+      // static import put the ~327 kB gz MapLibre chunk on the pre-mount
+      // critical path of every route. MapLibre now loads with the
+      // WdMapView chunk graph; crawlers never BOOT it (they still
+      // download the vendor chunk via the map-store cluster edge —
+      // known follow-up), see services/crawler-ua.ts.)
       { server: false, path: 'pwa-update' },
       { server: false, path: 'native' },
     ],
