@@ -405,6 +405,24 @@ see `src/services/apiBase.ts`), `WODORE_SEO_CACHE_TTL`,
 `WODORE_SEO_PAGE_TTL`, `WODORE_DEFAULT_LANG`, `WODORE_LANG_PREFIXES`,
 `WODORE_NGINX_CONFIG`.
 
+**CDN CORS (resolved 2026-10, wodore-backend#426):** the CDN host
+(`hub.cdn.stg.wodore.com`, BunnyCDN — URL-keyed cache, `Vary`
+collapsed) could not serve django-cors-headers' per-origin
+`Access-Control-Allow-Origin` (cache variants filled without an
+`Origin` header reach browsers header-less → CORS failures; same
+cache-variance class as PR #341). Fix lives in the BACKEND
+(`ApiCdnCacheMiddleware`): anonymous `/v1` GETs get a wildcard ACAO +
+explicit Cache-Control TTLs (`/v1/version` 300 s from the view, else
+3600 s; errors and authenticated responses are `no-store`) — one
+origin-independent variant, no CDN edge rules or vary settings needed
+(both explicitly rejected: vary-on-Origin breaks selective purging).
+The SPA routes ALL unauthenticated GETs through the CDN, including
+`/v1/version` (a short-lived frontend exemption was reverted once the
+backend shipped). After any backend CDN-header change: full Bunny zone
+purge, then verify
+`curl -sI -H 'Origin: https://stg.wodore.com' https://hub.cdn.stg.wodore.com/v1/version`
+shows `access-control-allow-origin: *` + `max-age=300` on a cache HIT.
+
 ### Hidden CDN origin hosts (orig.\*)
 
 The same server block (`server_name _`) also answers for the CDN pull

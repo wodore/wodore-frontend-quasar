@@ -92,6 +92,14 @@ const authMiddleware: Middleware = {
  * non-GET methods cover auth flows and mutations. Unset/empty = no
  * rewrite at all, byte-identical to the single-host behavior.
  *
+ * CDN-safe headers are the BACKEND's job (ApiCdnCacheMiddleware,
+ * wodore-backend#426): anonymous /v1 GETs carry a wildcard
+ * Access-Control-Allow-Origin + explicit Cache-Control TTLs (errors and
+ * authenticated responses are no-store), so every unauthenticated GET —
+ * /v1/version included — can flow through the CDN single-variant cache.
+ * A short stopgap once exempted /v1/version here (2026-10, cache variance
+ * à la PR #341) — reverted once the backend shipped those headers.
+ *
  * Registered AFTER authMiddleware on purpose: it decides the
  * Authorization header, so by the time this runs, "authenticated" is
  * simply "the header is present". Runs BEFORE apiVersionMiddleware so

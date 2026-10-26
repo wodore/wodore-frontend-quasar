@@ -128,6 +128,24 @@ function stampAppVersion<T extends Sentry.Event>(event: T): T {
 }
 
 /**
+ * Stream-mode tracing counterpart of stampAppVersion: SDK 11.8 defaults
+ * to `traceLifecycle: 'stream'`, where `beforeSendTransaction` is IGNORED
+ * (with a console warning on every init) and slated for removal in v12.
+ * `beforeSendSpan` works with both lifecycles; only the segment (root)
+ * span — the streamed equivalent of a transaction — gets the version, so
+ * child spans stay unpolluted.
+ */
+function stampAppVersionOnSegment(
+  span: Parameters<NonNullable<VueInitOptions['beforeSendSpan']>>[0]
+): Parameters<NonNullable<VueInitOptions['beforeSendSpan']>>[0] {
+  const version = process.env.WODORE_APP_VERSION;
+  if (version && span.is_segment) {
+    span.attributes = { ...span.attributes, app_version: version };
+  }
+  return span;
+}
+
+/**
  * Initialize Sentry-protocol error tracking when a DSN is configured.
  * Called from the `sentry` boot file at browser idle via dynamic import
  * (perf/defer-sentry-init): pre-init errors — including those raised by
@@ -184,7 +202,10 @@ export function initErrorTracking(app: App, router: Router): void {
       urlQueryParams: { deny: PARAM_DENY_KEYS },
     },
     beforeSend: stampAppVersion,
-    beforeSendTransaction: stampAppVersion,
+    // NOT beforeSendTransaction: ignored (with a console warning) under
+    // the SDK's default `traceLifecycle: 'stream'`, removed in v12 — see
+    // stampAppVersionOnSegment above.
+    beforeSendSpan: stampAppVersionOnSegment,
     // Trim the default integrations (perf/defer-sentry-init, see file
     // header): drop the timers/rAF/addEventListener wrappers entirely,
     // replace the default breadcrumbs with an instance that leaves

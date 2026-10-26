@@ -208,12 +208,37 @@ describe('attribution', () => {
     expect(event.tags).toEqual({ app_version: '0.0.6' });
   });
 
-  it('stamps app_version on transaction events via beforeSendTransaction', () => {
+  it('stamps app_version on the segment span via beforeSendSpan (stream lifecycle)', () => {
     process.env.WODORE_APP_VERSION = '0.0.6';
     initErrorTrackingWith();
-    const { beforeSendTransaction } = initMock.mock.calls[0][0];
-    const event = beforeSendTransaction({ type: 'transaction', tags: {} });
-    expect(event.tags).toEqual({ app_version: '0.0.6' });
+    const { beforeSendSpan } = initMock.mock.calls[0][0];
+    const segment = beforeSendSpan({
+      trace_id: 't1',
+      span_id: 's1',
+      name: 'pageload',
+      start_timestamp: 0,
+      status: 'ok',
+      is_segment: true,
+      attributes: {},
+    });
+    expect(segment.attributes).toEqual({ app_version: '0.0.6' });
+  });
+
+  it('leaves child spans unstamped via beforeSendSpan', () => {
+    process.env.WODORE_APP_VERSION = '0.0.6';
+    initErrorTrackingWith();
+    const { beforeSendSpan } = initMock.mock.calls[0][0];
+    const child = beforeSendSpan({
+      trace_id: 't1',
+      span_id: 's2',
+      parent_span_id: 's1',
+      name: 'GET /v1/huts',
+      start_timestamp: 0,
+      status: 'ok',
+      is_segment: false,
+      attributes: { 'http.status_code': 200 },
+    });
+    expect(child.attributes).toEqual({ 'http.status_code': 200 });
   });
 
   it('leaves events tag-less when WODORE_APP_VERSION is unset', () => {
