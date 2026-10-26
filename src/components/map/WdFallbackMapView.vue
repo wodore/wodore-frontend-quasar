@@ -453,8 +453,8 @@ function makeIcon(style: MarkerStyle, selected = false): L.DivIcon {
     // Sprite path (maplibre parity): type-colored shield with a WHITE
     // primitive glyph, every icon normalized to the same rendered size.
     const glyph = spriteSpan(
-      `primitive/${style.identifier}`,
-      'primitive/accommodation.unknown',
+      `mono/${style.identifier}`,
+      'mono/accommodation.unknown',
       'wd-fb-shield__icon',
       '--wd-fb-g',
       24
@@ -561,8 +561,8 @@ function clusterIcon(cluster: L.MarkerCluster): L.DivIcon {
   const scale0 = Math.min(0.8 + ((cluster.getChildCount() - 2) / 38) * 0.8, 1.6);
   const glyph = availSprite
     ? spriteSpan(
-        `primitive/${info.identifier ?? 'accommodation.unknown'}`,
-        'primitive/accommodation.unknown',
+        `mono/${info.identifier ?? 'accommodation.unknown'}`,
+        'mono/accommodation.unknown',
         'wd-fb-cluster__icon',
         '--wd-fb-c',
         Math.round(13 * scale0)
@@ -629,6 +629,11 @@ function rebuildMarkers(): void {
     markerBySlug.set(hut.slug, layer);
     hutBySlug.set(hut.slug, hut);
     layer.on('click', () => selectHut(hut));
+    // Canvas dots: hover grows the dot (DOM shields hover via CSS).
+    if (layer instanceof WdCanvasDot) {
+      layer.on('mouseover', () => layer.setStyle({ dotRadius: 8.5 } as L.CircleMarkerOptions));
+      layer.on('mouseout', () => layer.setStyle({ dotRadius: 6.5 } as L.CircleMarkerOptions));
+    }
     (availBySlug.has(hut.slug) ? availMarkers : plainMarkers).push(layer);
   }
   clusterAvail.addLayers(availMarkers); // bulk: no per-marker animation
@@ -830,12 +835,12 @@ async function loadAvailability(dateISO: string): Promise<void> {
 }
 
 /** "Zoom in to see availabilities" hint: shown while a DATE is selected
- *  and the camera is at z <= 8 (below the marker floor — nothing is
- *  visible there); dismissed from z > 9. The gap is deliberate
+ *  and the camera is at z <= 9 (below the marker floor — nothing is
+ *  visible there); dismissed from z > 10. The gap is deliberate
  *  hysteresis so a pan around z8.5 cannot flicker it. Persistent toast
  *  (timeout 0) + close button; re-shows when conditions return. */
-const ZOOM_HINT_SHOW_AT = 8;
-const ZOOM_HINT_HIDE_AT = 9;
+const ZOOM_HINT_SHOW_AT = 9; // owner: visible at z <= 9
+const ZOOM_HINT_HIDE_AT = 10;
 let zoomHintDismiss: (() => void) | undefined;
 
 function updateZoomHint(): void {
@@ -1283,6 +1288,16 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   place-items: center;
   border: 1.5px solid rgba(255, 255, 255, 0.95);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+// Hover: the shield lifts and grows slightly (the occupation disc stays
+// put — only the shield reacts, like a raised instrument key).
+.wd-fb-marker:hover .wd-fb-shield {
+  transform: scale(1.18);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
 }
 
 .wd-fb-shield__icon {
