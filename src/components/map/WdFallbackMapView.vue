@@ -69,10 +69,15 @@ import 'leaflet.markercluster';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
-import { getEnv } from '@services/runtimeEnv';
 import { useLocalPropertiesStore } from '@stores/local-properties-store';
 import { useHutsStore } from '@stores/huts-store';
-import { useMapCatalogStore } from '@stores/map/map-catalog-store';
+import {
+  beginAvailabilityLoadManual,
+  settleAvailabilityLoadManual,
+  setAvailabilityManualSettle,
+  toIsoDate,
+} from '@stores/map/availability-loading';
+import { TILE_SERVER, useFallbackBasemaps, type FbBasemap } from './fallback-basemaps';
 import { seedPlaceFromMap } from '@composables/usePlace';
 
 const emit = defineEmits<{
@@ -86,7 +91,6 @@ const router = useRouter();
 const { t } = useI18n();
 const localPropertiesStore = useLocalPropertiesStore();
 const hutsStore = useHutsStore();
-const catalogStore = useMapCatalogStore();
 
 const fallbackEl = ref<HTMLDivElement>();
 
@@ -135,7 +139,9 @@ const HUTS_TILE_MAX_ZOOM = 9;
 const DEFAULT_DOT_COLOR = '#346751'; // $primary
 
 /** Day-0 occupation status → ring color. Same palette the MapLibre
- * `wd-huts-occupation` layer paints (live catalog style). */
+ * `wd-huts-occupation` layer paints (live catalog style).
+ * ⚠️ FOLLOW-UP: derive from the served style's circle-color match
+ * expression instead of hardcoding (backend catalog already carries it). */
 const STATUS_COLORS: Record<string, string> = {
   empty: '#25BF5E',
   low: '#F6AD4B',
@@ -145,54 +151,9 @@ const STATUS_COLORS: Record<string, string> = {
   full: '#961A17',
 };
 
-// ── Basemap set (hardcoded raster trio — catalog later) ─────────────────
-
-const TILE_SERVER = getEnv('WODORE_TILE_SERVER_URL') ?? 'http://localhost:8075';
-const OSM_ATTR =
-  '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors';
-const TOPO_ATTR =
-  '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> | <a href="https://opentopomap.org" target="_blank" rel="noopener">OpenTopoMap</a> (CC-BY-SA) | swisstopo | geoland.at';
-const SAT_ATTR = 'Esri, Maxar, Earthstar Geographics';
-
-interface FbBasemap {
-  id: 'osm' | 'topo' | 'satellite';
-  url: string;
-  attribution: string;
-  maxNativeZoom: number;
-  thumb: string;
-}
-
-const assetUrl = (name: string) =>
-  new URL(`/src/assets/wodore-design/map/switch/${name}`, import.meta.url).href;
-
-const BASEMAPS: FbBasemap[] = [
-  {
-    id: 'osm',
-    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: OSM_ATTR,
-    maxNativeZoom: 19,
-    thumb: assetUrl('outdoor-v2.png'),
-  },
-  {
-    id: 'topo',
-    // mapproxy world_topo facade behind the tile-router (OpenTopoMap +
-    // geoland.at + swisstopo merged, cached WebP)
-    url: `${TILE_SERVER}/raster/tiles/world_topo/webmercator/{z}/{x}/{y}.webp`,
-    attribution: TOPO_ATTR,
-    maxNativeZoom: 16,
-    thumb: assetUrl('swiss-raster.png'),
-  },
-  {
-    id: 'satellite',
-    url: `${TILE_SERVER}/raster/tiles/world_satellite/webmercator/{z}/{x}/{y}.webp`,
-    attribution: SAT_ATTR,
-    maxNativeZoom: 19,
-    thumb: assetUrl('satellite.png'),
-  },
-];
-
 const BM_KEY = 'wodore:fallbackBasemap';
 const NOTE_KEY = 'wodore:fallbackNoteDismissed';
+const BASEMAPS = useFallbackBasemaps();
 const bmOpen = ref(false);
 const activeBasemapId = ref((LocalStorage.getItem(BM_KEY) as FbBasemap['id'] | null) ?? 'osm');
 
@@ -968,18 +929,6 @@ const refreshTilesDebounced = useDebounceFn(() => void refreshTiles(), 400);
  *  the store's 600ms minimum spin still applies. */
 let firstAvailLoad = true;
 
-/** DD.MM.YY picker format → ISO (mirrors map-catalog-store.toIsoDate —
- *  Martin's availability source needs ISO dates in the tile URLs). */
-function toIsoDate(input: string): string | undefined {
-  const euro = input.match(/^(\d{2})\.(\d{2})\.(\d{2}|\d{4})$/);
-  if (euro) {
-    const year = euro[3]!.length === 2 ? `20${euro[3]}` : euro[3]!;
-    return `${year}-${euro[2]}-${euro[1]}`;
-  }
-  if (/^\d{4}-\d{2}-\d{2}$/.test(input)) return input;
-  return undefined;
-}
-
 function availTileZoom(): number {
   return Math.min(
     AVAIL_TILE_MAX_ZOOM,
@@ -995,7 +944,7 @@ async function refreshAvailTiles(picked: string): Promise<void> {
   const generation = ++availTileGeneration;
   const spin = !firstAvailLoad;
   firstAvailLoad = false;
-  if (spin) catalogStore.beginAvailabilityLoadManual();
+  if (spin) beginAvailabilityLoadManual();
   const tileZoom = availTileZoom();
   const bounds = activeMap.getBounds().pad(0.25);
   const n = 2 ** tileZoom;
@@ -1031,7 +980,7 @@ async function refreshAvailTiles(picked: string): Promise<void> {
     if (generation === availTileGeneration) {
       // Rebuild FIRST (settle when rendered — owner spec), then settle.
       applyAvailTiles();
-      if (spin) catalogStore.settleAvailabilityLoadManual();
+      if (spin) settleAvailabilityLoadManual();
     }
   }
 }
@@ -1126,13 +1075,13 @@ watch(
     // Owner spec: resetting the date REMOVES the availability display
     // (same date-gating as the MapLibre occupation layers) — no rings,
     // labels or zoom hint until a date is picked again.
-    if (date === undefined || toIsoDate(date) === undefined) {
+    if (toIsoDate(date) === undefined) {
       availBySlug.clear();
       availTiles.clear();
       availFetchedForDate = undefined;
       rebuildMarkers();
       updateZoomHint();
-    } else {
+    } else if (date !== undefined) {
       void refreshAvailTiles(date);
       updateZoomHint();
     }
@@ -1220,7 +1169,7 @@ function applyBasemap(): void {
 onMounted(() => {
   const el = fallbackEl.value;
   if (!el) return;
-  catalogStore.setAvailabilityManualSettle(true); // we own the spinner settle
+  setAvailabilityManualSettle(true); // we own the spinner settle
 
   const initial = localPropertiesStore.getInitialLocation();
   // Defensive wrap: an out-of-range seed lng (mangled deep link) must
@@ -1325,7 +1274,7 @@ onBeforeUnmount(() => {
   availTileGeneration++;
   fetchingTiles.clear();
   fetchingAvailTiles.clear();
-  catalogStore.setAvailabilityManualSettle(false);
+  setAvailabilityManualSettle(false);
   document.body.classList.remove('wd-fb-active');
   zoomHintDismiss?.();
   if (focusOn.value) document.body.classList.remove('wd-map-focus');
@@ -1453,6 +1402,11 @@ onBeforeUnmount(() => {
 
 <style lang="scss" scoped>
 @use '../../css/map-controls/chip' as chip;
+// Shared zoom-slider pill visuals — the SAME partial WdZoomSlider uses
+// (MapLibre renderer): one source of truth for both maps.
+@use '../../css/map-controls/zoom-slider-pill';
+
+@include zoom-slider-pill.pill;
 $ease: cubic-bezier(0.2, 0, 0, 1);
 
 .wd-fallback-map {

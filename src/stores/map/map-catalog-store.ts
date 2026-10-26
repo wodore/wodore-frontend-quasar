@@ -25,7 +25,12 @@ import { defineStore } from 'pinia';
 import { ref, watch } from 'vue';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
 import { Notify } from 'quasar';
-import { availabilityLoading } from './availability-loading';
+import {
+  availabilityLoading,
+  availabilitySpinner,
+  settleAvailabilitySpinner,
+  toIsoDate,
+} from './availability-loading';
 import type {
   AllLayoutProperties,
   AllPaintProperties,
@@ -109,46 +114,22 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
   // here so a freshly created store — e.g. per-test pinia — never
   // inherits a spinner state from a previous instance (review #349).
   availabilityLoading.value = false;
-  let availabilityLoadGen = 0;
-  let availabilityShownAt = 0;
   let availabilityListenersBound = false;
-  /** Set by the Leaflet fallback while IT renders availability data —
-   *  suppresses the mapless fixed-minimum settle (see beginAvailabilityLoad)
-   *  so the spinner tracks the fallback's real render instead. */
-  let availabilityManualSettle = false;
-  const AVAILABILITY_MIN_SPIN_MS = 600;
+  // Re-imported name kept short at the call site (module owns the canonical
+  // constant; the store aliases it for the native-bridge fallback timeout).
+  const AVAILABILITY_MIN_SPIN_MS_FALLBACK = 600;
 
-  /** Manual renderer (fallback) API: begin + settle around its own fetch /
-   *  render; the shared 600ms minimum spin still applies on settle. */
-  function beginAvailabilityLoadManual(): void {
-    beginAvailabilityLoad();
-  }
-
-  function settleAvailabilityLoadManual(): void {
-    settleAvailabilityLoad(availabilityLoadGen);
-  }
-
-  function setAvailabilityManualSettle(on: boolean): void {
-    availabilityManualSettle = on;
-  }
-
+  /** Gen-guarded settle delegating to the shared module (600ms minimum). */
   function settleAvailabilityLoad(gen: number): void {
-    if (gen !== availabilityLoadGen) return; // superseded by a newer date pick
-    const elapsed = performance.now() - availabilityShownAt;
-    const remaining = AVAILABILITY_MIN_SPIN_MS - elapsed;
-    if (remaining > 0) {
-      setTimeout(() => {
-        if (gen === availabilityLoadGen) availabilityLoading.value = false;
-      }, remaining);
-    } else {
-      availabilityLoading.value = false;
-    }
+    if (gen !== availabilitySpinner.gen) return; // superseded by a newer date pick
+    settleAvailabilitySpinner();
   }
 
   function beginAvailabilityLoad(): void {
-    const gen = ++availabilityLoadGen;
+    availabilitySpinner.gen += 1;
+    const gen = availabilitySpinner.gen;
     availabilityLoading.value = true;
-    availabilityShownAt = performance.now();
+    availabilitySpinner.shownAt = performance.now();
     const map = mapRef.map as unknown as
       | { on?: (ev: string, fn: (e: unknown) => void) => void }
       | undefined;
@@ -157,9 +138,12 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
       // settle: it calls settleAvailabilityLoadManual() when ITS data is
       // rendered — skip the fixed minimum so the spinner tracks the real
       // load (600ms minimum still applies inside settle).
-      if (availabilityManualSettle) return;
+      if (availabilitySpinner.manualSettle) return;
       // Native bridge (no sourcedata forwarding): run the fixed minimum.
-      setTimeout(() => settleAvailabilityLoad(gen), AVAILABILITY_MIN_SPIN_MS);
+      setTimeout(
+        () => settleAvailabilityLoad(gen),
+        AVAILABILITY_MIN_SPIN_MS_FALLBACK
+      );
       return;
     }
     if (!availabilityListenersBound) {
@@ -167,7 +151,7 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
       const onSourceData = (e: { sourceId?: string; isSourceLoaded?: boolean; type?: string }) => {
         if (e.sourceId !== 'wd-bookings') return;
         if (e.isSourceLoaded || e.type === 'sourcedataabort') {
-          settleAvailabilityLoad(availabilityLoadGen);
+          settleAvailabilityLoad(availabilitySpinner.gen);
         }
       };
       (mapRef.map as unknown as { on: (ev: string, fn: (e: never) => void) => void }).on(
@@ -444,16 +428,6 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
    *  runtime `{{date}}` token must be normalized before it lands in tile
    *  URLs. Unparseable input yields undefined (token stays unresolved →
    *  the date-gated layers stay hidden). */
-  function toIsoDate(input: string | undefined): string | undefined {
-    if (!input) return undefined;
-    const euro = input.match(/^(\d{2})\.(\d{2})\.(\d{2}|\d{4})$/);
-    if (euro) {
-      const year = euro[3]!.length === 2 ? `20${euro[3]}` : euro[3]!;
-      return `${year}-${euro[2]}-${euro[1]}`;
-    }
-    if (/^\d{4}-\d{2}-\d{2}$/.test(input)) return input;
-    return undefined;
-  }
 
   /** Mirror the selected availability date into the runtime values. */
   function setRuntimeDate(date: string | undefined): void {
@@ -805,8 +779,5 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     // here); the ref itself lives in ./availability-loading so eager
     // chunk consumers (WdSelectDate) need no cluster import.
     availabilityLoading,
-    beginAvailabilityLoadManual,
-    settleAvailabilityLoadManual,
-    setAvailabilityManualSettle,
   };
 });
