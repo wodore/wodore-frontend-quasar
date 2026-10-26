@@ -107,7 +107,7 @@ function markerOpacityFor(zoom: number): number {
   // Low zoom: ghost ramp z7(50%) → z9(solid). High zoom: fade out the
   // markers so the basemap detail dominates (owner spec: z17=30%,
   // z18=50%, z19=20% transparency — i.e. opacity 0.7, 0.5, 0.8).
-  if (zoom >= 19) return 0.8; // z19: 20% transparent
+  if (zoom >= 19) return 0.3; // z19: 70% transparent
   if (zoom >= 18) return 0.5; // z18: 50% transparent
   if (zoom >= 17) return 0.7; // z17: 30% transparent
   return Math.min(0.5 + ((zoom - HUT_MIN_ZOOM) / 2) * 0.5, 1);
@@ -128,7 +128,7 @@ const OCC_LABEL_FONT = '600 9px "Barlow Semi Condensed", "Barlow", sans-serif';
 function shieldPxFor(zoom: number): number {
   if (zoom <= 10) return 13; // z7-10: small, below the clusters
   if (zoom <= 13) return 17; // z11-13: medium (owner: fine)
-  return Math.min(17 + (zoom - 14) * 1.5, 22); // z14+: grows to 22 by z16
+  return Math.min(17 + (zoom - 14) * 2.75, 28); // z14+: grows to 28 by z17
 }
 /** Huts WITH availability uncluster from here (owner spec; +1 vs the
  *  first iteration — caps the unclustered marker count, see the profile
@@ -157,18 +157,6 @@ const STATUS_COLORS: Record<string, string> = {
   free_unknown: '#7FAB88',
   high: '#C3731F',
   full: '#961A17',
-};
-
-/** Slightly darker versions of the status colors for the disc border —
- *  owner spec: "circle behind with a border (slightly darker than the
- *  fill)". Computed at 80% lightness of the original. */
-const STATUS_DARK_BORDERS: Record<string, string> = {
-  '#25BF5E': '#1E9949',
-  '#F6AD4B': '#C58A3B',
-  '#EA9A37': '#BB7A2C',
-  '#7FAB88': '#66896F',
-  '#C3731F': '#9C5C19',
-  '#961A17': '#781512',
 };
 
 const BM_KEY = 'wodore:fallbackBasemap';
@@ -641,9 +629,9 @@ class WdCanvasDot extends L.CircleMarker {
       ctx.globalAlpha = 0.85 * markerOpacity;
       ctx.fillStyle = options.ringColor;
       ctx.fill();
-      // Darker border (same hue, reduced lightness — computed once)
+      // Owner: category color as the disc border (type identity)
       ctx.lineWidth = 2;
-      ctx.strokeStyle = STATUS_DARK_BORDERS[options.ringColor] ?? options.ringColor;
+      ctx.strokeStyle = options.typeColor ?? options.ringColor;
       ctx.stroke();
       ctx.globalAlpha = markerOpacity;
     }
@@ -656,9 +644,10 @@ class WdCanvasDot extends L.CircleMarker {
       WdCanvasDot.shieldPath(ctx, point.x, point.y, size, size, size * 0.22);
       ctx.fillStyle = options.typeColor;
       ctx.fill();
-      ctx.lineWidth = options.selected ? 3 : 2.5;
-      // Status-colored border when available, white otherwise; gold for selection
-      ctx.strokeStyle = options.selected ? '#BFAB25' : (options.ringColor ?? '#ffffff');
+      ctx.lineWidth = options.selected ? 3 : 1.5;
+      // Owner: WHITE border for ALL shields (thinner); selection uses
+      // glacier-blue #2673bf (design system: selected states token).
+      ctx.strokeStyle = options.selected ? '#2673bf' : '#ffffff';
       ctx.stroke();
       const iconPx = size * 0.72;
       ctx.drawImage(icon, point.x - iconPx / 2, point.y - iconPx / 2, iconPx, iconPx);
@@ -763,11 +752,11 @@ function clusterIcon(cluster: L.MarkerCluster): L.DivIcon {
   // than the 19px shields (owner spec).
   const count = cluster.getChildCount();
   const scale = Math.min(0.8 + ((count - 2) / 38) * 0.45, 1.25);
-  const discPx = Math.round(26 * scale);
+  const discPx = Math.round(28 * scale);
   return L.divIcon({
     // Icon-only bubble (owner: "less interested in the number") — the
     // count was a tiny badge that drowned the glyph; dropped.
-    html: `<div class="wd-fb-cluster" style="--c:${info.color};width:${discPx}px;height:${discPx}px">${glyph}</div>`,
+    html: `<div class="wd-fb-cluster" style="--c:${info.color};width:${discPx}px;height:${discPx}px">${glyph}<span class="wd-fb-cluster__count">${count}</span></div>`,
     className: 'wd-fb-cluster-icon',
     iconSize: [discPx, discPx],
     iconAnchor: [discPx / 2, discPx / 2],
@@ -1274,8 +1263,10 @@ onMounted(() => {
     spiderfyOnMaxZoom: false,
     iconCreateFunction: clusterIcon,
   });
-  map.addLayer(clusterAvail);
+  // Z-ORDER: plain first (drawn below), avail second (on top) —
+  // owner: huts with availability should never be covered by others.
   map.addLayer(clusterPlain);
+  map.addLayer(clusterAvail);
 
   map.on('moveend zoomend', onMoveEnd);
   map.on('zoom', onMapZoomSync);
