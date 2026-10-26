@@ -120,7 +120,7 @@ let markerOpacity = 1;
  *  (owner: clearly visible behind the icon). Module vars — the canvas
  *  draw reads them synchronously, refreshed on camera settle. */
 let shieldPx = 19;
-const OCC_LABEL_FONT = '600 9px "Barlow Semi Condensed", "Barlow", sans-serif';
+const OCC_LABEL_FONT = '600 11px "Barlow Semi Condensed", "Barlow", sans-serif';
 
 /** Shield ramp: 11px at z7 → 16px by z11 → 20px from z14. Below z12 the
  *  smaller ghost sizes stay (owner: "before it is good"); at z12+ the
@@ -659,7 +659,7 @@ class WdCanvasDot extends L.CircleMarker {
         ctx.lineWidth = 3;
         ctx.strokeStyle = '#ffffff';
         ctx.strokeText(options.occLabel, point.x, labelY);
-        ctx.fillStyle = '#29626b'; // glacier-turquoise-deep (design token)
+        ctx.fillStyle = '#2673bf'; // glacier-blue (lighter, design token)
         ctx.fillText(options.occLabel, point.x, labelY);
         ctx.globalAlpha = markerOpacity;
       }
@@ -1578,8 +1578,30 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 <style lang="scss">
 // ── Hut markers: 36px hit box, 13px type-colored dot, status ring ──────
 .wd-fb-cluster-icon {
-  // z7 ghost ramp (owner spec) — 50% at z7, solid by z9.
+  // z7 ghost ramp (owner spec) — 50% at z7, solid by z9. The transition
+  // prevents the solid→transparent FLICKER on first load at z7-z9.
   opacity: var(--wd-fb-o, 1);
+  transition: opacity 0.35s ease;
+}
+
+// Count badge: small circle at the bottom-right in the hut/category
+// color, white text (owner spec — restored after the icon-only round).
+.wd-fb-cluster__count {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  z-index: 2;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--c, #346751);
+  color: #ffffff;
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 15px;
+  text-align: center;
+  box-shadow: 0 0 0 2px #ffffff;
 }
 
 // Icons above clusters (owner spec): hut shields live on the CANVAS
