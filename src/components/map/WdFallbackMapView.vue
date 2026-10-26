@@ -233,6 +233,68 @@ const fetchingTiles = new Set<string>();
 const availBySlug = new Map<string, FbAvail>();
 /** Mono symbol SVG per type slug (null = fetched, unavailable). */
 const symbolBySlug = new Map<string, string | null>();
+/** Martin sprite pack (accommodation,availability) — the SAME icons the
+ *  MapLibre huts style renders: `primitive/{type_standard_identifier}`
+ *  for hut glyphs, `color/availability.{status}` for the day chips. */
+let availSprite: {
+  icons: Record<string, { x: number; y: number; width: number; height: number }>;
+  sheetW: number;
+  sheetH: number;
+} | null = null;
+
+/** Load the sprite sheet once; markers rebuild when it arrives. */
+async function loadSprite(): Promise<void> {
+  if (availSprite) return;
+  try {
+    const base = `${TILE_SERVER}/sprite/accommodation,availability`;
+    const [meta, png] = await Promise.all([fetch(`${base}.json`), fetch(`${base}.png`)]);
+    if (!meta.ok || !png.ok) return;
+    const icons = (await meta.json()) as Record<
+      string,
+      { x: number; y: number; width: number; height: number }
+    >;
+    // Sheet extent from the entries (the JSON carries no canvas size).
+    let sheetW = 0;
+    let sheetH = 0;
+    for (const e of Object.values(icons)) {
+      sheetW = Math.max(sheetW, e.x + e.width);
+      sheetH = Math.max(sheetH, e.y + e.height);
+    }
+    const url = URL.createObjectURL(await png.blob());
+    availSprite = { icons, sheetW, sheetH };
+    // Feed the sheet to the CSS (spans position into it via --wd-fb-s).
+    fallbackEl.value?.style.setProperty('--wd-fb-sheet', `url(${url})`);
+    fallbackEl.value?.style.setProperty('--wd-fb-sheet-w', `${sheetW}px`);
+    fallbackEl.value?.style.setProperty('--wd-fb-sheet-h', `${sheetH}px`);
+    rebuildMarkers();
+  } catch {
+    /* no sprite — the CSS shield + mono SVG fallback keeps rendering */
+  }
+}
+
+/** Sprite-backed span; scales with the given CSS var (zoom factor). */
+function spriteSpan(key: string, fallbackKey: string, className: string, cssVar: string): string {
+  const sprite = availSprite;
+  if (!sprite) return '';
+  const entry = sprite.icons[key] ?? sprite.icons[fallbackKey];
+  if (!entry) return '';
+  const pos = `background-position:calc(${-entry.x}px * var(${cssVar}, 0.3)) calc(${-entry.y}px * var(${cssVar}, 0.3));`;
+  const size = `width:calc(${entry.width}px * var(${cssVar}, 0.3));height:calc(${entry.height}px * var(${cssVar}, 0.3));`;
+  return `<span class="${className}" style="${pos}${size}"></span>`;
+}
+
+/** Availability CHIP scale — MapLibre's occupation-day ramp verbatim:
+ *  0.300 at z12 growing to 0.6 by z15 (owner: "reduce shields to 300"). */
+function shieldScale(zoom: number): number {
+  return 0.3 + Math.min(Math.max((zoom - 12) / 3, 0), 1) * 0.3;
+}
+
+/** Hut GLYPH scale — MapLibre's wd-huts ramp verbatim: 0.55 at z11
+ *  growing to 1.0 by z16 (the primitive glyphs are 24px source, so this
+ *  renders 13-24px — the chips above use their own 48px-based ramp). */
+function glyphScale(zoom: number): number {
+  return 0.55 + Math.min(Math.max((zoom - SYMBOL_MIN_ZOOM) / 5, 0), 1) * 0.45;
+}
 /** Marker → its type color (cluster bubble coloring). */
 const markerTypeColor = new WeakMap<L.Layer, string>();
 /** slug → live marker (selection swaps without a full rebuild). */
@@ -367,22 +429,41 @@ class WdCanvasDot extends L.CircleMarker {
 /** Finger-sized hit box; 13px dot below SYMBOL_MIN_ZOOM, mono SVG on
  *  a category-colored rounded shield above it. Optional status ring
  *  behind either variant. */
-function makeIcon(
-  typeColor: string,
-  status: string | undefined,
-  symbol: string | null,
-  selected = false
-): L.DivIcon {
-  const ringColor = status ? STATUS_COLORS[status] : undefined;
-  const ring = ringColor ? `<span class="wd-fb-ring" style="background:${ringColor}"></span>` : '';
-  const fg = symbol
-    ? `<span class="wd-fb-sym" style="--c:${typeColor}">${symbol}</span>`
-    : `<span class="wd-fb-dot" style="background:${typeColor}"></span>`;
-  const classes = ['wd-fb-marker'];
-  if (symbol) classes.push('wd-fb-marker--sym');
+function makeIcon(style: MarkerStyle, selected = false): L.DivIcon {
+  const classes = ['wd-fb-marker', 'wd-fb-marker--sym'];
   if (selected) classes.push('wd-fb-marker--sel');
+  let html: string;
+  if (availSprite && style.identifier) {
+    // Sprite path (maplibre parity): primitive hut glyph + colored
+    // availability chip for the selected day.
+    const glyph = spriteSpan(
+      `primitive/${style.identifier}`,
+      'primitive/accommodation.unknown',
+      'wd-fb-glyph',
+      '--wd-fb-g'
+    );
+    const chip = style.status
+      ? spriteSpan(
+          `color/availability.${style.status}`,
+          'color/availability.unknown',
+          'wd-fb-avail',
+          '--wd-fb-s'
+        )
+      : '';
+    html = `${glyph}${chip}`;
+  } else {
+    // Fallback: CSS shield + mono SVG (or plain dot), status ring behind.
+    const ringColor = style.status ? STATUS_COLORS[style.status] : undefined;
+    const ring = ringColor
+      ? `<span class="wd-fb-ring" style="background:${ringColor}"></span>`
+      : '';
+    const fg = style.symbol
+      ? `<span class="wd-fb-sym" style="--c:${style.typeColor}">${style.symbol}</span>`
+      : `<span class="wd-fb-dot" style="background:${style.typeColor}"></span>`;
+    html = `${ring}${fg}`;
+  }
   return L.divIcon({
-    html: `${ring}${fg}`,
+    html,
     className: classes.join(' '),
     iconSize: [36, 36],
     iconAnchor: [18, 18],
@@ -394,6 +475,8 @@ interface MarkerStyle {
   typeColor: string;
   status: string | undefined;
   symbol: string | null;
+  /** type_standard_identifier — the sprite glyph key (maplibre parity). */
+  identifier: string | undefined;
 }
 
 function markerStyleFor(hut: FbHut, useSymbols: boolean): MarkerStyle {
@@ -412,12 +495,16 @@ function markerStyleFor(hut: FbHut, useSymbols: boolean): MarkerStyle {
     typeColor: hut.typeColor ?? DEFAULT_DOT_COLOR,
     status: availBySlug.get(hut.slug)?.status,
     symbol,
+    identifier:
+      typeof hut.properties.type_standard_identifier === 'string'
+        ? hut.properties.type_standard_identifier
+        : undefined,
   };
 }
 
 function applySelection(layer: L.Layer, style: MarkerStyle, selected: boolean): void {
   if (layer instanceof L.Marker) {
-    layer.setIcon(makeIcon(style.typeColor, style.status, style.symbol, selected));
+    layer.setIcon(makeIcon(style, selected));
   } else {
     // Canvas dot: merge + redraw (custom fields ride along in options)
     (layer as WdCanvasDot).setStyle({ selected } as L.CircleMarkerOptions);
@@ -442,8 +529,8 @@ function clusterIcon(cluster: L.MarkerCluster): L.DivIcon {
   return L.divIcon({
     html: `<div class="wd-fb-cluster" style="--c:${dominant}"><span>${cluster.getChildCount()}</span></div>`,
     className: 'wd-fb-cluster-icon',
-    iconSize: [40, 40],
-    iconAnchor: [20, 20],
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
   });
 }
 
@@ -474,7 +561,7 @@ function rebuildMarkers(): void {
     // canvas path each), DOM shields at symbol zoom (few huts, rich).
     const layer: L.Layer = useSymbols
       ? L.marker([hut.lat, hut.lon], {
-          icon: makeIcon(style.typeColor, style.status, style.symbol, selected),
+          icon: makeIcon(style, selected),
           keyboard: false,
           title: String(hut.properties.name ?? hut.slug), // hover tooltip
         })
@@ -816,6 +903,9 @@ onMounted(() => {
   map.addLayer(clusterPlain);
 
   map.on('moveend zoomend', onMoveEnd);
+  fallbackEl.value?.style.setProperty('--wd-fb-s', String(shieldScale(map.getZoom())));
+  fallbackEl.value?.style.setProperty('--wd-fb-g', String(glyphScale(map.getZoom())));
+  void loadSprite();
 
   // Dev-only debugging/profiling hook (the map instance lives in this
   // component's closure otherwise; window.__wdFbDebug.map exposes e.g.
@@ -1078,19 +1168,56 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   z-index: 2;
 }
 
-// ── Symbol shield (z11+): mono category SVG on a rounded rect in the
-//    category color — the mono SVGs are built with currentColor, so the
-//    CSS color recolors them. ────────────────────────────────────────
+// ── Sprite shield (z11+, maplibre parity): primitive hut glyph from the
+//    Martin sprite pack, scaled by --wd-fb-s (0.300 at the shield floor,
+//    0.6 by z15 — owner: "reduce shields to 300"). The availability chip
+//    (color/availability.{status}) sits at the glyph's lower-left, like
+//    the MapLibre occupation-day fan. ─────────────────────────────────
+.wd-fb-glyph,
+.wd-fb-avail {
+  background-repeat: no-repeat;
+  background-image: var(--wd-fb-sheet);
+  image-rendering: auto;
+  display: block;
+}
+
+// Each kind scales its slice of the sheet with its own zoom factor.
+.wd-fb-glyph {
+  background-size: calc(var(--wd-fb-sheet-w, 432px) * var(--wd-fb-g, 0.55))
+    calc(var(--wd-fb-sheet-h, 480px) * var(--wd-fb-g, 0.55));
+}
+
+.wd-fb-avail {
+  background-size: calc(var(--wd-fb-sheet-w, 432px) * var(--wd-fb-s, 0.3))
+    calc(var(--wd-fb-sheet-h, 480px) * var(--wd-fb-s, 0.3));
+}
+
+.wd-fb-glyph {
+  position: relative;
+  z-index: 2;
+  margin: auto; // center in the 36px hit box
+}
+
+.wd-fb-avail {
+  position: absolute;
+  // lower-left of the glyph (maplibre day0 offset direction)
+  left: calc(50% - 2px);
+  top: calc(50% + 2px);
+  transform: translate(-62%, -34%);
+  z-index: 3;
+}
+
+// ── Fallback shield (no sprite sheet yet): smaller CSS quad ───────────
 .wd-fb-marker--sym .wd-fb-ring {
-  width: 40px; // peeks around the square shield
-  height: 40px;
+  width: 30px;
+  height: 30px;
 }
 
 .wd-fb-sym {
   position: relative;
-  width: 34px;
-  height: 34px; // quadratic shield (owner spec)
-  border-radius: 9px;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
   background: var(--c, #346751);
   border: 2px solid #ffffff;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
@@ -1100,13 +1227,19 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   z-index: 2;
 
   svg {
-    width: 20px;
-    height: 20px;
+    width: 14px;
+    height: 14px;
     display: block;
   }
 }
 
-// ── Selection: gold — the app's selection color (chips, zoom thumb) ────
+// ── Selection: gold ring — the app's selection color ───────────────────
+.wd-fb-marker--sel .wd-fb-glyph {
+  outline: 2.5px solid $wd-gold;
+  outline-offset: 1px;
+  border-radius: 4px;
+}
+
 .wd-fb-marker--sel .wd-fb-sym {
   border: 3px solid $wd-gold;
   box-shadow:
@@ -1131,18 +1264,18 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 
 // ── Cluster bubbles: dominant type color ───────────────────────────────
 .wd-fb-cluster-icon {
-  width: 40px;
-  height: 40px;
+  width: 28px;
+  height: 28px;
 }
 
 .wd-fb-cluster {
-  width: 40px;
-  height: 40px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   border: 2px solid #ffffff;
   background: var(--c, #346751);
   color: #ffffff;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 600;
   display: grid;
   place-items: center;
