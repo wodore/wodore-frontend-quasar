@@ -38,16 +38,17 @@
  * - Viewport: shared with the main map (localPropertiesStore) AND
  *   mirrored into the URL as `#map=z/lat/lng` (maplibre hash format —
  *   local-properties-store parses it back on boot).
- * - Controls: zoom buttons top-right + the WdZoomSlider look (ported,
- *   Leaflet-driven, always visible via body.wd-fb-active), scale and
- *   attribution bottom-left — matching the MapLibre layout.
+ * - Controls (MapLibre parity): zoom buttons top-right on desktop /
+ *   bottom-left on mobile with the ctrl-group look, the focus/fullscreen
+ *   toggle top-right, scale bottom-left, and a MapLibre-style attribution
+ *   (translucent bar on desktop, compact ⓘ pill on mobile).
  * - Reduced-mode notice: one-time dismissable toast (Quasar Notify),
  *   dismissal persisted — never shown again.
  *
  * Leaflet + markercluster ride this component's async chunk
  * (WdMapView async-imports it), so WebGL users never download them.
  */
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useDebounceFn } from '@vueuse/core';
@@ -171,6 +172,7 @@ function selectBasemap(id: FbBasemap['id']): void {
   activeBasemapId.value = id;
   LocalStorage.set(BM_KEY, id);
   applyBasemap();
+  if (attribInnerEl) attribInnerEl.innerHTML = attribHtml(id); // follows the basemap
 }
 
 const bmIconOpen = new URL(
@@ -220,135 +222,54 @@ const symbolBySlug = new Map<string, string | null>();
 /** Marker → its type color (cluster bubble coloring). */
 const markerTypeColor = new WeakMap<L.Marker, string>();
 
-// ── Zoom slider (ported WdZoomSlider, Leaflet-driven) ───────────────────
+// ── Focus (fullscreen) mode ────────────────────────────────────────────────
+// Same body-class contract as the MapLibre map's setMapFocus: the global
+// chrome CSS (map-controls/_layout.scss) keys off body.wd-map-focus. The
+// shared .wd-focus-toggle class styles the button identically; the
+// fallback's scoped override keeps it VISIBLE on mobile (the main map
+// enters focus via empty-map tap there — the fallback has no such
+// gesture, so the button is the only entry).
+const focusOn = ref(false);
 
-const PX_PER_LEVEL = 32;
-const STEP = 0.75;
-const PAGE_STEP = 3;
-const MOVE_THRESHOLD = 5;
-const STEP_CHAIN_MS = 600;
-
-const sliderZoom = ref(10);
-const dragging = ref(false);
-let dragStartX = 0;
-let dragStartY = 0;
-let dragStartZoom = 0;
-let downStep = 0;
-let didDrag = false;
-let targetZoom: number | null = null;
-let lastStepAt = 0;
-
-const clamp = (v: number) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, v));
-const thumbPos = computed(() => 88 - ((sliderZoom.value - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)) * 76);
-
-function applyZoom(value: number): void {
-  if (!map) return;
-  const next = clamp(value);
-  targetZoom = next;
-  lastStepAt = Date.now();
-  sliderZoom.value = next;
-  map.setZoom(next, {
-    animate: !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-  });
+function toggleFocus(): void {
+  focusOn.value = !focusOn.value;
+  document.body.classList.toggle('wd-map-focus', focusOn.value);
 }
 
-function stepZoom(delta: number): void {
-  if (!map) return;
-  const now = Date.now();
-  const chain =
-    targetZoom !== null && now - lastStepAt <= STEP_CHAIN_MS ? targetZoom : map.getZoom();
-  applyZoom(chain + delta);
+// ── Attribution (MapLibre-style) ───────────────────────────────────────────
+// Leaflet's stock attribution (bottom-right, always expanded) is replaced
+// with a control mirroring maplibre's: desktop = translucent bar, mobile =
+// compact ⓘ pill expanding on tap (same geometry/colors as
+// .maplibregl-ctrl-attrib in maplibre-gl.css).
+const ATTRIB_INFO_SVG =
+  '<svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M4 10a6 6 0 1 0 12 0 6 6 0 1 0-12 0m5-3a1 1 0 1 0 2 0 1 1 0 1 0-2 0m0 3a1 1 0 1 1 2 0v3a1 1 0 1 1-2 0"/></svg>';
+
+function attribHtml(bmId: FbBasemap['id']): string {
+  const bm = BASEMAPS.find(b => b.id === bmId) ?? BASEMAPS[0]!;
+  return bm.attribution;
 }
 
-function onKeydown(e: KeyboardEvent): void {
-  switch (e.key) {
-    case 'ArrowUp':
-    case 'ArrowRight':
-      e.preventDefault();
-      stepZoom(STEP);
-      break;
-    case 'ArrowDown':
-    case 'ArrowLeft':
-      e.preventDefault();
-      stepZoom(-STEP);
-      break;
-    case 'PageUp':
-      e.preventDefault();
-      stepZoom(PAGE_STEP);
-      break;
-    case 'PageDown':
-      e.preventDefault();
-      stepZoom(-PAGE_STEP);
-      break;
-    case 'Home':
-      e.preventDefault();
-      applyZoom(MIN_ZOOM);
-      break;
-    case 'End':
-      e.preventDefault();
-      applyZoom(MAX_ZOOM);
-      break;
-  }
-}
+let attribInnerEl: HTMLElement | undefined;
 
-function onSliderPointerDown(e: PointerEvent): void {
-  if (dragging.value) return;
-  downStep =
-    Number(
-      (e.target as HTMLElement | null)?.closest('[data-zoom-step]')?.getAttribute('data-zoom-step')
-    ) || 0;
-  dragging.value = true;
-  didDrag = false;
-  dragStartX = e.clientX;
-  dragStartY = e.clientY;
-  dragStartZoom = map ? map.getZoom() : sliderZoom.value;
-  try {
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-  } catch {
-    /* pointer already inactive — band-level handlers still work */
-  }
-}
-
-function onSliderPointerMove(e: PointerEvent): void {
-  if (!dragging.value || !map) return;
-  const dx = e.clientX - dragStartX;
-  const dy = dragStartY - e.clientY; // up = zoom in
-  if (Math.abs(dy) > MOVE_THRESHOLD || Math.abs(dx) > MOVE_THRESHOLD) didDrag = true;
-  const next = clamp(dragStartZoom + dy / PX_PER_LEVEL);
-  if (next !== sliderZoom.value) {
-    sliderZoom.value = next;
-    map.setZoom(next, { animate: false });
-  }
-}
-
-function onSliderPointerUp(e: PointerEvent): void {
-  finishDrag(e);
-}
-
-function onSliderPointerCancel(): void {
-  finishDrag();
-}
-
-function finishDrag(tap?: PointerEvent): void {
-  if (!dragging.value) return;
-  dragging.value = false;
-  if (tap && !didDrag) {
-    if (downStep !== 0) {
-      stepZoom(downStep);
-    } else if (tap.currentTarget instanceof HTMLElement) {
-      const rect = tap.currentTarget.getBoundingClientRect();
-      stepZoom(tap.clientY < rect.top + rect.height / 2 ? STEP : -STEP);
+class WdAttributionControl extends L.Control {
+  onAdd(): HTMLElement {
+    const container = L.DomUtil.create('div', 'wd-fb-attrib') as HTMLElement;
+    const mobile = window.matchMedia('(max-width: 768px)').matches;
+    container.classList.add(mobile ? 'wd-fb-attrib--compact' : 'wd-fb-attrib--full');
+    attribInnerEl = L.DomUtil.create('div', 'wd-fb-attrib__inner', container);
+    attribInnerEl.innerHTML = attribHtml(activeBasemapId.value);
+    if (mobile) {
+      const btn = L.DomUtil.create('button', 'wd-fb-attrib__btn', container);
+      btn.type = 'button';
+      btn.setAttribute('aria-label', 'Attribution');
+      btn.innerHTML = ATTRIB_INFO_SVG;
+      L.DomEvent.on(btn, 'click', ev => {
+        L.DomEvent.stop(ev);
+        container.classList.toggle('wd-fb-attrib--open');
+      });
     }
+    return container;
   }
-  downStep = 0;
-}
-
-function onStepClick(e: MouseEvent, delta: number): void {
-  if (e.detail === 0) stepZoom(delta); // keyboard activation
-}
-
-function onMapZoomSync(): void {
-  if (!dragging.value && map) sliderZoom.value = map.getZoom();
 }
 
 // ── Markers ──────────────────────────────────────────────────────────────
@@ -663,22 +584,24 @@ function applyBasemap(): void {
 onMounted(() => {
   const el = fallbackEl.value;
   if (!el) return;
-  document.body.classList.add('wd-fb-active'); // zoom-slider visibility
 
   const initial = localPropertiesStore.getInitialLocation();
   map = L.map(el, {
     zoomControl: false,
-    attributionControl: true,
+    attributionControl: false, // replaced by the MapLibre-style control below
     minZoom: MIN_ZOOM,
     maxZoom: MAX_ZOOM,
-    zoomSnap: 0, // fractional zoom — slider + wheel stay continuous
+    zoomSnap: 0, // continuous wheel zoom
   });
   map.setView([initial.lat, initial.lng], Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, initial.zoom)));
   applyBasemap();
 
-  // Controls — same positions as the MapLibre layout: zoom top-right,
-  // scale + attribution bottom-left.
-  L.control.zoom({ position: 'topright' }).addTo(map);
+  // Controls — same layout as the MapLibre map: zoom top-right on desktop
+  // / bottom-left on mobile (matching MglNavigationControl), attribution +
+  // scale bottom-left (attribution above the scale).
+  const isMobileView = window.matchMedia('(max-width: 768px)').matches;
+  L.control.zoom({ position: isMobileView ? 'bottomleft' : 'topright' }).addTo(map);
+  new WdAttributionControl({ position: 'bottomleft' }).addTo(map);
   L.control.scale({ position: 'bottomleft', imperial: false, maxWidth: 100 }).addTo(map);
 
   // Dual cluster groups: availability huts uncluster one level earlier.
@@ -702,8 +625,6 @@ onMounted(() => {
   map.addLayer(clusterPlain);
 
   map.on('moveend zoomend', onMoveEnd);
-  map.on('zoom', onMapZoomSync);
-  sliderZoom.value = map.getZoom();
 
   map.whenReady(() => {
     emit('ready');
@@ -735,7 +656,7 @@ onBeforeUnmount(() => {
   tileGeneration++; // invalidate any in-flight tile/symbol callbacks
   availGeneration++;
   fetchingTiles.clear();
-  document.body.classList.remove('wd-fb-active');
+  if (focusOn.value) document.body.classList.remove('wd-map-focus');
   map?.remove(); // tears down layers + listeners
   map = undefined;
   clusterAvail = undefined;
@@ -773,47 +694,40 @@ onBeforeUnmount(() => {
       </button>
     </div>
 
-    <!-- Zoom slider — WdZoomSlider port (Leaflet-driven, always visible
-         in fallback mode via body.wd-fb-active). -->
-    <div
-      class="wd-zoom"
-      :class="{ 'wd-zoom--dragging': dragging }"
-      role="slider"
-      :aria-label="t('map.zoom')"
-      :aria-valuemin="MIN_ZOOM"
-      :aria-valuemax="MAX_ZOOM"
-      :aria-valuenow="Math.round(sliderZoom * 10) / 10"
-      :aria-valuetext="Math.round(((sliderZoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)) * 100) + '%'"
-      tabindex="0"
-      @keydown="onKeydown"
-      @pointerdown="onSliderPointerDown"
-      @pointermove="onSliderPointerMove"
-      @pointerup="onSliderPointerUp"
-      @pointercancel="onSliderPointerCancel"
-      @lostpointercapture="onSliderPointerCancel"
+    <!-- Focus (fullscreen) toggle — same global class and position as the
+         MapLibre map's button (desktop top-right; scoped override keeps it
+         tappable on mobile where the fallback has no tap-to-focus). -->
+    <button
+      class="wd-focus-toggle"
+      :class="{ 'wd-focus-toggle--active': focusOn }"
+      :aria-label="focusOn ? 'Exit focus mode' : 'Focus mode'"
+      @click.stop="toggleFocus"
     >
-      <div class="wd-zoom__pill">
-        <button
-          class="wd-zoom__step"
-          data-zoom-step="0.75"
-          :aria-label="t('map.zoomIn')"
-          @click="onStepClick($event, STEP)"
-        >
-          <q-icon name="wd-plus" size="14px" />
-        </button>
-        <div class="wd-zoom__track">
-          <div class="wd-zoom__thumb" :style="{ top: thumbPos + '%' }" />
-        </div>
-        <button
-          class="wd-zoom__step"
-          data-zoom-step="-0.75"
-          :aria-label="t('map.zoomOut')"
-          @click="onStepClick($event, -STEP)"
-        >
-          <q-icon name="wd-minus" size="14px" />
-        </button>
-      </div>
-    </div>
+      <svg
+        v-if="!focusOn"
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+      >
+        <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+      </svg>
+      <svg
+        v-else
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.4"
+        stroke-linecap="round"
+      >
+        <path d="M6 6l12 12M18 6L6 18" />
+      </svg>
+    </button>
   </div>
 </template>
 
@@ -917,103 +831,19 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   transform: translateX(8px);
 }
 
-// ── Zoom slider pill (ported visuals from WdZoomSlider) ────────────────
-.wd-zoom {
-  position: fixed;
-  right: 0;
-  top: 50%;
-  z-index: 2010;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  justify-content: center;
-  width: calc(44px + env(safe-area-inset-right, 0px));
-  min-height: 120px;
-  padding-right: env(safe-area-inset-right, 0px);
-  background: transparent;
-  cursor: grab;
-  touch-action: none;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  transform: translateY(-50%);
-
-  &--dragging {
-    cursor: grabbing;
-  }
-
-  *:focus {
-    outline: none;
-  }
-
-  &:focus-visible,
-  .wd-zoom__step:focus-visible {
-    outline: 2px solid var(--wd-ctl-ink);
-    outline-offset: -2px;
-  }
-}
-
-.wd-zoom__pill {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 18px;
-  padding: 3px 0;
-  border: 1px solid var(--wd-ctl-border);
-  border-right: none;
-  border-radius: 999px 0 0 999px;
-  background: color-mix(in srgb, var(--wd-ctl-bg) 68%, transparent);
-  color: var(--wd-ctl-ink);
-}
-
-.wd-zoom__step {
-  display: grid;
-  place-items: center;
-  position: relative;
-  width: 30px;
-  height: 26px;
-  border: none;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--wd-ctl-ink-soft);
-  cursor: pointer;
-  flex: none;
-  transition: color 0.12s ease;
-
-  &::before {
-    content: '';
+// ── Focus toggle: keep it reachable on mobile ──────────────────────────
+// The global _layout.scss hides the button outside focus mode on mobile
+// (the main map enters via empty-map tap, which the fallback lacks) —
+// here the button is the only entry, so it stays visible everywhere.
+@media (max-width: #{$breakpoint-sm}) {
+  .wd-fallback-map .wd-focus-toggle {
     position: absolute;
-    top: -9px;
-    bottom: -9px;
-    left: -20px;
-    right: -6px;
+    top: calc(11px + env(safe-area-inset-top, 0px));
+    right: 12px;
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
   }
-
-  @media (min-width: #{$breakpoint-sm + 1}) {
-    &:hover {
-      color: var(--wd-ctl-ink);
-    }
-  }
-}
-
-.wd-zoom__track {
-  position: relative;
-  width: 100%;
-  flex: 1;
-  min-height: 36px;
-  margin: 2px 0;
-  pointer-events: none;
-}
-
-.wd-zoom__thumb {
-  position: absolute;
-  left: 50%;
-  width: 18px;
-  height: 10px;
-  transform: translate(-50%, -50%);
-  border-radius: 999px;
-  background: var(--wd-ctl-ink);
-  opacity: 0.78;
-  box-shadow: 0 0 0 2px var(--wd-ctl-bg);
 }
 </style>
 
@@ -1021,17 +851,6 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
      Vue scope attributes reach it), and the zoom-slider visibility
      override keys off a body class set by this component. -->
 <style lang="scss">
-// Zoom slider: ALWAYS visible in fallback mode (the global _zoom-slider
-// gating only knows the MapLibre focus/overlay states).
-body.wd-fb-active .wd-zoom {
-  display: flex !important;
-
-  .wd-zoom__pill {
-    opacity: 1;
-    transform: none;
-  }
-}
-
 // ── Hut markers: 36px hit box, 13px type-colored dot, status ring ──────
 .wd-fb-marker {
   width: 36px;
@@ -1112,61 +931,141 @@ body.wd-fb-active .wd-zoom {
   }
 }
 
-// ── Leaflet controls styled like the MapLibre layout ───────────────────
+// ── Controls: MapLibre parity ─────────────────────────────────────────────
+// Geometry/colors copied from maplibre-gl.css (.maplibregl-ctrl-*):
+// the zoom group is a shadow-ringed white square like .maplibregl-ctrl-group
+// and sits at the SAME offsets the main map gives its top-right cluster
+// (14px inset, pushed below the focus toggle — css/maplibre-gl.scss).
+
+// Zoom bar: maplibre ctrl-group look
 .wd-fallback-map .leaflet-bar {
-  border: 1px solid var(--wd-ctl-border);
-  border-radius: 8px;
-  box-shadow: var(--wd-ctl-shadow);
+  border: none;
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 
+  a,
+  a:hover {
+    width: 29px;
+    height: 29px;
+    line-height: 29px;
+    font-size: 19px;
+    font-weight: 600;
+    color: #333333;
+    background: #ffffff;
+    border-bottom: none;
+    text-decoration: none;
+  }
+
+  a:hover {
+    background: #f4f4f4;
+  }
+
+  a:focus-visible {
+    outline: 2px solid #333333;
+    outline-offset: -2px;
+  }
+
+  a + a {
+    border-top: 2px solid rgba(0, 0, 0, 0.1);
+  }
+}
+
+// Desktop: zoom below the focus toggle, 14px inset (main map parity)
+@media (min-width: 769px) {
+  .wd-fallback-map .leaflet-top.leaflet-right .leaflet-control-zoom {
+    margin: 58px 14px 0 0;
+    float: right;
+  }
+}
+
+// Mobile: zoom bottom-left (MglNavigationControl parity)
+@media (max-width: 768px) {
+  .wd-fallback-map .leaflet-bottom.leaflet-left .leaflet-control-zoom {
+    margin: 0 0 10px 10px;
+  }
+}
+
+// Scale: maplibre .maplibregl-ctrl-scale values (readable ink on a
+// translucent bar with the 2px baseline)
+.wd-fallback-map .leaflet-control-scale-line {
+  background-color: rgba(255, 255, 255, 0.75);
+  font-size: 10px;
+  white-space: nowrap;
+  border: none;
+  border-right: 2px solid #333333;
+  border-bottom: 2px solid #333333;
+  padding: 0 5px;
+  color: #333333;
+  box-sizing: border-box;
+}
+
+// ── Attribution: maplibre .maplibregl-ctrl-attrib parity ──────────────
+// Desktop = translucent expanded bar; mobile = compact ⓘ pill that
+// expands on tap (same geometry as maplibre's compact control).
+.wd-fb-attrib {
+  font-size: 12px;
+
   a {
-    width: 34px;
-    height: 34px;
-    line-height: 34px;
-    font-size: 18px;
-    color: var(--wd-ctl-ink);
-    background: var(--wd-ctl-bg);
-    border-bottom-color: var(--wd-ctl-border);
+    color: rgba(0, 0, 0, 0.75);
+    text-decoration: none;
 
     &:hover {
-      background: color-mix(in srgb, var(--wd-ctl-bg) 88%, var(--wd-ctl-ink));
-      color: var(--wd-ctl-ink);
+      color: inherit;
+      text-decoration: underline;
     }
-
-    &:focus-visible {
-      outline: 2px solid var(--wd-ctl-ink);
-      outline-offset: -2px;
-    }
-  }
-
-  a:first-child {
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-  }
-
-  a:last-child {
-    border-bottom-left-radius: 7px;
-    border-bottom-right-radius: 7px;
-    border-bottom: none;
   }
 }
 
-.wd-fallback-map .leaflet-control-attribution {
-  font-size: 10px;
-  background: color-mix(in srgb, var(--wd-ctl-bg) 82%, transparent);
-  color: var(--wd-ctl-ink-soft);
-  border-radius: 6px 6px 0 0;
-  padding: 1px 6px;
+.wd-fb-attrib--full .wd-fb-attrib__inner {
+  padding: 0 5px;
+  background-color: rgba(255, 255, 255, 0.5);
+}
 
-  a {
-    color: var(--wd-ctl-ink-soft);
+.wd-fb-attrib--compact {
+  position: relative;
+  margin: 10px;
+  min-height: 20px;
+  background-color: #ffffff;
+  color: #000000;
+  border-radius: 12px;
+  padding: 2px 0 2px 24px;
+  box-sizing: content-box;
+  transition: width 0.15s ease;
+
+  .wd-fb-attrib__inner {
+    display: none;
+    white-space: nowrap;
+    line-height: 20px;
+  }
+
+  &.wd-fb-attrib--open {
+    padding: 2px 8px 2px 28px;
+
+    .wd-fb-attrib__inner {
+      display: block;
+    }
   }
 }
 
-.wd-fallback-map .leaflet-control-scale-line {
-  border-color: var(--wd-ctl-ink-soft);
-  color: var(--wd-ctl-ink);
-  background: color-mix(in srgb, var(--wd-ctl-bg) 82%, transparent);
-  font-size: 10px;
+.wd-fb-attrib__btn {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: rgba(0, 0, 0, 0.75);
+  cursor: pointer;
+
+  svg {
+    width: 20px;
+    height: 20px;
+    display: block;
+    margin: 2px auto;
+  }
 }
 </style>
