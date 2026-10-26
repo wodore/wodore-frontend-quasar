@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { defineAsyncComponent, onMounted, ref, watch } from 'vue';
 import { whenIdle } from '@services/idle';
+import { isCrawlerUA } from '@services/crawler-ua';
 import { useMeteoStore } from '@stores/meteo-store';
 import WdMapLoader from 'components/map/WdMapLoader.vue';
 
@@ -23,7 +24,25 @@ const mapRendered = ref(false);
 /** MapLibre `load` fired — pre-reveal signal for the splash (words fade
  * out, no new hills). */
 const mapLibreReady = ref(false);
+
+// Crawler render path (SEO): index-building bots (see
+// services/crawler-ua.ts — same UA list as the SEO edge) get the app
+// WITHOUT the map. WdMapView — and with it the whole MapLibre payload
+// (chunk, worker, styles, tiles) — never mounts, so the renderer sees
+// the hut panel content fast. The panel is route-driven (usePlace →
+// /v1/huts/{slug}), not map-seeded: nothing the crawler indexes is
+// lost. Perf-only gate — same DOM minus the map, no cloaking.
+const skipMap = isCrawlerUA();
+
 onMounted(() => {
+  if (skipMap) {
+    // No map reveal will ever release these — take the page out of the
+    // boot phase directly (index.html sets wd-map-focus + wd-booting;
+    // WdMapView's reveal is the usual removal point).
+    document.documentElement.classList.remove('wd-map-focus', 'wd-booting');
+    document.body.classList.remove('wd-map-focus', 'wd-booting');
+    return;
+  }
   void whenIdle(() => {
     mapReady.value = true;
   });
@@ -54,12 +73,12 @@ watch(
          mounts INSIDE the same tree; the loader stays on top until
          `rendered`, no Suspense fallback needed (it covers that phase
          too). -->
-    <Suspense v-if="mapReady">
+    <Suspense v-if="mapReady && !skipMap">
       <q-no-ssr>
         <WdMapView @rendered="mapRendered = true" @mapready="mapLibreReady = true" />
       </q-no-ssr>
     </Suspense>
-    <WdMapLoader :rendered="mapRendered" :map-ready="mapLibreReady" />
+    <WdMapLoader v-if="!skipMap" :rendered="mapRendered" :map-ready="mapLibreReady" />
   </q-page>
 </template>
 

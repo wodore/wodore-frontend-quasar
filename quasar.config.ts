@@ -85,7 +85,13 @@ export default configure(ctx => {
       // when env + opt-out + DNT gates pass — never on the boot critical
       // path (see boot/analytics.ts).
       { server: false, path: 'analytics' },
-      { server: false, path: 'maplibre' },
+      // (No maplibre boot: the plugin's global component registration was
+      // unused — WdMapView imports its Mgl* components directly — and the
+      // static import put the ~327 kB gz MapLibre chunk on the pre-mount
+      // critical path of every route. MapLibre now loads with the
+      // WdMapView chunk graph; crawlers never BOOT it (they still
+      // download the vendor chunk via the map-store cluster edge —
+      // known follow-up), see services/crawler-ua.ts.)
       { server: false, path: 'pwa-update' },
       { server: false, path: 'native' },
     ],
@@ -170,6 +176,14 @@ export default configure(ctx => {
         WODORE_IMAGOR_REPLACE_API_HOST_MEDIA: process.env.WODORE_IMAGOR_REPLACE_API_HOST_MEDIA,
         WODORE_UMAMI_WEBSITE_ID: process.env.WODORE_UMAMI_WEBSITE_ID,
         WODORE_UMAMI_WEBSITE_URL: process.env.WODORE_UMAMI_WEBSITE_URL,
+        // Session recording (replays/heatmaps) opt-in — 'on' loads
+        // recorder.js. Runtime-swappable in docker via /env.js ONLY
+        // once the key exists in the committed base env file (the
+        // replace_vars template) — until then docker activation
+        // requires baking it at build time. The `|| ''` fallback keeps
+        // the define a string when the key is absent from older env
+        // files (empty = inherit, see services/runtimeEnv.ts).
+        WODORE_UMAMI_RECORDER: process.env.WODORE_UMAMI_RECORDER || '',
         WODORE_OICD_ISSUER_URL: process.env.WODORE_OICD_ISSUER_URL,
         WODORE_OICD_CLIENT_ID: process.env.WODORE_OICD_CLIENT_ID,
         WODORE_OICD_RESOURCE_ID: process.env.WODORE_OICD_RESOURCE_ID,
@@ -232,6 +246,19 @@ export default configure(ctx => {
         // build is untouched.
         viteConf.build.rollupOptions ??= {};
         const chunkFn = (id: string): string | undefined => {
+          // Shell map stores (menu + content UI state, no MapLibre deps):
+          // MainLayout imports them statically, so rollup would otherwise
+          // merge them into the map-store cluster chunk (catalog/basemap/
+          // overlay stores — which statically import MapLibre), putting the
+          // 327 kB gz vendor chunk on every crawler's download list
+          // (follow-up to PR #347). Pinning them to their own chunk keeps
+          // the cluster lazy behind the map components. The $ anchor
+          // assumes plain .ts ids (no ?query suffixes) — a future plugin
+          // adding suffixes would silently regress this split, so verify
+          // the map-shell-stores chunk exists in dist after build changes.
+          if (/stores\/map\/(map-menu-store|map-content-store)\.ts$/.test(id)) {
+            return 'map-shell-stores';
+          }
           if (!id.includes('node_modules')) return undefined;
           // Keep rollup's worker builds out of the main graph — a named
           // chunk assignment here would inline/break the separate worker

@@ -10,6 +10,10 @@
 // requestIdleCallback-deferred dynamic import (setTimeout fallback),
 // listeners removed before init, flush after init.
 //
+// sentry-tunnel adds: the web-only first-party /sentry-ingest envelope
+// tunnel (ad blockers block *.ingest.*.sentry.io cross-origin) — wired
+// on web, skipped on Capacitor, never without a DSN.
+//
 // The runtimeEnv mock simulates the BROWSER reality: getEnv serves only
 // runtime-env keys (env.js / EJS inline) and nothing else — build-time
 // defines are NOT reachable through it (Vite replaces only static
@@ -114,6 +118,38 @@ describe('DSN gate', () => {
     expect(initMock.mock.calls[0][0]).toMatchObject({
       dsn: 'https://key@example.invalid/1',
     });
+  });
+});
+
+describe('first-party ingest tunnel (sentry-tunnel)', () => {
+  beforeEach(() => {
+    runtimeEnvValues.WODORE_SENTRY_DSN = 'https://key@example.invalid/1';
+  });
+
+  it('tunnels envelopes same-origin on web — blockers kill *.ingest.sentry.io', () => {
+    capacitorPlatform = 'web';
+    initErrorTrackingWith();
+    // Same-origin POST: Brave/uBlock (EasyPrivacy) never block it. The
+    // path must match nginx's `location = /sentry-ingest` proxy.
+    expect(initMock.mock.calls[0][0].tunnel).toBe('/sentry-ingest');
+  });
+
+  it('keeps the direct DSN on Capacitor android builds (no WebView blockers)', () => {
+    capacitorPlatform = 'android';
+    initErrorTrackingWith();
+    expect(initMock.mock.calls[0][0].tunnel).toBeUndefined();
+  });
+
+  it('keeps the direct DSN on Capacitor ios builds too', () => {
+    capacitorPlatform = 'ios';
+    initErrorTrackingWith();
+    expect(initMock.mock.calls[0][0].tunnel).toBeUndefined();
+  });
+
+  it('never wires a tunnel without a DSN — the gate runs before the options', () => {
+    delete runtimeEnvValues.WODORE_SENTRY_DSN;
+    initErrorTrackingWith();
+    expect(initMock).not.toHaveBeenCalled();
   });
 });
 

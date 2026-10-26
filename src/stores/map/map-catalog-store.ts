@@ -25,6 +25,7 @@ import { defineStore } from 'pinia';
 import { ref, watch } from 'vue';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
 import { Notify } from 'quasar';
+import { availabilityLoading } from './availability-loading';
 import type {
   AllLayoutProperties,
   AllPaintProperties,
@@ -96,17 +97,18 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
   /** Runtime-scope values ({{date}}) — never persisted. */
   const runtimeValues = ref<Record<string, string>>({});
 
-  /** ── Availability date-load spinner state ────────────────────────────
-   *
-   * The date pick swaps the wd-bookings vector tile URLs (setTiles);
-   * maplibre then loads the visible tiles so fast that nothing visibly
-   * happens. The spinner next to the date runs from the setTiles call
-   * until the source settles (`sourcedata` with isSourceLoaded — empty
-   * 204 tiles included), held for a 600ms minimum so the user always
-   * sees the state change. Native builds get the fixed minimum (the
-   * Capacitor bridge does not forward sourcedata events; the date
-   * change recomposes the whole style there anyway). */
-  const availabilityLoading = ref(false);
+  /** Availability date-load spinner state: the shared ref lives in
+   * the dependency-free ./availability-loading module so WdSelectDate
+   * (eager MainLayout chunk) can read it without importing this store
+   * — that import would drag the map-store cluster + MapLibre vendor
+   * chunk onto every crawler's download list (follow-up to PR #347).
+   * Semantics: setTiles → `sourcedata` settle, 600ms minimum spin;
+   * native builds run the fixed minimum (the Capacitor bridge does
+   * not forward sourcedata events). */
+  // The shared ref outlives store instances (module scope): reset it
+  // here so a freshly created store — e.g. per-test pinia — never
+  // inherits a spinner state from a previous instance (review #349).
+  availabilityLoading.value = false;
   let availabilityLoadGen = 0;
   let availabilityShownAt = 0;
   let availabilityListenersBound = false;
@@ -776,6 +778,9 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     resetLayerParameters,
     applyOverlayParameters,
     setRuntimeDate,
+    // Re-exported for API stability (specs + any store consumers read it
+    // here); the ref itself lives in ./availability-loading so eager
+    // chunk consumers (WdSelectDate) need no cluster import.
     availabilityLoading,
   };
 });

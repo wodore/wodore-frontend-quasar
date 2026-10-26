@@ -3,16 +3,16 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue';
 
 import { useQuasar, QDate, TouchSwipeValue } from 'quasar';
 import { useHutsStore } from '@stores/huts-store';
-import { useMapCatalogStore } from '@stores/map/map-catalog-store';
+// The availability spinner state is a module-scope ref, NOT the
+// map-catalog store: importing that store here would statically wire
+// the eager MainLayout chunk to the map-store cluster and pull the
+// MapLibre vendor chunk for crawlers too (follow-up to PR #347).
+import { availabilityLoading } from '@stores/map/availability-loading';
 // import { useAuthStore } from '@stores/auth-store';
 import { date } from 'quasar';
 const { formatDate, addToDate, extractDate } = date;
 const { selectedDate } = storeToRefs(useHutsStore());
 const { removeBookings, fetchHutBookingsGeojson } = useHutsStore();
-/** Availability date-load spinner state (tile URL swap → sourcedata).
- *  storeToRefs is REQUIRED — a plain store property access unwraps the
- *  ref to a frozen boolean and the spinner never re-renders. */
-const { availabilityLoading } = storeToRefs(useMapCatalogStore());
 import { useRouter, useRoute, RouteLocationRaw } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';

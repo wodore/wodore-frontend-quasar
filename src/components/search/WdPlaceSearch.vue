@@ -3,6 +3,7 @@ import { ref, computed, nextTick } from 'vue';
 import { useQuasar } from 'quasar';
 import { clientWodore, schemasWodore } from '@clients/index';
 import { useI18n } from 'vue-i18n';
+import { isCrawlerUA } from '@services/crawler-ua';
 import { MapInstance } from '@indoorequal/vue-maplibre-gl/dist/lib/lib/mapRegistry';
 import { useRouter, useRoute } from 'vue-router';
 import { useDebounceFn } from '@vueuse/core';
@@ -34,7 +35,11 @@ const isMobile = computed(() => props.mobile);
 
 // Map reference for flying to location
 let mapRef: MapInstance | undefined;
-if (process.env.CLIENT) {
+// Crawler gate (SEO, follow-up to PR #347): free for humans (the
+// vendor chunk loads via WdMapView on this page anyway) but would drag
+// 327 kB gz of map library into every crawler render — crawlers never
+// search-and-fly, so skip it.
+if (process.env.CLIENT && !isCrawlerUA()) {
   import('@indoorequal/vue-maplibre-gl').then(pkg => {
     mapRef = pkg.useMap();
   });
