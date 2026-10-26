@@ -39,6 +39,10 @@
         WODORE_CLOUDINARY_ENV: '<%= process.env.WODORE_CLOUDINARY_ENV %>',
         WODORE_UMAMI_WEBSITE_ID: '<%= process.env.WODORE_UMAMI_WEBSITE_ID %>',
         WODORE_UMAMI_WEBSITE_URL: '<%= process.env.WODORE_UMAMI_WEBSITE_URL %>',
+        // Session recording (replays/heatmaps): 'on' loads recorder.js.
+        // The `|| ''` matters: without a .env entry EJS would bake the
+        // literal string "undefined" (same as WODORE_PUBLIC_API_URL).
+        WODORE_UMAMI_RECORDER: '<%= process.env.WODORE_UMAMI_RECORDER || "" %>',
         WODORE_OICD_ISSUER_URL: '<%= process.env.WODORE_OICD_ISSUER_URL %>',
         WODORE_OICD_CLIENT_ID: '<%= process.env.WODORE_OICD_CLIENT_ID %>',
         WODORE_OICD_RESOURCE_ID: '<%= process.env.WODORE_OICD_RESOURCE_ID %>',

@@ -438,6 +438,48 @@ SPA keeps calling the public hub. Note: Traefik's api-compress/CORS
 middlewares do not apply to the bypassed path (accepted — compress moves
 to the in-cluster hop, CORS is irrelevant for same-origin SEO paths).
 
+`WODORE_SENTRY_DSN` additionally drives the first-party ingest tunnel:
+entrypoint.sh parses it (`scheme://publicKey@host/projectId`) into the
+`__WODORE_SENTRY_INGEST_{HOST,PROJECT,KEY}__` placeholders of nginx's
+`location = /sentry-ingest` (see 'Error tracking' above). Missing,
+unrewritten `@@…@@` or malformed DSNs → the location becomes `return
+404;` (inert; the proxy target degrades to a literal 127.0.0.1 purely to
+keep the config loadable — the return short-circuits first).
+
+### Edge-cached SPA shell (CDN-Tag purge)
+
+The SPA shell is edge-cacheable ("edge-hot index.html"): `= /index.html`
+AND the `@spa` try_files fallback serve
+`Cache-Control: public, max-age=0, s-maxage=600,
+stale-while-revalidate=86400` + `CDN-Tag: frontend-html`; `/env.js`
+serves `public, max-age=0, s-maxage=120, stale-while-revalidate=3600` +
+`CDN-Tag: frontend-env`. Browsers revalidate on every navigation
+(`max-age=0`, cheap conditional GETs answered 304 by the CDN's fresh
+edge copy) while the edge keeps its window (`s-maxage`);
+`stale-while-revalidate` lets supporting browsers serve stale and
+refresh in the background. Bunny (the CDN in front) honors origin
+Cache-Control and keys tag purges off the `CDN-Tag` response header.
+Rationale: with the old no-store policy every page view was a full
+origin round trip (`cdn-cache: MISS`, ~1s+ for overseas visitors);
+hashed assets were already edge-cached immutable-1y.
+
+**Deploy flow:** after a rollout that changes the shell or runtime env,
+purge tags `frontend-html` + `frontend-env` (Bunny dashboard → Purge by
+tag, or Core API `POST /pullzone/{id}/purgeCache` with
+`{"CacheTag": "frontend-html"}`) — instant global invalidation. Skip
+the purge and the worst case is 10 min of stale shell on the edge,
+referencing hashed chunks the deploy deleted (browsers revalidate on
+their next navigation; SWR-savvy ones converge in the background).
+Hashed assets never need
+purging. Untouched on purpose: hut pages (njs per-hut shell stays
+no-store — `WODORE_SEO_PAGE_TTL` is the opt-in), llms/sitemap/hut `.md`
+proxies (backend Cache-Control), manifest.json + sw.js (no-store).
+Caveat: Bunny tag purging does not apply to Perma-Cache content.
+Caveat: if the CDN ever stops edge-caching (a non-standard CDN honoring
+`max-age=0` over `s-maxage` would make every view a MISS), revert the
+browser half to `max-age=300`.
+Guarded by `tests/unit/nginx-cache-headers.spec.ts`.
+
 ## Environment Variables
 
 Environment files are loaded in this order (later files override earlier ones):
@@ -463,6 +505,16 @@ sentry.py`). Rules:
   through `getEnv` (`services/runtimeEnv.ts`): docker swaps the DSN per
   environment at container start (`/env.js` + replace_vars, no rebuild),
   Capacitor builds bake it at build time (inline EJS in index.html).
+- **Web ingest tunnel**: on web builds the SDK's `tunnel: '/sentry-ingest'`
+  option (services/sentry.ts) POSTs envelopes same-origin; nginx
+  (`location = /sentry-ingest`) proxies them to the ingest host — Brave and
+  uBlock/EasyPrivacy-style blockers block cross-origin `*.ingest.*.sentry.io`
+  (`net::ERR_BLOCKED_BY_CLIENT`, observed on staging), first-party URLs are
+  never blocked. The proxy target (ingest host/project/key) is derived by
+  `docker/entrypoint.sh` from the SAME `WODORE_SENTRY_DSN`, so the vendor
+  swap stays DSN-change + container restart; no DSN → the location returns
+  404 (inert). POST only, other methods 405. Capacitor keeps the direct DSN
+  (no blockers in the WebView, no nginx on the Capacitor origin).
 - **Vendor-neutral**: the DSN decides the destination — sentry.io or Better
   Stack (Sentry-SDK-compatible ingestion). Switching vendors = swap DSN,
   never a code change. Rollback = unset the DSN.
@@ -491,6 +543,34 @@ sentry.py`). Rules:
   (clients must not download maps). Android remains the exception: the
   APK's maps can't be scraped (device-internal origin) — upload-from-CI
   is the follow-up if WebView stacks need symbolication.
+
+### Analytics (Umami)
+
+Tracker `script.js` is injected client-only at browser idle by
+`src/boot/analytics.ts`, gated on (1) `WODORE_UMAMI_WEBSITE_ID` +
+`WODORE_UMAMI_WEBSITE_URL` env, (2) the user's `umami.disabled`
+localStorage opt-out (WdUser/WdMapMenu toggle), (3) DNT
+(`data-do-not-track`). Custom events go through the typed `track()` in
+`src/services/analytics.ts`. `WdAnalytics.vue` was REMOVED (it
+injected a second tracker per session) — never re-add a second
+injection point.
+
+- `data-performance="true"` collects real-user Core Web Vitals
+  (Umami ≥3.1) — inside the ~2.3 KB tracker, no extra download.
+- `WODORE_UMAMI_RECORDER=on` additionally loads `recorder.js` (replays
+  ≥3.1 / heatmaps ≥3.2; rrweb, ~59 KB gzip + a config GET; then the
+  SERVER-side per-website sample rate/mask level decides what records).
+  recorder.js has NO own DNT/opt-out support — it must only ever load
+  through the boot gates, never a pasted index.html tag. A mid-session
+  opt-out stops custom events immediately, but a recorder.js that
+  already loaded keeps recording the CURRENT visit — full stop needs
+  the next visit (same as the tracker's auto pageviews). Session
+  replays are individual recordings (30-day retention) — the data
+  policy (DataPolicy.vue) must cover them before enabling in prod.
+- Umami's heatmap view iframes the site from the dashboard: nginx ships
+  `Content-Security-Policy: frame-ancestors 'self'
+https://stats.wodore.com` (repeat it in any HTML location that adds
+  its own add_header — nginx drops server-level headers there).
 
 ## Common Patterns
 

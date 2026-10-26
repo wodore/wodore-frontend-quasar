@@ -18,6 +18,8 @@ declare namespace NodeJS {
     WODORE_IMAGOR_REPLACE_API_HOST_MEDIA: string;
     WODORE_UMAMI_WEBSITE_ID: string;
     WODORE_UMAMI_WEBSITE_URL: string;
+    /** Umami session recording opt-in ('on' = load recorder.js). */
+    WODORE_UMAMI_RECORDER: string;
     WODORE_OICD_ISSUER_URL: string;
     WODORE_OICD_CLIENT_ID: string;
     WODORE_OICD_RESOURCE_ID: string;

@@ -124,6 +124,46 @@ sed -i "s|__WODORE_SEO_PAGE_TTL__|${WODORE_SEO_PAGE_TTL:-0}|g" "/etc/nginx/http.
 sed -i "s|__WODORE_DEFAULT_LANG__|${WODORE_DEFAULT_LANG:-en}|g" /etc/nginx/seo.js
 sed -i "s|__WODORE_LANG_PREFIXES__|${WODORE_LANG_PREFIXES:-de,en,fr,it}|g" /etc/nginx/seo.js
 
+# Sentry ingest tunnel (sentry-tunnel): nginx proxies POST /sentry-ingest
+# envelopes to the ingest host so ad-blocked browsers (Brave, uBlock's
+# EasyPrivacy list block *.ingest.*.sentry.io → net::ERR_BLOCKED_BY_CLIENT,
+# observed on staging) still reach Sentry through a first-party request.
+# Target parts are parsed from the SAME WODORE_SENTRY_DSN replace_vars
+# serves into /env.js (shape: scheme://publicKey@host/projectId) — the
+# SDK's DSN and the tunnel destination cannot drift apart, and a vendor
+# swap (sentry.io ↔ Better Stack) stays a DSN change + container restart.
+# The public key is not a secret: it ships in the client DSN anyway.
+# Unset/empty/unrewritten-@@…@@/malformed DSN → inert location: the INERT
+# placeholder becomes `return 404;` and the proxy target is filled with a
+# literal 127.0.0.1 only to keep the config loadable — the return
+# short-circuits before it is ever reached.
+SENTRY_DSN="${WODORE_SENTRY_DSN:-}"
+case "$SENTRY_DSN" in
+  @@*) SENTRY_DSN='' ;;
+  # sed-injection guard: only URL-ish characters may reach the config
+  *[!A-Za-z0-9:./@?=-]*) SENTRY_DSN='' ;;
+  # shape: scheme://nonEmptyKey@nonEmptyHost/nonEmptyProject
+  *://?*@?*/?*) : ;;
+  *) SENTRY_DSN='' ;;
+esac
+if [ -n "$SENTRY_DSN" ]; then
+  INGEST_REST="${SENTRY_DSN#*://}"
+  INGEST_REST="${INGEST_REST%%\?*}"
+  INGEST_KEY="${INGEST_REST%%@*}"
+  INGEST_REST="${INGEST_REST#*@}"
+  INGEST_HOST="${INGEST_REST%%/*}"
+  INGEST_PROJECT="${INGEST_REST##*/}"
+  sed -i "/__WODORE_SENTRY_INGEST_INERT__/d" "/etc/nginx/http.d/${CONFIG_FILE}.conf"
+else
+  INGEST_HOST=127.0.0.1
+  INGEST_PROJECT=0
+  INGEST_KEY=unused
+  sed -i "s|__WODORE_SENTRY_INGEST_INERT__|return 404;|" "/etc/nginx/http.d/${CONFIG_FILE}.conf"
+fi
+sed -i "s|__WODORE_SENTRY_INGEST_HOST__|${INGEST_HOST}|g" "/etc/nginx/http.d/${CONFIG_FILE}.conf"
+sed -i "s|__WODORE_SENTRY_INGEST_PROJECT__|${INGEST_PROJECT}|g" "/etc/nginx/http.d/${CONFIG_FILE}.conf"
+sed -i "s|__WODORE_SENTRY_INGEST_KEY__|${INGEST_KEY}|g" "/etc/nginx/http.d/${CONFIG_FILE}.conf"
+
 # Create necessary directories for nginx
 mkdir -p /run/nginx
 # The SEO meta cache must be writable by the nginx worker user — a fresh

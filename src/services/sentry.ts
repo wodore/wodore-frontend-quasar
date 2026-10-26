@@ -23,6 +23,13 @@
  * and no telemetry leaves the browser. Dev/test/CI/preview set no DSN
  * and are unaffected.
  *
+ * Web builds send envelopes through a first-party tunnel (sentry-tunnel):
+ * the SDK POSTs same-origin to /sentry-ingest and nginx proxies to the
+ * ingest host — ad blockers (Brave, uBlock's EasyPrivacy list) block
+ * cross-origin *.ingest.*.sentry.io requests (net::ERR_BLOCKED_BY_CLIENT,
+ * observed on staging) but never first-party URLs. Capacitor builds keep
+ * the direct DSN: the WebView runs no blockers and has no nginx in front.
+ *
  * Env resolution has TWO deliberate modes (review B1):
  * - Runtime-swappable values (DSN, traces rate, environment) go through
  *   `getEnv()` — docker swaps them per environment at container start
@@ -75,6 +82,21 @@ const BREADCRUMBS_INTEGRATION_NAME = 'Breadcrumbs';
  * `window.location` where captured URLs would carry them.
  */
 const PARAM_DENY_KEYS = [...HEADER_DENY_KEYS, 'code', 'state', 'iss'];
+
+/**
+ * First-party envelope tunnel path (web only): the SDK POSTs envelopes
+ * same-origin to this path and nginx forwards them verbatim to the
+ * ingest endpoint — docker/nginx-default.conf, `location = /sentry-ingest`,
+ * its placeholders filled by docker/entrypoint.sh from the SAME
+ * WODORE_SENTRY_DSN this file reads (client DSN and tunnel target can
+ * never drift apart, and the vendor swap sentry.io ↔ Better Stack stays
+ * a DSN change + container restart). Rationale: ad blockers (Brave,
+ * uBlock's EasyPrivacy list) block cross-origin *.ingest.*.sentry.io
+ * requests with net::ERR_BLOCKED_BY_CLIENT — same-origin URLs are never
+ * blocked. Capacitor builds skip the tunnel: the WebView (origin
+ * https://localhost) runs no blockers and no nginx answers the path.
+ */
+const TUNNEL_PATH = '/sentry-ingest';
 
 /**
  * Parse the runtime sample rate tolerantly (spec: malformed values fall
@@ -189,6 +211,15 @@ export function initErrorTracking(app: App, router: Router): void {
   // 0 means errors-only mode with no tracing integration attached.
   if (sampleRate > 0) {
     options.tracesSampleRate = sampleRate;
+  }
+
+  // First-party ingest tunnel, web only (see TUNNEL_PATH): envelopes go
+  // same-origin to nginx, which proxies them to the ingest host, so
+  // ad-blocked browsers still get telemetry through. Native builds keep
+  // the direct DSN — no blockers run in the WebView, and nothing answers
+  // the path on the Capacitor origin anyway.
+  if (Capacitor.getPlatform() === 'web') {
+    options.tunnel = TUNNEL_PATH;
   }
 
   Sentry.init(options);
