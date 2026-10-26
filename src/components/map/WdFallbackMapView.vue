@@ -211,9 +211,11 @@ interface FbHut {
   typeColor: string | undefined;
 }
 
-/** Day-0 availability per hut (from the availability GeoJSON). */
+/** Day statuses per hut (index 0 = the selected date). All four days
+ *  are kept — the zoomed-in 4-day fan (maplibre's occupation-day chips)
+ *  can build on this later. */
 interface FbAvail {
-  status: string | undefined;
+  statuses: string[];
 }
 
 let map: L.Map | undefined;
@@ -449,12 +451,14 @@ function makeIcon(style: MarkerStyle, selected = false): L.DivIcon {
     // Occupation = status circle BEHIND the hut (owner spec; MapLibre's
     // low-zoom occupation circle is the same idea). ONE day only — day0,
     // the selected date. The day-chip fan (4 days) is not drawn.
-    const occColor = style.status ? STATUS_COLORS[style.status] : undefined;
+    const occColor =
+      style.status && style.status !== 'unknown' ? STATUS_COLORS[style.status] : undefined;
     const occ = occColor ? `<span class="wd-fb-occ" style="background:${occColor}"></span>` : '';
     html = `${occ}${glyph}`;
   } else {
     // Fallback: CSS shield + mono SVG (or plain dot), status ring behind.
-    const ringColor = style.status ? STATUS_COLORS[style.status] : undefined;
+    const ringColor =
+      style.status && style.status !== 'unknown' ? STATUS_COLORS[style.status] : undefined;
     const ring = ringColor
       ? `<span class="wd-fb-ring" style="background:${ringColor}"></span>`
       : '';
@@ -494,7 +498,7 @@ function markerStyleFor(hut: FbHut, useSymbols: boolean): MarkerStyle {
   }
   return {
     typeColor: hut.typeColor ?? DEFAULT_DOT_COLOR,
-    status: availBySlug.get(hut.slug)?.status,
+    status: availBySlug.get(hut.slug)?.statuses[0],
     symbol,
     identifier:
       typeof hut.properties.type_standard_identifier === 'string'
@@ -590,7 +594,8 @@ function rebuildMarkers(): void {
           renderer: dotRenderer,
           dotRadius: 6.5,
           ringRadius: 12,
-          ringColor: style.status ? STATUS_COLORS[style.status] : undefined,
+          ringColor:
+            style.status && style.status !== 'unknown' ? STATUS_COLORS[style.status] : undefined,
           fillColor: style.typeColor,
           selected,
           // SAFETY: the custom dot fields ride along in options — the
@@ -776,7 +781,9 @@ async function loadAvailability(dateISO: string): Promise<void> {
     const { data, error } = await clientWodore.GET('/v1/huts/availability/{date}.geojson', {
       params: {
         path: { date: dateISO },
-        query: { days: 1, lang: currentLocale() },
+        // days=4 matches the MapLibre wd-bookings source — same request
+        // shape, shared browser-cache entry with the main map's fetches.
+        query: { days: 4, lang: currentLocale() },
       },
     });
     if (!error && data && 'features' in data && generation === availGeneration) {
@@ -788,7 +795,7 @@ async function loadAvailability(dateISO: string): Promise<void> {
         } | null;
         if (!properties?.slug) continue;
         availBySlug.set(properties.slug, {
-          status: properties.data?.[0]?.occupancy_status ?? undefined,
+          statuses: (properties.data ?? []).map(day => day.occupancy_status ?? 'unknown'),
         });
       }
       rebuildMarkers(); // recolor rings — settle AFTER the new render
@@ -1214,6 +1221,13 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   margin: auto; // center in the 36px hit box
 }
 
+// The 24px primitive glyphs are WHITE templates (MapLibre renders them
+// over the colored occupation disc). Without a disc behind them they
+// would vanish on light basemaps — flatten to a dark silhouette then.
+.wd-fb-marker:not(:has(.wd-fb-occ)) .wd-fb-glyph {
+  filter: brightness(0) opacity(0.82);
+}
+
 // Occupation: status-colored circle BEHIND the hut glyph (one ring
 // sized relative to the glyph scale — clearly visible now that shields
 // are sprite-sized, ~1.45x the glyph).
@@ -1309,6 +1323,9 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   --wd-fb-c: 0.55; // fixed cluster scale (24px circle, ~13px glyph)
   position: relative;
   z-index: 1;
+  // White template glyphs would vanish on the white disc — always a
+  // dark silhouette here (colored 48px primitives flatten too: uniform).
+  filter: brightness(0) opacity(0.82);
   background-size: calc(var(--wd-fb-sheet-w, 432px) * var(--wd-fb-c))
     calc(var(--wd-fb-sheet-h, 480px) * var(--wd-fb-c));
 }
