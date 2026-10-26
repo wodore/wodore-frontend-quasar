@@ -7,13 +7,12 @@
  */
 
 /** Longitude → fractional tile X at the given zoom. */
-export const lngToTileX = (lng: number, z: number): number =>
-  ((lng + 180) / 360) * 2 ** z;
+export const lngToTileX = (lng: number, z: number): number => ((lng + 180) / 360) * 2 ** z;
 
 /** Latitude → fractional tile Y at the given zoom (Web Mercator). */
 export const latToTileY = (lat: number, z: number): number => {
   const rad = (lat * Math.PI) / 180;
-  return (((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * 2 ** z);
+  return ((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * 2 ** z;
 };
 
 /** Fractional tile X → longitude at the given zoom. */
@@ -37,13 +36,20 @@ export function viewportTileRange(
   const tileZoom = Math.min(maxTileZoom, Math.max(minTileZoom, Math.round(mapZoom)));
   return {
     tileZoom,
-    x1: Math.floor(lngToTileX(bounds.getWest() - (bounds.getEast() - bounds.getWest()) * pad, tileZoom)),
-    x2: Math.floor(lngToTileX(bounds.getEast() + (bounds.getEast() - bounds.getWest()) * pad, tileZoom)),
-    y1: Math.floor(latToTileY(bounds.getNorth() + (bounds.getSouth() - bounds.getNorth()) * pad, tileZoom)),
-    y2: Math.floor(latToTileY(bounds.getSouth() - (bounds.getSouth() - bounds.getNorth()) * pad, tileZoom)),
+    x1: Math.floor(
+      lngToTileX(bounds.getWest() - (bounds.getEast() - bounds.getWest()) * pad, tileZoom)
+    ),
+    x2: Math.floor(
+      lngToTileX(bounds.getEast() + (bounds.getEast() - bounds.getWest()) * pad, tileZoom)
+    ),
+    y1: Math.floor(
+      latToTileY(bounds.getNorth() + (bounds.getNorth() - bounds.getSouth()) * pad, tileZoom)
+    ),
+    y2: Math.floor(
+      latToTileY(bounds.getSouth() - (bounds.getNorth() - bounds.getSouth()) * pad, tileZoom)
+    ),
   };
 }
 
 /** Wrap a tile X coordinate into [0, 2^z). */
-export const wrapTileX = (x: number, z: number): number =>
-  ((x % 2 ** z) + 2 ** z) % 2 ** z;
+export const wrapTileX = (x: number, z: number): number => ((x % 2 ** z) + 2 ** z) % 2 ** z;

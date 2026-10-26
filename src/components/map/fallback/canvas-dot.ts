@@ -9,13 +9,8 @@
  * the review's finding #7 for the Leaflet 2.x risk note).
  */
 import * as L from 'leaflet';
-import {
-  DEFAULT_DOT_COLOR,
-  SELECTION_COLOR,
-  LABEL_COLOR,
-  OCC_LABEL_FONT,
-} from './status-colors';
-import { whiteIconFor } from './sprite-sheet';
+import { DEFAULT_DOT_COLOR, SELECTION_COLOR, LABEL_COLOR, OCC_LABEL_FONT } from './status-colors';
+import { whiteIconFor, type IconBitmap } from './sprite-sheet';
 
 /** Structural stand-in for the canvas 2D context (the project ESLint
  *  env lacks the DOM interface names). */
@@ -37,11 +32,6 @@ export interface CanvasDotCtx {
   strokeStyle: string;
   strokeText(text: string, x: number, y: number): void;
   textAlign: string;
-}
-
-export interface IconBitmap {
-  width: number;
-  height: number;
 }
 
 interface CanvasDotInternals {
@@ -134,13 +124,7 @@ export class WdCanvasDot extends L.CircleMarker {
       ctx.strokeStyle = options.selected ? SELECTION_COLOR : '#ffffff';
       ctx.stroke();
       const iconPx = size * 0.72;
-      ctx.drawImage(
-        icon,
-        point.x - iconPx / 2,
-        point.y - iconPx / 2,
-        iconPx,
-        iconPx
-      );
+      ctx.drawImage(icon, point.x - iconPx / 2, point.y - iconPx / 2, iconPx, iconPx);
       if (options.occLabel) {
         ctx.font = OCC_LABEL_FONT;
         ctx.textAlign = 'center';
