@@ -1207,7 +1207,13 @@ onMounted(() => {
     attributionControl: false, // replaced by the MapLibre-style control below
     minZoom: MIN_ZOOM,
     maxZoom: MAX_ZOOM,
-    zoomSnap: 0, // continuous wheel zoom
+    // LOW-SPEC: integer zoom snap — with zoomSnap: 0 every wheel tick
+    // triggered a full canvas re-projection of all markers (the
+    // profile showed 16-31fps during wheel zoom vs 60fps idle). Snapping
+    // to integer levels means one redraw per level change instead of
+    // dozens per gesture. The zoom slider compensates for the loss of
+    // fractional smoothness.
+    zoomSnap: 1,
     // Default 60px/level felt twitchy — a bit more travel per level.
     wheelPxPerZoomLevel: 100,
   });
