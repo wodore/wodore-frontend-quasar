@@ -72,7 +72,6 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import { clientWodore } from '@clients/index';
 import { currentLocale } from '@services/locale';
 import { getEnv } from '@services/runtimeEnv';
-import { publicApiBase } from '@services/apiBase';
 import { useLocalPropertiesStore } from '@stores/local-properties-store';
 import { useHutsStore } from '@stores/huts-store';
 import { useMapCatalogStore } from '@stores/map/map-catalog-store';
@@ -108,8 +107,12 @@ function markerOpacityFor(zoom: number): number {
   return Math.min(0.5 + ((zoom - HUT_MIN_ZOOM) / 2) * 0.5, 1);
 }
 /** Current marker opacity — the canvas draw reads it synchronously
- *  (CSS var for the DOM tiers, module var for canvas). */
+ *  (CSS var for the DOM cluster icons, module var for canvas). */
 let markerOpacity = 1;
+/** Canvas marker geometry (fixed sizes — owner spec). */
+const SHIELD_PX = 19;
+const DISC_PX = 27;
+const OCC_LABEL_FONT = '600 9px "Barlow Semi Condensed", "Barlow", sans-serif';
 /** Huts WITH availability uncluster from here (owner spec; +1 vs the
  *  first iteration — caps the unclustered marker count, see the profile
  *  note in the header). */
@@ -244,16 +247,66 @@ const hutTiles = new Map<string, FbHut[]>();
 const fetchingTiles = new Set<string>();
 /** slug → day-0 availability status. */
 const availBySlug = new Map<string, FbAvail>();
-/** Mono symbol SVG per type slug (null = fetched, unavailable). */
-const symbolBySlug = new Map<string, string | null>();
 /** Martin sprite pack (accommodation,availability) — the SAME icons the
  *  MapLibre huts style renders: `primitive/{type_standard_identifier}`
  *  for hut glyphs, `color/availability.{status}` for the day chips. */
+/** Structural stand-ins: the project ESLint env lacks the DOM interface
+ *  names — these carry exactly the members the draw path uses. */
+interface SheetImage {
+  src: string;
+  decode(): Promise<void>;
+}
+interface IconBitmap {
+  width: number;
+  height: number;
+}
 let availSprite: {
   icons: Record<string, { x: number; y: number; width: number; height: number }>;
   sheetW: number;
   sheetH: number;
+  sheetImg: SheetImage;
 } | null = null;
+/** WHITE-tinted icon bitmaps for the canvas shields, cached per type
+ *  (identifier → offscreen canvas; LOW-SPEC: one drawImage per hut on
+ *  the shared canvas — no DOM markers, no per-draw SVG rasterization). */
+const whiteIconCache = new Map<string, IconBitmap | null>();
+
+function whiteIconFor(identifier: string | undefined): IconBitmap | null {
+  const sprite = availSprite;
+  const key = identifier ?? 'accommodation.unknown';
+  if (whiteIconCache.has(key)) return whiteIconCache.get(key) ?? null;
+  let canvas: IconBitmap | null = null;
+  const entry = sprite?.icons[`mono/${key}`] ?? sprite?.icons['mono/accommodation.unknown'];
+  if (sprite && entry) {
+    // Tint to white: draw the mono cell, then source-in a white fill.
+    const sheet = document.createElement('canvas');
+    sheet.width = entry.width;
+    sheet.height = entry.height;
+    canvas = sheet;
+    const c2d = sheet.getContext('2d');
+    if (c2d) {
+      // SAFETY: sheetImg is a real <img> (created via createElement);
+      // the structural SheetImage type just hides the DOM interface
+      // from the linter — the runtime value satisfies drawImage.
+      c2d.drawImage(
+        sprite.sheetImg as unknown as Parameters<typeof c2d.drawImage>[0],
+        entry.x,
+        entry.y,
+        entry.width,
+        entry.height,
+        0,
+        0,
+        entry.width,
+        entry.height
+      );
+      c2d.globalCompositeOperation = 'source-in';
+      c2d.fillStyle = '#ffffff';
+      c2d.fillRect(0, 0, entry.width, entry.height);
+    }
+  }
+  whiteIconCache.set(key, canvas);
+  return canvas;
+}
 
 /** Load the sprite sheet once; markers rebuild when it arrives. */
 async function loadSprite(): Promise<void> {
@@ -274,7 +327,11 @@ async function loadSprite(): Promise<void> {
       sheetH = Math.max(sheetH, e.y + e.height);
     }
     const url = URL.createObjectURL(await png.blob());
-    availSprite = { icons, sheetW, sheetH };
+    const sheetImg = document.createElement('img') as unknown as SheetImage;
+    sheetImg.src = url;
+    await sheetImg.decode().catch(() => undefined); // broken image → dots stay
+    availSprite = { icons, sheetW, sheetH, sheetImg };
+    whiteIconCache.clear();
     // Feed the sheet to the CSS (spans position into it via --wd-fb-s).
     fallbackEl.value?.style.setProperty('--wd-fb-sheet', `url(${url})`);
     fallbackEl.value?.style.setProperty('--wd-fb-sheet-w', `${sheetW}px`);
@@ -334,6 +391,110 @@ const selectedSlug = computed(() =>
 );
 /** Last rendered zoom band — dot↔symbol icon swaps rebuild on band change. */
 let lastRenderBand: 'none' | 'dot' | 'sym' | 'symlabel' | undefined;
+
+// ── Zoom slider (owner re-request; LOW-SPEC tuned: 64px travel per
+//  level — half the speed of the first cut) ────────────────────────────────
+const PX_PER_LEVEL = 64;
+const SLIDER_STEP = 1;
+const sliderZoom = ref(10);
+const dragging = ref(false);
+let dragStartY = 0;
+let dragStartZoom = 0;
+let sliderTarget: number | null = null;
+let sliderStepAt = 0;
+
+const sliderClamp = (v: number) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, v));
+const thumbPos = computed(() => 88 - ((sliderZoom.value - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)) * 76);
+
+function sliderApply(value: number): void {
+  if (!map) return;
+  const next = sliderClamp(value);
+  sliderTarget = next;
+  sliderStepAt = Date.now();
+  sliderZoom.value = next;
+  map.setZoom(next, {
+    animate: !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  });
+}
+
+function sliderStep(delta: number): void {
+  if (!map) return;
+  const chain =
+    sliderTarget !== null && Date.now() - sliderStepAt <= 600 ? sliderTarget : map.getZoom();
+  sliderApply(chain + delta);
+}
+
+function onSliderDown(e: PointerEvent): void {
+  dragging.value = true;
+  dragStartY = e.clientY;
+  dragStartZoom = map ? map.getZoom() : sliderZoom.value;
+  try {
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  } catch {
+    /* pointer inactive — handlers still work */
+  }
+}
+
+function onSliderMove(e: PointerEvent): void {
+  if (!dragging.value || !map) return;
+  const dy = dragStartY - e.clientY; // up = zoom in
+  const next = sliderClamp(dragStartZoom + dy / PX_PER_LEVEL);
+  if (next !== sliderZoom.value) {
+    sliderZoom.value = next;
+    map.setZoom(next, { animate: false });
+  }
+}
+
+function onSliderUp(): void {
+  dragging.value = false;
+}
+
+function onSliderStepClick(e: MouseEvent, delta: number): void {
+  if (e.detail === 0) sliderStep(delta); // keyboard activation
+}
+
+function onMapZoomSync(): void {
+  if (!dragging.value && map) sliderZoom.value = map.getZoom();
+}
+
+// ── Locate (GPS) — MglGeolocateControl counterpart: one-shot fix,
+//  maplibre-style blue dot + accuracy circle, fly-to. ─────────────────────
+let locateDot: L.CircleMarker | undefined;
+let locateAccuracy: L.Circle | undefined;
+
+function onLocate(): void {
+  if (!navigator.geolocation || !map) return;
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      if (!map) return;
+      const ll = L.latLng(pos.coords.latitude, pos.coords.longitude);
+      if (!locateDot) {
+        locateAccuracy = L.circle(ll, {
+          radius: pos.coords.accuracy,
+          weight: 1,
+          color: '#1da1f2',
+          fillColor: '#1da1f2',
+          fillOpacity: 0.15,
+          interactive: false,
+        }).addTo(map);
+        locateDot = L.circleMarker(ll, {
+          radius: 7,
+          color: '#ffffff',
+          weight: 2,
+          fillColor: '#1da1f2',
+          fillOpacity: 1,
+          interactive: false,
+        }).addTo(map);
+      } else {
+        locateDot.setLatLng(ll);
+        locateAccuracy?.setLatLng(ll);
+      }
+      map.flyTo(ll, Math.max(map.getZoom(), 13), { duration: 1.2 });
+    },
+    () => undefined,
+    { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
+  );
+}
 
 // ── Focus (fullscreen) mode ────────────────────────────────────────────────
 // Same body-class contract as the MapLibre map's setMapFocus: the global
@@ -396,13 +557,22 @@ class WdAttributionControl extends L.Control {
  *  so plain arc() calls land correctly (same as L.Canvas._updateCircle). */
 interface CanvasDotCtx {
   arc(x: number, y: number, r: number, a: number, b: number): void;
+  arcTo(x1: number, y1: number, x2: number, y2: number, r: number): void;
   beginPath(): void;
+  closePath(): void;
+  drawImage(img: IconBitmap, dx: number, dy: number, dw: number, dh: number): void;
   fill(): void;
+  fillText(text: string, x: number, y: number): void;
   fillStyle: string;
+  font: string;
   globalAlpha: number;
+  lineTo(x: number, y: number): void;
   lineWidth: number;
+  moveTo(x: number, y: number): void;
   stroke(): void;
   strokeStyle: string;
+  strokeText(text: string, x: number, y: number): void;
+  textAlign: string;
 }
 interface CanvasDotInternals {
   _point?: L.Point;
@@ -415,6 +585,30 @@ class WdCanvasDot extends L.CircleMarker {
     return this as unknown as CanvasDotInternals & WdCanvasDot;
   }
 
+  /** Rounded-rect path helper (canvas roundRect is not everywhere). */
+  private static shieldPath(
+    ctx: CanvasDotCtx,
+    cx: number,
+    cy: number,
+    w: number,
+    h: number,
+    r: number
+  ): void {
+    const x = cx - w / 2;
+    const y = cy - h / 2;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.arcTo(x + w, y, x + w, y + r, r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+    ctx.lineTo(x + r, y + h);
+    ctx.arcTo(x, y + h, x, y + h - r, r);
+    ctx.lineTo(x, y + r);
+    ctx.arcTo(x, y, x + r, y, r);
+    ctx.closePath();
+  }
+
   _updatePath(): void {
     const self = this.internals();
     const ctx = self._renderer?._ctx;
@@ -422,110 +616,79 @@ class WdCanvasDot extends L.CircleMarker {
     if (!ctx || !point) return;
     const options = this.options as {
       ringColor?: string;
-      ringRadius: number;
-      dotRadius: number;
-      fillColor: string;
+      identifier?: string;
+      typeColor: string;
+      occLabel?: string;
       selected?: boolean;
+      hovered?: boolean;
+      dotRadius: number;
+      ringRadius: number;
+      fillColor: string;
     };
+    // Occupation disc behind everything (status color, ghost ramp).
     if (options.ringColor) {
       ctx.beginPath();
-      ctx.arc(point.x, point.y, options.ringRadius, 0, Math.PI * 2);
-      ctx.globalAlpha = 0.9 * markerOpacity;
+      ctx.arc(point.x, point.y, DISC_PX / 2, 0, Math.PI * 2);
+      ctx.globalAlpha = 0.85 * markerOpacity;
       ctx.fillStyle = options.ringColor;
       ctx.fill();
       ctx.globalAlpha = markerOpacity;
     }
-    ctx.beginPath();
-    ctx.arc(point.x, point.y, options.dotRadius, 0, Math.PI * 2);
-    ctx.fillStyle = options.fillColor;
-    ctx.fill();
-    ctx.lineWidth = options.selected ? 3 : 2;
-    ctx.strokeStyle = options.selected ? '#BFAB25' : '#ffffff'; // gold = selection
-    ctx.stroke();
+    const icon = whiteIconFor(options.identifier);
+    if (icon) {
+      // LOW-SPEC canvas shield: rounded rect + cached white bitmap —
+      // one fill, one stroke, one drawImage per hut.
+      const size = options.hovered ? SHIELD_PX * 1.15 : SHIELD_PX;
+      WdCanvasDot.shieldPath(ctx, point.x, point.y, size, size, size * 0.22);
+      ctx.fillStyle = options.typeColor;
+      ctx.fill();
+      ctx.lineWidth = options.selected ? 3 : 2;
+      ctx.strokeStyle = options.selected ? '#BFAB25' : '#ffffff'; // gold = selection
+      ctx.stroke();
+      const iconPx = size * 0.72;
+      ctx.drawImage(icon, point.x - iconPx / 2, point.y - iconPx / 2, iconPx, iconPx);
+      if (options.occLabel) {
+        ctx.font = OCC_LABEL_FONT;
+        ctx.textAlign = 'center';
+        const labelY = point.y + DISC_PX / 2 + 11;
+        ctx.globalAlpha = 0.95 * markerOpacity;
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#ffffff';
+        ctx.strokeText(options.occLabel, point.x, labelY);
+        ctx.fillStyle = '#29626b'; // glacier-turquoise-deep (design token)
+        ctx.fillText(options.occLabel, point.x, labelY);
+        ctx.globalAlpha = markerOpacity;
+      }
+    } else {
+      // Pre-sprite fallback: plain colored dot with white/gold stroke.
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, options.dotRadius, 0, Math.PI * 2);
+      ctx.fillStyle = options.fillColor;
+      ctx.fill();
+      ctx.lineWidth = options.selected ? 3 : 2;
+      ctx.strokeStyle = options.selected ? '#BFAB25' : '#ffffff';
+      ctx.stroke();
+    }
   }
 
-  /** Finger-sized hit area regardless of the small visual dot. */
+  /** Finger-sized hit area regardless of the small visual shield. */
   _containsPoint(p: L.Point): boolean {
     const self = this.internals();
-    return !!self._point && p.distanceTo(self._point) <= Math.max(self._radius ?? 0, 12);
+    return !!self._point && p.distanceTo(self._point) <= Math.max(self._radius ?? 0, 13);
   }
 }
 
-/** Finger-sized hit box; 13px dot below SYMBOL_MIN_ZOOM, mono SVG on
- *  a category-colored rounded shield above it. Optional status ring
- *  behind either variant. */
-function makeIcon(style: MarkerStyle, selected = false): L.DivIcon {
-  const classes = ['wd-fb-marker', 'wd-fb-marker--sym'];
-  if (selected) classes.push('wd-fb-marker--sel');
-  let html: string;
-  if (availSprite && style.identifier) {
-    // Sprite path (maplibre parity): type-colored shield with a WHITE
-    // primitive glyph, every icon normalized to the same rendered size.
-    const glyph = spriteSpan(
-      `mono/${style.identifier}`,
-      'mono/accommodation.unknown',
-      'wd-fb-shield__icon',
-      '--wd-fb-g',
-      24
-    );
-    // Occupation = status circle BEHIND the hut (owner spec; MapLibre's
-    // low-zoom occupation circle is the same idea). ONE day only — day0,
-    // the selected date. The day-chip fan (4 days) is not drawn.
-    const occColor =
-      style.status && style.status !== 'unknown' ? STATUS_COLORS[style.status] : undefined;
-    const occ = occColor ? `<span class="wd-fb-occ" style="background:${occColor}"></span>` : '';
-    // Status word under the disc from z12 (owner spec) — the existing
-    // availability.glance.* i18n words (de: frei / begrenzt / voll …).
-    const occLabel =
-      occColor && map && map.getZoom() >= OCC_LABEL_MIN_ZOOM
-        ? `<span class="wd-fb-occ-label">${t(`availability.glance.${style.status}`)}</span>`
-        : '';
-    html = `${occ}<span class="wd-fb-shield" style="--c:${style.typeColor}">${glyph}</span>${occLabel}`;
-  } else {
-    // Fallback: CSS shield + mono SVG (or plain dot), status ring behind.
-    const ringColor =
-      style.status && style.status !== 'unknown' ? STATUS_COLORS[style.status] : undefined;
-    const ring = ringColor
-      ? `<span class="wd-fb-ring" style="background:${ringColor}"></span>`
-      : '';
-    const fg = style.symbol
-      ? `<span class="wd-fb-sym" style="--c:${style.typeColor}">${style.symbol}</span>`
-      : `<span class="wd-fb-dot" style="background:${style.typeColor}"></span>`;
-    html = `${ring}${fg}`;
-  }
-  return L.divIcon({
-    html,
-    className: classes.join(' '),
-    iconSize: [36, 36],
-    iconAnchor: [18, 18],
-  });
-}
-
-/** The marker's full icon inputs — lets setIcon rebuild any variant. */
 interface MarkerStyle {
   typeColor: string;
   status: string | undefined;
-  symbol: string | null;
   /** type_standard_identifier — the sprite glyph key (maplibre parity). */
   identifier: string | undefined;
 }
 
-function markerStyleFor(hut: FbHut, useSymbols: boolean): MarkerStyle {
-  let symbol: string | null = null;
-  if (useSymbols && hut.typeSlug) {
-    symbol = symbolBySlug.get(hut.typeSlug) ?? null;
-    if (!symbolBySlug.has(hut.typeSlug)) {
-      symbolBySlug.set(hut.typeSlug, null); // pending sentinel
-      void fetchSymbol(hut.typeSlug).then(svg => {
-        symbolBySlug.set(hut.typeSlug!, svg);
-        rebuildMarkers();
-      });
-    }
-  }
+function markerStyleFor(hut: FbHut): MarkerStyle {
   return {
     typeColor: hut.typeColor ?? DEFAULT_DOT_COLOR,
     status: availBySlug.get(hut.slug)?.statuses[0],
-    symbol,
     identifier:
       typeof hut.properties.type_standard_identifier === 'string'
         ? hut.properties.type_standard_identifier
@@ -533,13 +696,9 @@ function markerStyleFor(hut: FbHut, useSymbols: boolean): MarkerStyle {
   };
 }
 
-function applySelection(layer: L.Layer, style: MarkerStyle, selected: boolean): void {
-  if (layer instanceof L.Marker) {
-    layer.setIcon(makeIcon(style, selected));
-  } else {
-    // Canvas dot: merge + redraw (custom fields ride along in options)
-    (layer as WdCanvasDot).setStyle({ selected } as L.CircleMarkerOptions);
-  }
+function applySelection(layer: L.Layer, selected: boolean): void {
+  // Canvas shield: merge + redraw (custom fields ride along in options)
+  (layer as WdCanvasDot).setStyle({ selected } as L.CircleMarkerOptions);
 }
 
 /** Cluster bubble: small circle in the dominant member type color
@@ -567,7 +726,7 @@ function clusterIcon(cluster: L.MarkerCluster): L.DivIcon {
     color: DEFAULT_DOT_COLOR,
     identifier: undefined,
   };
-  const scale0 = Math.min(0.8 + ((cluster.getChildCount() - 2) / 38) * 0.8, 1.6);
+  const scale0 = Math.min(0.8 + ((cluster.getChildCount() - 2) / 38) * 0.45, 1.25);
   const glyph = availSprite
     ? spriteSpan(
         `mono/${info.identifier ?? 'accommodation.unknown'}`,
@@ -577,10 +736,10 @@ function clusterIcon(cluster: L.MarkerCluster): L.DivIcon {
         Math.round(13 * scale0)
       )
     : '';
-  // Member-count sizing (owner spec): 0.8x at 2 members growing to
-  // 1.6x at 40+ — disc, glyph and hit box scale together.
+  // Member-count sizing (owner spec): 0.8x at 2 members growing to a
+  // REDUCED max of 1.25x at 40+ (low-spec: smaller bubbles = less paint).
   const count = cluster.getChildCount();
-  const scale = Math.min(0.8 + ((count - 2) / 38) * 0.8, 1.6);
+  const scale = Math.min(0.8 + ((count - 2) / 38) * 0.45, 1.25);
   const discPx = Math.round(20 * scale);
   return L.divIcon({
     // Icon-only bubble (owner: "less interested in the number") — the
@@ -602,47 +761,43 @@ function rebuildMarkers(): void {
     lastRenderBand = 'none';
     return;
   }
-  const useSymbols = map.getZoom() >= SYMBOL_MIN_ZOOM;
-  lastRenderBand = !useSymbols ? 'dot' : map.getZoom() >= OCC_LABEL_MIN_ZOOM ? 'symlabel' : 'sym';
+  const showLabel = map.getZoom() >= OCC_LABEL_MIN_ZOOM;
+  lastRenderBand = showLabel ? 'symlabel' : 'sym';
   // Dedupe by slug — buffer features repeat across neighboring tiles.
   const huts = new Map<string, FbHut>();
   for (const tileHuts of hutTiles.values()) {
     for (const hut of tileHuts) if (!huts.has(hut.slug)) huts.set(hut.slug, hut);
   }
-  const availMarkers: L.Layer[] = [];
-  const plainMarkers: L.Layer[] = [];
+  const availMarkers: WdCanvasDot[] = [];
+  const plainMarkers: WdCanvasDot[] = [];
   const rebuildStart = window.performance.now();
   for (const hut of huts.values()) {
-    const style = markerStyleFor(hut, useSymbols);
+    const style = markerStyleFor(hut);
     const selected = selectedSlug.value === hut.slug;
-    // Hybrid: canvas dots below symbol zoom (hundreds of huts — one
-    // canvas path each), DOM shields at symbol zoom (few huts, rich).
-    const layer: L.Layer = useSymbols
-      ? L.marker([hut.lat, hut.lon], {
-          icon: makeIcon(style, selected),
-          keyboard: false,
-          title: String(hut.properties.name ?? hut.slug), // hover tooltip
-        })
-      : new WdCanvasDot([hut.lat, hut.lon], {
-          renderer: dotRenderer,
-          dotRadius: 6.5,
-          ringRadius: 12,
-          ringColor:
-            style.status && style.status !== 'unknown' ? STATUS_COLORS[style.status] : undefined,
-          fillColor: style.typeColor,
-          selected,
-          // SAFETY: the custom dot fields ride along in options — the
-          // cast only satisfies Leaflet's CircleMarkerOptions typing.
-        } as L.CircleMarkerOptions);
+    const status = style.status && style.status !== 'unknown' ? style.status : undefined;
+    // LOW-SPEC: ONE canvas tier — every hut is a canvas-drawn shield
+    // (cached white sprite bitmap on a type-colored rounded rect); the
+    // plain dot only renders before the sprite sheet arrives.
+    const layer = new WdCanvasDot([hut.lat, hut.lon], {
+      renderer: dotRenderer,
+      dotRadius: 6.5, // pre-sprite fallback dot only
+      ringRadius: DISC_PX / 2,
+      ringColor: status ? STATUS_COLORS[status] : undefined,
+      fillColor: style.typeColor,
+      typeColor: style.typeColor,
+      identifier: style.identifier,
+      occLabel: status && showLabel ? t(`availability.glance.${status}`) : undefined,
+      selected,
+      // SAFETY: the custom fields ride along in options — the cast only
+      // satisfies Leaflet's CircleMarkerOptions typing.
+    } as L.CircleMarkerOptions);
     markerTypeInfo.set(layer, { color: style.typeColor, identifier: style.identifier });
     markerBySlug.set(hut.slug, layer);
     hutBySlug.set(hut.slug, hut);
     layer.on('click', () => selectHut(hut));
-    // Canvas dots: hover grows the dot (DOM shields hover via CSS).
-    if (layer instanceof WdCanvasDot) {
-      layer.on('mouseover', () => layer.setStyle({ dotRadius: 8.5 } as L.CircleMarkerOptions));
-      layer.on('mouseout', () => layer.setStyle({ dotRadius: 6.5 } as L.CircleMarkerOptions));
-    }
+    // Hover: shield grows (drawn via options.hovered in _updatePath).
+    layer.on('mouseover', () => layer.setStyle({ hovered: true } as L.CircleMarkerOptions));
+    layer.on('mouseout', () => layer.setStyle({ hovered: false } as L.CircleMarkerOptions));
     (availBySlug.has(hut.slug) ? availMarkers : plainMarkers).push(layer);
   }
   clusterAvail.addLayers(availMarkers); // bulk: no per-marker animation
@@ -655,31 +810,15 @@ function rebuildMarkers(): void {
  *  map): swap ONLY the two affected markers' icons — no full rebuild. */
 watch(selectedSlug, (slug, previous) => {
   if (!map) return;
-  const useSymbols = map.getZoom() >= SYMBOL_MIN_ZOOM;
   for (const [slugKey, sel] of [
     [previous, false],
     [slug, true],
   ] as Array<[string | undefined, boolean]>) {
     if (!slugKey) continue;
     const layer = markerBySlug.get(slugKey);
-    const hut = hutBySlug.get(slugKey);
-    if (layer && hut) applySelection(layer, markerStyleFor(hut, useSymbols), sel);
+    if (layer) applySelection(layer, sel);
   }
 });
-
-/** Mono category symbol — currentColor SVG, recolored via CSS. */
-async function fetchSymbol(typeSlug: string): Promise<string | null> {
-  const base = publicApiBase();
-  if (!base) return null;
-  try {
-    const res = await fetch(`${base}/v1/categories/symbol/mono/${typeSlug}.svg`);
-    if (!res.ok) return null;
-    const svg = await res.text();
-    return svg.includes('<svg') ? svg : null;
-  } catch {
-    return null; // cached as unavailable — dots keep rendering
-  }
-}
 
 // ── Data fetching (Martin MLT tiles — same URLs as the MapLibre map) ──
 
@@ -1009,6 +1148,9 @@ onMounted(() => {
   map.addLayer(clusterPlain);
 
   map.on('moveend zoomend', onMoveEnd);
+  map.on('zoom', onMapZoomSync);
+  document.body.classList.add('wd-fb-active'); // slider visibility gate
+  sliderZoom.value = map.getZoom();
   fallbackEl.value?.style.setProperty('--wd-fb-g', String(glyphScale(map.getZoom())));
   markerOpacity = markerOpacityFor(map.getZoom());
   fallbackEl.value?.style.setProperty('--wd-fb-o', String(markerOpacity));
@@ -1060,6 +1202,7 @@ onBeforeUnmount(() => {
   availGeneration++;
   fetchingTiles.clear();
   catalogStore.setAvailabilityManualSettle(false);
+  document.body.classList.remove('wd-fb-active');
   zoomHintDismiss?.();
   if (focusOn.value) document.body.classList.remove('wd-map-focus');
   map?.remove(); // tears down layers + listeners
@@ -1097,6 +1240,54 @@ onBeforeUnmount(() => {
       >
         <img :src="bmOpen ? bmIconClose : bmIconOpen" alt="" class="wd-fb-bm__toggle-img" />
       </button>
+    </div>
+
+    <!-- Locate (GPS): maplibre ctrl-group style, top-right under the
+         focus toggle on desktop, above the bottom-left zoom on mobile. -->
+    <button class="wd-fb-locate" type="button" aria-label="Show my location" @click.stop="onLocate">
+      <svg viewBox="0 0 20 20" fill="#333" aria-hidden="true">
+        <path
+          d="M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1A5 5 0 0 0 14.9 11h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7"
+        />
+        <circle cx="10" cy="10" r="2" />
+      </svg>
+    </button>
+
+    <!-- Zoom slider (owner re-request) — same dock as the MapLibre map. -->
+    <div
+      class="wd-zoom"
+      :class="{ 'wd-zoom--dragging': dragging }"
+      role="slider"
+      :aria-label="t('map.zoom')"
+      :aria-valuemin="MIN_ZOOM"
+      :aria-valuemax="MAX_ZOOM"
+      :aria-valuenow="Math.round(sliderZoom * 10) / 10"
+      tabindex="0"
+      @pointerdown="onSliderDown"
+      @pointermove="onSliderMove"
+      @pointerup="onSliderUp"
+      @pointercancel="onSliderUp"
+      @lostpointercapture="onSliderUp"
+    >
+      <div class="wd-zoom__pill">
+        <button
+          class="wd-zoom__step"
+          :aria-label="t('map.zoomIn')"
+          @click="onSliderStepClick($event, SLIDER_STEP)"
+        >
+          <q-icon name="wd-plus" size="14px" />
+        </button>
+        <div class="wd-zoom__track">
+          <div class="wd-zoom__thumb" :style="{ top: thumbPos + '%' }" />
+        </div>
+        <button
+          class="wd-zoom__step"
+          :aria-label="t('map.zoomOut')"
+          @click="onSliderStepClick($event, -SLIDER_STEP)"
+        >
+          <q-icon name="wd-minus" size="14px" />
+        </button>
+      </div>
     </div>
 
     <!-- Focus (fullscreen) toggle — same global class and position as the
@@ -1257,175 +1448,76 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
      override keys off a body class set by this component. -->
 <style lang="scss">
 // ── Hut markers: 36px hit box, 13px type-colored dot, status ring ──────
-.wd-fb-marker,
 .wd-fb-cluster-icon {
   // z7 ghost ramp (owner spec) — 50% at z7, solid by z9.
   opacity: var(--wd-fb-o, 1);
 }
 
-.wd-fb-marker {
-  width: 36px;
-  height: 36px;
-  display: grid;
-  place-items: center;
+// ── Locate button: maplibre ctrl-group language (29px white square,
+//    shadow ring, #333 icon) ────────────────────────────────────────────
+.wd-fb-locate {
+  position: absolute;
+  top: 58px;
+  right: 14px;
+  z-index: 1001;
+  width: 29px;
+  height: 29px;
+  padding: 3px;
+  border: none;
+  border-radius: 4px;
+  background: #ffffff;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
   cursor: pointer;
-  // Perf: layout/style containment on hundreds of markers keeps pan-time
-  // recalculation local (measured in the zoom-sweep profile).
-  contain: layout style;
-}
-
-.wd-fb-dot {
-  width: 13px;
-  height: 13px;
-  border-radius: 50%;
-  border: 2px solid #ffffff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-  z-index: 2;
-}
-
-// ── Sprite shield (z11+, maplibre parity): primitive hut glyph from the
-//    Martin sprite pack, scaled by --wd-fb-s (0.300 at the shield floor,
-//    0.6 by z15 — owner: "reduce shields to 300"). The availability chip
-//    (color/availability.{status}) sits at the glyph's lower-left, like
-//    the MapLibre occupation-day fan. ─────────────────────────────────
-.wd-fb-shield__icon,
-.wd-fb-cluster__icon {
-  background-repeat: no-repeat;
-  background-image: var(--wd-fb-sheet);
-  image-rendering: auto;
-  display: block;
-}
-
-// ── Shield: type-colored rounded square + WHITE glyph, one fixed size
-//    for every type (owner spec) — the icon is flattened to white so the
-//    white 24px templates AND colored 48px shapes render identically.
-.wd-fb-shield {
-  position: relative;
-  z-index: 2;
-  margin: auto; // centered in the 36px hit box
-  width: calc(31px * var(--wd-fb-g, 0.55));
-  height: calc(31px * var(--wd-fb-g, 0.55));
-  border-radius: 22%;
-  background: var(--c, #346751);
-  display: grid;
-  place-items: center;
-  border: 1.5px solid rgba(255, 255, 255, 0.95);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
-  transition:
-    transform 0.12s ease,
-    box-shadow 0.12s ease;
-}
-
-// Hover: the shield lifts and grows slightly (the occupation disc stays
-// put — only the shield reacts, like a raised instrument key).
-.wd-fb-marker:hover .wd-fb-shield {
-  transform: scale(1.18);
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
-}
-
-.wd-fb-shield__icon {
-  filter: brightness(0) invert(1); // uniform white glyph
-}
-
-.wd-fb-marker--sel .wd-fb-shield {
-  outline: 2.5px solid $wd-gold;
-  outline-offset: 1px;
-}
-
-.wd-fb-glyph {
-  position: relative;
-  z-index: 2;
-  margin: auto; // center in the 36px hit box
-}
-
-// Occupation: status-colored circle BEHIND the hut glyph (one ring
-// sized relative to the glyph scale — clearly visible now that shields
-// are sprite-sized, ~1.45x the glyph).
-.wd-fb-occ {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: calc(46px * var(--wd-fb-g, 0.55));
-  height: calc(46px * var(--wd-fb-g, 0.55));
-  border-radius: 50%;
-  opacity: 0.85; // maplibre's occupation circle transparency
-  z-index: 1;
-}
-
-// Status word under the disc (z12+, owner spec) — the availability.glance
-// i18n words, tiny, ink with a white halo for any basemap.
-.wd-fb-occ-label {
-  position: absolute;
-  left: 50%;
-  top: calc(50% + 25px * var(--wd-fb-g, 0.6));
-  transform: translateX(-50%);
-  z-index: 3;
-  // Design tokens (wodore-design DESIGN.md): instrument label typography
-  // (Barlow Semi Condensed, uppercase, tracked) in glacier-turquoise-deep
-  // — the information-text ink.
-  font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif;
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #29626b;
-  text-shadow:
-    0 0 3px #ffffff,
-    0 0 2px #ffffff,
-    1px 0 2px #ffffff,
-    -1px 0 2px #ffffff;
-  white-space: nowrap;
-  pointer-events: none;
-}
-
-// ── Fallback shield (no sprite sheet yet): smaller CSS quad ───────────
-.wd-fb-marker--sym .wd-fb-ring {
-  width: 30px;
-  height: 30px;
-}
-
-.wd-fb-sym {
-  position: relative;
-  width: 24px;
-  height: 24px;
-  border-radius: 7px;
-  background: var(--c, #346751);
-  border: 2px solid #ffffff;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
-  display: grid;
-  place-items: center;
-  color: #ffffff; // mono glyph ink (currentColor)
-  z-index: 2;
 
   svg {
-    width: 14px;
-    height: 14px;
+    width: 100%;
+    height: 100%;
     display: block;
+  }
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  &:focus-visible {
+    box-shadow:
+      0 0 0 2px rgba(0, 0, 0, 0.1),
+      0 0 2px 2px #0096ff;
+    outline: none;
   }
 }
 
-// ── Selection: gold ring — the app's selection color ───────────────────
-.wd-fb-marker--sel .wd-fb-sym {
-  border: 3px solid $wd-gold;
-  box-shadow:
-    0 0 0 2px rgba(255, 255, 255, 0.9),
-    0 2px 8px rgba(0, 0, 0, 0.45);
+// Mobile: above the bottom-left zoom stack (GPS parity with the main map)
+@media (max-width: 768px) {
+  .wd-fb-locate {
+    top: auto;
+    bottom: 84px;
+    left: 10px;
+    right: auto;
+  }
 }
 
-.wd-fb-marker--sel .wd-fb-dot {
-  border: 3px solid $wd-gold;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+// ── Focus mode: the basemap switch is APP CHROME — same slide-away the
+//    main map gives .wd-map-ctl-sticky/.wd-map-ctl-col. Map instruments
+//    (zoom, slider, locate, attribution) stay, like MapLibre controls. ──
+body.wd-map-focus .wd-fb-bm {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(80px);
+  transition:
+    opacity 0.3s cubic-bezier(0.2, 0, 0, 1),
+    transform 0.3s cubic-bezier(0.2, 0, 0, 1);
 }
 
-.wd-fb-ring {
-  position: absolute;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  opacity: 0.9;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-  z-index: 1;
+// Zoom slider: ALWAYS visible in fallback mode (the global gating only
+// knows the MapLibre focus/overlay states).
+body.wd-fb-active .wd-zoom {
+  display: flex !important;
+
+  .wd-zoom__pill {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 // ── Cluster bubbles: dominant type color ───────────────────────────────
