@@ -295,8 +295,12 @@ function shieldScale(zoom: number): number {
 function glyphScale(zoom: number): number {
   return 0.55 + Math.min(Math.max((zoom - SYMBOL_MIN_ZOOM) / 5, 0), 1) * 0.45;
 }
-/** Marker → its type color (cluster bubble coloring). */
-const markerTypeColor = new WeakMap<L.Layer, string>();
+/** Marker → its type color + identifier (cluster bubble styling). */
+interface MarkerTypeInfo {
+  color: string;
+  identifier: string | undefined;
+}
+const markerTypeInfo = new WeakMap<L.Layer, MarkerTypeInfo>();
 /** slug → live marker (selection swaps without a full rebuild). */
 const markerBySlug = new Map<string, L.Layer>();
 /** Shared canvas renderer for all dot markers. */
@@ -442,15 +446,12 @@ function makeIcon(style: MarkerStyle, selected = false): L.DivIcon {
       'wd-fb-glyph',
       '--wd-fb-g'
     );
-    const chip = style.status
-      ? spriteSpan(
-          `color/availability.${style.status}`,
-          'color/availability.unknown',
-          'wd-fb-avail',
-          '--wd-fb-s'
-        )
-      : '';
-    html = `${glyph}${chip}`;
+    // Occupation = status circle BEHIND the hut (owner spec; MapLibre's
+    // low-zoom occupation circle is the same idea). ONE day only — day0,
+    // the selected date. The day-chip fan (4 days) is not drawn.
+    const occColor = style.status ? STATUS_COLORS[style.status] : undefined;
+    const occ = occColor ? `<span class="wd-fb-occ" style="background:${occColor}"></span>` : '';
+    html = `${occ}${glyph}`;
   } else {
     // Fallback: CSS shield + mono SVG (or plain dot), status ring behind.
     const ringColor = style.status ? STATUS_COLORS[style.status] : undefined;
@@ -511,26 +512,46 @@ function applySelection(layer: L.Layer, style: MarkerStyle, selected: boolean): 
   }
 }
 
-/** Cluster bubble in the DOMINANT member type color. */
+/** Cluster bubble: small circle in the dominant member type color
+ *  with the dominant type's sprite GLYPH inside (owner: "show the icon
+ *  in the circle, less interested in the number" — the count rides
+ *  along as a tiny badge). */
 function clusterIcon(cluster: L.MarkerCluster): L.DivIcon {
-  const counts = new Map<string, number>();
+  const counts = new Map<string, number>(); // key: color|identifier
+  const infoByKey = new Map<string, MarkerTypeInfo>();
   for (const marker of cluster.getAllChildMarkers()) {
-    const color = markerTypeColor.get(marker) ?? DEFAULT_DOT_COLOR;
-    counts.set(color, (counts.get(color) ?? 0) + 1);
+    const info = markerTypeInfo.get(marker) ?? { color: DEFAULT_DOT_COLOR, identifier: undefined };
+    const key = `${info.color}|${info.identifier ?? ''}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+    infoByKey.set(key, info);
   }
-  let dominant = DEFAULT_DOT_COLOR;
+  let dominantKey = '';
   let best = 0;
-  for (const [color, n] of counts) {
+  for (const [key, n] of counts) {
     if (n > best) {
-      dominant = color;
+      dominantKey = key;
       best = n;
     }
   }
+  const info = infoByKey.get(dominantKey) ?? {
+    color: DEFAULT_DOT_COLOR,
+    identifier: undefined,
+  };
+  const glyph = availSprite
+    ? spriteSpan(
+        `primitive/${info.identifier ?? 'accommodation.unknown'}`,
+        'primitive/accommodation.unknown',
+        'wd-fb-cluster__icon',
+        '--wd-fb-c' // never set → spriteSpan's 0.3 fallback… overridden
+      )
+    : '';
   return L.divIcon({
-    html: `<div class="wd-fb-cluster" style="--c:${dominant}"><span>${cluster.getChildCount()}</span></div>`,
+    html:
+      `<div class="wd-fb-cluster" style="--c:${info.color}">${glyph}` +
+      `<span class="wd-fb-cluster__count">${cluster.getChildCount()}</span></div>`,
     className: 'wd-fb-cluster-icon',
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
   });
 }
 
@@ -575,7 +596,7 @@ function rebuildMarkers(): void {
           // SAFETY: the custom dot fields ride along in options — the
           // cast only satisfies Leaflet's CircleMarkerOptions typing.
         } as L.CircleMarkerOptions);
-    markerTypeColor.set(layer, style.typeColor);
+    markerTypeInfo.set(layer, { color: style.typeColor, identifier: style.identifier });
     markerBySlug.set(hut.slug, layer);
     hutBySlug.set(hut.slug, hut);
     layer.on('click', () => selectHut(hut));
@@ -1187,24 +1208,25 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
     calc(var(--wd-fb-sheet-h, 480px) * var(--wd-fb-g, 0.55));
 }
 
-.wd-fb-avail {
-  background-size: calc(var(--wd-fb-sheet-w, 432px) * var(--wd-fb-s, 0.3))
-    calc(var(--wd-fb-sheet-h, 480px) * var(--wd-fb-s, 0.3));
-}
-
 .wd-fb-glyph {
   position: relative;
   z-index: 2;
   margin: auto; // center in the 36px hit box
 }
 
-.wd-fb-avail {
+// Occupation: status-colored circle BEHIND the hut glyph (one ring
+// sized relative to the glyph scale — clearly visible now that shields
+// are sprite-sized, ~1.45x the glyph).
+.wd-fb-occ {
   position: absolute;
-  // lower-left of the glyph (maplibre day0 offset direction)
-  left: calc(50% - 2px);
-  top: calc(50% + 2px);
-  transform: translate(-62%, -34%);
-  z-index: 3;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(46px * var(--wd-fb-g, 0.55));
+  height: calc(46px * var(--wd-fb-g, 0.55));
+  border-radius: 50%;
+  opacity: 0.85; // maplibre's occupation circle transparency
+  z-index: 1;
 }
 
 // ── Fallback shield (no sprite sheet yet): smaller CSS quad ───────────
@@ -1264,26 +1286,49 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 
 // ── Cluster bubbles: dominant type color ───────────────────────────────
 .wd-fb-cluster-icon {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
 }
 
+// Small cluster bubble: white disc, dominant-type color ring, the type's
+// sprite glyph inside; the count demoted to a tiny edge badge (owner:
+// "show the icon in the circle, less interested in the number").
 .wd-fb-cluster {
-  width: 28px;
-  height: 28px;
+  position: relative;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  border: 2px solid #ffffff;
-  background: var(--c, #346751);
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: 600;
+  border: 2.5px solid var(--c, #346751);
+  background: #ffffff;
   display: grid;
   place-items: center;
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
 
-  span {
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
-  }
+.wd-fb-cluster__icon {
+  --wd-fb-c: 0.55; // fixed cluster scale (24px circle, ~13px glyph)
+  position: relative;
+  z-index: 1;
+  background-size: calc(var(--wd-fb-sheet-w, 432px) * var(--wd-fb-c))
+    calc(var(--wd-fb-sheet-h, 480px) * var(--wd-fb-c));
+}
+
+.wd-fb-cluster__count {
+  position: absolute;
+  right: -5px;
+  bottom: -4px;
+  z-index: 2;
+  min-width: 12px;
+  height: 12px;
+  padding: 0 3px;
+  border-radius: 6px;
+  background: var(--c, #346751);
+  color: #ffffff;
+  font-size: 8.5px;
+  font-weight: 600;
+  line-height: 12px;
+  text-align: center;
+  box-shadow: 0 0 0 1.5px #ffffff;
 }
 
 // ── Controls: MapLibre parity ─────────────────────────────────────────────
