@@ -31,8 +31,18 @@
  *   status color (the same palette the MapLibre `wd-huts-occupation`
  *   layer uses).
  * - Clustering: TWO markercluster groups — huts WITH availability
- *   uncluster from z9, huts without from z10 (owner spec). Cluster
- *   bubbles are colored by the DOMINANT member type color.
+ *   uncluster from z10, huts without from z11 (owner spec, +1 vs the
+ *   first cut after the zoom-sweep profile: ~1200 unclustered DOM
+ *   markers at z10 dropped frames; ~500 stays 60fps). Cluster bubbles
+ *   are colored by the DOMINANT member type color. Pans fully inside
+ *   loaded tiles skip the marker rebuild; rebuilds also run only on
+ *   tile-set, availability, selection or icon-band changes.
+ * - Selection: the clicked hut's marker swaps to a wider gold border
+ *   (route-driven — same toggle semantics as the MapLibre map).
+ * - Date changes drive the SAME calendar spinner as the main map
+ *   (map-catalog-store availabilityLoading) via the manual
+ *   begin/settle API — settles when the new rings are rendered, with
+ *   the shared 600ms minimum spin.
  * - Click: seeds the place identity (seedPlaceFromMap) and routes to
  *   `map-hut` — the same content panel the MapLibre map opens.
  * - Viewport: shared with the main map (localPropertiesStore) AND
@@ -48,7 +58,7 @@
  * Leaflet + markercluster ride this component's async chunk
  * (WdMapView async-imports it), so WebGL users never download them.
  */
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useDebounceFn } from '@vueuse/core';
@@ -65,6 +75,7 @@ import { getEnv } from '@services/runtimeEnv';
 import { publicApiBase } from '@services/apiBase';
 import { useLocalPropertiesStore } from '@stores/local-properties-store';
 import { useHutsStore } from '@stores/huts-store';
+import { useMapCatalogStore } from '@stores/map/map-catalog-store';
 import { seedPlaceFromMap } from '@composables/usePlace';
 
 const emit = defineEmits<{
@@ -78,6 +89,7 @@ const router = useRouter();
 const { t } = useI18n();
 const localPropertiesStore = useLocalPropertiesStore();
 const hutsStore = useHutsStore();
+const catalogStore = useMapCatalogStore();
 
 const fallbackEl = ref<HTMLDivElement>();
 
@@ -87,10 +99,12 @@ const fallbackEl = ref<HTMLDivElement>();
 const HUT_MIN_ZOOM = 8;
 /** Dots upgrade to category symbols (mono SVG on a colored shield). */
 const SYMBOL_MIN_ZOOM = 11;
-/** Huts WITH availability uncluster from here (owner spec). */
-const AVAIL_UNCLUSTER_ZOOM = 9;
+/** Huts WITH availability uncluster from here (owner spec; +1 vs the
+ *  first iteration — caps the unclustered marker count, see the profile
+ *  note in the header). */
+const AVAIL_UNCLUSTER_ZOOM = 10;
 /** Huts WITHOUT availability one level later (owner spec). */
-const PLAIN_UNCLUSTER_ZOOM = 10;
+const PLAIN_UNCLUSTER_ZOOM = 11;
 const MIN_ZOOM = 2; // MAP_MIN_ZOOM parity
 const MAX_ZOOM = 19; // raster basemaps top out here
 /** Martin `huts` source pyramid (martin.yaml minzoom/maxzoom) — above
@@ -221,6 +235,16 @@ const availBySlug = new Map<string, FbAvail>();
 const symbolBySlug = new Map<string, string | null>();
 /** Marker → its type color (cluster bubble coloring). */
 const markerTypeColor = new WeakMap<L.Marker, string>();
+/** slug → live marker (selection icon swaps without a full rebuild). */
+const markerBySlug = new Map<string, L.Marker>();
+/** slug → hut (style inputs for selection icon swaps). */
+const hutBySlug = new Map<string, FbHut>();
+/** Currently selected hut slug (route-driven, same as the MapLibre map). */
+const selectedSlug = computed(() =>
+  typeof route.params.slug === 'string' ? route.params.slug : undefined
+);
+/** Last rendered zoom band — dot↔symbol icon swaps rebuild on band change. */
+let lastRenderBand: 'none' | 'dot' | 'sym' | undefined;
 
 // ── Focus (fullscreen) mode ────────────────────────────────────────────────
 // Same body-class contract as the MapLibre map's setMapFocus: the global
@@ -277,18 +301,56 @@ class WdAttributionControl extends L.Control {
 /** Finger-sized hit box; 13px dot below SYMBOL_MIN_ZOOM, mono SVG on
  *  a category-colored rounded shield above it. Optional status ring
  *  behind either variant. */
-function makeIcon(typeColor: string, status: string | undefined, symbol: string | null): L.DivIcon {
+function makeIcon(
+  typeColor: string,
+  status: string | undefined,
+  symbol: string | null,
+  selected = false
+): L.DivIcon {
   const ringColor = status ? STATUS_COLORS[status] : undefined;
   const ring = ringColor ? `<span class="wd-fb-ring" style="background:${ringColor}"></span>` : '';
   const fg = symbol
     ? `<span class="wd-fb-sym" style="--c:${typeColor}">${symbol}</span>`
     : `<span class="wd-fb-dot" style="background:${typeColor}"></span>`;
+  const classes = ['wd-fb-marker'];
+  if (symbol) classes.push('wd-fb-marker--sym');
+  if (selected) classes.push('wd-fb-marker--sel');
   return L.divIcon({
     html: `${ring}${fg}`,
-    className: symbol ? 'wd-fb-marker wd-fb-marker--sym' : 'wd-fb-marker',
+    className: classes.join(' '),
     iconSize: [36, 36],
     iconAnchor: [18, 18],
   });
+}
+
+/** The marker's full icon inputs — lets setIcon rebuild any variant. */
+interface MarkerStyle {
+  typeColor: string;
+  status: string | undefined;
+  symbol: string | null;
+}
+
+function markerStyleFor(hut: FbHut, useSymbols: boolean): MarkerStyle {
+  let symbol: string | null = null;
+  if (useSymbols && hut.typeSlug) {
+    symbol = symbolBySlug.get(hut.typeSlug) ?? null;
+    if (!symbolBySlug.has(hut.typeSlug)) {
+      symbolBySlug.set(hut.typeSlug, null); // pending sentinel
+      void fetchSymbol(hut.typeSlug).then(svg => {
+        symbolBySlug.set(hut.typeSlug!, svg);
+        rebuildMarkers();
+      });
+    }
+  }
+  return {
+    typeColor: hut.typeColor ?? DEFAULT_DOT_COLOR,
+    status: availBySlug.get(hut.slug)?.status,
+    symbol,
+  };
+}
+
+function applyIcon(marker: L.Marker, style: MarkerStyle, selected: boolean): void {
+  marker.setIcon(makeIcon(style.typeColor, style.status, style.symbol, selected));
 }
 
 /** Cluster bubble in the DOMINANT member type color. */
@@ -318,8 +380,14 @@ function rebuildMarkers(): void {
   if (!clusterAvail || !clusterPlain) return;
   clusterAvail.clearLayers();
   clusterPlain.clearLayers();
-  if (!map || map.getZoom() < HUT_MIN_ZOOM) return;
+  markerBySlug.clear();
+  hutBySlug.clear();
+  if (!map || map.getZoom() < HUT_MIN_ZOOM) {
+    lastRenderBand = 'none';
+    return;
+  }
   const useSymbols = map.getZoom() >= SYMBOL_MIN_ZOOM;
+  lastRenderBand = useSymbols ? 'sym' : 'dot';
   // Dedupe by slug — buffer features repeat across neighboring tiles.
   const huts = new Map<string, FbHut>();
   for (const tileHuts of hutTiles.values()) {
@@ -328,34 +396,39 @@ function rebuildMarkers(): void {
   const availMarkers: L.Marker[] = [];
   const plainMarkers: L.Marker[] = [];
   for (const hut of huts.values()) {
-    const avail = availBySlug.get(hut.slug);
-    const typeColor = hut.typeColor ?? DEFAULT_DOT_COLOR;
-    let symbol: string | null = null;
-    if (useSymbols && hut.typeSlug) {
-      symbol = symbolBySlug.get(hut.typeSlug) ?? null;
-      if (!symbolBySlug.has(hut.typeSlug)) {
-        // Kick the fetch; ONE extra rebuild when it lands (the has()-
-        // guard above breaks the rebuild cycle).
-        symbolBySlug.set(hut.typeSlug, null); // pending sentinel
-        void fetchSymbol(hut.typeSlug).then(svg => {
-          symbolBySlug.set(hut.typeSlug!, svg);
-          rebuildMarkers();
-        });
-      }
-    }
+    const style = markerStyleFor(hut, useSymbols);
     const marker = L.marker([hut.lat, hut.lon], {
-      icon: makeIcon(typeColor, avail?.status, symbol),
+      icon: makeIcon(style.typeColor, style.status, style.symbol, selectedSlug.value === hut.slug),
       keyboard: false,
-      riseOnHover: true,
+      // NOTE: no riseOnHover — the z-index churn on hundreds of markers
+      // showed up as dropped frames in the pan profile.
       title: String(hut.properties.name ?? hut.slug), // hover tooltip
     });
-    markerTypeColor.set(marker, typeColor);
+    markerTypeColor.set(marker, style.typeColor);
+    markerBySlug.set(hut.slug, marker);
+    hutBySlug.set(hut.slug, hut);
     marker.on('click', () => selectHut(hut));
-    (avail ? availMarkers : plainMarkers).push(marker);
+    (availBySlug.has(hut.slug) ? availMarkers : plainMarkers).push(marker);
   }
   clusterAvail.addLayers(availMarkers); // bulk: no per-marker animation
   clusterPlain.addLayers(plainMarkers);
 }
+
+/** Selection follows the route (same toggle semantics as the MapLibre
+ *  map): swap ONLY the two affected markers' icons — no full rebuild. */
+watch(selectedSlug, (slug, previous) => {
+  if (!map) return;
+  const useSymbols = map.getZoom() >= SYMBOL_MIN_ZOOM;
+  for (const [slugKey, sel] of [
+    [previous, false],
+    [slug, true],
+  ] as Array<[string | undefined, boolean]>) {
+    if (!slugKey) continue;
+    const marker = markerBySlug.get(slugKey);
+    const hut = hutBySlug.get(slugKey);
+    if (marker && hut) applyIcon(marker, markerStyleFor(hut, useSymbols), sel);
+  }
+});
 
 /** Mono category symbol — currentColor SVG, recolored via CSS. */
 async function fetchSymbol(typeSlug: string): Promise<string | null> {
@@ -420,11 +493,20 @@ async function refreshTiles(): Promise<void> {
       }
     }
   }
+  let evicted = 0;
   for (const key of hutTiles.keys()) {
-    if (!needed.has(key)) hutTiles.delete(key);
+    if (!needed.has(key)) {
+      hutTiles.delete(key);
+      evicted++;
+    }
   }
   await Promise.all(jobs);
-  if (generation === tileGeneration && map) rebuildMarkers();
+  // Perf: a pan fully inside already-loaded tiles changes NOTHING — skip
+  // the clearLayers/addLayers rebuild (the 1200-marker rebuild frame was
+  // the worst jank in the profile sweep).
+  if (generation === tileGeneration && map && (jobs.length > 0 || evicted > 0)) {
+    rebuildMarkers();
+  }
 }
 
 /** Fetch + decode one MLT tile. Failures leave the tile absent (the
@@ -483,28 +565,43 @@ async function fetchHutTile(
 
 const refreshTilesDebounced = useDebounceFn(() => void refreshTiles(), 400);
 
-/** Day-0 availability for the effective date (status colors the ring). */
+/** Day-0 availability for the effective date (status colors the ring).
+ *  The calendar-icon spinner (map-catalog-store availabilityLoading — the
+ *  same signal the MapLibre map drives via sourcedata) runs from begin to
+ *  RENDERED-settle here; the store's 600ms minimum spin still applies.
+ *  The boot fetch ('now') does not spin — same as the main map, where the
+ *  spinner belongs to the date PICK, not the initial load. */
+let firstAvailLoad = true;
+
 async function loadAvailability(dateISO: string): Promise<void> {
   const generation = ++availGeneration;
-  const { data, error } = await clientWodore.GET('/v1/huts/availability/{date}.geojson', {
-    params: {
-      path: { date: dateISO },
-      query: { days: 1, lang: currentLocale() },
-    },
-  });
-  if (error || !data || !('features' in data) || generation !== availGeneration) return;
-  availBySlug.clear();
-  for (const feature of data.features ?? []) {
-    const properties = feature.properties as {
-      slug?: string;
-      data?: Array<{ occupancy_status?: string | null }> | null;
-    } | null;
-    if (!properties?.slug) continue;
-    availBySlug.set(properties.slug, {
-      status: properties.data?.[0]?.occupancy_status ?? undefined,
+  const spin = !firstAvailLoad;
+  firstAvailLoad = false;
+  if (spin) catalogStore.beginAvailabilityLoadManual();
+  try {
+    const { data, error } = await clientWodore.GET('/v1/huts/availability/{date}.geojson', {
+      params: {
+        path: { date: dateISO },
+        query: { days: 1, lang: currentLocale() },
+      },
     });
+    if (!error && data && 'features' in data && generation === availGeneration) {
+      availBySlug.clear();
+      for (const feature of data.features ?? []) {
+        const properties = feature.properties as {
+          slug?: string;
+          data?: Array<{ occupancy_status?: string | null }> | null;
+        } | null;
+        if (!properties?.slug) continue;
+        availBySlug.set(properties.slug, {
+          status: properties.data?.[0]?.occupancy_status ?? undefined,
+        });
+      }
+      rebuildMarkers(); // recolor rings — settle AFTER the new render
+    }
+  } finally {
+    if (spin) catalogStore.settleAvailabilityLoadManual();
   }
-  rebuildMarkers(); // recolor rings
 }
 
 // Date picker drives the ring date (today when unset — the header chip's
@@ -555,6 +652,11 @@ function syncHash(): void {
 
 function onMoveEnd(): void {
   if (!map) return;
+  // Icon band change (none/dot/sym) — rebuild; markercluster itself
+  // re-clusters on zoom without any rebuild.
+  const band =
+    map.getZoom() < HUT_MIN_ZOOM ? 'none' : map.getZoom() >= SYMBOL_MIN_ZOOM ? 'sym' : 'dot';
+  if (band !== lastRenderBand) rebuildMarkers();
   localPropertiesStore.updateLocation({
     lat: map.getCenter().lat,
     lng: map.getCenter().lng,
@@ -584,6 +686,7 @@ function applyBasemap(): void {
 onMounted(() => {
   const el = fallbackEl.value;
   if (!el) return;
+  catalogStore.setAvailabilityManualSettle(true); // we own the spinner settle
 
   const initial = localPropertiesStore.getInitialLocation();
   map = L.map(el, {
@@ -656,6 +759,7 @@ onBeforeUnmount(() => {
   tileGeneration++; // invalidate any in-flight tile/symbol callbacks
   availGeneration++;
   fetchingTiles.clear();
+  catalogStore.setAvailabilityManualSettle(false);
   if (focusOn.value) document.body.classList.remove('wd-map-focus');
   map?.remove(); // tears down layers + listeners
   map = undefined;
@@ -858,6 +962,9 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   display: grid;
   place-items: center;
   cursor: pointer;
+  // Perf: layout/style containment on hundreds of markers keeps pan-time
+  // recalculation local (measured in the zoom-sweep profile).
+  contain: layout style;
 }
 
 .wd-fb-dot {
@@ -873,15 +980,15 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 //    category color — the mono SVGs are built with currentColor, so the
 //    CSS color recolors them. ────────────────────────────────────────
 .wd-fb-marker--sym .wd-fb-ring {
-  width: 34px;
-  height: 34px;
+  width: 40px; // peeks around the square shield
+  height: 40px;
 }
 
 .wd-fb-sym {
   position: relative;
-  width: 36px;
-  height: 30px;
-  border-radius: 8px;
+  width: 34px;
+  height: 34px; // quadratic shield (owner spec)
+  border-radius: 9px;
   background: var(--c, #346751);
   border: 2px solid #ffffff;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
@@ -895,6 +1002,19 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
     height: 20px;
     display: block;
   }
+}
+
+// ── Selection: gold — the app's selection color (chips, zoom thumb) ────
+.wd-fb-marker--sel .wd-fb-sym {
+  border: 3px solid $wd-gold;
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.9),
+    0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+.wd-fb-marker--sel .wd-fb-dot {
+  border: 3px solid $wd-gold;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
 }
 
 .wd-fb-ring {

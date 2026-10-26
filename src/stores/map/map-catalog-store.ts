@@ -112,7 +112,25 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
   let availabilityLoadGen = 0;
   let availabilityShownAt = 0;
   let availabilityListenersBound = false;
+  /** Set by the Leaflet fallback while IT renders availability data —
+   *  suppresses the mapless fixed-minimum settle (see beginAvailabilityLoad)
+   *  so the spinner tracks the fallback's real render instead. */
+  let availabilityManualSettle = false;
   const AVAILABILITY_MIN_SPIN_MS = 600;
+
+  /** Manual renderer (fallback) API: begin + settle around its own fetch /
+   *  render; the shared 600ms minimum spin still applies on settle. */
+  function beginAvailabilityLoadManual(): void {
+    beginAvailabilityLoad();
+  }
+
+  function settleAvailabilityLoadManual(): void {
+    settleAvailabilityLoad(availabilityLoadGen);
+  }
+
+  function setAvailabilityManualSettle(on: boolean): void {
+    availabilityManualSettle = on;
+  }
 
   function settleAvailabilityLoad(gen: number): void {
     if (gen !== availabilityLoadGen) return; // superseded by a newer date pick
@@ -135,6 +153,11 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
       | { on?: (ev: string, fn: (e: unknown) => void) => void }
       | undefined;
     if (!map?.on) {
+      // Non-MapLibre availability renderer (Leaflet fallback) owns the
+      // settle: it calls settleAvailabilityLoadManual() when ITS data is
+      // rendered — skip the fixed minimum so the spinner tracks the real
+      // load (600ms minimum still applies inside settle).
+      if (availabilityManualSettle) return;
       // Native bridge (no sourcedata forwarding): run the fixed minimum.
       setTimeout(() => settleAvailabilityLoad(gen), AVAILABILITY_MIN_SPIN_MS);
       return;
@@ -782,5 +805,8 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     // here); the ref itself lives in ./availability-loading so eager
     // chunk consumers (WdSelectDate) need no cluster import.
     availabilityLoading,
+    beginAvailabilityLoadManual,
+    settleAvailabilityLoadManual,
+    setAvailabilityManualSettle,
   };
 });
