@@ -1616,16 +1616,16 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 //    shadow ring, #333 icon) ────────────────────────────────────────────
 .wd-fb-locate {
   position: absolute;
-  top: 58px;
+  top: 72px; // main-map GPS: 58px container push + 14px child margin
   right: 14px;
   z-index: 1001;
-  width: 29px;
-  height: 29px;
-  padding: 3px;
-  border: none;
-  border-radius: 4px;
-  background: #ffffff;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+  width: 46px; // main-map button size (maplibre-gl.scss:190-200)
+  height: 46px;
+  padding: 8px;
+  border: 1px solid var(--wd-ctl-border, #dde7e0);
+  border-radius: 8px; // main-map ctrl-group radius
+  background: var(--wd-ctl-bg, #fdfefd);
+  box-shadow: var(--wd-ctl-shadow, 0 1px 3px rgba(10, 20, 15, 0.2));
   cursor: pointer;
 
   svg {
@@ -1650,74 +1650,17 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 @media (max-width: 768px) {
   .wd-fb-locate {
     top: auto;
-    bottom: 84px;
-    left: 10px;
+    bottom: 14px; // merge with the zoom stack
+    left: 12px;
     right: auto;
+    border-radius: 8px 8px 0 0; // top of the merged chip
+    border-bottom: none;
   }
 }
 
 // ── Focus mode: the basemap switch is APP CHROME — same slide-away the
 //    main map gives .wd-map-ctl-sticky/.wd-map-ctl-col. Map instruments
 //    (zoom, slider, locate, attribution) stay, like MapLibre controls. ──
-
-// ── Dark mode: Leaflet controls match the MapLibre dark styling ────────
-body.body--dark {
-  .wd-fallback-map .leaflet-bar {
-    background: var(--wd-ctl-bg);
-    box-shadow: 0 0 0 2px rgba(169, 240, 210, 0.15);
-
-    a,
-    a:hover {
-      background: var(--wd-ctl-bg);
-      color: var(--wd-ctl-ink);
-    }
-
-    a:hover {
-      background: color-mix(in srgb, var(--wd-ctl-bg) 88%, var(--wd-ctl-ink));
-    }
-
-    a + a {
-      border-top-color: rgba(169, 240, 210, 0.15);
-    }
-  }
-
-  .wd-fb-locate {
-    background: var(--wd-ctl-bg);
-    box-shadow: 0 0 0 2px rgba(169, 240, 210, 0.15);
-
-    svg {
-      fill: var(--wd-ctl-ink);
-    }
-
-    &:hover {
-      background: color-mix(in srgb, var(--wd-ctl-bg) 88%, var(--wd-ctl-ink));
-    }
-  }
-
-  .wd-fallback-map .leaflet-control-attribution {
-    background: color-mix(in srgb, var(--wd-ctl-bg) 82%, transparent);
-    color: var(--wd-ctl-ink-soft);
-
-    a {
-      color: var(--wd-ctl-ink-soft);
-    }
-  }
-
-  .wd-fallback-map .leaflet-control-scale-line {
-    background: color-mix(in srgb, var(--wd-ctl-bg) 82%, transparent);
-    border-color: var(--wd-ctl-ink-soft);
-    color: var(--wd-ctl-ink);
-  }
-
-  .wd-fb-cluster {
-    background: var(--wd-ctl-bg);
-    border-color: var(--c, #346751);
-  }
-
-  .wd-fb-cluster__icon {
-    filter: brightness(1) invert(1) opacity(0.85); // light icon on dark bg
-  }
-}
 
 // Owner spec: in focus mode, slide away ALL floating chrome — the
 // basemap switch, zoom bar, locate, attribution and scale. Same motion
@@ -1787,26 +1730,26 @@ body.wd-map-focus {
 
 // Zoom bar: maplibre ctrl-group look
 .wd-fallback-map .leaflet-bar {
-  border: none;
-  border-radius: 4px;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--wd-ctl-border, #dde7e0);
+  border-radius: 8px; // main-map ctrl-group radius
+  box-shadow: var(--wd-ctl-shadow, 0 1px 3px rgba(10, 20, 15, 0.2));
   overflow: hidden;
 
   a,
   a:hover {
-    width: 29px;
-    height: 29px;
-    line-height: 29px;
-    font-size: 19px;
+    width: 46px; // main-map button size
+    height: 46px;
+    line-height: 46px;
+    font-size: 22px;
     font-weight: 600;
-    color: #333333;
-    background: #ffffff;
+    color: var(--wd-ctl-ink, #333333);
+    background: var(--wd-ctl-bg, #fdfefd);
     border-bottom: none;
     text-decoration: none;
   }
 
   a:hover {
-    background: #f4f4f4;
+    background: color-mix(in srgb, var(--wd-ctl-bg, #fdfefd) 92%, var(--wd-ctl-ink, #333));
   }
 
   a:focus-visible {
@@ -1815,14 +1758,14 @@ body.wd-map-focus {
   }
 
   a + a {
-    border-top: 2px solid rgba(0, 0, 0, 0.1);
+    border-top: 1px solid var(--wd-ctl-border, #dde7e0);
   }
 }
 
 // Desktop: zoom below the focus toggle, 14px inset (main map parity)
 @media (min-width: 769px) {
   .wd-fallback-map .leaflet-top.leaflet-right .leaflet-control-zoom {
-    margin: 92px 14px 0 0; /* below the locate button (58+29+5) */
+    margin: 134px 14px 0 0; /* below the 46px locate at y72 + 14px gap */
     float: right;
   }
 }
@@ -1830,12 +1773,16 @@ body.wd-map-focus {
 // Mobile: zoom bottom-left (MglNavigationControl parity)
 @media (max-width: 768px) {
   .wd-fallback-map .leaflet-bottom.leaflet-left .leaflet-control-zoom {
-    margin: 0 0 10px 10px;
+    margin: 0 0 14px 12px;
   }
 }
 
 // Scale: maplibre .maplibregl-ctrl-scale values (readable ink on a
 // translucent bar with the 2px baseline)
+.wd-fallback-map .leaflet-bottom.leaflet-left .leaflet-control-scale {
+  margin: 0 0 14px 12px; // main-map bottom-left inset (maplibre-gl.scss:49-55)
+}
+
 .wd-fallback-map .leaflet-control-scale-line {
   background-color: rgba(255, 255, 255, 0.75);
   font-size: 10px;
@@ -1852,6 +1799,7 @@ body.wd-map-focus {
 // Desktop = translucent expanded bar; mobile = compact ⓘ pill that
 // expands on tap (same geometry as maplibre's compact control).
 .wd-fb-attrib {
+  margin-left: 12px;
   font-size: 12px;
 
   a {
@@ -1866,8 +1814,13 @@ body.wd-map-focus {
 }
 
 .wd-fb-attrib--full .wd-fb-attrib__inner {
-  padding: 0 5px;
-  background-color: rgba(255, 255, 255, 0.5);
+  padding: 1px 8px;
+  font-size: 10px;
+  line-height: 16px;
+  border-radius: 4px;
+  background: var(--wd-ctl-bg, #fdfefd);
+  border: 1px solid var(--wd-ctl-border, #dde7e0);
+  color: var(--wd-ctl-ink, #333333);
 }
 
 .wd-fb-attrib--compact {
