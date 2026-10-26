@@ -4,10 +4,16 @@ import { useQuasar } from 'quasar';
 import { usePlace } from '@composables/usePlace';
 import WdSourceButtons from '@components/huts/WdSourceButtons.vue';
 import { useAuthStore } from '@stores/auth-store';
+import { isCrawlerUA } from '@services/crawler-ua';
 import { MapInstance } from '@indoorequal/vue-maplibre-gl/dist/lib/lib/mapRegistry';
 
 let mapRef: MapInstance | undefined;
-if (process.env.CLIENT) {
+// Crawler gate (SEO, follow-up to PR #347): for humans the MapLibre
+// vendor chunk always loads via WdMapView anyway, so this import is
+// free there — but it fires on panel mount, which would drag 327 kB gz
+// of map library into every crawler render. Crawlers never interact
+// with the map, so skip it for them.
+if (process.env.CLIENT && !isCrawlerUA()) {
   import('@indoorequal/vue-maplibre-gl').then(pkg => {
     mapRef = pkg.useMap();
   });

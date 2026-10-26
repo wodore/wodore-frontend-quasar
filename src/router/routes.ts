@@ -1,6 +1,20 @@
 import { RouteLocation, RouteLocationRaw, RouteRecordRaw } from 'vue-router';
+import { defineComponent } from 'vue';
 
 import { LANG_PREFIXES } from '@/i18n';
+import { isCrawlerUA } from '@services/crawler-ua';
+
+/** Crawler gate for the `menu` named view (SEO, follow-up to PR #347):
+ * vue-router resolves lazy route components during NAVIGATION, before
+ * any router-view renders — so a v-if on the view cannot stop the
+ * WdMapMenu chunk (and its static chain: overlay-config cluster + the
+ * 327 kB gz MapLibre vendor chunk) from loading for crawlers. The map
+ * menu is pure map chrome with zero indexable content, so crawlers get
+ * a render-nothing stub instead. */
+const menuView = () =>
+  isCrawlerUA()
+    ? Promise.resolve(defineComponent({ name: 'WdMapMenuCrawlerStub', render: () => null }))
+    : import('components/map/WdMapMenu.vue');
 
 function redirectFix(to: RouteLocation, newRouteName: string): RouteLocationRaw {
   return {
@@ -61,7 +75,7 @@ const routes: RouteRecordRaw[] = [
         meta: { content: true, contentType: 'place' },
         components: {
           default: () => import('pages/MapPage.vue'),
-          menu: () => import('components/map/WdMapMenu.vue'),
+          menu: menuView,
           content: () => import('components/content/place/WdPlaceContent.vue'),
         },
         props: { content: true },
@@ -71,7 +85,7 @@ const routes: RouteRecordRaw[] = [
         name: 'map',
         components: {
           default: () => import('pages/MapPage.vue'),
-          menu: () => import('components/map/WdMapMenu.vue'),
+          menu: menuView,
         },
       },
       {

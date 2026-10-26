@@ -246,6 +246,16 @@ export default configure(ctx => {
         // build is untouched.
         viteConf.build.rollupOptions ??= {};
         const chunkFn = (id: string): string | undefined => {
+          // Shell map stores (menu + content UI state, no MapLibre deps):
+          // MainLayout imports them statically, so rollup would otherwise
+          // merge them into the map-store cluster chunk (catalog/basemap/
+          // overlay stores — which statically import MapLibre), putting the
+          // 327 kB gz vendor chunk on every crawler's download list
+          // (follow-up to PR #347). Pinning them to their own chunk keeps
+          // the cluster lazy behind the map components.
+          if (/stores\/map\/(map-menu-store|map-content-store)\.ts$/.test(id)) {
+            return 'map-shell-stores';
+          }
           if (!id.includes('node_modules')) return undefined;
           // Keep rollup's worker builds out of the main graph — a named
           // chunk assignment here would inline/break the separate worker
