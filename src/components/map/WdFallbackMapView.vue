@@ -300,17 +300,12 @@ function spriteSpan(
   return `<span class="${className}" style="${pos}${size}${bg}"></span>`;
 }
 
-/** Availability CHIP scale — MapLibre's occupation-day ramp verbatim:
- *  0.300 at z12 growing to 0.6 by z15 (owner: "reduce shields to 300"). */
-function shieldScale(zoom: number): number {
-  return 0.3 + Math.min(Math.max((zoom - 12) / 3, 0), 1) * 0.3;
-}
-
-/** Hut GLYPH scale — MapLibre's wd-huts ramp verbatim: 0.55 at z11
- *  growing to 1.0 by z16 (the primitive glyphs are 24px source, so this
- *  renders 13-24px — the chips above use their own 48px-based ramp). */
-function glyphScale(zoom: number): number {
-  return 0.55 + Math.min(Math.max((zoom - SYMBOL_MIN_ZOOM) / 5, 0), 1) * 0.45;
+/** Marker scale — FIXED at all symbol zooms (owner: "at z12 they are
+ *  very big, should always have around the same size"): shield ≈ 19px,
+ *  glyph ≈ 14px, occupation disc ≈ 28px. The var stays so a future ramp
+ *  is a one-line change. */
+function glyphScale(_zoom: number): number {
+  return 0.6;
 }
 /** Marker → its type color + identifier (cluster bubble styling). */
 interface MarkerTypeInfo {
@@ -563,22 +558,28 @@ function clusterIcon(cluster: L.MarkerCluster): L.DivIcon {
     color: DEFAULT_DOT_COLOR,
     identifier: undefined,
   };
+  const scale0 = Math.min(0.8 + ((cluster.getChildCount() - 2) / 38) * 0.8, 1.6);
   const glyph = availSprite
     ? spriteSpan(
         `primitive/${info.identifier ?? 'accommodation.unknown'}`,
         'primitive/accommodation.unknown',
         'wd-fb-cluster__icon',
         '--wd-fb-c',
-        13
+        Math.round(13 * scale0)
       )
     : '';
+  // Member-count sizing (owner spec): 0.8x at 2 members growing to
+  // 1.6x at 40+ — disc, glyph and hit box scale together.
+  const count = cluster.getChildCount();
+  const scale = Math.min(0.8 + ((count - 2) / 38) * 0.8, 1.6);
+  const discPx = Math.round(20 * scale);
   return L.divIcon({
     // Icon-only bubble (owner: "less interested in the number") — the
     // count was a tiny badge that drowned the glyph; dropped.
-    html: `<div class="wd-fb-cluster" style="--c:${info.color}">${glyph}</div>`,
+    html: `<div class="wd-fb-cluster" style="--c:${info.color};width:${discPx}px;height:${discPx}px">${glyph}</div>`,
     className: 'wd-fb-cluster-icon',
-    iconSize: [20, 20],
-    iconAnchor: [10, 10],
+    iconSize: [discPx, discPx],
+    iconAnchor: [discPx / 2, discPx / 2],
   });
 }
 
@@ -828,11 +829,42 @@ async function loadAvailability(dateISO: string): Promise<void> {
   }
 }
 
+/** "Zoom in to see availabilities" hint: shown while a DATE is selected
+ *  and the camera is at z <= 8 (below the marker floor — nothing is
+ *  visible there); dismissed from z > 9. The gap is deliberate
+ *  hysteresis so a pan around z8.5 cannot flicker it. Persistent toast
+ *  (timeout 0) + close button; re-shows when conditions return. */
+const ZOOM_HINT_SHOW_AT = 8;
+const ZOOM_HINT_HIDE_AT = 9;
+let zoomHintDismiss: (() => void) | undefined;
+
+function updateZoomHint(): void {
+  const zoom = map?.getZoom() ?? 99;
+  const wanted = Boolean(hutsStore.selectedDate) && zoom <= ZOOM_HINT_SHOW_AT;
+  if (wanted && !zoomHintDismiss) {
+    zoomHintDismiss = Notify.create({
+      message: t('map.fallbackZoomHint'),
+      position: 'bottom',
+      timeout: 0,
+      color: 'dark',
+      actions: [{ label: t('close'), color: 'accent' }],
+      onDismiss: () => {
+        zoomHintDismiss = undefined;
+      },
+    });
+  } else if (!wanted && zoom > ZOOM_HINT_HIDE_AT && zoomHintDismiss) {
+    zoomHintDismiss();
+  }
+}
+
 // Date picker drives the ring date (today when unset — the header chip's
 // default); 'now' is the backend's alias for today.
 watch(
   () => hutsStore.selectedDate,
-  date => void loadAvailability(date ?? 'now'),
+  date => {
+    void loadAvailability(date ?? 'now');
+    updateZoomHint();
+  },
   { immediate: true }
 );
 
@@ -876,6 +908,7 @@ function syncHash(): void {
 
 function onMoveEnd(): void {
   if (!map) return;
+  updateZoomHint(); // zoom-hysteresis check on every camera settle
   // Icon band change (none/dot/sym) — rebuild; markercluster itself
   // re-clusters on zoom without any rebuild.
   const band =
@@ -956,8 +989,8 @@ onMounted(() => {
   map.addLayer(clusterPlain);
 
   map.on('moveend zoomend', onMoveEnd);
-  fallbackEl.value?.style.setProperty('--wd-fb-s', String(shieldScale(map.getZoom())));
   fallbackEl.value?.style.setProperty('--wd-fb-g', String(glyphScale(map.getZoom())));
+  updateZoomHint();
   void loadSprite();
 
   // Dev-only debugging/profiling hook (the map instance lives in this
@@ -1005,6 +1038,7 @@ onBeforeUnmount(() => {
   availGeneration++;
   fetchingTiles.clear();
   catalogStore.setAvailabilityManualSettle(false);
+  zoomHintDismiss?.();
   if (focusOn.value) document.body.classList.remove('wd-map-focus');
   map?.remove(); // tears down layers + listeners
   map = undefined;
@@ -1286,13 +1320,18 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 .wd-fb-occ-label {
   position: absolute;
   left: 50%;
-  top: calc(50% + 25px * var(--wd-fb-g, 0.55));
+  top: calc(50% + 25px * var(--wd-fb-g, 0.6));
   transform: translateX(-50%);
   z-index: 3;
-  font-size: 9.5px;
+  // Design tokens (wodore-design DESIGN.md): instrument label typography
+  // (Barlow Semi Condensed, uppercase, tracked) in glacier-turquoise-deep
+  // — the information-text ink.
+  font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif;
+  font-size: 9px;
   font-weight: 600;
-  letter-spacing: 0.02em;
-  color: #1c1c1c;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #29626b;
   text-shadow:
     0 0 3px #ffffff,
     0 0 2px #ffffff,
@@ -1353,17 +1392,14 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 
 // ── Cluster bubbles: dominant type color ───────────────────────────────
 .wd-fb-cluster-icon {
-  width: 20px;
-  height: 20px;
+  /* hit box sized per-cluster by iconSize */
 }
 
 // Small cluster bubble: white disc, dominant-type color ring, the type's
 // sprite glyph inside; the count demoted to a tiny edge badge (owner:
 // "show the icon in the circle, less interested in the number").
 .wd-fb-cluster {
-  position: relative;
-  width: 20px;
-  height: 20px;
+  position: relative; // width/height inline (member-count sizing)
   border-radius: 50%;
   border: 2px solid var(--c, #346751);
   background: #ffffff;

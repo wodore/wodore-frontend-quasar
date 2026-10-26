@@ -88,7 +88,8 @@
       "osm": "OSM (OpenStreetMap)",
       "satellite": "Satellite",
       "topo": "World Topo"
-    }
+    },
+    "fallbackZoomHint": "Zoom in to see availabilities."
   },
   "layers": "Layers",
   "maps": "Maps",

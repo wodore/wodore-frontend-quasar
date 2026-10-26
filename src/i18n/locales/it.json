@@ -73,7 +73,8 @@
       "osm": "OSM (OpenStreetMap)",
       "satellite": "Satellite",
       "topo": "Topo mondiale"
-    }
+    },
+    "fallbackZoomHint": "Ingrandisci per vedere le disponibilità."
   },
   "map_style": "Carta geografica",
   "location": "Posizione",
