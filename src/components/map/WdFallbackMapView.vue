@@ -114,11 +114,15 @@ let markerOpacity = 1;
  *  (owner: clearly visible behind the icon). Module vars — the canvas
  *  draw reads them synchronously, refreshed on camera settle. */
 let shieldPx = 19;
-const SHIELD_MAX_PX = 16;
+const SHIELD_MAX_PX = 20;
 const OCC_LABEL_FONT = '600 9px "Barlow Semi Condensed", "Barlow", sans-serif';
 
+/** Shield ramp: 11px at z7 → 16px by z11 → 20px from z14. Below z12 the
+ *  smaller ghost sizes stay (owner: "before it is good"); at z12+ the
+ *  icons grow again (owner: "at zoom >= 12 the icons should be larger"). */
 function shieldPxFor(zoom: number): number {
-  return Math.min(11 + (zoom - HUT_MIN_ZOOM) * 1.8, SHIELD_MAX_PX);
+  if (zoom < 12) return Math.min(11 + (zoom - HUT_MIN_ZOOM) * 1.8, 16);
+  return Math.min(16 + (zoom - 12) * 1.5, SHIELD_MAX_PX);
 }
 /** Huts WITH availability uncluster from here (owner spec; +1 vs the
  *  first iteration — caps the unclustered marker count, see the profile
@@ -609,7 +613,7 @@ class WdCanvasDot extends L.CircleMarker {
     // Occupation disc behind everything (status color, ghost ramp) —
     // sized RELATIVE to the shield so it always peeks clearly.
     const baseSize = shieldPx;
-    const discR = baseSize * 0.64; // 1.28x diameter — a tight halo, not a full disc
+    const discR = baseSize * 0.74; // 1.48x diameter — a visible halo (owner: the 1.28x was too tight to see)
     if (options.ringColor) {
       ctx.beginPath();
       ctx.arc(point.x, point.y, discR, 0, Math.PI * 2);
