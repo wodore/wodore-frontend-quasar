@@ -11,6 +11,7 @@
 import * as L from 'leaflet';
 import { DEFAULT_DOT_COLOR, SELECTION_COLOR, LABEL_COLOR, OCC_LABEL_FONT } from './status-colors';
 import { whiteIconFor, type IconBitmap } from './sprite-sheet';
+import { darkenHex } from './status-colors';
 
 /** Structural stand-in for the canvas 2D context (the project ESLint
  *  env lacks the DOM interface names). */
@@ -101,16 +102,16 @@ export class WdCanvasDot extends L.CircleMarker {
       fillColor: string;
     };
     const baseSize = shieldPx;
-    const discR = baseSize * 0.8;
+    const discR = baseSize * 0.85;
     if (options.ringColor) {
       ctx.beginPath();
       ctx.arc(point.x, point.y, discR, 0, Math.PI * 2);
       ctx.globalAlpha = 0.85 * markerOpacity;
       ctx.fillStyle = options.ringColor;
       ctx.fill();
-      // Category-colored border (type identity)
+      // Slightly darker version of the status color (owner spec)
       ctx.lineWidth = 2;
-      ctx.strokeStyle = options.typeColor ?? options.ringColor;
+      ctx.strokeStyle = darkenHex(options.ringColor, 0.25);
       ctx.stroke();
       ctx.globalAlpha = markerOpacity;
     }

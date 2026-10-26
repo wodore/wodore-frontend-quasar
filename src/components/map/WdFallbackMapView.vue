@@ -120,6 +120,24 @@ let markerOpacity = 1;
  *  (owner: clearly visible behind the icon). Module vars — the canvas
  *  draw reads them synchronously, refreshed on camera settle. */
 let shieldPx = 19;
+/** Darken a hex color by the given fraction (0=unchanged, 1=black). */
+function darkenHex(hex: string, amount: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const d = 1 - amount;
+  return (
+    '#' +
+    [r, g, b]
+      .map(c =>
+        Math.round(c * d)
+          .toString(16)
+          .padStart(2, '0')
+      )
+      .join('')
+  );
+}
+
 const OCC_LABEL_FONT = '600 11px "Barlow Semi Condensed", "Barlow", sans-serif';
 
 /** Shield ramp: 11px at z7 → 16px by z11 → 20px from z14. Below z12 the
@@ -127,7 +145,7 @@ const OCC_LABEL_FONT = '600 11px "Barlow Semi Condensed", "Barlow", sans-serif';
  *  icons grow again (owner: "at zoom >= 12 the icons should be larger"). */
 function shieldPxFor(zoom: number): number {
   if (zoom <= 10) return 13; // z7-10: small, below the clusters
-  if (zoom <= 13) return 17; // z11-13: medium (owner: fine)
+  if (zoom <= 13) return 19; // z11-13: larger (owner: icons got smaller at z11+ when clusters disappear)
   return Math.min(17 + (zoom - 14) * 2.75, 28); // z14+: grows to 28 by z17
 }
 /** Huts WITH availability uncluster from here (owner spec; +1 vs the
@@ -640,17 +658,18 @@ class WdCanvasDot extends L.CircleMarker {
     const baseSize = shieldPx;
     // Owner spec: larger availability disc with a slightly darker
     // border ring around the fill. 1.6x the shield diameter.
-    const discR = baseSize * 0.8;
+    const discR = baseSize * 0.85;
     if (options.ringColor) {
-      // Fill
+      // Fill: status color
       ctx.beginPath();
       ctx.arc(point.x, point.y, discR, 0, Math.PI * 2);
       ctx.globalAlpha = 0.85 * markerOpacity;
       ctx.fillStyle = options.ringColor;
       ctx.fill();
-      // Owner: category color as the disc border (type identity)
+      // Border: slightly darker version of the SAME status color
+      // (owner: "back to the availability color, a bit darker")
       ctx.lineWidth = 2;
-      ctx.strokeStyle = options.typeColor ?? options.ringColor;
+      ctx.strokeStyle = darkenHex(options.ringColor, 0.25);
       ctx.stroke();
       ctx.globalAlpha = markerOpacity;
     }

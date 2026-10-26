@@ -53,3 +53,21 @@ export function shieldPxFor(zoom: number): number {
   if (zoom <= 13) return 17;
   return Math.min(17 + (zoom - 14) * 2.75, 28);
 }
+
+/** Darken a hex color by the given fraction (0=unchanged, 1=black). */
+export function darkenHex(hex: string, amount: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const d = 1 - amount;
+  return (
+    '#' +
+    [r, g, b]
+      .map(c =>
+        Math.round(c * d)
+          .toString(16)
+          .padStart(2, '0')
+      )
+      .join('')
+  );
+}

@@ -13,26 +13,26 @@ modular architecture with pixel-accurate control parity to MapLibre.
 
 ### Control Layout (from screenshots + Opus plan review)
 
-| # | Issue | Fix (per review corrections) |
-|---|---|---|
-| C1 | Desktop attribution: links unreadable in dark mode | Theme `a { color: var(--wd-ctl-ink) }` — the LINKS are hardcoded `rgba(0,0,0,0.75)`, not the text (text is already correct via `--wd-ctl-ink`). Mirror the MapLibre fix at `maplibre-gl.scss:128-133`. |
-| C2 | Desktop MapLibre: no attribution visible | Main map issue, not this PR's scope |
-| C3 | Mobile: zoom MINUS hidden behind locate | Restructure bottom-left: locate ABOVE zoom in a merged LIGHT `--wd-ctl-bg` group (NOT dark — MapLibre is light in both themes per `maplibre-gl.scss:168-171`). |
-| C4 | Mobile: attribution behind zoom panel | Move attribution ABOVE the control stack; compact ⓘ pill stays. |
-| C5 | Mobile: focus mode button visible | Option (a): ADD a tap-to-focus handler to the fallback (empty-map tap → `toggleFocus()`), THEN remove the scoped override. Without this, mobile users have NO way to enter focus mode (the button is the only entry — the fallback lacks MapLibre's tap gesture). Also fix `::aria-label` → `:aria-label` typo on the focus button. |
-| C6 | Scale bar doesn't match MapLibre | Use the ACTUAL `.maplibregl-ctrl-scale` values from `maplibre-gl.scss:276-303`: linear-gradient white fade (bottom 30%), 4-way white text-shadow halo, `font-size:15px; font-weight:700`, `border-width: medium 3px 3px`. NOT transparent/2px as originally stated. |
+| #   | Issue                                              | Fix (per review corrections)                                                                                                                                                                                                                                                                                                        |
+| --- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| C1  | Desktop attribution: links unreadable in dark mode | Theme `a { color: var(--wd-ctl-ink) }` — the LINKS are hardcoded `rgba(0,0,0,0.75)`, not the text (text is already correct via `--wd-ctl-ink`). Mirror the MapLibre fix at `maplibre-gl.scss:128-133`.                                                                                                                              |
+| C2  | Desktop MapLibre: no attribution visible           | Main map issue, not this PR's scope                                                                                                                                                                                                                                                                                                 |
+| C3  | Mobile: zoom MINUS hidden behind locate            | Restructure bottom-left: locate ABOVE zoom in a merged LIGHT `--wd-ctl-bg` group (NOT dark — MapLibre is light in both themes per `maplibre-gl.scss:168-171`).                                                                                                                                                                      |
+| C4  | Mobile: attribution behind zoom panel              | Move attribution ABOVE the control stack; compact ⓘ pill stays.                                                                                                                                                                                                                                                                     |
+| C5  | Mobile: focus mode button visible                  | Option (a): ADD a tap-to-focus handler to the fallback (empty-map tap → `toggleFocus()`), THEN remove the scoped override. Without this, mobile users have NO way to enter focus mode (the button is the only entry — the fallback lacks MapLibre's tap gesture). Also fix `::aria-label` → `:aria-label` typo on the focus button. |
+| C6  | Scale bar doesn't match MapLibre                   | Use the ACTUAL `.maplibregl-ctrl-scale` values from `maplibre-gl.scss:276-303`: linear-gradient white fade (bottom 30%), 4-way white text-shadow halo, `font-size:15px; font-weight:700`, `border-width: medium 3px 3px`. NOT transparent/2px as originally stated.                                                                 |
 
 ### Code Architecture (from Opus full review)
 
-| # | Issue | Priority |
-|---|---|---|
-| A1 | 1919-line monolith mixing ~8 concerns | should-fix |
-| A2 | Hut/avail tile fetch loops are the same algorithm twice | should-fix |
-| A3 | STATUS_COLORS hardcoded copy of MapLibre palette | should-fix |
-| A4 | Tile-math functions inline (not testable) | done |
-| A5 | Sprite sheet management inline | should-fix |
-| A6 | WdCanvasDot class + types inline | should-fix |
-| A7 | Zoom slider gesture JS duplicated | nice-to-have (defer) |
+| #   | Issue                                                   | Priority             |
+| --- | ------------------------------------------------------- | -------------------- |
+| A1  | 1919-line monolith mixing ~8 concerns                   | should-fix           |
+| A2  | Hut/avail tile fetch loops are the same algorithm twice | should-fix           |
+| A3  | STATUS_COLORS hardcoded copy of MapLibre palette        | should-fix           |
+| A4  | Tile-math functions inline (not testable)               | done                 |
+| A5  | Sprite sheet management inline                          | should-fix           |
+| A6  | WdCanvasDot class + types inline                        | should-fix           |
+| A7  | Zoom slider gesture JS duplicated                       | nice-to-have (defer) |
 
 ## Implementation Order (per Opus review: controls first)
 
