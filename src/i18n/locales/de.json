@@ -99,7 +99,11 @@
       "satellite": "Satellit",
       "topo": "Welt-Topo"
     },
-    "fallbackZoomHint": "Zoome hinein, um Verfügbarkeiten zu sehen."
+    "fallbackZoomHint": "Zoome hinein, um Verfügbarkeiten zu sehen.",
+    "fallbackAttribution": "Attribution",
+    "fallbackLocate": "Meinen Standort zeigen",
+    "fallbackFocus": "Fokusmodus",
+    "fallbackExitFocus": "Fokusmodus beenden"
   },
   "favorites": "Favoriten",
   "layers": "Layers",

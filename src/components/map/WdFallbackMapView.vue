@@ -1081,6 +1081,10 @@ const refreshAvailTilesDebounced = useDebounceFn(
 const ZOOM_HINT_SHOW_AT = 9; // owner: visible at z <= 9
 const ZOOM_HINT_HIDE_AT = 10;
 let zoomHintDismiss: (() => void) | undefined;
+/** Reduced-mode toast handle — dismissed on unmount (Opus review:
+ * the handle was discarded, letting the toast linger over the next
+ * view if the component unmounts within its 10s window). */
+let reducedModeToast: (() => void) | undefined;
 
 function updateZoomHint(): void {
   const zoom = map?.getZoom() ?? 99;
@@ -1301,7 +1305,7 @@ onMounted(() => {
   // Reduced-mode notice — dismissable toast, dismissal persisted, shown
   // exactly once per browser (localStorage flag).
   if (!LocalStorage.getItem(NOTE_KEY)) {
-    Notify.create({
+    reducedModeToast = Notify.create({
       message: t('map.fallbackNote'),
       position: 'bottom', // same as the app's staging notifiers
       timeout: 10000,
@@ -1327,6 +1331,7 @@ onBeforeUnmount(() => {
   setAvailabilityManualSettle(false);
   document.body.classList.remove('wd-fb-active');
   zoomHintDismiss?.();
+  reducedModeToast?.();
   if (focusOn.value) document.body.classList.remove('wd-map-focus');
   if (spriteSheetUrl) URL.revokeObjectURL(spriteSheetUrl); // Opus #5
   map?.remove(); // tears down layers + listeners
@@ -1368,7 +1373,12 @@ onBeforeUnmount(() => {
 
     <!-- Locate (GPS): maplibre ctrl-group style, top-right under the
          focus toggle on desktop, above the bottom-left zoom on mobile. -->
-    <button class="wd-fb-locate" type="button" aria-label="Show my location" @click.stop="onLocate">
+    <button
+      class="wd-fb-locate"
+      type="button"
+      :aria-label="t('map.fallbackLocate')"
+      @click.stop="onLocate"
+    >
       <svg viewBox="0 0 20 20" fill="#333" aria-hidden="true">
         <path
           d="M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1A5 5 0 0 0 14.9 11h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7"
@@ -1420,7 +1430,7 @@ onBeforeUnmount(() => {
     <button
       class="wd-focus-toggle"
       :class="{ 'wd-focus-toggle--active': focusOn }"
-      :aria-label="focusOn ? 'Exit focus mode' : 'Focus mode'"
+      ::aria-label="focusOn ? t('map.fallbackExitFocus') : t('map.fallbackFocus')"
       @click.stop="toggleFocus"
     >
       <svg

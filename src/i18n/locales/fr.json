@@ -74,7 +74,11 @@
       "satellite": "Satellite",
       "topo": "Topo mondial"
     },
-    "fallbackZoomHint": "Zoomez pour voir les disponibilités."
+    "fallbackZoomHint": "Zoomez pour voir les disponibilités.",
+    "fallbackAttribution": "Attribution",
+    "fallbackLocate": "Afficher ma position",
+    "fallbackFocus": "Mode focus",
+    "fallbackExitFocus": "Quitter le mode focus"
   },
   "map_style": "Carte",
   "location": "Lieu",
