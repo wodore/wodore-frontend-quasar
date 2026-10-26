@@ -54,6 +54,7 @@ import { getEnv } from '@services/runtimeEnv';
 import { storageGet } from '@services/storage';
 import { clientWodore } from '@clients/index';
 import { seedPlaceFromMap } from '@composables/usePlace';
+import { forcedGpuTier, GPU_TIER_FALLBACK } from '@services/gpu-override';
 import { MAP_MIN_ZOOM, MIN_HUT_CLICK_ZOOM } from '@stores/map/utils/map-constants';
 import { isBasemapStyleGone } from '@stores/map/utils/basemap-fallback';
 import {
@@ -642,10 +643,15 @@ function activeBasemapIsMtkOutdoor(): boolean {
  * GPUInitializationError that is only console-logged, and every subsequent
  * map interaction throws generic TypeErrors — which the error-based
  * detection above cannot recognize (the map just stays white). Detecting it
- * up front lets us show the proper error dialog and skip mounting MglMap.
+ * up front lets us skip mounting MglMap — the Leaflet fallback mounts
+ * instead.
+ *
+ * `?gpuTier=-1` (services/gpu-override.ts) forces the same path on
+ * capable machines — the test/QA knob for the fallback map.
  */
 const webglSupported = (() => {
   if (typeof document === 'undefined') return true; // SSR — decide on client
+  if (forcedGpuTier() === GPU_TIER_FALLBACK) return false; // URL override
   try {
     const canvas = document.createElement('canvas');
     return !!(
@@ -659,7 +665,11 @@ const webglSupported = (() => {
 })();
 
 if (!webglSupported) {
-  console.error('[WdMapView] WebGL is not supported by this browser/device');
+  if (forcedGpuTier() === GPU_TIER_FALLBACK) {
+    console.info('[WdMapView] ?gpuTier=-1 override — Leaflet fallback forced');
+  } else {
+    console.error('[WdMapView] WebGL is not supported by this browser/device');
+  }
   // POC fallback: no dead-end dialog — the Leaflet fallback map mounts
   // (v-else below) and reveals through the same choreography. The
   // persistent dialog stays wired for RUNTIME GL loss (onMapError /

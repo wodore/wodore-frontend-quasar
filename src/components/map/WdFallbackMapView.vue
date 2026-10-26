@@ -23,6 +23,9 @@
  *
  * Leaflet + markercluster ride this component's async chunk
  * (WdMapView async-imports it), so WebGL users never download them.
+ *
+ * Test/QA: `?gpuTier=-1` (services/gpu-override.ts) forces this map on
+ * any machine — sticky in the URL, no browser flags needed.
  */
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';

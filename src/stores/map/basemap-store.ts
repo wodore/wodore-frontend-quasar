@@ -16,6 +16,7 @@ import {
 } from './utils/country-fallback';
 import { StyleSpecification } from 'maplibre-gl';
 import { i18n, currentLocale } from '@services/locale';
+import { forcedGpuTier } from '@services/gpu-override';
 import { isOutdoorStyle, setupOutdoorContours } from '@services/outdoorContours';
 import {
   attachStagedEnhancements,
@@ -1164,6 +1165,24 @@ export const useBasemapStore = defineStore('basemap', () => {
       storageSet('gpuTier', gpuTier);
       storageSet('gpuTierTime', now);
       console.debug('Detected and cached GPU tier:', gpuTier.tier);
+    }
+
+    // `?gpuTier=0..3` boot override (services/gpu-override.ts): force a
+    // detect-gpu tier, bypassing the cache — the weak-GPU raster path
+    // (`0`/`1`) and the high/vector path (`2`/`3`) both become testable
+    // on any machine. `-1` never reaches here (WdMapView mounts the
+    // Leaflet fallback instead — the catalog is never consumed).
+    const tierOverride = forcedGpuTier();
+    if (tierOverride !== null && tierOverride >= 0) {
+      gpuTier = {
+        ...gpuTier,
+        tier: tierOverride,
+        // Non-empty, not a SOFTWARE_GPU_NAMES match: `shouldUseRaster`
+        // must decide on the TIER alone, not fall into its no-name /
+        // software-renderer short-circuits.
+        gpu: gpuTier.gpu || 'url-override',
+      };
+      console.info(`[basemap-store] ?gpuTier=${tierOverride} override active`);
     }
 
     const useRaster = shouldUseRaster(gpuTier);
