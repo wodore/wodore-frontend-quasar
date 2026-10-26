@@ -125,16 +125,12 @@ describe('nginx location blocks parse', () => {
 describe('edge-hot SPA shell cache policy', () => {
   it('= /index.html: private (browser 5 min, no shared cache) + SWR 1 d', () => {
     const loc = block('= /index.html');
-    expect(cacheControl(loc)).toEqual([
-      '"private, max-age=300, stale-while-revalidate=86400"',
-    ]);
+    expect(cacheControl(loc)).toEqual(['"private, max-age=300, stale-while-revalidate=86400"']);
   });
 
   it('@spa (try_files fallback): identical policy as = /index.html', () => {
     const loc = block('@spa');
-    expect(cacheControl(loc)).toEqual([
-      '"private, max-age=300, stale-while-revalidate=86400"',
-    ]);
+    expect(cacheControl(loc)).toEqual(['"private, max-age=300, stale-while-revalidate=86400"']);
   });
 
   it('= /env.js: browser 5 min, edge 120 s, SWR 1 h + CDN-Tag frontend-env', () => {
