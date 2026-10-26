@@ -501,6 +501,29 @@ function toggleFocus(): void {
   document.body.classList.toggle('wd-map-focus', focusOn.value);
 }
 
+/** Empty-map tap → enter focus mode (mobile entry point — the focus
+ *  button is hidden outside focus mode on mobile; this mirrors the
+ *  MapLibre map's tap-to-focus gesture). Guarded: only fires on
+ *  deliberate taps (no drag), not on marker/cluster/control clicks. */
+let tapDownAt = 0;
+let tapDownPos = { x: 0, y: 0 };
+
+function onMapTapForFocus(e: L.LeafletMouseEvent): void {
+  if (!e.originalEvent) return;
+  const oe = e.originalEvent as PointerEvent;
+  if (oe.pointerType === 'mouse') return; // desktop has the button
+  const now = Date.now();
+  if (
+    now - tapDownAt < 350 &&
+    Math.abs(oe.clientX - tapDownPos.x) < 10 &&
+    Math.abs(oe.clientY - tapDownPos.y) < 10
+  ) {
+    toggleFocus();
+  }
+  tapDownAt = now;
+  tapDownPos = { x: oe.clientX, y: oe.clientY };
+}
+
 // ── Attribution (MapLibre-style) ───────────────────────────────────────────
 // Leaflet's stock attribution (bottom-right, always expanded) is replaced
 // with a control mirroring maplibre's: desktop = translucent bar, mobile =
@@ -1273,6 +1296,7 @@ onMounted(() => {
   map.addLayer(clusterAvail);
 
   map.on('moveend zoomend', onMoveEnd);
+  map.on('click', onMapTapForFocus); // mobile focus entry
   map.on('zoom', onMapZoomSync);
   document.body.classList.add('wd-fb-active'); // slider visibility gate
   sliderZoom.value = map.getZoom();
@@ -1430,7 +1454,7 @@ onBeforeUnmount(() => {
     <button
       class="wd-focus-toggle"
       :class="{ 'wd-focus-toggle--active': focusOn }"
-      ::aria-label="focusOn ? t('map.fallbackExitFocus') : t('map.fallbackFocus')"
+      :aria-label="focusOn ? t('map.fallbackExitFocus') : t('map.fallbackFocus')"
       @click.stop="toggleFocus"
     >
       <svg
@@ -1570,16 +1594,10 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 // The global _layout.scss hides the button outside focus mode on mobile
 // (the main map enters via empty-map tap, which the fallback lacks) —
 // here the button is the only entry, so it stays visible everywhere.
-@media (max-width: #{$breakpoint-sm}) {
-  .wd-fallback-map .wd-focus-toggle {
-    position: absolute;
-    top: calc(11px + env(safe-area-inset-top, 0px));
-    right: 12px;
-    opacity: 1;
-    pointer-events: auto;
-    transform: none;
-  }
-}
+// Focus toggle on mobile: hidden outside focus mode (global
+// _layout.scss handles this). Mobile users enter focus via the
+// tap-to-focus handler above — the button only appears IN focus mode
+// as the exit control, matching the MapLibre behavior.
 </style>
 
 <!-- UNSCOPED: Leaflet renders marker/cluster/control DOM at runtime (no
@@ -1660,10 +1678,12 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 @media (max-width: 768px) {
   .wd-fb-locate {
     top: auto;
-    bottom: 14px; // merge with the zoom stack
+    // Stack above the zoom bar: zoom at ~76px (2×46px + margins),
+    // locate directly above it at ~62px (46px + 16px from zoom's top)
+    bottom: 76px;
     left: 12px;
     right: auto;
-    border-radius: 8px 8px 0 0; // top of the merged chip
+    border-radius: 8px 8px 0 0;
     border-bottom: none;
   }
 }
@@ -1784,6 +1804,12 @@ body.wd-map-focus {
 @media (max-width: 768px) {
   .wd-fallback-map .leaflet-bottom.leaflet-left .leaflet-control-zoom {
     margin: 0 0 14px 12px;
+    border-radius: 0 0 8px 8px; // bottom of the merged chip
+    border-top: none; // seam with locate above
+
+    a:first-child {
+      border-radius: 0;
+    }
   }
 }
 
@@ -1793,16 +1819,37 @@ body.wd-map-focus {
   margin: 0 0 14px 12px; // main-map bottom-left inset (maplibre-gl.scss:49-55)
 }
 
+// Mobile: push attribution above the locate+zoom stack (~180px tall)
+@media (max-width: 768px) {
+  .wd-fallback-map .wd-fb-attrib {
+    margin-left: 12px;
+    margin-bottom: 160px; // above locate (76px) + zoom (~62px) + 22px
+  }
+  .wd-fallback-map .leaflet-bottom.leaflet-left .leaflet-control-scale {
+    margin-bottom: 160px;
+  }
+}
+
+// Actual MapLibre scale values (maplibre-gl.scss:276-303) — NOT the
+// transparent/2px I originally described. The MapLibre scale uses a
+// gradient white fade + text-shadow halo for legibility on any basemap.
 .wd-fallback-map .leaflet-control-scale-line {
-  background-color: rgba(255, 255, 255, 0.75);
-  font-size: 10px;
+  position: relative;
+  font-size: 15px;
+  font-weight: 700;
   white-space: nowrap;
-  border: none;
-  border-right: 2px solid #333333;
-  border-bottom: 2px solid #333333;
-  padding: 0 5px;
   color: #333333;
+  border-color: #333333;
+  border-style: none solid solid;
+  border-width: medium 3px 3px;
+  padding: 0 5px;
   box-sizing: border-box;
+  background: linear-gradient(to bottom, transparent 70%, rgba(255, 255, 255, 0.85) 100%);
+  text-shadow:
+    1px 0 0 rgba(255, 255, 255, 0.7),
+    -1px 0 0 rgba(255, 255, 255, 0.7),
+    0 1px 0 rgba(255, 255, 255, 0.7),
+    0 -1px 0 rgba(255, 255, 255, 0.7);
 }
 
 // ── Attribution: maplibre .maplibregl-ctrl-attrib parity ──────────────
@@ -1813,7 +1860,7 @@ body.wd-map-focus {
   font-size: 12px;
 
   a {
-    color: rgba(0, 0, 0, 0.75);
+    color: var(--wd-ctl-ink, #333333);
     text-decoration: none;
 
     &:hover {
@@ -1869,7 +1916,7 @@ body.wd-map-focus {
   border: none;
   border-radius: 12px;
   background: transparent;
-  color: rgba(0, 0, 0, 0.75);
+  color: var(--wd-ctl-ink, #333333);
   cursor: pointer;
 
   svg {
