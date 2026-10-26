@@ -1,11 +1,12 @@
 //
 // Edge-cached SPA shell ("edge-hot index.html", docker/nginx-default.conf):
-// the shell (= /index.html AND the @spa try_files fallback) revalidates in
-// the browser on every navigation (max-age=0) while the CDN caches its own
-// copy (s-maxage, 600 s), tagged CDN-Tag: frontend-html for tag-based
-// purging; stale-while-revalidate lets supporting browsers serve stale and
-// refresh in the background. /env.js gets a shorter edge window (120 s,
-// frontend-env). Hashed assets stay immutable-1y and are
+// the shell (= /index.html AND the @spa try_files fallback) is held by the
+// browser for 5 minutes (max-age=300 — a quick refresh stays fully local)
+// while the CDN caches its own copy (s-maxage, 600 s), tagged CDN-Tag:
+// frontend-html; stale-while-revalidate lets supporting browsers serve
+// stale and refresh in the background (safe: hashed chunks stay on the
+// CDN). /env.js gets the same browser window with a shorter edge one
+// (120 s, frontend-env). Hashed assets stay immutable-1y and are
 // NEVER tagged (they must not be purged or re-fetched), manifest/sw
 // stay no-store, and the njs hut shell keeps its own policy (seo.js).
 //
@@ -122,10 +123,10 @@ describe('nginx location blocks parse', () => {
 });
 
 describe('edge-hot SPA shell cache policy', () => {
-  it('= /index.html: browser revalidates, edge 10 min, SWR 1 d + CDN-Tag frontend-html', () => {
+  it('= /index.html: browser 5 min, edge 10 min, SWR 1 d + CDN-Tag frontend-html', () => {
     const loc = block('= /index.html');
     expect(cacheControl(loc)).toEqual([
-      '"public, max-age=0, s-maxage=600, stale-while-revalidate=86400"',
+      '"public, max-age=300, s-maxage=600, stale-while-revalidate=86400"',
     ]);
     expect(cdnTag(loc)).toEqual(['"frontend-html"']);
   });
@@ -133,15 +134,15 @@ describe('edge-hot SPA shell cache policy', () => {
   it('@spa (try_files fallback): identical policy + tag as = /index.html', () => {
     const loc = block('@spa');
     expect(cacheControl(loc)).toEqual([
-      '"public, max-age=0, s-maxage=600, stale-while-revalidate=86400"',
+      '"public, max-age=300, s-maxage=600, stale-while-revalidate=86400"',
     ]);
     expect(cdnTag(loc)).toEqual(['"frontend-html"']);
   });
 
-  it('= /env.js: browser revalidates, edge 120 s, SWR 1 h + CDN-Tag frontend-env', () => {
+  it('= /env.js: browser 5 min, edge 120 s, SWR 1 h + CDN-Tag frontend-env', () => {
     const loc = block('= /env.js');
     expect(cacheControl(loc)).toEqual([
-      '"public, max-age=0, s-maxage=120, stale-while-revalidate=3600"',
+      '"public, max-age=300, s-maxage=120, stale-while-revalidate=3600"',
     ]);
     expect(cdnTag(loc)).toEqual(['"frontend-env"']);
   });
