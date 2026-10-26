@@ -1590,7 +1590,10 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
           </div>
         </q-page-sticky>
 
-        <!-- Zoom slider: focus mode only on mobile (left edge) -->
+        <!-- Zoom slider — the only zoom control besides wheel/keyboard:
+             always visible on desktop, focus mode everywhere, mobile
+             outside the overlay strip (gating lives in
+             map-controls/_zoom-slider.scss) -->
         <WdZoomSlider />
 
         <!-- Focus (fullscreen) toggle: desktop always visible below the
