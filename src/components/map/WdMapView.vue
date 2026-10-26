@@ -314,6 +314,27 @@ function onFallbackReady(): void {
   emit('mapready');
 }
 
+/** Fallback reveal safety ladder: the MapLibre path has one (8s/20s in
+ *  scheduleReveal), the fallback path did NOT — a chunk-load failure or a
+ *  component error (observed with stale vite optimized-deps in a long-
+ *  lived tab) left the splash on the mono logo FOREVER. If `ready` has
+ *  not arrived within 8s, reveal anyway — a blank-but-usable app beats
+ *  an infinite splash — and say so in the console. */
+function scheduleFallbackReveal(): void {
+  revealTimers.push(
+    window.setTimeout(() => {
+      if (!mapRendered.value) {
+        console.error(
+          '[WdMapView] fallback map did not signal ready within 8s — revealing anyway ' +
+            '(check the browser console for chunk-load or component errors; a hard ' +
+            'reload clears stale dev-server chunks)'
+        );
+        revealMap();
+      }
+    }, 8000)
+  );
+}
+
 function scheduleReveal(map: Map): void {
   if (mapRendered.value) return;
   // Reveal logic lives in reveal-scheduler.ts (unit-tested for both
@@ -670,6 +691,9 @@ if (!webglSupported) {
   } else {
     console.error('[WdMapView] WebGL is not supported by this browser/device');
   }
+  // Reveal safety ladder — a failed fallback chunk/error must never hold
+  // the splash hostage (see scheduleFallbackReveal).
+  scheduleFallbackReveal();
   // POC fallback: no dead-end dialog — the Leaflet fallback map mounts
   // (v-else below) and reveals through the same choreography. The
   // persistent dialog stays wired for RUNTIME GL loss (onMapError /

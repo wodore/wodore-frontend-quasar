@@ -234,9 +234,11 @@ const availBySlug = new Map<string, FbAvail>();
 /** Mono symbol SVG per type slug (null = fetched, unavailable). */
 const symbolBySlug = new Map<string, string | null>();
 /** Marker → its type color (cluster bubble coloring). */
-const markerTypeColor = new WeakMap<L.Marker, string>();
-/** slug → live marker (selection icon swaps without a full rebuild). */
-const markerBySlug = new Map<string, L.Marker>();
+const markerTypeColor = new WeakMap<L.Layer, string>();
+/** slug → live marker (selection swaps without a full rebuild). */
+const markerBySlug = new Map<string, L.Layer>();
+/** Shared canvas renderer for all dot markers. */
+let dotRenderer: L.Canvas | undefined;
 /** slug → hut (style inputs for selection icon swaps). */
 const hutBySlug = new Map<string, FbHut>();
 /** Currently selected hut slug (route-driven, same as the MapLibre map). */
@@ -298,6 +300,70 @@ class WdAttributionControl extends L.Control {
 
 // ── Markers ──────────────────────────────────────────────────────────────
 
+/** Canvas-rendered hut dot (below symbol zoom): the status ring and the
+ *  type-colored dot are drawn as ONE canvas path — two DOM nodes per hut
+ *  (ring + dot spans) were the dominant cost at 500+ markers. Shields
+ *  (symbol zoom) stay DOM markers: few huts, richer visuals.
+ *  TS note: Leaflet's _point/_renderer privates are accessed through a
+ *  structural cast — the draw pass leaves the renderer's transform set,
+ *  so plain arc() calls land correctly (same as L.Canvas._updateCircle). */
+interface CanvasDotCtx {
+  arc(x: number, y: number, r: number, a: number, b: number): void;
+  beginPath(): void;
+  fill(): void;
+  fillStyle: string;
+  globalAlpha: number;
+  lineWidth: number;
+  stroke(): void;
+  strokeStyle: string;
+}
+interface CanvasDotInternals {
+  _point?: L.Point;
+  _radius?: number;
+  _renderer?: { _ctx: CanvasDotCtx | null };
+}
+
+class WdCanvasDot extends L.CircleMarker {
+  private internals(): CanvasDotInternals & WdCanvasDot {
+    return this as unknown as CanvasDotInternals & WdCanvasDot;
+  }
+
+  _updatePath(): void {
+    const self = this.internals();
+    const ctx = self._renderer?._ctx;
+    const point = self._point;
+    if (!ctx || !point) return;
+    const options = this.options as {
+      ringColor?: string;
+      ringRadius: number;
+      dotRadius: number;
+      fillColor: string;
+      selected?: boolean;
+    };
+    if (options.ringColor) {
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, options.ringRadius, 0, Math.PI * 2);
+      ctx.globalAlpha = 0.9;
+      ctx.fillStyle = options.ringColor;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+    ctx.beginPath();
+    ctx.arc(point.x, point.y, options.dotRadius, 0, Math.PI * 2);
+    ctx.fillStyle = options.fillColor;
+    ctx.fill();
+    ctx.lineWidth = options.selected ? 3 : 2;
+    ctx.strokeStyle = options.selected ? '#BFAB25' : '#ffffff'; // gold = selection
+    ctx.stroke();
+  }
+
+  /** Finger-sized hit area regardless of the small visual dot. */
+  _containsPoint(p: L.Point): boolean {
+    const self = this.internals();
+    return !!self._point && p.distanceTo(self._point) <= Math.max(self._radius ?? 0, 12);
+  }
+}
+
 /** Finger-sized hit box; 13px dot below SYMBOL_MIN_ZOOM, mono SVG on
  *  a category-colored rounded shield above it. Optional status ring
  *  behind either variant. */
@@ -349,8 +415,13 @@ function markerStyleFor(hut: FbHut, useSymbols: boolean): MarkerStyle {
   };
 }
 
-function applyIcon(marker: L.Marker, style: MarkerStyle, selected: boolean): void {
-  marker.setIcon(makeIcon(style.typeColor, style.status, style.symbol, selected));
+function applySelection(layer: L.Layer, style: MarkerStyle, selected: boolean): void {
+  if (layer instanceof L.Marker) {
+    layer.setIcon(makeIcon(style.typeColor, style.status, style.symbol, selected));
+  } else {
+    // Canvas dot: merge + redraw (custom fields ride along in options)
+    (layer as WdCanvasDot).setStyle({ selected } as L.CircleMarkerOptions);
+  }
 }
 
 /** Cluster bubble in the DOMINANT member type color. */
@@ -393,25 +464,40 @@ function rebuildMarkers(): void {
   for (const tileHuts of hutTiles.values()) {
     for (const hut of tileHuts) if (!huts.has(hut.slug)) huts.set(hut.slug, hut);
   }
-  const availMarkers: L.Marker[] = [];
-  const plainMarkers: L.Marker[] = [];
+  const availMarkers: L.Layer[] = [];
+  const plainMarkers: L.Layer[] = [];
+  const rebuildStart = window.performance.now();
   for (const hut of huts.values()) {
     const style = markerStyleFor(hut, useSymbols);
-    const marker = L.marker([hut.lat, hut.lon], {
-      icon: makeIcon(style.typeColor, style.status, style.symbol, selectedSlug.value === hut.slug),
-      keyboard: false,
-      // NOTE: no riseOnHover — the z-index churn on hundreds of markers
-      // showed up as dropped frames in the pan profile.
-      title: String(hut.properties.name ?? hut.slug), // hover tooltip
-    });
-    markerTypeColor.set(marker, style.typeColor);
-    markerBySlug.set(hut.slug, marker);
+    const selected = selectedSlug.value === hut.slug;
+    // Hybrid: canvas dots below symbol zoom (hundreds of huts — one
+    // canvas path each), DOM shields at symbol zoom (few huts, rich).
+    const layer: L.Layer = useSymbols
+      ? L.marker([hut.lat, hut.lon], {
+          icon: makeIcon(style.typeColor, style.status, style.symbol, selected),
+          keyboard: false,
+          title: String(hut.properties.name ?? hut.slug), // hover tooltip
+        })
+      : new WdCanvasDot([hut.lat, hut.lon], {
+          renderer: dotRenderer,
+          dotRadius: 6.5,
+          ringRadius: 12,
+          ringColor: style.status ? STATUS_COLORS[style.status] : undefined,
+          fillColor: style.typeColor,
+          selected,
+          // SAFETY: the custom dot fields ride along in options — the
+          // cast only satisfies Leaflet's CircleMarkerOptions typing.
+        } as L.CircleMarkerOptions);
+    markerTypeColor.set(layer, style.typeColor);
+    markerBySlug.set(hut.slug, layer);
     hutBySlug.set(hut.slug, hut);
-    marker.on('click', () => selectHut(hut));
-    (availBySlug.has(hut.slug) ? availMarkers : plainMarkers).push(marker);
+    layer.on('click', () => selectHut(hut));
+    (availBySlug.has(hut.slug) ? availMarkers : plainMarkers).push(layer);
   }
   clusterAvail.addLayers(availMarkers); // bulk: no per-marker animation
   clusterPlain.addLayers(plainMarkers);
+  // Diagnostics for the zoom-sweep profiler (harmless in prod).
+  window.performance.measure('wd-fb:rebuild', { start: rebuildStart });
 }
 
 /** Selection follows the route (same toggle semantics as the MapLibre
@@ -424,9 +510,9 @@ watch(selectedSlug, (slug, previous) => {
     [slug, true],
   ] as Array<[string | undefined, boolean]>) {
     if (!slugKey) continue;
-    const marker = markerBySlug.get(slugKey);
+    const layer = markerBySlug.get(slugKey);
     const hut = hutBySlug.get(slugKey);
-    if (marker && hut) applyIcon(marker, markerStyleFor(hut, useSymbols), sel);
+    if (layer && hut) applySelection(layer, markerStyleFor(hut, useSymbols), sel);
   }
 });
 
@@ -707,6 +793,8 @@ onMounted(() => {
   new WdAttributionControl({ position: 'bottomleft' }).addTo(map);
   L.control.scale({ position: 'bottomleft', imperial: false, maxWidth: 100 }).addTo(map);
 
+  dotRenderer = L.canvas({ padding: 0.5 }); // one canvas for all hut dots
+
   // Dual cluster groups: availability huts uncluster one level earlier.
   clusterAvail = L.markerClusterGroup({
     showCoverageOnHover: false,
@@ -728,6 +816,20 @@ onMounted(() => {
   map.addLayer(clusterPlain);
 
   map.on('moveend zoomend', onMoveEnd);
+
+  // Dev-only debugging/profiling hook (the map instance lives in this
+  // component's closure otherwise; window.__wdFbDebug.map exposes e.g.
+  // latLngToContainerPoint for exact click tests). Never in prod builds.
+  if (import.meta.env.DEV) {
+    (window as unknown as { __wdFbDebug?: unknown }).__wdFbDebug = {
+      map,
+      clusterAvail,
+      clusterPlain,
+      hutTiles,
+      markerBySlug,
+      selectHut,
+    };
+  }
 
   map.whenReady(() => {
     emit('ready');
