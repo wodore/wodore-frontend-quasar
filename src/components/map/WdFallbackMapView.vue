@@ -104,6 +104,12 @@ const OCC_LABEL_MIN_ZOOM = 12;
 /** Marker transparency ramp (owner spec): 50% opaque at z7, solid by
  *  z9 — z7 markers are ghost hints of where the huts cluster. */
 function markerOpacityFor(zoom: number): number {
+  // Low zoom: ghost ramp z7(50%) → z9(solid). High zoom: fade out the
+  // markers so the basemap detail dominates (owner spec: z17=30%,
+  // z18=50%, z19=20% transparency — i.e. opacity 0.7, 0.5, 0.8).
+  if (zoom >= 19) return 0.8; // z19: 20% transparent
+  if (zoom >= 18) return 0.5; // z18: 50% transparent
+  if (zoom >= 17) return 0.7; // z17: 30% transparent
   return Math.min(0.5 + ((zoom - HUT_MIN_ZOOM) / 2) * 0.5, 1);
 }
 /** Current marker opacity — the canvas draw reads it synchronously
@@ -114,15 +120,15 @@ let markerOpacity = 1;
  *  (owner: clearly visible behind the icon). Module vars — the canvas
  *  draw reads them synchronously, refreshed on camera settle. */
 let shieldPx = 19;
-const SHIELD_MAX_PX = 20;
 const OCC_LABEL_FONT = '600 9px "Barlow Semi Condensed", "Barlow", sans-serif';
 
 /** Shield ramp: 11px at z7 → 16px by z11 → 20px from z14. Below z12 the
  *  smaller ghost sizes stay (owner: "before it is good"); at z12+ the
  *  icons grow again (owner: "at zoom >= 12 the icons should be larger"). */
 function shieldPxFor(zoom: number): number {
-  if (zoom < 12) return Math.min(11 + (zoom - HUT_MIN_ZOOM) * 1.8, 16);
-  return Math.min(16 + (zoom - 12) * 1.5, SHIELD_MAX_PX);
+  if (zoom <= 10) return 13; // z7-10: small, below the clusters
+  if (zoom <= 13) return 17; // z11-13: medium (owner: fine)
+  return Math.min(17 + (zoom - 14) * 1.5, 22); // z14+: grows to 22 by z16
 }
 /** Huts WITH availability uncluster from here (owner spec; +1 vs the
  *  first iteration — caps the unclustered marker count, see the profile
@@ -151,6 +157,18 @@ const STATUS_COLORS: Record<string, string> = {
   free_unknown: '#7FAB88',
   high: '#C3731F',
   full: '#961A17',
+};
+
+/** Slightly darker versions of the status colors for the disc border —
+ *  owner spec: "circle behind with a border (slightly darker than the
+ *  fill)". Computed at 80% lightness of the original. */
+const STATUS_DARK_BORDERS: Record<string, string> = {
+  '#25BF5E': '#1E9949',
+  '#F6AD4B': '#C58A3B',
+  '#EA9A37': '#BB7A2C',
+  '#7FAB88': '#66896F',
+  '#C3731F': '#9C5C19',
+  '#961A17': '#781512',
 };
 
 const BM_KEY = 'wodore:fallbackBasemap';
@@ -613,25 +631,34 @@ class WdCanvasDot extends L.CircleMarker {
     // Occupation disc behind everything (status color, ghost ramp) —
     // sized RELATIVE to the shield so it always peeks clearly.
     const baseSize = shieldPx;
-    const discR = baseSize * 0.74; // 1.48x diameter — a visible halo (owner: the 1.28x was too tight to see)
+    // Owner spec: larger availability disc with a slightly darker
+    // border ring around the fill. 1.6x the shield diameter.
+    const discR = baseSize * 0.8;
     if (options.ringColor) {
+      // Fill
       ctx.beginPath();
       ctx.arc(point.x, point.y, discR, 0, Math.PI * 2);
       ctx.globalAlpha = 0.85 * markerOpacity;
       ctx.fillStyle = options.ringColor;
       ctx.fill();
+      // Darker border (same hue, reduced lightness — computed once)
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = STATUS_DARK_BORDERS[options.ringColor] ?? options.ringColor;
+      ctx.stroke();
       ctx.globalAlpha = markerOpacity;
     }
     const icon = whiteIconFor(options.identifier);
     if (icon) {
-      // LOW-SPEC canvas shield: rounded rect + cached white bitmap —
-      // one fill, one stroke, one drawImage per hut.
+      // LOW-SPEC canvas shield: rounded rect + cached white bitmap.
+      // Owner spec: shield BORDER uses the availability status color;
+      // the disc behind uses the status fill with a darker border.
       const size = options.hovered ? baseSize * 1.15 : baseSize;
       WdCanvasDot.shieldPath(ctx, point.x, point.y, size, size, size * 0.22);
       ctx.fillStyle = options.typeColor;
       ctx.fill();
-      ctx.lineWidth = options.selected ? 3 : 2;
-      ctx.strokeStyle = options.selected ? '#BFAB25' : '#ffffff'; // gold = selection
+      ctx.lineWidth = options.selected ? 3 : 2.5;
+      // Status-colored border when available, white otherwise; gold for selection
+      ctx.strokeStyle = options.selected ? '#BFAB25' : (options.ringColor ?? '#ffffff');
       ctx.stroke();
       const iconPx = size * 0.72;
       ctx.drawImage(icon, point.x - iconPx / 2, point.y - iconPx / 2, iconPx, iconPx);
@@ -728,7 +755,7 @@ function clusterIcon(cluster: L.MarkerCluster): L.DivIcon {
         'mono/accommodation.unknown',
         'wd-fb-cluster__icon',
         '--wd-fb-c',
-        Math.round(15 * scale0)
+        Math.round(16 * scale0)
       )
     : '';
   // Member-count sizing (owner spec): 0.8x at 2 members growing to a
@@ -736,7 +763,7 @@ function clusterIcon(cluster: L.MarkerCluster): L.DivIcon {
   // than the 19px shields (owner spec).
   const count = cluster.getChildCount();
   const scale = Math.min(0.8 + ((count - 2) / 38) * 0.45, 1.25);
-  const discPx = Math.round(24 * scale);
+  const discPx = Math.round(26 * scale);
   return L.divIcon({
     // Icon-only bubble (owner: "less interested in the number") — the
     // count was a tiny badge that drowned the glyph; dropped.
@@ -1619,23 +1646,93 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 // ── Focus mode: the basemap switch is APP CHROME — same slide-away the
 //    main map gives .wd-map-ctl-sticky/.wd-map-ctl-col. Map instruments
 //    (zoom, slider, locate, attribution) stay, like MapLibre controls. ──
-body.wd-map-focus .wd-fb-bm {
-  opacity: 0;
-  pointer-events: none;
-  transform: translateX(80px);
-  transition:
-    opacity 0.3s cubic-bezier(0.2, 0, 0, 1),
-    transform 0.3s cubic-bezier(0.2, 0, 0, 1);
+
+// ── Dark mode: Leaflet controls match the MapLibre dark styling ────────
+body.body--dark {
+  .wd-fallback-map .leaflet-bar {
+    background: var(--wd-ctl-bg);
+    box-shadow: 0 0 0 2px rgba(169, 240, 210, 0.15);
+
+    a,
+    a:hover {
+      background: var(--wd-ctl-bg);
+      color: var(--wd-ctl-ink);
+    }
+
+    a:hover {
+      background: color-mix(in srgb, var(--wd-ctl-bg) 88%, var(--wd-ctl-ink));
+    }
+
+    a + a {
+      border-top-color: rgba(169, 240, 210, 0.15);
+    }
+  }
+
+  .wd-fb-locate {
+    background: var(--wd-ctl-bg);
+    box-shadow: 0 0 0 2px rgba(169, 240, 210, 0.15);
+
+    svg {
+      fill: var(--wd-ctl-ink);
+    }
+
+    &:hover {
+      background: color-mix(in srgb, var(--wd-ctl-bg) 88%, var(--wd-ctl-ink));
+    }
+  }
+
+  .wd-fallback-map .leaflet-control-attribution {
+    background: color-mix(in srgb, var(--wd-ctl-bg) 82%, transparent);
+    color: var(--wd-ctl-ink-soft);
+
+    a {
+      color: var(--wd-ctl-ink-soft);
+    }
+  }
+
+  .wd-fallback-map .leaflet-control-scale-line {
+    background: color-mix(in srgb, var(--wd-ctl-bg) 82%, transparent);
+    border-color: var(--wd-ctl-ink-soft);
+    color: var(--wd-ctl-ink);
+  }
+
+  .wd-fb-cluster {
+    background: var(--wd-ctl-bg);
+    border-color: var(--c, #346751);
+  }
+
+  .wd-fb-cluster__icon {
+    filter: brightness(1) invert(1) opacity(0.85); // light icon on dark bg
+  }
+}
+
+// Owner spec: in focus mode, slide away ALL floating chrome — the
+// basemap switch, zoom bar, locate, attribution and scale. Same motion
+// language as the main map (.wd-map-ctl-sticky: fade + 80px slide).
+body.wd-map-focus {
+  .wd-fb-bm,
+  .wd-fb-locate,
+  .wd-fallback-map .leaflet-top.leaflet-right .leaflet-control-zoom,
+  .wd-fallback-map .wd-fb-attrib,
+  .wd-fallback-map .leaflet-bottom.leaflet-left .leaflet-control-scale {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(80px);
+    transition:
+      opacity 0.3s cubic-bezier(0.2, 0, 0, 1),
+      transform 0.3s cubic-bezier(0.2, 0, 0, 1);
+  }
 }
 
 // Zoom slider: ALWAYS visible in fallback mode (the global gating only
 // knows the MapLibre focus/overlay states).
-body.wd-fb-active .wd-zoom {
-  display: flex !important;
-
-  .wd-zoom__pill {
-    opacity: 1;
-    transform: none;
+// Owner spec: zoom slider ONLY on mobile (desktop uses the zoom
+// buttons). The global _zoom-slider.scss gating already handles mobile
+// (visible when the overlay strip is closed); we only need to ensure
+// desktop NEVER shows it in the fallback, overriding the global rules.
+@media (min-width: #{$breakpoint-sm + 1}) {
+  body.wd-fb-active .wd-zoom {
+    display: none !important;
   }
 }
 
