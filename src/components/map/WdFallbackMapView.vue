@@ -505,23 +505,19 @@ function toggleFocus(): void {
  *  button is hidden outside focus mode on mobile; this mirrors the
  *  MapLibre map's tap-to-focus gesture). Guarded: only fires on
  *  deliberate taps (no drag), not on marker/cluster/control clicks. */
-let tapDownAt = 0;
-let tapDownPos = { x: 0, y: 0 };
+let lastTapAt = 0;
 
 function onMapTapForFocus(e: L.LeafletMouseEvent): void {
   if (!e.originalEvent) return;
   const oe = e.originalEvent as PointerEvent;
   if (oe.pointerType === 'mouse') return; // desktop has the button
   const now = Date.now();
-  if (
-    now - tapDownAt < 350 &&
-    Math.abs(oe.clientX - tapDownPos.x) < 10 &&
-    Math.abs(oe.clientY - tapDownPos.y) < 10
-  ) {
+  // SINGLE deliberate tap enters (>350ms since last); rapid re-tap
+  // cancels (mirrors the MapLibre map's tap-to-focus pattern).
+  if (now - lastTapAt > 350 && !focusOn.value) {
     toggleFocus();
   }
-  tapDownAt = now;
-  tapDownPos = { x: oe.clientX, y: oe.clientY };
+  lastTapAt = now;
 }
 
 // ── Attribution (MapLibre-style) ───────────────────────────────────────────
@@ -1257,6 +1253,7 @@ onMounted(() => {
     // dozens per gesture. The zoom slider compensates for the loss of
     // fractional smoothness.
     zoomSnap: 1,
+    doubleClickZoom: false, // prevents zoom on the focus-cancel double-tap
     // Default 60px/level felt twitchy — a bit more travel per level.
     wheelPxPerZoomLevel: 100,
   });
