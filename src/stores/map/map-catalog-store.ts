@@ -130,6 +130,9 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     const gen = availabilitySpinner.gen;
     availabilityLoading.value = true;
     availabilitySpinner.shownAt = performance.now();
+    // SAFETY: structural duck-type of the MapLibre map instance — vue-maplibre-gl's
+    // mapRef.map is untyped in this store; only `.on` is used for the sourcedata
+    // listener below. The runtime shape is guaranteed by MglMap mounting first.
     const map = mapRef.map as unknown as
       | { on?: (ev: string, fn: (e: unknown) => void) => void }
       | undefined;
@@ -140,10 +143,7 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
       // load (600ms minimum still applies inside settle).
       if (availabilitySpinner.manualSettle) return;
       // Native bridge (no sourcedata forwarding): run the fixed minimum.
-      setTimeout(
-        () => settleAvailabilityLoad(gen),
-        AVAILABILITY_MIN_SPIN_MS_FALLBACK
-      );
+      setTimeout(() => settleAvailabilityLoad(gen), AVAILABILITY_MIN_SPIN_MS_FALLBACK);
       return;
     }
     if (!availabilityListenersBound) {
@@ -154,10 +154,13 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
           settleAvailabilityLoad(availabilitySpinner.gen);
         }
       };
+      // SAFETY: same structural cast as above — `.on` exists on every MapLibre
+      // map; the callback's event shape is the sourcedata payload subset we read.
       (mapRef.map as unknown as { on: (ev: string, fn: (e: never) => void) => void }).on(
         'sourcedata',
         onSourceData as (e: never) => void
       );
+      // SAFETY: duplicate cast for the second listener registration (abort).
       (mapRef.map as unknown as { on: (ev: string, fn: (e: never) => void) => void }).on(
         'sourcedataabort',
         onSourceData as (e: never) => void
