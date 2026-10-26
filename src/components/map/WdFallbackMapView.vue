@@ -900,7 +900,7 @@ function selectHut(hut: FbHut): void {
  * router interference (hash-only change never fires hashchange). */
 function syncHash(): void {
   if (!map || typeof window === 'undefined') return;
-  const center = map.getCenter();
+  const center = map.getCenter().wrap(); // stay within ±180 in the URL
   const hash = `#map=${map.getZoom().toFixed(2)}/${center.lat.toFixed(5)}/${center.lng.toFixed(5)}`;
   if (window.location.hash !== hash) {
     window.history.replaceState(
@@ -951,6 +951,10 @@ onMounted(() => {
   catalogStore.setAvailabilityManualSettle(true); // we own the spinner settle
 
   const initial = localPropertiesStore.getInitialLocation();
+  // Defensive wrap: an out-of-range seed lng (mangled deep link) must
+  // never park the camera on an unwrapped off-world copy — markers exist
+  // only on copy 0 and would vanish (owner bug report).
+  const initialCenter = L.latLng(initial.lat, initial.lng).wrap();
   map = L.map(el, {
     zoomControl: false,
     attributionControl: false, // replaced by the MapLibre-style control below
@@ -960,7 +964,7 @@ onMounted(() => {
     // Default 60px/level felt twitchy — a bit more travel per level.
     wheelPxPerZoomLevel: 100,
   });
-  map.setView([initial.lat, initial.lng], Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, initial.zoom)));
+  map.setView(initialCenter, Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, initial.zoom)));
   applyBasemap();
 
   // Controls — same layout as the MapLibre map: zoom top-right on desktop
