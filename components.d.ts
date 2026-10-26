@@ -48,6 +48,7 @@ declare module 'vue' {
     WdDayLabel: typeof import('./src/components/content/place/WdDayLabel.vue')['default']
     WdErrorDialog: typeof import('./src/components/error/WdErrorDialog.vue')['default']
     WdExternalLinkCard: typeof import('./src/components/contribute/WdExternalLinkCard.vue')['default']
+    WdFallbackMapView: typeof import('./src/components/map/WdFallbackMapView.vue')['default']
     WdFeedbackButton: typeof import('./src/components/feedback/WdFeedbackButton.vue')['default']
     WdFeedbackForm: typeof import('./src/components/feedback/WdFeedbackForm.vue')['default']
     WdHutAvailabilities: typeof import('./src/components/huts/WdHutAvailabilities.vue')['default']
