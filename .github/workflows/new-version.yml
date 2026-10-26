@@ -19,6 +19,9 @@ jobs:
         with:
           fetch-depth: 0 # Fetch all history for git-cliff
 
+      - name: Enable Corepack
+        run: corepack enable
+
       - name: Read Node.js version from .nvmrc
         id: nvmrc
         run: echo "NODE_VERSION=$(cat .nvmrc)" >> $GITHUB_OUTPUT
