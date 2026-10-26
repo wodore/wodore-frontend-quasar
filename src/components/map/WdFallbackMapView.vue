@@ -25,7 +25,7 @@
  *   the mono SVG from `/v1/categories/symbol/mono/{type}.svg` (built
  *   with currentColor — recolored via CSS) on a rounded-rect shield in
  *   the category color (type_standard_color from the tile properties).
- * - Availability: `GET /v1/huts/availability/{date}.geojson?days=1` for
+ * - Availability: the SAME Martin MLT tiles MapLibre renders
  *   the SELECTED date (today when unset — same default as the header
  *   chip). Day 0 paints a larger background ring in the occupation
  *   status color (the same palette the MapLibre `wd-huts-occupation`
@@ -99,8 +99,6 @@ const fallbackEl = ref<HTMLDivElement>();
 /** Dots render from this zoom up (owner: down to z7, ghosted — see
  *  markerOpacityFor; solid again from z9). */
 const HUT_MIN_ZOOM = 7;
-/** Dots upgrade to category symbols (mono SVG on a colored shield). */
-const SYMBOL_MIN_ZOOM = 11;
 /** Occupation status word appears from here (owner spec). */
 const OCC_LABEL_MIN_ZOOM = 12;
 /** Marker transparency ramp (owner spec): 50% opaque at z7, solid by
@@ -240,6 +238,8 @@ interface IconBitmap {
   width: number;
   height: number;
 }
+/** Object URL of the sprite sheet PNG — revoked on unmount (Opus #5). */
+let spriteSheetUrl: string | undefined;
 let availSprite: {
   icons: Record<string, { x: number; y: number; width: number; height: number }>;
   sheetW: number;
@@ -307,6 +307,7 @@ async function loadSprite(): Promise<void> {
       sheetH = Math.max(sheetH, e.y + e.height);
     }
     const url = URL.createObjectURL(await png.blob());
+    spriteSheetUrl = url;
     const sheetImg = document.createElement('img') as unknown as SheetImage;
     sheetImg.src = url;
     await sheetImg.decode().catch(() => undefined); // broken image → dots stay
@@ -705,9 +706,16 @@ function clusterIcon(cluster: L.MarkerCluster): L.DivIcon {
       best = n;
     }
   }
-  const info = infoByKey.get(dominantKey) ?? {
+  const rawInfo = infoByKey.get(dominantKey) ?? {
     color: DEFAULT_DOT_COLOR,
     identifier: undefined,
+  };
+  // Opus review #6: the color lands in a divIcon's inline style via
+  // innerHTML — validate it's a CSS hex before interpolating (fallback
+  // to the brand color on anything else).
+  const info = {
+    ...rawInfo,
+    color: /^#[0-9a-fA-F]{3,8}$/.test(rawInfo.color) ? rawInfo.color : DEFAULT_DOT_COLOR,
   };
   const scale0 = Math.min(0.8 + ((cluster.getChildCount() - 2) / 38) * 0.45, 1.25);
   const glyph = availSprite
@@ -941,8 +949,15 @@ async function refreshAvailTiles(picked: string): Promise<void> {
   if (!dateISO) return;
   const activeMap = map;
   if (!activeMap) return;
+  // No markers below the floor — skip fetching entirely (Opus review
+  // #3: at world view this computed tileZoom=5 over the global bounds
+  // and fired a fetch storm against the tile router).
+  if (activeMap.getZoom() < HUT_MIN_ZOOM) return;
   const generation = ++availTileGeneration;
-  const spin = !firstAvailLoad;
+  // Opus review #2: spinner only on DATE CHANGE — viewport top-ups are
+  // silent (every pan was driving the calendar glyph through a spin).
+  const dateChanged = availFetchedForDate !== dateISO;
+  const spin = dateChanged && !firstAvailLoad;
   firstAvailLoad = false;
   if (spin) beginAvailabilityLoadManual();
   const tileZoom = availTileZoom();
@@ -955,7 +970,6 @@ async function refreshAvailTiles(picked: string): Promise<void> {
   const needed = new Set<string>();
   const jobs: Array<Promise<void>> = [];
   // Date change ⇒ new URLs ⇒ full swap; same date ⇒ viewport top-up.
-  const dateChanged = availFetchedForDate !== dateISO;
   if (dateChanged) {
     availTiles.clear();
     availFetchedForDate = dateISO;
@@ -1132,8 +1146,16 @@ function onMoveEnd(): void {
   updateZoomHint(); // zoom-hysteresis check on every camera settle
   // Icon band change (none/dot/sym) — rebuild; markercluster itself
   // re-clusters on zoom without any rebuild.
+  // Same vocabulary as rebuildMarkers: 'none' below the marker floor,
+  // 'sym' up to the label zoom, 'symlabel' above (Opus review #1 — the
+  // old 'dot' case never matched what rebuildMarkers stored, causing a
+  // full rebuild on EVERY pan at z7-10 and z>=12).
   const band =
-    map.getZoom() < HUT_MIN_ZOOM ? 'none' : map.getZoom() >= SYMBOL_MIN_ZOOM ? 'sym' : 'dot';
+    map.getZoom() < HUT_MIN_ZOOM
+      ? 'none'
+      : map.getZoom() >= OCC_LABEL_MIN_ZOOM
+        ? 'symlabel'
+        : 'sym';
   if (band !== lastRenderBand) rebuildMarkers();
   localPropertiesStore.updateLocation({
     lat: map.getCenter().lat,
@@ -1278,6 +1300,7 @@ onBeforeUnmount(() => {
   document.body.classList.remove('wd-fb-active');
   zoomHintDismiss?.();
   if (focusOn.value) document.body.classList.remove('wd-map-focus');
+  if (spriteSheetUrl) URL.revokeObjectURL(spriteSheetUrl); // Opus #5
   map?.remove(); // tears down layers + listeners
   map = undefined;
   clusterAvail = undefined;
