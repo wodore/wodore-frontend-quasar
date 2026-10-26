@@ -99,6 +99,8 @@ const fallbackEl = ref<HTMLDivElement>();
 const HUT_MIN_ZOOM = 8;
 /** Dots upgrade to category symbols (mono SVG on a colored shield). */
 const SYMBOL_MIN_ZOOM = 11;
+/** Occupation status word appears from here (owner spec). */
+const OCC_LABEL_MIN_ZOOM = 12;
 /** Huts WITH availability uncluster from here (owner spec; +1 vs the
  *  first iteration — caps the unclustered marker count, see the profile
  *  note in the header). */
@@ -274,15 +276,28 @@ async function loadSprite(): Promise<void> {
   }
 }
 
-/** Sprite-backed span; scales with the given CSS var (zoom factor). */
-function spriteSpan(key: string, fallbackKey: string, className: string, cssVar: string): string {
+/** Sprite-backed span, NORMALIZED: every icon renders into the same
+ *  refPx box regardless of its source size (the pack mixes 24px and
+ *  48px entries — raw scaling produced the "different sizes" bug),
+ *  scaled by the given CSS var (zoom factor). All geometry inline —
+ *  no dependence on class-level background-size. */
+function spriteSpan(
+  key: string,
+  fallbackKey: string,
+  className: string,
+  cssVar: string,
+  refPx: number
+): string {
   const sprite = availSprite;
   if (!sprite) return '';
   const entry = sprite.icons[key] ?? sprite.icons[fallbackKey];
   if (!entry) return '';
-  const pos = `background-position:calc(${-entry.x}px * var(${cssVar}, 0.3)) calc(${-entry.y}px * var(${cssVar}, 0.3));`;
-  const size = `width:calc(${entry.width}px * var(${cssVar}, 0.3));height:calc(${entry.height}px * var(${cssVar}, 0.3));`;
-  return `<span class="${className}" style="${pos}${size}"></span>`;
+  // Entry → refPx normalization factor (calc handles var × number × number).
+  const k = refPx / entry.width;
+  const pos = `background-position:calc(${-entry.x}px * var(${cssVar}) * ${k}) calc(${-entry.y}px * var(${cssVar}) * ${k});`;
+  const size = `width:calc(${refPx}px * var(${cssVar}));height:calc(${refPx}px * var(${cssVar}));`;
+  const bg = `background-size:calc(var(--wd-fb-sheet-w, 432px) * var(${cssVar}) * ${k}) calc(var(--wd-fb-sheet-h, 480px) * var(${cssVar}) * ${k});`;
+  return `<span class="${className}" style="${pos}${size}${bg}"></span>`;
 }
 
 /** Availability CHIP scale — MapLibre's occupation-day ramp verbatim:
@@ -314,7 +329,7 @@ const selectedSlug = computed(() =>
   typeof route.params.slug === 'string' ? route.params.slug : undefined
 );
 /** Last rendered zoom band — dot↔symbol icon swaps rebuild on band change. */
-let lastRenderBand: 'none' | 'dot' | 'sym' | undefined;
+let lastRenderBand: 'none' | 'dot' | 'sym' | 'symlabel' | undefined;
 
 // ── Focus (fullscreen) mode ────────────────────────────────────────────────
 // Same body-class contract as the MapLibre map's setMapFocus: the global
@@ -440,13 +455,14 @@ function makeIcon(style: MarkerStyle, selected = false): L.DivIcon {
   if (selected) classes.push('wd-fb-marker--sel');
   let html: string;
   if (availSprite && style.identifier) {
-    // Sprite path (maplibre parity): primitive hut glyph + colored
-    // availability chip for the selected day.
+    // Sprite path (maplibre parity): type-colored shield with a WHITE
+    // primitive glyph, every icon normalized to the same rendered size.
     const glyph = spriteSpan(
       `primitive/${style.identifier}`,
       'primitive/accommodation.unknown',
-      'wd-fb-glyph',
-      '--wd-fb-g'
+      'wd-fb-shield__icon',
+      '--wd-fb-g',
+      24
     );
     // Occupation = status circle BEHIND the hut (owner spec; MapLibre's
     // low-zoom occupation circle is the same idea). ONE day only — day0,
@@ -454,7 +470,13 @@ function makeIcon(style: MarkerStyle, selected = false): L.DivIcon {
     const occColor =
       style.status && style.status !== 'unknown' ? STATUS_COLORS[style.status] : undefined;
     const occ = occColor ? `<span class="wd-fb-occ" style="background:${occColor}"></span>` : '';
-    html = `${occ}${glyph}`;
+    // Status word under the disc from z12 (owner spec) — the existing
+    // availability.glance.* i18n words (de: frei / begrenzt / voll …).
+    const occLabel =
+      occColor && map && map.getZoom() >= OCC_LABEL_MIN_ZOOM
+        ? `<span class="wd-fb-occ-label">${t(`availability.glance.${style.status}`)}</span>`
+        : '';
+    html = `${occ}<span class="wd-fb-shield" style="--c:${style.typeColor}">${glyph}</span>${occLabel}`;
   } else {
     // Fallback: CSS shield + mono SVG (or plain dot), status ring behind.
     const ringColor =
@@ -546,16 +568,17 @@ function clusterIcon(cluster: L.MarkerCluster): L.DivIcon {
         `primitive/${info.identifier ?? 'accommodation.unknown'}`,
         'primitive/accommodation.unknown',
         'wd-fb-cluster__icon',
-        '--wd-fb-c' // never set → spriteSpan's 0.3 fallback… overridden
+        '--wd-fb-c',
+        13
       )
     : '';
   return L.divIcon({
-    html:
-      `<div class="wd-fb-cluster" style="--c:${info.color}">${glyph}` +
-      `<span class="wd-fb-cluster__count">${cluster.getChildCount()}</span></div>`,
+    // Icon-only bubble (owner: "less interested in the number") — the
+    // count was a tiny badge that drowned the glyph; dropped.
+    html: `<div class="wd-fb-cluster" style="--c:${info.color}">${glyph}</div>`,
     className: 'wd-fb-cluster-icon',
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
+    iconSize: [20, 20],
+    iconAnchor: [10, 10],
   });
 }
 
@@ -570,7 +593,7 @@ function rebuildMarkers(): void {
     return;
   }
   const useSymbols = map.getZoom() >= SYMBOL_MIN_ZOOM;
-  lastRenderBand = useSymbols ? 'sym' : 'dot';
+  lastRenderBand = !useSymbols ? 'dot' : map.getZoom() >= OCC_LABEL_MIN_ZOOM ? 'symlabel' : 'sym';
   // Dedupe by slug — buffer features repeat across neighboring tiles.
   const huts = new Map<string, FbHut>();
   for (const tileHuts of hutTiles.values()) {
@@ -896,6 +919,8 @@ onMounted(() => {
     minZoom: MIN_ZOOM,
     maxZoom: MAX_ZOOM,
     zoomSnap: 0, // continuous wheel zoom
+    // Default 60px/level felt twitchy — a bit more travel per level.
+    wheelPxPerZoomLevel: 100,
   });
   map.setView([initial.lat, initial.lng], Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, initial.zoom)));
   applyBasemap();
@@ -1201,31 +1226,44 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 //    0.6 by z15 — owner: "reduce shields to 300"). The availability chip
 //    (color/availability.{status}) sits at the glyph's lower-left, like
 //    the MapLibre occupation-day fan. ─────────────────────────────────
-.wd-fb-glyph,
-.wd-fb-avail {
+.wd-fb-shield__icon,
+.wd-fb-cluster__icon {
   background-repeat: no-repeat;
   background-image: var(--wd-fb-sheet);
   image-rendering: auto;
   display: block;
 }
 
-// Each kind scales its slice of the sheet with its own zoom factor.
-.wd-fb-glyph {
-  background-size: calc(var(--wd-fb-sheet-w, 432px) * var(--wd-fb-g, 0.55))
-    calc(var(--wd-fb-sheet-h, 480px) * var(--wd-fb-g, 0.55));
+// ── Shield: type-colored rounded square + WHITE glyph, one fixed size
+//    for every type (owner spec) — the icon is flattened to white so the
+//    white 24px templates AND colored 48px shapes render identically.
+.wd-fb-shield {
+  position: relative;
+  z-index: 2;
+  margin: auto; // centered in the 36px hit box
+  width: calc(31px * var(--wd-fb-g, 0.55));
+  height: calc(31px * var(--wd-fb-g, 0.55));
+  border-radius: 22%;
+  background: var(--c, #346751);
+  display: grid;
+  place-items: center;
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+.wd-fb-shield__icon {
+  filter: brightness(0) invert(1); // uniform white glyph
+}
+
+.wd-fb-marker--sel .wd-fb-shield {
+  outline: 2.5px solid $wd-gold;
+  outline-offset: 1px;
 }
 
 .wd-fb-glyph {
   position: relative;
   z-index: 2;
   margin: auto; // center in the 36px hit box
-}
-
-// The 24px primitive glyphs are WHITE templates (MapLibre renders them
-// over the colored occupation disc). Without a disc behind them they
-// would vanish on light basemaps — flatten to a dark silhouette then.
-.wd-fb-marker:not(:has(.wd-fb-occ)) .wd-fb-glyph {
-  filter: brightness(0) opacity(0.82);
 }
 
 // Occupation: status-colored circle BEHIND the hut glyph (one ring
@@ -1241,6 +1279,27 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   border-radius: 50%;
   opacity: 0.85; // maplibre's occupation circle transparency
   z-index: 1;
+}
+
+// Status word under the disc (z12+, owner spec) — the availability.glance
+// i18n words, tiny, ink with a white halo for any basemap.
+.wd-fb-occ-label {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + 25px * var(--wd-fb-g, 0.55));
+  transform: translateX(-50%);
+  z-index: 3;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #1c1c1c;
+  text-shadow:
+    0 0 3px #ffffff,
+    0 0 2px #ffffff,
+    1px 0 2px #ffffff,
+    -1px 0 2px #ffffff;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 // ── Fallback shield (no sprite sheet yet): smaller CSS quad ───────────
@@ -1270,12 +1329,6 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 }
 
 // ── Selection: gold ring — the app's selection color ───────────────────
-.wd-fb-marker--sel .wd-fb-glyph {
-  outline: 2.5px solid $wd-gold;
-  outline-offset: 1px;
-  border-radius: 4px;
-}
-
 .wd-fb-marker--sel .wd-fb-sym {
   border: 3px solid $wd-gold;
   box-shadow:
@@ -1300,8 +1353,8 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 
 // ── Cluster bubbles: dominant type color ───────────────────────────────
 .wd-fb-cluster-icon {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
 }
 
 // Small cluster bubble: white disc, dominant-type color ring, the type's
@@ -1309,10 +1362,10 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 // "show the icon in the circle, less interested in the number").
 .wd-fb-cluster {
   position: relative;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  border: 2.5px solid var(--c, #346751);
+  border: 2px solid var(--c, #346751);
   background: #ffffff;
   display: grid;
   place-items: center;
@@ -1320,32 +1373,11 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 }
 
 .wd-fb-cluster__icon {
-  --wd-fb-c: 0.55; // fixed cluster scale (24px circle, ~13px glyph)
+  --wd-fb-c: 1; // fixed (inline geometry is pre-normalized to 13px)
   position: relative;
   z-index: 1;
-  // White template glyphs would vanish on the white disc — always a
-  // dark silhouette here (colored 48px primitives flatten too: uniform).
-  filter: brightness(0) opacity(0.82);
-  background-size: calc(var(--wd-fb-sheet-w, 432px) * var(--wd-fb-c))
-    calc(var(--wd-fb-sheet-h, 480px) * var(--wd-fb-c));
-}
-
-.wd-fb-cluster__count {
-  position: absolute;
-  right: -5px;
-  bottom: -4px;
-  z-index: 2;
-  min-width: 12px;
-  height: 12px;
-  padding: 0 3px;
-  border-radius: 6px;
-  background: var(--c, #346751);
-  color: #ffffff;
-  font-size: 8.5px;
-  font-weight: 600;
-  line-height: 12px;
-  text-align: center;
-  box-shadow: 0 0 0 1.5px #ffffff;
+  // GRAY silhouette (owner: black or better gray) — visible on white.
+  filter: brightness(0) opacity(0.8);
 }
 
 // ── Controls: MapLibre parity ─────────────────────────────────────────────
