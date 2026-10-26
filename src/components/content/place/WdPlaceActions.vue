@@ -17,8 +17,6 @@ if (process.env.CLIENT && !isCrawlerUA()) {
   import('@indoorequal/vue-maplibre-gl').then(pkg => {
     mapRef = pkg.useMap();
   });
-} else {
-  mapRef = undefined;
 }
 
 interface Props {

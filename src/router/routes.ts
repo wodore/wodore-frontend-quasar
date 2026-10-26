@@ -11,10 +11,12 @@ import { isCrawlerUA } from '@services/crawler-ua';
  * 327 kB gz MapLibre vendor chunk) from loading for crawlers. The map
  * menu is pure map chrome with zero indexable content, so crawlers get
  * a render-nothing stub instead. */
+const WdMapMenuCrawlerStub = defineComponent({
+  name: 'WdMapMenuCrawlerStub',
+  render: () => null,
+});
 const menuView = () =>
-  isCrawlerUA()
-    ? Promise.resolve(defineComponent({ name: 'WdMapMenuCrawlerStub', render: () => null }))
-    : import('components/map/WdMapMenu.vue');
+  isCrawlerUA() ? Promise.resolve(WdMapMenuCrawlerStub) : import('components/map/WdMapMenu.vue');
 
 function redirectFix(to: RouteLocation, newRouteName: string): RouteLocationRaw {
   return {

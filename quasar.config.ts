@@ -252,7 +252,10 @@ export default configure(ctx => {
           // overlay stores — which statically import MapLibre), putting the
           // 327 kB gz vendor chunk on every crawler's download list
           // (follow-up to PR #347). Pinning them to their own chunk keeps
-          // the cluster lazy behind the map components.
+          // the cluster lazy behind the map components. The $ anchor
+          // assumes plain .ts ids (no ?query suffixes) — a future plugin
+          // adding suffixes would silently regress this split, so verify
+          // the map-shell-stores chunk exists in dist after build changes.
           if (/stores\/map\/(map-menu-store|map-content-store)\.ts$/.test(id)) {
             return 'map-shell-stores';
           }

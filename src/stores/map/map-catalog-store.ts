@@ -105,6 +105,10 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
    * Semantics: setTiles → `sourcedata` settle, 600ms minimum spin;
    * native builds run the fixed minimum (the Capacitor bridge does
    * not forward sourcedata events). */
+  // The shared ref outlives store instances (module scope): reset it
+  // here so a freshly created store — e.g. per-test pinia — never
+  // inherits a spinner state from a previous instance (review #349).
+  availabilityLoading.value = false;
   let availabilityLoadGen = 0;
   let availabilityShownAt = 0;
   let availabilityListenersBound = false;
