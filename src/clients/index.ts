@@ -92,11 +92,13 @@ const authMiddleware: Middleware = {
  * non-GET methods cover auth flows and mutations. Unset/empty = no
  * rewrite at all, byte-identical to the single-host behavior.
  *
- * /v1/version is EXEMPT: it is deployment identity, consumed as a live
- * signal by the versions panel and the api-version check — a CDN-cached
- * copy would go stale per deploy, and on staging the CDN served it
- * without CORS headers (2026-10, cache variance à la PR #341), failing
- * the fetch from the app origin entirely.
+ * CDN-safe headers are the BACKEND's job (ApiCdnCacheMiddleware,
+ * wodore-backend#426): anonymous /v1 GETs carry a wildcard
+ * Access-Control-Allow-Origin + explicit Cache-Control TTLs (errors and
+ * authenticated responses are no-store), so every unauthenticated GET —
+ * /v1/version included — can flow through the CDN single-variant cache.
+ * A short stopgap once exempted /v1/version here (2026-10, cache variance
+ * à la PR #341) — reverted once the backend shipped those headers.
  *
  * Registered AFTER authMiddleware on purpose: it decides the
  * Authorization header, so by the time this runs, "authenticated" is
@@ -114,7 +116,6 @@ const publicBaseMiddleware: Middleware = {
       const url = new URL(request.url);
       const base = new URL(publicBase);
       if (url.origin === base.origin) return; // already the public base
-      if (url.pathname === '/v1/version') return; // deployment identity — see doc block
       // Path + query stay untouched — same URL shape, different origin,
       // so the browser HTTP cache and ETag revalidation keep working.
       return new Request(new URL(url.pathname + url.search, base).href, request);

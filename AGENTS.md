@@ -405,17 +405,23 @@ see `src/services/apiBase.ts`), `WODORE_SEO_CACHE_TTL`,
 `WODORE_SEO_PAGE_TTL`, `WODORE_DEFAULT_LANG`, `WODORE_LANG_PREFIXES`,
 `WODORE_NGINX_CONFIG`.
 
-**CDN CORS caveat (found on staging 2026-10):** the CDN host
-(`hub.cdn.stg.wodore.com`) must forward the browser `Origin` request
-header to the origin and honor `Vary: Origin` — the backend
-(django-cors-headers) emits `Access-Control-Allow-Origin` only for
-requests carrying an allowed Origin, so a CDN cache variant fetched
-without Origin serves browser requests header-less and the SPA's
-fetches fail CORS (`/v1/version` was hit exactly this way; same
-cache-variance class as PR #341). The frontend exempts `/v1/version`
-from the CDN rewrite (`publicBaseMiddleware`) — deployment identity
-must not be CDN-cached anyway — but every other public GET still
-depends on the CDN getting Origin/Vary right.
+**CDN CORS (resolved 2026-10, wodore-backend#426):** the CDN host
+(`hub.cdn.stg.wodore.com`, BunnyCDN — URL-keyed cache, `Vary`
+collapsed) could not serve django-cors-headers' per-origin
+`Access-Control-Allow-Origin` (cache variants filled without an
+`Origin` header reach browsers header-less → CORS failures; same
+cache-variance class as PR #341). Fix lives in the BACKEND
+(`ApiCdnCacheMiddleware`): anonymous `/v1` GETs get a wildcard ACAO +
+explicit Cache-Control TTLs (`/v1/version` 300 s from the view, else
+3600 s; errors and authenticated responses are `no-store`) — one
+origin-independent variant, no CDN edge rules or vary settings needed
+(both explicitly rejected: vary-on-Origin breaks selective purging).
+The SPA routes ALL unauthenticated GETs through the CDN, including
+`/v1/version` (a short-lived frontend exemption was reverted once the
+backend shipped). After any backend CDN-header change: full Bunny zone
+purge, then verify
+`curl -sI -H 'Origin: https://stg.wodore.com' https://hub.cdn.stg.wodore.com/v1/version`
+shows `access-control-allow-origin: *` + `max-age=300` on a cache HIT.
 
 ### Hidden CDN origin hosts (orig.\*)
 
