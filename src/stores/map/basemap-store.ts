@@ -1189,9 +1189,7 @@ export const useBasemapStore = defineStore('basemap', () => {
 
     let gpuTier: Awaited<ReturnType<typeof getGPUTier>>;
     const usedCache = Boolean(
-      cachedGpuTier &&
-      cachedGpuTierTime &&
-      now - cachedGpuTierTime < twoDaysInMs
+      cachedGpuTier && cachedGpuTierTime && now - cachedGpuTierTime < twoDaysInMs
     );
 
     if (usedCache) {
