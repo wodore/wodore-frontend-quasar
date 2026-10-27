@@ -450,6 +450,50 @@ function attribHtml(bmId: string): string {
 
 let attribInnerEl: HTMLElement | undefined;
 
+/** Geolocate glyph — maplibre's geolocate path (same SVG the stock
+ *  control draws), currentColor so it rides the theme tokens. */
+const LOCATE_SVG =
+  '<svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1a5 5 0 0 0 3.9-3.9h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7"/><circle cx="10" cy="10" r="2"/></svg>';
+
+/** Mobile merged control bar: locate row on top of the +/− zoom rows,
+ *  ONE .leaflet-bar box (maplibre ctrl-group parity). A single bordered
+ *  box cannot develop a seam, width drift, or border mismatch between
+ *  the rows — and the locate row sits inside .leaflet-control, so every
+ *  focus-tap exclusion list covers it. */
+class WdMobileZoomBarControl extends L.Control {
+  onAdd(): HTMLElement {
+    const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control-zoom');
+    L.DomEvent.disableClickPropagation(container);
+
+    const locate = L.DomUtil.create('button', 'wd-fb-locate-row', container) as HTMLElement & {
+      type: string;
+    };
+    locate.type = 'button';
+    locate.setAttribute('aria-label', 'Locate');
+    locate.innerHTML = LOCATE_SVG;
+    L.DomEvent.on(locate, 'click', () => onLocate());
+
+    const zoomIn = L.DomUtil.create('a', 'leaflet-control-zoom-in', container) as HTMLElement & { href: string };
+    zoomIn.href = '#';
+    zoomIn.setAttribute('role', 'button');
+    zoomIn.textContent = '+';
+    L.DomEvent.on(zoomIn, 'click', ev => {
+      L.DomEvent.stop(ev);
+      map?.zoomIn();
+    });
+
+    const zoomOut = L.DomUtil.create('a', 'leaflet-control-zoom-out', container) as HTMLElement & { href: string };
+    zoomOut.href = '#';
+    zoomOut.setAttribute('role', 'button');
+    zoomOut.textContent = '\u2212';
+    L.DomEvent.on(zoomOut, 'click', ev => {
+      L.DomEvent.stop(ev);
+      map?.zoomOut();
+    });
+    return container;
+  }
+}
+
 class WdAttributionControl extends L.Control {
   onAdd(): HTMLElement {
     const container = L.DomUtil.create('div', 'wd-fb-attrib') as HTMLElement;
@@ -939,7 +983,16 @@ onMounted(() => {
   // / bottom-left on mobile (matching MglNavigationControl), attribution +
   // scale bottom-left (attribution above the scale).
   const isMobileView = window.matchMedia('(max-width: 768px)').matches;
-  L.control.zoom({ position: isMobileView ? 'bottomleft' : 'topright' }).addTo(map);
+  if (isMobileView) {
+    // ONE merged bar (locate row above +/−): a single bordered box has no
+    // seam/width/border drift between the rows (owner report — two stacked
+    // boxes rendered a light seam + 1-2px width mismatch at fractional
+    // DPR), and the in-bar locate sits inside .leaflet-control so the
+    // focus-tap exclusion lists cover it for free.
+    new WdMobileZoomBarControl({ position: 'bottomleft' }).addTo(map);
+  } else {
+    L.control.zoom({ position: 'topright' }).addTo(map);
+  }
   new WdAttributionControl({ position: 'bottomleft' }).addTo(map);
   L.control.scale({ position: 'bottomleft', imperial: false, maxWidth: 100 }).addTo(map);
 
@@ -1487,10 +1540,14 @@ body.wd-map-focus {
 // and sits at the SAME offsets the main map gives its top-right cluster
 // (14px inset, pushed below the focus toggle — css/maplibre-gl.scss).
 
-// Zoom bar: maplibre ctrl-group look
+// Zoom bar: maplibre ctrl-group look. The background override is
+// REQUIRED: leaflet's own .leaflet-bar sets background:#fff — without
+// this the white bar bg bleeds at every removed/merged border edge
+// (the "white seam line" at fractional DPR).
 .wd-fallback-map .leaflet-bar {
   border: 1px solid var(--wd-ctl-border, #dde7e0);
   border-radius: 8px; // main-map ctrl-group radius
+  background: var(--wd-ctl-bg, #fdfefd);
   box-shadow: var(--wd-ctl-shadow, 0 1px 3px rgba(10, 20, 15, 0.2));
   overflow: hidden;
 
@@ -1507,11 +1564,44 @@ body.wd-map-focus {
     text-decoration: none;
   }
 
+  // In-bar locate row (mobile merged bar): same button box as the +/−
+  // anchors — one frame, one hover language, no seam possible.
+  .wd-fb-locate-row {
+    width: 46px;
+    height: 46px;
+    padding: 6px; // 34px glyph (maplibre ctrl-icon size)
+    display: grid;
+    place-items: center;
+    border: none;
+    background: var(--wd-ctl-bg, #fdfefd);
+    color: var(--wd-ctl-ink, #224e3b);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+
+    svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+  }
+
+  a:hover,
+  .wd-fb-locate-row:hover,
+  .wd-fb-locate-row:active {
+    background: color-mix(in srgb, var(--wd-ctl-bg, #fdfefd) 92%, var(--wd-ctl-ink, #333));
+  }
+
+  // Divider between rows (leaflet's a+a rule only matches anchors)
+  .wd-fb-locate-row + a {
+    border-top: 1px solid var(--wd-ctl-border, #dde7e0);
+  }
+
   a:hover {
     background: color-mix(in srgb, var(--wd-ctl-bg, #fdfefd) 92%, var(--wd-ctl-ink, #333));
   }
 
-  a:focus-visible {
+  a:focus-visible,
+  .wd-fb-locate-row:focus-visible {
     outline: 2px solid #333333;
     outline-offset: -2px;
   }
@@ -1529,16 +1619,11 @@ body.wd-map-focus {
   }
 }
 
-// Mobile: zoom bottom-left (MglNavigationControl parity)
+// Mobile: zoom+locate merged bar bottom-left (MglNavigationControl parity)
 @media (max-width: 768px) {
   .wd-fallback-map .leaflet-bottom.leaflet-left .leaflet-control-zoom {
     margin: 0 0 14px 12px;
-    border-radius: 0 0 8px 8px; // bottom of the merged chip
-    border-top: none; // seam with locate above
-
-    a:first-child {
-      border-radius: 0;
-    }
+    // full 8px radius — the locate row lives INSIDE the bar now
   }
 }
 
@@ -1573,23 +1658,10 @@ body.wd-map-focus {
     display: none !important;
   }
 
-  // Locate: above the zoom bar (not overlapping the + button)
+  // Locate: the template button is DESKTOP-only — on mobile the locate
+  // row lives inside the merged zoom bar (WdMobileZoomBarControl).
   .wd-fb-locate {
-    bottom: 107px; // flush with zoom bar top (14px margin + 93px height)
-    left: 12px;
-    border-radius: 8px 8px 0 0;
-    border-bottom: none;
-  }
-
-  // Zoom bar: standard bottom-left with rounded bottom
-  .wd-fallback-map .leaflet-bottom.leaflet-left .leaflet-control-zoom {
-    margin: 0 0 14px 12px;
-    border-radius: 0 0 8px 8px;
-    border-top: none;
-
-    a:first-child {
-      border-radius: 0;
-    }
+    display: none;
   }
 
   // Attribution: MapLibre parity — the round ⓘ chip BESIDE the control
