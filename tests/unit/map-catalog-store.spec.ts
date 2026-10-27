@@ -352,11 +352,8 @@ describe('map catalog store (boot cache + version sync)', () => {
     expect(persistedLayers.data).toHaveLength(2);
     expect(persistedLayers.lang).toBe('en');
     const styleCache = JSON.parse(window.localStorage.getItem('mapCatalogStyleCache')!);
-    expect(Object.keys(styleCache).sort()).toEqual([
-      'mtb|high|tokenized',
-      'transport-stops|high|resolved',
-    ]);
-    expect(styleCache['mtb|high|tokenized'].modified).toBe(VERSION_A);
+    expect(Object.keys(styleCache).sort()).toEqual(['mtb|tokenized', 'transport-stops|resolved']);
+    expect(styleCache['mtb|tokenized'].modified).toBe(VERSION_A);
   });
 
   it('style fetches use the catalog style_url verbatim (+ mode=tokenized), never client-built URLs', async () => {
@@ -435,8 +432,8 @@ describe('map catalog store (boot cache + version sync)', () => {
     expect(styleFetches[0]).toContain('spec=');
     expect(styleFetches[0]).not.toContain('tokenized');
     const styleCache = JSON.parse(window.localStorage.getItem('mapCatalogStyleCache')!);
-    expect(styleCache['transport-stops|high|resolved'].modified).toBe(VERSION_B);
-    expect(styleCache['mtb|high|tokenized'].modified).toBe(VERSION_A);
+    expect(styleCache['transport-stops|resolved'].modified).toBe(VERSION_B);
+    expect(styleCache['mtb|tokenized'].modified).toBe(VERSION_A);
   });
 
   it('missing modified (pre-#331 backend): cached null-modified entries stay valid', async () => {

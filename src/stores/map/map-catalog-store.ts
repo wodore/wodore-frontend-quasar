@@ -50,7 +50,6 @@ import {
   fetchMapCatalog,
   fetchMapSlots,
   fetchMapStyle,
-  gpuSpec,
   isOpacityCurve,
   loadPersistedLayers,
   loadStyleCache,
@@ -66,7 +65,6 @@ import {
   type MapCatalogLayer,
   type MapCatalogSlot,
   type MapLayerParameter,
-  type MapSpecTier,
   type OpacityCurve,
   type PersistedStyleCache,
   type PersistedStyleEntry,
@@ -458,13 +456,6 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
 
   // ── Style loading with the persisted cache + version sync ─────────────
 
-  /** Overlay-layer spec: the cached GPU tier (basemap-store detects and
-   *  stores it; tier < 2 is the weak-GPU raster path). */
-  function overlaySpec(): MapSpecTier {
-    const tier = storageGet('gpuTier') as { tier?: number } | null;
-    return gpuSpec((tier?.tier ?? 3) < 2);
-  }
-
   interface LoadedBundle {
     style: StyleSpecification;
     tokenizedStyle?: StyleSpecification;
@@ -514,22 +505,23 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
    */
   async function loadStyleBundle(
     layer: MapCatalogLayer,
-    spec: MapSpecTier,
     cache: PersistedStyleCache
   ): Promise<LoadedBundle | undefined> {
     const tokenized = layer.parameters.length > 0;
-    // `spec` only keys the PERSISTED cache now — the fetched URL is the
-    // catalog's canonical `style_url` (backend-served spec + immutable
-    // `&v=` token), with `mode=tokenized` appended for parameterized
-    // layers (backend #434: any variant URL carrying a valid v serves
-    // immutable). A missing style_url means the catalog entry is broken
-    // — skip loudly like a failed fetch.
+    // The fetched URL is the catalog's canonical `style_url` (backend-
+    // served spec + immutable `&v=` token), with `mode=tokenized`
+    // appended for parameterized layers (backend #434: any variant URL
+    // carrying a valid v serves immutable). The cache key is slug ×
+    // mode ONLY — the document no longer varies with the client GPU
+    // tier, so a tier change must not duplicate entries. A missing
+    // style_url means the catalog entry is broken — skip loudly like a
+    // failed fetch.
     if (!layer.style_url) {
       skipLayer(layer, 'layer configuration missing (style URL)', undefined);
       return undefined;
     }
     const styleUrl = layer.style_url;
-    const key = styleCacheKey(layer.slug, spec, tokenized);
+    const key = styleCacheKey(layer.slug, tokenized);
     const cached = cache[key];
     if (cacheServes(cached, layer, tokenized)) {
       if (tokenized && cached.tokenized) {
@@ -620,7 +612,6 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     slotSlugs: Set<string>,
     onItems?: (items: OverlaySwitchItem[], meta?: { mapContentChanged: boolean }) => void
   ): Promise<OverlaySwitchItem[]> {
-    const spec = overlaySpec();
     const styleCache = loadStyleCache();
     const overlayLayers = layers.filter(l => l.role === 'overlay');
     // Catalog order (role, order, slug — the backend sorts): progressive
@@ -674,7 +665,7 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     emitAll(false); // metadata-first: rows before any style fetch settles
 
     const load = async (layer: MapCatalogLayer, isActive: boolean): Promise<void> => {
-      const bundle = await loadStyleBundle(layer, spec, styleCache);
+      const bundle = await loadStyleBundle(layer, styleCache);
       settled[layer.slug] = bundle ? mapCatalogOverlay(layer, slotSlugs, bundle) : null;
       // A user may have toggled a placeholder row ON mid-compile: its
       // arrival is map content too, even though the pre-resolved wave

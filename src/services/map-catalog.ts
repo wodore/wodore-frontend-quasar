@@ -392,9 +392,13 @@ export interface PersistedStyleEntry {
 
 export type PersistedStyleCache = Record<string, PersistedStyleEntry>;
 
-/** Cache key: one entry per slug × spec × mode. */
-export function styleCacheKey(slug: string, spec: MapSpecTier, tokenized: boolean): string {
-  return `${slug}|${spec}|${tokenized ? 'tokenized' : 'resolved'}`;
+/** Cache key: one entry per slug × mode — the spec is NOT part of the
+ *  identity: since the verbatim-style_url change the fetched document
+ *  no longer varies with the client GPU tier (the URL carries the
+ *  backend-SERVED spec), so two tiers would store identical bytes under
+ *  different keys. Owner decision 2026-10: slug + mode only. */
+export function styleCacheKey(slug: string, tokenized: boolean): string {
+  return `${slug}|${tokenized ? 'tokenized' : 'resolved'}`;
 }
 
 export function loadStyleCache(): PersistedStyleCache {
