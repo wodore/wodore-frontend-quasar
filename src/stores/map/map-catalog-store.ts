@@ -744,10 +744,18 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
   });
 
   // Mirror the hut-store's selected date into the runtime {{date}} value.
+  // IMMEDIATE: the date can predate this store — WdSelectDate restores it
+  // from the ?date= query at layout mount, while this store is only created
+  // when the idle-gated async WdMapView mounts. A non-immediate watch would
+  // never fire for that pre-existing value, the runtime date would stay
+  // unset, and the wd-bookings tile URLs would keep the today boot default
+  // (staging incident 2026-10-27: the map showed the wrong date's
+  // availability while the date pill showed the picked date).
   const hutsStore = useHutsStore();
   watch(
     () => hutsStore.selectedDate,
-    date => setRuntimeDate(date)
+    date => setRuntimeDate(date),
+    { immediate: true }
   );
 
   // Availability data arrival (date picked → fetch settled, or cleared):
