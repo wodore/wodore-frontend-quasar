@@ -192,7 +192,6 @@ const HUTS_STYLE = {
 } as StyleSpecification;
 
 const VERSION_A = '2026-10-14T10:00:00+00:00';
-const VERSION_B = '2026-10-14T12:00:00+00:00';
 
 /** A resolved layers envelope (backend #331): `{data, count}`, one
  *  layer per slug with the served spec + spec-resolved style_url. */
@@ -293,7 +292,7 @@ vi.mock('@services/map-catalog', async importOriginal => {
   };
 });
 
-describe('map catalog store (boot cache + version sync)', () => {
+describe('map catalog store (layers snapshot + versioned style URLs)', () => {
   let stores: typeof import('@stores/map/map-catalog-store');
   let overlayStores: typeof import('@stores/map/overlay-store');
 
@@ -351,66 +350,74 @@ describe('map catalog store (boot cache + version sync)', () => {
     const persistedLayers = JSON.parse(window.localStorage.getItem('mapLayersCache')!);
     expect(persistedLayers.data).toHaveLength(2);
     expect(persistedLayers.lang).toBe('en');
-    const styleCache = JSON.parse(window.localStorage.getItem('mapCatalogStyleCache')!);
-    expect(Object.keys(styleCache).sort()).toEqual([
-      'mtb|high|tokenized',
-      'transport-stops|high|resolved',
-    ]);
-    expect(styleCache['mtb|high|tokenized'].modified).toBe(VERSION_A);
   });
 
-  it('warm boot: the persisted cache serves unchanged modified timestamps without refetching', async () => {
-    // First session populates the cache
+  it('style fetches use the catalog style_url verbatim (+ mode=tokenized), never client-built URLs', async () => {
+    const cat = catalogFor(VERSION_A);
+    cat.data[0]!.style_url = '/v1/map/styles/transport-stops.json?spec=medium&v=3114e2da1253';
+    cat.data[cat.data.length - 1]!.style_url = '/v1/map/styles/mtb.json?spec=medium&v=9e9ddf24f942';
+    catalogFetch.mockResolvedValue(cat);
+    const store = stores.useMapCatalogStore();
+    await store.initOverlays();
+
+    // Non-parameterized layer: the resolved variant, style_url VERBATIM —
+    // served spec and immutable version token preserved (backend #434);
+    // no client-guessed spec, no dropped token. (endsWith: the spec env
+    // absolutizes against the API host — CI serves it root-relative.)
+    expect(
+      styleFetches.some(u =>
+        u.endsWith('/v1/map/styles/transport-stops.json?spec=medium&v=3114e2da1253')
+      )
+    ).toBe(true);
+    // Parameterized layer (mtb): the tokenized sibling — `mode=tokenized`
+    // appended to the SAME canonical URL so the v token rides along and
+    // the variant caches immutable.
+    expect(
+      styleFetches.some(u =>
+        u.endsWith('/v1/map/styles/mtb.json?spec=medium&v=9e9ddf24f942&mode=tokenized')
+      )
+    ).toBe(true);
+  });
+
+  it('a layer without style_url is skipped loudly (no fetch, no crash)', async () => {
+    const cat = catalogFor(VERSION_A);
+    (cat.data[0] as { style_url: string | null }).style_url = null; // transport-stops
+    catalogFetch.mockResolvedValue(cat);
+    const store = stores.useMapCatalogStore();
+    await store.initOverlays();
+
+    // Only mtb's style was fetched; the broken layer dropped with a
+    // user-visible notice, the rest of the catalog still compiled.
+    expect(styleFetches).toHaveLength(1);
+    expect(notifyCalls.length).toBeGreaterThan(0);
+    expect(store.status).toBe('ready');
+    expect(overlaysOf().map(o => o.name)).toEqual(['mtb']);
+  });
+
+  it('warm boot: the refresh refetches styles through the SAME immutable URLs (browser-cache hits)', async () => {
     catalogFetch.mockResolvedValue(catalogFor(VERSION_A));
     const store = stores.useMapCatalogStore();
     await store.initOverlays();
-    const firstSessionFetches = styleFetches.length;
-    expect(firstSessionFetches).toBeGreaterThan(0);
+    const firstFetches = [...styleFetches].sort();
+    expect(firstFetches.length).toBeGreaterThan(0);
 
-    // Second session: same modified timestamps — no style fetches at all
+    // No local style persistence anymore: every compile fetches again —
+    // through the identical versioned URLs, which is what makes the
+    // repeat fetch a free browser disk-cache hit in production.
     styleFetches.length = 0;
     await store.refreshCatalog({ background: true });
-    expect(styleFetches).toHaveLength(0);
+    expect([...styleFetches].sort()).toEqual(firstFetches);
     expect(overlaysOf().map(o => o.name)).toEqual(['transport-stops', 'mtb']);
   });
 
-  it('modified change: only the changed layer refetches', async () => {
+  it('boot purges the retired localStorage style caches once', async () => {
+    window.localStorage.setItem('mapCatalogStyleCache', '{"stale":1}');
+    window.localStorage.setItem('basemapStyleCache', '{"stale":1}');
     catalogFetch.mockResolvedValue(catalogFor(VERSION_A));
     const store = stores.useMapCatalogStore();
     await store.initOverlays();
-    styleFetches.length = 0;
-
-    // Fresh catalog: the transport layer bumped, mtb unchanged
-    const next = catalogFor(VERSION_A);
-    const transport = next.data.find(l => l.slug === 'transport-stops')!;
-    transport.modified = VERSION_B;
-    catalogFetch.mockResolvedValue(next);
-    await store.refreshCatalog({ background: true });
-
-    // Only the transport style was fetched again (resolved mode)
-    expect(styleFetches).toHaveLength(1);
-    expect(styleFetches[0]).toContain('/v1/map/styles/transport-stops.json');
-    expect(styleFetches[0]).toContain('spec=');
-    expect(styleFetches[0]).not.toContain('tokenized');
-    const styleCache = JSON.parse(window.localStorage.getItem('mapCatalogStyleCache')!);
-    expect(styleCache['transport-stops|high|resolved'].modified).toBe(VERSION_B);
-    expect(styleCache['mtb|high|tokenized'].modified).toBe(VERSION_A);
-  });
-
-  it('missing modified (pre-#331 backend): cached null-modified entries stay valid', async () => {
-    catalogFetch.mockResolvedValue(catalogFor(undefined));
-    const store = stores.useMapCatalogStore();
-    await store.initOverlays();
-    styleFetches.length = 0;
-
-    // Same modified-less catalog again → cache serves
-    await store.refreshCatalog({ background: true });
-    expect(styleFetches).toHaveLength(0);
-    // The first modified-bearing catalog invalidates the cache once
-    styleFetches.length = 0;
-    catalogFetch.mockResolvedValue(catalogFor(VERSION_A));
-    await store.refreshCatalog({ background: true });
-    expect(styleFetches).toHaveLength(2); // tokenized + resolved
+    expect(window.localStorage.getItem('mapCatalogStyleCache')).toBeNull();
+    expect(window.localStorage.getItem('basemapStyleCache')).toBeNull();
   });
 
   it('cold boot failure: error status + user-visible notice, no overlays', async () => {
@@ -631,12 +638,13 @@ describe('map catalog store (boot cache + version sync)', () => {
     const epochAfterBoot = overlayStore.overlaysEpoch;
     const fetchesAfterBoot = styleFetches.length;
 
-    // Locale rebuild with unchanged `modified` — the persisted style
-    // cache serves both bundles: the ACTIVE layer's arrival bumps the
-    // epoch once, the inactive layer's does not, nothing refetches.
+    // Locale rebuild with unchanged `modified`: every style refetches
+    // through its immutable URL (browser disk-cache hit in production) —
+    // the ACTIVE layer's arrival bumps the epoch once, the inactive
+    // layer's does not.
     await store.rebuildOverlaysFromCatalog();
     expect(overlayStore.overlaysEpoch - epochAfterBoot).toBe(1);
-    expect(styleFetches).toHaveLength(fetchesAfterBoot);
+    expect(styleFetches).toHaveLength(2 * fetchesAfterBoot);
 
     // A failing rebuild is silent by design: overlays stay, status and
     // the reveal latch stay ready (review finding PR #357).
