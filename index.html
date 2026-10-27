@@ -56,6 +56,19 @@
     <% } else { %>
     <script src="/env.js"></script>
     <% } %>
+    <!--
+      Static tile-host preconnects: the compile-time default hosts the map
+      styles reference (see the dynamic preconnect script below). As static
+      links they start warming at HTML PARSE — not after the (blocking)
+      env.js or the app boot — shaving the tile-origin TLS setup off the map
+      boot (perf/map-boot; advisor note: link tags also travel WITH the
+      shell bytes, unlike header-based hints a service-worker-served
+      navigation would never re-apply). The script below dedupes against
+      these and adds the env-driven API/CDN hosts on top.
+    -->
+    <link rel="preconnect" href="https://icons.maptoolkit.org" crossorigin />
+    <link rel="preconnect" href="https://tiles.maptoolkit.org" crossorigin />
+    <link rel="preconnect" href="https://tiles.mapterhorn.com" crossorigin />
     <script>
       // Preconnect to the cross-origin hosts the app will talk to: the
       // map tile origins are CORS-fetched by MapLibre (~600 ms measured
@@ -89,7 +102,14 @@
           env.WODORE_PUBLIC_API_URL,
           env.WODORE_TILE_SERVER_URL,
         ];
-        const seen = new Set();
+        const seen = new Set([
+          // Seeded with the STATIC preconnects in <head> above (same
+          // origins as `defaults` — they apply in every env mode) so the
+          // dynamic links below never duplicate them.
+          'https://icons.maptoolkit.org',
+          'https://tiles.maptoolkit.org',
+          'https://tiles.mapterhorn.com',
+        ]);
         for (const url of urls) {
           if (!url || url.startsWith('@@')) continue;
           let origin;

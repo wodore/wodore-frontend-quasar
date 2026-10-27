@@ -47,11 +47,15 @@ export const useOverlayStore = defineStore('overlay', () => {
   const overlays = reactive<Array<OverlaySwitchItem>>([]);
 
   // ── Catalog swap epoch ────────────────────────────────────────────────────
-  // Bumped whenever the overlay items are replaced from the backend map
-  // catalog (map-catalog-store): renderers watch it to drop stale factory
-  // layers/sources and re-add the catalog ones (WdOverlayControl), or to
-  // recompose the native style (WdNativeMapView). Parameter-only changes
-  // bump `parametersEpoch` instead (paint re-resolution, no re-add).
+  // Bumped when the overlay items' MAP CONTENT changed — renderers watch
+  // it to drop stale factory layers/sources and re-add the catalog ones
+  // (WdOverlayControl), or to recompose the native style
+  // (WdNativeMapView). Parameter-only changes bump `parametersEpoch`
+  // instead (paint re-resolution, no re-add). Menu-only updates (metadata
+  // placeholders, INACTIVE style arrivals) pass `bumpEpoch: false` — see
+  // applyCatalogOverlays and the catalog compile's emit batching
+  // (perf/map-boot: the epoch used to bump per bundle, re-adding every
+  // active overlay's map layers once per catalog row).
   const overlaysEpoch = ref(0);
   const parametersEpoch = ref(0);
 
@@ -61,8 +65,16 @@ export const useOverlayStore = defineStore('overlay', () => {
    * persisted active/show state (localStorage 'overlays', legacy slugs
    * migrated through RENAMED_SLUGS) applies; later swaps preserve the
    * CURRENT live state. Group settings re-merge so new slugs join groups.
+   *
+   * `bumpEpoch` (default true) lifts the catalog-swap epoch so renderers
+   * re-add the (possibly replaced) overlay layers. The catalog compile
+   * passes false for menu-only updates and bumps only when an ACTIVE
+   * overlay's compiled style actually arrived.
    */
-  function applyCatalogOverlays(catalogItems: OverlaySwitchItem[]): void {
+  function applyCatalogOverlays(
+    catalogItems: OverlaySwitchItem[],
+    opts?: { bumpEpoch?: boolean }
+  ): void {
     // SAFETY: overlays is the reactive OverlaySwitchItem[] above; the
     // widened cast breaks the maplibre-style TS2589 recursion (same
     // pattern as activeGroupLayers) — items are OverlaySwitchItem.
@@ -93,7 +105,38 @@ export const useOverlayStore = defineStore('overlay', () => {
       }
     }
     mergeLayerGroups();
-    overlaysEpoch.value += 1;
+    if (opts?.bumpEpoch !== false) overlaysEpoch.value += 1;
+  }
+
+  /**
+   * Which of `names` WILL be active once they are applied — resolves the
+   * same state `applyCatalogOverlays` adopts (current live flags on later
+   * swaps; persisted 'overlays' + the fresh-install active-group view on
+   * the first application) WITHOUT applying anything. The catalog compile
+   * needs this BEFORE it starts, so ACTIVE overlays' styles fetch first
+   * and only their arrivals bump the epoch.
+   */
+  function resolveActiveSlugs(names: string[]): Set<string> {
+    const active = new Set<string>();
+    // SAFETY: same widened cast as applyCatalogOverlays — reading
+    // .name/.active only, fields every catalog item sets.
+    const live = overlays as unknown as OverlaySwitchItem[];
+    if (live.length > 0) {
+      for (const o of live) if (o.active) active.add(o.name);
+      return active;
+    }
+    // First application — mirror the adoption in applyCatalogOverlays.
+    const activeGroupView = getActiveGroup(groupSettings);
+    for (const name of names) {
+      const s = savedOverlayState(name);
+      if (s?.active) active.add(name);
+      else if (s === undefined && activeGroupView?.activeLayerSlugs.includes(name)) {
+        // Fresh install (no persisted overlay state): the ACTIVE group's
+        // saved view activates.
+        active.add(name);
+      }
+    }
+    return active;
   }
 
   const savedOverlays: Array<OverlaySwitchItem> = storageHas('overlays')
@@ -255,6 +298,7 @@ export const useOverlayStore = defineStore('overlay', () => {
     setActiveGroup,
     stepGroup,
     applyCatalogOverlays,
+    resolveActiveSlugs,
     overlaysEpoch,
     parametersEpoch,
     // Layer groups

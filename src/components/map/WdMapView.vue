@@ -362,9 +362,15 @@ function scheduleReveal(map: Map): void {
   // notifyOverlaysDone is idempotent — no need to stop this watcher
   // from inside its own callback (that exact pattern was the TDZ
   // regression); the scope dispose cleans it up.
+  //
+  // Reveal gate (perf/map-boot): `mapStylesReady` flips once every ACTIVE
+  // overlay's boot bundle settled (resolved or skipped) — INACTIVE
+  // overlays' styles are menu data fetched in the background and must
+  // never hold the splash (owner decision 2026-10). A whole-catalog
+  // failure still releases via `status === 'error'`.
   let stopStatusWatch: (() => void) | undefined;
   stopStatusWatch = watch(
-    () => mapCatalogStore.status === 'ready' || mapCatalogStore.status === 'error',
+    () => mapCatalogStore.mapStylesReady || mapCatalogStore.status === 'error',
     overlaysDone => {
       if (!overlaysDone) return;
       scheduler.notifyOverlaysDone();

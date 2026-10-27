@@ -1019,6 +1019,12 @@ export const useBasemapStore = defineStore('basemap', () => {
 
   // Helper to determine if we should use raster basemaps based on GPU capabilities
   function shouldUseRaster(gpuTier: Awaited<ReturnType<typeof getGPUTier>>): boolean {
+    // tier < 0 = detection FAILURE (incl. the GPU-detect timeout race
+    // below) — hardware that couldn't be classified, not weak hardware.
+    // Same precedent as mapProfileForTier's tier < 0 branch: treat as
+    // capable (vector), never punish unknown hardware with the raster
+    // path for a dead benchmark host.
+    if (gpuTier.tier < 0) return false;
     if (!gpuTier.gpu) return true;
     const gpuName = gpuTier.gpu.toLowerCase();
     if (SOFTWARE_GPU_NAMES.some(s => gpuName.includes(s))) return true;
@@ -1159,12 +1165,40 @@ export const useBasemapStore = defineStore('basemap', () => {
       console.debug('Using cached GPU tier:', cachedGpuTier);
       gpuTier = cachedGpuTier as Awaited<ReturnType<typeof getGPUTier>>;
     } else {
-      // Run GPU detection
-      gpuTier = await getGPUTier();
-      // Cache the result
-      storageSet('gpuTier', gpuTier);
-      storageSet('gpuTierTime', now);
-      console.debug('Detected and cached GPU tier:', gpuTier.tier);
+      // Run GPU detection, raced against a deadline: detect-gpu's
+      // tier-list download (unpkg.com) has no built-in timeout, and this
+      // await gates the WHOLE map boot — gpuSpecReady blocks the layers
+      // fetch and the first basemap needs the tier. A hung fetch would
+      // hold the splash until the 20s hard cap with no style at all
+      // (observed 2026-10-27, map-boot profiling). On timeout fall back
+      // to the capable "detection failure" tier (tier < 0 — same
+      // precedent as mapProfileForTier's failure branch: never punish
+      // capable hardware for a dead benchmark host) WITHOUT caching it,
+      // so the next visit retries detection.
+      const GPU_DETECT_TIMEOUT_MS = 3500;
+      let gpuDetectTimedOut = false;
+      let gpuDetectTimer: ReturnType<typeof setTimeout> | undefined;
+      gpuTier = await Promise.race([
+        getGPUTier(),
+        new Promise<Awaited<ReturnType<typeof getGPUTier>>>(resolve => {
+          gpuDetectTimer = setTimeout(() => {
+            gpuDetectTimedOut = true;
+            resolve({ tier: -1, type: 'FALLBACK' });
+          }, GPU_DETECT_TIMEOUT_MS);
+        }),
+      ]);
+      clearTimeout(gpuDetectTimer);
+      if (gpuDetectTimedOut) {
+        console.warn(
+          `[basemap] GPU detection timed out after ${GPU_DETECT_TIMEOUT_MS}ms — ` +
+            'using the capable fallback tier (not cached; the next visit retries)'
+        );
+      } else {
+        // Cache the result — never the timeout fallback.
+        storageSet('gpuTier', gpuTier);
+        storageSet('gpuTierTime', now);
+        console.debug('Detected and cached GPU tier:', gpuTier.tier);
+      }
     }
 
     // `?gpuTier=0..3` boot override (services/gpu-override.ts): force a
@@ -1216,7 +1250,7 @@ export const useBasemapStore = defineStore('basemap', () => {
       'GPU Tier detected:',
       gpuTier.tier,
       'GPU:',
-      gpuTier.gpu,
+      gpuTier.gpu || 'n/a',
       'Using raster:',
       useRaster
     );

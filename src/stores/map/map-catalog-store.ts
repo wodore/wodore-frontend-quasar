@@ -94,6 +94,17 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
   /** 'loading' = cold boot, catalog being fetched (no cache to render). */
   const status = ref<'idle' | 'loading' | 'ready' | 'error'>('idle');
 
+  /**
+   * Reveal gate (perf/map-boot): flips once every ACTIVE overlay's style
+   * bundle from the boot compile has SETTLED — resolved OR skipped (a
+   * failed fetch/validation counts as settled; the layer drops with a
+   * notice). INACTIVE overlays' styles never gate the reveal — they are
+   * menu/switcher data fetched in the background. WdMapView watches this
+   * instead of the full-catalog `status`. One-way latch per session: the
+   * warm-boot background refresh and locale rebuilds never re-block it.
+   */
+  const mapStylesReady = ref(false);
+
   /** Persisted per-layer parameter overrides: {overlayName: {paramSlug: value}}. */
   const parameterValues = ref<Record<string, Record<string, unknown>>>(
     (storageGet(PARAMS_KEY) as Record<string, Record<string, unknown>>) ?? {}
@@ -585,11 +596,21 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
    * replaces its placeholder through `onItems` (catalog order), and a
    * layer whose style fails validation or fetch DROPS from the list
    * (skip loudly — design.md D8). Returns the final list.
+   *
+   * Fetch + emit priority (perf/map-boot, owner decision 2026-10):
+   * ACTIVE overlays' styles (the reveal path) fetch FIRST — everything
+   * else only starts once the active wave settled. Emits beyond the
+   * synchronous metadata-first one are microtask-batched (the whole
+   * persisted-cache warm wave collapses into ONE application), and only
+   * batches in which an ACTIVE overlay's bundle arrived bump the
+   * catalog-swap epoch (`mapContentChanged` → applyCatalogOverlays): the
+   * compile used to bump per bundle, re-adding every active overlay's
+   * map layers up to once per catalog row at boot.
    */
   async function compileCatalogOverlays(
     layers: MapCatalogLayer[],
     slotSlugs: Set<string>,
-    onItems?: (items: OverlaySwitchItem[]) => void
+    onItems?: (items: OverlaySwitchItem[], meta?: { mapContentChanged: boolean }) => void
   ): Promise<OverlaySwitchItem[]> {
     const spec = overlaySpec();
     const styleCache = loadStyleCache();
@@ -608,25 +629,71 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     );
     /** Resolved items by slug; null = skipped (invalid/unfetchable style). */
     const settled: Record<string, OverlaySwitchItem | null> = {};
-    const emit = () => {
+
+    // Active wave — the slugs that will be ACTIVE once applied, resolved
+    // up front (current live flags on later swaps; persisted state + the
+    // fresh-install active-group view on the first application) so fetch
+    // order and the epoch signal never depend on the apply having run.
+    const activeSlugs = overlayStore.resolveActiveSlugs(overlayLayers.map(l => l.slug));
+    const activeLayers = overlayLayers.filter(l => activeSlugs.has(l.slug));
+    const otherLayers = overlayLayers.filter(l => !activeSlugs.has(l.slug));
+
+    let emitScheduled = false;
+    let activeArrivedInBatch = false;
+    const emitAll = (mapContentChanged: boolean): void => {
       const snapshot = overlayLayers
         .filter(l => settled[l.slug] !== null)
         .map(l => settled[l.slug] ?? placeholders[l.slug]!)
         .sort((a, b) => (orderOf[a.name] ?? 0) - (orderOf[b.name] ?? 0));
       mergeSpritePacks(snapshot);
       fixupCatalogStyles(snapshot);
-      onItems?.(snapshot);
+      onItems?.(snapshot, { mapContentChanged });
     };
-    emit(); // metadata-first: rows before any style fetch settles
-    await Promise.all(
-      overlayLayers.map(async layer => {
-        const bundle = await loadStyleBundle(layer, spec, styleCache);
-        settled[layer.slug] = bundle ? mapCatalogOverlay(layer, slotSlugs, bundle) : null;
-        emit();
-        return undefined;
-      })
-    );
-    emit();
+    /** Microtask-batched emit: bundles resolving in the same tick (the
+     *  whole persisted-cache warm wave) collapse into ONE application. */
+    const scheduleEmit = (activeArrived: boolean): void => {
+      if (activeArrived) activeArrivedInBatch = true;
+      if (emitScheduled) return;
+      emitScheduled = true;
+      queueMicrotask(() => {
+        emitScheduled = false;
+        const changed = activeArrivedInBatch;
+        activeArrivedInBatch = false;
+        emitAll(changed);
+      });
+    };
+
+    emitAll(false); // metadata-first: rows before any style fetch settles
+
+    const load = async (layer: MapCatalogLayer, isActive: boolean): Promise<void> => {
+      const bundle = await loadStyleBundle(layer, spec, styleCache);
+      settled[layer.slug] = bundle ? mapCatalogOverlay(layer, slotSlugs, bundle) : null;
+      // A user may have toggled a placeholder row ON mid-compile: its
+      // arrival is map content too, even though the pre-resolved wave
+      // classified it as inactive (reading the live flag at settle time
+      // catches that; the next apply's live-state adoption keeps it on).
+      // SAFETY: overlays items are OverlaySwitchItem — reading .name and
+      // .active only, fields every catalog item sets; the widened cast
+      // breaks the maplibre-style TS2589 recursion (same pattern as
+      // applyCatalogOverlays in the overlay store).
+      const liveOverlays = overlayStore.overlays as unknown as Array<{
+        name: string;
+        active?: boolean;
+      }>;
+      const isActiveNow = isActive || liveOverlays.some(o => o.name === layer.slug && o.active);
+      scheduleEmit(isActiveNow);
+    };
+    // Active wave (reveal path) first — flipping the reveal latch below
+    // the moment it settles — then the background wave for the menu.
+    await Promise.all(activeLayers.map(l => load(l, true)));
+    mapStylesReady.value = true;
+    await Promise.all(otherLayers.map(l => load(l, false)));
+    // Deterministic final flush (review nit, PR #357): by the time the
+    // background wave resolves, its last batched emit already ran
+    // (microtasks drain before this continuation) — this extra apply is
+    // menu-only (no epoch bump) and guarantees a final list exactly once,
+    // covering the zero-layer edge where no emit ever fired.
+    emitAll(false);
     return overlayLayers
       .filter(l => settled[l.slug])
       .map(l => settled[l.slug]!)
@@ -659,8 +726,10 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
         // entries stream in progressively (see compileCatalogOverlays).
         // Slots are not persisted — the seed set matches the backend seed
         // and the fresh compile below switches to the fetched list.
-        await compileCatalogOverlays(cached.data, SEED_SLOT_SLUGS, items =>
-          overlayStore.applyCatalogOverlays(items)
+        await compileCatalogOverlays(cached.data, SEED_SLOT_SLUGS, (items, meta) =>
+          overlayStore.applyCatalogOverlays(items, {
+            bumpEpoch: meta?.mapContentChanged ?? true,
+          })
         );
         status.value = 'ready';
       } catch (error) {
@@ -697,8 +766,10 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
       // warms their URLs meanwhile so this mostly reads HTTP-cache hits
       // (perf/fast-first-paint). No additional idle hop here: stacking a
       // second deadline behind the mount gate only delays the styles.
-      await compileCatalogOverlays(layers, slotSlugs, items =>
-        overlayStore.applyCatalogOverlays(items)
+      await compileCatalogOverlays(layers, slotSlugs, (items, meta) =>
+        overlayStore.applyCatalogOverlays(items, {
+          bumpEpoch: meta?.mapContentChanged ?? true,
+        })
       );
       status.value = 'ready';
     } catch (error) {
@@ -731,8 +802,10 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
         fetchMapCatalog(lang, spec),
         slotSlugsFor(lang),
       ]);
-      await compileCatalogOverlays(layers, slotSlugs, items =>
-        overlayStore.applyCatalogOverlays(items)
+      await compileCatalogOverlays(layers, slotSlugs, (items, meta) =>
+        overlayStore.applyCatalogOverlays(items, {
+          bumpEpoch: meta?.mapContentChanged ?? true,
+        })
       );
     } catch (error) {
       console.warn('[map-catalog] catalog rebuild failed — keeping current overlays:', error);
@@ -775,6 +848,7 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
 
   return {
     status,
+    mapStylesReady,
     parameterValues,
     runtimeValues,
     initOverlays,
