@@ -569,7 +569,16 @@ Tracker `script.js` is injected client-only at browser idle by
 `WODORE_UMAMI_WEBSITE_URL` env, (2) the user's `umami.disabled`
 localStorage opt-out (WdUser/WdMapMenu toggle), (3) DNT
 (`data-do-not-track`). Custom events go through the typed `track()` in
-`src/services/analytics.ts`. `WdAnalytics.vue` was REMOVED (it
+`src/services/analytics.ts`; events that fire at BOOT (before the
+idle-injected tracker exists, e.g. the basemap store's `gpu-tier`
+event) go through `trackWhenUmamiReady()` instead — a deferred
+one-shot that polls for the tracker (500ms, 15s deadline, silent drop
+on env-gated builds). The `gpu-tier` event reports the session's GPU
+bucket (`classification`, `tier`, `type`, `spec`, `raster`, `webgl2`,
+`source` cached/detected) — deliberately WITHOUT the raw renderer
+string (review decision: `WEBGL_debug_renderer_info` is a
+fingerprinting vector; the buckets answer the analytics questions).
+`WdAnalytics.vue` was REMOVED (it
 injected a second tracker per session) — never re-add a second
 injection point.
 

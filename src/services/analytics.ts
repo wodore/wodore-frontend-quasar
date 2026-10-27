@@ -54,7 +54,12 @@ export default function track(
  * until `deadlineMs` elapses — then drops silently, which is the
  * correct outcome on env-gated builds (dev/test/CI never load the
  * script). All track() gates apply at fire time (opt-out re-checked);
- * no queue: only the LAST call site per event should use this. */
+ * no queue: only the LAST call site per event should use this.
+ *
+ * Raw setInterval, not a VueUse composable, on purpose: the polling
+ * lives outside any component/effect scope (plain service module,
+ * explicit clearInterval) — useIntervalFn's scope-based auto-cleanup
+ * buys nothing here. */
 export function trackWhenUmamiReady(
   event_name: string,
   event_data?: { [key: string]: unknown },

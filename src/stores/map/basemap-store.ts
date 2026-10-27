@@ -216,8 +216,8 @@ export function classifyGpuTier(gpuTier: {
   gpu?: string | null;
 }): GpuTierClass {
   if (gpuTier.type === 'WEBGL_UNSUPPORTED') return 'non-webgl';
-  const gpuName = gpuTier.gpu?.toLowerCase() ?? '';
   if (!gpuTier.gpu) return 'no-gpu-name';
+  const gpuName = gpuTier.gpu.toLowerCase();
   if (SOFTWARE_GPU_NAMES.some(s => gpuName.includes(s))) return 'software-renderer';
   if (gpuTier.tier < 0) return 'detection-failed';
   if (gpuTier.tier < 2) return 'weak';
@@ -1241,20 +1241,23 @@ export const useBasemapStore = defineStore('basemap', () => {
     // failure) and what the renderer made of it (classification, spec,
     // raster). Deferred via trackWhenUmamiReady: this init usually
     // settles BEFORE the tracker script (injected at browser idle)
-    // exists. gpu string = the unmasked renderer when the browser
-    // exposes it (device hardware info, same class as screen size —
-    // not user-identifying; the opt-out gates of services/analytics
-    // apply at fire time).
+    // exists.
+    //
+    // Privacy: NO raw renderer string is sent (review decision — the
+    // unmasked WEBGL_debug_renderer_info value is a fingerprinting
+    // vector, and the bucket fields below already answer every
+    // analytics question). The unmasked name stays in the console
+    // diagnostic above, local-only. Optional fields are guarded so
+    // stale caches predating them simply omit the key.
     const gpuEventData: { [key: string]: unknown } = {
       tier: gpuTier.tier,
-      type: gpuTier.type,
-      gpu: unmaskedGpuName,
       classification: classifyGpuTier(gpuTier),
       spec: gpuSpec(useRaster),
       raster: useRaster,
       source: usedCache ? 'cached' : 'detected',
       webgl2,
     };
+    if (gpuTier.type !== undefined) gpuEventData.type = gpuTier.type;
     if (gpuTier.fps !== undefined) gpuEventData.fps = gpuTier.fps;
     if (gpuTier.isMobile !== undefined) gpuEventData.isMobile = gpuTier.isMobile;
     trackWhenUmamiReady('gpu-tier', gpuEventData);

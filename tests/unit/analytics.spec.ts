@@ -200,6 +200,18 @@ describe('trackWhenUmamiReady — deferred boot-time events', () => {
     expect(umami.track).not.toHaveBeenCalled();
   });
 
+  it('still fires when the tracker appears on the deadline tick itself (t=15_000)', async () => {
+    // fire() runs BEFORE the deadline check in the tick condition — a
+    // tracker that lands exactly at the deadline must not be missed.
+    const umami = { track: vi.fn() };
+    const { trackWhenUmamiReady } = await loadModule();
+    trackWhenUmamiReady('gpu-tier', { tier: 2 });
+    vi.advanceTimersByTime(14_500); // 29 polls, tracker still absent
+    vi.stubGlobal('umami', umami);
+    vi.advanceTimersByTime(500); // t=15_000 — the deadline tick
+    expect(umami.track).toHaveBeenCalledTimes(1);
+  });
+
   it('never starts polling while opted out', async () => {
     localStorage.setItem('umami.disabled', 'true');
     const { trackWhenUmamiReady } = await loadModule();

@@ -14,7 +14,17 @@ import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vite
 import { createPinia, setActivePinia } from 'pinia';
 import { effectScope } from 'vue';
 import type { MapCatalogLayer } from '@services/map-catalog';
-import { classifyGpuTier } from '@stores/map/basemap-store';
+import { classifyGpuTier, mapProfileForTier } from '@stores/map/basemap-store';
+import { trackWhenUmamiReady } from '@services/analytics';
+
+// Capture (not perform) the gpu-tier telemetry: the store under test
+// calls trackWhenUmamiReady — the deferred-fire behavior itself is
+// covered by analytics.spec.ts.
+vi.mock('@services/analytics', () => ({
+  default: vi.fn(),
+  umamiOptedOut: () => false,
+  trackWhenUmamiReady: vi.fn(),
+}));
 
 const API_HOST = 'https://hub.stg.wodore.com';
 
@@ -328,5 +338,158 @@ describe('classifyGpuTier — render-profile buckets (shared with the gpu-tier U
 
   it('software names match case-insensitively', () => {
     expect(classifyGpuTier({ tier: 3, gpu: 'SwiftShader' })).toBe('software-renderer');
+  });
+});
+
+describe('mapProfileForTier — class → render profile table (refactor lock)', () => {
+  // Pins the switch mapping after the classifyGpuTier refactor — the
+  // profiles must stay exactly what the historical inline branches
+  // returned. dpr=3 exercises every Math.min cap.
+  const dpr = 3;
+  const LOWEST = { pixelRatio: 1, fadeDuration: 0, maxTileCacheSize: 100, maxParallelImageRequests: 8 };
+
+  it('null (first visit, no cached tier) → HIGH defaults', () => {
+    expect(mapProfileForTier(null, dpr)).toEqual({
+      pixelRatio: 3,
+      fadeDuration: 300,
+      maxTileCacheSize: 400,
+      maxParallelImageRequests: 32,
+    });
+  });
+
+  it('degraded buckets → lowest-spec profile', () => {
+    // non-webgl, no-gpu-name (incl. the trimmed cached {tier} shape),
+    // software-renderer — all cap at pixelRatio 1
+    expect(mapProfileForTier({ tier: 3, type: 'WEBGL_UNSUPPORTED' }, dpr)).toEqual(LOWEST);
+    expect(mapProfileForTier({ tier: 2 }, dpr)).toEqual(LOWEST);
+    expect(mapProfileForTier({ tier: 3, gpu: 'ANGLE (Google, Vulkan SwiftShader)' }, dpr)).toEqual(
+      LOWEST
+    );
+  });
+
+  it('detection-failed / weak / medium / high → their historical profiles', () => {
+    expect(mapProfileForTier({ tier: -1, gpu: 'PowerVR Rogue', type: 'BLOCKLISTED' }, dpr)).toEqual({
+      pixelRatio: 2, // min(3, 2)
+      fadeDuration: 0,
+      maxTileCacheSize: 100,
+      maxParallelImageRequests: 8,
+    });
+    expect(mapProfileForTier({ tier: 1, gpu: 'Adreno 505' }, dpr)).toEqual({
+      pixelRatio: 1.5, // min(3, 1.5)
+      fadeDuration: 0,
+      maxTileCacheSize: 100,
+      maxParallelImageRequests: 8,
+    });
+    expect(mapProfileForTier({ tier: 2, gpu: 'Iris Plus' }, dpr)).toEqual({
+      pixelRatio: 2, // min(3, 2)
+      fadeDuration: 300,
+      maxTileCacheSize: 200,
+      maxParallelImageRequests: 16,
+    });
+    expect(mapProfileForTier({ tier: 3, gpu: 'RTX 4080' }, dpr)).toEqual({
+      pixelRatio: 3, // uncapped
+      fadeDuration: 300,
+      maxTileCacheSize: 400,
+      maxParallelImageRequests: 32,
+    });
+  });
+});
+
+describe('basemap store — gpu-tier Umami event (runBasemapInit wiring)', () => {
+  let stores: typeof import('@stores/map/basemap-store');
+  let scope: ReturnType<typeof effectScope>;
+
+  beforeAll(async () => {
+    stores = await import('@stores/map/basemap-store');
+  });
+
+  const bootStore = () => {
+    scope = effectScope();
+    scope.run(() => stores.useBasemapStore());
+  };
+
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    setStyleCalls.length = 0;
+    storageState.clear();
+    vi.mocked(trackWhenUmamiReady).mockClear();
+    catalogResponse.layers = [HILL()];
+    process.env.WODORE_API_HOST = API_HOST;
+  });
+
+  afterEach(() => {
+    scope?.stop();
+    delete process.env.WODORE_API_HOST;
+  });
+
+  const eventCall = async (): Promise<[string, Record<string, unknown>]> => {
+    await vi.waitFor(() => expect(trackWhenUmamiReady).toHaveBeenCalledTimes(1), { timeout: 4000 });
+    return vi.mocked(trackWhenUmamiReady).mock.calls[0]! as [string, Record<string, unknown>];
+  };
+
+  it('cached high tier: reports the bucket fields, never the raw gpu string', async () => {
+    storageState.set('gpuTier', {
+      tier: 3,
+      gpu: 'Test GPU',
+      type: 'BENCHMARK',
+      fps: 60,
+      isMobile: false,
+    });
+    storageState.set('gpuTierTime', Date.now());
+    bootStore();
+    const [name, data] = await eventCall();
+    expect(name).toBe('gpu-tier');
+    expect(data).toMatchObject({
+      tier: 3,
+      type: 'BENCHMARK',
+      classification: 'high',
+      spec: 'high',
+      raster: false,
+      source: 'cached',
+      fps: 60,
+      isMobile: false,
+    });
+    // privacy (review decision): the unmasked renderer string is a
+    // fingerprinting vector — it must not be transmitted
+    expect(data).not.toHaveProperty('gpu');
+    // present (value is environment-dependent: happy-dom has no WebGL)
+    expect(typeof data.webgl2).toBe('boolean');
+  });
+
+  it('fresh detection: source=detected, optional keys absent from a stale/mocked tier are omitted', async () => {
+    // no cached tier → the getGPUTier mock runs; it returns neither
+    // `type` nor `isMobile` — those keys must be ABSENT, not undefined
+    bootStore();
+    const [name, data] = await eventCall();
+    expect(name).toBe('gpu-tier');
+    expect(data).toMatchObject({
+      tier: 3,
+      classification: 'high',
+      source: 'detected',
+      raster: false,
+      spec: 'high',
+      fps: 60,
+    });
+    expect(data).not.toHaveProperty('type');
+    expect(data).not.toHaveProperty('isMobile');
+    expect(data).not.toHaveProperty('gpu');
+  });
+
+  it('cached detection failure: raster fallback engaged (detection-failed → spec low)', async () => {
+    // tier < 0 with a NAMED gpu: the subtlest shouldUseRaster case —
+    // old logic sent it to raster via tier < 2; the classification
+    // path must keep it there.
+    storageState.set('gpuTier', { tier: -1, gpu: 'PowerVR Rogue GE8320', type: 'BLOCKLISTED' });
+    storageState.set('gpuTierTime', Date.now());
+    bootStore();
+    const [, data] = await eventCall();
+    expect(data).toMatchObject({
+      tier: -1,
+      type: 'BLOCKLISTED',
+      classification: 'detection-failed',
+      spec: 'low',
+      raster: true,
+      source: 'cached',
+    });
   });
 });
