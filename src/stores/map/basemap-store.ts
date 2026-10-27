@@ -6,6 +6,7 @@ import { BasemapSwitchItem } from '@stores/map/utils/interfaces';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
 //import type { Emitter } from 'mitt';
 import { storageGet, storageSet } from '@services/storage';
+import { trackWhenUmamiReady } from '@services/analytics';
 import { getGPUTier } from '@pmndrs/detect-gpu';
 import { useOverlayStore } from './overlay-store';
 import { withOverlayMinZoom } from './utils/map-constants';
@@ -172,6 +173,47 @@ const DEFAULT_BASEMAP_NAME = 'wd-outdoor-base-mtk-hill';
 
 const SOFTWARE_GPU_NAMES = ['swiftshader', 'llvmpipe', 'software', 'mesa offscreen', 'softpipe'];
 
+/** The render-decision bucket a detect-gpu result falls into — the
+ * single vocabulary shared by mapProfileForTier, shouldUseRaster and
+ * the `gpu-tier` Umami event, so what analytics reports is exactly
+ * what the renderer did. Order matters and mirrors the historical
+ * branch order of mapProfileForTier/shouldUseRaster. */
+export type GpuTierClass =
+  | 'non-webgl' // detect-gpu type WEBGL_UNSUPPORTED (tier -1) — no WebGL context at all
+  | 'software-renderer' // known software rasterizer (SwiftShader, llvmpipe, …)
+  | 'no-gpu-name' // detect-gpu couldn't identify the GPU (no renderer string)
+  | 'detection-failed' // tier < 0 — detection failure or the GPU-detect timeout race
+  | 'weak' // tier ≤ 1 — confirmed weak GPU hardware
+  | 'medium' // tier 2
+  | 'high'; // tier 3+
+
+/** Classify a detect-gpu TierResult into its GpuTierClass. Pure —
+ * safe outside a component (analytics, unit tests). Accepts the
+ * trimmed cached shape ({ tier, gpu }) too: `type`/`fps`/`isMobile`
+ * are optional, exactly like the persisted localStorage entry.
+ *
+ * tier < 0 is checked FIRST, mirroring shouldUseRaster's capable-
+ * failure doctrine adopted on main: WEBGL_UNSUPPORTED is its own
+ * bucket, every other tier<0 outcome — blocklisted, benchmark fetch
+ * failed, and the store's own GPU-detect timeout fallback
+ * ({tier: -1, type: 'FALLBACK'}, never cached) — is
+ * 'detection-failed' = treated as capable hardware (vector). */
+export function classifyGpuTier(gpuTier: {
+  tier: number;
+  type?: string;
+  gpu?: string | null;
+}): GpuTierClass {
+  if (gpuTier.tier < 0) {
+    return gpuTier.type === 'WEBGL_UNSUPPORTED' ? 'non-webgl' : 'detection-failed';
+  }
+  if (!gpuTier.gpu) return 'no-gpu-name';
+  const gpuName = gpuTier.gpu.toLowerCase();
+  if (SOFTWARE_GPU_NAMES.some(s => gpuName.includes(s))) return 'software-renderer';
+  if (gpuTier.tier < 2) return 'weak';
+  if (gpuTier.tier === 2) return 'medium';
+  return 'high';
+}
+
 export interface MapRenderProfile {
   pixelRatio: number;
   fadeDuration: number;
@@ -198,49 +240,50 @@ export function mapProfileForTier(
     };
   }
 
-  const gpuName = gpuTier.gpu?.toLowerCase() ?? '';
-  if (!gpuTier.gpu || SOFTWARE_GPU_NAMES.some(s => gpuName.includes(s))) {
-    // No GPU name (detect-gpu couldn't identify) or a known software renderer — treat as lowest-spec
-    return { pixelRatio: 1, fadeDuration: 0, maxTileCacheSize: 100, maxParallelImageRequests: 8 };
-  }
+  switch (classifyGpuTier(gpuTier)) {
+    // No GPU name (detect-gpu couldn't identify), a known software
+    // renderer, or no WebGL at all — treat as lowest-spec
+    case 'non-webgl':
+    case 'no-gpu-name':
+    case 'software-renderer':
+      return { pixelRatio: 1, fadeDuration: 0, maxTileCacheSize: 100, maxParallelImageRequests: 8 };
 
-  if (gpuTier.tier < 0) {
     // Detection failure — capable hardware that detect-gpu couldn't classify
-    return {
-      pixelRatio: Math.min(dpr, 2),
-      fadeDuration: 0,
-      maxTileCacheSize: 100,
-      maxParallelImageRequests: 8,
-    };
-  }
+    case 'detection-failed':
+      return {
+        pixelRatio: Math.min(dpr, 2),
+        fadeDuration: 0,
+        maxTileCacheSize: 100,
+        maxParallelImageRequests: 8,
+      };
 
-  if (gpuTier.tier <= 1) {
     // LOW: confirmed weak GPU hardware
-    return {
-      pixelRatio: Math.min(dpr, 1.5),
-      fadeDuration: 0,
-      maxTileCacheSize: 100,
-      maxParallelImageRequests: 8,
-    };
-  }
+    case 'weak':
+      return {
+        pixelRatio: Math.min(dpr, 1.5),
+        fadeDuration: 0,
+        maxTileCacheSize: 100,
+        maxParallelImageRequests: 8,
+      };
 
-  if (gpuTier.tier === 2) {
     // MEDIUM
-    return {
-      pixelRatio: Math.min(dpr, 2),
-      fadeDuration: 300,
-      maxTileCacheSize: 200,
-      maxParallelImageRequests: 16,
-    };
-  }
+    case 'medium':
+      return {
+        pixelRatio: Math.min(dpr, 2),
+        fadeDuration: 300,
+        maxTileCacheSize: 200,
+        maxParallelImageRequests: 16,
+      };
 
-  // HIGH (tier 3+)
-  return {
-    pixelRatio: dpr,
-    fadeDuration: 300,
-    maxTileCacheSize: 400,
-    maxParallelImageRequests: 32,
-  };
+    // HIGH (tier 3+)
+    case 'high':
+      return {
+        pixelRatio: dpr,
+        fadeDuration: 300,
+        maxTileCacheSize: 400,
+        maxParallelImageRequests: 32,
+      };
+  }
 }
 
 // Keyless plain OSM raster (tile.openstreetmap.org) — style for the weak-GPU
@@ -999,16 +1042,13 @@ export const useBasemapStore = defineStore('basemap', () => {
 
   // Helper to determine if we should use raster basemaps based on GPU capabilities
   function shouldUseRaster(gpuTier: Awaited<ReturnType<typeof getGPUTier>>): boolean {
-    // tier < 0 = detection FAILURE (incl. the GPU-detect timeout race
-    // below) — hardware that couldn't be classified, not weak hardware.
-    // Same precedent as mapProfileForTier's tier < 0 branch: treat as
-    // capable (vector), never punish unknown hardware with the raster
-    // path for a dead benchmark host.
-    if (gpuTier.tier < 0) return false;
-    if (!gpuTier.gpu) return true;
-    const gpuName = gpuTier.gpu.toLowerCase();
-    if (SOFTWARE_GPU_NAMES.some(s => gpuName.includes(s))) return true;
-    return gpuTier.tier < 2;
+    // Raster exactly for no-gpu-name / software-renderer / weak —
+    // classifyGpuTier is the shared decision vocabulary. Detection
+    // failures (tier < 0, incl. the GPU-detect timeout race below) are
+    // NOT weak hardware: treat as capable (vector), never punish
+    // unknown hardware with the raster path for a dead benchmark host.
+    const gpuClass = classifyGpuTier(gpuTier);
+    return gpuClass === 'no-gpu-name' || gpuClass === 'software-renderer' || gpuClass === 'weak';
   }
 
   // Async function to initialize basemaps based on GPU tier
@@ -1139,8 +1179,14 @@ export const useBasemapStore = defineStore('basemap', () => {
     const now = Date.now();
 
     let gpuTier: Awaited<ReturnType<typeof getGPUTier>>;
+    const usedCache = Boolean(
+      cachedGpuTier && cachedGpuTierTime && now - cachedGpuTierTime < twoDaysInMs
+    );
+    // Set by the GPU-detect timeout race below (function scope: the
+    // gpu-tier event reports it as source 'timeout').
+    let gpuDetectTimedOut = false;
 
-    if (cachedGpuTier && cachedGpuTierTime && now - cachedGpuTierTime < twoDaysInMs) {
+    if (usedCache) {
       // Use cached result
       console.debug('Using cached GPU tier:', cachedGpuTier);
       gpuTier = cachedGpuTier as Awaited<ReturnType<typeof getGPUTier>>;
@@ -1156,7 +1202,6 @@ export const useBasemapStore = defineStore('basemap', () => {
       // capable hardware for a dead benchmark host) WITHOUT caching it,
       // so the next visit retries detection.
       const GPU_DETECT_TIMEOUT_MS = 3500;
-      let gpuDetectTimedOut = false;
       let gpuDetectTimer: ReturnType<typeof setTimeout> | undefined;
       gpuTier = await Promise.race([
         getGPUTier(),
@@ -1206,14 +1251,17 @@ export const useBasemapStore = defineStore('basemap', () => {
     resolveGpuSpec(gpuSpec(useRaster));
 
     // GPU + optimization status (user-facing console diagnostics)
+    let webgl2: boolean;
+    let unmaskedGpuName: string;
     {
       const gl = document.createElement('canvas').getContext('webgl2');
+      webgl2 = gl !== null;
       const renderer = gl?.getExtension('WEBGL_debug_renderer_info');
-      const gpuName = renderer
+      unmaskedGpuName = renderer
         ? String(gl!.getParameter(renderer.UNMASKED_RENDERER_WEBGL))
         : gpuTier.gpu || 'unknown';
       console.info(
-        `[perf] GPU: ${gpuName} | tier: ${gpuTier.tier} | fps: ${gpuTier.fps || 'n/a'} | ` +
+        `[perf] GPU: ${unmaskedGpuName} | tier: ${gpuTier.tier} | fps: ${gpuTier.fps || 'n/a'} | ` +
           `weak: ${weakGpu} | ` +
           `optimizations: ${[
             'ao_max+dramatic removed (all)',
@@ -1225,6 +1273,45 @@ export const useBasemapStore = defineStore('basemap', () => {
       );
       if (gl) gl.getExtension('WEBGL_lose_context')?.loseContext();
     }
+
+    // Umami: one `gpu-tier` event per session, reporting the FULL tier
+    // outcome — not just the tier number but every fallback bucket
+    // (non-WebGL, software rasterizer, unidentifiable GPU, detection
+    // failure) and what the renderer made of it (classification, spec,
+    // raster). Deferred via trackWhenUmamiReady: this init usually
+    // settles BEFORE the tracker script (injected at browser idle)
+    // exists.
+    //
+    // Privacy: NO raw renderer string is sent (review decision — the
+    // unmasked WEBGL_debug_renderer_info value is a fingerprinting
+    // vector, and the bucket fields below already answer every
+    // analytics question). The unmasked name stays in the console
+    // diagnostic above, local-only. Optional fields are guarded so
+    // stale caches predating them simply omit the key.
+    const gpuEventData: { [key: string]: unknown } = {
+      tier: gpuTier.tier,
+      classification: classifyGpuTier(gpuTier),
+      spec: gpuSpec(useRaster),
+      raster: useRaster,
+      // How the session's tier came to be: the ?gpuTier= URL override
+      // wins (QA knob; -1 = forced Leaflet fallback), then the
+      // GPU-detect timeout fallback, then the 2-day cache, then a
+      // fresh detection.
+      source:
+        tierOverride !== null
+          ? 'override'
+          : gpuDetectTimedOut
+            ? 'timeout'
+            : usedCache
+              ? 'cached'
+              : 'detected',
+      webgl2,
+    };
+    if (tierOverride !== null) gpuEventData.override = tierOverride;
+    if (gpuTier.type !== undefined) gpuEventData.type = gpuTier.type;
+    if (gpuTier.fps !== undefined) gpuEventData.fps = gpuTier.fps;
+    if (gpuTier.isMobile !== undefined) gpuEventData.isMobile = gpuTier.isMobile;
+    trackWhenUmamiReady('gpu-tier', gpuEventData);
 
     console.debug(
       'GPU Tier detected:',

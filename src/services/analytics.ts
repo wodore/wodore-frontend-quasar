@@ -43,3 +43,42 @@ export default function track(
     return undefined;
   }
 }
+
+/** Fire an event once the Umami tracker script has actually loaded.
+ *
+ * Boot-time detections (e.g. the GPU tier) routinely resolve BEFORE
+ * the tracker global exists: the boot file injects script.js at
+ * browser idle (≤2s) and the fetch takes a round trip, so a direct
+ * track() in that window is dropped ("Umami is not available"). This
+ * defers exactly ONE attempt, polling the umami global every 500ms
+ * until `deadlineMs` elapses — then drops silently, which is the
+ * correct outcome on env-gated builds (dev/test/CI never load the
+ * script). All track() gates apply at fire time (opt-out re-checked);
+ * no queue: only the LAST call site per event should use this.
+ *
+ * Raw setInterval, not a VueUse composable, on purpose: the polling
+ * lives outside any component/effect scope (plain service module,
+ * explicit clearInterval) — useIntervalFn's scope-based auto-cleanup
+ * buys nothing here. */
+export function trackWhenUmamiReady(
+  event_name: string,
+  event_data?: { [key: string]: unknown },
+  deadlineMs = 15_000
+): void {
+  if (typeof window === 'undefined') return; // SSR — never track
+  if (umamiOptedOut()) return;
+
+  const fire = (): boolean => {
+    if (typeof umami === 'undefined') return false;
+    track(event_name, event_data);
+    return true;
+  };
+
+  if (fire()) return;
+  const startedAt = Date.now();
+  const timer = window.setInterval(() => {
+    if (fire() || Date.now() - startedAt >= deadlineMs) {
+      window.clearInterval(timer);
+    }
+  }, 500);
+}
