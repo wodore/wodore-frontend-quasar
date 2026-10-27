@@ -52,22 +52,17 @@ import {
   fetchMapStyle,
   isOpacityCurve,
   loadPersistedLayers,
-  loadStyleCache,
   parseOpacityCurve,
   persistLayers,
-  persistStyleEntry,
-  pruneStyleCache,
+  purgeLegacyStyleCaches,
   resolveTokens,
   collectTokens,
   serializeOpacityCurve,
-  styleCacheKey,
   styleVariantUrl,
   type MapCatalogLayer,
   type MapCatalogSlot,
   type MapLayerParameter,
   type OpacityCurve,
-  type PersistedStyleCache,
-  type PersistedStyleEntry,
 } from '@services/map-catalog';
 import {
   authoredParameterValues,
@@ -485,53 +480,24 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     return styleValid(validated);
   }
 
-  /** Whether a cached entry can serve this layer (modified + validity). */
-  function cacheServes(
-    entry: PersistedStyleEntry | undefined,
-    layer: MapCatalogLayer,
-    tokenized: boolean
-  ): entry is PersistedStyleEntry {
-    if (!entry) return false;
-    if ((entry.modified ?? null) !== (layer.modified ?? null)) return false;
-    const doc = tokenized ? entry.tokenized : entry.style;
-    if (!doc) return false;
-    return bundleIsValid(doc, layer);
-  }
-
   /**
-   * Load one layer's style bundle: the persisted cache serves when the
-   * version matches; otherwise the style endpoint is fetched (tokenized
-   * for parameterized layers, resolved otherwise) and persisted.
+   * Load one layer's style bundle: fetch the catalog's canonical
+   * `style_url` variant (backend-served spec + immutable `&v=` token,
+   * `mode=tokenized` appended for parameterized layers — backend #434:
+   * any variant URL carrying a valid v serves immutable, so the BROWSER
+   * cache owns freshness; the in-service session dedupe collapses repeat
+   * fetches). No local persistence — the retired localStorage caches were
+   * redundant once URLs became content-versioned (owner decision
+   * 2026-10). A missing style_url means the catalog entry is broken —
+   * skip loudly like a failed fetch.
    */
-  async function loadStyleBundle(
-    layer: MapCatalogLayer,
-    cache: PersistedStyleCache
-  ): Promise<LoadedBundle | undefined> {
+  async function loadStyleBundle(layer: MapCatalogLayer): Promise<LoadedBundle | undefined> {
     const tokenized = layer.parameters.length > 0;
-    // The fetched URL is the catalog's canonical `style_url` (backend-
-    // served spec + immutable `&v=` token), with `mode=tokenized`
-    // appended for parameterized layers (backend #434: any variant URL
-    // carrying a valid v serves immutable). The cache key is slug ×
-    // mode ONLY — the document no longer varies with the client GPU
-    // tier, so a tier change must not duplicate entries. A missing
-    // style_url means the catalog entry is broken — skip loudly like a
-    // failed fetch.
     if (!layer.style_url) {
       skipLayer(layer, 'layer configuration missing (style URL)', undefined);
       return undefined;
     }
     const styleUrl = layer.style_url;
-    const key = styleCacheKey(layer.slug, tokenized);
-    const cached = cache[key];
-    if (cacheServes(cached, layer, tokenized)) {
-      if (tokenized && cached.tokenized) {
-        return {
-          style: resolveTokens(cached.tokenized, valuesFor(layer)) as StyleSpecification,
-          tokenizedStyle: cached.tokenized,
-        };
-      }
-      if (!tokenized && cached.style) return { style: cached.style };
-    }
 
     try {
       const tokenizedDoc = tokenized
@@ -550,10 +516,6 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
         skipLayer(layer, 'invalid style document', undefined);
         return undefined;
       }
-      persistStyleEntry(key, {
-        ...(tokenized ? { tokenized: tokenizedDoc } : { style: resolvedDoc }),
-        modified: layer.modified ?? null,
-      });
       return { style: resolvedDoc, tokenizedStyle: tokenizedDoc };
     } catch (error) {
       skipLayer(layer, 'style could not be loaded', error);
@@ -612,7 +574,6 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     slotSlugs: Set<string>,
     onItems?: (items: OverlaySwitchItem[], meta?: { mapContentChanged: boolean }) => void
   ): Promise<OverlaySwitchItem[]> {
-    const styleCache = loadStyleCache();
     const overlayLayers = layers.filter(l => l.role === 'overlay');
     // Catalog order (role, order, slug — the backend sorts): progressive
     // batches resolve in network order; this lookup keeps the list stable.
@@ -665,7 +626,7 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     emitAll(false); // metadata-first: rows before any style fetch settles
 
     const load = async (layer: MapCatalogLayer, isActive: boolean): Promise<void> => {
-      const bundle = await loadStyleBundle(layer, styleCache);
+      const bundle = await loadStyleBundle(layer);
       settled[layer.slug] = bundle ? mapCatalogOverlay(layer, slotSlugs, bundle) : null;
       // A user may have toggled a placeholder row ON mid-compile: its
       // arrival is map content too, even though the pre-resolved wave
@@ -718,6 +679,9 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
    * never factories.
    */
   async function initOverlays(): Promise<void> {
+    // One-time cleanup of the retired localStorage style caches (their
+    // immutable-URL replacements live in the browser/SW cache now).
+    purgeLegacyStyleCaches();
     const cached = loadPersistedLayers();
     if (cached) {
       try {
@@ -757,7 +721,6 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
         slotSlugsFor(lang),
       ]);
       persistLayers(layers, lang);
-      pruneStyleCache(new Set(layers.map(l => l.slug)));
       // The per-style documents are switcher data, not first-render
       // data — they are already deferred off the first-paint critical
       // path by MapPage's idle-gated map mount (WdMapView setup is what

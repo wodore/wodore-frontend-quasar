@@ -376,96 +376,15 @@ export function loadPersistedLayers(): PersistedLayers | null {
   return cached;
 }
 
-const STYLE_CACHE_KEY = 'mapCatalogStyleCache';
+/** Persisted-basemap cache (pre-#434) — purged once; freshness now
+ *  lives in the immutable versioned URLs + the browser/SW cache. */
+const LEGACY_STYLE_CACHE_KEYS = ['mapCatalogStyleCache', 'basemapStyleCache'];
 
-/** A persisted style document + the layer version it was built from. */
-export interface PersistedStyleEntry {
-  /** Resolved-mode document (non-parameterized layers). */
-  style?: StyleSpecification | null;
-  /** Tokenized document (parameterized layers — resolved client-side). */
-  tokenized?: StyleSpecification | null;
-  /** `modified` of the catalog layer this was fetched from (ISO
-   *  timestamp, backend #331 — was `version`; absent on pre-#331
-   *  persisted entries, which simply revalidate once). */
-  modified?: string | null;
-}
-
-export type PersistedStyleCache = Record<string, PersistedStyleEntry>;
-
-/** Cache key: one entry per slug × mode — the spec is NOT part of the
- *  identity: since the verbatim-style_url change the fetched document
- *  no longer varies with the client GPU tier (the URL carries the
- *  backend-SERVED spec), so two tiers would store identical bytes under
- *  different keys. Owner decision 2026-10: slug + mode only. */
-export function styleCacheKey(slug: string, tokenized: boolean): string {
-  return `${slug}|${tokenized ? 'tokenized' : 'resolved'}`;
-}
-
-export function loadStyleCache(): PersistedStyleCache {
-  return (storageGet(STYLE_CACHE_KEY) as PersistedStyleCache | null) ?? {};
-}
-
-export function persistStyleEntry(
-  key: string,
-  entry: PersistedStyleEntry,
-  cache: PersistedStyleCache = loadStyleCache()
-): void {
-  cache[key] = entry;
-  storageSet(STYLE_CACHE_KEY, cache);
-}
-
-/** Drop cached style entries that no longer match any catalog layer
- *  (removed layers) — keeps the persisted cache from growing forever.
- *  Keys are `slug|spec|mode`; the slug segment decides membership. */
-export function pruneStyleCache(validSlugs: Set<string>): void {
-  const cache = loadStyleCache();
-  const stale = Object.keys(cache).filter(k => {
-    const slug = k.split('|')[0];
-    return slug !== undefined && !validSlugs.has(slug);
-  });
-  if (stale.length === 0) return;
-  for (const k of stale) {
-    delete cache[k];
-  }
-  storageSet(STYLE_CACHE_KEY, cache);
-}
-
-// ── Persisted BASEMAP styles (SWR for the boot-critical style) ────────────
-
-const BASEMAP_STYLE_CACHE_KEY = 'basemapStyleCache';
-
-/** Bounded so a long session hopping basemaps can't grow the store
- *  unbounded (style docs run 100-300 kB each; localStorage is ~5 MB). */
-const BASEMAP_STYLE_CACHE_MAX = 6;
-
-export interface PersistedBasemapStyle {
-  savedAt: string;
-  /** RAW style document (URL resolution is deterministic, recomputed
-   *  on read — see basemap-store's loadStyleObject). */
-  style: StyleSpecification;
-}
-
-export function loadBasemapStyleCache(): Record<string, PersistedBasemapStyle> {
-  const raw = storageGet(BASEMAP_STYLE_CACHE_KEY);
-  // Runtime guard (review finding): a corrupted or schema-drifted entry
-  // from an older build must degrade to a cache MISS, never leak a
-  // wrong-shaped value through the cast.
-  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
-  return raw as Record<string, PersistedBasemapStyle>;
-}
-
-/** Store one style document (keyed by its URL). SWR semantics: an
- *  entry may go stale if the backend updates the style under an
- *  unchanged URL (the URL carries slug+spec, not the layer's
- *  `modified`) — the background revalidate in basemap-store refreshes
- *  the copy so at latest the NEXT warm boot serves fresh content.
- *  Prunes to the newest MAX entries by savedAt. */
-export function persistBasemapStyle(url: string, style: StyleSpecification): void {
-  const cache = loadBasemapStyleCache();
-  cache[url] = { savedAt: new Date().toISOString(), style };
-  const entries = Object.entries(cache).sort((a, b) => b[1].savedAt.localeCompare(a[1].savedAt));
-  const pruned = Object.fromEntries(entries.slice(0, BASEMAP_STYLE_CACHE_MAX));
-  storageSet(BASEMAP_STYLE_CACHE_KEY, pruned);
+/** One-time cleanup of the retired localStorage style caches (the
+ *  immutable `&v=` URLs made them redundant — owner decision 2026-10).
+ *  Idempotent and cheap; called from the map-catalog store's boot. */
+export function purgeLegacyStyleCaches(): void {
+  for (const key of LEGACY_STYLE_CACHE_KEYS) storageRemove(key);
 }
 
 /** GPU tier → style `spec` param. `shouldUseRaster` (basemap-store) stays
