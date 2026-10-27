@@ -1458,7 +1458,7 @@ function addOverlays(): void {
 // Deferred-catalog-swap retry state (see reapplyOverlaysAfterCatalogSwap).
 // `pending` accumulates epoch bumps that arrived while a style swap was
 // in flight (each must eventually re-run the re-add, not just the first);
-// `armed` keeps at most ONE retry listener pair bound at a time.
+// `armed` keeps exactly ONE retry listener pair bound at a time.
 let catalogSwapPending = false;
 let catalogSwapRetryArmed = false;
 
@@ -1466,15 +1466,20 @@ let catalogSwapRetryArmed = false;
  *  style is loaded. Both 'idle' and 'style.load' can signal readiness
  *  (a style fetch can stall for seconds — 'idle' fires in between and
  *  'style.load' fires the moment the swapped style is up); whichever
- *  fires first runs the retry, re-arming when the style is still busy
- *  so a bump is never dropped (cold-boot race 2026-10-27: progressive
- *  catalog emits landed during the boot setStyle, the single 'idle'
- *  retry gave up while the style was still loading, and the huts
- *  overlay — markers AND availability — never reached the map). */
+ *  fires first unregisters BOTH siblings (maplibre's `off` removes
+ *  `once`-registered listeners by identity), so exactly one pair is
+ *  ever live and no straggler can clear `armed` for a newer pair. A
+ *  retry that finds the style still busy re-arms — a bump is never
+ *  dropped (cold-boot race 2026-10-27: progressive catalog emits landed
+ *  during the boot setStyle, the single 'idle' retry gave up while the
+ *  style was still loading, and the huts overlay — markers AND
+ *  availability — never reached the map). */
 function armCatalogSwapRetry(map: MapLibreMap): void {
   if (catalogSwapRetryArmed) return;
   catalogSwapRetryArmed = true;
   const retry = () => {
+    map.off('idle', retry);
+    map.off('style.load', retry);
     catalogSwapRetryArmed = false;
     if (!catalogSwapPending) return;
     if (!map.isStyleLoaded()) {
@@ -1553,7 +1558,10 @@ watch(
 // overlay owning the wd-bookings source through the normal toggle path
 // (persist + group view + map add + visibility). One-directional —
 // clearing the date never disables the overlay again (the date-gated
-// occupation layers hide on their own).
+// occupation layers hide on their own). Deliberately NOT immediate: on
+// a reload with a restored ?date= the overlay's active state comes back
+// from persistence (the toggle path persisted it when the date was
+// first picked), so re-firing the auto-enable is unnecessary.
 watch(
   () => useHutsStore().selectedDate,
   date => {
