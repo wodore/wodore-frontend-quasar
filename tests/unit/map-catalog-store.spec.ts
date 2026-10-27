@@ -492,6 +492,117 @@ describe('map catalog store (boot cache + version sync)', () => {
     expect(mtb.tokenizedStyle).toBeTruthy();
   });
 
+  it('boot priority: ACTIVE overlay styles fetch first; only their arrival bumps the swap epoch', async () => {
+    window.localStorage.setItem(
+      'overlays',
+      JSON.stringify([
+        { name: 'transport-stops', active: false, show: true },
+        { name: 'mtb', active: true, show: true },
+      ])
+    );
+    let releaseTransport: (() => void) | undefined;
+    let releaseMtb: (() => void) | undefined;
+    catalogFetch.mockResolvedValue(catalogFor(VERSION_A));
+    styleFetch.mockImplementation(async (url: string) => {
+      await new Promise<void>(resolve => {
+        if (url.includes('mtb')) releaseMtb = resolve;
+        else releaseTransport = resolve;
+      });
+      return url.includes('mode=tokenized')
+        ? structuredClone(MTB_TOKENIZED)
+        : structuredClone(TRANSPORT_STYLE);
+    });
+
+    const store = stores.useMapCatalogStore();
+    const overlayStore = overlayStores.useOverlayStore();
+    const epochBefore = overlayStore.overlaysEpoch;
+    const initDone = store.initOverlays();
+    await new Promise(resolve => setTimeout(resolve, 20));
+
+    // Only the ACTIVE layer's style endpoint fetched so far — the
+    // inactive wave waits for the active one (reveal-path priority).
+    expect(styleFetches).toHaveLength(1);
+    expect(styleFetches[0]).toContain('mtb');
+    // The metadata-first placeholder emit is a menu-only update: no epoch.
+    expect(overlayStore.overlaysEpoch - epochBefore).toBe(0);
+
+    releaseMtb?.();
+    await new Promise(resolve => setTimeout(resolve, 20));
+    // Active wave settled → reveal latch open with ONE epoch bump, while
+    // the inactive wave (transport-stops) is still pending.
+    expect(store.mapStylesReady).toBe(true);
+    expect(overlayStore.overlaysEpoch - epochBefore).toBe(1);
+    expect(store.status).not.toBe('ready');
+
+    releaseTransport?.();
+    await initDone;
+    expect(store.status).toBe('ready');
+    // Inactive arrivals are menu-only: never another epoch bump.
+    expect(overlayStore.overlaysEpoch - epochBefore).toBe(1);
+  });
+
+  it('mapStylesReady settles even when an ACTIVE overlay style fails (skip, not hang)', async () => {
+    window.localStorage.setItem(
+      'overlays',
+      JSON.stringify([
+        { name: 'transport-stops', active: false, show: true },
+        { name: 'mtb', active: true, show: true },
+      ])
+    );
+    catalogFetch.mockResolvedValue(catalogFor(VERSION_A));
+    let releaseTransport: (() => void) | undefined;
+    styleFetch.mockImplementation(async (url: string) => {
+      if (url.includes('mtb')) throw new Error('style endpoint down');
+      await new Promise<void>(resolve => {
+        releaseTransport = resolve;
+      });
+      return structuredClone(TRANSPORT_STYLE);
+    });
+
+    const store = stores.useMapCatalogStore();
+    const initDone = store.initOverlays();
+    await new Promise(resolve => setTimeout(resolve, 20));
+
+    // The active layer failed → skipped loudly (notice + dropped row),
+    // but the reveal latch still settles: failure counts, the reveal
+    // must never hang on a dead style endpoint.
+    expect(store.mapStylesReady).toBe(true);
+    expect(notifyCalls.length).toBeGreaterThan(0);
+    expect(overlaysOf().map(o => o.name)).toEqual(['transport-stops']);
+
+    releaseTransport?.();
+    await initDone;
+    expect(store.status).toBe('ready');
+    expect(store.mapStylesReady).toBe(true);
+  });
+
+  it('resolveActiveSlugs mirrors the state applyCatalogOverlays adopts (persisted + fresh-install)', async () => {
+    window.localStorage.setItem(
+      'overlays',
+      JSON.stringify([{ name: 'mtb', active: true, show: true }])
+    );
+    const overlayStore = overlayStores.useOverlayStore();
+    const names = ['transport-stops', 'mtb', 'huts'];
+
+    // First application (live empty): persisted flags win; unknown slugs
+    // fall to the active-group view (default group activates huts).
+    const resolved = overlayStore.resolveActiveSlugs(names);
+    expect([...resolved].sort()).toEqual(['huts', 'mtb']);
+
+    // After the apply, the live actives equal the pre-resolved set — the
+    // compile's fetch order and epoch signal can rely on it.
+    overlayStore.applyCatalogOverlays(
+      names.map(n => ({ name: n, label: n, active: false, show: true })) as never
+    );
+    const liveActive = (
+      overlayStore.overlays as unknown as Array<{ name: string; active?: boolean }>
+    )
+      .filter(o => o.active)
+      .map(o => o.name)
+      .sort();
+    expect(liveActive).toEqual([...resolved].sort());
+  });
+
   it('parameter overrides apply live from the tokenized cache (no style reload)', async () => {
     catalogFetch.mockResolvedValue(catalogFor(VERSION_A));
     const store = stores.useMapCatalogStore();
