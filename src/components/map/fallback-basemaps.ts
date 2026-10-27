@@ -174,7 +174,7 @@ let catalogLoaded = false;
 
 async function loadCatalogBasemaps(): Promise<void> {
   if (catalogLoaded) return;
-  catalogLoaded = true;
+  catalogLoaded = true; // one load attempt at a time
   try {
     const response = await fetchMapCatalog(undefined, undefined, 'basemap');
     const candidates = response.data.filter(
@@ -189,7 +189,10 @@ async function loadCatalogBasemaps(): Promise<void> {
       ];
     }
   } catch {
-    /* catalog unavailable — the offline seed keeps serving */
+    // Transient failure (fetchMapCatalog clears its own cache on throw,
+    // map-catalog.ts:203) — allow the next mount to retry instead of
+    // pinning the seed for the whole session (Opus review #6).
+    catalogLoaded = false;
   }
 }
 

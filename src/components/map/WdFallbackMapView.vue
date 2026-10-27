@@ -461,6 +461,11 @@ const LOCATE_SVG =
  *  the rows — and the locate row sits inside .leaflet-control, so every
  *  focus-tap exclusion list covers it. */
 class WdMobileZoomBarControl extends L.Control {
+  private locateBtn: HTMLElement | undefined;
+  private zoomInAnchor: HTMLElement | undefined;
+  private zoomOutAnchor: HTMLElement | undefined;
+  private readonly handlers: Array<[HTMLElement, string, (ev: Event) => void]> = [];
+
   onAdd(): HTMLElement {
     const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control-zoom');
     L.DomEvent.disableClickPropagation(container);
@@ -471,7 +476,10 @@ class WdMobileZoomBarControl extends L.Control {
     locate.type = 'button';
     locate.setAttribute('aria-label', 'Locate');
     locate.innerHTML = LOCATE_SVG;
-    L.DomEvent.on(locate, 'click', () => onLocate());
+    const onLocateClick = () => onLocate();
+    this.handlers.push([locate, 'click', onLocateClick]);
+    L.DomEvent.on(locate, 'click', onLocateClick);
+    this.locateBtn = locate;
 
     const zoomIn = L.DomUtil.create('a', 'leaflet-control-zoom-in', container) as HTMLElement & {
       href: string;
@@ -479,10 +487,13 @@ class WdMobileZoomBarControl extends L.Control {
     zoomIn.href = '#';
     zoomIn.setAttribute('role', 'button');
     zoomIn.textContent = '+';
-    L.DomEvent.on(zoomIn, 'click', ev => {
+    const onZoomIn = (ev: Event) => {
       L.DomEvent.stop(ev);
       map?.zoomIn();
-    });
+    };
+    this.handlers.push([zoomIn, 'click', onZoomIn]);
+    L.DomEvent.on(zoomIn, 'click', onZoomIn);
+    this.zoomInAnchor = zoomIn;
 
     const zoomOut = L.DomUtil.create('a', 'leaflet-control-zoom-out', container) as HTMLElement & {
       href: string;
@@ -490,11 +501,22 @@ class WdMobileZoomBarControl extends L.Control {
     zoomOut.href = '#';
     zoomOut.setAttribute('role', 'button');
     zoomOut.textContent = '\u2212';
-    L.DomEvent.on(zoomOut, 'click', ev => {
+    const onZoomOut = (ev: Event) => {
       L.DomEvent.stop(ev);
       map?.zoomOut();
-    });
+    };
+    this.handlers.push([zoomOut, 'click', onZoomOut]);
+    L.DomEvent.on(zoomOut, 'click', onZoomOut);
+    this.zoomOutAnchor = zoomOut;
     return container;
+  }
+
+  onRemove(): void {
+    // Symmetric teardown (Opus review #4) — map.remove() discards the
+    // container anyway, but explicit off keeps the lifecycle honest.
+    for (const [el, type, fn] of this.handlers) L.DomEvent.off(el, type, fn);
+    this.handlers.length = 0;
+    this.locateBtn = this.zoomInAnchor = this.zoomOutAnchor = undefined;
   }
 }
 
@@ -673,7 +695,12 @@ watch(selectedSlug, (slug, previous) => {
   }
 });
 
-// ── Data fetching (Martin MLT tiles — same URLs as the MapLibre map) ──
+/** Control-exclusion selector for the delegated veto listener (module
+ *  scope so the unmount can remove the same function reference). */
+const CONTROL_SELECTOR = '.leaflet-control, .wd-fb-bm, .q-page-sticky';
+const onVetoClick = (e: Event): void => {
+  if ((e.target as HTMLElement)?.closest(CONTROL_SELECTOR)) vetoFocus();
+};
 
 // ── Data fetching (Martin MLT tiles — same URLs as the MapLibre map) ──
 // The fetch → decode → cache → evict → generation-guard loop lives in
@@ -793,10 +820,15 @@ async function refreshAvailTiles(picked: string): Promise<void> {
     AVAIL_TILE_MIN_ZOOM,
     AVAIL_TILE_MAX_ZOOM
   );
-  const { superseded } = await availCache.loadViewport(range);
-  if (!superseded) {
-    // Rebuild FIRST (settle when rendered — owner spec), then settle.
-    applyAvailTiles();
+  try {
+    const { superseded } = await availCache.loadViewport(range);
+    // Rebuild only on the newest call (Opus review #1: a superseded
+    // date-change load must still settle ITS spin — a viewport top-up
+    // that supersedes it has spin=false and never settles. The settle
+    // itself is gen-guarded in availability-loading, so an extra settle
+    // after a newer begin is ignored.)
+    if (!superseded) applyAvailTiles();
+  } finally {
     if (spin) settleAvailabilityLoadManual();
   }
 }
@@ -1038,21 +1070,8 @@ onMounted(() => {
   // button's own exit handler (exit taps did nothing). The button is
   // invisible+dead when focus is off (the only state the container's
   // delayed toggle runs in), so it never needs vetoing.
-  const CONTROL_SELECTOR = '.leaflet-control, .wd-fb-bm, .q-page-sticky';
-  container.addEventListener(
-    'click',
-    (e: Event) => {
-      if ((e.target as HTMLElement)?.closest(CONTROL_SELECTOR)) vetoFocus();
-    },
-    { passive: true }
-  );
-  container.addEventListener(
-    'touchend',
-    (e: Event) => {
-      if ((e.target as HTMLElement)?.closest(CONTROL_SELECTOR)) vetoFocus();
-    },
-    { passive: true }
-  );
+  container.addEventListener('click', onVetoClick, { passive: true });
+  container.addEventListener('touchend', onVetoClick, { passive: true });
   map.on('zoom', onMapZoomSync);
   document.body.classList.add('wd-fb-active'); // slider visibility gate
   sliderZoom.value = map.getZoom();
@@ -1114,6 +1133,8 @@ onBeforeUnmount(() => {
     const c = map.getContainer();
     c.removeEventListener('pointerdown', onContainerPointerDown);
     c.removeEventListener('pointerup', onContainerPointerUp);
+    c.removeEventListener('click', onVetoClick);
+    c.removeEventListener('touchend', onVetoClick);
   }
   map?.remove(); // tears down layers + listeners
   map = undefined;

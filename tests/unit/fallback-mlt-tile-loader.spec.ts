@@ -119,35 +119,39 @@ describe('MltTileCache.loadViewport', () => {
     expect(cache.tiles.size).toBe(0);
   });
 
-  it('generation guard: superseded results are dropped, newer call wins', async () => {
-    // Slow fetch for the first call, fast for the second — the slow
-    // (older) call must not apply its results.
+  it('generation guard: a still-needed tile lands even when its fetch was superseded', async () => {
+    // Regression (Opus review #2): gen N fetches 9/0/0 (slow), gen N+1
+    // (viewport top-up covering the SAME key) supersedes it and completes
+    // first. The slow fetch still lands — its key is still in view.
     const cache = makeCache(async input => {
       const url = String(input);
       if (url.includes('/0/0')) await new Promise(r => setTimeout(r, 80));
       return okBody([9, 9, 9]);
     });
-    // The superseding viewport pans east: x=0 is IN FLIGHT (skipped by
-    // the newer call, dropped when its old generation finishes), x=1 is
-    // new and lands from the newer generation.
     const first = cache.loadViewport(range(0, 0, 0, 0));
     await new Promise(r => setTimeout(r, 10)); // let the first start
-    const second = cache.loadViewport(range(0, 1, 0, 0)); // supersedes
+    const second = cache.loadViewport(range(0, 1, 0, 0)); // supersedes, needs BOTH keys
     const r1 = await first;
     const r2 = await second;
     expect(r1.superseded).toBe(true);
     expect(r2.superseded).toBe(false);
-    // Newer call's own tile lands; the superseded in-flight tile is
-    // dropped (absent — the next move would retry it)
-    expect(cache.tiles.get('9/1/0')).toEqual(['\u0009\u0009\u0009']);
-    expect(cache.tiles.has('9/0/0')).toBe(false);
+    expect(cache.tiles.get('9/1/0')).toEqual(['\u0009\u0009\u0009']); // newer call's own
+    expect(cache.tiles.get('9/0/0')).toEqual(['\u0009\u0009\u0009']); // late, still needed → lands
   });
 
-  it('clear() drops every tile (date change semantics)', async () => {
-    const cache = makeCache(async () => okBody([1, 2, 3, 4]));
-    await cache.loadViewport(range(0, 1, 0, 0));
-    expect(cache.tiles.size).toBe(2);
-    cache.clear();
-    expect(cache.tiles.size).toBe(0);
+  it('generation guard: tiles that LEFT the viewport stay dropped', async () => {
+    const cache = makeCache(async input => {
+      const url = String(input);
+      if (url.includes('/0/0')) await new Promise(r => setTimeout(r, 80));
+      return okBody([9, 9, 9]);
+    });
+    const first = cache.loadViewport(range(0, 0, 0, 0));
+    await new Promise(r => setTimeout(r, 10));
+    const second = cache.loadViewport(range(1, 1, 0, 0)); // pans AWAY from x=0
+    await first;
+    await second;
+    // 9/0/0 left the viewport — the slow fetch result is discarded
+    expect(cache.tiles.has('9/0/0')).toBe(false);
+    expect(cache.tiles.has('9/1/0')).toBe(true);
   });
 });

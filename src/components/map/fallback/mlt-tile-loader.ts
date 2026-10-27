@@ -59,6 +59,11 @@ export class MltTileCache<T> {
   readonly tiles = new Map<string, T>();
   private readonly fetching = new Set<string>();
   private generation = 0;
+  /** Keys the NEWEST loadViewport needs — a slow fetch completing after
+   *  a supersede still lands when its key is still in view (the
+   *  generation alone would drop it with no retry until the next map
+   *  move — Opus review #2). Evicted/cleared keys stay dropped. */
+  private neededNow = new Set<string>();
   private readonly doFetch: typeof fetch;
 
   constructor(private readonly opts: MltTileCacheOptions<T>) {
@@ -66,9 +71,11 @@ export class MltTileCache<T> {
   }
 
   /** Drop every cached tile — call when the URL inputs changed (e.g.
-   *  a new availability date swaps every URL). */
+   *  a new availability date swaps every URL). Also invalidates
+   *  in-flight results (neededNow emptied). */
   clear(): void {
     this.tiles.clear();
+    this.neededNow = new Set();
   }
 
   /** Fetch missing tiles in `range`, evict out-of-range ones, await
@@ -86,7 +93,7 @@ export class MltTileCache<T> {
         const key = `${range.tileZoom}/${wrappedX}/${y}`;
         needed.add(key);
         if (!this.tiles.has(key) && !this.fetching.has(key)) {
-          jobs.push(this.fetchTile(key, range.tileZoom, wrappedX, y, generation));
+          jobs.push(this.fetchTile(key, range.tileZoom, wrappedX, y));
         }
       }
     }
@@ -97,30 +104,28 @@ export class MltTileCache<T> {
         evicted++;
       }
     }
+    this.neededNow = needed; // newest viewport owns the write guard
     await Promise.all(jobs);
     return { fetched: jobs.length, evicted, superseded: generation !== this.generation };
   }
 
   /** Fetch + decode one MLT tile. Failures leave the tile absent (the
-   *  next move retries); empty bodies cache as `emptyValue`. */
-  private async fetchTile(
-    key: string,
-    z: number,
-    x: number,
-    y: number,
-    generation: number
-  ): Promise<void> {
+   *  next move retries); empty bodies cache as `emptyValue`. A result
+   *  lands when its key is still needed by the NEWEST viewport —
+   *  superseded-and-evicted keys are dropped (latest-wins). */
+  private async fetchTile(key: string, z: number, x: number, y: number): Promise<void> {
     this.fetching.add(key);
     try {
       const res = await this.doFetch(this.opts.buildUrl(z, x, y));
       if (!res.ok) return; // 404/204 = empty region; transient errors retry later
       const buf = new Uint8Array(await res.arrayBuffer());
+      const wanted = () => this.neededNow.has(key);
       if (buf.byteLength < 2) {
-        if (generation === this.generation) this.tiles.set(key, this.opts.emptyValue);
+        if (wanted()) this.tiles.set(key, this.opts.emptyValue);
         return;
       }
       const value = this.opts.parseTile(buf, z, x, y);
-      if (generation === this.generation) this.tiles.set(key, value);
+      if (wanted()) this.tiles.set(key, value);
     } catch {
       /* decode/network failure — tile stays absent (next move retries) */
     } finally {
