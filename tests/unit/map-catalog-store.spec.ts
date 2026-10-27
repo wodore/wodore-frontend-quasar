@@ -464,13 +464,18 @@ describe('map catalog store (boot cache + version sync)', () => {
     const store = stores.useMapCatalogStore();
     const overlayStore = overlayStores.useOverlayStore();
     const applied: string[][] = [];
-    // Track every progressive application the store pushes out.
+    // Track every progressive application the store pushes out. The opts
+    // are FORWARDED (review nit, PR #357): dropping them would silently
+    // default bumpEpoch to true and stop this test from validating the
+    // metadata-first emit's epoch suppression.
     const orig = overlayStore.applyCatalogOverlays.bind(overlayStore);
     (
-      overlayStore as unknown as { applyCatalogOverlays: (i: never[]) => void }
-    ).applyCatalogOverlays = (items: never[]) => {
+      overlayStore as unknown as {
+        applyCatalogOverlays: (i: never[], opts?: { bumpEpoch?: boolean }) => void;
+      }
+    ).applyCatalogOverlays = (items: never[], opts?: { bumpEpoch?: boolean }) => {
       applied.push((items as unknown as Array<{ name: string }>).map(i => i.name));
-      orig(items as never);
+      orig(items as never, opts);
     };
 
     const initDone = store.initOverlays();
@@ -583,9 +588,16 @@ describe('map catalog store (boot cache + version sync)', () => {
     );
     const overlayStore = overlayStores.useOverlayStore();
     const names = ['transport-stops', 'mtb', 'huts'];
+    // Seed the active-group view EXPLICITLY (review nit, PR #357): the
+    // default group shipping 'huts' made the expectation below implicit —
+    // a default change would break this test cryptically.
+    const activeGroup = overlayStore.groupSettings.groups.find(
+      g => g.id === overlayStore.groupSettings.activeGroupId
+    );
+    if (activeGroup) activeGroup.activeLayerSlugs = ['huts'];
 
     // First application (live empty): persisted flags win; unknown slugs
-    // fall to the active-group view (default group activates huts).
+    // fall to the active-group view seeded above.
     const resolved = overlayStore.resolveActiveSlugs(names);
     expect([...resolved].sort()).toEqual(['huts', 'mtb']);
 

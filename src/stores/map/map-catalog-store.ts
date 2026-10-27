@@ -688,6 +688,11 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     await Promise.all(activeLayers.map(l => load(l, true)));
     mapStylesReady.value = true;
     await Promise.all(otherLayers.map(l => load(l, false)));
+    // Deterministic final flush (review nit, PR #357): by the time the
+    // background wave resolves, its last batched emit already ran
+    // (microtasks drain before this continuation) — this extra apply is
+    // menu-only (no epoch bump) and guarantees a final list exactly once,
+    // covering the zero-layer edge where no emit ever fired.
     emitAll(false);
     return overlayLayers
       .filter(l => settled[l.slug])
