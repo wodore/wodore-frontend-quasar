@@ -60,7 +60,6 @@ declare module 'vue' {
     WdHutTypeChip: typeof import('./src/components/huts/WdHutTypeChip.vue')['default']
     WdHutTypeNameChip: typeof import('./src/components/huts/WdHutTypeNameChip.vue')['default']
     WdHutView: typeof import('./src/components/huts/WdHutView.vue')['default']
-    WdHutWeatherDay: typeof import('./src/components/huts/WdHutWeatherDay.vue')['default']
     WdHutWeatherForecast: typeof import('./src/components/huts/WdHutWeatherForecast.vue')['default']
     WdIcon: typeof import('./src/components/utils/WdIcon.vue')['default']
     WdLanguageSwitcher: typeof import('./src/components/toolbar/WdLanguageSwitcher.vue')['default']
