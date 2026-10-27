@@ -5,7 +5,6 @@
 import { test, expect } from './helpers';
 import {
   waitForMapIdle,
-  waitForOverlayExpanded,
   loadMap,
   pinTheme,
   tagTest,

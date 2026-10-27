@@ -14,7 +14,6 @@
 import { test, expect } from './helpers';
 import {
   waitForMapIdle,
-  waitForOverlayExpanded,
   loadMap,
   tagTest,
   attachScreenshot,
