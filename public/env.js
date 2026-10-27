@@ -1,13 +1,16 @@
 // Runtime environment for the Wodore SPA — see services/runtimeEnv.ts.
 //
-// This file is intentionally NOT processed at build time: in the docker
-// image it ships double-at placeholders that replace_vars rewrites at
-// container startup (docker/entrypoint.sh), and nginx serves it with
-// Cache-Control: no-store. This keeps the exact freshness guarantees the
-// inline <script> in index.html used to provide (env changes, e.g. a
-// renewed MapTiler key, reach every client on the next visit) while the
-// HTML shell itself stays free of volatile values — which is what lets
-// the SEO edge (docker/seo.js) cache hut pages aggressively.
+// In the docker image this file ships double-at placeholders that
+// replace_vars rewrites at container startup (docker/entrypoint.sh); a
+// build-time plugin minifies it (quasar.config.ts → wd-minify-env-js),
+// so these comments never reach the served bytes. nginx serves it with
+// a short browser window and an even shorter edge one (max-age=300,
+// s-maxage=120, stale-while-revalidate=3600 — see nginx-default.conf),
+// keeping the freshness guarantees of the old inline <script>: env
+// changes, e.g. a renewed MapTiler key, reach every client on the next
+// visit, while the HTML shell itself stays free of volatile values —
+// which is what lets the SEO edge (docker/seo.js) cache hut pages
+// aggressively.
 //
 // index.html loads this file only where replace_vars runs at runtime
 // (production PWA/docker builds). Dev and Capacitor builds bake real

@@ -468,15 +468,16 @@ keep the config loadable — the return short-circuits first).
 
 The SPA shell is edge-cacheable ("edge-hot index.html"): `= /index.html`
 AND the `@spa` try_files fallback serve
-`Cache-Control: public, max-age=0, s-maxage=600,
+`Cache-Control: public, max-age=300, s-maxage=600,
 stale-while-revalidate=86400` + `CDN-Tag: frontend-html`; `/env.js`
-serves `public, max-age=0, s-maxage=120, stale-while-revalidate=3600` +
-`CDN-Tag: frontend-env`. Browsers revalidate on every navigation
-(`max-age=0`, cheap conditional GETs answered 304 by the CDN's fresh
-edge copy) while the edge keeps its window (`s-maxage`);
-`stale-while-revalidate` lets supporting browsers serve stale and
-refresh in the background. Bunny (the CDN in front) honors origin
-Cache-Control and keys tag purges off the `CDN-Tag` response header.
+serves `public, max-age=300, s-maxage=120, stale-while-revalidate=3600` +
+`CDN-Tag: frontend-env`. Browsers hold the shell/env for 5 minutes,
+then revalidate; `stale-while-revalidate` lets supporting browsers serve
+stale and refresh in the background. Bunny (the CDN in front) must be
+configured "Cache expiration: Respect origin Cache-Control" + "Browser
+cache expiration: Match server cache expiration" — then it passes
+these headers through and keys tag purges off the `CDN-Tag` response
+header.
 Rationale: with the old no-store policy every page view was a full
 origin round trip (`cdn-cache: MISS`, ~1s+ for overseas visitors);
 hashed assets were already edge-cached immutable-1y.
@@ -492,10 +493,19 @@ Hashed assets never need
 purging. Untouched on purpose: hut pages (njs per-hut shell stays
 no-store — `WODORE_SEO_PAGE_TTL` is the opt-in), llms/sitemap/hut `.md`
 proxies (backend Cache-Control), manifest.json + sw.js (no-store).
-Caveat: Bunny tag purging does not apply to Perma-Cache content.
+**Perma-Cache is OFF (2026-10)** — enabling it on the pull zone pins the
+zone-wide cache settings to a ~1-year browser `Cache-Control` override
+for EVERY URL (measured on staging: `public, max-age=31919000` on the
+shell, env.js, manifest.json and sw.js alike — origin `no-store`
+ignored), defeating the shell/env freshness design and muting
+service-worker updates; tag and wildcard purges are also inert under
+Perma-Cache. Chunk survival after deploys relies on the edge honoring
+the immutable 1y asset TTLs plus exact-URL deploy purges; if cold-PoP
+misses on deleted chunks ever become a problem, retain the previous
+release's `/assets/` on the origin.
 Caveat: if the CDN ever stops edge-caching (a non-standard CDN honoring
-`max-age=0` over `s-maxage` would make every view a MISS), revert the
-browser half to `max-age=300`.
+`max-age` over `s-maxage` would make every view a MISS), drop the
+browser half back to `max-age=0`.
 Guarded by `tests/unit/nginx-cache-headers.spec.ts`.
 
 ## Environment Variables

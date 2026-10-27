@@ -132,6 +132,7 @@
     "autoprefixer": "^10.4.2",
     "cli-real-favicon": "^0.0.9",
     "dotenv": "^17.2.3",
+    "esbuild": "^0.25.12",
     "eslint": "^10.12.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-vue": "^10.11.1",
