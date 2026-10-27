@@ -71,8 +71,8 @@
     "fallbackNote": "Mappa semplificata attiva — funzionalità ridotte (no WebGL).",
     "fallbackBasemaps": {
       "osm": "OSM (OpenStreetMap)",
-      "satellite": "Satellite",
-      "topo": "Topo mondiale"
+      "world-topo": "Topo mondiale",
+      "world-satellite-hybrid": "Satellite"
     },
     "fallbackZoomHint": "Ingrandisci per vedere le disponibilità.",
     "fallbackAttribution": "Attribuzione",

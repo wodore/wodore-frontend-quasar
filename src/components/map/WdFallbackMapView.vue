@@ -76,7 +76,12 @@ import {
   setAvailabilityManualSettle,
   toIsoDate,
 } from '@stores/map/availability-loading';
-import { TILE_SERVER, useFallbackBasemaps, type FbBasemap } from './fallback-basemaps';
+import {
+  TILE_SERVER,
+  useFallbackBasemaps,
+  migrateBasemapId,
+  type FbBasemap,
+} from './fallback-basemaps';
 import { seedPlaceFromMap } from '@composables/usePlace';
 // ── Extracted fallback modules (Phase B rewiring) ───────────────────
 import { viewportTileRange, tileXToLng, tileYToLat } from './fallback/tile-math';
@@ -139,21 +144,37 @@ const HUTS_TILE_MAX_ZOOM = 9;
 
 const BM_KEY = 'wodore:fallbackBasemap';
 const NOTE_KEY = 'wodore:fallbackNoteDismissed';
+/** Catalog-driven basemap list — seeded offline trio, upgraded to the
+ *  backend catalog (same registry as MapLibre) when it resolves. */
 const BASEMAPS = useFallbackBasemaps();
 const bmOpen = ref(false);
-const activeBasemapId = ref((LocalStorage.getItem(BM_KEY) as FbBasemap['id'] | null) ?? 'osm');
+/** Stored id, legacy POC ids migrated to catalog slugs on read. */
+const activeBasemapId = ref(
+  migrateBasemapId((LocalStorage.getItem(BM_KEY) as string | null) ?? 'osm')
+);
 
 function bmLabel(bm: FbBasemap): string {
-  return t(`map.fallbackBasemaps.${bm.id}`);
+  return bm.label ?? t(`map.fallbackBasemaps.${bm.id}`);
 }
 
-function selectBasemap(id: FbBasemap['id']): void {
+function selectBasemap(id: string): void {
   if (id === activeBasemapId.value) return;
   activeBasemapId.value = id;
   LocalStorage.set(BM_KEY, id);
   applyBasemap();
   if (attribInnerEl) attribInnerEl.innerHTML = attribHtml(id); // follows the basemap
 }
+
+// Catalog upgrade landed: keep the selection on its slug, re-apply the
+// (possibly re-pointed — CDN + versioned) tile URL. Stored ids not in
+// the upgraded list fall back to OSM.
+watch(BASEMAPS, list => {
+  const kept = list.find(b => b.id === activeBasemapId.value);
+  if (!kept) activeBasemapId.value = list[0]?.id ?? 'osm';
+  LocalStorage.set(BM_KEY, activeBasemapId.value);
+  applyBasemap();
+  if (attribInnerEl) attribInnerEl.innerHTML = attribHtml(activeBasemapId.value);
+});
 
 const bmIconOpen = new URL(
   '/src/assets/wodore-design/icons/export/basemap-switch.svg',
@@ -422,8 +443,8 @@ function onContainerPointerUp(e: PointerEvent): void {
 const ATTRIB_INFO_SVG =
   '<svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M4 10a6 6 0 1 0 12 0 6 6 0 1 0-12 0m5-3a1 1 0 1 0 2 0 1 1 0 1 0-2 0m0 3a1 1 0 1 1 2 0v3a1 1 0 1 1-2 0"/></svg>';
 
-function attribHtml(bmId: FbBasemap['id']): string {
-  const bm = BASEMAPS.find(b => b.id === bmId) ?? BASEMAPS[0]!;
+function attribHtml(bmId: string): string {
+  const bm = BASEMAPS.value.find(b => b.id === bmId) ?? BASEMAPS.value[0]!;
   return bm.attribution;
 }
 
@@ -873,7 +894,7 @@ function onMoveEnd(): void {
 
 function applyBasemap(): void {
   if (!map) return;
-  const bm = BASEMAPS.find(b => b.id === activeBasemapId.value) ?? BASEMAPS[0]!;
+  const bm = BASEMAPS.value.find(b => b.id === activeBasemapId.value) ?? BASEMAPS.value[0]!;
   if (tileLayer) map.removeLayer(tileLayer);
   tileLayer = L.tileLayer(bm.url, {
     maxNativeZoom: bm.maxNativeZoom,
