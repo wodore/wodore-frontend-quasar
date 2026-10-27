@@ -603,6 +603,80 @@ describe('map catalog store (boot cache + version sync)', () => {
     expect(liveActive).toEqual([...resolved].sort());
   });
 
+  it('locale rebuild: active arrivals bump the epoch once; a failed rebuild keeps overlays (silent fallback)', async () => {
+    window.localStorage.setItem(
+      'overlays',
+      JSON.stringify([
+        { name: 'transport-stops', active: false, show: true },
+        { name: 'mtb', active: true, show: true },
+      ])
+    );
+    catalogFetch.mockResolvedValue(catalogFor(VERSION_A));
+    const store = stores.useMapCatalogStore();
+    const overlayStore = overlayStores.useOverlayStore();
+    await store.initOverlays();
+    expect(store.status).toBe('ready');
+    const epochAfterBoot = overlayStore.overlaysEpoch;
+    const fetchesAfterBoot = styleFetches.length;
+
+    // Locale rebuild with unchanged `modified` — the persisted style
+    // cache serves both bundles: the ACTIVE layer's arrival bumps the
+    // epoch once, the inactive layer's does not, nothing refetches.
+    await store.rebuildOverlaysFromCatalog();
+    expect(overlayStore.overlaysEpoch - epochAfterBoot).toBe(1);
+    expect(styleFetches).toHaveLength(fetchesAfterBoot);
+
+    // A failing rebuild is silent by design: overlays stay, status and
+    // the reveal latch stay ready (review finding PR #357).
+    catalogFetch.mockRejectedValue(new Error('locale fetch down'));
+    await store.rebuildOverlaysFromCatalog();
+    expect(store.status).toBe('ready');
+    expect(store.mapStylesReady).toBe(true);
+    expect(overlaysOf().map(o => o.name)).toEqual(['transport-stops', 'mtb']);
+    expect(overlayStore.overlaysEpoch - epochAfterBoot).toBe(1);
+  });
+
+  it('overlay toggled ON mid-compile bumps the epoch when its style arrives', async () => {
+    // No persisted overlay state: both layers start inactive, so both
+    // ride the background wave (empty active wave → latch open early).
+    let releaseTransport: (() => void) | undefined;
+    catalogFetch.mockResolvedValue(catalogFor(VERSION_A));
+    styleFetch.mockImplementation(async (url: string) => {
+      if (!url.includes('mtb')) {
+        await new Promise<void>(resolve => {
+          releaseTransport = resolve;
+        });
+      }
+      return url.includes('mode=tokenized')
+        ? structuredClone(MTB_TOKENIZED)
+        : structuredClone(TRANSPORT_STYLE);
+    });
+
+    const store = stores.useMapCatalogStore();
+    const overlayStore = overlayStores.useOverlayStore();
+    const initDone = store.initOverlays();
+    await new Promise(resolve => setTimeout(resolve, 20));
+    expect(store.mapStylesReady).toBe(true);
+    const epochBefore = overlayStore.overlaysEpoch;
+
+    // User toggles the pending placeholder row ON while its style is
+    // still in flight — the arrival now IS map content: the live-state
+    // re-check in the compile bumps the epoch (review finding PR #357).
+    const row = (
+      overlayStore.overlays as unknown as Array<{
+        name: string;
+        active: boolean;
+        show: boolean;
+      }>
+    ).find(o => o.name === 'transport-stops')!;
+    overlayStore.toggleOverlay(row as never);
+    expect(row.active).toBe(true);
+
+    releaseTransport?.();
+    await initDone;
+    expect(overlayStore.overlaysEpoch - epochBefore).toBe(1);
+  });
+
   it('parameter overrides apply live from the tokenized cache (no style reload)', async () => {
     catalogFetch.mockResolvedValue(catalogFor(VERSION_A));
     const store = stores.useMapCatalogStore();
