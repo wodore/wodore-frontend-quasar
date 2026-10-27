@@ -42,7 +42,7 @@ export interface IconRef {
 }
 
 const ICON_REF_RE = /^([a-z0-9-]+)\/([a-z0-9-]+)(?:@([a-z]+))?$/;
-const LOOKS: IconLook[] = ['color', 'mono'];
+const _LOOKS: IconLook[] = ['color', 'mono'];
 /** Suffixes stored before the color/mono model — all render as color. */
 const LEGACY_COLOR_SUFFIXES = ['simple', 'detailed'];
 

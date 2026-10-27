@@ -4,7 +4,7 @@
 import { configure } from 'quasar/wrappers';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { readdirSync, readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 // import git from 'git-rev-sync';
 
 import { date } from 'quasar';
@@ -12,6 +12,8 @@ const { formatDate } = date;
 
 import IconsResolver from 'unplugin-icons/resolver';
 import { compression } from 'vite-plugin-compression2';
+import { transform } from 'esbuild';
+import type { Plugin } from 'vite';
 
 import { execSync } from 'child_process';
 let gitHash = process.env.GIT_HASH || '';
@@ -225,6 +227,12 @@ export default configure(ctx => {
         removeAttributeQuotes: false,
         collapseBooleanAttributes: true,
         removeScriptTypeAttributes: true,
+        // Terser/clean-css the inline boot <script>s and the splash
+        // <style>: removeComments only strips HTML comments — it never
+        // touches comment bodies INSIDE script/style, so without these
+        // the shipped shell carried the full inline source commentary.
+        minifyJS: true,
+        minifyCSS: true,
       },
       // polyfillModulePreload: true,
       // distDir
@@ -236,6 +244,34 @@ export default configure(ctx => {
         // 'inline' instead.
         viteConf.build ??= {};
         viteConf.build.sourcemap = true;
+
+        // Ship public/env.js comment-free: it is public runtime config,
+        // and the served bytes must not carry source commentary (the
+        // docs live in the source file and services/runtimeEnv.ts).
+        // closeBundle runs after vite copied public/ into the output;
+        // safe against the compression plugin (env.js explicitly
+        // excluded — no .br/.gz sibling could go stale) and against
+        // replace_vars (the @@…@@ placeholders live inside string
+        // literals, minification never rewrites them).
+        let envJsOutDir = '';
+        viteConf.plugins ??= [];
+        viteConf.plugins.push({
+          name: 'wd-minify-env-js',
+          apply: 'build',
+          configResolved(config) {
+            envJsOutDir = path.resolve(config.root, config.build.outDir);
+          },
+          async closeBundle() {
+            const envPath = path.join(envJsOutDir, 'env.js');
+            if (!existsSync(envPath)) return;
+            const minified = await transform(readFileSync(envPath, 'utf8'), {
+              minify: true,
+              legalComments: 'none',
+              loader: 'js',
+            });
+            writeFileSync(envPath, minified.code);
+          },
+        } satisfies Plugin);
 
         // Stable long-lived vendor chunks: without pinning, rollup's
         // chunk graph is sensitive — one new dynamic import anywhere

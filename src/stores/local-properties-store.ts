@@ -352,6 +352,21 @@ export const useLocalPropertiesStore = defineStore('localProperties', () => {
         return null;
       }
 
+      // Range sanity (owner bug report 2026-11: a mangled deep link
+      // `#map=14.52/46.60043/-10072.19225` — lng far outside ±180 — put
+      // the Leaflet fallback's camera on an unwrapped off-world copy:
+      // wrapped basemap tiles rendered, hut markers (which exist only on
+      // copy 0) did not, with zero console/network errors. Out-of-range
+      // values are rejected → the stored location / timezone guess takes
+      // over instead of teleporting the user into empty space.
+      if (lat < -85.051129 || lat > 85.051129 || lng < -180 || lng > 180) {
+        console.warn('[local-properties] Hash location out of range, ignored:', hash);
+        return null;
+      }
+      if (zoom < 0 || zoom > 22) {
+        return null;
+      }
+
       return {
         lat,
         lng,

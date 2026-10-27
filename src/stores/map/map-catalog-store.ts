@@ -25,7 +25,12 @@ import { defineStore } from 'pinia';
 import { ref, watch } from 'vue';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
 import { Notify } from 'quasar';
-import { availabilityLoading } from './availability-loading';
+import {
+  availabilityLoading,
+  availabilitySpinner,
+  settleAvailabilitySpinner,
+  toIsoDate,
+} from './availability-loading';
 import type {
   AllLayoutProperties,
   AllPaintProperties,
@@ -120,34 +125,36 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
   // here so a freshly created store — e.g. per-test pinia — never
   // inherits a spinner state from a previous instance (review #349).
   availabilityLoading.value = false;
-  let availabilityLoadGen = 0;
-  let availabilityShownAt = 0;
   let availabilityListenersBound = false;
-  const AVAILABILITY_MIN_SPIN_MS = 600;
+  // Re-imported name kept short at the call site (module owns the canonical
+  // constant; the store aliases it for the native-bridge fallback timeout).
+  const AVAILABILITY_MIN_SPIN_MS_FALLBACK = 600;
 
+  /** Gen-guarded settle delegating to the shared module (600ms minimum). */
   function settleAvailabilityLoad(gen: number): void {
-    if (gen !== availabilityLoadGen) return; // superseded by a newer date pick
-    const elapsed = performance.now() - availabilityShownAt;
-    const remaining = AVAILABILITY_MIN_SPIN_MS - elapsed;
-    if (remaining > 0) {
-      setTimeout(() => {
-        if (gen === availabilityLoadGen) availabilityLoading.value = false;
-      }, remaining);
-    } else {
-      availabilityLoading.value = false;
-    }
+    if (gen !== availabilitySpinner.gen) return; // superseded by a newer date pick
+    settleAvailabilitySpinner();
   }
 
   function beginAvailabilityLoad(): void {
-    const gen = ++availabilityLoadGen;
+    availabilitySpinner.gen += 1;
+    const gen = availabilitySpinner.gen;
     availabilityLoading.value = true;
-    availabilityShownAt = performance.now();
+    availabilitySpinner.shownAt = performance.now();
+    // SAFETY: structural duck-type of the MapLibre map instance — vue-maplibre-gl's
+    // mapRef.map is untyped in this store; only `.on` is used for the sourcedata
+    // listener below. The runtime shape is guaranteed by MglMap mounting first.
     const map = mapRef.map as unknown as
       | { on?: (ev: string, fn: (e: unknown) => void) => void }
       | undefined;
     if (!map?.on) {
+      // Non-MapLibre availability renderer (Leaflet fallback) owns the
+      // settle: it calls settleAvailabilityLoadManual() when ITS data is
+      // rendered — skip the fixed minimum so the spinner tracks the real
+      // load (600ms minimum still applies inside settle).
+      if (availabilitySpinner.manualSettle) return;
       // Native bridge (no sourcedata forwarding): run the fixed minimum.
-      setTimeout(() => settleAvailabilityLoad(gen), AVAILABILITY_MIN_SPIN_MS);
+      setTimeout(() => settleAvailabilityLoad(gen), AVAILABILITY_MIN_SPIN_MS_FALLBACK);
       return;
     }
     if (!availabilityListenersBound) {
@@ -155,13 +162,16 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
       const onSourceData = (e: { sourceId?: string; isSourceLoaded?: boolean; type?: string }) => {
         if (e.sourceId !== 'wd-bookings') return;
         if (e.isSourceLoaded || e.type === 'sourcedataabort') {
-          settleAvailabilityLoad(availabilityLoadGen);
+          settleAvailabilityLoad(availabilitySpinner.gen);
         }
       };
+      // SAFETY: same structural cast as above — `.on` exists on every MapLibre
+      // map; the callback's event shape is the sourcedata payload subset we read.
       (mapRef.map as unknown as { on: (ev: string, fn: (e: never) => void) => void }).on(
         'sourcedata',
         onSourceData as (e: never) => void
       );
+      // SAFETY: duplicate cast for the second listener registration (abort).
       (mapRef.map as unknown as { on: (ev: string, fn: (e: never) => void) => void }).on(
         'sourcedataabort',
         onSourceData as (e: never) => void
@@ -432,16 +442,6 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
    *  runtime `{{date}}` token must be normalized before it lands in tile
    *  URLs. Unparseable input yields undefined (token stays unresolved →
    *  the date-gated layers stay hidden). */
-  function toIsoDate(input: string | undefined): string | undefined {
-    if (!input) return undefined;
-    const euro = input.match(/^(\d{2})\.(\d{2})\.(\d{2}|\d{4})$/);
-    if (euro) {
-      const year = euro[3]!.length === 2 ? `20${euro[3]}` : euro[3]!;
-      return `${year}-${euro[2]}-${euro[1]}`;
-    }
-    if (/^\d{4}-\d{2}-\d{2}$/.test(input)) return input;
-    return undefined;
-  }
 
   /** Mirror the selected availability date into the runtime values. */
   function setRuntimeDate(date: string | undefined): void {
@@ -817,10 +817,18 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
   });
 
   // Mirror the hut-store's selected date into the runtime {{date}} value.
+  // IMMEDIATE: the date can predate this store — WdSelectDate restores it
+  // from the ?date= query at layout mount, while this store is only created
+  // when the idle-gated async WdMapView mounts. A non-immediate watch would
+  // never fire for that pre-existing value, the runtime date would stay
+  // unset, and the wd-bookings tile URLs would keep the today boot default
+  // (staging incident 2026-10-27: the map showed the wrong date's
+  // availability while the date pill showed the picked date).
   const hutsStore = useHutsStore();
   watch(
     () => hutsStore.selectedDate,
-    date => setRuntimeDate(date)
+    date => setRuntimeDate(date),
+    { immediate: true }
   );
 
   // Availability data arrival (date picked → fetch settled, or cleared):

@@ -92,7 +92,18 @@
     },
     "layers": "Ebenen",
     "loading": "Karte wird geladen",
-    "loadingWords": "Rucksack geschnürt~Karte aufgeschlagen~Route im Kopf~Wetter gelesen~Stiefel fest~Flaschen voll~Stöcke bereit~Erste Höhenmeter~Karte füllt sich~Höhenlinien zeichnen sich~Täler tauchen auf~Baumgrenze erreicht~Bäche plätschern~Alpenrosen blühen~Gipfel rücken näher~Hütten in Sicht~Wolken ziehen vorbei~Murmeltiere pfeifen~Blick wird frei~Ziel in Sicht"
+    "loadingWords": "Rucksack geschnürt~Karte aufgeschlagen~Route im Kopf~Wetter gelesen~Stiefel fest~Flaschen voll~Stöcke bereit~Erste Höhenmeter~Karte füllt sich~Höhenlinien zeichnen sich~Täler tauchen auf~Baumgrenze erreicht~Bäche plätschern~Alpenrosen blühen~Gipfel rücken näher~Hütten in Sicht~Wolken ziehen vorbei~Murmeltiere pfeifen~Blick wird frei~Ziel in Sicht",
+    "fallbackNote": "Vereinfachte Karte aktiv – eingeschränkte Funktionalität (kein WebGL).",
+    "fallbackBasemaps": {
+      "osm": "OSM (OpenStreetMap)",
+      "satellite": "Satellit",
+      "topo": "Welt-Topo"
+    },
+    "fallbackZoomHint": "Zoome hinein, um Verfügbarkeiten zu sehen.",
+    "fallbackAttribution": "Attribution",
+    "fallbackLocate": "Meinen Standort zeigen",
+    "fallbackFocus": "Fokusmodus",
+    "fallbackExitFocus": "Fokusmodus beenden"
   },
   "favorites": "Favoriten",
   "layers": "Layers",
