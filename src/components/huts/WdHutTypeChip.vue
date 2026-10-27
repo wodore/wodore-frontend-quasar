@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { schemasWodore } from '@clients/index';
-import getImageUrl from '@services/imageService';
 
 import IconCheckmarkFill from '~icons/eva/checkmark-fill';
 import WdCategoryIcon from '@components/categories/WdCategoryIcon.vue';

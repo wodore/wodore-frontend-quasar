@@ -3,15 +3,7 @@
  * outside-click, attribution open/close, focus-mode entry guards.
  */
 import { test, expect } from './helpers';
-import {
-  waitForMapIdle,
-  waitForOverlayExpanded,
-  loadMap,
-  pinTheme,
-  tagTest,
-  attachScreenshot,
-  evalJSON,
-} from './helpers';
+import { waitForMapIdle, loadMap, pinTheme, tagTest, attachScreenshot, evalJSON } from './helpers';
 
 const CONFIGS = [
   { theme: 'light', mode: 'mobile' },

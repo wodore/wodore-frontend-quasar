@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { PINNED_API_VERSION } from '@services/apiVersion';
 import { getBackendVersion } from '@services/backendVersion';
 import {

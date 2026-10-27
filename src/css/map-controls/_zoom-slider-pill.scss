@@ -1,0 +1,153 @@
+// ══════════════════════════════════════════════════════════════════════
+// ZOOM SLIDER — pill geometry & visuals (SHARED PARTIAL)
+// Consumed via @use from BOTH renderers' scoped styles (WdZoomSlider for
+// MapLibre, WdFallbackMapView's ported slider) — one source of truth,
+// compiled per consumer so nothing lands in the global first-load CSS.
+// ══════════════════════════════════════════════════════════════════════
+@use '../quasar.variables' as q;
+
+@mixin pill {
+  .wd-zoom {
+    position: fixed;
+    right: 0;
+    top: 50%;
+    z-index: 2010;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    // Touch zone: 44px grab width PLUS the right display-cutout inset. On
+    // notched devices in landscape the outermost strip is owned by the OS
+    // (edge swipe / cutout) — touches there die before they reach us. The
+    // padding lifts the pill out of the dead strip (same convention as the
+    // topbar's right offset); with inset 0 (portrait) border-box keeps the
+    // resting position pixel-identical.
+    width: calc(44px + env(safe-area-inset-right, 0px));
+    min-height: 120px; // vertical grab zone (kept compact — drags now catch
+    // reliably via the gesture pipeline, not via a bigger target)
+    padding-right: env(safe-area-inset-right, 0px);
+    background: transparent;
+    cursor: grab;
+    touch-action: none; // we own the gesture
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+
+    // The tuck/fade (translateX + opacity) lives on the __pill, NOT here:
+    // this 44px hit band must stay at its resting position and hit-testable
+    // from the first frame of the enter animation — otherwise drags and taps
+    // during the 300ms slide-in land on empty map. Only the display flip
+    // remains on the band; allow-discrete holds the band rendered until the
+    // pill's exit fade has finished (enter from display:none flips at start).
+    // Engines without @starting-style/allow-discrete just toggle instantly.
+    transform: translateY(-50%);
+    transition: display 200ms allow-discrete;
+
+    &--dragging {
+      cursor: grabbing;
+    }
+
+    *:focus {
+      outline: none;
+    }
+
+    // Keyboard focus rings (focus-visible only — pointer focus stays clean);
+    // negative offset keeps the ring inside the edge-flush control
+    &:focus-visible,
+    .wd-zoom__step:focus-visible {
+      outline: 2px solid var(--wd-ctl-ink);
+      outline-offset: -2px;
+    }
+  }
+
+  // slim translucent visual pill docked to the edge
+  .wd-zoom__pill {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 18px;
+    padding: 3px 0;
+    border: 1px solid var(--wd-ctl-border);
+    border-right: none; // flush to the screen edge
+    border-radius: 999px 0 0 999px;
+    background: color-mix(in srgb, var(--wd-ctl-bg) 68%, transparent);
+    color: var(--wd-ctl-ink);
+
+    // Hidden state + exit motion (200ms) — the pill tucks past the edge and
+    // fades while the band's allow-discrete display flip keeps it rendered.
+    // Travel = the old band's 44px crossing (100% + 26px, plus the inset so
+    // it clears the screen edge in landscape too): the visible slide stays
+    // the LAST ~18px of a 44px journey, i.e. the same ~120ms glide the band
+    // produced before the hit-band/pill split — not a slowed full-300ms 18px
+    // creep. Enter motion (300ms focus-mode curve) and its @starting-style
+    // live in the global _zoom-slider.scss, keyed off the same body classes
+    // as the band's display flip.
+    opacity: 0;
+    transform: translateX(calc(100% + 26px + env(safe-area-inset-right, 0px)));
+    transition:
+      opacity 200ms cubic-bezier(0.2, 0, 0, 1),
+      transform 200ms cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  // Dark: mint ridge (the elevation kill strips shadows)
+  body.body--dark .wd-zoom__pill {
+    border-color: rgba(169, 240, 210, 0.28);
+  }
+
+  .wd-zoom__step {
+    display: grid;
+    place-items: center;
+    position: relative; // anchors the ::before hit expander
+    width: 30px;
+    height: 26px;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--wd-ctl-ink-soft);
+    cursor: pointer;
+    flex: none;
+    transition: color 0.12s ease;
+
+    // Hit expander: presses must land on a full 44×44px target flush to the
+    // (safe-area) edge, even though the visible glyph stays 30px wide inside
+    // the 18px pill — without it the on-screen target is only ~24×26px, the
+    // single biggest "missed tap" of this control. Pseudo-elements are never
+    // event targets; the browser reports the button itself, so the band's
+    // closest('[data-zoom-step]') still resolves.
+    &::before {
+      content: '';
+      position: absolute;
+      top: -9px;
+      bottom: -9px;
+      left: -20px; // 24px glyph inset + 20 = reaches the band's left edge
+      right: -6px; // cancels the glyph's 6px overhang past the pill's edge
+    }
+
+    // No bg/hover/active chrome — fg feedback only, desktop only
+    @media (min-width: #{q.$breakpoint-sm + 1}) {
+      &:hover {
+        color: var(--wd-ctl-ink);
+      }
+    }
+  }
+
+  .wd-zoom__track {
+    position: relative;
+    width: 100%;
+    flex: 1;
+    min-height: 36px;
+    margin: 2px 0;
+    pointer-events: none; // the pill handles the drag
+  }
+
+  .wd-zoom__thumb {
+    position: absolute;
+    left: 50%;
+    width: 18px;
+    height: 10px;
+    transform: translate(-50%, -50%);
+    border-radius: 999px;
+    background: var(--wd-ctl-ink); // neutral ink — gold is reserved for selection
+    opacity: 0.78;
+    box-shadow: 0 0 0 2px var(--wd-ctl-bg);
+  }
+}
