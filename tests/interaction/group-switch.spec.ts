@@ -12,15 +12,7 @@
  *   passive → its layers on the map (if any) are set to none
  */
 import { test, expect } from './helpers';
-import {
-  waitForMapIdle,
-  waitForOverlayExpanded,
-  loadMap,
-  tagTest,
-  attachScreenshot,
-  evalJSON,
-  GET_MAP,
-} from './helpers';
+import { waitForMapIdle, loadMap, tagTest, attachScreenshot, evalJSON, GET_MAP } from './helpers';
 
 const OVERLAY_STATE_VS_MAP = `
 (() => {

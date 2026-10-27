@@ -4,7 +4,7 @@ import {
   resolveTokens,
   collectTokens,
   gpuSpec,
-  styleEndpointUrl,
+  styleVariantUrl,
   absolutizeStyleUrl,
   fetchMapCatalog,
   clearMapCatalogCache,
@@ -164,17 +164,41 @@ describe('fetchMapCatalog (resolved layers API, backend #331)', () => {
 });
 
 describe('map catalog URLs', () => {
-  it('builds the style endpoint with spec and mode params (no cache busters)', () => {
+  it('derives style variants from the catalog style_url (served spec + version token preserved)', () => {
     process.env.WODORE_API_HOST = 'https://hub.example.com';
-    // Server ETags + revalidate-always own freshness (backend #331) —
-    // the client must never rotate cache keys itself.
-    expect(styleEndpointUrl('mtb', { spec: 'low' })).toBe(
-      'https://hub.example.com/v1/map/styles/mtb.json?spec=low'
+    // Backend #434: style_url embeds the backend-SERVED spec and the
+    // immutable version token — variants keep both, only appending the
+    // mode. The client must never rebuild the URL from a slug (it would
+    // guess the spec and drop the token).
+    const catalogUrl = '/v1/map/styles/mtb.json?spec=medium&v=9e9ddf24f942';
+    expect(styleVariantUrl(catalogUrl)).toBe(
+      'https://hub.example.com/v1/map/styles/mtb.json?spec=medium&v=9e9ddf24f942'
     );
-    expect(styleEndpointUrl('mtb', { spec: 'high', tokenized: true })).toBe(
-      'https://hub.example.com/v1/map/styles/mtb.json?spec=high&mode=tokenized'
+    expect(styleVariantUrl(catalogUrl, { tokenized: true })).toBe(
+      'https://hub.example.com/v1/map/styles/mtb.json?spec=medium&v=9e9ddf24f942&mode=tokenized'
     );
-    expect(styleEndpointUrl('mtb')).toBe('https://hub.example.com/v1/map/styles/mtb.json');
+    // Bare style_url (no query yet) — tokenized appends '?', resolved
+    // passes through; external URLs are never re-based.
+    expect(styleVariantUrl('/v1/map/styles/x.json', { tokenized: true })).toBe(
+      'https://hub.example.com/v1/map/styles/x.json?mode=tokenized'
+    );
+    expect(styleVariantUrl('https://api.maptiler.com/maps/x?key=k')).toBe(
+      'https://api.maptiler.com/maps/x?key=k'
+    );
+    // Idempotence guard: a URL already carrying a mode never gets a
+    // second — both the real case (mode=tokenized re-requested) and a
+    // foreign mode value pass through unchanged (URLParams-based, so a
+    // future `x-mode=` param cannot falsely match).
+    expect(
+      styleVariantUrl('/v1/map/styles/x.json?spec=high&mode=tokenized', {
+        tokenized: true,
+      })
+    ).toBe('https://hub.example.com/v1/map/styles/x.json?spec=high&mode=tokenized');
+    expect(
+      styleVariantUrl('/v1/map/styles/x.json?spec=high&x-mode=1', {
+        tokenized: true,
+      })
+    ).toBe('https://hub.example.com/v1/map/styles/x.json?spec=high&x-mode=1&mode=tokenized');
     delete process.env.WODORE_API_HOST;
   });
 

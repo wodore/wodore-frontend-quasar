@@ -67,7 +67,18 @@
     },
     "layers": "Livelli",
     "loading": "Caricamento della mappa",
-    "loadingWords": "Zaino allacciato~Carta spiegata~Percorso in testa~Meteo letto~Scarponi stretti~Borracce piene~Bastoni pronti~Primi metri guadagnati~La mappa si disegna~Curve di livello~Le valli appaiono~Bosco alle spalle~I ruscelli mormorano~Rododendri in fiore~Le vette si avvicinano~Primi rifugi~Le nuvole passano~Le marmotte fischiano~Il panorama si apre~Meta in vista"
+    "loadingWords": "Zaino allacciato~Carta spiegata~Percorso in testa~Meteo letto~Scarponi stretti~Borracce piene~Bastoni pronti~Primi metri guadagnati~La mappa si disegna~Curve di livello~Le valli appaiono~Bosco alle spalle~I ruscelli mormorano~Rododendri in fiore~Le vette si avvicinano~Primi rifugi~Le nuvole passano~Le marmotte fischiano~Il panorama si apre~Meta in vista",
+    "fallbackNote": "Mappa semplificata attiva — funzionalità ridotte (no WebGL).",
+    "fallbackBasemaps": {
+      "osm": "OSM (OpenStreetMap)",
+      "world-topo": "Topo mondiale",
+      "world-satellite-hybrid": "Satellite"
+    },
+    "fallbackZoomHint": "Ingrandisci per vedere le disponibilità.",
+    "fallbackAttribution": "Attribuzione",
+    "fallbackLocate": "Mostra la mia posizione",
+    "fallbackFocus": "Modalità focus",
+    "fallbackExitFocus": "Esci dalla modalità focus"
   },
   "map_style": "Carta geografica",
   "location": "Posizione",

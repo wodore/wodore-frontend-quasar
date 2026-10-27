@@ -6,6 +6,7 @@ import {
   watch,
   onErrorCaptured,
   computed,
+  defineAsyncComponent,
   onMounted,
   onScopeDispose,
 } from 'vue';
@@ -21,6 +22,10 @@ import { useQuasar } from 'quasar';
 import { useBasemapStore, mapProfileForTier } from '@stores/map/basemap-store';
 import { useMapCatalogStore } from '@stores/map/map-catalog-store';
 import { startRevealLoop } from './reveal-scheduler';
+
+// Non-WebGL fallback (POC): Leaflet + clustered hut dots, async-loaded
+// so the Leaflet chunk never downloads for WebGL users.
+const WdFallbackMapView = defineAsyncComponent(() => import('./WdFallbackMapView.vue'));
 import { useLocalPropertiesStore } from '@stores/local-properties-store';
 import { showErrorDialogPersistent, ErrorCode } from '@components/error';
 import type { Map, PaddingOptions } from 'maplibre-gl';
@@ -49,6 +54,7 @@ import { getEnv } from '@services/runtimeEnv';
 import { storageGet } from '@services/storage';
 import { clientWodore } from '@clients/index';
 import { seedPlaceFromMap } from '@composables/usePlace';
+import { forcedGpuTier, GPU_TIER_FALLBACK } from '@services/gpu-override';
 import { MAP_MIN_ZOOM, MIN_HUT_CLICK_ZOOM } from '@stores/map/utils/map-constants';
 import { isBasemapStyleGone } from '@stores/map/utils/basemap-fallback';
 import {
@@ -265,7 +271,7 @@ const mapRendered = ref(false);
  * for EVERY reveal side effect, not just the scheduler's). */
 const revealTimers: number[] = [];
 
-function revealMap(_map: Map): void {
+function revealMap(_map?: Map): void {
   if (mapRendered.value) return;
   mapRendered.value = true;
   emit('rendered');
@@ -300,6 +306,35 @@ function revealMap(_map: Map): void {
   }
 }
 
+/** Fallback map ready (Leaflet initialized): same reveal ladder as
+ * the MapLibre path — release the splash/chrome and pre-signal the
+ * loader (words fade out). */
+function onFallbackReady(): void {
+  revealMap();
+  emit('mapready');
+}
+
+/** Fallback reveal safety ladder: the MapLibre path has one (8s/20s in
+ *  scheduleReveal), the fallback path did NOT — a chunk-load failure or a
+ *  component error (observed with stale vite optimized-deps in a long-
+ *  lived tab) left the splash on the mono logo FOREVER. If `ready` has
+ *  not arrived within 8s, reveal anyway — a blank-but-usable app beats
+ *  an infinite splash — and say so in the console. */
+function scheduleFallbackReveal(): void {
+  revealTimers.push(
+    window.setTimeout(() => {
+      if (!mapRendered.value) {
+        console.error(
+          '[WdMapView] fallback map did not signal ready within 8s — revealing anyway ' +
+            '(check the browser console for chunk-load or component errors; a hard ' +
+            'reload clears stale dev-server chunks)'
+        );
+        revealMap();
+      }
+    }, 8000)
+  );
+}
+
 function scheduleReveal(map: Map): void {
   if (mapRendered.value) return;
   // Reveal logic lives in reveal-scheduler.ts (unit-tested for both
@@ -327,9 +362,15 @@ function scheduleReveal(map: Map): void {
   // notifyOverlaysDone is idempotent — no need to stop this watcher
   // from inside its own callback (that exact pattern was the TDZ
   // regression); the scope dispose cleans it up.
+  //
+  // Reveal gate (perf/map-boot): `mapStylesReady` flips once every ACTIVE
+  // overlay's boot bundle settled (resolved or skipped) — INACTIVE
+  // overlays' styles are menu data fetched in the background and must
+  // never hold the splash (owner decision 2026-10). A whole-catalog
+  // failure still releases via `status === 'error'`.
   let stopStatusWatch: (() => void) | undefined;
   stopStatusWatch = watch(
-    () => mapCatalogStore.status === 'ready' || mapCatalogStore.status === 'error',
+    () => mapCatalogStore.mapStylesReady || mapCatalogStore.status === 'error',
     overlaysDone => {
       if (!overlaysDone) return;
       scheduler.notifyOverlaysDone();
@@ -629,10 +670,15 @@ function activeBasemapIsMtkOutdoor(): boolean {
  * GPUInitializationError that is only console-logged, and every subsequent
  * map interaction throws generic TypeErrors — which the error-based
  * detection above cannot recognize (the map just stays white). Detecting it
- * up front lets us show the proper error dialog and skip mounting MglMap.
+ * up front lets us skip mounting MglMap — the Leaflet fallback mounts
+ * instead.
+ *
+ * `?gpuTier=-1` (services/gpu-override.ts) forces the same path on
+ * capable machines — the test/QA knob for the fallback map.
  */
 const webglSupported = (() => {
   if (typeof document === 'undefined') return true; // SSR — decide on client
+  if (forcedGpuTier() === GPU_TIER_FALLBACK) return false; // URL override
   try {
     const canvas = document.createElement('canvas');
     return !!(
@@ -646,8 +692,18 @@ const webglSupported = (() => {
 })();
 
 if (!webglSupported) {
-  console.error('[WdMapView] WebGL is not supported by this browser/device');
-  showErrorDialogPersistent(ErrorCode.WEBGL_NOT_SUPPORTED);
+  if (forcedGpuTier() === GPU_TIER_FALLBACK) {
+    console.info('[WdMapView] ?gpuTier=-1 override — Leaflet fallback forced');
+  } else {
+    console.error('[WdMapView] WebGL is not supported by this browser/device');
+  }
+  // Reveal safety ladder — a failed fallback chunk/error must never hold
+  // the splash hostage (see scheduleFallbackReveal).
+  scheduleFallbackReveal();
+  // POC fallback: no dead-end dialog — the Leaflet fallback map mounts
+  // (v-else below) and reveals through the same choreography. The
+  // persistent dialog stays wired for RUNTIME GL loss (onMapError /
+  // onErrorCaptured), which only fires once MapLibre exists.
 }
 
 // Capture errors from child components (like MglMap)
@@ -1319,7 +1375,7 @@ function onMapPointerDown(ev: MouseEvent): void {
   if (pointerType !== 'touch') return; // desktop has the explicit button
   if (
     (ev.target as HTMLElement).closest(
-      '.maplibregl-ctrl, .maplibregl-popup, .maplibregl-marker, .q-page-sticky, .wd-focus-toggle'
+      '.maplibregl-ctrl, .maplibregl-popup, .maplibregl-marker, .q-page-sticky, .wd-focus-toggle, .leaflet-control, .leaflet-marker-icon, .leaflet-marker-cluster, .wd-fb-bm'
     )
   )
     return;
@@ -1498,6 +1554,28 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
   background-color: #f6f9f7;
 }
 
+// Non-WebGL fallback: the Leaflet container (the fallback component's
+// root div — Leaflet adds .leaflet-container to it) rides the same
+// reveal choreography as the MapLibre canvas above.
+.wd-map-fill .wd-fallback-map {
+  background-color: #f6f9f7;
+  opacity: 0;
+  filter: blur(14px);
+  transition:
+    opacity 0.32s ease-out,
+    filter 0.9s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.wd-map-fill--rendered .wd-fallback-map {
+  opacity: 1;
+  filter: blur(0);
+}
+
+.wd-map-fill--settled .wd-fallback-map {
+  filter: none;
+  transition: none;
+}
+
 // Reveal choreography (owner spec, ~900ms total):
 //   1. map fades in while BLURRED (opacity 0→1 over 320ms)
 //   2. the blur resolves (blur(14px)→0 over 900ms)
@@ -1526,6 +1604,11 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
 
 @media (prefers-reduced-motion: reduce) {
   .wd-map-fill .maplibregl-map {
+    filter: none;
+    transition: opacity 0.3s ease-out;
+  }
+
+  .wd-map-fill .wd-fallback-map {
     filter: none;
     transition: opacity 0.3s ease-out;
   }
@@ -1672,6 +1755,10 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
       ></MglSymbolLayer> -->
         <!-- </MglGeoJsonSource> -->
       </MglMap>
+      <!-- Non-WebGL fallback (POC): Leaflet + clustered hut dots. Reveals
+           through the same choreography (splash out, chrome in) once the
+           fallback map is initialized. -->
+      <WdFallbackMapView v-else @ready="onFallbackReady" />
       <!-- Translucent footer shade (native app): keeps the attribution
            zone readable over the map while the map stays visible
            through it. Rendered always, hidden outside capacitor via CSS. -->

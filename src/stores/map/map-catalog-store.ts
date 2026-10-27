@@ -25,7 +25,12 @@ import { defineStore } from 'pinia';
 import { ref, watch } from 'vue';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
 import { Notify } from 'quasar';
-import { availabilityLoading } from './availability-loading';
+import {
+  availabilityLoading,
+  availabilitySpinner,
+  settleAvailabilitySpinner,
+  toIsoDate,
+} from './availability-loading';
 import type {
   AllLayoutProperties,
   AllPaintProperties,
@@ -45,26 +50,19 @@ import {
   fetchMapCatalog,
   fetchMapSlots,
   fetchMapStyle,
-  gpuSpec,
   isOpacityCurve,
   loadPersistedLayers,
-  loadStyleCache,
   parseOpacityCurve,
   persistLayers,
-  persistStyleEntry,
-  pruneStyleCache,
+  purgeLegacyStyleCaches,
   resolveTokens,
   collectTokens,
   serializeOpacityCurve,
-  styleCacheKey,
-  styleEndpointUrl,
+  styleVariantUrl,
   type MapCatalogLayer,
   type MapCatalogSlot,
   type MapLayerParameter,
-  type MapSpecTier,
   type OpacityCurve,
-  type PersistedStyleCache,
-  type PersistedStyleEntry,
 } from '@services/map-catalog';
 import {
   authoredParameterValues,
@@ -89,6 +87,17 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
   /** 'loading' = cold boot, catalog being fetched (no cache to render). */
   const status = ref<'idle' | 'loading' | 'ready' | 'error'>('idle');
 
+  /**
+   * Reveal gate (perf/map-boot): flips once every ACTIVE overlay's style
+   * bundle from the boot compile has SETTLED — resolved OR skipped (a
+   * failed fetch/validation counts as settled; the layer drops with a
+   * notice). INACTIVE overlays' styles never gate the reveal — they are
+   * menu/switcher data fetched in the background. WdMapView watches this
+   * instead of the full-catalog `status`. One-way latch per session: the
+   * warm-boot background refresh and locale rebuilds never re-block it.
+   */
+  const mapStylesReady = ref(false);
+
   /** Persisted per-layer parameter overrides: {overlayName: {paramSlug: value}}. */
   const parameterValues = ref<Record<string, Record<string, unknown>>>(
     (storageGet(PARAMS_KEY) as Record<string, Record<string, unknown>>) ?? {}
@@ -109,34 +118,36 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
   // here so a freshly created store — e.g. per-test pinia — never
   // inherits a spinner state from a previous instance (review #349).
   availabilityLoading.value = false;
-  let availabilityLoadGen = 0;
-  let availabilityShownAt = 0;
   let availabilityListenersBound = false;
-  const AVAILABILITY_MIN_SPIN_MS = 600;
+  // Re-imported name kept short at the call site (module owns the canonical
+  // constant; the store aliases it for the native-bridge fallback timeout).
+  const AVAILABILITY_MIN_SPIN_MS_FALLBACK = 600;
 
+  /** Gen-guarded settle delegating to the shared module (600ms minimum). */
   function settleAvailabilityLoad(gen: number): void {
-    if (gen !== availabilityLoadGen) return; // superseded by a newer date pick
-    const elapsed = performance.now() - availabilityShownAt;
-    const remaining = AVAILABILITY_MIN_SPIN_MS - elapsed;
-    if (remaining > 0) {
-      setTimeout(() => {
-        if (gen === availabilityLoadGen) availabilityLoading.value = false;
-      }, remaining);
-    } else {
-      availabilityLoading.value = false;
-    }
+    if (gen !== availabilitySpinner.gen) return; // superseded by a newer date pick
+    settleAvailabilitySpinner();
   }
 
   function beginAvailabilityLoad(): void {
-    const gen = ++availabilityLoadGen;
+    availabilitySpinner.gen += 1;
+    const gen = availabilitySpinner.gen;
     availabilityLoading.value = true;
-    availabilityShownAt = performance.now();
+    availabilitySpinner.shownAt = performance.now();
+    // SAFETY: structural duck-type of the MapLibre map instance — vue-maplibre-gl's
+    // mapRef.map is untyped in this store; only `.on` is used for the sourcedata
+    // listener below. The runtime shape is guaranteed by MglMap mounting first.
     const map = mapRef.map as unknown as
       | { on?: (ev: string, fn: (e: unknown) => void) => void }
       | undefined;
     if (!map?.on) {
+      // Non-MapLibre availability renderer (Leaflet fallback) owns the
+      // settle: it calls settleAvailabilityLoadManual() when ITS data is
+      // rendered — skip the fixed minimum so the spinner tracks the real
+      // load (600ms minimum still applies inside settle).
+      if (availabilitySpinner.manualSettle) return;
       // Native bridge (no sourcedata forwarding): run the fixed minimum.
-      setTimeout(() => settleAvailabilityLoad(gen), AVAILABILITY_MIN_SPIN_MS);
+      setTimeout(() => settleAvailabilityLoad(gen), AVAILABILITY_MIN_SPIN_MS_FALLBACK);
       return;
     }
     if (!availabilityListenersBound) {
@@ -144,13 +155,16 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
       const onSourceData = (e: { sourceId?: string; isSourceLoaded?: boolean; type?: string }) => {
         if (e.sourceId !== 'wd-bookings') return;
         if (e.isSourceLoaded || e.type === 'sourcedataabort') {
-          settleAvailabilityLoad(availabilityLoadGen);
+          settleAvailabilityLoad(availabilitySpinner.gen);
         }
       };
+      // SAFETY: same structural cast as above — `.on` exists on every MapLibre
+      // map; the callback's event shape is the sourcedata payload subset we read.
       (mapRef.map as unknown as { on: (ev: string, fn: (e: never) => void) => void }).on(
         'sourcedata',
         onSourceData as (e: never) => void
       );
+      // SAFETY: duplicate cast for the second listener registration (abort).
       (mapRef.map as unknown as { on: (ev: string, fn: (e: never) => void) => void }).on(
         'sourcedataabort',
         onSourceData as (e: never) => void
@@ -421,16 +435,6 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
    *  runtime `{{date}}` token must be normalized before it lands in tile
    *  URLs. Unparseable input yields undefined (token stays unresolved →
    *  the date-gated layers stay hidden). */
-  function toIsoDate(input: string | undefined): string | undefined {
-    if (!input) return undefined;
-    const euro = input.match(/^(\d{2})\.(\d{2})\.(\d{2}|\d{4})$/);
-    if (euro) {
-      const year = euro[3]!.length === 2 ? `20${euro[3]}` : euro[3]!;
-      return `${year}-${euro[2]}-${euro[1]}`;
-    }
-    if (/^\d{4}-\d{2}-\d{2}$/.test(input)) return input;
-    return undefined;
-  }
 
   /** Mirror the selected availability date into the runtime values. */
   function setRuntimeDate(date: string | undefined): void {
@@ -446,13 +450,6 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
   }
 
   // ── Style loading with the persisted cache + version sync ─────────────
-
-  /** Overlay-layer spec: the cached GPU tier (basemap-store detects and
-   *  stores it; tier < 2 is the weak-GPU raster path). */
-  function overlaySpec(): MapSpecTier {
-    const tier = storageGet('gpuTier') as { tier?: number } | null;
-    return gpuSpec((tier?.tier ?? 3) < 2);
-  }
 
   interface LoadedBundle {
     style: StyleSpecification;
@@ -483,55 +480,35 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     return styleValid(validated);
   }
 
-  /** Whether a cached entry can serve this layer (modified + validity). */
-  function cacheServes(
-    entry: PersistedStyleEntry | undefined,
-    layer: MapCatalogLayer,
-    tokenized: boolean
-  ): entry is PersistedStyleEntry {
-    if (!entry) return false;
-    if ((entry.modified ?? null) !== (layer.modified ?? null)) return false;
-    const doc = tokenized ? entry.tokenized : entry.style;
-    if (!doc) return false;
-    return bundleIsValid(doc, layer);
-  }
-
   /**
-   * Load one layer's style bundle: the persisted cache serves when the
-   * version matches; otherwise the style endpoint is fetched (tokenized
-   * for parameterized layers, resolved otherwise) and persisted.
+   * Load one layer's style bundle: fetch the catalog's canonical
+   * `style_url` variant (backend-served spec + immutable `&v=` token,
+   * `mode=tokenized` appended for parameterized layers — backend #434:
+   * any variant URL carrying a valid v serves immutable, so the BROWSER
+   * cache owns freshness; the in-service session dedupe collapses repeat
+   * fetches). No local persistence — the retired localStorage caches were
+   * redundant once URLs became content-versioned (owner decision
+   * 2026-10). A missing style_url means the catalog entry is broken —
+   * skip loudly like a failed fetch.
    */
-  async function loadStyleBundle(
-    layer: MapCatalogLayer,
-    spec: MapSpecTier,
-    cache: PersistedStyleCache
-  ): Promise<LoadedBundle | undefined> {
+  async function loadStyleBundle(layer: MapCatalogLayer): Promise<LoadedBundle | undefined> {
     const tokenized = layer.parameters.length > 0;
-    const key = styleCacheKey(layer.slug, spec, tokenized);
-    const cached = cache[key];
-    if (cacheServes(cached, layer, tokenized)) {
-      if (tokenized && cached.tokenized) {
-        return {
-          style: resolveTokens(cached.tokenized, valuesFor(layer)) as StyleSpecification,
-          tokenizedStyle: cached.tokenized,
-        };
-      }
-      if (!tokenized && cached.style) return { style: cached.style };
+    if (!layer.style_url) {
+      skipLayer(layer, 'layer configuration missing (style URL)', undefined);
+      return undefined;
     }
+    const styleUrl = layer.style_url;
 
     try {
       const tokenizedDoc = tokenized
         ? ((await fetchMapStyle(
-            styleEndpointUrl(layer.slug, { spec, tokenized: true }),
+            styleVariantUrl(styleUrl, { tokenized: true }),
             layer.slug
           )) as StyleSpecification)
         : undefined;
       const resolvedDoc = tokenizedDoc
         ? (resolveTokens(tokenizedDoc, valuesFor(layer)) as StyleSpecification)
-        : ((await fetchMapStyle(
-            styleEndpointUrl(layer.slug, { spec }),
-            layer.slug
-          )) as StyleSpecification);
+        : ((await fetchMapStyle(styleVariantUrl(styleUrl), layer.slug)) as StyleSpecification);
       // Remote-data guard: an invalid document must not blank the layer —
       // the RESOLVED output is validated (tokenized docs carry invalid
       // paint tokens by design until resolved).
@@ -539,10 +516,6 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
         skipLayer(layer, 'invalid style document', undefined);
         return undefined;
       }
-      persistStyleEntry(key, {
-        ...(tokenized ? { tokenized: tokenizedDoc } : { style: resolvedDoc }),
-        modified: layer.modified ?? null,
-      });
       return { style: resolvedDoc, tokenizedStyle: tokenizedDoc };
     } catch (error) {
       skipLayer(layer, 'style could not be loaded', error);
@@ -585,14 +558,22 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
    * replaces its placeholder through `onItems` (catalog order), and a
    * layer whose style fails validation or fetch DROPS from the list
    * (skip loudly — design.md D8). Returns the final list.
+   *
+   * Fetch + emit priority (perf/map-boot, owner decision 2026-10):
+   * ACTIVE overlays' styles (the reveal path) fetch FIRST — everything
+   * else only starts once the active wave settled. Emits beyond the
+   * synchronous metadata-first one are microtask-batched (the whole
+   * persisted-cache warm wave collapses into ONE application), and only
+   * batches in which an ACTIVE overlay's bundle arrived bump the
+   * catalog-swap epoch (`mapContentChanged` → applyCatalogOverlays): the
+   * compile used to bump per bundle, re-adding every active overlay's
+   * map layers up to once per catalog row at boot.
    */
   async function compileCatalogOverlays(
     layers: MapCatalogLayer[],
     slotSlugs: Set<string>,
-    onItems?: (items: OverlaySwitchItem[]) => void
+    onItems?: (items: OverlaySwitchItem[], meta?: { mapContentChanged: boolean }) => void
   ): Promise<OverlaySwitchItem[]> {
-    const spec = overlaySpec();
-    const styleCache = loadStyleCache();
     const overlayLayers = layers.filter(l => l.role === 'overlay');
     // Catalog order (role, order, slug — the backend sorts): progressive
     // batches resolve in network order; this lookup keeps the list stable.
@@ -608,25 +589,71 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     );
     /** Resolved items by slug; null = skipped (invalid/unfetchable style). */
     const settled: Record<string, OverlaySwitchItem | null> = {};
-    const emit = () => {
+
+    // Active wave — the slugs that will be ACTIVE once applied, resolved
+    // up front (current live flags on later swaps; persisted state + the
+    // fresh-install active-group view on the first application) so fetch
+    // order and the epoch signal never depend on the apply having run.
+    const activeSlugs = overlayStore.resolveActiveSlugs(overlayLayers.map(l => l.slug));
+    const activeLayers = overlayLayers.filter(l => activeSlugs.has(l.slug));
+    const otherLayers = overlayLayers.filter(l => !activeSlugs.has(l.slug));
+
+    let emitScheduled = false;
+    let activeArrivedInBatch = false;
+    const emitAll = (mapContentChanged: boolean): void => {
       const snapshot = overlayLayers
         .filter(l => settled[l.slug] !== null)
         .map(l => settled[l.slug] ?? placeholders[l.slug]!)
         .sort((a, b) => (orderOf[a.name] ?? 0) - (orderOf[b.name] ?? 0));
       mergeSpritePacks(snapshot);
       fixupCatalogStyles(snapshot);
-      onItems?.(snapshot);
+      onItems?.(snapshot, { mapContentChanged });
     };
-    emit(); // metadata-first: rows before any style fetch settles
-    await Promise.all(
-      overlayLayers.map(async layer => {
-        const bundle = await loadStyleBundle(layer, spec, styleCache);
-        settled[layer.slug] = bundle ? mapCatalogOverlay(layer, slotSlugs, bundle) : null;
-        emit();
-        return undefined;
-      })
-    );
-    emit();
+    /** Microtask-batched emit: bundles resolving in the same tick (the
+     *  whole persisted-cache warm wave) collapse into ONE application. */
+    const scheduleEmit = (activeArrived: boolean): void => {
+      if (activeArrived) activeArrivedInBatch = true;
+      if (emitScheduled) return;
+      emitScheduled = true;
+      queueMicrotask(() => {
+        emitScheduled = false;
+        const changed = activeArrivedInBatch;
+        activeArrivedInBatch = false;
+        emitAll(changed);
+      });
+    };
+
+    emitAll(false); // metadata-first: rows before any style fetch settles
+
+    const load = async (layer: MapCatalogLayer, isActive: boolean): Promise<void> => {
+      const bundle = await loadStyleBundle(layer);
+      settled[layer.slug] = bundle ? mapCatalogOverlay(layer, slotSlugs, bundle) : null;
+      // A user may have toggled a placeholder row ON mid-compile: its
+      // arrival is map content too, even though the pre-resolved wave
+      // classified it as inactive (reading the live flag at settle time
+      // catches that; the next apply's live-state adoption keeps it on).
+      // SAFETY: overlays items are OverlaySwitchItem — reading .name and
+      // .active only, fields every catalog item sets; the widened cast
+      // breaks the maplibre-style TS2589 recursion (same pattern as
+      // applyCatalogOverlays in the overlay store).
+      const liveOverlays = overlayStore.overlays as unknown as Array<{
+        name: string;
+        active?: boolean;
+      }>;
+      const isActiveNow = isActive || liveOverlays.some(o => o.name === layer.slug && o.active);
+      scheduleEmit(isActiveNow);
+    };
+    // Active wave (reveal path) first — flipping the reveal latch below
+    // the moment it settles — then the background wave for the menu.
+    await Promise.all(activeLayers.map(l => load(l, true)));
+    mapStylesReady.value = true;
+    await Promise.all(otherLayers.map(l => load(l, false)));
+    // Deterministic final flush (review nit, PR #357): by the time the
+    // background wave resolves, its last batched emit already ran
+    // (microtasks drain before this continuation) — this extra apply is
+    // menu-only (no epoch bump) and guarantees a final list exactly once,
+    // covering the zero-layer edge where no emit ever fired.
+    emitAll(false);
     return overlayLayers
       .filter(l => settled[l.slug])
       .map(l => settled[l.slug]!)
@@ -652,6 +679,9 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
    * never factories.
    */
   async function initOverlays(): Promise<void> {
+    // One-time cleanup of the retired localStorage style caches (their
+    // immutable-URL replacements live in the browser/SW cache now).
+    purgeLegacyStyleCaches();
     const cached = loadPersistedLayers();
     if (cached) {
       try {
@@ -659,8 +689,10 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
         // entries stream in progressively (see compileCatalogOverlays).
         // Slots are not persisted — the seed set matches the backend seed
         // and the fresh compile below switches to the fetched list.
-        await compileCatalogOverlays(cached.data, SEED_SLOT_SLUGS, items =>
-          overlayStore.applyCatalogOverlays(items)
+        await compileCatalogOverlays(cached.data, SEED_SLOT_SLUGS, (items, meta) =>
+          overlayStore.applyCatalogOverlays(items, {
+            bumpEpoch: meta?.mapContentChanged ?? true,
+          })
         );
         status.value = 'ready';
       } catch (error) {
@@ -689,7 +721,6 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
         slotSlugsFor(lang),
       ]);
       persistLayers(layers, lang);
-      pruneStyleCache(new Set(layers.map(l => l.slug)));
       // The per-style documents are switcher data, not first-render
       // data — they are already deferred off the first-paint critical
       // path by MapPage's idle-gated map mount (WdMapView setup is what
@@ -697,8 +728,10 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
       // warms their URLs meanwhile so this mostly reads HTTP-cache hits
       // (perf/fast-first-paint). No additional idle hop here: stacking a
       // second deadline behind the mount gate only delays the styles.
-      await compileCatalogOverlays(layers, slotSlugs, items =>
-        overlayStore.applyCatalogOverlays(items)
+      await compileCatalogOverlays(layers, slotSlugs, (items, meta) =>
+        overlayStore.applyCatalogOverlays(items, {
+          bumpEpoch: meta?.mapContentChanged ?? true,
+        })
       );
       status.value = 'ready';
     } catch (error) {
@@ -731,8 +764,10 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
         fetchMapCatalog(lang, spec),
         slotSlugsFor(lang),
       ]);
-      await compileCatalogOverlays(layers, slotSlugs, items =>
-        overlayStore.applyCatalogOverlays(items)
+      await compileCatalogOverlays(layers, slotSlugs, (items, meta) =>
+        overlayStore.applyCatalogOverlays(items, {
+          bumpEpoch: meta?.mapContentChanged ?? true,
+        })
       );
     } catch (error) {
       console.warn('[map-catalog] catalog rebuild failed — keeping current overlays:', error);
@@ -744,10 +779,18 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
   });
 
   // Mirror the hut-store's selected date into the runtime {{date}} value.
+  // IMMEDIATE: the date can predate this store — WdSelectDate restores it
+  // from the ?date= query at layout mount, while this store is only created
+  // when the idle-gated async WdMapView mounts. A non-immediate watch would
+  // never fire for that pre-existing value, the runtime date would stay
+  // unset, and the wd-bookings tile URLs would keep the today boot default
+  // (staging incident 2026-10-27: the map showed the wrong date's
+  // availability while the date pill showed the picked date).
   const hutsStore = useHutsStore();
   watch(
     () => hutsStore.selectedDate,
-    date => setRuntimeDate(date)
+    date => setRuntimeDate(date),
+    { immediate: true }
   );
 
   // Availability data arrival (date picked → fetch settled, or cleared):
@@ -767,6 +810,7 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
 
   return {
     status,
+    mapStylesReady,
     parameterValues,
     runtimeValues,
     initOverlays,

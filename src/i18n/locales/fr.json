@@ -67,7 +67,18 @@
     },
     "layers": "Couches",
     "loading": "Chargement de la carte",
-    "loadingWords": "Sac bouclé~Carte dépliée~Itinéraire en tête~Météo lue~Chaussures serrées~Gourdes pleines~Bâtons en main~Premiers mètres gagnés~La carte se dessine~Courbes de niveau~Les vallées s'ouvrent~La forêt s'efface~Les ruisseaux murmurent~Rhododendrons en fleurs~Les sommets approchent~Premiers refuges~Les nuages passent~Les marmottes sifflent~La vue s'ouvre~Objectif en vue"
+    "loadingWords": "Sac bouclé~Carte dépliée~Itinéraire en tête~Météo lue~Chaussures serrées~Gourdes pleines~Bâtons en main~Premiers mètres gagnés~La carte se dessine~Courbes de niveau~Les vallées s'ouvrent~La forêt s'efface~Les ruisseaux murmurent~Rhododendrons en fleurs~Les sommets approchent~Premiers refuges~Les nuages passent~Les marmottes sifflent~La vue s'ouvre~Objectif en vue",
+    "fallbackNote": "Carte simplifiée active — fonctionnalités réduites (pas de WebGL).",
+    "fallbackBasemaps": {
+      "osm": "OSM (OpenStreetMap)",
+      "world-topo": "Topo mondial",
+      "world-satellite-hybrid": "Satellite"
+    },
+    "fallbackZoomHint": "Zoomez pour voir les disponibilités.",
+    "fallbackAttribution": "Attribution",
+    "fallbackLocate": "Afficher ma position",
+    "fallbackFocus": "Mode focus",
+    "fallbackExitFocus": "Quitter le mode focus"
   },
   "map_style": "Carte",
   "location": "Lieu",

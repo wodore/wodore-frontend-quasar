@@ -12,7 +12,7 @@
  * but their visual context (what's beside them, the map margin) matters.
  */
 import { test, expect } from './helpers';
-import { waitForMapIdle, waitForOverlayExpanded, loadMap, pinTheme, tagTest } from './helpers';
+import { waitForMapIdle, loadMap, pinTheme, tagTest } from './helpers';
 
 const STATES = [
   // Mobile

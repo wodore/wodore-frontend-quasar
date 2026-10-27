@@ -17,6 +17,7 @@ import {
 } from './utils/country-fallback';
 import { StyleSpecification } from 'maplibre-gl';
 import { i18n, currentLocale } from '@services/locale';
+import { forcedGpuTier } from '@services/gpu-override';
 import { isOutdoorStyle, setupOutdoorContours } from '@services/outdoorContours';
 import {
   attachStagedEnhancements,
@@ -30,9 +31,7 @@ import {
   clearMapCatalogCache,
   fetchMapCatalog,
   gpuSpec,
-  loadBasemapStyleCache,
   loadPersistedLayers,
-  persistBasemapStyle,
   type MapCatalogLayer,
   type MapSpecTier,
 } from '@services/map-catalog';
@@ -110,42 +109,24 @@ async function prepareStagedStyle(style: StyleSpecification | string): Promise<S
 let defaultStylePromise: Promise<StyleSpecification | null> | null = null;
 
 /** Fetch a style URL into an object (assets resolved against the URL).
- *  Returns null on failure — callers degrade to the unmerged style. */
+ *  Returns null on failure — callers degrade to the unmerged style.
+ *  Freshness lives in the immutable `&v=` URLs (backend #434): a warm
+ *  boot's fetch is a browser disk-cache hit, so the retired localStorage
+ *  SWR cache added nothing (owner decision 2026-10 — dropped). */
 async function loadStyleObject(styleUrl: string): Promise<StyleSpecification | null> {
-  // Stale-while-revalidate (perf/warm-style-cache): a warm boot reads
-  // the persisted style document synchronously and paints the map from
-  // it while a background revalidate refreshes the entry. This removes
-  // the last boot-critical network round-trip on warm visits (~0.5-0.8s
-  // measured on staging — the tiles are already content-versioned
-  // HTTP-cache hits, the style was the only fetch left). The URL embeds
-  // the layer's updated_at cache-buster, so a CHANGED style always
-  // arrives as a different key — a stale entry can never shadow new
-  // content, the revalidate just keeps the copy fresh.
-  const stale = loadBasemapStyleCache()[styleUrl]?.style ?? null;
-  const fresh = fetchStyleObject(styleUrl);
-  if (stale) {
-    void fresh.catch(() => undefined);
-    return resolveStyleForMap(stale, styleUrl);
-  }
   try {
-    return await fresh;
+    return await fetchStyleObject(styleUrl);
   } catch (error) {
     console.warn(`[basemap] Style fetch failed (${styleUrl}):`, error);
     return null;
   }
 }
 
-/** Fetch + absolutize + prewarm one style document; persists the raw
- *  document for the next warm boot. */
+/** Fetch + absolutize + prewarm one style document. */
 async function fetchStyleObject(styleUrl: string): Promise<StyleSpecification> {
   const res = await fetch(styleUrl);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const styleObj = (await res.json()) as StyleSpecification;
-  try {
-    persistBasemapStyle(styleUrl, styleObj);
-  } catch {
-    /* quota/storage failures never block the style apply */
-  }
   return resolveStyleForMap(styleObj, styleUrl);
 }
 
@@ -198,10 +179,10 @@ const SOFTWARE_GPU_NAMES = ['swiftshader', 'llvmpipe', 'software', 'mesa offscre
  * what the renderer did. Order matters and mirrors the historical
  * branch order of mapProfileForTier/shouldUseRaster. */
 export type GpuTierClass =
-  | 'non-webgl' // detect-gpu type WEBGL_UNSUPPORTED — no WebGL context at all
+  | 'non-webgl' // detect-gpu type WEBGL_UNSUPPORTED (tier -1) — no WebGL context at all
   | 'software-renderer' // known software rasterizer (SwiftShader, llvmpipe, …)
   | 'no-gpu-name' // detect-gpu couldn't identify the GPU (no renderer string)
-  | 'detection-failed' // tier < 0 — capable hardware the benchmarks couldn't classify
+  | 'detection-failed' // tier < 0 — detection failure or the GPU-detect timeout race
   | 'weak' // tier ≤ 1 — confirmed weak GPU hardware
   | 'medium' // tier 2
   | 'high'; // tier 3+
@@ -209,17 +190,25 @@ export type GpuTierClass =
 /** Classify a detect-gpu TierResult into its GpuTierClass. Pure —
  * safe outside a component (analytics, unit tests). Accepts the
  * trimmed cached shape ({ tier, gpu }) too: `type`/`fps`/`isMobile`
- * are optional, exactly like the persisted localStorage entry. */
+ * are optional, exactly like the persisted localStorage entry.
+ *
+ * tier < 0 is checked FIRST, mirroring shouldUseRaster's capable-
+ * failure doctrine adopted on main: WEBGL_UNSUPPORTED is its own
+ * bucket, every other tier<0 outcome — blocklisted, benchmark fetch
+ * failed, and the store's own GPU-detect timeout fallback
+ * ({tier: -1, type: 'FALLBACK'}, never cached) — is
+ * 'detection-failed' = treated as capable hardware (vector). */
 export function classifyGpuTier(gpuTier: {
   tier: number;
   type?: string;
   gpu?: string | null;
 }): GpuTierClass {
-  if (gpuTier.type === 'WEBGL_UNSUPPORTED') return 'non-webgl';
+  if (gpuTier.tier < 0) {
+    return gpuTier.type === 'WEBGL_UNSUPPORTED' ? 'non-webgl' : 'detection-failed';
+  }
   if (!gpuTier.gpu) return 'no-gpu-name';
   const gpuName = gpuTier.gpu.toLowerCase();
   if (SOFTWARE_GPU_NAMES.some(s => gpuName.includes(s))) return 'software-renderer';
-  if (gpuTier.tier < 0) return 'detection-failed';
   if (gpuTier.tier < 2) return 'weak';
   if (gpuTier.tier === 2) return 'medium';
   return 'high';
@@ -1053,11 +1042,13 @@ export const useBasemapStore = defineStore('basemap', () => {
 
   // Helper to determine if we should use raster basemaps based on GPU capabilities
   function shouldUseRaster(gpuTier: Awaited<ReturnType<typeof getGPUTier>>): boolean {
-    // Raster for every degraded bucket, vector only for medium/high —
-    // classifyGpuTier is the shared decision vocabulary (was three
-    // inline conditionals duplicating mapProfileForTier's logic).
+    // Raster exactly for no-gpu-name / software-renderer / weak —
+    // classifyGpuTier is the shared decision vocabulary. Detection
+    // failures (tier < 0, incl. the GPU-detect timeout race below) are
+    // NOT weak hardware: treat as capable (vector), never punish
+    // unknown hardware with the raster path for a dead benchmark host.
     const gpuClass = classifyGpuTier(gpuTier);
-    return gpuClass !== 'medium' && gpuClass !== 'high';
+    return gpuClass === 'no-gpu-name' || gpuClass === 'software-renderer' || gpuClass === 'weak';
   }
 
   // Async function to initialize basemaps based on GPU tier
@@ -1191,18 +1182,66 @@ export const useBasemapStore = defineStore('basemap', () => {
     const usedCache = Boolean(
       cachedGpuTier && cachedGpuTierTime && now - cachedGpuTierTime < twoDaysInMs
     );
+    // Set by the GPU-detect timeout race below (function scope: the
+    // gpu-tier event reports it as source 'timeout').
+    let gpuDetectTimedOut = false;
 
     if (usedCache) {
       // Use cached result
       console.debug('Using cached GPU tier:', cachedGpuTier);
       gpuTier = cachedGpuTier as Awaited<ReturnType<typeof getGPUTier>>;
     } else {
-      // Run GPU detection
-      gpuTier = await getGPUTier();
-      // Cache the result
-      storageSet('gpuTier', gpuTier);
-      storageSet('gpuTierTime', now);
-      console.debug('Detected and cached GPU tier:', gpuTier.tier);
+      // Run GPU detection, raced against a deadline: detect-gpu's
+      // tier-list download (unpkg.com) has no built-in timeout, and this
+      // await gates the WHOLE map boot — gpuSpecReady blocks the layers
+      // fetch and the first basemap needs the tier. A hung fetch would
+      // hold the splash until the 20s hard cap with no style at all
+      // (observed 2026-10-27, map-boot profiling). On timeout fall back
+      // to the capable "detection failure" tier (tier < 0 — same
+      // precedent as mapProfileForTier's failure branch: never punish
+      // capable hardware for a dead benchmark host) WITHOUT caching it,
+      // so the next visit retries detection.
+      const GPU_DETECT_TIMEOUT_MS = 3500;
+      let gpuDetectTimer: ReturnType<typeof setTimeout> | undefined;
+      gpuTier = await Promise.race([
+        getGPUTier(),
+        new Promise<Awaited<ReturnType<typeof getGPUTier>>>(resolve => {
+          gpuDetectTimer = setTimeout(() => {
+            gpuDetectTimedOut = true;
+            resolve({ tier: -1, type: 'FALLBACK' });
+          }, GPU_DETECT_TIMEOUT_MS);
+        }),
+      ]);
+      clearTimeout(gpuDetectTimer);
+      if (gpuDetectTimedOut) {
+        console.warn(
+          `[basemap] GPU detection timed out after ${GPU_DETECT_TIMEOUT_MS}ms — ` +
+            'using the capable fallback tier (not cached; the next visit retries)'
+        );
+      } else {
+        // Cache the result — never the timeout fallback.
+        storageSet('gpuTier', gpuTier);
+        storageSet('gpuTierTime', now);
+        console.debug('Detected and cached GPU tier:', gpuTier.tier);
+      }
+    }
+
+    // `?gpuTier=0..3` boot override (services/gpu-override.ts): force a
+    // detect-gpu tier, bypassing the cache — the weak-GPU raster path
+    // (`0`/`1`) and the high/vector path (`2`/`3`) both become testable
+    // on any machine. `-1` never reaches here (WdMapView mounts the
+    // Leaflet fallback instead — the catalog is never consumed).
+    const tierOverride = forcedGpuTier();
+    if (tierOverride !== null && tierOverride >= 0) {
+      gpuTier = {
+        ...gpuTier,
+        tier: tierOverride,
+        // Non-empty, not a SOFTWARE_GPU_NAMES match: `shouldUseRaster`
+        // must decide on the TIER alone, not fall into its no-name /
+        // software-renderer short-circuits.
+        gpu: gpuTier.gpu || 'url-override',
+      };
+      console.info(`[basemap-store] ?gpuTier=${tierOverride} override active`);
     }
 
     const useRaster = shouldUseRaster(gpuTier);
@@ -1254,9 +1293,21 @@ export const useBasemapStore = defineStore('basemap', () => {
       classification: classifyGpuTier(gpuTier),
       spec: gpuSpec(useRaster),
       raster: useRaster,
-      source: usedCache ? 'cached' : 'detected',
+      // How the session's tier came to be: the ?gpuTier= URL override
+      // wins (QA knob; -1 = forced Leaflet fallback), then the
+      // GPU-detect timeout fallback, then the 2-day cache, then a
+      // fresh detection.
+      source:
+        tierOverride !== null
+          ? 'override'
+          : gpuDetectTimedOut
+            ? 'timeout'
+            : usedCache
+              ? 'cached'
+              : 'detected',
       webgl2,
     };
+    if (tierOverride !== null) gpuEventData.override = tierOverride;
     if (gpuTier.type !== undefined) gpuEventData.type = gpuTier.type;
     if (gpuTier.fps !== undefined) gpuEventData.fps = gpuTier.fps;
     if (gpuTier.isMobile !== undefined) gpuEventData.isMobile = gpuTier.isMobile;
@@ -1266,7 +1317,7 @@ export const useBasemapStore = defineStore('basemap', () => {
       'GPU Tier detected:',
       gpuTier.tier,
       'GPU:',
-      gpuTier.gpu,
+      gpuTier.gpu || 'n/a',
       'Using raster:',
       useRaster
     );

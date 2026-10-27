@@ -51,9 +51,15 @@ vi.mock('@indoorequal/vue-maplibre-gl', () => ({
   useMap: () => ({ map: fakeMap }),
 }));
 
-// Deterministic capable GPU → weak-GPU raster paths never engage.
+// Deterministic capable GPU → weak-GPU raster paths never engage. The
+// hoisted promise is MUTABLE so the gpu-tier event tests can hang it
+// (detect-timeout race) or vary the result per test.
+const { detectGpuResult, DEFAULT_DETECT_RESULT } = vi.hoisted(() => {
+  const DEFAULT_DETECT_RESULT = Promise.resolve({ tier: 3, gpu: 'Test GPU', fps: 60 });
+  return { detectGpuResult: { value: DEFAULT_DETECT_RESULT }, DEFAULT_DETECT_RESULT };
+});
 vi.mock('@pmndrs/detect-gpu', () => ({
-  getGPUTier: async () => ({ tier: 3, gpu: 'Test GPU', fps: 60 }),
+  getGPUTier: () => detectGpuResult.value,
 }));
 
 vi.mock('quasar', async importOriginal => {
@@ -241,75 +247,32 @@ describe('basemap store — catalog refresh recovery', () => {
   });
 });
 
-describe('basemap store — persisted style SWR', () => {
-  const fetchMock = vi.fn(async () => ({ ok: true, json: async () => styleDoc }));
-  let scope: ReturnType<typeof effectScope> | null = null;
-  let stores: typeof import('@stores/map/basemap-store');
-
-  beforeAll(async () => {
-    stores = await import('@stores/map/basemap-store');
-  });
-
-  beforeEach(() => {
-    setActivePinia(createPinia());
-    setStyleCalls.length = 0;
-    vi.stubGlobal('fetch', fetchMock);
-    fetchMock.mockClear();
-    storageState.clear();
-    storageState.set('basemapName', 'wd-outdoor-base-mtk');
-    catalogResponse.layers = [HILL(), MTK(), OFM()];
-    process.env.WODORE_API_HOST = API_HOST;
-    scope = effectScope();
-    scope.run(() => stores.useBasemapStore());
-  });
-
-  afterEach(() => {
-    scope?.stop();
-    delete process.env.WODORE_API_HOST;
-    vi.unstubAllGlobals();
-  });
-
-  it('boot applies a persisted style without awaiting the network', async () => {
-    // Seed the persisted cache for the ACTIVE style URL exactly as a
-    // previous warm boot would have left it.
-    storageState.set('basemapStyleCache', {
-      [style('wd-outdoor-base-mtk')]: { savedAt: new Date().toISOString(), style: styleDoc },
-    });
-    fetchMock.mockClear();
-
-    await vi.waitFor(() => expect(setStyleCalls.length).toBe(1), { timeout: 4000 });
-    expect(setStyleCalls[0]!.style).toBe(style('wd-outdoor-base-mtk'));
-    // The network revalidate still runs in the background (SWR), but
-    // the boot NEVER waited for it: the style was on the map before
-    // the fetch response resolved.
-    expect(fetchMock.mock.calls.length).toBeLessThanOrEqual(1);
-  });
-
-  it('persists a fetched style for the next warm boot', async () => {
-    await vi.waitFor(() => expect(setStyleCalls.length).toBe(1), { timeout: 4000 });
-    const cache = storageState.get('basemapStyleCache') as Record<string, { style: unknown }>;
-    const key = style('wd-outdoor-base-mtk');
-    expect(cache[key]).toBeDefined();
-    expect(cache[key]!.style).toEqual(styleDoc);
-  });
-});
-
 describe('classifyGpuTier — render-profile buckets (shared with the gpu-tier Umami event)', () => {
   // The classification is the single vocabulary behind
   // mapProfileForTier, shouldUseRaster AND the `gpu-tier` analytics
   // event — what gets reported is exactly what the renderer decided.
   // All fallback buckets (non-WebGL, software renderer, unidentifiable
-  // GPU, detection failure) must stay distinguishable.
+  // GPU, detection failure incl. the detect-timeout race) must stay
+  // distinguishable. tier < 0 is decided FIRST — main's capable-failure
+  // doctrine: never treat failed detection as weak hardware.
 
-  it('non-webgl: detect-gpu WEBGL_UNSUPPORTED outranks everything', () => {
+  it('non-webgl: WEBGL_UNSUPPORTED (tier -1), even with a stale gpu string', () => {
     expect(classifyGpuTier({ tier: -1, type: 'WEBGL_UNSUPPORTED' })).toBe('non-webgl');
-    // even with a (stale) gpu string — the type is authoritative
-    expect(classifyGpuTier({ tier: 3, type: 'WEBGL_UNSUPPORTED', gpu: 'Some GPU' })).toBe(
+    expect(classifyGpuTier({ tier: -1, type: 'WEBGL_UNSUPPORTED', gpu: 'stale cache' })).toBe(
       'non-webgl'
     );
   });
 
-  it('no-gpu-name: unidentifiable GPU without a renderer string', () => {
+  it('detection-failed: every other tier<0 outcome — blocklisted, timeout fallback, fetch failure', () => {
+    expect(classifyGpuTier({ tier: -1, type: 'BLOCKLISTED', gpu: 'PowerVR Rogue' })).toBe(
+      'detection-failed'
+    );
+    // the store's GPU-detect timeout race resolves this shape (never cached)
+    expect(classifyGpuTier({ tier: -1, type: 'FALLBACK' })).toBe('detection-failed');
+    expect(classifyGpuTier({ tier: -1, type: 'BENCHMARK_FETCH_FAILED' })).toBe('detection-failed');
+  });
+
+  it('no-gpu-name: tier ≥ 0 without a renderer string', () => {
     expect(classifyGpuTier({ tier: 1, type: 'BENCHMARK' })).toBe('no-gpu-name');
     expect(classifyGpuTier({ tier: 3, type: 'FALLBACK', gpu: null })).toBe('no-gpu-name');
     // the trimmed cached shape ({ tier }) classifies the same way
@@ -321,12 +284,6 @@ describe('classifyGpuTier — render-profile buckets (shared with the gpu-tier U
       'software-renderer'
     );
     expect(classifyGpuTier({ tier: 0, gpu: 'llvmpipe (Mesa)' })).toBe('software-renderer');
-  });
-
-  it('detection-failed: named GPU the benchmarks could not classify', () => {
-    expect(classifyGpuTier({ tier: -1, type: 'BLOCKLISTED', gpu: 'PowerVR Rogue' })).toBe(
-      'detection-failed'
-    );
   });
 
   it('weak / medium / high by tier', () => {
@@ -342,11 +299,27 @@ describe('classifyGpuTier — render-profile buckets (shared with the gpu-tier U
 });
 
 describe('mapProfileForTier — class → render profile table (refactor lock)', () => {
-  // Pins the switch mapping after the classifyGpuTier refactor — the
-  // profiles must stay exactly what the historical inline branches
-  // returned. dpr=3 exercises every Math.min cap.
+  // Pins the switch mapping after the classifyGpuTier refactor. dpr=3
+  // exercises every Math.min cap. ONE deliberate unification vs the
+  // historical inline branches: tier<0 WITHOUT a gpu string (benchmark
+  // fetch failed, detect timeout) now gets the CAPABLE detection-failed
+  // profile — the old !gpu-first order gave it LOWEST while
+  // shouldUseRaster already treated it as vector. The timeout shape is
+  // never cached, so the cache-fed mapProfileForTier callers rarely
+  // see it at all.
   const dpr = 3;
-  const LOWEST = { pixelRatio: 1, fadeDuration: 0, maxTileCacheSize: 100, maxParallelImageRequests: 8 };
+  const LOWEST = {
+    pixelRatio: 1,
+    fadeDuration: 0,
+    maxTileCacheSize: 100,
+    maxParallelImageRequests: 8,
+  };
+  const CAPABLE = {
+    pixelRatio: 2, // min(3, 2)
+    fadeDuration: 0,
+    maxTileCacheSize: 100,
+    maxParallelImageRequests: 8,
+  };
 
   it('null (first visit, no cached tier) → HIGH defaults', () => {
     expect(mapProfileForTier(null, dpr)).toEqual({
@@ -360,20 +333,22 @@ describe('mapProfileForTier — class → render profile table (refactor lock)',
   it('degraded buckets → lowest-spec profile', () => {
     // non-webgl, no-gpu-name (incl. the trimmed cached {tier} shape),
     // software-renderer — all cap at pixelRatio 1
-    expect(mapProfileForTier({ tier: 3, type: 'WEBGL_UNSUPPORTED' }, dpr)).toEqual(LOWEST);
+    expect(mapProfileForTier({ tier: -1, type: 'WEBGL_UNSUPPORTED' }, dpr)).toEqual(LOWEST);
     expect(mapProfileForTier({ tier: 2 }, dpr)).toEqual(LOWEST);
     expect(mapProfileForTier({ tier: 3, gpu: 'ANGLE (Google, Vulkan SwiftShader)' }, dpr)).toEqual(
       LOWEST
     );
   });
 
-  it('detection-failed / weak / medium / high → their historical profiles', () => {
-    expect(mapProfileForTier({ tier: -1, gpu: 'PowerVR Rogue', type: 'BLOCKLISTED' }, dpr)).toEqual({
-      pixelRatio: 2, // min(3, 2)
-      fadeDuration: 0,
-      maxTileCacheSize: 100,
-      maxParallelImageRequests: 8,
-    });
+  it('detection-failed (named, timeout, fetch-failed) → the capable profile', () => {
+    expect(mapProfileForTier({ tier: -1, gpu: 'PowerVR Rogue', type: 'BLOCKLISTED' }, dpr)).toEqual(
+      CAPABLE
+    );
+    expect(mapProfileForTier({ tier: -1, type: 'FALLBACK' }, dpr)).toEqual(CAPABLE);
+    expect(mapProfileForTier({ tier: -1, type: 'BENCHMARK_FETCH_FAILED' }, dpr)).toEqual(CAPABLE);
+  });
+
+  it('weak / medium / high → their historical profiles', () => {
     expect(mapProfileForTier({ tier: 1, gpu: 'Adreno 505' }, dpr)).toEqual({
       pixelRatio: 1.5, // min(3, 1.5)
       fadeDuration: 0,
@@ -412,6 +387,7 @@ describe('basemap store — gpu-tier Umami event (runBasemapInit wiring)', () =>
     setActivePinia(createPinia());
     setStyleCalls.length = 0;
     storageState.clear();
+    detectGpuResult.value = DEFAULT_DETECT_RESULT;
     vi.mocked(trackWhenUmamiReady).mockClear();
     catalogResponse.layers = [HILL()];
     process.env.WODORE_API_HOST = API_HOST;
@@ -422,8 +398,10 @@ describe('basemap store — gpu-tier Umami event (runBasemapInit wiring)', () =>
     delete process.env.WODORE_API_HOST;
   });
 
-  const eventCall = async (): Promise<[string, Record<string, unknown>]> => {
-    await vi.waitFor(() => expect(trackWhenUmamiReady).toHaveBeenCalledTimes(1), { timeout: 4000 });
+  const eventCall = async (
+    timeout = 4000
+  ): Promise<[string, Record<string, unknown>]> => {
+    await vi.waitFor(() => expect(trackWhenUmamiReady).toHaveBeenCalledTimes(1), { timeout });
     return vi.mocked(trackWhenUmamiReady).mock.calls[0]! as [string, Record<string, unknown>];
   };
 
@@ -452,11 +430,12 @@ describe('basemap store — gpu-tier Umami event (runBasemapInit wiring)', () =>
     // privacy (review decision): the unmasked renderer string is a
     // fingerprinting vector — it must not be transmitted
     expect(data).not.toHaveProperty('gpu');
+    expect(data).not.toHaveProperty('override');
     // present (value is environment-dependent: happy-dom has no WebGL)
     expect(typeof data.webgl2).toBe('boolean');
   });
 
-  it('fresh detection: source=detected, optional keys absent from a stale/mocked tier are omitted', async () => {
+  it('fresh detection: source=detected, optional keys absent from the tier are omitted', async () => {
     // no cached tier → the getGPUTier mock runs; it returns neither
     // `type` nor `isMobile` — those keys must be ABSENT, not undefined
     bootStore();
@@ -475,10 +454,10 @@ describe('basemap store — gpu-tier Umami event (runBasemapInit wiring)', () =>
     expect(data).not.toHaveProperty('gpu');
   });
 
-  it('cached detection failure: raster fallback engaged (detection-failed → spec low)', async () => {
-    // tier < 0 with a NAMED gpu: the subtlest shouldUseRaster case —
-    // old logic sent it to raster via tier < 2; the classification
-    // path must keep it there.
+  it('cached detection failure: treated as capable (detection-failed → vector, spec high)', async () => {
+    // tier < 0 with a NAMED gpu — main's doctrine: a failed detection
+    // is NOT weak hardware; raster must stay off (Leaflet-vs-MapLibre
+    // and the render profile follow the same capable treatment).
     storageState.set('gpuTier', { tier: -1, gpu: 'PowerVR Rogue GE8320', type: 'BLOCKLISTED' });
     storageState.set('gpuTierTime', Date.now());
     bootStore();
@@ -487,9 +466,41 @@ describe('basemap store — gpu-tier Umami event (runBasemapInit wiring)', () =>
       tier: -1,
       type: 'BLOCKLISTED',
       classification: 'detection-failed',
+      spec: 'high',
+      raster: false,
+      source: 'cached',
+    });
+  });
+
+  it('cached weak tier: raster path engaged (weak → spec low)', async () => {
+    storageState.set('gpuTier', { tier: 1, gpu: 'Adreno 505', type: 'BENCHMARK' });
+    storageState.set('gpuTierTime', Date.now());
+    bootStore();
+    const [, data] = await eventCall();
+    expect(data).toMatchObject({
+      tier: 1,
+      classification: 'weak',
       spec: 'low',
       raster: true,
       source: 'cached',
     });
+  });
+
+  it('detection timeout: capable timeout fallback (source=timeout, detection-failed, vector)', { timeout: 12_000 }, async () => {
+    // A hung benchmark fetch (unpkg unreachable) trips the 3.5s
+    // GPU-detect timeout race → {tier:-1, type:'FALLBACK'}, uncached.
+    detectGpuResult.value = new Promise(() => {});
+    bootStore();
+    const [, data] = await eventCall(9000);
+    expect(data).toMatchObject({
+      tier: -1,
+      type: 'FALLBACK',
+      classification: 'detection-failed',
+      source: 'timeout',
+      raster: false,
+      spec: 'high',
+    });
+    // the timeout fallback is never cached
+    expect(storageState.has('gpuTier')).toBe(false);
   });
 });
