@@ -529,6 +529,24 @@ function onMapTapForFocus(e: L.LeafletMouseEvent): void {
   if (!e.originalEvent) return;
   const oe = e.originalEvent as PointerEvent;
   if (oe.pointerType === 'mouse') return; // desktop has the button
+
+  // EXCLUDE handled clicks: markers, clusters, controls, basemap switch
+  // (mirrors the MapLibre map's onMapPointerDown exclusion pattern —
+  // only truly unhandled empty-map taps toggle focus).
+  const target = e.originalEvent.target as HTMLElement | null;
+  if (
+    target?.closest(
+      '.leaflet-marker-icon, .leaflet-control, .wd-fb-bm, .wd-focus-toggle, .q-page-sticky'
+    )
+  ) {
+    return;
+  }
+  // A tap that closes an open basemap rail is consumed
+  if (document.querySelector('.wd-fb-bm__rail')) {
+    lastTapAt = Date.now();
+    return;
+  }
+
   const now = Date.now();
   // SINGLE deliberate tap enters (>350ms since last); rapid re-tap
   // cancels (mirrors the MapLibre map's tap-to-focus pattern).
@@ -1711,15 +1729,34 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 // Owner spec: in focus mode, slide away ALL floating chrome — the
 // basemap switch, zoom bar, locate, attribution and scale. Same motion
 // language as the main map (.wd-map-ctl-sticky: fade + 80px slide).
+// Focus mode (desktop): basemap switch and locate slide away (app
+// chrome). Scale and attribution STAY (MapLibre keeps both — they're
+// map instruments, not chrome). The zoom bar also stays.
 body.wd-map-focus {
   .wd-fb-bm,
-  .wd-fb-locate,
-  .wd-fallback-map .leaflet-top.leaflet-right .leaflet-control-zoom,
-  .wd-fallback-map .wd-fb-attrib,
-  .wd-fallback-map .leaflet-bottom.leaflet-left .leaflet-control-scale {
+  .wd-fb-locate {
     opacity: 0;
     pointer-events: none;
     transform: translateX(80px);
+    transition:
+      opacity 0.3s cubic-bezier(0.2, 0, 0, 1),
+      transform 0.3s cubic-bezier(0.2, 0, 0, 1);
+  }
+}
+
+// Focus mode on mobile — per MapLibre _layout.scss:132-134:
+// - Scale STAYS, slides UP from 66px to 12px+inset
+// - GPS/zoom bottom-left flies OUT (translateX(-60px), opacity 0)
+// - Attribution STAYS (not explicitly hidden in MapLibre)
+// - Focus toggle stays as the exit button
+@media (max-width: 768px) {
+  body.wd-map-focus .wd-fallback-map .leaflet-control-scale {
+    top: calc(12px + env(safe-area-inset-top, 0px));
+  }
+  body.wd-map-focus .wd-fallback-map .leaflet-bottom.leaflet-left .leaflet-control-zoom,
+  body.wd-map-focus .wd-fb-locate {
+    opacity: 0;
+    transform: translateX(-60px);
     transition:
       opacity 0.3s cubic-bezier(0.2, 0, 0, 1),
       transform 0.3s cubic-bezier(0.2, 0, 0, 1);
@@ -1835,14 +1872,54 @@ body.wd-map-focus {
   margin: 0 0 14px 12px; // main-map bottom-left inset (maplibre-gl.scss:49-55)
 }
 
-// Mobile: push attribution above the locate+zoom stack (~180px tall)
+// ── Mobile layout: scale at top-center (below the topbar), zoom slider
+//    hidden, locate + zoom stacked at bottom-left, attribution visible above
+//    the stack. Mirrors the MapLibre mobile control layout.
 @media (max-width: 768px) {
+  // Scale: FIXED top-center below the topbar — MapLibre mobile exact
+  // (maplibre-gl.scss:367-372: position fixed, top 66px+inset, centered)
+  .wd-fallback-map .leaflet-bottom.leaflet-left .leaflet-control-scale {
+    position: fixed;
+    bottom: auto;
+    top: calc(66px + env(safe-area-inset-top, 0px));
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    z-index: 500;
+  }
+
+  // Zoom slider: HIDDEN on mobile (owner: "does not really work in
+  // leaflet") — needs body-level specificity to override the global
+  // _zoom-slider.scss mobile rule (display:flex !important)
+  body .wd-fallback-map .wd-zoom,
+  body.wd-fb-active .wd-fallback-map .wd-zoom,
+  body:not(.wd-ovl-strip-open) .wd-fallback-map .wd-zoom {
+    display: none !important;
+  }
+
+  // Locate: above the zoom bar (not overlapping the + button)
+  .wd-fb-locate {
+    bottom: 110px; // zoom bar is ~94px (2×46px + 2px border) + 14px margin
+    left: 12px;
+    border-radius: 8px 8px 0 0;
+    border-bottom: none;
+  }
+
+  // Zoom bar: standard bottom-left with rounded bottom
+  .wd-fallback-map .leaflet-bottom.leaflet-left .leaflet-control-zoom {
+    margin: 0 0 14px 12px;
+    border-radius: 0 0 8px 8px;
+    border-top: none;
+
+    a:first-child {
+      border-radius: 0;
+    }
+  }
+
+  // Attribution: compact ⓘ pill, visible above the control stack
   .wd-fallback-map .wd-fb-attrib {
     margin-left: 12px;
-    margin-bottom: 160px; // above locate (76px) + zoom (~62px) + 22px
-  }
-  .wd-fallback-map .leaflet-bottom.leaflet-left .leaflet-control-scale {
-    margin-bottom: 160px;
+    margin-bottom: 120px; // above locate (110px) + 10px gap
   }
 }
 
