@@ -1018,6 +1018,12 @@ export const useBasemapStore = defineStore('basemap', () => {
 
   // Helper to determine if we should use raster basemaps based on GPU capabilities
   function shouldUseRaster(gpuTier: Awaited<ReturnType<typeof getGPUTier>>): boolean {
+    // tier < 0 = detection FAILURE (incl. the GPU-detect timeout race
+    // below) — hardware that couldn't be classified, not weak hardware.
+    // Same precedent as mapProfileForTier's tier < 0 branch: treat as
+    // capable (vector), never punish unknown hardware with the raster
+    // path for a dead benchmark host.
+    if (gpuTier.tier < 0) return false;
     if (!gpuTier.gpu) return true;
     const gpuName = gpuTier.gpu.toLowerCase();
     if (SOFTWARE_GPU_NAMES.some(s => gpuName.includes(s))) return true;
@@ -1225,7 +1231,7 @@ export const useBasemapStore = defineStore('basemap', () => {
       'GPU Tier detected:',
       gpuTier.tier,
       'GPU:',
-      gpuTier.gpu,
+      gpuTier.gpu || 'n/a',
       'Using raster:',
       useRaster
     );
