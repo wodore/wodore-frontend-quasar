@@ -637,6 +637,53 @@ describe('map catalog store (boot cache + version sync)', () => {
     expect(setDataCalls).toHaveLength(0);
   });
 
+  it('a selected date that predates the store still resolves into the tile URLs (boot order)', async () => {
+    // Staging incident 2026-10-27: WdSelectDate restores the date from
+    // the ?date= query at layout mount, while this store is only created
+    // when the idle-gated async WdMapView mounts. A non-immediate mirror
+    // watch never fired for the pre-existing value, runtimeValues stayed
+    // empty, and the wd-bookings tiles kept the today boot default — the
+    // map showed the wrong date's availability while the pill showed the
+    // picked date. The mirror watch must seed from the current value.
+    const vectorStyle = structuredClone(HUTS_STYLE);
+    vectorStyle.sources['wd-bookings'] = {
+      type: 'vector',
+      tiles: ['https://tiles.example.com/availability/{z}/{x}/{y}.mlt?date={{date}}&days=4'],
+    };
+    for (const layer of vectorStyle.layers) {
+      (layer as Record<string, unknown>)['source-layer'] = 'availability';
+    }
+    catalogFetch.mockResolvedValue(catalogFor(VERSION_A, HUTS_LAYER));
+    styleFetch.mockImplementation(async (url: string) =>
+      url.includes('/v1/map/styles/huts.json')
+        ? Promise.resolve(vectorStyle)
+        : Promise.resolve(TRANSPORT_STYLE)
+    );
+    bookingsSourceStub = vectorBookingsStub;
+
+    // The date is set BEFORE the catalog store exists (boot order:
+    // WdSelectDate restore → async map mount → this store).
+    useHutsStore().selectedDate = '31.10.2026';
+    await nextTick();
+    const store = stores.useMapCatalogStore();
+    await store.initOverlays();
+
+    // The runtime date seeds from the pre-existing value …
+    expect(store.runtimeValues.date).toBe('2026-10-31');
+    // … and the compiled overlay's tile URLs carry the PICKED date, not
+    // the today boot default.
+    const overlays = (
+      overlayStores.useOverlayStore() as unknown as {
+        overlays: Array<{ name: string; style?: StyleSpecification }>;
+      }
+    ).overlays;
+    const huts = overlays.find(o => o.name === 'huts');
+    const source = (huts!.style!.sources as Record<string, { tiles?: string[] }>)['wd-bookings'];
+    expect(source?.tiles).toEqual([
+      'https://tiles.example.com/availability/{z}/{x}/{y}.mlt?date=2026-10-31&days=4',
+    ]);
+  });
+
   it('runs the date-load spinner until the source settles, min 600ms', async () => {
     vi.useFakeTimers();
     try {
