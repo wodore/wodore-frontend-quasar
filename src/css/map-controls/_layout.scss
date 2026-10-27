@@ -54,9 +54,13 @@
   // Mobile: HIDDEN in normal view (focus is entered by tapping the map);
   // visible ONLY as the exit button in focus mode. position: FIXED +
   // z-index above the topbar so nothing covers it.
+  // PARKED at the focus-exit position (bottom-right) at ALL times —
+  // switching between top/bottom on focus toggle teleports the button
+  // (top↔auto is not interpolable) and it fades out AT THE WRONG
+  // position (visible flicker). Only opacity/transform animate now.
   @media (max-width: #{$breakpoint-sm}) {
     position: fixed;
-    top: calc(11px + env(safe-area-inset-top, 0px));
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
     right: 12px;
     width: 48px;
     height: 48px;
@@ -136,14 +140,7 @@ body.wd-map-focus {
     opacity: 1;
     pointer-events: auto;
     transform: none;
-    // Mobile: the exit lives bottom-right (where the overlay toggle
-    // normally sits) — top-right belongs to nothing in focus mode
-    @media (max-width: #{$breakpoint-sm}) {
-      position: fixed;
-      top: auto;
-      bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-      right: 12px;
-    }
+    // Mobile: exit stays parked bottom-right (base rule) — no move.
   }
 }
 

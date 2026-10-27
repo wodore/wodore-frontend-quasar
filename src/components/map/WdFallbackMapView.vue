@@ -1356,29 +1356,23 @@ onMounted(() => {
   // element inside a Leaflet control (the actual target might be a span,
   // text node, or pseudo-element wrapper inside the button, not the <a>
   // itself). This is the robust approach.
+  // NOTE: .wd-focus-toggle is deliberately NOT in the selector — its
+  // touchend fires BEFORE its own click, so vetoing it would block the
+  // button's own exit handler (exit taps did nothing). The button is
+  // invisible+dead when focus is off (the only state the container's
+  // delayed toggle runs in), so it never needs vetoing.
+  const CONTROL_SELECTOR = '.leaflet-control, .wd-fb-bm, .q-page-sticky';
   container.addEventListener(
     'click',
     (e: Event) => {
-      if (
-        (e.target as HTMLElement)?.closest(
-          '.leaflet-control, .wd-fb-bm, .wd-focus-toggle, .q-page-sticky'
-        )
-      ) {
-        vetoFocus();
-      }
+      if ((e.target as HTMLElement)?.closest(CONTROL_SELECTOR)) vetoFocus();
     },
     { passive: true }
   );
   container.addEventListener(
     'touchend',
     (e: Event) => {
-      if (
-        (e.target as HTMLElement)?.closest(
-          '.leaflet-control, .wd-fb-bm, .wd-focus-toggle, .q-page-sticky'
-        )
-      ) {
-        vetoFocus();
-      }
+      if ((e.target as HTMLElement)?.closest(CONTROL_SELECTOR)) vetoFocus();
     },
     { passive: true }
   );
@@ -1687,14 +1681,6 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 // Focus toggle on mobile: hidden outside focus mode (global
 // _layout.scss handles this). Mobile users enter focus via the
 // tap-to-focus handler above — the button only appears IN focus mode
-// as the exit control, matching the MapLibre behavior.
-// NOTE: remove the transform transition to prevent the flicker
-// (button appearing at default pos then jumping to focus-mode pos).
-@media (max-width: #{$breakpoint-sm}) {
-  body.wd-map-focus .wd-focus-toggle {
-    transition: opacity 0.15s ease;
-  }
-}
 </style>
 
 <!-- UNSCOPED: Leaflet renders marker/cluster/control DOM at runtime (no
