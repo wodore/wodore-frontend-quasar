@@ -524,32 +524,31 @@ function toggleFocus(): void {
  *  MapLibre map's tap-to-focus gesture). Guarded: only fires on
  *  deliberate taps (no drag), not on marker/cluster/control clicks. */
 let lastTapAt = 0;
+let tapStart = { x: 0, y: 0, t: 0 };
 
-function onMapTapForFocus(e: L.LeafletMouseEvent): void {
-  if (!e.originalEvent) return;
-  const oe = e.originalEvent as PointerEvent;
-  if (oe.pointerType === 'mouse') return; // desktop has the button
+function onContainerPointerDown(e: PointerEvent): void {
+  if (e.pointerType === 'mouse') return;
+  tapStart = { x: e.clientX, y: e.clientY, t: Date.now() };
+}
 
-  // EXCLUDE handled clicks: markers, clusters, controls, basemap switch
-  // (mirrors the MapLibre map's onMapPointerDown exclusion pattern —
-  // only truly unhandled empty-map taps toggle focus).
-  const target = e.originalEvent.target as HTMLElement | null;
+function onContainerPointerUp(e: PointerEvent): void {
+  if (e.pointerType === 'mouse') return;
+  const dt = Date.now() - tapStart.t;
+  const dist = Math.hypot(e.clientX - tapStart.x, e.clientY - tapStart.y);
+  if (dt > 400 || dist > 10) return;
+  const target = e.target as HTMLElement | null;
   if (
     target?.closest(
-      '.leaflet-marker-icon, .leaflet-control, .wd-fb-bm, .wd-focus-toggle, .q-page-sticky'
+      '.leaflet-control, .leaflet-marker-icon, .leaflet-marker-cluster, .wd-fb-bm, .wd-focus-toggle, .q-page-sticky, .q-btn'
     )
   ) {
     return;
   }
-  // A tap that closes an open basemap rail is consumed
   if (document.querySelector('.wd-fb-bm__rail')) {
     lastTapAt = Date.now();
     return;
   }
-
   const now = Date.now();
-  // SINGLE deliberate tap enters (>350ms since last); rapid re-tap
-  // cancels (mirrors the MapLibre map's tap-to-focus pattern).
   if (now - lastTapAt > 350 && !focusOn.value) {
     toggleFocus();
   }
@@ -1330,7 +1329,9 @@ onMounted(() => {
   map.addLayer(clusterAvail);
 
   map.on('moveend zoomend', onMoveEnd);
-  map.on('click', onMapTapForFocus); // mobile focus entry
+  const container = map.getContainer();
+  container.addEventListener('pointerdown', onContainerPointerDown, { passive: true });
+  container.addEventListener('pointerup', onContainerPointerUp, { passive: true });
   map.on('zoom', onMapZoomSync);
   document.body.classList.add('wd-fb-active'); // slider visibility gate
   sliderZoom.value = map.getZoom();
@@ -1392,6 +1393,11 @@ onBeforeUnmount(() => {
   reducedModeToast?.();
   if (focusOn.value) document.body.classList.remove('wd-map-focus');
   if (spriteSheetUrl) URL.revokeObjectURL(spriteSheetUrl); // Opus #5
+  if (map) {
+    const c = map.getContainer();
+    c.removeEventListener('pointerdown', onContainerPointerDown);
+    c.removeEventListener('pointerup', onContainerPointerUp);
+  }
   map?.remove(); // tears down layers + listeners
   map = undefined;
   clusterAvail = undefined;
@@ -1632,6 +1638,13 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 // _layout.scss handles this). Mobile users enter focus via the
 // tap-to-focus handler above — the button only appears IN focus mode
 // as the exit control, matching the MapLibre behavior.
+// NOTE: remove the transform transition to prevent the flicker
+// (button appearing at default pos then jumping to focus-mode pos).
+@media (max-width: #{$breakpoint-sm}) {
+  body.wd-map-focus .wd-focus-toggle {
+    transition: opacity 0.15s ease;
+  }
+}
 </style>
 
 <!-- UNSCOPED: Leaflet renders marker/cluster/control DOM at runtime (no
@@ -1750,8 +1763,8 @@ body.wd-map-focus {
 // - Attribution STAYS (not explicitly hidden in MapLibre)
 // - Focus toggle stays as the exit button
 @media (max-width: 768px) {
-  body.wd-map-focus .wd-fallback-map .leaflet-control-scale {
-    top: calc(12px + env(safe-area-inset-top, 0px));
+  body.wd-map-focus .wd-fallback-map .leaflet-bottom.leaflet-left .leaflet-control-scale {
+    top: calc(12px + env(safe-area-inset-top, 0px)) !important;
   }
   body.wd-map-focus .wd-fallback-map .leaflet-bottom.leaflet-left .leaflet-control-zoom,
   body.wd-map-focus .wd-fb-locate {
@@ -1899,7 +1912,7 @@ body.wd-map-focus {
 
   // Locate: above the zoom bar (not overlapping the + button)
   .wd-fb-locate {
-    bottom: 110px; // zoom bar is ~94px (2×46px + 2px border) + 14px margin
+    bottom: 107px; // flush with zoom bar top (14px margin + 93px height)
     left: 12px;
     border-radius: 8px 8px 0 0;
     border-bottom: none;
@@ -1916,10 +1929,13 @@ body.wd-map-focus {
     }
   }
 
-  // Attribution: compact ⓘ pill, visible above the control stack
+  // Attribution: absolutely positioned ABOVE the control stack
+  // (outside Leaflet's corner flow so it can't be pushed behind)
   .wd-fallback-map .wd-fb-attrib {
-    margin-left: 12px;
-    margin-bottom: 120px; // above locate (110px) + 10px gap
+    position: absolute;
+    bottom: 160px;
+    left: 12px;
+    margin: 0;
   }
 }
 
