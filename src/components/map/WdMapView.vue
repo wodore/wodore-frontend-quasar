@@ -1369,7 +1369,7 @@ function onMapPointerDown(ev: MouseEvent): void {
   if (pointerType !== 'touch') return; // desktop has the explicit button
   if (
     (ev.target as HTMLElement).closest(
-      '.maplibregl-ctrl, .maplibregl-popup, .maplibregl-marker, .q-page-sticky, .wd-focus-toggle'
+      '.maplibregl-ctrl, .maplibregl-popup, .maplibregl-marker, .q-page-sticky, .wd-focus-toggle, .leaflet-control, .leaflet-marker-icon, .leaflet-marker-cluster, .wd-fb-bm'
     )
   )
     return;

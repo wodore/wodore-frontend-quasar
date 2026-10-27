@@ -515,6 +515,11 @@ function onLocate(): void {
 const focusOn = ref(false);
 
 function toggleFocus(): void {
+  // VETO: a control was clicked in the last 400ms — do not toggle.
+  // This catches ALL control interactions regardless of how events
+  // propagate (pointer capture, synthetic clicks, touch → click
+  // conversion, etc.).
+  if (Date.now() - controlVetoAt < 400) return;
   focusOn.value = !focusOn.value;
   document.body.classList.toggle('wd-map-focus', focusOn.value);
 }
@@ -525,6 +530,13 @@ function toggleFocus(): void {
  *  deliberate taps (no drag), not on marker/cluster/control clicks. */
 let lastTapAt = 0;
 let tapStart = { x: 0, y: 0, t: 0 };
+/** Veto timestamp — set by ANY control click; toggleFocus checks it.
+ *  More robust than pointer-event target checking on touch devices. */
+let controlVetoAt = 0;
+
+function vetoFocus(): void {
+  controlVetoAt = Date.now();
+}
 
 function onContainerPointerDown(e: PointerEvent): void {
   if (e.pointerType === 'mouse') return;
@@ -536,21 +548,28 @@ function onContainerPointerUp(e: PointerEvent): void {
   const dt = Date.now() - tapStart.t;
   const dist = Math.hypot(e.clientX - tapStart.x, e.clientY - tapStart.y);
   if (dt > 400 || dist > 10) return;
-  const target = e.target as HTMLElement | null;
-  if (
-    target?.closest(
-      '.leaflet-control, .leaflet-marker-icon, .leaflet-marker-cluster, .wd-fb-bm, .wd-focus-toggle, .q-page-sticky, .q-btn'
-    )
-  ) {
-    return;
+
+  // SIMPLEST exclusion: what element is ACTUALLY at the tap position?
+  // document.elementFromPoint returns the topmost element regardless of
+  // event propagation, pointer capture, or synthetic event targets.
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  if (el?.closest('.leaflet-control, .wd-fb-bm, .wd-focus-toggle, .q-page-sticky')) {
+    return; // tap is on a control — do NOT toggle focus
   }
+
+  // A tap that closes an open basemap rail is consumed
   if (document.querySelector('.wd-fb-bm__rail')) {
     lastTapAt = Date.now();
     return;
   }
+
   const now = Date.now();
   if (now - lastTapAt > 350 && !focusOn.value) {
-    toggleFocus();
+    setTimeout(() => {
+      // Double-check the veto (set by the delegated click listener)
+      if (Date.now() - controlVetoAt < 400) return;
+      toggleFocus();
+    }, 100);
   }
   lastTapAt = now;
 }
@@ -1332,6 +1351,37 @@ onMounted(() => {
   const container = map.getContainer();
   container.addEventListener('pointerdown', onContainerPointerDown, { passive: true });
   container.addEventListener('pointerup', onContainerPointerUp, { passive: true });
+
+  // VETO: delegated listener on the container — catches clicks on ANY
+  // element inside a Leaflet control (the actual target might be a span,
+  // text node, or pseudo-element wrapper inside the button, not the <a>
+  // itself). This is the robust approach.
+  container.addEventListener(
+    'click',
+    (e: Event) => {
+      if (
+        (e.target as HTMLElement)?.closest(
+          '.leaflet-control, .wd-fb-bm, .wd-focus-toggle, .q-page-sticky'
+        )
+      ) {
+        vetoFocus();
+      }
+    },
+    { passive: true }
+  );
+  container.addEventListener(
+    'touchend',
+    (e: Event) => {
+      if (
+        (e.target as HTMLElement)?.closest(
+          '.leaflet-control, .wd-fb-bm, .wd-focus-toggle, .q-page-sticky'
+        )
+      ) {
+        vetoFocus();
+      }
+    },
+    { passive: true }
+  );
   map.on('zoom', onMapZoomSync);
   document.body.classList.add('wd-fb-active'); // slider visibility gate
   sliderZoom.value = map.getZoom();
