@@ -1,12 +1,12 @@
 //
 // Edge-cached SPA shell ("edge-hot index.html", docker/nginx-default.conf):
-// the shell (= /index.html AND the @spa try_files fallback) is held by the
-// browser for 5 minutes (max-age=300 — a quick refresh stays fully local)
-// while the CDN caches its own copy (s-maxage, 600 s), tagged CDN-Tag:
-// frontend-html; stale-while-revalidate lets supporting browsers serve
-// stale and refresh in the background (safe: hashed chunks stay on the
-// CDN). /env.js gets the same browser window with a shorter edge one
-// (120 s, frontend-env). Hashed assets stay immutable-1y and are
+// the shell (= /index.html AND the @spa try_files fallback) is PRIVATE —
+// browsers hold it for 5 minutes (max-age=300 — a quick refresh stays
+// fully local) but shared caches (Bunny edge + Perma-Cache) must never
+// store it: Perma-Cache geo-replica invalidation lag made exact-URL
+// purges unreliable, so an edge-cached shell could go stale on deploys.
+// /env.js keeps its short public edge window (120 s, frontend-env).
+// Hashed assets stay immutable-1y and are
 // NEVER tagged (they must not be purged or re-fetched), manifest/sw
 // stay no-store, and the njs hut shell keeps its own policy (seo.js).
 //
@@ -127,20 +127,14 @@ describe('nginx location blocks parse', () => {
 });
 
 describe('edge-hot SPA shell cache policy', () => {
-  it('= /index.html: browser 5 min, edge 10 min, SWR 1 d + CDN-Tag frontend-html', () => {
+  it('= /index.html: private (browser 5 min, no shared cache) + SWR 1 d', () => {
     const loc = block('= /index.html');
-    expect(cacheControl(loc)).toEqual([
-      '"public, max-age=300, s-maxage=600, stale-while-revalidate=86400"',
-    ]);
-    expect(cdnTag(loc)).toEqual(['"frontend-html"']);
+    expect(cacheControl(loc)).toEqual(['"private, max-age=300, stale-while-revalidate=86400"']);
   });
 
-  it('@spa (try_files fallback): identical policy + tag as = /index.html', () => {
+  it('@spa (try_files fallback): identical policy as = /index.html', () => {
     const loc = block('@spa');
-    expect(cacheControl(loc)).toEqual([
-      '"public, max-age=300, s-maxage=600, stale-while-revalidate=86400"',
-    ]);
-    expect(cdnTag(loc)).toEqual(['"frontend-html"']);
+    expect(cacheControl(loc)).toEqual(['"private, max-age=300, stale-while-revalidate=86400"']);
   });
 
   it('= /env.js: browser 5 min, edge 120 s, SWR 1 h + CDN-Tag frontend-env', () => {
@@ -158,9 +152,9 @@ describe('edge-hot SPA shell cache policy', () => {
     }
   });
 
-  it('tags ONLY the shell and env — immutable assets are never tagged', () => {
+  it('tags ONLY the env — the private shell is untagged, immutable assets are never tagged', () => {
     const tagged = locations.filter(l => cdnTag(l).length > 0);
-    expect(tagged.map(l => l.matcher).sort()).toEqual(['= /env.js', '= /index.html', '@spa']);
+    expect(tagged.map(l => l.matcher).sort()).toEqual(['= /env.js']);
     // Hashed assets keep their immutable 1 y policy, untagged.
     for (const matcher of ['^~ /assets/', '~* ^/workbox-.*\\.js$']) {
       const loc = block(matcher);
