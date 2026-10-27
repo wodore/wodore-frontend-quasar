@@ -64,7 +64,6 @@ import { useI18n } from 'vue-i18n';
 import { useDebounceFn } from '@vueuse/core';
 import { LocalStorage, Notify } from 'quasar';
 import * as L from 'leaflet';
-import { decodeTile } from '@maplibre/mlt';
 import 'leaflet.markercluster';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
@@ -79,6 +78,24 @@ import {
 } from '@stores/map/availability-loading';
 import { TILE_SERVER, useFallbackBasemaps, type FbBasemap } from './fallback-basemaps';
 import { seedPlaceFromMap } from '@composables/usePlace';
+// ── Extracted fallback modules (Phase B rewiring) ───────────────────
+import { viewportTileRange, tileXToLng, tileYToLat } from './fallback/tile-math';
+import {
+  STATUS_COLORS,
+  DEFAULT_DOT_COLOR,
+  HUT_MIN_ZOOM,
+  OCC_LABEL_MIN_ZOOM,
+  markerOpacityFor,
+  shieldPxFor,
+} from './fallback/status-colors';
+import {
+  loadSprite as loadSpriteModule,
+  revokeSprite,
+  spriteSpan,
+  getSprite,
+} from './fallback/sprite-sheet';
+import { WdCanvasDot, setMarkerOpacity, setShieldPx } from './fallback/canvas-dot';
+import { MltTileCache, findMltTable, type TileRange } from './fallback/mlt-tile-loader';
 
 const emit = defineEmits<{
   /** Map initialized + first paint requested — WdMapView runs its
@@ -94,60 +111,16 @@ const hutsStore = useHutsStore();
 
 const fallbackEl = ref<HTMLDivElement>();
 
-// ── Zoom model ───────────────────────────────────────────────────────────
-
-/** Dots render from this zoom up (owner: down to z7, ghosted — see
- *  markerOpacityFor; solid again from z9). */
-const HUT_MIN_ZOOM = 7;
-/** Occupation status word appears from here (owner spec). */
-const OCC_LABEL_MIN_ZOOM = 12;
-/** Marker transparency ramp (owner spec): 50% opaque at z7, solid by
- *  z9 — z7 markers are ghost hints of where the huts cluster. */
-function markerOpacityFor(zoom: number): number {
-  // Low zoom: ghost ramp z7(50%) → z9(solid). High zoom: fade out the
-  // markers so the basemap detail dominates (owner spec: z17=30%,
-  // z18=50%, z19=20% transparency — i.e. opacity 0.7, 0.5, 0.8).
-  if (zoom >= 19) return 0.3; // z19: 70% transparent
-  if (zoom >= 18) return 0.5; // z18: 50% transparent
-  if (zoom >= 17) return 0.7; // z17: 30% transparent
-  return Math.min(0.5 + ((zoom - HUT_MIN_ZOOM) / 2) * 0.5, 1);
-}
-/** Current marker opacity — the canvas draw reads it synchronously
- *  (CSS var for the DOM cluster icons, module var for canvas). */
-let markerOpacity = 1;
-/** Canvas marker geometry. Shield size ramps 12px at z7 → 19px from z10
- *  (owner: z8-9 icons too large); the occupation disc is 1.56x the shield
- *  (owner: clearly visible behind the icon). Module vars — the canvas
- *  draw reads them synchronously, refreshed on camera settle. */
-let shieldPx = 19;
-/** Darken a hex color by the given fraction (0=unchanged, 1=black). */
-function darkenHex(hex: string, amount: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  const d = 1 - amount;
-  return (
-    '#' +
-    [r, g, b]
-      .map(c =>
-        Math.round(c * d)
-          .toString(16)
-          .padStart(2, '0')
-      )
-      .join('')
-  );
+// ── Zoom model (ramps + palette live in ./fallback/status-colors) ──────
+/** Push the zoom-ramped draw state everywhere it is read synchronously:
+ *  the canvas-dot module vars (canvas shields) + the --wd-fb-o CSS var
+ *  (DOM cluster icons). */
+function syncDrawState(zoom: number): void {
+  setMarkerOpacity(markerOpacityFor(zoom));
+  setShieldPx(shieldPxFor(zoom));
+  fallbackEl.value?.style.setProperty('--wd-fb-o', String(markerOpacityFor(zoom)));
 }
 
-const OCC_LABEL_FONT = '600 11px "Barlow Semi Condensed", "Barlow", sans-serif';
-
-/** Shield ramp: 11px at z7 → 16px by z11 → 20px from z14. Below z12 the
- *  smaller ghost sizes stay (owner: "before it is good"); at z12+ the
- *  icons grow again (owner: "at zoom >= 12 the icons should be larger"). */
-function shieldPxFor(zoom: number): number {
-  if (zoom <= 10) return 13; // z7-10: small, below the clusters
-  if (zoom <= 13) return 19; // z11-13: larger (owner: icons got smaller at z11+ when clusters disappear)
-  return Math.min(17 + (zoom - 14) * 2.75, 28); // z14+: grows to 28 by z17
-}
 /** Huts WITH availability uncluster from here (owner spec; +1 vs the
  *  first iteration — caps the unclustered marker count, see the profile
  *  note in the header). */
@@ -161,21 +134,8 @@ const MAX_ZOOM = 19; // raster basemaps top out here
  *  tile unit is ~0.15 m at the equator). */
 const HUTS_TILE_MIN_ZOOM = 5;
 const HUTS_TILE_MAX_ZOOM = 9;
-/** Brand fallback when no type color is known for a hut. */
-const DEFAULT_DOT_COLOR = '#346751'; // $primary
-
-/** Day-0 occupation status → ring color. Same palette the MapLibre
- * `wd-huts-occupation` layer paints (live catalog style).
- * ⚠️ FOLLOW-UP: derive from the served style's circle-color match
- * expression instead of hardcoding (backend catalog already carries it). */
-const STATUS_COLORS: Record<string, string> = {
-  empty: '#25BF5E',
-  low: '#F6AD4B',
-  medium: '#EA9A37',
-  free_unknown: '#7FAB88',
-  high: '#C3731F',
-  full: '#961A17',
-};
+/** Brand fallback when no type color is known for a hut — in
+ *  ./fallback/status-colors (DEFAULT_DOT_COLOR). */
 
 const BM_KEY = 'wodore:fallbackBasemap';
 const NOTE_KEY = 'wodore:fallbackNoteDismissed';
@@ -228,13 +188,6 @@ let map: L.Map | undefined;
 let tileLayer: L.TileLayer | undefined;
 let clusterAvail: L.MarkerClusterGroup | undefined;
 let clusterPlain: L.MarkerClusterGroup | undefined;
-/** Latest-wins guard for hut tile fetches (the availability tiles keep
- *  their own counter — see availTileGeneration). */
-let tileGeneration = 0;
-/** Loaded hut tiles, keyed `z/x/y` (buffer features dedup by slug at
- *  rebuild). Evicted when outside the padded viewport. */
-const hutTiles = new Map<string, FbHut[]>();
-const fetchingTiles = new Set<string>();
 /**
  * Availability now comes from the SAME Martin source MapLibre renders
  * (wd-bookings): `{TILE_SERVER}/availability/{z}/{x}/{y}.mlt?date=…&days=4`
@@ -245,136 +198,23 @@ const fetchingTiles = new Set<string>();
  */
 const AVAIL_TILE_MIN_ZOOM = 5; // wd-bookings source pyramid (style minzoom)
 const AVAIL_TILE_MAX_ZOOM = 9; // (style maxzoom)
-/** z/x/y → decoded slug→day-0 status map (d0_status). */
-const availTiles = new Map<string, Map<string, string>>();
-const fetchingAvailTiles = new Set<string>();
-let availTileGeneration = 0;
 /** The date the current availability tiles were fetched for (ISO). */
 let availFetchedForDate: string | undefined;
 /** slug → day-0 availability status. */
 const availBySlug = new Map<string, FbAvail>();
-/** Martin sprite pack (accommodation,availability) — the SAME icons the
- *  MapLibre huts style renders: `primitive/{type_standard_identifier}`
- *  for hut glyphs, `color/availability.{status}` for the day chips. */
-/** Structural stand-ins: the project ESLint env lacks the DOM interface
- *  names — these carry exactly the members the draw path uses. */
-interface SheetImage {
-  src: string;
-  decode(): Promise<void>;
-}
-interface IconBitmap {
-  width: number;
-  height: number;
-}
-/** Object URL of the sprite sheet PNG — revoked on unmount (Opus #5). */
-let spriteSheetUrl: string | undefined;
-let availSprite: {
-  icons: Record<string, { x: number; y: number; width: number; height: number }>;
-  sheetW: number;
-  sheetH: number;
-  sheetImg: SheetImage;
-} | null = null;
-/** WHITE-tinted icon bitmaps for the canvas shields, cached per type
- *  (identifier → offscreen canvas; LOW-SPEC: one drawImage per hut on
- *  the shared canvas — no DOM markers, no per-draw SVG rasterization). */
-const whiteIconCache = new Map<string, IconBitmap | null>();
-
-function whiteIconFor(identifier: string | undefined): IconBitmap | null {
-  const sprite = availSprite;
-  const key = identifier ?? 'accommodation.unknown';
-  if (whiteIconCache.has(key)) return whiteIconCache.get(key) ?? null;
-  let canvas: IconBitmap | null = null;
-  const entry = sprite?.icons[`mono/${key}`] ?? sprite?.icons['mono/accommodation.unknown'];
-  if (sprite && entry) {
-    // Tint to white: draw the mono cell, then source-in a white fill.
-    const sheet = document.createElement('canvas');
-    sheet.width = entry.width;
-    sheet.height = entry.height;
-    canvas = sheet;
-    const c2d = sheet.getContext('2d');
-    if (c2d) {
-      // SAFETY: sheetImg is a real <img> (created via createElement);
-      // the structural SheetImage type just hides the DOM interface
-      // from the linter — the runtime value satisfies drawImage.
-      c2d.drawImage(
-        sprite.sheetImg as unknown as Parameters<typeof c2d.drawImage>[0],
-        entry.x,
-        entry.y,
-        entry.width,
-        entry.height,
-        0,
-        0,
-        entry.width,
-        entry.height
-      );
-      c2d.globalCompositeOperation = 'source-in';
-      c2d.fillStyle = '#ffffff';
-      c2d.fillRect(0, 0, entry.width, entry.height);
-    }
-  }
-  whiteIconCache.set(key, canvas);
-  return canvas;
-}
-
-/** Load the sprite sheet once; markers rebuild when it arrives. */
+/** Sprite pack lives in ./fallback/sprite-sheet — the component keeps
+ *  only the CSS-var feed + marker rebuild (side-effects the module
+ *  deliberately does not own). */
 async function loadSprite(): Promise<void> {
-  if (availSprite) return;
-  try {
-    const base = `${TILE_SERVER}/sprite/accommodation,availability`;
-    const [meta, png] = await Promise.all([fetch(`${base}.json`), fetch(`${base}.png`)]);
-    if (!meta.ok || !png.ok) return;
-    const icons = (await meta.json()) as Record<
-      string,
-      { x: number; y: number; width: number; height: number }
-    >;
-    // Sheet extent from the entries (the JSON carries no canvas size).
-    let sheetW = 0;
-    let sheetH = 0;
-    for (const e of Object.values(icons)) {
-      sheetW = Math.max(sheetW, e.x + e.width);
-      sheetH = Math.max(sheetH, e.y + e.height);
-    }
-    const url = URL.createObjectURL(await png.blob());
-    spriteSheetUrl = url;
-    const sheetImg = document.createElement('img') as unknown as SheetImage;
-    sheetImg.src = url;
-    await sheetImg.decode().catch(() => undefined); // broken image → dots stay
-    availSprite = { icons, sheetW, sheetH, sheetImg };
-    whiteIconCache.clear();
-    // Feed the sheet to the CSS (spans position into it via --wd-fb-s).
-    fallbackEl.value?.style.setProperty('--wd-fb-sheet', `url(${url})`);
-    fallbackEl.value?.style.setProperty('--wd-fb-sheet-w', `${sheetW}px`);
-    fallbackEl.value?.style.setProperty('--wd-fb-sheet-h', `${sheetH}px`);
-    rebuildMarkers();
-  } catch {
-    /* no sprite — the CSS shield + mono SVG fallback keeps rendering */
-  }
+  const ok = await loadSpriteModule(TILE_SERVER);
+  if (!ok) return;
+  const sheet = getSprite();
+  if (!sheet) return;
+  fallbackEl.value?.style.setProperty('--wd-fb-sheet', `url(${sheet.sheetImg.src})`);
+  fallbackEl.value?.style.setProperty('--wd-fb-sheet-w', `${sheet.sheetW}px`);
+  fallbackEl.value?.style.setProperty('--wd-fb-sheet-h', `${sheet.sheetH}px`);
+  rebuildMarkers();
 }
-
-/** Sprite-backed span, NORMALIZED: every icon renders into the same
- *  refPx box regardless of its source size (the pack mixes 24px and
- *  48px entries — raw scaling produced the "different sizes" bug),
- *  scaled by the given CSS var (zoom factor). All geometry inline —
- *  no dependence on class-level background-size. */
-function spriteSpan(
-  key: string,
-  fallbackKey: string,
-  className: string,
-  cssVar: string,
-  refPx: number
-): string {
-  const sprite = availSprite;
-  if (!sprite) return '';
-  const entry = sprite.icons[key] ?? sprite.icons[fallbackKey];
-  if (!entry) return '';
-  // Entry → refPx normalization factor (calc handles var × number × number).
-  const k = refPx / entry.width;
-  const pos = `background-position:calc(${-entry.x}px * var(${cssVar}) * ${k}) calc(${-entry.y}px * var(${cssVar}) * ${k});`;
-  const size = `width:calc(${refPx}px * var(${cssVar}));height:calc(${refPx}px * var(${cssVar}));`;
-  const bg = `background-size:calc(var(--wd-fb-sheet-w, 432px) * var(${cssVar}) * ${k}) calc(var(--wd-fb-sheet-h, 480px) * var(${cssVar}) * ${k});`;
-  return `<span class="${className}" style="${pos}${size}${bg}"></span>`;
-}
-
 /** Marker scale — FIXED at all symbol zooms (owner: "at z12 they are
  *  very big, should always have around the same size"): shield ≈ 19px,
  *  glyph ≈ 14px, occupation disc ≈ 28px. The var stays so a future ramp
@@ -612,150 +452,9 @@ class WdAttributionControl extends L.Control {
 
 // ── Markers ──────────────────────────────────────────────────────────────
 
-/** Canvas-rendered hut dot (below symbol zoom): the status ring and the
- *  type-colored dot are drawn as ONE canvas path — two DOM nodes per hut
- *  (ring + dot spans) were the dominant cost at 500+ markers. Shields
- *  (symbol zoom) stay DOM markers: few huts, richer visuals.
- *  TS note: Leaflet's _point/_renderer privates are accessed through a
- *  structural cast — the draw pass leaves the renderer's transform set,
- *  so plain arc() calls land correctly (same as L.Canvas._updateCircle). */
-interface CanvasDotCtx {
-  arc(x: number, y: number, r: number, a: number, b: number): void;
-  arcTo(x1: number, y1: number, x2: number, y2: number, r: number): void;
-  beginPath(): void;
-  closePath(): void;
-  drawImage(img: IconBitmap, dx: number, dy: number, dw: number, dh: number): void;
-  fill(): void;
-  fillText(text: string, x: number, y: number): void;
-  fillStyle: string;
-  font: string;
-  globalAlpha: number;
-  lineTo(x: number, y: number): void;
-  lineWidth: number;
-  moveTo(x: number, y: number): void;
-  stroke(): void;
-  strokeStyle: string;
-  strokeText(text: string, x: number, y: number): void;
-  textAlign: string;
-}
-interface CanvasDotInternals {
-  _point?: L.Point;
-  _radius?: number;
-  _renderer?: { _ctx: CanvasDotCtx | null };
-}
-
-class WdCanvasDot extends L.CircleMarker {
-  private internals(): CanvasDotInternals & WdCanvasDot {
-    return this as unknown as CanvasDotInternals & WdCanvasDot;
-  }
-
-  /** Rounded-rect path helper (canvas roundRect is not everywhere). */
-  private static shieldPath(
-    ctx: CanvasDotCtx,
-    cx: number,
-    cy: number,
-    w: number,
-    h: number,
-    r: number
-  ): void {
-    const x = cx - w / 2;
-    const y = cy - h / 2;
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.lineTo(x + w - r, y);
-    ctx.arcTo(x + w, y, x + w, y + r, r);
-    ctx.lineTo(x + w, y + h - r);
-    ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
-    ctx.lineTo(x + r, y + h);
-    ctx.arcTo(x, y + h, x, y + h - r, r);
-    ctx.lineTo(x, y + r);
-    ctx.arcTo(x, y, x + r, y, r);
-    ctx.closePath();
-  }
-
-  _updatePath(): void {
-    const self = this.internals();
-    const ctx = self._renderer?._ctx;
-    const point = self._point;
-    if (!ctx || !point) return;
-    const options = this.options as {
-      ringColor?: string;
-      identifier?: string;
-      typeColor: string;
-      occLabel?: string;
-      selected?: boolean;
-      hovered?: boolean;
-      dotRadius: number;
-      ringRadius: number;
-      fillColor: string;
-    };
-    // Occupation disc behind everything (status color, ghost ramp) —
-    // sized RELATIVE to the shield so it always peeks clearly.
-    const baseSize = shieldPx;
-    // Owner spec: larger availability disc with a slightly darker
-    // border ring around the fill. 1.6x the shield diameter.
-    const discR = baseSize * 0.85;
-    if (options.ringColor) {
-      // Fill: status color
-      ctx.beginPath();
-      ctx.arc(point.x, point.y, discR, 0, Math.PI * 2);
-      ctx.globalAlpha = 0.85 * markerOpacity;
-      ctx.fillStyle = options.ringColor;
-      ctx.fill();
-      // Border: slightly darker version of the SAME status color
-      // (owner: "back to the availability color, a bit darker")
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = darkenHex(options.ringColor, 0.25);
-      ctx.stroke();
-      ctx.globalAlpha = markerOpacity;
-    }
-    const icon = whiteIconFor(options.identifier);
-    if (icon) {
-      // LOW-SPEC canvas shield: rounded rect + cached white bitmap.
-      // Owner spec: shield BORDER uses the availability status color;
-      // the disc behind uses the status fill with a darker border.
-      const size = options.hovered ? baseSize * 1.15 : baseSize;
-      WdCanvasDot.shieldPath(ctx, point.x, point.y, size, size, size * 0.22);
-      ctx.fillStyle = options.typeColor;
-      ctx.fill();
-      ctx.lineWidth = options.selected ? 3 : 1.5;
-      // Owner: WHITE border for ALL shields (thinner); selection uses
-      // glacier-blue #2673bf (design system: selected states token).
-      ctx.strokeStyle = options.selected ? '#2673bf' : '#ffffff';
-      ctx.stroke();
-      const iconPx = size * 0.72;
-      ctx.drawImage(icon, point.x - iconPx / 2, point.y - iconPx / 2, iconPx, iconPx);
-      if (options.occLabel) {
-        ctx.font = OCC_LABEL_FONT;
-        ctx.textAlign = 'center';
-        const labelY = point.y + discR + 11;
-        ctx.globalAlpha = 0.95 * markerOpacity;
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = '#ffffff';
-        ctx.strokeText(options.occLabel, point.x, labelY);
-        ctx.fillStyle = '#2673bf'; // glacier-blue (lighter, design token)
-        ctx.fillText(options.occLabel, point.x, labelY);
-        ctx.globalAlpha = markerOpacity;
-      }
-    } else {
-      // Pre-sprite fallback: plain colored dot with white/gold stroke.
-      ctx.beginPath();
-      ctx.arc(point.x, point.y, options.dotRadius, 0, Math.PI * 2);
-      ctx.fillStyle = options.fillColor;
-      ctx.fill();
-      ctx.lineWidth = options.selected ? 3 : 2;
-      ctx.strokeStyle = options.selected ? '#BFAB25' : '#ffffff';
-      ctx.stroke();
-    }
-  }
-
-  /** Finger-sized hit area regardless of the small visual shield. */
-  _containsPoint(p: L.Point): boolean {
-    const self = this.internals();
-    return !!self._point && p.distanceTo(self._point) <= Math.max(self._radius ?? 0, 13);
-  }
-}
-
+/** WdCanvasDot lives in ./fallback/canvas-dot (single-path canvas
+ *  marker: availability disc + type-colored shield + white sprite icon
+ *  + optional status label; LOW-SPEC — no DOM nodes at all). */
 interface MarkerStyle {
   typeColor: string;
   status: string | undefined;
@@ -812,7 +511,7 @@ function clusterIcon(cluster: L.MarkerCluster): L.DivIcon {
     color: /^#[0-9a-fA-F]{3,8}$/.test(rawInfo.color) ? rawInfo.color : DEFAULT_DOT_COLOR,
   };
   const scale0 = Math.min(0.8 + ((cluster.getChildCount() - 2) / 38) * 0.45, 1.25);
-  const glyph = availSprite
+  const glyph = getSprite()
     ? spriteSpan(
         `mono/${info.identifier ?? 'accommodation.unknown'}`,
         'mono/accommodation.unknown',
@@ -851,7 +550,7 @@ function rebuildMarkers(): void {
   lastRenderBand = showLabel ? 'symlabel' : 'sym';
   // Dedupe by slug — buffer features repeat across neighboring tiles.
   const huts = new Map<string, FbHut>();
-  for (const tileHuts of hutTiles.values()) {
+  for (const tileHuts of hutCache.tiles.values()) {
     for (const hut of tileHuts) if (!huts.has(hut.slug)) huts.set(hut.slug, hut);
   }
   const availMarkers: WdCanvasDot[] = [];
@@ -907,16 +606,63 @@ watch(selectedSlug, (slug, previous) => {
 
 // ── Data fetching (Martin MLT tiles — same URLs as the MapLibre map) ──
 
-const lngToTileX = (lng: number, z: number) => ((lng + 180) / 360) * 2 ** z;
-const latToTileY = (lat: number, z: number) => {
-  const rad = (lat * Math.PI) / 180;
-  return ((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * 2 ** z;
-};
-const tileXToLng = (x: number, z: number) => (x / 2 ** z) * 360 - 180;
-const tileYToLat = (y: number, z: number) => {
-  const n = Math.PI - (2 * Math.PI * y) / 2 ** z;
-  return (Math.atan(0.5 * (Math.exp(n) - Math.exp(-n))) * 180) / Math.PI;
-};
+// ── Data fetching (Martin MLT tiles — same URLs as the MapLibre map) ──
+// The fetch → decode → cache → evict → generation-guard loop lives in
+// ./fallback/mlt-tile-loader (one MltTileCache per source — the loop
+// was the same algorithm twice inline). Only source-specific parsing
+// and the component side-effects (rebuild, spinner) stay here.
+
+/** Hut tiles: MLT `huts` table → FbHut list (tile-local coords scaled
+ *  by the table extent, converted to lng/lat at fetch time so the
+ *  rebuild pass never re-parses). */
+const hutCache = new MltTileCache<FbHut[]>({
+  buildUrl: (z, x, y) => `${TILE_SERVER}/huts/${z}/${x}/${y}.mlt`,
+  emptyValue: [],
+  parseTile: (buf, z, x, y) => {
+    const huts: FbHut[] = [];
+    const table = findMltTable(buf, 'huts');
+    if (!table) return huts;
+    const extent = table.extent || 4096;
+    for (const feature of table.getFeatures()) {
+      const point = feature.geometry?.coordinates?.[0]?.[0];
+      const properties = feature.properties as Record<string, unknown> | null;
+      if (!point || !properties?.slug) continue;
+      huts.push({
+        slug: String(properties.slug),
+        lat: tileYToLat(y + point.y / extent, z),
+        lon: tileXToLng(x + point.x / extent, z),
+        properties,
+        typeSlug:
+          typeof properties.type_standard_slug === 'string' ? properties.type_standard_slug : null,
+        typeColor:
+          typeof properties.type_standard_color === 'string'
+            ? properties.type_standard_color
+            : undefined,
+      });
+    }
+    return huts;
+  },
+});
+
+/** Availability tiles: MLT `availability` table → slug → day-0 status.
+ *  buildUrl reads the CURRENT date (set before loadViewport) so a date
+ *  change swaps every URL — the cache is cleared for a full reload. */
+const availCache = new MltTileCache<Map<string, string>>({
+  buildUrl: (z, x, y) =>
+    `${TILE_SERVER}/availability/${z}/${x}/${y}.mlt?date=${availFetchedForDate}&days=4`,
+  emptyValue: new Map(),
+  parseTile: buf => {
+    const statuses = new Map<string, string>();
+    const table = findMltTable(buf, 'availability');
+    if (!table) return statuses;
+    for (const feature of table.getFeatures()) {
+      const properties = feature.properties as { slug?: unknown; d0_status?: unknown } | null;
+      if (!properties?.slug) continue;
+      statuses.set(String(properties.slug), String(properties.d0_status ?? 'unknown'));
+    }
+    return statuses;
+  },
+});
 
 /** Fetch the tiles covering the padded viewport (overzoomed from the
  *  source's maxzoom), evict stale ones, rebuild markers once. */
@@ -924,104 +670,24 @@ async function refreshTiles(): Promise<void> {
   const activeMap = map;
   if (!activeMap) return;
   if (activeMap.getZoom() < HUT_MIN_ZOOM) {
-    if (hutTiles.size > 0) {
-      hutTiles.clear();
+    if (hutCache.tiles.size > 0) {
+      hutCache.clear();
       rebuildMarkers();
     }
     return;
   }
-  const generation = ++tileGeneration;
-  const tileZoom = Math.min(
-    HUTS_TILE_MAX_ZOOM,
-    Math.max(HUTS_TILE_MIN_ZOOM, Math.round(activeMap.getZoom()))
+  const range: TileRange = viewportTileRange(
+    activeMap.getBounds(),
+    0.25,
+    activeMap.getZoom(),
+    HUTS_TILE_MIN_ZOOM,
+    HUTS_TILE_MAX_ZOOM
   );
-  const bounds = activeMap.getBounds().pad(0.25);
-  const n = 2 ** tileZoom;
-  const x1 = Math.floor(lngToTileX(bounds.getWest(), tileZoom));
-  const x2 = Math.floor(lngToTileX(bounds.getEast(), tileZoom));
-  const y1 = Math.floor(latToTileY(bounds.getNorth(), tileZoom));
-  const y2 = Math.floor(latToTileY(bounds.getSouth(), tileZoom));
-  const needed = new Set<string>();
-  const jobs: Array<Promise<void>> = [];
-  for (let x = x1; x <= x2; x++) {
-    for (let y = y1; y <= y2; y++) {
-      if (y < 0 || y >= n) continue;
-      const wrappedX = ((x % n) + n) % n; // globe wrap
-      const key = `${tileZoom}/${wrappedX}/${y}`;
-      needed.add(key);
-      if (!hutTiles.has(key) && !fetchingTiles.has(key)) {
-        jobs.push(fetchHutTile(key, tileZoom, wrappedX, y, generation));
-      }
-    }
-  }
-  let evicted = 0;
-  for (const key of hutTiles.keys()) {
-    if (!needed.has(key)) {
-      hutTiles.delete(key);
-      evicted++;
-    }
-  }
-  await Promise.all(jobs);
+  const { fetched, evicted, superseded } = await hutCache.loadViewport(range);
   // Perf: a pan fully inside already-loaded tiles changes NOTHING — skip
   // the clearLayers/addLayers rebuild (the 1200-marker rebuild frame was
   // the worst jank in the profile sweep).
-  if (generation === tileGeneration && map && (jobs.length > 0 || evicted > 0)) {
-    rebuildMarkers();
-  }
-}
-
-/** Fetch + decode one MLT tile. Failures leave the tile absent (the
- *  next move retries); empty bodies cache as empty tile lists. */
-async function fetchHutTile(
-  key: string,
-  z: number,
-  x: number,
-  y: number,
-  generation: number
-): Promise<void> {
-  fetchingTiles.add(key);
-  try {
-    // Same URL the MapLibre huts style fetches (`.mlt`) — the browser
-    // cache entry is literally shared with the WebGL map. decodeTile is
-    // maplibre-gl's own decoder (@maplibre/mlt), version-locked via the
-    // dependency tree.
-    const res = await fetch(`${TILE_SERVER}/huts/${z}/${x}/${y}.mlt`);
-    if (!res.ok) return; // 404/204 = empty region; transient errors retry later
-    const buf = new Uint8Array(await res.arrayBuffer());
-    if (buf.byteLength < 2) {
-      if (generation === tileGeneration) hutTiles.set(key, []);
-      return;
-    }
-    const huts: FbHut[] = [];
-    for (const table of decodeTile(buf)) {
-      if (table.name !== 'huts') continue;
-      const extent = table.extent || 4096;
-      for (const feature of table.getFeatures()) {
-        const point = feature.geometry?.coordinates?.[0]?.[0];
-        const properties = feature.properties as Record<string, unknown> | null;
-        if (!point || !properties?.slug) continue;
-        huts.push({
-          slug: String(properties.slug),
-          lat: tileYToLat(y + point.y / extent, z),
-          lon: tileXToLng(x + point.x / extent, z),
-          properties,
-          typeSlug:
-            typeof properties.type_standard_slug === 'string'
-              ? properties.type_standard_slug
-              : null,
-          typeColor:
-            typeof properties.type_standard_color === 'string'
-              ? properties.type_standard_color
-              : undefined,
-        });
-      }
-    }
-    if (generation === tileGeneration) hutTiles.set(key, huts);
-  } catch {
-    /* decode/network failure — tile stays absent (next move retries) */
-  } finally {
-    fetchingTiles.delete(key);
-  }
+  if (!superseded && map && (fetched > 0 || evicted > 0)) rebuildMarkers();
 }
 
 const refreshTilesDebounced = useDebounceFn(() => void refreshTiles(), 400);
@@ -1030,13 +696,6 @@ const refreshTilesDebounced = useDebounceFn(() => void refreshTiles(), 400);
  *  like the huts tiles). The spinner runs from begin to RENDERED-settle;
  *  the store's 600ms minimum spin still applies. */
 let firstAvailLoad = true;
-
-function availTileZoom(): number {
-  return Math.min(
-    AVAIL_TILE_MAX_ZOOM,
-    Math.max(AVAIL_TILE_MIN_ZOOM, Math.round(map?.getZoom() ?? AVAIL_TILE_MAX_ZOOM))
-  );
-}
 
 async function refreshAvailTiles(picked: string): Promise<void> {
   const dateISO = toIsoDate(picked);
@@ -1047,94 +706,36 @@ async function refreshAvailTiles(picked: string): Promise<void> {
   // #3: at world view this computed tileZoom=5 over the global bounds
   // and fired a fetch storm against the tile router).
   if (activeMap.getZoom() < HUT_MIN_ZOOM) return;
-  const generation = ++availTileGeneration;
   // Opus review #2: spinner only on DATE CHANGE — viewport top-ups are
   // silent (every pan was driving the calendar glyph through a spin).
   const dateChanged = availFetchedForDate !== dateISO;
   const spin = dateChanged && !firstAvailLoad;
   firstAvailLoad = false;
   if (spin) beginAvailabilityLoadManual();
-  const tileZoom = availTileZoom();
-  const bounds = activeMap.getBounds().pad(0.25);
-  const n = 2 ** tileZoom;
-  const x1 = Math.floor(lngToTileX(bounds.getWest(), tileZoom));
-  const x2 = Math.floor(lngToTileX(bounds.getEast(), tileZoom));
-  const y1 = Math.floor(latToTileY(bounds.getNorth(), tileZoom));
-  const y2 = Math.floor(latToTileY(bounds.getSouth(), tileZoom));
-  const needed = new Set<string>();
-  const jobs: Array<Promise<void>> = [];
   // Date change ⇒ new URLs ⇒ full swap; same date ⇒ viewport top-up.
   if (dateChanged) {
-    availTiles.clear();
+    availCache.clear();
     availFetchedForDate = dateISO;
   }
-  for (let x = x1; x <= x2; x++) {
-    for (let y = y1; y <= y2; y++) {
-      if (y < 0 || y >= n) continue;
-      const wrappedX = ((x % n) + n) % n;
-      const key = `${tileZoom}/${wrappedX}/${y}`;
-      needed.add(key);
-      if (!availTiles.has(key) && !fetchingAvailTiles.has(key)) {
-        jobs.push(fetchAvailTile(key, tileZoom, wrappedX, y, dateISO, generation));
-      }
-    }
-  }
-  for (const key of availTiles.keys()) {
-    if (!needed.has(key)) availTiles.delete(key);
-  }
-  try {
-    await Promise.all(jobs);
-  } finally {
-    if (generation === availTileGeneration) {
-      // Rebuild FIRST (settle when rendered — owner spec), then settle.
-      applyAvailTiles();
-      if (spin) settleAvailabilityLoadManual();
-    }
-  }
-}
-
-async function fetchAvailTile(
-  key: string,
-  z: number,
-  x: number,
-  y: number,
-  dateISO: string,
-  generation: number
-): Promise<void> {
-  fetchingAvailTiles.add(key);
-  try {
-    // Same wd-bookings source MapLibre renders — .mlt (the seeded style
-    // serves extension-less MVT today; seed fix pending, see header).
-    const res = await fetch(
-      `${TILE_SERVER}/availability/${z}/${x}/${y}.mlt?date=${dateISO}&days=4`
-    );
-    if (!res.ok) return;
-    const buf = new Uint8Array(await res.arrayBuffer());
-    if (buf.byteLength < 2) {
-      if (generation === availTileGeneration) availTiles.set(key, new Map());
-      return;
-    }
-    const statuses = new Map<string, string>();
-    for (const table of decodeTile(buf)) {
-      if (table.name !== 'availability') continue;
-      for (const feature of table.getFeatures()) {
-        const properties = feature.properties as { slug?: unknown; d0_status?: unknown } | null;
-        if (!properties?.slug) continue;
-        statuses.set(String(properties.slug), String(properties.d0_status ?? 'unknown'));
-      }
-    }
-    if (generation === availTileGeneration) availTiles.set(key, statuses);
-  } catch {
-    /* offline/decode failure — tile absent, retried next move */
-  } finally {
-    fetchingAvailTiles.delete(key);
+  const range: TileRange = viewportTileRange(
+    activeMap.getBounds(),
+    0.25,
+    activeMap.getZoom(),
+    AVAIL_TILE_MIN_ZOOM,
+    AVAIL_TILE_MAX_ZOOM
+  );
+  const { superseded } = await availCache.loadViewport(range);
+  if (!superseded) {
+    // Rebuild FIRST (settle when rendered — owner spec), then settle.
+    applyAvailTiles();
+    if (spin) settleAvailabilityLoadManual();
   }
 }
 
 /** Fold the decoded tiles into availBySlug and recolor the markers. */
 function applyAvailTiles(): void {
   availBySlug.clear();
-  for (const tile of availTiles.values()) {
+  for (const tile of availCache.tiles.values()) {
     for (const [slug, status] of tile) {
       if (!availBySlug.has(slug)) availBySlug.set(slug, { statuses: [status] });
     }
@@ -1189,7 +790,7 @@ watch(
     // labels or zoom hint until a date is picked again.
     if (toIsoDate(date) === undefined) {
       availBySlug.clear();
-      availTiles.clear();
+      availCache.clear();
       availFetchedForDate = undefined;
       rebuildMarkers();
       updateZoomHint();
@@ -1264,9 +865,7 @@ function onMoveEnd(): void {
   syncHash();
   const pickedDate = hutsStore.selectedDate;
   if (pickedDate) refreshAvailTilesDebounced(pickedDate);
-  markerOpacity = markerOpacityFor(map.getZoom());
-  shieldPx = shieldPxFor(map.getZoom());
-  fallbackEl.value?.style.setProperty('--wd-fb-o', String(markerOpacity));
+  syncDrawState(map.getZoom());
   refreshTilesDebounced();
 }
 
@@ -1380,9 +979,7 @@ onMounted(() => {
   document.body.classList.add('wd-fb-active'); // slider visibility gate
   sliderZoom.value = map.getZoom();
   fallbackEl.value?.style.setProperty('--wd-fb-g', String(glyphScale(map.getZoom())));
-  markerOpacity = markerOpacityFor(map.getZoom());
-  shieldPx = shieldPxFor(map.getZoom());
-  fallbackEl.value?.style.setProperty('--wd-fb-o', String(markerOpacity));
+  syncDrawState(map.getZoom());
   updateZoomHint();
   void loadSprite();
 
@@ -1394,7 +991,7 @@ onMounted(() => {
       map,
       clusterAvail,
       clusterPlain,
-      hutTiles,
+      hutCache,
       markerBySlug,
       selectHut,
     };
@@ -1427,16 +1024,14 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-  tileGeneration++; // invalidate any in-flight tile/symbol callbacks
-  availTileGeneration++;
-  fetchingTiles.clear();
-  fetchingAvailTiles.clear();
+  hutCache.clear(); // in-flight loads land in a superseded generation
+  availCache.clear();
   setAvailabilityManualSettle(false);
   document.body.classList.remove('wd-fb-active');
   zoomHintDismiss?.();
   reducedModeToast?.();
   if (focusOn.value) document.body.classList.remove('wd-map-focus');
-  if (spriteSheetUrl) URL.revokeObjectURL(spriteSheetUrl); // Opus #5
+  revokeSprite(); // blob URL cleanup (Opus #5)
   if (map) {
     const c = map.getContainer();
     c.removeEventListener('pointerdown', onContainerPointerDown);
