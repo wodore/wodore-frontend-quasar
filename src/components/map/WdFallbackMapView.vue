@@ -1103,7 +1103,7 @@ onBeforeUnmount(() => {
       :aria-label="t('map.fallbackLocate')"
       @click.stop="onLocate"
     >
-      <svg viewBox="0 0 20 20" fill="#333" aria-hidden="true">
+      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
         <path
           d="M10 4C9 4 9 5 9 5v.1A5 5 0 0 0 5.1 9H5s-1 0-1 1 1 1 1 1h.1A5 5 0 0 0 9 14.9v.1s0 1 1 1 1-1 1-1v-.1A5 5 0 0 0 14.9 11h.1s1 0 1-1-1-1-1-1h-.1A5 5 0 0 0 11 5.1V5s0-1-1-1m0 2.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 1 1 0-7"
         />
@@ -1353,6 +1353,7 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   border-radius: 8px; // main-map ctrl-group radius
   background: var(--wd-ctl-bg, #fdfefd);
   box-shadow: var(--wd-ctl-shadow, 0 1px 3px rgba(10, 20, 15, 0.2));
+  color: var(--wd-ctl-ink, #224e3b); // SVG uses currentColor — flips with the theme
   cursor: pointer;
 
   svg {
@@ -1361,8 +1362,13 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
     display: block;
   }
 
-  &:hover {
-    background: rgba(0, 0, 0, 0.05);
+  // Solid hover/active — a translucent rgba here would REPLACE the
+  // token background (the "transparent on hover" bug); MapLibre's
+  // ctrl-group hover layers over a solid group bg. Same formula as the
+  // zoom bar so the flush mobile stack hovers as one.
+  &:hover,
+  &:active {
+    background: color-mix(in srgb, var(--wd-ctl-bg, #fdfefd) 92%, var(--wd-ctl-ink, #333));
   }
 
   &:focus-visible {
@@ -1645,9 +1651,12 @@ body.wd-map-focus {
   position: relative;
   margin: 10px;
   min-height: 20px;
-  background-color: #ffffff;
-  color: #000000;
-  border-radius: 8px;
+  // Theme-aware like MapLibre's attrib chip (maplibre-gl.scss:115-131):
+  // --wd-ctl-* tokens — the hardcoded #ffffff stayed white in dark mode.
+  background: var(--wd-ctl-bg, #fdfefd);
+  color: var(--wd-ctl-ink, #224e3b);
+  border: 1px solid var(--wd-ctl-border, #dde7e0);
+  border-radius: 4px; // maplibre attrib chip radius
   padding: 2px 0 2px 24px;
   box-sizing: content-box;
   transition: width 0.15s ease;
@@ -1675,7 +1684,7 @@ body.wd-map-focus {
   height: 24px;
   padding: 0;
   border: none;
-  border-radius: 8px;
+  border-radius: 4px;
   background: transparent;
   color: var(--wd-ctl-ink, #333333);
   cursor: pointer;
