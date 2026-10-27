@@ -440,8 +440,8 @@ function onContainerPointerUp(e: PointerEvent): void {
 // with a control mirroring maplibre's: desktop = translucent bar, mobile =
 // compact ⓘ pill expanding on tap (same geometry/colors as
 // .maplibregl-ctrl-attrib in maplibre-gl.css).
-const ATTRIB_INFO_SVG =
-  '<svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M4 10a6 6 0 1 0 12 0 6 6 0 1 0-12 0m5-3a1 1 0 1 0 2 0 1 1 0 1 0-2 0m0 3a1 1 0 1 1 2 0v3a1 1 0 1 1-2 0"/></svg>';
+const ATTRIB_CLOSE_SVG =
+  '<svg class="wd-fb-attrib__close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 
 function attribHtml(bmId: string): string {
   const bm = BASEMAPS.value.find(b => b.id === bmId) ?? BASEMAPS.value[0]!;
@@ -461,7 +461,7 @@ class WdAttributionControl extends L.Control {
       const btn = L.DomUtil.create('button', 'wd-fb-attrib__btn', container);
       btn.type = 'button';
       btn.setAttribute('aria-label', 'Attribution');
-      btn.innerHTML = ATTRIB_INFO_SVG;
+      btn.innerHTML = '<span class="wd-fb-attrib__i">i</span>' + ATTRIB_CLOSE_SVG;
       L.DomEvent.on(btn, 'click', ev => {
         L.DomEvent.stop(ev);
         container.classList.toggle('wd-fb-attrib--open');
@@ -1346,9 +1346,9 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
   top: 72px; // main-map GPS: 58px container push + 14px child margin
   right: 14px;
   z-index: 1001;
-  width: 46px; // main-map button size (maplibre-gl.scss:190-200)
-  height: 46px;
-  padding: 8px;
+  width: 48px; // 48 outer = maplibre ctrl-group (46 button + 2px border)
+  height: 48px;
+  padding: 6px; // 48 - 2 border - 12 = 34px glyph (maplibre ctrl-icon size)
   border: 1px solid var(--wd-ctl-border, #dde7e0);
   border-radius: 8px; // main-map ctrl-group radius
   background: var(--wd-ctl-bg, #fdfefd);
@@ -1431,6 +1431,11 @@ body.wd-map-focus {
     transition:
       opacity 0.3s cubic-bezier(0.2, 0, 0, 1),
       transform 0.3s cubic-bezier(0.2, 0, 0, 1);
+  }
+  // Attribution follows the stack's vacated corner (wd-attrib parity)
+  body.wd-map-focus .wd-fallback-map .wd-fb-attrib {
+    left: calc(12px + env(safe-area-inset-left, 0px));
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -1587,13 +1592,15 @@ body.wd-map-focus {
     }
   }
 
-  // Attribution: absolutely positioned ABOVE the control stack
-  // (outside Leaflet's corner flow so it can't be pushed behind)
+  // Attribution: MapLibre parity — the round ⓘ chip BESIDE the control
+  // stack (left 68 = 12 + 48 stack + 8 gap), bottom-aligned with it
+  // (_attribution.scss .wd-attrib geometry — NOT above the stack).
   .wd-fallback-map .wd-fb-attrib {
     position: absolute;
-    bottom: 160px;
-    left: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    left: calc(68px + env(safe-area-inset-left, 0px));
     margin: 0;
+    z-index: 1001;
   }
 }
 
@@ -1647,28 +1654,58 @@ body.wd-map-focus {
   color: var(--wd-ctl-ink, #333333);
 }
 
+// Compact ⓘ — a twin of the main map's owned chip (_attribution.scss
+// .wd-attrib): round 28px serif-i chip that expands into a text card
+// with the i becoming a 32px close button (taps were hitting links).
 .wd-fb-attrib--compact {
-  position: relative;
-  margin: 10px;
-  min-height: 20px;
-  // Theme-aware like MapLibre's attrib chip (maplibre-gl.scss:115-131):
-  // --wd-ctl-* tokens — the hardcoded #ffffff stayed white in dark mode.
-  background: var(--wd-ctl-bg, #fdfefd);
-  color: var(--wd-ctl-ink, #224e3b);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  min-height: 0;
+  padding: 0;
   border: 1px solid var(--wd-ctl-border, #dde7e0);
-  border-radius: 4px; // maplibre attrib chip radius
-  padding: 2px 0 2px 24px;
-  box-sizing: content-box;
-  transition: width 0.15s ease;
+  border-radius: 999px; // round ⓘ
+  background: color-mix(in srgb, var(--wd-ctl-bg, #fdfefd) 88%, transparent);
+  color: var(--wd-ctl-ink, #224e3b);
+  box-sizing: border-box;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    width 0.15s cubic-bezier(0.2, 0, 0, 1),
+    min-width 0.15s cubic-bezier(0.2, 0, 0, 1),
+    border-radius 0.15s cubic-bezier(0.2, 0, 0, 1),
+    padding 0.15s cubic-bezier(0.2, 0, 0, 1);
+  overflow: hidden; // clip during the size morph
 
   .wd-fb-attrib__inner {
     display: none;
-    white-space: nowrap;
-    line-height: 20px;
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+    font-size: 10px;
+    line-height: 1.5;
+    white-space: normal;
+    color: var(--wd-ctl-ink, #224e3b);
+
+    a {
+      color: var(--wd-ctl-ink, #224e3b);
+      text-decoration: underline;
+      opacity: 0.8;
+    }
   }
 
   &.wd-fb-attrib--open {
-    padding: 2px 8px 2px 28px;
+    width: auto;
+    min-width: 190px;
+    max-width: min(66vw, 320px);
+    height: auto;
+    padding: 7px 12px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--wd-ctl-bg, #fdfefd) 92%, transparent);
+    justify-content: flex-start;
+    gap: 8px;
 
     .wd-fb-attrib__inner {
       display: block;
@@ -1676,24 +1713,45 @@ body.wd-map-focus {
   }
 }
 
+// The chip button: collapsed = serif italic "i" centered in the round
+// chip (the chip IS the circle); open = 32px round close button.
 .wd-fb-attrib__btn {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 24px;
-  height: 24px;
+  inset: 0;
+  display: grid;
+  place-items: center;
   padding: 0;
   border: none;
-  border-radius: 4px;
   background: transparent;
-  color: var(--wd-ctl-ink, #333333);
+  color: inherit;
   cursor: pointer;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1;
 
-  svg {
-    width: 20px;
-    height: 20px;
+  .wd-fb-attrib__close {
+    display: none;
+    width: 13px;
+    height: 13px;
+  }
+}
+
+.wd-fb-attrib--open .wd-fb-attrib__btn {
+  position: static;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 999px;
+  background: rgba(128, 145, 135, 0.14);
+
+  .wd-fb-attrib__i {
+    display: none;
+  }
+
+  .wd-fb-attrib__close {
     display: block;
-    margin: 2px auto;
   }
 }
 </style>
