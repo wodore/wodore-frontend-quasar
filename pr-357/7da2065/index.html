@@ -1,0 +1,507 @@
+<!doctype html>
+<html class="wd-map-focus wd-booting">
+  <head>
+    <title>Wodore</title>
+    
+    <meta name="llms" content="Wodore serves structured Markdown alongside this app: /llms.txt lists every surface; each hut is available as Markdown at /hut/{slug}.md (Accept: text/markdown or the .md suffix).">
+    
+     
+    <script>
+      window.__WODORE_RUNTIME_ENV__ = {
+        WODORE_APP_NAME: 'Wodore',
+        WODORE_ENV: 'preview',
+        WODORE_DOMAIN: 'wodore.github.io',
+        WODORE_URL: 'https://wodore.github.io/wodore-frontend-quasar/pr-357/7da2065/',
+        WODORE_OFFICIAL_URL: 'https://wodo.re',
+        WODORE_API_HOST: 'https://hub.stg.wodore.com',
+        WODORE_API_VERSION: 'v1',
+        // Optional CDN base for public/unauthenticated GETs (empty = off).
+        // The `|| ''` matters: without a .env entry EJS would bake the
+        // literal string "undefined".
+        WODORE_PUBLIC_API_URL: '',
+        WODORE_TILE_SERVER_URL: 'https://tiles.stg.wodore.com',
+        WODORE_IMAGOR_KEY: '4dBvaAemV3dwrjYcZ81GUeQ7nwErbZTQ',
+        WODORE_IMAGOR_URL: 'https://img.stg.wodore.com',
+        WODORE_IMAGOR_REPLACE_API_HOST_MEDIA:
+          'wd',
+        WODORE_CLOUDINARY_ENV: '',
+        WODORE_UMAMI_WEBSITE_ID: '',
+        WODORE_UMAMI_WEBSITE_URL: '',
+        // Session recording (replays/heatmaps): 'on' loads recorder.js.
+        // The `|| ''` matters: without a .env entry EJS would bake the
+        // literal string "undefined" (same as WODORE_PUBLIC_API_URL).
+        WODORE_UMAMI_RECORDER: '',
+        WODORE_OICD_ISSUER_URL: '',
+        WODORE_OICD_CLIENT_ID: '',
+        WODORE_OICD_RESOURCE_ID: '',
+        WODORE_MAPTILER_API_KEY: 'yYYuZy3hwmMjY087FDvY',
+        // Error tracking (openspec: add-error-tracking) — empty = inert;
+        // same entries as public/env.js for the docker placeholder path.
+        WODORE_SENTRY_DSN: '',
+        WODORE_SENTRY_TRACES_SAMPLE_RATE: '0',
+      };
+    </script>
+    
+    
+    <link rel="preconnect" href="https://icons.maptoolkit.org" crossorigin>
+    <link rel="preconnect" href="https://tiles.maptoolkit.org" crossorigin>
+    <link rel="preconnect" href="https://tiles.mapterhorn.com" crossorigin>
+    <script>
+      // Preconnect to the cross-origin hosts the app will talk to: the
+      // map tile origins are CORS-fetched by MapLibre (~600 ms measured
+      // TTFB per origin) and the API host is otherwise only contacted
+      // after JS boot. Runs in BOTH env modes — the env above is either
+      // baked inline or loaded by the blocking /env.js script, so
+      // __WODORE_RUNTIME_ENV__ is already populated here. Missing,
+      // empty, @@placeholder@@ or non-URL env values are skipped;
+      // origins are deduplicated.
+      (() => {
+        const env = window.__WODORE_RUNTIME_ENV__ || {};
+        // Extra preconnect origins are env-driven (comma-separated
+        // WODORE_PREFETCH_DOMAINS, runtime env) with the tile hosts the
+        // default style references as fallback defaults.
+        const defaults = [
+          'https://icons.maptoolkit.org',
+          'https://tiles.maptoolkit.org',
+          'https://tiles.mapterhorn.com',
+        ];
+        const extra =
+          typeof env.WODORE_PREFETCH_DOMAINS === 'string'
+            ? env.WODORE_PREFETCH_DOMAINS.split(',')
+                .map(s => s.trim())
+                .filter(Boolean)
+            : [];
+        const urls = [
+          ...(extra.length ? extra : defaults),
+          env.WODORE_API_HOST,
+          // Public CDN base (anonymous GET traffic) when configured —
+          // deduplicated with the API host origin by the loop below.
+          env.WODORE_PUBLIC_API_URL,
+          env.WODORE_TILE_SERVER_URL,
+        ];
+        const seen = new Set([
+          // Seeded with the STATIC preconnects in <head> above (same
+          // origins as `defaults` — they apply in every env mode) so the
+          // dynamic links below never duplicate them.
+          'https://icons.maptoolkit.org',
+          'https://tiles.maptoolkit.org',
+          'https://tiles.mapterhorn.com',
+        ]);
+        for (const url of urls) {
+          if (!url || url.startsWith('@@')) continue;
+          let origin;
+          try {
+            origin = new URL(url).origin;
+          } catch {
+            continue;
+          }
+          if (seen.has(origin)) continue;
+          seen.add(origin);
+          const link = document.createElement('link');
+          link.rel = 'preconnect';
+          link.href = origin;
+          link.setAttribute('crossorigin', '');
+          document.head.appendChild(link);
+        }
+      })();
+    </script>
+    <meta charset="utf-8">
+    <meta name="application-name" content="Wodore">
+    <meta name="theme-color" content="#1a4231">
+    
+    
+    <meta name="robots" content="noindex, nofollow">
+    
+
+    <meta name="format-detection" content="telephone=no">
+    <meta name="viewport" content="user-scalable=no,initial-scale=1,maximum-scale=1,minimum-scale=1,width=device-width">
+
+    <meta name="title" content="Wodore">
+    <meta name="description" content="Wohin gipfelt deine nächste Tour?">
+    
+    <meta property="og:site_name" content="Wodore">
+    <meta property="og:title" content="Wodore">
+    <meta property="og:description" content="Wohin gipfelt deine nächste Tour?">
+    <meta property="og:image" content="https://wodore.com/meta/meta.jpg">
+    <meta property="og:image:url" content="https://wodore.com/meta/meta.jpg">
+    <meta property="og:url" content="https://wodore.com">
+    <meta property="og:type" content="website">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="628">
+    
+    <meta itemprop="name" content="Wodore">
+    <meta itemprop="description" content="Wohin gipfelt deine nächste Tour?">
+    <meta itemprop="image" content="https://wodore.com/meta/meta.jpg">
+    
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://wodore.com">
+    <meta property="twitter:title" content="Wodore">
+    <meta property="twitter:description" content="Wohin gipfelt deine nächste Tour?">
+    <meta property="twitter:image" content="https://wodore.com/meta/meta.jpg">
+
+    <link rel="icon" type="image/png" sizes="32x32" href="/wodore-frontend-quasar/pr-357/7da2065/favicon-32x32.png?v=3">
+    <link rel="icon" type="image/png" sizes="16x16" href="/wodore-frontend-quasar/pr-357/7da2065/favicon-16x16.png?v=3">
+
+    
+    <link rel="apple-touch-startup-image" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" href="/wodore-frontend-quasar/pr-357/7da2065/icons/apple-launch-1290x2796.png?v=3">
+    
+    <link rel="apple-touch-startup-image" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" href="/wodore-frontend-quasar/pr-357/7da2065/icons/apple-launch-1179x2556.png?v=3">
+    
+    <link rel="apple-touch-startup-image" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)" href="/wodore-frontend-quasar/pr-357/7da2065/icons/apple-launch-1284x2778.png?v=3">
+    
+    <link rel="apple-touch-startup-image" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" href="/wodore-frontend-quasar/pr-357/7da2065/icons/apple-launch-1170x2532.png?v=3">
+    
+    <link rel="apple-touch-startup-image" media="(device-width: 360px) and (device-height: 780px) and (-webkit-device-pixel-ratio: 3)" href="/wodore-frontend-quasar/pr-357/7da2065/icons/apple-launch-1080x2340.png?v=3">
+    
+    <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)" href="/wodore-frontend-quasar/pr-357/7da2065/icons/apple-launch-828x1792.png?v=3">
+    
+    <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" href="/wodore-frontend-quasar/pr-357/7da2065/icons/apple-launch-1125x2436.png?v=3">
+    
+    <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)" href="/wodore-frontend-quasar/pr-357/7da2065/icons/apple-launch-1242x2688.png?v=3">
+    
+    <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" href="/wodore-frontend-quasar/pr-357/7da2065/icons/apple-launch-750x1334.png?v=3">
+    
+    <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3)" href="/wodore-frontend-quasar/pr-357/7da2065/icons/apple-launch-1242x2208.png?v=3">
+    
+    <link rel="apple-touch-startup-image" media="(device-width: 810px) and (device-height: 1080px) and (-webkit-device-pixel-ratio: 2)" href="/wodore-frontend-quasar/pr-357/7da2065/icons/apple-launch-1620x2160.png?v=3">
+    
+    <link rel="apple-touch-startup-image" media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)" href="/wodore-frontend-quasar/pr-357/7da2065/icons/apple-launch-1536x2048.png?v=3">
+    
+    <link rel="apple-touch-startup-image" media="(device-width: 834px) and (device-height: 1112px) and (-webkit-device-pixel-ratio: 2)" href="/wodore-frontend-quasar/pr-357/7da2065/icons/apple-launch-1668x2224.png?v=3">
+    
+    <link rel="apple-touch-startup-image" media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)" href="/wodore-frontend-quasar/pr-357/7da2065/icons/apple-launch-1668x2388.png?v=3">
+    
+    <link rel="apple-touch-startup-image" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)" href="/wodore-frontend-quasar/pr-357/7da2065/icons/apple-launch-2048x2732.png?v=3">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="mask-icon" href="/wodore-frontend-quasar/pr-357/7da2065/safari-pinned-tab.svg?v=3" color="#315e47">
+    
+    <meta name="msapplication-TileColor" content="#315e47">
+    <meta name="apple-mobile-web-app-title" content="Wodore">
+    <link rel="apple-touch-icon" sizes="180x180" href="/wodore-frontend-quasar/pr-357/7da2065/apple-touch-icon.png?v=3">
+    
+
+    
+    <style id="wd-boot-shell-style">
+      /* Wodore splash v4 (owner brief 2026-10, impeccable pass): the
+       * forest-green brand moment (Vue adds mountains + status words). Pixel-mirrors
+       * WdMapLoader.vue for an invisible handover; body bg = splash
+       * green (no dark gap); body.wd-map-focus + wd-booting (mirrored
+       * by the script below) keep ALL chrome hidden until the map
+       * reveals. */
+      html,
+      body {
+        background-color: #346751;
+      }
+      #wd-boot-shell {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 3000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        /* PLACEMENT — pixel-mirrors WdMapLoader.vue (owner: "the initial
+           html should have exactly the same position"): group center at
+           44vh desktop / 30vh mobile, 12px gap. */
+        justify-content: flex-start;
+        padding-top: calc(44vh - 121px);
+        gap: 12px;
+        pointer-events: none;
+        background: linear-gradient(180deg, #346751 0%, #2b5844 58%, #224e3b 100%);
+        transition: opacity 0.28s ease-out;
+      }
+      #wd-boot-shell.wd-boot-shell--out {
+        opacity: 0;
+      }
+      .wd-boot-shell__mark {
+        position: relative;
+        width: 100%;
+        height: 176px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .wd-boot-shell__logo {
+        height: 110px;
+        width: auto;
+        /* Handover = pure opacity crossfade: the Vue splash paints the
+           pixel-identical mark underneath, so ANY movement here reads as
+           the logo jumping (owner-reported slide-down). */
+        transition: opacity 0.2s ease-out;
+      }
+      .wd-boot-shell__logo path {
+        /* Charcoal ink = the color mark's stroke color (#1c1c1c): the
+           boot→Vue crossfade only has to fade in the green fills, the
+           dark strokes never change luminance. */
+        fill: #1c1c1c;
+      }
+      #wd-boot-shell.wd-boot-shell--out .wd-boot-shell__logo {
+        opacity: 0;
+      }
+      /* Invisible wordmark slot: same 42px box as the Vue splash's
+       * wordmark so the mark sits identically before/after handover. */
+      .wd-boot-shell__wordmark-slot {
+        height: 42px;
+      }
+      /* CSS-only word cycler: one group per language (picked via
+         data-wd-words on the shell by the sniff script); the ~20
+         words crossfade one 1900ms slot each over a 38s loop. Keep
+         the word lists in sync with map.loadingWords i18n (all four
+         locales) and WdMapLoader's WORD_INTERVAL_MS. */
+      .wd-boot-shell__words {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: auto;
+        /* Mirrors the Vue splash's status anchor (wordmark bottom +
+           14px, following the group at 44vh/30vh). */
+        top: calc(44vh + 121px + 14px);
+        font-family:
+          'Barlow Semi Condensed',
+          -apple-system,
+          sans-serif;
+        font-size: 0.8rem;
+        font-weight: 500;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: rgba(242, 247, 244, 0.78);
+        display: none;
+      }
+      @media (max-width: 600px) {
+        #wd-boot-shell {
+          padding-top: calc(30vh - 121px);
+        }
+        .wd-boot-shell__words {
+          top: calc(30vh + 121px + 14px);
+        }
+      }
+      #wd-boot-shell[data-wd-words='de'] .wd-boot-shell__words--de,
+      #wd-boot-shell[data-wd-words='en'] .wd-boot-shell__words--en,
+      #wd-boot-shell[data-wd-words='fr'] .wd-boot-shell__words--fr,
+      #wd-boot-shell[data-wd-words='it'] .wd-boot-shell__words--it {
+        display: block;
+      }
+      .wd-boot-shell__word {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        white-space: nowrap;
+        opacity: 0;
+        /* One 20-word cycle = 20 x 1900ms; each word's slot comes from
+           its inline animation-delay (2000 + i*1900ms — the first 2s
+           stay wordless, matching the Vue splash's WORD_START_AT_MS).
+           Word 19 (delay 38.1s) intentionally starts 100ms into the
+           SECOND 38s cycle — it only shows on pathological stalls past
+           the 20s reveal cap; not a miscalculation (review n2). */
+        animation: wd-boot-shell-word 38000ms infinite;
+      }
+      /* Swap micro-timing MIRRORS the Vue splash's blur-crystallize
+         (owner: "same text animations"): in = blur(2px)+scale(0.96)
+         resolving on the system curve (~300ms = 0.8%), out = quick
+         ease-in expand to scale(1.04)+blur (~180ms = 0.5%). Same values
+         as .wd-splash-word-enter/leave in WdMapLoader.vue. */
+      @keyframes wd-boot-shell-word {
+        0% {
+          opacity: 0;
+          filter: blur(2px);
+          transform: translateX(-50%) scale(0.96);
+        }
+        0.8% {
+          opacity: 1;
+          filter: blur(0);
+          transform: translateX(-50%) scale(1);
+        }
+        4.2% {
+          opacity: 1;
+          filter: blur(0);
+          transform: translateX(-50%) scale(1);
+        }
+        5% {
+          opacity: 0;
+          filter: blur(2px);
+          transform: translateX(-50%) scale(1.04);
+        }
+        100% {
+          opacity: 0;
+          filter: blur(2px);
+          transform: translateX(-50%) scale(0.96);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .wd-boot-shell__word {
+          animation: none;
+          opacity: 0;
+        }
+        .wd-boot-shell__word:first-child {
+          opacity: 1;
+        }
+      }
+    </style>
+    <script type="module" crossorigin src="/wodore-frontend-quasar/pr-357/7da2065/assets/index-dFOAIeFf.js"></script>
+    <link rel="modulepreload" crossorigin href="/wodore-frontend-quasar/pr-357/7da2065/assets/vue-8ve7ahA3.js">
+    <link rel="modulepreload" crossorigin href="/wodore-frontend-quasar/pr-357/7da2065/assets/quasar-B261Aapr.js">
+    <link rel="stylesheet" crossorigin href="/wodore-frontend-quasar/pr-357/7da2065/assets/quasar-D1CuYeW9.css">
+    <link rel="stylesheet" crossorigin href="/wodore-frontend-quasar/pr-357/7da2065/assets/index-Ca4j1FV_.css">
+  <link rel="manifest" href="/wodore-frontend-quasar/pr-357/7da2065/manifest.json"></head>
+  <body class="overflow-hidden">
+    
+    
+    <div id="wd-boot-shell" role="status" aria-label="Loading map">
+      <div class="wd-boot-shell__mark">
+        <svg class="wd-boot-shell__logo" viewBox="0 0 42 48" aria-hidden="true">
+          <g>
+            <g>
+              <path d="m25.496 1.5682c1.238 15.516 0.67832 29.751-0.0086 44.683-0.0405 0.88045-0.77447 1.4539-1.6342 1.2589-0.65173-0.14784-1.3169-0.31143-1.5742-0.4162-0.80751-0.32881-2.3816-0.39391-3.379-0.39942-0.49706-0.0027-0.88336-0.39169-0.86399-0.88859 0.59872-15.359 0.5934-34.915 0.05341-43.541-0.04376-0.69897 0.46832-1.3735 1.1604-1.4822 1.6628-0.26116 3.3252-0.40795 4.987-0.40308 0.64271 0.001883 1.208 0.54782 1.2591 1.1885z" fill="#1c1c1c" style="paint-order: normal"/>
+            </g>
+            <g>
+              <path d="m9.596 24.165c-0.79278-0.047106-1.5718 0.22267-2.1656 0.74998l-6.0135 5.3395c-0.51226 0.45485-0.55886 1.2388-0.10408 1.7512l5.3398 6.0156c0.52721 0.59393 1.2688 0.95405 2.0616 1.0011l19.811 1.1777c0.68373 0.04084 1.271-0.48049 1.3116-1.1642l0.73486-12.384c0.04058-0.68383-0.48086-1.2711-1.1647-1.3117l-1.9691-0.11696z" fill="#1c1c1c"/>
+            </g>
+            <g>
+              <path d="m33.315 19.769c0.7926-0.05028 1.5328-0.41331 2.0578-1.0092l5.3177-6.0361c0.45279-0.51396 0.40307-1.2977-0.11104-1.7503l-6.038-5.3159c-0.5961-0.5248-1.3762-0.7914-2.1688-0.74116l-5.4363 0.34456-9.8936 0.62696-4.4746 0.28385c-0.68365 0.043369-1.2027 0.63273-1.1593 1.3164l0.78532 12.379c0.04336 0.68361 0.63276 1.2026 1.3164 1.1591" fill="#1c1c1c"/>
+            </g>
+          </g>
+        </svg>
+      </div>
+      <div class="wd-boot-shell__wordmark-slot" aria-hidden="true"></div>
+      <div class="wd-boot-shell__words wd-boot-shell__words--de">
+        <span class="wd-boot-shell__word" style="animation-delay: 2000ms">Rucksack geschnürt</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 3900ms">Karte aufgeschlagen</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 5800ms">Route im Kopf</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 7700ms">Wetter gelesen</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 9600ms">Stiefel fest</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 11500ms">Flaschen voll</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 13400ms">Stöcke bereit</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 15300ms">Erste Höhenmeter</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 17200ms">Karte füllt sich</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 19100ms">Höhenlinien zeichnen sich</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 21000ms">Täler tauchen auf</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 22900ms">Baumgrenze erreicht</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 24800ms">Bäche plätschern</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 26700ms">Alpenrosen blühen</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 28600ms">Gipfel rücken näher</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 30500ms">Hütten in Sicht</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 32400ms">Wolken ziehen vorbei</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 34300ms">Murmeltiere pfeifen</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 36200ms">Blick wird frei</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 38100ms">Ziel in Sicht</span>
+      </div>
+      <div class="wd-boot-shell__words wd-boot-shell__words--en">
+        <span class="wd-boot-shell__word" style="animation-delay: 2000ms">Rucksack buckled</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 3900ms">Map unfolded</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 5800ms">Route in mind</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 7700ms">Weather read</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 9600ms">Boots tight</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 11500ms">Bottles full</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 13400ms">Poles at hand</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 15300ms">First metres gained</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 17200ms">Map filling in</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 19100ms">Contour lines tracing</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 21000ms">Valleys appearing</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 22900ms">Treeline behind</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 24800ms">Brooks babbling</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 26700ms">Alpenroses in bloom</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 28600ms">Summits drawing near</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 30500ms">Huts in sight</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 32400ms">Clouds drifting past</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 34300ms">Marmots whistling</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 36200ms">View opening wide</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 38100ms">The peak awaits</span>
+      </div>
+      <div class="wd-boot-shell__words wd-boot-shell__words--fr">
+        <span class="wd-boot-shell__word" style="animation-delay: 2000ms">Sac bouclé</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 3900ms">Carte dépliée</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 5800ms">Itinéraire en tête</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 7700ms">Météo lue</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 9600ms">Chaussures serrées</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 11500ms">Gourdes pleines</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 13400ms">Bâtons en main</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 15300ms">Premiers mètres gagnés</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 17200ms">La carte se dessine</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 19100ms">Courbes de niveau</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 21000ms">Les vallées s'ouvrent</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 22900ms">La forêt s'efface</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 24800ms">Les ruisseaux murmurent</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 26700ms">Rhododendrons en fleurs</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 28600ms">Les sommets approchent</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 30500ms">Premiers refuges</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 32400ms">Les nuages passent</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 34300ms">Les marmottes sifflent</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 36200ms">La vue s'ouvre</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 38100ms">Objectif en vue</span>
+      </div>
+      <div class="wd-boot-shell__words wd-boot-shell__words--it">
+        <span class="wd-boot-shell__word" style="animation-delay: 2000ms">Zaino allacciato</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 3900ms">Carta spiegata</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 5800ms">Percorso in testa</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 7700ms">Meteo letto</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 9600ms">Scarponi stretti</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 11500ms">Borracce piene</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 13400ms">Bastoni pronti</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 15300ms">Primi metri guadagnati</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 17200ms">La mappa si disegna</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 19100ms">Curve di livello</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 21000ms">Le valli appaiono</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 22900ms">Bosco alle spalle</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 24800ms">I ruscelli mormorano</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 26700ms">Rododendri in fiore</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 28600ms">Le vette si avvicinano</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 30500ms">Primi rifugi</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 32400ms">Le nuvole passano</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 34300ms">Le marmotte fischiano</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 36200ms">Il panorama si apre</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 38100ms">Meta in vista</span>
+      </div>
+    </div>
+    <script>
+      // Word-language sniff — MUST run AFTER #wd-boot-shell exists in
+      // the DOM (an earlier placement above the div silently no-oped:
+      // getElementById returned null, no language group was activated
+      // and the words never showed).
+      (function () {
+        try {
+          var raw = localStorage.getItem('CapacitorStorage.wodore:userSettings');
+          var lang = raw ? ((JSON.parse(raw) || {}).ui || {}).language : undefined;
+          var mode =
+            ['de', 'en', 'fr', 'it'].indexOf(lang) >= 0
+              ? lang
+              : (navigator.language || 'en').slice(0, 2);
+          var el = document.getElementById('wd-boot-shell');
+          if (el) {
+            el.setAttribute(
+              'data-wd-words',
+              ['de', 'en', 'fr', 'it'].indexOf(mode) >= 0 ? mode : 'en'
+            );
+            // Localized a11y label (review nit: the words localize,
+            // the label must too) — same strings as map.loading i18n.
+            var LABELS = {
+              de: 'Karte wird geladen',
+              en: 'Loading map',
+              fr: 'Chargement de la carte',
+              it: 'Caricamento della mappa',
+            };
+            el.setAttribute('aria-label', LABELS[mode] || 'Loading map');
+          }
+        } catch (e) {
+          /* sniff THROW — data-wd-words stays unset, so NO word group
+             shows (all groups require the attribute). Deliberate: a
+             broken sniff must not flash the wrong language; the Vue
+             splash takes over with the persisted locale anyway. */
+        }
+      })();
+    </script>
+    <script>
+      // Mirror the boot classes onto <body> the moment it exists in the
+      // parse stream — quasar's build rewrites <body> attributes, so the
+      // classes live on <html> and land on <body> here, before ANY app
+      // chrome (topbar/controls) can paint. Removed by WdMapView's
+      // reveal (chrome then flies in like a focus-mode release).
+      document.body.classList.add('wd-map-focus', 'wd-booting');
+    </script>
+    <div id="q-app"></div>
+  </body>
+</html>
