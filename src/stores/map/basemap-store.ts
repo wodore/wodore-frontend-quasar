@@ -1158,12 +1158,40 @@ export const useBasemapStore = defineStore('basemap', () => {
       console.debug('Using cached GPU tier:', cachedGpuTier);
       gpuTier = cachedGpuTier as Awaited<ReturnType<typeof getGPUTier>>;
     } else {
-      // Run GPU detection
-      gpuTier = await getGPUTier();
-      // Cache the result
-      storageSet('gpuTier', gpuTier);
-      storageSet('gpuTierTime', now);
-      console.debug('Detected and cached GPU tier:', gpuTier.tier);
+      // Run GPU detection, raced against a deadline: detect-gpu's
+      // tier-list download (unpkg.com) has no built-in timeout, and this
+      // await gates the WHOLE map boot — gpuSpecReady blocks the layers
+      // fetch and the first basemap needs the tier. A hung fetch would
+      // hold the splash until the 20s hard cap with no style at all
+      // (observed 2026-10-27, map-boot profiling). On timeout fall back
+      // to the capable "detection failure" tier (tier < 0 — same
+      // precedent as mapProfileForTier's failure branch: never punish
+      // capable hardware for a dead benchmark host) WITHOUT caching it,
+      // so the next visit retries detection.
+      const GPU_DETECT_TIMEOUT_MS = 3500;
+      let gpuDetectTimedOut = false;
+      let gpuDetectTimer: ReturnType<typeof setTimeout> | undefined;
+      gpuTier = await Promise.race([
+        getGPUTier(),
+        new Promise<Awaited<ReturnType<typeof getGPUTier>>>(resolve => {
+          gpuDetectTimer = setTimeout(() => {
+            gpuDetectTimedOut = true;
+            resolve({ tier: -1, type: 'FALLBACK' });
+          }, GPU_DETECT_TIMEOUT_MS);
+        }),
+      ]);
+      clearTimeout(gpuDetectTimer);
+      if (gpuDetectTimedOut) {
+        console.warn(
+          `[basemap] GPU detection timed out after ${GPU_DETECT_TIMEOUT_MS}ms — ` +
+            'using the capable fallback tier (not cached; the next visit retries)'
+        );
+      } else {
+        // Cache the result — never the timeout fallback.
+        storageSet('gpuTier', gpuTier);
+        storageSet('gpuTierTime', now);
+        console.debug('Detected and cached GPU tier:', gpuTier.tier);
+      }
     }
 
     const useRaster = shouldUseRaster(gpuTier);
