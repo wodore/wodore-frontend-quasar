@@ -100,38 +100,21 @@ function appendIndex(url: string): void {
   fs.renameSync(tmp, marker);
 }
 
-/** Build the app's persisted localStorage caches from the disk cache. */
-function buildCatalogSeed(): { catalog: unknown; styles: Record<string, unknown> } | null {
+/** Build the app's persisted catalog cache from the disk cache. (The
+ *  style-cache seeding leg was removed with its subject — the app owns
+ *  style freshness via immutable URLs now and purges the retired key.) */
+function buildCatalogSeed(): { catalog: unknown } | null {
   const catalogUrl = readIndex().find(u => CATALOG_URL_RE.test(u));
   if (!catalogUrl) return null;
   const catalogEntry = readCached(catalogUrl);
   if (!catalogEntry) return null;
-  let catalog: { slots: unknown; layers: Array<{ slug: string; version?: string | null }> };
+  let catalog: { slots: unknown; layers: Array<{ slug: string }> };
   try {
     catalog = JSON.parse(Buffer.from(catalogEntry.body, 'base64').toString('utf8'));
   } catch {
     return null;
   }
   if (!Array.isArray(catalog.layers)) return null;
-  const versions = new Map(catalog.layers.map(l => [l.slug, l.version ?? null]));
-  const styles: Record<string, unknown> = {};
-  for (const url of readIndex()) {
-    const key = styleCacheKeyFor(url);
-    if (!key) continue;
-    const entry = readCached(url);
-    if (!entry) continue;
-    let doc: unknown;
-    try {
-      doc = JSON.parse(Buffer.from(entry.body, 'base64').toString('utf8'));
-    } catch {
-      continue;
-    }
-    const slug = key.split('|')[0]!;
-    const version = versions.get(slug) ?? null;
-    styles[key] = key.endsWith('|tokenized')
-      ? { tokenized: doc, version }
-      : { style: doc, version };
-  }
   return {
     catalog: {
       savedAt: new Date().toISOString(),
@@ -139,7 +122,6 @@ function buildCatalogSeed(): { catalog: unknown; styles: Record<string, unknown>
       slots: catalog.slots,
       layers: catalog.layers,
     },
-    styles,
   };
 }
 
@@ -183,13 +165,10 @@ export const test = baseTest.extend<{ stagingCache: void }>({
       const seed = buildCatalogSeed();
       if (seed) {
         await page.addInitScript(
-          ([catalog, styles]: unknown[]) => {
+          ([catalog]: unknown[]) => {
             localStorage.setItem('mapCatalogCache', JSON.stringify(catalog));
-            if (styles && Object.keys(styles as object).length > 0) {
-              localStorage.setItem('mapCatalogStyleCache', JSON.stringify(styles));
-            }
           },
-          [seed.catalog, seed.styles] as unknown[]
+          [seed.catalog] as unknown[]
         );
       }
       // Intercept cross-origin GETs only — localhost (dev server) requests never
