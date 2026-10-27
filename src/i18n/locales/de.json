@@ -96,8 +96,8 @@
     "fallbackNote": "Vereinfachte Karte aktiv – eingeschränkte Funktionalität (kein WebGL).",
     "fallbackBasemaps": {
       "osm": "OSM (OpenStreetMap)",
-      "satellite": "Satellit",
-      "topo": "Welt-Topo"
+      "world-topo": "Welt-Topo",
+      "world-satellite-hybrid": "Satellit"
     },
     "fallbackZoomHint": "Zoome hinein, um Verfügbarkeiten zu sehen.",
     "fallbackAttribution": "Attribution",

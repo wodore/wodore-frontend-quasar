@@ -139,13 +139,14 @@ export class WdCanvasDot extends L.CircleMarker {
         ctx.globalAlpha = markerOpacity;
       }
     } else {
-      // Pre-sprite fallback: plain colored dot
+      // Pre-sprite fallback: plain colored dot with white/gold stroke
+      // (selection gold matches the MapLibre dot-band selection).
       ctx.beginPath();
       ctx.arc(point.x, point.y, options.dotRadius, 0, Math.PI * 2);
       ctx.fillStyle = options.fillColor || DEFAULT_DOT_COLOR;
       ctx.fill();
       ctx.lineWidth = options.selected ? 3 : 2;
-      ctx.strokeStyle = options.selected ? SELECTION_COLOR : '#ffffff';
+      ctx.strokeStyle = options.selected ? '#BFAB25' : '#ffffff';
       ctx.stroke();
     }
   }

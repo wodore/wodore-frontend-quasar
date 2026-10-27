@@ -32,12 +32,17 @@ const whiteIconCache = new Map<string, IconBitmap | null>();
 
 let spriteSheet: SpriteSheet | null = null;
 let spriteSheetUrl: string | undefined;
+/** Load-generation guard: revokeSprite() (component unmount) bumps it so
+ *  an in-flight load revokes its OWN blob instead of re-populating module
+ *  state nobody will clean up (Opus review #3). */
+let loadGeneration = 0;
 
 /** Load the sprite sheet; returns true on success. The URL is kept for
  *  revocation on unmount. Callers should rebuild markers after this
  *  resolves (the fallback draws plain dots until the sheet is ready). */
 export async function loadSprite(tileServer: string): Promise<boolean> {
   if (spriteSheet) return true;
+  const gen = ++loadGeneration;
   try {
     const base = `${tileServer}/sprite/accommodation,availability`;
     const [meta, png] = await Promise.all([fetch(`${base}.json`), fetch(`${base}.png`)]);
@@ -52,13 +57,23 @@ export async function loadSprite(tileServer: string): Promise<boolean> {
       sheetW = Math.max(sheetW, e.x + e.width);
       sheetH = Math.max(sheetH, e.y + e.height);
     }
-    spriteSheetUrl = URL.createObjectURL(await png.blob());
+    const url = URL.createObjectURL(await png.blob());
+    if (gen !== loadGeneration) {
+      // Unmounted mid-load — nobody owns this blob anymore
+      URL.revokeObjectURL(url);
+      return false;
+    }
+    spriteSheetUrl = url;
     // SAFETY: createElement('img') returns HTMLImageElement at runtime;
     // the structural SheetImage type hides the DOM interface name from
     // the linter. Only .src and .decode() are used.
     const sheetImg = document.createElement('img') as unknown as SheetImage;
-    sheetImg.src = spriteSheetUrl;
+    sheetImg.src = url;
     await sheetImg.decode().catch(() => undefined);
+    if (gen !== loadGeneration) {
+      URL.revokeObjectURL(url);
+      return false;
+    }
     spriteSheet = { icons, sheetW, sheetH, sheetImg };
     whiteIconCache.clear();
     return true;
@@ -69,6 +84,7 @@ export async function loadSprite(tileServer: string): Promise<boolean> {
 
 /** Revoke the blob URL (call on component unmount). */
 export function revokeSprite(): void {
+  loadGeneration++; // invalidate any in-flight load
   if (spriteSheetUrl) URL.revokeObjectURL(spriteSheetUrl);
   spriteSheetUrl = undefined;
   spriteSheet = null;

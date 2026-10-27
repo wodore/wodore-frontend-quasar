@@ -47,10 +47,11 @@ export function markerOpacityFor(zoom: number): number {
   return Math.min(0.5 + ((zoom - HUT_MIN_ZOOM) / 2) * 0.5, 1);
 }
 
-/** Shield size ramp: 13px at z7-10, 17px at z11-13, grows to 28px at z17. */
+/** Shield size ramp: 13px at z7-10, 19px at z11-13 (owner-tuned:
+ *  icons must be larger once clusters disappear), grows to 28px at z17. */
 export function shieldPxFor(zoom: number): number {
   if (zoom <= 10) return 13;
-  if (zoom <= 13) return 17;
+  if (zoom <= 13) return 19;
   return Math.min(17 + (zoom - 14) * 2.75, 28);
 }
 
