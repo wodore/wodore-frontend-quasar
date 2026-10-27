@@ -19,7 +19,11 @@
 //       X-Robots-Tag line or the orig.* noindex (#338) silently
 //       disappears from that path;
 //   (b) regex locations with {n} quantifiers must be quoted or nginx
-//       crashes at config parse ("missing closing parenthesis").
+//       crashes at config parse ("missing closing parenthesis");
+//   (c) a location pairing `expires` with an add_header Cache-Control
+//       emits TWO Cache-Control headers (merged by clients, flagged by
+//       auditors — surfaced live once the CDN began passing origin
+//       headers through verbatim).
 
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -170,6 +174,20 @@ describe('edge-hot SPA shell cache policy', () => {
       const cc = cacheControl(block(matcher));
       expect(cc.join(' '), matcher).toContain('no-store');
     }
+  });
+});
+
+describe('single Cache-Control per location', () => {
+  it('no location pairs `expires` with an add_header Cache-Control', () => {
+    // `expires` emits its own max-age-only Cache-Control; combined with
+    // an add_header Cache-Control the response carries two CC headers.
+    const offenders = locations.filter(
+      loc => cacheControl(loc).length > 0 && loc.directives.some(d => /^expires\s/.test(d))
+    );
+    expect(
+      offenders.map(l => l.matcher),
+      'locations with expires + add_header Cache-Control'
+    ).toEqual([]);
   });
 });
 
