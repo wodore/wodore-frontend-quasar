@@ -2045,7 +2045,7 @@ body.wd-map-focus {
   min-height: 20px;
   background-color: #ffffff;
   color: #000000;
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 2px 0 2px 24px;
   box-sizing: content-box;
   transition: width 0.15s ease;
@@ -2073,7 +2073,7 @@ body.wd-map-focus {
   height: 24px;
   padding: 0;
   border: none;
-  border-radius: 12px;
+  border-radius: 8px;
   background: transparent;
   color: var(--wd-ctl-ink, #333333);
   cursor: pointer;

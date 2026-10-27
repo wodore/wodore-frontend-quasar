@@ -73,18 +73,11 @@ function weatherCodeFetches(): number {
   return fake.getCalls.filter(url => url.includes('/meteo/weather_codes')).length;
 }
 
-function weatherCodeCacheReads(spy: ReturnType<typeof vi.spyOn>): number {
-  return spy.mock.calls.filter(([key]) => String(key).startsWith('weather_codes:')).length;
-}
-
 describe('meteo store weather-code context', () => {
-  let getItemSpy: ReturnType<typeof vi.spyOn>;
-
   beforeEach(() => {
     fake.getCalls = [];
     fake.middlewares = [];
     localStorage.clear();
-    getItemSpy = vi.spyOn(localStorage, 'getItem');
     setActivePinia(createPinia());
   });
 
