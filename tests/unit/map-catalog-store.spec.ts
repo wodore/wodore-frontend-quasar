@@ -359,6 +359,48 @@ describe('map catalog store (boot cache + version sync)', () => {
     expect(styleCache['mtb|high|tokenized'].modified).toBe(VERSION_A);
   });
 
+  it('style fetches use the catalog style_url verbatim (+ mode=tokenized), never client-built URLs', async () => {
+    const cat = catalogFor(VERSION_A);
+    cat.data[0]!.style_url = '/v1/map/styles/transport-stops.json?spec=medium&v=3114e2da1253';
+    cat.data[cat.data.length - 1]!.style_url = '/v1/map/styles/mtb.json?spec=medium&v=9e9ddf24f942';
+    catalogFetch.mockResolvedValue(cat);
+    const store = stores.useMapCatalogStore();
+    await store.initOverlays();
+
+    // Non-parameterized layer: the resolved variant, style_url VERBATIM —
+    // served spec and immutable version token preserved (backend #434);
+    // no client-guessed spec, no dropped token. (endsWith: the spec env
+    // absolutizes against the API host — CI serves it root-relative.)
+    expect(
+      styleFetches.some(u =>
+        u.endsWith('/v1/map/styles/transport-stops.json?spec=medium&v=3114e2da1253')
+      )
+    ).toBe(true);
+    // Parameterized layer (mtb): the tokenized sibling — `mode=tokenized`
+    // appended to the SAME canonical URL so the v token rides along and
+    // the variant caches immutable.
+    expect(
+      styleFetches.some(u =>
+        u.endsWith('/v1/map/styles/mtb.json?spec=medium&v=9e9ddf24f942&mode=tokenized')
+      )
+    ).toBe(true);
+  });
+
+  it('a layer without style_url is skipped loudly (no fetch, no crash)', async () => {
+    const cat = catalogFor(VERSION_A);
+    (cat.data[0] as { style_url: string | null }).style_url = null; // transport-stops
+    catalogFetch.mockResolvedValue(cat);
+    const store = stores.useMapCatalogStore();
+    await store.initOverlays();
+
+    // Only mtb's style was fetched; the broken layer dropped with a
+    // user-visible notice, the rest of the catalog still compiled.
+    expect(styleFetches).toHaveLength(1);
+    expect(notifyCalls.length).toBeGreaterThan(0);
+    expect(store.status).toBe('ready');
+    expect(overlaysOf().map(o => o.name)).toEqual(['mtb']);
+  });
+
   it('warm boot: the persisted cache serves unchanged modified timestamps without refetching', async () => {
     // First session populates the cache
     catalogFetch.mockResolvedValue(catalogFor(VERSION_A));

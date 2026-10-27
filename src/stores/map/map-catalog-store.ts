@@ -62,7 +62,7 @@ import {
   collectTokens,
   serializeOpacityCurve,
   styleCacheKey,
-  styleEndpointUrl,
+  styleVariantUrl,
   type MapCatalogLayer,
   type MapCatalogSlot,
   type MapLayerParameter,
@@ -518,6 +518,17 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     cache: PersistedStyleCache
   ): Promise<LoadedBundle | undefined> {
     const tokenized = layer.parameters.length > 0;
+    // `spec` only keys the PERSISTED cache now — the fetched URL is the
+    // catalog's canonical `style_url` (backend-served spec + immutable
+    // `&v=` token), with `mode=tokenized` appended for parameterized
+    // layers (backend #434: any variant URL carrying a valid v serves
+    // immutable). A missing style_url means the catalog entry is broken
+    // — skip loudly like a failed fetch.
+    if (!layer.style_url) {
+      skipLayer(layer, 'layer configuration missing (style URL)', undefined);
+      return undefined;
+    }
+    const styleUrl = layer.style_url;
     const key = styleCacheKey(layer.slug, spec, tokenized);
     const cached = cache[key];
     if (cacheServes(cached, layer, tokenized)) {
@@ -533,16 +544,13 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     try {
       const tokenizedDoc = tokenized
         ? ((await fetchMapStyle(
-            styleEndpointUrl(layer.slug, { spec, tokenized: true }),
+            styleVariantUrl(styleUrl, { tokenized: true }),
             layer.slug
           )) as StyleSpecification)
         : undefined;
       const resolvedDoc = tokenizedDoc
         ? (resolveTokens(tokenizedDoc, valuesFor(layer)) as StyleSpecification)
-        : ((await fetchMapStyle(
-            styleEndpointUrl(layer.slug, { spec }),
-            layer.slug
-          )) as StyleSpecification);
+        : ((await fetchMapStyle(styleVariantUrl(styleUrl), layer.slug)) as StyleSpecification);
       // Remote-data guard: an invalid document must not blank the layer —
       // the RESOLVED output is validated (tokenized docs carry invalid
       // paint tokens by design until resolved).

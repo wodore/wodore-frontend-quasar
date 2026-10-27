@@ -260,26 +260,32 @@ function apiBase(): string {
   return publicApiBase() || '';
 }
 
-export interface StyleRequestOptions {
-  /** Device tier — the server falls back exact → nearest → single. */
-  spec?: MapSpecTier;
-  /** Keep parameter tokens for client-side resolution. */
+export interface StyleVariantOptions {
+  /** Fetch the tokenized sibling ({{param}} tokens kept for client-side
+   *  resolution) instead of the resolved document. */
   tokenized?: boolean;
 }
 
 /**
- * Absolute style endpoint URL for a layer slug. External style URLs
- * (env-resolved by the backend, e.g. MapTiler) pass through untouched.
+ * Absolute URL for a layer's style VARIANT, derived from the catalog's
+ * canonical `style_url` — which already embeds the backend's SERVED
+ * `spec` and the immutable version token (`&v=<style_version>`, backend
+ * #434). Parameterized layers append `mode=tokenized`; the version
+ * token rides along, so BOTH variants cache immutable — a client-built
+ * URL (the old `styleEndpointUrl`) guessed the spec and lost the token.
+ * External style URLs (env-resolved by the backend, e.g. MapTiler) pass
+ * through untouched — they carry no parameters.
  */
-export function styleEndpointUrl(slug: string, opts: StyleRequestOptions = {}): string {
-  const params = new URLSearchParams();
-  if (opts.spec) params.set('spec', opts.spec);
-  if (opts.tokenized) params.set('mode', 'tokenized');
-  const qs = params.toString();
-  const path = `/v1/map/styles/${slug}.json${qs ? `?${qs}` : ''}`;
-  const base = apiBase();
-  if (!base) return path;
-  return new URL(path, base).href;
+export function styleVariantUrl(styleUrl: string, opts: StyleVariantOptions = {}): string {
+  const url = absolutizeStyleUrl(styleUrl);
+  if (!opts.tokenized) return url;
+  // URLSearchParams (not a substring test) so a future query param like
+  // `x-mode=` can never suppress the append. The query slice keeps this
+  // valid for root-relative URLs (no URL base needed).
+  const queryAt = url.indexOf('?');
+  const params = new URLSearchParams(queryAt === -1 ? '' : url.slice(queryAt + 1));
+  if (params.has('mode')) return url;
+  return `${url}${queryAt === -1 ? '?' : '&'}mode=tokenized`;
 }
 
 /** Absolutize a catalog variant's style URL (root-relative → API origin). */
