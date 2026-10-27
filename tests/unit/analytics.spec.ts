@@ -143,3 +143,70 @@ describe('umami track() opt-out gate', () => {
     expect(umami.track).toHaveBeenCalledWith('test-event', { a: 1 });
   });
 });
+
+describe('trackWhenUmamiReady — deferred boot-time events', () => {
+  // The boot file injects script.js at browser idle; detections that
+  // settle earlier (e.g. the GPU tier) must not lose their event.
+  beforeEach(() => {
+    localStorage.clear();
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  const loadModule = () => import('@services/analytics');
+
+  it('fires immediately when the tracker already exists', async () => {
+    const umami = { track: vi.fn() };
+    vi.stubGlobal('umami', umami);
+    const { trackWhenUmamiReady } = await loadModule();
+    trackWhenUmamiReady('gpu-tier', { tier: 3 });
+    expect(umami.track).toHaveBeenCalledTimes(1);
+    expect(umami.track).toHaveBeenCalledWith('gpu-tier', { tier: 3 });
+  });
+
+  it('waits for the tracker to load, then fires exactly once', async () => {
+    const umami = { track: vi.fn() };
+    const { trackWhenUmamiReady } = await loadModule();
+    trackWhenUmamiReady('gpu-tier', { tier: 1 });
+    // tracker not loaded yet — first polls are silent
+    vi.advanceTimersByTime(1500);
+    expect(umami.track).not.toHaveBeenCalled();
+
+    vi.stubGlobal('umami', umami);
+    vi.advanceTimersByTime(500);
+    expect(umami.track).toHaveBeenCalledTimes(1);
+    expect(umami.track).toHaveBeenCalledWith('gpu-tier', { tier: 1 });
+
+    // the polling interval must be cleared after firing — no re-fires
+    vi.advanceTimersByTime(5000);
+    expect(umami.track).toHaveBeenCalledTimes(1);
+  });
+
+  it('drops the event silently when the tracker never loads (env-gated builds)', async () => {
+    const { trackWhenUmamiReady } = await loadModule();
+    expect(() => {
+      trackWhenUmamiReady('gpu-tier', { tier: 2 });
+      vi.advanceTimersByTime(15_000);
+    }).not.toThrow();
+
+    // deadline elapsed → the interval stopped; a late tracker is too late
+    const umami = { track: vi.fn() };
+    vi.stubGlobal('umami', umami);
+    vi.advanceTimersByTime(5000);
+    expect(umami.track).not.toHaveBeenCalled();
+  });
+
+  it('never starts polling while opted out', async () => {
+    localStorage.setItem('umami.disabled', 'true');
+    const { trackWhenUmamiReady } = await loadModule();
+    trackWhenUmamiReady('gpu-tier', { tier: 3 });
+    const umami = { track: vi.fn() };
+    vi.stubGlobal('umami', umami);
+    vi.advanceTimersByTime(20_000);
+    expect(umami.track).not.toHaveBeenCalled();
+  });
+});

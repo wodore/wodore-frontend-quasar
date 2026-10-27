@@ -14,6 +14,7 @@ import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vite
 import { createPinia, setActivePinia } from 'pinia';
 import { effectScope } from 'vue';
 import type { MapCatalogLayer } from '@services/map-catalog';
+import { classifyGpuTier } from '@stores/map/basemap-store';
 
 const API_HOST = 'https://hub.stg.wodore.com';
 
@@ -280,5 +281,52 @@ describe('basemap store — persisted style SWR', () => {
     const key = style('wd-outdoor-base-mtk');
     expect(cache[key]).toBeDefined();
     expect(cache[key]!.style).toEqual(styleDoc);
+  });
+});
+
+describe('classifyGpuTier — render-profile buckets (shared with the gpu-tier Umami event)', () => {
+  // The classification is the single vocabulary behind
+  // mapProfileForTier, shouldUseRaster AND the `gpu-tier` analytics
+  // event — what gets reported is exactly what the renderer decided.
+  // All fallback buckets (non-WebGL, software renderer, unidentifiable
+  // GPU, detection failure) must stay distinguishable.
+
+  it('non-webgl: detect-gpu WEBGL_UNSUPPORTED outranks everything', () => {
+    expect(classifyGpuTier({ tier: -1, type: 'WEBGL_UNSUPPORTED' })).toBe('non-webgl');
+    // even with a (stale) gpu string — the type is authoritative
+    expect(classifyGpuTier({ tier: 3, type: 'WEBGL_UNSUPPORTED', gpu: 'Some GPU' })).toBe(
+      'non-webgl'
+    );
+  });
+
+  it('no-gpu-name: unidentifiable GPU without a renderer string', () => {
+    expect(classifyGpuTier({ tier: 1, type: 'BENCHMARK' })).toBe('no-gpu-name');
+    expect(classifyGpuTier({ tier: 3, type: 'FALLBACK', gpu: null })).toBe('no-gpu-name');
+    // the trimmed cached shape ({ tier }) classifies the same way
+    expect(classifyGpuTier({ tier: 2 })).toBe('no-gpu-name');
+  });
+
+  it('software-renderer: known software rasterizers', () => {
+    expect(classifyGpuTier({ tier: 3, gpu: 'ANGLE (Google, Vulkan SwiftShader)' })).toBe(
+      'software-renderer'
+    );
+    expect(classifyGpuTier({ tier: 0, gpu: 'llvmpipe (Mesa)' })).toBe('software-renderer');
+  });
+
+  it('detection-failed: named GPU the benchmarks could not classify', () => {
+    expect(classifyGpuTier({ tier: -1, type: 'BLOCKLISTED', gpu: 'PowerVR Rogue' })).toBe(
+      'detection-failed'
+    );
+  });
+
+  it('weak / medium / high by tier', () => {
+    expect(classifyGpuTier({ tier: 0, gpu: 'Mali-400' })).toBe('weak');
+    expect(classifyGpuTier({ tier: 1, gpu: 'Adreno 505' })).toBe('weak');
+    expect(classifyGpuTier({ tier: 2, gpu: 'Iris Plus' })).toBe('medium');
+    expect(classifyGpuTier({ tier: 3, gpu: 'RTX 4080' })).toBe('high');
+  });
+
+  it('software names match case-insensitively', () => {
+    expect(classifyGpuTier({ tier: 3, gpu: 'SwiftShader' })).toBe('software-renderer');
   });
 });
