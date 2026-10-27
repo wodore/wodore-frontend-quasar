@@ -398,9 +398,7 @@ describe('basemap store — gpu-tier Umami event (runBasemapInit wiring)', () =>
     delete process.env.WODORE_API_HOST;
   });
 
-  const eventCall = async (
-    timeout = 4000
-  ): Promise<[string, Record<string, unknown>]> => {
+  const eventCall = async (timeout = 4000): Promise<[string, Record<string, unknown>]> => {
     await vi.waitFor(() => expect(trackWhenUmamiReady).toHaveBeenCalledTimes(1), { timeout });
     return vi.mocked(trackWhenUmamiReady).mock.calls[0]! as [string, Record<string, unknown>];
   };
@@ -486,21 +484,25 @@ describe('basemap store — gpu-tier Umami event (runBasemapInit wiring)', () =>
     });
   });
 
-  it('detection timeout: capable timeout fallback (source=timeout, detection-failed, vector)', { timeout: 12_000 }, async () => {
-    // A hung benchmark fetch (unpkg unreachable) trips the 3.5s
-    // GPU-detect timeout race → {tier:-1, type:'FALLBACK'}, uncached.
-    detectGpuResult.value = new Promise(() => {});
-    bootStore();
-    const [, data] = await eventCall(9000);
-    expect(data).toMatchObject({
-      tier: -1,
-      type: 'FALLBACK',
-      classification: 'detection-failed',
-      source: 'timeout',
-      raster: false,
-      spec: 'high',
-    });
-    // the timeout fallback is never cached
-    expect(storageState.has('gpuTier')).toBe(false);
-  });
+  it(
+    'detection timeout: capable timeout fallback (source=timeout, detection-failed, vector)',
+    { timeout: 12_000 },
+    async () => {
+      // A hung benchmark fetch (unpkg unreachable) trips the 3.5s
+      // GPU-detect timeout race → {tier:-1, type:'FALLBACK'}, uncached.
+      detectGpuResult.value = new Promise(() => {});
+      bootStore();
+      const [, data] = await eventCall(9000);
+      expect(data).toMatchObject({
+        tier: -1,
+        type: 'FALLBACK',
+        classification: 'detection-failed',
+        source: 'timeout',
+        raster: false,
+        spec: 'high',
+      });
+      // the timeout fallback is never cached
+      expect(storageState.has('gpuTier')).toBe(false);
+    }
+  );
 });
