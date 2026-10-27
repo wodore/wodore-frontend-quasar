@@ -473,7 +473,9 @@ class WdMobileZoomBarControl extends L.Control {
     locate.innerHTML = LOCATE_SVG;
     L.DomEvent.on(locate, 'click', () => onLocate());
 
-    const zoomIn = L.DomUtil.create('a', 'leaflet-control-zoom-in', container) as HTMLElement & { href: string };
+    const zoomIn = L.DomUtil.create('a', 'leaflet-control-zoom-in', container) as HTMLElement & {
+      href: string;
+    };
     zoomIn.href = '#';
     zoomIn.setAttribute('role', 'button');
     zoomIn.textContent = '+';
@@ -482,7 +484,9 @@ class WdMobileZoomBarControl extends L.Control {
       map?.zoomIn();
     });
 
-    const zoomOut = L.DomUtil.create('a', 'leaflet-control-zoom-out', container) as HTMLElement & { href: string };
+    const zoomOut = L.DomUtil.create('a', 'leaflet-control-zoom-out', container) as HTMLElement & {
+      href: string;
+    };
     zoomOut.href = '#';
     zoomOut.setAttribute('role', 'button');
     zoomOut.textContent = '\u2212';
