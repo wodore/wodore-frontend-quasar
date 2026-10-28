@@ -1,13 +1,19 @@
 // @vitest-environment happy-dom
 /**
  * Unit tests for the fallback overlay adapter's geojson CIRCLE support
- * (the transport-stops subset variant, backend #442):
+ * (the transport-stops subset variant, backend #442) plus its CLUSTERED
+ * subset twin (backend: clustering on the subset profile only):
  *
  * * evalStyleExpr (fallback/overlay-adapter) — the whitelisted subset
- *   expression evaluator (get/has/literal/in/==/case/match +
- *   interpolate-on-zoom, linear, nested stop-value expressions).
+ *   expression evaluator (get/has/literal/in/==/>/!/case/match +
+ *   interpolate on ['zoom'] OR ['get', prop], linear, nested stop-value
+ *   expressions).
  * * circleSpecFor — extracting a Leaflet-servable circle spec from a
- *   resolved style (geojson data URL, no tokens; zoom floor).
+ *   resolved style (geojson data URL, no tokens; zoom floor) including
+ *   the cluster declaration (cluster* source keys + cluster layers).
+ * * clusterBubbleStyle — the divIcon payload of one cluster bubble
+ *   (palette color by aggregated counts, radius by point_count, count
+ *   text gated by the ui.overlayClusterCounts setting).
  * * circleMarkerStyle — evaluating the transport-stops paints per
  *   feature + zoom into Leaflet CircleMarker options.
  * * rasterSpecFor — the raster path keeps its shape (kind tag).
@@ -21,6 +27,7 @@ import {
   circleFeaturePaints,
   circleMarkerPaint,
   circleSpecFor,
+  clusterBubbleStyle,
   evalStyleExpr,
   rasterSpecFor,
 } from '@components/map/fallback/overlay-adapter';
@@ -55,6 +62,35 @@ const TRANSPORT_RADIUS = [
   ['case', ['in', 'train', ['get', 'types']], 9, ['in', 'bus', ['get', 'types']], 8, 8],
 ];
 
+/** The cluster bubble radius ramp (served shape, verbatim): a
+ * `['get', 'point_count']` input — the widened interpolate domain. */
+const CLUSTER_RADIUS = [
+  'interpolate',
+  ['linear'],
+  ['get', 'point_count'],
+  2,
+  5,
+  10,
+  7,
+  50,
+  9,
+  200,
+  11,
+  1000,
+  14,
+];
+
+/** The cluster bubble color case (served shape, verbatim) — `>` over
+ * the aggregated counts. */
+const CLUSTER_COLOR = [
+  'case',
+  ['>', ['get', 'train_count'], 0],
+  '#C60018',
+  ['>', ['get', 'bus_count'], 0],
+  '#2d327d',
+  '#0079C7',
+];
+
 /** The transport-stops style as staging serves it (full variant — no
  * layer minzoom; the subset twin adds `minzoom: 10` and drops
  * promoteId/layout). Paints verbatim from hub.stg.wodore.com
@@ -84,6 +120,79 @@ const transportStyle = (minzoom?: number): StyleSpecification =>
       },
     ],
     metadata: { 'wd:served_spec': 'medium', 'wd:slug': 'transport-stops' },
+  }) as unknown as StyleSpecification;
+
+/** The clustered SUBSET twin (served shape: the raw layer gains
+ * minzoom 10 + the !has point_count filter; the source carries the
+ * cluster declaration; cluster circle + count layers follow). */
+const transportSubsetStyle = (): StyleSpecification =>
+  ({
+    version: 8,
+    name: 'transport-stops',
+    glyphs: 'https://tiles.cdn.stg.wodore.com/font/{fontstack}/{range}?v=x',
+    sources: {
+      'transport-stops': {
+        type: 'geojson',
+        data: DATA_URL,
+        cluster: true,
+        clusterMaxZoom: 6,
+        clusterRadius: 20,
+        clusterProperties: {
+          train_count: ['+', ['case', ['in', 'train', ['get', 'types']], 1, 0]],
+          bus_count: ['+', ['case', ['in', 'bus', ['get', 'types']], 1, 0]],
+        },
+      },
+    },
+    layers: [
+      {
+        id: 'transport-stops',
+        type: 'circle',
+        source: 'transport-stops',
+        minzoom: 10,
+        filter: ['!', ['has', 'point_count']],
+        paint: {
+          'circle-color': TRANSPORT_COLOR,
+          'circle-radius': TRANSPORT_RADIUS,
+          'circle-opacity': ['interpolate', ['linear'], ['zoom'], 4, 0, 5, 0.3, 8, 0.6, 12, 1],
+          'circle-stroke-color': '#F6F6F6',
+          'circle-stroke-width': ['interpolate', ['linear'], ['zoom'], 10, 0, 12, 1, 16, 2],
+        },
+      },
+      {
+        id: 'transport-stops-clusters',
+        type: 'circle',
+        source: 'transport-stops',
+        minzoom: 5,
+        maxzoom: 7,
+        filter: ['has', 'point_count'],
+        paint: {
+          'circle-color': CLUSTER_COLOR,
+          'circle-stroke-color': '#F6F6F6',
+          'circle-stroke-width': 1,
+          'circle-radius': CLUSTER_RADIUS,
+          'circle-opacity': ['interpolate', ['linear'], ['zoom'], 4, 0, 5, 0.3, 8, 0.6, 12, 1],
+        },
+      },
+      {
+        id: 'transport-stops-cluster-count',
+        type: 'symbol',
+        source: 'transport-stops',
+        minzoom: 5,
+        maxzoom: 7,
+        filter: ['has', 'point_count'],
+        layout: {
+          'text-field': ['get', 'point_count_abbreviated'],
+          'text-font': ['Barlow Semi Condensed SemiBold', 'Noto Sans Bold'],
+          'text-size': 11,
+        },
+        paint: {
+          'text-color': '#F6F6F6',
+          'text-halo-color': 'rgba(45, 50, 125, 0.45)',
+          'text-halo-width': 0.8,
+          'text-opacity': 1,
+        },
+      },
+    ],
   }) as unknown as StyleSpecification;
 
 const rasterStyle = (): StyleSpecification =>
@@ -144,6 +253,20 @@ describe('evalStyleExpr', () => {
     expect(evalStyleExpr(['==', 1, 2], 10, props)).toBe(false);
   });
 
+  it('compares numeric order (>) over aggregated counts', () => {
+    expect(evalStyleExpr(['>', ['get', 'train_count'], 0], 6, { train_count: 3 })).toBe(true);
+    expect(evalStyleExpr(['>', ['get', 'train_count'], 0], 6, { train_count: 0 })).toBe(false);
+    // non-number operands (missing props) stay undefined, never false
+    expect(evalStyleExpr(['>', ['get', 'train_count'], 0], 6, {})).toBeUndefined();
+  });
+
+  it('negates with MapLibre truthiness (!) — the cluster filters', () => {
+    expect(evalStyleExpr(['!', ['has', 'point_count']], 6, { point_count: 7 })).toBe(false);
+    expect(evalStyleExpr(['!', ['has', 'point_count']], 6, {})).toBe(true);
+    expect(evalStyleExpr(['!', ['get', 'code']], 6, { code: 0 })).toBe(true);
+    expect(evalStyleExpr(['!', ['get', 'code']], 6, { code: 42 })).toBe(false);
+  });
+
   it('walks case branches to the first true condition', () => {
     expect(evalStyleExpr(TRANSPORT_COLOR, 10, { types: ['train'] })).toBe('#C60018');
     expect(evalStyleExpr(TRANSPORT_COLOR, 10, { types: ['bus', 'tram'] })).toBe('#2d327d');
@@ -178,9 +301,22 @@ describe('evalStyleExpr', () => {
     expect(evalStyleExpr(TRANSPORT_RADIUS, 8, {})).toBe(2); // default branch
   });
 
-  it('rejects interpolate on a non-zoom input', () => {
+  it("interpolates on a ['get', prop] input (cluster radius by count)", () => {
+    expect(evalStyleExpr(CLUSTER_RADIUS, 6, { point_count: 2 })).toBe(5); // first stop
+    expect(evalStyleExpr(CLUSTER_RADIUS, 6, { point_count: 10 })).toBe(7); // at a stop
+    expect(evalStyleExpr(CLUSTER_RADIUS, 6, { point_count: 26 })).toBeCloseTo(7.8); // 10→50
+    expect(evalStyleExpr(CLUSTER_RADIUS, 6, { point_count: 5000 })).toBe(14); // above last
+    // missing/non-number input stays undefined
+    expect(evalStyleExpr(CLUSTER_RADIUS, 6, {})).toBeUndefined();
+    expect(evalStyleExpr(CLUSTER_RADIUS, 6, { point_count: 'many' })).toBeUndefined();
+  });
+
+  it('rejects interpolate on a non-whitelisted input', () => {
     expect(
-      evalStyleExpr(['interpolate', ['linear'], ['get', 'x'], 1, 0.5, 2, 1], 10, props)
+      evalStyleExpr(['interpolate', ['linear'], ['get', ['get', 'x']], 1, 0.5, 2, 1], 10, props)
+    ).toBeUndefined();
+    expect(
+      evalStyleExpr(['interpolate', ['linear'], ['pi'], 1, 0.5, 2, 1], 10, props)
     ).toBeUndefined();
   });
 
@@ -252,6 +388,85 @@ describe('circleSpecFor', () => {
     expect(spec.radiusPaint).toBe(5);
     expect(spec.opacityPaint).toBe(1);
     expect(spec.strokeWidthPaint).toBe(0);
+  });
+});
+
+// ── clusterSpecFor: the clustered subset twin ────────────────────────
+
+describe('circleSpecFor (clustered subset twin)', () => {
+  it('keeps the RAW layer as the base spec and parses the cluster declaration', () => {
+    const spec = circleSpecFor(transportSubsetStyle())!;
+    expect(spec).toBeDefined();
+    // raw first: base paints + floor from the unclustered layer
+    expect(spec.minZoom).toBe(10);
+    expect(spec.colorPaint).toEqual(TRANSPORT_COLOR);
+    // cluster config from the source keys + cluster layers
+    expect(spec.cluster).toMatchObject({
+      minZoom: 5,
+      maxZoom: 6,
+      radius: 20,
+      colorPaint: CLUSTER_COLOR,
+      radiusPaint: CLUSTER_RADIUS,
+      strokeWidthPaint: 1,
+    });
+    expect(spec.cluster?.countText.fieldPaint).toEqual(['get', 'point_count_abbreviated']);
+  });
+
+  it('leaves the unclustered full variant without a cluster spec', () => {
+    expect(circleSpecFor(transportStyle())?.cluster).toBeUndefined();
+  });
+});
+
+// ── clusterBubbleStyle (the divIcon payload) ─────────────────────────
+
+describe('clusterBubbleStyle', () => {
+  const spec = circleSpecFor(transportSubsetStyle())!;
+  const cluster = spec.cluster!;
+  const clusterProps = {
+    cluster: true,
+    point_count: 760,
+    point_count_abbreviated: '760',
+    train_count: 0,
+    bus_count: 700,
+  };
+
+  it('colors by category dominance and sizes by member count', () => {
+    const bubble = clusterBubbleStyle(cluster, 5.5, clusterProps, true);
+    // bus-dominant → #2d327d at the z5.5 opacity (0.3→0.6 ramp midpoint
+    // of the first segment: 0.35), count 760 → 11 + 3*(560/800) ≈ 13.1
+    expect(bubble.size).toBe(26);
+    expect(bubble.html).toContain('rgba(45, 50, 125, 0.35)');
+    expect(bubble.html).toContain('border:1px solid #F6F6F6');
+    expect(bubble.html).toContain('>760<');
+  });
+
+  it('train-dominant clusters render red', () => {
+    const bubble = clusterBubbleStyle(
+      cluster,
+      6,
+      { ...clusterProps, train_count: 2, bus_count: 5 },
+      true
+    );
+    expect(bubble.html).toContain('rgba(198, 0, 24,');
+  });
+
+  it('hides ONLY the count text when the setting is off', () => {
+    const bubble = clusterBubbleStyle(cluster, 5.5, clusterProps, false);
+    expect(bubble.html).not.toContain('760');
+    expect(bubble.size).toBe(26); // the bubble itself is unchanged
+  });
+
+  it('degrades to defaults on malformed paint expressions', () => {
+    const broken = {
+      ...cluster,
+      radiusPaint: ['step', ['get', 'point_count'], 1, 10, 9],
+      colorPaint: ['rgb', 1, 2, 3],
+    };
+    const bubble = clusterBubbleStyle(broken, 6, clusterProps, true);
+    expect(bubble.size).toBe(10); // default radius 5 → diameter 10
+    // default color #0079C7 at the z6 opacity (~0.4 on the 0.3→0.6
+    // ramp — float interpolation, so match the rgb prefix only)
+    expect(bubble.html).toContain('rgba(0, 121, 199,');
   });
 });
 

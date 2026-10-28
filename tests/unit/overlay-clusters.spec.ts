@@ -8,8 +8,8 @@
  *   badge layer the user setting toggles,
  * - clusterCountVisibility — the overlay-switch × user-setting
  *   composition (clusters always render; ONLY badges hide),
- * - withoutClusterConfig — stripping the geojson clustering source keys
- *   for renderers without supercluster (MapLibre Native compose).
+ * - isClusterLayer/isClusterCountLayer — the layer conventions the
+ *   fallback adapter parses the clustered subset twin with.
  */
 import { describe, expect, it } from 'vitest';
 import {
@@ -17,7 +17,6 @@ import {
   clusterCountVisibility,
   isClusterCountLayer,
   isClusterLayer,
-  withoutClusterConfig,
 } from '@stores/map/utils/overlay-clusters';
 
 describe('overlay-clusters', () => {
@@ -45,23 +44,5 @@ describe('overlay-clusters', () => {
     // overlay off hides everything
     expect(clusterCountVisibility(false, true)).toBe('none');
     expect(clusterCountVisibility(undefined, true)).toBe('none');
-  });
-
-  it('withoutClusterConfig strips the clustering keys, keeps the rest', () => {
-    const stripped = withoutClusterConfig({
-      type: 'geojson',
-      data: 'https://example.org/stops.geojson',
-      promoteId: 'id',
-      cluster: true,
-      clusterMaxZoom: 6,
-      clusterMinPoints: 2,
-      clusterRadius: 20,
-      clusterProperties: { train_count: ['+', 1] },
-    });
-    expect(stripped).toEqual({
-      type: 'geojson',
-      data: 'https://example.org/stops.geojson',
-      promoteId: 'id',
-    });
   });
 });

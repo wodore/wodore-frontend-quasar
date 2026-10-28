@@ -10,10 +10,13 @@
  *   `['has', 'point_count']` filter (only supercluster features match),
  * — the count badge is the symbol layer whose id ends in
  *   `-cluster-count` (backend naming convention; the user setting
- *   `ui.overlayClusterCounts` toggles ONLY these layers — clusters
- *   themselves always render),
- * — renderers without supercluster (MapLibre Native compose, Leaflet
- *   fallback) strip the clustering bits and render raw points.
+ *   `ui.overlayClusterCounts` toggles ONLY the badge text — cluster
+ *   bubbles always render),
+ * — clustering is a SUBSET-profile feature (backend decision 2026-10):
+ *   the no-WebGL fallback (Leaflet) clusters client-side via
+ *   supercluster over the served cluster config; the full
+ *   (WebGL/MapLibre + MapLibre Native) profile serves clean,
+ *   unclustered documents.
  */
 
 import type { LayerSpecification } from 'maplibre-gl';
@@ -47,23 +50,4 @@ export function clusterCountVisibility(
   showCounts: boolean
 ): 'visible' | 'none' {
   return overlayActive && showCounts ? 'visible' : 'none';
-}
-
-/** Geojson source keys that drive MapLibre's in-browser clustering. */
-const CLUSTER_SOURCE_KEYS = new Set([
-  'cluster',
-  'clusterMaxZoom',
-  'clusterMinPoints',
-  'clusterRadius',
-  'clusterProperties',
-]);
-
-/**
- * Copy of a source spec WITHOUT the clustering keys — for renderers
- * that must not cluster (MapLibre Native style compose).
- */
-export function withoutClusterConfig<S extends object>(source: S): S {
-  return Object.fromEntries(
-    Object.entries(source).filter(([key]) => !CLUSTER_SOURCE_KEYS.has(key))
-  ) as S;
 }

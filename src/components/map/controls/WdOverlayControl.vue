@@ -34,7 +34,6 @@ import {
 } from '@stores/map/utils/layer-groups';
 import { withOverlayMinZoom } from '@stores/map/utils/map-constants';
 import { isDateGatedLayer, dateGatedVisibility } from '@stores/map/utils/overlay-huts';
-import { clusterCountVisibility, isClusterCountLayer } from '@stores/map/utils/overlay-clusters';
 import { useI18n } from 'vue-i18n';
 import { LocalStorage } from 'quasar';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
@@ -45,7 +44,6 @@ import { useMapCatalogStore } from '@stores/map/map-catalog-store';
 import { useBasemapStore } from '@stores/map/basemap-store';
 import { useOverlayConfigStore } from '@stores/map/overlay-config-store';
 import { useMapMenuStore } from '@stores/map/map-menu-store';
-import { useUserSettingsStore } from '@stores/user-settings-store';
 import { OpacitySpecification, OverlaySwitchItem } from '@stores/map/utils/interfaces';
 import type {
   LayerSpecification,
@@ -72,11 +70,6 @@ function visibleInRenderer(overlay: { profile?: string }): boolean {
 }
 
 const overlayStore = useOverlayStore();
-// Cluster count badges (backend clustered overlays, e.g. transport-stops
-// on the far zoom levels): the user setting toggles ONLY the badge
-// layers' visibility — clusters always render.
-const userSettingsStore = useUserSettingsStore();
-const showClusterCounts = computed(() => userSettingsStore.uiSettings.overlayClusterCounts);
 // Catalog boot status drives the loading/error rows (cold first run).
 const mapCatalogStore = useMapCatalogStore();
 const catalogStatus = computed(() => mapCatalogStore.status);
@@ -1187,33 +1180,11 @@ function setOverlayVisibility(overlay: OverlaySwitchItem): boolean {
         );
         continue;
       }
-      if (isClusterCountLayer(layer.id)) {
-        // Cluster count badges follow the overlay switch AND the user
-        // setting — the cluster circles themselves always render.
-        mapRef.map.setLayoutProperty(
-          layer.id,
-          'visibility',
-          clusterCountVisibility(overlay.active, showClusterCounts.value)
-        );
-        continue;
-      }
       mapRef.map.setLayoutProperty(layer.id, 'visibility', overlay.active ? 'visible' : 'none');
     }
   }
   return true;
 }
-
-// Toggling the setting updates badge layers in place — no re-add. Re-
-// running the visibility composition for overlays that own a badge
-// layer covers every layer this control added; overlays without one
-// are skipped (cheap).
-watch(showClusterCounts, () => {
-  for (const overlay of overlayStore.overlays) {
-    if (overlay.style.layers.some(layer => isClusterCountLayer(layer.id))) {
-      setOverlayVisibility(overlay);
-    }
-  }
-});
 
 interface AddOverlayLayerArgs {
   layer: LayerSpecification;
@@ -1467,16 +1438,13 @@ function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwit
   for (const layer of overlay.style.layers) {
     // Date-gated availability layers carry the PICKED-DATE visibility
     // (hidden until a date is picked — the bookings wiring owns it);
-    // cluster count badges compose the overlay switch with the user
-    // setting; every other layer follows the overlay switch.
+    // every other layer follows the overlay switch.
     const layout: Record<string, unknown> = { ...(layer.layout || {}) };
-    layout['visibility'] = !overlay.active
-      ? 'none'
-      : isDateGatedLayer(layer.id)
+    layout['visibility'] = overlay.active
+      ? isDateGatedLayer(layer.id)
         ? dateGatedVisibility()
-        : isClusterCountLayer(layer.id)
-          ? clusterCountVisibility(true, showClusterCounts.value)
-          : 'visible';
+        : 'visible'
+      : 'none';
     const layerWithVisibility = {
       ...layer,
       layout,
