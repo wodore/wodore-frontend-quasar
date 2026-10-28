@@ -326,49 +326,81 @@ export function circleSpecFor(
   return undefined;
 }
 
-/** Leaflet style for one circle marker: evaluated paint at a zoom. */
-export interface CircleMarkerStyle {
+function clamp01(v: number): number {
+  return Math.min(1, Math.max(0, v));
+}
+
+/** Unvalidated CSS color strings pass through — the canvas silently
+ * keeps its previous fill for invalid strings (unreachable with the
+ * backend-whitelisted hex literals). */
+function colorOr(v: unknown, fallback: string): string {
+  return typeof v === 'string' && v.length > 0 ? v : fallback;
+}
+
+/** The feature-DEPENDENT circle paints: radius in px (MapLibre
+ * circle-radius is screen pixels, Leaflet CircleMarker radius too,
+ * 1:1) and fill color. The lean pair the per-marker path evaluates —
+ * 2 expressions per marker, not 5. Unknown/malformed expressions fall
+ * back to MapLibre's paint defaults, never a crash. */
+export interface CircleFeaturePaints {
   radius: number;
   fillColor: string;
+}
+
+/** Lean per-feature evaluation: ONLY the feature-dependent paints. */
+export function circleFeaturePaints(
+  spec: CircleOverlaySpec,
+  zoom: number,
+  props: StyleProps
+): CircleFeaturePaints {
+  const radius = finiteNumber(evalStyleExpr(spec.radiusPaint, zoom, props));
+  const fillColor = colorOr(evalStyleExpr(spec.colorPaint, zoom, props), '#000000');
+  return {
+    radius: radius !== null ? Math.max(0, radius) : 5, // MapLibre circle-radius default
+    fillColor,
+  };
+}
+
+/** The feature-INDEPENDENT circle paints at a zoom: fill opacity and
+ * the stroke (width + color). ASSUMPTION: in the fallback renderer
+ * these paints are feature-independent — they are evaluated ONCE per
+ * pass with zoom only. A future subset style with feature-dependent
+ * `circle-opacity`/`circle-stroke-*` (none exists today) would be
+ * flattened to its fallback branch here, silently — widen to a
+ * per-marker evaluation then (the lean per-feature pair above is the
+ * pattern). */
+export interface CircleBaseStyle {
   fillOpacity: number;
   stroke: boolean;
   color: string;
   weight: number;
 }
 
-function clamp01(v: number): number {
-  return Math.min(1, Math.max(0, v));
+/** Zoom-only evaluation of the feature-independent paints. */
+export function circleBaseStyle(spec: CircleOverlaySpec, zoom: number): CircleBaseStyle {
+  const opacity = finiteNumber(evalStyleExpr(spec.opacityPaint, zoom, undefined));
+  const weight = finiteNumber(evalStyleExpr(spec.strokeWidthPaint, zoom, undefined));
+  const strokeColor = colorOr(evalStyleExpr(spec.strokeColorPaint, zoom, undefined), '#000000');
+  const w = weight !== null ? Math.max(0, weight) : 0;
+  return {
+    fillOpacity: opacity !== null ? clamp01(opacity) : 1,
+    stroke: w > 0,
+    weight: w,
+    color: strokeColor,
+  };
 }
 
-function colorOr(v: unknown, fallback: string): string {
-  return typeof v === 'string' && v.length > 0 ? v : fallback;
-}
-
-/**
- * Evaluate one feature's circle style at a zoom (radius in px —
- * MapLibre circle-radius is screen pixels, Leaflet CircleMarker radius
- * too, 1:1). Unknown/malformed expressions fall back to MapLibre's
- * paint defaults, never a crash.
- */
-export function circleMarkerStyle(
+/** The FULL paint the adapter applies to one circle marker: the
+ * feature-dependent pair per feature + the hoisted zoom-only base.
+ * This is the production shape — what buildCircleGroup spreads into
+ * the marker options and restyleCircle hands to setStyle. */
+export function circleMarkerPaint(
   spec: CircleOverlaySpec,
   zoom: number,
-  props: StyleProps
-): CircleMarkerStyle {
-  const radius = finiteNumber(evalStyleExpr(spec.radiusPaint, zoom, props));
-  const fillColor = colorOr(evalStyleExpr(spec.colorPaint, zoom, props), '#000000');
-  const fillOpacity = finiteNumber(evalStyleExpr(spec.opacityPaint, zoom, props));
-  const weightRaw = finiteNumber(evalStyleExpr(spec.strokeWidthPaint, zoom, props));
-  const strokeColor = colorOr(evalStyleExpr(spec.strokeColorPaint, zoom, props), '#000000');
-  const weight = weightRaw !== null ? Math.max(0, weightRaw) : 0;
-  return {
-    radius: radius !== null ? Math.max(0, radius) : 5, // MapLibre circle-radius default
-    fillColor,
-    fillOpacity: fillOpacity !== null ? clamp01(fillOpacity) : 1,
-    stroke: weight > 0,
-    color: strokeColor,
-    weight,
-  };
+  props: StyleProps,
+  base: CircleBaseStyle
+): CircleFeaturePaints & CircleBaseStyle {
+  return { ...circleFeaturePaints(spec, zoom, props), ...base };
 }
 
 // ── Adapter ──────────────────────────────────────────────────────────────
@@ -478,8 +510,12 @@ export function createFallbackOverlayAdapter(map: L.Map): FallbackOverlayAdapter
       });
     // A failed fetch drops its cache slot (a later reconcile retries)
     // and never surfaces as an unhandled rejection when the caller is
-    // gone by the time it settles.
-    void promise.catch(() => featureCache.delete(url));
+    // gone by the time it settles. Identity-guarded: an OLD in-flight
+    // fetch's rejection must never evict a NEW entry for the same URL
+    // (a catalog epoch can swap the slot mid-flight).
+    void promise.catch(() => {
+      if (featureCache.get(url) === promise) featureCache.delete(url);
+    });
     featureCache.set(url, promise);
     return promise;
   }
@@ -490,21 +526,6 @@ export function createFallbackOverlayAdapter(map: L.Map): FallbackOverlayAdapter
     if (entry.kind === 'raster') map.removeLayer(entry.layer);
     else if (entry.group) map.removeLayer(entry.group);
     live.delete(name);
-  }
-
-  /** Feature-independent circle paints at a zoom — hoisted per pass,
-   * the zoom-only expressions must not be re-evaluated per marker. */
-  function circleBaseStyle(spec: CircleOverlaySpec, zoom: number) {
-    const opacity = finiteNumber(evalStyleExpr(spec.opacityPaint, zoom, undefined));
-    const weight = finiteNumber(evalStyleExpr(spec.strokeWidthPaint, zoom, undefined));
-    const strokeColor = colorOr(evalStyleExpr(spec.strokeColorPaint, zoom, undefined), '#000000');
-    const w = weight !== null ? Math.max(0, weight) : 0;
-    return {
-      fillOpacity: opacity !== null ? clamp01(opacity) : 1,
-      stroke: w > 0,
-      weight: w,
-      color: strokeColor,
-    };
   }
 
   function buildCircleGroup(spec: CircleOverlaySpec, features: Feature[]): L.GeoJSON {
@@ -520,26 +541,28 @@ export function createFallbackOverlayAdapter(map: L.Map): FallbackOverlayAdapter
     return L.geoJSON(collection, {
       pane: CIRCLE_PANE,
       pointToLayer: (feature, latLng) => {
-        const style = circleMarkerStyle(spec, zoom, feature?.properties);
+        const paint = circleMarkerPaint(spec, zoom, feature?.properties, base);
         // pane/renderer/interactive go on EVERY marker: pointToLayer
         // layers do not inherit the geoJSON container's options.
         return L.circleMarker(latLng, {
           pane: CIRCLE_PANE,
           renderer,
           interactive: false, // no circle interactions wired — skip hit-testing 27k markers
-          radius: style.radius,
-          fillColor: style.fillColor,
-          fillOpacity: base.fillOpacity,
-          stroke: base.stroke,
-          color: base.color,
-          weight: base.weight,
+          radius: paint.radius,
+          fillColor: paint.fillColor,
+          fillOpacity: paint.fillOpacity,
+          stroke: paint.stroke,
+          color: paint.color,
+          weight: paint.weight,
         });
       },
     });
   }
 
   /** Re-style every marker at the current zoom (setStyle, not
-   * recreate — the canvas renderer batches the redraw per frame). */
+   * recreate — the canvas renderer batches the redraw per frame; the
+   * feature-dependent paints are evaluated lean per marker, the
+   * zoom-only base once per pass). */
   function restyleCircle(entry: CircleEntry): void {
     const group = entry.group;
     if (!group) return;
@@ -548,29 +571,25 @@ export function createFallbackOverlayAdapter(map: L.Map): FallbackOverlayAdapter
     const base = circleBaseStyle(spec, zoom);
     group.eachLayer(marker => {
       const props = (marker as L.CircleMarker).feature?.properties;
-      const style = circleMarkerStyle(spec, zoom, props);
-      (marker as L.CircleMarker).setStyle({
-        radius: style.radius,
-        fillColor: style.fillColor,
-        fillOpacity: base.fillOpacity,
-        stroke: base.stroke,
-        weight: base.weight,
-        color: base.color,
-      });
+      (marker as L.CircleMarker).setStyle(circleMarkerPaint(spec, zoom, props, base));
     });
   }
 
-  /** Add/remove the group around the spec's zoom floor. */
-  function updateCircleVisibility(entry: CircleEntry): void {
-    if (destroyed || !entry.group) return;
+  /** Add/remove the group around the spec's zoom floor. Returns true
+   * when the group was ADDED (and already re-styled at the current
+   * zoom) — callers skip their own follow-up re-style then, avoiding
+   * a second 27k-marker pass on the floor-crossing frame. */
+  function updateCircleVisibility(entry: CircleEntry): boolean {
+    if (destroyed || !entry.group) return false;
     const shouldShow = map.getZoom() >= entry.spec.minZoom;
     const onMap = map.hasLayer(entry.group);
     if (shouldShow && !onMap) {
       entry.group.addTo(map);
       restyleCircle(entry); // styles were evaluated at the removal zoom
-    } else if (!shouldShow && onMap) {
-      map.removeLayer(entry.group);
+      return true;
     }
+    if (!shouldShow && onMap) map.removeLayer(entry.group);
+    return false;
   }
 
   /** Start (once) the deferred feature fetch for a circle entry. */
@@ -601,8 +620,10 @@ export function createFallbackOverlayAdapter(map: L.Map): FallbackOverlayAdapter
     if (existing && existing.kind === 'circle') {
       if (existing.spec.dataUrl === spec.dataUrl && existing.spec.minZoom === spec.minZoom) {
         existing.spec = spec; // paint refresh (parameter epochs) — re-style below
-        updateCircleVisibility(existing);
-        if (existing.group && map.hasLayer(existing.group)) restyleCircle(existing);
+        const addedNow = updateCircleVisibility(existing);
+        if (!addedNow && existing.group && map.hasLayer(existing.group)) {
+          restyleCircle(existing);
+        }
         // A below-floor activation deferred the fetch — start it now if
         // the zoom crossed since.
         if (map.getZoom() >= spec.minZoom) startCircleFetch(name, existing);
@@ -682,8 +703,8 @@ export function createFallbackOverlayAdapter(map: L.Map): FallbackOverlayAdapter
         entry.layer.setOpacity(paintOpacityAtZoom(entry.spec.opacityPaint, zoom));
         continue;
       }
-      updateCircleVisibility(entry);
-      if (entry.group && map.hasLayer(entry.group)) restyleCircle(entry);
+      const addedNow = updateCircleVisibility(entry);
+      if (!addedNow && entry.group && map.hasLayer(entry.group)) restyleCircle(entry);
       // Crossing up past the floor with the fetch still deferred (the
       // below-floor activation skipped it) — start it now.
       if (!entry.features && !entry.group && zoom >= entry.spec.minZoom) {

@@ -17,7 +17,9 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-  circleMarkerStyle,
+  circleBaseStyle,
+  circleFeaturePaints,
+  circleMarkerPaint,
   circleSpecFor,
   evalStyleExpr,
   rasterSpecFor,
@@ -253,32 +255,72 @@ describe('circleSpecFor', () => {
   });
 });
 
-// ── circleMarkerStyle ────────────────────────────────────────────────────
+// ── circle marker paints (the PRODUCTION path) ────────────────────────
+//
+// The adapter applies circleMarkerPaint(spec, zoom, props, base) to
+// every marker: the feature-dependent pair (radius, fill color)
+// evaluated per feature, the zoom-only base (opacity, stroke)
+// hoisted per pass. These tests pin THAT split — a future
+// feature-dependent circle-opacity style must change them
+// consciously.
 
-describe('circleMarkerStyle', () => {
+describe('circleBaseStyle (zoom-only paints, hoisted per pass)', () => {
   const spec = circleSpecFor(transportStyle())!;
 
-  it('styles train stops red at z12 (radius curve + stroke from paint)', () => {
-    const style = circleMarkerStyle(spec, 12, { types: ['train'] });
-    expect(style.fillColor).toBe('#C60018');
-    expect(style.radius).toBeCloseTo(4 + (9 - 4) * (3 / 7)); // 7→9→16 curve at 12
-    expect(style.fillOpacity).toBe(1); // opacity curve saturates at 12
-    expect(style.stroke).toBe(true); // stroke-width curve: 0@10 → 1@12 → 2@16
-    expect(style.weight).toBe(1);
-    expect(style.color).toBe('#F6F6F6');
+  it('evaluates the opacity curve at the zoom', () => {
+    expect(circleBaseStyle(spec, 4).fillOpacity).toBe(0); // first stop
+    expect(circleBaseStyle(spec, 8).fillOpacity).toBe(0.6);
+    expect(circleBaseStyle(spec, 10).fillOpacity).toBeCloseTo(0.8); // 8→12 midpoint
+    expect(circleBaseStyle(spec, 12).fillOpacity).toBe(1); // saturates
   });
 
-  it('styles bus stops indigo with the dimmer early-zoom values', () => {
-    const style = circleMarkerStyle(spec, 8, { types: ['bus'] });
-    expect(style.fillColor).toBe('#2d327d');
-    expect(style.radius).toBe(2.5); // 2@7 → 3@9 midpoint
-    expect(style.fillOpacity).toBe(0.6); // opacity curve at 8
-    expect(style.stroke).toBe(false); // stroke-width 0 below 10
+  it('evaluates the stroke pair (width gates the stroke on)', () => {
+    const z8 = circleBaseStyle(spec, 8);
+    expect(z8.stroke).toBe(false); // stroke-width 0 below z10
+    expect(z8.weight).toBe(0);
+    const z12 = circleBaseStyle(spec, 12);
+    expect(z12.stroke).toBe(true);
+    expect(z12.weight).toBe(1);
+    expect(z12.color).toBe('#F6F6F6');
+  });
+
+  it('clamps opacity into [0,1]', () => {
+    expect(circleBaseStyle({ ...spec, opacityPaint: 1.7 }, 12).fillOpacity).toBe(1);
+    expect(circleBaseStyle({ ...spec, opacityPaint: -0.5 }, 12).fillOpacity).toBe(0);
+  });
+
+  it('assumes feature-INDEPENDENT opacity/stroke (documented fallback flattening)', () => {
+    // A feature-dependent circle-opacity (none shipped today) evaluates
+    // to its fallback branch — the same value for every marker. This
+    // pins the contract; widening to per-marker opacity must update it.
+    const dependent = {
+      ...spec,
+      opacityPaint: ['case', ['==', ['get', 'id'], 1], 1, 0.2],
+    };
+    expect(circleBaseStyle(dependent, 12).fillOpacity).toBe(0.2); // fallback branch
+  });
+});
+
+describe('circleFeaturePaints (lean per-marker pair)', () => {
+  const spec = circleSpecFor(transportStyle())!;
+
+  it('styles train stops red on the radius curve', () => {
+    const z12 = circleFeaturePaints(spec, 12, { types: ['train'] });
+    expect(z12.fillColor).toBe('#C60018');
+    expect(z12.radius).toBeCloseTo(4 + (9 - 4) * (3 / 7)); // 7→9→16 curve at 12
+    const z8 = circleFeaturePaints(spec, 8, { types: ['train'] });
+    expect(z8.radius).toBe(3.5); // 3@7 → 4@9 midpoint
+  });
+
+  it('styles bus stops indigo with the dimmer radius branch', () => {
+    const z8 = circleFeaturePaints(spec, 8, { types: ['bus'] });
+    expect(z8.fillColor).toBe('#2d327d');
+    expect(z8.radius).toBe(2.5); // 2@7 → 3@9 midpoint
   });
 
   it('styles other stops with the case default', () => {
-    expect(circleMarkerStyle(spec, 12, { types: ['ship'] }).fillColor).toBe('#0079C7');
-    expect(circleMarkerStyle(spec, 12, {}).fillColor).toBe('#0079C7');
+    expect(circleFeaturePaints(spec, 12, { types: ['ship'] }).fillColor).toBe('#0079C7');
+    expect(circleFeaturePaints(spec, 12, {}).fillColor).toBe('#0079C7');
   });
 
   it('degrades to MapLibre defaults on unknown operators', () => {
@@ -287,16 +329,36 @@ describe('circleMarkerStyle', () => {
       radiusPaint: ['step', ['zoom'], 1, 10, 9],
       colorPaint: ['rgb', 1, 2, 3],
     };
-    const style = circleMarkerStyle(broken, 12, { types: ['train'] });
-    expect(style.radius).toBe(5); // default, not a crash
-    expect(style.fillColor).toBe('#000000'); // rgb() not whitelisted → default
+    const paint = circleFeaturePaints(broken, 12, { types: ['train'] });
+    expect(paint.radius).toBe(5); // default, not a crash
+    expect(paint.fillColor).toBe('#000000'); // rgb() not whitelisted → default
+  });
+});
+
+describe('circleMarkerPaint (the shape applied to markers)', () => {
+  const spec = circleSpecFor(transportStyle())!;
+
+  it('merges the feature pair with the zoom-only base', () => {
+    const base = circleBaseStyle(spec, 12);
+    const paint = circleMarkerPaint(spec, 12, { types: ['train'] }, base);
+    expect(paint).toEqual({
+      radius: 4 + (9 - 4) * (3 / 7),
+      fillColor: '#C60018',
+      fillOpacity: base.fillOpacity, // from base, not re-evaluated
+      stroke: base.stroke,
+      color: base.color,
+      weight: base.weight,
+    });
   });
 
-  it('clamps opacity into [0,1]', () => {
-    const over = { ...spec, opacityPaint: 1.7 };
-    expect(circleMarkerStyle(over, 12, {}).fillOpacity).toBe(1);
-    const under = { ...spec, opacityPaint: -0.5 };
-    expect(circleMarkerStyle(under, 12, {}).fillOpacity).toBe(0);
+  it('opacity/stroke always come from the base, radius/color per feature', () => {
+    // Guards the call-site contract: base is evaluated once per pass at
+    // the SAME zoom — drifting zooms between base and feature would
+    // mix inconsistent curve stops.
+    const baseAt8 = circleBaseStyle(spec, 8);
+    const paint = circleMarkerPaint(spec, 13, { types: ['train'] }, baseAt8);
+    expect(paint.fillOpacity).toBe(0.6); // base z8, not the z13 value 1
+    expect(paint.radius).toBeCloseTo(4 + (9 - 4) * (4 / 7)); // feature z13
   });
 });
 
