@@ -337,6 +337,10 @@
       "other_desc": "Other stops"
     },
     "info": "Information",
+
+    "cluster_counts": "Show cluster counts",
+
+    "cluster_counts_caption": "Show how many points each cluster on the map bundles.",
     "skitouren": {
       "label": "Ski tours",
       "desc": "Ski tour routes by Swisstopo. Watch out for avalanche danger and weather conditions.",

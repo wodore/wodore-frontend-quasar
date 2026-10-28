@@ -337,6 +337,10 @@
       "other_desc": "Altre fermate"
     },
     "info": "Informazioni",
+
+    "cluster_counts": "Mostra il numero di punti raggruppati",
+
+    "cluster_counts_caption": "Mostra quanti punti sono raggruppati in ciascun gruppo sulla mappa.",
     "skitouren": {
       "label": "Sci alpinismo",
       "desc": "Itinerari di sci alpinismo di Swisstopo. Attenzione al pericolo di valanghe e alle condizioni meteo.",

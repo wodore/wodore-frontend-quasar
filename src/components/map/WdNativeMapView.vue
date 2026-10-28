@@ -48,6 +48,7 @@ import type { PluginListenerHandle } from '@capacitor/core';
 import { useBasemapStore } from '@stores/map/basemap-store';
 import { useMapCatalogStore } from '@stores/map/map-catalog-store';
 import { MIN_HUT_CLICK_ZOOM } from '@stores/map/utils/map-constants';
+import { isClusterLayer, withoutClusterConfig } from '@stores/map/utils/overlay-clusters';
 import { useOverlayStore } from '@stores/map/overlay-store';
 import { useLocalPropertiesStore } from '@stores/local-properties-store';
 import { useHutsStore } from '@stores/huts-store';
@@ -302,10 +303,20 @@ async function composeStyle(revealZero?: Set<string>): Promise<StyleSpecificatio
         bookingsSourceIsGeojson = source.type === 'geojson';
       }
       if (!(id in style.sources!)) {
-        style.sources![id] = JSON.parse(JSON.stringify(source));
+        // Strip the web map's geojson clustering config (backend
+        // clustered overlays, e.g. transport-stops z5–z6): MapLibre
+        // Native keeps rendering raw stops — native clustering is a
+        // deliberate follow-up, not an unverified default.
+        style.sources![id] = withoutClusterConfig(
+          JSON.parse(JSON.stringify(source))
+        ) as (typeof style.sources)[string];
       }
     }
     for (const layer of overlay.style.layers) {
+      // Cluster render layers only match supercluster features —
+      // stripped with the source config above, native never produces
+      // them.
+      if (isClusterLayer(layer)) continue;
       const cloned: LayerSpecification = JSON.parse(JSON.stringify(layer));
       applyOverlayOpacity(cloned, overlay, revealZero?.has(overlay.name));
       if (remapFonts) {

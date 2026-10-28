@@ -337,6 +337,10 @@
       "other_desc": "Andere Haltestellen"
     },
     "info": "Information",
+
+    "cluster_counts": "Cluster-Anzahl anzeigen",
+
+    "cluster_counts_caption": "Zeigt, wie viele Punkte in jedem Cluster auf der Karte gebündelt sind.",
     "skitouren": {
       "label": "Skitouren",
       "desc": "Skitourenrouten von Swisstopo. Beachten Sie Lawinengefahr und Wetterbedingungen.",
