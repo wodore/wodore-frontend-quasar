@@ -1662,16 +1662,10 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
         :max-parallel-image-requests="initialMapProfile.maxParallelImageRequests"
       >
         <!-- ── Map controls (v2 clean layout) ──────────────────────────── -->
-        <!-- Bottom-right: overlay strip above basemap (basemap opens LEFT).
-             pointer-events: none on the wrapper — interactive elements
-             inside the controls opt back in, so map gestures pass through
-             every empty pixel. -->
-        <q-page-sticky position="bottom-right" :offset="[12, 14]" class="wd-map-ctl-sticky">
-          <div class="wd-map-ctl-col">
-            <WdOverlayControl />
-            <WdBasemapControl />
-          </div>
-        </q-page-sticky>
+        <!-- Overlay strip lives OUTSIDE the maplibre-only subtree (after
+             the renderer branches below): BOTH maps share ONE overlay
+             menu + basemap rail. See the shared <q-page-sticky> after
+             WdFallbackMapView. -->
 
         <!-- Zoom slider: focus mode only on mobile (left edge) -->
         <WdZoomSlider />
@@ -1759,6 +1753,28 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
            through the same choreography (splash out, chrome in) once the
            fallback map is initialized. -->
       <WdFallbackMapView v-else @ready="onFallbackReady" />
+
+      <!-- ── Shared control strip (hoisted out of the MglMap slot) ──────
+           Renders in BOTH modes so the Leaflet fallback gets THE SAME
+           overlay menu (one component, not a twin). The basemap control
+           stays MapLibre-only — the fallback ships its own raster
+           basemap switch (.wd-fb-bm, same corner). In fallback mode the
+           strip is lifted above that chip (48px + 4px column gap),
+           mirroring the maplibre column's overlay-above-basemap layout.
+           Focus-mode CSS (body.wd-map-focus .wd-map-ctl-sticky) applies
+           unchanged in both modes; the sticky is position:fixed, so its
+           tree position only affects stacking — it follows the map
+           containers in DOM order and wins ties. -->
+      <q-page-sticky
+        position="bottom-right"
+        :offset="webglSupported ? [12, 14] : [12, 66]"
+        class="wd-map-ctl-sticky"
+      >
+        <div class="wd-map-ctl-col">
+          <WdOverlayControl :renderer-profile="webglSupported ? 'full' : 'subset'" />
+          <WdBasemapControl v-if="webglSupported" />
+        </div>
+      </q-page-sticky>
       <!-- Translucent footer shade (native app): keeps the attribution
            zone readable over the map while the map stays visible
            through it. Rendered always, hidden outside capacitor via CSS. -->

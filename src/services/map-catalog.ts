@@ -54,6 +54,15 @@ export interface MapCatalogLayer {
   /** The SERVED device tier (after the backend's fallback chain
    *  resolved the wanted `?spec=`). */
   spec: MapSpecTier;
+  /** The served variant's capability profile (backend #440): 'full' —
+   *  a complete MapLibre style; 'subset' — restricted to the subset
+   *  whitelist, renderable by Leaflet-class engines (valid as a full
+   *  style by construction). Absent on pre-profile cached snapshots. */
+  profile?: 'full' | 'subset' | null;
+  /** Layer content version — the style-spec release for full rows
+   *  ('26.4.4'), the subset revision for subset rows, empty for
+   *  externally authored style_url rows (backend #440). */
+  version?: string | null;
   /** Spec-resolved style URL — root-relative for owned styles
    *  (absolutize against WODORE_API_HOST, see `absolutizeStyleUrl` —
    *  the #285 bug class), absolute for external styles. */
@@ -171,33 +180,44 @@ async function fetchLayersOnce(query: MapLayersQuery): Promise<MapLayersResponse
 }
 
 /** Query params for the layers collection — a typed subset of the
- *  generated operation's query (lang/spec/role/show/fields). */
+ *  generated operation's query (lang/spec/profile/role/show/fields). */
 interface MapLayersQuery {
   lang: string;
   spec?: MapSpecTier;
+  profile?: MapLayerProfile;
   role?: 'basemap' | 'overlay';
 }
+
+/** Renderer capability the client DECLARES on catalog requests
+ *  (backend #440): 'subset' clients never receive full variants —
+ *  slugs without a subset variant drop out of the resolved view. */
+export type MapLayerProfile = 'full' | 'subset';
 
 /**
  * Fetch the resolved map layer catalog in the given language (default:
  * the active UI locale). The backend resolves `spec` server-side and
  * serves ONE layer per slug (`spec` + `style_url` embedded per entry).
- * Rejects with MapCatalogUnavailableError on failure — callers fall
- * back to their persisted caches.
+ * `profile` (backend #440) declares the renderer capability: pass
+ * 'subset' to receive only Leaflet-class renderable variants (slugs
+ * without a subset variant are omitted). Rejects with
+ * MapCatalogUnavailableError on failure — callers fall back to their
+ * persisted caches.
  */
 export function fetchMapCatalog(
   lang?: string,
   spec?: MapSpecTier,
-  role?: 'basemap' | 'overlay'
+  role?: 'basemap' | 'overlay',
+  profile?: MapLayerProfile
 ): Promise<MapLayersResponse> {
   const locale = lang ?? currentLocale();
-  const key = `${locale}:${spec ?? '*'}:${role ?? '*'}`;
+  const key = `${locale}:${spec ?? '*'}:${role ?? '*'}:${profile ?? '*'}`;
   const cached = catalogCache.get(key);
   if (cached) return cached;
   const promise = fetchLayersOnce({
     lang: locale,
     ...(spec ? { spec } : {}),
     ...(role ? { role } : {}),
+    ...(profile ? { profile } : {}),
   });
   catalogCache.set(key, promise);
   promise.catch(() => catalogCache.delete(key));

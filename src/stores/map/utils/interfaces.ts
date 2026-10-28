@@ -67,10 +67,14 @@ export interface OverlaySwitchItem {
   // Backend map catalog (see services/map-catalog.ts): parameter
   // schemas + the tokenized style kept for client-side re-resolution
   // when the user overrides parameters. `catalogSlug` is the backend
-  // identity (differs from `name` for aliased slugs).
+  // identity (differs from `name` for aliased slugs). `profile` is the
+  // served variant's capability profile ('full' | 'subset', backend
+  // #440) — subset rows are Leaflet-servable, full-only rows never
+  // render on the fallback map.
   parameters?: MapLayerParameter[];
   tokenizedStyle?: StyleSpecification;
   catalogSlug?: string;
+  profile?: string;
 
   //registerMapFn?: CallableFunction | undefined;
   //deregisterMapFn?: CallableFunction | undefined;

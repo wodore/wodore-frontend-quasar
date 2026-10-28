@@ -367,6 +367,7 @@ export function mapCatalogOverlay(
     parameters: layer.parameters.length > 0 ? layer.parameters : undefined,
     tokenizedStyle: styles.tokenizedStyle,
     catalogSlug: layer.slug,
+    profile: layer.profile ?? undefined,
   };
   if (layer.min_zoom !== null && layer.min_zoom !== undefined) {
     // Zoom floor on every style layer (catalog layers carry no per-layer

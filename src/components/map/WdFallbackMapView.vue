@@ -83,6 +83,9 @@ import {
   type FbBasemap,
 } from './fallback-basemaps';
 import { seedPlaceFromMap } from '@composables/usePlace';
+import { useOverlayStore } from '@stores/map/overlay-store';
+import type { ClusteringConfig } from '@stores/map/overlay-configs/types';
+import type { StyleSpecification } from 'maplibre-gl';
 // ── Extracted fallback modules (Phase B rewiring) ───────────────────
 import { viewportTileRange, tileXToLng, tileYToLat } from './fallback/tile-math';
 import {
@@ -92,6 +95,7 @@ import {
   OCC_LABEL_MIN_ZOOM,
   markerOpacityFor,
   shieldPxFor,
+  parseStatusColors,
 } from './fallback/status-colors';
 import {
   loadSprite as loadSpriteModule,
@@ -101,6 +105,10 @@ import {
 } from './fallback/sprite-sheet';
 import { WdCanvasDot, setMarkerOpacity, setShieldPx } from './fallback/canvas-dot';
 import { MltTileCache, findMltTable, type TileRange } from './fallback/mlt-tile-loader';
+import {
+  createFallbackOverlayAdapter,
+  type FallbackOverlayAdapter,
+} from './fallback/overlay-adapter';
 
 const emit = defineEmits<{
   /** Map initialized + first paint requested — WdMapView runs its
@@ -113,6 +121,7 @@ const router = useRouter();
 const { t } = useI18n();
 const localPropertiesStore = useLocalPropertiesStore();
 const hutsStore = useHutsStore();
+const overlayStore = useOverlayStore();
 
 const fallbackEl = ref<HTMLDivElement>();
 
@@ -124,6 +133,25 @@ function syncDrawState(zoom: number): void {
   setMarkerOpacity(markerOpacityFor(zoom));
   setShieldPx(shieldPxFor(zoom));
   fallbackEl.value?.style.setProperty('--wd-fb-o', String(markerOpacityFor(zoom)));
+}
+
+// ── Served huts styling (backend #440) ──────────────────────────────
+// The overlay store's compiled `huts` item carries BOTH served inputs:
+// the resolved style (status palette: the wd-huts-occupation
+// circle-color match expression) and config.clustering (markercluster
+// parameters). Both keep their offline defaults until the catalog
+// resolves — same resilience pattern as the fallback basemaps.
+
+/** Status palette in use — seeded with the hardcoded copy, replaced by
+ *  the served style's match expression once it arrives. */
+const statusColors = ref<Record<string, string>>(STATUS_COLORS);
+
+/** Clustering config from the served huts row; undefined = legacy
+ *  dual-group behavior (hardcoded radius/uncluster zooms). */
+const hutsClustering = ref<ClusteringConfig | undefined>(undefined);
+
+function clusteringSignature(cfg: ClusteringConfig | undefined): string {
+  return `${cfg?.groupByProperty ?? ''}|${cfg?.radius ?? ''}|${cfg?.maxZoom ?? ''}`;
 }
 
 /** Huts WITH availability uncluster from here (owner spec; +1 vs the
@@ -207,8 +235,65 @@ interface FbAvail {
 
 let map: L.Map | undefined;
 let tileLayer: L.TileLayer | undefined;
-let clusterAvail: L.MarkerClusterGroup | undefined;
-let clusterPlain: L.MarkerClusterGroup | undefined;
+let overlayAdapter: FallbackOverlayAdapter | undefined;
+// ── Cluster groups (config-driven, backend #440 config.clustering) ──
+// With the served config: one markercluster group per groupByProperty
+// value (+ the null bucket for features without it), radius/maxZoom
+// from the config — the dual avail/plain groups and their
+// differentiated unclustering were dropped with it. Without the config
+// (style still loading / pre-#440 backend), the legacy dual buckets
+// keep today's exact behavior. Groups are created lazily per bucket.
+const AVAIL_BUCKET = '__wd_avail';
+const PLAIN_BUCKET = '__wd_plain';
+let clusterGroups = new Map<string | null, L.MarkerClusterGroup>();
+
+function makeClusterGroup(unclusterZoom: number, radius: number): L.MarkerClusterGroup {
+  return L.markerClusterGroup({
+    showCoverageOnHover: false,
+    chunkedLoading: true,
+    maxClusterRadius: radius,
+    disableClusteringAtZoom: unclusterZoom,
+    spiderfyOnMaxZoom: false,
+    iconCreateFunction: clusterIcon,
+  });
+}
+
+/** The marker's cluster bucket: the config's groupByProperty value
+ *  (null bucket for features without it), or the legacy avail/plain
+ *  split when no config is served. */
+function clusterBucketFor(hut: FbHut): string | null {
+  const prop = hutsClustering.value?.groupByProperty;
+  if (prop) {
+    const value = hut.properties[prop];
+    return typeof value === 'string' && value.length > 0 ? value : null;
+  }
+  return availBySlug.has(hut.slug) ? AVAIL_BUCKET : PLAIN_BUCKET;
+}
+
+/** Lazily create + mount the bucket's cluster group. */
+function clusterGroupFor(bucket: string | null): L.MarkerClusterGroup | undefined {
+  if (!map) return undefined;
+  let group = clusterGroups.get(bucket);
+  if (!group) {
+    const cfg = hutsClustering.value;
+    const unclusterZoom = cfg
+      ? (cfg.maxZoom ?? PLAIN_UNCLUSTER_ZOOM)
+      : bucket === AVAIL_BUCKET
+        ? AVAIL_UNCLUSTER_ZOOM
+        : PLAIN_UNCLUSTER_ZOOM;
+    group = makeClusterGroup(unclusterZoom, cfg?.radius ?? 48);
+    clusterGroups.set(bucket, group);
+    map.addLayer(group);
+  }
+  return group;
+}
+
+/** Drop every cluster group (config change / unmount) — markers are
+ *  re-added by the next rebuildMarkers. */
+function clearClusterGroups(): void {
+  for (const group of clusterGroups.values()) map?.removeLayer(group);
+  clusterGroups = new Map();
+}
 /**
  * Availability now comes from the SAME Martin source MapLibre renders
  * (wd-bookings): `{TILE_SERVER}/availability/{z}/{x}/{y}.mlt?date=…&days=4`
@@ -628,12 +713,11 @@ function clusterIcon(cluster: L.MarkerCluster): L.DivIcon {
 }
 
 function rebuildMarkers(): void {
-  if (!clusterAvail || !clusterPlain) return;
-  clusterAvail.clearLayers();
-  clusterPlain.clearLayers();
+  if (!map) return;
+  for (const group of clusterGroups.values()) group.clearLayers();
   markerBySlug.clear();
   hutBySlug.clear();
-  if (!map || map.getZoom() < HUT_MIN_ZOOM) {
+  if (map.getZoom() < HUT_MIN_ZOOM) {
     lastRenderBand = 'none';
     return;
   }
@@ -644,8 +728,7 @@ function rebuildMarkers(): void {
   for (const tileHuts of hutCache.tiles.values()) {
     for (const hut of tileHuts) if (!huts.has(hut.slug)) huts.set(hut.slug, hut);
   }
-  const availMarkers: WdCanvasDot[] = [];
-  const plainMarkers: WdCanvasDot[] = [];
+  const markersByBucket = new Map<string | null, WdCanvasDot[]>();
   const rebuildStart = window.performance.now();
   for (const hut of huts.values()) {
     const style = markerStyleFor(hut);
@@ -657,7 +740,7 @@ function rebuildMarkers(): void {
     const layer = new WdCanvasDot([hut.lat, hut.lon], {
       renderer: dotRenderer,
       dotRadius: 6.5, // pre-sprite fallback dot only
-      ringColor: status ? STATUS_COLORS[status] : undefined,
+      ringColor: status ? statusColors.value[status] : undefined,
       fillColor: style.typeColor,
       typeColor: style.typeColor,
       identifier: style.identifier,
@@ -673,13 +756,56 @@ function rebuildMarkers(): void {
     // Hover: shield grows (drawn via options.hovered in _updatePath).
     layer.on('mouseover', () => layer.setStyle({ hovered: true } as L.CircleMarkerOptions));
     layer.on('mouseout', () => layer.setStyle({ hovered: false } as L.CircleMarkerOptions));
-    (availBySlug.has(hut.slug) ? availMarkers : plainMarkers).push(layer);
+    const bucket = clusterBucketFor(hut);
+    const list = markersByBucket.get(bucket) ?? [];
+    list.push(layer);
+    markersByBucket.set(bucket, list);
   }
-  clusterAvail.addLayers(availMarkers); // bulk: no per-marker animation
-  clusterPlain.addLayers(plainMarkers);
+  for (const [bucket, markers] of markersByBucket) {
+    const group = clusterGroupFor(bucket);
+    if (group) group.addLayers(markers); // bulk: no per-marker animation
+  }
   // Diagnostics for the zoom-sweep profiler (harmless in prod).
   window.performance.measure('wd-fb:rebuild', { start: rebuildStart });
 }
+
+// ── Served huts item: status palette + clustering config ────────────
+// The compiled `huts` overlay item arrives asynchronously (metadata-
+// first placeholders carry an empty style — parseStatusColors returns
+// undefined for those and the offline palette stays). A CHANGED
+// clustering signature rebuilds the cluster groups (e.g. the config
+// landing after boot replaced the legacy dual buckets).
+type HutsOverlayItem =
+  | { style?: StyleSpecification; config?: { clustering?: ClusteringConfig } }
+  | undefined;
+
+const hutsItem = computed<HutsOverlayItem>(() =>
+  (
+    overlayStore.overlays as unknown as Array<{
+      name: string;
+      style?: StyleSpecification;
+      config?: { clustering?: ClusteringConfig };
+    }>
+  ).find(o => o.name === 'huts')
+);
+
+watch(
+  hutsItem,
+  item => {
+    const parsed = parseStatusColors(item?.style);
+    if (parsed) statusColors.value = parsed;
+    const next = item?.config?.clustering;
+    const usable = next && next.enabled !== false ? next : undefined;
+    if (clusteringSignature(usable) !== clusteringSignature(hutsClustering.value)) {
+      hutsClustering.value = usable;
+      clearClusterGroups();
+      rebuildMarkers();
+    } else {
+      hutsClustering.value = usable;
+    }
+  },
+  { immediate: true }
+);
 
 /** Selection follows the route (same toggle semantics as the MapLibre
  *  map): swap ONLY the two affected markers' icons — no full rebuild. */
@@ -1034,27 +1160,18 @@ onMounted(() => {
 
   dotRenderer = L.canvas({ padding: 0.5 }); // one canvas for all hut dots
 
-  // Dual cluster groups: availability huts uncluster one level earlier.
-  clusterAvail = L.markerClusterGroup({
-    showCoverageOnHover: false,
-    chunkedLoading: true,
-    maxClusterRadius: 48,
-    disableClusteringAtZoom: AVAIL_UNCLUSTER_ZOOM,
-    spiderfyOnMaxZoom: false,
-    iconCreateFunction: clusterIcon,
-  });
-  clusterPlain = L.markerClusterGroup({
-    showCoverageOnHover: false,
-    chunkedLoading: true,
-    maxClusterRadius: 48,
-    disableClusteringAtZoom: PLAIN_UNCLUSTER_ZOOM,
-    spiderfyOnMaxZoom: false,
-    iconCreateFunction: clusterIcon,
-  });
-  // Z-ORDER: plain first (drawn below), avail second (on top) —
-  // owner: huts with availability should never be covered by others.
-  map.addLayer(clusterPlain);
-  map.addLayer(clusterAvail);
+  // Shared overlay menu wiring: the hoisted WdOverlayControl (WdMapView)
+  // mutates the shared overlay store — this adapter mirrors the
+  // raster overlays onto the Leaflet map (fallback/overlay-adapter).
+  overlayAdapter = createFallbackOverlayAdapter(map);
+
+  // Cluster groups are created LAZILY per bucket on the first marker
+  // rebuild (clusterGroupFor) — driven by config.clustering when the
+  // catalog resolved, legacy dual buckets otherwise (see
+  // clusterBucketFor). Z-order note (owner: huts with availability
+  // should never be covered by others) applies to the legacy mode via
+  // stable insertion order: buckets are created in first-hut-seen
+  // order, later groups paint above earlier ones.
 
   map.on('moveend zoomend', onMoveEnd);
   const container = map.getContainer();
@@ -1083,11 +1200,15 @@ onMounted(() => {
   // Dev-only debugging/profiling hook (the map instance lives in this
   // component's closure otherwise; window.__wdFbDebug.map exposes e.g.
   // latLngToContainerPoint for exact click tests). Never in prod builds.
+  // clusterGroups is a GETTER — clearClusterGroups() reassigns the
+  // binding, a captured reference would go stale on the first config
+  // arrival.
   if (import.meta.env.DEV) {
     (window as unknown as { __wdFbDebug?: unknown }).__wdFbDebug = {
       map,
-      clusterAvail,
-      clusterPlain,
+      get clusterGroups() {
+        return clusterGroups;
+      },
       hutCache,
       markerBySlug,
       selectHut,
@@ -1138,8 +1259,9 @@ onBeforeUnmount(() => {
   }
   map?.remove(); // tears down layers + listeners
   map = undefined;
-  clusterAvail = undefined;
-  clusterPlain = undefined;
+  clusterGroups = new Map();
+  overlayAdapter?.destroy(); // stops the store watchers + removes layers
+  overlayAdapter = undefined;
 });
 </script>
 
@@ -1415,6 +1537,24 @@ $ease: cubic-bezier(0.2, 0, 0, 1);
 // bubbles at their shared edges.
 .wd-fallback-map .leaflet-overlay-pane {
   z-index: 650;
+}
+
+// ── Shared overlay strip (hoisted out of the MapLibre slot) ──────────
+// The sticky is position:fixed WITHOUT its own z-index — in MapLibre
+// mode tree order wins its ties. The Leaflet panes paint at 200-1000,
+// so in fallback mode the strip needs the same lift the fallback's own
+// chrome uses (.wd-fb-bm is 1100, above leaflet controls).
+body.wd-fb-active .wd-map-ctl-sticky {
+  z-index: 1100;
+}
+
+// Catalog raster overlays (fallback/overlay-adapter) sit in a pane
+// between the basemap tiles and the hut-dot canvas — declared here so
+// the stacking contract lives with the rest of the pane table above
+// (Leaflet names panes `leaflet-<name>-pane`; the adapter also sets
+// the z-index inline).
+.wd-fallback-map .leaflet-wdOverlay-pane {
+  z-index: 250;
 }
 
 // ── Locate button: maplibre ctrl-group language (29px white square,
