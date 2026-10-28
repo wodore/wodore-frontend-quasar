@@ -299,6 +299,10 @@ export const useOverlayStore = defineStore('overlay', () => {
     stepGroup,
     applyCatalogOverlays,
     resolveActiveSlugs,
+    // Persisted active/show state for a slug (pre-session snapshot,
+    // after rename migration) — consumers decide one-time adoption
+    // (fallback/huts-visibility) off it.
+    savedOverlayState,
     overlaysEpoch,
     parametersEpoch,
     // Layer groups
