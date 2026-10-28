@@ -109,6 +109,7 @@ import {
   createFallbackOverlayAdapter,
   type FallbackOverlayAdapter,
 } from './fallback/overlay-adapter';
+import { AVAIL_BUCKET, PLAIN_BUCKET, orderLegacyBucketsFirst } from './fallback/cluster-groups';
 
 const emit = defineEmits<{
   /** Map initialized + first paint requested — WdMapView runs its
@@ -242,9 +243,9 @@ let overlayAdapter: FallbackOverlayAdapter | undefined;
 // from the config — the dual avail/plain groups and their
 // differentiated unclustering were dropped with it. Without the config
 // (style still loading / pre-#440 backend), the legacy dual buckets
-// keep today's exact behavior. Groups are created lazily per bucket.
-const AVAIL_BUCKET = '__wd_avail';
-const PLAIN_BUCKET = '__wd_plain';
+// keep today's exact behavior. Groups are created lazily per bucket —
+// in a DETERMINISTIC order in legacy mode (orderLegacyBucketsFirst:
+// plain before avail, so availability huts paint on top).
 let clusterGroups = new Map<string | null, L.MarkerClusterGroup>();
 
 function makeClusterGroup(unclusterZoom: number, radius: number): L.MarkerClusterGroup {
@@ -761,7 +762,7 @@ function rebuildMarkers(): void {
     list.push(layer);
     markersByBucket.set(bucket, list);
   }
-  for (const [bucket, markers] of markersByBucket) {
+  for (const [bucket, markers] of orderLegacyBucketsFirst([...markersByBucket])) {
     const group = clusterGroupFor(bucket);
     if (group) group.addLayers(markers); // bulk: no per-marker animation
   }
@@ -1257,11 +1258,15 @@ onBeforeUnmount(() => {
     c.removeEventListener('click', onVetoClick);
     c.removeEventListener('touchend', onVetoClick);
   }
+  // Teardown order (adapter contract): stop the overlay adapter BEFORE
+  // map.remove() — destroy() removes its layers and unbinds watchers
+  // against a live map; after remove() the calls only survive by
+  // Leaflet's forgiving no-ops.
+  overlayAdapter?.destroy();
+  overlayAdapter = undefined;
   map?.remove(); // tears down layers + listeners
   map = undefined;
   clusterGroups = new Map();
-  overlayAdapter?.destroy(); // stops the store watchers + removes layers
-  overlayAdapter = undefined;
 });
 </script>
 

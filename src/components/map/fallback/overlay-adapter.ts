@@ -84,6 +84,11 @@ function rasterBase(style: StyleSpecification | undefined):
  * through (clamped), an `["interpolate", ["linear"], ["zoom"], z1, v1,
  * …]` expression linearly interpolates between stops (clamped at the
  * ends — MapLibre semantics). Anything else renders fully opaque.
+ *
+ * LIMITATION: `interpolate` with an exponential base (["exponential",
+ * e]) would evaluate as if linear — fine for today's subset styles
+ * (swisstopo/waymarkedtrails all declare linear curves); revisit if a
+ * catalog style ever ships a non-linear curve.
  */
 export function paintOpacityAtZoom(paint: unknown, zoom: number): number {
   const clamp = (v: number): number => Math.min(1, Math.max(0, v));
@@ -155,6 +160,9 @@ export function createFallbackOverlayAdapter(map: L.Map): FallbackOverlayAdapter
   function specFor(overlay: OverlaySwitchItem): RasterOverlaySpec | undefined {
     const base = rasterBase(overlay.style);
     if (!base) return undefined;
+    // LIMITATION: multi-URL raster sources render tiles[0] only — every
+    // catalog raster overlay serves one template today; a source
+    // sharding across hosts would need URL rotation.
     return {
       url: base.source.tiles[0]!,
       minZoom: base.layerMinZoom,

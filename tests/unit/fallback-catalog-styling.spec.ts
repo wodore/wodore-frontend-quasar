@@ -93,8 +93,9 @@ describe('parseStatusColors', () => {
 
   it('returns undefined for non-match or malformed paint', () => {
     expect(parseStatusColors(hutsStyle('#25BF5E'))).toBeUndefined();
-    expect(parseStatusColors(hutsStyle(['step', ['get', 'd0_status'], '#fff', 5, '#000'])))
-      .toBeUndefined();
+    expect(
+      parseStatusColors(hutsStyle(['step', ['get', 'd0_status'], '#fff', 5, '#000']))
+    ).toBeUndefined();
     // A match on an unrelated property must not masquerade as statuses.
     expect(
       parseStatusColors(hutsStyle(['match', ['get', 'type'], 'hut', '#fff', '#000']))
@@ -139,5 +140,40 @@ describe('paintOpacityAtZoom', () => {
     expect(paintOpacityAtZoom(undefined, 10)).toBe(1);
     expect(paintOpacityAtZoom('{{mtb.opacity}}', 10)).toBe(1); // unresolved token
     expect(paintOpacityAtZoom(['interpolate', ['linear'], ['get', 'x'], 1, 0.5], 10)).toBe(1);
+  });
+});
+
+// ── Cluster bucket ordering (legacy mode z-order invariant) ────────────
+import {
+  AVAIL_BUCKET,
+  PLAIN_BUCKET,
+  orderLegacyBucketsFirst,
+} from '@components/map/fallback/cluster-groups';
+
+describe('orderLegacyBucketsFirst', () => {
+  it('creates the plain group before avail regardless of hut-seen order', () => {
+    // Owner invariant: availability huts never paint BELOW plain ones —
+    // the plain bucket's group must be created (map-added) first, even
+    // when an avail hut was seen first in the tile stream.
+    const shuffled: Array<[string | null, string[]]> = [
+      [AVAIL_BUCKET, ['a']],
+      [null, ['n']],
+      [PLAIN_BUCKET, ['p']],
+    ];
+    expect(orderLegacyBucketsFirst(shuffled).map(([b]) => b)).toEqual([
+      PLAIN_BUCKET,
+      AVAIL_BUCKET,
+      null,
+    ]);
+  });
+
+  it('keeps config-mode buckets in first-seen (stable) order after the legacy pair', () => {
+    const buckets: Array<[string | null, string[]]> = [
+      ['hut', ['h1']],
+      [null, ['n1']],
+      ['bivouac', ['b1']],
+    ];
+    // No legacy buckets present: order is unchanged (stable sort).
+    expect(orderLegacyBucketsFirst(buckets).map(([b]) => b)).toEqual(['hut', null, 'bivouac']);
   });
 });

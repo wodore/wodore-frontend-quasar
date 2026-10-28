@@ -56,10 +56,12 @@ const $q = useQuasar();
 
 // ── Renderer capability (backend #440 profile dimension) ─────────────────
 // 'subset' (the Leaflet fallback map) never renders full-only layers —
-// their menu entries hide. Undefined (the MapLibre map) shows every
-// row: no filtering, byte-identical to before the profile dimension.
+// their menu entries hide. 'full' (what WdMapView passes for the
+// MapLibre map) or an undefined declaration shows every row: no
+// filtering, byte-identical to before the profile dimension.
 // Rows without a served profile (pre-#440 backend) stay visible in both
-// modes — the adapter renders whichever of them carries a raster base.
+// modes — the adapter renders whichever of them carries a raster base
+// (visible-but-inert for vector-only rows, the documented leniency).
 const props = defineProps<{
   rendererProfile?: 'full' | 'subset';
 }>();

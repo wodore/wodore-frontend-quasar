@@ -202,6 +202,21 @@ export type MapLayerProfile = 'full' | 'subset';
  * without a subset variant are omitted). Rejects with
  * MapCatalogUnavailableError on failure — callers fall back to their
  * persisted caches.
+ *
+ * FORWARD-COMPAT: no caller passes `profile` today. The shared
+ * map-catalog store fetches the DEFAULT (profile-agnostic) catalog —
+ * every renderer sees the same rows and the fallback's menu filters
+ * client-side by the row's `profile` field (subset-only variants stay
+ * `subset` in the default catalog, verified against the #440 backend).
+ * The known leniency: against a PRE-#440 backend the rows carry no
+ * `profile`, so full-only layers appear in the fallback's menu as
+ * visible-but-inert entries (the adapter renders only raster styles).
+ * Wiring the per-renderer fetch is deferred until the overlay store
+ * fetches per renderer — the parameter types the request until then.
+ * The generated staging client does not carry the param yet (#440 is
+ * unreleased); the query object passes through structurally and
+ * openapi-fetch serializes every key, so the param reaches backends
+ * that declare it.
  */
 export function fetchMapCatalog(
   lang?: string,
