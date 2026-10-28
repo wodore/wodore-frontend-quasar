@@ -109,6 +109,7 @@ import {
   createFallbackOverlayAdapter,
   type FallbackOverlayAdapter,
 } from './fallback/overlay-adapter';
+import { HUTS_OVERLAY_NAME, hutsRowVisible } from './fallback/huts-visibility';
 import { AVAIL_BUCKET, PLAIN_BUCKET, orderLegacyBucketsFirst } from './fallback/cluster-groups';
 
 const emit = defineEmits<{
@@ -715,6 +716,15 @@ function clusterIcon(cluster: L.MarkerCluster): L.DivIcon {
 
 function rebuildMarkers(): void {
   if (!map) return;
+  if (!hutsVisible.value) {
+    // Overlay row toggled OFF: clear what is rendered. The tile caches
+    // stay warm — re-enabling rebuilds from them without refetching.
+    for (const group of clusterGroups.values()) group.clearLayers();
+    markerBySlug.clear();
+    hutBySlug.clear();
+    lastRenderBand = undefined; // next enable rebuilds regardless of band
+    return;
+  }
   for (const group of clusterGroups.values()) group.clearLayers();
   markerBySlug.clear();
   hutBySlug.clear();
@@ -777,18 +787,32 @@ function rebuildMarkers(): void {
 // clustering signature rebuilds the cluster groups (e.g. the config
 // landing after boot replaced the legacy dual buckets).
 type HutsOverlayItem =
-  | { style?: StyleSpecification; config?: { clustering?: ClusteringConfig } }
+  | {
+      name?: string;
+      active?: boolean;
+      style?: StyleSpecification;
+      config?: { clustering?: ClusteringConfig };
+    }
   | undefined;
 
 const hutsItem = computed<HutsOverlayItem>(() =>
   (
     overlayStore.overlays as unknown as Array<{
       name: string;
+      active?: boolean;
       style?: StyleSpecification;
       config?: { clustering?: ClusteringConfig };
     }>
-  ).find(o => o.name === 'huts')
+  ).find(o => o.name === HUTS_OVERLAY_NAME)
 );
+
+/** Store-driven huts visibility (fallback/huts-visibility): the
+ *  catalog `huts` row gates the built-in hut rendering — present →
+ *  follow its active flag (menu toggle), ABSENT → default ACTIVE
+ *  (today's behavior during the backend deploy window). The hut
+ *  machinery itself (tiles, clustering, selection, availability)
+ *  stays; only rendering + loading are gated. */
+const hutsVisible = computed(() => hutsRowVisible(hutsItem.value));
 
 watch(
   hutsItem,
@@ -807,6 +831,23 @@ watch(
   },
   { immediate: true }
 );
+
+// Huts toggle handling (fallback/huts-visibility): OFF clears markers
+// (rebuildMarkers' gate) and suspends tile loads (refreshTiles' gate) —
+// both caches stay warm; ON rebuilds from the cached tiles — no
+// refetch — then top-ups the viewport and resumes availability for a
+// picked date. Row-absent catalogs never fire this (hutsVisible is a
+// constant true then).
+watch(hutsVisible, visible => {
+  if (!map) return;
+  rebuildMarkers(); // gate inside: clears when hidden, rebuilds when visible
+  updateZoomHint(); // dismissed when hidden (its own hutsVisible gate)
+  if (visible) {
+    void refreshTiles(); // viewport top-up (panned while suspended?)
+    const picked = hutsStore.selectedDate;
+    if (picked) void refreshAvailTiles(picked);
+  }
+});
 
 /** Selection follows the route (same toggle semantics as the MapLibre
  *  map): swap ONLY the two affected markers' icons — no full rebuild. */
@@ -892,6 +933,9 @@ const availCache = new MltTileCache<Map<string, string>>({
 async function refreshTiles(): Promise<void> {
   const activeMap = map;
   if (!activeMap) return;
+  // Overlay row OFF: suspend tile loading — no viewport top-ups while
+  // invisible (the cache is kept for instant resume).
+  if (!hutsVisible.value) return;
   if (activeMap.getZoom() < HUT_MIN_ZOOM) {
     if (hutCache.tiles.size > 0) {
       hutCache.clear();
@@ -925,6 +969,9 @@ async function refreshAvailTiles(picked: string): Promise<void> {
   if (!dateISO) return;
   const activeMap = map;
   if (!activeMap) return;
+  // Huts hidden (overlay row OFF): no availability fetch AND no
+  // spinner — the date picker must not spin for an invisible layer.
+  if (!hutsVisible.value) return;
   // No markers below the floor — skip fetching entirely (Opus review
   // #3: at world view this computed tileZoom=5 over the global bounds
   // and fired a fetch storm against the tile router).
@@ -991,7 +1038,9 @@ let reducedModeToast: (() => void) | undefined;
 
 function updateZoomHint(): void {
   const zoom = map?.getZoom() ?? 99;
-  const wanted = Boolean(hutsStore.selectedDate) && zoom <= ZOOM_HINT_SHOW_AT;
+  // Hidden huts suppress the hint too — "zoom in to see availabilities"
+  // would point at a layer that is not rendered at any zoom.
+  const wanted = hutsVisible.value && Boolean(hutsStore.selectedDate) && zoom <= ZOOM_HINT_SHOW_AT;
   if (wanted && !zoomHintDismiss) {
     zoomHintDismiss = Notify.create({
       message: t('map.fallbackZoomHint'),
