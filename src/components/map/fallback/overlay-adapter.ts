@@ -22,6 +22,14 @@
  *   whitelists). Attribution note: geojson overlays carry the raw data
  *   URL — no attribution wiring yet (the raw.githubusercontent.com
  *   BAV list carries none).
+ * * CLUSTERED circle overlays (backend subset twin declares `cluster`
+ *   source keys): the fetched points feed a supercluster index whose
+ *   options mirror the served config; on the cluster band (z5–z6 for
+ *   transport-stops) aggregated bubbles render as divIcon markers —
+ *   palette-colored, sized by member count, count text honoring the
+ *   `ui.overlayClusterCounts` user setting. Outside the band the raw
+ *   circle path takes over exactly as before. Clustering is a
+ *   SUBSET-profile feature: full (WebGL) styles never declare it.
  * * Everything else (huts symbols, vector sources, tokenized geojson
  *   data URLs) stays NOT rendered: the overlay menu's profile filtering
  *   (rendererProfile="subset" on WdOverlayControl) hides full-only rows
@@ -41,15 +49,19 @@
  */
 
 import * as L from 'leaflet';
+import Supercluster from 'supercluster';
 import { watch, type WatchStopHandle } from 'vue';
 import type {
   CircleLayerSpecification,
   GeoJSONSourceSpecification,
+  LayerSpecification,
   RasterSourceSpecification,
   StyleSpecification,
 } from 'maplibre-gl';
 import type { Feature, FeatureCollection } from 'geojson';
 import { useOverlayStore } from '@stores/map/overlay-store';
+import { useUserSettingsStore } from '@stores/user-settings-store';
+import { isClusterCountLayer, isClusterLayer } from '@stores/map/utils/overlay-clusters';
 import type { OverlaySwitchItem } from '@stores/map/utils/interfaces';
 
 /** Leaflet pane name for catalog raster overlays. */
@@ -88,10 +100,10 @@ const STYLE_TOKEN_RE = /\{\{/;
 //
 // The backend's subset validation (wodore-backend apps/basemaps
 // validation.py SUBSET_EXPRESSION_OPS) whitelists exactly: get, has,
-// match, case, in, ==, interpolate, literal. This evaluator implements
-// the same set — anything else evaluates to undefined (callers fall
-// back to safe defaults) so an unknown future operator degrades to a
-// visible default instead of a crash.
+// match, case, in, ==, >, !, interpolate, literal. This evaluator
+// implements the same set — anything else evaluates to undefined
+// (callers fall back to safe defaults) so an unknown future operator
+// degrades to a visible default instead of a crash.
 
 /** Feature properties for expression evaluation (geojson properties). */
 export type StyleProps = Record<string, unknown> | undefined;
@@ -105,11 +117,13 @@ export type StyleValue = string | number | boolean | null | unknown[] | undefine
 /**
  * Evaluate a whitelisted MapLibre style expression at a zoom with a
  * feature's properties. Plain scalars pass through; supported
- * operators: `get` / `has` / `literal` / `in` / `==` / `case` / `match`
- * and `interpolate` restricted to a `["zoom"]` input with linear
- * interpolation (stop VALUES may be nested expressions —
- * transport-stops interpolates per-type case expressions for its
- * radius). Unknown or malformed expressions evaluate to undefined.
+ * operators: `get` / `has` / `literal` / `in` / `==` / `>` / `!` /
+ * `case` / `match` and `interpolate` with a `['zoom']` or
+ * `['get', '<property>']` input, linear interpolation (stop VALUES may
+ * be nested expressions — transport-stops interpolates per-type case
+ * expressions for its radius, and its cluster bubbles interpolate on
+ * the aggregated `point_count`). Unknown or malformed expressions
+ * evaluate to undefined.
  *
  * LIMITATION: `interpolate` with an exponential base
  * (["exponential", e]) would evaluate as if linear — fine for today's
@@ -146,6 +160,24 @@ export function evalStyleExpr(expr: unknown, zoom: number, props: StyleProps): S
     }
     case '==':
       return evalStyleExpr(expr[1], zoom, props) === evalStyleExpr(expr[2], zoom, props);
+    case '>': {
+      // numeric comparison (cluster paints compare aggregated counts)
+      const left = finiteNumber(evalStyleExpr(expr[1], zoom, props));
+      const right = finiteNumber(evalStyleExpr(expr[2], zoom, props));
+      return left !== null && right !== null ? left > right : undefined;
+    }
+    case '!': {
+      // MapLibre truthiness negation (cluster filters: !has point_count)
+      const value = evalStyleExpr(expr[1], zoom, props);
+      const falsy =
+        value === false ||
+        value === null ||
+        value === undefined ||
+        value === 0 ||
+        value === '' ||
+        (typeof value === 'number' && !Number.isFinite(value));
+      return !falsy ? false : true;
+    }
     case 'case': {
       // ["case", cond1, val1, …, condN, valN, fallback]
       const rest = expr.slice(1);
@@ -169,27 +201,46 @@ export function evalStyleExpr(expr: unknown, zoom: number, props: StyleProps): S
       return rest.length % 2 === 1 ? evalStyleExpr(rest[rest.length - 1], zoom, props) : undefined;
     }
     case 'interpolate': {
-      // ["interpolate", ["linear"], ["zoom"], z1, v1, …] — zoom input
-      // only (walker-enforced, same limitation as the raster curve).
+      // ["interpolate", ["linear"], input, t1, v1, …] — the input is
+      // ['zoom'] or ['get', '<property>'] (walker-enforced; the cluster
+      // bubble radius interpolates on the aggregated point_count).
       const input = expr[2];
-      if (!Array.isArray(input) || input[0] !== 'zoom') return undefined;
+      let inputOp: 'zoom' | 'get' | null = null;
+      let inputProp: string | null = null;
+      if (Array.isArray(input) && input[0] === 'zoom') {
+        inputOp = 'zoom';
+      } else if (
+        Array.isArray(input) &&
+        input.length === 2 &&
+        input[0] === 'get' &&
+        typeof input[1] === 'string'
+      ) {
+        inputOp = 'get';
+        inputProp = input[1];
+      }
+      if (inputOp === null) return undefined;
+      const t =
+        inputOp === 'zoom'
+          ? zoom
+          : finiteNumber(props && inputProp !== null ? props[inputProp] : undefined);
+      if (t === null) return undefined;
       const rest = expr.slice(3);
-      let prevZoom: number | null = null;
+      let prevT: number | null = null;
       for (let i = 0; i + 1 < rest.length; i += 2) {
-        const z = rest[i];
-        if (typeof z !== 'number' || !Number.isFinite(z)) continue;
-        if (zoom <= z) {
-          if (prevZoom !== null && z > prevZoom) {
+        const stopT = rest[i];
+        if (typeof stopT !== 'number' || !Number.isFinite(stopT)) continue;
+        if (t <= stopT) {
+          if (prevT !== null && stopT > prevT) {
             const from = finiteNumber(evalStyleExpr(rest[i - 1], zoom, props));
             const to = finiteNumber(evalStyleExpr(rest[i + 1], zoom, props));
             if (from !== null && to !== null) {
-              return from + (to - from) * ((zoom - prevZoom) / (z - prevZoom));
+              return from + (to - from) * ((t - prevT) / (stopT - prevT));
             }
             return evalStyleExpr(rest[i + 1], zoom, props); // degenerate stop
           }
           return evalStyleExpr(rest[i + 1], zoom, props); // below the first stop
         }
-        prevZoom = z;
+        prevT = stopT;
       }
       return evalStyleExpr(rest[rest.length - 1], zoom, props); // above the last stop
     }
@@ -230,6 +281,37 @@ export interface RasterOverlaySpec {
   opacityPaint: unknown;
 }
 
+/** Cluster count-badge spec from the `-cluster-count` symbol layer. */
+export interface ClusterCountTextSpec {
+  fieldPaint: unknown;
+  sizePaint: unknown;
+  colorPaint: unknown;
+  haloColorPaint: unknown;
+  haloWidthPaint: unknown;
+}
+
+/** Clustering a clustered geojson circle overlay declares (the
+ * backend subset twin's `cluster*` source keys + cluster layers). */
+export interface ClusterOverlaySpec {
+  /** Bubble band floor (the cluster circle layer's minzoom). */
+  minZoom: number;
+  /** Bubbles render while floor(zoom) <= maxZoom (supercluster
+   * semantics: clusters AT maxZoom, raw points above). */
+  maxZoom: number;
+  /** supercluster screen radius (px). */
+  radius: number;
+  /** Cluster bubble paints — evaluated per cluster feature props
+   * (point_count / train_count / bus_count) like the raw path. */
+  colorPaint: unknown;
+  radiusPaint: unknown;
+  opacityPaint: unknown;
+  strokeColorPaint: unknown;
+  strokeWidthPaint: unknown;
+  /** Count badge text (``ui.overlayClusterCounts`` gates the text —
+   * bubbles always render). */
+  countText: ClusterCountTextSpec;
+}
+
 /** A Leaflet-servable circle (geojson) overlay from a resolved style. */
 export interface CircleOverlaySpec {
   kind: 'circle';
@@ -244,6 +326,9 @@ export interface CircleOverlaySpec {
   opacityPaint: unknown;
   strokeColorPaint: unknown;
   strokeWidthPaint: unknown;
+  /** Present when the source declares clustering (subset profile):
+   * aggregated bubbles on the cluster band instead of raw points. */
+  cluster?: ClusterOverlaySpec;
 }
 
 /** First raster-sourced layer + its source, if Leaflet can serve it. */
@@ -292,26 +377,44 @@ export function rasterSpecFor(
 }
 
 /**
- * Circle spec for a style: the first circle layer over a geojson
- * source whose `data` is a string URL without unresolved tokens.
- * Inline geojson objects and vector sources stay unsupported (defense
- * in depth for full-profile styles, which carry vector/symbol layers).
+ * Circle spec for a style: the first NON-CLUSTER circle layer over a
+ * geojson source whose `data` is a string URL without unresolved
+ * tokens, plus (when the source declares `cluster: true`) the cluster
+ * config from the source keys and the cluster render layers (`has
+ * point_count` filter circle + `-cluster-count` symbol). Inline geojson
+ * objects and vector sources stay unsupported (defense in depth for
+ * full-profile styles, which carry vector/symbol layers).
  */
 export function circleSpecFor(
   style: StyleSpecification | undefined
 ): CircleOverlaySpec | undefined {
   if (!style) return undefined;
   const sources = style.sources ?? {};
+  let rawSpec: CircleOverlaySpec | undefined;
+  let rawSource: GeoJSONSourceSpecification | undefined;
+  let clusterCircle: CircleLayerSpecification | undefined;
+  let countLayer: LayerSpecification | undefined;
   for (const layer of style.layers ?? []) {
-    if (layer.type !== 'circle') continue;
     if (!('source' in layer) || typeof layer.source !== 'string') continue;
     const source = sources[layer.source] as GeoJSONSourceSpecification | undefined;
     if (source?.type !== 'geojson') continue;
     const data = source?.data;
     if (typeof data !== 'string' || data.length === 0) continue;
     if (STYLE_TOKEN_RE.test(data)) continue;
+    if (layer.type === 'circle' && isClusterLayer(layer)) {
+      // cluster bubble circle (visual spec for the bubble band)
+      clusterCircle ??= layer as CircleLayerSpecification;
+      continue;
+    }
+    if (isClusterCountLayer(layer.id)) {
+      countLayer ??= layer;
+      continue;
+    }
+    if (layer.type !== 'circle') continue;
+    // raw stops — the first non-cluster circle layer wins
+    if (rawSpec) continue;
     const paint = (layer as CircleLayerSpecification).paint as Record<string, unknown> | undefined;
-    return {
+    rawSpec = {
       kind: 'circle',
       dataUrl: data,
       minZoom: typeof layer.minzoom === 'number' ? layer.minzoom : CIRCLE_DEFAULT_MIN_ZOOM,
@@ -322,8 +425,35 @@ export function circleSpecFor(
       strokeColorPaint: paint?.['circle-stroke-color'] ?? '#000000',
       strokeWidthPaint: paint?.['circle-stroke-width'] ?? 0,
     };
+    rawSource = source;
   }
-  return undefined;
+  if (!rawSpec || !rawSource) return undefined;
+  if (rawSource.cluster === true) {
+    const clusterPaint = (clusterCircle?.paint ?? {}) as Record<string, unknown>;
+    const countLayout = ((countLayer as LayerSpecification & { layout?: Record<string, unknown> })
+      ?.layout ?? {}) as Record<string, unknown>;
+    const countPaint = ((countLayer as LayerSpecification & { paint?: Record<string, unknown> })
+      ?.paint ?? {}) as Record<string, unknown>;
+    rawSpec.cluster = {
+      minZoom: clusterCircle?.minzoom ?? 0,
+      // maplibre defaults when the source omits the bounds
+      maxZoom: typeof rawSource.clusterMaxZoom === 'number' ? rawSource.clusterMaxZoom : 16,
+      radius: typeof rawSource.clusterRadius === 'number' ? rawSource.clusterRadius : 50,
+      colorPaint: clusterPaint['circle-color'] ?? '#0079C7',
+      radiusPaint: clusterPaint['circle-radius'] ?? 5,
+      opacityPaint: clusterPaint['circle-opacity'] ?? 1,
+      strokeColorPaint: clusterPaint['circle-stroke-color'] ?? '#000000',
+      strokeWidthPaint: clusterPaint['circle-stroke-width'] ?? 0,
+      countText: {
+        fieldPaint: countLayout['text-field'] ?? ['get', 'point_count_abbreviated'],
+        sizePaint: countLayout['text-size'] ?? 11,
+        colorPaint: countPaint['text-color'] ?? '#F6F6F6',
+        haloColorPaint: countPaint['text-halo-color'] ?? 'rgba(0, 0, 0, 0)',
+        haloWidthPaint: countPaint['text-halo-width'] ?? 0,
+      },
+    };
+  }
+  return rawSpec;
 }
 
 function clamp01(v: number): number {
@@ -378,9 +508,20 @@ export interface CircleBaseStyle {
 
 /** Zoom-only evaluation of the feature-independent paints. */
 export function circleBaseStyle(spec: CircleOverlaySpec, zoom: number): CircleBaseStyle {
-  const opacity = finiteNumber(evalStyleExpr(spec.opacityPaint, zoom, undefined));
-  const weight = finiteNumber(evalStyleExpr(spec.strokeWidthPaint, zoom, undefined));
-  const strokeColor = colorOr(evalStyleExpr(spec.strokeColorPaint, zoom, undefined), '#000000');
+  return baseStyleFromPaints(spec.opacityPaint, spec.strokeColorPaint, spec.strokeWidthPaint, zoom);
+}
+
+/** Zoom-only evaluation of the feature-independent paints, straight
+ * from the paint values (the cluster bubble path shares it). */
+function baseStyleFromPaints(
+  opacityPaint: unknown,
+  strokeColorPaint: unknown,
+  strokeWidthPaint: unknown,
+  zoom: number
+): CircleBaseStyle {
+  const opacity = finiteNumber(evalStyleExpr(opacityPaint, zoom, undefined));
+  const weight = finiteNumber(evalStyleExpr(strokeWidthPaint, zoom, undefined));
+  const strokeColor = colorOr(evalStyleExpr(strokeColorPaint, zoom, undefined), '#000000');
   const w = weight !== null ? Math.max(0, weight) : 0;
   return {
     fillOpacity: opacity !== null ? clamp01(opacity) : 1,
@@ -403,6 +544,117 @@ export function circleMarkerPaint(
   return { ...circleFeaturePaints(spec, zoom, props), ...base };
 }
 
+// ── Clustering (subset profile: cluster* source keys) ────────────────────
+
+/** Point properties of clustered geojson features (the BAV list). */
+type StopProps = { types?: unknown };
+
+/** Aggregated per-cluster counts the backend's clusterProperties
+ * declare — mirrored via supercluster's map/reduce functions
+ * (supercluster 8 has no expression evaluator; the semantics of the
+ * served train_count/bus_count expressions are implemented here). */
+type ClusterCounts = { train_count: number; bus_count: number };
+
+type StopClusterIndex = Supercluster<StopProps, ClusterCounts>;
+
+/** Whole-world bbox — the cluster band renders the entire (small: ~30
+ * to ~120 for the BAV list) bubble set; Leaflet culls off-viewport DOM
+ * markers itself. */
+const WORLD_BBOX: [number, number, number, number] = [-180, -85, 180, 85];
+
+/** Hex → rgba(): MapLibre circle-opacity fades only the fill — CSS
+ * background-color with the same alpha keeps stroke + count text
+ * opaque, like the canvas CircleMarker path. */
+function hexWithAlpha(color: string, alpha: number): string {
+  const hex = color.trim();
+  const clamped = Math.min(1, Math.max(0, alpha));
+  if (clamped >= 1) return hex;
+  if (/^#[0-9a-f]{6}$/i.test(hex)) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${clamped})`;
+  }
+  if (/^#[0-9a-f]{3}$/i.test(hex)) {
+    const r = parseInt(hex[1] + hex[1], 16);
+    const g = parseInt(hex[2] + hex[2], 16);
+    const b = parseInt(hex[3] + hex[3], 16);
+    return `rgba(${r}, ${g}, ${b}, ${clamped})`;
+  }
+  return hex; // non-hex literals pass through at full opacity
+}
+
+/** The visual shape of ONE cluster bubble (divIcon html + square size). */
+export interface ClusterBubbleStyle {
+  /** Icon width/height in px (2 x evaluated radius). */
+  size: number;
+  html: string;
+}
+
+/** Build one cluster bubble's divIcon payload from the cluster circle
+ * + count-text specs, evaluated against the cluster feature's
+ * aggregated properties (point_count / train_count / bus_count) — the
+ * same evaluator the raw path uses, so the served style stays the
+ * single source of the visual spec. `showCounts` is the user setting:
+ * bubbles render either way, ONLY the count text toggles. */
+export function clusterBubbleStyle(
+  cluster: ClusterOverlaySpec,
+  zoom: number,
+  props: StyleProps,
+  showCounts: boolean
+): ClusterBubbleStyle {
+  const radiusValue = finiteNumber(evalStyleExpr(cluster.radiusPaint, zoom, props));
+  const radius = radiusValue !== null ? Math.max(1, radiusValue) : 5;
+  const color = colorOr(evalStyleExpr(cluster.colorPaint, zoom, props), '#0079C7');
+  const base = baseStyleFromPaints(
+    cluster.opacityPaint,
+    cluster.strokeColorPaint,
+    cluster.strokeWidthPaint,
+    zoom
+  );
+  const count = cluster.countText;
+  const text = showCounts ? String(evalStyleExpr(count.fieldPaint, zoom, props) ?? '') : '';
+  const fontSize = finiteNumber(evalStyleExpr(count.sizePaint, zoom, props)) ?? 11;
+  const textColor = colorOr(evalStyleExpr(count.colorPaint, zoom, props), '#F6F6F6');
+  const haloColor = colorOr(evalStyleExpr(count.haloColorPaint, zoom, props), 'rgba(0, 0, 0, 0)');
+  const haloWidth = finiteNumber(evalStyleExpr(count.haloWidthPaint, zoom, props)) ?? 0;
+  const diameter = Math.round(2 * radius);
+  const border = base.stroke ? `${base.weight}px solid ${base.color}` : 'none';
+  const shadow = haloWidth > 0 ? `text-shadow:0 0 ${haloWidth}px ${haloColor};` : '';
+  const span = text
+    ? `<span style="font-family:'Barlow Semi Condensed SemiBold','Noto Sans Bold',sans-serif;` +
+      `font-size:${fontSize}px;line-height:1;color:${textColor};${shadow}">${text}</span>`
+    : '';
+  const div =
+    `<div style="box-sizing:border-box;width:${diameter}px;height:${diameter}px;` +
+    `border-radius:50%;background-color:${hexWithAlpha(color, base.fillOpacity)};` +
+    `border:${border};display:flex;align-items:center;justify-content:center;` +
+    `pointer-events:none;">${span}</div>`;
+  return { size: diameter, html: div };
+}
+
+/** Build the supercluster index mirroring the served cluster config
+ * (radius / maxZoom) + the clusterProperties count semantics. */
+function buildClusterIndex(features: Feature[], cluster: ClusterOverlaySpec): StopClusterIndex {
+  const index: StopClusterIndex = new Supercluster<StopProps, ClusterCounts>({
+    radius: cluster.radius,
+    maxZoom: cluster.maxZoom,
+    map: props => ({
+      train_count: Array.isArray(props?.types) && props.types.includes('train') ? 1 : 0,
+      bus_count: Array.isArray(props?.types) && props.types.includes('bus') ? 1 : 0,
+    }),
+    reduce: (accumulated, props) => {
+      accumulated.train_count += props.train_count;
+      accumulated.bus_count += props.bus_count;
+    },
+  });
+  // SAFETY: featuresFor() guarantees Point-geometry Features — the
+  // same array buildCircleGroup hands to L.geoJSON; the cast only
+  // satisfies supercluster's PointFeature<P> shape (structural twin).
+  index.load(features as unknown as Parameters<StopClusterIndex['load']>[0]);
+  return index;
+}
+
 // ── Adapter ──────────────────────────────────────────────────────────────
 
 /** One overlay's live Leaflet state, keyed by overlay slug. */
@@ -415,6 +667,12 @@ type LiveEntry =
       group: L.GeoJSON | null;
       /** The shared per-URL feature fetch (adapter-level cache). */
       features: Promise<Feature[]> | null;
+      /** supercluster index once the spec clusters + features resolved. */
+      clusterIndex: StopClusterIndex | null;
+      /** Live cluster bubble layer (on the map inside the cluster band). */
+      clusterLayer: L.LayerGroup | null;
+      /** Cluster zoom LEVEL (floor(zoom)) the bubble layer was built at. */
+      clusterLevel: number | null;
     };
 
 /** The circle variant of a live entry (helper alias). */
@@ -437,6 +695,7 @@ export interface FallbackOverlayAdapter {
  */
 export function createFallbackOverlayAdapter(map: L.Map): FallbackOverlayAdapter {
   const overlayStore = useOverlayStore();
+  const userSettingsStore = useUserSettingsStore();
   const live: LiveOverlays = new Map();
   /** Parsed geojson features per data URL — ONE fetch per overlay per
    * catalog generation (cleared on catalog swap/destroy; the fetch is
@@ -524,7 +783,10 @@ export function createFallbackOverlayAdapter(map: L.Map): FallbackOverlayAdapter
     const entry = live.get(name);
     if (!entry) return;
     if (entry.kind === 'raster') map.removeLayer(entry.layer);
-    else if (entry.group) map.removeLayer(entry.group);
+    else {
+      if (entry.group) map.removeLayer(entry.group);
+      if (entry.clusterLayer) map.removeLayer(entry.clusterLayer);
+    }
     live.delete(name);
   }
 
@@ -575,21 +837,92 @@ export function createFallbackOverlayAdapter(map: L.Map): FallbackOverlayAdapter
     });
   }
 
-  /** Add/remove the group around the spec's zoom floor. Returns true
-   * when the group was ADDED (and already re-styled at the current
-   * zoom) — callers skip their own follow-up re-style then, avoiding
-   * a second 27k-marker pass on the floor-crossing frame. */
-  function updateCircleVisibility(entry: CircleEntry): boolean {
-    if (destroyed || !entry.group) return false;
-    const shouldShow = map.getZoom() >= entry.spec.minZoom;
-    const onMap = map.hasLayer(entry.group);
-    if (shouldShow && !onMap) {
-      entry.group.addTo(map);
-      restyleCircle(entry); // styles were evaluated at the removal zoom
-      return true;
+  /** Cluster band? Bubbles render while zoom >= the band floor and
+   * floor(zoom) <= maxZoom (supercluster clusters AT maxZoom — the
+   * served clusterMaxZoom is inclusive). */
+  function inClusterBand(spec: CircleOverlaySpec, zoom: number): boolean {
+    const cluster = spec.cluster;
+    return !!cluster && zoom >= cluster.minZoom && Math.floor(zoom) <= cluster.maxZoom;
+  }
+
+  /** Should the geojson fetch start at this zoom (either render band)?
+   * A below-band activation must not pay the 4 MB download. */
+  function circleFetchDue(spec: CircleOverlaySpec, zoom: number): boolean {
+    return zoom >= spec.minZoom || inClusterBand(spec, zoom);
+  }
+
+  /** Rebuild the cluster bubble layer at the current cluster zoom
+   * LEVEL (~30–120 bubbles — cheap to rebuild on level change or a
+   * badge-setting toggle; the raw marker group is never touched). */
+  function rebuildClusterLayer(entry: CircleEntry): void {
+    const cluster = entry.spec.cluster;
+    const index = entry.clusterIndex;
+    if (destroyed || !cluster || !index) return;
+    const zoom = map.getZoom();
+    const level = Math.floor(zoom);
+    const showCounts = userSettingsStore.uiSettings.overlayClusterCounts;
+    const markers: L.Marker[] = [];
+    for (const feature of index.getClusters(WORLD_BBOX, level)) {
+      // union of cluster + raw point properties — narrow to the
+      // cluster shape (index signature for the evaluator)
+      const props = feature.properties as (StyleProps & { cluster?: unknown }) | undefined;
+      if (props?.cluster !== true) continue;
+      const bubble = clusterBubbleStyle(cluster, zoom, props, showCounts);
+      const lng = feature.geometry.coordinates[0];
+      const lat = feature.geometry.coordinates[1];
+      if (typeof lng !== 'number' || typeof lat !== 'number') continue;
+      markers.push(
+        L.marker([lat, lng], {
+          interactive: false, // no bubble interactions wired (yet)
+          keyboard: false,
+          icon: L.divIcon({
+            className: 'wd-cluster-bubble',
+            html: bubble.html,
+            iconSize: [bubble.size, bubble.size],
+          }),
+        })
+      );
     }
-    if (!shouldShow && onMap) map.removeLayer(entry.group);
-    return false;
+    if (entry.clusterLayer) map.removeLayer(entry.clusterLayer);
+    entry.clusterLayer = L.layerGroup(markers);
+    entry.clusterLayer.addTo(map);
+    entry.clusterLevel = level;
+  }
+
+  /** Add/remove the raw group + cluster bubble layer around their zoom
+   * bands. Returns true when the raw group was ADDED (and already
+   * re-styled at the current zoom) — callers skip their own follow-up
+   * re-style then, avoiding a second 27k-marker pass on the
+   * floor-crossing frame. */
+  function updateCircleBands(entry: CircleEntry): boolean {
+    if (destroyed) return false;
+    const zoom = map.getZoom();
+    let addedNow = false;
+    // raw stops: at/above the layer floor, exactly as before clustering
+    if (entry.group) {
+      const shouldShow = zoom >= entry.spec.minZoom;
+      const onMap = map.hasLayer(entry.group);
+      if (shouldShow && !onMap) {
+        entry.group.addTo(map);
+        restyleCircle(entry); // styles were evaluated at the removal zoom
+        addedNow = true;
+      } else if (!shouldShow && onMap) {
+        map.removeLayer(entry.group);
+      }
+    }
+    // cluster bubbles: inside the cluster band, rebuilt per level
+    if (entry.spec.cluster && entry.clusterIndex) {
+      const inBand = inClusterBand(entry.spec, zoom);
+      const onMap = entry.clusterLayer ? map.hasLayer(entry.clusterLayer) : false;
+      if (inBand && (!onMap || entry.clusterLevel !== Math.floor(zoom))) {
+        rebuildClusterLayer(entry);
+      } else if (!inBand && onMap) {
+        map.removeLayer(entry.clusterLayer as L.LayerGroup);
+        entry.clusterLayer = null;
+        entry.clusterLevel = null;
+      }
+    }
+    return addedNow;
   }
 
   /** Start (once) the deferred feature fetch for a circle entry. */
@@ -600,8 +933,11 @@ export function createFallbackOverlayAdapter(map: L.Map): FallbackOverlayAdapter
     entry.features
       .then(features => {
         if (destroyed || live.get(name) !== entry) return; // stale resolution
+        if (entry.spec.cluster) {
+          entry.clusterIndex = buildClusterIndex(features, entry.spec.cluster);
+        }
         entry.group = buildCircleGroup(entry.spec, features);
-        updateCircleVisibility(entry);
+        updateCircleBands(entry);
       })
       .catch(error => {
         // Render nothing (the menu row stays — an unchanged group from
@@ -614,31 +950,49 @@ export function createFallbackOverlayAdapter(map: L.Map): FallbackOverlayAdapter
       });
   }
 
+  /** Cluster config identity (a changed band/radius rebuilds the index
+   * with the entry — the fetch itself is cached per URL). */
+  const sameClusterConfig = (
+    a: CircleOverlaySpec['cluster'],
+    b: CircleOverlaySpec['cluster']
+  ): boolean => JSON.stringify(a) === JSON.stringify(b);
+
   /** Create/refresh the live circle entry for an active overlay. */
   function ensureCircleEntry(name: string, spec: CircleOverlaySpec): void {
     const existing = live.get(name);
     if (existing && existing.kind === 'circle') {
-      if (existing.spec.dataUrl === spec.dataUrl && existing.spec.minZoom === spec.minZoom) {
+      if (
+        existing.spec.dataUrl === spec.dataUrl &&
+        existing.spec.minZoom === spec.minZoom &&
+        sameClusterConfig(existing.spec.cluster, spec.cluster)
+      ) {
         existing.spec = spec; // paint refresh (parameter epochs) — re-style below
-        const addedNow = updateCircleVisibility(existing);
+        const addedNow = updateCircleBands(existing);
         if (!addedNow && existing.group && map.hasLayer(existing.group)) {
           restyleCircle(existing);
         }
-        // A below-floor activation deferred the fetch — start it now if
-        // the zoom crossed since.
-        if (map.getZoom() >= spec.minZoom) startCircleFetch(name, existing);
+        // A below-band activation deferred the fetch — start it now if
+        // a band was crossed since.
+        if (circleFetchDue(spec, map.getZoom())) startCircleFetch(name, existing);
         return;
       }
-      removeEntry(name); // URL/floor changed — rebuild (new fetch when the URL differs)
+      removeEntry(name); // URL/floor/cluster config changed — rebuild
     } else if (existing) {
       removeEntry(name); // kind switch (raster ↔ circle)
     }
-    const entry: CircleEntry = { kind: 'circle', spec, group: null, features: null };
+    const entry: CircleEntry = {
+      kind: 'circle',
+      spec,
+      group: null,
+      features: null,
+      clusterIndex: null,
+      clusterLayer: null,
+      clusterLevel: null,
+    };
     live.set(name, entry);
-    // Fetch only once the overlay is at/above its floor: a below-floor
-    // activation must not pay the 4 MB download (the zoomend crossing
-    // starts it instead).
-    if (map.getZoom() >= spec.minZoom) startCircleFetch(name, entry);
+    // Fetch only once a render band is due: a below-band activation
+    // must not pay the 4 MB download (the zoomend crossing starts it).
+    if (circleFetchDue(spec, map.getZoom())) startCircleFetch(name, entry);
   }
 
   /** Add/remove/re-point layers so the map mirrors the store state. */
@@ -703,11 +1057,11 @@ export function createFallbackOverlayAdapter(map: L.Map): FallbackOverlayAdapter
         entry.layer.setOpacity(paintOpacityAtZoom(entry.spec.opacityPaint, zoom));
         continue;
       }
-      const addedNow = updateCircleVisibility(entry);
+      const addedNow = updateCircleBands(entry);
       if (!addedNow && entry.group && map.hasLayer(entry.group)) restyleCircle(entry);
-      // Crossing up past the floor with the fetch still deferred (the
-      // below-floor activation skipped it) — start it now.
-      if (!entry.features && !entry.group && zoom >= entry.spec.minZoom) {
+      // Crossing into a render band with the fetch still deferred (the
+      // below-band activation skipped it) — start it now.
+      if (!entry.features && !entry.group && circleFetchDue(entry.spec, zoom)) {
         startCircleFetch(name, entry);
       }
     }
@@ -725,6 +1079,23 @@ export function createFallbackOverlayAdapter(map: L.Map): FallbackOverlayAdapter
     watch(
       () => overlayStore.overlaysEpoch,
       () => reset()
+    ),
+    // Cluster count badges: the user setting toggles ONLY the badge
+    // text — rebuild the (small) bubble layers in place, bubbles stay.
+    watch(
+      () => userSettingsStore.uiSettings.overlayClusterCounts,
+      () => {
+        if (destroyed) return;
+        for (const entry of live.values()) {
+          if (entry.kind !== 'circle' || !entry.spec.cluster || !entry.clusterIndex) {
+            continue;
+          }
+          if (inClusterBand(entry.spec, map.getZoom())) {
+            entry.clusterLevel = null; // force a rebuild with/without text
+            updateCircleBands(entry);
+          }
+        }
+      }
     )
   );
   map.on('zoomend', onZoomEnd);
