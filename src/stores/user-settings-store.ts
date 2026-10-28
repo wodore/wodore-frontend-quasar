@@ -32,6 +32,10 @@ export interface UserSettings {
      * sanitized to the fallback locale on load. */
     language: Locale;
     units: 'metric' | 'imperial';
+    /** Show the numeric count badge on clustered overlay markers
+     * (transport-stops clusters on the far zoom levels); the clusters
+     * themselves always render. */
+    overlayClusterCounts: boolean;
   };
   map: {
     defaultZoom: number;
@@ -62,6 +66,7 @@ const defaultSettings: UserSettings = {
     theme: 'auto',
     language: 'de',
     units: 'metric',
+    overlayClusterCounts: true,
   },
   map: {
     defaultZoom: 8,

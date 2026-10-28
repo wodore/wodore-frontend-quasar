@@ -7,9 +7,11 @@ import { ref, computed, watchEffect } from 'vue';
 import AuthService from 'src/services/auth';
 import WdVersionsPanel from 'src/components/version/WdVersionsPanel.vue';
 import WdOverlayConfig from './overlay-config/WdOverlayConfig.vue';
+import { useUserSettingsStore } from '@stores/user-settings-store';
 
 const authStore = useAuthStore();
 const menuStore = useMapMenuStore();
+const userSettings = useUserSettingsStore();
 const $q = useQuasar();
 
 let $auth: AuthService | undefined = undefined;
@@ -113,6 +115,28 @@ const toolbarLike = computed(() => $q.screen.width < 1100);
             @click="$auth?.logout()"
             :label="$t('logout')"
           />
+        </div>
+
+        <!-- Map display settings (cluster count badges on clustered
+             overlay markers — clusters themselves always render) -->
+        <div class="q-px-sm q-pb-sm">
+          <q-item tag="label" v-ripple dense>
+            <q-item-section>
+              <q-item-label>{{ $t('overlays.cluster_counts') }}</q-item-label>
+              <q-item-label class="text-caption">
+                {{ $t('overlays.cluster_counts_caption') }}
+              </q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-toggle
+                color="accent"
+                :model-value="userSettings.uiSettings.overlayClusterCounts"
+                @update:model-value="
+                  userSettings.updateUISetting('overlayClusterCounts', Boolean($event))
+                "
+              />
+            </q-item-section>
+          </q-item>
         </div>
 
         <div class="">

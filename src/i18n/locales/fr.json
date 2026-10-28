@@ -337,6 +337,10 @@
       "other_desc": "Autres arrêts"
     },
     "info": "Information",
+
+    "cluster_counts": "Afficher les effectifs des groupes",
+
+    "cluster_counts_caption": "Affiche le nombre de points regroupés dans chaque groupe sur la carte.",
     "skitouren": {
       "label": "Courses de ski",
       "desc": "Itinéraires de ski de randonnée de Swisstopo. Attention au danger d’avalanche et aux conditions météo.",

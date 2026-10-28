@@ -152,4 +152,33 @@ describe('user-settings-store', () => {
 
     expect(store.importSettings('not valid json')).toBe(false);
   });
+
+  it('overlayClusterCounts defaults on, merges for legacy users and persists', async () => {
+    allure.label('feature', 'user-settings');
+    allure.severity('minor');
+
+    // Pre-clustering stored blob (no overlayClusterCounts key) merges to
+    // the default — legacy users see the cluster badges once the backend
+    // ships the clustered transport-stops style.
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ ui: { theme: 'dark' }, map: {} }));
+    setActivePinia(createPinia());
+    const legacy = useUserSettingsStore();
+    expect(legacy.uiSettings.overlayClusterCounts).toBe(true);
+
+    legacy.updateUISetting('overlayClusterCounts', false);
+    expect(legacy.uiSettings.overlayClusterCounts).toBe(false);
+
+    await vi.waitFor(
+      () => {
+        const stored = readStored() as { ui?: { overlayClusterCounts?: boolean } };
+        expect(stored.ui?.overlayClusterCounts).toBe(false);
+      },
+      { timeout: 2000 }
+    );
+
+    // A new pinia + store instance must read the persisted value
+    setActivePinia(createPinia());
+    const fresh = useUserSettingsStore();
+    expect(fresh.uiSettings.overlayClusterCounts).toBe(false);
+  });
 });
