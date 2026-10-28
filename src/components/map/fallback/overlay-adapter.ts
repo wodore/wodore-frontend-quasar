@@ -46,6 +46,20 @@
  * overlayPane 400 and cluster icons on markerPane 600) for circle
  * overlays — circles paint above raster overlays regardless of toggle
  * order, always below the huts.
+ *
+ * DEBUGGING/VERIFICATION CONTRACT (a 2026-10-29 investigation chased a
+ * phantom "renders nothing" bug caused by non-matching DOM probes —
+ * these are the shapes that ACTUALLY exist at runtime):
+ * * cluster bubbles are divIcon markers with classes
+ *   `wd-cluster-bubble leaflet-marker-icon` (custom `className`
+ *   REPLACES Leaflet's default `leaflet-div-icon` — querying
+ *   `.leaflet-div-icon` finds NOTHING), in the marker pane;
+ * * raw circle markers are painted on a shared `<canvas>` (L.canvas)
+ *   in the pane element `.leaflet-wdOverlayData-pane` — custom panes
+ *   get Leaflet's `leaflet-` prefix + `-pane` suffix, and canvas
+ *   rendering produces NO SVG `circle` elements anywhere;
+ * * `window.__wdFbDebug.map` (dev builds) exposes the live map for
+ *   layer-walk assertions (e.g. counting markers with `.feature`).
  */
 
 import * as L from 'leaflet';
@@ -1040,10 +1054,16 @@ export function createFallbackOverlayAdapter(map: L.Map): FallbackOverlayAdapter
   }
 
   /** Hard reset: the catalog swapped the items (styles were replaced —
-   * drop the geojson cache too, data URLs may have rotated). */
+   * drop every layer and re-add from the new styles). The geojson
+   * feature cache SURVIVES: it is keyed by URL, so a rotated data URL
+   * misses naturally and fetches fresh, while an unchanged one (the
+   * 4 MB BAV list) keeps its in-flight/settled promise — clearing it
+   * re-downloaded the whole document on every catalog epoch bump
+   * (live-observed double fetch at 2026-10-29: boot fetched from the
+   * persisted style, then the fresh subset catalog arrived, bumped
+   * the epoch, reset() dropped the cache and fetched again). */
   function reset(): void {
     for (const [name] of live) removeEntry(name);
-    featureCache.clear();
     reconcile();
   }
 
