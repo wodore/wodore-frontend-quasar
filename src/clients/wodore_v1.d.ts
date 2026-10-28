@@ -567,9 +567,7 @@ export interface paths {
          * map-layers — List resolved map layers (generic collection envelope).
          * @description The backend resolves the wanted ``spec`` per layer (exact →
          *     explicit chain → single) and reports the served tier — clients
-         *     never select among variants. ``profile`` declares the client's
-         *     renderer capability (subset clients never receive full
-         *     variants). Sparse fieldsets narrow entries.
+         *     never select among variants. Sparse fieldsets narrow entries.
          */
         get: operations["map-layers"];
         put?: never;
@@ -5539,8 +5537,6 @@ export interface operations {
                 lang?: string;
                 /** @description Device-tier spec (low | medium | high); resolved into path */
                 spec?: string | null;
-                /** @description Renderer capability (full | subset); resolved into path. Omitted: today's profile-agnostic resolution. */
-                profile?: string | null;
             };
             header?: never;
             path?: never;
@@ -5600,8 +5596,6 @@ export interface operations {
                 lang?: string;
                 /** @description Device-tier spec the client WANTS (low | medium | high); the backend resolves exact → explicit chain → single and reports the served spec per entry */
                 spec?: string | null;
-                /** @description Renderer capability the client DECLARES (full | subset): full walks full→subset within each tier (tier respected before format richness); subset never receives full variants — slugs without a subset variant drop out. Omitted: today's profile-agnostic resolution (backward compatible). */
-                profile?: string | null;
                 /** @description Filter by layer role (basemap | overlay) */
                 role?: string | null;
                 /** @description Opt-in visibility filter (true | false). Default: all layers — hidden fallback basemaps stay resolvable for client-side fallback chains */
@@ -5663,8 +5657,6 @@ export interface operations {
                 lang?: string;
                 /** @description Device-tier spec the client WANTS (low | medium | high); the backend resolves exact → explicit chain → single and reports the served spec per entry */
                 spec?: string | null;
-                /** @description Renderer capability the client DECLARES (full | subset): full walks full→subset within each tier (tier respected before format richness); subset never receives full variants — slugs without a subset variant drop out. Omitted: today's profile-agnostic resolution (backward compatible). */
-                profile?: string | null;
                 /** @description Filter by layer role (basemap | overlay) */
                 role?: string | null;
                 /** @description Opt-in visibility filter (true | false). Default: all layers — hidden fallback basemaps stay resolvable for client-side fallback chains */
