@@ -203,20 +203,22 @@ export type MapLayerProfile = 'full' | 'subset';
  * MapCatalogUnavailableError on failure — callers fall back to their
  * persisted caches.
  *
- * FORWARD-COMPAT: no caller passes `profile` today. The shared
- * map-catalog store fetches the DEFAULT (profile-agnostic) catalog —
- * every renderer sees the same rows and the fallback's menu filters
- * client-side by the row's `profile` field (subset-only variants stay
- * `subset` in the default catalog, verified against the #440 backend).
- * The known leniency: against a PRE-#440 backend the rows carry no
- * `profile`, so full-only layers appear in the fallback's menu as
- * visible-but-inert entries (the adapter renders only raster styles).
- * Wiring the per-renderer fetch is deferred until the overlay store
- * fetches per renderer — the parameter types the request until then.
- * The generated staging client does not carry the param yet (#440 is
- * unreleased); the query object passes through structurally and
- * openapi-fetch serializes every key, so the param reaches backends
- * that declare it.
+ * WIRED for OVERLAYS (the #362 leniency gap, live since #440 deployed:
+ * the default catalog resolves transport-stops `profile: full`, the
+ * fallback's client-side filter hid it, and the fallback never asked
+ * for the subset view): the map-catalog store passes
+ * `rendererProfile()` — 'subset' on no-WebGL/fallback sessions,
+ * undefined (default) on MapLibre sessions. Basemap consumers keep
+ * the DEFAULT view deliberately: world-satellite-hybrid has no subset
+ * variant and would drop out of the fallback's basemap list — the
+ * fallback's raster extraction already gates which default-catalog
+ * basemaps render there. WdOverlayControl's client-side profile
+ * filter stays as transition + double safety (pre-#440 cached
+ * snapshots carry no profile — those rows stay visible-but-inert).
+ * The generated client does not carry the param yet (unreleased
+ * schema); the query object passes through structurally and
+ * openapi-fetch serializes every key, so the param reaches the
+ * backend (e2e-asserted on the request URL).
  */
 export function fetchMapCatalog(
   lang?: string,
@@ -377,37 +379,58 @@ export function fetchMapStyle(url: string, slug = url): Promise<StyleSpecificati
 import { storageGet, storageRemove, storageSet } from '@services/storage';
 
 const LAYERS_CACHE_KEY = 'mapLayersCache';
+/** The SUBSET view's snapshot key (fallback sessions, profile=subset
+ *  fetches): a separate slot so a fallback session's persisted subset
+ *  rows (full-only layers absent) never leak into a MapLibre session's
+ *  warm boot — and vice versa (the basemap stores read the DEFAULT
+ *  view; world-satellite-hybrid has no subset variant). */
+const LAYERS_CACHE_SUBSET_KEY = 'mapLayersCache:subset';
 
 /** Pre-#331 cache keys (config-catalog split) — removed on first read
  *  so stale shapes never shadow the new layers cache. */
 const LEGACY_CACHE_KEYS = ['mapCatalogCache', 'mapBasemapCatalogCache'];
 
 /** Persisted layers snapshot (last successful fetch, any locale):
- *  `{savedAt, lang, data}` — renders instantly on warm boot, the
- *  background refresh revalidates after (server ETags own freshness). */
+ *  `{savedAt, lang, profile, data}` — renders instantly on warm boot,
+ *  the background refresh revalidates after (server ETags own
+ *  freshness). `profile` selects the view's storage slot: 'subset'
+ *  (fallback-session fetch) or null (default catalog). */
 export interface PersistedLayers {
   savedAt: string;
   lang: string;
+  profile?: 'subset' | null;
   data: MapCatalogLayer[];
 }
 
-export function persistLayers(layers: MapCatalogLayer[], lang: string): void {
-  storageSet(LAYERS_CACHE_KEY, {
+export function persistLayers(
+  layers: MapCatalogLayer[],
+  lang: string,
+  profile: 'subset' | null = null
+): void {
+  storageSet(profile === 'subset' ? LAYERS_CACHE_SUBSET_KEY : LAYERS_CACHE_KEY, {
     savedAt: new Date().toISOString(),
     lang,
+    profile,
     data: layers,
   } satisfies PersistedLayers);
 }
 
-/** Last persisted layers snapshot (synchronous — the storage service
- *  preloads its cache at boot). Null on a cold first run; migrates away
- *  the legacy pre-#331 cache keys when present. */
-export function loadPersistedLayers(): PersistedLayers | null {
+/** Last persisted layers snapshot for ONE view (synchronous — the
+ *  storage service preloads its cache at boot). Null on a cold first
+ *  run or when the snapshot is from the OTHER view (a fallback
+ *  session must not warm-boot the default rows — the #362 gap class —
+ *  nor a MapLibre session the subset ones); migrates away the legacy
+ *  pre-#331 cache keys when present. Pre-profile snapshots (no
+ *  `profile` field) read as the default view. */
+export function loadPersistedLayers(profile: 'subset' | null = null): PersistedLayers | null {
   for (const legacy of LEGACY_CACHE_KEYS) {
     if (storageGet(legacy) !== null) storageRemove(legacy);
   }
-  const cached = storageGet(LAYERS_CACHE_KEY) as PersistedLayers | null;
+  const cached = storageGet(
+    profile === 'subset' ? LAYERS_CACHE_SUBSET_KEY : LAYERS_CACHE_KEY
+  ) as PersistedLayers | null;
   if (!cached || !Array.isArray(cached.data)) return null;
+  if ((cached.profile ?? null) !== profile) return null; // other view's snapshot
   return cached;
 }
 

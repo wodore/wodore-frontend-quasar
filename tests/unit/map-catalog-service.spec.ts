@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as allure from 'allure-js-commons';
+import { storageClear } from '@services/storage';
 import {
   resolveTokens,
   collectTokens,
@@ -11,6 +12,8 @@ import {
   isOpacityCurve,
   parseOpacityCurve,
   serializeOpacityCurve,
+  persistLayers,
+  loadPersistedLayers,
 } from '@services/map-catalog';
 
 // The layers/slots fetches ride the generated clientWodore — mock
@@ -160,6 +163,88 @@ describe('fetchMapCatalog (resolved layers API, backend #331)', () => {
     resolveFetch({ data: { data: [], count: 0 }, error: undefined });
     await expect(a).resolves.toBe(await b);
     expect(layersGet).toHaveBeenCalledTimes(1);
+  });
+
+  it('declares profile=subset for fallback sessions (backend #440) — the param rides the generated client structurally', async () => {
+    layersGet.mockResolvedValue({
+      data: { data: [], count: 0 },
+      error: undefined,
+      response: new Response(),
+    });
+    await fetchMapCatalog('de', 'low', undefined, 'subset');
+    // The generated client carries no `profile` field yet (unreleased
+    // schema) — the query object passes through structurally and
+    // openapi-fetch serializes every key, so the param still reaches
+    // backends that declare it (e2e-asserted on the wire).
+    expect(layersGet).toHaveBeenCalledWith(
+      '/v1/map/layers',
+      expect.objectContaining({
+        params: { query: { lang: 'de', spec: 'low', profile: 'subset' } },
+      })
+    );
+  });
+
+  it('caches per profile — a subset fetch never serves the default session (and vice versa)', async () => {
+    let calls = 0;
+    layersGet.mockImplementation(async () => {
+      calls += 1;
+      return { data: { data: [], count: calls }, error: undefined, response: new Response() };
+    });
+    const subset = fetchMapCatalog('de', 'low', undefined, 'subset');
+    const fallbackDefault = fetchMapCatalog('de', 'low');
+    const subsetAgain = fetchMapCatalog('de', 'low', undefined, 'subset');
+    expect(subsetAgain).toBe(subset); // deduped onto the subset request
+    await Promise.all([subset, fallbackDefault]);
+    expect(layersGet).toHaveBeenCalledTimes(2); // one per profile
+  });
+});
+
+describe('layers snapshot views (persistLayers/loadPersistedLayers)', () => {
+  const layers = () => [layerSummary()] as never[];
+
+  beforeEach(() => {
+    // The storage service keeps a module-level memory cache — a fresh
+    // slate keeps the view-isolation specs independent of each other.
+    storageClear();
+  });
+
+  it('persists and loads the DEFAULT view under mapLayersCache', () => {
+    persistLayers(layers(), 'en', null);
+    const loaded = loadPersistedLayers(null);
+    expect(loaded?.profile).toBeNull();
+    expect(loaded?.lang).toBe('en');
+    expect(loaded?.data).toHaveLength(1);
+  });
+
+  it('persists and loads the SUBSET view under its own slot', () => {
+    persistLayers(layers(), 'en', 'subset');
+    const loaded = loadPersistedLayers('subset');
+    expect(loaded?.profile).toBe('subset');
+    expect(loaded?.data).toHaveLength(1);
+  });
+
+  it('never leaks a view into the other session (both directions)', () => {
+    // A fallback session must not warm-boot default rows (the menu
+    // would hide subset-servable overlays again); a MapLibre session
+    // must not warm-boot subset rows (full-only overlays missing).
+    // Slots are independent — clearing between the halves proves the
+    // READ isolation (one view persisted at a time).
+    persistLayers(layers(), 'en', null);
+    expect(loadPersistedLayers(null)?.data).toHaveLength(1); // own view loads
+    expect(loadPersistedLayers('subset')).toBeNull(); // other view misses
+    storageClear();
+    persistLayers(layers(), 'en', 'subset');
+    expect(loadPersistedLayers('subset')?.profile).toBe('subset'); // own view loads
+    expect(loadPersistedLayers(null)).toBeNull(); // other view misses
+  });
+
+  it('reads pre-profile snapshots as the default view (backward compat)', () => {
+    // Written by app versions before the subset split — no `profile`
+    // field; MapLibre sessions keep warm-booting them untouched.
+    loadPersistedLayers(null); // no-op read
+    persistLayers(layers(), 'en', null);
+    const raw = loadPersistedLayers(null)!;
+    expect(raw.profile ?? null).toBeNull();
   });
 });
 
