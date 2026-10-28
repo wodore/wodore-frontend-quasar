@@ -368,7 +368,7 @@ function handleSwipeDown() {
         <transition-group name="search-result" tag="div">
           <WdSearchResultEntry
             v-for="(place, index) in searchResults"
-            :key="place.id"
+            :key="place.slug"
             :hut="place"
             :selected="index === selectedIndex"
             @select="onPlaceSelect"

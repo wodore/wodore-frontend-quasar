@@ -210,27 +210,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/geo/places/amenity/{place_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * get_amenity — Get an amenity place.
-         * @description Returns detailed information base GeoPlace fields plus amenity-specific information
-         *     like operating status, opening hours, websites, and phone numbers.
-         */
-        get: operations["get_amenity"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/geo/places/nearby": {
         parameters: {
             query?: never;
@@ -284,6 +263,29 @@ export interface paths {
          *     - Early exit if enough prefix matches found
          */
         get: operations["search_geoplaces"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/geo/places/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * get_place — Get a place.
+         * @description Unified detail for every place regardless of detail type (amenity, transport,
+         *     admin, natural, none): base place fields plus optional members (categories,
+         *     sources, amenity) under the `fields[places]` sparse-fieldset selection.
+         *     Places are identified by slug; the numeric id is never exposed.
+         */
+        get: operations["get_place"];
         put?: never;
         post?: never;
         delete?: never;
@@ -837,6 +839,10 @@ export interface components {
         /**
          * AmenityDetailSchema
          * @description Schema for amenity detailed information.
+         *
+         *     Websites/links live at the place level (external links), overflow
+         *     data on ``GeoPlace.extra``, phone numbers as ``uri.phone`` links
+         *     (external-link-uris) — none of them belong on this block.
          */
         AmenityDetailSchema: {
             /** Operating Status */
@@ -855,55 +861,6 @@ export interface components {
             opening_hours?: {
                 [key: string]: unknown;
             };
-            /** Websites */
-            websites?: components["schemas"]["WebsiteSchema"][];
-            /** Phones */
-            phones?: components["schemas"]["PhoneSchema"][];
-            /** Extra */
-            extra?: {
-                [key: string]: unknown;
-            };
-        };
-        /**
-         * AmenitySchema
-         * @description Schema for amenity places with full details.
-         */
-        AmenitySchema: {
-            /** Id */
-            id: number;
-            /** Name */
-            name: string;
-            /** Country Code */
-            country_code: string | null;
-            /** Elevation */
-            elevation: number | null;
-            /** Importance */
-            importance: number;
-            location: components["schemas"]["LocationSchema"];
-            /**
-             * Categories
-             * @default null
-             */
-            categories: string[] | components["schemas"]["CategoryPlaceTypeSchema"][] | null;
-            /**
-             * Sources
-             * @default null
-             */
-            sources: components["schemas"]["OrganizationSourceIdSlugSchema"][] | components["schemas"]["OrganizationSourceIdDetailSchema"][] | null;
-            /**
-             * Description
-             * @default null
-             */
-            description: string | null;
-            /** Detail Type */
-            detail_type: string;
-            /**
-             * Review Status
-             * @default null
-             */
-            review_status: string | null;
-            /** @default null */
-            amenity_detail: components["schemas"]["AmenityDetailSchema"] | null;
         };
         /**
          * AnswerEnum
@@ -1760,12 +1717,77 @@ export interface components {
             urls: string[] | null;
         };
         /**
+         * GeoPlaceDetailSchema
+         * @description Unified place detail (place-detail-endpoint).
+         *
+         *     Required members: ``slug``, ``name``, ``detail_type`` (the type
+         *     discriminator clients switch on), ``location``, ``importance``.
+         *     Everything else is an optional member under the ``fields[places]``
+         *     sparse-fieldset selection; detail blocks appear as sibling members
+         *     named exactly after their ``detail_type`` value (``amenity`` now,
+         *     ``admin``/``transport``/``natural`` later) and only for places of
+         *     that type with a detail row.
+         */
+        GeoPlaceDetailSchema: {
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string;
+            /**
+             * Country Code
+             * @default null
+             */
+            country_code: string | null;
+            /**
+             * Elevation
+             * @default null
+             */
+            elevation: number | null;
+            /** Importance */
+            importance: number;
+            location: components["schemas"]["LocationSchema"];
+            /**
+             * Categories
+             * @default null
+             */
+            categories: string[] | components["schemas"]["CategoryPlaceTypeSchema"][] | null;
+            /**
+             * Sources
+             * @default null
+             */
+            sources: components["schemas"]["OrganizationSourceIdSlugSchema"][] | components["schemas"]["OrganizationSourceIdDetailSchema"][] | null;
+            /**
+             * Parties
+             * @default null
+             */
+            parties: components["schemas"]["PartySchema"][] | null;
+            /**
+             * Description
+             * @default null
+             */
+            description: string | null;
+            /**
+             * Review Status
+             * @default null
+             */
+            review_status: string | null;
+            /** Detail Type */
+            detail_type: string;
+            /** @default null */
+            amenity: components["schemas"]["AmenityDetailSchema"] | null;
+            /**
+             * Links
+             * @default null
+             */
+            links: components["schemas"]["LinkSchema"][] | null;
+        };
+        /**
          * GeoPlaceNearbySchema
          * @description Schema for nearby places with distance information.
          */
         GeoPlaceNearbySchema: {
-            /** Id */
-            id: number;
+            /** Slug */
+            slug: string;
             /** Name */
             name: string;
             /** Country Code */
@@ -1785,6 +1807,11 @@ export interface components {
              * @default null
              */
             sources: components["schemas"]["OrganizationSourceIdSlugSchema"][] | components["schemas"]["OrganizationSourceIdDetailSchema"][] | null;
+            /**
+             * Parties
+             * @default null
+             */
+            parties: components["schemas"]["PartySchema"][] | null;
             /**
              * Distance
              * @default null
@@ -1796,8 +1823,8 @@ export interface components {
          * @description Schema for search results with location coordinates.
          */
         GeoPlaceSearchSchema: {
-            /** Id */
-            id: number;
+            /** Slug */
+            slug: string;
             /** Name */
             name: string;
             /** Country Code */
@@ -1817,6 +1844,11 @@ export interface components {
              * @default null
              */
             sources: components["schemas"]["OrganizationSourceIdSlugSchema"][] | components["schemas"]["OrganizationSourceIdDetailSchema"][] | null;
+            /**
+             * Parties
+             * @default null
+             */
+            parties: components["schemas"]["PartySchema"][] | null;
             /**
              * Score
              * @default null
@@ -3059,6 +3091,28 @@ export interface components {
             coordinates: (components["schemas"]["Position2D"] | components["schemas"]["Position3D"])[];
         };
         /**
+         * LinkSchema
+         * @description One typed external link on a place (external-link-uris).
+         */
+        LinkSchema: {
+            /** Uri */
+            uri: string;
+            /** Url */
+            url: string;
+            /**
+             * Label
+             * @default null
+             */
+            label: string | null;
+            /**
+             * Symbol
+             * @default null
+             */
+            symbol: {
+                [key: string]: string;
+            } | null;
+        };
+        /**
          * LocationSchema
          * @description Location with longitude, latitude and optional elevation in WSG84.
          *
@@ -3328,17 +3382,41 @@ export interface components {
             url: string | null;
         };
         /**
-         * PhoneSchema
-         * @description Schema for phone number with optional label.
+         * PartyLinkSchema
+         * @description Schema for a party link (label + url).
          */
-        PhoneSchema: {
-            /** Number */
-            number: string;
+        PartyLinkSchema: {
+            /** Url */
+            url: string;
             /**
              * Label
              * @default null
              */
             label: string | null;
+        };
+        /**
+         * PartySchema
+         * @description Schema for role-classified party associations (geoplace-parties).
+         */
+        PartySchema: {
+            /** Role */
+            role: string;
+            /** Slug */
+            slug: string;
+            /**
+             * Name
+             * @default null
+             */
+            name: string | null;
+            /** Links */
+            links?: components["schemas"]["PartyLinkSchema"][];
+            /**
+             * Symbol
+             * @default null
+             */
+            symbol: {
+                [key: string]: string;
+            } | null;
         };
         /**
          * PlaceMetaSchema
@@ -3585,19 +3663,6 @@ export interface components {
             collection: components["schemas"]["CollectionValue"] | null;
         } & {
             [key: string]: unknown;
-        };
-        /**
-         * WebsiteSchema
-         * @description Schema for website with optional label.
-         */
-        WebsiteSchema: {
-            /** Url */
-            url: string;
-            /**
-             * Label
-             * @default null
-             */
-            label: string | null;
         };
     };
     responses: never;
@@ -4251,77 +4316,10 @@ export interface operations {
             };
         };
     };
-    get_amenity: {
-        parameters: {
-            query?: {
-                /** @description Sparse fieldsets (JSON:API): `fields[TYPE]=name1,name2` narrows the response to the selected fields (`__all__` = every field). Valid TYPEs: places, categories, sources. */
-                fields?: {
-                    [key: string]: string;
-                } | null;
-                /** @description Select language code: de, en, fr, it. */
-                lang?: string;
-            };
-            header?: never;
-            path: {
-                /** @description GeoPlace id */
-                place_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    "Cache-Control": string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AmenitySchema"];
-                };
-            };
-            /** @description Raised when request components cannot be parsed */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
-                };
-            };
-            /** @description Raised when path parameters do not match */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
-                };
-            };
-            /** @description Raised when provided `Accept` header cannot be satisfied */
-            406: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
-                };
-            };
-            /** @description Raised when returned response does not match the response schema */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorDetail"];
-                };
-            };
-        };
-    };
     nearby_geoplaces: {
         parameters: {
             query: {
-                /** @description Sparse fieldsets (JSON:API): `fields[TYPE]=name1,name2` narrows the response to the selected fields (`__all__` = every field). Valid TYPEs: places, categories, sources. */
+                /** @description Sparse fieldsets (JSON:API): `fields[TYPE]=name1,name2` narrows the response to the selected fields (`__all__` = every field). Valid TYPEs: places, categories, sources, parties. */
                 fields?: {
                     [key: string]: string;
                 } | null;
@@ -4435,7 +4433,7 @@ export interface operations {
             query: {
                 /** @description Filter to features intersecting the box, formatted as minLon,minLat,maxLon,maxLat (WGS84 decimal degrees). */
                 bbox?: string | null;
-                /** @description Sparse fieldsets (JSON:API): `fields[TYPE]=name1,name2` narrows the response to the selected fields (`__all__` = every field). Valid TYPEs: places, categories, sources. */
+                /** @description Sparse fieldsets (JSON:API): `fields[TYPE]=name1,name2` narrows the response to the selected fields (`__all__` = every field). Valid TYPEs: places, categories, sources, parties. */
                 fields?: {
                     [key: string]: string;
                 } | null;
@@ -4478,6 +4476,73 @@ export interface operations {
             };
             /** @description Raised when request components cannot be parsed */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Raised when provided `Accept` header cannot be satisfied */
+            406: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Raised when returned response does not match the response schema */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+        };
+    };
+    get_place: {
+        parameters: {
+            query?: {
+                /** @description Sparse fieldsets (JSON:API): `fields[TYPE]=name1,name2` narrows the response to the selected fields (`__all__` = every field). Valid TYPEs: places, categories, sources, parties, links. */
+                fields?: {
+                    [key: string]: string;
+                } | null;
+                /** @description Select language code: de, en, fr, it. */
+                lang?: string;
+            };
+            header?: never;
+            path: {
+                /** @description GeoPlace slug */
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    "Cache-Control": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GeoPlaceDetailSchema"];
+                };
+            };
+            /** @description Raised when request components cannot be parsed */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorDetail"];
+                };
+            };
+            /** @description Raised when path parameters do not match */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5807,7 +5872,6 @@ export interface operations {
             /** @description OK */
             200: {
                 headers: {
-                    "Cache-Control": string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -6398,6 +6462,7 @@ export interface operations {
             /** @description OK */
             200: {
                 headers: {
+                    "Cache-Control": string;
                     [name: string]: unknown;
                 };
                 content: {

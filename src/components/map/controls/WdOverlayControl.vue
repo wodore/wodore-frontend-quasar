@@ -53,6 +53,22 @@ import type {
 
 const { t } = useI18n();
 const $q = useQuasar();
+
+// ── Renderer capability (backend #440 profile dimension) ─────────────────
+// 'subset' (the Leaflet fallback map) never renders full-only layers —
+// their menu entries hide. 'full' (what WdMapView passes for the
+// MapLibre map) or an undefined declaration shows every row: no
+// filtering, byte-identical to before the profile dimension.
+// Rows without a served profile (pre-#440 backend) stay visible in both
+// modes — the adapter renders whichever of them carries a raster base
+// (visible-but-inert for vector-only rows, the documented leniency).
+const props = defineProps<{
+  rendererProfile?: 'full' | 'subset';
+}>();
+function visibleInRenderer(overlay: { profile?: string }): boolean {
+  return props.rendererProfile !== 'subset' || overlay.profile !== 'full';
+}
+
 const overlayStore = useOverlayStore();
 // Catalog boot status drives the loading/error rows (cold first run).
 const mapCatalogStore = useMapCatalogStore();
@@ -759,7 +775,7 @@ watch([expanded, editMode], ([exp, edit], [prevExp, prevEdit]) => {
 });
 
 const miniLayers = computed(() => {
-  return overlayStore.activeGroupLayers();
+  return overlayStore.activeGroupLayers().filter(o => visibleInRenderer(o as { profile?: string }));
 });
 
 // ── Promoted rows & 6s linger grace ─────────────────────────────────────
@@ -852,6 +868,7 @@ const otherLayersSorted = computed(() => {
   const isRest = (o: OverlaySwitchItem): boolean => !o.active && !lingeringSlugs.value.has(o.name);
   return overlayStore
     .otherLayers()
+    .filter(o => visibleInRenderer(o as { profile?: string }))
     .slice()
     .sort((a, b) => {
       const r = Number(isRest(a)) - Number(isRest(b));
@@ -868,7 +885,11 @@ const visibleOthers = computed(() => {
 
 /** Mini height cap: group rows + visible promoted rows (linger included) */
 const cappedPromotedCount = computed(
-  () => overlayStore.otherLayers().filter(o => o.active || lingeringSlugs.value.has(o.name)).length
+  () =>
+    overlayStore
+      .otherLayers()
+      .filter(o => visibleInRenderer(o as { profile?: string }))
+      .filter(o => o.active || lingeringSlugs.value.has(o.name)).length
 );
 
 // The rows BOX is the same size in mini and expanded (pixel-perfect
@@ -1346,6 +1367,11 @@ function waitForSpriteImage(probeImage: string, spriteId: string): Promise<void>
 
 function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwitchItem>): boolean {
   if (addedOverlays.has(overlay.name)) return true;
+  // No MapLibre map mounted (the Leaflet fallback is active — its own
+  // adapter renders from the shared store): the toggle stays a
+  // menu/state change; addOverlayLayer's warn+retry path must not fire
+  // with nothing to add to.
+  if (!mapRef.map) return true;
   for (const label in overlay.style.sources) {
     if (mapRef.map?.getSource(label) === undefined) {
       mapRef.map?.addSource(label, overlay.style.sources[label]);

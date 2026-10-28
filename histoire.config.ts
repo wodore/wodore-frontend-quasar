@@ -99,10 +99,12 @@ export default defineConfig({
     css: {
       preprocessorOptions: {
         scss: {
-          includePaths: [__dirname],
+          // Modern Sass API (Vite ≥6): `includePaths` is the legacy
+          // option — `loadPaths` is the typed modern equivalent.
+          loadPaths: [__dirname],
         },
         sass: {
-          includePaths: [__dirname],
+          loadPaths: [__dirname],
         },
       },
     },

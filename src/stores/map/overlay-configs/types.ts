@@ -187,10 +187,38 @@ export interface LegendDefinition {
 // Overlay Configuration
 // =====================
 
+/** Clustering rendering hint (backend #440 config.clustering, seed on
+ *  the huts row): never inside the style document — one config serves
+ *  client-side clustering (Leaflet markercluster on the fallback map)
+ *  and precomputed DB clusters later. Features lacking groupByProperty
+ *  form one null bucket. */
+export interface ClusteringConfig {
+  enabled?: boolean;
+  /** Source the config clusters (e.g. 'wd-huts'). */
+  source?: string;
+  /** Feature property clustering is grouped by (e.g.
+   *  'type_standard_slug'); null/absent → the null bucket. */
+  groupByProperty?: string | null;
+  /** Cluster bubble radius in pixels (markercluster maxClusterRadius). */
+  radius?: number;
+  /** Zoom at which clusters dissolve into single markers
+   *  (markercluster disableClusteringAtZoom). */
+  maxZoom?: number;
+  /** Cluster bubble rendering properties (informational for
+   *  icon/count rendering — the fallback reads the same feature
+   *  fields already). */
+  bubble?: {
+    colorProperty?: string;
+    iconProperty?: string;
+    countProperty?: string;
+  };
+}
+
 export interface OverlayConfig {
   filters?: FilterDefinition[];
   settings?: SettingDefinition[];
   legend?: LegendDefinition;
+  clustering?: ClusteringConfig;
 }
 
 export interface OverlayConfigs {
