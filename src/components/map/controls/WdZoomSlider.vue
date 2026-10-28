@@ -31,6 +31,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
+import { type LngLat, type Map as MlMap } from 'maplibre-gl';
 import { MAP_MIN_ZOOM } from '@stores/map/utils/map-constants';
 
 const mapRef = useMap();
@@ -41,8 +42,10 @@ const { t } = useI18n();
  *  tile max up to MapLibre's z22. */
 const MIN_ZOOM = MAP_MIN_ZOOM;
 const MAX_ZOOM = 22;
-/** px of drag per full zoom level — lower = more aggressive */
-const PX_PER_LEVEL = 32;
+/** px of drag per full zoom level — lower = more aggressive. 48 keeps a
+ *  full-band drag (~120px) under ~2.5 levels; 32 (the previous value)
+ *  traversed almost 4 and read as hair-trigger. */
+const PX_PER_LEVEL = 48;
 /** zoom step of the +/− buttons and of a tap on a track half */
 const STEP = 0.75;
 /** large step of PageUp/PageDown (WAI-ARIA slider large step) */
@@ -74,6 +77,19 @@ const thumbPos = computed(() => {
 
 function clamp(v: number): number {
   return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, v));
+}
+
+/** Anchor for every slider zoom: the VISUAL viewport middle, as a
+ *  LngLat. NOT the map center — hut flyTos leave camera PADDING
+ *  behind (mobile safe-area flights, see WdMapView), and an unanchored
+ *  zoomTo pivots on the PADDED center, which sits off the visual
+ *  middle: the zoom drifts sideways instead of staying put.
+ *  unproject([w/2, h/2]) yields the true screen middle as a LngLat —
+ *  the container-pixel pair is accepted as a PointLike, and passing a
+ *  LngLat (not a raw pixel Point) is what easeTo's `around` expects. */
+function visualCenter(map: MlMap): LngLat {
+  const container = map.getContainer();
+  return map.unproject([container.clientWidth / 2, container.clientHeight / 2]);
 }
 
 function onPointerDown(e: PointerEvent): void {
@@ -109,7 +125,7 @@ function onPointerMove(e: PointerEvent): void {
   const next = clamp(dragStartZoom + dy / PX_PER_LEVEL);
   if (next !== zoom.value) {
     zoom.value = next;
-    mapRef.map.zoomTo(next, { duration: 0 });
+    mapRef.map.zoomTo(next, { duration: 0, around: visualCenter(mapRef.map) });
   }
 }
 
@@ -155,6 +171,7 @@ function applyZoom(value: number): void {
   lastStepAt = Date.now();
   zoom.value = next;
   mapRef.map.zoomTo(next, {
+    around: visualCenter(mapRef.map),
     // snappy step; no camera travel for reduced-motion users
     duration: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 150,
   });

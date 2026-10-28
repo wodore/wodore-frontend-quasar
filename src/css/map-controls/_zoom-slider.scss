@@ -18,7 +18,9 @@
 // hidden in focus mode, so they cannot collide.
 // Mobile (no focus): visible when the overlay strip is CLOSED (they
 // interfere otherwise).
-// Desktop (no focus): hidden — the classic zoom buttons serve instead.
+// Desktop (no focus): always visible — this slider IS the zoom control;
+// there is no classic button pair (wheel/keyboard zoom stay available
+// regardless of visibility).
 // ══════════════════════════════════════════════════════════════════════
 .wd-zoom {
   display: none !important;
@@ -54,6 +56,39 @@ body.wd-map-focus .wd-zoom__pill {
     transition:
       opacity 300ms cubic-bezier(0.2, 0, 0, 1),
       transform 300ms cubic-bezier(0.2, 0, 0, 1);
+  }
+}
+
+// Desktop, outside focus mode: always visible — the slider is the only
+// zoom control at this width (the "classic zoom buttons" the old gating
+// counted on never existed; wheel/keyboard zoom remain available anyway).
+// Unconditional: the right-edge overlay strip that collides on mobile
+// does not exist at desktop widths. Boot keeps it hidden via
+// body.wd-booting (opacity 0 !important, _layout.scss).
+@media (min-width: #{$breakpoint-sm + 1}) {
+  .wd-zoom {
+    display: flex !important;
+    transition: display 300ms allow-discrete;
+  }
+
+  // body-scoped like the focus/mobile rules: the component's scoped
+  // .wd-zoom__pill[data-v] hidden state is (0,2,0) — a plain class rule
+  // here would lose the cascade and keep the pill tucked away.
+  body:not(.wd-map-focus) .wd-zoom__pill {
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity 300ms cubic-bezier(0.2, 0, 0, 1),
+      transform 300ms cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  // Enter start values for the desktop show (same travel as the
+  // focus/mobile enters above).
+  @starting-style {
+    body:not(.wd-map-focus) .wd-zoom__pill {
+      opacity: 0;
+      transform: translateX(calc(100% + 26px + env(safe-area-inset-right, 0px)));
+    }
   }
 }
 
