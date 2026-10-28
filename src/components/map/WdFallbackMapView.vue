@@ -30,13 +30,14 @@
  *   chip). Day 0 paints a larger background ring in the occupation
  *   status color (the same palette the MapLibre `wd-huts-occupation`
  *   layer uses).
- * - Clustering: TWO markercluster groups — huts WITH availability
- *   uncluster from z10, huts without from z11 (owner spec, +1 vs the
- *   first cut after the zoom-sweep profile: ~1200 unclustered DOM
- *   markers at z10 dropped frames; ~500 stays 60fps). Cluster bubbles
- *   are colored by the DOMINANT member type color. Pans fully inside
- *   loaded tiles skip the marker rebuild; rebuilds also run only on
- *   tile-set, availability, selection or icon-band changes.
+ * - Clustering: TWO markercluster groups — both uncluster from z10
+ *   (owner tuning 2026-10, parity with the served config's maxZoom:
+ *   10; the plain group previously waited to z11 after the zoom-sweep
+ *   profile — ~1200 unclustered DOM markers at z10 dropped frames —
+ *   the owner accepted that density). Cluster bubbles are colored by
+ *   the DOMINANT member type color. Pans fully inside loaded tiles
+ *   skip the marker rebuild; rebuilds also run only on tile-set,
+ *   availability, selection or icon-band changes.
  * - Selection: the clicked hut's marker swaps to a wider gold border
  *   (route-driven — same toggle semantics as the MapLibre map).
  * - Date changes drive the SAME calendar spinner as the main map
@@ -164,8 +165,10 @@ function clusteringSignature(cfg: ClusteringConfig | undefined): string {
  *  first iteration — caps the unclustered marker count, see the profile
  *  note in the header). */
 const AVAIL_UNCLUSTER_ZOOM = 10;
-/** Huts WITHOUT availability one level later (owner spec). */
-const PLAIN_UNCLUSTER_ZOOM = 11;
+/** Huts WITHOUT availability uncluster at the SAME level now (owner
+ *  tuning 2026-10 — parity with the served config.clustering.maxZoom
+ *  of 10; was z11 before the profile-driven +1 was retired). */
+const PLAIN_UNCLUSTER_ZOOM = 10;
 const MIN_ZOOM = 2; // MAP_MIN_ZOOM parity
 const MAX_ZOOM = 19; // raster basemaps top out here
 /** Martin `huts` source pyramid (martin.yaml minzoom/maxzoom) — above
