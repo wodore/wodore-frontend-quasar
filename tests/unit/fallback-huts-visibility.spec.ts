@@ -11,7 +11,11 @@
  * fallback-huts-toggle interaction spec.
  */
 import { describe, expect, it } from 'vitest';
-import { HUTS_OVERLAY_NAME, hutsRowVisible } from '@components/map/fallback/huts-visibility';
+import {
+  HUTS_OVERLAY_NAME,
+  hutsRowVisible,
+  shouldAdoptHutsActive,
+} from '@components/map/fallback/huts-visibility';
 
 describe('hutsRowVisible', () => {
   it('row ABSENT → active (today always-on behavior, deploy window)', () => {
@@ -34,5 +38,22 @@ describe('hutsRowVisible', () => {
 
   it('the row identity is the huts catalog slug', () => {
     expect(HUTS_OVERLAY_NAME).toBe('huts');
+  });
+});
+
+describe('shouldAdoptHutsActive (one-time deploy-window adoption)', () => {
+  it('present + compiled inactive + NO persisted state → adopt (pure-fallback users)', () => {
+    expect(shouldAdoptHutsActive({ active: false }, false)).toBe(true);
+  });
+
+  it('present + inactive + persisted state → follow the flag, no adoption', () => {
+    // The user toggled huts before (any session) — their choice wins.
+    expect(shouldAdoptHutsActive({ active: false }, true)).toBe(false);
+  });
+
+  it('already-active or absent rows never adopt', () => {
+    expect(shouldAdoptHutsActive({ active: true }, false)).toBe(false); // nothing to adopt
+    expect(shouldAdoptHutsActive(undefined, false)).toBe(false); // deploy window: no row
+    expect(shouldAdoptHutsActive({}, false)).toBe(false); // flagless degenerate row
   });
 });

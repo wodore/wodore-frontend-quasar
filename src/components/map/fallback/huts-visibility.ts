@@ -29,3 +29,26 @@ export const HUTS_OVERLAY_NAME = 'huts';
 export function hutsRowVisible(row: { active?: boolean } | undefined | null): boolean {
   return row ? Boolean(row.active) : true;
 }
+
+/**
+ * One-time deploy-window adoption (the rollout gap, Opus review):
+ * fresh installs land huts active via the active-group default and
+ * maplibre-history users have it in their persisted group view — but
+ * existing PURE-fallback users who toggled overlays persisted a group
+ * view from before a 'huts' row existed, so the catalog compiles it
+ * INACTIVE while the fallback rendered their huts always-on until now.
+ * Adopting the row ACTIVE once (a real store toggle) keeps menu
+ * checkbox, rendering and persistence in agreement — the first user
+ * toggle then writes persisted state and the flag takes over
+ * permanently.
+ *
+ * Adopt only when: the row is present AND compiled inactive AND the
+ * user has NO persisted 'huts' overlay state (never toggled it — the
+ * overlay store's savedOverlayState, a pre-session snapshot).
+ */
+export function shouldAdoptHutsActive(
+  row: { active?: boolean } | undefined | null,
+  hasPersistedHutsState: boolean
+): boolean {
+  return row?.active === false && !hasPersistedHutsState;
+}

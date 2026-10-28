@@ -109,7 +109,11 @@ import {
   createFallbackOverlayAdapter,
   type FallbackOverlayAdapter,
 } from './fallback/overlay-adapter';
-import { HUTS_OVERLAY_NAME, hutsRowVisible } from './fallback/huts-visibility';
+import {
+  HUTS_OVERLAY_NAME,
+  hutsRowVisible,
+  shouldAdoptHutsActive,
+} from './fallback/huts-visibility';
 import { AVAIL_BUCKET, PLAIN_BUCKET, orderLegacyBucketsFirst } from './fallback/cluster-groups';
 
 const emit = defineEmits<{
@@ -828,6 +832,23 @@ watch(
     } else {
       hutsClustering.value = usable;
     }
+    // One-time deploy-window adoption (fallback/huts-visibility): the
+    // row compiled INACTIVE for existing pure-fallback users (their
+    // persisted group view predates the row) although the fallback
+    // rendered their huts always-on. Adopt ACTIVE once through the
+    // store's own toggle — menu checkbox, rendering and persistence
+    // agree; the first user toggle writes persisted state and the flag
+    // takes over permanently (shouldAdoptHutsActive self-limits: once
+    // adopted or toggled, it never fires again).
+    if (
+      hutsItem.value &&
+      shouldAdoptHutsActive(
+        hutsItem.value,
+        overlayStore.savedOverlayState(HUTS_OVERLAY_NAME) !== undefined
+      )
+    ) {
+      overlayStore.toggleOverlay(hutsItem.value as never);
+    }
   },
   { immediate: true }
 );
@@ -1052,7 +1073,14 @@ function updateZoomHint(): void {
         zoomHintDismiss = undefined;
       },
     });
-  } else if (!wanted && zoom > ZOOM_HINT_HIDE_AT && zoomHintDismiss) {
+  } else if (
+    zoomHintDismiss &&
+    (!hutsVisible.value || !hutsStore.selectedDate || zoom > ZOOM_HINT_HIDE_AT)
+  ) {
+    // The ZOOM hysteresis (z > HIDE_AT) only guards the zoom-out path;
+    // NON-zoom reasons (huts toggled off, date reset) dismiss
+    // immediately — the hint must never linger for a hidden layer at
+    // low zoom (Opus review fix).
     zoomHintDismiss();
   }
 }
@@ -1132,7 +1160,9 @@ function onMoveEnd(): void {
       : map.getZoom() >= OCC_LABEL_MIN_ZOOM
         ? 'symlabel'
         : 'sym';
-  if (band !== lastRenderBand) rebuildMarkers();
+  // Huts hidden: skip the band rebuild entirely (rebuildMarkers' gate
+  // would only no-op clear — one redundant call per moveend otherwise).
+  if (hutsVisible.value && band !== lastRenderBand) rebuildMarkers();
   localPropertiesStore.updateLocation({
     lat: map.getCenter().lat,
     lng: map.getCenter().lng,
