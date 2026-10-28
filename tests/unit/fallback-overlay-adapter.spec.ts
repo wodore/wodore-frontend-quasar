@@ -37,7 +37,8 @@ import type { StyleSpecification } from 'maplibre-gl';
 
 // ── Fixtures ─────────────────────────────────────────────────────────────
 
-const DATA_URL = 'https://raw.githubusercontent.com/wodore/bav-haltestellen/main/static/bav_list.geojson';
+const DATA_URL =
+  'https://raw.githubusercontent.com/wodore/bav-haltestellen/main/static/bav_list.geojson';
 
 /** The transport-stops SUBSET style as staging serves it (fetched from
  * hub.stg.wodore.com /v1/map/styles/transport-stops.json?spec=medium
@@ -156,7 +157,12 @@ const stop = (id: number, lng: number, lat: number, types: string[]) => ({
   properties: { id, types, name: `stop ${id}` },
 });
 const FEATURES = Array.from({ length: 60 }, (_, i) =>
-  stop(1000 + i, 7.4 + (i % 10) * 0.002, 46.95 + Math.floor(i / 10) * 0.002, i % 2 === 0 ? ['train'] : ['bus'])
+  stop(
+    1000 + i,
+    7.4 + (i % 10) * 0.002,
+    46.95 + Math.floor(i / 10) * 0.002,
+    i % 2 === 0 ? ['train'] : ['bus']
+  )
 );
 
 // ── Harness ──────────────────────────────────────────────────────────────
@@ -167,11 +173,11 @@ const noopCtx = new Proxy(
   {},
   {
     get: (target, prop) => {
-      if (prop in (target as object)) return (target as Record<string|symbol, unknown>)[prop];
+      if (prop in (target as object)) return (target as Record<string | symbol, unknown>)[prop];
       return () => undefined;
     },
     set: (target, prop, value) => {
-      (target as Record<string|symbol, unknown>)[prop] = value;
+      (target as Record<string | symbol, unknown>)[prop] = value;
       return true;
     },
   }
