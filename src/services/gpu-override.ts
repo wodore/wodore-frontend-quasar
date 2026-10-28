@@ -36,3 +36,40 @@ export function forcedGpuTier(): number | null {
     return null;
   }
 }
+
+/**
+ * The session's renderer capability profile (backend #440): `"subset"`
+ * when this session renders with the Leaflet fallback map — the
+ * `?gpuTier=-1` override or no WebGL context at all (the SAME probe
+ * WdMapView uses to decide mounting WdFallbackMapView, deduped here)
+ * — `undefined` for MapLibre sessions (they declare nothing and the
+ * backend serves the default catalog).
+ *
+ * Synchronous ON PURPOSE: the map-catalog store keys its OVERLAY fetch
+ * off this at boot (`profile=subset` — full-only rows never reach the
+ * fallback), so the answer must exist before any await. MapLibre
+ * sessions fetch the default catalog; the basemap stores keep the
+ * default view too (world-satellite-hybrid has no subset variant — a
+ * subset request would drop it from the fallback's basemap list;
+ * fallback-basemaps' raster extraction already gates what renders).
+ *
+ * NOTE: the runtime error-fallback (MapLibre failing AFTER mounting)
+ * does not flip this — that session already fetched the default
+ * catalog; WdOverlayControl's client-side profile filter keeps its
+ * menu sane (full-only rows hidden). Same for SSR: decide on client.
+ */
+export function rendererProfile(): 'subset' | undefined {
+  if (typeof document === 'undefined') return undefined; // SSR — decide on client
+  if (forcedGpuTier() === GPU_TIER_FALLBACK) return 'subset'; // URL override
+  try {
+    const canvas = document.createElement('canvas');
+    const webgl = !!(
+      canvas.getContext('webgl2') ||
+      canvas.getContext('webgl') ||
+      canvas.getContext('experimental-webgl')
+    );
+    return webgl ? undefined : 'subset';
+  } catch {
+    return 'subset';
+  }
+}

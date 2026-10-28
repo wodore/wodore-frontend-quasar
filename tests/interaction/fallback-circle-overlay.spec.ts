@@ -124,12 +124,20 @@ const CIRCLE_STATE = `(() => {
 })()`;
 
 test.beforeEach(async ({ page }) => {
-  // Layers catalog: staging live, transport-stops made lenient
-  // (profile stripped → the fallback menu shows the row).
+  // Layers catalog: the DEFAULT staging response with transport-stops
+  // made lenient (profile stripped → the row stays visible in the
+  // fallback menu — the pre-#440 state, and the state until the
+  // backend's subset variant deploys). Fetched WITHOUT the profile
+  // param: the overlay store now sends profile=subset on fallback
+  // sessions (fallback-subset-catalog.spec), and staging's subset view
+  // lacks transport-stops — the upstream must be the default view so
+  // the pinned lenient rows (incl. transport-stops) arrive either way.
   await page.route('**/v1/map/layers**', async route => {
     let body: { data?: Array<{ slug?: string; profile?: string }> } | undefined;
     try {
-      const resp = await route.fetch();
+      const upstream = new URL(route.request().url());
+      upstream.searchParams.delete('profile');
+      const resp = await route.fetch({ url: upstream.toString() });
       body = await resp.json();
       for (const layer of body?.data ?? []) {
         if (layer?.slug === 'transport-stops') delete layer.profile;

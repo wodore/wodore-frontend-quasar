@@ -9,6 +9,10 @@ import { createPinia, setActivePinia } from 'pinia';
 import { nextTick } from 'vue';
 import type { StyleSpecification } from 'maplibre-gl';
 import { useHutsStore } from '@stores/huts-store';
+// Real implementations (the vi.mock below keeps them via importOriginal)
+// — the view-isolation tests read/write the snapshot through the service.
+import { loadPersistedLayers } from '@services/map-catalog';
+import { rendererProfile } from '@services/gpu-override';
 
 const notifyCalls: Array<{ message: string; caption?: string }> = [];
 
@@ -344,12 +348,68 @@ describe('map catalog store (layers snapshot + versioned style URLs)', () => {
 
     expect(store.status).toBe('ready');
     expect(overlaysOf().map(o => o.name)).toEqual(['transport-stops', 'mtb']);
-    // Persisted: layers snapshot ({savedAt, lang, data}) + one style
-    // entry per layer (tokenized for the parameterized layer, resolved
-    // for the plain one).
-    const persistedLayers = JSON.parse(window.localStorage.getItem('mapLayersCache')!);
-    expect(persistedLayers.data).toHaveLength(2);
-    expect(persistedLayers.lang).toBe('en');
+    // Persisted: layers snapshot ({savedAt, lang, profile, data}) — this
+    // happy-dom spec runs as a FALLBACK session (no WebGL → subset), so
+    // the snapshot lands in the subset slot, fetched with profile=subset.
+    const persistedLayers = loadPersistedLayers(rendererProfile() ?? null);
+    expect(persistedLayers?.data).toHaveLength(2);
+    expect(persistedLayers?.lang).toBe('en');
+    expect(persistedLayers?.profile).toBe('subset');
+    expect(catalogFetch).toHaveBeenCalledWith('en', 'high', undefined, 'subset');
+  });
+
+  it('fallback sessions fetch the SUBSET catalog (profile rides the overlay fetch only)', async () => {
+    catalogFetch.mockResolvedValue(catalogFor(VERSION_A));
+    const store = stores.useMapCatalogStore();
+    await store.initOverlays();
+    // happy-dom has no WebGL → rendererProfile() === 'subset' (the
+    // store reads the SAME signal WdMapView mounts the fallback on).
+    expect(rendererProfile()).toBe('subset');
+    expect(catalogFetch).toHaveBeenCalledWith('en', 'high', undefined, 'subset');
+    expect(catalogFetch).not.toHaveBeenCalledWith('en', 'high', undefined, undefined);
+  });
+
+  it('maplibre sessions fetch the DEFAULT catalog (no profile param)', async () => {
+    // A WebGL-capable session — stub the probe the fallback signal
+    // reads (same one WdMapView uses).
+    const probe = vi
+      .spyOn(HTMLCanvasElement.prototype, 'getContext')
+      .mockImplementation(() => ({}) as WebGLRenderingContext);
+    try {
+      expect(rendererProfile()).toBeUndefined();
+      catalogFetch.mockResolvedValue(catalogFor(VERSION_A));
+      const store = stores.useMapCatalogStore();
+      await store.initOverlays();
+      expect(catalogFetch).toHaveBeenCalledWith('en', 'high', undefined, undefined);
+    } finally {
+      probe.mockRestore();
+    }
+  });
+
+  it('warm boot: a DEFAULT-view snapshot never renders in a fallback session (view isolation)', async () => {
+    // Written by a MapLibre session (or pre-split app version): the
+    // fallback session must skip it — its rows carry full-profile
+    // entries that would hide subset-servable overlays again.
+    const { persistLayers } = await import('@services/map-catalog');
+    persistLayers(catalogFor(VERSION_A).data as never, 'en', null);
+    catalogFetch.mockRejectedValue(new Error('offline'));
+    const store = stores.useMapCatalogStore();
+    await store.initOverlays();
+    // Snapshot skipped → no warm render → the fetch failure surfaces
+    // (cold path, not background) with NO overlays applied.
+    expect(store.status).toBe('error');
+    expect(overlaysOf()).toHaveLength(0);
+  });
+
+  it("warm boot: the session's OWN view snapshot renders before the refresh", async () => {
+    const { persistLayers } = await import('@services/map-catalog');
+    persistLayers(catalogFor(VERSION_A).data as never, 'en', rendererProfile() ?? null);
+    catalogFetch.mockRejectedValue(new Error('offline'));
+    const store = stores.useMapCatalogStore();
+    await store.initOverlays();
+    // Warm render succeeded; the failed refresh stays background.
+    expect(store.status).toBe('ready');
+    expect(overlaysOf().map(o => o.name)).toEqual(['transport-stops', 'mtb']);
   });
 
   it('style fetches use the catalog style_url verbatim (+ mode=tokenized), never client-built URLs', async () => {

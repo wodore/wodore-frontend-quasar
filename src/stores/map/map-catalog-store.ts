@@ -46,6 +46,7 @@ import { useBasemapStore } from './basemap-store';
 import { useHutsStore } from '@stores/huts-store';
 import { currentLocale } from '@services/locale';
 import { storageGet, storageSet } from '@services/storage';
+import { rendererProfile } from '@services/gpu-override';
 import {
   fetchMapCatalog,
   fetchMapSlots,
@@ -682,7 +683,10 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     // One-time cleanup of the retired localStorage style caches (their
     // immutable-URL replacements live in the browser/SW cache now).
     purgeLegacyStyleCaches();
-    const cached = loadPersistedLayers();
+    // The session's catalog VIEW: fallback sessions warm-boot only the
+    // subset snapshot (the default rows would hide again — the #362
+    // gap class; loadPersistedLayers cross-checks the stored view).
+    const cached = loadPersistedLayers(rendererProfile() ?? null);
     if (cached) {
       try {
         // Cache-first render; cached styles apply synchronously, missing
@@ -716,11 +720,22 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
       // tier so `?spec=` matches the basemap store's request (the
       // service dedupes concurrent callers onto a single request).
       const spec = await useBasemapStore().gpuSpecReady;
+      // OVERLAYS declare the renderer capability (backend #440):
+      // fallback sessions request the SUBSET view — full-only rows
+      // (transport-stops until #443, huts) never reach the menu, no
+      // client-side hide needed. Synchronous signal, so it is resolved
+      // before the fetch fires. MapLibre sessions pass undefined (the
+      // default catalog — same fetch as the basemap stores, still
+      // deduped onto ONE request). BASEMAPS stay on the default view
+      // on purpose: world-satellite-hybrid has no subset variant and
+      // would vanish from the fallback's basemap list — the fallback's
+      // raster extraction already gates which default basemaps render.
+      const profile = rendererProfile();
       const [{ data: layers }, slotSlugs] = await Promise.all([
-        fetchMapCatalog(lang, spec),
+        fetchMapCatalog(lang, spec, undefined, profile),
         slotSlugsFor(lang),
       ]);
-      persistLayers(layers, lang);
+      persistLayers(layers, lang, profile ?? null);
       // The per-style documents are switcher data, not first-render
       // data — they are already deferred off the first-paint critical
       // path by MapPage's idle-gated map mount (WdMapView setup is what
@@ -760,8 +775,11 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     try {
       const lang = currentLocale();
       const spec = await useBasemapStore().gpuSpecReady;
+      // Same view as the boot fetch — a fallback session's locale
+      // switch must not suddenly load the default rows.
+      const profile = rendererProfile();
       const [{ data: layers }, slotSlugs] = await Promise.all([
-        fetchMapCatalog(lang, spec),
+        fetchMapCatalog(lang, spec, undefined, profile),
         slotSlugsFor(lang),
       ]);
       await compileCatalogOverlays(layers, slotSlugs, (items, meta) =>

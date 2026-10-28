@@ -32,6 +32,7 @@ import {
   fetchMapCatalog,
   gpuSpec,
   loadPersistedLayers,
+  persistLayers,
   type MapCatalogLayer,
   type MapSpecTier,
 } from '@services/map-catalog';
@@ -1163,6 +1164,15 @@ export const useBasemapStore = defineStore('basemap', () => {
     try {
       if (options.revalidate) clearMapCatalogCache();
       const { data } = await fetchMapCatalog(currentLocale(), gpuSpec(weakGpu));
+      // Basemaps ALWAYS consume (and now persist) the DEFAULT catalog
+      // view — world-satellite-hybrid has no subset variant and must
+      // stay in the fallback's basemap list. Persisting here keeps the
+      // DEFAULT snapshot fresh on fallback-only devices, where the
+      // overlay store writes just the subset view (separate slot —
+      // loadPersistedLayers picks the view). On MapLibre sessions this
+      // writes the same content the overlay store persists for its
+      // identical deduped fetch — harmless double write.
+      persistLayers(data, currentLocale(), null);
       refreshFromLayers(data);
       return data;
     } catch (error) {

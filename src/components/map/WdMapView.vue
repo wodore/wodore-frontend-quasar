@@ -54,7 +54,7 @@ import { getEnv } from '@services/runtimeEnv';
 import { storageGet } from '@services/storage';
 import { clientWodore } from '@clients/index';
 import { seedPlaceFromMap } from '@composables/usePlace';
-import { forcedGpuTier, GPU_TIER_FALLBACK } from '@services/gpu-override';
+import { forcedGpuTier, GPU_TIER_FALLBACK, rendererProfile } from '@services/gpu-override';
 import { MAP_MIN_ZOOM, MIN_HUT_CLICK_ZOOM } from '@stores/map/utils/map-constants';
 import { isBasemapStyleGone } from '@stores/map/utils/basemap-fallback';
 import {
@@ -676,20 +676,7 @@ function activeBasemapIsMtkOutdoor(): boolean {
  * `?gpuTier=-1` (services/gpu-override.ts) forces the same path on
  * capable machines — the test/QA knob for the fallback map.
  */
-const webglSupported = (() => {
-  if (typeof document === 'undefined') return true; // SSR — decide on client
-  if (forcedGpuTier() === GPU_TIER_FALLBACK) return false; // URL override
-  try {
-    const canvas = document.createElement('canvas');
-    return !!(
-      canvas.getContext('webgl2') ||
-      canvas.getContext('webgl') ||
-      canvas.getContext('experimental-webgl')
-    );
-  } catch {
-    return false;
-  }
-})();
+const webglSupported = rendererProfile() !== 'subset';
 
 if (!webglSupported) {
   if (forcedGpuTier() === GPU_TIER_FALLBACK) {
