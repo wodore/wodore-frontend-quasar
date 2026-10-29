@@ -271,21 +271,36 @@ export function mergeSpritePacks(overlays: OverlaySwitchItem[]): void {
   for (const [, entries] of byId) {
     if (entries.length < 2) continue;
     // Group by pack-list base (URL up to the pack list) and union packs.
-    const packsByUrlBase = new Map<string, Set<string>>();
+    // Served sprite URLs carry a content-version query (`?v=<sprites
+    // group hash>`, injected by the backend's asset versioning) — the
+    // query must stay OUT of the pack list or the union produces
+    // `…/sprite/a?v=X,b?v=Y` garbage Martin 404s (both packs then load
+    // for NO overlay — "icons sometimes missing entirely"). Pack names
+    // never contain `/` or `?`; the version is per sprites-group and
+    // identical across same-origin sprite URLs, so entries with
+    // differing queries on one base are left unmerged (safer than
+    // guessing which version wins).
+    const packsByUrlBase = new Map<string, { packs: Set<string>; query: string }>();
     let mergeable = true;
     for (const { url } of entries) {
-      const m = /^(.*\/sprite\/)([^/]*)$/.exec(url);
+      const m = /^(.*\/sprite\/)([^/?]*)(\?.*)?$/.exec(url);
       if (!m) {
         mergeable = false;
         break;
       }
-      const packs = packsByUrlBase.get(m[1]!) ?? new Set<string>();
+      const query = m[3] ?? '';
+      const existing = packsByUrlBase.get(m[1]!);
+      if (existing && existing.query !== query) {
+        mergeable = false;
+        break;
+      }
+      const packs = existing?.packs ?? new Set<string>();
       for (const pack of m[2]!.split(',')) packs.add(pack);
-      packsByUrlBase.set(m[1]!, packs);
+      packsByUrlBase.set(m[1]!, { packs, query });
     }
     if (!mergeable || packsByUrlBase.size !== 1) continue;
-    const [[base, packs]] = [...packsByUrlBase];
-    const merged = `${base}${[...packs].sort().join(',')}`;
+    const [[base, { packs, query }]] = [...packsByUrlBase];
+    const merged = `${base}${[...packs].sort().join(',')}${query}`;
     for (const { overlay } of entries) {
       const sprite = overlay.style.sprite;
       if (Array.isArray(sprite)) {

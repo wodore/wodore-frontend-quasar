@@ -294,4 +294,53 @@ describe('mergeSpritePacks', () => {
     mergeSpritePacks([a]);
     expect(a.style.sprite).toEqual([{ id: 'other', url: 'https://other/sprite.json' }]);
   });
+
+  it('keeps the version query out of the pack list and re-appends it once', () => {
+    // Served sprite URLs carry the sprites-group content version
+    // (?v=…) — the union must not fold it into the pack list
+    // (…/sprite/a?v=X,b?v=Y 404s and BOTH packs load for no overlay).
+    const a = {
+      name: 'huts',
+      style: {
+        version: 8,
+        sprite: [{ id: 'wd', url: 'https://tiles/sprite/accommodation,availability?v=abc123' }],
+        layers: [],
+      } as StyleSpecification,
+    };
+    const b = {
+      name: 'transport',
+      style: {
+        version: 8,
+        sprite: [{ id: 'wd', url: 'https://tiles/sprite/transport?v=abc123' }],
+        layers: [],
+      } as StyleSpecification,
+    };
+    mergeSpritePacks([a, b]);
+    const expected = 'https://tiles/sprite/accommodation,availability,transport?v=abc123';
+    expect(a.style.sprite).toEqual([{ id: 'wd', url: expected }]);
+    expect(b.style.sprite).toEqual([{ id: 'wd', url: expected }]);
+  });
+
+  it('leaves entries unmerged when version queries differ', () => {
+    const a = {
+      name: 'huts',
+      style: {
+        version: 8,
+        sprite: [{ id: 'wd', url: 'https://tiles/sprite/accommodation?v=abc' }],
+        layers: [],
+      } as StyleSpecification,
+    };
+    const b = {
+      name: 'transport',
+      style: {
+        version: 8,
+        sprite: [{ id: 'wd', url: 'https://tiles/sprite/transport?v=def' }],
+        layers: [],
+      } as StyleSpecification,
+    };
+    mergeSpritePacks([a, b]);
+    // differing versions on one base: no merge is safer than guessing
+    expect(a.style.sprite).toEqual([{ id: 'wd', url: 'https://tiles/sprite/accommodation?v=abc' }]);
+    expect(b.style.sprite).toEqual([{ id: 'wd', url: 'https://tiles/sprite/transport?v=def' }]);
+  });
 });
