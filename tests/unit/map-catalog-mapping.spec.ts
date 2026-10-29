@@ -303,9 +303,7 @@ describe('mergeSpritePacks', () => {
       name: 'huts',
       style: {
         version: 8,
-        sprite: [
-          { id: 'wd', url: 'https://tiles/sprite/accommodation,availability?v=abc123' },
-        ],
+        sprite: [{ id: 'wd', url: 'https://tiles/sprite/accommodation,availability?v=abc123' }],
         layers: [],
       } as StyleSpecification,
     };
@@ -342,9 +340,7 @@ describe('mergeSpritePacks', () => {
     };
     mergeSpritePacks([a, b]);
     // differing versions on one base: no merge is safer than guessing
-    expect(a.style.sprite).toEqual([
-      { id: 'wd', url: 'https://tiles/sprite/accommodation?v=abc' },
-    ]);
+    expect(a.style.sprite).toEqual([{ id: 'wd', url: 'https://tiles/sprite/accommodation?v=abc' }]);
     expect(b.style.sprite).toEqual([{ id: 'wd', url: 'https://tiles/sprite/transport?v=def' }]);
   });
 });
