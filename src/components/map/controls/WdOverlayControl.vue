@@ -1389,16 +1389,51 @@ function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwit
   if (spriteData) {
     const existingSprites = mapRef.map?.getSprite() || [];
     const pendingSprites: Array<Promise<void>> = [];
+    /** Sprite ids whose pack set CHANGED here (removeSprite+re-add):
+     *  their images can feed OTHER overlays' layers too, so the
+     *  post-load layout kick below must widen beyond this overlay. */
+    const swappedSpriteIds = new Set<string>();
+    /** Probe an image that actually exists in the pack being added: the
+     *  first literal icon name this overlay's layers reference under the
+     *  sprite id (icon-image expressions bake `${id}:`-prefixed names).
+     *  The legacy accommodation probes only fit the huts packs — any
+     *  other pack (e.g. transport) never resolved, the 5s deadline ate
+     *  the wait and the post-load icon-image re-evaluation never fired. */
+    const probeImageFor = (id: string): string => {
+      const legacy =
+        id === 'wd-sdf' ? 'wd-sdf:mono/accommodation.unknown' : `${id}/color/accommodation.unknown`;
+      const prefix = `${id}:`;
+      for (const l of overlay.style.layers) {
+        if (l.type !== 'symbol') continue;
+        const iconImage = (l as { layout?: { 'icon-image'?: unknown } }).layout?.['icon-image'];
+        const stack: unknown[] = Array.isArray(iconImage) ? [...iconImage] : [iconImage];
+        while (stack.length > 0) {
+          const v = stack.pop();
+          if (typeof v === 'string' && v.startsWith(prefix)) return v;
+          if (Array.isArray(v)) stack.push(...v);
+        }
+      }
+      return legacy;
+    };
     const addSprite = (id: string, url: string) => {
-      const alreadyAdded = existingSprites.some(e => e.id === id);
-      if (alreadyAdded) return;
+      const existing = existingSprites.find(e => e.id === id);
+      if (existing) {
+        if (existing.url === url) return; // already loaded, same pack set
+        // Same id, DIFFERENT pack set (the catalog union grew after a
+        // later overlay settled, or a per-layer pack changed): sprite
+        // ids are add-once — the first URL would win and the new
+        // pack's icons silently resolve to nothing (the transport
+        // icons vanished at z14+ this way). Swap to the new URL and
+        // widen the post-load re-evaluation to every layer referencing
+        // the id.
+        mapRef.map?.removeSprite(id);
+        swappedSpriteIds.add(id);
+      }
       mapRef.map?.addSprite(id, url);
       // addSprite is async but has no completion callback in this MapLibre
       // version — wait for a known image from this sprite (shared, backed
       // off; see waitForSpriteImage)
-      const probeImage =
-        id === 'wd-sdf' ? 'wd-sdf:mono/accommodation.unknown' : `${id}/color/accommodation.unknown`;
-      pendingSprites.push(waitForSpriteImage(probeImage, id));
+      pendingSprites.push(waitForSpriteImage(probeImageFor(id), id));
     };
     if (Array.isArray(spriteData)) {
       for (const sprite of spriteData) {
@@ -1416,19 +1451,30 @@ function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwit
     // setLayoutProperty is the least disruptive.
     if (pendingSprites.length > 0) {
       Promise.all(pendingSprites).then(() => {
-        for (const layer of overlay.style.layers) {
-          if (layer.type === 'symbol' && mapRef.map?.getLayer(layer.id)) {
-            const layerSpec = layer as { layout?: Record<string, unknown> };
-            const iconImage = layerSpec.layout?.['icon-image'];
-            if (iconImage !== undefined) {
-              // Re-set the icon-image layout property — this forces
-              // MapLibre to re-evaluate the expression with the
-              // now-loaded sprite images (paint-property updates do NOT
-              // trigger layout-property re-evaluation).
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (mapRef.map as any).setLayoutProperty(layer.id, 'icon-image', iconImage);
-            }
-          }
+        // A swapped sprite id can feed other overlays' layers — kick
+        // every symbol layer whose icon-image references a swapped id;
+        // otherwise just this overlay's (the pre-existing behavior).
+        const swappedPrefixes = [...swappedSpriteIds].map(id => `${id}:`);
+        const kickLayers =
+          swappedPrefixes.length > 0
+            ? overlaysOrder.flatMap(o => o.style.layers)
+            : overlay.style.layers;
+        for (const layer of kickLayers) {
+          if (layer.type !== 'symbol' || !mapRef.map?.getLayer(layer.id)) continue;
+          const layerSpec = layer as { layout?: Record<string, unknown> };
+          const iconImage = layerSpec.layout?.['icon-image'];
+          if (iconImage === undefined) continue;
+          if (
+            swappedPrefixes.length > 0 &&
+            !swappedPrefixes.some(p => JSON.stringify(iconImage).includes(p))
+          )
+            continue;
+          // Re-set the icon-image layout property — this forces
+          // MapLibre to re-evaluate the expression with the
+          // now-loaded sprite images (paint-property updates do NOT
+          // trigger layout-property re-evaluation).
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (mapRef.map as any).setLayoutProperty(layer.id, 'icon-image', iconImage);
         }
       });
     }
