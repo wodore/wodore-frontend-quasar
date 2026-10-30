@@ -906,11 +906,9 @@ describe('map catalog store (layers snapshot + versioned style URLs)', () => {
     await store.initOverlays();
     const epochAfterBoot = overlayStore.overlaysEpoch;
     const mtbStyleUrl = () =>
-      (
-        overlayStore.overlays as unknown as Array<{ name: string; styleUrl?: string }>
-      )
-        .find(o => o.name === 'mtb')
-        ?.styleUrl;
+      (overlayStore.overlays as unknown as Array<{ name: string; styleUrl?: string }>).find(
+        o => o.name === 'mtb'
+      )?.styleUrl;
 
     // Focus #1: v2 published — menu applies, the epoch bump is pending.
     catalogFetch.mockResolvedValue(withStyleVersion(catalogFor(VERSION_A), 'mtb', '2'));
