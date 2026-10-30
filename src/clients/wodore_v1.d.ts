@@ -1112,6 +1112,13 @@ export interface components {
              * @default null
              */
             color: string | null;
+            /**
+             * Localized name (request language; backend PR #464)
+             * @default null
+             */
+            name?: string | null;
+            /** Symbol URL dict (color/primitive/mono; backend PR #464) */
+            symbol?: Record<string, string> | null;
         };
         /**
          * CategoryListItemSchema

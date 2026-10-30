@@ -28,6 +28,11 @@ const emit = defineEmits<{
 // the categories member; `domain` (always present, plain values:
 // amenity | admin | natural | none) is the tier fallback.
 const kindIdentifier = computed(() => (props.place.kind ? props.place.kind.identifier : ''));
+// Backend PR #464: kind.symbol carries ready URL dict (color/primitive/mono)
+// — render the color symbol directly, no icon resolution round-trip.
+const kindSymbolUrl = computed(() => props.place.kind?.symbol?.color || null);
+// Kind display name (localized) — the typeahead's type label
+const kindName = computed(() => props.place.kind?.name || null);
 const tier = computed(() => props.place.domain || 'none');
 
 // Handle click
@@ -61,8 +66,16 @@ function onPreviewClick(event: Event) {
   <div>
     <q-item clickable v-ripple @click="onClick" :class="{ 'wd-selected': selected }" dense>
       <q-item-section avatar>
+        <img
+          v-if="kindSymbolUrl"
+          :src="kindSymbolUrl"
+          alt=""
+          width="36"
+          height="36"
+          style="object-fit: contain"
+        />
         <WdCategoryIcon
-          v-if="kindIdentifier"
+          v-else-if="kindIdentifier"
           :identifier="kindIdentifier"
           variant="color"
           :size="36"
@@ -81,7 +94,7 @@ function onPreviewClick(event: Event) {
       </q-item-section>
       <q-item-section>
         <q-item-label overline class="wd-info-text" lines="1">{{
-          place.country_code
+          kindName || place.country_code
         }}</q-item-label>
         <q-item-label class="wd-ink-text text-body1" lines="2">{{ place.name }}</q-item-label>
         <q-item-label caption class="wd-ink-soft-text">
