@@ -33,7 +33,8 @@ const _authStore = useAuthStore();
 const menuStore = useMapMenuStore();
 const contentStore = useMapContentStore();
 
-// Initialize stores (this will create localStorage keys on first load)
+// Initialize stores (stores persist lazily on the first user change —
+// no localStorage key is written on creation)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const userSettingsStore = useUserSettingsStore();
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
