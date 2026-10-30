@@ -22,8 +22,13 @@ jobs:
 
       - name: Generate types from the live staging spec
         run: |
+          # Canonicalize first: the backend's committed snapshot is
+          # key-sorted, the live spec serves declaration order — sort
+          # so the byte-compare below never fails on ordering alone
+          curl -s https://hub.stg.wodore.com/v1/openapi.json \
+            | jq -S . > /tmp/fresh-spec.json
           npx -y openapi-typescript@7 \
-            https://hub.stg.wodore.com/v1/openapi.json \
+            /tmp/fresh-spec.json \
             -o /tmp/fresh.d.ts
 
       - name: Compare against the committed types
