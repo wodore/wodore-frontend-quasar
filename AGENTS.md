@@ -108,6 +108,13 @@ pnpm story:preview # Preview built Histoire site
 
 ````
 
+**Shell script formatting (shfmt):** all tracked `*.sh` files (docker/,
+scripts/, tasks/) are formatted with shfmt's default style — the repo
+`.editorconfig` supplies the 2-space indent, no extra config. Editors with
+shfmt integration produce this on save; otherwise run `shfmt -w <file>`
+(check: `shfmt -l .`). Keep new scripts conforming so saves don't dirty
+the working tree.
+
 ### Testing
 
 ```bash
