@@ -2,13 +2,13 @@
 import { computed } from 'vue';
 import { useQuasar } from 'quasar';
 import { schemasWodore } from '@clients/index';
-import getImageUrl from '@services/imageService';
+import WdCategoryIcon from '@components/categories/WdCategoryIcon.vue';
 
 const $q = useQuasar();
 const isMobile = computed(() => $q.screen.xs);
 
 interface Props {
-  hut: schemasWodore['GeoPlaceSearchSchema'];
+  place: schemasWodore['GeoPlaceSearchSchema'];
   selected?: boolean;
 }
 
@@ -22,69 +22,23 @@ const emit = defineEmits<{
   preview: [place: schemasWodore['GeoPlaceSearchSchema']];
 }>();
 
-// Get the first category (as CategoryPlaceTypeSchema or string)
-const firstCategory = computed<schemasWodore['CategoryPlaceTypeSchema'] | string | null>(() => {
-  if (
-    !props.hut.categories ||
-    !Array.isArray(props.hut.categories) ||
-    props.hut.categories.length === 0
-  ) {
-    return null;
-  }
-  return props.hut.categories[0];
-});
-
-// Get place type icon URL
-const placeTypeIcon = computed<string | undefined>(() => {
-  const category = firstCategory.value;
-  if (!category || typeof category !== 'object') {
-    return undefined;
-  }
-
-  const placeType = category as schemasWodore['CategoryPlaceTypeSchema'];
-
-  // Check for symbol.color (nested structure for GeoPlaces)
-  if (placeType.symbol && typeof placeType.symbol === 'object') {
-    const symbol = placeType.symbol as {
-      color?: string;
-      primitive?: string;
-      mono?: string;
-    };
-    if (symbol.color) {
-      return getImageUrl(symbol.color, { fit: true, size: '36x36' });
-    }
-  }
-
-  return undefined;
-});
-
-// Get place type name
-const placeTypeName = computed<string>(() => {
-  const category = firstCategory.value;
-  if (!category) {
-    return '';
-  }
-
-  if (typeof category === 'string') {
-    return category;
-  }
-
-  if (category.name) {
-    return category.name;
-  }
-
-  return '';
-});
+// Anchoring kind category (backend PR #456): {identifier, slug, color} —
+// present only for places with an anchor category and only when `kind` is
+// in the sparse-fieldset selection. Keys the avatar icon without loading
+// the categories member; `domain` (always present, plain values:
+// amenity | admin | natural | none) is the tier fallback.
+const kindIdentifier = computed(() => (props.place.kind ? props.place.kind.identifier : ''));
+const tier = computed(() => props.place.domain || 'none');
 
 // Handle click
 function onClick(event: Event) {
-  emit('select', props.hut, event);
+  emit('select', props.place, event);
 }
 
 // Handle preview click
 function onPreviewClick(event: Event) {
   event.stopPropagation();
-  emit('preview', props.hut);
+  emit('preview', props.place);
 }
 </script>
 
@@ -107,17 +61,35 @@ function onPreviewClick(event: Event) {
   <div>
     <q-item clickable v-ripple @click="onClick" :class="{ 'wd-selected': selected }" dense>
       <q-item-section avatar>
-        <img v-if="placeTypeIcon" :src="placeTypeIcon" :alt="hut.name" />
+        <WdCategoryIcon
+          v-if="kindIdentifier"
+          :identifier="kindIdentifier"
+          variant="color"
+          :size="36"
+        />
+        <!-- Tier fallback (no anchor kind on this place): domain maps to
+             the super-root tier icon -->
+        <q-icon v-else-if="tier === 'admin'" size="28px" class="wd-info-text">
+          <IconMingcuteBuilding2Line />
+        </q-icon>
+        <q-icon v-else-if="tier === 'natural'" size="28px" class="wd-info-text">
+          <IconMingcuteMountainLine />
+        </q-icon>
+        <q-icon v-else size="28px" class="wd-info-text">
+          <IconMingcuteMapPinLine />
+        </q-icon>
       </q-item-section>
       <q-item-section>
-        <q-item-label overline class="wd-info-text" lines="1">{{ placeTypeName }}</q-item-label>
-        <q-item-label class="wd-ink-text text-body1" lines="2">{{ hut.name }}</q-item-label>
+        <q-item-label overline class="wd-info-text" lines="1">{{
+          place.country_code
+        }}</q-item-label>
+        <q-item-label class="wd-ink-text text-body1" lines="2">{{ place.name }}</q-item-label>
         <q-item-label caption class="wd-ink-soft-text">
-          <div v-if="hut.elevation">
+          <div v-if="place.elevation">
             <q-icon size="xs">
               <IconMingcuteMountain2Fill />
             </q-icon>
-            <span class="q-pr-xl">{{ hut.elevation }}m</span>
+            <span class="q-pr-xl">{{ place.elevation }}m</span>
           </div>
           <!-- TODO: add region -->
         </q-item-label>

@@ -6,7 +6,7 @@ import { useI18n } from 'vue-i18n';
 import { isCrawlerUA } from '@services/crawler-ua';
 import { MapInstance } from '@indoorequal/vue-maplibre-gl/dist/lib/lib/mapRegistry';
 import { useRouter, useRoute } from 'vue-router';
-import { useDebounceFn } from '@vueuse/core';
+import { useDebounceFn, useIntersectionObserver } from '@vueuse/core';
 import { useLatestRequest } from '@composables/useLatestRequest';
 import WdSearchResultEntry from './WdSearchResultEntry.vue';
 
@@ -50,34 +50,70 @@ const searchText = ref('');
 const lastSearchText = ref('');
 const searchResults = ref<schemasWodore['GeoPlaceSearchSchema'][]>([]);
 const loading = ref(false);
+const loadingMore = ref(false);
+const hasMore = ref(false);
 const selectedIndex = ref(-1);
+// Backend offset of the next page — tracked independently of
+// searchResults.length (dedupe can shrink appends; an all-dupes page
+// would otherwise re-fetch the same offset forever) and reset with each
+// new term.
+let nextOffset = 0;
+// Proximity bias pinned when a term's first page fires — appends reuse
+// it so pagination walks one stable ranking (the map center may move
+// while the user previews results).
+let activeBias: { lat?: number; lon?: number } = {};
+
+// Search request shape (backend PR #456): sparse fieldsets skip the
+// categories/parties fetches per keystroke — `kind` keys the preview
+// icon, `sources` stays in the selection because hut selection resolves
+// the hut page via the wodore source_id (geoplace slug ≠ hut slug).
+const SEARCH_FIELDS = { places: 'slug,name,location,elevation,kind,sources' };
+const SEARCH_LIMIT = 8;
+const MIN_QUERY_LENGTH = 2;
+const SEARCH_DEBOUNCE_MS = 250;
 
 // Search function
 const latestSearch = useLatestRequest();
 
-async function performSearchInternal(newSearchText: string) {
-  if (newSearchText.length < 2) {
+// Proximity bias (optional backend ranking hint): prefer results near
+// the current map center when the map instance is already loaded.
+function mapCenterParams(): { lat?: number; lon?: number } {
+  if (!mapRef?.map) return {};
+  const center = mapRef.map.getCenter();
+  if (!Number.isFinite(center.lat) || !Number.isFinite(center.lng)) return {};
+  // ~11 m precision is plenty for ranking and keeps the URL compact.
+  return {
+    lat: Math.round(center.lat * 10000) / 10000,
+    lon: Math.round(center.lng * 10000) / 10000,
+  };
+}
+
+async function performSearchInternal(newSearchText: string, offset = 0) {
+  if (newSearchText.length < MIN_QUERY_LENGTH) {
     searchResults.value = [];
+    hasMore.value = false;
     return;
   }
 
-  loading.value = true;
+  if (offset === 0) {
+    loading.value = true;
+    activeBias = mapCenterParams();
+  } else {
+    loadingMore.value = true;
+  }
   const token = latestSearch.next();
 
   try {
-    //const { data, error } = await clientWodore.GET('/v1/huts/search', {
     const { data, error } = await clientWodore.GET('/v1/geo/places/search', {
       params: {
         query: {
           q: newSearchText,
           lang: locale.value || 'de',
-          offset: 0,
-          limit: 14,
+          offset,
+          limit: SEARCH_LIMIT,
           threshold: 0.25,
-          //include_hut_type: 'all',
-          include_place_type: 'all',
-          include_sources: 'slug',
-          //include_avatar: true,
+          fields: SEARCH_FIELDS,
+          ...(offset === 0 ? activeBias : {}),
         },
       },
     });
@@ -87,23 +123,65 @@ async function performSearchInternal(newSearchText: string) {
 
     if (error) {
       console.error('Search error:', error);
-      searchResults.value = [];
+      // A failed append keeps the already-rendered pages; only a failed
+      // first page switches to the empty state.
+      if (offset === 0) {
+        searchResults.value = [];
+      }
+      hasMore.value = false;
     } else {
-      searchResults.value = data || [];
+      const page = data || [];
+      hasMore.value = page.length === SEARCH_LIMIT;
+      nextOffset = offset + page.length;
+      if (offset === 0) {
+        searchResults.value = page;
+      } else {
+        // 'Show more' append: dedupe by slug — result sets can shift
+        // between requests, an overlapping entry would key-collide in
+        // the transition-group.
+        const seen = new Set(searchResults.value.map(place => place.slug));
+        searchResults.value.push(...page.filter(place => !seen.has(place.slug)));
+      }
     }
   } catch (err) {
     if (!latestSearch.isLatest(token)) return;
     console.error('Search failed:', err);
-    searchResults.value = [];
+    if (offset === 0) {
+      searchResults.value = [];
+    }
+    hasMore.value = false;
   } finally {
     if (latestSearch.isLatest(token)) {
       loading.value = false;
+      loadingMore.value = false;
     }
   }
 }
 
 // Debounced search function using VueUse
-const performSearch = useDebounceFn(performSearchInternal, 300);
+const performSearch = useDebounceFn(performSearchInternal, SEARCH_DEBOUNCE_MS);
+
+// 'Show more' pagination: a sentinel at the end of the result list loads
+// the next page (offset += limit). Paused while a page is in flight —
+// resume re-observes and re-fires when the sentinel stays visible, so a
+// short viewport keeps filling until the sentinel is pushed out of view.
+const loadMoreSentinel = ref<HTMLElement | null>(null);
+const { pause: pauseLoadMore, resume: resumeLoadMore } = useIntersectionObserver(
+  loadMoreSentinel,
+  ([entry]) => {
+    if (
+      !entry?.isIntersecting ||
+      loading.value ||
+      loadingMore.value ||
+      !hasMore.value ||
+      lastSearchText.value.length < MIN_QUERY_LENGTH
+    ) {
+      return;
+    }
+    pauseLoadMore();
+    void performSearchInternal(lastSearchText.value, nextOffset).finally(() => resumeLoadMore());
+  }
+);
 
 // Handle search input change
 function onSearchInput(value: string | number | null) {
@@ -111,10 +189,10 @@ function onSearchInput(value: string | number | null) {
   searchText.value = strValue;
   selectedIndex.value = -1;
 
-  if (strValue.length >= 2) {
+  if (strValue.length >= MIN_QUERY_LENGTH) {
     lastSearchText.value = strValue;
     performSearch(strValue);
-  } else if (strValue.length === 0 && lastSearchText.value.length >= 2) {
+  } else if (strValue.length === 0 && lastSearchText.value.length >= MIN_QUERY_LENGTH) {
     // Keep previous results when cleared
   } else {
     searchResults.value = [];
@@ -204,6 +282,9 @@ function clearSearch() {
   searchText.value = '';
   lastSearchText.value = '';
   searchResults.value = [];
+  hasMore.value = false;
+  nextOffset = 0;
+  activeBias = {};
   selectedIndex.value = -1;
 }
 
@@ -369,12 +450,20 @@ function handleSwipeDown() {
           <WdSearchResultEntry
             v-for="(place, index) in searchResults"
             :key="place.slug"
-            :hut="place"
+            :place="place"
             :selected="index === selectedIndex"
             @select="onPlaceSelect"
             @preview="onPlacePreview"
           />
         </transition-group>
+        <!-- 'Show more' sentinel: loads the next page when scrolled into view -->
+        <div
+          v-if="hasMore && searchResults.length > 0"
+          ref="loadMoreSentinel"
+          class="row justify-center q-py-md"
+        >
+          <q-spinner v-if="loadingMore" class="wd-info-text" size="18px" />
+        </div>
       </q-list>
       <div
         v-else-if="searchText.length >= 2 || lastSearchText.length >= 2"

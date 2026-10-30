@@ -567,7 +567,9 @@ export interface paths {
          * map-layers — List resolved map layers (generic collection envelope).
          * @description The backend resolves the wanted ``spec`` per layer (exact →
          *     explicit chain → single) and reports the served tier — clients
-         *     never select among variants. Sparse fieldsets narrow entries.
+         *     never select among variants. ``profile`` declares the client's
+         *     renderer capability (subset clients never receive full
+         *     variants). Sparse fieldsets narrow entries.
          */
         get: operations["map-layers"];
         put?: never;
@@ -1093,6 +1095,25 @@ export interface components {
         /** BaseModel */
         BaseModel: Record<string, never>;
         /**
+         * CategoryKindRefSchema
+         * @description The anchoring kind category of a place (preview-light).
+         *
+         *     The main category (e.g. ``accommodation.hut``) as a small ref —
+         *     one per place, first by ``(order, slug)``: the same anchor the
+         *     ``domain`` super-root identifier derives from.
+         */
+        CategoryKindRefSchema: {
+            /** Identifier */
+            identifier: string;
+            /** Slug */
+            slug: string;
+            /**
+             * Color
+             * @default null
+             */
+            color: string | null;
+        };
+        /**
          * CategoryListItemSchema
          * @description Simple category item for list view.
          */
@@ -1192,6 +1213,11 @@ export interface components {
         /**
          * CategoryPlaceTypeSchema
          * @description Schema for category place type with symbols (used in GeoPlace).
+         *
+         *     ``classifier`` and ``extra`` are association-level attributes
+         *     (OpenSpec ``geoplace-capacity-and-types-via-categories``): the
+         *     season classification (``season.*`` identifier) and typed
+         *     per-association attributes (bed capacities).
          */
         CategoryPlaceTypeSchema: {
             /** Slug */
@@ -1210,6 +1236,15 @@ export interface components {
             symbol: {
                 [key: string]: string;
             } | null;
+            /**
+             * Classifier
+             * @default null
+             */
+            classifier: string | null;
+            /** Extra */
+            extra?: {
+                [key: string]: unknown;
+            };
         };
         /**
          * CategoryTreeSchema
@@ -1720,13 +1755,13 @@ export interface components {
          * GeoPlaceDetailSchema
          * @description Unified place detail (place-detail-endpoint).
          *
-         *     Required members: ``slug``, ``name``, ``detail_type`` (the type
+         *     Required members: ``slug``, ``name``, ``domain`` (the type
          *     discriminator clients switch on), ``location``, ``importance``.
          *     Everything else is an optional member under the ``fields[places]``
          *     sparse-fieldset selection; detail blocks appear as sibling members
-         *     named exactly after their ``detail_type`` value (``amenity`` now,
-         *     ``admin``/``transport``/``natural`` later) and only for places of
-         *     that type with a detail row.
+         *     named exactly after their super-root (``amenity`` now,
+         *     ``admin``/``natural`` later) and only for places of that type
+         *     with a detail row.
          */
         GeoPlaceDetailSchema: {
             /** Slug */
@@ -1745,6 +1780,10 @@ export interface components {
             elevation: number | null;
             /** Importance */
             importance: number;
+            /** Domain */
+            domain: string;
+            /** @default null */
+            kind: components["schemas"]["CategoryKindRefSchema"] | null;
             location: components["schemas"]["LocationSchema"];
             /**
              * Categories
@@ -1771,8 +1810,6 @@ export interface components {
              * @default null
              */
             review_status: string | null;
-            /** Detail Type */
-            detail_type: string;
             /** @default null */
             amenity: components["schemas"]["AmenityDetailSchema"] | null;
             /**
@@ -1796,6 +1833,10 @@ export interface components {
             elevation: number | null;
             /** Importance */
             importance: number;
+            /** Domain */
+            domain: string;
+            /** @default null */
+            kind: components["schemas"]["CategoryKindRefSchema"] | null;
             location: components["schemas"]["LocationSchema"];
             /**
              * Categories
@@ -1833,6 +1874,10 @@ export interface components {
             elevation: number | null;
             /** Importance */
             importance: number;
+            /** Domain */
+            domain: string;
+            /** @default null */
+            kind: components["schemas"]["CategoryKindRefSchema"] | null;
             location: components["schemas"]["LocationSchema"];
             /**
              * Categories
@@ -4329,6 +4374,10 @@ export interface operations {
                 types?: string[] | null;
                 /** @description Filter by parent category slugs (e.g., 'terrain', 'transport') */
                 categories?: string[] | null;
+                /** @description Filter by super-root domain: 'amenity', 'admin' or 'natural' (the place's domain member; a 'map.' prefix is tolerated) */
+                domain?: string[] | null;
+                /** @description Filter by kind category — identifiers ('accommodation.hut') or slugs ('hut') */
+                kind?: string[] | null;
                 /** @description Latitude coordinate */
                 lat: number;
                 /** @description Longitude coordinate */
@@ -4443,6 +4492,10 @@ export interface operations {
                 types?: string[] | null;
                 /** @description Filter by parent category slugs (e.g., 'terrain', 'transport') */
                 categories?: string[] | null;
+                /** @description Filter by super-root domain: 'amenity', 'admin' or 'natural' (the place's domain member; a 'map.' prefix is tolerated) */
+                domain?: string[] | null;
+                /** @description Filter by kind category — identifiers ('accommodation.hut') or slugs ('hut') */
+                kind?: string[] | null;
                 /** @description Search query string to match against place names in all languages */
                 q: string;
                 /** @description Maximum number of results to return */
@@ -4457,6 +4510,10 @@ export interface operations {
                 min_importance?: number;
                 /** @description Remove near-identical places that share a name and a very close location before pagination. */
                 deduplicate?: boolean;
+                /** @description Optional proximity bias: prefer results near this latitude (pairs with lon; blends a distance decay into the ranking — closer places win ties without hiding distant matches) */
+                lat?: number | null;
+                /** @description Optional proximity bias longitude (pairs with lat) */
+                lon?: number | null;
             };
             header?: never;
             path?: never;
@@ -5537,6 +5594,8 @@ export interface operations {
                 lang?: string;
                 /** @description Device-tier spec (low | medium | high); resolved into path */
                 spec?: string | null;
+                /** @description Renderer capability (full | subset); resolved into path. Omitted: today's profile-agnostic resolution. */
+                profile?: string | null;
             };
             header?: never;
             path?: never;
@@ -5596,6 +5655,8 @@ export interface operations {
                 lang?: string;
                 /** @description Device-tier spec the client WANTS (low | medium | high); the backend resolves exact → explicit chain → single and reports the served spec per entry */
                 spec?: string | null;
+                /** @description Renderer capability the client DECLARES (full | subset): full walks full→subset within each tier (tier respected before format richness); subset never receives full variants — slugs without a subset variant drop out. Omitted: today's profile-agnostic resolution (backward compatible). */
+                profile?: string | null;
                 /** @description Filter by layer role (basemap | overlay) */
                 role?: string | null;
                 /** @description Opt-in visibility filter (true | false). Default: all layers — hidden fallback basemaps stay resolvable for client-side fallback chains */
@@ -5657,6 +5718,8 @@ export interface operations {
                 lang?: string;
                 /** @description Device-tier spec the client WANTS (low | medium | high); the backend resolves exact → explicit chain → single and reports the served spec per entry */
                 spec?: string | null;
+                /** @description Renderer capability the client DECLARES (full | subset): full walks full→subset within each tier (tier respected before format richness); subset never receives full variants — slugs without a subset variant drop out. Omitted: today's profile-agnostic resolution (backward compatible). */
+                profile?: string | null;
                 /** @description Filter by layer role (basemap | overlay) */
                 role?: string | null;
                 /** @description Opt-in visibility filter (true | false). Default: all layers — hidden fallback basemaps stay resolvable for client-side fallback chains */
