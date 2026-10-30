@@ -59,6 +59,14 @@ export const useOverlayStore = defineStore('overlay', () => {
   const overlaysEpoch = ref(0);
   const parametersEpoch = ref(0);
 
+  /** Bump the catalog-swap epoch WITHOUT replacing items — the
+   *  idle-gated apply after a tab-focus style revalidation (the items
+   *  were already spliced in menu-only; renderers re-add the possibly
+   *  replaced styles on the bump — map-catalog-store). */
+  function bumpCatalogEpoch(): void {
+    overlaysEpoch.value += 1;
+  }
+
   /**
    * Replace the overlay list with catalog-compiled items (map-catalog-store
    * owns loading + persistence). On the FIRST application (empty list) the
@@ -298,6 +306,7 @@ export const useOverlayStore = defineStore('overlay', () => {
     setActiveGroup,
     stepGroup,
     applyCatalogOverlays,
+    bumpCatalogEpoch,
     resolveActiveSlugs,
     // Persisted active/show state for a slug (pre-session snapshot,
     // after rename migration) — consumers decide one-time adoption

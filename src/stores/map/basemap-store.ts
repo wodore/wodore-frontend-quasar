@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia';
 import { reactive, watch } from 'vue';
 import { Notify } from 'quasar';
-import { useEventListener } from '@vueuse/core';
 import { BasemapSwitchItem } from '@stores/map/utils/interfaces';
 import { useMap } from '@indoorequal/vue-maplibre-gl';
 //import type { Emitter } from 'mitt';
@@ -42,6 +41,7 @@ import {
   RENAMED_BASEMAP_SLUGS,
   mapCatalogBasemap,
 } from './utils/catalog-mapping';
+import { whenMapIdle, type IdleMapLike } from './utils/idle-apply';
 // NOTE: whenIdle is no longer imported here — the catalog style wave
 // fired at boot idle exactly when the map's first render runs and
 // starved it (see the catalog warm-up comment in runBasemapInit).
@@ -1086,11 +1086,21 @@ export const useBasemapStore = defineStore('basemap', () => {
       const active = (basemaps as unknown as BasemapSwitchItem[]).find(b => b.name === activeName);
       if (active) {
         active.active = true;
-        // Style URL change (spec/variant switch) → re-apply so the map
-        // renders the new document; metadata-only changes keep the map.
+        // Style URL change (spec/variant switch, or a version bump picked
+        // up by the tab-focus revalidation) → re-apply so the map renders
+        // the new document; metadata-only changes keep the map. The FIRST
+        // apply (boot — activeStyleUrl unset) is immediate; a later swap
+        // happens on a map the user may be interacting with, so it waits
+        // for the app to go idle (idle-apply gate) instead of hard-
+        // swapping mid-pan — same live-refresh contract as the overlay
+        // catalog's tab-focus refresh (map-catalog-store).
         if (active.style !== activeStyleUrl) {
-          activeStyleUrl = active.style;
-          void setBasemap(active, true);
+          if (activeStyleUrl === undefined) {
+            activeStyleUrl = active.style;
+            void setBasemap(active, true);
+          } else {
+            scheduleIdleBasemapSwap(active);
+          }
         }
       } else {
         // The active basemap left the catalog (deactivated server-side
@@ -1123,6 +1133,38 @@ export const useBasemapStore = defineStore('basemap', () => {
    *  catalog items carry URL strings — the union only matches
    *  BasemapSwitchItem['style']). */
   let activeStyleUrl: BasemapSwitchItem['style'] | undefined;
+
+  /** One pending idle swap at a time: the fire-time handler re-resolves
+   *  the CURRENT active item (name + URL), so a swap scheduled for an
+   *  older refresh still applies the latest catalog (v1→v2→v3 collapses
+   * onto one setStyle of v3), and a user basemap switch while the gate
+   * waited wins untouched (name check). */
+  let idleBasemapSwapPending = false;
+
+  /** Apply a changed basemap style URL at the next idle moment — the
+   *  tab-focus revalidation must not setStyle under an active user
+   * interaction (full style swap = visible re-render). Safety net: the
+   * idle-apply gate fires anyway after its deadline, so a map that
+   * never idles still updates. Boot applies are immediate and never
+   * route through here (see refreshFromLayers). */
+  function scheduleIdleBasemapSwap(target: BasemapSwitchItem): void {
+    if (idleBasemapSwapPending) return; // pending fire applies the latest
+    idleBasemapSwapPending = true;
+    // SAFETY: structural duck-type — only `.once`/`.off` are used (the
+    // idle-apply gate); mapRef.map is the vue-maplibre-gl instance
+    // (undefined on the Leaflet fallback → whenIdle path).
+    whenMapIdle(mapRef.map as unknown as IdleMapLike, () => {
+      idleBasemapSwapPending = false;
+      // Staleness guards: a basemap switch or a later re-splice changed
+      // the active item while the gate waited — only proceed when the
+      // SAME selection still wants the swap.
+      const current = getBasemap();
+      if (!current || current.name !== target.name) return; // user choice stands
+      if (current.style === activeStyleUrl) return; // already applied
+      activeStyleUrl = current.style;
+      void setBasemap(current, true);
+    });
+  }
 
   /** The catalog's `is_default` basemap slug (set by refreshFromCatalog;
    *  backend PR #292 seed: wd-outdoor-base-mtk-hill). */
@@ -1468,24 +1510,55 @@ export const useBasemapStore = defineStore('basemap', () => {
   // Call initialization immediately
   void initializeBasemaps();
 
-  // Long-lived tabs: the boot fetch's in-session promise would keep
-  // serving stale data — one conditional GET per tab focus (the server
-  // ETag makes it a 304 when nothing changed; the browser revalidates
-  // automatically). Applies via the splice path, keeping the selection.
-  useEventListener(document, 'visibilitychange', () => {
-    if (document.visibilityState !== 'visible') return;
+  // Arm the module-level tab-focus listener (see the singleton binding
+  // after this store's definition): only an instance that EXISTS may
+  // revalidate — a visibility change on a crawler route (no map view,
+  // no store) must not create one and boot GPU detection.
+  basemapFocusArmed = true;
+
+  // Tab-focus revalidation entry — called by the module-level listener
+  // (one conditional GET per focus; the ETag makes it a 304 when
+  // nothing changed). Kept as a store method so the listener resolves
+  // the ACTIVE pinia's instance — per-instance useEventListener
+  // bindings pile up instead: pinia runs this setup in its own scope,
+  // so an outer effectScope stop never disposes them (spec finding,
+  // 2026-10: stale stores raced the fixtures across tests).
+  function revalidateLayersOnFocus(): void {
     if (!basemapInitPromise) return; // still booting — the init fetch is fresh
     void refreshLayers({ revalidate: true });
-  });
+  }
 
   return {
     basemaps,
     setBasemap,
     getBasemap,
     initializeBasemaps,
+    revalidateLayersOnFocus,
     gpuSpecReady,
     findBasemapBySlug,
     resolveFallbackBasemap,
     //setEmitter,
   };
 });
+
+// ── Tab-focus revalidation (singleton listener) ─────────────────────
+// Long-lived tabs: the boot fetch's in-session promise would keep
+// serving stale data — ONE conditional GET per tab focus (the server
+// ETag makes it a 304 when nothing changed), resolved against the
+// ACTIVE pinia's store instance so the fresh catalog feeds the live
+// refresh (idle-gated style swap for a changed basemap URL, picker
+// re-splice otherwise). Module-level and bound once, guarded by
+// `basemapFocusArmed` (set by the first store instance): a visibility
+// change on a crawler route — no map view, no store — must not CREATE
+// one and boot GPU detection. Per-instance useEventListener bindings
+// were the leak alternative: pinia runs the store setup in its own
+// effect scope, so callers' scope stops never dispose them and one
+// listener per instance piles onto the long-lived document (spec
+// finding 2026-10: stale stores raced the fixtures across tests).
+let basemapFocusArmed = false;
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible' || !basemapFocusArmed) return;
+    useBasemapStore().revalidateLayersOnFocus();
+  });
+}
