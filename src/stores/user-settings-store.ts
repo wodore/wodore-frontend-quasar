@@ -148,13 +148,13 @@ export const useUserSettingsStore = defineStore('userSettings', () => {
     storageSet(STORAGE_KEY, settings.value);
   }, 500);
 
-  // Watch for changes and save
+  // Watch for changes and save. Persistence is deliberately lazy: the
+  // key is written on the first user change, never on store creation —
+  // an initialization-time write would clobber persisted settings
+  // whenever the store is created before `initStorage()` has primed the
+  // memory cache (boot-order regression), resetting every preference
+  // (theme, language, …) to defaults on the next load.
   watch(settings, saveSettings, { deep: true });
-
-  // Save immediately on initialization to ensure key exists
-  if (!storageHas(STORAGE_KEY)) {
-    storageSet(STORAGE_KEY, settings.value);
-  }
 
   // Track which settings need server sync (prepare for future)
   const pendingSync = ref<Set<keyof UserSettings>>(new Set());

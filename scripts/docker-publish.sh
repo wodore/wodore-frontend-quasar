@@ -10,30 +10,30 @@ VERSION_TAGS=false
 TAG_SUFFIX=""
 while getopts "hvs:" opt; do
   case $opt in
-    h)
-      echo "Usage: $0 [-h] [-v] [-s <suffix>]"
-      echo ""
-      echo "Options:"
-      echo "  -h: Show this help message"
-      echo "  -v: Include version tags"
-      echo "  -s: Tag suffix (default: ${DEFAULT_TAG_SUFFIX}), include '-' as well."
-      exit 0
-      ;;
-    v)
-      VERSION_TAGS=true
-      ;;
-    s)
-      TAG_SUFFIX="$OPTARG"
-      ;;
-    \?)
-      echo "Usage: $0 [-h] [-v] [-s <suffix>]"
-      echo ""
-      echo "Options:"
-      echo "  -h: Show this help message"
-      echo "  -v: Include version tags"
-      echo "  -s: Tag suffix (default: ${DEFAULT_TAG_SUFFIX}), include '-' as well."
-      exit 1
-      ;;
+  h)
+    echo "Usage: $0 [-h] [-v] [-s <suffix>]"
+    echo ""
+    echo "Options:"
+    echo "  -h: Show this help message"
+    echo "  -v: Include version tags"
+    echo "  -s: Tag suffix (default: ${DEFAULT_TAG_SUFFIX}), include '-' as well."
+    exit 0
+    ;;
+  v)
+    VERSION_TAGS=true
+    ;;
+  s)
+    TAG_SUFFIX="$OPTARG"
+    ;;
+  \?)
+    echo "Usage: $0 [-h] [-v] [-s <suffix>]"
+    echo ""
+    echo "Options:"
+    echo "  -h: Show this help message"
+    echo "  -v: Include version tags"
+    echo "  -s: Tag suffix (default: ${DEFAULT_TAG_SUFFIX}), include '-' as well."
+    exit 1
+    ;;
   esac
 done
 

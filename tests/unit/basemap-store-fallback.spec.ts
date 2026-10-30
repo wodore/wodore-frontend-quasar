@@ -12,7 +12,6 @@
 // the selection (without re-applying) when nothing changed.
 import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { effectScope } from 'vue';
 import type { MapCatalogLayer } from '@services/map-catalog';
 import { classifyGpuTier, mapProfileForTier } from '@stores/map/basemap-store';
 import { trackWhenUmamiReady } from '@services/analytics';
@@ -29,23 +28,41 @@ vi.mock('@services/analytics', () => ({
 const API_HOST = 'https://hub.stg.wodore.com';
 
 // ── Hoisted mock state (vi.mock factories run before the suite) ─────────
-const { setStyleCalls, fakeMap, storageState, catalogResponse } = vi.hoisted(() => {
-  const setStyleCalls: Array<{ style: unknown }> = [];
-  const fakeMap = {
-    // The store applies basemaps via setStyle — recording the style
-    // argument is the observable behavior under test.
-    setStyle: (style: unknown) => setStyleCalls.push({ style }),
-    on: () => {},
-    once: () => {},
-    getStyle: () => ({ layers: [] }),
-  };
-  return {
-    setStyleCalls,
-    fakeMap,
-    storageState: new Map<string, unknown>(),
-    catalogResponse: { layers: [] as MapCatalogLayer[] },
-  };
-});
+const { setStyleCalls, fakeMap, storageState, catalogResponse, mapEvents, fireMapEvent } =
+  vi.hoisted(() => {
+    const setStyleCalls: Array<{ style: unknown }> = [];
+    // `once` listeners are recorded (not discarded) so tests can fire
+    // map events — the live-refresh idle gate (idle-apply) waits for
+    // 'idle' before swapping a changed basemap style.
+    const mapEvents = new Map<string, Array<() => void>>();
+    const fakeMap = {
+      // The store applies basemaps via setStyle — recording the style
+      // argument is the observable behavior under test.
+      setStyle: (style: unknown) => setStyleCalls.push({ style }),
+      on: () => {},
+      once: (event: string, fn: () => void) => {
+        mapEvents.set(event, [...(mapEvents.get(event) ?? []), fn]);
+      },
+      off: (event: string, fn: () => void) => {
+        mapEvents.set(
+          event,
+          (mapEvents.get(event) ?? []).filter(f => f !== fn)
+        );
+      },
+      getStyle: () => ({ layers: [] }),
+    };
+    const fireMapEvent = (event: string): void => {
+      for (const fn of mapEvents.get(event) ?? []) fn();
+    };
+    return {
+      setStyleCalls,
+      fakeMap,
+      mapEvents,
+      fireMapEvent,
+      storageState: new Map<string, unknown>(),
+      catalogResponse: { layers: [] as MapCatalogLayer[] },
+    };
+  });
 
 vi.mock('@indoorequal/vue-maplibre-gl', () => ({
   useMap: () => ({ map: fakeMap }),
@@ -165,13 +182,13 @@ const style = (slug: string) => `${API_HOST}/v1/map/styles/${slug}.json?spec=hig
 describe('basemap store — catalog refresh recovery', () => {
   let stores: typeof import('@stores/map/basemap-store');
   let warnSpy: ReturnType<typeof vi.spyOn>;
-  // The store registers a document-level visibilitychange listener via
-  // useEventListener; without an active scope it is never disposed and
-  // EVERY test's store piles another listener onto the shared document —
-  // stale stores then race on the hoisted fixtures and the file flakes.
-  // Running each store inside an effectScope (stopped in afterEach)
-  // makes vueuse dispose the listener with the test.
-  let scope: ReturnType<typeof effectScope>;
+  // The tab-focus listener is a MODULE-LEVEL singleton that resolves
+  // the ACTIVE pinia's store at event time (basemap-store) — so no
+  // per-instance listeners pile up across tests and a dispatched
+  // visibilitychange reaches exactly THIS test's store. (The previous
+  // effectScope workaround never actually disposed anything: pinia
+  // runs the setup in its own scope, vueuse bound the listener there,
+  // and stale stores raced the hoisted fixtures across tests.)
 
   beforeAll(async () => {
     stores = await import('@stores/map/basemap-store');
@@ -180,14 +197,14 @@ describe('basemap store — catalog refresh recovery', () => {
   beforeEach(async () => {
     setActivePinia(createPinia());
     setStyleCalls.length = 0;
+    mapEvents.clear();
     storageState.clear();
     warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     // The user's saved selection is the layer the backend deactivates.
     storageState.set('basemapName', 'wd-outdoor-base-mtk');
     catalogResponse.layers = [HILL(), MTK(), OFM()];
     process.env.WODORE_API_HOST = API_HOST;
-    scope = effectScope();
-    scope.run(() => stores.useBasemapStore());
+    stores.useBasemapStore();
     // Cold boot: the saved selection resolves from the catalog and is
     // applied exactly once.
     await vi.waitFor(() => expect(setStyleCalls.length).toBe(1), { timeout: 4000 });
@@ -195,7 +212,6 @@ describe('basemap store — catalog refresh recovery', () => {
   });
 
   afterEach(() => {
-    scope?.stop();
     warnSpy.mockRestore();
     delete process.env.WODORE_API_HOST;
   });
@@ -206,6 +222,34 @@ describe('basemap store — catalog refresh recovery', () => {
     await new Promise(resolve => setTimeout(resolve, 25));
     expect(setStyleCalls.length).toBe(1);
     expect(storageState.get('basemapName')).toBe('wd-outdoor-base-mtk');
+  });
+
+  it('re-applies a changed style URL at map idle, not immediately (live refresh)', async () => {
+    // Backend bumped the active basemap's style version (&v= token).
+    // The tab-focus revalidation splices the new URL into the picker
+    // immediately (menu-first) but the map-visible swap waits for the
+    // idle gate — a hard setStyle mid-interaction is exactly what the
+    // live-refresh design avoids.
+    const bumped = { ...MTK(), style_url: `${MTK().style_url}&v=2` };
+    catalogResponse.layers = [HILL(), bumped, OFM()];
+    document.dispatchEvent(new Event('visibilitychange'));
+    // Menu-first: the picker item carries the new immutable URL once
+    // the refresh settled...
+    await vi.waitFor(() =>
+      expect(
+        stores.useBasemapStore().basemaps.find(b => b.name === 'wd-outdoor-base-mtk')?.style
+      ).toBe(style('wd-outdoor-base-mtk') + '&v=2')
+    );
+    // ...but nothing was re-applied yet — the idle gate holds (the
+    // boot apply is still the only setStyle).
+    expect(setStyleCalls.length).toBe(1);
+
+    // Idle moment → the deferred swap applies the new style URL.
+    fireMapEvent('idle');
+    await vi.waitFor(() =>
+      expect(setStyleCalls.at(-1)?.style).toBe(style('wd-outdoor-base-mtk') + '&v=2')
+    );
+    expect(setStyleCalls.length).toBe(2);
   });
 
   it('switches to the catalog default when the active selection vanished from the catalog', async () => {
@@ -372,15 +416,13 @@ describe('mapProfileForTier — class → render profile table (refactor lock)',
 
 describe('basemap store — gpu-tier Umami event (runBasemapInit wiring)', () => {
   let stores: typeof import('@stores/map/basemap-store');
-  let scope: ReturnType<typeof effectScope>;
 
   beforeAll(async () => {
     stores = await import('@stores/map/basemap-store');
   });
 
   const bootStore = () => {
-    scope = effectScope();
-    scope.run(() => stores.useBasemapStore());
+    stores.useBasemapStore();
   };
 
   beforeEach(() => {
@@ -394,7 +436,6 @@ describe('basemap store — gpu-tier Umami event (runBasemapInit wiring)', () =>
   });
 
   afterEach(() => {
-    scope?.stop();
     delete process.env.WODORE_API_HOST;
   });
 

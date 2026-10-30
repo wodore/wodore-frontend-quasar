@@ -53,7 +53,7 @@ describe('user-settings-store', () => {
     setActivePinia(createPinia());
   });
 
-  it('initializes defaults and ensures the storage key exists', () => {
+  it('initializes defaults and persists lazily (no write on creation)', async () => {
     allure.label('feature', 'user-settings');
     allure.severity('critical');
 
@@ -64,7 +64,20 @@ describe('user-settings-store', () => {
     expect(store.uiSettings.units).toBe('metric');
     expect(store.mapSettings.defaultZoom).toBe(8);
     expect(store.availableOverlays).toContain('huts');
-    expect(window.localStorage.getItem(STORAGE_KEY)).not.toBeNull();
+    // Nothing is persisted on store creation — a creation-time write would
+    // clobber real persisted settings whenever the store is created before
+    // initStorage() primes the memory cache (boot-order regression, see
+    // settings-boot-order.spec.ts). The first user change persists:
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
+    store.updateUISetting('theme', 'light');
+    // Save is debounced (500ms)
+    await vi.waitFor(
+      () => {
+        expect(window.localStorage.getItem(STORAGE_KEY)).not.toBeNull();
+        expect(readStored().ui).toMatchObject({ theme: 'light' });
+      },
+      { timeout: 2000 }
+    );
   });
 
   it('updates UI and map settings', () => {

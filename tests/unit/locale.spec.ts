@@ -154,11 +154,18 @@ describe('locale service', () => {
     expect(useUserSettingsStore().uiSettings.language).toBe('en');
   });
 
-  it('reports whether stored settings existed (first-visit detection)', () => {
-    // Fresh localStorage -> first visit
+  it('reports whether stored settings existed (first-visit detection)', async () => {
+    // Fresh localStorage -> first visit, nothing persisted yet
     expect(useUserSettingsStore().hasStoredSettings).toBe(false);
-    // A NEW store instance (fresh pinia, as on the next app boot) sees the
-    // defaults the first store wrote on init
+
+    // A NEW store instance (fresh pinia, as on the next app boot) only
+    // sees stored settings once a user choice has actually been persisted
+    // (lazy write — a creation-time write would clobber persisted
+    // settings when the store boots before the storage cache is primed)
+    useUserSettingsStore().updateUISetting('language', 'en');
+    await vi.waitFor(() => expect(window.localStorage.getItem(STORAGE_KEY)).not.toBeNull(), {
+      timeout: 2000,
+    });
     setActivePinia(createPinia());
     expect(useUserSettingsStore().hasStoredSettings).toBe(true);
   });
