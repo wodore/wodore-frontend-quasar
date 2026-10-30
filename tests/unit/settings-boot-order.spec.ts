@@ -74,6 +74,9 @@ describe('settings boot order', () => {
 
     // The storage boot runs before i18n/theme: the cache is primed from
     // the persisted payload before any store is created.
+    // (Positive-path validation — the regression detectors for the
+    // boot-order bug are the cold-cache test above and the boot-order
+    // guard below, both of which fail on the old code.)
     await initStorage();
 
     const store = useUserSettingsStore();
