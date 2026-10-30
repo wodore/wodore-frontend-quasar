@@ -672,14 +672,9 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
       // arrival is map content too, even though the pre-resolved wave
       // classified it as inactive (reading the live flag at settle time
       // catches that; the next apply's live-state adoption keeps it on).
-      // SAFETY: overlays items are OverlaySwitchItem — reading .name and
-      // .active only, fields every catalog item sets; the widened cast
-      // breaks the maplibre-style TS2589 recursion (same pattern as
-      // applyCatalogOverlays in the overlay store).
-      const liveOverlays = overlayStore.overlays as unknown as Array<{
-        name: string;
-        active?: boolean;
-      }>;
+      // `liveOverlays` (compile scope above) is the same reactive array
+      // — settle-time reads see current flags; only liveStyleUrls is a
+      // compile-start snapshot.
       const isActiveNow = isActive || liveOverlays.some(o => o.name === layer.slug && o.active);
       scheduleEmit(isActiveNow && styleChanged(layer));
     };
@@ -911,6 +906,12 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     }
   );
 
+  // Arm the module-level tab-focus listener (see the singleton binding
+  // after this store's definition): only a boot path that uses this
+  // store may revalidate it — a visibility change on a route that never
+  // opened the map must not instantiate it here.
+  catalogFocusArmed = true;
+
   return {
     status,
     mapStylesReady,
@@ -944,15 +945,21 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
 // event time — per-instance listeners (useEventListener in the setup)
 // would pile onto the long-lived document one per store creation and
 // never dispose (no component scope in stores), exactly the leak the
-// basemap specs work around with effectScope.
+// basemap specs work around with effectScope. `catalogFocusArmed` is
+// set by the first store instance (basemapFocusArmed pattern): a
+// visibility change on a route that never opened the map must not
+// CREATE the store (review finding) — its setup would drag in the
+// huts store + watchers for nothing.
+let catalogFocusArmed = false;
 if (typeof document !== 'undefined') {
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState !== 'visible') return;
+    if (document.visibilityState !== 'visible' || !catalogFocusArmed) return;
     const store = useMapCatalogStore();
-    // 'idle' = the map view never booted this store (crawler / non-map
-    // routes — creating it here would be pure waste); 'loading' = cold
-    // boot in flight, its fetch is fresh. An 'error' boot retries —
-    // the focus refresh is self-healing (silent, background).
+    // 'idle' = created but never booted (a non-initOverlays consumer,
+    // e.g. a settings tab reading parameter values, can instantiate
+    // the store off-map); 'loading' = cold boot in flight, its fetch
+    // is fresh. An 'error' boot retries — the focus refresh is
+    // self-healing (silent, background).
     if (store.status === 'idle' || store.status === 'loading') return;
     void store.refreshCatalog({ background: true, revalidate: true, deferApply: true });
   });

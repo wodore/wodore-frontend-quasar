@@ -44,7 +44,10 @@ const { setStyleCalls, fakeMap, storageState, catalogResponse, mapEvents, fireMa
         mapEvents.set(event, [...(mapEvents.get(event) ?? []), fn]);
       },
       off: (event: string, fn: () => void) => {
-        mapEvents.set(event, (mapEvents.get(event) ?? []).filter(f => f !== fn));
+        mapEvents.set(
+          event,
+          (mapEvents.get(event) ?? []).filter(f => f !== fn)
+        );
       },
       getStyle: () => ({ layers: [] }),
     };

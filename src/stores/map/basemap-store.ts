@@ -1137,8 +1137,8 @@ export const useBasemapStore = defineStore('basemap', () => {
   /** One pending idle swap at a time: the fire-time handler re-resolves
    *  the CURRENT active item (name + URL), so a swap scheduled for an
    *  older refresh still applies the latest catalog (v1→v2→v3 collapses
-   * onto one setStyle of v3), and a user basemap switch while the gate
-   * waited wins untouched (name check). */
+   *  onto one setStyle of v3), and a user basemap switch while the gate
+   *  waited wins untouched (name check). */
   let idleBasemapSwapPending = false;
 
   /** Apply a changed basemap style URL at the next idle moment — the

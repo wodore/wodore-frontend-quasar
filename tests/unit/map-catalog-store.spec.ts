@@ -43,7 +43,10 @@ const fakeMap = {
     mapListeners.set(event, [...(mapListeners.get(event) ?? []), fn]);
   },
   off: (event: string, fn: (e: unknown) => void) => {
-    mapListeners.set(event, (mapListeners.get(event) ?? []).filter(f => f !== fn));
+    mapListeners.set(
+      event,
+      (mapListeners.get(event) ?? []).filter(f => f !== fn)
+    );
   },
   // `once` listeners land in the same registry — tests fire them via
   // emitMapEvent (e.g. 'idle' for the live-refresh idle gate).
@@ -800,7 +803,7 @@ describe('map catalog store (layers snapshot + versioned style URLs)', () => {
     // Make mtb active (the boot kept everything inactive — no persisted
     // mtb state): a live toggle flips the item + persists, so the focus
     // refresh's diff must treat its version bump as map content.
-    const mtb = (overlayStore.overlays as unknown as Array<{ name: string }> ).find(
+    const mtb = (overlayStore.overlays as unknown as Array<{ name: string }>).find(
       o => o.name === 'mtb'
     );
     overlayStore.toggleOverlay(mtb as never);
@@ -818,9 +821,9 @@ describe('map catalog store (layers snapshot + versioned style URLs)', () => {
     // Menu-first: the new item (with its new immutable URL) is applied
     // immediately — the epoch has NOT bumped yet (idle gate holds).
     await vi.waitFor(() => {
-      const item = (overlayStore.overlays as unknown as Array<{ name: string; styleUrl?: string }>).find(
-        o => o.name === 'mtb'
-      );
+      const item = (
+        overlayStore.overlays as unknown as Array<{ name: string; styleUrl?: string }>
+      ).find(o => o.name === 'mtb');
       expect(item?.styleUrl).toContain('&v=2');
     });
     expect(overlayStore.overlaysEpoch).toBe(epochAfterBoot);
@@ -829,9 +832,9 @@ describe('map catalog store (layers snapshot + versioned style URLs)', () => {
     expect(styleFetches.some(u => u.includes('mtb') && u.includes('v=2'))).toBe(true);
 
     // Idle moment → the deferred epoch bump releases the renderers'
-    // re-add with the new style (exactly one bump).
+    // re-add with the new style (exactly one bump). The bump is
+    // synchronous inside the 'idle' listener — no settle wait needed.
     emitMapEvent('idle', {});
-    await new Promise(resolve => setTimeout(resolve, 10));
     expect(overlayStore.overlaysEpoch).toBe(epochAfterBoot + 1);
   });
 
@@ -842,20 +845,23 @@ describe('map catalog store (layers snapshot + versioned style URLs)', () => {
     await store.initOverlays();
     const epochAfterBoot = overlayStore.overlaysEpoch;
     const fetchesAfterBoot = catalogFetch.mock.calls.length;
+    // Item identity changes on every compile apply (the splice replaces
+    // the item objects) — a deterministic "revalidation compiled" signal
+    // that needs no timeout fence (styles dedupe in-session either way).
+    const firstItemBefore = overlaysOf()[0];
 
     document.dispatchEvent(new Event('visibilitychange'));
     await vi.waitFor(() =>
       expect(catalogFetch.mock.calls.length).toBeGreaterThan(fetchesAfterBoot)
     );
-    // Let the revalidation compile settle (styles dedupe in-session).
-    await new Promise(resolve => setTimeout(resolve, 30));
+    await vi.waitFor(() => expect(overlaysOf()[0]).not.toBe(firstItemBefore));
 
     // Same immutable URLs → the diff keeps every arrival menu-only.
     expect(overlayStore.overlaysEpoch).toBe(epochAfterBoot);
     // And firing idle must not bump either — no deferred bump was
-    // scheduled (nothing changed).
+    // scheduled (nothing changed). No listener is registered, so the
+    // synchronous dispatch cannot move the epoch.
     emitMapEvent('idle', {});
-    await new Promise(resolve => setTimeout(resolve, 10));
     expect(overlayStore.overlaysEpoch).toBe(epochAfterBoot);
     expect(overlaysOf().map(o => o.name)).toEqual(['transport-stops', 'mtb']);
   });
@@ -884,9 +890,46 @@ describe('map catalog store (layers snapshot + versioned style URLs)', () => {
     // carries the old layers until the idle-gated bump removes them.
     expect(overlayStore.overlaysEpoch).toBe(epochAfterBoot);
 
+    // Synchronous bump inside the 'idle' listener — no settle wait.
     emitMapEvent('idle', {});
-    await new Promise(resolve => setTimeout(resolve, 10));
     expect(overlayStore.overlaysEpoch).toBe(epochAfterBoot + 1);
+  });
+
+  it('tab focus: a second version bump while the idle apply is pending rides along (one bump, latest style)', async () => {
+    window.localStorage.setItem(
+      'overlays',
+      JSON.stringify([{ name: 'mtb', active: true, show: true }])
+    );
+    catalogFetch.mockResolvedValue(catalogFor(VERSION_A));
+    const store = stores.useMapCatalogStore();
+    const overlayStore = overlayStores.useOverlayStore();
+    await store.initOverlays();
+    const epochAfterBoot = overlayStore.overlaysEpoch;
+    const mtbStyleUrl = () =>
+      (
+        overlayStore.overlays as unknown as Array<{ name: string; styleUrl?: string }>
+      )
+        .find(o => o.name === 'mtb')
+        ?.styleUrl;
+
+    // Focus #1: v2 published — menu applies, the epoch bump is pending.
+    catalogFetch.mockResolvedValue(withStyleVersion(catalogFor(VERSION_A), 'mtb', '2'));
+    document.dispatchEvent(new Event('visibilitychange'));
+    await vi.waitFor(() => expect(mtbStyleUrl()).toContain('&v=2'));
+    expect(overlayStore.overlaysEpoch).toBe(epochAfterBoot);
+
+    // Focus #2 BEFORE idle: v3 published — scheduleIdleEpochBump must
+    // absorb it (one pending bump at a time; the fire applies the
+    // LATEST items), not schedule a second gate.
+    catalogFetch.mockResolvedValue(withStyleVersion(catalogFor(VERSION_A), 'mtb', '3'));
+    document.dispatchEvent(new Event('visibilitychange'));
+    await vi.waitFor(() => expect(mtbStyleUrl()).toContain('&v=3'));
+
+    // One idle moment → exactly ONE epoch bump, and the live item is v3.
+    emitMapEvent('idle', {});
+    expect(overlayStore.overlaysEpoch).toBe(epochAfterBoot + 1);
+    expect(mtbStyleUrl()).toContain('&v=3');
+    expect(styleFetches.some(u => u.includes('mtb') && u.includes('v=3'))).toBe(true);
   });
 
   it('parameter overrides apply live from the tokenized cache (no style reload)', async () => {

@@ -18,10 +18,13 @@ import { whenIdle } from '@services/idle';
 /** Structural slice of the MapLibre map the gate uses (duck-typed so
  *  the store's widened mapRef casts stay local — mirrors the
  *  availability sourcedata listener pattern in map-catalog-store). */
-export type IdleMapLike = {
-  once: (event: string, listener: () => void) => void;
-  off?: (event: string, listener: () => void) => void;
-} | null | undefined;
+export type IdleMapLike =
+  | {
+      once: (event: string, listener: () => void) => void;
+      off?: (event: string, listener: () => void) => void;
+    }
+  | null
+  | undefined;
 
 /** Deadline for the never-idle safety net (ms) — parity with
  *  scheduleStagedAttach's fallback timer. */
