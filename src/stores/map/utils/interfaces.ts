@@ -75,6 +75,11 @@ export interface OverlaySwitchItem {
   tokenizedStyle?: StyleSpecification;
   catalogSlug?: string;
   profile?: string;
+  /** Catalog `style_url` the style was compiled from — the LIVE-REFRESH
+   *  diff key: the URL is content-versioned (`&v=` token, backend #434),
+   *  so an unchanged URL means an unchanged document and a tab-focus
+   *  revalidation must NOT re-add the layer (map-catalog-store). */
+  styleUrl?: string;
 
   //registerMapFn?: CallableFunction | undefined;
   //deregisterMapFn?: CallableFunction | undefined;

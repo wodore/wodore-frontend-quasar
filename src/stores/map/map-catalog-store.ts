@@ -48,6 +48,7 @@ import { currentLocale } from '@services/locale';
 import { storageGet, storageSet } from '@services/storage';
 import { rendererProfile } from '@services/gpu-override';
 import {
+  clearMapCatalogCache,
   fetchMapCatalog,
   fetchMapSlots,
   fetchMapStyle,
@@ -72,6 +73,7 @@ import {
   mergeSpritePacks,
 } from './utils/catalog-mapping';
 import { fixupBookingsStyle, applyBookingsToMap } from './utils/overlay-huts';
+import { whenMapIdle, type IdleMapLike } from './utils/idle-apply';
 import type { OverlaySwitchItem } from './utils/interfaces';
 
 const PARAMS_KEY = 'mapParameterValues';
@@ -599,6 +601,43 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     const activeLayers = overlayLayers.filter(l => activeSlugs.has(l.slug));
     const otherLayers = overlayLayers.filter(l => !activeSlugs.has(l.slug));
 
+    // LIVE-REFRESH DIFF (tab-focus revalidation): an arrival is map
+    // content only when its style actually changed. Style URLs are
+    // content-versioned (`&v=`, backend #434) — same URL ⇒ same
+    // document — so compare against the style URLs of the items
+    // currently applied. Cold boot / first application: nothing is
+    // live yet, everything counts as changed (each active arrival
+    // bumps, exactly the pre-diff behavior). Unchanged revalidations
+    // stay menu-only — no re-add flicker on every tab focus, and the
+    // warm-boot refresh stops re-adding layers whose style did not
+    // change. A previously SKIPPED layer (absent from the live list)
+    // also counts as changed — its arrival is new map content.
+    // SAFETY: same widened cast as applyCatalogOverlays — reading
+    // .name/.active/.styleUrl only, fields every catalog item sets
+    // (styleUrl since the live-refresh diff; placeholder rows carry
+    // it too, unresolved ones are absent from the live list anyway).
+    const liveOverlays = overlayStore.overlays as unknown as Array<{
+      name: string;
+      active?: boolean;
+      styleUrl?: string;
+    }>;
+    // Plain record, not new Map() — the maplibre `Map` TYPE import
+    // shadows the global constructor (same as orderOf above).
+    const liveStyleUrls: Record<string, string | undefined> = Object.fromEntries(
+      liveOverlays.map(o => [o.name, o.styleUrl])
+    );
+    const styleChanged = (layer: MapCatalogLayer): boolean =>
+      liveStyleUrls[layer.slug] !== (layer.style_url ?? undefined);
+    // An ACTIVE layer that left the catalog is map content too: its
+    // splice-drop must bump the epoch so renderers REMOVE its layers.
+    // Raised after the active wave settles (never over placeholder
+    // rows — see below). A skipped-while-active broken entry
+    // (missing style_url) is NOT covered — its loud skip notice fires
+    // and the next real change drops it.
+    const removedActive = liveOverlays.some(
+      o => o.active && !overlayLayers.some(l => l.slug === o.name)
+    );
+
     let emitScheduled = false;
     let activeArrivedInBatch = false;
     const emitAll = (mapContentChanged: boolean): void => {
@@ -633,21 +672,20 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
       // arrival is map content too, even though the pre-resolved wave
       // classified it as inactive (reading the live flag at settle time
       // catches that; the next apply's live-state adoption keeps it on).
-      // SAFETY: overlays items are OverlaySwitchItem — reading .name and
-      // .active only, fields every catalog item sets; the widened cast
-      // breaks the maplibre-style TS2589 recursion (same pattern as
-      // applyCatalogOverlays in the overlay store).
-      const liveOverlays = overlayStore.overlays as unknown as Array<{
-        name: string;
-        active?: boolean;
-      }>;
+      // `liveOverlays` (compile scope above) is the same reactive array
+      // — settle-time reads see current flags; only liveStyleUrls is a
+      // compile-start snapshot.
       const isActiveNow = isActive || liveOverlays.some(o => o.name === layer.slug && o.active);
-      scheduleEmit(isActiveNow);
+      scheduleEmit(isActiveNow && styleChanged(layer));
     };
     // Active wave (reveal path) first — flipping the reveal latch below
     // the moment it settles — then the background wave for the menu.
     await Promise.all(activeLayers.map(l => load(l, true)));
     mapStylesReady.value = true;
+    // Vanished-active drop (see removedActive above): raise it now —
+    // the active wave settled, so a bump re-adds real styles, never
+    // placeholder rows.
+    if (removedActive) scheduleEmit(true);
     await Promise.all(otherLayers.map(l => load(l, false)));
     // Deterministic final flush (review nit, PR #357): by the time the
     // background wave resolves, its last batched emit already ran
@@ -708,13 +746,47 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     await refreshCatalog({ background: cached !== null });
   }
 
+  /** Deferred epoch bump (idle-gated apply, tab-focus refreshes):
+   *  the items were applied menu-only the moment they arrived; the
+   *  map-visible re-add (overlay remove + re-add on the renderers)
+   *  waits for the app to go idle so a version bump published
+   *  mid-session never interrupts an interaction. One pending bump at
+   *  a time — the bump applies the LATEST items, so a second change
+   *  arriving while one waits rides along. */
+  let idleBumpPending = false;
+  function scheduleIdleEpochBump(): void {
+    if (idleBumpPending) return;
+    idleBumpPending = true;
+    // SAFETY: structural duck-type — only `.once`/`.off` are used (the
+    // idle-apply gate); same pattern as the sourcedata listener above.
+    whenMapIdle(mapRef.map as unknown as IdleMapLike, () => {
+      idleBumpPending = false;
+      overlayStore.bumpCatalogEpoch();
+    });
+  }
+
   /** Fetch the fresh layers catalog, sync changed styles, apply,
    *  persist. The basemap store compiles its picker from the same
-   *  deduplicated service fetch (it never needs a handoff). */
-  async function refreshCatalog({ background }: { background: boolean }): Promise<void> {
+   *  deduplicated service fetch (it never needs a handoff).
+   *
+   *  `revalidate` drops the in-session catalog cache first — a true
+   *  conditional GET (the browser revalidates the ETag; a 304 when
+   *  nothing changed). Tab-focus revalidations need it: the boot
+   *  fetch's promise would otherwise be served all session.
+   *  `deferApply` routes map-content batches through the idle gate
+   *  above — boot refreshes apply immediately (the session is still
+   *  settling, no interaction to interrupt), tab-focus refreshes
+   *  defer. */
+  async function refreshCatalog(options: {
+    background: boolean;
+    revalidate?: boolean;
+    deferApply?: boolean;
+  }): Promise<void> {
+    const { background, revalidate = false, deferApply = false } = options;
     if (refreshing) return;
     refreshing = true;
     try {
+      if (revalidate) clearMapCatalogCache();
       const lang = currentLocale();
       // One shared layers fetch for overlays + basemaps: await the GPU
       // tier so `?spec=` matches the basemap store's request (the
@@ -743,11 +815,19 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
       // warms their URLs meanwhile so this mostly reads HTTP-cache hits
       // (perf/fast-first-paint). No additional idle hop here: stacking a
       // second deadline behind the mount gate only delays the styles.
-      await compileCatalogOverlays(layers, slotSlugs, (items, meta) =>
-        overlayStore.applyCatalogOverlays(items, {
-          bumpEpoch: meta?.mapContentChanged ?? true,
-        })
-      );
+      await compileCatalogOverlays(layers, slotSlugs, (items, meta) => {
+        if (!deferApply) {
+          overlayStore.applyCatalogOverlays(items, {
+            bumpEpoch: meta?.mapContentChanged ?? true,
+          });
+          return;
+        }
+        // Tab-focus refresh: the menu applies immediately (labels,
+        // legends, new rows); the epoch bump — the only map-visible
+        // part — waits for idle.
+        overlayStore.applyCatalogOverlays(items, { bumpEpoch: false });
+        if (meta?.mapContentChanged) scheduleIdleEpochBump();
+      });
       status.value = 'ready';
     } catch (error) {
       console.warn('[map-catalog] catalog refresh failed:', error);
@@ -826,6 +906,12 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     }
   );
 
+  // Arm the module-level tab-focus listener (see the singleton binding
+  // after this store's definition): only a boot path that uses this
+  // store may revalidate it — a visibility change on a route that never
+  // opened the map must not instantiate it here.
+  catalogFocusArmed = true;
+
   return {
     status,
     mapStylesReady,
@@ -846,3 +932,35 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
     availabilityLoading,
   };
 });
+
+// ── Tab-focus revalidation (singleton) ───────────────────────────────
+// Mid-session style updates (live refresh): one conditional GET per
+// tab focus — the same moment basemap-store revalidates its list — so
+// a version published while the app is open reaches the map without a
+// reload. The ETag makes an unchanged focus a 304; changed layers get
+// a new immutable `&v=` URL (fresh document), and the map-visible
+// apply is idle-gated inside the refresh (deferApply).
+//
+// BOUND ONCE at module level, resolving the ACTIVE pinia's store at
+// event time — per-instance listeners (useEventListener in the setup)
+// would pile onto the long-lived document one per store creation and
+// never dispose (no component scope in stores), exactly the leak the
+// basemap specs work around with effectScope. `catalogFocusArmed` is
+// set by the first store instance (basemapFocusArmed pattern): a
+// visibility change on a route that never opened the map must not
+// CREATE the store (review finding) — its setup would drag in the
+// huts store + watchers for nothing.
+let catalogFocusArmed = false;
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible' || !catalogFocusArmed) return;
+    const store = useMapCatalogStore();
+    // 'idle' = created but never booted (a non-initOverlays consumer,
+    // e.g. a settings tab reading parameter values, can instantiate
+    // the store off-map); 'loading' = cold boot in flight, its fetch
+    // is fresh. An 'error' boot retries — the focus refresh is
+    // self-healing (silent, background).
+    if (store.status === 'idle' || store.status === 'loading') return;
+    void store.refreshCatalog({ background: true, revalidate: true, deferApply: true });
+  });
+}
