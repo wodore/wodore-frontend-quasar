@@ -63,12 +63,11 @@ let nextOffset = 0;
 // while the user previews results).
 let activeBias: { lat?: number; lon?: number } = {};
 
-// Search request shape (backend PR #456/#464): sparse fieldsets skip the
-// categories/parties/sources fetches per keystroke — `kind` (name +
-// symbol since #464) keys the preview icon. Sources dropped per PO:
-// hut deep-links fall back to fly-only until a cheap `hut_slug`
-// discriminator lands on the backend.
-const SEARCH_FIELDS = { places: 'slug,name,location,elevation,kind' };
+// Search request shape (backend PR #456): sparse fieldsets skip the
+// categories/parties fetches per keystroke — `kind` keys the preview
+// icon, `sources` stays in the selection because hut selection resolves
+// the hut page via the wodore source_id (geoplace slug ≠ hut slug).
+const SEARCH_FIELDS = { places: 'slug,name,location,elevation,kind,sources' };
 const SEARCH_LIMIT = 8;
 const MIN_QUERY_LENGTH = 2;
 const SEARCH_DEBOUNCE_MS = 250;
@@ -76,37 +75,9 @@ const SEARCH_DEBOUNCE_MS = 250;
 // Search function
 const latestSearch = useLatestRequest();
 
-// Proximity bias (optional backend ranking hint): the user's geolocation
-// when known (one-shot, cached — permission-gated), else the current map
-// center when the map instance is already loaded.
-let cachedUserPosition: { lat: number; lon: number } | null = null;
-let userPositionRequested = false;
-
-function requestUserPosition(): void {
-  if (userPositionRequested || !('geolocation' in navigator)) return;
-  userPositionRequested = true;
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      cachedUserPosition = {
-        lat: pos.coords.latitude,
-        lon: pos.coords.longitude,
-      };
-    },
-    () => {
-      /* permission denied or unavailable — map center fallback stays */
-    },
-    { timeout: 5000, maximumAge: 300000 }
-  );
-}
-
+// Proximity bias (optional backend ranking hint): prefer results near
+// the current map center when the map instance is already loaded.
 function mapCenterParams(): { lat?: number; lon?: number } {
-  if (cachedUserPosition) {
-    return {
-      lat: Math.round(cachedUserPosition.lat * 10000) / 10000,
-      lon: Math.round(cachedUserPosition.lon * 10000) / 10000,
-    };
-  }
-  requestUserPosition();
   if (!mapRef?.map) return {};
   const center = mapRef.map.getCenter();
   if (!Number.isFinite(center.lat) || !Number.isFinite(center.lng)) return {};
