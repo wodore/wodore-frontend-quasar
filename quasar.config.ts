@@ -78,8 +78,8 @@ export default configure(ctx => {
       // mount (owner report: boot must not wait on it).
       { server: false, path: 'debug-tools' },
       { server: false, path: 'hut-prefetch' },
-      'i18n',
       'storage',
+      'i18n',
       'theme',
       'icons',
       { server: false, path: 'auth' },
