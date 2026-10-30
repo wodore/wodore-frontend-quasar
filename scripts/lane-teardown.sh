@@ -14,8 +14,8 @@ cd "$(dirname "$0")/.."
 
 # Not a workz lane (no managed block)? Nothing to clean — exit clean.
 if ! grep -q '^PORT=' .env.local 2>/dev/null; then
-    echo "lane-teardown: no workz managed block in .env.local — nothing to clean up"
-    exit 0
+  echo "lane-teardown: no workz managed block in .env.local — nothing to clean up"
+  exit 0
 fi
 
 scripts/lane-web.sh stop >/dev/null 2>&1 || true

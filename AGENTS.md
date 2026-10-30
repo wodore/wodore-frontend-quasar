@@ -100,6 +100,12 @@ pnpm lint # Check code
 pnpm lint:fix # Fix linting issues
 pnpm format # Format with Prettier
 
+# Shell script formatting (shfmt, default style; repo .editorconfig
+# supplies the 2-space indent). Editors with shfmt integration do this
+# on save — `shfmt -w <file>` or `shfmt -l .` to check. All tracked
+# *.sh files (docker/, scripts/, tasks/) conform; keep new ones conforming
+# so saves don't dirty the working tree.
+
 # Component development (Histoire)
 
 pnpm story:dev # Start Histoire dev server

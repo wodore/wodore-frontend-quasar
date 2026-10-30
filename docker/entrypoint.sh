@@ -2,18 +2,18 @@
 CONFIG=${WODORE_NGINX_CONFIG:-default}
 # Map config names to actual file names
 case "$CONFIG" in
-  nginx-local.conf|local)
-    CONFIG_FILE="local"
-    ;;
-  nginx-proxy.conf|proxy)
-    CONFIG_FILE="proxy"
-    ;;
-  default|nginx-default.conf|"")
-    CONFIG_FILE="default"
-    ;;
-  *)
-    CONFIG_FILE="$CONFIG"
-    ;;
+nginx-local.conf | local)
+  CONFIG_FILE="local"
+  ;;
+nginx-proxy.conf | proxy)
+  CONFIG_FILE="proxy"
+  ;;
+default | nginx-default.conf | "")
+  CONFIG_FILE="default"
+  ;;
+*)
+  CONFIG_FILE="$CONFIG"
+  ;;
 esac
 # Copy the selected config to the nginx http.d directory. Alpine's nginx
 # includes http.d/*.conf INSIDE the http block; /etc/nginx/conf.d is
@@ -27,7 +27,7 @@ if [ "$CONFIG_FILE" != "default" ]; then
 fi
 # Staging: block search engine indexing
 if [ "${WODORE_ENV}" != "production" ]; then
-  printf 'User-agent: *\nDisallow: /\n' > /usr/share/nginx/html/robots.txt
+  printf 'User-agent: *\nDisallow: /\n' >/usr/share/nginx/html/robots.txt
   # Bake a noindex into the HTML shell for crawlers that do not run JS
   # (the app sets the same via useMeta client-side, this covers the rest).
   sed -i 's|<head>|<head><meta name="robots" content="noindex, nofollow">|' /usr/share/nginx/html/index.html
@@ -37,7 +37,7 @@ fi
 # of WODORE_ENV — nginx picks this file via the $robots_txt $host map
 # (nginx-default.conf), so the origin hosts never serve the crawlable
 # production robots.txt even though they serve the same content.
-printf 'User-agent: *\nDisallow: /\n' > /usr/share/nginx/html/robots-origin.txt
+printf 'User-agent: *\nDisallow: /\n' >/usr/share/nginx/html/robots-origin.txt
 
 # SEO proxies: replace the API host placeholder with the runtime API host
 # (same source of truth as the @@WODORE_API_HOST@@ placeholders in index.html)
@@ -139,12 +139,12 @@ sed -i "s|__WODORE_LANG_PREFIXES__|${WODORE_LANG_PREFIXES:-de,en,fr,it}|g" /etc/
 # short-circuits before it is ever reached.
 SENTRY_DSN="${WODORE_SENTRY_DSN:-}"
 case "$SENTRY_DSN" in
-  @@*) SENTRY_DSN='' ;;
-  # sed-injection guard: only URL-ish characters may reach the config
-  *[!A-Za-z0-9:./@?=-]*) SENTRY_DSN='' ;;
-  # shape: scheme://nonEmptyKey@nonEmptyHost/nonEmptyProject
-  *://?*@?*/?*) : ;;
-  *) SENTRY_DSN='' ;;
+@@*) SENTRY_DSN='' ;;
+# sed-injection guard: only URL-ish characters may reach the config
+*[!A-Za-z0-9:./@?=-]*) SENTRY_DSN='' ;;
+# shape: scheme://nonEmptyKey@nonEmptyHost/nonEmptyProject
+*://?*@?*/?*) : ;;
+*) SENTRY_DSN='' ;;
 esac
 if [ -n "$SENTRY_DSN" ]; then
   INGEST_REST="${SENTRY_DSN#*://}"

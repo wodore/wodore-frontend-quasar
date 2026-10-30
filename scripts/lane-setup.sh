@@ -15,13 +15,13 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 if [ ! -f .env.local ]; then
-    echo "lane-setup: no .env.local — run 'workz sync . --isolated' first (or: not a workz lane)" >&2
-    exit 1
+  echo "lane-setup: no .env.local — run 'workz sync . --isolated' first (or: not a workz lane)" >&2
+  exit 1
 fi
 
 if ! command -v pnpm >/dev/null 2>&1; then
-    echo "lane-setup: pnpm not found on PATH" >&2
-    exit 1
+  echo "lane-setup: pnpm not found on PATH" >&2
+  exit 1
 fi
 
 pnpm install --frozen-lockfile
