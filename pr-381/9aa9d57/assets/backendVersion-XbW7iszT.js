@@ -1,0 +1,2 @@
+import{c as s}from"./index-XdLtZOZV.js";const l=300*1e3;let o=null,a=null;function c(){return o&&Date.now()-o.at<l?o.info:null}async function f(){const r=c();if(r)return r;a??=(async()=>{const{data:e,error:t}=await s.GET("/v1/version",{});if(t||!e)throw new Error(t?JSON.stringify(t):"no version payload");const n=e,i={version:n.version??"",hash:n.hash??"",hashLong:n.hash_long??"",api:n.api};return o={at:Date.now(),info:i},i})();try{return await a}finally{a=null}}export{f as g};
+//# sourceMappingURL=backendVersion-XbW7iszT.js.map
