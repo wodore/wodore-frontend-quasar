@@ -6,14 +6,8 @@
  * Transitland onestop_id (no URL — D10 reserves the pattern).
  */
 import { definePresentation } from '@selection/types';
+import { TRANSPORT_STOP_LAYERS } from '@selection/map-layer-ids';
 
-/** transport-stops style layers (probed from the staging catalog style:
- *  circle + two symbol layers, source `transitland_stops`, minzoom 11). */
-const TRANSPORT_STOP_LAYERS = [
-  'transport-stops',
-  'transport-stops-icons',
-  'transport-stops-icons-detail',
-] as const;
 
 export const transportEntry = definePresentation<Record<string, unknown>>({
   id: 'transport',

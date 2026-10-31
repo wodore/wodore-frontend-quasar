@@ -31,6 +31,14 @@ export const WD_HUTS_CLICK_LAYERS: readonly string[] = [
   ...WD_HUTS_OCCUPATION_LAYERS,
 ];
 
+/** Transport stop layers (probed from the staging catalog style: circle
+ *  + two symbol layers, source `transitland_stops`). */
+export const TRANSPORT_STOP_LAYERS = [
+  'transport-stops',
+  'transport-stops-icons',
+  'transport-stops-icons-detail',
+] as const;
+
 // Re-exported for entry claims: entries are store-free (eslint boundary
 // on **/stores/*), so the zoom gate travels through this module — the
 // single definition lives in map-constants.ts.

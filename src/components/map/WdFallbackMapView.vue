@@ -1280,12 +1280,19 @@ onMounted(() => {
   unregisterFallbackProjector?.();
   const m = map; // narrow the nullable instance for the adapter closures
   if (m) {
+    // GLM review F8: container rect is pan-invariant — cache, refresh on
+    // resize (the fallback path runs on weak hardware where per-frame
+    // forced layouts hurt most).
+    let containerRect = m.getContainer().getBoundingClientRect();
+    const onResize = () => {
+      containerRect = m.getContainer().getBoundingClientRect();
+    };
+    m.on('resize', onResize);
     unregisterFallbackProjector = registerProjector({
       engine: 'leaflet',
       project(lngLat) {
         const point = m.latLngToContainerPoint([lngLat.lat, lngLat.lon]);
-        const rect = m.getContainer().getBoundingClientRect();
-        return { x: rect.left + point.x, y: rect.top + point.y };
+        return { x: containerRect.left + point.x, y: containerRect.top + point.y };
       },
       onMove(cb) {
         m.on('move', cb);
@@ -1294,6 +1301,7 @@ onMounted(() => {
         };
       },
     });
+    onScopeDispose(() => m.off('resize', onResize));
   }
   onScopeDispose(() => unregisterFallbackProjector?.());
   const container = map.getContainer();

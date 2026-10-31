@@ -98,19 +98,25 @@ watch(projectorRef, p => {
 });
 
 // ── Entry popup CONTENT: resolve the popup surface from the entry's
-// ONE barrel (memoized per entry id — module scope, shared and
-// idempotent like useActiveDetailEntry's cache). Falls back to the
-// bare slot when the entry declares no popup surface.
-const popupContent = shallowRef<Component | null>(null);
+// ONE barrel (GLM review F1: cache hoisted to MODULE scope — genuinely
+// shared and idempotent like useActiveDetailEntry's cache; bounded by
+// entry count, failure evicts for retry). Falls back to the bare slot
+// when the entry declares no popup surface.
 const surfacesCache = new Map<string, Promise<EntrySurfaces>>();
+
+const popupContent = shallowRef<Component | null>(null);
 let contentSeq = 0;
 
 watch(
   () => selection.popupEntry,
   async entry => {
     const token = ++contentSeq;
+    // GLM review F2: drop the previous entry's component IMMEDIATELY —
+    // during the barrel resolution it would otherwise render against
+    // the NEW target's props (defensively-typed → empty, but a
+    // chunk-load of empty card on slow networks).
+    popupContent.value = null;
     if (!entry?.surfaces) {
-      popupContent.value = null;
       return;
     }
     let promise = surfacesCache.get(entry.id);
@@ -174,11 +180,7 @@ onScopeDispose(() => {
             @click="selection.closePopup()"
           />
         </header>
-        <component
-          :is="popupContent"
-          v-if="popupContent"
-          :target="selection.popupTarget"
-        />
+        <component :is="popupContent" v-if="popupContent" :target="selection.popupTarget" />
         <slot v-else />
         <footer
           v-if="selection.popupEntry?.capabilities?.includes('detail')"

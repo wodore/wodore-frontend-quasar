@@ -653,7 +653,7 @@ function scheduleReveal(map: Map): void {
     },
     markLayersFullyReady
   );
-  onScopeDispose(() => {
+  revealDisposers.push(() => {
     map.off('styledata', invalidateVisibleSources);
     map.off('error', onMapError);
     map.off('render', onSplashRender);
@@ -689,8 +689,8 @@ function scheduleReveal(map: Map): void {
     },
     { immediate: true }
   );
-  onScopeDispose(() => stopStatusWatch?.());
-  onScopeDispose(() => {
+  revealDisposers.push(() => stopStatusWatch?.());
+  revealDisposers.push(() => {
     unregisterMapProjector?.();
     applyFeatureHighlight(null); // engine teardown clears its own highlight
   });
@@ -709,6 +709,17 @@ useResizeObserver(mapDiv, () => {
 
 let unregisterMapProjector: (() => void) | null = null;
 
+// scheduleReveal runs from a watch callback (async scheduler job,
+// activeEffectScope === null) — its onScopeDispose calls would be
+// DROPPED by Vue. Collect them here; the setup-level drain below runs
+// reliably (GLM review F3 — this also restores the projector-unregister
+// teardown contract and removes 3 boot console warnings).
+const revealDisposers: Array<() => void> = [];
+onScopeDispose(() => {
+  for (const dispose of revealDisposers) dispose();
+  revealDisposers.length = 0;
+});
+
 function onMapLoad(e: MglEvent<'load'>) {
   collapseAutoExpandedAttribution();
   console.debug(`[onMapLoad] Maplibre version ${e.map.version} loaded`);
@@ -722,18 +733,26 @@ function onMapLoad(e: MglEvent<'load'>) {
   // body) and forwards CONTINUOUS move events (flyTo glue). The
   // unregister path clears this adapter's highlight (engine teardown).
   unregisterMapProjector?.();
+  // GLM review F8: the canvas rect is pan-invariant — cache it at
+  // registration and refresh on resize (per-frame getBoundingClientRect
+  // forces a synchronous layout every anchored rAF frame).
+  let canvasRect = e.map.getCanvas().getBoundingClientRect();
+  const onResize = () => {
+    canvasRect = e.map.getCanvas().getBoundingClientRect();
+  };
+  e.map.on('resize', onResize);
   unregisterMapProjector = registerProjector({
     engine: 'maplibre',
     project(lngLat) {
       const p = e.map.project([lngLat.lon, lngLat.lat]);
-      const r = e.map.getCanvas().getBoundingClientRect();
-      return { x: r.left + p.x, y: r.top + p.y };
+      return { x: canvasRect.left + p.x, y: canvasRect.top + p.y };
     },
     onMove(cb) {
       e.map.on('move', cb);
       return () => e.map.off('move', cb);
     },
   });
+  revealDisposers.push(() => e.map.off('resize', onResize));
 
   // Country basemap restored from a previous session: the raw initial
   // style carries no world fallback (composing it needs an async style

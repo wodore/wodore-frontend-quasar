@@ -8,8 +8,9 @@
  * Tile schema (transitland_stops MLT, probed from staging tiles):
  * `onestop_id`, `operator_name`, `operator_short_name`, `routes`
  * (JSON string array), `route_types`, `location_type`,
- * `parent_station`. Stop names are sparse in the tiles — the title
- * falls back to operator + stop id.
+ * `parent_station`. Stop names are sparse in the tiles — the shell
+ * title stays empty when absent (hidden via its v-if); the content
+ * leads with the operator.
  */
 import { computed } from 'vue';
 import type { MapTarget } from '@selection/types';
@@ -48,7 +49,8 @@ const routes = computed<RouteInfo[]>(() => {
           (typeof route.long_name === 'string' && route.long_name) ||
           null;
         const color =
-          typeof route.color === 'string' && /^#?[0-9a-fA-F]{3,8}$/.test(route.color)
+          typeof route.color === 'string' &&
+            /^(?:#?[0-9a-fA-F]{3,4}|#?[0-9a-fA-F]{6}|#?[0-9a-fA-F]{8})$/.test(route.color)
             ? route.color.startsWith('#')
               ? route.color
               : `#${route.color}`
@@ -67,8 +69,8 @@ const routes = computed<RouteInfo[]>(() => {
     <p v-if="operator" class="wd-transport-popup__operator q-mb-none">{{ operator }}</p>
     <div v-if="routes.length" class="row q-gutter-xs q-mt-xs">
       <span
-        v-for="r in routes"
-        :key="r.name ?? ''"
+        v-for="(r, i) in routes"
+        :key="(r.name ?? '') + ':' + i"
         class="wd-transport-popup__chip"
         :style="r.color ? { borderColor: r.color, color: r.color } : undefined"
       >
