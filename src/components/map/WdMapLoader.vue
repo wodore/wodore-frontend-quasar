@@ -68,13 +68,39 @@ const words = computed(() =>
     .filter(Boolean)
 );
 const word = ref('');
+/** Word swaps animate (blur-crystallize) — EXCEPT the initial word:
+ *  it must paint at full opacity in the same state the boot shell's
+ *  word is in, or the handover visibly pops (owner-reported flicker
+ *  2026-10-31). Flipped once the first swap happens. */
+const wordAnimated = ref(false);
 let pool: string[] = [];
 const pickNext = () => {
   if (words.value.length === 0) return;
   if (pool.length === 0) pool = [...words.value];
   const at = Math.floor(Math.random() * pool.length);
+  wordAnimated.value = true;
   word.value = pool.splice(at, 1)[0] ?? '';
 };
+/** The FIRST word is not random — it is the word the boot shell's CSS
+ *  cycler is showing right now (same list order, same 600ms + i*1900ms
+ *  slots; the lists are kept in sync — see index.html). The handover
+ *  crossfades two identical, steady words = invisible. */
+const timelineWord = (): string => {
+  if (words.value.length === 0) return '';
+  const idx = Math.max(
+    0,
+    Math.min(
+      Math.floor((window.performance.now() - WORD_START_AT_MS) / WORD_INTERVAL_MS),
+      words.value.length - 1
+    )
+  );
+  return words.value[idx] ?? '';
+};
+// Already past the word start (the usual case — the shell has been
+// cycling since 600ms)? Paint the timeline word from first render.
+if (window.performance.now() >= WORD_START_AT_MS) {
+  word.value = timelineWord();
+}
 let wordTimer: ReturnType<typeof setInterval> | undefined;
 let wordDelayTimer: ReturnType<typeof setTimeout> | undefined;
 let hillsTimer: ReturnType<typeof setTimeout> | undefined;
@@ -164,15 +190,22 @@ onMounted(() => {
     });
   }, entranceDelay);
   // Stage 1 words — same 600ms page-time budget as the boot shell cycler.
-  wordDelayTimer = setTimeout(
-    () => {
-      wordDelayTimer = undefined;
-      if (props.rendered) return; // already past — never start
-      pickNext();
-      wordTimer = setInterval(pickNext, WORD_INTERVAL_MS);
-    },
-    Math.max(0, WORD_START_AT_MS - window.performance.now())
-  );
+  if (word.value === '') {
+    // Mounted before the word start: begin at 600ms with the SHELL's
+    // timeline word (steady, no animation — the handover must not pop).
+    wordDelayTimer = setTimeout(
+      () => {
+        wordDelayTimer = undefined;
+        if (props.rendered) return; // already past — never start
+        word.value = timelineWord();
+        wordTimer = setInterval(pickNext, WORD_INTERVAL_MS);
+      },
+      Math.max(0, WORD_START_AT_MS - window.performance.now())
+    );
+  } else {
+    // Timeline word already showing since setup — keep cycling.
+    wordTimer = setInterval(pickNext, WORD_INTERVAL_MS);
+  }
 });
 onBeforeUnmount(() => {
   disposed = true; // review n1: async callbacks must not run past unmount
@@ -325,7 +358,7 @@ onBeforeUnmount(() => {
     <div class="wd-splash__wordmark">
       <span class="wd-splash__wo">wo</span><span class="wd-splash__dore">dore</span>
     </div>
-    <Transition name="wd-splash-word" mode="out-in">
+    <Transition :name="wordAnimated ? 'wd-splash-word' : 'wd-word-instant'" mode="out-in">
       <div :key="word" class="wd-splash__status">
         {{ word }}
       </div>

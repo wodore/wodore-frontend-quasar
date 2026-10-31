@@ -399,20 +399,35 @@ function scheduleReveal(map: Map): void {
     }
     return ids;
   };
-  let visibleSetsCache: { all: Set<string>; base: Set<string> } | null = null;
-  const visibleSourceSets = (): { all: Set<string>; base: Set<string> } => {
+  /** Visible-layer source sets + the count of visible NON-overlay
+   *  layers — baseLayerCount > 0 is the "a real basemap style is
+   *  applied" signal (slow-4G investigation 2026-10-31: overlay layers
+   * on the empty boot style satisfied the old `layers >= 2` check while
+   * the basemap style was still fetching, an EMPTY base set made the
+   * every-source-loaded check vacuously true, and the splash released
+   * onto a map with no basemap at all — white). */
+  interface VisibleSets {
+    all: Set<string>;
+    base: Set<string>;
+    baseLayerCount: number;
+  }
+  let visibleSetsCache: VisibleSets | null = null;
+  const visibleSourceSets = (): VisibleSets => {
     if (!visibleSetsCache) {
       const overlayIds = overlayOwnedLayerIds();
       const all = new Set<string>();
       const base = new Set<string>();
+      let baseLayerCount = 0;
       for (const layer of map.getStyle()?.layers ?? []) {
         const layout = layer.layout as Record<string, unknown> | undefined;
         if (layout?.visibility === 'none') continue;
+        const isOverlayLayer = overlayIds.has(layer.id);
+        if (!isOverlayLayer) baseLayerCount++;
         if (!('source' in layer) || typeof layer.source !== 'string') continue;
         all.add(layer.source);
-        if (!overlayIds.has(layer.id)) base.add(layer.source);
+        if (!isOverlayLayer) base.add(layer.source);
       }
-      visibleSetsCache = { all, base };
+      visibleSetsCache = { all, base, baseLayerCount };
     }
     return visibleSetsCache;
   };
@@ -524,12 +539,6 @@ function scheduleReveal(map: Map): void {
     layersFullyReady = true;
     setMapBootPending(false);
   };
-  /** True once any tile CONTENT event arrived (ladder signal). */
-  let tileContentSeen = false;
-  const onTileContent = (e: { sourceDataType?: string }) => {
-    if (e.sourceDataType === 'content') tileContentSeen = true;
-  };
-  map.on('sourcedata', onTileContent);
   /** Splash gate as a POLL (perf/map-boot, 2026-10-31): the boot's event
    *  choreography defeated every once-listener formulation — the EMPTY
    * boot style fires `idle` unconditionally (~0.9s), style swaps orphan
@@ -550,10 +559,28 @@ function scheduleReveal(map: Map): void {
    *  make this fast; slow fonts hold the splash — accepted: white is
    *  worse than slow). Overlay/GeoJSON sources are excluded via the
    *  base set. */
+  /** Sources that ERRORED (tile fetch failures do not retry — such a
+   *  source will never load, and holding the splash for it forever is
+   *  the infinite-splash hostage the original hard cap existed for).
+   *  Loaded-or-errored is the gate: an errored source releases it. */
+  const erroredSources = new globalThis.Set<string>();
+  const onMapError = (e: unknown) => {
+    // MapErrorEvent carries sourceId for tile/source failures (not in
+    // the DOM ErrorEvent typings — narrow locally).
+    const sid = (e as { sourceId?: unknown }).sourceId;
+    if (typeof sid === 'string') erroredSources.add(sid);
+  };
+  map.on('error', onMapError);
   const SPLASH_SETTLE_MS = 150;
+  /** Basemap APPLIED + its sources settled. The baseLayerCount > 0
+   *  guard is load-bearing (see VisibleSets): without it, overlay
+   *  layers alone on the empty boot style made this vacuously true and
+   *  released a basemap-less (white) map. */
   const basemapSourcesLoaded = (): boolean => {
-    for (const id of visibleSourceSets().base) {
-      if (!map.isSourceLoaded(id)) return false;
+    const sets = visibleSourceSets();
+    if (sets.baseLayerCount < 1) return false;
+    for (const id of sets.base) {
+      if (!map.isSourceLoaded(id) && !erroredSources.has(id)) return false;
     }
     return true;
   };
@@ -571,8 +598,18 @@ function scheduleReveal(map: Map): void {
     }
     const layers = map.getStyle()?.layers?.length ?? 0;
     const elapsed = Date.now() - splashStartedAt;
-    const laddered = elapsed >= SPLASH_LADDER_MS && tileContentSeen;
-    const capped = elapsed >= SPLASH_HARD_CAP_MS;
+    // NO-WHITE rule, final form (owner 2026-10-31, Fast/Slow 4G +
+    // cold cache): NO release path may ever show an unloaded basemap.
+    // The 8s ladder and the 20s cap are backups for suppressed render
+    // signals — both require the basemap loaded-or-errored. A
+    // slow-but-working network keeps the animated splash for as long
+    // as its tiles need (verified: painted reveal at ~27s Fast 4G); a
+    // base source that ERRORED counts as settled (it will never load);
+    // only a fully dead network holds the splash indefinitely — a
+    // white map is never the better outcome.
+    const baseSettled = basemapSourcesLoaded();
+    const laddered = elapsed >= SPLASH_LADDER_MS && baseSettled;
+    const capped = elapsed >= SPLASH_HARD_CAP_MS && baseSettled;
     const allBaseSourcesLoaded = layers >= 2 && basemapSourcesLoaded();
     if (allBaseSourcesLoaded && basemapContentCompleteAt === undefined) {
       basemapContentCompleteAt = window.performance.now();
@@ -605,7 +642,7 @@ function scheduleReveal(map: Map): void {
   );
   onScopeDispose(() => {
     map.off('styledata', invalidateVisibleSources);
-    map.off('sourcedata', onTileContent);
+    map.off('error', onMapError);
     map.off('render', onSplashRender);
     stopSplashPoll();
     fullReadyScheduler.dispose();
