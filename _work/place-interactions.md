@@ -499,6 +499,23 @@ Registry supplies per-entry `searchEntry` overrides later.
 | **PR3 — transport entry**             | Integrate the existing transport popup (WIP) via `surfaces.ts` barrel; proves the external-source path end to end                                                                                                                                                                                                                                                                        | Depends on transport layer serving (catalog row w/ external tiles); footprint size-check for precache.                                                                                                                                                 |
 | **Later**                             | Rich switcher UI, routes/areas/`my/*` entries, huts→geoplace backend swap (entry-local), per-entry `searchEntry` overrides, popup↔detail morph (cross-fade only for now)                                                                                                                                                                                                                 | —                                                                                                                                                                                                                                                      |
 
+### PR0 backend handoff (blocking PR1b only — concrete asks)
+
+1. **`/place/:slug` SEO serving** (nginx + backend): wire the existing
+   hut-page machinery to the new path — `.md` subrequest +
+   `GET /v1/geo/places/{slug}/meta` (endpoint exists) for meta tags;
+   regenerate canonical + hreflang for `/place/`. Until this ships, the
+   new canonical URL has no indexable content.
+2. **`wd-huts` MVT tiles: add a geoplace-slug property** (D7) — map
+   clicks must build the canonical URL from tile props (the hut
+   `source_id` ≠ geoplace slug; `HutSchemaDetails` carries no cross-ref).
+3. Not needed anymore: the search-sources ask — D11 handles it
+   frontend-side (`sources` back in the autocomplete sparse selection).
+
+Transitional fallback if (2) lags: the frontend probe tries
+`/v1/huts/{slug}` on geoplace 404 (mixed id-space, removed once tiles
+   ship — tracked under Later).
+
 ## 5. Risks & coordination
 
 | Risk                                                                                                                          | Mitigation                                                                                                                                                  |
