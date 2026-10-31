@@ -416,7 +416,10 @@ function scheduleReveal(map: Map): void {
     }
     return visibleSetsCache;
   };
-  const criticalLoaded = (sources: Set<string>, graceMs: number = SOURCE_LOAD_GRACE_MS): boolean => {
+  const criticalLoaded = (
+    sources: Set<string>,
+    graceMs: number = SOURCE_LOAD_GRACE_MS
+  ): boolean => {
     const now = Date.now();
     let allLoaded = true;
     for (const id of sources) {
@@ -521,8 +524,7 @@ function scheduleReveal(map: Map): void {
     layersFullyReady = true;
     setMapBootPending(false);
   };
-  /** True once any tile CONTENT event arrived (data on screen — a
-   *  painted map, not a bare background layer). */
+  /** True once any tile CONTENT event arrived (ladder signal). */
   let tileContentSeen = false;
   const onTileContent = (e: { sourceDataType?: string }) => {
     if (e.sourceDataType === 'content') tileContentSeen = true;
@@ -537,22 +539,31 @@ function scheduleReveal(map: Map): void {
    * ladder is just elapsed time in the same poll. */
   const SPLASH_LADDER_MS = 8000;
   const SPLASH_HARD_CAP_MS = 20000;
-  /** PIXEL TRUTH (owner report 2026-10-31: the first cut revealed onto
-   *  a WHITE map): a tile-content EVENT fires when the WORKER has data
-   *  (and GeoJSON setData triggers it too) — before anything is
-   *  painted. Require the BASEMAP sources to be loaded (overlay/
-   *  GeoJSON sources excluded via the base set) AND a render frame
-   *  AFTER that moment, so the loaded tiles are on screen. The short
-   *  grace keeps glyph-pending label tiles (fonts) from holding the
-   *  splash — base features are painted by then, labels stream in. */
-  const SPLASH_SOURCE_GRACE_MS = 400;
+  /** PIXEL TRUTH (owner report 2026-10-31, confirmed in headed Brave on
+   *  a cold profile: EVERY event-based cut — content events, time
+   *  graces — revealed onto a WHITE canvas, because the worker can have
+   *  data long before the first painted pixel, especially with a cold
+   *  GL cache). The splash gate requires the basemap sources to be
+   *  ACTUALLY loaded (`isSourceLoaded`, NO time grace — a grace passes
+   *  tiles that are merely slow = white) AND a render frame after that.
+   *  Fonts ride along with the basemap's symbol tiles (cached fonts
+   *  make this fast; slow fonts hold the splash — accepted: white is
+   *  worse than slow). Overlay/GeoJSON sources are excluded via the
+   *  base set. */
+  const SPLASH_SETTLE_MS = 150;
+  const basemapSourcesLoaded = (): boolean => {
+    for (const id of visibleSourceSets().base) {
+      if (!map.isSourceLoaded(id)) return false;
+    }
+    return true;
+  };
   let lastRenderAt = 0;
   const onSplashRender = () => {
     lastRenderAt = window.performance.now();
   };
   map.on('render', onSplashRender);
   const splashStartedAt = Date.now();
-  let basemapReadyAt: number | undefined;
+  let basemapContentCompleteAt: number | undefined;
   const splashPoll = window.setInterval(() => {
     if (mapRendered.value) {
       window.clearInterval(splashPoll);
@@ -562,14 +573,17 @@ function scheduleReveal(map: Map): void {
     const elapsed = Date.now() - splashStartedAt;
     const laddered = elapsed >= SPLASH_LADDER_MS && tileContentSeen;
     const capped = elapsed >= SPLASH_HARD_CAP_MS;
-    const basemapLoaded =
-      layers >= 2 && criticalLoaded(visibleSourceSets().base, SPLASH_SOURCE_GRACE_MS);
-    if (basemapLoaded && basemapReadyAt === undefined) {
-      basemapReadyAt = window.performance.now();
+    const allBaseSourcesLoaded = layers >= 2 && basemapSourcesLoaded();
+    if (allBaseSourcesLoaded && basemapContentCompleteAt === undefined) {
+      basemapContentCompleteAt = window.performance.now();
     }
-    if (!basemapLoaded) basemapReadyAt = undefined;
-    const paintedAfterData = basemapReadyAt !== undefined && lastRenderAt > basemapReadyAt;
-    if (layers >= 2 && (paintedAfterData || laddered || capped)) {
+    if (!allBaseSourcesLoaded) basemapContentCompleteAt = undefined;
+    const settled =
+      basemapContentCompleteAt !== undefined &&
+      window.performance.now() - basemapContentCompleteAt >= SPLASH_SETTLE_MS;
+    const paintedAfterData =
+      basemapContentCompleteAt !== undefined && lastRenderAt > basemapContentCompleteAt;
+    if (layers >= 2 && ((settled && paintedAfterData) || laddered || capped)) {
       window.clearInterval(splashPoll);
       map.off('render', onSplashRender);
       revealMap(map);
