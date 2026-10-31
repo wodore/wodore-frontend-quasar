@@ -666,4 +666,14 @@ ship — tracked under Later).
   pipeline, MapLibre):** global handler + derived interactive layers
   from entry claims + deduped target/items + openFromMap with
   candidates; browser-verified (open, D12 toggle, zoom gate).
+- **2026-10-31 — PR2 remainder + PR3 landed:** geoplace-default popup
+  content + barrel; Leaflet fallback adapter (selectHut → claim pipeline,
+  Leaflet projector); useActiveDetailEntry spec (Opus #4); popup stories.
+  PR3: transport entry (claims on the 3 transport-stops layers, idProp
+  onestop_id, popup-only, defensive routes parsing). LIVE end-to-end
+  verification: overlay toggled via the layers UI, 356 stops in the
+  viewport, click at a stop's exact pixel opens the anchored popup with
+  real operator content (VBZ). Backend issues confirmed (NOT frontend):
+  /v1/categories/list/transport 400, sprite/transport@2x 404, no stop
+  names in tiles. GLM review of the batch running.
 - Owner sign-off: **pending go for OpenSpec** — no open questions.
