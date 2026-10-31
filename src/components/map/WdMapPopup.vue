@@ -50,10 +50,12 @@ function updateAnchor(): void {
   const projector = projectorRef.value;
   if (!card || !target?.location || !projector) return;
   const anchor = projector.project(target.location);
-  const rect = card.getBoundingClientRect();
+  // Layout size (offsetWidth/Height) — NOT getBoundingClientRect, which
+  // returns the scale-transformed visual box during the enter transition
+  // and left the card offset from the pin (owner report 2026-10-31).
   const clamped = clampToViewport(
     anchor,
-    { width: rect.width, height: rect.height },
+    { width: card.offsetWidth, height: card.offsetHeight },
     { width: window.innerWidth, height: window.innerHeight },
     CHROME
   );
@@ -165,6 +167,7 @@ onScopeDispose(() => {
         <div class="wd-map-popup__stem" aria-hidden="true" />
         <header class="wd-map-popup__header">
           <span v-if="title" class="wd-map-popup__title">{{ title }}</span>
+          <span v-else class="wd-map-popup__spacer" />
           <q-btn
             v-if="selection.candidates.length > 1"
             dense
@@ -218,7 +221,6 @@ onScopeDispose(() => {
   left: 0;
   z-index: 2400; // above map chrome (attribution ~1000), below dialogs
   max-width: 280px;
-  min-width: 200px;
   background: var(--wd-surface, #fff);
   color: var(--wd-ink, #1a1a1a);
   border-radius: 12px;
@@ -252,6 +254,10 @@ onScopeDispose(() => {
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.wd-map-popup__spacer {
+  flex: 1;
 }
 
 .wd-map-popup__title {
