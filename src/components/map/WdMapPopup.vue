@@ -223,8 +223,7 @@ onScopeDispose(() => {
   max-width: 280px;
   background: var(--wd-surface, #fff);
   color: var(--wd-ink, #1a1a1a);
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  border-radius: 8px;
   padding: 8px 10px;
   // Position is written imperatively (translate) — only the ENTRY
   // transition animates here (scale+fade); safe-area insets pad the
