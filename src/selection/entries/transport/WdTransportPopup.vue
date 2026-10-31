@@ -19,6 +19,17 @@ const props = defineProps<{ target: MapTarget }>();
 
 const p = computed(() => props.target.props as Record<string, unknown>);
 
+/** Readable stop name from the onestop_id slug (the tiles carry no
+ *  name member, but the id's suffix IS the station slug:
+ *  s-u0qj9m71vb-zürichzwielplatz → Zürichzwielplatz). */
+const stopName = computed(() => {
+  const id = p.value.onestop_id;
+  if (typeof id !== 'string') return null;
+  const slug = id.split('-').slice(2).join('-');
+  if (!slug) return null;
+  return slug.charAt(0).toUpperCase() + slug.slice(1);
+});
+
 const operator = computed(() => {
   const short = p.value.operator_short_name;
   if (typeof short === 'string' && short) return short;
@@ -66,6 +77,7 @@ const routes = computed<RouteInfo[]>(() => {
 
 <template>
   <div class="wd-transport-popup">
+    <p v-if="stopName" class="wd-transport-popup__name q-mb-none">{{ stopName }}</p>
     <p v-if="operator" class="wd-transport-popup__operator q-mb-none">{{ operator }}</p>
     <div v-if="routes.length" class="row q-gutter-xs q-mt-xs">
       <span
@@ -84,6 +96,12 @@ const routes = computed<RouteInfo[]>(() => {
 .wd-transport-popup {
   font-size: 13px;
   padding-top: 2px;
+}
+
+.wd-transport-popup__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--wd-ink, #1a1a1a);
 }
 
 .wd-transport-popup__operator {

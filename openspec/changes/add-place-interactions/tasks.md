@@ -41,7 +41,7 @@ Sourced from `_work/place-interactions.md` (rev 3, PR table amended rev 4)
       highlight-clear ownership, sequence-token latest-wins
 - [ ] **Interim routed-entry binding (T1)**: until the PR1b probe chain,
       the routed target's entry binds via route meta (`contentType:
-  'place'` → accommodation entry — the registry equivalent of
+'place'` → accommodation entry — the registry equivalent of
       today's `componentMap`); a cold `/hut/:slug` resolves the
       accommodation entry with ZERO probe requests (unit test)
 - [ ] Migrate `map-content-store` consumers (`MainLayout`
@@ -115,7 +115,7 @@ Sourced from `_work/place-interactions.md` (rev 3, PR table amended rev 4)
 
 - [ ] Add `/place/:slug` route record (`meta.source: 'geoplace'`,
       crawler-stubbed `menuView` AND `contentView`, `props: {content:
-  true}`); delete ALL legacy hut route records incl. the
+true}`); delete ALL legacy hut route records incl. the
       `/m/hut/:slug` redirect (redirect-to-deleted-name would throw, T2)
       — no redirect, D1
 - [ ] Replace the interim route-meta entry binding (T1) with the probe
@@ -197,7 +197,6 @@ Sourced from `_work/place-interactions.md` (rev 3, PR table amended rev 4)
 - [ ] Update AGENTS.md (project structure: `src/selection/` tree;
       common patterns: selection framework + registry + eslint boundary)
       and `docs/specs/` pointer (T7)
-- [ ] Work doc `_work/place-interactions.md` review log entry per PR
 
 ## Later (out of scope here)
 

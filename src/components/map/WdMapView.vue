@@ -1141,17 +1141,21 @@ function onMapClick(e: MapLayerEventType['click']): void {
   if (ids.length === 0) return;
   let features: readonly RenderedFeatureLike[];
   try {
-    // HIT TOLERANCE: query a small BOX, not a point — vector dots are
-    // ~5px circles (tiny transport stops, phone taps on hut symbols);
-    // ±10px makes every claimed feature comfortably clickable. The box
-    // preserves render order (topmost first), so disambiguation is
-    // unchanged.
+    // PRECISION-FIRST (owner 2026-10-31): an exact-point hit wins — a
+    // click inside one dot must open exactly that stop, never a
+    // disambiguation list. Only when the point misses does the ±10px
+    // tolerance BOX rescue the tap (dots are ~5px circles; symbol
+    // layers don't render on staging — sprite 404s). Both preserve
+    // render order (topmost first).
     const t = 10;
     const box: [[number, number], [number, number]] = [
       [e.point.x - t, e.point.y - t],
       [e.point.x + t, e.point.y + t],
     ];
-    features = (map.queryRenderedFeatures(box, { layers: ids }) ??
+    const pointHits = map.queryRenderedFeatures(e.point, { layers: ids });
+    features = ((pointHits.length > 0
+      ? pointHits
+      : map.queryRenderedFeatures(box, { layers: ids })) ??
       []) as unknown as readonly RenderedFeatureLike[];
   } catch {
     return; // style not loaded / mid-basemap-switch

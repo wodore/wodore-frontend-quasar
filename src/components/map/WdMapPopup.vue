@@ -59,6 +59,12 @@ function updateAnchor(): void {
   );
   card.style.transform = `translate(${clamped.x}px, ${clamped.y}px)`;
   side.value = clamped.side;
+  // Pop origin = the PIN's position relative to the card (clamped side
+  // picks the y), so the grow-from-the-dot reads exactly even when the
+  // card is pushed away from the anchor by the viewport clamp.
+  const originX = Math.round(anchor.x - clamped.x);
+  card.style.transformOrigin =
+    clamped.side === 'above' ? `${originX}px calc(100% - 8px)` : `${originX}px 8px`;
 }
 
 // Dirty-flag re-anchoring: move events mark dirty, ONE rAF loop drains.
@@ -71,31 +77,6 @@ const { pause, resume } = useRafFn(
   },
   { immediate: false }
 );
-
-let unsubscribeMove: (() => void) | null = null;
-watch(
-  [projectorRef, () => selection.popupTarget],
-  ([projector, target]) => {
-    unsubscribeMove?.();
-    unsubscribeMove = null;
-    if (!projector || !target) {
-      pause();
-      return;
-    }
-    unsubscribeMove = projector.onMove(() => {
-      dirty = true;
-    });
-    dirty = true;
-    resume();
-  },
-  { immediate: true }
-);
-
-// Engine swap (unregister): close the popup (place-popup spec); the
-// adapter's unregister path owns feature-state cleanup.
-watch(projectorRef, p => {
-  if (!p) selection.closePopup();
-});
 
 // ── Entry popup CONTENT: resolve the popup surface from the entry's
 // ONE barrel (GLM review F1: cache hoisted to MODULE scope — genuinely
@@ -135,6 +116,35 @@ watch(
   },
   { immediate: true }
 );
+
+let unsubscribeMove: (() => void) | null = null;
+watch(
+  [projectorRef, () => selection.popupTarget, () => popupContent.value],
+  ([projector, target]) => {
+    unsubscribeMove?.();
+    unsubscribeMove = null;
+    if (!projector || !target) {
+      pause();
+      return;
+    }
+    unsubscribeMove = projector.onMove(() => {
+      dirty = true;
+    });
+    // flush:'post' → the card is mounted: position it SYNCHRONOUSLY so
+    // the enter transition starts AT the pin (no top-left first frame,
+    // no jump). Re-runs when the content component resolves (card size
+    // changes) — re-anchoring keeps the stem on the dot.
+    updateAnchor();
+    resume();
+  },
+  { immediate: true, flush: 'post' }
+);
+
+// Engine swap (unregister): close the popup (place-popup spec); the
+// adapter's unregister path owns feature-state cleanup.
+watch(projectorRef, p => {
+  if (!p) selection.closePopup();
+});
 
 onScopeDispose(() => {
   unsubscribeMove?.();

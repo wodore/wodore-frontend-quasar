@@ -71,6 +71,7 @@ declare module 'vue' {
     WdLegendSection: typeof import('./src/components/map/overlay-config/WdLegendSection.vue')['default']
     WdMapLoader: typeof import('./src/components/map/WdMapLoader.vue')['default']
     WdMapMenu: typeof import('./src/components/map/WdMapMenu.vue')['default']
+    WdMapPopup: typeof import('./src/components/map/WdMapPopup.vue')['default']
     WdMapView: typeof import('./src/components/map/WdMapView.vue')['default']
     WdMediaDialog: typeof import('./src/components/media/WdMediaDialog.vue')['default']
     WdMediaGallery: typeof import('./src/components/media/WdMediaGallery.vue')['default']
