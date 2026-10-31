@@ -1294,6 +1294,22 @@ const addedOverlays = new Set<string>();
  *  factory layers never linger under catalog-compiled ones. */
 const addedLayerIds = new Set<string>();
 const addedSourceIds = new Set<string>();
+/** Serialized source spec per added source id, captured at addSource
+ *  time (perf/map-boot, 2026-10-31 profiling). The catalog-swap reapply
+ *  compares these against the incoming overlay specs and KEEPS sources
+ *  whose definition did not change — a removeSource/addSource cycle
+ *  recreates the source in MapLibre, wiping its tile cache and
+ *  re-downloading every visible tile (observed: the same huts .mlt tile
+ *  fetched 12× across one cold boot because every epoch bump tore every
+ *  overlay source down). A version-bumped style whose tile URLs and
+ *  source parameters are identical keeps its tiles. */
+const appliedSourceSpecs = new Map<string, string>();
+
+/** JSON form of a source spec for the deep-equal check — key order is
+ *  stable because both sides come from the same compile pipeline. */
+function sourceSpecKey(spec: unknown): string {
+  return JSON.stringify(spec);
+}
 
 function getOverlaysInRenderOrder(): Array<OverlaySwitchItem> {
   // Break type inference chain to avoid "excessively deep" TypeScript error
@@ -1375,6 +1391,14 @@ function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwit
   for (const label in overlay.style.sources) {
     if (mapRef.map?.getSource(label) === undefined) {
       mapRef.map?.addSource(label, overlay.style.sources[label]);
+      addedSourceIds.add(label);
+      appliedSourceSpecs.set(label, sourceSpecKey(overlay.style.sources[label]));
+    } else if (!appliedSourceSpecs.has(label)) {
+      // Present but untracked (kept unchanged by the reapply guard, or
+      // survived a style transform that carries overlay sources
+      // verbatim): adopt the overlay's spec as the mounted truth so the
+      // reapply guard manages this source from now on.
+      appliedSourceSpecs.set(label, sourceSpecKey(overlay.style.sources[label]));
       addedSourceIds.add(label);
     }
   }
@@ -1514,6 +1538,7 @@ function addOverlays(): void {
   addedOverlays.clear();
   addedLayerIds.clear();
   addedSourceIds.clear();
+  appliedSourceSpecs.clear();
   const overlaysOrder = getOverlaysInRenderOrder();
   for (const overlay of overlaysOrder) {
     if (overlay.active) addOverlay(overlay, overlaysOrder);
@@ -1549,9 +1574,14 @@ let catalogSwapRetryArmed = false;
 function armCatalogSwapRetry(map: MapLibreMap): void {
   if (catalogSwapRetryArmed) return;
   catalogSwapRetryArmed = true;
-  const retry = () => {
+  let pollTimer: number | undefined;
+  const disarm = () => {
     map.off('idle', retry);
     map.off('style.load', retry);
+    if (pollTimer !== undefined) window.clearInterval(pollTimer);
+  };
+  const retry = () => {
+    disarm();
     catalogSwapRetryArmed = false;
     if (!catalogSwapPending) return;
     if (!map.isStyleLoaded()) {
@@ -1563,6 +1593,17 @@ function armCatalogSwapRetry(map: MapLibreMap): void {
   };
   map.once('idle', retry);
   map.once('style.load', retry);
+  // Poll path (perf/map-boot, 2026-10-31 profiling): `isStyleLoaded()`
+  // flips open in windows that neither `idle` nor `style.load` bracket
+  // (async sprite loads and staged enhancements keep the style object
+  // busy in between), and `idle` itself waits for glyph-dependent
+  // symbol tiles — a parked boot attach waited ~1.5s behind the first
+  // render that way (huts attached at 2.4s while the base map had
+  // painted at 0.9s). A short poll attaches the moment the style
+  // object is actually stable, independent of glyph/network settling.
+  pollTimer = window.setInterval(() => {
+    if (map.isStyleLoaded()) retry();
+  }, 250);
 }
 
 function reapplyOverlaysAfterCatalogSwap(): void {
@@ -1583,10 +1624,33 @@ function reapplyOverlaysAfterCatalogSwap(): void {
   for (const layerId of addedLayerIds) {
     if (map.getLayer(layerId)) map.removeLayer(layerId);
   }
-  // Sources first added by a previous overlay may be shared — remove
-  // each tracked source once no remaining tracked layer references it.
+  // SOURCES: keep any whose incoming spec is DEEP-EQUAL to the mounted
+  // one — a remove/add cycle wipes MapLibre's tile cache for that
+  // source and re-downloads every visible tile. The common catalog
+  // refresh (same content, bumped version token) therefore costs
+  // layer re-adds only; only genuinely changed sources reload their
+  // tiles. Layers are always re-added (cheap, no tile affinity) so
+  // ordering and paint changes always land.
+  const activeOverlays = (overlayStore.overlays as unknown as Array<OverlaySwitchItem>).filter(
+    o => o.active
+  );
+  const nextSourceSpecs = new Map<string, string>();
+  for (const overlay of activeOverlays) {
+    for (const [sourceId, spec] of Object.entries(overlay.style.sources ?? {})) {
+      nextSourceSpecs.set(sourceId, sourceSpecKey(spec));
+    }
+  }
   for (const sourceId of addedSourceIds) {
-    if (map.getSource(sourceId)) map.removeSource(sourceId);
+    if (!map.getSource(sourceId)) {
+      appliedSourceSpecs.delete(sourceId);
+      continue;
+    }
+    const nextSpec = nextSourceSpecs.get(sourceId);
+    if (nextSpec !== undefined && appliedSourceSpecs.get(sourceId) === nextSpec) {
+      continue; // unchanged — keep the source (and its tiles)
+    }
+    map.removeSource(sourceId);
+    appliedSourceSpecs.delete(sourceId);
   }
   addOverlays();
 }

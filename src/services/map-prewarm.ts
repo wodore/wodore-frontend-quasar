@@ -9,7 +9,11 @@
  * once per session.
  */
 import type { StyleSpecification } from 'maplibre-gl';
-import { absolutizeStyleUrl, type MapCatalogLayer } from './map-catalog';
+import {
+  absolutizeStyleUrl,
+  styleVariantUrl,
+  type MapCatalogLayer,
+} from './map-catalog';
 
 /** Session-wide dedupe — one warm fetch per URL, however many callers. */
 const warmed = new Set<string>();
@@ -72,7 +76,16 @@ export function prewarmStyleAssets(style: StyleSpecification | null | undefined)
  *  switcher's per-style JSONs) warms the HTTP cache AFTER the map's
  *  first render settles (the caller schedules this on map 'idle' —
  *  firing it earlier starves the first render; the catalog compile
- *  later reads these as cache hits). */
+ *  later reads these as cache hits).
+ *
+ *  VARIANT MATCH (perf/map-boot, 2026-10-31 profiling): the catalog
+ *  compile consumes parameterized overlays ONLY as their `mode=
+ *  tokenized` variant (loadStyleBundle resolves tokens client-side) —
+ *  warming the plain style_url for those layers bought a cache entry
+ *  nobody ever reads while the compile still downloaded the tokenized
+ *  sibling from the network (every parameterized overlay fetched
+ *  twice per cold boot). Parameterized layers now warm the variant
+ *  the compile will actually fetch. */
 export function prewarmCatalogStyles(layers: MapCatalogLayer[], exceptStyleUrl?: string): void {
   // Skip by BOTH the raw and the absolutized form: the persisted
   // selection and the catalog's style_url can differ in resolution
@@ -93,7 +106,8 @@ export function prewarmCatalogStyles(layers: MapCatalogLayer[], exceptStyleUrl?:
     // fetches to the visible 11 overlays + 3 basemaps (minus the
     // active one).
     if (layer.show === false) continue;
-    const url = absolutizeStyleUrl(layer.style_url);
+    const tokenized = (layer.parameters?.length ?? 0) > 0;
+    const url = styleVariantUrl(absolutizeStyleUrl(layer.style_url), { tokenized });
     if (skip?.has(layer.style_url) || skip?.has(url)) continue;
     urls.push(url);
   }

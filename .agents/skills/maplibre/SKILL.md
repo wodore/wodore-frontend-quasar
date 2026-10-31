@@ -98,6 +98,45 @@ Overlays are **declarative configurations** that include:
 
 ## Performance Optimization Strategy
 
+### Reveal gating (perf/map-boot 2026-10-31)
+
+The splash drops when: all ACTIVE overlays' layers are MOUNTED
+(`styleReady` reads the overlay store — never hardcoded layer names) AND
+every source referenced by a VISIBLE layer is loaded (`isSourceLoaded`, NOT
+global `areTilesLoaded()` — staged-out terrain/contours and erroring sprites
+must not hold the splash) AND a frame rendered (`sourcedata` → `render`
+trigger; plain `idle` waits for glyph PBFs, which are explicitly NOT
+reveal-blocking — labels stream in post-reveal, owner decision).
+
+### Overlay re-application invariants
+
+- `overlaysEpoch` bumps trigger `reapplyOverlaysAfterCatalogSwap`, which
+  **keeps sources whose serialized spec is unchanged** (`appliedSourceSpecs`
+  deep-equal guard in WdOverlayControl) — a remove/add cycle wipes
+  MapLibre's tile cache and re-downloads every visible tile (observed:
+  same huts `.mlt` fetched 6× concurrently per bump on cold boots).
+- The catalog compile debounces ACTIVE-arrival emits (150ms, 0 in tests)
+  so a settle wave bumps the epoch once; `mapStylesReady` flips only
+  after the batched application flushed (never reveal onto overlays
+  that are not mounted).
+- A parked catalog-swap retry polls `isStyleLoaded()` every 250ms —
+  `idle`-only retries waited for glyph tiles and attached overlays ~1.5s
+  after the first render.
+
+### Prewarm
+
+`prewarmCatalogStyles` warms the `mode=tokenized` variant for
+parameterized overlays (the compile only consumes tokenized docs for
+those); `prewarmStyleAssets` warms only STAGED-OUT (deferred terrain/
+contour/pattern-sprite) assets — warming base-style assets raced
+MapLibre's own loads with duplicate in-flight requests.
+
+### Known MapLibre internals (follow-up)
+
+One vector source add can still issue ~6 identical concurrent tile
+requests (single wave, MapLibre worker-internal, ~20KB — negligible on
+a warm edge, worth an upstream look for cold edges).
+
 ### GPU-Aware Basemap Selection
 
 **Implementation**: Detect GPU tier and select appropriate basemap

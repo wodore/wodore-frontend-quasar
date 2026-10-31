@@ -20,6 +20,7 @@ import {
 } from '@vueuse/core';
 import { useQuasar } from 'quasar';
 import { useBasemapStore, mapProfileForTier } from '@stores/map/basemap-store';
+import { useOverlayStore } from '@stores/map/overlay-store';
 import { useMapCatalogStore } from '@stores/map/map-catalog-store';
 import { startRevealLoop } from './reveal-scheduler';
 
@@ -162,6 +163,7 @@ const $q = useQuasar();
 const router = useRouter();
 const route = useRoute();
 const basemapStore = useBasemapStore();
+const overlayStore = useOverlayStore();
 const mapRef = useMap();
 const localPropertiesStore = useLocalPropertiesStore();
 // Backend map catalog: swap catalog-compiled overlays in once the
@@ -341,20 +343,113 @@ function scheduleReveal(map: Map): void {
   // catalog-vs-idle orderings + the safety ladder; the original
   // inline version had a TDZ crash on the synchronous path — see
   // tests/unit/reveal-scheduler.spec.ts). Safety: at 8 s the splash
-  // drops only if the map has PAINTED (style + tiles) — the
+  // drops only if the map has PAINTED (style + visible tiles) — the
   // catalog-stuck case reveals a basemap-only map, while a cold start
   // with slow tiles keeps the branded splash instead of flashing a
   // white canvas. Absolute hard cap 20 s: a partial/empty map still
   // beats an infinite splash; overlays attach whenever they arrive.
+  //
+  // CRITICAL-set gating (perf/map-boot, 2026-10-31 profiling): the old
+  // `painted()` used the GLOBAL `areTilesLoaded()` — it waited for every
+  // source on the map, including deliberately staged-out terrain/contour
+  // sources (outdoor-staging.ts attaches them only after the first
+  // render), deep-zoom pattern sprites, and erroring stragglers (a 404
+  // sprite), delaying the reveal by seconds after the map the user
+  // actually sees was done. "Painted" now means: every source referenced
+  // by a VISIBLE layer has loaded — generic across basemaps/overlays, no
+  // layer-name knowledge. Glyphs (font stacks) are deliberately NOT
+  // required (owner 2026-10: labels may stream in after the reveal —
+  // MapLibre's `idle` waits for symbol glyph dependencies, so the
+  // trigger below fires on a rendered frame instead of on idle).
+  let visibleSourceIdsCache: Set<string> | null = null;
+  const invalidateVisibleSources = () => {
+    visibleSourceIdsCache = null;
+  };
+  map.on('styledata', invalidateVisibleSources);
+  /** Sources of every visible layer (visibility !== 'none') — these are
+   *  the ones whose tiles the user sees; hidden overlays' and staged-out
+   *  sources must not hold the splash. Memoized per styledata event. */
+  const visibleSourceIds = (): Set<string> => {
+    if (!visibleSourceIdsCache) {
+      const ids = new Set<string>();
+      for (const layer of map.getStyle()?.layers ?? []) {
+        const layout = layer.layout as Record<string, unknown> | undefined;
+        if (layout?.visibility === 'none') continue;
+        if ('source' in layer && typeof layer.source === 'string') ids.add(layer.source);
+      }
+      visibleSourceIdsCache = ids;
+    }
+    return visibleSourceIdsCache;
+  };
+  const criticalLoaded = (): boolean => {
+    for (const id of visibleSourceIds()) {
+      if (!map.isSourceLoaded(id)) return false;
+    }
+    return true;
+  };
+  /** One-shot "settled" arm: fires on the EARLIER of (a) a rendered
+   *  frame after all visible sources loaded — reveal without waiting
+   *  for glyph-dependent `idle` — or (b) plain map `idle` (backstop;
+   *  covers a map that already settled before arming). Both are guarded
+   *  by one `fired` flag; the sourcedata listener unbinds itself. */
+  const armSettledOnce = (cb: () => void): void => {
+    let fired = false;
+    const fire = () => {
+      if (fired) return;
+      fired = true;
+      map.off('sourcedata', onSourceData);
+      cb();
+    };
+    const onSourceData = () => {
+      if (fired) return;
+      if (criticalLoaded()) map.once('render', fire);
+    };
+    map.once('idle', fire);
+    map.on('sourcedata', onSourceData);
+    // Already critical-loaded at arm time (re-arm after an earlier
+    // idle): the next rendered frame completes the reveal.
+    if (criticalLoaded()) map.once('render', fire);
+  };
+  /** The ACTIVE overlays' compiled layers must be MOUNTED before the
+   *  style counts as reveal-ready (perf/map-boot, 2026-10-31): the
+   *  render-based trigger below can fire while a catalog swap is still
+   *  parked behind a busy style — revealing then would drop the splash
+   *  onto a map whose overlay layers are not on it yet (the user must
+   *  see the overlay, not a basemap-only view). No layer names are
+   *  hardcoded: the required set is read from the overlay store's
+   *  ACTIVE items (placeholders contribute no layers; dropped rows are
+   *  already out of the list — neither can block).
+   */
+  const activeOverlayLayersMounted = (): boolean => {
+    const overlays = overlayStore.overlays as unknown as Array<{
+      active?: boolean;
+      style?: { layers?: Array<{ id: string }> };
+    }>;
+    const required: string[] = [];
+    for (const o of overlays) {
+      if (!o.active) continue;
+      for (const l of o.style?.layers ?? []) required.push(l.id);
+    }
+    if (required.length === 0) return true;
+    const present = map.getStyle()?.layers;
+    if (!present) return false;
+    const ids = new Set(present.map(l => l.id));
+    for (const id of required) {
+      if (!ids.has(id)) return false;
+    }
+    return true;
+  };
   const scheduler = startRevealLoop(
     {
-      styleReady: () => (map.getStyle()?.layers?.length ?? 0) >= 2,
-      painted: () => (map.getStyle()?.layers?.length ?? 0) >= 2 && map.areTilesLoaded(),
-      onIdleOnce: cb => map.once('idle', cb),
+      styleReady: () =>
+        (map.getStyle()?.layers?.length ?? 0) >= 2 && activeOverlayLayersMounted(),
+      painted: () => (map.getStyle()?.layers?.length ?? 0) >= 2 && criticalLoaded(),
+      onIdleOnce: cb => armSettledOnce(cb),
     },
     () => revealMap(map)
   );
   onScopeDispose(() => {
+    map.off('styledata', invalidateVisibleSources);
     scheduler.dispose();
     for (const t of revealTimers) clearTimeout(t);
     revealTimers.length = 0;
