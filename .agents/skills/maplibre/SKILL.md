@@ -98,6 +98,52 @@ Overlays are **declarative configurations** that include:
 
 ## Performance Optimization Strategy
 
+### Reveal gating (progressive, owner 2026-10-31)
+
+TWO milestones:
+1. SPLASH DROP (50ms poll in WdMapView): style applied (≥2 layers) +
+   first tile-content event + ladder — reveals the PAINTED BASEMAP,
+   fully decoupled from the catalog and from isSourceLoaded (label
+   fonts held the old gate through symbol-tile glyph dependencies).
+   Never arm reveal logic from MapLibre's `load` event — it is
+   glyph/idle-gated (observed firing ~2s after the basemap painted);
+   arm from the map instance, poll for the rest.
+2. FULL READY (reveal-scheduler.ts, unit-tested): active overlays'
+   layers mounted (store-driven — never hardcoded layer names) + every
+   source referenced by a VISIBLE layer loaded (`isSourceLoaded`, NOT
+   global `areTilesLoaded()`; 1.2s glyph grace) + a rendered frame.
+   This releases the TOPBAR LOADING BAR (useRequestProgress
+   setMapBootPending, 150ms shared debounce), not the splash.
+
+### Overlay re-application invariants
+
+- `overlaysEpoch` bumps trigger `reapplyOverlaysAfterCatalogSwap`, which
+  **keeps sources whose serialized spec is unchanged** (`appliedSourceSpecs`
+  deep-equal guard in WdOverlayControl) — a remove/add cycle wipes
+  MapLibre's tile cache and re-downloads every visible tile (observed:
+  same huts `.mlt` fetched 6× concurrently per bump on cold boots).
+- The catalog compile debounces ACTIVE-arrival emits (150ms, 0 in tests)
+  so a settle wave bumps the epoch once; `mapStylesReady` flips only
+  after the batched application flushed (never reveal onto overlays
+  that are not mounted).
+- A parked catalog-swap retry polls `isStyleLoaded()` every 250ms —
+  `idle`-only retries waited for glyph tiles and attached overlays ~1.5s
+  after the first render.
+
+### Prewarm
+
+`prewarmCatalogStyles` warms the `mode=tokenized` variant for
+parameterized overlays (the compile only consumes tokenized docs for
+those); `prewarmStyleAssets` warms only STAGED-OUT (deferred terrain/
+contour/pattern-sprite) assets — warming base-style assets raced
+MapLibre's own loads with duplicate in-flight requests.
+
+### Known MapLibre internals (follow-up)
+
+One vector source add can still issue ~6 identical concurrent tile
+requests (single wave, MapLibre worker-internal, ~20KB — negligible on
+a warm edge, worth an upstream look for cold edges).
+
 ### GPU-Aware Basemap Selection
 
 **Implementation**: Detect GPU tier and select appropriate basemap

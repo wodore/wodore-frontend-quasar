@@ -35,7 +35,11 @@ import {
   type MapCatalogLayer,
   type MapSpecTier,
 } from '@services/map-catalog';
-import { prewarmCatalogStyles, prewarmStyleAssets } from '@services/map-prewarm';
+import {
+  prewarmCatalogStyles,
+  prewarmStyleAssets,
+  prewarmStyleGlyphs,
+} from '@services/map-prewarm';
 import {
   LEGACY_BASEMAP_FALLBACKS,
   RENAMED_BASEMAP_SLUGS,
@@ -101,7 +105,27 @@ async function probeStyleUrl(styleUrl: string): Promise<Response | null> {
 async function prepareStagedStyle(style: StyleSpecification | string): Promise<StagedStyle | null> {
   const styleObject = typeof style === 'string' ? await loadStyleObject(style) : style;
   if (!styleObject) return null;
-  return stageStyleEnhancements(styleObject);
+  const staged = stageStyleEnhancements(styleObject);
+  // Prewarm ONLY the staged-out assets (perf/map-boot, 2026-10-31
+  // profiling): the base style's TileJSONs/sprites are fetched by
+  // MapLibre the moment the style applies — warming them here just
+  // raced those loads with duplicate in-flight requests. The DEFERRED
+  // set (terrain DEM, contours, pattern sprites) attaches after the
+  // first render; warming it now means the attach reads HTTP-cache
+  // hits instead of adding a late network wave. */
+  if (staged) {
+    prewarmStyleAssets({
+      version: 8,
+      sources: staged.deferred.sources,
+      layers: [],
+      sprite: staged.deferred.sprites,
+    });
+  }
+  // Font stacks: warm the INITIAL style's glyph PBFs (label layers) so
+  // they load in parallel with the tile wave instead of after the first
+  // symbol render — see prewarmStyleGlyphs for the measured motivation.
+  prewarmStyleGlyphs(staged ? staged.initial : styleObject);
+  return staged;
 }
 
 /** Fetched default-basemap style object, shared by every country-basemap
@@ -123,7 +147,12 @@ async function loadStyleObject(styleUrl: string): Promise<StyleSpecification | n
   }
 }
 
-/** Fetch + absolutize + prewarm one style document. */
+/** Fetch + absolutize one style document (no asset prewarm here —
+ *  see prepareStagedStyle: warming the FULL style's TileJSONs/sprites
+ *  raced MapLibre's own loads of the same URLs, and the base sources
+ *  need no warming at all since the renderer fetches them the moment
+ *  the style applies. Only the staged-OUT assets benefit from an early
+ *  warm — they attach after the first render, off the critical path). */
 async function fetchStyleObject(styleUrl: string): Promise<StyleSpecification> {
   const res = await fetch(styleUrl);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -136,11 +165,11 @@ function resolveStyleForMap(styleObj: StyleSpecification, styleUrl: string): Sty
     ...styleObj,
     ...absoluteStyleAssets(styleObj, styleUrl),
   } as StyleSpecification;
-  // Catalog-derived prewarm: warm the TileJSON/sprite endpoints this
-  // style references while the renderer walks its serial style→assets
-  // chain — the generic replacement for the retired hardcoded mtk
-  // prefetch list (perf/fast-first-paint).
-  prewarmStyleAssets(resolved);
+  // Glyph prewarm on EVERY style application — boot AND basemap
+  // switches (review finding: the boot-only placement inside
+  // prepareStagedStyle left switches with the serial glyph-fetch delay
+  // this prewarm was introduced to eliminate on cold glyph cache).
+  prewarmStyleGlyphs(resolved);
   return resolved;
 }
 

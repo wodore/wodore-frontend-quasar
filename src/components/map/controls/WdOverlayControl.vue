@@ -1294,6 +1294,22 @@ const addedOverlays = new Set<string>();
  *  factory layers never linger under catalog-compiled ones. */
 const addedLayerIds = new Set<string>();
 const addedSourceIds = new Set<string>();
+/** Serialized source spec per added source id, captured at addSource
+ *  time (perf/map-boot, 2026-10-31 profiling). The catalog-swap reapply
+ *  compares these against the incoming overlay specs and KEEPS sources
+ *  whose definition did not change — a removeSource/addSource cycle
+ *  recreates the source in MapLibre, wiping its tile cache and
+ *  re-downloading every visible tile (observed: the same huts .mlt tile
+ *  fetched 12× across one cold boot because every epoch bump tore every
+ *  overlay source down). A version-bumped style whose tile URLs and
+ *  source parameters are identical keeps its tiles. */
+const appliedSourceSpecs = new Map<string, string>();
+
+/** JSON form of a source spec for the deep-equal check — key order is
+ *  stable because both sides come from the same compile pipeline. */
+function sourceSpecKey(spec: unknown): string {
+  return JSON.stringify(spec);
+}
 
 function getOverlaysInRenderOrder(): Array<OverlaySwitchItem> {
   // Break type inference chain to avoid "excessively deep" TypeScript error
@@ -1375,6 +1391,14 @@ function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwit
   for (const label in overlay.style.sources) {
     if (mapRef.map?.getSource(label) === undefined) {
       mapRef.map?.addSource(label, overlay.style.sources[label]);
+      addedSourceIds.add(label);
+      appliedSourceSpecs.set(label, sourceSpecKey(overlay.style.sources[label]));
+    } else if (!appliedSourceSpecs.has(label)) {
+      // Present but untracked (kept unchanged by the reapply guard, or
+      // survived a style transform that carries overlay sources
+      // verbatim): adopt the overlay's spec as the mounted truth so the
+      // reapply guard manages this source from now on.
+      appliedSourceSpecs.set(label, sourceSpecKey(overlay.style.sources[label]));
       addedSourceIds.add(label);
     }
   }
@@ -1514,6 +1538,7 @@ function addOverlays(): void {
   addedOverlays.clear();
   addedLayerIds.clear();
   addedSourceIds.clear();
+  appliedSourceSpecs.clear();
   const overlaysOrder = getOverlaysInRenderOrder();
   for (const overlay of overlaysOrder) {
     if (overlay.active) addOverlay(overlay, overlaysOrder);
@@ -1533,6 +1558,11 @@ function addOverlays(): void {
 // `armed` keeps exactly ONE retry listener pair bound at a time.
 let catalogSwapPending = false;
 let catalogSwapRetryArmed = false;
+/** The retry poll's interval handle — module scope so the unmount
+ *  cleanup can always reach it (review finding: a closure-local
+ *  handle orphaned when the component unmounts mid-style-load, firing
+ *  every 250ms against a destroyed map for the session's lifetime). */
+let catalogSwapPollTimer: number | undefined;
 
 /** Bind ONE retry that runs the pending catalog swap as soon as the
  *  style is loaded. Both 'idle' and 'style.load' can signal readiness
@@ -1549,44 +1579,104 @@ let catalogSwapRetryArmed = false;
 function armCatalogSwapRetry(map: MapLibreMap): void {
   if (catalogSwapRetryArmed) return;
   catalogSwapRetryArmed = true;
-  const retry = () => {
+  const disarm = () => {
     map.off('idle', retry);
     map.off('style.load', retry);
+    if (catalogSwapPollTimer !== undefined) window.clearInterval(catalogSwapPollTimer);
+    catalogSwapPollTimer = undefined;
+    catalogSwapRetryArmed = false;
+  };
+  const retry = () => {
+    disarm();
     catalogSwapRetryArmed = false;
     if (!catalogSwapPending) return;
-    if (!map.isStyleLoaded()) {
-      armCatalogSwapRetry(map);
-      return;
-    }
+    // Attempt directly (throw → re-park): isStyleLoaded() stays false
+    // ~600ms past style.load while sprites/glyphs settle, but the
+    // mutating calls are usually accepted far earlier.
     catalogSwapPending = false;
     reapplyOverlaysAfterCatalogSwap();
   };
   map.once('idle', retry);
   map.once('style.load', retry);
+  // Poll path (perf/map-boot, 2026-10-31 profiling): `isStyleLoaded()`
+  // flips open in windows that neither `idle` nor `style.load` bracket
+  // (async sprite loads and staged enhancements keep the style object
+  // busy in between), and `idle` itself waits for glyph-dependent
+  // symbol tiles — a parked boot attach waited ~1.5s behind the first
+  // render that way (huts attached at 2.4s while the base map had
+  // painted at 0.9s). A short poll attaches the moment the style
+  // object is actually stable, independent of glyph/network settling.
+  catalogSwapPollTimer = window.setInterval(() => {
+    if (map.isStyleLoaded()) retry();
+  }, 250);
 }
 
 function reapplyOverlaysAfterCatalogSwap(): void {
   const map = mapRef.map;
   if (!map) return;
-  // Style swap in flight (boot basemap apply, user basemap switch, or
-  // MapLibre's diff-rebuild fallback): addSource/addLayer would throw
-  // "Style is not done loading", and the swap wipes everything this
-  // control added anyway. Park the swap and retry when the style is
-  // ready — the map 'load' event does NOT re-fire after setStyle, so
-  // this retry is the only re-add path left for the bump.
-  if (!map.isStyleLoaded()) {
+  // Attempt IMMEDIATELY, guarded by try/catch (perf/map-boot, 2026-10-31
+  // profiling): `isStyleLoaded()` remains false for ~600ms after
+  // `style.load` while sprites/glyphs settle, yet addSource/addLayer are
+  // accepted far earlier — parking on the flag delayed the boot overlay
+  // attach to 1.18s while the base map painted at 0.5s. A throw (style
+  // swap genuinely in flight — boot basemap apply, user basemap switch,
+  // MapLibre's diff-rebuild fallback) parks the swap for the retry path
+  // below; the failed attempt's partial ops are idempotent (guards on
+  // getLayer/getSource) and re-run wholesale on the retry.
+  try {
+    applyCatalogSwapNow(map);
+    catalogSwapPending = false;
+  } catch (error) {
+    // Only PARK on MapLibre's transient "Style is not done loading" —
+    // a permanent error (corrupt style data, invalid source spec, a
+    // future MapLibre throw) would retry forever at 250ms (review
+    // finding). Anything else re-throws: the overlay stays off, the
+    // catalog error path surfaces a notice, no infinite poll.
+    if (!(error instanceof Error) || !error.message.includes('Style is not done loading')) {
+      console.warn('[overlay-control] catalog swap failed (non-transient):', error);
+      catalogSwapPending = false;
+      return;
+    }
     catalogSwapPending = true;
     armCatalogSwapRetry(map);
-    return;
   }
-  catalogSwapPending = false;
+}
+
+/** The swap itself: remove tracked layers, reconcile sources (keep
+ *  unchanged specs — tile caches survive), re-add overlays. Throws when
+ *  the style is genuinely mid-swap (MapLibre "Style is not done
+ *  loading") — callers park and retry. */
+function applyCatalogSwapNow(map: MapLibreMap): void {
   for (const layerId of addedLayerIds) {
     if (map.getLayer(layerId)) map.removeLayer(layerId);
   }
-  // Sources first added by a previous overlay may be shared — remove
-  // each tracked source once no remaining tracked layer references it.
+  // SOURCES: keep any whose incoming spec is DEEP-EQUAL to the mounted
+  // one — a remove/add cycle wipes MapLibre's tile cache for that
+  // source and re-downloads every visible tile. The common catalog
+  // refresh (same content, bumped version token) therefore costs
+  // layer re-adds only; only genuinely changed sources reload their
+  // tiles. Layers are always re-added (cheap, no tile affinity) so
+  // ordering and paint changes always land.
+  const activeOverlays = (overlayStore.overlays as unknown as Array<OverlaySwitchItem>).filter(
+    o => o.active
+  );
+  const nextSourceSpecs = new Map<string, string>();
+  for (const overlay of activeOverlays) {
+    for (const [sourceId, spec] of Object.entries(overlay.style.sources ?? {})) {
+      nextSourceSpecs.set(sourceId, sourceSpecKey(spec));
+    }
+  }
   for (const sourceId of addedSourceIds) {
-    if (map.getSource(sourceId)) map.removeSource(sourceId);
+    if (!map.getSource(sourceId)) {
+      appliedSourceSpecs.delete(sourceId);
+      continue;
+    }
+    const nextSpec = nextSourceSpecs.get(sourceId);
+    if (nextSpec !== undefined && appliedSourceSpecs.get(sourceId) === nextSpec) {
+      continue; // unchanged — keep the source (and its tiles)
+    }
+    map.removeSource(sourceId);
+    appliedSourceSpecs.delete(sourceId);
   }
   addOverlays();
 }
@@ -1689,6 +1779,14 @@ onBeforeUnmount(() => {
   for (const timer of lingerTimers.values()) clearTimeout(timer);
   lingerTimers.clear();
   if (dragScrollRaf) window.cancelAnimationFrame(dragScrollRaf);
+  // Catalog-swap retry poll (review finding: the module-scope interval
+  // had no unmount path — it kept firing against a destroyed map).
+  if (catalogSwapPollTimer !== undefined) {
+    window.clearInterval(catalogSwapPollTimer);
+    catalogSwapPollTimer = undefined;
+  }
+  catalogSwapRetryArmed = false;
+  catalogSwapPending = false;
 });
 </script>
 
