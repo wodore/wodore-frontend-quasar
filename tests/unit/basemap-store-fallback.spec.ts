@@ -101,6 +101,7 @@ vi.mock('@services/idle', () => ({ whenIdle: () => Promise.resolve() }));
 vi.mock('@services/map-prewarm', () => ({
   prewarmCatalogStyles: () => {},
   prewarmStyleAssets: () => {},
+  prewarmStyleGlyphs: () => {},
 }));
 
 // The catalog service: controlled layers response, cold boot (no

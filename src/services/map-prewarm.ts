@@ -9,11 +9,7 @@
  * once per session.
  */
 import type { StyleSpecification } from 'maplibre-gl';
-import {
-  absolutizeStyleUrl,
-  styleVariantUrl,
-  type MapCatalogLayer,
-} from './map-catalog';
+import { absolutizeStyleUrl, styleVariantUrl, type MapCatalogLayer } from './map-catalog';
 
 /** Session-wide dedupe — one warm fetch per URL, however many callers. */
 const warmed = new Set<string>();
@@ -68,6 +64,49 @@ export function spriteVariantUrl(spriteUrl: string, suffix: string): string {
  *  style→assets chain the renderer would otherwise pay alone. */
 export function prewarmStyleAssets(style: StyleSpecification | null | undefined): void {
   if (style) warm(styleAssetUrls(style));
+}
+
+/** Collect literal font-stack names from a style's symbol layers
+ *  (text-font values — usually literal string arrays, occasionally
+ *  buried in expressions; the recursive walk catches both). */
+function styleFontStacks(style: StyleSpecification): Set<string> {
+  const stacks = new Set<string>();
+  const walk = (v: unknown): void => {
+    if (typeof v === 'string') {
+      stacks.add(v);
+    } else if (Array.isArray(v)) {
+      for (const x of v) walk(x);
+    }
+  };
+  for (const layer of style.layers ?? []) {
+    if (layer.type !== 'symbol') continue;
+    const layout = (layer as { layout?: Record<string, unknown> }).layout;
+    walk(layout?.['text-font']);
+  }
+  return stacks;
+}
+
+/** Warm a style's glyph PBFs for the common 0-255 range (perf/map-boot,
+ *  2026-10-31 profiling): MapLibre only requests a font stack when a
+ *  symbol tile first RENDERS — tiles → first render → glyph fetch →
+ *  re-render — and until those PBFs land, `isSourceLoaded()` stays false
+ *  for every label-carrying source (symbol tiles count as loading while
+ *  glyph dependencies pend). On a CDN-slow day that serialized font
+ *  chain was the single longest reveal blocker. Warming the stacks at
+ *  style-apply time loads the PBFs in parallel with the tile wave; the
+ *  renderer's own requests then hit the HTTP cache. Best-effort: no
+ *  stacks found or a template without {fontstack} is a no-op. */
+export function prewarmStyleGlyphs(style: StyleSpecification | null | undefined): void {
+  if (!style || typeof style.glyphs !== 'string') return;
+  const template = style.glyphs;
+  if (!template.includes('{fontstack}')) return;
+  const urls: string[] = [];
+  for (const stack of styleFontStacks(style)) {
+    urls.push(
+      template.replace('{fontstack}', encodeURIComponent(stack)).replace('{range}', '0-255')
+    );
+  }
+  warm(urls);
 }
 
 /** Warm every catalog layer's STYLE DOCUMENT except the critical one:

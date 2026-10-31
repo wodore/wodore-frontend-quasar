@@ -1584,10 +1584,9 @@ function armCatalogSwapRetry(map: MapLibreMap): void {
     disarm();
     catalogSwapRetryArmed = false;
     if (!catalogSwapPending) return;
-    if (!map.isStyleLoaded()) {
-      armCatalogSwapRetry(map);
-      return;
-    }
+    // Attempt directly (throw → re-park): isStyleLoaded() stays false
+    // ~600ms past style.load while sprites/glyphs settle, but the
+    // mutating calls are usually accepted far earlier.
     catalogSwapPending = false;
     reapplyOverlaysAfterCatalogSwap();
   };
@@ -1609,18 +1608,29 @@ function armCatalogSwapRetry(map: MapLibreMap): void {
 function reapplyOverlaysAfterCatalogSwap(): void {
   const map = mapRef.map;
   if (!map) return;
-  // Style swap in flight (boot basemap apply, user basemap switch, or
-  // MapLibre's diff-rebuild fallback): addSource/addLayer would throw
-  // "Style is not done loading", and the swap wipes everything this
-  // control added anyway. Park the swap and retry when the style is
-  // ready — the map 'load' event does NOT re-fire after setStyle, so
-  // this retry is the only re-add path left for the bump.
-  if (!map.isStyleLoaded()) {
+  // Attempt IMMEDIATELY, guarded by try/catch (perf/map-boot, 2026-10-31
+  // profiling): `isStyleLoaded()` remains false for ~600ms after
+  // `style.load` while sprites/glyphs settle, yet addSource/addLayer are
+  // accepted far earlier — parking on the flag delayed the boot overlay
+  // attach to 1.18s while the base map painted at 0.5s. A throw (style
+  // swap genuinely in flight — boot basemap apply, user basemap switch,
+  // MapLibre's diff-rebuild fallback) parks the swap for the retry path
+  // below; the failed attempt's partial ops are idempotent (guards on
+  // getLayer/getSource) and re-run wholesale on the retry.
+  try {
+    applyCatalogSwapNow(map);
+    catalogSwapPending = false;
+  } catch {
     catalogSwapPending = true;
     armCatalogSwapRetry(map);
-    return;
   }
-  catalogSwapPending = false;
+}
+
+/** The swap itself: remove tracked layers, reconcile sources (keep
+ *  unchanged specs — tile caches survive), re-add overlays. Throws when
+ *  the style is genuinely mid-swap (MapLibre "Style is not done
+ *  loading") — callers park and retry. */
+function applyCatalogSwapNow(map: MapLibreMap): void {
   for (const layerId of addedLayerIds) {
     if (map.getLayer(layerId)) map.removeLayer(layerId);
   }

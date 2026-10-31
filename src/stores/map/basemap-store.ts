@@ -35,7 +35,11 @@ import {
   type MapCatalogLayer,
   type MapSpecTier,
 } from '@services/map-catalog';
-import { prewarmCatalogStyles, prewarmStyleAssets } from '@services/map-prewarm';
+import {
+  prewarmCatalogStyles,
+  prewarmStyleAssets,
+  prewarmStyleGlyphs,
+} from '@services/map-prewarm';
 import {
   LEGACY_BASEMAP_FALLBACKS,
   RENAMED_BASEMAP_SLUGS,
@@ -117,6 +121,10 @@ async function prepareStagedStyle(style: StyleSpecification | string): Promise<S
       sprite: staged.deferred.sprites,
     });
   }
+  // Font stacks: warm the INITIAL style's glyph PBFs (label layers) so
+  // they load in parallel with the tile wave instead of after the first
+  // symbol render — see prewarmStyleGlyphs for the measured motivation.
+  prewarmStyleGlyphs(staged ? staged.initial : styleObject);
   return staged;
 }
 

@@ -362,6 +362,12 @@ function scheduleReveal(map: Map): void {
   // MapLibre's `idle` waits for symbol glyph dependencies, so the
   // trigger below fires on a rendered frame instead of on idle).
   let visibleSourceIdsCache: Set<string> | null = null;
+  /** Grace clock per source id (perf/map-boot 2026-10-31): symbol-tile
+   *  sources stay `isSourceLoaded() === false` while their glyph PBFs
+   *  pend — fonts are NOT reveal-blocking, so a source past this grace
+   *  stops holding the splash. */
+  const glyphGraceFirstFalse = new globalThis.Map<string, number>();
+  const SOURCE_LOAD_GRACE_MS = 1200;
   const invalidateVisibleSources = () => {
     visibleSourceIdsCache = null;
   };
@@ -382,10 +388,29 @@ function scheduleReveal(map: Map): void {
     return visibleSourceIdsCache;
   };
   const criticalLoaded = (): boolean => {
+    const now = Date.now();
+    let allLoaded = true;
     for (const id of visibleSourceIds()) {
-      if (!map.isSourceLoaded(id)) return false;
+      if (map.isSourceLoaded(id)) {
+        glyphGraceFirstFalse.delete(id);
+        continue;
+      }
+      // Not loaded: symbol-tile sources stay "loading" while their GLYPH
+      // PBFs pend (fonts are explicitly NOT reveal-blocking — owner
+      // 2026-10). Give every source a short grace from its first
+      // not-loaded observation; past it, a glyph-pending (or genuinely
+      // stuck) source stops holding the splash — the map renders, labels
+      // stream in when the fonts land. Real tile slowness on the FIRST
+      // observation still waits the full grace.
+      const first = glyphGraceFirstFalse.get(id);
+      if (first === undefined) {
+        glyphGraceFirstFalse.set(id, now);
+        allLoaded = false;
+        continue;
+      }
+      if (now - first < SOURCE_LOAD_GRACE_MS) allLoaded = false;
     }
-    return true;
+    return allLoaded;
   };
   /** One-shot "settled" arm: fires on the EARLIER of (a) a rendered
    *  frame after all visible sources loaded — reveal without waiting
@@ -394,21 +419,32 @@ function scheduleReveal(map: Map): void {
    *  by one `fired` flag; the sourcedata listener unbinds itself. */
   const armSettledOnce = (cb: () => void): void => {
     let fired = false;
+    let graceTimer: number | undefined;
     const fire = () => {
       if (fired) return;
       fired = true;
+      if (graceTimer !== undefined) window.clearTimeout(graceTimer);
       map.off('sourcedata', onSourceData);
       cb();
     };
-    const onSourceData = () => {
+    const evaluate = () => {
       if (fired) return;
-      if (criticalLoaded()) map.once('render', fire);
+      if (criticalLoaded()) {
+        map.once('render', fire);
+        return;
+      }
+      // Not critical yet — re-check at the grace horizon: glyph-pending
+      // sources go quiet (no sourcedata events once tiles are in), so
+      // without a timer the grace would only be noticed by the idle
+      // backstop seconds later.
+      if (graceTimer === undefined) {
+        graceTimer = window.setTimeout(evaluate, SOURCE_LOAD_GRACE_MS);
+      }
     };
+    const onSourceData = () => evaluate();
     map.once('idle', fire);
     map.on('sourcedata', onSourceData);
-    // Already critical-loaded at arm time (re-arm after an earlier
-    // idle): the next rendered frame completes the reveal.
-    if (criticalLoaded()) map.once('render', fire);
+    evaluate();
   };
   /** The ACTIVE overlays' compiled layers must be MOUNTED before the
    *  style counts as reveal-ready (perf/map-boot, 2026-10-31): the
@@ -441,8 +477,7 @@ function scheduleReveal(map: Map): void {
   };
   const scheduler = startRevealLoop(
     {
-      styleReady: () =>
-        (map.getStyle()?.layers?.length ?? 0) >= 2 && activeOverlayLayersMounted(),
+      styleReady: () => (map.getStyle()?.layers?.length ?? 0) >= 2 && activeOverlayLayersMounted(),
       painted: () => (map.getStyle()?.layers?.length ?? 0) >= 2 && criticalLoaded(),
       onIdleOnce: cb => armSettledOnce(cb),
     },
