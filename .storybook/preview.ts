@@ -7,6 +7,7 @@ import { MobileIcon, TabletIcon } from '@storybook/icons';
 import { Quasar, Notify, Dialog, LoadingBar, LocalStorage, useQuasar } from 'quasar';
 import { createPinia } from 'pinia';
 import { createI18n } from 'vue-i18n';
+import { createMemoryHistory, createRouter } from 'vue-router';
 
 import 'quasar/dist/quasar.sass';
 import '@quasar/extras/roboto-font/roboto-font.css';
@@ -30,6 +31,24 @@ const i18n = createI18n({
 setup(app => {
   app.use(createPinia());
   app.use(i18n);
+  // Memory router: stories that exercise routing-aware pieces (the
+  // selection store / detail body host) need the injection; no existing
+  // story reads routing — additive only. Routes mirror the app's content
+  // route shapes.
+  app.use(
+    createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/', name: 'map', component: { render: () => null } },
+        {
+          path: '/hut/:slug',
+          name: 'map-hut',
+          meta: { content: true, contentType: 'place' },
+          component: { render: () => null },
+        },
+      ],
+    })
+  );
   app.use(Quasar, {
     plugins: { Notify, Dialog, LoadingBar, LocalStorage },
     config: {

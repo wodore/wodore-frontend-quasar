@@ -627,4 +627,14 @@ Registry supplies per-entry `searchEntry` overrides later.
   map re-click of the open target toggles the detail closed (today's UX
   preserved); search re-select re-anchors. Spec scenarios, design, tasks
   and §7.4 updated. No open questions remain.
+- **2026-10-31 — Implementation (PR1a, lane branch design-geoplace-overlay-architecture):**
+  all four task groups landed (selection core, selection store, data
+  engine, entries + three-zone composition), GLM code review
+  approve-with-fixes applied in full (F1 multi-source choke-point watch,
+  F2 detached-scope epoch watch, F3 reseed, F4 NavigationFailure, F5
+  entry pass-through, F6 same-key guard, F7 AbortError filter, F9
+  polish + regression tests). Visual verification passed: cold
+  /hut/:slug deep link renders the maximized panel with all three zones
+  through the new wiring (desktop + mobile bottom sheet), close routes
+  to map with hash preserved; 575 unit tests green.
 - Owner sign-off: **pending go for OpenSpec** — no open questions.

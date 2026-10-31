@@ -313,6 +313,7 @@ wodore-frontend-quasar/
 │   ├── layouts/             # Page layouts
 │   ├── pages/               # Route pages
 │   ├── router/              # Vue Router configuration
+│   ├── selection/           # Place-interaction framework: registry, entries, taxonomy
 │   ├── services/            # Business logic and services
 │   ├── stores/              # Pinia stores (state management)
 │   ├── types/               # TypeScript type definitions
@@ -619,6 +620,29 @@ https://stats.wodore.com` (repeat it in any HTML location that adds
   its own add_header — nginx drops server-level headers there).
 
 ## Common Patterns
+
+### Selection framework (place interactions)
+
+- `src/selection/` owns the type-agnostic interaction system (OpenSpec
+  `add-place-interactions`; full design in `_work/place-interactions.md`):
+  a `MapTarget` (source/id/props/featureRef) from every origin (map click,
+  search, deep link), a **Presentation registry** (declarative `MatchSpec`,
+  first-wins array order, one `surfaces.ts` barrel chunk per entry) and the
+  `selection-store` state machine (popup ephemeral / detail routed, ONE
+  route watcher as the ephemeral-cleanup choke point, D12 map-toggle).
+- **Entries are store-free data modules** (`eslint no-restricted-paths`
+  enforces it — the store→registry→entry import cycle crashes at
+  module-init). Adding a place type = one folder in
+  `src/selection/entries/` + one array line; fetchers/seeds live in the
+  entry (`usePlaceDetail` provides the framework: token supersession,
+  never-abort-shared dedup keyed `entry:id:lang`, seed cache LRU +
+  epoch clear).
+- Reactivity discipline is normative: targets are `markRaw` +
+  `shallowRef` wire data — never cloned, never deep-proxied
+  (`featureRef` holds LIVE engine objects).
+- `useActiveDetailEntry` feeds the panel shells' three zone slots
+  (title/body/actions); never flatten the zones, never resolve async
+  components inside a `computed`.
 
 ### i18n / Language Switch
 
