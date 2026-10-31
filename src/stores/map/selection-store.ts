@@ -145,10 +145,7 @@ export const useSelectionStore = defineStore('selection', () => {
       // purpose: swap between stacked targets while the detail is
       // open) — but a slug outside the candidate list (search open,
       // unrelated navigation) clears them.
-      if (
-        candidates.value.length > 0 &&
-        !candidates.value.some(item => item.target.id === slug)
-      ) {
+      if (candidates.value.length > 0 && !candidates.value.some(item => item.target.id === slug)) {
         candidates.value = [];
         candidateIndex.value = 0;
       }

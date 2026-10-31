@@ -33,7 +33,14 @@ function feature(
   id = 7,
   geometry: RenderedFeatureLike['geometry'] = { type: 'Point', coordinates: [8.15, 46.55] }
 ): RenderedFeatureLike {
-  return { layer: { id: layer }, source: 'wd-huts', sourceLayer: 'huts', id, properties: props, geometry };
+  return {
+    layer: { id: layer },
+    source: 'wd-huts',
+    sourceLayer: 'huts',
+    id,
+    properties: props,
+    geometry,
+  };
 }
 
 describe('targetFromFeature', () => {

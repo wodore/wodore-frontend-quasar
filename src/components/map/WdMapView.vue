@@ -64,10 +64,8 @@ import {
   derivedInteractiveLayers,
   tapTargetsInteractiveLayer,
 } from '@stores/map/utils/interactive-layers';
-import {
-  targetsFromFeatures,
-  type RenderedFeatureLike,
-} from '@selection/props-from-feature';
+import { registerProjector } from '@selection/projector';
+import { targetsFromFeatures, type RenderedFeatureLike } from '@selection/props-from-feature';
 import { useSelectionStore } from '@stores/map/selection-store';
 
 // MapLibre v6 resolves its web worker via import.meta.url, which breaks under
@@ -692,6 +690,10 @@ function scheduleReveal(map: Map): void {
     { immediate: true }
   );
   onScopeDispose(() => stopStatusWatch?.());
+  onScopeDispose(() => {
+    unregisterMapProjector?.();
+    applyFeatureHighlight(null); // engine teardown clears its own highlight
+  });
 }
 
 const mapResize = useDebounceFn(() => {
@@ -705,6 +707,8 @@ useResizeObserver(mapDiv, () => {
 //  `${getEnv('WODORE_API_HOST')}/${getEnv('WODORE_API_VERSION')}/huts/huts.geojson?lang=de&limit=5000&embed_all=false&embed_type=true&embed_owner=false&embed_capacity=false&embed_sources=false&include_elevation=false&include_name=true&flat=true`,
 //);
 
+let unregisterMapProjector: (() => void) | null = null;
+
 function onMapLoad(e: MglEvent<'load'>) {
   collapseAutoExpandedAttribution();
   console.debug(`[onMapLoad] Maplibre version ${e.map.version} loaded`);
@@ -712,6 +716,24 @@ function onMapLoad(e: MglEvent<'load'>) {
   // begins): the splash ends its words immediately and blocks new
   // hills (owner stage spec).
   emit('mapready');
+
+  // ── Projector registration (place-popup): the MapLibre adapter
+  // returns VIEWPORT px (canvas rect folded in — the popup teleports to
+  // body) and forwards CONTINUOUS move events (flyTo glue). The
+  // unregister path clears this adapter's highlight (engine teardown).
+  unregisterMapProjector?.();
+  unregisterMapProjector = registerProjector({
+    engine: 'maplibre',
+    project(lngLat) {
+      const p = e.map.project([lngLat.lon, lngLat.lat]);
+      const r = e.map.getCanvas().getBoundingClientRect();
+      return { x: r.left + p.x, y: r.top + p.y };
+    },
+    onMove(cb) {
+      e.map.on('move', cb);
+      return () => e.map.off('move', cb);
+    },
+  });
 
   // Country basemap restored from a previous session: the raw initial
   // style carries no world fallback (composing it needs an async style

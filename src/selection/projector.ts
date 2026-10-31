@@ -5,19 +5,23 @@
  * a shallowRef handle lets consumers re-anchor reactively when the
  * engine changes (fallback swap, basemap switch).
  *
- * Semantics (place-popup spec): a projector unregister (engine swap)
- * closes the popup; feature-state cleanup belongs to the adapter that
- * set it. Canvas-relative projected px must be converted to viewport
- * px by the consumer (canvas bounding rect) when the overlay teleports
- * to body. PR2 wires the actual adapters — this scaffold lands in PR1a
- * so the module boundary exists (work doc PR table).
+ * Semantics (place-popup spec):
+ * - `project` returns VIEWPORT-RELATIVE px (the adapter folds in its
+ *   canvas/container offset — consumers teleport to body and use the
+ *   result verbatim).
+ * - `onMove` subscribes to CONTINUOUS movement (not just `moveend`) so
+ *   overlays glue through flyTo animations; returns the unsubscribe.
+ * - A projector unregister (engine swap) closes the popup; feature-state
+ *   cleanup belongs to the adapter that set it (the unregister path).
  */
 import { shallowRef, type ShallowRef } from 'vue';
 import type { LatLng } from './types';
 
 export interface MapProjector {
-  /** Project a geographic position to CONTAINER-relative pixels. */
+  /** Project a geographic position to VIEWPORT-relative pixels. */
   project(lngLat: LatLng): { x: number; y: number };
+  /** Subscribe to continuous map movement; returns the unsubscribe. */
+  onMove(cb: () => void): () => void;
   readonly engine: 'maplibre' | 'leaflet';
 }
 

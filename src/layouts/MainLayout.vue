@@ -15,6 +15,7 @@ import WodoreLogo from 'components/wodore/WodoreLogo.vue';
 import WdPlaceSearchMenu from 'components/search/WdPlaceSearchMenu.vue';
 import WdPlaceSearchDialog from 'components/search/WdPlaceSearchDialog.vue';
 import WdBottomSheet from '@components/utils/WdBottomSheet.vue';
+import WdMapPopup from '@components/map/WdMapPopup.vue';
 import WdContentPanel, { openContentPanelMaximized } from '@components/content/WdContentPanel.vue';
 import { useRequestProgress } from '@composables/useRequestProgress';
 import { getEnv } from '@services/runtimeEnv';
@@ -602,4 +603,5 @@ body.capacitor .preview-badge {
       />
     </template>
   </WdBottomSheet>
+  <WdMapPopup />
 </template>

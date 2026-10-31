@@ -10,10 +10,7 @@ import { definePresentation } from '@selection/types';
 import { consumePrefetchedHut } from '@services/hut-prefetch';
 import { clientWodore } from '@clients/index';
 import { PlaceRequestError } from '@composables/usePlaceDetail';
-import {
-  MIN_HUT_CLICK_ZOOM,
-  WD_HUTS_CLICK_LAYERS,
-} from '@selection/map-layer-ids';
+import { MIN_HUT_CLICK_ZOOM, WD_HUTS_CLICK_LAYERS } from '@selection/map-layer-ids';
 import { hutSeedPartial, type HutDetails } from './seed';
 
 export type { HutDetails } from './seed';

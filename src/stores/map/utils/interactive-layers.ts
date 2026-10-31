@@ -53,7 +53,9 @@ export interface ClaimedLayer extends InteractiveLayer {
 }
 
 /** All claimed layers across the installed entries, in registry order. */
-export function derivedClaimedLayers(entries: readonly Presentation[] = defaultRegistry().entries()): ClaimedLayer[] {
+export function derivedClaimedLayers(
+  entries: readonly Presentation[] = defaultRegistry().entries()
+): ClaimedLayer[] {
   const claimed: ClaimedLayer[] = [];
   for (const entry of entries) {
     for (const claim of entry.mapLayers ?? []) {
