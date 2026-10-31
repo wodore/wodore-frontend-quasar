@@ -59,8 +59,15 @@
  * Leaflet + markercluster ride this component's async chunk
  * (WdMapView async-imports it), so WebGL users never download them.
  */
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  onScopeDispose,
+  ref,
+  watch,
+} from 'vue';
+import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useDebounceFn } from '@vueuse/core';
 import { LocalStorage, Notify } from 'quasar';
@@ -84,6 +91,10 @@ import {
   type FbBasemap,
 } from './fallback-basemaps';
 import { seedPlaceFromMap } from '@composables/usePlace';
+import { useSelectionStore } from '@stores/map/selection-store';
+import { registerProjector } from '@selection/projector';
+import { targetKey, type MapTarget } from '@selection/types';
+import { accommodationEntry } from '@selection/entries/accommodation';
 import { useOverlayStore } from '@stores/map/overlay-store';
 import type { ClusteringConfig } from '@stores/map/overlay-configs/types';
 import type { StyleSpecification } from 'maplibre-gl';
@@ -124,7 +135,8 @@ const emit = defineEmits<{
 }>();
 
 const route = useRoute();
-const router = useRouter();
+const selectionStore = useSelectionStore();
+let unregisterFallbackProjector: (() => void) | null = null;
 const { t } = useI18n();
 const localPropertiesStore = useLocalPropertiesStore();
 const hutsStore = useHutsStore();
@@ -1116,18 +1128,22 @@ watch(
  * panel identity from the feature properties, then route — the place
  * content panel (`map-hut`) is shared with the main map. */
 function selectHut(hut: FbHut): void {
+  // Selection-framework adapter (place-interactions spec): the marker is
+  // a claimed feature of the accommodation entry — claim-based
+  // resolution, no MatchSpec needed. The store owns the D12 toggle,
+  // surfaces and candidates; selection styling stays route-driven
+  // (selectedSlug) as before.
   const slug = hut.slug;
   seedPlaceFromMap(slug, hut.properties, { lat: hut.lat, lon: hut.lon });
-  if (route.params.slug === slug) {
-    router.push({ name: 'map', hash: route.hash, query: route.query });
-  } else {
-    router.push({
-      name: 'map-hut',
-      params: { slug },
-      hash: route.hash,
-      query: route.query,
-    });
-  }
+  const target: MapTarget = {
+    key: targetKey({ source: 'geoplace', id: slug }),
+    source: 'geoplace',
+    id: slug,
+    location: { lat: hut.lat, lon: hut.lon },
+    props: hut.properties,
+    featureRef: { engine: 'leaflet', handle: markerBySlug.get(slug) ?? null },
+  };
+  selectionStore.openFromMap([{ target, entry: accommodationEntry }]);
 }
 
 // ── Viewport sync (store + #map hash, maplibre format) ──────────────────
@@ -1257,6 +1273,29 @@ onMounted(() => {
   // order, later groups paint above earlier ones.
 
   map.on('moveend zoomend', onMoveEnd);
+
+  // ── Projector registration (place-popup): the Leaflet adapter returns
+  // VIEWPORT px (container rect folded in) and forwards CONTINUOUS move
+  // events; unregister on teardown (engine swap closes the popup).
+  unregisterFallbackProjector?.();
+  const m = map; // narrow the nullable instance for the adapter closures
+  if (m) {
+    unregisterFallbackProjector = registerProjector({
+      engine: 'leaflet',
+      project(lngLat) {
+        const point = m.latLngToContainerPoint([lngLat.lat, lngLat.lon]);
+        const rect = m.getContainer().getBoundingClientRect();
+        return { x: rect.left + point.x, y: rect.top + point.y };
+      },
+      onMove(cb) {
+        m.on('move', cb);
+        return () => {
+          m.off('move', cb);
+        };
+      },
+    });
+  }
+  onScopeDispose(() => unregisterFallbackProjector?.());
   const container = map.getContainer();
   container.addEventListener('pointerdown', onContainerPointerDown, { passive: true });
   container.addEventListener('pointerup', onContainerPointerUp, { passive: true });

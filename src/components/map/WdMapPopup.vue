@@ -18,12 +18,13 @@
  * closes via ✕ and expands to detail when the entry has one (handoff —
  * never abort). The minimal `1/n` candidates chip cycles the switcher.
  */
-import { computed, watch, shallowRef, ref, onScopeDispose } from 'vue';
+import { computed, watch, shallowRef, ref, markRaw, onScopeDispose, type Component } from 'vue';
 import { useRafFn } from '@vueuse/core';
 import { useSelectionStore } from '@stores/map/selection-store';
 import { useProjector } from '@selection/projector';
 import { clampToViewport, type ViewportChrome } from '@selection/clamp-viewport';
 import { currentLocale } from '@services/locale';
+import type { EntrySurfaces } from '@selection/types';
 
 const selection = useSelectionStore();
 const projectorRef = useProjector();
@@ -96,6 +97,39 @@ watch(projectorRef, p => {
   if (!p) selection.closePopup();
 });
 
+// ── Entry popup CONTENT: resolve the popup surface from the entry's
+// ONE barrel (memoized per entry id — module scope, shared and
+// idempotent like useActiveDetailEntry's cache). Falls back to the
+// bare slot when the entry declares no popup surface.
+const popupContent = shallowRef<Component | null>(null);
+const surfacesCache = new Map<string, Promise<EntrySurfaces>>();
+let contentSeq = 0;
+
+watch(
+  () => selection.popupEntry,
+  async entry => {
+    const token = ++contentSeq;
+    if (!entry?.surfaces) {
+      popupContent.value = null;
+      return;
+    }
+    let promise = surfacesCache.get(entry.id);
+    if (!promise) {
+      promise = entry.surfaces();
+      surfacesCache.set(entry.id, promise);
+      promise.catch(() => surfacesCache.delete(entry.id));
+    }
+    try {
+      const surfaces = await promise;
+      if (token !== contentSeq) return; // superseded by another entry
+      popupContent.value = surfaces.popup ? markRaw(surfaces.popup) : null;
+    } catch {
+      if (token === contentSeq) popupContent.value = null;
+    }
+  },
+  { immediate: true }
+);
+
 onScopeDispose(() => {
   unsubscribeMove?.();
 });
@@ -114,7 +148,7 @@ onScopeDispose(() => {
       >
         <div class="wd-map-popup__stem" aria-hidden="true" />
         <header class="wd-map-popup__header">
-          <span class="wd-map-popup__title">{{ title }}</span>
+          <span v-if="title" class="wd-map-popup__title">{{ title }}</span>
           <q-btn
             v-if="selection.candidates.length > 1"
             dense
@@ -140,8 +174,16 @@ onScopeDispose(() => {
             @click="selection.closePopup()"
           />
         </header>
-        <slot />
-        <footer v-if="selection.popupEntry?.capabilities?.includes('detail')" class="wd-map-popup__footer">
+        <component
+          :is="popupContent"
+          v-if="popupContent"
+          :target="selection.popupTarget"
+        />
+        <slot v-else />
+        <footer
+          v-if="selection.popupEntry?.capabilities?.includes('detail')"
+          class="wd-map-popup__footer"
+        >
           <q-btn
             dense
             no-caps

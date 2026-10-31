@@ -7,7 +7,9 @@
 import { createRegistry, setDefaultRegistry } from '@selection/registry';
 import { accommodationEntry } from './accommodation';
 import { geoplaceDefaultEntry } from './geoplace-default';
+import { transportEntry } from './transport';
 
-export const entries = [accommodationEntry, geoplaceDefaultEntry];
+// geoplace-default LAST so every geoplace target resolves, failing open.
+export const entries = [accommodationEntry, transportEntry, geoplaceDefaultEntry];
 
 setDefaultRegistry(createRegistry(entries));
