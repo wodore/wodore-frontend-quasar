@@ -260,18 +260,55 @@ onScopeDispose(() => {
   padding-top: 4px;
 }
 
-// Enter/leave: fade + scale only — `transform` is owned imperatively
-// by the rAF loop; the independent `scale` property composes with it.
-.wd-popup-enter-active,
-.wd-popup-leave-active {
-  transition:
-    opacity 0.15s ease,
-    scale 0.15s ease;
+// Enter/leave — the POP (owner 2026-10-31): the card is BORN from the
+// pin. transform-origin sits at the STEM (data-side picks the end), so
+// the scale-up grows out of the dot the user tapped; the JS-owned
+// `transform` (anchoring translate) is origin-independent and composes
+// with the independent `scale` property. Enter: fast decelerating
+// scale-up (the STEM origin does the pop — the growth reads as
+// born-from-the-pin without a bounce curve). Exit: faster, collapsing
+// back toward the pin.
+.wd-map-popup[data-side='above'] {
+  transform-origin: 50% calc(100% - 8px);
 }
 
-.wd-popup-enter-from,
+.wd-map-popup[data-side='below'] {
+  transform-origin: 50% 8px;
+}
+
+.wd-popup-enter-active {
+  transition:
+    opacity 0.12s ease-out,
+    scale 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.wd-popup-leave-active {
+  transition:
+    opacity 0.1s ease-in,
+    scale 0.12s ease-in;
+}
+
+.wd-popup-enter-from {
+  opacity: 0;
+  scale: 0.55;
+}
+
 .wd-popup-leave-to {
   opacity: 0;
-  scale: 0.96;
+  scale: 0.85;
+}
+
+// Reduced motion: the spatial growth yields; the fade keeps the state
+// change legible (fewer/gentler, not none).
+@media (prefers-reduced-motion: reduce) {
+  .wd-popup-enter-active,
+  .wd-popup-leave-active {
+    transition: opacity 0.12s ease;
+  }
+
+  .wd-popup-enter-from,
+  .wd-popup-leave-to {
+    scale: 1;
+  }
 }
 </style>
