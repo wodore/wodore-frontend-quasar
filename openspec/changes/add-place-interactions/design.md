@@ -31,7 +31,7 @@ numericId}` / Leaflet marker) passed back to the originating adapter for
   carries the controller-resolved probe so entries never re-probe.
   `detailStart?: 'minimized' | 'expanded'` sets the panel start-size
   preset per entry (the per-type start-size promise). `mapLayers?:
-  ReadonlyArray<LayerClaim>` with `{layer, minZoom?, idProp}` — a claim
+ReadonlyArray<LayerClaim>` with `{layer, minZoom?, idProp}` — a claim
   BINDS the style layer to the entry (see Click pipeline).
 - **Resolution has two paths** (GLM review C7): (1) **Claim-based** — a
   target built from a claimed style layer resolves to the CLAIMING entry
@@ -47,7 +47,8 @@ numericId}` / Leaflet marker) passed back to the originating adapter for
   is the choke point clearing ephemeral state on content-slug change/leave;
   `open(target, {via})` picks the surface (both exist → map: popup,
   search/link: detail) and detects already-routed targets
-  (`NavigationDuplicated` → re-anchor/re-highlight/reseed).
+  (`NavigationDuplicated` → via map: toggle-close, D12; via
+  search/link: re-anchor/re-highlight/reseed).
 - **Interim routed-entry binding (PR1a only, GLM review T1)**: until the
   PR1b probe chain exists, the routed target's entry binds via route
   meta (`contentType: 'place'` → accommodation entry — the registry

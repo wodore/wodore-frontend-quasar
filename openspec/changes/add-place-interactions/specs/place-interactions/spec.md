@@ -7,17 +7,22 @@
 - **Requirement**: A selection store SHALL own interaction state with modes `closed`, `popup` (ephemeral store state, never routed) and `detail` (derived from the route — single source of truth, not duplicated).
 - **Requirement**: ONE route watcher SHALL be the choke point clearing ephemeral state (popup, candidates, highlight) when navigation changes the content slug or leaves the content family; back/leave SHALL NOT resurrect the popup.
 - **Requirement**: `open(target, {via})` SHALL pick the surface: when the entry declares both popup and detail, `via: 'map'` opens the popup and `via: 'search' | 'link'` opens the detail; a single declared surface opens regardless of via.
-- **Requirement**: `open()` SHALL detect an already-routed target (same slug → duplicated navigation, no watcher fires) and still re-anchor, re-highlight and reseed.
+- **Requirement**: `open()` SHALL detect an already-routed target (same slug → duplicated navigation, no watcher fires): via `map` it SHALL toggle-close the detail (preserving today's tap-pin-to-close UX, D12); via `search`/`link` it SHALL re-anchor, re-highlight and reseed.
 
 #### Scenario: Open from map click
 
 - **WHEN** a map click resolves to one target whose entry declares both surfaces
 - **THEN** the popup opens and no route change occurs
 
-#### Scenario: Re-open the routed target
+#### Scenario: Re-click of the open target toggles it closed (map)
 
-- **WHEN** the user clicks the feature whose slug is already in `/place/:slug`
-- **THEN** the selection re-anchors, re-highlights and reseeds instead of being a no-op
+- **WHEN** the user clicks the feature whose slug is already in `/place/:slug` (opened from the map or still open after navigation)
+- **THEN** the detail closes (toggle), matching the pre-framework tap-pin-to-close behavior
+
+#### Scenario: Search re-select of the open target re-anchors
+
+- **WHEN** a search selection targets the slug already in `/place/:slug`
+- **THEN** the detail stays open and re-anchors/re-highlights/reseeds instead of closing
 
 #### Scenario: Back from detail
 

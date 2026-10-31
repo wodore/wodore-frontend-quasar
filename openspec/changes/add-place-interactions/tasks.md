@@ -1,12 +1,13 @@
 # Tasks: Place Interactions
 
 Sourced from `_work/place-interactions.md` (rev 3, PR table amended rev 4)
-+ GLM OpenSpec review (C1–C7, T1–T10, F1–F4). PR slicing: PR1a (framework,
-zero URL change) → PR1b (URL cutover, needs backend PR0) → PR2 (popup
-surface) → PR3 (transport). All tasks land on the lane branch
-`design-geoplace-overlay-architecture`; PR boundaries are commit/tag
-boundaries. Reviewer per step (owner instruction): Opus when available,
-GLM 5.3 max otherwise; visual verification per PR.
+
+- GLM OpenSpec review (C1–C7, T1–T10, F1–F4). PR slicing: PR1a (framework,
+  zero URL change) → PR1b (URL cutover, needs backend PR0) → PR2 (popup
+  surface) → PR3 (transport). All tasks land on the lane branch
+  `design-geoplace-overlay-architecture`; PR boundaries are commit/tag
+  boundaries. Reviewer per step (owner instruction): Opus when available,
+  GLM 5.3 max otherwise; visual verification per PR.
 
 ## PR1a — Framework (zero URL change, behavior-identical)
 
@@ -40,7 +41,7 @@ GLM 5.3 max otherwise; visual verification per PR.
       highlight-clear ownership, sequence-token latest-wins
 - [ ] **Interim routed-entry binding (T1)**: until the PR1b probe chain,
       the routed target's entry binds via route meta (`contentType:
-      'place'` → accommodation entry — the registry equivalent of
+    'place'` → accommodation entry — the registry equivalent of
       today's `componentMap`); a cold `/hut/:slug` resolves the
       accommodation entry with ZERO probe requests (unit test)
 - [ ] Migrate `map-content-store` consumers (`MainLayout`
@@ -51,7 +52,8 @@ GLM 5.3 max otherwise; visual verification per PR.
       only MainLayout imports it)
 - [ ] Unit tests: state machine with in-memory `createRouter` —
       open/expand/close, via-modes, rapid A→B clicks, expand-mid-fetch
-      handoff (no abort), same-slug reopen per the C1 owner decision,
+      handoff (no abort), same-slug reopen: map re-click toggles close,
+      search re-select re-anchors (D12),
       back-closes-without-popup
 
 ### 3. Data layer
@@ -113,7 +115,7 @@ GLM 5.3 max otherwise; visual verification per PR.
 
 - [ ] Add `/place/:slug` route record (`meta.source: 'geoplace'`,
       crawler-stubbed `menuView` AND `contentView`, `props: {content:
-      true}`); delete ALL legacy hut route records incl. the
+    true}`); delete ALL legacy hut route records incl. the
       `/m/hut/:slug` redirect (redirect-to-deleted-name would throw, T2)
       — no redirect, D1
 - [ ] Replace the interim route-meta entry binding (T1) with the probe
@@ -121,8 +123,7 @@ GLM 5.3 max otherwise; visual verification per PR.
       domain/kind/sources), registry match from probe props, seed
       skeleton, `‖(barrel, entry.fetch)`
 - [ ] Create the geoplace-default minimal DETAIL component (probe
-      payload render, D8 — needed for non-accommodation cold links, T5)
-      + Histoire story
+      payload render, D8 — needed for non-accommodation cold links, T5) + Histoire story
 - [ ] i18n keys for the geoplace-default detail labels + legacy-hut
       not-found copy (all 4 locales in lockstep, T6)
 - [ ] Boot prefetch adaptation: `/place/` path regex, probe via client
