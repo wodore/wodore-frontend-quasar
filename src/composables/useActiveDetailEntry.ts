@@ -68,9 +68,16 @@ export function useActiveDetailEntry(): ActiveDetailEntry {
   const actions = shallowRef<Component | null>(null);
   const loading = ref(false);
 
+  // Staleness token (GLM group-4 review F3-followup): a late-settling
+  // surfaces promise for a PREVIOUS entry must not clobber the current
+  // entry's zones (reject-after-swap nulls them, resolve-after-close
+  // repopulates them) — mirrors the token discipline in usePlaceDetail.
+  let surfacesSeq = 0;
+
   watch(
     entry,
     async e => {
+      const token = ++surfacesSeq;
       const surfaces = e ? loadSurfaces(e) : null;
       if (!surfaces) {
         title.value = null;
@@ -82,6 +89,7 @@ export function useActiveDetailEntry(): ActiveDetailEntry {
       loading.value = true;
       try {
         const s = await surfaces;
+        if (token !== surfacesSeq) return; // superseded by another entry
         // Missing zones fall back to NULL for now — the generic geoplace
         // title/actions defaults land with PR2's geoplace-default
         // surfaces. (Accommodation, the only PR1a detail, supplies all
@@ -90,11 +98,12 @@ export function useActiveDetailEntry(): ActiveDetailEntry {
         body.value = s.detail ? markRaw(s.detail) : null;
         actions.value = s.detailActions ? markRaw(s.detailActions) : null;
       } catch {
+        if (token !== surfacesSeq) return;
         title.value = null;
         body.value = null;
         actions.value = null;
       } finally {
-        loading.value = false;
+        if (token === surfacesSeq) loading.value = false;
       }
     },
     { immediate: true }

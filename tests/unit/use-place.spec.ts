@@ -144,6 +144,18 @@ describe('usePlace MVT identity seed', () => {
     await nextTick();
     expect(place.value).toBeUndefined();
   });
+
+  it('empty tile properties paint NO seed (no phantom {} husk)', async () => {
+    // Regression (GLM group-4 review): hutSeedPartial returns null for
+    // empty props — an empty partial would be cached and painted as a
+    // truthy {} payload while the fetch is in flight.
+    fetchMock.mockImplementation(() => new Promise(() => {}));
+    seedPlaceFromMap('empty-props-hut', {});
+
+    const { place } = usePlace(ref('empty-props-hut'));
+    await nextTick();
+    expect(place.value).toBeUndefined();
+  });
 });
 
 describe('deep-link prefetch handoff', () => {

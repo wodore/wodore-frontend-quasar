@@ -39,19 +39,17 @@ export const accommodationEntry = definePresentation<HutDetails>({
     // openapi-fetch response union, which widens tuple members
     // (country: string[] vs [string, string]) — an invariant the
     // generated types can't express.
-    const result = await (
-      prefetched
-        ? prefetched.then(
-            hutData =>
-              ({
-                data: hutData as HutDetails,
-                error: undefined,
-                response: undefined,
-              }) as unknown as Awaited<ReturnType<typeof get>>,
-            () => get()
-          )
-        : get()
-    );
+    const result = await (prefetched
+      ? prefetched.then(
+          hutData =>
+            ({
+              data: hutData as HutDetails,
+              error: undefined,
+              response: undefined,
+            }) as unknown as Awaited<ReturnType<typeof get>>,
+          () => get()
+        )
+      : get());
     const data = result.data as HutDetails | undefined;
     const { error: apiError, response } = result;
 

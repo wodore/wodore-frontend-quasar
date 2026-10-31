@@ -630,9 +630,10 @@ https://stats.wodore.com` (repeat it in any HTML location that adds
   first-wins array order, one `surfaces.ts` barrel chunk per entry) and the
   `selection-store` state machine (popup ephemeral / detail routed, ONE
   route watcher as the ephemeral-cleanup choke point, D12 map-toggle).
-- **Entries are store-free data modules** (`eslint no-restricted-paths`
-  enforces it — the store→registry→entry import cycle crashes at
-  module-init). Adding a place type = one folder in
+- **Entries are store-free data modules** — enforced by eslint
+  (`no-restricted-imports` + an ImportExpression guard; see
+  `eslint.config.js`): the store→registry→entry import cycle crashes at
+  module-init. Adding a place type = one folder in
   `src/selection/entries/` + one array line; fetchers/seeds live in the
   entry (`usePlaceDetail` provides the framework: token supersession,
   never-abort-shared dedup keyed `entry:id:lang`, seed cache LRU +

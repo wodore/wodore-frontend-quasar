@@ -159,6 +159,17 @@ export default [
           ],
         },
       ],
+      // Hardening (GLM group-4 review F4): dynamic import() bypasses
+      // no-restricted-imports patterns — catch ImportExpressions whose
+      // source references a stores path too.
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'ImportExpression[source.value=/stores/]',
+          message:
+            'Selection entries must be store-free — dynamic import() of stores bypasses no-restricted-imports.',
+        },
+      ],
     },
   },
 

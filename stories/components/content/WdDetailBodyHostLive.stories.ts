@@ -1,4 +1,6 @@
 import preview, { HUT_SLUGS } from '../../../.storybook/preview';
+import { onMounted, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import WdDetailBodyHost from '@/components/content/WdDetailBodyHost.vue';
 
 /**
@@ -17,7 +19,7 @@ const meta = preview.meta({
     docs: {
       description: {
         component:
-          'Generic body host for content named views — renders the active entry\'s detail surface. With no routed target, the interim route-meta binding resolves the accommodation entry; the slug prop passes through to the legacy WdPlaceContent.',
+          "Generic body host for content named views — renders the active entry's detail surface. With no routed target, the interim route-meta binding resolves the accommodation entry; the slug prop passes through to the legacy WdPlaceContent.",
       },
       source: {
         code: '<WdDetailBodyHost :slug="aarbiwak" />',
@@ -46,6 +48,19 @@ export const Interactive = meta.story({
   render: (args: { slug: string }) => ({
     components: { WdDetailBodyHost },
     setup() {
+      // The shared memory router starts at '/' — the route-meta binding
+      // (contentType: 'place' → accommodation) only resolves on the
+      // CONTENT route, so the story must navigate there (and re-navigate
+      // when the slug control changes), or the body host stays empty.
+      const router = useRouter();
+      const goToSlug = (slug: string) => {
+        void router.push({ name: 'map-hut', params: { slug } });
+      };
+      onMounted(() => goToSlug(args.slug));
+      watch(
+        () => args.slug,
+        slug => goToSlug(slug)
+      );
       return { args };
     },
     template: `

@@ -201,8 +201,7 @@ watch(
 // zone is the content named view (WdDetailBodyHost). Zone components
 // are memoized per entry id — re-targets within an entry never remount
 // (no flicker), entry swaps change all zones atomically.
-const { title: contentTitleComponent, actions: contentActionsComponent } =
-  useActiveDetailEntry();
+const { title: contentTitleComponent, actions: contentActionsComponent } = useActiveDetailEntry();
 
 function closeContent() {
   contentStore.close();
