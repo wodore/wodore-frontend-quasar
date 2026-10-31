@@ -55,6 +55,7 @@ import { getEnv } from '@services/runtimeEnv';
 import { storageGet } from '@services/storage';
 import { clientWodore } from '@clients/index';
 import { seedPlaceFromMap } from '@composables/usePlace';
+import { setMapBootPending } from '@composables/useRequestProgress';
 import { forcedGpuTier, GPU_TIER_FALLBACK, rendererProfile } from '@services/gpu-override';
 import { MAP_MIN_ZOOM, MIN_HUT_CLICK_ZOOM } from '@stores/map/utils/map-constants';
 import { isBasemapStyleGone } from '@stores/map/utils/basemap-fallback';
@@ -337,6 +338,21 @@ function scheduleFallbackReveal(): void {
   );
 }
 
+// Reveal scheduling (progressive, owner 2026-10-31): arm as soon as the
+// MAP INSTANCE exists — NOT on MapLibre's `load` event, which is
+// idle-gated and idle waits for glyph PBFs (measured: `load` fired at
+// ~2s on slow-font boots while the basemap had painted at ~0.5s — the
+// splash scheduler was armed 1.5s late for no reason). The splash gate
+// itself (style applied + tile content + a painted frame) makes arming
+// early safe; the 8s safety ladder still bounds it.
+watch(
+  () => mapRef.map,
+  map => {
+    if (map) scheduleReveal(map);
+  },
+  { immediate: true }
+);
+
 function scheduleReveal(map: Map): void {
   if (mapRendered.value) return;
   // Reveal logic lives in reveal-scheduler.ts (unit-tested for both
@@ -361,36 +377,49 @@ function scheduleReveal(map: Map): void {
   // required (owner 2026-10: labels may stream in after the reveal —
   // MapLibre's `idle` waits for symbol glyph dependencies, so the
   // trigger below fires on a rendered frame instead of on idle).
-  let visibleSourceIdsCache: Set<string> | null = null;
-  /** Grace clock per source id (perf/map-boot 2026-10-31): symbol-tile
-   *  sources stay `isSourceLoaded() === false` while their glyph PBFs
-   *  pend — fonts are NOT reveal-blocking, so a source past this grace
-   *  stops holding the splash. */
   const glyphGraceFirstFalse = new globalThis.Map<string, number>();
   const SOURCE_LOAD_GRACE_MS = 1200;
   const invalidateVisibleSources = () => {
-    visibleSourceIdsCache = null;
+    visibleSetsCache = null;
   };
   map.on('styledata', invalidateVisibleSources);
-  /** Sources of every visible layer (visibility !== 'none') — these are
-   *  the ones whose tiles the user sees; hidden overlays' and staged-out
-   *  sources must not hold the splash. Memoized per styledata event. */
-  const visibleSourceIds = (): Set<string> => {
-    if (!visibleSourceIdsCache) {
-      const ids = new Set<string>();
+  /** Sources of every visible layer (visibility !== 'none'), split into
+   *  the BASEMAP set and the overlay-owned set: the progressive reveal
+   *  (owner 2026-10-31) drops the splash on the basemap set alone, while
+   *  the full-ready milestone (topbar bar) waits for both. Memoized per
+   *  styledata event; overlay ownership comes from the overlay store —
+   *  no layer names hardcoded. */
+  const overlayOwnedLayerIds = (): Set<string> => {
+    const ids = new Set<string>();
+    for (const o of overlayStore.overlays as unknown as Array<{
+      active?: boolean;
+      style?: { layers?: Array<{ id: string }> };
+    }>) {
+      for (const l of o.style?.layers ?? []) ids.add(l.id);
+    }
+    return ids;
+  };
+  let visibleSetsCache: { all: Set<string>; base: Set<string> } | null = null;
+  const visibleSourceSets = (): { all: Set<string>; base: Set<string> } => {
+    if (!visibleSetsCache) {
+      const overlayIds = overlayOwnedLayerIds();
+      const all = new Set<string>();
+      const base = new Set<string>();
       for (const layer of map.getStyle()?.layers ?? []) {
         const layout = layer.layout as Record<string, unknown> | undefined;
         if (layout?.visibility === 'none') continue;
-        if ('source' in layer && typeof layer.source === 'string') ids.add(layer.source);
+        if (!('source' in layer) || typeof layer.source !== 'string') continue;
+        all.add(layer.source);
+        if (!overlayIds.has(layer.id)) base.add(layer.source);
       }
-      visibleSourceIdsCache = ids;
+      visibleSetsCache = { all, base };
     }
-    return visibleSourceIdsCache;
+    return visibleSetsCache;
   };
-  const criticalLoaded = (): boolean => {
+  const criticalLoaded = (sources: Set<string>): boolean => {
     const now = Date.now();
     let allLoaded = true;
-    for (const id of visibleSourceIds()) {
+    for (const id of sources) {
       if (map.isSourceLoaded(id)) {
         glyphGraceFirstFalse.delete(id);
         continue;
@@ -413,11 +442,11 @@ function scheduleReveal(map: Map): void {
     return allLoaded;
   };
   /** One-shot "settled" arm: fires on the EARLIER of (a) a rendered
-   *  frame after all visible sources loaded — reveal without waiting
+   *  frame after the given source set loaded — reveal without waiting
    *  for glyph-dependent `idle` — or (b) plain map `idle` (backstop;
    *  covers a map that already settled before arming). Both are guarded
    *  by one `fired` flag; the sourcedata listener unbinds itself. */
-  const armSettledOnce = (cb: () => void): void => {
+  const armSettledOnce = (cb: () => void, sources: () => Set<string>): void => {
     let fired = false;
     let graceTimer: number | undefined;
     const fire = () => {
@@ -429,7 +458,7 @@ function scheduleReveal(map: Map): void {
     };
     const evaluate = () => {
       if (fired) return;
-      if (criticalLoaded()) {
+      if (criticalLoaded(sources())) {
         map.once('render', fire);
         return;
       }
@@ -475,17 +504,75 @@ function scheduleReveal(map: Map): void {
     }
     return true;
   };
-  const scheduler = startRevealLoop(
+  /** PROGRESSIVE REVEAL (owner 2026-10-31): the splash drops on the
+   *  FIRST PAINTED FRAME — style applied (≥2 layers), catalog settled
+   *  (notifyOverlaysDone), at least one tile-content event seen, and a
+   *  rendered frame after that. No per-source loading checks on this
+   *  path at all: label fonts and straggler tiles no longer hold the
+   *  splash (they held it through isSourceLoaded's glyph dependency —
+   *  measured 1.1-2s). The old, stricter milestone (active overlays
+   *  mounted + ALL visible sources loaded + a frame) stays as the
+   *  FULL-ready signal: it no longer holds the splash, it releases the
+   *  topbar loading bar instead (setMapBootPending — the bar rides the
+   *  topbar pill, debounced in useRequestProgress, so an overlay wave
+   *  that lands within 150 ms of the reveal never flashes it). */
+  let layersFullyReady = false;
+  const markLayersFullyReady = () => {
+    layersFullyReady = true;
+    setMapBootPending(false);
+  };
+  /** True once any tile CONTENT event arrived (data on screen — a
+   *  painted map, not a bare background layer). */
+  let tileContentSeen = false;
+  const onTileContent = (e: { sourceDataType?: string }) => {
+    if (e.sourceDataType === 'content') tileContentSeen = true;
+  };
+  map.on('sourcedata', onTileContent);
+  /** Splash gate as a POLL (perf/map-boot, 2026-10-31): the boot's event
+   *  choreography defeated every once-listener formulation — the EMPTY
+   * boot style fires `idle` unconditionally (~0.9s), style swaps orphan
+   * armed listeners, and the busy catalog apply suppresses render
+   * events for seconds. A 50 ms poll over two trivial checks (style
+   * applied + tile content seen) is immune to all of it; the 8 s/20 s
+   * ladder is just elapsed time in the same poll. */
+  const SPLASH_LADDER_MS = 8000;
+  const SPLASH_HARD_CAP_MS = 20000;
+  const splashStartedAt = Date.now();
+  const splashPoll = window.setInterval(() => {
+    if (mapRendered.value) {
+      window.clearInterval(splashPoll);
+      return;
+    }
+    const layers = map.getStyle()?.layers?.length ?? 0;
+    const elapsed = Date.now() - splashStartedAt;
+    const laddered = elapsed >= SPLASH_LADDER_MS && tileContentSeen;
+    const capped = elapsed >= SPLASH_HARD_CAP_MS;
+    if (layers >= 2 && (tileContentSeen || laddered || capped)) {
+      window.clearInterval(splashPoll);
+      revealMap(map);
+      // Bridge the bar from HERE (map visible, layers maybe not) to the
+      // full-ready milestone. If full-ready already landed (fast boot)
+      // the debounce swallows the flash and no bar shows at all.
+      setMapBootPending(!layersFullyReady);
+    }
+  }, 50);
+  const stopSplashPoll = () => window.clearInterval(splashPoll);
+  const fullReadyScheduler = startRevealLoop(
     {
-      styleReady: () => (map.getStyle()?.layers?.length ?? 0) >= 2 && activeOverlayLayersMounted(),
-      painted: () => (map.getStyle()?.layers?.length ?? 0) >= 2 && criticalLoaded(),
-      onIdleOnce: cb => armSettledOnce(cb),
+      styleReady: () =>
+        (map.getStyle()?.layers?.length ?? 0) >= 2 && activeOverlayLayersMounted(),
+      painted: () =>
+        (map.getStyle()?.layers?.length ?? 0) >= 2 && criticalLoaded(visibleSourceSets().all),
+      onIdleOnce: cb => armSettledOnce(cb, () => visibleSourceSets().all),
     },
-    () => revealMap(map)
+    markLayersFullyReady
   );
   onScopeDispose(() => {
     map.off('styledata', invalidateVisibleSources);
-    scheduler.dispose();
+    map.off('sourcedata', onTileContent);
+    stopSplashPoll();
+    fullReadyScheduler.dispose();
+    setMapBootPending(false);
     for (const t of revealTimers) clearTimeout(t);
     revealTimers.length = 0;
   });
@@ -498,12 +585,16 @@ function scheduleReveal(map: Map): void {
   // overlays' styles are menu data fetched in the background and must
   // never hold the splash (owner decision 2026-10). A whole-catalog
   // failure still releases via `status === 'error'`.
+  // The SPLASH gate is fully decoupled from the catalog: its poll
+  // reveals the painted basemap immediately (owner 2026-10-31
+  // progressive decision). The catalog-settled watcher below only feeds
+  // the FULL-ready scheduler (the one that releases the topbar bar).
   let stopStatusWatch: (() => void) | undefined;
   stopStatusWatch = watch(
     () => mapCatalogStore.mapStylesReady || mapCatalogStore.status === 'error',
     overlaysDone => {
       if (!overlaysDone) return;
-      scheduler.notifyOverlaysDone();
+      fullReadyScheduler.notifyOverlaysDone();
       // One-shot: stop the watcher once it fired (idempotent anyway, but
       // no reason to keep tracking catalog changes — review N4).
       stopStatusWatch?.();
@@ -532,8 +623,6 @@ function onMapLoad(e: MglEvent<'load'>) {
   // begins): the splash ends its words immediately and blocks new
   // hills (owner stage spec).
   emit('mapready');
-
-  scheduleReveal(e.map);
 
   // Country basemap restored from a previous session: the raw initial
   // style carries no world fallback (composing it needs an async style
