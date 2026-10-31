@@ -21,6 +21,11 @@ import { defineStore } from 'pinia';
 import { computed, markRaw, shallowRef, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { defaultRegistry } from '@selection/registry';
+// Registry installation side effect: populates the default registry
+// (ordered entries) before any open() can resolve. Import direction is
+// store → entries (entries are store-free — eslint-enforced boundary).
+import '@selection/entries';
+import { stageSeed } from '@composables/usePlaceDetail';
 import type { FeatureRef, MapTarget, Presentation } from '@selection/types';
 
 /** Interim content-type kept for the legacy componentMap (removed with
@@ -82,8 +87,13 @@ export const useSelectionStore = defineStore('selection', () => {
   }
 
   // ── Choke point: ONE route watcher clears ephemeral state ───────────
+  // MULTI-SOURCE watch (GLM review F1): a single getter returning a
+  // fresh array would fire on EVERY route mutation (vue-router swaps the
+  // route object on query/hash-only pushes too), killing the popup
+  // world on unrelated navigations. Per-element sources fire only when
+  // the content flag or slug actually changes.
   watch(
-    () => [Boolean(route.meta.content), detailSlug.value] as const,
+    [() => Boolean(route.meta.content), detailSlug],
     ([content, slug]) => {
       if (!content) {
         // Left the content family: clear everything, never resurrect.
@@ -135,6 +145,10 @@ export const useSelectionStore = defineStore('selection', () => {
       if (via === 'map') {
         await close();
       } else {
+        // D12 re-anchor: stage the fresh props (reseed) so a later cold
+        // load paints them (GLM review F3 — the data layer's key watch
+        // does not refire on an unchanged slug).
+        stageSeed(target, entry);
         setTarget(routedTarget, target);
         applyHighlight(target);
       }
@@ -157,12 +171,18 @@ export const useSelectionStore = defineStore('selection', () => {
   async function openDetail(target: MapTarget): Promise<void> {
     setTarget(routedTarget, target);
     applyHighlight(target);
-    await router.push({
+    const failure = await router.push({
       name: CONTENT_ROUTE,
       params: { slug: target.id },
       query: route.query,
       hash: route.hash,
     });
+    if (failure) {
+      // Navigation cancelled (guard): the route watcher never fires —
+      // undo the optimistic routed/highlight state (GLM review F4).
+      setTarget(routedTarget, null);
+      applyHighlight(null);
+    }
   }
 
   /** Expand a popup to its detail — HAND OFF, never abort: the pending
@@ -174,12 +194,17 @@ export const useSelectionStore = defineStore('selection', () => {
     const entry = popupEntry.value ?? defaultRegistry().resolve(target);
     if (!entry || !isCapable(entry, 'detail')) return;
     setTarget(detailPending, target);
-    await router.push({
+    const failure = await router.push({
       name: CONTENT_ROUTE,
       params: { slug: target.id },
       query: route.query,
       hash: route.hash,
     });
+    if (failure) {
+      // Navigation cancelled: the watcher never adopts — drop the
+      // handoff, the popup stays open (GLM review F4).
+      setTarget(detailPending, null);
+    }
   }
 
   /** Close the detail (content family leave), preserving query/hash. */

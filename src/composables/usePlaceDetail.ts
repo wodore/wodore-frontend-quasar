@@ -19,7 +19,16 @@
  * `usePlace` is a thin compat wrapper over this engine during PR1a; the
  * accommodation entry (task group 4) takes over the hut fetch/seed.
  */
-import { ref, shallowRef, watch, onScopeDispose, type Ref, type ShallowRef } from 'vue';
+import {
+  effectScope,
+  ref,
+  shallowRef,
+  watch,
+  onScopeDispose,
+  type EffectScope,
+  type Ref,
+  type ShallowRef,
+} from 'vue';
 import { currentLocale } from '@services/locale';
 import { defaultRegistry } from '@selection/registry';
 import { useOverlayStore } from '@stores/map/overlay-store';
@@ -84,34 +93,42 @@ export function __resetPlaceDetailEngine(): void {
   pending.clear();
   owners.clear();
   seedCache.clear();
+  epochScope?.stop();
+  epochScope = null;
 }
 
-/** Catalog-epoch invalidation, registered ONCE on first composable use:
- *  props from pre-swap tiles are semantically stale once
- *  `applyCatalogOverlays` re-adds layers (overlaysEpoch bump), so the
- *  seed cache clears with it. */
-let epochWatchInstalled = false;
+/** Catalog-epoch invalidation, registered ONCE on first composable use
+ *  in a DETACHED effect scope (GLM review F2): a plain watch would die
+ *  with the first host component's scope (panel unmount) while the
+ *  installed-flag stayed true — the seed cache would never clear again.
+ *  Detached scopes are never auto-disposed; the reset hook stops it. */
+let epochScope: EffectScope | null = null;
 
 function installEpochWatch(): void {
-  if (epochWatchInstalled) return;
-  epochWatchInstalled = true;
+  if (epochScope) return;
   try {
-    watch(
-      () => useOverlayStore().overlaysEpoch,
-      () => seedCache.clear()
-    );
+    epochScope = effectScope(true);
+    epochScope.run(() => {
+      watch(
+        () => useOverlayStore().overlaysEpoch,
+        () => seedCache.clear()
+      );
+    });
   } catch {
     // Store unavailable (no pinia yet — early boot/test env): the LRU
     // bound still caps memory; the next composable instance retries.
-    epochWatchInstalled = false;
+    epochScope = null;
   }
 }
 
 /** Seed the cache from an adapter (map click): computes and stores
  *  entry.seed(props) for the target key so the composable paints it
- *  before any fetch resolves (the generalized seedPlaceFromMap). */
+ *  before any fetch resolves (the generalized seedPlaceFromMap). The
+ *  entry may be passed explicitly (claim/route-aware resolution); the
+ *  fallback resolves through the default registry, which reads
+ *  source/id — both required here. */
 export function stageSeed(
-  target: Pick<MapTarget, 'key'> & { props?: MapTarget['props'] },
+  target: Pick<MapTarget, 'key' | 'source' | 'id'> & { props?: MapTarget['props'] },
   entry?: Presentation | null
 ): void {
   if (!target.key || !target.props) return;
@@ -160,6 +177,13 @@ function releasePending(key: string): boolean {
   return false;
 }
 
+/** Dedup key — entry, target AND locale dimensions (fixes the legacy
+ *  slug-only key, which let a wrong-locale payload cross-talk between
+ *  simultaneous consumers). */
+export function dedupKey(entryId: string, id: string, lang: string): string {
+  return `${entryId}:${id}:${lang}`;
+}
+
 // ── Composable ──────────────────────────────────────────────────────────
 
 export interface UsePlaceDetailOptions {
@@ -205,26 +229,31 @@ export function usePlaceDetail(
       return;
     }
     const lang = currentLocale();
-    const key = `${entry.id}:${t.id}:${lang}`;
+    const key = dedupKey(entry.id, t.id, lang);
     const token = ++seq;
 
     // Best-effort abort of the superseded request — only when this
-    // composable is its sole owner (shared requests are never aborted).
-    if (controller && pendingKey && releasePending(pendingKey)) {
+    // composable is its sole owner (shared requests are never aborted)
+    // and only when it is a DIFFERENT key (GLM review F6: a refetch of
+    // the identical in-flight request would abort-then-join its own
+    // aborted promise).
+    const sameKey = pendingKey === key;
+    if (!sameKey && controller && pendingKey && releasePending(pendingKey)) {
       controller.abort();
     }
     controller = new AbortController();
     pendingKey = key;
 
-    // Seed first (instant paint), then fetch.
-    const seeded = seedCache.get(t.key);
-    if (seeded) detail.value = seeded;
+    // Seed application belongs to the target watcher (one source of
+    // truth); a refetch keeps the full payload painted (legacy parity).
     loading.value = true;
     error.value = null;
 
-    const request = joinPending(key, () =>
-      entry.fetch!({ id: t.id, lang, signal: controller!.signal }) as Promise<object>
-    );
+    // Locals for the create closure — provably non-null here (fetch
+    // checked above, controller just assigned); no assertions (F9).
+    const fetcher = entry.fetch;
+    const signal = controller.signal;
+    const request = joinPending(key, () => fetcher({ id: t.id, lang, signal }) as Promise<object>);
 
     try {
       const data = await request;
@@ -232,6 +261,9 @@ export function usePlaceDetail(
       detail.value = data;
     } catch (err) {
       if (token !== seq) return;
+      // A teardown abort is not an error state (legacy filtered
+      // AbortError by name — GLM review F7).
+      if (err instanceof Error && err.name === 'AbortError') return;
       error.value = toPlaceError(err);
     } finally {
       if (token === seq) {
@@ -249,8 +281,10 @@ export function usePlaceDetail(
         detail.value = null;
         return;
       }
-      // Apply (or lazily compute) the seed before loading.
-      if (!seedCache.has(t.key)) stageSeed(t);
+      // Apply (or lazily compute) the seed before loading — with the
+      // resolved entry passed through (GLM review F5: default-registry
+      // fallback resolution is wrong for entry-override targets).
+      if (!seedCache.has(t.key)) stageSeed(t, resolveEntry(t));
       const seeded = seedCache.get(t.key);
       if (seeded) detail.value = seeded;
       void load(t);

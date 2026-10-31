@@ -1,20 +1,11 @@
 <script setup lang="ts">
-import {
-  ref,
-  computed,
-  watch,
-  watchEffect,
-  markRaw,
-  nextTick,
-  onMounted,
-  type Component,
-} from 'vue';
-import { defineAsyncComponent } from 'vue';
+import { ref, computed, watch, watchEffect, nextTick, onMounted } from 'vue';
 import { useQuasar } from 'quasar';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@stores/auth-store';
 import { useMapMenuStore } from '@stores/map/map-menu-store';
 import { useSelectionStore } from '@stores/map/selection-store';
+import { useActiveDetailEntry } from '@composables/useActiveDetailEntry';
 import { useUserSettingsStore } from '@stores/user-settings-store';
 import { useLocalPropertiesStore } from '@stores/local-properties-store';
 import { useSyncedPropertiesStore } from '@stores/synced-properties-store';
@@ -204,33 +195,14 @@ watch(
   }
 );
 
-// Static component map with markRaw (prevents re-evaluation)
-const componentMap: Record<string, { title: Component; content: Component; actions: Component }> = {
-  place: {
-    title: markRaw(
-      defineAsyncComponent(() => import('@/components/content/place/WdPlaceTitle.vue'))
-    ),
-    content: markRaw(
-      defineAsyncComponent(() => import('@/components/content/place/WdPlaceContent.vue'))
-    ),
-    actions: markRaw(
-      defineAsyncComponent(() => import('@/components/content/place/WdPlaceActions.vue'))
-    ),
-  },
-};
-
-// Computed selects from static map
-const contentTitleComponent = computed(() => {
-  const type = contentStore.contentType;
-  if (!type || !componentMap[type]) return null;
-  return componentMap[type].title ?? null;
-});
-
-const contentActionsComponent = computed(() => {
-  const type = contentStore.contentType;
-  if (!type || !componentMap[type]) return null;
-  return componentMap[type].actions ?? null;
-});
+// Detail zones from the ACTIVE ENTRY (selection framework): the panel
+// shells' title/actions slots are fed from the entry's ONE surfaces
+// barrel — replacing the retired contentType componentMap. The body
+// zone is the content named view (WdDetailBodyHost). Zone components
+// are memoized per entry id — re-targets within an entry never remount
+// (no flicker), entry swaps change all zones atomically.
+const { title: contentTitleComponent, actions: contentActionsComponent } =
+  useActiveDetailEntry();
 
 function closeContent() {
   contentStore.close();

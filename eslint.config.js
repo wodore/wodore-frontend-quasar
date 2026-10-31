@@ -137,6 +137,31 @@ export default [
     },
   },
 
+  // Selection entries boundary (OpenSpec add-place-interactions /
+  // capability place-registry): entry modules are store-free DATA
+  // modules. The cycle selection-store → registry → entries →
+  // selection-store crashes at module-init under dev/HMR (Pinia setup
+  // stores call useRouter() at init). Entries may import selection
+  // types/taxonomy/map-layer-ids, generated client types, services and
+  // lazy component barrels — never stores.
+  {
+    files: ['src/selection/entries/**/*.ts', 'src/selection/entries/**/*.vue'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@stores/*', '**/stores/*'],
+              message:
+                'Selection entries must be store-free (selection framework boundary) — fetchers/seeds/surface loaders only.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
   // Prettier config (must be last to override other configs)
   prettier,
 ];

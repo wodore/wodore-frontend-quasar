@@ -1,8 +1,12 @@
+/**
+ * @vitest-environment happy-dom
+ */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { nextTick, ref } from 'vue';
-import { createPinia, setActivePinia } from 'pinia';
+import { createApp, nextTick, ref } from 'vue';
+import { createPinia, setActivePinia, type Pinia } from 'pinia';
 import {
   __resetPlaceDetailEngine,
+  dedupKey,
   stagePrebuiltSeed,
   usePlaceDetail,
 } from '@composables/usePlaceDetail';
@@ -39,8 +43,11 @@ const propsOnlyEntry: Presentation = {
   // no fetch — seeds/props are the whole payload
 };
 
+let pinia: Pinia;
+
 beforeEach(() => {
-  setActivePinia(createPinia());
+  pinia = createPinia();
+  setActivePinia(pinia);
   __resetPlaceDetailEngine();
 });
 
@@ -128,5 +135,41 @@ describe('usePlaceDetail engine', () => {
       const after = usePlaceDetail(ref(t), { entry: ref(propsOnlyEntry) });
       expect(after.detail.value).toBeNull();
     });
+  });
+
+  it('epoch watch survives its host component unmounting (GLM F2)', async () => {
+    // Instantiate ONE composable inside a mounted app, then unmount it —
+    // a scope-bound watch would die here while the installed-flag stayed
+    // true (test-masked bug the review found).
+    const t = makeTarget('scoped');
+    const app = createApp({
+      setup() {
+        usePlaceDetail(ref(makeTarget('warmup')), { entry: ref(propsOnlyEntry) });
+        return () => null;
+      },
+    });
+    app.use(pinia);
+    app.mount(document.createElement('div'));
+    app.unmount();
+
+    stagePrebuiltSeed(t.key, { name: 'Before' });
+    const store = useOverlayStore();
+    store.overlaysEpoch += 1;
+    await vi.waitFor(() => {
+      const after = usePlaceDetail(ref(t), { entry: ref(propsOnlyEntry) });
+      expect(after.detail.value).toBeNull();
+    });
+  });
+
+  it('dedup key carries entry, target AND locale dimensions', () => {
+    expect(dedupKey('accommodation', 'hut-a', 'de')).not.toBe(
+      dedupKey('accommodation', 'hut-a', 'en')
+    );
+    expect(dedupKey('accommodation', 'hut-a', 'de')).not.toBe(
+      dedupKey('geoplace-default', 'hut-a', 'de')
+    );
+    expect(dedupKey('accommodation', 'hut-a', 'de')).not.toBe(
+      dedupKey('accommodation', 'hut-b', 'de')
+    );
   });
 });

@@ -233,4 +233,59 @@ describe('selection store state machine', () => {
       setDefaultRegistry(createRegistry([]));
     }
   });
+
+  // ── GLM review F1: choke point fires only on CONTENT changes ──────
+
+  it('a query-only navigation does not kill the open popup', async () => {
+    await router.push('/');
+    const store = instantiate(pinia, router);
+    await store.open(target('w'), { via: 'map', entry: bothCapable });
+    expect(store.mode).toBe('popup');
+    await router.push({ path: '/', query: { x: '2' } });
+    await nextTick();
+    expect(store.mode).toBe('popup');
+    expect(store.popupTarget?.id).toBe('w');
+    await router.push('/#foo');
+    await nextTick();
+    expect(store.mode).toBe('popup');
+  });
+
+  it('a hash-only navigation does not kill the open detail', async () => {
+    await router.push('/');
+    const store = instantiate(pinia, router);
+    await store.open(target('h'), { via: 'map', entry: detailOnly });
+    expect(store.mode).toBe('detail');
+    await router.push('/hut/h#zoom');
+    await nextTick();
+    expect(store.mode).toBe('detail');
+    expect(store.routedTarget?.id).toBe('h');
+  });
+
+  // ── GLM review F4: cancelled navigation must not leak state ────────
+
+  it('a cancelled expand drops the handoff and keeps the popup', async () => {
+    router.beforeEach(() => false); // cancel every navigation
+    await router.push('/');
+    const store = instantiate(pinia, router);
+    await store.open(target('stop'), { via: 'map', entry: bothCapable });
+    expect(store.mode).toBe('popup');
+    await store.expand();
+    expect(store.mode).toBe('popup'); // detail route never landed
+    expect(store.detailPending).toBeNull();
+    expect(store.popupTarget?.id).toBe('stop');
+  });
+
+  it('a cancelled openDetail undoes the optimistic routed/highlight state', async () => {
+    router.beforeEach(() => false); // cancel every navigation
+    await router.push('/');
+    const store = instantiate(pinia, router);
+    const marker = { engine: 'maplibre' as const, handle: { id: 11 } };
+    await store.open(target('planing', { featureRef: marker }), {
+      via: 'search',
+      entry: detailOnly,
+    });
+    expect(store.mode).toBe('closed'); // route never landed
+    expect(store.routedTarget).toBeNull();
+    expect(store.highlightRef).toBeNull();
+  });
 });
