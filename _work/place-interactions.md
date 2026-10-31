@@ -285,6 +285,14 @@ click ─► queryRenderedFeatures(derived interactive layers, topmost first)
                      ("importance = layer order" falls out of render order)
 ```
 
+**Claim-based resolution (GLM OpenSpec review C7)**: a target built from
+a claimed style layer resolves to the CLAIMING entry directly — the claim
+binds layer → entry. Map-click resolution therefore has NO dependency on
+kind/domain tile properties (today's `wd-huts` tiles carry none, and PR0
+does not need to add them); MatchSpec resolution applies to claim-less
+targets (search rows, probe payloads). Stacked features of the same layer
+dedupe by `key` (never candidates).
+
 A single global handler is what makes dynamic layers safe: `applyCatalogOverlays`
 re-adds layers on every epoch bump (boot/revalidate/locale) — per-layer
 `map.on('click', …)` bindings would need re-registration each time; a global
@@ -484,7 +492,7 @@ Registry supplies per-entry `searchEntry` overrides later.
 | PR                                    | Content                                                                                                                                                                                                                                                   | Notes                                                                                                                                           |
 | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | **PR0 (backend/nginx)**               | `/place/:slug` SEO support: `.md` + meta subrequests + canonical/hreflang; `wd-huts` MVT tiles gain a geoplace-slug property (D7)                                                                                                                         | **Blocking** — without it the canonical URL has no indexable content and map clicks cannot build the canonical URL.                             |
-| **PR1a — framework, zero URL change** | `selection-store`, `registry` (+`createRegistry`), `types`, `taxonomy`, `map-layer-ids`, `projector`, `usePlaceDetail`, accommodation entry, `useActiveDetailEntry` + body host, eslint import boundaries — all still mounted at `/hut/:slug`             | Behavior-identical; generalizes internals without breaking anything; the cold-link resolver is NOT needed yet (URL still carries the hut slug). |
+| **PR1a — framework, zero URL change** | `selection-store`, `registry` (+`createRegistry`), `types`, `taxonomy`, `map-layer-ids`, `projector` scaffold, `usePlaceDetail`, accommodation entry, `useActiveDetailEntry` + body host (legacy slug-props adapted by the host), eslint import boundaries, INTERIM route-meta→entry binding for cold `/hut/:slug` (probe chain replaces it in PR1b) — all still mounted at `/hut/:slug`             | Behavior-identical; generalizes internals without breaking anything. Deviation (GLM review C5): the geoplace-default ENTRY (stubbed surface loaders) already lands here so registry resolution + fail-open are testable; its components come with PR2. |
 | **PR1b — URL cutover**                | `/place/:slug` + cold-link resolver (probe chain) + boot-prefetch adaptation (client headers, `/place/` regex) + search last hop (per §2.10 decision) + content-view crawler stub + `/hut/:slug` dies (D1)                                                | Ships only after PR0 is live.                                                                                                                   |
 | **PR2 — popup surface**               | `WdMapPopup` SPIKE first (anchoring, clamping, move+rAF, flyTo bbox, teleport coords — §2.9), then popup surface (BOTH engines, D9) + global click pipeline + `LayerClaim`-derived interactive layers + `geoplace-default` entry + minimal `1/n` switcher | Engine swap closes popup + clears highlight; drift-warning dev guard lands here.                                                                |
 | **PR3 — transport entry**             | Integrate the existing transport popup (WIP) via `surfaces.ts` barrel; proves the external-source path end to end                                                                                                                                         | Depends on transport layer serving (catalog row w/ external tiles); footprint size-check for precache.                                          |

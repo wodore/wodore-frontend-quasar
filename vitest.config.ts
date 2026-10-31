@@ -13,6 +13,7 @@ export default defineConfig({
       '@services': fileURLToPath(new URL('./src/services', import.meta.url)),
       '@boot': fileURLToPath(new URL('./src/boot', import.meta.url)),
       '@composables': fileURLToPath(new URL('./src/composables', import.meta.url)),
+      '@selection': fileURLToPath(new URL('./src/selection', import.meta.url)),
     },
   },
   test: {
