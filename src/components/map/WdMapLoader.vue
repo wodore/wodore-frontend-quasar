@@ -6,10 +6,12 @@ import { useI18n } from 'vue-i18n';
  *
  *  THREE stages, all budgets in PAGE TIME (performance.now()):
  *   1. t=0–2s  calm base: green, mono mark, status words (words are
- *      STAGE-1 content — they start at the 2s mark, matching the boot
- *      shell's CSS cycler, and never wait for the brand entrance)
- *   2. t=2s   brand entrance (`--in`): color mark crossfades in at
- *      +0.2s, wordmark at +0.5s
+ *      STAGE-1 content — they start at the 600ms mark with the mono
+ *      mark, matching the boot shell's CSS cycler, and never wait for
+ *      the brand entrance; owner 2026-10-31: keep something moving
+ *      from the start — the colored-icon→reveal window was dead air)
+ *   2. t=2s   brand entrance (`--in`): wordmark at +0.5s (the color
+ *      mark is already in — see colorIn below)
  *   3. t=3s   landscape (`--hills`, entrance + 1s): mountain layers
  *      slide in staggered, then drift forever — ONLY if MapLibre is
  *      not already past its `load` event (map ready ⇒ no new hills)
@@ -48,11 +50,11 @@ const COLOR_DELAY_S = 0; // color starts WITH the entrance (owner: earlier)
 const logoDelaySec = COLOR_DELAY_S;
 
 // ── Status words (one stage-independent pool, ~20 phrases) ───────────────
-// STAGE-1 content (owner spec): they start at the 2s page-time mark —
-// the same budget as the brand entrance, matching the boot shell's
-// 2000ms CSS delay — and end the moment MapLibre is ready (fade out
+// STAGE-1 content (owner spec, re-timed 2026-10-31): they start at the
+// 600ms page-time mark — WITH the mono mark, matching the boot shell's
+// 600ms CSS cycler — and end the moment MapLibre is ready (fade out
 // early, before the reveal) or the splash exits, whichever first.
-const WORD_START_AT_MS = 2000;
+const WORD_START_AT_MS = 600;
 const WORD_INTERVAL_MS = 1900;
 const words = computed(() =>
   (t('map.loadingWords') as string)
@@ -103,14 +105,16 @@ watch(
     }
   }
 );
-// MapLibre READY (pre-reveal): words fade out EARLY (owner spec) and
-// new hills are blocked — a ready map only needs its paint time, not
-// the full show.
+// MapLibre READY (pre-reveal): words keep cycling — since the
+// progressive reveal (owner 2026-10-31) the splash routinely outlives
+// mapReady by the basemap paint wait, and killing the words there
+// re-created the dead-air window the words exist to fill. Only new
+// hills are blocked — a ready map only needs its paint time, not the
+// full show.
 watch(
   () => props.mapReady,
   ready => {
     if (!ready) return;
-    stopWords();
     if (hillsTimer !== undefined && !hillsIn.value) {
       clearTimeout(hillsTimer);
       hillsTimer = undefined;
@@ -160,11 +164,11 @@ onMounted(() => {
       }, HILLS_AFTER_ENTRANCE_MS);
     });
   }, entranceDelay);
-  // Stage 1 words — same 2s page-time budget as the boot shell cycler.
+  // Stage 1 words — same 600ms page-time budget as the boot shell cycler.
   wordDelayTimer = setTimeout(
     () => {
       wordDelayTimer = undefined;
-      if (props.rendered || props.mapReady) return; // already past — never start
+      if (props.rendered) return; // already past — never start
       pickNext();
       wordTimer = setInterval(pickNext, WORD_INTERVAL_MS);
     },
@@ -623,13 +627,11 @@ onBeforeUnmount(() => {
   transform: scale(0.96);
 }
 
-/* MapLibre ready (pre-reveal): words fade out EARLY (owner spec) —
- * they are stage-1 content and have no meaning once the map is in its
- * painting stage. */
-.wd-splash--map-ready .wd-splash__status {
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
+/* Words run until the REVEAL (owner 2026-10-31): since the progressive
+ * reveal the splash routinely outlives MapLibre's `load` (the basemap
+ * paint wait), and fading words at map-ready re-created the dead-air
+ * window the words exist to fill — they end with the splash exit
+ * (.wd-splash--out retracts everything). */
 
 @media (prefers-reduced-motion: reduce) {
   .wd-splash__mtn,

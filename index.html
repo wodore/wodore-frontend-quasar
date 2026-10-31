@@ -335,6 +335,9 @@
         justify-content: center;
       }
       .wd-boot-shell__logo {
+        position: absolute;
+        inset: 0;
+        margin: auto;
         height: 110px;
         width: auto;
         /* Handover = pure opacity crossfade: the Vue splash paints the
@@ -342,13 +345,52 @@
            the logo jumping (owner-reported slide-down). */
         transition: opacity 0.2s ease-out;
       }
-      .wd-boot-shell__logo path {
+      .wd-boot-shell__logo--mono path {
         /* Charcoal ink = the color mark's stroke color (#1c1c1c): the
            boot→Vue crossfade only has to fade in the green fills, the
            dark strokes never change luminance. */
         fill: #1c1c1c;
       }
+      /* Owner 2026-10-31: the mono→color crossfade must not wait for
+         the Vue splash mount (measured ~360ms warm, longer on slower
+         profiles — the JS boot chain is entry eval → Quasar boots →
+         router → layout → map page). The shell starts its own
+         crossfade at 250ms with the pixel-identical colored mark, so
+         something visibly happens long before Vue is up; the handover
+         is then invisible (same fills, same geometry). */
+      .wd-boot-shell__logo--mono {
+        animation: wd-boot-shell-mono-out 600ms cubic-bezier(0.25, 1, 0.5, 1)
+          250ms forwards;
+      }
+      .wd-boot-shell__logo--color {
+        opacity: 0;
+        animation: wd-boot-shell-color-in 600ms cubic-bezier(0.25, 1, 0.5, 1)
+          250ms forwards;
+      }
+      @keyframes wd-boot-shell-mono-out {
+        to {
+          opacity: 0;
+        }
+      }
+      @keyframes wd-boot-shell-color-in {
+        to {
+          opacity: 1;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .wd-boot-shell__logo--mono {
+          animation: none;
+          opacity: 0;
+        }
+        .wd-boot-shell__logo--color {
+          animation: none;
+          opacity: 1;
+        }
+      }
       #wd-boot-shell.wd-boot-shell--out .wd-boot-shell__logo {
+        /* fill:forwards animations would pin opacity over this rule —
+           drop them so the handover crossfade works again. */
+        animation: none;
         opacity: 0;
       }
       /* Invisible wordmark slot: same 42px box as the Vue splash's
@@ -401,8 +443,10 @@
         white-space: nowrap;
         opacity: 0;
         /* One 20-word cycle = 20 x 1900ms; each word's slot comes from
-           its inline animation-delay (2000 + i*1900ms — the first 2s
-           stay wordless, matching the Vue splash's WORD_START_AT_MS).
+           its inline animation-delay (600 + i*1900ms — the first 600ms
+           stay wordless, matching the Vue splash's WORD_START_AT_MS; owner
+           2026-10-31: words start with the mono mark, not at the brand
+           entrance).
            Word 19 (delay 38.1s) intentionally starts 100ms into the
            SECOND 38s cycle — it only shows on pathological stalls past
            the 20s reveal cap; not a miscalculation (review n2). */
@@ -465,7 +509,7 @@
          (same ~20 phrases, same order, all four locales). -->
     <div id="wd-boot-shell" role="status" aria-label="Loading map">
       <div class="wd-boot-shell__mark">
-        <svg class="wd-boot-shell__logo" viewBox="0 0 42 48" aria-hidden="true">
+        <svg class="wd-boot-shell__logo wd-boot-shell__logo--mono" viewBox="0 0 42 48" aria-hidden="true">
           <g>
             <g>
               <path
@@ -488,143 +532,213 @@
             </g>
           </g>
         </svg>
+        <svg
+          class="wd-boot-shell__logo wd-boot-shell__logo--color"
+          viewBox="0 0 42 48"
+          aria-hidden="true"
+        >
+          <g>
+            <g>
+              <path
+                d="m25.496 1.5682c1.238 15.516 0.67832 29.751-0.0086 44.683-0.0405 0.88045-0.77447 1.4539-1.6342 1.2589-0.65173-0.14784-1.3169-0.31143-1.5742-0.4162-0.80751-0.32881-2.3816-0.39391-3.379-0.39942-0.49706-0.0027-0.88336-0.39169-0.86399-0.88859 0.59872-15.359 0.5934-34.915 0.05341-43.541-0.04376-0.69897 0.46832-1.3735 1.1604-1.4822 1.6628-0.26116 3.3252-0.40795 4.987-0.40308 0.64271 0.001883 1.208 0.54782 1.2591 1.1885z"
+                fill="#1c1c1c"
+                style="paint-order: normal"
+              />
+              <path
+                d="m19.25 0.78277c-0.69212 0.1087-1.2039 0.78345-1.1602 1.4824 0.53999 8.6257 0.54403 28.182-0.05469 43.541-0.01937 0.4969 0.36818 0.88593 0.86523 0.88867 0.4119 0.0023 1.0058-0.04987 2.4641 0.1657 0.05368-1.6605-1.0429-1.1857-1.0456-2.1303-0.0023-0.79261 0.12778-3.0529 0.16297-5.0217 0.07039-3.9375 0.26417-12.515 0.28149-16.365s-0.44407-12.677-0.53463-17.494c-0.045281-2.4082-0.5087-3.5717 0.033543-4.0171 0.32561-0.26741 0.43176-0.87833 0.42484-1.2467-0.42457 0.056097-1.0996 0.14335-1.4371 0.19635z"
+                fill="#9c9c9c"
+                fill-opacity=".082404"
+                style="mix-blend-mode: lighten"
+              />
+            </g>
+            <g>
+              <path
+                d="m9.596 24.165c-0.79278-0.047106-1.5718 0.22267-2.1656 0.74998l-6.0135 5.3395c-0.51226 0.45485-0.55886 1.2388-0.10408 1.7512l5.3398 6.0156c0.52721 0.59393 1.2688 0.95405 2.0616 1.0011l19.811 1.1777c0.68373 0.04084 1.271-0.48049 1.3116-1.1642l0.73486-12.384c0.04058-0.68383-0.48086-1.2711-1.1647-1.3117l-1.9691-0.11696z"
+                fill="#1c1c1c"
+              />
+              <path
+                transform="matrix(-1.2306 -.155 .155 -1.2306 44.027 51.899)"
+                d="m15.399 9.3598 13.656-0.8245a2.3876 2.3876 19.27 0 1 1.7414 0.60881l2.6372 2.3742a1.027 1.027 86.232 0 1 0.09417 1.4298l-2.582 3.0266a2.3487 2.3487 153.53 0 1-1.6473 0.82019l-13.295 0.79142a1.0139 1.0139 41.167 0 1-1.0715-0.93789l-0.45762-6.2311a0.98708 0.98708 131.17 0 1 0.92494-1.0576z"
+                fill="#408c6b"
+                style="paint-order: stroke fill markers"
+              />
+              <path
+                transform="matrix(-1.2306 -.155 .155 -1.2306 44.027 51.899)"
+                d="m29.299 16.795c0.6372-0.0383 1.2314-0.33432 1.6457-0.81991l2.5835-3.0267c0.36174-0.42363 0.31981-1.0584-0.09451-1.4308-0.50537-0.01217-1.3428 1.481-2.7628 2.9409-0.60344 0.62036-1.8592 1.1326-2.7197 1.2325l-6.0717 0.70466a2.1202 2.1202 158.06 0 0-1.0391 0.41852l-0.69065 0.5253z"
+                fill="#fff"
+                fill-opacity=".04"
+                style="mix-blend-mode: lighten; paint-order: stroke fill markers"
+              />
+              <path
+                d="m26.365 27.73-0.58868 5.0583a3.3552 3.3552 0 0 1-3.3916 2.9652l-15.172-0.2689 0.33431 0.38761a2.9612 2.9612 0 0 0 2.0471 1.0199l16.934 1.1023a1.2243 1.2243 0 0 0 1.3033-1.158l0.40214-7.74a1.2576 1.2576 0 0 0-1.1725-1.3203z"
+                fill="#0f0f0f"
+                fill-opacity=".18039"
+                style="mix-blend-mode: overlay; paint-order: stroke fill markers"
+              />
+            </g>
+            <g>
+              <path
+                d="m33.315 19.769c0.7926-0.05028 1.5328-0.41331 2.0578-1.0092l5.3177-6.0361c0.45279-0.51396 0.40307-1.2977-0.11104-1.7503l-6.038-5.3159c-0.5961-0.5248-1.3762-0.7914-2.1688-0.74116l-5.4363 0.34456-9.8936 0.62696-4.4746 0.28385c-0.68365 0.043369-1.2027 0.63273-1.1593 1.3164l0.78532 12.379c0.04336 0.68361 0.63276 1.2026 1.3164 1.1591"
+                fill="#1c1c1c"
+              />
+              <path
+                transform="matrix(1.2403 0 0 1.2403 -4.3022 -3.418)"
+                d="m15.752 9.6948 13.557-0.86452a2.4101 2.4101 18.886 0 1 1.7479 0.59793l2.6318 2.3219a1.0122 1.0122 86.074 0 1 0.09742 1.4194l-2.5498 2.9615a2.3866 2.3866 153.46 0 1-1.6503 0.82419l-13.284 0.88352a1.001 1.001 41.167 0 1-1.0651-0.93137l-0.41515-6.1512a0.99603 0.99603 131.25 0 1 0.93064-1.0614z"
+                fill="#2a5b46"
+                style="paint-order: stroke fill markers"
+              />
+              <path
+                d="m30.497 7.6342-15.262 0.97266c-0.68286 0.043554-1.2003 0.63371-1.1543 1.3164l0.35156 5.2031a1.7119 1.7119 120.88 0 0 0.79581-1.3307l0.14233-1.4633a2.5076 2.5076 134 0 1 2.1662-2.2431l11.387-1.5101a2.05 2.05 154.82 0 0 1 1.1236-0.5283z"
+                fill="#fff"
+                fill-opacity=".04"
+                style="mix-blend-mode: lighten"
+              />
+              <path
+                d="m37.506 11.18-3.4715 3.1663a5.6898 5.6898 0 0 1-3.4836 1.4753l-16.006 0.98113 0.05088 0.75099a1.2413 1.2413 0 0 0 1.3203 1.1556l16.478-1.0974a2.9601 2.9601 0 0 0 2.0471-1.0223l3.1614-3.6726a1.2551 1.2551 0 0 0-0.0969-1.737z"
+                fill="#0f0f0f"
+                fill-opacity=".18026"
+                style="mix-blend-mode: overlay"
+              />
+            </g>
+          </g>
+        </svg>
       </div>
       <div class="wd-boot-shell__wordmark-slot" aria-hidden="true"></div>
       <div class="wd-boot-shell__words wd-boot-shell__words--de">
-        <span class="wd-boot-shell__word" style="animation-delay: 2000ms">Rucksack geschnürt</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 3900ms">Karte aufgeschlagen</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 5800ms">Route im Kopf</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 7700ms">Wetter gelesen</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 9600ms">Stiefel fest</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 11500ms">Flaschen voll</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 13400ms">Stöcke bereit</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 15300ms">Erste Höhenmeter</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 17200ms">Karte füllt sich</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 19100ms"
+        <span class="wd-boot-shell__word" style="animation-delay: 600ms">Rucksack geschnürt</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 2500ms">Karte aufgeschlagen</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 4400ms">Route im Kopf</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 6300ms">Wetter gelesen</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 8200ms">Stiefel fest</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 10100ms">Flaschen voll</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 12000ms">Stöcke bereit</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 13900ms">Erste Höhenmeter</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 15800ms">Karte füllt sich</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 17700ms"
           >Höhenlinien zeichnen sich</span
         >
-        <span class="wd-boot-shell__word" style="animation-delay: 21000ms">Täler tauchen auf</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 22900ms"
+        <span class="wd-boot-shell__word" style="animation-delay: 19600ms">Täler tauchen auf</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 21500ms"
           >Baumgrenze erreicht</span
         >
-        <span class="wd-boot-shell__word" style="animation-delay: 24800ms">Bäche plätschern</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 26700ms">Alpenrosen blühen</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 28600ms"
+        <span class="wd-boot-shell__word" style="animation-delay: 23400ms">Bäche plätschern</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 25300ms">Alpenrosen blühen</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 27200ms"
           >Gipfel rücken näher</span
         >
-        <span class="wd-boot-shell__word" style="animation-delay: 30500ms">Hütten in Sicht</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 32400ms"
+        <span class="wd-boot-shell__word" style="animation-delay: 29100ms">Hütten in Sicht</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 31000ms"
           >Wolken ziehen vorbei</span
         >
-        <span class="wd-boot-shell__word" style="animation-delay: 34300ms"
+        <span class="wd-boot-shell__word" style="animation-delay: 32900ms"
           >Murmeltiere pfeifen</span
         >
-        <span class="wd-boot-shell__word" style="animation-delay: 36200ms">Blick wird frei</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 38100ms">Ziel in Sicht</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 34800ms">Blick wird frei</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 36700ms">Ziel in Sicht</span>
       </div>
       <div class="wd-boot-shell__words wd-boot-shell__words--en">
-        <span class="wd-boot-shell__word" style="animation-delay: 2000ms">Rucksack buckled</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 3900ms">Map unfolded</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 5800ms">Route in mind</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 7700ms">Weather read</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 9600ms">Boots tight</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 11500ms">Bottles full</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 13400ms">Poles at hand</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 15300ms"
+        <span class="wd-boot-shell__word" style="animation-delay: 600ms">Rucksack buckled</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 2500ms">Map unfolded</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 4400ms">Route in mind</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 6300ms">Weather read</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 8200ms">Boots tight</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 10100ms">Bottles full</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 12000ms">Poles at hand</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 13900ms"
           >First metres gained</span
         >
-        <span class="wd-boot-shell__word" style="animation-delay: 17200ms">Map filling in</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 19100ms"
+        <span class="wd-boot-shell__word" style="animation-delay: 15800ms">Map filling in</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 17700ms"
           >Contour lines tracing</span
         >
-        <span class="wd-boot-shell__word" style="animation-delay: 21000ms">Valleys appearing</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 22900ms">Treeline behind</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 24800ms">Brooks babbling</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 26700ms"
+        <span class="wd-boot-shell__word" style="animation-delay: 19600ms">Valleys appearing</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 21500ms">Treeline behind</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 23400ms">Brooks babbling</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 25300ms"
           >Alpenroses in bloom</span
         >
-        <span class="wd-boot-shell__word" style="animation-delay: 28600ms"
+        <span class="wd-boot-shell__word" style="animation-delay: 27200ms"
           >Summits drawing near</span
         >
-        <span class="wd-boot-shell__word" style="animation-delay: 30500ms">Huts in sight</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 32400ms"
+        <span class="wd-boot-shell__word" style="animation-delay: 29100ms">Huts in sight</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 31000ms"
           >Clouds drifting past</span
         >
-        <span class="wd-boot-shell__word" style="animation-delay: 34300ms">Marmots whistling</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 36200ms">View opening wide</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 38100ms">The peak awaits</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 32900ms">Marmots whistling</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 34800ms">View opening wide</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 36700ms">The peak awaits</span>
       </div>
       <div class="wd-boot-shell__words wd-boot-shell__words--fr">
-        <span class="wd-boot-shell__word" style="animation-delay: 2000ms">Sac bouclé</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 3900ms">Carte dépliée</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 5800ms">Itinéraire en tête</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 7700ms">Météo lue</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 9600ms">Chaussures serrées</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 11500ms">Gourdes pleines</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 13400ms">Bâtons en main</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 15300ms"
+        <span class="wd-boot-shell__word" style="animation-delay: 600ms">Sac bouclé</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 2500ms">Carte dépliée</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 4400ms">Itinéraire en tête</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 6300ms">Météo lue</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 8200ms">Chaussures serrées</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 10100ms">Gourdes pleines</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 12000ms">Bâtons en main</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 13900ms"
           >Premiers mètres gagnés</span
         >
-        <span class="wd-boot-shell__word" style="animation-delay: 17200ms"
+        <span class="wd-boot-shell__word" style="animation-delay: 15800ms"
           >La carte se dessine</span
         >
-        <span class="wd-boot-shell__word" style="animation-delay: 19100ms">Courbes de niveau</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 21000ms"
+        <span class="wd-boot-shell__word" style="animation-delay: 17700ms">Courbes de niveau</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 19600ms"
           >Les vallées s'ouvrent</span
         >
-        <span class="wd-boot-shell__word" style="animation-delay: 22900ms">La forêt s'efface</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 24800ms"
+        <span class="wd-boot-shell__word" style="animation-delay: 21500ms">La forêt s'efface</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 23400ms"
           >Les ruisseaux murmurent</span
         >
-        <span class="wd-boot-shell__word" style="animation-delay: 26700ms"
+        <span class="wd-boot-shell__word" style="animation-delay: 25300ms"
           >Rhododendrons en fleurs</span
         >
-        <span class="wd-boot-shell__word" style="animation-delay: 28600ms"
+        <span class="wd-boot-shell__word" style="animation-delay: 27200ms"
           >Les sommets approchent</span
         >
-        <span class="wd-boot-shell__word" style="animation-delay: 30500ms">Premiers refuges</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 32400ms">Les nuages passent</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 34300ms"
+        <span class="wd-boot-shell__word" style="animation-delay: 29100ms">Premiers refuges</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 31000ms">Les nuages passent</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 32900ms"
           >Les marmottes sifflent</span
         >
-        <span class="wd-boot-shell__word" style="animation-delay: 36200ms">La vue s'ouvre</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 38100ms">Objectif en vue</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 34800ms">La vue s'ouvre</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 36700ms">Objectif en vue</span>
       </div>
       <div class="wd-boot-shell__words wd-boot-shell__words--it">
-        <span class="wd-boot-shell__word" style="animation-delay: 2000ms">Zaino allacciato</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 3900ms">Carta spiegata</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 5800ms">Percorso in testa</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 7700ms">Meteo letto</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 9600ms">Scarponi stretti</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 11500ms">Borracce piene</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 13400ms">Bastoni pronti</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 15300ms"
+        <span class="wd-boot-shell__word" style="animation-delay: 600ms">Zaino allacciato</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 2500ms">Carta spiegata</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 4400ms">Percorso in testa</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 6300ms">Meteo letto</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 8200ms">Scarponi stretti</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 10100ms">Borracce piene</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 12000ms">Bastoni pronti</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 13900ms"
           >Primi metri guadagnati</span
         >
-        <span class="wd-boot-shell__word" style="animation-delay: 17200ms"
+        <span class="wd-boot-shell__word" style="animation-delay: 15800ms"
           >La mappa si disegna</span
         >
-        <span class="wd-boot-shell__word" style="animation-delay: 19100ms">Curve di livello</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 21000ms">Le valli appaiono</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 22900ms">Bosco alle spalle</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 24800ms"
+        <span class="wd-boot-shell__word" style="animation-delay: 17700ms">Curve di livello</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 19600ms">Le valli appaiono</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 21500ms">Bosco alle spalle</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 23400ms"
           >I ruscelli mormorano</span
         >
-        <span class="wd-boot-shell__word" style="animation-delay: 26700ms"
+        <span class="wd-boot-shell__word" style="animation-delay: 25300ms"
           >Rododendri in fiore</span
         >
-        <span class="wd-boot-shell__word" style="animation-delay: 28600ms"
+        <span class="wd-boot-shell__word" style="animation-delay: 27200ms"
           >Le vette si avvicinano</span
         >
-        <span class="wd-boot-shell__word" style="animation-delay: 30500ms">Primi rifugi</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 32400ms">Le nuvole passano</span>
-        <span class="wd-boot-shell__word" style="animation-delay: 34300ms"
+        <span class="wd-boot-shell__word" style="animation-delay: 29100ms">Primi rifugi</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 31000ms">Le nuvole passano</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 32900ms"
           >Le marmotte fischiano</span
         >
-        <span class="wd-boot-shell__word" style="animation-delay: 36200ms"
+        <span class="wd-boot-shell__word" style="animation-delay: 34800ms"
           >Il panorama si apre</span
         >
-        <span class="wd-boot-shell__word" style="animation-delay: 38100ms">Meta in vista</span>
+        <span class="wd-boot-shell__word" style="animation-delay: 36700ms">Meta in vista</span>
       </div>
     </div>
     <script>
