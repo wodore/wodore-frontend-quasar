@@ -161,10 +161,16 @@ async function fetchStyleObject(styleUrl: string): Promise<StyleSpecification> {
 }
 
 function resolveStyleForMap(styleObj: StyleSpecification, styleUrl: string): StyleSpecification {
-  return {
+  const resolved = {
     ...styleObj,
     ...absoluteStyleAssets(styleObj, styleUrl),
   } as StyleSpecification;
+  // Glyph prewarm on EVERY style application — boot AND basemap
+  // switches (review finding: the boot-only placement inside
+  // prepareStagedStyle left switches with the serial glyph-fetch delay
+  // this prewarm was introduced to eliminate on cold glyph cache).
+  prewarmStyleGlyphs(resolved);
+  return resolved;
 }
 
 /** Late-bound accessor for the reactive basemap list (set by the store

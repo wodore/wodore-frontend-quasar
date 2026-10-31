@@ -381,6 +381,11 @@ function scheduleReveal(map: Map): void {
   const SOURCE_LOAD_GRACE_MS = 1200;
   const invalidateVisibleSources = () => {
     visibleSetsCache = null;
+    // Reset the grace clock too (review finding: a basemap switch that
+    // reuses a source ID would see the stale first-false timestamp as
+    // already past the grace — bypassing it for a source that may
+    // still be loading, and releasing the topbar bar too early).
+    glyphGraceFirstFalse.clear();
   };
   map.on('styledata', invalidateVisibleSources);
   /** Sources of every visible layer (visibility !== 'none'), split into
@@ -608,9 +613,15 @@ function scheduleReveal(map: Map): void {
     // only a fully dead network holds the splash indefinitely — a
     // white map is never the better outcome.
     const baseSettled = basemapSourcesLoaded();
+    const allBaseSourcesLoaded = layers >= 2 && baseSettled;
+    // The 20s cap is UNCONDITIONAL (review finding: gating it on
+    // baseSettled meant a silently-empty basemap style → baseLayerCount
+    // 0 → both ladder AND cap permanently false → infinite splash with
+    // no escape. The original hard-cap intent was an unconditional
+    // last resort — a partial map always beats a branded splash after
+    // 20s, even if the only alternative is white).
     const laddered = elapsed >= SPLASH_LADDER_MS && baseSettled;
-    const capped = elapsed >= SPLASH_HARD_CAP_MS && baseSettled;
-    const allBaseSourcesLoaded = layers >= 2 && basemapSourcesLoaded();
+    const capped = elapsed >= SPLASH_HARD_CAP_MS;
     if (allBaseSourcesLoaded && basemapContentCompleteAt === undefined) {
       basemapContentCompleteAt = window.performance.now();
     }

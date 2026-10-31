@@ -1558,6 +1558,11 @@ function addOverlays(): void {
 // `armed` keeps exactly ONE retry listener pair bound at a time.
 let catalogSwapPending = false;
 let catalogSwapRetryArmed = false;
+/** The retry poll's interval handle — module scope so the unmount
+ *  cleanup can always reach it (review finding: a closure-local
+ *  handle orphaned when the component unmounts mid-style-load, firing
+ *  every 250ms against a destroyed map for the session's lifetime). */
+let catalogSwapPollTimer: number | undefined;
 
 /** Bind ONE retry that runs the pending catalog swap as soon as the
  *  style is loaded. Both 'idle' and 'style.load' can signal readiness
@@ -1574,11 +1579,12 @@ let catalogSwapRetryArmed = false;
 function armCatalogSwapRetry(map: MapLibreMap): void {
   if (catalogSwapRetryArmed) return;
   catalogSwapRetryArmed = true;
-  let pollTimer: number | undefined;
   const disarm = () => {
     map.off('idle', retry);
     map.off('style.load', retry);
-    if (pollTimer !== undefined) window.clearInterval(pollTimer);
+    if (catalogSwapPollTimer !== undefined) window.clearInterval(catalogSwapPollTimer);
+    catalogSwapPollTimer = undefined;
+    catalogSwapRetryArmed = false;
   };
   const retry = () => {
     disarm();
@@ -1600,7 +1606,7 @@ function armCatalogSwapRetry(map: MapLibreMap): void {
   // render that way (huts attached at 2.4s while the base map had
   // painted at 0.9s). A short poll attaches the moment the style
   // object is actually stable, independent of glyph/network settling.
-  pollTimer = window.setInterval(() => {
+  catalogSwapPollTimer = window.setInterval(() => {
     if (map.isStyleLoaded()) retry();
   }, 250);
 }
@@ -1620,7 +1626,17 @@ function reapplyOverlaysAfterCatalogSwap(): void {
   try {
     applyCatalogSwapNow(map);
     catalogSwapPending = false;
-  } catch {
+  } catch (error) {
+    // Only PARK on MapLibre's transient "Style is not done loading" —
+    // a permanent error (corrupt style data, invalid source spec, a
+    // future MapLibre throw) would retry forever at 250ms (review
+    // finding). Anything else re-throws: the overlay stays off, the
+    // catalog error path surfaces a notice, no infinite poll.
+    if (!(error instanceof Error) || !error.message.includes('Style is not done loading')) {
+      console.warn('[overlay-control] catalog swap failed (non-transient):', error);
+      catalogSwapPending = false;
+      return;
+    }
     catalogSwapPending = true;
     armCatalogSwapRetry(map);
   }
@@ -1763,6 +1779,14 @@ onBeforeUnmount(() => {
   for (const timer of lingerTimers.values()) clearTimeout(timer);
   lingerTimers.clear();
   if (dragScrollRaf) window.cancelAnimationFrame(dragScrollRaf);
+  // Catalog-swap retry poll (review finding: the module-scope interval
+  // had no unmount path — it kept firing against a destroyed map).
+  if (catalogSwapPollTimer !== undefined) {
+    window.clearInterval(catalogSwapPollTimer);
+    catalogSwapPollTimer = undefined;
+  }
+  catalogSwapRetryArmed = false;
+  catalogSwapPending = false;
 });
 </script>
 
