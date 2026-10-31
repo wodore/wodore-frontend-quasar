@@ -98,15 +98,22 @@ Overlays are **declarative configurations** that include:
 
 ## Performance Optimization Strategy
 
-### Reveal gating (perf/map-boot 2026-10-31)
+### Reveal gating (progressive, owner 2026-10-31)
 
-The splash drops when: all ACTIVE overlays' layers are MOUNTED
-(`styleReady` reads the overlay store — never hardcoded layer names) AND
-every source referenced by a VISIBLE layer is loaded (`isSourceLoaded`, NOT
-global `areTilesLoaded()` — staged-out terrain/contours and erroring sprites
-must not hold the splash) AND a frame rendered (`sourcedata` → `render`
-trigger; plain `idle` waits for glyph PBFs, which are explicitly NOT
-reveal-blocking — labels stream in post-reveal, owner decision).
+TWO milestones:
+1. SPLASH DROP (50ms poll in WdMapView): style applied (≥2 layers) +
+   first tile-content event + ladder — reveals the PAINTED BASEMAP,
+   fully decoupled from the catalog and from isSourceLoaded (label
+   fonts held the old gate through symbol-tile glyph dependencies).
+   Never arm reveal logic from MapLibre's `load` event — it is
+   glyph/idle-gated (observed firing ~2s after the basemap painted);
+   arm from the map instance, poll for the rest.
+2. FULL READY (reveal-scheduler.ts, unit-tested): active overlays'
+   layers mounted (store-driven — never hardcoded layer names) + every
+   source referenced by a VISIBLE layer loaded (`isSourceLoaded`, NOT
+   global `areTilesLoaded()`; 1.2s glyph grace) + a rendered frame.
+   This releases the TOPBAR LOADING BAR (useRequestProgress
+   setMapBootPending, 150ms shared debounce), not the splash.
 
 ### Overlay re-application invariants
 
