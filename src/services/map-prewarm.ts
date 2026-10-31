@@ -9,7 +9,7 @@
  * once per session.
  */
 import type { StyleSpecification } from 'maplibre-gl';
-import { absolutizeStyleUrl, type MapCatalogLayer } from './map-catalog';
+import { absolutizeStyleUrl, styleVariantUrl, type MapCatalogLayer } from './map-catalog';
 
 /** Session-wide dedupe — one warm fetch per URL, however many callers. */
 const warmed = new Set<string>();
@@ -66,13 +66,65 @@ export function prewarmStyleAssets(style: StyleSpecification | null | undefined)
   if (style) warm(styleAssetUrls(style));
 }
 
+/** Collect literal font-stack names from a style's symbol layers
+ *  (text-font values — usually literal string arrays, occasionally
+ *  buried in expressions; the recursive walk catches both). */
+function styleFontStacks(style: StyleSpecification): Set<string> {
+  const stacks = new Set<string>();
+  const walk = (v: unknown): void => {
+    if (typeof v === 'string') {
+      stacks.add(v);
+    } else if (Array.isArray(v)) {
+      for (const x of v) walk(x);
+    }
+  };
+  for (const layer of style.layers ?? []) {
+    if (layer.type !== 'symbol') continue;
+    const layout = (layer as { layout?: Record<string, unknown> }).layout;
+    walk(layout?.['text-font']);
+  }
+  return stacks;
+}
+
+/** Warm a style's glyph PBFs for the common 0-255 range (perf/map-boot,
+ *  2026-10-31 profiling): MapLibre only requests a font stack when a
+ *  symbol tile first RENDERS — tiles → first render → glyph fetch →
+ *  re-render — and until those PBFs land, `isSourceLoaded()` stays false
+ *  for every label-carrying source (symbol tiles count as loading while
+ *  glyph dependencies pend). On a CDN-slow day that serialized font
+ *  chain was the single longest reveal blocker. Warming the stacks at
+ *  style-apply time loads the PBFs in parallel with the tile wave; the
+ *  renderer's own requests then hit the HTTP cache. Best-effort: no
+ *  stacks found or a template without {fontstack} is a no-op. */
+export function prewarmStyleGlyphs(style: StyleSpecification | null | undefined): void {
+  if (!style || typeof style.glyphs !== 'string') return;
+  const template = style.glyphs;
+  if (!template.includes('{fontstack}')) return;
+  const urls: string[] = [];
+  for (const stack of styleFontStacks(style)) {
+    urls.push(
+      template.replace('{fontstack}', encodeURIComponent(stack)).replace('{range}', '0-255')
+    );
+  }
+  warm(urls);
+}
+
 /** Warm every catalog layer's STYLE DOCUMENT except the critical one:
  *  the selected-or-default basemap style stays alone on the boot
  *  critical path, everything else (basemaps and overlays alike — the
  *  switcher's per-style JSONs) warms the HTTP cache AFTER the map's
  *  first render settles (the caller schedules this on map 'idle' —
  *  firing it earlier starves the first render; the catalog compile
- *  later reads these as cache hits). */
+ *  later reads these as cache hits).
+ *
+ *  VARIANT MATCH (perf/map-boot, 2026-10-31 profiling): the catalog
+ *  compile consumes parameterized overlays ONLY as their `mode=
+ *  tokenized` variant (loadStyleBundle resolves tokens client-side) —
+ *  warming the plain style_url for those layers bought a cache entry
+ *  nobody ever reads while the compile still downloaded the tokenized
+ *  sibling from the network (every parameterized overlay fetched
+ *  twice per cold boot). Parameterized layers now warm the variant
+ *  the compile will actually fetch. */
 export function prewarmCatalogStyles(layers: MapCatalogLayer[], exceptStyleUrl?: string): void {
   // Skip by BOTH the raw and the absolutized form: the persisted
   // selection and the catalog's style_url can differ in resolution
@@ -93,7 +145,8 @@ export function prewarmCatalogStyles(layers: MapCatalogLayer[], exceptStyleUrl?:
     // fetches to the visible 11 overlays + 3 basemaps (minus the
     // active one).
     if (layer.show === false) continue;
-    const url = absolutizeStyleUrl(layer.style_url);
+    const tokenized = (layer.parameters?.length ?? 0) > 0;
+    const url = styleVariantUrl(absolutizeStyleUrl(layer.style_url), { tokenized });
     if (skip?.has(layer.style_url) || skip?.has(url)) continue;
     urls.push(url);
   }

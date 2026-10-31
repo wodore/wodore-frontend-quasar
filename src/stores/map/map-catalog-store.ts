@@ -640,6 +640,14 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
 
     let emitScheduled = false;
     let activeArrivedInBatch = false;
+    /** Resolves when every currently scheduled emit has flushed — the
+     *  active-wave completion below awaits it so `mapStylesReady` (the
+     *  reveal gate) never flips while a debounced application is still
+     *  pending (a reveal before the apply would drop the splash on a
+     *  map whose overlay layers are not mounted yet — perf/map-boot
+     *  2026-10 profiling: the reveal fired under a pending emit).
+     */
+    let emitFlushed: Promise<void> = Promise.resolve();
     const emitAll = (mapContentChanged: boolean): void => {
       const snapshot = overlayLayers
         .filter(l => settled[l.slug] !== null)
@@ -649,18 +657,41 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
       fixupCatalogStyles(snapshot);
       onItems?.(snapshot, { mapContentChanged });
     };
-    /** Microtask-batched emit: bundles resolving in the same tick (the
-     *  whole persisted-cache warm wave) collapse into ONE application. */
+    /** Batched emit (perf/map-boot, 2026-10-31 profiling): active-overlay
+     *  arrivals settle on separate network completions — a microtask-only
+     *  batch let each one through as its own epoch bump, and every bump
+     *  tore down + re-added every overlay source (MapLibre re-downloading
+     *  tiles for each recreation: 6 identical concurrent huts .mlt
+     *  requests on a cold boot). Batches that carry an ACTIVE arrival now
+     *  debounce briefly so a settle wave (styles landing within ~100ms of
+     *  each other) collapses into ONE application; menu-only batches keep
+     *  the microtask flush. The ≤150ms apply delay is invisible behind
+     *  the splash at boot and imperceptible for background refreshes. */
+    const ACTIVE_APPLY_DEBOUNCE_MS = process.env.NODE_ENV === 'test' ? 0 : 150;
     const scheduleEmit = (activeArrived: boolean): void => {
       if (activeArrived) activeArrivedInBatch = true;
       if (emitScheduled) return;
       emitScheduled = true;
-      queueMicrotask(() => {
+      const flush = () => {
         emitScheduled = false;
         const changed = activeArrivedInBatch;
         activeArrivedInBatch = false;
         emitAll(changed);
-      });
+      };
+      // Same-tick joins collapse instantly either way; cross-tick active
+      // arrivals ride the debounce timer, menu-only ones a microtask.
+      // Hermetic tests (NODE_ENV=test, same precedent as basemap-store's
+      // prewarm guard): 0ms keeps the flush on the microtask so fake
+      // timers never hang an awaited initOverlays().
+      emitFlushed =
+        activeArrivedInBatch && ACTIVE_APPLY_DEBOUNCE_MS > 0
+          ? new Promise<void>(resolve => {
+              setTimeout(() => {
+                flush();
+                resolve();
+              }, ACTIVE_APPLY_DEBOUNCE_MS);
+            })
+          : Promise.resolve().then(flush);
     };
 
     emitAll(false); // metadata-first: rows before any style fetch settles
@@ -679,8 +710,11 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
       scheduleEmit(isActiveNow && styleChanged(layer));
     };
     // Active wave (reveal path) first — flipping the reveal latch below
-    // the moment it settles — then the background wave for the menu.
+    // the moment it settles (AFTER the batched application flushed: the
+    // reveal gate must not open onto overlays that are not mounted) —
+    // then the background wave for the menu.
     await Promise.all(activeLayers.map(l => load(l, true)));
+    await emitFlushed;
     mapStylesReady.value = true;
     // Vanished-active drop (see removedActive above): raise it now —
     // the active wave settled, so a bump re-adds real styles, never

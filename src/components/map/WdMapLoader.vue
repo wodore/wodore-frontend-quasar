@@ -6,10 +6,12 @@ import { useI18n } from 'vue-i18n';
  *
  *  THREE stages, all budgets in PAGE TIME (performance.now()):
  *   1. t=0–2s  calm base: green, mono mark, status words (words are
- *      STAGE-1 content — they start at the 2s mark, matching the boot
- *      shell's CSS cycler, and never wait for the brand entrance)
- *   2. t=2s   brand entrance (`--in`): color mark crossfades in at
- *      +0.2s, wordmark at +0.5s
+ *      STAGE-1 content — they start at the 600ms mark with the mono
+ *      mark, matching the boot shell's CSS cycler, and never wait for
+ *      the brand entrance; owner 2026-10-31: keep something moving
+ *      from the start — the colored-icon→reveal window was dead air)
+ *   2. t=2s   brand entrance (`--in`): wordmark at +0.5s (the color
+ *      mark is already in — see colorIn below)
  *   3. t=3s   landscape (`--hills`, entrance + 1s): mountain layers
  *      slide in staggered, then drift forever — ONLY if MapLibre is
  *      not already past its `load` event (map ready ⇒ no new hills)
@@ -33,11 +35,16 @@ const props = withDefaults(defineProps<Props>(), { rendered: false, mapReady: fa
 const { t } = useI18n();
 const entered = ref(false);
 const hillsIn = ref(false);
-/** Color-mark crossfade fires INDEPENDENTLY of the 2s entrance — as
- * soon as the splash mounts and the font gate clears (owner: "show
- * colored logo asap if ready, keep fading"). The wordmark and hills
- * still respect the 2s/3s budget. */
-const colorIn = ref(false);
+/** The Vue splash renders COLORED from its first paint (owner report
+ *  2026-10-31: mounting with the mono mark re-ran the crossfade UNDER
+ *  the boot shell — the shell crossfades mono→color at 250ms in pure
+ *  CSS, the handover then revealed a mono Vue splash that faded to
+ *  color AGAIN, a visible double crossfade). The boot shell owns the
+ *  only mono→color transition; starting colored here means the class
+ *  applies before the component's first paint — no transition runs.
+ *  The SVG mark needs no font, so the font gate (kept for the
+ *  wordmark/words) never applied to it anyway. */
+const colorIn = ref(true);
 
 /** Stage budgets in PAGE TIME. */
 const ENTRANCE_AT_MS = 2000;
@@ -48,11 +55,11 @@ const COLOR_DELAY_S = 0; // color starts WITH the entrance (owner: earlier)
 const logoDelaySec = COLOR_DELAY_S;
 
 // ── Status words (one stage-independent pool, ~20 phrases) ───────────────
-// STAGE-1 content (owner spec): they start at the 2s page-time mark —
-// the same budget as the brand entrance, matching the boot shell's
-// 2000ms CSS delay — and end the moment MapLibre is ready (fade out
+// STAGE-1 content (owner spec, re-timed 2026-10-31): they start at the
+// 600ms page-time mark — WITH the mono mark, matching the boot shell's
+// 600ms CSS cycler — and end the moment MapLibre is ready (fade out
 // early, before the reveal) or the splash exits, whichever first.
-const WORD_START_AT_MS = 2000;
+const WORD_START_AT_MS = 600;
 const WORD_INTERVAL_MS = 1900;
 const words = computed(() =>
   (t('map.loadingWords') as string)
@@ -61,13 +68,39 @@ const words = computed(() =>
     .filter(Boolean)
 );
 const word = ref('');
+/** Word swaps animate (blur-crystallize) — EXCEPT the initial word:
+ *  it must paint at full opacity in the same state the boot shell's
+ *  word is in, or the handover visibly pops (owner-reported flicker
+ *  2026-10-31). Flipped once the first swap happens. */
+const wordAnimated = ref(false);
 let pool: string[] = [];
 const pickNext = () => {
   if (words.value.length === 0) return;
   if (pool.length === 0) pool = [...words.value];
   const at = Math.floor(Math.random() * pool.length);
+  wordAnimated.value = true;
   word.value = pool.splice(at, 1)[0] ?? '';
 };
+/** The FIRST word is not random — it is the word the boot shell's CSS
+ *  cycler is showing right now (same list order, same 600ms + i*1900ms
+ *  slots; the lists are kept in sync — see index.html). The handover
+ *  crossfades two identical, steady words = invisible. */
+const timelineWord = (): string => {
+  if (words.value.length === 0) return '';
+  const idx = Math.max(
+    0,
+    Math.min(
+      Math.floor((window.performance.now() - WORD_START_AT_MS) / WORD_INTERVAL_MS),
+      words.value.length - 1
+    )
+  );
+  return words.value[idx] ?? '';
+};
+// Already past the word start (the usual case — the shell has been
+// cycling since 600ms)? Paint the timeline word from first render.
+if (window.performance.now() >= WORD_START_AT_MS) {
+  word.value = timelineWord();
+}
 let wordTimer: ReturnType<typeof setInterval> | undefined;
 let wordDelayTimer: ReturnType<typeof setTimeout> | undefined;
 let hillsTimer: ReturnType<typeof setTimeout> | undefined;
@@ -103,14 +136,16 @@ watch(
     }
   }
 );
-// MapLibre READY (pre-reveal): words fade out EARLY (owner spec) and
-// new hills are blocked — a ready map only needs its paint time, not
-// the full show.
+// MapLibre READY (pre-reveal): words keep cycling — since the
+// progressive reveal (owner 2026-10-31) the splash routinely outlives
+// mapReady by the basemap paint wait, and killing the words there
+// re-created the dead-air window the words exist to fill. Only new
+// hills are blocked — a ready map only needs its paint time, not the
+// full show.
 watch(
   () => props.mapReady,
   ready => {
     if (!ready) return;
-    stopWords();
     if (hillsTimer !== undefined && !hillsIn.value) {
       clearTimeout(hillsTimer);
       hillsTimer = undefined;
@@ -132,15 +167,9 @@ onMounted(() => {
       window.setTimeout(resolve, 500);
     }),
   ]);
-  // COLOR MARK — asap once fonts are ready (owner spec): independent
-  // of the 2s entrance budget, so warm boots show the brand color in
-  // the first ~500ms instead of holding the mono mark until 2s.
-  void fontsReady.then(() => {
-    requestAnimationFrame(() => {
-      if (disposed) return; // review n1: no post-unmount ref writes
-      colorIn.value = true;
-    });
-  });
+  // (The color mark needs no gate — see colorIn above: it renders
+  // colored from first paint. The fontsReady gate below still governs
+  // the WORDMARK entrance and the status words.)
   // Stage 2 — brand entrance (wordmark) at the 2s PAGE-TIME budget (a
   // slow JS boot already consumed it and enters immediately).
   const entranceDelay = Math.max(0, ENTRANCE_AT_MS - window.performance.now());
@@ -160,16 +189,23 @@ onMounted(() => {
       }, HILLS_AFTER_ENTRANCE_MS);
     });
   }, entranceDelay);
-  // Stage 1 words — same 2s page-time budget as the boot shell cycler.
-  wordDelayTimer = setTimeout(
-    () => {
-      wordDelayTimer = undefined;
-      if (props.rendered || props.mapReady) return; // already past — never start
-      pickNext();
-      wordTimer = setInterval(pickNext, WORD_INTERVAL_MS);
-    },
-    Math.max(0, WORD_START_AT_MS - window.performance.now())
-  );
+  // Stage 1 words — same 600ms page-time budget as the boot shell cycler.
+  if (word.value === '') {
+    // Mounted before the word start: begin at 600ms with the SHELL's
+    // timeline word (steady, no animation — the handover must not pop).
+    wordDelayTimer = setTimeout(
+      () => {
+        wordDelayTimer = undefined;
+        if (props.rendered) return; // already past — never start
+        word.value = timelineWord();
+        wordTimer = setInterval(pickNext, WORD_INTERVAL_MS);
+      },
+      Math.max(0, WORD_START_AT_MS - window.performance.now())
+    );
+  } else {
+    // Timeline word already showing since setup — keep cycling.
+    wordTimer = setInterval(pickNext, WORD_INTERVAL_MS);
+  }
 });
 onBeforeUnmount(() => {
   disposed = true; // review n1: async callbacks must not run past unmount
@@ -322,7 +358,7 @@ onBeforeUnmount(() => {
     <div class="wd-splash__wordmark">
       <span class="wd-splash__wo">wo</span><span class="wd-splash__dore">dore</span>
     </div>
-    <Transition name="wd-splash-word" mode="out-in">
+    <Transition :name="wordAnimated ? 'wd-splash-word' : 'wd-word-instant'" mode="out-in">
       <div :key="word" class="wd-splash__status">
         {{ word }}
       </div>
@@ -623,13 +659,11 @@ onBeforeUnmount(() => {
   transform: scale(0.96);
 }
 
-/* MapLibre ready (pre-reveal): words fade out EARLY (owner spec) —
- * they are stage-1 content and have no meaning once the map is in its
- * painting stage. */
-.wd-splash--map-ready .wd-splash__status {
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
+/* Words run until the REVEAL (owner 2026-10-31): since the progressive
+ * reveal the splash routinely outlives MapLibre's `load` (the basemap
+ * paint wait), and fading words at map-ready re-created the dead-air
+ * window the words exist to fill — they end with the splash exit
+ * (.wd-splash--out retracts everything). */
 
 @media (prefers-reduced-motion: reduce) {
   .wd-splash__mtn,

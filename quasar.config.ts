@@ -273,6 +273,73 @@ export default configure(ctx => {
           },
         } satisfies Plugin);
 
+        // Critical-chunk modulepreload (perf/map-boot, 2026-10-31
+        // profiling): the map boot is a serial DYNAMIC-import chain
+        // (entry → router → MapPage → WdMapView → maplibre → stores) —
+        // each hop costs a fetch roundtrip (SW-served even when warm)
+        // plus parse, and after a browser restart (cold V8 code cache)
+        // that chain alone delayed the splash to ~1s. Injecting
+        // modulepreload links for the known map-boot chunks lets the
+        // browser fetch+compile them ALL in parallel while the entry
+        // script is still evaluating. index.html carries no
+        // precompressed siblings (the compression include is js/css/svg
+        // only), so rewriting it here cannot go stale.
+        const MAP_BOOT_CHUNK_PREFIXES = [
+          'MainLayout-',
+          'MapPage-',
+          'WdMapView-',
+          'maplibre-',
+          'WdMapMenu-',
+          'huts-store-',
+          'map-shell-stores-',
+          'overlay-config-store-',
+        ];
+        let preloadOutDir = '';
+        viteConf.plugins.push({
+          name: 'wd-modulepreload-map-boot',
+          apply: 'build',
+          configResolved(config) {
+            preloadOutDir = path.resolve(config.root, config.build.outDir);
+          },
+          closeBundle() {
+            const htmlPath = path.join(preloadOutDir, 'index.html');
+            const assetsDir = path.join(preloadOutDir, 'assets');
+            let html: string;
+            let chunks: string[];
+            try {
+              html = readFileSync(htmlPath, 'utf8');
+              chunks = readdirSync(assetsDir);
+            } catch {
+              return; // no html/assets — nothing to do
+            }
+            if (html.includes('wd-modulepreload-map-boot')) return; // idempotent
+            // The worker is a classic script (new Worker), not a module
+            // import — preload it as a script to warm the HTTP cache only.
+            const worker = chunks.find(f => /^maplibre-gl-worker-.*\.js$/.test(f));
+            const targets = MAP_BOOT_CHUNK_PREFIXES.flatMap(prefix =>
+              chunks.filter(
+                f =>
+                  f.startsWith(prefix) &&
+                  f.endsWith('.js') &&
+                  // The maplibre- prefix would also catch the worker and
+                  // contour chunks: the worker gets its own script preload
+                  // below, contour stays lazy (no served style uses it).
+                  !f.startsWith('maplibre-gl-worker') &&
+                  !f.startsWith('maplibre-contour')
+              )
+            ).filter(f => !f.includes('.map'));
+            if (targets.length === 0 && !worker) return;
+            const links = [
+              '<!-- wd-modulepreload-map-boot -->',
+              ...targets.map(f => `<link rel="modulepreload" href="assets/${f}" crossorigin>`),
+              ...(worker
+                ? [`<link rel="preload" href="assets/${worker}" as="script" crossorigin>`]
+                : []),
+            ].join('');
+            writeFileSync(htmlPath, html.replace('</head>', `${links}</head>`));
+          },
+        } satisfies Plugin);
+
         // Stable long-lived vendor chunks: without pinning, rollup's
         // chunk graph is sensitive — one new dynamic import anywhere
         // rehashes unchanged vendor code, forcing returning visitors to

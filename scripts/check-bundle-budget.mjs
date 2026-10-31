@@ -50,11 +50,18 @@ const refs = [
 const jsBytes = refs.reduce((sum, ref) => sum + wireSize(ref.replace(/^\//, '')), 0);
 const shellBytes = statSync(`${DIST}/index.html`).size;
 
-/** Budgets (bytes, brotli wire). Current baseline: ~183 KB initial JS
- * (quasar 95 + vue 55 + entry 28 + SW-adjacent bits), 25.5 KB shell.
- * Headroom ≈ 20 % — enough for organic growth, tight enough to catch an
- * accidentally-eager import (a single MapLibre-tier mistake is +150 KB). */
-const BUDGET_INITIAL_JS = 225 * 1024;
+/** Budgets (bytes, brotli wire). Baseline after the map-boot chunk
+ * preload (perf/map-boot 2026-10-31): ~513 KB initial JS — the 8
+ * modulepreload links (MapLibre 327KB raw + MapPage/WdMapView/stores)
+ * are INTENTIONALLY on the boot critical path (they flatten the serial
+ * dynamic-import chain; see quasar.config.ts wd-modulepreload-map-boot).
+ * Without the preload the budget was 225 KB; with it, the chunks download
+ * in parallel rather than serially — the WALL-CLOCK boot is faster even
+ * though the byte budget grew. Headroom ≈ 3 KB — the preload set is
+ * build-managed, not organic; any growth here means a new chunk entered
+ * the preload list and should be justified in the plugin's prefix
+ * list, not silently absorbed. */
+const BUDGET_INITIAL_JS = 518 * 1024;
 const BUDGET_SHELL = 40 * 1024;
 
 const kb = b => `${(b / 1024).toFixed(1)} KB`;
