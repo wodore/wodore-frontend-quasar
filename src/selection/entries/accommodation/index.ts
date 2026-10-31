@@ -10,6 +10,10 @@ import { definePresentation } from '@selection/types';
 import { consumePrefetchedHut } from '@services/hut-prefetch';
 import { clientWodore } from '@clients/index';
 import { PlaceRequestError } from '@composables/usePlaceDetail';
+import {
+  MIN_HUT_CLICK_ZOOM,
+  WD_HUTS_CLICK_LAYERS,
+} from '@selection/map-layer-ids';
 import { hutSeedPartial, type HutDetails } from './seed';
 
 export type { HutDetails } from './seed';
@@ -21,6 +25,16 @@ export const accommodationEntry = definePresentation<HutDetails>({
   capabilities: ['detail'],
   surfaces: () => import('./surfaces'),
   detailStart: 'minimized',
+  // Claim-based map-click resolution (D5): every style layer whose
+  // features are accommodations, with the shared hut-click zoom gate and
+  // the canonical-id tile property. INTENDED behavior change vs the
+  // legacy path (tasks.md PR2 note): the date-gated occupation circles
+  // become clickable — clicking one IS clicking its hut.
+  mapLayers: WD_HUTS_CLICK_LAYERS.map(layer => ({
+    layer,
+    minZoom: MIN_HUT_CLICK_ZOOM,
+    idProp: 'slug',
+  })),
   fetch: async (ctx): Promise<HutDetails> => {
     // Deep-link prefetch handoff (perf/hut-fast-first-paint): if the boot
     // already fired this exact request, await its response — the promise

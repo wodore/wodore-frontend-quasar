@@ -30,3 +30,8 @@ export const WD_HUTS_CLICK_LAYERS: readonly string[] = [
   WD_HUTS_LAYER,
   ...WD_HUTS_OCCUPATION_LAYERS,
 ];
+
+// Re-exported for entry claims: entries are store-free (eslint boundary
+// on **/stores/*), so the zoom gate travels through this module — the
+// single definition lives in map-constants.ts.
+export { MIN_HUT_CLICK_ZOOM } from '@stores/map/utils/map-constants';

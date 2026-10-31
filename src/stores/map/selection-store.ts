@@ -38,6 +38,14 @@ const MAP_ROUTE = 'map';
 
 export type OpenVia = 'map' | 'search' | 'link';
 
+/** Click-pipeline item: a deduplicated target plus its CLAIM-resolved
+ *  entry (map clicks know the claiming entry directly — no MatchSpec
+ *  needed, tile props carry no taxonomy; Opus consolidated review #1). */
+export interface FromMapItem {
+  target: MapTarget;
+  entry?: Presentation;
+}
+
 /** Surface capability read off the entry (sync — `capabilities` flag),
  *  defaulting to detail for entries that only declare a barrel. */
 function isCapable(entry: Presentation, surface: 'popup' | 'detail'): boolean {
@@ -55,7 +63,9 @@ export const useSelectionStore = defineStore('selection', () => {
   /** Entry resolved for the open popup — travels with the target so
    *  expand() never re-resolves (no drift, works with entry overrides). */
   const popupEntry = shallowRef<Presentation | null>(null);
-  const candidates = shallowRef<readonly MapTarget[]>([]);
+  const candidates = shallowRef<readonly FromMapItem[]>([]);
+  /** Index of the open candidate (minimal `1/n` cycling switcher). */
+  const candidateIndex = shallowRef(0);
   /** Expand handoff: the popup target awaiting route adoption. */
   const detailPending = shallowRef<MapTarget | null>(null);
   /** Controller-owned highlight — adapters watch and apply/clear. */
@@ -65,6 +75,14 @@ export const useSelectionStore = defineStore('selection', () => {
   /** The target whose detail is routed (null on cold deep links — the
    *  host/resolver owns building it from the slug). */
   const routedTarget = shallowRef<MapTarget | null>(null);
+  /** Entry RESOLVED for the routed target (Opus consolidated review #1):
+   *  carries the CLAIM-resolved entry of map-clicked details — a hut's
+   *  tile props carry no kind/domain, so MatchSpec re-resolution would
+   *  mis-resolve to geoplace-default and render a blank panel. Mirrors
+   *  popupEntry; adopted with the pending handoff, cleared on leave. */
+  const routedEntry = shallowRef<Presentation | null>(null);
+  /** Entry for the expand handoff (popupEntry at expand time). */
+  const detailPendingEntry = shallowRef<Presentation | null>(null);
 
   const detailOpen = computed(() => Boolean(route.meta.content));
   const detailSlug = computed(() =>
@@ -101,6 +119,8 @@ export const useSelectionStore = defineStore('selection', () => {
         popupEntry.value = null;
         candidates.value = [];
         setTarget(detailPending, null);
+        routedEntry.value = null;
+        detailPendingEntry.value = null;
         setTarget(routedTarget, null);
         highlightRef.value = null;
         return;
@@ -109,16 +129,29 @@ export const useSelectionStore = defineStore('selection', () => {
       if (detailPending.value && detailPending.value.id === slug) {
         // Expand handoff adopted AFTER navigation committed.
         setTarget(routedTarget, detailPending.value);
+        routedEntry.value = detailPendingEntry.value;
         setTarget(detailPending, null);
+        detailPendingEntry.value = null;
       } else if (routedTarget.value && routedTarget.value.id !== slug) {
         // Re-targeted to a different slug while open: the old target is
         // gone (the host resolver builds the new one from the slug).
         setTarget(routedTarget, null);
+        routedEntry.value = null;
       }
       // Detail supersedes the popup world (D2: back → map, no popup).
       setTarget(popupTarget, null);
       popupEntry.value = null;
-      candidates.value = [];
+      // Candidates SURVIVE the detail they caused (the switcher's
+      // purpose: swap between stacked targets while the detail is
+      // open) — but a slug outside the candidate list (search open,
+      // unrelated navigation) clears them.
+      if (
+        candidates.value.length > 0 &&
+        !candidates.value.some(item => item.target.id === slug)
+      ) {
+        candidates.value = [];
+        candidateIndex.value = 0;
+      }
       applyHighlight(routedTarget.value);
     },
     { immediate: true }
@@ -150,6 +183,7 @@ export const useSelectionStore = defineStore('selection', () => {
         // does not refire on an unchanged slug).
         stageSeed(target, entry);
         setTarget(routedTarget, target);
+        routedEntry.value = markRaw(entry);
         applyHighlight(target);
       }
       return;
@@ -164,12 +198,43 @@ export const useSelectionStore = defineStore('selection', () => {
     }
 
     if (!isCapable(entry, 'detail')) return;
-    await openDetail(target);
+    await openDetail(target, entry);
   }
 
-  /** Route the detail for a target (surface rule resolved by caller). */
-  async function openDetail(target: MapTarget): Promise<void> {
+  /** Click-pipeline entry point: the adapter supplies the deduplicated
+   *  items (topmost first). One item opens directly; several become
+   *  `candidates` with the first open (minimal `1/n` cycling switcher). */
+  function openFromMap(items: readonly FromMapItem[]): void {
+    if (items.length === 0) return;
+    if (items.length > 1) {
+      candidates.value = items.map(item => ({
+        target: markRaw(item.target) as MapTarget,
+        entry: item.entry,
+      }));
+      candidateIndex.value = 0;
+    } else {
+      candidates.value = [];
+      candidateIndex.value = 0;
+    }
+    void open(items[0].target, { via: 'map', entry: items[0].entry });
+  }
+
+  /** Cycle the disambiguation switcher to the next candidate (wraps).
+   *  No-op without candidates. */
+  async function cycleCandidates(): Promise<void> {
+    const list = candidates.value;
+    if (list.length < 2) return;
+    candidateIndex.value = (candidateIndex.value + 1) % list.length;
+    const item = list[candidateIndex.value];
+    await open(item.target, { via: 'map', entry: item.entry });
+  }
+
+  /** Route the detail for a target (surface rule resolved by caller).
+   *  The resolved entry travels with the routed target (Opus #1) —
+   *  claim-resolved map clicks keep their entry across the routing. */
+  async function openDetail(target: MapTarget, entry?: Presentation): Promise<void> {
     setTarget(routedTarget, target);
+    routedEntry.value = entry ? markRaw(entry) : null;
     applyHighlight(target);
     const failure = await router.push({
       name: CONTENT_ROUTE,
@@ -181,6 +246,7 @@ export const useSelectionStore = defineStore('selection', () => {
       // Navigation cancelled (guard): the route watcher never fires —
       // undo the optimistic routed/highlight state (GLM review F4).
       setTarget(routedTarget, null);
+      routedEntry.value = null;
       applyHighlight(null);
     }
   }
@@ -225,16 +291,20 @@ export const useSelectionStore = defineStore('selection', () => {
     popupTarget,
     popupEntry,
     candidates,
+    candidateIndex,
     detailPending,
     highlightRef,
     // Routed
     routedTarget,
+    routedEntry,
     detailOpen,
     detailSlug,
     mode,
     // Actions
     open,
     openDetail,
+    openFromMap,
+    cycleCandidates,
     expand,
     close,
     closePopup,

@@ -1,4 +1,4 @@
-import preview, { HUT_SLUGS } from '../../../../.storybook/preview';
+import preview, { HUT_SLUGS } from '../../../.storybook/preview';
 import { createRegistry } from '@/selection/registry';
 import { definePresentation, targetKey } from '@/selection/types';
 import { accommodationEntry } from '@/selection/entries/accommodation';

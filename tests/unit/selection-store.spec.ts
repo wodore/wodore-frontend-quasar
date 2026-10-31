@@ -6,7 +6,7 @@
  *
  * @vitest-environment happy-dom
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createApp, nextTick } from 'vue';
 import { createPinia, setActivePinia, type Pinia } from 'pinia';
 import { createRouter, createMemoryHistory, type Router } from 'vue-router';
@@ -287,5 +287,33 @@ describe('selection store state machine', () => {
     expect(store.mode).toBe('closed'); // route never landed
     expect(store.routedTarget).toBeNull();
     expect(store.highlightRef).toBeNull();
+  });
+
+  // ── PR2: click pipeline entry point ────────────────────────────────
+
+  it('openFromMap routes the first item and carries its claim entry (Opus #1)', async () => {
+    await router.push('/');
+    const store = instantiate(pinia, router);
+    store.openFromMap([{ target: target('planing'), entry: detailOnly }]);
+    await vi.waitFor(() => expect(store.mode).toBe('detail'));
+    expect(router.currentRoute.value.params.slug).toBe('planing');
+    // The claim-resolved entry travels with the routed target — a
+    // props-poor map-click target must NOT be re-resolved via MatchSpec.
+    expect(store.routedEntry).toBe(detailOnly);
+  });
+
+  it('openFromMap with several items sets candidates; cycling re-opens', async () => {
+    await router.push('/');
+    const store = instantiate(pinia, router);
+    store.openFromMap([
+      { target: target('a'), entry: detailOnly },
+      { target: target('b'), entry: detailOnly },
+    ]);
+    await vi.waitFor(() => expect(router.currentRoute.value.params.slug).toBe('a'));
+    expect(store.candidates).toHaveLength(2);
+    expect(store.candidateIndex).toBe(0);
+    await store.cycleCandidates();
+    await vi.waitFor(() => expect(router.currentRoute.value.params.slug).toBe('b'));
+    expect(store.candidateIndex).toBe(1);
   });
 });

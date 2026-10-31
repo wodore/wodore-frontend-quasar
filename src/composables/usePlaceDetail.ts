@@ -262,8 +262,10 @@ export function usePlaceDetail(
     } catch (err) {
       if (token !== seq) return;
       // A teardown abort is not an error state (legacy filtered
-      // AbortError by name — GLM review F7).
-      if (err instanceof Error && err.name === 'AbortError') return;
+      // AbortError by name — GLM review F7; name-only check because
+      // DOMException's instanceof Error is engine-dependent — Opus
+      // consolidated review #3).
+      if ((err as { name?: string })?.name === 'AbortError') return;
       error.value = toPlaceError(err);
     } finally {
       if (token === seq) {

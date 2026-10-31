@@ -10,7 +10,7 @@ import {
   onMounted,
   onScopeDispose,
 } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { useRoute } from 'vue-router';
 import {
   useResizeObserver,
   useDebounceFn,
@@ -57,12 +57,18 @@ import { clientWodore } from '@clients/index';
 import { seedPlaceFromMap } from '@composables/usePlace';
 import { setMapBootPending } from '@composables/useRequestProgress';
 import { forcedGpuTier, GPU_TIER_FALLBACK, rendererProfile } from '@services/gpu-override';
-import { MAP_MIN_ZOOM, MIN_HUT_CLICK_ZOOM } from '@stores/map/utils/map-constants';
+import { MAP_MIN_ZOOM } from '@stores/map/utils/map-constants';
 import { isBasemapStyleGone } from '@stores/map/utils/basemap-fallback';
 import {
-  INTERACTIVE_LAYERS,
+  derivedClaimedLayers,
+  derivedInteractiveLayers,
   tapTargetsInteractiveLayer,
 } from '@stores/map/utils/interactive-layers';
+import {
+  targetsFromFeatures,
+  type RenderedFeatureLike,
+} from '@selection/props-from-feature';
+import { useSelectionStore } from '@stores/map/selection-store';
 
 // MapLibre v6 resolves its web worker via import.meta.url, which breaks under
 // Vite's dependency optimization: the rewritten worker URL 404s and vector
@@ -100,7 +106,6 @@ const MOBILE_MAP_QUERY = '(max-width: 769px)';
 const isMobileMap = useMediaQuery(MOBILE_MAP_QUERY);
 
 // Map layer IDs
-const HUT_LAYER_ID = 'wd-huts';
 const HUT_SOURCE_ID = 'wd-huts';
 const HUT_SOURCE_LAYER = 'huts';
 
@@ -161,7 +166,6 @@ function getDangerMargin(): number {
 // ============================================================================
 
 const $q = useQuasar();
-const router = useRouter();
 const route = useRoute();
 const basemapStore = useBasemapStore();
 const overlayStore = useOverlayStore();
@@ -726,19 +730,16 @@ function onMapLoad(e: MglEvent<'load'>) {
 
   e.map.scrollZoom.setWheelZoomRate(0.003);
   onMapStyledata(e as unknown as MglEvent<'styledata'>);
-  // Interactive layers: hover cursor + click for every registry entry
-  // (see interactive-layers.ts). The focus tap guard consults the same
-  // list — a new interactive layer only needs a registry entry and a
-  // click handler here; guard and cursor affordance follow automatically.
-  const layerClickHandlers: Record<string, (e: MapLayerEventType['click']) => void> = {
-    [HUT_LAYER_ID]: onHutLayerClick,
-  };
-  for (const { id, minZoom } of INTERACTIVE_LAYERS) {
+  // Interactive layers: DERIVED from the presentation registry's layer
+  // claims (see interactive-layers.ts). ONE global click handler queries
+  // at click time — safe across catalog epoch bumps (per-layer bindings
+  // would go stale when applyCatalogOverlays re-adds layers). The focus
+  // tap guard consults the same derived list.
+  for (const { id, minZoom } of derivedInteractiveLayers()) {
     e.map.on('mouseenter', id, ev => onLayerEnter(ev, minZoom));
     e.map.on('mouseleave', id, ev => onLayerLeave(ev, minZoom));
-    const onClick = layerClickHandlers[id];
-    if (onClick) e.map.on('click', id, onClick);
   }
+  e.map.on('click', onMapClick);
 
   // Track location changes with throttling (updates every 1s max)
   // Only when tab is active
@@ -1022,75 +1023,109 @@ onErrorCaptured((err, instance, info) => {
 
 const selectedHutFeature = ref<undefined | MapGeoJSONFeature>(undefined);
 
-function onHutLayerClick(e: MapLayerEventType['click']) {
-  console.debug('Hut layer clicked.');
-  if (e.target.getZoom() > MIN_HUT_CLICK_ZOOM) {
-    let feature = e.features?.[0];
-    console.debug(
-      '  Selected huts:',
-      e.features?.map(v => v.properties.slug)
+// ── Generic click pipeline (OpenSpec place-interactions, PR2) ────────
+// Claim-based resolution: features of claimed layers → deduplicated
+// {target, entry} items → the selection store (surfaces, D12 toggle,
+// candidates). Highlight is controller-owned: the store's highlightRef
+// drives this adapter's feature-state via ONE writer.
+const selectionStore = useSelectionStore();
+
+/** Single feature-state writer — also clears the legacy deep-link
+ *  selection (selectHutBySlug) so the two paths never double-highlight. */
+type FeatureHandle = { source?: string; sourceLayer?: string; id?: unknown };
+let lastHighlightHandle: FeatureHandle | null = null;
+
+function applyFeatureHighlight(handle: FeatureHandle | null): void {
+  const map = mapRef.map;
+  if (!map) return;
+  if (lastHighlightHandle?.source) {
+    map.setFeatureState(
+      {
+        source: lastHighlightHandle.source,
+        sourceLayer: lastHighlightHandle.sourceLayer,
+        // SAFETY: the wire handle's id is the numeric feature id
+        // MapLibre keyed the feature under (never the slug).
+        id: lastHighlightHandle.id as string | number,
+      },
+      { selected: false }
     );
-    if (feature) {
-      const slug = feature.properties.slug;
-
-      // Check if clicking the same hut (toggle selection)
-      if (selectedHutFeature.value?.id == feature.id) {
-        // Deselect
-        e.target.setFeatureState(
-          { source: HUT_SOURCE_ID, sourceLayer: HUT_SOURCE_LAYER, id: feature.id },
-          { selected: false }
-        );
-        selectedHutFeature.value = undefined;
-
-        // Update router to remove slug
-        router.push({ name: 'map', hash: route.hash, query: route.query });
-        return;
-      }
-
-      // Deselect previous hut
-      if (selectedHutFeature.value !== undefined) {
-        e.target.setFeatureState(
-          { source: HUT_SOURCE_ID, sourceLayer: HUT_SOURCE_LAYER, id: selectedHutFeature.value.id },
-          { selected: false }
-        );
-      }
-
-      // Select new hut
-      e.target.setFeatureState(
-        { source: HUT_SOURCE_ID, sourceLayer: HUT_SOURCE_LAYER, id: feature.id },
-        { selected: true }
-      );
-      selectedHutFeature.value = <MapGeoJSONFeature>(feature as unknown);
-
-      // Instant identity: seed name/elevation/owner/location from the
-      // tile properties so the panel header paints before the details
-      // request resolves (owner 2026-10)
-      if (feature.geometry.type === 'Point') {
-        const [lon, lat] = feature.geometry.coordinates as [number, number];
-        seedPlaceFromMap(String(slug), { ...feature.properties }, { lat, lon });
-      } else {
-        seedPlaceFromMap(String(slug), { ...feature.properties });
-      }
-
-      // Smart fly to hut location
-      if (feature.geometry.type === 'Point') {
-        const coordinates = feature.geometry.coordinates as [number, number];
-        smartFlyToHut(e.target, coordinates);
-      }
-
-      // Update router
-      if (route.params.slug == slug) {
-        router.push({ name: 'map', hash: route.hash, query: route.query });
-      } else {
-        router.push({
-          name: 'map-hut',
-          params: { slug: slug },
-          hash: route.hash,
-          query: route.query,
-        });
-      }
-    }
   }
+  if (selectedHutFeature.value !== undefined) {
+    map.setFeatureState(
+      { source: HUT_SOURCE_ID, sourceLayer: HUT_SOURCE_LAYER, id: selectedHutFeature.value.id },
+      { selected: false }
+    );
+    selectedHutFeature.value = undefined;
+  }
+  if (handle?.source && handle.id !== undefined && handle.id !== null) {
+    map.setFeatureState(
+      {
+        source: handle.source,
+        sourceLayer: handle.sourceLayer,
+        id: handle.id as string | number, // SAFETY: numeric feature id, see above
+      },
+      { selected: true }
+    );
+  }
+  lastHighlightHandle = handle;
+}
+
+// Controller-owned highlight: the store sets/clears highlightRef; this
+// adapter applies it to the engine (setFeatureState keys on the NUMERIC
+// feature id, never the slug).
+watch(
+  () => selectionStore.highlightRef,
+  ref => {
+    const handle = (ref as { engine?: string; handle?: FeatureHandle } | null)?.handle;
+    applyFeatureHighlight(handle ?? null);
+  }
+);
+
+/** ONE global click handler — queries the derived claim layers at click
+ *  time (safe across catalog epoch bumps; per-layer bindings go stale). */
+function onMapClick(e: MapLayerEventType['click']): void {
+  const map = e.target;
+  const claims = derivedClaimedLayers();
+  if (claims.length === 0) return;
+  const claimsForPipeline = claims.map(c => ({
+    layer: c.id,
+    source: c.entry.match.source,
+    idProp: c.idProp,
+    minZoom: c.minZoom,
+    entry: c.entry,
+  }));
+  // Query only claim layers that exist on the current style; keep the
+  // style-not-loaded guard (same class as the tap guard).
+  const ids = claims.map(c => c.id).filter(id => map.getLayer(id));
+  if (ids.length === 0) return;
+  let features: readonly RenderedFeatureLike[];
+  try {
+    features = (map.queryRenderedFeatures(e.point, { layers: ids }) ??
+      []) as unknown as readonly RenderedFeatureLike[];
+  } catch {
+    return; // style not loaded / mid-basemap-switch
+  }
+  if (features.length === 0) return;
+  const items = targetsFromFeatures(features, claimsForPipeline, map.getZoom());
+  if (items.length === 0) return;
+  const first = items[0];
+
+  // Legacy identity-seed parity (owner 2026-10): tile props + click
+  // geometry paint the panel header before the details request resolves.
+  seedPlaceFromMap(first.target.id, first.target.props, first.target.location);
+
+  // Legacy fly-to parity — only when a DETAIL will open (not the D12
+  // toggle-close; popup surfaces get popup-aware padding with the
+  // WdMapPopup spike instead).
+  const caps = first.entry?.capabilities;
+  const detailOnly = !caps || (caps.includes('detail') && !caps.includes('popup'));
+  const willToggleClose =
+    selectionStore.detailOpen && selectionStore.detailSlug === first.target.id;
+  if (detailOnly && !willToggleClose && first.target.location) {
+    smartFlyToHut(map, [first.target.location.lon, first.target.location.lat]);
+  }
+
+  selectionStore.openFromMap(items);
 }
 
 // Clear the hut selection when the hut route is left (sheet dismissed by

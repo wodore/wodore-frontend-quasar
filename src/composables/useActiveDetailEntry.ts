@@ -15,7 +15,16 @@
  * the same entry NEVER swaps components (no remount flicker); swapping
  * entries swaps all three zones atomically.
  */
-import { computed, markRaw, ref, shallowRef, watch, type Component, type Ref, type ShallowRef } from 'vue';
+import {
+  computed,
+  markRaw,
+  ref,
+  shallowRef,
+  watch,
+  type Component,
+  type Ref,
+  type ShallowRef,
+} from 'vue';
 import { useSelectionStore } from '@stores/map/selection-store';
 import { defaultRegistry } from '@selection/registry';
 import type { EntrySurfaces, Presentation } from '@selection/types';
@@ -54,6 +63,12 @@ export function useActiveDetailEntry(): ActiveDetailEntry {
   const selection = useSelectionStore();
 
   const entry = computed<Presentation | null>(() => {
+    // Opus consolidated review #1: the CLAIM-resolved entry travels with
+    // the routed target (map-clicked huts carry no kind/domain in tile
+    // props — MatchSpec re-resolution would mis-resolve to the fallback
+    // and render a blank panel). Prefer it; registry resolution only
+    // for routed targets without one (search/probe-resolved).
+    if (selection.routedEntry) return selection.routedEntry;
     const routed = selection.routedTarget;
     if (routed) {
       const resolved = defaultRegistry().resolve(routed);
