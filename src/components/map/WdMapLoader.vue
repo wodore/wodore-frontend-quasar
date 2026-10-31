@@ -35,11 +35,16 @@ const props = withDefaults(defineProps<Props>(), { rendered: false, mapReady: fa
 const { t } = useI18n();
 const entered = ref(false);
 const hillsIn = ref(false);
-/** Color-mark crossfade fires INDEPENDENTLY of the 2s entrance — as
- * soon as the splash mounts and the font gate clears (owner: "show
- * colored logo asap if ready, keep fading"). The wordmark and hills
- * still respect the 2s/3s budget. */
-const colorIn = ref(false);
+/** The Vue splash renders COLORED from its first paint (owner report
+ *  2026-10-31: mounting with the mono mark re-ran the crossfade UNDER
+ *  the boot shell — the shell crossfades mono→color at 250ms in pure
+ *  CSS, the handover then revealed a mono Vue splash that faded to
+ *  color AGAIN, a visible double crossfade). The boot shell owns the
+ *  only mono→color transition; starting colored here means the class
+ *  applies before the component's first paint — no transition runs.
+ *  The SVG mark needs no font, so the font gate (kept for the
+ *  wordmark/words) never applied to it anyway. */
+const colorIn = ref(true);
 
 /** Stage budgets in PAGE TIME. */
 const ENTRANCE_AT_MS = 2000;
@@ -136,15 +141,9 @@ onMounted(() => {
       window.setTimeout(resolve, 500);
     }),
   ]);
-  // COLOR MARK — asap once fonts are ready (owner spec): independent
-  // of the 2s entrance budget, so warm boots show the brand color in
-  // the first ~500ms instead of holding the mono mark until 2s.
-  void fontsReady.then(() => {
-    requestAnimationFrame(() => {
-      if (disposed) return; // review n1: no post-unmount ref writes
-      colorIn.value = true;
-    });
-  });
+  // (The color mark needs no gate — see colorIn above: it renders
+  // colored from first paint. The fontsReady gate below still governs
+  // the WORDMARK entrance and the status words.)
   // Stage 2 — brand entrance (wordmark) at the 2s PAGE-TIME budget (a
   // slow JS boot already consumed it and enters immediately).
   const entranceDelay = Math.max(0, ENTRANCE_AT_MS - window.performance.now());

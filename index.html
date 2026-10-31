@@ -359,13 +359,11 @@
          something visibly happens long before Vue is up; the handover
          is then invisible (same fills, same geometry). */
       .wd-boot-shell__logo--mono {
-        animation: wd-boot-shell-mono-out 600ms cubic-bezier(0.25, 1, 0.5, 1)
-          250ms forwards;
+        animation: wd-boot-shell-mono-out 600ms cubic-bezier(0.25, 1, 0.5, 1) 250ms forwards;
       }
       .wd-boot-shell__logo--color {
         opacity: 0;
-        animation: wd-boot-shell-color-in 600ms cubic-bezier(0.25, 1, 0.5, 1)
-          250ms forwards;
+        animation: wd-boot-shell-color-in 600ms cubic-bezier(0.25, 1, 0.5, 1) 250ms forwards;
       }
       @keyframes wd-boot-shell-mono-out {
         to {
@@ -509,7 +507,11 @@
          (same ~20 phrases, same order, all four locales). -->
     <div id="wd-boot-shell" role="status" aria-label="Loading map">
       <div class="wd-boot-shell__mark">
-        <svg class="wd-boot-shell__logo wd-boot-shell__logo--mono" viewBox="0 0 42 48" aria-hidden="true">
+        <svg
+          class="wd-boot-shell__logo wd-boot-shell__logo--mono"
+          viewBox="0 0 42 48"
+          aria-hidden="true"
+        >
           <g>
             <g>
               <path
