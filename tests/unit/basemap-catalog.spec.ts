@@ -47,14 +47,18 @@ describe('mapCatalogBasemap (resolved layers entries)', () => {
   });
 
   it('maps the resolved layer onto a switch item with the served style_url', () => {
+    // Hermetic: the switch item must carry the SERVED url verbatim —
+    // whatever absolutizeStyleUrl yields in this environment (raw stays
+    // raw without WODORE_API_HOST, absolutizes with it).
+    const served = absolutizeStyleUrl('/v1/map/styles/wd-outdoor-base-mtk-hill.json?spec=high');
     const item = mapCatalogBasemap(
       layer({ slug: 'wd-outdoor-base-mtk-hill' }),
-      absolutizeStyleUrl('/v1/map/styles/wd-outdoor-base-mtk-hill.json?spec=high'),
+      served,
       () => 'thumb.png'
     );
     expect(item.name).toBe('wd-outdoor-base-mtk-hill');
     expect(item.label).toBe('Wodore Outdoor (client relief)');
-    expect(item.style).toBe('/v1/map/styles/wd-outdoor-base-mtk-hill.json?spec=high');
+    expect(item.style).toBe(served);
     expect(item.img).toBe('thumb.png');
     expect(item.active).toBe(false);
     expect(item.fallback).toBeUndefined();

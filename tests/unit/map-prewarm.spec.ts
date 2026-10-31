@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { styleAssetUrls, spriteVariantUrl, prewarmCatalogStyles } from '@services/map-prewarm';
-import type { MapCatalogLayer } from '@services/map-catalog';
+import { absolutizeStyleUrl, type MapCatalogLayer } from '@services/map-catalog';
 import type { StyleSpecification } from 'maplibre-gl';
 
 /** Staged-map prewarm URL grammar: MapLibre loads `sprite.json` /
@@ -101,6 +101,10 @@ describe('map-prewarm prewarmCatalogStyles', () => {
     ];
     prewarmCatalogStyles(layers, '/v1/map/styles/huts.json?spec=high');
     const warmed = fetchMock.mock.calls.map(c => String(c[0]));
-    expect(warmed).toEqual(['/v1/map/styles/mtb.json?spec=high']);
+    // Hermetic: prewarm warms the ABSOLUTIZED url (whatever apiBase()
+    // yields here — raw without WODORE_API_HOST); the INTENT of this test
+    // is that the critical style still gets skipped when exceptStyleUrl
+    // is given in its RAW root-relative form.
+    expect(warmed).toEqual([absolutizeStyleUrl('/v1/map/styles/mtb.json?spec=high')]);
   });
 });
