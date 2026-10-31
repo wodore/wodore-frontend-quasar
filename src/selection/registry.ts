@@ -54,7 +54,9 @@ export function matchSpec(spec: MatchSpec, target: MapTarget): boolean {
 
 /** Structural read of a `kind` member from a wire bag (search row,
  *  probe, MVT props). */
-function kindOf(props: Record<string, unknown>): { identifier?: string | null; slug?: string | null } | null {
+function kindOf(
+  props: Record<string, unknown>
+): { identifier?: string | null; slug?: string | null } | null {
   const kind = props.kind;
   if (typeof kind !== 'object' || kind === null) return null;
   return kind as { identifier?: string | null; slug?: string | null };
@@ -104,4 +106,21 @@ export function createRegistry(list: readonly Presentation[]): Registry {
     entries: () => list,
     clearMemo: () => memo.clear(),
   };
+}
+
+// ── Default instance ────────────────────────────────────────────────────
+// `src/selection/entries/index.ts` installs the app registry at import
+// time (createRegistry over the ordered entry array). Until then the
+// default is an EMPTY registry — resolution fails open (undefined) and
+// `open()` no-ops, which is correct for the staged PR1a rollout where
+// map clicks still route directly and the routed side binds via route
+// meta. Tests/Histoire may install scoped registries via setDefaultRegistry.
+let defaultReg: Registry | null = null;
+
+export function setDefaultRegistry(r: Registry): void {
+  defaultReg = r;
+}
+
+export function defaultRegistry(): Registry {
+  return (defaultReg ??= createRegistry([]));
 }

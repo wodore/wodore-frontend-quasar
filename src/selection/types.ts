@@ -145,6 +145,10 @@ export type DetailStart = 'minimized' | 'expanded';
 export interface PresentationDef<D extends object> {
   id: string;
   match: MatchSpec;
+  /** Sync, declarative surface capabilities — lets `open()` pick the
+   *  surface WITHOUT awaiting the lazy barrel (the loader stays the
+   *  single chunk source). */
+  capabilities?: ReadonlyArray<'popup' | 'detail'>;
   /** Barrel loader — `() => import('./surfaces')`. */
   surfaces?: () => Promise<EntrySurfaces>;
   /** Narrow return type erases soundly (covariant). */
@@ -161,6 +165,7 @@ export interface PresentationDef<D extends object> {
 export interface Presentation {
   id: string;
   match: MatchSpec;
+  capabilities?: ReadonlyArray<'popup' | 'detail'>;
   surfaces?: () => Promise<EntrySurfaces>;
   fetch?(ctx: FetchCtx): Promise<object>;
   seed?(props: PropsBag): object | null;
@@ -173,9 +178,7 @@ export interface Presentation {
  * Entries get full type inference on fetch/seed; the registry stores
  * plain Presentations.
  */
-export function definePresentation<D extends object>(
-  def: PresentationDef<D>
-): Presentation {
+export function definePresentation<D extends object>(def: PresentationDef<D>): Presentation {
   // Sound by construction: fetch/seed return types are covariant, the
   // wide seed parameter is already the erased bag, match consumes no
   // generics. The cast only widens the recorded def.

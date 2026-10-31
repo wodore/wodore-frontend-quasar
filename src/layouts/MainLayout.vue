@@ -14,7 +14,7 @@ import { useQuasar } from 'quasar';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@stores/auth-store';
 import { useMapMenuStore } from '@stores/map/map-menu-store';
-import { useMapContentStore } from '@stores/map/map-content-store';
+import { useSelectionStore } from '@stores/map/selection-store';
 import { useUserSettingsStore } from '@stores/user-settings-store';
 import { useLocalPropertiesStore } from '@stores/local-properties-store';
 import { useSyncedPropertiesStore } from '@stores/synced-properties-store';
@@ -31,7 +31,7 @@ import { getEnv } from '@services/runtimeEnv';
 // Initialize stores
 const _authStore = useAuthStore();
 const menuStore = useMapMenuStore();
-const contentStore = useMapContentStore();
+const contentStore = useSelectionStore();
 
 // Initialize stores (stores persist lazily on the first user change —
 // no localStorage key is written on creation)

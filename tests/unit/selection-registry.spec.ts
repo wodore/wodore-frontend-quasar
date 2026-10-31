@@ -68,7 +68,12 @@ describe('matchSpec', () => {
       true,
     ],
     ['domain mismatch', { source: SOURCES.geoplace, domain: 'admin' }, geoplaceHut, false],
-    ['missing domain member', { source: SOURCES.geoplace, domain: 'amenity' }, target({ source: SOURCES.geoplace, id: 'x', props: {} }), false],
+    [
+      'missing domain member',
+      { source: SOURCES.geoplace, domain: 'amenity' },
+      target({ source: SOURCES.geoplace, id: 'x', props: {} }),
+      false,
+    ],
     [
       'kindParent derived from identifier prefix',
       { source: SOURCES.geoplace, kindParent: 'accommodation' },
@@ -106,12 +111,7 @@ describe('matchSpec', () => {
       geoplaceHut,
       true,
     ],
-    [
-      'where can veto',
-      { source: SOURCES.geoplace, where: () => false },
-      geoplaceHut,
-      false,
-    ],
+    ['where can veto', { source: SOURCES.geoplace, where: () => false }, geoplaceHut, false],
   ];
 
   it.each(cases)('%s', (_name, spec, t, expected) => {
@@ -149,7 +149,10 @@ describe('createRegistry', () => {
     const water = target({
       source: SOURCES.geoplace,
       id: 'water-x',
-      props: { domain: 'amenity', kind: { identifier: 'amenity.water_point', slug: 'water_point' } },
+      props: {
+        domain: 'amenity',
+        kind: { identifier: 'amenity.water_point', slug: 'water_point' },
+      },
     });
     expect(reg.resolve(water)?.id).toBe('geoplace-default');
   });

@@ -47,10 +47,7 @@ export function kindParentOf(kind: KindRefLike | null | undefined): string | nul
 }
 
 /** Kind identifier or slug equality against a match value. */
-export function kindEquals(
-  kind: KindRefLike | null | undefined,
-  expected: string
-): boolean {
+export function kindEquals(kind: KindRefLike | null | undefined, expected: string): boolean {
   return kind?.identifier === expected || kind?.slug === expected;
 }
 
