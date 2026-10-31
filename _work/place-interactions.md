@@ -35,7 +35,7 @@ First implementation scope (owner, 2026-10-31):
 | D9  | Fallback popup     | IN scope. Anchoring shell is engine-specific (MapLibre/Leaflet adapters); the rendered popup CONTENT component is shared. The transport popup component already exists (WIP) and is integrated as-is.                                                                                                                                                                |
 | D10 | URL taxonomy       | Path segments = ENTITY MODELS only (`place`, `route`, `area`). Geoplace domains (admin/natural/amenity) NEVER appear in URLs — reclassification must not break links. External sources: no URL in first scope; `/place/:source/:id` pattern reserved (needs `encodeURIComponent` + param regex when it lands).                                                       |
 | D11 | Search sources     | `sources` returns to the autocomplete sparse selection (owner accepts the per-row keystroke cost). Search select opens detail straight from props — 1 request, no probe. May be dropped again after the huts→geoplace migration removes the source_id chain — but sources stay potentially useful then too (attribution, external sources); revisit, don't pre-drop. |
-| D12 | Toggle-close       | Clicking the already-open target's feature via the MAP toggles the detail CLOSED (today's tap-pin-to-close UX is preserved). Via search/link, the already-routed target re-anchors/re-highlights/reseeds instead. |
+| D12 | Toggle-close       | Clicking the already-open target's feature via the MAP toggles the detail CLOSED (today's tap-pin-to-close UX is preserved). Via search/link, the already-routed target re-anchors/re-highlights/reseeds instead.                                                                                                                                                    |
 
 ## 1. Current state (what constrains us)
 
@@ -514,7 +514,7 @@ Registry supplies per-entry `searchEntry` overrides later.
 
 Transitional fallback if (2) lags: the frontend probe tries
 `/v1/huts/{slug}` on geoplace 404 (mixed id-space, removed once tiles
-   ship — tracked under Later).
+ship — tracked under Later).
 
 ## 5. Risks & coordination
 
@@ -654,4 +654,16 @@ Transitional fallback if (2) lags: the frontend probe tries
   /hut/:slug deep link renders the maximized panel with all three zones
   through the new wiring (desktop + mobile bottom sheet), close routes
   to map with hash preserved; 575 unit tests green.
+- **2026-10-31 — Opus consolidated review (PR1a): APPROVE.** All
+  GLM fixes verified correct; PR1a shippable. Followups applied before
+  PR2 built on the seam: #1 routedEntry travels with the routed target
+  (claim-resolved map clicks never re-resolved via props-blind
+  MatchSpec — blank-panel bug in waiting), #3 AbortError name-only.
+  #2 (registry memo props-discrimination) DEFERRED with rationale: no
+  current path resolves props-poor targets through MatchSpec after #1.
+  #4 (useActiveDetailEntry spec) pending.
+- **2026-10-31 — PR2 task 1 landed (generic claim-based click
+  pipeline, MapLibre):** global handler + derived interactive layers
+  from entry claims + deduped target/items + openFromMap with
+  candidates; browser-verified (open, D12 toggle, zoom gate).
 - Owner sign-off: **pending go for OpenSpec** — no open questions.
