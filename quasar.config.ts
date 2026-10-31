@@ -281,7 +281,7 @@ export default configure(ctx => {
         // that chain alone delayed the splash to ~1s. Injecting
         // modulepreload links for the known map-boot chunks lets the
         // browser fetch+compile them ALL in parallel while the entry
-          // script is still evaluating. index.html carries no
+        // script is still evaluating. index.html carries no
         // precompressed siblings (the compression include is js/css/svg
         // only), so rewriting it here cannot go stale.
         const MAP_BOOT_CHUNK_PREFIXES = [
@@ -332,7 +332,9 @@ export default configure(ctx => {
             const links = [
               '<!-- wd-modulepreload-map-boot -->',
               ...targets.map(f => `<link rel="modulepreload" href="assets/${f}" crossorigin>`),
-              ...(worker ? [`<link rel="preload" href="assets/${worker}" as="script" crossorigin>`] : []),
+              ...(worker
+                ? [`<link rel="preload" href="assets/${worker}" as="script" crossorigin>`]
+                : []),
             ].join('');
             writeFileSync(htmlPath, html.replace('</head>', `${links}</head>`));
           },
