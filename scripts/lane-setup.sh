@@ -24,6 +24,11 @@ if ! command -v pnpm >/dev/null 2>&1; then
   exit 1
 fi
 
+# AGENTS.md worktree pitfall: the design submodule (overlay/basemap
+# switch icons, map assets) does NOT propagate to new worktrees —
+# without it the overlay toggle and map-picker icons 404. Idempotent.
+git submodule update --init --recursive
+
 pnpm install --frozen-lockfile
 
 echo "lane-setup: ready — dev server: scripts/lane-web.sh fg|start (port $(sed -n 's/^PORT=//p' .env.local 2>/dev/null || true))"
