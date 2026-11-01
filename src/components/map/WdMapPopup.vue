@@ -38,6 +38,10 @@ const projectorRef = useProjector();
 const cardEl = ref<HTMLElement | null>(null);
 const side = shallowRef<'above' | 'below'>('above');
 const candidatesOpen = shallowRef(false);
+/** Anchor is outside the viewport — the card is visually hidden (CSS
+ *  fade/scale-out) but stays in the store; it pops back when the map
+ *  pans the anchor back in (animated hide/reveal, owner 2026-11-01). */
+const anchorOffScreen = shallowRef(false);
 
 /** Display name for the SHELL title strip (non-transport entries with a
  *  `name` prop). Transport carries stop_name in its CONTENT component. */
@@ -56,31 +60,27 @@ function updateAnchor(): void {
   const projector = projectorRef.value;
   if (!card || !target?.location || !projector) return;
   const anchor = projector.project(target.location);
-  // OFF-SCREEN: hide the card, don't close it (owner 2026-11-01: "it
-  // should open again when moved in again"). The popup target stays in
-  // the store — map click still fully closes via closePopup.
-  // No visibility toggle — the card simply moves off-screen with its
-  // anchor (the browser clips it naturally). When the map pans back,
-  // the next move frame re-positions it. Simpler and more natural
-  // than hide/show (owner: "do we even need to hide popup when
-  // outside, why not just move it outside the view").
-  // Layout size (offsetWidth/Height) — NOT getBoundingClientRect, which
-  // returns the scale-transformed visual box during the enter transition.
-  // When the anchor is OUTSIDE the viewport, skip the clamp — position
-  // the card at the raw anchor so it follows the dot off-screen (the
-  // browser clips it naturally; the card re-enters when the map pans
-  // back). Only clamp when the anchor is visible (keep the card on-screen).
-  const anchorVisible =
-    anchor.x >= 0 && anchor.x <= window.innerWidth &&
-    anchor.y >= 0 && anchor.y <= window.innerHeight;
-  const clamped = anchorVisible
-    ? clampToViewport(
-        anchor,
-        { width: card.offsetWidth, height: card.offsetHeight },
-        { width: window.innerWidth, height: window.innerHeight },
-        CHROME
-      )
-    : { x: anchor.x - card.offsetWidth / 2, y: anchor.y - card.offsetHeight - 12, side: 'above' as const };
+  // ANIMATED OFF-SCREEN HIDE/REVEAL (owner 2026-11-01): when the anchor
+  // leaves the viewport, fade+scale the card out (CSS class — the popup
+  // target STAYS in the store, map click still fully closes). When the
+  // anchor re-enters on a later move frame, the class lifts and the
+  // card pops back at its re-clamped position.
+  const offScreen =
+    anchor.x < -20 || anchor.x > window.innerWidth + 20 ||
+    anchor.y < -20 || anchor.y > window.innerHeight + 20;
+  if (offScreen !== anchorOffScreen.value) {
+    anchorOffScreen.value = offScreen;
+    card.classList.toggle('wd-map-popup--off-screen', offScreen);
+  }
+  if (offScreen) return; // hidden — skip positioning until back in view
+
+  // Layout size (offsetWidth/Height) — NOT getBoundingClientRect.
+  const clamped = clampToViewport(
+    anchor,
+    { width: card.offsetWidth, height: card.offsetHeight },
+    { width: window.innerWidth, height: window.innerHeight },
+    CHROME
+  );
   card.style.transform = `translate(${clamped.x}px, ${clamped.y}px)`;
   side.value = clamped.side;
   const originX = Math.round(anchor.x - clamped.x);
@@ -422,6 +422,25 @@ onScopeDispose(() => {
   padding-top: 4px;
   margin-top: 4px;
   border-top: 1px solid var(--wd-ridge);
+}
+
+// ── Off-screen hide/reveal (animated fade+scale) ───────────────────────
+// The card stays in the DOM; the class toggles on/off as the anchor
+// leaves/re-enters the viewport. Same pop easing as the enter/leave —
+// the reveal reads as a second pop from the pin.
+.wd-map-popup--off-screen {
+  opacity: 0;
+  scale: 0.6;
+  pointer-events: none;
+  transition:
+    opacity 0.15s ease-in,
+    scale 0.15s ease-in;
+}
+
+.wd-map-popup:not(.wd-map-popup--off-screen) {
+  transition:
+    opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+    scale 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 // ── Enter/leave: pop from the pin ──────────────────────────────────────
