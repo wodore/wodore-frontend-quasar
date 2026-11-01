@@ -226,6 +226,15 @@ export const useSelectionStore = defineStore('selection', () => {
     await open(item.target, { via: 'map', entry: item.entry });
   }
 
+  /** Jump directly to candidate i (collapsible-list click). */
+  async function selectCandidate(i: number): Promise<void> {
+    const list = candidates.value;
+    if (i < 0 || i >= list.length) return;
+    candidateIndex.value = i;
+    const item = list[i];
+    await open(item.target, { via: 'map', entry: item.entry });
+  }
+
   /** Route the detail for a target (surface rule resolved by caller).
    *  The resolved entry travels with the routed target (Opus #1) —
    *  claim-resolved map clicks keep their entry across the routing. */
@@ -302,6 +311,7 @@ export const useSelectionStore = defineStore('selection', () => {
     openDetail,
     openFromMap,
     cycleCandidates,
+    selectCandidate,
     expand,
     close,
     closePopup,

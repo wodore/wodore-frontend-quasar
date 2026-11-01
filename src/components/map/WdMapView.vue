@@ -1160,9 +1160,19 @@ function onMapClick(e: MapLayerEventType['click']): void {
   } catch {
     return; // style not loaded / mid-basemap-switch
   }
-  if (features.length === 0) return;
+  if (features.length === 0) {
+    // Click on empty map (NOT a drag — MapLibre's click event only fires
+    // on genuine clicks): dismiss an open popup (owner 2026-10-31).
+    if (selectionStore.popupTarget) selectionStore.closePopup();
+    return;
+  }
   const items = targetsFromFeatures(features, claimsForPipeline, map.getZoom());
-  if (items.length === 0) return;
+  if (items.length === 0) {
+    // Features under the cursor but none produced a target (missing id,
+    // zoom gate) — still dismiss the popup, the click "went somewhere".
+    if (selectionStore.popupTarget) selectionStore.closePopup();
+    return;
+  }
   const first = items[0];
 
   // Legacy identity-seed parity (owner 2026-10): tile props + click
