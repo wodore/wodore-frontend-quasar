@@ -59,13 +59,11 @@ function updateAnchor(): void {
   // OFF-SCREEN: hide the card, don't close it (owner 2026-11-01: "it
   // should open again when moved in again"). The popup target stays in
   // the store — map click still fully closes via closePopup.
-  const offScreen =
-    anchor.x < -20 ||
-    anchor.x > window.innerWidth + 20 ||
-    anchor.y < -20 ||
-    anchor.y > window.innerHeight + 20;
-  card.style.visibility = offScreen ? 'hidden' : 'visible';
-  if (offScreen) return; // skip positioning — restore on next move frame
+  // No visibility toggle — the card simply moves off-screen with its
+  // anchor (the browser clips it naturally). When the map pans back,
+  // the next move frame re-positions it. Simpler and more natural
+  // than hide/show (owner: "do we even need to hide popup when
+  // outside, why not just move it outside the view").
   // Layout size (offsetWidth/Height) — NOT getBoundingClientRect, which
   // returns the scale-transformed visual box during the enter transition.
   const clamped = clampToViewport(
@@ -81,7 +79,10 @@ function updateAnchor(): void {
     clamped.side === 'above' ? `${originX}px calc(100% - 8px)` : `${originX}px 8px`;
   // Stem sits at the anchor's x position (not card center) — the arrow
   // points at the dot even when the card is clamped away from it.
-  card.style.setProperty('--wd-stem-x', `${Math.max(8, Math.min(card.offsetWidth - 8, originX))}px`);
+  card.style.setProperty(
+    '--wd-stem-x',
+    `${Math.max(8, Math.min(card.offsetWidth - 8, originX))}px`
+  );
 }
 
 // ── Entry popup CONTENT (module-scope cache, GLM F1) ─────────────────
@@ -295,8 +296,8 @@ onScopeDispose(() => {
 // ── Chrome: absolute close button ───────────────────────────────────────
 .wd-map-popup__chrome {
   position: absolute;
-  top: 4px;
-  right: 4px;
+  top: 6px;
+  right: 8px;
   z-index: 1;
 
   .q-btn {

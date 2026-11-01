@@ -1167,6 +1167,10 @@ function onMapClick(e: MapLayerEventType['click']): void {
     return;
   }
   const items = targetsFromFeatures(features, claimsForPipeline, map.getZoom());
+  // Cancel any pending focus-mode timer from the tap guard — the
+  // click found a target the exact-point guard missed (±10px box;
+  // owner: "sometimes focus mode still changes on clicks of dots").
+  if (items.length > 0) cancelPendingTap();
   if (items.length === 0) {
     // Features under the cursor but none produced a target (missing id,
     // zoom gate) — still dismiss the popup, the click "went somewhere".

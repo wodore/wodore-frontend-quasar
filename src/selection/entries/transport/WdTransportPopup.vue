@@ -107,7 +107,7 @@ interface RouteInfo {
 const ROUTE_PILL_CAP = 4;
 
 const routes = computed<RouteInfo[]>(() => {
-  return parseJsonArray(p.value.routes)
+  const all = parseJsonArray(p.value.routes)
     .map(r => {
       const route = r as {
         route_short_name?: unknown;
@@ -129,6 +129,24 @@ const routes = computed<RouteInfo[]>(() => {
       return { name, color };
     })
     .filter((r): r is RouteInfo => r !== null);
+
+  // Dedup by name, keep the first color seen (Transitland repeats
+  // routes per direction/segment at hubs like Zürich HB — 64 pills
+  // collapse to ~20 unique). Count occurrences, sort by frequency
+  // (most-served first) then alphabetically.
+  const byName = new Map<string, RouteInfo & { count: number }>();
+  for (const route of all) {
+    const existing = byName.get(route.name);
+    if (existing) {
+      existing.count++;
+      if (!existing.color && route.color) existing.color = route.color;
+    } else {
+      byName.set(route.name, { ...route, count: 1 });
+    }
+  }
+  return [...byName.values()]
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+    .map(({ name, color }) => ({ name, color }));
 });
 
 const showAllRoutes = ref(false);
@@ -297,6 +315,9 @@ function swatchColor(route: RouteInfo): string {
   flex-wrap: wrap;
   gap: 4px;
   margin-top: 8px;
+  max-height: 96px; // ~3 rows — larger sets scroll (Zurich HB: 20+ routes)
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .wd-tp__pill {
