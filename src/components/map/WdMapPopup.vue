@@ -192,17 +192,18 @@ onScopeDispose(() => {
       >
         <div class="wd-map-popup__stem" aria-hidden="true" />
 
-        <!-- Chrome: close button, absolute top-right (no header row) -->
-        <div class="wd-map-popup__chrome">
-          <q-btn
-            flat
-            round
-            dense
-            icon="wd-close"
-            :aria-label="$t('place.popup.close')"
-            @click="selection.closePopup()"
-          />
-        </div>
+        <!-- Accessible close: visually hidden, keyboard-focusable.
+             Dismissal is by map click (the natural gesture for ephemeral
+             map popups); this exists for screen readers and keyboard
+             users only (owner 2026-11-01: "drop the close button"). -->
+        <button
+          type="button"
+          class="wd-map-popup__sr-close"
+          :aria-label="$t('place.popup.close')"
+          @click.stop="selection.closePopup()"
+        >
+          {{ $t('place.popup.close') }}
+        </button>
 
         <!-- Title strip (entries with a name prop; transport renders in content) -->
         <div v-if="title" class="wd-map-popup__title-strip">{{ title }}</div>
@@ -302,15 +303,36 @@ onScopeDispose(() => {
   border-right: none;
 }
 
-// ── Chrome: absolute close button ───────────────────────────────────────
-.wd-map-popup__chrome {
+// ── Accessible close: visually hidden (sr-only) ────────────────────────
+// Standard screen-reader-only pattern: off-screen until keyboard-focused,
+// then visible for sighted keyboard users.
+.wd-map-popup__sr-close {
   position: absolute;
-  top: 4px;
-  right: 4px;
-  z-index: 1;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  background: none;
+  color: var(--wd-ink);
+  font-size: 12px;
+  cursor: pointer;
 
-  .q-btn {
-    color: var(--wd-ink-soft);
+  &:focus {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: auto;
+    height: auto;
+    padding: 4px 8px;
+    margin: 0;
+    clip: auto;
+    border-radius: 4px;
+    background: var(--wd-wash);
+    z-index: 1;
   }
 }
 
@@ -439,23 +461,6 @@ onScopeDispose(() => {
     scale 0.15s ease-in;
 }
 
-.wd-map-popup:not(.wd-map-popup--off-screen) {
-  transition:
-    opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1),
-    scale 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-// Kill any inherited transition on the enter-active phase — the Vue
-// Transition's enter-active class owns the animation timing; a base
-// transition on the same properties makes the card briefly visible at
-// the pre-anchor position (0,0) before the transform lands (owner:
-// "popup flies in from top left").
-.wd-popup-enter-active {
-  transition:
-    opacity 0.1s ease-out,
-    scale 0.14s cubic-bezier(0.16, 1, 0.3, 1) !important;
-}
-
 // ── Enter/leave: pop from the pin ──────────────────────────────────────
 .wd-map-popup[data-side='above'] {
   transform-origin: 50% calc(100% - 8px);
@@ -467,8 +472,8 @@ onScopeDispose(() => {
 
 .wd-popup-enter-active {
   transition:
-    opacity 0.12s ease-out,
-    scale 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity 0.1s ease-out,
+    scale 0.16s cubic-bezier(0.22, 1.2, 0.36, 1);
 }
 
 .wd-popup-leave-active {
@@ -479,7 +484,7 @@ onScopeDispose(() => {
 
 .wd-popup-enter-from {
   opacity: 0;
-  scale: 0.92;
+  scale: 0.75;
 }
 
 .wd-popup-leave-to {

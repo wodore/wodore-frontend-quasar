@@ -250,7 +250,7 @@ function swatchColor(route: RouteInfo): string {
 .wd-tp__col {
   flex: 1;
   min-width: 0;
-  padding-right: 40px; // clears the absolute close + generous breathing room
+  padding-right: 8px; // no visible close button (sr-only) — normal padding
 }
 
 // Row 1: type overline
