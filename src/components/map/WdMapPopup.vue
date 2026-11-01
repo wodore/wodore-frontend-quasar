@@ -83,15 +83,17 @@ function updateAnchor(): void {
   );
   card.style.transform = `translate(${clamped.x}px, ${clamped.y}px)`;
   side.value = clamped.side;
-  const originX = Math.round(anchor.x - clamped.x);
-  card.style.transformOrigin =
-    clamped.side === 'above' ? `${originX}px calc(100% - 8px)` : `${originX}px 8px`;
-  // Stem sits at the anchor's x position (not card center) — the arrow
-  // points at the dot even when the card is clamped away from it.
-  card.style.setProperty(
-    '--wd-stem-x',
-    `${Math.max(8, Math.min(card.offsetWidth - 8, originX))}px`
+  // transform-origin is CSS-owned (data-side rules) — 50% of the card
+  // width at the stem edge. The animation grows from the CENTER of the
+  // stem edge (upward when above, downward when below), not from the
+  // exact pin x-offset (owner 2026-11-01: "grow from bottom center").
+  // Stem sits at the anchor's x position — compute the offset inline
+  // (originX was removed with the transform-origin override).
+  const stemX = Math.max(
+    card.offsetWidth * 0.2,
+    Math.min(card.offsetWidth * 0.8, anchor.x - clamped.x)
   );
+  card.style.setProperty('--wd-stem-x', `${Math.round(stemX)}px`);
 }
 
 // ── Entry popup CONTENT (module-scope cache, GLM F1) ─────────────────
@@ -184,6 +186,7 @@ onScopeDispose(() => {
     <Transition name="wd-popup">
       <div
         v-if="selection.popupTarget"
+        :key="selection.popupTarget.key"
         ref="cardEl"
         class="wd-map-popup"
         :data-side="side"
@@ -472,24 +475,30 @@ onScopeDispose(() => {
 
 .wd-popup-enter-active {
   transition:
-    opacity 0.1s ease-out,
-    scale 0.16s cubic-bezier(0.22, 1.2, 0.36, 1);
+    opacity 0.14s ease-out,
+    scale 0.18s cubic-bezier(0.22, 1.15, 0.36, 1);
 }
 
 .wd-popup-leave-active {
   transition:
-    opacity 0.1s ease-in,
-    scale 0.12s ease-in;
+    opacity 0.12s ease-in,
+    scale 0.14s ease-in;
 }
 
+// GROW from the stem edge: the CSS transform-origin (50% at the stem)
+// makes the card unfold upward (side=above) or downward (side=below).
+// Scale 0.4→1.0 gives a clear vertical grow; the opacity runs slightly
+// ahead of the scale so the card becomes visible before it reaches
+// full size (owner: "grow from bottom center, with alpha combined").
 .wd-popup-enter-from {
   opacity: 0;
-  scale: 0.75;
+  scale: 0.4;
 }
 
+// SHRINK back toward the stem — the reverse of the enter.
 .wd-popup-leave-to {
   opacity: 0;
-  scale: 0.85;
+  scale: 0.4;
 }
 
 @media (prefers-reduced-motion: reduce) {
