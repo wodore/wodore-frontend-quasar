@@ -168,6 +168,14 @@ export const useSelectionStore = defineStore('selection', () => {
     const entry = opts.entry ?? defaultRegistry().resolve(target);
     if (!entry) return; // registry dev-warns on unresolved sources
 
+    // POPUP toggle (owner 2026-11-01: "click the same layer again →
+    // close, like outside click"): clicking the feature whose popup
+    // is already open dismisses it.
+    if (popupTarget.value && popupTarget.value.key === target.key && via === 'map') {
+      closePopup();
+      return;
+    }
+
     // Already-routed target (same slug → duplicated navigation, no
     // watcher would fire): D12 — map re-click toggles closed, search
     // re-select re-anchors.

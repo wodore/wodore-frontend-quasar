@@ -66,8 +66,10 @@ function updateAnchor(): void {
   // anchor re-enters on a later move frame, the class lifts and the
   // card pops back at its re-clamped position.
   const offScreen =
-    anchor.x < -20 || anchor.x > window.innerWidth + 20 ||
-    anchor.y < -20 || anchor.y > window.innerHeight + 20;
+    anchor.x < -20 ||
+    anchor.x > window.innerWidth + 20 ||
+    anchor.y < -20 ||
+    anchor.y > window.innerHeight + 20;
   if (offScreen !== anchorOffScreen.value) {
     anchorOffScreen.value = offScreen;
     card.classList.toggle('wd-map-popup--off-screen', offScreen);
@@ -160,6 +162,27 @@ watch(projectorRef, p => {
   if (!p) selection.closePopup();
 });
 
+// ── Re-target: shrink → reposition → grow (no remount, no fly-in) ────
+// When popupTarget.key changes (user clicks another stop), the card
+// briefly enters the retarget state (same visual as off-screen: shrink
+// + fade toward the stem), the rAF loop repositions at the new anchor,
+// then the class lifts — the card pops from the NEW stem position.
+let lastTargetKey = '';
+watch(
+  () => selection.popupTarget?.key,
+  key => {
+    if (key && lastTargetKey && key !== lastTargetKey) {
+      const card = cardEl.value;
+      if (card) card.classList.add('wd-map-popup--retarget');
+      // The rAF loop repositions on the next dirty frame; the class
+      // lifts 100ms later (enough for the shrink to read, not so long
+      // it feels sluggish).
+      setTimeout(() => cardEl.value?.classList.remove('wd-map-popup--retarget'), 100);
+    }
+    lastTargetKey = key ?? '';
+  }
+);
+
 // ── Candidates: toggle + re-anchor (card grows/shrinks) ────────────────
 function toggleCandidates(): void {
   candidatesOpen.value = !candidatesOpen.value;
@@ -186,7 +209,6 @@ onScopeDispose(() => {
     <Transition name="wd-popup">
       <div
         v-if="selection.popupTarget"
-        :key="selection.popupTarget.key"
         ref="cardEl"
         class="wd-map-popup"
         :data-side="side"
@@ -462,6 +484,16 @@ onScopeDispose(() => {
   transition:
     opacity 0.15s ease-in,
     scale 0.15s ease-in;
+}
+
+// ── Re-target: quick shrink + fade toward the stem, then pop back ─────
+.wd-map-popup--retarget {
+  opacity: 0;
+  scale: 0.4;
+  pointer-events: none;
+  transition:
+    opacity 0.08s ease-in,
+    scale 0.08s ease-in;
 }
 
 // ── Enter/leave: pop from the pin ──────────────────────────────────────
