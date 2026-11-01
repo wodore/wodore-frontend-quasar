@@ -42,6 +42,9 @@ const candidatesOpen = shallowRef(false);
  *  fade/scale-out) but stays in the store; it pops back when the map
  *  pans the anchor back in (animated hide/reveal, owner 2026-11-01). */
 const anchorOffScreen = shallowRef(false);
+/** Whether updateAnchor() has written a real transform at least once —
+ *  the card is visibility:hidden until then (never painted at 0,0). */
+const positioned = shallowRef(false);
 
 /** Display name for the SHELL title strip (non-transport entries with a
  *  `name` prop). Transport carries stop_name in its CONTENT component. */
@@ -96,6 +99,8 @@ function updateAnchor(): void {
     Math.min(card.offsetWidth * 0.8, anchor.x - clamped.x)
   );
   card.style.setProperty('--wd-stem-x', `${Math.round(stemX)}px`);
+  // Position is now authoritative — the card may be painted.
+  positioned.value = true;
 }
 
 // ── Entry popup CONTENT (module-scope cache, GLM F1) ─────────────────
@@ -145,6 +150,7 @@ watch(
     unsubscribeMove?.();
     unsubscribeMove = null;
     if (!projector || !target) {
+      positioned.value = false; // fresh mount must re-earn visibility
       pause();
       return;
     }
@@ -211,6 +217,7 @@ onScopeDispose(() => {
         v-if="selection.popupTarget"
         ref="cardEl"
         class="wd-map-popup"
+        :class="{ 'wd-map-popup--unpositioned': !positioned }"
         :data-side="side"
         role="dialog"
         aria-modal="false"
@@ -469,6 +476,13 @@ onScopeDispose(() => {
   padding-top: 4px;
   margin-top: 4px;
   border-top: 1px solid var(--wd-ridge);
+}
+
+// ── Unpositioned gate: never paint at translate(0,0) ────────────────────
+// visibility:hidden suppresses painting but KEEPS layout (measurement works).
+// Flips to visible the instant updateAnchor() writes a real transform.
+.wd-map-popup--unpositioned {
+  visibility: hidden;
 }
 
 // ── Off-screen hide/reveal (animated fade+scale) ───────────────────────
