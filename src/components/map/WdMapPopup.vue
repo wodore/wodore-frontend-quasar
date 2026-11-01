@@ -66,12 +66,21 @@ function updateAnchor(): void {
   // outside, why not just move it outside the view").
   // Layout size (offsetWidth/Height) — NOT getBoundingClientRect, which
   // returns the scale-transformed visual box during the enter transition.
-  const clamped = clampToViewport(
-    anchor,
-    { width: card.offsetWidth, height: card.offsetHeight },
-    { width: window.innerWidth, height: window.innerHeight },
-    CHROME
-  );
+  // When the anchor is OUTSIDE the viewport, skip the clamp — position
+  // the card at the raw anchor so it follows the dot off-screen (the
+  // browser clips it naturally; the card re-enters when the map pans
+  // back). Only clamp when the anchor is visible (keep the card on-screen).
+  const anchorVisible =
+    anchor.x >= 0 && anchor.x <= window.innerWidth &&
+    anchor.y >= 0 && anchor.y <= window.innerHeight;
+  const clamped = anchorVisible
+    ? clampToViewport(
+        anchor,
+        { width: card.offsetWidth, height: card.offsetHeight },
+        { width: window.innerWidth, height: window.innerHeight },
+        CHROME
+      )
+    : { x: anchor.x - card.offsetWidth / 2, y: anchor.y - card.offsetHeight - 12, side: 'above' as const };
   card.style.transform = `translate(${clamped.x}px, ${clamped.y}px)`;
   side.value = clamped.side;
   const originX = Math.round(anchor.x - clamped.x);
@@ -297,7 +306,7 @@ onScopeDispose(() => {
 .wd-map-popup__chrome {
   position: absolute;
   top: 6px;
-  right: 8px;
+  right: 10px;
   z-index: 1;
 
   .q-btn {

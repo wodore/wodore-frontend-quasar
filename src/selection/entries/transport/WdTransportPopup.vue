@@ -244,13 +244,13 @@ function swatchColor(route: RouteInfo): string {
 
 .wd-tp__avatar {
   flex: none;
-  margin-top: 2px;
+  align-self: center; // vertically center against the full 3-row text block
 }
 
 .wd-tp__col {
   flex: 1;
   min-width: 0;
-  padding-right: 22px; // clears the absolute-positioned close button
+  padding-right: 32px; // clears the absolute close + breathing room
 }
 
 // Row 1: type overline
