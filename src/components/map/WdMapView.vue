@@ -1088,7 +1088,7 @@ function applyFeatureHighlight(handle: FeatureHandle | null): void {
         // MapLibre keyed the feature under (never the slug).
         id: lastHighlightHandle.id as string | number,
       },
-      { selected: false }
+      { selected: false, active: false }
     );
   }
   if (selectedHutFeature.value !== undefined) {
@@ -1105,7 +1105,7 @@ function applyFeatureHighlight(handle: FeatureHandle | null): void {
         sourceLayer: handle.sourceLayer,
         id: handle.id as string | number, // SAFETY: numeric feature id, see above
       },
-      { selected: true }
+      { selected: true, active: true }
     );
   }
   lastHighlightHandle = handle;
@@ -1698,20 +1698,63 @@ watch(
   { immediate: true } // Run on component mount
 );
 
-/** Pointer cursor while the pointer is over a registered interactive
- *  layer — but only above the layer's zoom gate: below it the click
- *  would fall through (e.g. to focus mode), so the affordance must not
- *  promise interactivity. */
+/** Currently hovered feature's state key (source + sourceLayer + id) —
+ *  cleared when the pointer leaves the layer or moves to another
+ *  feature. The backend style reads ["feature-state", "hovered"] in
+ *  its paint expressions for the visual response. */
+let hoveredFeature: {
+  source: string;
+  sourceLayer?: string;
+  id: number | string;
+} | null = null;
+
+function clearHoveredFeature(map: Map): void {
+  if (!hoveredFeature) return;
+  try {
+    map.setFeatureState(
+      { ...hoveredFeature } as never,
+      { hovered: false }
+    );
+  } catch {
+    // feature gone (tile unloaded) — nothing to clear
+  }
+  hoveredFeature = null;
+}
+
+/** Pointer cursor + hovered feature-state while the pointer is over a
+ *  registered interactive layer (above its zoom gate). The backend
+ *  style's paint expressions branch on ["feature-state", "hovered"]
+ *  for the visual enlargement/stroke — the frontend only sets state. */
 function onLayerEnter(e: MapLayerEventType['mouseenter'], minZoom?: number) {
   if (minZoom === undefined || e.target.getZoom() > minZoom) {
     e.target.getCanvas().style.cursor = 'pointer';
+
+    // Set hovered feature-state for the paint response
+    const feature = e.features?.[0];
+    if (feature && feature.id !== undefined && feature.id !== null) {
+      clearHoveredFeature(e.target);
+      hoveredFeature = {
+        source: String(feature.source ?? feature.layer?.source ?? ''),
+        sourceLayer: feature.sourceLayer ?? undefined,
+        id: feature.id,
+      };
+      try {
+        e.target.setFeatureState(
+          { ...hoveredFeature } as never,
+          { hovered: true }
+        );
+      } catch {
+        // source not ready — skip silently
+      }
+    }
   }
 }
 
-/** Clear it again when the pointer leaves the layer. */
+/** Clear cursor + hovered feature-state when the pointer leaves. */
 function onLayerLeave(e: MapLayerEventType['mouseleave'], minZoom?: number) {
   if (minZoom === undefined || e.target.getZoom() > minZoom) {
     e.target.getCanvas().style.cursor = '';
+    clearHoveredFeature(e.target);
   }
 }
 
