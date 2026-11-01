@@ -1820,6 +1820,16 @@ function onMapPointerUp(): void {
     cancelPendingTap();
     return;
   }
+  // Popup open: a non-interactive tap only closes the popup (owner
+  // 2026-11-01: "when open and i click outside it should only close the
+  // popup, not toggle the focus mode"). The click handler's ±10px
+  // tolerance box can find a target the exact-point guard misses — so
+  // ANY tap while a popup is open suppresses the focus-mode toggle.
+  if (selectionStore.popupTarget) {
+    lastMapTapAt = 0;
+    cancelPendingTap();
+    return; // the click handler will fire and close the popup
+  }
   // too slow = long-press, not a tap
   if (now - tapDown.t > 400) {
     cancelPendingTap();

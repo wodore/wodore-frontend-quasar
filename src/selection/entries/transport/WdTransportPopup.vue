@@ -104,7 +104,7 @@ interface RouteInfo {
   color: string | null;
 }
 
-const ROUTE_PILL_CAP = 6;
+const ROUTE_PILL_CAP = 4;
 
 const routes = computed<RouteInfo[]>(() => {
   return parseJsonArray(p.value.routes)

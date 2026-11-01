@@ -56,6 +56,18 @@ function updateAnchor(): void {
   const projector = projectorRef.value;
   if (!card || !target?.location || !projector) return;
   const anchor = projector.project(target.location);
+  // Close when the anchor leaves the viewport (MapLibre native popups
+  // do this; owner report 2026-11-01: "when i move the map outside the
+  // popup stays visible").
+  if (
+    anchor.x < -20 ||
+    anchor.x > window.innerWidth + 20 ||
+    anchor.y < -20 ||
+    anchor.y > window.innerHeight + 20
+  ) {
+    selection.closePopup();
+    return;
+  }
   // Layout size (offsetWidth/Height) — NOT getBoundingClientRect, which
   // returns the scale-transformed visual box during the enter transition.
   const clamped = clampToViewport(
@@ -69,6 +81,9 @@ function updateAnchor(): void {
   const originX = Math.round(anchor.x - clamped.x);
   card.style.transformOrigin =
     clamped.side === 'above' ? `${originX}px calc(100% - 8px)` : `${originX}px 8px`;
+  // Stem sits at the anchor's x position (not card center) — the arrow
+  // points at the dot even when the card is clamped away from it.
+  card.style.setProperty('--wd-stem-x', `${Math.max(8, Math.min(card.offsetWidth - 8, originX))}px`);
 }
 
 // ── Entry popup CONTENT (module-scope cache, GLM F1) ─────────────────
@@ -172,11 +187,10 @@ onScopeDispose(() => {
         <!-- Chrome: close button, absolute top-right (no header row) -->
         <div class="wd-map-popup__chrome">
           <q-btn
-            dense
             flat
             round
+            dense
             icon="wd-close"
-            size="7px"
             :aria-label="$t('place.popup.close')"
             @click="selection.closePopup()"
           />
@@ -258,13 +272,13 @@ onScopeDispose(() => {
 // ── Stem ────────────────────────────────────────────────────────────────
 .wd-map-popup__stem {
   position: absolute;
-  left: 50%;
+  left: var(--wd-stem-x, 50%);
   width: 10px;
   height: 10px;
   background: inherit;
   border-radius: 2px;
   border: 1px solid var(--wd-ridge);
-  transform: translateX(-50%) rotate(45deg);
+  transform: translateX(-5px) rotate(45deg);
 }
 
 .wd-map-popup[data-side='above'] .wd-map-popup__stem {
