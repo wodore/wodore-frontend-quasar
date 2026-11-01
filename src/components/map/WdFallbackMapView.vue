@@ -13,8 +13,11 @@
  *   `world_topo` facade (OpenTopoMap + geoland.at + swisstopo, cached
  *   WebP) and `world_satellite` (ESRI). Hardcoded for the POC — later
  *   these should come from the same backend catalog layers.
- * - Huts: the SAME Martin vector source the MapLibre huts style
- *   fetches — `{TILE_SERVER}/huts/{z}/{x}/{y}.mlt` — decoded with
+ * - Huts: the SAME served vector source the MapLibre huts style
+ *   fetches — tile URLs, pyramid bounds and MLT table name extracted
+ *   from the overlay store's compiled `huts` style (fallback/
+ *   huts-style-source; on fallback sessions that document is the
+ *   backend's SUBSET twin, profile=subset) — decoded with
  *   @maplibre/mlt (maplibre-gl's own decoder, version-locked via the
  *   dependency tree). Same URLs ⇒ the browser HTTP-cache entries are
  *   literally shared between the WebGL map and this fallback. Tiles
@@ -25,9 +28,10 @@
  *   the mono SVG from `/v1/categories/symbol/mono/{type}.svg` (built
  *   with currentColor — recolored via CSS) on a rounded-rect shield in
  *   the category color (type_standard_color from the tile properties).
- * - Availability: the SAME Martin MLT tiles MapLibre renders
- *   the SELECTED date (today when unset — same default as the header
- *   chip). Day 0 paints a larger background ring in the occupation
+ * - Availability: the SAME served `wd-bookings` MLT tiles MapLibre
+ *   renders (template from the style, `{{date}}` substituted per fetch
+ *   with the SELECTED date). Day 0 paints a larger background ring in
+ *   the occupation
  *   status color (the same palette the MapLibre `wd-huts-occupation`
  *   layer uses).
  * - Clustering: TWO markercluster groups — both uncluster from z10
@@ -77,12 +81,12 @@ import {
   setAvailabilityManualSettle,
   toIsoDate,
 } from '@stores/map/availability-loading';
+import { useFallbackBasemaps, migrateBasemapId, type FbBasemap } from './fallback-basemaps';
 import {
-  TILE_SERVER,
-  useFallbackBasemaps,
-  migrateBasemapId,
-  type FbBasemap,
-} from './fallback-basemaps';
+  fallbackHutsSource,
+  expandTileUrl,
+  type FallbackHutsSource,
+} from './fallback/huts-style-source';
 import { seedPlaceFromMap } from '@composables/usePlace';
 import { useOverlayStore } from '@stores/map/overlay-store';
 import type { ClusteringConfig } from '@stores/map/overlay-configs/types';
@@ -171,11 +175,10 @@ const AVAIL_UNCLUSTER_ZOOM = 10;
 const PLAIN_UNCLUSTER_ZOOM = 10;
 const MIN_ZOOM = 2; // MAP_MIN_ZOOM parity
 const MAX_ZOOM = 19; // raster basemaps top out here
-/** Martin `huts` source pyramid (martin.yaml minzoom/maxzoom) — above
- *  the max the fallback overzooms from z9 tiles (exact coords: a z9
- *  tile unit is ~0.15 m at the equator). */
-const HUTS_TILE_MIN_ZOOM = 5;
-const HUTS_TILE_MAX_ZOOM = 9;
+/* The hut/availability TILE pyramids (min/max zoom, MLT table names)
+ * are NOT hardcoded anymore — they come from the served style's
+ * sources (wd-huts / wd-bookings), exactly the values MapLibre honors;
+ * see hutsStyleSource below and fallback/huts-style-source. */
 /** Brand fallback when no type color is known for a hut — in
  *  ./fallback/status-colors (DEFAULT_DOT_COLOR). */
 
@@ -304,15 +307,12 @@ function clearClusterGroups(): void {
   clusterGroups = new Map();
 }
 /**
- * Availability now comes from the SAME Martin source MapLibre renders
- * (wd-bookings): `{TILE_SERVER}/availability/{z}/{x}/{y}.mlt?date=…&days=4`
- * — MLT-decoded like the huts tiles. NOTE: the seeded maplibre style
- * currently serves the extension-less (MVT) form — a backend seed fix
- * is pending (owner is checking); the fallback already targets .mlt,
- * so both maps converge on the MLT URLs once the seed lands.
+ * Availability comes from the SAME served source MapLibre renders
+ * (wd-bookings): the tile template (with its `?date={{date}}&days=4`
+ * query) is extracted from the compiled huts style — tokenized
+ * document preferred, `{{date}}` substituted per fetch (see
+ * fallback/huts-style-source). MLT-decoded like the huts tiles.
  */
-const AVAIL_TILE_MIN_ZOOM = 5; // wd-bookings source pyramid (style minzoom)
-const AVAIL_TILE_MAX_ZOOM = 9; // (style maxzoom)
 /** The date the current availability tiles were fetched for (ISO). */
 let availFetchedForDate: string | undefined;
 /** slug → day-0 availability status. */
@@ -320,8 +320,8 @@ const availBySlug = new Map<string, FbAvail>();
 /** Sprite pack lives in ./fallback/sprite-sheet — the component keeps
  *  only the CSS-var feed + marker rebuild (side-effects the module
  *  deliberately does not own). */
-async function loadSprite(): Promise<void> {
-  const ok = await loadSpriteModule(TILE_SERVER);
+async function loadSprite(baseUrl: string): Promise<void> {
+  const ok = await loadSpriteModule(baseUrl);
   if (!ok) return;
   const sheet = getSprite();
   if (!sheet) return;
@@ -797,7 +797,14 @@ type HutsOverlayItem =
   | {
       name?: string;
       active?: boolean;
+      /** Served variant capability (backend #440) — the built-in huts
+       *  rendering is SUBSET-OR-NOTHING: only a subset twin carries the
+       *  contract the fallback can honor. */
+      profile?: string;
       style?: StyleSpecification;
+      /** Tokenized sibling ({{date}} preserved in the wd-bookings
+       *  tiles) — preferred as the availability tile template. */
+      tokenizedStyle?: StyleSpecification;
       config?: { clustering?: ClusteringConfig };
     }
   | undefined;
@@ -814,12 +821,32 @@ const hutsItem = computed<HutsOverlayItem>(() =>
 );
 
 /** Store-driven huts visibility (fallback/huts-visibility): the
- *  catalog `huts` row gates the built-in hut rendering — present →
- *  follow its active flag (menu toggle), ABSENT → default ACTIVE
- *  (today's behavior during the backend deploy window). The hut
- *  machinery itself (tiles, clustering, selection, availability)
- *  stays; only rendering + loading are gated. */
-const hutsVisible = computed(() => hutsRowVisible(hutsItem.value));
+ *  catalog `huts` row's active flag (menu toggle) AND the served
+ *  subset style's tile URLs (hutsStyleSource) both gate the built-in
+ *  hut rendering — subset-or-nothing: no usable served style ⇒ OFF
+ *  (the metadata-first placeholder phase and profile-less rows are
+ *  hidden until the subset twin lands). The hut machinery itself
+ *  (tiles, clustering, selection, availability) stays; only rendering
+ *  + loading are gated. */
+/** Tile/pyramid/sprite inputs extracted from the SERVED subset style
+ *  (fallback/huts-style-source). undefined until the subset twin lands
+ *  — no style, no tile URLs: the built-in huts rendering stays OFF
+ *  (subset-or-nothing; there is deliberately NO client-side
+ *  TILE_SERVER fallback URL anymore). */
+const hutsStyleSource = computed<FallbackHutsSource | undefined>(() =>
+  hutsItem.value?.profile === 'subset'
+    ? fallbackHutsSource(hutsItem.value.style, hutsItem.value.tokenizedStyle)
+    : undefined
+);
+
+/** The source the tile caches build URLs from — mirrors the computed's
+ *  latest value (set by the style watcher below; the buildUrl/parseTile
+ *  closures read it synchronously, like availFetchedForDate). */
+let activeHutsSource: FallbackHutsSource | undefined;
+
+const hutsVisible = computed(
+  () => hutsRowVisible(hutsItem.value) && Boolean(hutsStyleSource.value)
+);
 
 watch(
   hutsItem,
@@ -904,11 +931,13 @@ const onVetoClick = (e: Event): void => {
  *  by the table extent, converted to lng/lat at fetch time so the
  *  rebuild pass never re-parses). */
 const hutCache = new MltTileCache<FbHut[]>({
-  buildUrl: (z, x, y) => `${TILE_SERVER}/huts/${z}/${x}/${y}.mlt`,
+  // Served wd-huts template (style-sourced, see activeHutsSource);
+  // refreshTiles gates every load on its presence — '' fails fast.
+  buildUrl: (z, x, y) => expandTileUrl(activeHutsSource?.huts.tiles, z, x, y),
   emptyValue: [],
   parseTile: (buf, z, x, y) => {
     const huts: FbHut[] = [];
-    const table = findMltTable(buf, 'huts');
+    const table = findMltTable(buf, activeHutsSource?.huts.sourceLayer ?? 'huts');
     if (!table) return huts;
     const extent = table.extent || 4096;
     for (const feature of table.getFeatures()) {
@@ -936,12 +965,17 @@ const hutCache = new MltTileCache<FbHut[]>({
  *  buildUrl reads the CURRENT date (set before loadViewport) so a date
  *  change swaps every URL — the cache is cleared for a full reload. */
 const availCache = new MltTileCache<Map<string, string>>({
+  // Served wd-bookings template (tokenized doc preferred — {{date}}
+  // stays substitutable); buildUrl reads the CURRENT date like before.
+  // refreshAvailTiles gates on activeHutsSource.avail — '' fails fast.
   buildUrl: (z, x, y) =>
-    `${TILE_SERVER}/availability/${z}/${x}/${y}.mlt?date=${availFetchedForDate}&days=4`,
+    expandTileUrl(activeHutsSource?.avail?.tiles, z, x, y, {
+      date: availFetchedForDate,
+    }),
   emptyValue: new Map(),
   parseTile: buf => {
     const statuses = new Map<string, string>();
-    const table = findMltTable(buf, 'availability');
+    const table = findMltTable(buf, activeHutsSource?.avail?.sourceLayer ?? 'availability');
     if (!table) return statuses;
     for (const feature of table.getFeatures()) {
       const properties = feature.properties as { slug?: unknown; d0_status?: unknown } | null;
@@ -960,6 +994,8 @@ async function refreshTiles(): Promise<void> {
   // Overlay row OFF: suspend tile loading — no viewport top-ups while
   // invisible (the cache is kept for instant resume).
   if (!hutsVisible.value) return;
+  const source = activeHutsSource;
+  if (!source) return; // no served subset style — nothing to fetch from
   if (activeMap.getZoom() < HUT_MIN_ZOOM) {
     if (hutCache.tiles.size > 0) {
       hutCache.clear();
@@ -971,8 +1007,8 @@ async function refreshTiles(): Promise<void> {
     activeMap.getBounds(),
     0.25,
     activeMap.getZoom(),
-    HUTS_TILE_MIN_ZOOM,
-    HUTS_TILE_MAX_ZOOM
+    source.huts.minZoom,
+    source.huts.maxZoom
   );
   const { fetched, evicted, superseded } = await hutCache.loadViewport(range);
   // Perf: a pan fully inside already-loaded tiles changes NOTHING — skip
@@ -996,6 +1032,8 @@ async function refreshAvailTiles(picked: string): Promise<void> {
   // Huts hidden (overlay row OFF): no availability fetch AND no
   // spinner — the date picker must not spin for an invisible layer.
   if (!hutsVisible.value) return;
+  const source = activeHutsSource?.avail;
+  if (!source) return; // no served wd-bookings template — no availability
   // No markers below the floor — skip fetching entirely (Opus review
   // #3: at world view this computed tileZoom=5 over the global bounds
   // and fired a fetch storm against the tile router).
@@ -1015,8 +1053,8 @@ async function refreshAvailTiles(picked: string): Promise<void> {
     activeMap.getBounds(),
     0.25,
     activeMap.getZoom(),
-    AVAIL_TILE_MIN_ZOOM,
-    AVAIL_TILE_MAX_ZOOM
+    source.minZoom,
+    source.maxZoom
   );
   try {
     const { superseded } = await availCache.loadViewport(range);
@@ -1045,6 +1083,54 @@ function applyAvailTiles(): void {
 const refreshAvailTilesDebounced = useDebounceFn(
   (date: string) => void refreshAvailTiles(date),
   400
+);
+
+// ── Served-source adoption (the style-driven TILE_SERVER successor) ──
+// The compiled subset style arrives asynchronously (metadata-first
+// placeholders carry an empty style) and can CHANGE (catalog swap,
+// backend re-pointing the tile origin). TILE inputs and the sprite
+// pack are diffed separately: changed tile URLs invalidate every
+// cached tile (both caches key by z/x/y only — the URLs behind them
+// swapped) and top the viewport back up, while a changed sprite pack
+// only reloads the sheet. Same tile URLs (an unchanged tab-focus
+// revalidation, or the sprite-pack merge flip a date re-resolution can
+// cause via mergeSpritePacks) are a signature match — no churn.
+function hutsTileSignature(src: FallbackHutsSource | undefined): string {
+  return src
+    ? [
+        src.huts.tiles,
+        src.huts.minZoom,
+        src.huts.maxZoom,
+        src.huts.sourceLayer,
+        src.avail?.tiles ?? '',
+        src.avail?.minZoom ?? '',
+        src.avail?.maxZoom ?? '',
+        src.avail?.sourceLayer ?? '',
+      ].join('|')
+    : '';
+}
+
+watch(
+  hutsStyleSource,
+  (src, previous) => {
+    activeHutsSource = src; // buildUrl/parseTile always read the latest
+    if (hutsTileSignature(src) !== hutsTileSignature(previous)) {
+      // New URLs ⇒ cached tiles are stale regardless of key.
+      hutCache.clear();
+      availCache.clear();
+      availBySlug.clear();
+      rebuildMarkers(); // hidden until the new tiles land (or cleared)
+      if (src) {
+        void refreshTiles();
+        const picked = hutsStore.selectedDate;
+        if (picked && src.avail) void refreshAvailTiles(picked);
+      }
+    }
+    if (src?.spriteBase && src.spriteBase !== previous?.spriteBase) {
+      void loadSprite(src.spriteBase);
+    }
+  },
+  { immediate: true }
 );
 
 /** "Zoom in to see availabilities" hint: shown while a DATE is selected
@@ -1278,7 +1364,12 @@ onMounted(() => {
   fallbackEl.value?.style.setProperty('--wd-fb-g', String(glyphScale(map.getZoom())));
   syncDrawState(map.getZoom());
   updateZoomHint();
-  void loadSprite();
+  // The style watcher owns the sprite PACK loads (style-sourced URL);
+  // when the subset style already landed before mount its immediate
+  // run loaded the sheet into the module but could not apply the CSS
+  // vars (no element yet) — re-apply now (same-base load is a no-op
+  // fetch, it only feeds the vars + marker rebuild).
+  if (activeHutsSource?.spriteBase) void loadSprite(activeHutsSource.spriteBase);
 
   // Dev-only debugging/profiling hook (the map instance lives in this
   // component's closure otherwise; window.__wdFbDebug.map exposes e.g.

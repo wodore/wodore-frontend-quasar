@@ -47,8 +47,11 @@ export interface FbBasemap {
   label?: string;
 }
 
-/** Tile-router origin — shared by the basemaps, hut tiles, availability
- *  tiles and the sprite sheet. */
+/** Tile-router origin — used ONLY by the OFFLINE basemap seed entries
+ *  below (guaranteed-before-catalog raster URLs; the catalog swap
+ *  re-points them to the served tile origin). The huts/availability
+ *  MLT tiles and the sprite pack moved to the SERVED style documents
+ *  (fallback/huts-style-source) — no TILE_SERVER for data overlays. */
 export const TILE_SERVER = getEnv('WODORE_TILE_SERVER_URL') ?? 'http://localhost:8075';
 
 /** POC-era ids → catalog slugs (migrated on read, persisted back). */

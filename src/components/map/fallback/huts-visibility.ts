@@ -13,9 +13,12 @@
  *   rebuilds without refetch). The menu row itself appears through the
  *   normal profile filtering; WdOverlayControl's toggle mutates the
  *   shared store — this binding renders the consequence.
- * * row ABSENT (backend variant undeployed, old catalogs) → default
- *   ACTIVE — exactly the pre-binding behavior, zero regression during
- *   the deploy window.
+ * * row ABSENT → this helper still answers the ROW's toggle state
+ *   (absent = active, the deploy-window default), but the component
+ *   additionally gates rendering on the served SUBSET style's tile
+ *   URLs (WdFallbackMapView's hutsStyleSource — subset-or-nothing):
+ *   no subset style ⇒ no tile URLs ⇒ the built-in huts rendering
+ *   stays OFF. The TILE_SERVER-era fallback URLs are gone.
  */
 
 /** The catalog overlay row that drives the fallback's huts (slug). */
