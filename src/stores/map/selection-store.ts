@@ -202,39 +202,40 @@ export const useSelectionStore = defineStore('selection', () => {
    *  items (topmost first). One item opens directly; several become
    *  `candidates` with the first open (minimal `1/n` cycling switcher). */
   /** Generic importance heuristic for sorting stacked click candidates:
- *  stops with more routes (parsed from the Transitland routes JSON)
- *  first — Zürich HB with 17 lines outranks its transliterated feed
- *  duplicates. Fallback: alphabetical by stop_name. */
-function candidateImportance(item: FromMapItem): number {
-  const routes = item.target.props.routes;
-  if (typeof routes !== 'string') return 0;
-  try {
-    const parsed: unknown = JSON.parse(routes);
-    return Array.isArray(parsed) ? parsed.length : 0;
-  } catch {
-    return 0;
+   *  stops with more routes (parsed from the Transitland routes JSON)
+   *  first — Zürich HB with 17 lines outranks its transliterated feed
+   *  duplicates. Fallback: alphabetical by stop_name. */
+  function candidateImportance(item: FromMapItem): number {
+    const routes = item.target.props.routes;
+    if (typeof routes !== 'string') return 0;
+    try {
+      const parsed: unknown = JSON.parse(routes);
+      return Array.isArray(parsed) ? parsed.length : 0;
+    } catch {
+      return 0;
+    }
   }
-}
 
-function candidateSortLabel(item: FromMapItem): string {
-  const props = item.target.props as Record<string, unknown>;
-  return String(props.stop_name ?? props.name ?? item.target.id);
-}
+  function candidateSortLabel(item: FromMapItem): string {
+    const props = item.target.props as Record<string, unknown>;
+    return String(props.stop_name ?? props.name ?? item.target.id);
+  }
 
-function openFromMap(items: readonly FromMapItem[]): void {
+  function openFromMap(items: readonly FromMapItem[]): void {
     if (items.length === 0) return;
     // Sort by importance BEFORE opening: most routes first (the main
     // station), then alphabetical (stable tie-break). Render-order
     // (topmost-first) puts whichever tile feature draws last on top —
     // not the one the user wants (owner 2026-11-01: "Zurich HB is
     // still last in the list").
-    const sorted = items.length > 1
-      ? [...items].sort(
-          (a, b) =>
-            candidateImportance(b) - candidateImportance(a) ||
-            candidateSortLabel(a).localeCompare(candidateSortLabel(b))
-        )
-      : items;
+    const sorted =
+      items.length > 1
+        ? [...items].sort(
+            (a, b) =>
+              candidateImportance(b) - candidateImportance(a) ||
+              candidateSortLabel(a).localeCompare(candidateSortLabel(b))
+          )
+        : items;
     if (sorted.length > 1) {
       candidates.value = sorted.map(item => ({
         target: markRaw(item.target) as MapTarget,
