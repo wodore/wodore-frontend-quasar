@@ -305,8 +305,8 @@ onScopeDispose(() => {
 // ── Chrome: absolute close button ───────────────────────────────────────
 .wd-map-popup__chrome {
   position: absolute;
-  top: 6px;
-  right: 12px;
+  top: 4px;
+  right: 4px;
   z-index: 1;
 
   .q-btn {
@@ -452,8 +452,8 @@ onScopeDispose(() => {
 // "popup flies in from top left").
 .wd-popup-enter-active {
   transition:
-    opacity 0.12s ease-out,
-    scale 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    opacity 0.1s ease-out,
+    scale 0.14s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 // ── Enter/leave: pop from the pin ──────────────────────────────────────
@@ -479,7 +479,7 @@ onScopeDispose(() => {
 
 .wd-popup-enter-from {
   opacity: 0;
-  scale: 0.55;
+  scale: 0.92;
 }
 
 .wd-popup-leave-to {
