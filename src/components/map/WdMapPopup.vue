@@ -306,7 +306,7 @@ onScopeDispose(() => {
 .wd-map-popup__chrome {
   position: absolute;
   top: 6px;
-  right: 10px;
+  right: 12px;
   z-index: 1;
 
   .q-btn {
@@ -427,7 +427,9 @@ onScopeDispose(() => {
 // ── Off-screen hide/reveal (animated fade+scale) ───────────────────────
 // The card stays in the DOM; the class toggles on/off as the anchor
 // leaves/re-enters the viewport. Same pop easing as the enter/leave —
-// the reveal reads as a second pop from the pin.
+// the reveal reads as a second pop from the pin. The BASE card has NO
+// transition (the enter/leave and off-screen classes own it — a base
+// transition made the enter animation start from the wrong position).
 .wd-map-popup--off-screen {
   opacity: 0;
   scale: 0.6;
@@ -441,6 +443,17 @@ onScopeDispose(() => {
   transition:
     opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1),
     scale 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+// Kill any inherited transition on the enter-active phase — the Vue
+// Transition's enter-active class owns the animation timing; a base
+// transition on the same properties makes the card briefly visible at
+// the pre-anchor position (0,0) before the transform lands (owner:
+// "popup flies in from top left").
+.wd-popup-enter-active {
+  transition:
+    opacity 0.12s ease-out,
+    scale 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 // ── Enter/leave: pop from the pin ──────────────────────────────────────
