@@ -56,18 +56,16 @@ function updateAnchor(): void {
   const projector = projectorRef.value;
   if (!card || !target?.location || !projector) return;
   const anchor = projector.project(target.location);
-  // Close when the anchor leaves the viewport (MapLibre native popups
-  // do this; owner report 2026-11-01: "when i move the map outside the
-  // popup stays visible").
-  if (
+  // OFF-SCREEN: hide the card, don't close it (owner 2026-11-01: "it
+  // should open again when moved in again"). The popup target stays in
+  // the store — map click still fully closes via closePopup.
+  const offScreen =
     anchor.x < -20 ||
     anchor.x > window.innerWidth + 20 ||
     anchor.y < -20 ||
-    anchor.y > window.innerHeight + 20
-  ) {
-    selection.closePopup();
-    return;
-  }
+    anchor.y > window.innerHeight + 20;
+  card.style.visibility = offScreen ? 'hidden' : 'visible';
+  if (offScreen) return; // skip positioning — restore on next move frame
   // Layout size (offsetWidth/Height) — NOT getBoundingClientRect, which
   // returns the scale-transformed visual box during the enter transition.
   const clamped = clampToViewport(
@@ -258,8 +256,9 @@ onScopeDispose(() => {
   top: 0;
   left: 0;
   z-index: 2400;
-  min-width: 232px; // consistent feel (owner #6)
-  max-width: min(288px, calc(100vw - 24px));
+  width: 232px; // FIXED — only height grows (owner 2026-11-01); the
+  // card re-anchors upward via the rAF loop when content expands
+  min-height: 80px; // skeleton floor before the async barrel resolves
   background: var(--wd-surface);
   color: var(--wd-ink);
   border-radius: 8px;
