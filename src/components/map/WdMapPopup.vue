@@ -168,26 +168,7 @@ watch(projectorRef, p => {
   if (!p) selection.closePopup();
 });
 
-// ── Re-target: shrink → reposition → grow (no remount, no fly-in) ────
-// When popupTarget.key changes (user clicks another stop), the card
-// briefly enters the retarget state (same visual as off-screen: shrink
-// + fade toward the stem), the rAF loop repositions at the new anchor,
-// then the class lifts — the card pops from the NEW stem position.
-let lastTargetKey = '';
-watch(
-  () => selection.popupTarget?.key,
-  key => {
-    if (key && lastTargetKey && key !== lastTargetKey) {
-      const card = cardEl.value;
-      if (card) card.classList.add('wd-map-popup--retarget');
-      // The rAF loop repositions on the next dirty frame; the class
-      // lifts 100ms later (enough for the shrink to read, not so long
-      // it feels sluggish).
-      setTimeout(() => cardEl.value?.classList.remove('wd-map-popup--retarget'), 100);
-    }
-    lastTargetKey = key ?? '';
-  }
-);
+// (Retarget watcher removed with the Transition.)
 
 // ── Candidates: toggle + re-anchor (card grows/shrinks) ────────────────
 function toggleCandidates(): void {
@@ -212,16 +193,15 @@ onScopeDispose(() => {
 
 <template>
   <Teleport to="body">
-    <Transition name="wd-popup">
-      <div
-        v-if="selection.popupTarget"
-        ref="cardEl"
-        class="wd-map-popup"
-        :class="{ 'wd-map-popup--unpositioned': !positioned }"
-        :data-side="side"
-        role="dialog"
-        aria-modal="false"
-      >
+    <div
+      v-if="selection.popupTarget"
+      ref="cardEl"
+      class="wd-map-popup"
+      :class="{ 'wd-map-popup--unpositioned': !positioned }"
+      :data-side="side"
+      role="dialog"
+      aria-modal="false"
+    >
         <div class="wd-map-popup__stem" aria-hidden="true" />
 
         <!-- Accessible close: visually hidden, keyboard-focusable.
@@ -287,8 +267,7 @@ onScopeDispose(() => {
             {{ $t('place.popup.expand') }}
           </q-btn>
         </div>
-      </div>
-    </Transition>
+    </div>
   </Teleport>
 </template>
 
@@ -500,15 +479,7 @@ onScopeDispose(() => {
     scale 0.15s ease-in;
 }
 
-// ── Re-target: quick shrink + fade toward the stem, then pop back ─────
-.wd-map-popup--retarget {
-  opacity: 0;
-  scale: 0.4;
-  pointer-events: none;
-  transition:
-    opacity 0.08s ease-in,
-    scale 0.08s ease-in;
-}
+// (Retarget animation removed with the Transition.)
 
 // ── Enter/leave: pop from the pin ──────────────────────────────────────
 .wd-map-popup[data-side='above'] {

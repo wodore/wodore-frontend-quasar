@@ -68,8 +68,14 @@ export const useSelectionStore = defineStore('selection', () => {
   const candidateIndex = shallowRef(0);
   /** Expand handoff: the popup target awaiting route adoption. */
   const detailPending = shallowRef<MapTarget | null>(null);
-  /** Controller-owned highlight — adapters watch and apply/clear. */
-  const highlightRef = shallowRef<FeatureRef | null>(null);
+  /** Controller-owned highlights — adapters watch and apply/clear.
+   *  DETAIL highlight persists while the detail route is active (a hut
+   *  stays highlighted even when a popup opens on top — owner
+   *  2026-11-01). POPUP highlight is ephemeral (cleared on popup close). */
+  const detailHighlightRef = shallowRef<FeatureRef | null>(null);
+  const popupHighlightRef = shallowRef<FeatureRef | null>(null);
+  /** All active highlights (detail first — higher precedence). */
+  const highlightRef = computed(() => [detailHighlightRef.value, popupHighlightRef.value].filter(Boolean) as FeatureRef[]);
 
   // ── Routed detail state ─────────────────────────────────────────────
   /** The target whose detail is routed (null on cold deep links — the
@@ -100,8 +106,12 @@ export const useSelectionStore = defineStore('selection', () => {
     ref.value = target ? (markRaw(target) as MapTarget) : null;
   }
 
-  function applyHighlight(target: MapTarget | null): void {
-    highlightRef.value = (target?.featureRef as FeatureRef | undefined) ?? null;
+  function applyDetailHighlight(target: MapTarget | null): void {
+    detailHighlightRef.value = (target?.featureRef as FeatureRef | undefined) ?? null;
+  }
+
+  function applyPopupHighlight(target: MapTarget | null): void {
+    popupHighlightRef.value = (target?.featureRef as FeatureRef | undefined) ?? null;
   }
 
   // ── Choke point: ONE route watcher clears ephemeral state ───────────
@@ -122,7 +132,8 @@ export const useSelectionStore = defineStore('selection', () => {
         routedEntry.value = null;
         detailPendingEntry.value = null;
         setTarget(routedTarget, null);
-        highlightRef.value = null;
+        detailHighlightRef.value = null;
+        popupHighlightRef.value = null;
         return;
       }
       // Content route active.
@@ -149,7 +160,7 @@ export const useSelectionStore = defineStore('selection', () => {
         candidates.value = [];
         candidateIndex.value = 0;
       }
-      applyHighlight(routedTarget.value);
+      applyDetailHighlight(routedTarget.value);
     },
     { immediate: true }
   );
@@ -189,7 +200,7 @@ export const useSelectionStore = defineStore('selection', () => {
         stageSeed(target, entry);
         setTarget(routedTarget, target);
         routedEntry.value = markRaw(entry);
-        applyHighlight(target);
+        applyDetailHighlight(target);
       }
       return;
     }
@@ -198,7 +209,7 @@ export const useSelectionStore = defineStore('selection', () => {
     if (wantsPopup) {
       setTarget(popupTarget, target);
       popupEntry.value = markRaw(entry);
-      applyHighlight(target);
+      applyPopupHighlight(target);
       return;
     }
 
@@ -282,7 +293,7 @@ export const useSelectionStore = defineStore('selection', () => {
   async function openDetail(target: MapTarget, entry?: Presentation): Promise<void> {
     setTarget(routedTarget, target);
     routedEntry.value = entry ? markRaw(entry) : null;
-    applyHighlight(target);
+    applyDetailHighlight(target);
     const failure = await router.push({
       name: CONTENT_ROUTE,
       params: { slug: target.id },
@@ -294,7 +305,7 @@ export const useSelectionStore = defineStore('selection', () => {
       // undo the optimistic routed/highlight state (GLM review F4).
       setTarget(routedTarget, null);
       routedEntry.value = null;
-      applyHighlight(null);
+      applyDetailHighlight(null);
     }
   }
 
@@ -330,7 +341,8 @@ export const useSelectionStore = defineStore('selection', () => {
     setTarget(popupTarget, null);
     popupEntry.value = null;
     candidates.value = [];
-    if (!detailOpen.value) highlightRef.value = null;
+    // POPUP highlight cleared; the DETAIL highlight persists while
+    // the detail route is active (owner: hut stays highlighted).
   }
 
   return {
@@ -340,6 +352,8 @@ export const useSelectionStore = defineStore('selection', () => {
     candidates,
     candidateIndex,
     detailPending,
+    detailHighlightRef,
+    popupHighlightRef,
     highlightRef,
     // Routed
     routedTarget,

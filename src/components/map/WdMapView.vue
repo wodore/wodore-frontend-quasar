@@ -692,7 +692,7 @@ function scheduleReveal(map: Map): void {
   revealDisposers.push(() => stopStatusWatch?.());
   revealDisposers.push(() => {
     unregisterMapProjector?.();
-    applyFeatureHighlight(null); // engine teardown clears its own highlight
+    applyFeatureHighlights([]); // engine teardown clears all highlights
   });
 }
 
@@ -1074,23 +1074,30 @@ const selectionStore = useSelectionStore();
 /** Single feature-state writer — also clears the legacy deep-link
  *  selection (selectHutBySlug) so the two paths never double-highlight. */
 type FeatureHandle = { source?: string; sourceLayer?: string; id?: unknown };
-let lastHighlightHandle: FeatureHandle | null = null;
 
-function applyFeatureHighlight(handle: FeatureHandle | null): void {
+let appliedHandles: FeatureHandle[] = [];
+
+function applyFeatureHighlights(handles: FeatureHandle[]): void {
   const map = mapRef.map;
   if (!map) return;
-  if (lastHighlightHandle?.source) {
-    map.setFeatureState(
-      {
-        source: lastHighlightHandle.source,
-        sourceLayer: lastHighlightHandle.sourceLayer,
-        // SAFETY: the wire handle's id is the numeric feature id
-        // MapLibre keyed the feature under (never the slug).
-        id: lastHighlightHandle.id as string | number,
-      },
-      { selected: false, active: false }
-    );
+  // Clear handles that are no longer active
+  for (const prev of appliedHandles) {
+    if (!handles.some(h => h.id === prev.id && h.source === prev.source)) {
+      try {
+        map.setFeatureState(
+          {
+            source: prev.source,
+            sourceLayer: prev.sourceLayer,
+            id: prev.id as string | number, // SAFETY: numeric feature id
+          },
+          { selected: false, active: false }
+        );
+      } catch {
+        // feature gone (tile unloaded)
+      }
+    }
   }
+  // Clear the legacy deep-link selection
   if (selectedHutFeature.value !== undefined) {
     map.setFeatureState(
       { source: HUT_SOURCE_ID, sourceLayer: HUT_SOURCE_LAYER, id: selectedHutFeature.value.id },
@@ -1098,27 +1105,36 @@ function applyFeatureHighlight(handle: FeatureHandle | null): void {
     );
     selectedHutFeature.value = undefined;
   }
-  if (handle?.source && handle.id !== undefined && handle.id !== null) {
-    map.setFeatureState(
-      {
-        source: handle.source,
-        sourceLayer: handle.sourceLayer,
-        id: handle.id as string | number, // SAFETY: numeric feature id, see above
-      },
-      { selected: true, active: true }
-    );
+  // Apply new handles
+  for (const handle of handles) {
+    if (handle?.source && handle.id !== undefined && handle.id !== null) {
+      try {
+        map.setFeatureState(
+          {
+            source: handle.source,
+            sourceLayer: handle.sourceLayer,
+            id: handle.id as string | number, // SAFETY: numeric feature id
+          },
+          { selected: true, active: true }
+        );
+      } catch {
+        // source not ready
+      }
+    }
   }
-  lastHighlightHandle = handle;
+  appliedHandles = handles;
 }
 
-// Controller-owned highlight: the store sets/clears highlightRef; this
-// adapter applies it to the engine (setFeatureState keys on the NUMERIC
-// feature id, never the slug).
+// Controller-owned highlights: the store exposes an ARRAY (detail +
+// popup — the hut stays highlighted while its detail route is open,
+// even when a popup opens on top). Apply/clear all handles.
 watch(
   () => selectionStore.highlightRef,
-  ref => {
-    const handle = (ref as { engine?: string; handle?: FeatureHandle } | null)?.handle;
-    applyFeatureHighlight(handle ?? null);
+  refs => {
+    const handles = (refs as Array<{ engine?: string; handle?: FeatureHandle }>)
+      .map(r => r?.handle ?? null)
+      .filter(Boolean) as FeatureHandle[];
+    applyFeatureHighlights(handles);
   }
 );
 
