@@ -14,7 +14,7 @@
  * a window), same docblock pattern as the store specs.
  */
 import { describe, expect, it } from 'vitest';
-import { parseStatusColors, STATUS_COLORS } from '@components/map/fallback/status-colors';
+import { parseStatusColors } from '@components/map/fallback/status-colors';
 import { paintOpacityAtZoom } from '@components/map/fallback/overlay-adapter';
 import type { StyleSpecification } from 'maplibre-gl';
 
@@ -106,13 +106,14 @@ describe('parseStatusColors', () => {
     ).toBeUndefined();
   });
 
-  it('offline fallback stays a valid superset of the served palette', () => {
-    // The hardcoded STATUS_COLORS must cover every status the served
-    // expression carries — an offline session never loses a status.
+  it('parses the served seed palette verbatim (served-only — no offline copy exists)', () => {
+    // MapLibre parity: the palette exists ONLY as the served match
+    // expression — this pins the statuses the backend seed carries so
+    // a seed change that the fallback must understand is noticed.
     const parsed = parseStatusColors(hutsStyle(SERVED_MATCH))!;
-    for (const status of Object.keys(parsed)) {
-      expect(STATUS_COLORS[status]).toBeDefined();
-    }
+    expect(Object.keys(parsed).sort()).toEqual(
+      ['empty', 'free_unknown', 'full', 'high', 'low', 'medium'].sort()
+    );
   });
 });
 
@@ -143,37 +144,6 @@ describe('paintOpacityAtZoom', () => {
   });
 });
 
-// ── Cluster bucket ordering (legacy mode z-order invariant) ────────────
-import {
-  AVAIL_BUCKET,
-  PLAIN_BUCKET,
-  orderLegacyBucketsFirst,
-} from '@components/map/fallback/cluster-groups';
-
-describe('orderLegacyBucketsFirst', () => {
-  it('creates the plain group before avail regardless of hut-seen order', () => {
-    // Owner invariant: availability huts never paint BELOW plain ones —
-    // the plain bucket's group must be created (map-added) first, even
-    // when an avail hut was seen first in the tile stream.
-    const shuffled: Array<[string | null, string[]]> = [
-      [AVAIL_BUCKET, ['a']],
-      [null, ['n']],
-      [PLAIN_BUCKET, ['p']],
-    ];
-    expect(orderLegacyBucketsFirst(shuffled).map(([b]) => b)).toEqual([
-      PLAIN_BUCKET,
-      AVAIL_BUCKET,
-      null,
-    ]);
-  });
-
-  it('keeps config-mode buckets in first-seen (stable) order after the legacy pair', () => {
-    const buckets: Array<[string | null, string[]]> = [
-      ['hut', ['h1']],
-      [null, ['n1']],
-      ['bivouac', ['b1']],
-    ];
-    // No legacy buckets present: order is unchanged (stable sort).
-    expect(orderLegacyBucketsFirst(buckets).map(([b]) => b)).toEqual(['hut', null, 'bivouac']);
-  });
-});
+// (Legacy cluster bucket ordering tests removed with the legacy dual-
+// bucket mode — clustering is served-config-only since the MapLibre
+// parity decision 2026-11; see WdFallbackMapView clusterBucketFor.)

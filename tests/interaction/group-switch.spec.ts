@@ -20,10 +20,24 @@ const OVERLAY_STATE_VS_MAP = `
   const styleLayers = map.getStyle().layers;
   const pinia = document.querySelector('#q-app').__vue_app__.config.globalProperties.$pinia;
   const store = pinia._s.get('overlay');
+  // Date-gated occupation layers (stores/map/utils/overlay-huts
+  // OCCUPATION_LAYER_IDS): their visibility is owned by the picked
+  // date, not the overlay switch — baked 'none' while no date is
+  // selected. Real served styles carry them (the old empty-style
+  // fixture never materialized these), so the switch-sync check must
+  // not flag them.
+  const DATE_GATED = [
+    'wd-huts-occupation',
+    'wd-huts-occupation-day0',
+    'wd-huts-occupation-day1',
+    'wd-huts-occupation-day2',
+    'wd-huts-occupation-day3',
+  ];
   const mismatches = [];
   for (const o of store.overlays) {
     if (o.show === false) continue;
     for (const l of o.style.layers) {
+      if (DATE_GATED.includes(l.id)) continue;
       const ml = styleLayers.find(x => x.id === l.id);
       if (o.active && !ml) {
         mismatches.push(o.name + '/' + l.id + ': active but MISSING from map');

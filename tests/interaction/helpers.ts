@@ -179,19 +179,13 @@ export const test = baseTest.extend<{ stagingCache: void }>({
         const url = req.url();
         if (req.method() !== 'GET') return route.fallback();
 
-        // Style-endpoint resilience: with the real document cached, serve
-        // it; on a cache miss NEVER touch a slow/dead endpoint — a minimal
-        // valid style keeps the suite independent of style-serving health
-        // (catalog-driven rows still render; the overlay's map layers stay
-        // empty for that slug — chrome assertions do not depend on them).
-        if (styleCacheKeyFor(url) && !readCached(url)) {
-          return route.fulfill({
-            status: 200,
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ version: 8, sources: {}, layers: [] }),
-          });
-        }
-
+        // Style documents are REAL data now (owner decision 2026-11: the
+        // no-WebGL fallback reads its hut tile URLs/pyramid/sprite from
+        // the SERVED subset style — a synthetic empty style would
+        // silently blank the fallback's huts). A cache miss therefore
+        // fetches the live document below (recorded for later replay);
+        // only a hard upstream failure degrades — to 503, which the app
+        // skips loudly instead of rendering a fake style.
         const hit = readCached(url);
         if (hit) {
           // Record catalog/style URLs on HITS too — the CI-restored cache

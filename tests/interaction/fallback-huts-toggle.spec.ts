@@ -1,17 +1,20 @@
 /**
- * Fallback huts toggle — store-driven visibility (owner decision,
- * option B): the fallback's built-in huts render following the overlay
- * store's `huts` row once the catalog serves it; row-absent catalogs
- * keep the always-on behavior (deploy window).
+ * Fallback huts toggle — store-driven, SERVED-ONLY visibility (owner
+ * decision, evolved 2026-11): the fallback's built-in huts render iff
+ * the catalog serves a usable huts SUBSET row — its active flag gates
+ * rendering AND its style document provides the tile URLs/pyramid/
+ * sprite (fallback/huts-style-source; there is no client-side
+ * TILE_SERVER anymore). A row-absent catalog keeps the huts HIDDEN —
+ * subset-or-nothing, the same rule the MapLibre path follows.
  *
- * Route pins: LIVE staging lacks the backend huts subset variant
- * (parallel backend task), so the subset request is served a pinned
- * catalog derived from the live DEFAULT view — the huts row rewritten
- * to its subset identity (profile=subset, style_url kept — the real
- * document feeds statusColors/clustering like production).
+ * Route pins: the subset request is served a pinned catalog derived
+ * from the live DEFAULT view — the huts row rewritten to its subset
+ * identity (profile=subset, style_url kept — the real document feeds
+ * statusColors/clustering/tile URLs like production).
  *
- * Hut markers render from the real LAN Martin tile server
- * (WODORE_TILE_SERVER_URL in .env.local) — MLT tile requests are
+ * Hut tiles come from the SERVED style's URLs (staging CDN); the MLT
+ * route below rewrites any origin onto the CDN anyway (LAN Martin
+ * version drift — see the route comment) and tile requests are
  * counted to assert loading SUSPENDS while the row is toggled off and
  * resumes WITHOUT refetch when re-enabled (warm caches).
  */
@@ -168,12 +171,19 @@ test.describe('fallback huts toggle (store-driven)', () => {
     expect(hutsTileRequests).toBe(requestsAtOn); // zero refetch — cache hit
   });
 
-  test('huts row ABSENT: built-in huts render as today (deploy window)', async ({ page }) => {
+  test('huts row ABSENT: built-in huts stay hidden (subset-or-nothing)', async ({ page }) => {
     tagTest('light', 'mobile', 'fallback-huts-toggle');
     test.setTimeout(240_000);
 
+    // Count huts tile requests — subset-or-nothing means NONE may fire
+    // (no row ⇒ no served style ⇒ no tile URLs ⇒ nothing to fetch).
+    let hutsTileRequests = 0;
+    page.on('request', req => {
+      if (/\/huts\/\d+\/\d+\/\d+\.mlt/.test(req.url())) hutsTileRequests += 1;
+    });
+
     // Strip the huts row from EVERY catalog view (subset + default):
-    // a pre-backend-variant catalog.
+    // e.g. a backend serving the subset view without the huts variant.
     await page.route('**/v1/map/layers**', async route => {
       const resp = await route.fetch();
       const body = await resp.json();
@@ -182,6 +192,7 @@ test.describe('fallback huts toggle (store-driven)', () => {
     });
 
     await openFallbackAtBern(page);
+    await page.waitForTimeout(4000); // settle any late compile + tile debounce
 
     // No menu row (checked after the menu renders other rows)…
     await page.evaluate('document.querySelector(".wd-ovl__more")?.click()');
@@ -189,14 +200,10 @@ test.describe('fallback huts toggle (store-driven)', () => {
     await page.waitForTimeout(1000); // settle any late compile
     expect(await page.locator('.wd-ovl__row[data-slug="huts"]').count()).toBe(0);
 
-    // …but the built-in huts render exactly as before the binding.
-    await page.waitForFunction(
-      `(() => { const n = ${HUT_MARKER_COUNT}; return n !== null && n > 0; })()`,
-      null,
-      {
-        timeout: 30_000,
-      }
-    );
-    expect((await page.evaluate(HUT_MARKER_COUNT)) as number).toBeGreaterThan(0);
+    // …and the built-in huts stay OFF: no markers from the (absent)
+    // served style — the TILE_SERVER-era fallback URLs are gone.
+    const markers = await page.evaluate(HUT_MARKER_COUNT);
+    expect(markers as number).toBe(0);
+    expect(hutsTileRequests).toBe(0); // no URL ⇒ no fetch, ever
   });
 });

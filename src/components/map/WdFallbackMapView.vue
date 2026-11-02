@@ -7,12 +7,14 @@
  * `?gpuTier=-1` boot override is set): MapLibre GL cannot render at all
  * there — raster basemaps included, they still need a GL canvas.
  *
- * Stack:
- * - Basemap: switchable raster set mirroring the MapLibre basemap
- *   control (chip toggle + thumbnail rail): plain OSM, the mapproxy
- *   `world_topo` facade (OpenTopoMap + geoland.at + swisstopo, cached
- *   WebP) and `world_satellite` (ESRI). Hardcoded for the POC — later
- *   these should come from the same backend catalog layers.
+ * Stack (SERVED-ONLY, MapLibre parity — owner decision 2026-11: no
+ * offline seeds, no env-sourced URLs; the splash covers the map until
+ * the backend's main parts land, see the reveal gate):
+ * - Basemap: switchable raster set from the backend catalog
+ *   (role=basemap, raster-base styles — same registry the MapLibre
+ *   basemap control reads); chip toggle + thumbnail rail. EMPTY until
+ *   the catalog resolves — a failed catalog leaves a bare canvas
+ *   behind the splash, exactly like the MapLibre path (design.md D1).
  * - Huts: the SAME served vector source the MapLibre huts style
  *   fetches — tile URLs, pyramid bounds and MLT table name extracted
  *   from the overlay store's compiled `huts` style (fallback/
@@ -34,14 +36,13 @@
  *   the occupation
  *   status color (the same palette the MapLibre `wd-huts-occupation`
  *   layer uses).
- * - Clustering: TWO markercluster groups — both uncluster from z10
- *   (owner tuning 2026-10, parity with the served config's maxZoom:
- *   10; the plain group previously waited to z11 after the zoom-sweep
- *   profile — ~1200 unclustered DOM markers at z10 dropped frames —
- *   the owner accepted that density). Cluster bubbles are colored by
- *   the DOMINANT member type color. Pans fully inside loaded tiles
- *   skip the marker rebuild; rebuilds also run only on tile-set,
- *   availability, selection or icon-band changes.
+ * - Clustering: served `config.clustering` ONLY — one markercluster
+ *   group per groupByProperty value (radius/uncluster-zoom from the
+ *   config; bubbles colored by the DOMINANT member type color).
+ *   Without a served config markers render UNCLUSTERED — there is no
+ *   offline clustering mode (MapLibre parity). Pans fully inside
+ *   loaded tiles skip the marker rebuild; rebuilds also run only on
+ *   tile-set, availability, selection or icon-band changes.
  * - Selection: the clicked hut's marker swaps to a wider gold border
  *   (route-driven — same toggle semantics as the MapLibre map).
  * - Date changes drive the SAME calendar spinner as the main map
@@ -94,7 +95,6 @@ import type { StyleSpecification } from 'maplibre-gl';
 // ── Extracted fallback modules (Phase B rewiring) ───────────────────
 import { viewportTileRange, tileXToLng, tileYToLat } from './fallback/tile-math';
 import {
-  STATUS_COLORS,
   DEFAULT_DOT_COLOR,
   HUT_MIN_ZOOM,
   OCC_LABEL_MIN_ZOOM,
@@ -119,11 +119,14 @@ import {
   hutsRowVisible,
   shouldAdoptHutsActive,
 } from './fallback/huts-visibility';
-import { AVAIL_BUCKET, PLAIN_BUCKET, orderLegacyBucketsFirst } from './fallback/cluster-groups';
+import { useMapCatalogStore } from '@stores/map/map-catalog-store';
 
 const emit = defineEmits<{
-  /** Map initialized + first paint requested — WdMapView runs its
-   * reveal choreography on this (splash out, chrome in). */
+  /** Map initialized AND the served main parts are in (catalog
+   * basemap applied + active overlay styles settled — see the reveal
+   * gate near onMounted). WdMapView runs its reveal choreography on
+   * this (splash out, chrome in); its 8s safety ladder reveals anyway
+   * if a part never settles. */
   (e: 'ready'): void;
 }>();
 
@@ -133,6 +136,10 @@ const { t } = useI18n();
 const localPropertiesStore = useLocalPropertiesStore();
 const hutsStore = useHutsStore();
 const overlayStore = useOverlayStore();
+/** Catalog store (initialized by the hosting WdMapView — runs on
+ *  fallback sessions too): its mapStylesReady/status refs gate the
+ *  reveal exactly like the MapLibre path's full-ready milestone. */
+const mapCatalogStore = useMapCatalogStore();
 
 const fallbackEl = ref<HTMLDivElement>();
 
@@ -150,29 +157,27 @@ function syncDrawState(zoom: number): void {
 // The overlay store's compiled `huts` item carries BOTH served inputs:
 // the resolved style (status palette: the wd-huts-occupation
 // circle-color match expression) and config.clustering (markercluster
-// parameters). Both keep their offline defaults until the catalog
-// resolves — same resilience pattern as the fallback basemaps.
+// parameters). SERVED-ONLY (MapLibre parity, owner decision 2026-11):
+// no offline copies — until the catalog resolves, availability rings
+// do not paint and markers render unclustered.
 
-/** Status palette in use — seeded with the hardcoded copy, replaced by
- *  the served style's match expression once it arrives. */
-const statusColors = ref<Record<string, string>>(STATUS_COLORS);
+/** Status palette in use — empty until the served style's match
+ *  expression arrives (unknown statuses paint no ring). */
+const statusColors = ref<Record<string, string>>({});
 
-/** Clustering config from the served huts row; undefined = legacy
- *  dual-group behavior (hardcoded radius/uncluster zooms). */
+/** Clustering config from the served huts row; undefined = plain
+ *  UNCLUSTERED markers (no client-side clustering exists). */
 const hutsClustering = ref<ClusteringConfig | undefined>(undefined);
 
 function clusteringSignature(cfg: ClusteringConfig | undefined): string {
   return `${cfg?.groupByProperty ?? ''}|${cfg?.radius ?? ''}|${cfg?.maxZoom ?? ''}`;
 }
 
-/** Huts WITH availability uncluster from here (owner spec; +1 vs the
- *  first iteration — caps the unclustered marker count, see the profile
- *  note in the header). */
-const AVAIL_UNCLUSTER_ZOOM = 10;
-/** Huts WITHOUT availability uncluster at the SAME level now (owner
- *  tuning 2026-10 — parity with the served config.clustering.maxZoom
- *  of 10; was z11 before the profile-driven +1 was retired). */
-const PLAIN_UNCLUSTER_ZOOM = 10;
+/** Field defaults when a SERVED clustering config omits them (the
+ *  backend seed sends maxZoom 10 / radius 48 — these only cover
+ *  partially-authored configs; there is no offline clustering mode). */
+const DEFAULT_UNCLUSTER_ZOOM = 10;
+const DEFAULT_CLUSTER_RADIUS = 48;
 const MIN_ZOOM = 2; // MAP_MIN_ZOOM parity
 const MAX_ZOOM = 19; // raster basemaps top out here
 /* The hut/availability TILE pyramids (min/max zoom, MLT table names)
@@ -188,9 +193,14 @@ const NOTE_KEY = 'wodore:fallbackNoteDismissed';
  *  backend catalog (same registry as MapLibre) when it resolves. */
 const BASEMAPS = useFallbackBasemaps();
 const bmOpen = ref(false);
-/** Stored id, legacy POC ids migrated to catalog slugs on read. */
-const activeBasemapId = ref(
-  migrateBasemapId((LocalStorage.getItem(BM_KEY) as string | null) ?? 'osm')
+/** Stored id (legacy POC ids migrated to catalog slugs on read);
+ *  undefined until the catalog list lands and adopts an entry — there
+ *  is no offline default basemap anymore (MapLibre parity). */
+const activeBasemapId = ref<string | undefined>(
+  (() => {
+    const stored = LocalStorage.getItem(BM_KEY) as string | null;
+    return stored ? migrateBasemapId(stored) : undefined;
+  })()
 );
 
 function bmLabel(bm: FbBasemap): string {
@@ -205,12 +215,15 @@ function selectBasemap(id: string): void {
   if (attribInnerEl) attribInnerEl.innerHTML = attribHtml(id); // follows the basemap
 }
 
-// Catalog upgrade landed: keep the selection on its slug, re-apply the
-// (possibly re-pointed — CDN + versioned) tile URL. Stored ids not in
-// the upgraded list fall back to OSM.
+// Catalog list landed: keep the stored selection on its slug, re-apply
+// the (possibly re-pointed — CDN + versioned) tile URL. Stored ids not
+// in the list fall back to the FIRST entry. An empty list (catalog
+// loading/failed) changes nothing — the canvas stays bare behind the
+// splash.
 watch(BASEMAPS, list => {
+  if (list.length === 0) return;
   const kept = list.find(b => b.id === activeBasemapId.value);
-  if (!kept) activeBasemapId.value = list[0]?.id ?? 'osm';
+  if (!kept) activeBasemapId.value = list[0]!.id;
   LocalStorage.set(BM_KEY, activeBasemapId.value);
   applyBasemap();
   if (attribInnerEl) attribInnerEl.innerHTML = attribHtml(activeBasemapId.value);
@@ -251,13 +264,11 @@ let overlayAdapter: FallbackOverlayAdapter | undefined;
 // ── Cluster groups (config-driven, backend #440 config.clustering) ──
 // With the served config: one markercluster group per groupByProperty
 // value (+ the null bucket for features without it), radius/maxZoom
-// from the config — the dual avail/plain groups and their
-// differentiated unclustering were dropped with it. Without the config
-// (style still loading / pre-#440 backend), the legacy dual buckets
-// keep today's exact behavior. Groups are created lazily per bucket —
-// in a DETERMINISTIC order in legacy mode (orderLegacyBucketsFirst:
-// plain before avail, so availability huts paint on top).
-let clusterGroups = new Map<string | null, L.MarkerClusterGroup>();
+// from the config. Without the config (style still loading / a row
+// that declares none) there is NO client-side clustering — markers
+// render as plain unclustered features in one feature group
+// (MapLibre-parity: clustering exists only when the backend says so).
+let clusterGroups = new Map<string | null, L.FeatureGroup>();
 
 function makeClusterGroup(unclusterZoom: number, radius: number): L.MarkerClusterGroup {
   return L.markerClusterGroup({
@@ -270,30 +281,30 @@ function makeClusterGroup(unclusterZoom: number, radius: number): L.MarkerCluste
   });
 }
 
-/** The marker's cluster bucket: the config's groupByProperty value
- *  (null bucket for features without it), or the legacy avail/plain
- *  split when no config is served. */
+/** The marker's cluster bucket: the served config's groupByProperty
+ *  value (null bucket for features without it). Without a config
+ *  everything lands in the single null bucket's plain group. */
 function clusterBucketFor(hut: FbHut): string | null {
   const prop = hutsClustering.value?.groupByProperty;
-  if (prop) {
-    const value = hut.properties[prop];
-    return typeof value === 'string' && value.length > 0 ? value : null;
-  }
-  return availBySlug.has(hut.slug) ? AVAIL_BUCKET : PLAIN_BUCKET;
+  if (!prop) return null;
+  const value = hut.properties[prop];
+  return typeof value === 'string' && value.length > 0 ? value : null;
 }
 
-/** Lazily create + mount the bucket's cluster group. */
-function clusterGroupFor(bucket: string | null): L.MarkerClusterGroup | undefined {
+/** Lazily create + mount the bucket's group: a markercluster group per
+ *  bucket under the served config; a PLAIN feature group (unclustered,
+ *  MapLibre-parity symbol rendering) without one. */
+function clusterGroupFor(bucket: string | null): L.FeatureGroup | undefined {
   if (!map) return undefined;
   let group = clusterGroups.get(bucket);
   if (!group) {
     const cfg = hutsClustering.value;
-    const unclusterZoom = cfg
-      ? (cfg.maxZoom ?? PLAIN_UNCLUSTER_ZOOM)
-      : bucket === AVAIL_BUCKET
-        ? AVAIL_UNCLUSTER_ZOOM
-        : PLAIN_UNCLUSTER_ZOOM;
-    group = makeClusterGroup(unclusterZoom, cfg?.radius ?? 48);
+    group = cfg
+      ? makeClusterGroup(
+          cfg.maxZoom ?? DEFAULT_UNCLUSTER_ZOOM,
+          cfg.radius ?? DEFAULT_CLUSTER_RADIUS
+        )
+      : L.featureGroup();
     clusterGroups.set(bucket, group);
     map.addLayer(group);
   }
@@ -537,9 +548,9 @@ function onContainerPointerUp(e: PointerEvent): void {
 const ATTRIB_CLOSE_SVG =
   '<svg class="wd-fb-attrib__close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 
-function attribHtml(bmId: string): string {
-  const bm = BASEMAPS.value.find(b => b.id === bmId) ?? BASEMAPS.value[0]!;
-  return bm.attribution;
+function attribHtml(bmId: string | undefined): string {
+  const bm = BASEMAPS.value.find(b => b.id === bmId) ?? BASEMAPS.value[0];
+  return bm?.attribution ?? '';
 }
 
 let attribInnerEl: HTMLElement | undefined;
@@ -779,9 +790,14 @@ function rebuildMarkers(): void {
     list.push(layer);
     markersByBucket.set(bucket, list);
   }
-  for (const [bucket, markers] of orderLegacyBucketsFirst([...markersByBucket])) {
+  for (const [bucket, markers] of markersByBucket) {
     const group = clusterGroupFor(bucket);
-    if (group) group.addLayers(markers); // bulk: no per-marker animation
+    if (!group) continue;
+    if (group instanceof L.MarkerClusterGroup) {
+      group.addLayers(markers); // bulk: no per-marker animation
+    } else {
+      for (const marker of markers) group.addLayer(marker);
+    }
   }
   // Diagnostics for the zoom-sweep profiler (harmless in prod).
   window.performance.measure('wd-fb:rebuild', { start: rebuildStart });
@@ -790,9 +806,9 @@ function rebuildMarkers(): void {
 // ── Served huts item: status palette + clustering config ────────────
 // The compiled `huts` overlay item arrives asynchronously (metadata-
 // first placeholders carry an empty style — parseStatusColors returns
-// undefined for those and the offline palette stays). A CHANGED
-// clustering signature rebuilds the cluster groups (e.g. the config
-// landing after boot replaced the legacy dual buckets).
+// undefined for those and the palette stays empty: no rings). A CHANGED
+// clustering signature rebuilds the groups (e.g. the config landing
+// after boot swaps plain markers for clustered ones).
 type HutsOverlayItem =
   | {
       name?: string;
@@ -1269,8 +1285,12 @@ function onMoveEnd(): void {
 
 function applyBasemap(): void {
   if (!map) return;
-  const bm = BASEMAPS.value.find(b => b.id === activeBasemapId.value) ?? BASEMAPS.value[0]!;
+  const bm = BASEMAPS.value.find(b => b.id === activeBasemapId.value) ?? BASEMAPS.value[0];
   if (tileLayer) map.removeLayer(tileLayer);
+  tileLayer = undefined;
+  // No served basemap (catalog loading/failed): the canvas stays bare
+  // behind the splash — no offline seed tiles exist (MapLibre parity).
+  if (!bm) return;
   tileLayer = L.tileLayer(bm.url, {
     maxNativeZoom: bm.maxNativeZoom,
     maxZoom: MAX_ZOOM,
@@ -1278,6 +1298,33 @@ function applyBasemap(): void {
   });
   tileLayer.addTo(map);
 }
+
+// ── Reveal gate (MapLibre parity, owner decision 2026-11) ────────────
+// 'ready' does NOT fire on bare Leaflet initialization anymore: the
+// splash stays until the served MAIN PARTS are in —
+//   1. the catalog basemap applied (BASEMAPS non-empty ⇒ applyBasemap
+//      ran via the watch — no offline seed tiles exist), and
+//   2. the active overlay styles settled: mapCatalogStore.mapStylesReady
+//      — resolved OR skipped, the SAME semantics WdMapView's full-ready
+//      milestone uses on the MapLibre path (map-catalog-store). A
+//      catalog 'error' reveals too — the overlay menu shows the error
+//      row, mirroring the MapLibre behavior.
+// WdMapView's 8s safety ladder reveals anyway if any part never
+// settles (blank-but-usable beats an infinite splash).
+let leafletReady = false;
+let readyEmitted = false;
+
+function maybeEmitReady(): void {
+  if (readyEmitted || !leafletReady) return;
+  if (BASEMAPS.value.length === 0) return; // no served basemap yet
+  if (!mapCatalogStore.mapStylesReady && mapCatalogStore.status !== 'error') return;
+  readyEmitted = true;
+  emit('ready');
+}
+
+watch([BASEMAPS, () => mapCatalogStore.mapStylesReady, () => mapCatalogStore.status], () =>
+  maybeEmitReady()
+);
 
 // ── Lifecycle ────────────────────────────────────────────────────────────
 
@@ -1335,12 +1382,12 @@ onMounted(() => {
   overlayAdapter = createFallbackOverlayAdapter(map);
 
   // Cluster groups are created LAZILY per bucket on the first marker
-  // rebuild (clusterGroupFor) — driven by config.clustering when the
-  // catalog resolved, legacy dual buckets otherwise (see
+  // rebuild (clusterGroupFor) — markercluster under the served
+  // config.clustering, one plain unclustered group without it (see
   // clusterBucketFor). Z-order note (owner: huts with availability
-  // should never be covered by others) applies to the legacy mode via
-  // stable insertion order: buckets are created in first-hut-seen
-  // order, later groups paint above earlier ones.
+  // should never be covered by others) applies via stable insertion
+  // order: buckets are created in first-hut-seen order, later groups
+  // paint above earlier ones.
 
   map.on('moveend zoomend', onMoveEnd);
   const container = map.getContainer();
@@ -1390,8 +1437,9 @@ onMounted(() => {
   }
 
   map.whenReady(() => {
-    emit('ready');
-    void refreshTiles();
+    leafletReady = true;
+    maybeEmitReady();
+    void refreshTiles(); // hut tiles stream in BEHIND the splash
   });
 
   // Reduced-mode notice — dismissable toast, dismissal persisted, shown
