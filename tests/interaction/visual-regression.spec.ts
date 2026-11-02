@@ -14,6 +14,23 @@
 import { test, expect } from './helpers';
 import { waitForMapIdle, loadMap, pinTheme, tagTest } from './helpers';
 
+// Deterministic map content (fixture change 2026-11: the generic
+// staging-cache no longer substitutes empty styles — real documents
+// flow, which the fallback specs depend on). These pixel baselines
+// were recorded against a BLANK map area, and real styles render live
+// tiles whose bytes vary per run — so THIS spec pins every style
+// document to a minimal empty one itself: chrome-only assertions do
+// not depend on style content, and the map renders exactly the blank
+// surface the references show. (Spec routes register after the
+// fixture's, so this pin wins over cache replay.)
+const EMPTY_STYLE = JSON.stringify({ version: 8, sources: {}, layers: [] });
+
+test.beforeEach(async ({ page }) => {
+  await page.route('**/v1/map/styles/**', route =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: EMPTY_STYLE })
+  );
+});
+
 const STATES = [
   // Mobile
   { id: 'overlay-strip', theme: 'light', mode: 'mobile' },
