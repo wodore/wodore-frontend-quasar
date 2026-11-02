@@ -326,7 +326,7 @@ function swatchColor(route: RouteInfo): string {
   gap: 5px;
   height: 20px;
   padding: 0 7px;
-  border-radius: 6px;
+  border-radius: 4px;
   font-family: 'Barlow Semi Condensed', 'Barlow', sans-serif;
   font-size: 12px;
   font-weight: 600;
