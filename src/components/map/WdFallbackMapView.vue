@@ -59,14 +59,7 @@
  * Leaflet + markercluster ride this component's async chunk
  * (WdMapView async-imports it), so WebGL users never download them.
  */
-import {
-  computed,
-  onBeforeUnmount,
-  onMounted,
-  onScopeDispose,
-  ref,
-  watch,
-} from 'vue';
+import { computed, onBeforeUnmount, onMounted, onScopeDispose, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useDebounceFn } from '@vueuse/core';

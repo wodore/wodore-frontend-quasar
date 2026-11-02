@@ -1728,10 +1728,7 @@ let hoveredFeature: {
 function clearHoveredFeature(map: Map): void {
   if (!hoveredFeature) return;
   try {
-    map.setFeatureState(
-      { ...hoveredFeature } as never,
-      { hovered: false }
-    );
+    map.setFeatureState({ ...hoveredFeature } as never, { hovered: false });
   } catch {
     // feature gone (tile unloaded) — nothing to clear
   }
@@ -1756,10 +1753,7 @@ function onLayerEnter(e: MapLayerEventType['mouseenter'], minZoom?: number) {
         id: feature.id,
       };
       try {
-        e.target.setFeatureState(
-          { ...hoveredFeature } as never,
-          { hovered: true }
-        );
+        e.target.setFeatureState({ ...hoveredFeature } as never, { hovered: true });
       } catch {
         // source not ready — skip silently
       }
