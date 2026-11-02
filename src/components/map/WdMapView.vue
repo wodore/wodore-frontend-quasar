@@ -1082,6 +1082,7 @@ function applyFeatureHighlights(handles: FeatureHandle[]): void {
   if (!map) return;
   // Clear handles that are no longer active
   for (const prev of appliedHandles) {
+    if (!prev.source) continue; // no source — nothing to clear
     if (!handles.some(h => h.id === prev.id && h.source === prev.source)) {
       try {
         map.setFeatureState(
