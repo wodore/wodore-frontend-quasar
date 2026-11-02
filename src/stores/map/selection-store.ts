@@ -341,8 +341,11 @@ export const useSelectionStore = defineStore('selection', () => {
     setTarget(popupTarget, null);
     popupEntry.value = null;
     candidates.value = [];
-    // POPUP highlight cleared; the DETAIL highlight persists while
-    // the detail route is active (owner: hut stays highlighted).
+    popupHighlightRef.value = null;
+    // The DETAIL highlight persists while the detail route is active
+    // (owner: hut stays highlighted); clear it too when no detail is
+    // open (there's nothing to persist).
+    if (!detailOpen.value) detailHighlightRef.value = null;
   }
 
   return {

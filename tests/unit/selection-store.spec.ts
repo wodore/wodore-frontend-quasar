@@ -11,6 +11,12 @@ import { createApp, nextTick } from 'vue';
 import { createPinia, setActivePinia, type Pinia } from 'pinia';
 import { createRouter, createMemoryHistory, type Router } from 'vue-router';
 import { useSelectionStore } from '@stores/map/selection-store';
+
+/** Last active highlight (the array holds detail + popup refs). */
+function lastHighlight(store: ReturnType<typeof useSelectionStore>) {
+  const refs = store.highlightRef as unknown[];
+  return refs.length > 0 ? refs[refs.length - 1] : null;
+}
 import { createRegistry, setDefaultRegistry } from '@selection/registry';
 import { definePresentation, targetKey, type MapTarget } from '@selection/types';
 
@@ -104,7 +110,7 @@ describe('selection store state machine', () => {
     expect(router.currentRoute.value.params.slug).toBe('planing');
     expect(store.routedTarget?.id).toBe('planing');
     expect(store.mode).toBe('detail');
-    expect(store.highlightRef).toBe(marker);
+    expect(lastHighlight(store)).toBe(marker);
   });
 
   it('via search prefers the detail when both surfaces exist', async () => {
@@ -131,7 +137,7 @@ describe('selection store state machine', () => {
     expect(router.currentRoute.value.name).toBe('map');
     expect(store.mode).toBe('closed');
     expect(store.routedTarget).toBeNull();
-    expect(store.highlightRef).toBeNull();
+    expect(store.highlightRef).toHaveLength(0);
   });
 
   it('D12: search re-select of the routed target re-anchors (stays open)', async () => {
@@ -143,7 +149,7 @@ describe('selection store state machine', () => {
     await store.open(reanchored, { via: 'search', entry: detailOnly });
     expect(router.currentRoute.value.name).toBe('map-hut');
     expect(store.routedTarget).toBe(reanchored);
-    expect(store.highlightRef).toBe(reanchored.featureRef);
+    expect(lastHighlight(store)).toBe(reanchored.featureRef);
   });
 
   it('rapid popup A→B replaces the target and the highlight', async () => {
@@ -154,7 +160,7 @@ describe('selection store state machine', () => {
     await store.open(a, { via: 'map', entry: popupOnly });
     await store.open(b, { via: 'map', entry: popupOnly });
     expect(store.popupTarget?.id).toBe('b');
-    expect(store.highlightRef).toBe(b.featureRef);
+    expect(lastHighlight(store)).toBe(b.featureRef);
     expect(store.candidates).toEqual([]);
   });
 
@@ -168,7 +174,7 @@ describe('selection store state machine', () => {
     expect(store.mode).toBe('detail');
     expect(store.routedTarget).toBe(t);
     expect(store.popupTarget).toBeNull();
-    expect(store.highlightRef).toBe(t.featureRef);
+    expect(lastHighlight(store)).toBe(t.featureRef);
   });
 
   it('back/leave clears detail state without resurrecting the popup', async () => {
@@ -180,7 +186,7 @@ describe('selection store state machine', () => {
     await nextTick();
     expect(store.mode).toBe('closed');
     expect(store.routedTarget).toBeNull();
-    expect(store.highlightRef).toBeNull();
+    expect(store.highlightRef).toHaveLength(0);
     expect(store.popupTarget).toBeNull();
   });
 
@@ -215,7 +221,7 @@ describe('selection store state machine', () => {
     });
     store.closePopup();
     expect(store.mode).toBe('closed');
-    expect(store.highlightRef).toBeNull();
+    expect(store.highlightRef).toHaveLength(0);
   });
 
   it('open resolves through the installed default registry', async () => {
@@ -286,7 +292,7 @@ describe('selection store state machine', () => {
     });
     expect(store.mode).toBe('closed'); // route never landed
     expect(store.routedTarget).toBeNull();
-    expect(store.highlightRef).toBeNull();
+    expect(store.highlightRef).toHaveLength(0);
   });
 
   // ── PR2: click pipeline entry point ────────────────────────────────
