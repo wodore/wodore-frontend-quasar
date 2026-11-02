@@ -337,9 +337,7 @@
       "other_desc": "Altre fermate"
     },
     "info": "Informazioni",
-
     "cluster_counts": "Mostra il numero di punti raggruppati",
-
     "cluster_counts_caption": "Mostra quanti punti sono raggruppati in ciascun gruppo sulla mappa.",
     "skitouren": {
       "label": "Sci alpinismo",
@@ -576,5 +574,11 @@
   "api_version_unsupported_native": "Questa versione dell'app non è più supportata dal server. Aggiorna l'app.",
   "api_version_unsupported_web": "Questa versione non è più supportata dal server. Ricarica la pagina.",
   "api_version_reload": "Ricarica",
-  "api_version_update": "Aggiorna l'app"
+  "api_version_update": "Aggiorna l'app",
+  "place": {
+    "popup": {
+      "close": "Chiudi",
+      "expand": "Dettagli"
+    }
+  }
 }

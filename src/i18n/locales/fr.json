@@ -337,9 +337,7 @@
       "other_desc": "Autres arrêts"
     },
     "info": "Information",
-
     "cluster_counts": "Afficher les effectifs des groupes",
-
     "cluster_counts_caption": "Affiche le nombre de points regroupés dans chaque groupe sur la carte.",
     "skitouren": {
       "label": "Courses de ski",
@@ -576,5 +574,11 @@
   "api_version_unsupported_native": "Cette version de l'application n'est plus prise en charge par le serveur. Veuillez mettre à jour l'application.",
   "api_version_unsupported_web": "Cette version n'est plus prise en charge par le serveur. Veuillez recharger la page.",
   "api_version_reload": "Recharger",
-  "api_version_update": "Mettre à jour l'appli"
+  "api_version_update": "Mettre à jour l'appli",
+  "place": {
+    "popup": {
+      "close": "Fermer",
+      "expand": "Détails"
+    }
+  }
 }

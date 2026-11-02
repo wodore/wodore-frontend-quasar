@@ -58,3 +58,6 @@ AGENT/
 dist/
 junit-results/
 tests/interaction/.staging-cache/
+
+# Working documents (session-scoped docs; durable info lives in openspec/)
+_work/

@@ -126,6 +126,7 @@ export default configure(ctx => {
         '@stores': path.join(__dirname, './src/stores'),
         '@components': path.join(__dirname, './src/components'),
         '@composables': path.join(__dirname, './src/composables'),
+        '@selection': path.join(__dirname, './src/selection'),
         '@layouts': path.join(__dirname, './src/layouts'),
         '@pages': path.join(__dirname, './src/pages'),
         '@assets': path.join(__dirname, './src/assets'),

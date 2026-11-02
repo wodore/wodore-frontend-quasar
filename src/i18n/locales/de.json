@@ -337,9 +337,7 @@
       "other_desc": "Andere Haltestellen"
     },
     "info": "Information",
-
     "cluster_counts": "Cluster-Anzahl anzeigen",
-
     "cluster_counts_caption": "Zeigt, wie viele Punkte in jedem Cluster auf der Karte gebündelt sind.",
     "skitouren": {
       "label": "Skitouren",
@@ -576,5 +574,11 @@
   "api_version_unsupported_native": "Diese App-Version wird vom Server nicht mehr unterstützt. Bitte aktualisiere die App.",
   "api_version_unsupported_web": "Diese Version wird vom Server nicht mehr unterstützt. Bitte lade die Seite neu.",
   "api_version_reload": "Neu laden",
-  "api_version_update": "App aktualisieren"
+  "api_version_update": "App aktualisieren",
+  "place": {
+    "popup": {
+      "close": "Schliessen",
+      "expand": "Details"
+    }
+  }
 }

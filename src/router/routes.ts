@@ -78,7 +78,7 @@ const routes: RouteRecordRaw[] = [
         components: {
           default: () => import('pages/MapPage.vue'),
           menu: menuView,
-          content: () => import('components/content/place/WdPlaceContent.vue'),
+          content: () => import('components/content/WdDetailBodyHost.vue'),
         },
         props: { content: true },
       },
