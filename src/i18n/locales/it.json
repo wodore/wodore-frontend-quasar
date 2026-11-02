@@ -578,8 +578,7 @@
   "place": {
     "popup": {
       "close": "Chiudi",
-      "expand": "Dettagli",
-      "candidates": "{n} di {total} risultati"
+      "expand": "Dettagli"
     }
   }
 }
