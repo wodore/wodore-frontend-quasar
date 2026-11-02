@@ -140,7 +140,15 @@ async function loadCatalogBasemaps(): Promise<void> {
     );
     const resolved = await Promise.all(candidates.map(layerToFbBasemap));
     const entries = resolved.filter((b): b is FbBasemap => Boolean(b));
-    if (entries.length > 0) basemapList.value = entries;
+    if (entries.length > 0) {
+      basemapList.value = entries;
+    } else {
+      // "Succeeded but nothing usable" (every style fetch failed /
+      // non-raster) — same retry-on-next-mount as a thrown fetch, or
+      // the empty list would pin forever and the reveal gate's
+      // basemap term would never pass (review finding #1).
+      catalogLoaded = false;
+    }
   } catch {
     // Transient failure (fetchMapCatalog clears its own cache on throw,
     // map-catalog.ts:203) — allow the next mount to retry instead of

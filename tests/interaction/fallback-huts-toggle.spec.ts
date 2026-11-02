@@ -192,12 +192,15 @@ test.describe('fallback huts toggle (store-driven)', () => {
     });
 
     await openFallbackAtBern(page);
-    await page.waitForTimeout(4000); // settle any late compile + tile debounce
 
-    // No menu row (checked after the menu renders other rows)…
+    // Open the menu and wait for the catalog compile to surface rows —
+    // CONDITION-based (no blind sleep, review finding #5): the absence
+    // assertions below are only meaningful once some catalog applied.
     await page.evaluate('document.querySelector(".wd-ovl__more")?.click()');
     await page.waitForSelector('.wd-ovl__row', { timeout: 60_000 });
-    await page.waitForTimeout(1000); // settle any late compile
+    await page.waitForTimeout(1500); // settle any late compile + tile debounce
+
+    // No menu row for the stripped huts overlay…
     expect(await page.locator('.wd-ovl__row[data-slug="huts"]').count()).toBe(0);
 
     // …and the built-in huts stay OFF: no markers from the (absent)

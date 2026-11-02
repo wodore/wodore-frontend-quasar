@@ -42,8 +42,12 @@ export const AVAIL_SOURCE_ID = 'wd-bookings';
 const SPRITE_PACK_ID = 'wd';
 
 /** MapLibre vector-source pyramid defaults (style-spec: 0 / 22) — used
- *  when a served source omits minzoom/maxzoom, exactly what MapLibre
- *  itself would assume for that source. */
+ *  only when a served source omits minzoom/maxzoom, exactly what
+ *  MapLibre itself would assume for that source. The backend seed
+ *  contract always carries them (apps/basemaps seed_lib — the huts
+ *  pyramid is z5–z9); without them the fallback would fetch into the
+ *  void above z9 instead of overzooming (theoretical, malformed
+ *  responses only — review finding #2). */
 const VECTOR_MIN_ZOOM_DEFAULT = 0;
 const VECTOR_MAX_ZOOM_DEFAULT = 22;
 
@@ -161,6 +165,9 @@ export function fallbackHutsSource(
   // resolved document only when no tokenized sibling exists.
   const availTokenized = vectorTilesSource(tokenizedStyle, AVAIL_SOURCE_ID);
   const avail = availTokenized ?? vectorTilesSource(style, AVAIL_SOURCE_ID);
+  // availTokenized implies tokenizedStyle is defined (an undefined
+  // input yields undefined) — the second guard only narrows the type
+  // without a non-null assertion (review finding #3).
   const availStyle = availTokenized && tokenizedStyle ? tokenizedStyle : style;
   const spriteBase = spriteBaseOf(style);
   return {
@@ -186,7 +193,7 @@ export function expandTileUrl(
   tokens?: Record<string, unknown>
 ): string {
   if (!template) return '';
-  const substituted = tokens ? (resolveTokens(template, tokens) as string) : template;
+  const substituted = tokens ? resolveTokens(template, tokens) : template;
   return substituted
     .replaceAll('{z}', String(z))
     .replaceAll('{x}', String(x))
