@@ -12,9 +12,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { createApp, defineComponent, nextTick } from 'vue';
 import { createPinia, setActivePinia, type Pinia } from 'pinia';
 import { createMemoryHistory, createRouter, type Router } from 'vue-router';
-import {
-  useActiveDetailEntry,
-} from '@composables/useActiveDetailEntry';
+import { useActiveDetailEntry } from '@composables/useActiveDetailEntry';
 import { useSelectionStore } from '@stores/map/selection-store';
 import { createRegistry, setDefaultRegistry } from '@selection/registry';
 import { definePresentation, targetKey } from '@selection/types';

@@ -8,7 +8,6 @@
 import { definePresentation } from '@selection/types';
 import { TRANSPORT_STOP_LAYERS } from '@selection/map-layer-ids';
 
-
 export const transportEntry = definePresentation<Record<string, unknown>>({
   id: 'transport',
   match: { source: 'transport' },
