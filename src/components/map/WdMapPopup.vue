@@ -202,71 +202,71 @@ onScopeDispose(() => {
       role="dialog"
       aria-modal="false"
     >
-        <div class="wd-map-popup__stem" aria-hidden="true" />
+      <div class="wd-map-popup__stem" aria-hidden="true" />
 
-        <!-- Accessible close: visually hidden, keyboard-focusable.
+      <!-- Accessible close: visually hidden, keyboard-focusable.
              Dismissal is by map click (the natural gesture for ephemeral
              map popups); this exists for screen readers and keyboard
              users only (owner 2026-11-01: "drop the close button"). -->
-        <button
-          type="button"
-          class="wd-map-popup__sr-close"
-          :aria-label="$t('place.popup.close')"
-          @click.stop="selection.closePopup()"
-        >
-          {{ $t('place.popup.close') }}
+      <button
+        type="button"
+        class="wd-map-popup__sr-close"
+        :aria-label="$t('place.popup.close')"
+        @click.stop="selection.closePopup()"
+      >
+        {{ $t('place.popup.close') }}
+      </button>
+
+      <!-- Title strip (entries with a name prop; transport renders in content) -->
+      <div v-if="title" class="wd-map-popup__title-strip">{{ title }}</div>
+
+      <!-- Candidates: collapsible list (replaces 1/n chip) -->
+      <div v-if="selection.candidates.length > 1" class="wd-map-popup__cands">
+        <button type="button" class="wd-map-popup__cands-toggle" @click="toggleCandidates">
+          <q-icon name="wd-layers-outline" size="14px" />
+          <span class="wd-map-popup__cands-label">
+            {{ candidateLabel(selection.candidateIndex) }}
+          </span>
+          <span class="wd-map-popup__cands-count">
+            {{ selection.candidateIndex + 1 }}/{{ selection.candidates.length }}
+          </span>
+          <q-icon :name="candidatesOpen ? 'wd-chevron-up' : 'wd-chevron-down'" size="14px" />
         </button>
+        <Transition name="wd-cands">
+          <div v-if="candidatesOpen" class="wd-map-popup__cands-list">
+            <button
+              v-for="(c, i) in selection.candidates"
+              :key="c.target.key"
+              type="button"
+              class="wd-map-popup__cands-item"
+              :class="{ 'wd-map-popup__cands-item--active': i === selection.candidateIndex }"
+              @click="selection.selectCandidate(i)"
+            >
+              {{ candidateLabel(i) }}
+            </button>
+          </div>
+        </Transition>
+      </div>
 
-        <!-- Title strip (entries with a name prop; transport renders in content) -->
-        <div v-if="title" class="wd-map-popup__title-strip">{{ title }}</div>
+      <!-- Entry popup content -->
+      <component :is="popupContent" v-if="popupContent" :target="selection.popupTarget" />
+      <slot v-else />
 
-        <!-- Candidates: collapsible list (replaces 1/n chip) -->
-        <div v-if="selection.candidates.length > 1" class="wd-map-popup__cands">
-          <button type="button" class="wd-map-popup__cands-toggle" @click="toggleCandidates">
-            <q-icon name="wd-layers-outline" size="14px" />
-            <span class="wd-map-popup__cands-label">
-              {{ candidateLabel(selection.candidateIndex) }}
-            </span>
-            <span class="wd-map-popup__cands-count">
-              {{ selection.candidateIndex + 1 }}/{{ selection.candidates.length }}
-            </span>
-            <q-icon :name="candidatesOpen ? 'wd-chevron-up' : 'wd-chevron-down'" size="14px" />
-          </button>
-          <Transition name="wd-cands">
-            <div v-if="candidatesOpen" class="wd-map-popup__cands-list">
-              <button
-                v-for="(c, i) in selection.candidates"
-                :key="c.target.key"
-                type="button"
-                class="wd-map-popup__cands-item"
-                :class="{ 'wd-map-popup__cands-item--active': i === selection.candidateIndex }"
-                @click="selection.selectCandidate(i)"
-              >
-                {{ candidateLabel(i) }}
-              </button>
-            </div>
-          </Transition>
-        </div>
-
-        <!-- Entry popup content -->
-        <component :is="popupContent" v-if="popupContent" :target="selection.popupTarget" />
-        <slot v-else />
-
-        <!-- Expand affordance -->
-        <div
-          v-if="selection.popupEntry?.capabilities?.includes('detail')"
-          class="wd-map-popup__footer"
+      <!-- Expand affordance -->
+      <div
+        v-if="selection.popupEntry?.capabilities?.includes('detail')"
+        class="wd-map-popup__footer"
+      >
+        <q-btn
+          dense
+          no-caps
+          class="wd-map-popup__expand"
+          :aria-label="$t('place.popup.expand')"
+          @click="selection.expand()"
         >
-          <q-btn
-            dense
-            no-caps
-            class="wd-map-popup__expand"
-            :aria-label="$t('place.popup.expand')"
-            @click="selection.expand()"
-          >
-            {{ $t('place.popup.expand') }}
-          </q-btn>
-        </div>
+          {{ $t('place.popup.expand') }}
+        </q-btn>
+      </div>
     </div>
   </Teleport>
 </template>

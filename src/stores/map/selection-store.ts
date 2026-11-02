@@ -75,7 +75,9 @@ export const useSelectionStore = defineStore('selection', () => {
   const detailHighlightRef = shallowRef<FeatureRef | null>(null);
   const popupHighlightRef = shallowRef<FeatureRef | null>(null);
   /** All active highlights (detail first — higher precedence). */
-  const highlightRef = computed(() => [detailHighlightRef.value, popupHighlightRef.value].filter(Boolean) as FeatureRef[]);
+  const highlightRef = computed(
+    () => [detailHighlightRef.value, popupHighlightRef.value].filter(Boolean) as FeatureRef[]
+  );
 
   // ── Routed detail state ─────────────────────────────────────────────
   /** The target whose detail is routed (null on cold deep links — the
