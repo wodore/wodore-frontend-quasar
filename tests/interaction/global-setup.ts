@@ -67,36 +67,54 @@ async function fetchText(url: string): Promise<string | null> {
 
 export default async function globalSetup(): Promise<void> {
   const base = process.env.E2E_API_HOST ?? 'https://hub.stg.wodore.com';
-  const catalogUrl = `${base}/v1/map/catalog?lang=en`;
-  const catalogBody = await fetchText(catalogUrl);
-  if (!catalogBody) {
-    console.warn('[global-setup] catalog unreachable — tests rely on the existing cache');
-    return;
-  }
-  writeEntry(catalogUrl, catalogBody);
+  // The layers endpoint (backend #331 — the old `/v1/map/config` and
+  // `/v1/map/catalog` endpoints retired with the config-catalog split).
+  // Prime per spec tier at the LOW and HIGH ends: a session's GPU
+  // detection resolves between them (headless CI chromium lands on
+  // 'medium' — the backend's spec fallback then serves one of the
+  // primed rows, and the fixture's live-fetch path covers the rest).
+  let primedStyles = 0;
+  for (const spec of ['low', 'high'] as const) {
+    const catalogUrl = `${base}/v1/map/layers?lang=en&spec=${spec}`;
+    const catalogBody = await fetchText(catalogUrl);
+    if (!catalogBody) {
+      console.warn(`[global-setup] ${catalogUrl} unreachable — relying on the existing cache`);
+      continue;
+    }
+    writeEntry(catalogUrl, catalogBody);
 
-  let layers: Array<{ slug: string; parameters?: unknown[] }>;
-  try {
-    layers =
-      (JSON.parse(catalogBody) as { layers?: Array<{ slug: string; parameters?: unknown[] }> })
-        .layers ?? [];
-  } catch {
-    console.warn('[global-setup] catalog body unparseable — skipping style priming');
-    return;
-  }
+    let layers: Array<{ slug: string; style_url?: string | null; parameters?: unknown[] }>;
+    try {
+      layers =
+        (
+          JSON.parse(catalogBody) as {
+            data?: Array<{ slug: string; style_url?: string | null; parameters?: unknown[] }>;
+          }
+        ).data ?? [];
+    } catch {
+      console.warn('[global-setup] layers body unparseable — skipping style priming');
+      continue;
+    }
 
-  // Prime exactly what the app requests per layer: tokenized when the
-  // layer declares parameters (client-side resolution), resolved
-  // otherwise — at both spec tiers the GPU detection may pick.
-  await Promise.all(
-    layers.map(async layer => {
-      const tokenized = (layer.parameters?.length ?? 0) > 0;
-      for (const spec of ['low', 'high'] as const) {
-        const url = `${base}/v1/map/styles/${layer.slug}.json?spec=${spec}${tokenized ? '&mode=tokenized' : ''}`;
-        const body = await fetchText(url);
-        if (body) writeEntry(url, body);
-      }
-    })
-  );
-  console.info(`[global-setup] primed catalog + ${layers.length * 2} style responses`);
+    // Prime EXACTLY what the app requests per layer: the row's own
+    // style_url (it embeds the backend-resolved spec AND the immutable
+    // `&v=` version token — a hand-built URL would never match the
+    // app's request), plus its `mode=tokenized` sibling when the layer
+    // declares parameters (client-side resolution).
+    await Promise.all(
+      layers.map(async layer => {
+        if (!layer.style_url) return;
+        const resolved = new URL(layer.style_url, base).href;
+        const tokenized = (layer.parameters?.length ?? 0) > 0;
+        for (const url of tokenized ? [resolved, `${resolved}&mode=tokenized`] : [resolved]) {
+          const body = await fetchText(url);
+          if (body) {
+            writeEntry(url, body);
+            primedStyles += 1;
+          }
+        }
+      })
+    );
+  }
+  console.info(`[global-setup] primed layers + ${primedStyles} style responses`);
 }

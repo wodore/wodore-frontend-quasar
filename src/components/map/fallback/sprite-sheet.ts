@@ -1,7 +1,8 @@
 /**
- * Sprite sheet management for the fallback map: load the Martin
- * `accommodation,availability` pack, tint icons white for canvas
- * shields, and build CSS background-position spans for cluster icons.
+ * Sprite sheet management for the fallback map: load the served `wd`
+ * sprite pack (base URL extracted from the huts style document — see
+ * fallback/huts-style-source), tint icons white for canvas shields,
+ * and build CSS background-position spans for cluster icons.
  *
  * The sheet is fetched ONCE as a blob → Image, decoded, then:
  * - Canvas shields use `whiteIconFor(identifier)` — a cached offscreen
@@ -32,19 +33,28 @@ const whiteIconCache = new Map<string, IconBitmap | null>();
 
 let spriteSheet: SpriteSheet | null = null;
 let spriteSheetUrl: string | undefined;
+/** The base URL the CURRENT sheet was loaded from (style-sourced) — a
+ *  changed pack URL (catalog swap) reloads instead of returning the
+ *  stale sheet. */
+let spriteBaseLoaded: string | undefined;
 /** Load-generation guard: revokeSprite() (component unmount) bumps it so
  *  an in-flight load revokes its OWN blob instead of re-populating module
  *  state nobody will clean up (Opus review #3). */
 let loadGeneration = 0;
 
-/** Load the sprite sheet; returns true on success. The URL is kept for
- *  revocation on unmount. Callers should rebuild markers after this
- *  resolves (the fallback draws plain dots until the sheet is ready). */
-export async function loadSprite(tileServer: string): Promise<boolean> {
-  if (spriteSheet) return true;
+/** Load the sprite sheet from the style-served pack base URL;
+ *  returns true on success. The URL is kept for revocation on unmount.
+ *  An already-loaded SAME base is a no-op; a different base (catalog
+ *  swap re-pointed the pack) drops the stale sheet first. Callers
+ *  should rebuild markers after this resolves (the fallback draws
+ *  plain dots until the sheet is ready). */
+export async function loadSprite(baseUrl: string): Promise<boolean> {
+  if (!baseUrl) return false;
+  if (spriteSheet && spriteBaseLoaded === baseUrl) return true;
+  if (spriteSheet) revokeSprite(); // stale pack — reload below
   const gen = ++loadGeneration;
   try {
-    const base = `${tileServer}/sprite/accommodation,availability`;
+    const base = baseUrl;
     const [meta, png] = await Promise.all([fetch(`${base}.json`), fetch(`${base}.png`)]);
     if (!meta.ok || !png.ok) return false;
     const icons = (await meta.json()) as Record<
@@ -64,6 +74,7 @@ export async function loadSprite(tileServer: string): Promise<boolean> {
       return false;
     }
     spriteSheetUrl = url;
+    spriteBaseLoaded = baseUrl;
     // SAFETY: createElement('img') returns HTMLImageElement at runtime;
     // the structural SheetImage type hides the DOM interface name from
     // the linter. Only .src and .decode() are used.
@@ -87,6 +98,7 @@ export function revokeSprite(): void {
   loadGeneration++; // invalidate any in-flight load
   if (spriteSheetUrl) URL.revokeObjectURL(spriteSheetUrl);
   spriteSheetUrl = undefined;
+  spriteBaseLoaded = undefined;
   spriteSheet = null;
   whiteIconCache.clear();
 }

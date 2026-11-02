@@ -1,26 +1,15 @@
 /**
  * Occupation status palette and marker zoom ramps for the fallback map.
  *
- * STATUS_COLORS is the OFFLINE fallback of the MapLibre
- * `wd-huts-occupation` paint palette (hardcoded copy). The live map
- * derives the palette from the served huts style's `circle-color`
- * match expression (parseStatusColors, backend #440) — this constant
- * only paints when the style is unavailable (same resilience pattern
- * as fallback-basemaps).
+ * SERVED-ONLY (MapLibre parity, owner decision 2026-11): the palette
+ * comes exclusively from the served huts style's `circle-color` match
+ * expression (parseStatusColors, backend #440) — there is NO offline
+ * copy anymore. Until the style lands, availability rings simply do
+ * not paint (markers render with their type colors — those come from
+ * the tile feature properties, not the style).
  */
 
 import type { StyleSpecification } from 'maplibre-gl';
-
-/** Day-0 occupation status → ring/disc color. Same palette the MapLibre
- * `wd-huts-occupation` layer paints (live catalog style). */
-export const STATUS_COLORS: Record<string, string> = {
-  empty: '#25BF5E',
-  low: '#F6AD4B',
-  medium: '#EA9A37',
-  free_unknown: '#7FAB88',
-  high: '#C3731F',
-  full: '#961A17',
-};
 
 /** CSS hex color guard — the parsed values flow into canvas paint and
  * divIcon inline styles; anything else falls back to the seed palette. */

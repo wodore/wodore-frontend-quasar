@@ -1,13 +1,14 @@
 /**
  * FALLBACK BASEMAPS — the Leaflet fallback's raster basemap set.
  *
- * CATALOG-DRIVEN (was hardcoded in the POC): the list is seeded with a
- * guaranteed offline trio (OSM + the two world rasters on the tile
- * router), then asynchronously replaced by the same backend catalog the
- * MapLibre map consumes (`/v1/map/layers`, role=basemap) — filtered to
- * entries whose style's BASE (first sourced layer) is a raster source,
- * so only Leaflet-servable basemaps appear. New raster basemaps land in
- * the fallback without a frontend change.
+ * CATALOG-ONLY (MapLibre parity, owner decision 2026-11): the list is
+ * EMPTY until the backend catalog resolves (`/v1/map/layers`,
+ * role=basemap) — same rule the MapLibre path follows since design.md
+ * D1 ("no bundled factory basemaps"). There is deliberately NO offline
+ * seed trio anymore and no TILE_SERVER constant: nothing renders until
+ * served data arrives, and a catalog failure leaves an empty rail
+ * behind the loading splash (WdMapView's reveal safety ladder shows
+ * the app anyway — the catalog error row explains the empty map).
  *
  * Detection rule (first-sourced-layer): a MapLibre style paints its
  * base beneath everything, so the first layer referencing a source
@@ -18,14 +19,13 @@
  * fallback is a WORLD map — country-scoped rasters would be blank
  * oceans at world view).
  *
- * IDs are stable slugs: 'osm' (hardcoded default, keyless, offline)
- * + catalog slugs ('world-topo', …). Legacy POC ids ('topo',
- * 'satellite') migrate on read. Labels: catalog entries carry the
- * localized backend name; OSM uses the app's i18n key. Thumbnails use
- * local assets until the backend serves `preview_url` (follow-up).
+ * IDs are stable catalog slugs ('world-topo', …); legacy POC ids
+ * ('topo', 'satellite' — and the retired hardcoded 'osm') migrate on
+ * read. Labels: catalog entries carry the localized backend name.
+ * Thumbnails use local assets until the backend serves `preview_url`
+ * (follow-up).
  */
 import { ref, type Ref } from 'vue';
-import { getEnv } from '@services/runtimeEnv';
 import {
   fetchMapCatalog,
   fetchMapStyle,
@@ -35,7 +35,7 @@ import {
 import type { StyleSpecification } from 'maplibre-gl';
 
 export interface FbBasemap {
-  /** Stable slug — 'osm' or the catalog layer slug. */
+  /** Stable slug — the catalog layer slug. */
   id: string;
   /** Raster tile URL template ({z}/{x}/{y}). */
   url: string;
@@ -43,54 +43,20 @@ export interface FbBasemap {
   maxNativeZoom: number;
   thumb: string;
   /** Localized display name (catalog `name`); undefined = use the
-   *  `map.fallbackBasemaps.${id}` i18n key (the hardcoded OSM entry). */
+   *  `map.fallbackBasemaps.${id}` i18n key. */
   label?: string;
 }
 
-/** Tile-router origin — shared by the basemaps, hut tiles, availability
- *  tiles and the sprite sheet. */
-export const TILE_SERVER = getEnv('WODORE_TILE_SERVER_URL') ?? 'http://localhost:8075';
-
-/** POC-era ids → catalog slugs (migrated on read, persisted back). */
+/** POC-era ids → catalog slugs (migrated on read, persisted back);
+ *  'osm' was the retired hardcoded offline entry — it maps through to
+ *  itself and simply matches nothing until the catalog carries it. */
 const LEGACY_IDS: Record<string, string> = {
   topo: 'world-topo',
   satellite: 'world-satellite-hybrid',
 };
 
-const OSM_ATTR =
-  '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors';
-const TOPO_ATTR =
-  '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> | <a href="https://opentopomap.org" target="_blank" rel="noopener">OpenTopoMap</a> (CC-BY-SA) | swisstopo | geoland.at';
-const SAT_ATTR = 'Esri, Maxar, Earthstar Geographics';
-
 const assetUrl = (name: string) =>
   new URL(`/src/assets/wodore-design/map/switch/${name}`, import.meta.url).href;
-
-/** Offline seed — same three entries as the POC, now under catalog
- *  slugs so the ids survive the async catalog swap. */
-const SEED: FbBasemap[] = [
-  {
-    id: 'osm',
-    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: OSM_ATTR,
-    maxNativeZoom: 19,
-    thumb: assetUrl('outdoor-v2.png'),
-  },
-  {
-    id: 'world-topo',
-    url: `${TILE_SERVER}/raster/tiles/world_topo/webmercator/{z}/{x}/{y}.webp`,
-    attribution: TOPO_ATTR,
-    maxNativeZoom: 16,
-    thumb: assetUrl('swiss-raster.png'),
-  },
-  {
-    id: 'world-satellite-hybrid',
-    url: `${TILE_SERVER}/raster/tiles/world_satellite/webmercator/{z}/{x}/{y}.webp`,
-    attribution: SAT_ATTR,
-    maxNativeZoom: 19,
-    thumb: assetUrl('satellite.png'),
-  },
-];
 
 /** Map a legacy stored id to its catalog slug ('topo' → 'world-topo'). */
 export function migrateBasemapId(id: string): string {
@@ -135,16 +101,8 @@ function attributionsHtml(layer: MapCatalogLayer, fallback: string): string {
 function thumbFor(slug: string): string {
   if (slug === 'world-topo') return assetUrl('swiss-raster.png');
   if (slug === 'world-satellite-hybrid') return assetUrl('satellite.png');
-  if (slug === 'osm') return assetUrl('outdoor-v2.png');
   return assetUrl('outdoor-v2.png');
 }
-
-/** Known-slug attribution fallbacks (catalog entries normally carry
- *  their own; these keep the seed parity when they don't). */
-const SEED_ATTR: Record<string, string> = {
-  'world-topo': TOPO_ATTR,
-  'world-satellite-hybrid': SAT_ATTR,
-};
 
 /** Map a catalog layer to a Leaflet basemap, or undefined when its
  *  style is not raster-servable (vector base) / fails to load. */
@@ -157,19 +115,19 @@ async function layerToFbBasemap(layer: MapCatalogLayer): Promise<FbBasemap | und
     return {
       id: layer.slug,
       url: base.tiles[0]!,
-      attribution: base.attribution ?? attributionsHtml(layer, SEED_ATTR[layer.slug] ?? OSM_ATTR),
+      attribution: base.attribution ?? attributionsHtml(layer, ''),
       maxNativeZoom: base.maxzoom ?? 19,
       thumb: thumbFor(layer.slug),
       label: layer.name || undefined,
     };
   } catch {
-    return undefined; // style unavailable — layer skipped, seed serves
+    return undefined; // style unavailable — layer skipped
   }
 }
 
 /** Shared reactive list — one catalog fetch per session (fetchMapCatalog
  *  caches), so every fallback mount reuses the resolved entries. */
-const basemapList = ref<FbBasemap[]>(SEED);
+const basemapList = ref<FbBasemap[]>([]);
 let catalogLoaded = false;
 
 async function loadCatalogBasemaps(): Promise<void> {
@@ -183,21 +141,24 @@ async function loadCatalogBasemaps(): Promise<void> {
     const resolved = await Promise.all(candidates.map(layerToFbBasemap));
     const entries = resolved.filter((b): b is FbBasemap => Boolean(b));
     if (entries.length > 0) {
-      basemapList.value = [
-        SEED[0]!, // OSM stays the hardcoded default
-        ...entries.filter(b => b.id !== 'osm'),
-      ];
+      basemapList.value = entries;
+    } else {
+      // "Succeeded but nothing usable" (every style fetch failed /
+      // non-raster) — same retry-on-next-mount as a thrown fetch, or
+      // the empty list would pin forever and the reveal gate's
+      // basemap term would never pass (review finding #1).
+      catalogLoaded = false;
     }
   } catch {
     // Transient failure (fetchMapCatalog clears its own cache on throw,
     // map-catalog.ts:203) — allow the next mount to retry instead of
-    // pinning the seed for the whole session (Opus review #6).
+    // pinning an empty list for the whole session (Opus review #6).
     catalogLoaded = false;
   }
 }
 
-/** Single access point: the seeded list (sync) that upgrades to the
- *  catalog-driven list when it resolves. The caller watches the ref. */
+/** Single access point: the (initially empty) catalog-driven list.
+ *  The caller watches the ref — MapLibre parity: nothing until served. */
 export function useFallbackBasemaps(): Ref<FbBasemap[]> {
   void loadCatalogBasemaps();
   return basemapList;
