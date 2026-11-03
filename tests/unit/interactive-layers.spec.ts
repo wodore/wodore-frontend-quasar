@@ -10,7 +10,15 @@ import { MIN_HUT_CLICK_ZOOM } from '@stores/map/utils/map-constants';
 import { createRegistry, setDefaultRegistry } from '@selection/registry';
 import { definePresentation, type Presentation } from '@selection/types';
 import { accommodationEntry } from '@selection/entries/accommodation';
+import { amenityEntry } from '@selection/entries/amenity';
+import { amenityClusterEntry } from '@selection/entries/amenity-cluster';
 import { geoplaceDefaultEntry } from '@selection/entries/geoplace-default';
+import { transportEntry } from '@selection/entries/transport';
+import {
+  AMENITY_SUBTREES,
+  WD_ACCOMMODATIONS_CLUSTER_LAYER,
+  WD_ACCOMMODATIONS_LAYER,
+} from '@selection/map-layer-ids';
 
 /** Minimal MapLibre stub — only what tapTargetsInteractiveLayer needs. */
 function stubMap(opts: { zoom: number; layers: string[]; hits?: number }): TapQueryMap {
@@ -45,7 +53,15 @@ describe('derived interactive layers', () => {
   it('includes the wd-huts claim with the hut-click zoom gate from the entries', () => {
     // The INSTALLED registry (entries/index via the store import chain is
     // not part of this spec — install explicitly).
-    setDefaultRegistry(createRegistry([accommodationEntry, geoplaceDefaultEntry]));
+    setDefaultRegistry(
+      createRegistry([
+        accommodationEntry,
+        amenityEntry,
+        amenityClusterEntry,
+        transportEntry,
+        geoplaceDefaultEntry,
+      ])
+    );
     try {
       const layers = derivedInteractiveLayers();
       const huts = layers.find(l => l.id === 'wd-huts');
@@ -53,6 +69,72 @@ describe('derived interactive layers', () => {
       // The occupation circles carry the same claim (PR2 behavior
       // change): every wd-huts-family layer is interactive.
       expect(layers.filter(l => l.id.startsWith('wd-huts')).length).toBeGreaterThan(1);
+    } finally {
+      setDefaultRegistry(createRegistry([]));
+    }
+  });
+
+  it('claims the accommodations overlay layer at floor 5 (hut details view)', () => {
+    setDefaultRegistry(createRegistry([accommodationEntry]));
+    try {
+      const layers = derivedInteractiveLayers();
+      expect(layers).toContainEqual({ id: WD_ACCOMMODATIONS_LAYER, minZoom: 5 });
+      // Both claim families resolve to the SAME entry (the accommodation
+      // detail surface serves huts and geoplace accommodations alike).
+      const claims = derivedClaimedLayers();
+      expect(claims.find(c => c.id === WD_ACCOMMODATIONS_LAYER)?.entry.id).toBe('accommodation');
+      expect(claims.find(c => c.id === 'wd-huts')?.entry.id).toBe('accommodation');
+    } finally {
+      setDefaultRegistry(createRegistry([]));
+    }
+  });
+
+  it('claims all ten amenity symbol layers at their tier floors', () => {
+    setDefaultRegistry(createRegistry([amenityEntry]));
+    try {
+      const layers = derivedInteractiveLayers();
+      expect(layers).toEqual(
+        AMENITY_SUBTREES.map(({ subtree, minZoom }) => ({ id: `wd-${subtree}`, minZoom }))
+      );
+      // spot-check the three tiers (backend importance bands)
+      expect(layers.find(l => l.id === 'wd-restaurant')).toEqual({
+        id: 'wd-restaurant',
+        minZoom: 5,
+      });
+      expect(layers.find(l => l.id === 'wd-groceries')).toEqual({
+        id: 'wd-groceries',
+        minZoom: 9,
+      });
+      expect(layers.find(l => l.id === 'wd-automotive')).toEqual({
+        id: 'wd-automotive',
+        minZoom: 13,
+      });
+      // claims resolve to the amenity entry (popup surface)
+      for (const claim of derivedClaimedLayers()) {
+        expect(claim.entry.id).toBe('amenity');
+        expect(claim.idProp).toBe('slug');
+      }
+    } finally {
+      setDefaultRegistry(createRegistry([]));
+    }
+  });
+
+  it('claims the cluster layers at the same tier floors (cluster entry)', () => {
+    setDefaultRegistry(createRegistry([amenityClusterEntry]));
+    try {
+      const layers = derivedInteractiveLayers();
+      // ten subtree clusters + the accommodations cluster, floors mirror
+      // the symbol layers
+      expect(layers).toEqual([
+        ...AMENITY_SUBTREES.map(({ subtree, minZoom }) => ({
+          id: `wd-${subtree}-clusters`,
+          minZoom,
+        })),
+        { id: WD_ACCOMMODATIONS_CLUSTER_LAYER, minZoom: 5 },
+      ]);
+      for (const claim of derivedClaimedLayers()) {
+        expect(claim.entry.id).toBe('amenity-cluster');
+      }
     } finally {
       setDefaultRegistry(createRegistry([]));
     }

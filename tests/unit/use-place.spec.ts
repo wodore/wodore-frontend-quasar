@@ -156,6 +156,39 @@ describe('usePlace MVT identity seed', () => {
     await nextTick();
     expect(place.value).toBeUndefined();
   });
+
+  it('seeds the type avatar from geoplace category_identifier tiles (wd-accommodations wrap)', async () => {
+    fetchMock.mockImplementation(() => new Promise(() => {}));
+    seedPlaceFromMap(
+      'geoplace-accommodation',
+      {
+        name: 'Berghotel Laresch',
+        category_identifier: 'accommodation.bhotel',
+        color: '#4B8E43',
+      },
+      { lat: 46.5, lon: 8.0 }
+    );
+
+    const { place } = usePlace(ref('geoplace-accommodation'));
+    await nextTick();
+    expect(place.value?.name).toBe('Berghotel Laresch');
+    expect(place.value?.type_open?.slug).toBe('bhotel');
+    expect(place.value?.type_open?.color).toBe('#4B8E43');
+  });
+
+  it('never seeds a hut type for non-accommodation category identifiers', async () => {
+    fetchMock.mockImplementation(() => new Promise(() => {}));
+    seedPlaceFromMap('amenity-place', {
+      name: 'Restaurant B',
+      category_identifier: 'restaurant.restaurant',
+      color: '#4B8E43',
+    });
+
+    const { place } = usePlace(ref('amenity-place'));
+    await nextTick();
+    expect(place.value?.name).toBe('Restaurant B');
+    expect(place.value?.type_open).toBeUndefined();
+  });
 });
 
 describe('deep-link prefetch handoff', () => {

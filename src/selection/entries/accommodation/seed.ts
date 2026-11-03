@@ -51,6 +51,20 @@ export function hutSeedPartial(
           ? properties.type_standard_color
           : undefined,
     } as HutDetails['type_open'];
+  } else if (typeof properties.category_identifier === 'string') {
+    // GEOPLACE WRAP (backend tile-fields PR): the wd-accommodations
+    // overlay carries the kind identifier ('accommodation.bhotel') + the
+    // kind color instead of the hut type props — same instant-avatar
+    // mapping (identifier parent.slug → type_open.slug). Guarded to the
+    // accommodation family; other domains never seed a hut type.
+    const [parent, ...rest] = properties.category_identifier.split('.');
+    const kindSlug = rest.join('.') || parent;
+    if (parent === 'accommodation' && kindSlug) {
+      seed.type_open = {
+        slug: kindSlug,
+        color: typeof properties.color === 'string' ? properties.color : undefined,
+      } as HutDetails['type_open'];
+    }
   }
   return Object.keys(seed).length ? seed : null;
 }

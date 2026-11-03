@@ -66,6 +66,20 @@ import {
 } from '@stores/map/utils/interactive-layers';
 import { registerProjector } from '@selection/projector';
 import { targetsFromFeatures, type RenderedFeatureLike } from '@selection/props-from-feature';
+import {
+  CLUSTER_ZOOM_STEP,
+  clusterClickAction,
+  clusterCountOf,
+  clusterParamsFromTilesUrl,
+  clusterTargetFromFeature,
+  isClusterLayerId,
+  isClusterProps,
+  servedTileZoom,
+  type ClusterClickContext,
+} from '@selection/cluster-behavior';
+import { amenityClusterEntry } from '@selection/entries/amenity-cluster';
+import { fetchWhatsHere } from '@services/cluster-members';
+import { entryForNearPlace, nearPlaceTarget } from '@selection/near-places';
 import { useSelectionStore } from '@stores/map/selection-store';
 
 // MapLibre v6 resolves its web worker via import.meta.url, which breaks under
@@ -1179,8 +1193,27 @@ function onMapClick(e: MapLayerEventType['click']): void {
   }
   if (features.length === 0) {
     // Click on empty map (NOT a drag — MapLibre's click event only fires
-    // on genuine clicks): dismiss an open popup (owner 2026-10-31).
+    // on genuine clicks): dismiss an open popup (owner 2026-10-31), then
+    // probe WHAT'S HERE before focus mode claims the tap (2026-11).
     if (selectionStore.popupTarget) selectionStore.closePopup();
+    void whatsHereLookup(e.lngLat);
+    return;
+  }
+  // SERVER-SIDE CLUSTERS first (amenity overlays): a `count > 1` feature
+  // on a claimed cluster layer has no slug — it can never produce an
+  // individual target. Small clusters open the member-list popup
+  // (members fetched from the near endpoint); big ones zoom in to break
+  // apart. Features keep render order — an individual symbol drawn on
+  // top of a cluster circle wins before this check sees the cluster.
+  const clusterFeature = features.find(
+    f => isClusterLayerId(f.layer?.id) && isClusterProps(f.properties)
+  );
+  if (clusterFeature && clusterFeature.layer) {
+    // The tap guard's exact-point check may have missed the cluster
+    // circle (the ±10px box rescued it) — cancel any pending focus-mode
+    // timer, same as a resolved target below.
+    cancelPendingTap();
+    handleClusterClick(map, clusterFeature);
     return;
   }
   const items = targetsFromFeatures(features, claimsForPipeline, map.getZoom());
@@ -1212,6 +1245,121 @@ function onMapClick(e: MapLayerEventType['click']): void {
   }
 
   selectionStore.openFromMap(items);
+}
+
+/**
+ * Server-side cluster click (amenity overlays): small clusters
+ * (count < 6) open the member-list popup — a synthetic `cluster`-source
+ * target carrying count/subtree/colors + the served TILE zoom (the near
+ * query snaps to that tile's grid); big ones zoom one notch in to break
+ * the cluster apart. Re-clicking the same cluster toggles the popup
+ * closed (the store's open() toggle, keyed by target key).
+ */
+function handleClusterClick(map: Map, feature: RenderedFeatureLike): void {
+  const count = clusterCountOf(feature.properties);
+  if (clusterClickAction(count) === 'zoom') {
+    if (feature.geometry?.type === 'Point' && Array.isArray(feature.geometry.coordinates)) {
+      const [lon, lat] = feature.geometry.coordinates as number[];
+      if (Number.isFinite(lon) && Number.isFinite(lat)) {
+        map.easeTo({ center: [lon, lat], zoom: map.getZoom() + CLUSTER_ZOOM_STEP });
+      }
+    }
+    return;
+  }
+  const target = clusterTargetFromFeature(feature, clusterClickContext(map, feature));
+  if (!target) return; // no usable anchor geometry — nothing to open
+  void selectionStore.open(target, { via: 'map', entry: amenityClusterEntry });
+}
+
+/** Near-query context for a clicked cluster, read from the overlay's
+ *  style source: the served TILE zoom (integer floor of the camera zoom,
+ *  capped at the source's declared maxzoom — MapLibre overzoom; the grid
+ *  snap needs the zoom the tile was BUILT for) and the forwardable
+ *  cluster params off the tile URL (the same cluster configuration the
+ *  tiles were built with). Defensive — mid-style-swap reads degrade to
+ *  floor(zoom) + no forwarded params. */
+function clusterClickContext(map: Map, feature: RenderedFeatureLike): ClusterClickContext {
+  let sourceMaxZoom: number | undefined;
+  let nearParams: ClusterClickContext['nearParams'] = {};
+  const sourceId = feature.source;
+  if (typeof sourceId === 'string') {
+    try {
+      const source = map.getStyle()?.sources?.[sourceId] as
+        | { maxzoom?: number; tiles?: unknown }
+        | undefined;
+      const declared = source?.maxzoom;
+      if (typeof declared === 'number' && Number.isFinite(declared)) sourceMaxZoom = declared;
+      const tiles = source?.tiles;
+      const tilesUrl = Array.isArray(tiles) && typeof tiles[0] === 'string' ? tiles[0] : null;
+      nearParams = clusterParamsFromTilesUrl(tilesUrl);
+    } catch {
+      // style not readable (mid-swap) — floor(zoom) is still a sane grid
+    }
+  }
+  return { tileZoom: servedTileZoom(map.getZoom(), sourceMaxZoom), nearParams };
+}
+
+// ── What's here (2026-11): unclaimed tap → proximity lookup ──────────
+// A tap that hits NO interactive layer probes the immediate surroundings
+// (near, ~50 m, no category): results open through the place framework
+// (one → its detail flow, several → the candidate list); an empty or
+// failed probe falls through to focus mode EXACTLY as before — the
+// pending focus timer is cancelled for the probe and re-armed on miss,
+// through the SAME timer variable so double-tap/pan/wheel cancels keep
+// working unchanged.
+let whatsHereController: AbortController | null = null;
+
+async function whatsHereLookup(lngLat: { lat: number; lng: number }): Promise<void> {
+  // Single flight, latest wins: a rapid second tap aborts the first probe.
+  if (whatsHereController) whatsHereController.abort();
+  // A focus toggle pending from this tap's pointerup: hold it while the
+  // probe runs (results would open a popup on top of focus mode).
+  const focusPending = focusTapTimer !== null;
+  if (focusPending) cancelPendingTap();
+  // Gesture guard for the re-arm: a pointerdown newer than this click
+  // (rapid second tap) owns its own focus decision — never defer ours.
+  const clickAt = Date.now();
+  const mayDeferFocus = (): boolean => tapDown.t <= clickAt && !tapDown.active;
+  const controller = new AbortController();
+  whatsHereController = controller;
+  try {
+    const { places } = await fetchWhatsHere({
+      lat: lngLat.lat,
+      lon: lngLat.lng,
+      signal: controller.signal,
+    });
+    if (controller.signal.aborted) return; // superseded by a newer tap
+    if (places.length === 0) {
+      if (focusPending && mayDeferFocus()) deferFocusToggle(); // focus mode, as before
+      return;
+    }
+    // Results: open through the framework exactly like symbol clicks —
+    // one row opens directly, several arm the candidate switcher.
+    const anchor = { lat: lngLat.lat, lon: lngLat.lng };
+    selectionStore.openFromMap(
+      places.map(place => ({
+        target: nearPlaceTarget(place, anchor),
+        entry: entryForNearPlace(place),
+      }))
+    );
+  } catch {
+    // Offline / endpoint hiccup: behave like an empty probe — focus
+    // mode falls through, no error surface for a background lookup.
+    if (!controller.signal.aborted && focusPending && mayDeferFocus()) deferFocusToggle();
+  } finally {
+    if (whatsHereController === controller) whatsHereController = null;
+  }
+}
+
+/** Re-arm the focus-mode toggle the tap guard scheduled — same delayed
+ *  toggle and same timer slot as onMapPointerUp, so cancelPendingTap
+ *  (double-tap, pan, wheel, second finger) still defuses it. */
+function deferFocusToggle(): void {
+  if (focusTapTimer) clearTimeout(focusTapTimer);
+  focusTapTimer = setTimeout(() => {
+    focusTapTimer = null;
+    setMapFocus(!mapFocus.value);
+  }, 250);
 }
 
 // Clear the hut selection when the hut route is left (sheet dismissed by

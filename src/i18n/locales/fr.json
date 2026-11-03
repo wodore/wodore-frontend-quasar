@@ -579,6 +579,11 @@
     "popup": {
       "close": "Fermer",
       "expand": "Détails"
+    },
+    "cluster": {
+      "count": "{n} lieux",
+      "error": "Impossible de charger les lieux",
+      "retry": "Réessayer"
     }
   }
 }
