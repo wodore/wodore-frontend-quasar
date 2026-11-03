@@ -64,6 +64,10 @@ export function hutSeedPartial(
         slug: kindSlug,
         color: typeof properties.color === 'string' ? properties.color : undefined,
       } as HutDetails['type_open'];
+      // Same wrap rule as geoplaceAsHutDetails: geoplaces carry no hut
+      // availability — explicit false keeps the availability block
+      // hidden during the seed window (strict-false guards).
+      seed.has_availability = false;
     }
   }
   return Object.keys(seed).length ? seed : null;

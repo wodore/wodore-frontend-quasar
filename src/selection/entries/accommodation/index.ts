@@ -53,6 +53,11 @@ async function geoplaceAsHutDetails(
     elevation: data.elevation,
     description: data.description,
     location: data.location,
+    // Geoplaces have no hut availability — set the explicit false so
+    // WdHutAvailabilities' strict `!== false` render guard and `===
+    // false` fetch guard both take the hide path (undefined slips
+    // through both and 404s /v1/huts/{slug}/availability).
+    has_availability: false,
   };
   if (kind) {
     details.type_open = {
@@ -63,8 +68,9 @@ async function geoplaceAsHutDetails(
     } as HutDetails['type_open'];
   }
   // SAFETY: partial by design — the hut view guards every optional
-  // member; missing hut-only blocks (availability, capacities, open
-  // monthly) render nothing instead of stale/empty data.
+  // member; missing hut-only blocks (capacities, open monthly) render
+  // nothing instead of stale/empty data. Availability is the one
+  // exception that needs the EXPLICIT false (strict-false guards).
   return details as HutDetails;
 }
 
