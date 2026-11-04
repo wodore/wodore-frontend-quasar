@@ -55,6 +55,15 @@ test.beforeEach(async ({ page }) => {
       headers: { ...resp.headers(), 'access-control-allow-origin': '*' },
     });
   });
+  // Catalog determinism (Opus review 2026-11-04): a page session must
+  // never see two different catalog bodies — the warm-boot sequence
+  // (persisted apply → background fresh fetch → re-apply with
+  // mapContentChanged) hot-swaps tile sources when the bodies differ,
+  // and staging's `?v=` content-versioning (rotates on any dep-row
+  // change / deploy) then busts the warm tile cache (18→36 doubling,
+  // 'execution context destroyed' reload races). Memoize the first
+  // live response per URL class and replay it byte-for-byte.
+  const catalogMemo = new Map<string, Record<string, unknown>>();
   await page.route('**/v1/map/layers**', async route => {
     const url = new URL(route.request().url());
     if (url.searchParams.get('profile') === 'subset') {
@@ -62,19 +71,36 @@ test.beforeEach(async ({ page }) => {
       // (the live subset view lacks the huts subset variant) with the
       // huts row rewritten to its subset identity; non-subset rows
       // dropped. transport-stops is left to its own spec.
-      const upstream = new URL(route.request().url());
-      upstream.searchParams.delete('profile');
-      const resp = await route.fetch({ url: upstream.toString() });
-      const body = await resp.json();
-      const rows = (body?.data ?? []).filter(
-        (l: { slug?: string; profile?: string }) => l?.profile === 'subset' || l?.slug === 'huts'
-      );
-      for (const l of rows) {
-        if (l.slug === 'huts') l.profile = 'subset';
+      let body = catalogMemo.get('subset');
+      if (!body) {
+        const upstream = new URL(route.request().url());
+        upstream.searchParams.delete('profile');
+        const resp = await route.fetch({ url: upstream.toString() });
+        if (!resp.ok()) return route.fulfill({ response: resp });
+        const fresh = (await resp.json()) as Record<string, unknown>;
+        const rows = ((fresh?.data ?? []) as Array<{ slug?: string; profile?: string }>).filter(
+          (l: { slug?: string; profile?: string }) => l?.profile === 'subset' || l?.slug === 'huts'
+        );
+        for (const l of rows) {
+          if (l.slug === 'huts') l.profile = 'subset';
+        }
+        body = { ...fresh, data: rows, count: rows.length };
+        catalogMemo.set('subset', body);
       }
-      return route.fulfill({ response: resp, json: { ...body, data: rows, count: rows.length } });
+      return route.fulfill({ json: body });
     }
-    return route.fallback(); // default view: live staging
+    // Default view: live staging, but memoized per query so repeated
+    // fetches within the session (boot + warm-boot revalidation)
+    // replay the identical body.
+    const key = `default:${url.search}`;
+    let body = catalogMemo.get(key);
+    if (!body) {
+      const resp = await route.fetch();
+      if (!resp.ok()) return route.fulfill({ response: resp });
+      body = (await resp.json()) as Record<string, unknown>;
+      catalogMemo.set(key, body);
+    }
+    return route.fulfill({ json: body });
   });
 });
 
