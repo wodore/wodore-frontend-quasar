@@ -1122,7 +1122,15 @@ function applyFeatureHighlights(handles: FeatureHandle[]): void {
   }
   // Apply new handles
   for (const handle of handles) {
-    if (handle?.source && handle.id !== undefined && handle.id !== null) {
+    if (
+      handle?.source &&
+      handle.id !== undefined &&
+      handle.id !== null &&
+      // Empty-string ids are PLACEHOLDERS, not identities: cluster
+      // features carry slug='' (promoteId), so ''-id state writes hit
+      // EVERY cluster in the source at once (mass selection halos).
+      handle.id !== ''
+    ) {
       try {
         map.setFeatureState(
           {
