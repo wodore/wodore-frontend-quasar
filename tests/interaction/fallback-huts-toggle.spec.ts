@@ -106,14 +106,31 @@ test.beforeEach(async ({ page }) => {
 
 async function openFallbackAtBern(page: import('@playwright/test').Page): Promise<void> {
   await page.goto('/?gpuTier=-1', { waitUntil: 'domcontentloaded', timeout: 60_000 });
-  await page.waitForSelector('.leaflet-container', { timeout: 60_000 });
-  await page.waitForFunction(
-    () => !!(window as unknown as Record<string, unknown>).__wdFbDebug,
-    null,
-    { timeout: 30_000 }
-  );
+  // The PWA reloads once when the service worker updates mid-boot
+  // (boot/pwa-update) — legal app behavior the suite must survive. Any
+  // context-destroyed error (navigation raced a waitFor/evaluate) is
+  // retried ONCE against the reloaded page.
+  const settled = async (): Promise<void> => {
+    await page.waitForSelector('.leaflet-container', { timeout: 60_000 });
+    await page.waitForFunction(
+      () => !!(window as unknown as Record<string, unknown>).__wdFbDebug,
+      null,
+      { timeout: 30_000 }
+    );
+  };
+  try {
+    await settled();
+  } catch {
+    await settled(); // post-reload context
+  }
   // Bern at z9 — above the hut marker floor (z7), real MLT huts tiles.
-  await page.evaluate('window.__wdFbDebug.map.setView([46.9482, 7.4472], 9)');
+  const setView = 'window.__wdFbDebug.map.setView([46.9482, 7.4472], 9)';
+  try {
+    await page.evaluate(setView);
+  } catch {
+    await settled(); // a reload raced the evaluate
+    await page.evaluate(setView);
+  }
 }
 
 test.describe('fallback huts toggle (store-driven)', () => {

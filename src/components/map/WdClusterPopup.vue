@@ -71,6 +71,10 @@ function loadMembers(): void {
     lon: anchor.lon,
     tileZoom: tileZoom.value,
     count: count.value,
+    categoryIdentifier:
+      typeof props.target.props.category_identifier === 'string'
+        ? props.target.props.category_identifier
+        : undefined,
     nearParams: nearParams.value,
     signal: controller.signal,
   })

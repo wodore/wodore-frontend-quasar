@@ -107,6 +107,12 @@ export interface ClusterMembersQuery {
   tileZoom: number;
   /** Cluster count — the member `limit`. */
   count: number;
+  /** The clicked feature's own `category_identifier` (e.g.
+   *  'restaurant.pizza'). Clusters group by (category, grid cell) —
+   *  one cell can hold several category clusters; without the pin the
+   *  member list merges them (backend #483: unpinned cell count 1134
+   *  vs pinned 789, verified live). */
+  categoryIdentifier?: string;
   /** Cluster-shaping params forwarded from the overlay's tile URL
    *  (importance_threshold, cluster_max_zoom, cluster_radius_m,
    *  cluster_ref_zoom) so the grid snap sees the SAME cluster
@@ -130,6 +136,9 @@ export async function fetchClusterMembers(query: ClusterMembersQuery): Promise<N
   params.set('z', String(Math.max(0, Math.floor(query.tileZoom))));
   params.set('category_tree', categoryTreeOfSubtree(query.subtree));
   params.set('limit', String(Math.max(1, query.count)));
+  if (query.categoryIdentifier) {
+    params.set('category_identifier', query.categoryIdentifier);
+  }
   for (const [key, value] of Object.entries(query.nearParams ?? {})) {
     if (value !== undefined && value !== null && value !== '') params.set(key, String(value));
   }
