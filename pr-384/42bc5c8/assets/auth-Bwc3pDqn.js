@@ -1,0 +1,2 @@
+import{b as e}from"./quasar-Dpth6S10.js";import{w as o}from"./idle-DC5trgwT.js";import{u as n}from"./useAuthService-BhWWNPNF.js";import{g as s}from"./runtimeEnv-rF6Bd-z9.js";import"./vue-Ce9XrPCw.js";import"./auth-store-D09XuzcJ.js";const p=e(async()=>{if(s("WODORE_ENV")==="preview")return;const t=n();o(async()=>{(await t.userManager.getUser())?.refresh_token&&await t.signinSilent()}).catch(r=>console.warn("Could not silent login",r))});export{p as default};
+//# sourceMappingURL=auth-Bwc3pDqn.js.map
