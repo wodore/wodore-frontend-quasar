@@ -1,0 +1,2 @@
+import{c as i,t as u,a as p,h as d,s as f}from"./selection-store-D-TAi8rQ.js";import{b as r,a as m}from"./vue-Ce9XrPCw.js";const c=e=>u({source:"geoplace",id:e});function g(e,t,o){if(!e)return;const a=d(t,o);a&&f(c(e),a)}function h(e){const t=r(()=>e.value?{key:c(e.value),source:"geoplace",id:e.value,props:{}}:null),o=m(p),{detail:a,loading:s,error:l,refetch:n}=i(t,{entry:o});return{place:r(()=>a.value?a.value:void 0),loading:s,error:l,refetch:n}}export{g as s,h as u};
+//# sourceMappingURL=usePlace-BAoh8vie.js.map
