@@ -97,7 +97,7 @@
     "openmeteo": "^1.2.3",
     "pinia": "^4.0.3",
     "pure-web-bottom-sheet": "^1.1.1",
-    "quasar": "^2.35.1",
+    "quasar": "^2.35.2",
     "register-service-worker": "^1.0.0",
     "supercluster": "^8.0.1",
     "swiper": "^14.3.0",
