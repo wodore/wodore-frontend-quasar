@@ -583,7 +583,11 @@
     "cluster": {
       "count": "{n} places",
       "error": "Places could not be loaded",
-      "retry": "Try again"
+      "retry": "Try again",
+      "members": "Cluster members"
+    },
+    "geo": {
+      "aria": "Open in maps app"
     }
   }
 }

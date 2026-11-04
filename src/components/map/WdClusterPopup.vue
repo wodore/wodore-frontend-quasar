@@ -18,6 +18,7 @@ import { useSelectionStore } from '@stores/map/selection-store';
 import { targetKey, type MapTarget } from '@selection/types';
 import { CLUSTER_LIST_MAX } from '@selection/cluster-behavior';
 import { fetchClusterMembers, type NearPlace, type NearResult } from '@services/cluster-members';
+import WdGeoLink from '@components/map/WdGeoLink.vue';
 import { accommodationEntry } from '@selection/entries/accommodation';
 import { amenityEntry } from '@selection/entries/amenity';
 
@@ -135,7 +136,7 @@ function openMember(member: NearPlace): void {
       <div class="wd-cl-popup__hint">
         {{ t('place.cluster.count', { n: totalCount || members.length }) }}
       </div>
-      <div class="wd-cl-popup__list" role="listbox" aria-label="Cluster members">
+      <div class="wd-cl-popup__list" role="listbox" :aria-label="t('place.cluster.members')">
         <button
           v-for="member in members"
           :key="member.slug"
@@ -156,6 +157,11 @@ function openMember(member: NearPlace): void {
 
     <!-- Empty result: nothing usable came back — zoom hint row -->
     <div v-else class="wd-cl-popup__hint">{{ t('place.cluster.count', { n: count }) }}</div>
+
+    <!-- Geo link, bottom-right (the cluster anchor) -->
+    <div v-if="target.location" class="wd-cl-popup__footer">
+      <WdGeoLink :lat="target.location.lat" :lon="target.location.lon" />
+    </div>
   </div>
 </template>
 
@@ -224,5 +230,12 @@ function openMember(member: NearPlace): void {
   flex: none;
   font-size: 11px;
   color: var(--wd-ink-soft);
+}
+
+// ── Footer: geo link, bottom-right ───────────────────────────────
+.wd-cl-popup__footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
 }
 </style>

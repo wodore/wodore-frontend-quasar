@@ -15,6 +15,7 @@ import { computed, ref } from 'vue';
 import { copyToClipboard } from 'quasar';
 import type { MapTarget } from '@selection/types';
 import WdCategoryIcon from '@components/categories/WdCategoryIcon.vue';
+import WdGeoLink from '@components/map/WdGeoLink.vue';
 
 const props = defineProps<{ target: MapTarget }>();
 
@@ -225,6 +226,11 @@ function swatchColor(route: RouteInfo): string {
         +{{ hiddenRouteCount }}
       </button>
     </div>
+
+    <!-- Geo link, bottom-right (the stop coordinates) -->
+    <div v-if="target.location" class="wd-tp__geo">
+      <WdGeoLink :lat="target.location.lat" :lon="target.location.lon" />
+    </div>
   </div>
 </template>
 
@@ -348,5 +354,12 @@ function swatchColor(route: RouteInfo): string {
 .wd-tp__pill--more {
   cursor: pointer;
   color: var(--wd-info);
+}
+
+// ── Geo link, bottom-right ───────────────────────────────────────
+.wd-tp__geo {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
 }
 </style>

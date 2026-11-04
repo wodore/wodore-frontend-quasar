@@ -583,7 +583,11 @@
     "cluster": {
       "count": "{n} luoghi",
       "error": "Impossibile caricare i luoghi",
-      "retry": "Riprova"
+      "retry": "Riprova",
+      "members": "Luoghi nel cluster"
+    },
+    "geo": {
+      "aria": "Apri nell’app mappe"
     }
   }
 }

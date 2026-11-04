@@ -583,7 +583,11 @@
     "cluster": {
       "count": "{n} lieux",
       "error": "Impossible de charger les lieux",
-      "retry": "Réessayer"
+      "retry": "Réessayer",
+      "members": "Lieux du groupe"
+    },
+    "geo": {
+      "aria": "Ouvrir dans l’app cartes"
     }
   }
 }
