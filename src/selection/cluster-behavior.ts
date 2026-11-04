@@ -165,6 +165,15 @@ export function clusterTargetFromFeature(
   if (!location) return null;
   const id = `${layerId}@${location.lon.toFixed(5)},${location.lat.toFixed(5)}`;
   const props = feature.properties ?? {};
+  // Highlight handle only when the feature has a USABLE id: cluster
+  // features share the empty-slug placeholder under promoteId, and an
+  // ''-id feature-state write would select every cluster in the source
+  // at once (the map adapter guards this too — belt and braces).
+  const featureId = feature.id;
+  const usableFeatureId =
+    typeof featureId === 'number' || (typeof featureId === 'string' && featureId !== '')
+      ? featureId
+      : undefined;
   return {
     key: targetKey({ source: 'cluster', id }),
     source: 'cluster',
@@ -179,14 +188,16 @@ export function clusterTargetFromFeature(
       parent_color: props.parent_color,
       parent_slug: props.parent_slug,
     },
-    featureRef: {
-      engine: 'maplibre',
-      handle: {
-        source: feature.source ?? undefined,
-        sourceLayer: feature.sourceLayer ?? undefined,
-        id: feature.id ?? undefined,
-      },
-    },
+    featureRef: usableFeatureId
+      ? {
+          engine: 'maplibre',
+          handle: {
+            source: feature.source ?? undefined,
+            sourceLayer: feature.sourceLayer ?? undefined,
+            id: usableFeatureId,
+          },
+        }
+      : undefined,
   };
 }
 

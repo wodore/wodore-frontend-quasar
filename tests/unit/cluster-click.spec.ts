@@ -190,6 +190,23 @@ describe('clusterTargetFromFeature', () => {
     expect(a.key).toBe(b.key);
   });
 
+  it('drops the highlight handle for empty-string feature ids (placeholder slugs)', () => {
+    // Cluster features carry slug='' under promoteId — an ''-id
+    // feature-state write selects EVERY cluster in the source at once
+    // (mass blue halos, staging 2026-11-04). The synthetic popup id
+    // stays unique; only the highlight handle must vanish.
+    const emptyId = clusterTargetFromFeature(
+      { ...feature, id: '' },
+      { tileZoom: 7, nearParams: {} }
+    )!;
+    expect(emptyId).not.toBeNull();
+    expect(emptyId.key).toContain('wd-restaurant-clusters@');
+    expect(emptyId.featureRef).toBeUndefined();
+
+    const numericId = clusterTargetFromFeature(feature, { tileZoom: 7, nearParams: {} })!;
+    expect(numericId.featureRef?.handle).toMatchObject({ id: 42 });
+  });
+
   it('returns null for individuals, non-cluster layers, missing geometry', () => {
     expect(
       clusterTargetFromFeature(
