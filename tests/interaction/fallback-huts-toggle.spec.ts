@@ -20,6 +20,14 @@
  */
 import { test, expect, tagTest } from './helpers';
 
+// The PWA service worker can update MID-TEST (boot/pwa-update reloads
+// the page) — legal app behavior that destroys execution contexts at
+// arbitrary points. This spec tests the fallback map, not the PWA, so
+// block service workers entirely: no registration, no update, no
+// reload (the boot helper below additionally retries across
+// navigations as belt-and-braces).
+test.use({ serviceWorkers: 'block' });
+
 /** Marker counter via the DEV debug hook: hut dots are WdCanvasDot
  * markers inside the cluster groups (wdOverlay circles live in their
  * own pane and are counted separately — not part of this suite). */
