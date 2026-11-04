@@ -171,7 +171,7 @@ export function clusterTargetFromFeature(
   // at once (the map adapter guards this too — belt and braces).
   const featureId = feature.id;
   const usableFeatureId =
-    (typeof featureId === 'number' || (typeof featureId === 'string' && featureId !== ''))
+    typeof featureId === 'number' || (typeof featureId === 'string' && featureId !== '')
       ? featureId
       : undefined;
   return {
