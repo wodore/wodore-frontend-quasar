@@ -7,6 +7,7 @@ const stationTarget = {
   key: targetKey({ source: 'transport', id: 's-9q8yy-matterhorntal' }),
   source: 'transport',
   id: 's-9q8yy-matterhorntal',
+  location: { lat: 46.0207, lon: 7.7491 },
   props: {
     onestop_id: 's-9q8yy-zermatt',
     operator_name: 'Matterhorn Gotthard Bahn',

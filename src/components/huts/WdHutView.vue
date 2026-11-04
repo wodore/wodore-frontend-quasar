@@ -359,8 +359,11 @@ const { images: nearbyImages, loading: imagesLoading } = useHutImages(computed((
       >
         <div v-if="error" class="q-pa-md text-negative">{{ error }}</div>
         <q-page style="height: 100%" class="q-px-md fit" v-if="hut">
-          <!-- used to add shadow to header -->
+          <!-- used to add shadow to header — hidden entirely when the
+               place has no owner (geoplace-accommodation wrap): an empty
+               h2 would leave a heading-shaped gap above the gallery -->
           <h2
+            v-if="hut.owner?.name"
             :style="($q.screen.gt.sm ? 'margin-top: -3px; ' : '') + 'text-wrap: wrap;'"
             class="wd-section-title q-ma-none q-mb-sm"
           >

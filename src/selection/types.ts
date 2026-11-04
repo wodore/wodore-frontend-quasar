@@ -149,6 +149,11 @@ export interface PresentationDef<D extends object> {
    *  surface WITHOUT awaiting the lazy barrel (the loader stays the
    *  single chunk source). */
   capabilities?: ReadonlyArray<'popup' | 'detail'>;
+  /** The entry's POPUP renders the target's name itself (transport
+   *  grammar: icon + type eyebrow + name) — the popup shell suppresses
+   *  its title strip so the name is never doubled or detached above
+   *  the card. */
+  popupOwnsTitle?: boolean;
   /** Barrel loader — `() => import('./surfaces')`. */
   surfaces?: () => Promise<EntrySurfaces>;
   /** Narrow return type erases soundly (covariant). */
@@ -166,6 +171,7 @@ export interface Presentation {
   id: string;
   match: MatchSpec;
   capabilities?: ReadonlyArray<'popup' | 'detail'>;
+  popupOwnsTitle?: boolean;
   surfaces?: () => Promise<EntrySurfaces>;
   fetch?(ctx: FetchCtx): Promise<object>;
   seed?(props: PropsBag): object | null;

@@ -1,7 +1,12 @@
 import { defineConfig } from 'vitest/config';
 import { fileURLToPath } from 'node:url';
+import vue from '@vitejs/plugin-vue';
 
 export default defineConfig({
+  // SFC imports in unit specs (popup/geolink component tests). The
+  // plugin only engages for .vue imports — node-env specs are
+  // unaffected.
+  plugins: [vue()],
   resolve: {
     // Match the path aliases used by the app (quasar.config.ts / tsconfig)
     alias: {

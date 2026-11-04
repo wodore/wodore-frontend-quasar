@@ -46,9 +46,13 @@ const anchorOffScreen = shallowRef(false);
  *  the card is visibility:hidden until then (never painted at 0,0). */
 const positioned = shallowRef(false);
 
-/** Display name for the SHELL title strip (non-transport entries with a
- *  `name` prop). Transport carries stop_name in its CONTENT component. */
+/** Display name for the SHELL title strip (entries with a `name` prop
+ *  that do NOT own their title in the popup content). Transport carries
+ *  stop_name in its CONTENT component; entries declaring
+ *  `popupOwnsTitle` (amenity — transport grammar: icon + eyebrow + name)
+ *  render the name themselves and suppress the strip. */
 const title = computed(() => {
+  if (selection.popupEntry?.popupOwnsTitle) return '';
   const props = selection.popupTarget?.props as Record<string, unknown> | undefined;
   if (!props) return '';
   return String(props[`name_${currentLocale()}`] ?? props.name ?? '');

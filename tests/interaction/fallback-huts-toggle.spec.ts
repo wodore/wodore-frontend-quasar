@@ -20,6 +20,14 @@
  */
 import { test, expect, tagTest } from './helpers';
 
+// The PWA service worker can update MID-TEST (boot/pwa-update reloads
+// the page) — legal app behavior that destroys execution contexts at
+// arbitrary points. This spec tests the fallback map, not the PWA, so
+// block service workers entirely: no registration, no update, no
+// reload (the boot helper below additionally retries across
+// navigations as belt-and-braces).
+test.use({ serviceWorkers: 'block' });
+
 /** Marker counter via the DEV debug hook: hut dots are WdCanvasDot
  * markers inside the cluster groups (wdOverlay circles live in their
  * own pane and are counted separately — not part of this suite). */
@@ -55,6 +63,15 @@ test.beforeEach(async ({ page }) => {
       headers: { ...resp.headers(), 'access-control-allow-origin': '*' },
     });
   });
+  // Catalog determinism (Opus review 2026-11-04): a page session must
+  // never see two different catalog bodies — the warm-boot sequence
+  // (persisted apply → background fresh fetch → re-apply with
+  // mapContentChanged) hot-swaps tile sources when the bodies differ,
+  // and staging's `?v=` content-versioning (rotates on any dep-row
+  // change / deploy) then busts the warm tile cache (18→36 doubling,
+  // 'execution context destroyed' reload races). Memoize the first
+  // live response per URL class and replay it byte-for-byte.
+  const catalogMemo = new Map<string, Record<string, unknown>>();
   await page.route('**/v1/map/layers**', async route => {
     const url = new URL(route.request().url());
     if (url.searchParams.get('profile') === 'subset') {
@@ -62,32 +79,66 @@ test.beforeEach(async ({ page }) => {
       // (the live subset view lacks the huts subset variant) with the
       // huts row rewritten to its subset identity; non-subset rows
       // dropped. transport-stops is left to its own spec.
-      const upstream = new URL(route.request().url());
-      upstream.searchParams.delete('profile');
-      const resp = await route.fetch({ url: upstream.toString() });
-      const body = await resp.json();
-      const rows = (body?.data ?? []).filter(
-        (l: { slug?: string; profile?: string }) => l?.profile === 'subset' || l?.slug === 'huts'
-      );
-      for (const l of rows) {
-        if (l.slug === 'huts') l.profile = 'subset';
+      let body = catalogMemo.get('subset');
+      if (!body) {
+        const upstream = new URL(route.request().url());
+        upstream.searchParams.delete('profile');
+        const resp = await route.fetch({ url: upstream.toString() });
+        if (!resp.ok()) return route.fulfill({ response: resp });
+        const fresh = (await resp.json()) as Record<string, unknown>;
+        const rows = ((fresh?.data ?? []) as Array<{ slug?: string; profile?: string }>).filter(
+          (l: { slug?: string; profile?: string }) => l?.profile === 'subset' || l?.slug === 'huts'
+        );
+        for (const l of rows) {
+          if (l.slug === 'huts') l.profile = 'subset';
+        }
+        body = { ...fresh, data: rows, count: rows.length };
+        catalogMemo.set('subset', body);
       }
-      return route.fulfill({ response: resp, json: { ...body, data: rows, count: rows.length } });
+      return route.fulfill({ json: body });
     }
-    return route.fallback(); // default view: live staging
+    // Default view: live staging, but memoized per query so repeated
+    // fetches within the session (boot + warm-boot revalidation)
+    // replay the identical body.
+    const key = `default:${url.search}`;
+    let body = catalogMemo.get(key);
+    if (!body) {
+      const resp = await route.fetch();
+      if (!resp.ok()) return route.fulfill({ response: resp });
+      body = (await resp.json()) as Record<string, unknown>;
+      catalogMemo.set(key, body);
+    }
+    return route.fulfill({ json: body });
   });
 });
 
 async function openFallbackAtBern(page: import('@playwright/test').Page): Promise<void> {
   await page.goto('/?gpuTier=-1', { waitUntil: 'domcontentloaded', timeout: 60_000 });
-  await page.waitForSelector('.leaflet-container', { timeout: 60_000 });
-  await page.waitForFunction(
-    () => !!(window as unknown as Record<string, unknown>).__wdFbDebug,
-    null,
-    { timeout: 30_000 }
-  );
+  // The PWA reloads once when the service worker updates mid-boot
+  // (boot/pwa-update) — legal app behavior the suite must survive. Any
+  // context-destroyed error (navigation raced a waitFor/evaluate) is
+  // retried ONCE against the reloaded page.
+  const settled = async (): Promise<void> => {
+    await page.waitForSelector('.leaflet-container', { timeout: 60_000 });
+    await page.waitForFunction(
+      () => !!(window as unknown as Record<string, unknown>).__wdFbDebug,
+      null,
+      { timeout: 30_000 }
+    );
+  };
+  try {
+    await settled();
+  } catch {
+    await settled(); // post-reload context
+  }
   // Bern at z9 — above the hut marker floor (z7), real MLT huts tiles.
-  await page.evaluate('window.__wdFbDebug.map.setView([46.9482, 7.4472], 9)');
+  const setView = 'window.__wdFbDebug.map.setView([46.9482, 7.4472], 9)';
+  try {
+    await page.evaluate(setView);
+  } catch {
+    await settled(); // a reload raced the evaluate
+    await page.evaluate(setView);
+  }
 }
 
 test.describe('fallback huts toggle (store-driven)', () => {
