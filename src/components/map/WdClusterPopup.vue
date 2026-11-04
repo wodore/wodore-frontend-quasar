@@ -158,10 +158,14 @@ function openMember(member: NearPlace): void {
     <!-- Empty result: nothing usable came back — zoom hint row -->
     <div v-else class="wd-cl-popup__hint">{{ t('place.cluster.count', { n: count }) }}</div>
 
-    <!-- Geo link, bottom-right (the cluster anchor) -->
-    <div v-if="target.location" class="wd-cl-popup__footer">
-      <WdGeoLink :lat="target.location.lat" :lon="target.location.lon" />
-    </div>
+    <!-- Geo link: absolute bottom-right, no flow space (the cluster
+         anchor) -->
+    <WdGeoLink
+      v-if="target.location"
+      class="wd-cl-popup__geo"
+      :lat="target.location.lat"
+      :lon="target.location.lon"
+    />
   </div>
 </template>
 
@@ -232,10 +236,14 @@ function openMember(member: NearPlace): void {
   color: var(--wd-ink-soft);
 }
 
-// ── Footer: geo link, bottom-right ───────────────────────────────
-.wd-cl-popup__footer {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 6px;
+// ── Geo link: absolute bottom-right, zero flow space ───────────────
+.wd-cl-popup {
+  position: relative;
+}
+
+.wd-cl-popup__geo {
+  position: absolute;
+  right: 0;
+  bottom: 0;
 }
 </style>

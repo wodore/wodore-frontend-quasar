@@ -1,25 +1,23 @@
 <script setup lang="ts">
 /**
- * Amenity popup — the minimal content for amenity-subtree targets
- * (type, name, elevation; owner decision 2026-11), laid out in the
- * transport-popup grammar (the hut-title pattern):
+ * Amenity popup — transport-popup grammar (owner 2026-11, review pass 2):
  *
  *   [ICON]  TYPE · 1234 m      ← eyebrow (small, uppercase, muted)
- *           NAME               ← large/bold — only when the shell's
- *                                title strip does not already own it
+ *           NAME               ← title (large/bold)
  *
- * - The shell strip carries the name when the tiles have one (label
- *   zooms) — the content then renders icon + eyebrow only (no double
- *   name). Below label zoom the tile name is empty and this content
- *   owns the name row, localized from the detail fetch.
- * - No name anywhere: the type label becomes the NAME row and the
- *   eyebrow is dropped (never the same string twice).
+ * The popup OWNS the name (entry declares popupOwnsTitle — the shell
+ * renders no title strip): instant from tile properties, localized
+ * overwrite from the geoplace detail when it resolves. No name
+ * anywhere (after settle) → the type label becomes the title and the
+ * eyebrow drops (never the same string twice).
+ *
  * - icon chain: `category_identifier` tile prop (backend tile-fields
  *   PR) → detail kind symbol → color-swatch fallback (the marker's own
  *   color — better than a wrong generic icon; degrades gracefully
  *   today).
  * - elevation: tile `elevation` (backend PR) → detail elevation → the
- *   eyebrow dot separator only when present.
+ *   eyebrow's `· elevation` part hidden when absent.
+ * - geo link: absolute bottom-right of the card, zero flow space.
  */
 import { computed, ref, watch, onScopeDispose } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -53,10 +51,9 @@ const tileColor = computed(() => {
   return typeof raw === 'string' && raw ? raw : null;
 });
 
-// ── Detail enrichment (name below label zoom, elevation, kind icon) ──
+// ── Detail enrichment (localized name, elevation, kind icon) ────────
 const detail = ref<AmenityDetail | null>(null);
 const loading = ref(false);
-const failed = ref(false);
 let controller: AbortController | null = null;
 
 watch(
@@ -64,7 +61,6 @@ watch(
   ([slug]) => {
     if (controller) controller.abort();
     detail.value = null;
-    failed.value = false;
     if (!slug) return;
     controller = new AbortController();
     loading.value = true;
@@ -75,7 +71,6 @@ watch(
       .catch(() => {
         // Props-only degrade: the popup stays usable without the detail
         // (offline, endpoint hiccup) — never a dead card.
-        failed.value = true;
       })
       .finally(() => {
         loading.value = false;
@@ -89,10 +84,6 @@ onScopeDispose(() => controller?.abort());
 // ── Rows ──────────────────────────────────────────────────────────────
 const name = computed(() => detail.value?.name || tileName.value || null);
 
-/** The shell strip owns the name when the tiles carry one — this
- *  content must not double-render it. */
-const shellOwnsName = computed(() => Boolean(tileName.value));
-
 /** Type eyebrow: the detail's localized kind name; readable fallback
  *  from the identifier slug part ('restaurant.pizza' → 'Pizza'). */
 const typeLabel = computed(() => {
@@ -104,16 +95,14 @@ const typeLabel = computed(() => {
   return slug.charAt(0).toUpperCase() + slug.slice(1).replace(/_/g, ' ');
 });
 
-/** No name anywhere (after settle) → the type becomes the NAME (and
- *  the eyebrow is dropped — never the same string twice); while the
- *  detail is still resolving below label zoom, the name row shows the
- *  skeleton instead. */
-const nameRow = computed(() => name.value ?? (loading.value ? null : typeLabel.value));
-const showNameRow = computed(() => !shellOwnsName.value && Boolean(nameRow.value || loading.value));
-const eyebrow = computed(() => {
-  if (!name.value && nameRow.value && nameRow.value === typeLabel.value) return null;
-  return typeLabel.value;
-});
+/** Title row: NAME; empty (after settle) → the type stands in, and the
+ *  eyebrow drops (never the same string twice). While the detail is in
+ *  flight below label zoom, the row shows the skeleton. */
+const titleRow = computed(() => name.value ?? (loading.value ? null : typeLabel.value));
+const showTitleRow = computed(() => Boolean(titleRow.value || loading.value));
+const eyebrow = computed(() =>
+  !name.value && titleRow.value && titleRow.value === typeLabel.value ? null : typeLabel.value
+);
 
 const elevation = computed(() => tileElevation.value ?? detail.value?.elevation ?? null);
 
@@ -155,26 +144,25 @@ const anchor = computed(() => props.target.location);
           <span v-if="eyebrow && elevation !== null"> · </span>
           <span v-if="elevation !== null">{{ elevation }} m</span>
         </div>
-        <!-- Row 2: NAME (owned here only when the shell strip lacks it;
-             skeleton while the detail resolves below label zoom) -->
-        <div v-if="showNameRow" class="wd-am-popup__name-row">
-          <span v-if="nameRow" class="wd-am-popup__name">{{ nameRow }}</span>
+        <!-- Row 2: NAME (skeleton while the detail resolves below label
+             zoom) -->
+        <div v-if="showTitleRow" class="wd-am-popup__name-row">
+          <span v-if="titleRow" class="wd-am-popup__name">{{ titleRow }}</span>
           <span v-else-if="loading" class="wd-am-popup__placeholder">&nbsp;</span>
         </div>
       </div>
     </div>
-    <!-- Geo link, bottom-right (the cluster anchor / tap position) -->
-    <div v-if="anchor" class="wd-am-popup__footer">
-      <WdGeoLink :lat="anchor.lat" :lon="anchor.lon" />
-    </div>
+    <!-- Geo link: absolute bottom-right, no flow space -->
+    <WdGeoLink v-if="anchor" class="wd-am-popup__geo" :lat="anchor.lat" :lon="anchor.lon" />
   </div>
 </template>
 
 <style lang="scss" scoped>
 .wd-am-popup {
+  position: relative; // anchors the absolute geo link
   font-size: 13px;
   line-height: 1.35;
-  padding-top: 2px;
+  padding: 2px 0 2px;
   min-width: 0;
 }
 
@@ -262,10 +250,10 @@ const anchor = computed(() => props.target.location);
   border: 1px solid rgba(var(--wd-ink-rgb, 30 30 30), 0.25);
 }
 
-// ── Footer: geo link, bottom-right ───────────────────────────────────
-.wd-am-popup__footer {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 6px;
+// ── Geo link: absolute bottom-right, zero flow space ────────────────
+.wd-am-popup__geo {
+  position: absolute;
+  right: 0;
+  bottom: 0;
 }
 </style>

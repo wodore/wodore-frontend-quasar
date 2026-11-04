@@ -22,6 +22,10 @@ export const amenityEntry = definePresentation<AmenityDetail>({
   id: 'amenity',
   match: { source: 'geoplace', domain: 'amenity' },
   capabilities: ['popup'],
+  // Transport grammar: the popup renders icon + type eyebrow + NAME
+  // itself — the shell must not sit a detached name strip above the
+  // card (owner review 2026-11).
+  popupOwnsTitle: true,
   surfaces: () => import('./surfaces'),
   fetch: ctx => fetchAmenityDetail({ id: ctx.id, lang: ctx.lang, signal: ctx.signal }),
   mapLayers: AMENITY_LAYERS.map(({ layer, minZoom }) => ({
