@@ -107,6 +107,13 @@ export interface ClusterMembersQuery {
   tileZoom: number;
   /** Cluster count — the member `limit`. */
   count: number;
+  /** The clicked feature's emitted cell ids (cell_x/cell_y tile
+   *  properties) — the EXACT pin: MVT quantization of the anchor can
+   *  cross a 50 m floor-cell boundary, so anchor snapping alone may
+   *  miss singleton clusters at the hybrid floor. Absent (pre-backend
+   *  deploy) → anchor snapping fallback. */
+  cellX?: number;
+  cellY?: number;
   /** The clicked feature's own `category_identifier` (e.g.
    *  'restaurant.pizza'). Clusters group by (category, grid cell) —
    *  one cell can hold several category clusters; without the pin the
@@ -138,6 +145,10 @@ export async function fetchClusterMembers(query: ClusterMembersQuery): Promise<N
   params.set('limit', String(Math.max(1, query.count)));
   if (query.categoryIdentifier) {
     params.set('category_identifier', query.categoryIdentifier);
+  }
+  if (query.cellX !== undefined && query.cellY !== undefined) {
+    params.set('cell_x', String(query.cellX));
+    params.set('cell_y', String(query.cellY));
   }
   for (const [key, value] of Object.entries(query.nearParams ?? {})) {
     if (value !== undefined && value !== null && value !== '') params.set(key, String(value));

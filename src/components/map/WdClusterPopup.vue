@@ -75,6 +75,8 @@ function loadMembers(): void {
       typeof props.target.props.category_identifier === 'string'
         ? props.target.props.category_identifier
         : undefined,
+    cellX: typeof props.target.props.cell_x === 'number' ? props.target.props.cell_x : undefined,
+    cellY: typeof props.target.props.cell_y === 'number' ? props.target.props.cell_y : undefined,
     nearParams: nearParams.value,
     signal: controller.signal,
   })
