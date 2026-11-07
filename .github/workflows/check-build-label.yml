@@ -1,0 +1,55 @@
+name: Check BUILD:docker label
+
+# The docker workflow skips its PUSH when a merged PR lacked the
+# BUILD:docker label — a GREEN skip (see docker.yml "Exit if no
+# BUILD:docker label on main"). That hide-behind-a-checkmark gap
+# shipped #391 without an image (staging 2026-11-07). This check
+# surfaces the requirement at PR time: a PR touching buildable paths
+# MUST carry the BUILD:docker label, otherwise its merge silently
+# publishes no image.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  check:
+    name: BUILD:docker label gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const BUILD_LABEL = 'BUILD:docker';
+            // Paths whose changes require a published image.
+            const patterns = [
+              /^src\//,
+              /^public\//,
+              /^docker\//,
+              /^\.github\/workflows\/docker\.yml$/,
+              /^(package\.json|pnpm-lock\.yaml|quasar\.config\.ts|Dockerfile)$/,
+            ];
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              per_page: 100,
+            });
+            const touched = files.some(f =>
+              patterns.some(p => p.test(f.filename))
+            );
+            const labeled = context.payload.pull_request.labels.some(
+              l => l.name === BUILD_LABEL
+            );
+            core.info(`buildable paths touched: ${touched}; ${BUILD_LABEL} label: ${labeled}`);
+            if (touched && !labeled) {
+              core.setFailed(
+                `This PR changes buildable paths but carries no ${BUILD_LABEL} label — ` +
+                'its merge would silently skip the docker image push. ' +
+                `Add the ${BUILD_LABEL} label or restrict the change to non-buildable files.`
+              );
+            }
