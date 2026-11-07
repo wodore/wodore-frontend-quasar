@@ -440,6 +440,9 @@
       },
       "snowsport": {
         "name": "Wintersport"
+      },
+      "pois": {
+        "name": "POIs"
       }
     },
     "all_layers": "Alle Ebenen",
