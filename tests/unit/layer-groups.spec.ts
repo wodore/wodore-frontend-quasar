@@ -35,24 +35,48 @@ const mockOverlays = [
 
 describe('layer-groups', () => {
   describe('createDefaultGroups', () => {
-    it('creates 3 groups with unique ids', () => {
+    it('creates 4 groups with unique ids', () => {
       const groups = createDefaultGroups();
-      expect(groups).toHaveLength(3);
-      expect(new Set(groups.map(g => g.id)).size).toBe(3);
+      expect(groups).toHaveLength(4);
+      expect(new Set(groups.map(g => g.id)).size).toBe(4);
     });
 
-    it('includes huts in all groups', () => {
-      const groups = createDefaultGroups();
+    it('includes huts in every activity group', () => {
+      // The ACTIVITY groups (hiking/cycling/snowsport) always lead with
+      // the hut layer; the POI group is the amenity-overlay family and
+      // stands apart.
+      const groups = createDefaultGroups().filter(g => g.slug !== 'pois');
+      expect(groups.length).toBeGreaterThan(0);
       for (const g of groups) {
         expect(g.layerSlugs).toContain('huts');
       }
     });
 
-    it('includes transport in all groups', () => {
-      const groups = createDefaultGroups();
+    it('includes transport in every activity group', () => {
+      const groups = createDefaultGroups().filter(g => g.slug !== 'pois');
       for (const g of groups) {
         expect(g.layerSlugs).toContain('transport-stops');
       }
+    });
+
+    it('creates the POI group with the eleven amenity overlays', () => {
+      const pois = createDefaultGroups().find(g => g.slug === 'pois');
+      expect(pois).toBeDefined();
+      expect(pois?.layerSlugs).toEqual([
+        'accommodations',
+        'restaurant',
+        'health_and_emergency',
+        'outdoor_services',
+        'groceries',
+        'shopping',
+        'tourism',
+        'services',
+        'finance',
+        'utilities',
+        'automotive',
+      ]);
+      expect(pois?.icon).toBe('fluent-emoji/pushpin@mono');
+      expect(pois?.locked).toBe(true);
     });
 
     it('includes slope_angle in snowsport only', () => {
@@ -92,8 +116,9 @@ describe('layer-groups', () => {
   describe('getVisibleGroups', () => {
     it('excludes hidden and removed groups', () => {
       const settings = defaultOverlayGroupSettings();
-      settings.groups[0].hidden = true;
-      settings.groups[1].removed = true;
+      settings.groups[0].hidden = true; // hiking
+      settings.groups[1].removed = true; // cycling
+      settings.groups[3].hidden = true; // pois
       const visible = getVisibleGroups(settings);
       expect(visible).toHaveLength(1);
       expect(visible[0].slug).toBe('snowsport');
@@ -109,7 +134,7 @@ describe('layer-groups', () => {
 
     it('wraps around after the last group', () => {
       const settings = defaultOverlayGroupSettings();
-      settings.activeGroupId = settings.groups[2].id; // snowsport (last)
+      settings.activeGroupId = settings.groups[3].id; // pois (last)
       const { group } = cycleGroup(settings);
       expect(group.slug).toBe('hiking'); // wraps to first
     });

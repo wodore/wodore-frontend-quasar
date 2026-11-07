@@ -45,6 +45,19 @@ const SLUGS = {
   skiSlopes: 'slopes',
   nature: 'wildruhe_und_jagdbann',
   sheepdogs: 'ch.bafu.alpweiden-herdenschutzhunde',
+  // POI overlays (backend catalog slugs, map_seed) — the amenity
+  // overlay family served from the geoplaces tiles + near endpoint
+  accommodations: 'accommodations',
+  restaurant: 'restaurant',
+  healthAndEmergency: 'health_and_emergency',
+  outdoorServices: 'outdoor_services',
+  groceries: 'groceries',
+  shopping: 'shopping',
+  tourism: 'tourism',
+  services: 'services',
+  finance: 'finance',
+  utilities: 'utilities',
+  automotive: 'automotive',
 } as const;
 
 /** App-level group restructures (group slug → members to ensure /
@@ -122,6 +135,31 @@ export function createDefaultGroups(): LayerGroup[] {
       removed: false,
       locked: true,
       sortOrder: 2,
+    },
+    {
+      slug: 'pois',
+      name: 'overlays.groups.pois.name',
+      // Mono look (stored-ref @mono suffix) — the POI group reads as a
+      // utility group, distinct from the activity groups' color icons
+      icon: 'fluent-emoji/pushpin@mono',
+      layerSlugs: [
+        SLUGS.accommodations,
+        SLUGS.restaurant,
+        SLUGS.healthAndEmergency,
+        SLUGS.outdoorServices,
+        SLUGS.groceries,
+        SLUGS.shopping,
+        SLUGS.tourism,
+        SLUGS.services,
+        SLUGS.finance,
+        SLUGS.utilities,
+        SLUGS.automotive,
+      ],
+      activeLayerSlugs: [SLUGS.accommodations],
+      hidden: false,
+      removed: false,
+      locked: true,
+      sortOrder: 3,
     },
   ];
   return groups.map(g => ({ ...g, id: uid() }));

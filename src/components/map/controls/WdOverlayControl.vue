@@ -20,6 +20,7 @@ import {
   DEFAULT_ICON_LOOK,
   availableStyle,
   formatIconRef,
+  parseIconRef,
   searchIcons,
   type BackendIcon,
   type IconLook,
@@ -738,6 +739,14 @@ function layerIcon(name: string): string {
   return (
     'img:' + new URL(`/src/assets/wodore-design/overlays/exports/${name}.svg`, import.meta.url).href
   );
+}
+
+/** Layer toggle icons: backend icon-library refs ("pack/slug[@style]" —
+ *  every catalog overlay since the backend icon migration) render via
+ *  WdBackendIcon (GET /v1/icons, HTTP-cached); legacy bare names keep
+ *  the bundled static-asset fallback. */
+function isBackendLayerIcon(icon: string): boolean {
+  return parseIconRef(icon) !== null;
 }
 
 /** Layers to show in the mini strip (active group only) */
@@ -2202,7 +2211,12 @@ onBeforeUnmount(() => {
                   @touchstart.passive="onSwipeStart"
                   @touchend.passive="onSwipeEnd"
                 >
-                  <q-icon :name="layerIcon(item.icon)" size="20px" />
+                  <WdBackendIcon
+                    v-if="isBackendLayerIcon(item.icon)"
+                    :icon="item.icon"
+                    :size="20"
+                  />
+                  <q-icon v-else :name="layerIcon(item.icon)" size="20px" />
                   <span
                     v-if="hasActiveFilters(item.name)"
                     class="wd-ovl__chip-filter"
@@ -2327,7 +2341,12 @@ onBeforeUnmount(() => {
                   @touchstart.passive="onSwipeStart"
                   @touchend.passive="onSwipeEnd"
                 >
-                  <q-icon :name="layerIcon(item.icon)" size="20px" />
+                  <WdBackendIcon
+                    v-if="isBackendLayerIcon(item.icon)"
+                    :icon="item.icon"
+                    :size="20"
+                  />
+                  <q-icon v-else :name="layerIcon(item.icon)" size="20px" />
                   <span
                     v-if="hasActiveFilters(item.name)"
                     class="wd-ovl__chip-filter"
@@ -2526,7 +2545,12 @@ onBeforeUnmount(() => {
         aria-hidden="true"
       >
         <span class="wd-ovl__dragghost-chip">
-          <q-icon :name="layerIcon(draggedItem.icon)" size="18px" />
+          <WdBackendIcon
+            v-if="isBackendLayerIcon(draggedItem.icon)"
+            :icon="draggedItem.icon"
+            :size="18"
+          />
+          <q-icon v-else :name="layerIcon(draggedItem.icon)" size="18px" />
         </span>
         <span class="wd-ovl__dragghost-label">{{ draggedItem.label }}</span>
       </div>

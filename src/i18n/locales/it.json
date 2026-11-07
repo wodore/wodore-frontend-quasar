@@ -440,6 +440,9 @@
       },
       "snowsport": {
         "name": "Sport invernali"
+      },
+      "pois": {
+        "name": "POI"
       }
     },
     "all_layers": "Tutti i livelli",
