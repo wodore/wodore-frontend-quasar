@@ -191,7 +191,10 @@ function categoryProjectionToItems(
 ): LegendDefinition['sections'][number]['category'] {
   const hasSymbols = projectionHasSymbols(projection);
   if (!hasSymbols) {
-    return String(projection.slug ?? '');
+    // IDENTIFIER (dot path, e.g. 'amenity.restaurant') — bare slugs
+    // collide (stray categories) and the categories list API 400s on
+    // ambiguity, which silently emptied those legends' item lists.
+    return String(projection.identifier ?? projection.slug ?? '');
   }
   return [projectionToCategoryItem(projection)];
 }
