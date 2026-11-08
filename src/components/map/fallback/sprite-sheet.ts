@@ -130,7 +130,16 @@ export function whiteIconFor(identifier: string | undefined): IconBitmap | null 
   const key = identifier ?? 'accommodation.unknown';
   if (whiteIconCache.has(key)) return whiteIconCache.get(key) ?? null;
   let canvas: IconBitmap | null = null;
-  const entry = sheet?.icons[`mono/${key}`] ?? sheet?.icons['mono/accommodation.unknown'];
+  // martin_sync names pack icons with the DOMAIN-PREFixed identifier
+  // (`mono/amenity.accommodation.hut`) while the huts tiles still
+  // carry the 2-segment `type_standard_identifier`
+  // (`accommodation.hut`) — try both spellings, then both unknown
+  // fallbacks, before degrading to the plain dot.
+  const entry =
+    sheet?.icons[`mono/${key}`] ??
+    sheet?.icons[`mono/amenity.${key}`] ??
+    sheet?.icons['mono/accommodation.unknown'] ??
+    sheet?.icons['mono/amenity.accommodation.unknown'];
   if (sheet && entry) {
     const el = document.createElement('canvas');
     el.width = entry.width;

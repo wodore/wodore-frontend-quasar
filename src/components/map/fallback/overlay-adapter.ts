@@ -1229,8 +1229,21 @@ export function createFallbackOverlayAdapter(map: L.Map): FallbackOverlayAdapter
       markers.push(marker);
     }
     if (entry.group) map.removeLayer(entry.group);
-    entry.group = L.layerGroup(markers);
+    // CLIENT clustering on top of the server's: the raw band (z10+
+    // for most tiers) delivers every place as an individual — hundreds
+    // of overlapping dots at city zoom with no collision handling in
+    // Leaflet. markercluster declutters them (same library + look the
+    // huts path uses); server-cluster features (count>1 at low zooms)
+    // cluster too, harmlessly — one marker each.
+    entry.group = L.markerClusterGroup({
+      showCoverageOnHover: false,
+      chunkedLoading: true,
+      maxClusterRadius: 60,
+      spiderfyOnMaxZoom: false,
+    }) as unknown as L.LayerGroup;
     entry.group.addTo(map);
+    // bulk add AFTER the group is on the map (markercluster batches)
+    (entry.group as unknown as { addLayers(layers: L.CircleMarker[]): void }).addLayers(markers);
   }
 
   /** Load the viewport's tiles + rebuild (move/zoom end). */
