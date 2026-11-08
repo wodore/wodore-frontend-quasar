@@ -54,8 +54,18 @@ export async function loadSprite(baseUrl: string): Promise<boolean> {
   if (spriteSheet) revokeSprite(); // stale pack — reload below
   const gen = ++loadGeneration;
   try {
-    const base = baseUrl;
-    const [meta, png] = await Promise.all([fetch(`${base}.json`), fetch(`${base}.png`)]);
+    // The served sprite base may carry a cache-busting query
+    // (`?v=<content-version>` — the versioned-asset injection).
+    // Extensions append BEFORE the query; appending after it 404s
+    // (…?v=abc.json) and the whole sheet silently never loads — the
+    // "huts icons missing in the fallback" regression.
+    const qi = baseUrl.indexOf('?');
+    const base = qi >= 0 ? baseUrl.slice(0, qi) : baseUrl;
+    const query = qi >= 0 ? baseUrl.slice(qi) : '';
+    const [meta, png] = await Promise.all([
+      fetch(`${base}.json${query}`),
+      fetch(`${base}.png${query}`),
+    ]);
     if (!meta.ok || !png.ok) return false;
     const icons = (await meta.json()) as Record<
       string,

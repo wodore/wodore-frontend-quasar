@@ -78,6 +78,25 @@ import { useUserSettingsStore } from '@stores/user-settings-store';
 import { isClusterCountLayer, isClusterLayer } from '@stores/map/utils/overlay-clusters';
 import type { OverlaySwitchItem } from '@stores/map/utils/interfaces';
 
+// Vector-symbol overlays (POI subsets): MLT-decoded geoplaces tiles
+import { MltTileCache, findMltTable, type TileRange } from './mlt-tile-loader';
+import { tileXToLng, tileYToLat, viewportTileRange } from './tile-math';
+import { expandTileUrl } from './huts-style-source';
+import {
+  CLUSTER_ZOOM_STEP,
+  clusterClickAction,
+  clusterCountOf,
+  clusterParamsFromTilesUrl,
+  clusterTargetFromFeature,
+  servedTileZoom,
+  type ClusterFeatureLike,
+} from '@selection/cluster-behavior';
+import { amenityEntry } from '@selection/entries/amenity';
+import { amenityClusterEntry } from '@selection/entries/amenity-cluster';
+import { accommodationEntry } from '@selection/entries/accommodation';
+import { targetKey, type MapTarget } from '@selection/types';
+import { useSelectionStore } from '@stores/map/selection-store';
+
 /** Leaflet pane name for catalog raster overlays. */
 const OVERLAY_PANE = 'wdOverlay';
 /** Pane z-index: tilePane is 200, overlayPane 400 — overlays sit
@@ -707,6 +726,77 @@ export interface FallbackOverlayAdapter {
  * opacity curves and circle radii interpolate on zoom; circle overlays
  * gate on their min-zoom floor).
  */
+// ── Vector-symbol overlays (POI subsets: server-clustered geoplaces) ──
+
+/** One decoded geoplaces point (raw individual or server cluster). */
+export interface SymbolPoint {
+  lat: number;
+  lon: number;
+  slug: string;
+  name: string;
+  color: string | undefined;
+  count: number;
+  identifier: string | undefined;
+  importance: number;
+}
+
+/** A servable POI subset overlay: vector source on the geoplaces
+ * tiles + a symbol layer for the raw individuals. Server-side
+ * clustering is already baked into the tiles (count>1 features are
+ * clusters) — the fallback renders what the tiles carry, no
+ * client-side clustering. */
+export interface SymbolOverlaySpec {
+  overlayName: string;
+  sourceId: string;
+  layerId: string;
+  clusterLayerId: string;
+  tilesUrl: string;
+  sourceLayer: string;
+  minZoom: number;
+  maxZoom: number;
+}
+
+const GEOPLACES_TILE_MARKER = '/geoplaces/';
+
+/** Extract a symbol-overlay spec from a subset style: a vector source
+ * whose tile template hits the geoplaces function + its raw symbol
+ * layer (`wd-<subtree>`, not the -clusters twin). */
+export function symbolSpecFor(style: unknown, overlayName: string): SymbolOverlaySpec | null {
+  const doc = style as
+    | {
+        sources?: Record<string, Record<string, unknown>>;
+        layers?: Array<{ id?: string; type?: string; source?: string; minzoom?: number }>;
+      }
+    | undefined;
+  if (!doc?.sources || !doc.layers) return null;
+  for (const [sourceId, source] of Object.entries(doc.sources)) {
+    if (source?.type !== 'vector') continue;
+    const tiles = source.tiles as unknown;
+    const template = Array.isArray(tiles) && typeof tiles[0] === 'string' ? tiles[0] : undefined;
+    if (!template || !template.includes(GEOPLACES_TILE_MARKER)) continue;
+    const raw = doc.layers.find(
+      l => l.source === sourceId && l.type === 'symbol' && l.id === sourceId
+    );
+    if (!raw) continue;
+    const minZoom =
+      (typeof raw.minzoom === 'number' ? raw.minzoom : undefined) ??
+      (typeof source.minzoom === 'number' ? (source.minzoom as number) : undefined) ??
+      5;
+    const maxZoom = typeof source.maxzoom === 'number' ? (source.maxzoom as number) : 14;
+    return {
+      overlayName,
+      sourceId,
+      layerId: sourceId,
+      clusterLayerId: `${sourceId}-clusters`,
+      tilesUrl: template,
+      sourceLayer: 'geoplaces',
+      minZoom,
+      maxZoom,
+    };
+  }
+  return null;
+}
+
 export function createFallbackOverlayAdapter(map: L.Map): FallbackOverlayAdapter {
   const overlayStore = useOverlayStore();
   const userSettingsStore = useUserSettingsStore();
@@ -1009,6 +1099,202 @@ export function createFallbackOverlayAdapter(map: L.Map): FallbackOverlayAdapter
     if (circleFetchDue(spec, map.getZoom())) startCircleFetch(name, entry);
   }
 
+  // ── Symbol overlays (POI subsets): MLT tiles → canvas markers ──
+  // The selection store is resolved LAZILY (on the first click): the
+  // adapter is also created in unit specs without a router, and the
+  // store's setup watches route.meta — instantiating it eagerly breaks
+  // those environments.
+  const symbolEntries = new Map<
+    string,
+    {
+      spec: SymbolOverlaySpec;
+      cache: MltTileCache<SymbolPoint[]>;
+      group: L.LayerGroup | null;
+      level: number | null;
+    }
+  >();
+
+  function parseSymbolTile(
+    buf: Uint8Array,
+    spec: SymbolOverlaySpec,
+    z: number,
+    x: number,
+    y: number
+  ): SymbolPoint[] {
+    const points: SymbolPoint[] = [];
+    const table = findMltTable(buf, spec.sourceLayer);
+    if (!table) return points;
+    const extent = table.extent || 4096;
+    for (const feature of table.getFeatures()) {
+      const point = feature.geometry?.coordinates?.[0]?.[0];
+      const properties = feature.properties as Record<string, unknown> | null;
+      if (!point || !properties) continue;
+      const count = clusterCountOf(properties);
+      points.push({
+        slug: typeof properties.slug === 'string' ? properties.slug : '',
+        name: typeof properties.name === 'string' ? properties.name : '',
+        color: typeof properties.color === 'string' ? properties.color : undefined,
+        count: count || 1,
+        identifier:
+          typeof properties.category_identifier === 'string'
+            ? properties.category_identifier
+            : undefined,
+        importance: typeof properties.importance === 'number' ? properties.importance : 0,
+        lat: tileYToLat(y + point.y / extent, z),
+        lon: tileXToLng(x + point.x / extent, z),
+      });
+    }
+    return points;
+  }
+
+  /** Radius by member count (server clusters): singles 5px, clusters
+   *  7–12px (MapLibre subset parity: static sprite at ~1.35×). */
+  function symbolRadius(count: number): number {
+    if (count <= 1) return 5;
+    return 7 + (Math.min(count, 50) / 50) * 5;
+  }
+
+  /** Click routing (MapLibre pipeline parity): clusters behave per
+   *  cluster-behavior.ts (small → member popup from the near
+   *  endpoint; big → zoom in); individuals open their entry popup. */
+  function onSymbolClick(spec: SymbolOverlaySpec, pt: SymbolPoint): void {
+    const selectionStore = useSelectionStore();
+    if (pt.count > 1) {
+      const count = pt.count;
+      if (clusterClickAction(count) === 'zoom') {
+        map.setView([pt.lat, pt.lon], map.getZoom() + CLUSTER_ZOOM_STEP, { animate: true });
+        return;
+      }
+      const feature: ClusterFeatureLike = {
+        layer: { id: spec.clusterLayerId },
+        source: spec.sourceId,
+        properties: { count, color: pt.color },
+        geometry: { type: 'Point', coordinates: [pt.lon, pt.lat] },
+      };
+      const target = clusterTargetFromFeature(feature, {
+        tileZoom: servedTileZoom(map.getZoom(), spec.maxZoom),
+        nearParams: clusterParamsFromTilesUrl(spec.tilesUrl),
+      });
+      if (target) selectionStore.openFromMap([{ target, entry: amenityClusterEntry }]);
+      return;
+    }
+    if (!pt.slug) return;
+    const entry = spec.sourceId === 'wd-accommodations' ? accommodationEntry : amenityEntry;
+    const target: MapTarget = {
+      key: targetKey({ source: 'geoplace', id: pt.slug }),
+      source: 'geoplace',
+      id: pt.slug,
+      location: { lat: pt.lat, lon: pt.lon },
+      props: { slug: pt.slug, name: pt.name, color: pt.color },
+    };
+    selectionStore.openFromMap([{ target, entry }]);
+  }
+
+  /** Rebuild the marker group from the cached tiles (dedupe across
+   *  tile borders; canvas renderer shared with the circle overlays). */
+  function rebuildSymbolEntry(entry: {
+    spec: SymbolOverlaySpec;
+    cache: MltTileCache<SymbolPoint[]>;
+    group: L.LayerGroup | null;
+    level: number | null;
+  }): void {
+    if (destroyed) return;
+    ensurePane();
+    if (!circleRenderer) circleRenderer = L.canvas({ padding: 0.5, pane: CIRCLE_PANE });
+    const renderer = circleRenderer;
+    const byKey = new Map<string, SymbolPoint>();
+    for (const tilePoints of entry.cache.tiles.values()) {
+      for (const pt of tilePoints) {
+        const key = pt.slug || `${pt.lon.toFixed(6)},${pt.lat.toFixed(6)}`;
+        const existing = byKey.get(key);
+        if (!existing || pt.count > existing.count) byKey.set(key, pt);
+      }
+    }
+    const markers: L.CircleMarker[] = [];
+    for (const pt of byKey.values()) {
+      const marker = L.circleMarker([pt.lat, pt.lon], {
+        pane: CIRCLE_PANE,
+        renderer,
+        interactive: true,
+        radius: symbolRadius(pt.count),
+        fillColor: pt.color ?? '#718096',
+        fillOpacity: 0.8,
+        color: '#ffffff',
+        weight: 1.5,
+        opacity: 0.9,
+      });
+      marker.on('click', () => onSymbolClick(entry.spec, pt));
+      marker.on('mouseover', () => marker.setStyle({ fillOpacity: 1, weight: 2.5 }));
+      marker.on('mouseout', () => marker.setStyle({ fillOpacity: 0.8, weight: 1.5 }));
+      markers.push(marker);
+    }
+    if (entry.group) map.removeLayer(entry.group);
+    entry.group = L.layerGroup(markers);
+    entry.group.addTo(map);
+  }
+
+  /** Load the viewport's tiles + rebuild (move/zoom end). */
+  function refreshSymbolEntry(
+    name: string,
+    entry: {
+      spec: SymbolOverlaySpec;
+      cache: MltTileCache<SymbolPoint[]>;
+      group: L.LayerGroup | null;
+      level: number | null;
+    }
+  ): void {
+    if (destroyed || map.getZoom() < entry.spec.minZoom) {
+      if (entry.group) {
+        map.removeLayer(entry.group);
+        entry.group = null;
+      }
+      return;
+    }
+    const range: TileRange = viewportTileRange(
+      map.getBounds(),
+      0.15,
+      map.getZoom(),
+      3,
+      entry.spec.maxZoom
+    );
+    void entry.cache.loadViewport(range).then(result => {
+      if (destroyed || result.superseded) return;
+      rebuildSymbolEntry(entry);
+    });
+  }
+
+  function ensureSymbolEntry(name: string, spec: SymbolOverlaySpec): void {
+    const existing = symbolEntries.get(name);
+    if (existing) {
+      if (existing.spec.tilesUrl === spec.tilesUrl) {
+        existing.spec = spec;
+        refreshSymbolEntry(name, existing);
+        return;
+      }
+      if (existing.group) map.removeLayer(existing.group);
+      symbolEntries.delete(name);
+    }
+    const cache = new MltTileCache<SymbolPoint[]>({
+      buildUrl: (z, x, y) => expandTileUrl(spec.tilesUrl, z, x, y),
+      emptyValue: [],
+      parseTile: (buf, z, x, y) => parseSymbolTile(buf, spec, z, x, y),
+    });
+    const entry = { spec, cache, group: null as L.LayerGroup | null, level: null as number | null };
+    symbolEntries.set(name, entry);
+    refreshSymbolEntry(name, entry);
+  }
+
+  function removeSymbolEntry(name: string): void {
+    const entry = symbolEntries.get(name);
+    if (!entry) return;
+    if (entry.group) map.removeLayer(entry.group);
+    symbolEntries.delete(name);
+  }
+
+  function refreshSymbols(): void {
+    for (const [name, entry] of symbolEntries) refreshSymbolEntry(name, entry);
+  }
+
   /** Add/remove/re-point layers so the map mirrors the store state. */
   function reconcile(): void {
     if (destroyed) return;
@@ -1016,6 +1302,7 @@ export function createFallbackOverlayAdapter(map: L.Map): FallbackOverlayAdapter
     const zoom = map.getZoom();
     const wantedRaster = new Map<string, RasterOverlaySpec>();
     const wantedCircle = new Map<string, CircleOverlaySpec>();
+    const wantedSymbol = new Map<string, SymbolOverlaySpec>();
     for (const overlay of overlays) {
       if (!overlay.active) continue;
       const raster = rasterSpecFor(overlay.style);
@@ -1024,12 +1311,20 @@ export function createFallbackOverlayAdapter(map: L.Map): FallbackOverlayAdapter
         continue;
       }
       const circle = circleSpecFor(overlay.style);
-      if (circle) wantedCircle.set(overlay.name, circle);
+      if (circle) {
+        wantedCircle.set(overlay.name, circle);
+        continue;
+      }
+      const symbol = symbolSpecFor(overlay.style, overlay.name);
+      if (symbol) wantedSymbol.set(overlay.name, symbol);
     }
     // Remove layers no longer active (or no longer servable as their kind).
     for (const [name, entry] of live) {
       const stillWanted = entry.kind === 'raster' ? wantedRaster.has(name) : wantedCircle.has(name);
       if (!stillWanted) removeEntry(name);
+    }
+    for (const name of [...symbolEntries.keys()]) {
+      if (!wantedSymbol.has(name)) removeSymbolEntry(name);
     }
     for (const [name, spec] of wantedRaster) {
       const existing = live.get(name);
@@ -1051,6 +1346,7 @@ export function createFallbackOverlayAdapter(map: L.Map): FallbackOverlayAdapter
       existing.layer.setOpacity(paintOpacityAtZoom(spec.opacityPaint, zoom));
     }
     for (const [name, spec] of wantedCircle) ensureCircleEntry(name, spec);
+    for (const [name, spec] of wantedSymbol) ensureSymbolEntry(name, spec);
   }
 
   /** Hard reset: the catalog swapped the items (styles were replaced —
@@ -1064,6 +1360,7 @@ export function createFallbackOverlayAdapter(map: L.Map): FallbackOverlayAdapter
    * the epoch, reset() dropped the cache and fetched again). */
   function reset(): void {
     for (const [name] of live) removeEntry(name);
+    for (const name of [...symbolEntries.keys()]) removeSymbolEntry(name);
     reconcile();
   }
 
@@ -1118,7 +1415,12 @@ export function createFallbackOverlayAdapter(map: L.Map): FallbackOverlayAdapter
       }
     )
   );
+  function onMoveEnd(): void {
+    if (destroyed) return;
+    refreshSymbols();
+  }
   map.on('zoomend', onZoomEnd);
+  map.on('moveend', onMoveEnd);
   reconcile();
 
   return {
@@ -1127,8 +1429,10 @@ export function createFallbackOverlayAdapter(map: L.Map): FallbackOverlayAdapter
       destroyed = true;
       for (const stop of stops) stop();
       map.off('zoomend', onZoomEnd);
+      map.off('moveend', onMoveEnd);
       for (const [name] of live) removeEntry(name);
       live.clear();
+      for (const name of [...symbolEntries.keys()]) removeSymbolEntry(name);
       featureCache.clear();
       if (circleRenderer && map.hasLayer(circleRenderer)) map.removeLayer(circleRenderer);
     },
