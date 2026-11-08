@@ -1161,6 +1161,57 @@ watch(
   }
 );
 
+// ── POI selection plate (backend `*-selected` circle + `*-selected-icon`
+// twin): the styles read feature-state { selected, color } and the
+// selected-icon layer's filter names the selected slug. One selection
+// at a time, cleared on popup close / new selection / empty tap.
+let selectedPoiState: { source: string; sourceLayer?: string; id: string | number } | null = null;
+
+function clearSelectedPoi(map: Pick<Map, 'setFeatureState' | 'getLayer' | 'setFilter'>): void {
+  if (!selectedPoiState) return;
+  const prev = selectedPoiState;
+  selectedPoiState = null;
+  try {
+    map.setFeatureState({ ...prev } as never, { selected: false, color: null });
+  } catch {
+    /* source gone (overlay toggled off) */
+  }
+  const prevLayer = `${prev.source}-selected-icon`;
+  if (map.getLayer(prevLayer)) {
+    map.setFilter(prevLayer, ['==', ['get', 'slug'], '']);
+  }
+}
+
+function setSelectedPoi(
+  map: Pick<Map, 'setFeatureState' | 'getLayer' | 'setFilter'>,
+  feature: {
+    source?: string;
+    layer?: { source?: string };
+    sourceLayer?: string;
+    id?: string | number;
+    properties?: Record<string, unknown>;
+  } | null
+): void {
+  clearSelectedPoi(map);
+  if (!feature || feature.id === undefined || feature.id === null) return;
+  const source = String(feature.source ?? feature.layer?.source ?? '');
+  const state = { source, sourceLayer: feature.sourceLayer ?? undefined, id: feature.id };
+  const props = feature.properties ?? {};
+  try {
+    map.setFeatureState({ ...state } as never, {
+      selected: true,
+      color: typeof props.color === 'string' ? props.color : null,
+    });
+  } catch {
+    return;
+  }
+  const layer = `${source}-selected-icon`;
+  if (map.getLayer(layer)) {
+    map.setFilter(layer, ['==', ['get', 'slug'], String(props.slug ?? '')]);
+  }
+  selectedPoiState = state;
+}
+
 /** ONE global click handler — queries the derived claim layers at click
  *  time (safe across catalog epoch bumps; per-layer bindings go stale). */
 function onMapClick(e: MapLayerEventType['click']): void {
@@ -1204,6 +1255,7 @@ function onMapClick(e: MapLayerEventType['click']): void {
     // on genuine clicks): dismiss an open popup (owner 2026-10-31), then
     // probe WHAT'S HERE before focus mode claims the tap (2026-11).
     if (selectionStore.popupTarget) selectionStore.closePopup();
+    clearSelectedPoi(map as never);
     void whatsHereLookup(e.lngLat);
     return;
   }
@@ -1221,6 +1273,8 @@ function onMapClick(e: MapLayerEventType['click']): void {
     // circle (the ±10px box rescued it) — cancel any pending focus-mode
     // timer, same as a resolved target below.
     cancelPendingTap();
+    // Cluster features carry no slug/id — the plate cannot name one.
+    clearSelectedPoi(map as never);
     handleClusterClick(map, clusterFeature);
     return;
   }
@@ -1253,6 +1307,14 @@ function onMapClick(e: MapLayerEventType['click']): void {
   }
 
   selectionStore.openFromMap(items);
+  // Selection plate: the feature that produced the winning target (ids
+  // are unique across the geoplaces sources — match by target id).
+  const idProps = ['slug', 'id'];
+  const winner = features.find(f => {
+    const p = (f.properties ?? {}) as Record<string, unknown>;
+    return idProps.some(prop => String(p[prop] ?? '') === String(first.target.id));
+  });
+  setSelectedPoi(map as never, (winner ?? null) as never);
 }
 
 /**
