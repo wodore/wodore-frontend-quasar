@@ -64,6 +64,7 @@ import {
   derivedInteractiveLayers,
   tapTargetsInteractiveLayer,
 } from '@stores/map/utils/interactive-layers';
+import { createWhatsHereGesture } from '@stores/map/utils/whats-here-gesture';
 import { registerProjector } from '@selection/projector';
 import { targetsFromFeatures, type RenderedFeatureLike } from '@selection/props-from-feature';
 import {
@@ -110,6 +111,13 @@ const MOBILE_DRAWER_TRACK_THRESHOLD = 100;
 // exists at all)
 const DESKTOP_DRAWER_WIDTH_LARGE = 460;
 const DESKTOP_DRAWER_WIDTH_MEDIUM = 380;
+
+// DOM that is NOT the map for tap/gesture purposes: MapLibre controls,
+// popups, markers, Quasar sticky chrome, the focus toggle and the
+// fallback-map (Leaflet) equivalents. Both the mobile focus-tap guard and
+// the what's-here contextmenu probe must ignore gestures on these.
+const NON_MAP_TAP_SELECTOR =
+  '.maplibregl-ctrl, .maplibregl-popup, .maplibregl-marker, .q-page-sticky, .wd-focus-toggle, .leaflet-control, .leaflet-marker-icon, .leaflet-marker-cluster, .wd-fb-bm';
 
 // Mobile map chrome lives below Quasar's md boundary. Keep the media
 // query in ONE place — it drives the attribution chip swap (see
@@ -795,6 +803,11 @@ function onMapLoad(e: MglEvent<'load'>) {
     e.map.on('mouseleave', id, ev => onLayerLeave(ev, minZoom));
   }
   e.map.on('click', onMapClick);
+  // WHAT'S HERE is a deliberate gesture (owner 2026-11): MapLibre fires
+  // ONE `contextmenu` map event for mouse right-click AND touch
+  // long-press — the only paths that probe for places the active layers
+  // do not render. A plain click never probes.
+  e.map.on('contextmenu', onMapContextMenu);
 
   // Track location changes with throttling (updates every 1s max)
   // Only when tab is active
@@ -1085,6 +1098,11 @@ const selectedHutFeature = ref<undefined | MapGeoJSONFeature>(undefined);
 // drives this adapter's feature-state via ONE writer.
 const selectionStore = useSelectionStore();
 
+/** What's-here gesture state: which clicks are the release tail of a
+ *  touch long-press whose contextmenu already ran the probe (those get
+ *  swallowed — see onMapContextMenu / whats-here-gesture.ts). */
+const whatsHereGesture = createWhatsHereGesture();
+
 /** Single feature-state writer — also clears the legacy deep-link
  *  selection (selectHutBySlug) so the two paths never double-highlight. */
 type FeatureHandle = { source?: string; sourceLayer?: string; id?: unknown };
@@ -1215,6 +1233,9 @@ function setSelectedPoi(
 /** ONE global click handler — queries the derived claim layers at click
  *  time (safe across catalog epoch bumps; per-layer bindings go stale). */
 function onMapClick(e: MapLayerEventType['click']): void {
+  // Release tail of a touch long-press (its contextmenu already ran the
+  // probe): drop it — it would close what the probe just opened.
+  if (whatsHereGesture.consumeClick()) return;
   const map = e.target;
   const claims = derivedClaimedLayers();
   if (claims.length === 0) return;
@@ -1252,11 +1273,13 @@ function onMapClick(e: MapLayerEventType['click']): void {
   }
   if (features.length === 0) {
     // Click on empty map (NOT a drag — MapLibre's click event only fires
-    // on genuine clicks): dismiss an open popup (owner 2026-10-31), then
-    // probe WHAT'S HERE before focus mode claims the tap (2026-11).
+    // on genuine clicks): dismiss an open popup (owner 2026-10-31) and
+    // clear the selection plate. NO what's-here probe on a plain tap
+    // (owner 2026-11): details of places whose layers are not active are
+    // the deliberate gesture — right-click / long-press — and the tap
+    // falls through to focus mode exactly as before the probe existed.
     if (selectionStore.popupTarget) selectionStore.closePopup();
     clearSelectedPoi(map as never);
-    void whatsHereLookup(e.lngLat);
     return;
   }
   // SERVER-SIDE CLUSTERS first (amenity overlays): a `count > 1` feature
@@ -1317,6 +1340,27 @@ function onMapClick(e: MapLayerEventType['click']): void {
   setSelectedPoi(map as never, (winner ?? null) as never);
 }
 
+/** WHAT'S HERE gesture (owner 2026-11): right-click / long-press —
+ *  MapLibre synthesizes one `contextmenu` map event for both (a single
+ *  touch held 500 ms fires it while the finger is still down). Probes
+ *  the surroundings for places the ACTIVE layers do not render and
+ *  opens them through the same framework as icon clicks. Empty/failed
+ *  probe → silent no-op (never a focus-mode toggle: the gesture is
+ *  deliberate, and no focus timer can be pending — touch: finger still
+ *  down; mouse: no tap path). */
+function onMapContextMenu(e: MapLayerEventType['contextmenu']): void {
+  // Long-press / right-click on controls, popups, markers or menu
+  // chrome: not a map probe.
+  const target = e.originalEvent?.target as HTMLElement | null;
+  if (target?.closest(NON_MAP_TAP_SELECTOR)) return;
+  // A touch long-press (a touch gesture is still pressed — any
+  // viewport width) releases into a click: swallow exactly that
+  // trailing click. Mouse right-clicks never produce one — a
+  // left-click right after must stay live.
+  whatsHereGesture.contextmenu(touchGestureActive);
+  void whatsHereLookup(e.lngLat);
+}
+
 /**
  * Server-side cluster click (amenity overlays): small clusters
  * (count < 6) open the member-list popup — a synthetic `cluster`-source
@@ -1369,14 +1413,16 @@ function clusterClickContext(map: Map, feature: RenderedFeatureLike): ClusterCli
   return { tileZoom: servedTileZoom(map.getZoom(), sourceMaxZoom), nearParams };
 }
 
-// ── What's here (2026-11): unclaimed tap → proximity lookup ──────────
-// A tap that hits NO interactive layer probes the immediate surroundings
-// (near, ~50 m, no category): results open through the place framework
-// (one → its detail flow, several → the candidate list); an empty or
-// failed probe falls through to focus mode EXACTLY as before — the
-// pending focus timer is cancelled for the probe and re-armed on miss,
-// through the SAME timer variable so double-tap/pan/wheel cancels keep
-// working unchanged.
+// ── What's here (2026-11): deliberate gesture → proximity lookup ─────
+// Right-click / long-press (onMapContextMenu) probes the immediate
+// surroundings (near, ~50 m, no category) for places the ACTIVE layers
+// do not render: results open through the place framework (one → its
+// detail flow, several → the candidate list); an empty or failed probe
+// is a silent no-op. The focus-mode deferral below is defensive only —
+// the contextmenu gesture never has a pending focus timer (touch: the
+// finger is still down; mouse: no tap path) — kept so any future call
+// site stays coordinated through the SAME timer variable (double-tap /
+// pan / wheel cancels keep working unchanged).
 let whatsHereController: AbortController | null = null;
 
 async function whatsHereLookup(lngLat: { lat: number; lng: number }): Promise<void> {
@@ -2018,6 +2064,12 @@ function setMapFocus(on: boolean): void {
 
 let lastMapTapAt = 0;
 
+/** A touch gesture is currently pressed — ANY viewport width (unlike
+ *  the focus-tap tracker `tapDown`, which arms only in mobile chrome).
+ *  The long-press contextmenu reads it to know a trailing release
+ *  click is coming (see onMapContextMenu). */
+let touchGestureActive = false;
+
 /**
  * Focus-mode activation: a DELIBERATE single tap on empty map only.
  *  - pan/drag: movement over 10px between down and up cancels
@@ -2029,6 +2081,7 @@ let lastMapTapAt = 0;
 const tapDown = { x: 0, y: 0, t: 0, active: false };
 
 function cancelPendingTap(): void {
+  touchGestureActive = false; // covers pointercancel / gesture morphs
   tapDown.active = false;
   if (focusTapTimer) {
     clearTimeout(focusTapTimer);
@@ -2037,15 +2090,18 @@ function cancelPendingTap(): void {
 }
 
 function onMapPointerDown(ev: MouseEvent): void {
-  if (!isMobileMap.value) return;
+  // Any new gesture expires a pending long-press click-swallow first,
+  // on EVERY pointer type (desktop mouse included) — a long-press
+  // cancelled into a drag never releases its click, and the next click
+  // belongs to a new gesture.
+  whatsHereGesture.pointerDown();
   const pointerType = (ev as unknown as { pointerType?: string }).pointerType;
+  // Touch-alive tracking at ANY width (the swallow discriminator below)
+  // comes before the mobile-only focus-tap tracking.
+  touchGestureActive = pointerType === 'touch';
+  if (!isMobileMap.value) return;
   if (pointerType !== 'touch') return; // desktop has the explicit button
-  if (
-    (ev.target as HTMLElement).closest(
-      '.maplibregl-ctrl, .maplibregl-popup, .maplibregl-marker, .q-page-sticky, .wd-focus-toggle, .leaflet-control, .leaflet-marker-icon, .leaflet-marker-cluster, .wd-fb-bm'
-    )
-  )
-    return;
+  if ((ev.target as HTMLElement).closest(NON_MAP_TAP_SELECTOR)) return;
   // A tap that CLOSES an open panel (expanded overlay / basemap rail) is
   // consumed — it must not also enter focus mode.
   if (document.querySelector('.wd-ovl__box--expanded, .wd-bm__rail')) {
@@ -2087,6 +2143,7 @@ function tapHitsInteractiveLayer(x: number, y: number): boolean {
 }
 
 function onMapPointerUp(): void {
+  touchGestureActive = false;
   if (!tapDown.active) return;
   tapDown.active = false;
   const now = Date.now();

@@ -66,22 +66,39 @@
 - **WHEN** a count-12 cluster is clicked
 - **THEN** the map eases in by 1.5 zoom levels centered on the cluster and no popup opens
 
-### Requirement: What's-here proximity fallback
+### Requirement: What's-here proximity probe on the deliberate gesture
 
-- **Requirement**: A tap that hits no interactive layer (exact point and ±10px box) SHALL first probe `GET /v1/geoplaces/near` in proximity mode (`radius` 25–50 m, `order=distance`, `limit` 3–5, no zoom, no category) before focus mode claims the tap.
-- **Requirement**: With results, the probe SHALL open them through the place framework: one result opens its entry surface directly (accommodation kinds → the hut details view; others → the amenity popup), several results arm the candidate list.
-- **Requirement**: With no results (or a failed probe), the tap SHALL fall through to focus mode exactly as before — the pending focus toggle is held for the probe and re-armed (same timer slot and delay) on miss; newer pointerdowns, double-taps, pans and wheel events cancel it unchanged.
-- **Requirement**: The probe SHALL be single-flight with latest-wins supersession and SHALL surface no error state.
+- **Requirement**: The what's-here proximity probe (`GET /v1/geoplaces/near`, proximity mode: `radius` 25–50 m, `order=distance`, `limit` 3–5, no zoom, no category) SHALL fire ONLY on the deliberate detail gesture — mouse right-click and touch long-press, both surfacing as ONE map `contextmenu` event — and NEVER on a plain click/tap.
+- **Requirement**: A plain click/tap that hits no interactive layer (exact point and ±10px box) SHALL NOT probe: active-layer icons remain the only click-openable places; the tap falls straight through to the popup-dismiss and focus-mode behavior as it was before the probe existed.
+- **Requirement**: With probe results, they SHALL open through the place framework: one result opens its entry surface directly (accommodation kinds → the hut details view; others → the amenity popup), several results arm the candidate list.
+- **Requirement**: The release click following a touch long-press SHALL be swallowed (exactly one per gesture — it must not close what the probe opened nor re-run the click pipeline); clicks after a mouse right-click SHALL NOT be swallowed (no trailing click exists).
+- **Requirement**: A gesture on map chrome (controls, popups, markers, sticky panels) SHALL NOT probe.
+- **Requirement**: With no results (or a failed probe), the gesture SHALL be a silent no-op — no focus-mode toggle, no error surface; the probe SHALL be single-flight with latest-wins supersession.
 
-#### Scenario: Tap next to an unlabeled marker
+#### Scenario: Plain tap near an inactive-layer place
 
-- **WHEN** a tap on empty map lands within 50 m of a place
-- **THEN** that place's popup opens instead of focus mode toggling
+- **WHEN** a tap on empty map lands within 50 m of a place whose layer is not active
+- **THEN** nothing opens (no probe) and the tap owns popup-dismiss / focus mode exactly as before the probe existed
 
-#### Scenario: Tap on truly empty map
+#### Scenario: Long-press near an inactive-layer place
 
-- **WHEN** the proximity probe returns no places
-- **THEN** focus mode toggles exactly as before the probe existed
+- **WHEN** a long-press (touch) or right-click (mouse) lands within 50 m of a place
+- **THEN** that place's popup or detail opens through the place framework
+
+#### Scenario: Long-press release click
+
+- **WHEN** the finger lifts after the long-press opened a place
+- **THEN** the trailing click is swallowed and the opened surface stays
+
+#### Scenario: Probe finds nothing
+
+- **WHEN** the deliberate gesture finds no places within the radius
+- **THEN** nothing happens (no focus toggle, no error)
+
+#### Scenario: Active-layer icon on plain click
+
+- **WHEN** an icon of an active overlay is clicked normally
+- **THEN** its popup/detail opens as before — the gesture gate only affects the empty-map probe
 
 ### Requirement: Tab-focus overlay-catalog revalidation
 

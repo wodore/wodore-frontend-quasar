@@ -2,15 +2,15 @@
 
 Owner decisions (2026-11, user review):
 
-| #   | Topic             | Decision                                                                                                                                                                               |
-| --- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A1  | Framework         | Everything flows through the #383 selection framework (entries, claims, popups, `openFromMap`). No parallel click pipeline.                                                            |
-| A2  | Accommodations    | Open the EXISTING hut details view. Their slugs are geoplace slugs (404 on `/v1/huts/{slug}`) — wrap the entry fetch: 404 → `/v1/geo/places/{slug}` mapped onto the hut details shape. |
-| A3  | Amenity popup     | Minimal: name, type icon, elevation. Tile props paint instantly; `/v1/geo/places/{slug}` enriches (localized name below label zoom, kind symbol, elevation). No expand/detail surface. |
-| A4  | Cluster threshold | `count < 6` → member list; `>= 6` → zoom in (+1.5 z). 6 is the fixed backend convention.                                                                                               |
-| A5  | Members source    | NOT the tiles (members-in-properties abandoned: +100–370% tile size). Spatial near endpoint with exact tile-grid snap.                                                                 |
-| A6  | Cluster members   | STRICT members only — no "also nearby" section (graduated high-importance POIs are their own clickable markers next to the bubble).                                                    |
-| A7  | What's here       | Unclaimed tap → proximity probe (50 m, distance-ordered, ≤5). Results open via the framework; empty/failed → focus mode exactly as before.                                             |
+| #   | Topic             | Decision                                                                                                                                                                                                                                           |
+| --- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A1  | Framework         | Everything flows through the #383 selection framework (entries, claims, popups, `openFromMap`). No parallel click pipeline.                                                                                                                        |
+| A2  | Accommodations    | Open the EXISTING hut details view. Their slugs are geoplace slugs (404 on `/v1/huts/{slug}`) — wrap the entry fetch: 404 → `/v1/geo/places/{slug}` mapped onto the hut details shape.                                                             |
+| A3  | Amenity popup     | Minimal: name, type icon, elevation. Tile props paint instantly; `/v1/geo/places/{slug}` enriches (localized name below label zoom, kind symbol, elevation). No expand/detail surface.                                                             |
+| A4  | Cluster threshold | `count < 6` → member list; `>= 6` → zoom in (+1.5 z). 6 is the fixed backend convention.                                                                                                                                                           |
+| A5  | Members source    | NOT the tiles (members-in-properties abandoned: +100–370% tile size). Spatial near endpoint with exact tile-grid snap.                                                                                                                             |
+| A6  | Cluster members   | STRICT members only — no "also nearby" section (graduated high-importance POIs are their own clickable markers next to the bubble).                                                                                                                |
+| A7  | What's here       | Deliberate gesture ONLY (owner revision 2026-11): proximity probe (50 m, distance-ordered, ≤5) fires on right-click / long-press (one map `contextmenu` event), NEVER on a plain tap. Results open via the framework; empty/failed → silent no-op. |
 
 ## Backend contract (owned by the backend's openspec change)
 
@@ -48,8 +48,11 @@ click ─► queryRenderedFeatures (claimed layers, point ±10px)
   ├─ cluster feature (count>1 on *-clusters) ─► count<6: cluster popup
   │                                            └ count>=6: easeTo(z+1.5)
   ├─ symbol features ─► targetsFromFeatures ─► openFromMap (framework)
-  └─ nothing claimed ─► what's-here probe ─► results: openFromMap
-                                             └ empty: focus mode (as before)
+  └─ nothing claimed ─► popup-dismiss + focus mode (NO probe — A7 rev)
+
+contextmenu (right-click / touch long-press) ─► what's-here probe
+  ├─ results ─► openFromMap (framework)
+  └─ empty/failed ─► nothing (silent)
 ```
 
 - **Cluster interception** runs BEFORE the target pipeline: cluster
@@ -85,16 +88,28 @@ bivouac amenities — huts have their own `wd-huts` overlay and remain on
   fields (`category_identifier` 'accommodation.\*' → `type_open.slug`,
   `color` → instant avatar; `elevation` when the tile-fields PR lands).
 
-## What's here (A7)
+## What's here (A7, owner revision 2026-11)
 
-- Fires only when BOTH the exact-point and ±10px-box queries find no
-  claimed feature (the existing empty-click branch).
+- Moved OFF the plain tap onto the deliberate gesture: MapLibre fires
+  ONE map `contextmenu` event for mouse right-click AND touch
+  long-press (a single touch held 500 ms fires it while the finger is
+  still down) — the probe hooks that. A plain tap that claims no layer
+  never probes: hidden-layer places must not surface on every click,
+  and the tap keeps the pre-probe behavior (popup-dismiss + focus
+  mode).
+- Touch long-presses release into a click (the browser fires it when
+  the finger lifts within the click tolerance): exactly that ONE
+  trailing click is swallowed (`whats-here-gesture.ts`) so it cannot
+  close what the probe opened. Mouse right-clicks arm no swallow (no
+  trailing click exists); a new pointer gesture expires a stale flag.
+- Gestures on map chrome (controls, popups, markers — the same
+  selector the focus-tap guard uses) do not probe.
 - Single flight, latest wins (abort); no error surface (background
-  lookup — offline behaves like an empty probe).
-- Focus-mode coordination: a pending focus toggle from the tap's
-  pointerup is CANCELLED for the probe and re-armed (same timer slot,
-  same 250 ms delay) on empty/failed results — double-tap/pan/wheel
-  cancels keep working, and a newer pointerdown suppresses the re-arm.
+  lookup — offline behaves like an empty probe). Empty/failed probe →
+  silent no-op, never a focus toggle (the gesture is deliberate, and
+  no focus timer can be pending: touch keeps the finger down, mouse
+  has no tap path — the deferral inside `whatsHereLookup` is kept as
+  defensive coordination only).
 - Results: `nearPlaceTarget(row, tapAnchor)` + `entryForNearPlace(row)`
   (identifier parent `accommodation` → accommodation entry, else amenity
   entry) → `openFromMap` — one row opens directly, several arm the

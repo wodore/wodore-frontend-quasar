@@ -1,7 +1,10 @@
 /**
- * Near-place → target mapping (what's-here). A tap that hits no
- * interactive layer probes `/v1/geoplaces/near` (no zoom, no category,
- * ~50 m radius); the rows map onto place-framework targets and open
+ * Near-place → target mapping (what's-here). The DELIBERATE detail
+ * gesture — right-click / touch long-press, one map `contextmenu`
+ * event (owner 2026-11; a plain tap no longer probes: hidden-layer
+ * places must not surface on every click) — probes
+ * `/v1/geoplaces/near` (no zoom, no category, ~50 m radius); the rows
+ * map onto place-framework targets and open
  * through the selection store exactly like symbol clicks:
  *
  * - one result: opens the row's entry surface directly (accommodation
