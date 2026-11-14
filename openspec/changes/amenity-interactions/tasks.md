@@ -58,6 +58,19 @@ change), tile `elevation`/`category_identifier` fields.
 - [x] `WdMapView.vue`: unclaimed-tap probe (single-flight, latest wins),
       results → `openFromMap` (candidates for several), empty/failed →
       focus mode re-arm (same timer slot; newer-gesture guards)
+- [x] Owner revision 2026-11: probe moved OFF the plain tap onto the
+      deliberate gesture — `contextmenu` (right-click / long-press),
+      plain clicks no longer probe (active-layer icons stay the only
+      click-openable places); long-press release click swallowed once
+      (`src/stores/map/utils/whats-here-gesture.ts` +
+      `tests/unit/whats-here-gesture.spec.ts`), empty/failed probe →
+      silent no-op
+- [x] Fresh-context review fixes: pens count as touch for the swallow;
+      `cancelPendingTap` no longer clears the touch-alive flag (a
+      long-press started with an overlay rail open now swallows too);
+      keyboard contextmenus rejected (`button` 0); docs state the pure
+      proximity (no active-layer filter), the native-menu suppression
+      over the canvas, and the structural chrome-guard reality
 
 ## 6. Verification
 

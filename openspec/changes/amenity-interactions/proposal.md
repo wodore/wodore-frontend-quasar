@@ -42,11 +42,15 @@ refreshes — the #380 tab-focus revalidation landed separately).
   supplement (owner decision: graduated high-importance POIs are their
   own clickable markers). Member clicks open the place exactly like an
   individual symbol click.
-- **What's here**: a tap that hits no interactive layer probes the near
+- **What's here**: a DELIBERATE gesture — right-click / touch
+  long-press (MapLibre's one `contextmenu` event) — probes the near
   endpoint in proximity mode (`radius` 50 m, `order=distance`, no
-  zoom/category). Results open through the place framework (one → its
-  detail flow; several → the candidate list popup); an empty or failed
-  probe falls through to focus mode exactly as before.
+  zoom/category); a plain tap never probes (owner revision 2026-11:
+  hidden-layer places must not surface on every click). Results open
+  through the place framework (one → its detail flow; several → the
+  candidate list popup); an empty or failed probe is a silent no-op
+  (the long-press release click is swallowed so it cannot close what
+  the probe opened).
 - **Tab-focus catalog refresh**: a visibilitychange revalidation of the
   overlay catalog (`refreshCatalog({background, revalidate, deferApply})`)
   so new backend overlays appear without a reload (menu instantly, map
@@ -59,8 +63,8 @@ refreshes — the #380 tab-focus revalidation landed separately).
 
 - `amenity-interactions`: interactive amenity overlays — layer claims and
   zoom gates, the minimal popup, the accommodations→hut-details wrap,
-  the cluster member flow via the near endpoint, and the what's-here
-  proximity fallback.
+  the cluster member flow via the near endpoint, and the gesture-gated
+  what's-here probe.
 
 ### Modified Capabilities
 
