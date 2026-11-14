@@ -71,8 +71,9 @@
 - **Requirement**: The what's-here proximity probe (`GET /v1/geoplaces/near`, proximity mode: `radius` 25–50 m, `order=distance`, `limit` 3–5, no zoom, no category) SHALL fire ONLY on the deliberate detail gesture — mouse right-click and touch long-press, both surfacing as ONE map `contextmenu` event — and NEVER on a plain click/tap.
 - **Requirement**: A plain click/tap that hits no interactive layer (exact point and ±10px box) SHALL NOT probe: active-layer icons remain the only click-openable places; the tap falls straight through to the popup-dismiss and focus-mode behavior as it was before the probe existed.
 - **Requirement**: With probe results, they SHALL open through the place framework: one result opens its entry surface directly (accommodation kinds → the hut details view; others → the amenity popup), several results arm the candidate list.
-- **Requirement**: The release click following a touch long-press SHALL be swallowed (exactly one per gesture — it must not close what the probe opened nor re-run the click pipeline); clicks after a mouse right-click SHALL NOT be swallowed (no trailing click exists).
-- **Requirement**: A gesture on map chrome (controls, popups, markers, sticky panels) SHALL NOT probe.
+- **Requirement**: The release click following a touch/pen long-press SHALL be swallowed (exactly one per gesture — it must not close what the probe opened nor re-run the click pipeline); clicks after a mouse right-click SHALL NOT be swallowed (no trailing click exists).
+- **Requirement**: A gesture on map chrome (controls, popups, markers, sticky panels) SHALL NOT probe — satisfied structurally (those gestures never reach the map handler) with a defensive guard for anything appended inside the canvas container; keyboard-invoked context menus (Menu key / Shift+F10, `button` 0) SHALL be ignored.
+- **Requirement**: Registering the `contextmenu` handler SHALL suppress the browser's native context menu over the map canvas (right-click is the what's-here affordance; the empty probe is a silent no-op).
 - **Requirement**: With no results (or a failed probe), the gesture SHALL be a silent no-op — no focus-mode toggle, no error surface; the probe SHALL be single-flight with latest-wins supersession.
 
 #### Scenario: Plain tap near an inactive-layer place

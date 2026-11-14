@@ -65,6 +65,12 @@ change), tile `elevation`/`category_identifier` fields.
       (`src/stores/map/utils/whats-here-gesture.ts` +
       `tests/unit/whats-here-gesture.spec.ts`), empty/failed probe →
       silent no-op
+- [x] Fresh-context review fixes: pens count as touch for the swallow;
+      `cancelPendingTap` no longer clears the touch-alive flag (a
+      long-press started with an overlay rail open now swallows too);
+      keyboard contextmenus rejected (`button` 0); docs state the pure
+      proximity (no active-layer filter), the native-menu suppression
+      over the canvas, and the structural chrome-guard reality
 
 ## 6. Verification
 

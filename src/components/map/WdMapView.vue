@@ -1342,18 +1342,28 @@ function onMapClick(e: MapLayerEventType['click']): void {
 
 /** WHAT'S HERE gesture (owner 2026-11): right-click / long-press —
  *  MapLibre synthesizes one `contextmenu` map event for both (a single
- *  touch held 500 ms fires it while the finger is still down). Probes
- *  the surroundings for places the ACTIVE layers do not render and
- *  opens them through the same framework as icon clicks. Empty/failed
- *  probe → silent no-op (never a focus-mode toggle: the gesture is
- *  deliberate, and no focus timer can be pending — touch: finger still
- *  down; mouse: no tap path). */
+ *  touch held 500 ms fires it while the finger is still down). Pure
+ *  proximity probe (no active-layer filter — results may include places
+ *  whose layers ARE active), opened through the same framework as icon
+ *  clicks. Empty/failed probe → silent no-op (never a focus-mode toggle:
+ *  the gesture is deliberate, and no focus timer can be pending —
+ *  touch: finger still down; mouse: no tap path). Registering the
+ *  listener also suppresses the browser's native context menu over the
+ *  canvas (MapLibre preventDefaults while a contextmenu listener
+ *  exists) — right-click IS the map's what's-here affordance. */
 function onMapContextMenu(e: MapLayerEventType['contextmenu']): void {
-  // Long-press / right-click on controls, popups, markers or menu
-  // chrome: not a map probe.
+  // Keyboard contextmenus (Menu key / Shift+F10) arrive with button 0
+  // and corner coordinates — not a place-probe gesture.
+  if ((e.originalEvent as MouseEvent | undefined)?.button !== 2) return;
+  // Right-click on controls, popups, markers or menu chrome: not a map
+  // probe. Real DOM events only — MapLibre's synthetic touch long-press
+  // event is never dispatched, so its target is null; chrome gestures
+  // structurally never reach the map handler (its listeners live on the
+  // canvas container, chrome sits outside it). Defense in depth for
+  // anything ever appended INSIDE the canvas container.
   const target = e.originalEvent?.target as HTMLElement | null;
   if (target?.closest(NON_MAP_TAP_SELECTOR)) return;
-  // A touch long-press (a touch gesture is still pressed — any
+  // A touch/pen long-press (a touch gesture is still pressed — any
   // viewport width) releases into a click: swallow exactly that
   // trailing click. Mouse right-clicks never produce one — a
   // left-click right after must stay live.
@@ -1415,8 +1425,8 @@ function clusterClickContext(map: Map, feature: RenderedFeatureLike): ClusterCli
 
 // ── What's here (2026-11): deliberate gesture → proximity lookup ─────
 // Right-click / long-press (onMapContextMenu) probes the immediate
-// surroundings (near, ~50 m, no category) for places the ACTIVE layers
-// do not render: results open through the place framework (one → its
+// surroundings (near, ~50 m, no category, pure proximity — no
+// active-layer filter): results open through the place framework (one → its
 // detail flow, several → the candidate list); an empty or failed probe
 // is a silent no-op. The focus-mode deferral below is defensive only —
 // the contextmenu gesture never has a pending focus timer (touch: the
@@ -2081,7 +2091,12 @@ let touchGestureActive = false;
 const tapDown = { x: 0, y: 0, t: 0, active: false };
 
 function cancelPendingTap(): void {
-  touchGestureActive = false; // covers pointercancel / gesture morphs
+  // NOTE: does NOT clear `touchGestureActive` — this runs at pointerdown
+  // on paths where the finger stays pressed (panel rail open, second
+  // finger) and the 500 ms long-press can still fire. The flag is
+  // re-evaluated on every pointerdown and cleared on pointerup (review
+  // finding: clearing it here disarmed the swallow for long-presses
+  // started while an overlay rail was open).
   tapDown.active = false;
   if (focusTapTimer) {
     clearTimeout(focusTapTimer);
@@ -2097,8 +2112,10 @@ function onMapPointerDown(ev: MouseEvent): void {
   whatsHereGesture.pointerDown();
   const pointerType = (ev as unknown as { pointerType?: string }).pointerType;
   // Touch-alive tracking at ANY width (the swallow discriminator below)
-  // comes before the mobile-only focus-tap tracking.
-  touchGestureActive = pointerType === 'touch';
+  // comes before the mobile-only focus-tap tracking. Pens deliver touch
+  // events too (MapLibre's long-press timer runs for them) — count them
+  // as touch here so their release click is swallowed as well.
+  touchGestureActive = pointerType === 'touch' || pointerType === 'pen';
   if (!isMobileMap.value) return;
   if (pointerType !== 'touch') return; // desktop has the explicit button
   if ((ev.target as HTMLElement).closest(NON_MAP_TAP_SELECTOR)) return;

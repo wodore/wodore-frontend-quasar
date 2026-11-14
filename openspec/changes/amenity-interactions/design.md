@@ -97,13 +97,25 @@ bivouac amenities — huts have their own `wd-huts` overlay and remain on
   never probes: hidden-layer places must not surface on every click,
   and the tap keeps the pre-probe behavior (popup-dismiss + focus
   mode).
-- Touch long-presses release into a click (the browser fires it when
-  the finger lifts within the click tolerance): exactly that ONE
+- Pure proximity, NO active-layer filter: results may include places
+  whose layers ARE active (nearest first) — same framework, so opening
+  them through the near pipeline is equivalent to their icon click.
+- Registering the `contextmenu` listener suppresses the browser's
+  native context menu over the canvas (MapLibre preventDefaults while
+  a listener exists) — right-click IS the map's what's-here affordance.
+- Touch/pen long-presses release into a click (the browser fires it
+  when the finger lifts within the click tolerance): exactly that ONE
   trailing click is swallowed (`whats-here-gesture.ts`) so it cannot
-  close what the probe opened. Mouse right-clicks arm no swallow (no
-  trailing click exists); a new pointer gesture expires a stale flag.
-- Gestures on map chrome (controls, popups, markers — the same
-  selector the focus-tap guard uses) do not probe.
+  close what the probe opened. Pens count as touch for the swallow
+  (they deliver touch events to MapLibre but `pointerType` 'pen').
+  Mouse right-clicks arm no swallow (no trailing click exists); a new
+  pointer gesture expires a stale flag.
+- Gestures on map chrome (controls, popups, markers) do not probe —
+  STRUCTURALLY: MapLibre's handlers live on the canvas container and
+  chrome sits outside it (the app's popup teleports to body; no
+  MapLibre markers exist). A defensive target guard covers anything
+  ever appended INSIDE the canvas container; keyboard contextmenus
+  (Menu key, `button` 0) are rejected.
 - Single flight, latest wins (abort); no error surface (background
   lookup — offline behaves like an empty probe). Empty/failed probe →
   silent no-op, never a focus toggle (the gesture is deliberate, and
