@@ -25,7 +25,7 @@ const showText = computed(() => {
   return !props.icon && !props.text ? true : props.text;
 });
 const rightText = computed(() => {
-  return process.env.DEV ? 'deev' : 'dore';
+  return import.meta.env.QUASAR_DEV ? 'deev' : 'dore';
 });
 </script>
 

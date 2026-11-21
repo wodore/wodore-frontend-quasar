@@ -8,7 +8,10 @@ export default defineConfig({
   // unaffected.
   plugins: [vue()],
   resolve: {
-    // Match the path aliases used by the app (quasar.config.ts / tsconfig)
+    // Match the path aliases used by the app (quasar.config.ts / tsconfig).
+    // `#q-app` (@quasar/app-vite v3 wrappers) and the legacy v2 aliases
+    // (`src/`, `components/`) resolve in the app build via quasar.config
+    // build.alias — vitest needs them spelled out here.
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
       '@stores': fileURLToPath(new URL('./src/stores', import.meta.url)),
@@ -19,6 +22,11 @@ export default defineConfig({
       '@boot': fileURLToPath(new URL('./src/boot', import.meta.url)),
       '@composables': fileURLToPath(new URL('./src/composables', import.meta.url)),
       '@selection': fileURLToPath(new URL('./src/selection', import.meta.url)),
+      src: fileURLToPath(new URL('./src', import.meta.url)),
+      components: fileURLToPath(new URL('./src/components', import.meta.url)),
+      '#q-app': fileURLToPath(
+        new URL('./node_modules/@quasar/app-vite/exports/wrappers.js', import.meta.url)
+      ),
     },
   },
   test: {

@@ -11,7 +11,7 @@ import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
 import { registerRoute, NavigationRoute } from 'workbox-routing';
 import { NetworkFirst } from 'workbox-strategies';
 
-const SW_APP_VERSION = process.env.WODORE_APP_VERSION || '';
+const SW_APP_VERSION = import.meta.env.WODORE_APP_VERSION || '';
 
 // NOTE: We don't call skipWaiting() here to avoid disrupting user sessions
 // The new SW will wait until the user triggers a reload
@@ -25,7 +25,7 @@ cleanupOutdatedCaches();
 
 // Handle navigation requests with NetworkFirst strategy
 // This ensures we always get the latest index.html when online
-if (process.env.MODE !== 'ssr' || process.env.PROD) {
+if (import.meta.env.QUASAR_MODE !== 'ssr' || import.meta.env.QUASAR_PROD) {
   // NetworkFirst for navigation requests (index.html)
   // Online: Try network first, fall back to cache
   // Offline: Use cache immediately
@@ -36,7 +36,7 @@ if (process.env.MODE !== 'ssr' || process.env.PROD) {
 
   const navigationRoute = new NavigationRoute(networkFirstHandler, {
     denylist: [
-      new RegExp(process.env.PWA_SERVICE_WORKER_REGEX),
+      new RegExp(import.meta.env.QUASAR_PWA_SERVICE_WORKER_REGEX),
       /workbox-(.)*\.js$/,
       // Cache knob (preview cold-load testing): navigations carrying
       // ?cache=off|on bypass the SW entirely, so the network shell can

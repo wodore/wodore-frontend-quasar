@@ -1,9 +1,9 @@
 import { whenIdle } from '@services/idle';
-import { boot } from 'quasar/wrappers';
-import { setPwaUpdateCallback } from 'src-pwa/register-service-worker';
+import { defineBoot } from '#q-app';
+import { setPwaUpdateCallback } from 'src-pwa/register-sw';
 import { usePwaUpdate } from 'src/composables/usePwaUpdate';
 
-export default boot(() => {
+export default defineBoot(() => {
   // Update-check registration is never boot-critical (perf/boot-parallel).
   return whenIdle(() => {
     // Set up the PWA update callback when the app is ready

@@ -15,7 +15,7 @@ const userSettings = useUserSettingsStore();
 const $q = useQuasar();
 
 let $auth: AuthService | undefined = undefined;
-if (process.env.CLIENT) {
+if (import.meta.env.QUASAR_CLIENT) {
   $auth = useAuthService();
 }
 

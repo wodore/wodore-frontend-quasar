@@ -11,7 +11,7 @@
  * must not hang on a timer that never fires.
  */
 export function whenIdle<T>(task: () => T | Promise<T>, timeoutMs = 1500): Promise<T> {
-  if (typeof window === 'undefined' || process.env.NODE_ENV === 'test') {
+  if (typeof window === 'undefined' || import.meta.env.MODE === 'test') {
     return Promise.resolve().then(task);
   }
   if (typeof window.requestIdleCallback === 'function') {

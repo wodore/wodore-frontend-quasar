@@ -1,4 +1,4 @@
-import { boot } from 'quasar/wrappers';
+import { defineBoot } from '#q-app';
 import { getEnv } from '@services/runtimeEnv';
 import { umamiOptedOut } from '@services/analytics';
 
@@ -49,7 +49,7 @@ function dntEnabled(): boolean {
   return dnt === '1' || dnt === 'yes';
 }
 
-export default boot(() => {
+export default defineBoot(() => {
   if (injected) return; // HMR/SSR re-entry guard
   injected = true;
 

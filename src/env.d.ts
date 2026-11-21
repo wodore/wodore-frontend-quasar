@@ -1,36 +1,32 @@
-declare namespace NodeJS {
-  interface ProcessEnv {
-    NODE_ENV: string;
-    VUE_ROUTER_MODE: 'hash' | 'history' | 'abstract' | undefined;
-    VUE_ROUTER_BASE: string | undefined;
-    WODORE_GIT_HASH: string;
-    WODORE_APP_VERSION: string;
-    WODORE_APP_NAME: string;
-    WODORE_ENV: 'development' | 'staging' | 'preview' | 'production';
-    WODORE_URL: string;
-    WODORE_DOMAIN: string;
-    WODORE_API_HOST: string;
-    WODORE_API_VERSION: string;
-    /** Optional CDN base for public/unauthenticated GETs (empty = off). */
-    WODORE_PUBLIC_API_URL: string;
-    WODORE_IMAGOR_KEY: string;
-    WODORE_IMAGOR_URL: string;
-    WODORE_IMAGOR_REPLACE_API_HOST_MEDIA: string;
-    WODORE_UMAMI_WEBSITE_ID: string;
-    WODORE_UMAMI_WEBSITE_URL: string;
-    /** Umami session recording opt-in ('on' = load recorder.js). */
-    WODORE_UMAMI_RECORDER: string;
-    WODORE_OICD_ISSUER_URL: string;
-    WODORE_OICD_CLIENT_ID: string;
-    WODORE_OICD_RESOURCE_ID: string;
-    WODORE_MAPTILER_API_KEY: string;
-    WODORE_OFFICIAL_URL: string;
-    WODORE_SENTRY_DSN: string;
-    WODORE_SENTRY_TRACES_SAMPLE_RATE: string;
-    TIMESTAMP_VERSION_HEX: string;
-  }
+interface ImportMetaEnv {
+  readonly QUASAR_VUE_ROUTER_MODE: 'hash' | 'history' | 'abstract' | undefined;
+  readonly QUASAR_VUE_ROUTER_BASE: string | undefined;
+  readonly WODORE_GIT_HASH: string;
+  readonly WODORE_APP_VERSION: string;
+  readonly WODORE_APP_NAME: string;
+  readonly WODORE_ENV: 'development' | 'staging' | 'preview' | 'production';
+  readonly WODORE_URL: string;
+  readonly WODORE_DOMAIN: string;
+  readonly WODORE_API_HOST: string;
+  readonly WODORE_API_VERSION: string;
+  /** Optional CDN base for public/unauthenticated GETs (empty = off). */
+  readonly WODORE_PUBLIC_API_URL: string;
+  readonly WODORE_IMAGOR_KEY: string;
+  readonly WODORE_IMAGOR_URL: string;
+  readonly WODORE_IMAGOR_REPLACE_API_HOST_MEDIA: string;
+  readonly WODORE_UMAMI_WEBSITE_ID: string;
+  readonly WODORE_UMAMI_WEBSITE_URL: string;
+  /** Umami session recording opt-in ('on' = load recorder.js). */
+  readonly WODORE_UMAMI_RECORDER: string;
+  readonly WODORE_OICD_ISSUER_URL: string;
+  readonly WODORE_OICD_CLIENT_ID: string;
+  readonly WODORE_OICD_RESOURCE_ID: string;
+  readonly WODORE_MAPTILER_API_KEY: string;
+  readonly WODORE_OFFICIAL_URL: string;
+  readonly WODORE_SENTRY_DSN: string;
+  readonly WODORE_SENTRY_TRACES_SAMPLE_RATE: string;
+  readonly TIMESTAMP_VERSION_HEX: string;
 }
-
 declare module '*?worker&url' {
   const workerUrl: string;
   export default workerUrl;

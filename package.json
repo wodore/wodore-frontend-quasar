@@ -98,7 +98,6 @@
     "pinia": "^4.1.0",
     "pure-web-bottom-sheet": "^1.1.1",
     "quasar": "^2.35.2",
-    "register-service-worker": "^1.0.0",
     "supercluster": "^8.0.1",
     "swiper": "^14.4.0",
     "vue": "^3.5.44",
@@ -164,14 +163,7 @@
     "vite-tsconfig-paths": "^6.0.5",
     "vitest": "^4.1.11",
     "vue-eslint-parser": "^10.4.1",
-    "vue-tsc": "^3.2.3",
-    "workbox-build": "^7.0.0",
-    "workbox-cacheable-response": "^7.0.0",
-    "workbox-core": "^7.0.0",
-    "workbox-expiration": "^7.0.0",
-    "workbox-precaching": "^7.0.0",
-    "workbox-routing": "^7.0.0",
-    "workbox-strategies": "^7.0.0"
+    "vue-tsc": "^3.2.3"
   },
   "engines": {
     "node": "^24 || ^22"

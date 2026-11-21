@@ -11,9 +11,9 @@
  * memory cache and treats persisted settings as absent — pinned by
  * tests/unit/settings-boot-order.spec.ts.
  */
-import { boot } from 'quasar/wrappers';
+import { defineBoot } from '#q-app';
 import { initStorage } from '@services/storage';
 
-export default boot(async () => {
+export default defineBoot(async () => {
   await initStorage();
 });

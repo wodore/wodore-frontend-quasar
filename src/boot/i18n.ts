@@ -1,4 +1,4 @@
-import { boot } from 'quasar/wrappers';
+import { defineBoot } from '#q-app';
 import type { QVueGlobals } from 'quasar';
 
 // The vue-i18n instance itself lives in the locale service; this boot file
@@ -36,7 +36,7 @@ declare module 'vue-i18n' {
   export interface DefineNumberFormat {}
 }
 
-export default boot(({ app, store }) => {
+export default defineBoot(({ app, store }) => {
   // $q is registered by the Quasar plugin as a global property.
   // useQuasar() (Vue inject) only works inside component setup — NOT in
   // boot files — so read the global property instead to bind the instance

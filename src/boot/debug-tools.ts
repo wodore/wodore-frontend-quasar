@@ -7,7 +7,7 @@
  *
  * Inert without the flag/param: no scripts are requested.
  */
-import { boot } from 'quasar/wrappers';
+import { defineBoot } from '#q-app';
 import {
   applyDebugParam,
   disableDebugTools,
@@ -15,7 +15,7 @@ import {
   isDebugEnabled,
 } from '@services/debug-tools';
 
-export default boot(() => {
+export default defineBoot(() => {
   const param = applyDebugParam();
   if (param === '0') {
     // Explicit off also tears down the testing knobs (net/cache) —

@@ -119,7 +119,7 @@ function parseSampleRate(raw: string | undefined): number {
  * it at build time; `getEnv` cannot reach this key in the browser.
  */
 function stampAppVersion<T extends Sentry.Event>(event: T): T {
-  const version = process.env.WODORE_APP_VERSION;
+  const version = import.meta.env.WODORE_APP_VERSION;
   if (version) {
     event.tags ??= {};
     event.tags.app_version = version;
@@ -138,7 +138,7 @@ function stampAppVersion<T extends Sentry.Event>(event: T): T {
 function stampAppVersionOnSegment(
   span: Parameters<NonNullable<VueInitOptions['beforeSendSpan']>>[0]
 ): Parameters<NonNullable<VueInitOptions['beforeSendSpan']>>[0] {
-  const version = process.env.WODORE_APP_VERSION;
+  const version = import.meta.env.WODORE_APP_VERSION;
   if (version && span.is_segment) {
     span.attributes = { ...span.attributes, app_version: version };
   }
@@ -178,7 +178,7 @@ export function initErrorTracking(app: App, router: Router): void {
     // STATIC process.env read on purpose (see header comment): Vite
     // inlines the build's commit hash; `getEnv` cannot reach this key
     // in the browser bundle.
-    release: process.env.WODORE_GIT_HASH || undefined,
+    release: import.meta.env.WODORE_GIT_HASH || undefined,
     environment: getEnv('WODORE_ENV') || 'development',
     // Runtime platform ('web' | 'android' | 'ios') on every event:
     // distinguishes browser from Capacitor-WebView events inside the one

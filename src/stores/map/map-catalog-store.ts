@@ -667,7 +667,7 @@ export const useMapCatalogStore = defineStore('mapCatalog', () => {
      *  each other) collapses into ONE application; menu-only batches keep
      *  the microtask flush. The ≤150ms apply delay is invisible behind
      *  the splash at boot and imperceptible for background refreshes. */
-    const ACTIVE_APPLY_DEBOUNCE_MS = process.env.NODE_ENV === 'test' ? 0 : 150;
+    const ACTIVE_APPLY_DEBOUNCE_MS = import.meta.env.MODE === 'test' ? 0 : 150;
     const scheduleEmit = (activeArrived: boolean): void => {
       if (activeArrived) activeArrivedInBatch = true;
       if (emitScheduled) return;

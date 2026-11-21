@@ -9,7 +9,7 @@
  * no-ops there.
  */
 export default () => {
-  if (process.env.CLIENT && process.env.MODE === 'capacitor') {
+  if (import.meta.env.QUASAR_CLIENT && import.meta.env.QUASAR_MODE === 'capacitor') {
     document.body.classList.add('capacitor');
   }
 };
