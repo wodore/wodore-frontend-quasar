@@ -74,7 +74,7 @@ test.describe('map chrome theming', () => {
         const g = (s) => { const el = document.querySelector(s); return el ? getComputedStyle(el).filter : 'MISSING'; };
         return {
           canvas: g('.maplibregl-canvas'),
-          layerIcon: g('.wd-ovl__icon .q-icon'),
+          layerIcon: g('.wd-ovl__icon .wd-backend-icon, .wd-ovl__icon .q-icon'),
           overlayToggleIcon: g('.wd-ovl__toggle-icon'),
           basemapToggleIcon: g('.wd-bm__toggle-icon'),
         };
