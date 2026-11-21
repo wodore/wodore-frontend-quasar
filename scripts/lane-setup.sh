@@ -30,5 +30,6 @@ fi
 git submodule update --init --recursive
 
 pnpm install --frozen-lockfile
+pnpm --dir src-pwa install --frozen-lockfile
 
 echo "lane-setup: ready — dev server: scripts/lane-web.sh fg|start (port $(sed -n 's/^PORT=//p' .env.local 2>/dev/null || true))"

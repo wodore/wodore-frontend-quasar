@@ -49,8 +49,10 @@ RUN corepack enable && pnpm add -g @quasar/cli
 # Install dependencies efficiently (store cache mount = layer stays hot
 # across builds even when package.json changes)
 COPY package.json pnpm-lock.yaml ./
+COPY src-pwa/package.json src-pwa/pnpm-lock.yaml ./src-pwa/
 RUN --mount=type=cache,target=/pnpm/store \
-  pnpm install --frozen-lockfile --store-dir /pnpm/store
+  pnpm install --frozen-lockfile --store-dir /pnpm/store && \
+  pnpm --dir src-pwa install --frozen-lockfile --store-dir /pnpm/store
 
 # Just copy the directories/files which are needed
 COPY .env index.html package.json pnpm-lock.yaml quasar.config.ts tsconfig.json tsconfig.vue-tsc.json eslint.config.js ./

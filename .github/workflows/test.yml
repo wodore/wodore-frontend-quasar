@@ -45,7 +45,10 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        # v3 mode-scoped deps: the PWA deps live in src-pwa/package.json
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm --dir src-pwa install --frozen-lockfile
 
       - name: Build PWA
         run: pnpm build:pwa
@@ -89,7 +92,10 @@ jobs:
           key: vite-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        # v3 mode-scoped deps: the PWA deps live in src-pwa/package.json
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm --dir src-pwa install --frozen-lockfile
 
       - name: Cache Playwright browsers
         uses: actions/cache@v4
