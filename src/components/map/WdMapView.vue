@@ -159,7 +159,9 @@ function getExpectedDesktopDrawerWidth(): number {
  * @returns Expected drawer height in pixels
  */
 function getExpectedMobileDrawerHeight(): number {
-  const defaultHeight = import.meta.env.QUASAR_CLIENT ? window.innerHeight * MOBILE_DRAWER_DEFAULT_RATIO : 400;
+  const defaultHeight = import.meta.env.QUASAR_CLIENT
+    ? window.innerHeight * MOBILE_DRAWER_DEFAULT_RATIO
+    : 400;
   return lastMobileDrawerHeight.value || defaultHeight;
 }
 

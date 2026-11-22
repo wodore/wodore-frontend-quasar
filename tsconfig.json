@@ -3,11 +3,7 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "strict": true,
     "jsx": "preserve",
     "esModuleInterop": true,
@@ -18,99 +14,39 @@
     "isolatedModules": true,
     "noEmit": true,
     "baseUrl": ".",
-    "types": [
-      "unplugin-icons/types/vue",
-      "./components.d.ts",
-      "node"
-    ],
+    "types": ["unplugin-icons/types/vue", "./components.d.ts", "node"],
     "paths": {
-      "src/*": [
-        "src/*"
-      ],
-      "@/*": [
-        "src/*"
-      ],
-      "app/*": [
-        "*"
-      ],
-      "@app/*": [
-        "*"
-      ],
-      "components/*": [
-        "src/components/*"
-      ],
-      "@components/*": [
-        "src/components/*"
-      ],
-      "@composables/*": [
-        "src/composables/*"
-      ],
-      "selection/*": [
-        "src/selection/*"
-      ],
-      "@selection/*": [
-        "src/selection/*"
-      ],
-      "layouts/*": [
-        "src/layouts/*"
-      ],
-      "@layouts/*": [
-        "src/layouts/*"
-      ],
-      "pages/*": [
-        "src/pages/*"
-      ],
-      "@pages/*": [
-        "src/pages/*"
-      ],
-      "assets/*": [
-        "src/assets/*"
-      ],
-      "@assets/*": [
-        "src/assets/*"
-      ],
-      "boot/*": [
-        "src/boot/*"
-      ],
-      "@boot/*": [
-        "src/boot/*"
-      ],
-      "stores/*": [
-        "src/stores/*"
-      ],
-      "@stores/*": [
-        "src/stores/*"
-      ],
-      "@services/*": [
-        "src/services/*"
-      ],
-      "@extras/*": [
-        "src/extras/*"
-      ],
-      "clients/*": [
-        "src/clients/*"
-      ],
-      "@clients/*": [
-        "src/clients/*"
-      ],
-      "types/*": [
-        "src/types/*"
-      ],
-      "@types/*": [
-        "src/types/*"
-      ],
-      "#q-app": [
-        "./node_modules/@quasar/app-vite/types/index.d.ts"
-      ],
-      "#q-app/client": [
-        "./node_modules/@quasar/app-vite/exports/client/client.d.ts"
-      ],
+      "src/*": ["src/*"],
+      "@/*": ["src/*"],
+      "app/*": ["*"],
+      "@app/*": ["*"],
+      "components/*": ["src/components/*"],
+      "@components/*": ["src/components/*"],
+      "@composables/*": ["src/composables/*"],
+      "selection/*": ["src/selection/*"],
+      "@selection/*": ["src/selection/*"],
+      "layouts/*": ["src/layouts/*"],
+      "@layouts/*": ["src/layouts/*"],
+      "pages/*": ["src/pages/*"],
+      "@pages/*": ["src/pages/*"],
+      "assets/*": ["src/assets/*"],
+      "@assets/*": ["src/assets/*"],
+      "boot/*": ["src/boot/*"],
+      "@boot/*": ["src/boot/*"],
+      "stores/*": ["src/stores/*"],
+      "@stores/*": ["src/stores/*"],
+      "@services/*": ["src/services/*"],
+      "@extras/*": ["src/extras/*"],
+      "clients/*": ["src/clients/*"],
+      "@clients/*": ["src/clients/*"],
+      "types/*": ["src/types/*"],
+      "@types/*": ["src/types/*"],
+      "#q-app": ["./node_modules/@quasar/app-vite/types/index.d.ts"],
+      "#q-app/client": ["./node_modules/@quasar/app-vite/exports/client/client.d.ts"],
       "#q-app/bex/background": [
         "./node_modules/@quasar/app-vite/types/bex/entrypoints/background.d.ts"
       ],
-      "#q-app/bex/content": [
-        "./node_modules/@quasar/app-vite/types/bex/entrypoints/content.d.ts"
-      ],
+      "#q-app/bex/content": ["./node_modules/@quasar/app-vite/types/bex/entrypoints/content.d.ts"],
       "#q-app/bex/private/bex-bridge": [
         "./node_modules/@quasar/app-vite/types/bex/bex-bridge.d.ts"
       ],
@@ -120,19 +56,11 @@
       "#q-app/electron/preload": [
         "./node_modules/@quasar/app-vite/exports/electron/preload-runtime.d.ts"
       ],
-      "#q-app/testing": [
-        "./node_modules/@quasar/app-vite/exports/testing/testing.d.ts"
-      ],
-      "#q-app/capacitor": [
-        "./node_modules/@quasar/app-vite/exports/capacitor/capacitor.d.ts"
-      ]
+      "#q-app/testing": ["./node_modules/@quasar/app-vite/exports/testing/testing.d.ts"],
+      "#q-app/capacitor": ["./node_modules/@quasar/app-vite/exports/capacitor/capacitor.d.ts"]
     }
   },
-  "include": [
-    "src/**/*",
-    "src-pwa/**/*",
-    "quasar.config.ts"
-  ],
+  "include": ["src/**/*", "src-pwa/**/*", "quasar.config.ts"],
   "exclude": [
     "./dist",
     "./.quasar",
