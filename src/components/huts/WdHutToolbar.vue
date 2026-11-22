@@ -10,12 +10,12 @@ let mapRef: MapInstance | undefined;
 // free there — but it fires on panel mount, which would drag 327 kB gz
 // of map library into every crawler render. Crawlers never interact
 // with the map, so skip it for them.
-if (process.env.CLIENT && !isCrawlerUA()) {
+if (import.meta.env.QUASAR_CLIENT && !isCrawlerUA()) {
   import('@indoorequal/vue-maplibre-gl').then(pkg => {
     mapRef = pkg.useMap();
   });
 }
-// if (process.env.CLIENT) {
+// if (import.meta.env.QUASAR_CLIENT) {
 // }
 import { useAuthStore } from '@stores/auth-store';
 import { MapInstance } from '@indoorequal/vue-maplibre-gl/dist/lib/lib/mapRegistry';

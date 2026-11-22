@@ -242,7 +242,7 @@ useMeta(() => {
 });
 
 onMounted(() => {
-  if (isNotProduction.value && officialUrl && !process.env.DEV) {
+  if (isNotProduction.value && officialUrl && !import.meta.env.QUASAR_DEV) {
     $q.notify({
       type: 'warning',
       color: 'negative-800',

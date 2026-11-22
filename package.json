@@ -98,7 +98,6 @@
     "pinia": "^4.1.0",
     "pure-web-bottom-sheet": "^1.1.1",
     "quasar": "^2.35.2",
-    "register-service-worker": "^1.0.0",
     "supercluster": "^8.0.1",
     "swiper": "^14.4.0",
     "vue": "^3.5.44",
@@ -115,8 +114,8 @@
     "@iconify/json": "^2.2.202",
     "@intlify/unplugin-vue-i18n": "^11",
     "@playwright/test": "^1.58.2",
-    "@quasar/app-vite": "^2",
-    "@quasar/icongenie": "^4.0.0",
+    "@quasar/app-vite": "^3",
+    "@quasar/icongenie": "^6.1.1",
     "@storybook/addon-a11y": "10",
     "@storybook/addon-docs": "10",
     "@storybook/addon-themes": "10",
@@ -148,7 +147,7 @@
     "geojson": "^0.5.0",
     "git-cliff": "^2.8.0",
     "git-rev-sync": "^3.0.2",
-    "happy-dom": "^20.14.5",
+    "happy-dom": "^21.0.4",
     "histoire": "^1.0.0-beta.1",
     "lint-staged": "^17.6.0",
     "maplibre-font-maker-node": "^0.5.0",
@@ -164,14 +163,7 @@
     "vite-tsconfig-paths": "^6.0.5",
     "vitest": "^4.1.11",
     "vue-eslint-parser": "^10.4.1",
-    "vue-tsc": "^3.2.3",
-    "workbox-build": "^7.0.0",
-    "workbox-cacheable-response": "^7.0.0",
-    "workbox-core": "^7.0.0",
-    "workbox-expiration": "^7.0.0",
-    "workbox-precaching": "^7.0.0",
-    "workbox-routing": "^7.0.0",
-    "workbox-strategies": "^7.0.0"
+    "vue-tsc": "^3.2.3"
   },
   "engines": {
     "node": "^24 || ^22"

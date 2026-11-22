@@ -1,7 +1,7 @@
 // Configuration for your app
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js
 
-import { configure } from 'quasar/wrappers';
+import { defineConfig } from '#q-app';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -50,7 +50,7 @@ for (const file of envFiles) {
 
 // add any new variable to the 'env' section
 
-export default configure(ctx => {
+export default defineConfig(ctx => {
   const appNameBase = process.env.WODORE_APP_NAME || 'Wodore';
   const appNameDev = () => {
     if (appNameBase.toLowerCase().includes('dore')) {
@@ -120,6 +120,21 @@ export default configure(ctx => {
 
       alias: {
         '@': path.join(__dirname, './src'),
+        // Legacy v2 aliases (src/, boot/, stores/, components/, ...) —
+        // @quasar/app-vite v3 injects ONLY '@/' natively, but the codebase
+        // still imports through them. Keep in sync with tsconfig.json paths
+        // (vue-tsc reads those, the bundler reads these).
+        src: ctx.appPaths.srcDir,
+        app: ctx.appPaths.appDir,
+        components: ctx.appPaths.resolve.src('components'),
+        layouts: ctx.appPaths.resolve.src('layouts'),
+        pages: ctx.appPaths.resolve.src('pages'),
+        assets: ctx.appPaths.resolve.src('assets'),
+        boot: ctx.appPaths.resolve.src('boot'),
+        stores: ctx.appPaths.resolve.src('stores'),
+        selection: ctx.appPaths.resolve.src('selection'),
+        clients: ctx.appPaths.resolve.src('clients'),
+        types: ctx.appPaths.resolve.src('types'),
         '@services': path.join(__dirname, './src/services'),
         '@extras': path.join(__dirname, './src/extras'),
         '@clients': path.join(__dirname, './src/clients'),
@@ -156,7 +171,7 @@ export default configure(ctx => {
 
       publicPath: process.env.WODORE_PUBLIC_PATH || '/',
       // analyze: true,
-      env: {
+      defineEnv: {
         TIMESTAMP_VERSION_HEX:
           't' +
           parseInt(formatDate(Date.now(), 'YYMMDD')).toString(16).padStart(5, '0') +
@@ -192,6 +207,7 @@ export default configure(ctx => {
         WODORE_OICD_RESOURCE_ID: process.env.WODORE_OICD_RESOURCE_ID,
         WODORE_MAPTILER_API_KEY: process.env.WODORE_MAPTILER_API_KEY,
         WODORE_TILE_SERVER_URL: process.env.WODORE_TILE_SERVER_URL,
+        WODORE_CLOUDINARY_ENV: process.env.WODORE_CLOUDINARY_ENV || '',
         // Error tracking (openspec: add-error-tracking) — runtime-swappable
         // in docker via /env.js; empty/unset = fully inert.
         // The `|| ''` fallbacks matter: esbuild's dev-server define
@@ -211,7 +227,6 @@ export default configure(ctx => {
         // index.html.
         WODORE_EXTERNAL_ENV: process.env.WODORE_EXTERNAL_ENV || '',
       },
-      // rawDefine: {}
       // ignorePublicFolder: true,
       // Public source maps (repo is open source, GPL-3.0): Sentry
       // symbolicates stack traces by fetching the .map files referenced
@@ -585,8 +600,8 @@ export default configure(ctx => {
     //   rootComponent: 'src/App.vue',
     //   router: 'src/router/index',
     //   store: 'src/store/index',
-    //   pwaRegisterServiceWorker: 'src-pwa/register-service-worker',
-    //   pwaServiceWorker: 'src-pwa/custom-service-worker',
+    //   pwaRegisterServiceWorker: 'src-pwa/register-sw',
+    //   pwaServiceWorker: 'src-pwa/sw/custom-sw',
     //   pwaManifestFile: 'src-pwa/manifest.json',
     //   electronMain: 'src-electron/electron-main',
     //   electronPreload: 'src-electron/electron-preload'
@@ -622,14 +637,14 @@ export default configure(ctx => {
     // https://v2.quasar.dev/quasar-cli-vite/developing-pwa/configuring-pwa
     pwa: {
       workboxMode: 'InjectManifest', // 'GenerateSW' or 'InjectManifest'
-      injectPwaMetaTags: false,
-      extendManifestJson(json) {
+      injectPWAMetaTags: false,
+      extendPWAManifestJson(json) {
         json.name = appName;
         json.short_name = appName;
         return json;
       },
       // Exclude index.html from precache to ensure fresh version via NetworkFirst
-      extendInjectManifestOptions(options) {
+      extendPWAInjectManifestOptions(options) {
         // Ignore index.html so it's not added to the precache manifest
         // This allows the NavigationRoute with NetworkFirst to handle it.
         // Same for env.js (runtime env, rewritten at container start):

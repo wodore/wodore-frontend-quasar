@@ -17,40 +17,40 @@
       services/runtimeEnv.ts and public/env.js.
     -->
     <% const inlineEnv = ctx.dev || ctx.mode.capacitor || ctx.mode.cordova ||
-    !process.env.WODORE_EXTERNAL_ENV; %> <% if (inlineEnv) { %>
+    !importMetaEnv.WODORE_EXTERNAL_ENV; %> <% if (inlineEnv) { %>
     <script>
       window.__WODORE_RUNTIME_ENV__ = {
-        WODORE_APP_NAME: '<%= process.env.WODORE_APP_NAME %>',
-        WODORE_ENV: '<%= process.env.WODORE_ENV %>',
-        WODORE_DOMAIN: '<%= process.env.WODORE_DOMAIN %>',
-        WODORE_URL: '<%= process.env.WODORE_URL %>',
-        WODORE_OFFICIAL_URL: '<%= process.env.WODORE_OFFICIAL_URL %>',
-        WODORE_API_HOST: '<%= process.env.WODORE_API_HOST %>',
-        WODORE_API_VERSION: '<%= process.env.WODORE_API_VERSION %>',
+        WODORE_APP_NAME: '<%= importMetaEnv.WODORE_APP_NAME %>',
+        WODORE_ENV: '<%= importMetaEnv.WODORE_ENV %>',
+        WODORE_DOMAIN: '<%= importMetaEnv.WODORE_DOMAIN %>',
+        WODORE_URL: '<%= importMetaEnv.WODORE_URL %>',
+        WODORE_OFFICIAL_URL: '<%= importMetaEnv.WODORE_OFFICIAL_URL %>',
+        WODORE_API_HOST: '<%= importMetaEnv.WODORE_API_HOST %>',
+        WODORE_API_VERSION: '<%= importMetaEnv.WODORE_API_VERSION %>',
         // Optional CDN base for public/unauthenticated GETs (empty = off).
         // The `|| ''` matters: without a .env entry EJS would bake the
         // literal string "undefined".
-        WODORE_PUBLIC_API_URL: '<%= process.env.WODORE_PUBLIC_API_URL || "" %>',
-        WODORE_TILE_SERVER_URL: '<%= process.env.WODORE_TILE_SERVER_URL %>',
-        WODORE_IMAGOR_KEY: '<%= process.env.WODORE_IMAGOR_KEY %>',
-        WODORE_IMAGOR_URL: '<%= process.env.WODORE_IMAGOR_URL %>',
+        WODORE_PUBLIC_API_URL: '<%= importMetaEnv.WODORE_PUBLIC_API_URL || "" %>',
+        WODORE_TILE_SERVER_URL: '<%= importMetaEnv.WODORE_TILE_SERVER_URL %>',
+        WODORE_IMAGOR_KEY: '<%= importMetaEnv.WODORE_IMAGOR_KEY %>',
+        WODORE_IMAGOR_URL: '<%= importMetaEnv.WODORE_IMAGOR_URL %>',
         WODORE_IMAGOR_REPLACE_API_HOST_MEDIA:
-          '<%= process.env.WODORE_IMAGOR_REPLACE_API_HOST_MEDIA %>',
-        WODORE_CLOUDINARY_ENV: '<%= process.env.WODORE_CLOUDINARY_ENV %>',
-        WODORE_UMAMI_WEBSITE_ID: '<%= process.env.WODORE_UMAMI_WEBSITE_ID %>',
-        WODORE_UMAMI_WEBSITE_URL: '<%= process.env.WODORE_UMAMI_WEBSITE_URL %>',
+          '<%= importMetaEnv.WODORE_IMAGOR_REPLACE_API_HOST_MEDIA %>',
+        WODORE_CLOUDINARY_ENV: '<%= importMetaEnv.WODORE_CLOUDINARY_ENV %>',
+        WODORE_UMAMI_WEBSITE_ID: '<%= importMetaEnv.WODORE_UMAMI_WEBSITE_ID %>',
+        WODORE_UMAMI_WEBSITE_URL: '<%= importMetaEnv.WODORE_UMAMI_WEBSITE_URL %>',
         // Session recording (replays/heatmaps): 'on' loads recorder.js.
         // The `|| ''` matters: without a .env entry EJS would bake the
         // literal string "undefined" (same as WODORE_PUBLIC_API_URL).
-        WODORE_UMAMI_RECORDER: '<%= process.env.WODORE_UMAMI_RECORDER || "" %>',
-        WODORE_OICD_ISSUER_URL: '<%= process.env.WODORE_OICD_ISSUER_URL %>',
-        WODORE_OICD_CLIENT_ID: '<%= process.env.WODORE_OICD_CLIENT_ID %>',
-        WODORE_OICD_RESOURCE_ID: '<%= process.env.WODORE_OICD_RESOURCE_ID %>',
-        WODORE_MAPTILER_API_KEY: '<%= process.env.WODORE_MAPTILER_API_KEY %>',
+        WODORE_UMAMI_RECORDER: '<%= importMetaEnv.WODORE_UMAMI_RECORDER || "" %>',
+        WODORE_OICD_ISSUER_URL: '<%= importMetaEnv.WODORE_OICD_ISSUER_URL %>',
+        WODORE_OICD_CLIENT_ID: '<%= importMetaEnv.WODORE_OICD_CLIENT_ID %>',
+        WODORE_OICD_RESOURCE_ID: '<%= importMetaEnv.WODORE_OICD_RESOURCE_ID %>',
+        WODORE_MAPTILER_API_KEY: '<%= importMetaEnv.WODORE_MAPTILER_API_KEY %>',
         // Error tracking (openspec: add-error-tracking) — empty = inert;
         // same entries as public/env.js for the docker placeholder path.
-        WODORE_SENTRY_DSN: '<%= process.env.WODORE_SENTRY_DSN %>',
-        WODORE_SENTRY_TRACES_SAMPLE_RATE: '<%= process.env.WODORE_SENTRY_TRACES_SAMPLE_RATE %>',
+        WODORE_SENTRY_DSN: '<%= importMetaEnv.WODORE_SENTRY_DSN %>',
+        WODORE_SENTRY_TRACES_SAMPLE_RATE: '<%= importMetaEnv.WODORE_SENTRY_TRACES_SAMPLE_RATE %>',
       };
     </script>
     <% } else { %>
@@ -135,7 +135,7 @@
          (GitHub Pages PR previews, set via WODORE_SEO_NOINDEX=1). The
          Docker image decides per-environment at container start instead
          (docker/entrypoint.sh) and must NOT bake this flag. -->
-    <% if (process.env.WODORE_SEO_NOINDEX) { %>
+    <% if (importMetaEnv.WODORE_SEO_NOINDEX) { %>
     <meta name="robots" content="noindex, nofollow" />
     <% } %>
 

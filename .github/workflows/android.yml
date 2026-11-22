@@ -224,6 +224,7 @@ jobs:
         if: steps.resolve.outputs.build == 'true'
         run: |
           pnpm install --frozen-lockfile
+          pnpm --dir src-pwa install --frozen-lockfile
           pnpm --dir src-capacitor install --frozen-lockfile
 
       - name: Build web assets (Quasar capacitor mode)

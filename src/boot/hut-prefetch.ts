@@ -4,9 +4,9 @@
  * /hut/:slug arrival starts its API request within milliseconds of the
  * bundle executing — the response is handed to usePlace later.
  */
-import { boot } from 'quasar/wrappers';
+import { defineBoot } from '#q-app';
 import { startHutPrefetch } from '@services/hut-prefetch';
 
-export default boot(() => {
+export default defineBoot(() => {
   startHutPrefetch();
 });

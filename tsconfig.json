@@ -40,7 +40,24 @@
       "clients/*": ["src/clients/*"],
       "@clients/*": ["src/clients/*"],
       "types/*": ["src/types/*"],
-      "@types/*": ["src/types/*"]
+      "@types/*": ["src/types/*"],
+      "#q-app": ["./node_modules/@quasar/app-vite/types/index.d.ts"],
+      "#q-app/client": ["./node_modules/@quasar/app-vite/exports/client/client.d.ts"],
+      "#q-app/bex/background": [
+        "./node_modules/@quasar/app-vite/types/bex/entrypoints/background.d.ts"
+      ],
+      "#q-app/bex/content": ["./node_modules/@quasar/app-vite/types/bex/entrypoints/content.d.ts"],
+      "#q-app/bex/private/bex-bridge": [
+        "./node_modules/@quasar/app-vite/types/bex/bex-bridge.d.ts"
+      ],
+      "#q-app/electron/main": [
+        "./node_modules/@quasar/app-vite/exports/electron/main-runtime.d.ts"
+      ],
+      "#q-app/electron/preload": [
+        "./node_modules/@quasar/app-vite/exports/electron/preload-runtime.d.ts"
+      ],
+      "#q-app/testing": ["./node_modules/@quasar/app-vite/exports/testing/testing.d.ts"],
+      "#q-app/capacitor": ["./node_modules/@quasar/app-vite/exports/capacitor/capacitor.d.ts"]
     }
   },
   "include": ["src/**/*", "src-pwa/**/*", "quasar.config.ts"],
@@ -50,6 +67,7 @@
     "./node_modules",
     "./src-capacitor",
     "./src-cordova",
-    "./quasar.config.*.temporary.compiled*"
+    "./quasar.config.*.temporary.compiled*",
+    "./src-pwa/sw"
   ]
 }

@@ -10,8 +10,8 @@ import {
 } from '@services/debug-tools';
 import WdVersionTag from './WdVersionTag.vue';
 
-const frontendVersion = process.env.WODORE_APP_VERSION || '';
-const frontendHash = process.env.WODORE_GIT_HASH || '';
+const frontendVersion = import.meta.env.WODORE_APP_VERSION || '';
+const frontendHash = import.meta.env.WODORE_GIT_HASH || '';
 
 // Debug-tools hidden switch (owner spec): DOUBLE-click the frontend
 // version row → enable the eruda stack; SINGLE click while ON →

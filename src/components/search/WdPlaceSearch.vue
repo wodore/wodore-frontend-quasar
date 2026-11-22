@@ -39,7 +39,7 @@ let mapRef: MapInstance | undefined;
 // vendor chunk loads via WdMapView on this page anyway) but would drag
 // 327 kB gz of map library into every crawler render — crawlers never
 // search-and-fly, so skip it.
-if (process.env.CLIENT && !isCrawlerUA()) {
+if (import.meta.env.QUASAR_CLIENT && !isCrawlerUA()) {
   import('@indoorequal/vue-maplibre-gl').then(pkg => {
     mapRef = pkg.useMap();
   });

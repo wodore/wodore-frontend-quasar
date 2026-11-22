@@ -99,7 +99,7 @@ const MOBILE_DRAWER_MARGIN = -75;
 // Disable map position hash sync in hash routing mode (previews):
 // vue-maplibre-gl appends &map=zoom/lat/lng to the Vue Router hash,
 // breaking route matching on refresh
-const isHashMode = process.env.VUE_ROUTER_MODE !== 'history';
+const isHashMode = import.meta.env.QUASAR_VUE_ROUTER_MODE !== 'history';
 const MIN_FLY_ZOOM = 9;
 const FLY_DURATION = 600; // ms
 const INITIAL_ZOOM = 12;
@@ -159,7 +159,9 @@ function getExpectedDesktopDrawerWidth(): number {
  * @returns Expected drawer height in pixels
  */
 function getExpectedMobileDrawerHeight(): number {
-  const defaultHeight = process.env.CLIENT ? window.innerHeight * MOBILE_DRAWER_DEFAULT_RATIO : 400;
+  const defaultHeight = import.meta.env.QUASAR_CLIENT
+    ? window.innerHeight * MOBILE_DRAWER_DEFAULT_RATIO
+    : 400;
   return lastMobileDrawerHeight.value || defaultHeight;
 }
 
@@ -255,7 +257,7 @@ if ($layout === undefined) {
   watchEffect(() => {
     top.value = `${$layout.header.offset}px`;
     right.value = `${$layout.right.offset}px`;
-    if (process.env.CLIENT && $layout.footer.offset < window.innerHeight - 250) {
+    if (import.meta.env.QUASAR_CLIENT && $layout.footer.offset < window.innerHeight - 250) {
       bottom.value = `${$layout.footer.offset}px`;
     }
     // Left inset: the Quasar left-drawer offset (0 today — the menu docks
@@ -787,7 +789,7 @@ function onMapLoad(e: MglEvent<'load'>) {
 
   // Dev-only handle for debugging and e2e tests (map.project for exact
   // marker tap positions). Stripped from production behavior by the guard.
-  if (process.env.DEV) {
+  if (import.meta.env.QUASAR_DEV) {
     (window as unknown as Record<string, unknown>).__wodoreMap = e.map;
   }
 

@@ -43,7 +43,7 @@ function sniffLang(): string {
 /** Fire the hut request for a deep-linked hut. Safe to call any number
  *  of times — only the first call prefetches. */
 export function startHutPrefetch(): void {
-  if (prefetched || typeof window === 'undefined' || process.env.NODE_ENV === 'test') return;
+  if (prefetched || typeof window === 'undefined' || import.meta.env.MODE === 'test') return;
   const match = HUT_PATH_RE.exec(window.location.pathname);
   if (!match) return;
   const slug = match[1]!.toLowerCase();

@@ -1,11 +1,11 @@
-import { boot } from 'quasar/wrappers';
+import { defineBoot } from '#q-app';
 
 import { whenIdle } from '@services/idle';
 import { useAuthService } from '@composables/useAuthService';
 import { getEnv } from '@services/runtimeEnv';
 // "async" is optional;
 // more info about params: https://v2.quasar.dev/quasar-cli/boot-files
-export default boot(async (/* { app, router, ... } */) => {
+export default defineBoot(async (/* { app, router, ... } */) => {
   // Read-only PR previews share the wodore.github.io ORIGIN with every
   // other preview and every PR — localStorage is origin-wide, so stale
   // OIDC state from an earlier visit can wedge signinSilent in a

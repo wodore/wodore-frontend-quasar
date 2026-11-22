@@ -64,8 +64,14 @@ const shellBytes = statSync(`${DIST}/index.html`).size;
  *
  * 2026-11-22: 518 -> 522 KB — maplibre-gl 6.14.0 -> 6.16.0 (deps batch
  * superseding #378) grows the preloaded maplibre chunk by ~2.6 KB brotli;
- * same preload set, no new chunk entered the list. */
-const BUDGET_INITIAL_JS = 522 * 1024;
+ * same preload set, no new chunk entered the list.
+ *
+ * 2026-11-22: 522 -> 545 KB — @quasar/app-vite v3 migration (vite 8 +
+ * rolldown/oxc replaces rollup + esbuild; forced by the npm_and_yarn
+ * security group, #395). Same preload set — no new chunk entered the
+ * boot path; the +20 KB brotli is the new minifier's output across the
+ * preloaded graph (measured: maplibre chunk shrank, app chunks grew). */
+const BUDGET_INITIAL_JS = 545 * 1024;
 const BUDGET_SHELL = 40 * 1024;
 
 const kb = b => `${(b / 1024).toFixed(1)} KB`;

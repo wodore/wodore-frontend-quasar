@@ -7,7 +7,7 @@ import { register } from 'register-service-worker';
 // Import the composable for update notifications
 // Note: We need to defer notification rendering until Vue app is ready
 let showUpdateCallback: (() => void) | null = null;
-const APP_VERSION = process.env.WODORE_APP_VERSION || '';
+const APP_VERSION = import.meta.env.WODORE_APP_VERSION || '';
 
 type Semver = {
   major: number;
@@ -79,7 +79,7 @@ if (
     }
   })();
 } else {
-  register(process.env.SERVICE_WORKER_FILE, {
+  register(import.meta.env.QUASAR_SERVICE_WORKER_FILE, {
     // The registrationOptions object will be passed as the second argument
     // to ServiceWorkerContainer.register()
     // https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerContainer/register#Parameter

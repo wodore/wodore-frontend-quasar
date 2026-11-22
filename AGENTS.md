@@ -42,8 +42,9 @@ call pnpm directly — `just` is human/agent ergonomics only.
 ### Development
 
 ```bash
-# Install dependencies
+# Install dependencies (root + the v3 mode-scoped PWA deps)
 pnpm install
+pnpm --dir src-pwa install
 
 # Generate assets (API client, icons, favicons)
 pnpm gen:api          # OpenAPI client from backend (latest) + pins the API version
@@ -176,7 +177,7 @@ submodule via icongenie profiles (`src/assets/icongenie/icongenie-capacitor-*.js
 (since the 2026 refresh it is Java 25, which Gradle 8.11 cannot load — 'Unsupported class file
 major version 69' / lint `25.0.3` failures); install Temurin 21 to `~/jdks/` (script default
 `~/jdks/jdk-21.0.12.1+1`). New worktrees need `src-capacitor/android/local.properties`
-(`sdk.dir=/home/tobias/Android/Sdk`) and a `pnpm install` inside `src-capacitor`. The script
+(`sdk.dir=/home/tobias/Android/Sdk`) and a `pnpm install` inside `src-capacitor` (plus `src-pwa` since the @quasar/app-vite v3 migration). The script
 stashes `.env.local` while baking the variant env (CI parity) and restores it after. CI signs
 preview/RC builds with a stable dev keystore (`WODORE_ANDROID_DEV_*` secrets; local backup +
 password in `/home/tobias/git/wodore/wodore-ci-dev-keystore.txt`) so devices update over

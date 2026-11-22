@@ -1,4 +1,4 @@
-import { boot } from 'quasar/wrappers';
+import { defineBoot } from '#q-app';
 
 import { getEnv } from '@services/runtimeEnv';
 
@@ -108,7 +108,7 @@ function removeBufferListeners(): void {
 /** Module-level guard: the idle pipeline runs at most once (HMR/SSR re-entry). */
 let scheduled = false;
 
-export default boot(({ app, router }) => {
+export default defineBoot(({ app, router }) => {
   if (scheduled) return;
   scheduled = true;
 

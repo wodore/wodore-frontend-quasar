@@ -1517,7 +1517,7 @@ export const useBasemapStore = defineStore('basemap', () => {
       // fetches and the 20s fallback timer must not race the catalog
       // refresh assertions in the store specs — prewarm behavior is
       // covered by its own unit spec.
-      if (process.env.NODE_ENV === 'test') return;
+      if (import.meta.env.MODE === 'test') return;
       if (hasMap) mapRef.map?.once('idle', warmCatalogStyles);
       window.setTimeout(warmCatalogStyles, 20_000);
     });
