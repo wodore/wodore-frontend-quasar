@@ -164,7 +164,9 @@ jobs:
 
       - name: Install
         if: steps.pr.outputs.action == 'deploy'
-        run: pnpm install --frozen-lockfile
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm --dir src-pwa install --frozen-lockfile
 
       - name: Build preview (hash router, subpath, prod API)
         if: steps.pr.outputs.action == 'deploy'
