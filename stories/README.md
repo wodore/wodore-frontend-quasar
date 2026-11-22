@@ -53,12 +53,12 @@ export const Default = meta.story({
 
 The preview setup registers pinia, i18n, a memory router and Quasar — real components work, including ones that call the API (see `WdPlaceTitleLive.stories.ts` for the live pattern with a slug control).
 
-| Approach                | Best for                                            | Backend required? |
-| ----------------------- | --------------------------------------------------- | ----------------- |
-| **Live component**      | Interactive testing, real data, full functionality  | ✅ Yes            |
-| **Mock implementation** | Visual reference, documentation                     | ❌ No             |
-| **Wrapper with mocks**  | Components with props, controlled data              | ❌ No             |
-| **Vitest**              | Behavior testing, complex interactions              | ❌ No (mocked)    |
+| Approach                | Best for                                           | Backend required? |
+| ----------------------- | -------------------------------------------------- | ----------------- |
+| **Live component**      | Interactive testing, real data, full functionality | ✅ Yes            |
+| **Mock implementation** | Visual reference, documentation                    | ❌ No             |
+| **Wrapper with mocks**  | Components with props, controlled data             | ❌ No             |
+| **Vitest**              | Behavior testing, complex interactions             | ❌ No (mocked)    |
 
 For complex behavior testing prefer Vitest (`pnpm test:unit`) — stories are for visual reference.
 
