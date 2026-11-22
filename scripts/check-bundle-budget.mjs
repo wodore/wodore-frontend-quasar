@@ -60,8 +60,12 @@ const shellBytes = statSync(`${DIST}/index.html`).size;
  * though the byte budget grew. Headroom ≈ 3 KB — the preload set is
  * build-managed, not organic; any growth here means a new chunk entered
  * the preload list and should be justified in the plugin's prefix
- * list, not silently absorbed. */
-const BUDGET_INITIAL_JS = 518 * 1024;
+ * list, not silently absorbed.
+ *
+ * 2026-11-22: 518 -> 522 KB — maplibre-gl 6.14.0 -> 6.16.0 (deps batch
+ * superseding #378) grows the preloaded maplibre chunk by ~2.6 KB brotli;
+ * same preload set, no new chunk entered the list. */
+const BUDGET_INITIAL_JS = 522 * 1024;
 const BUDGET_SHELL = 40 * 1024;
 
 const kb = b => `${(b / 1024).toFixed(1)} KB`;
