@@ -1,50 +1,41 @@
-<script setup lang="ts">
-import { ref, onMounted, defineOptions } from 'vue';
+import preview from '../../.storybook/preview';
+import { onMounted, ref } from 'vue';
 import { useUserSettingsStore } from '@stores/user-settings-store';
 
-defineOptions({
-  name: 'StoreExampleStory',
+// Ported from the Histoire store example (Histoire retired 2026-11).
+const meta = preview.meta({
+  title: 'Examples/Working with Stores',
+  parameters: { layout: 'fullscreen' },
 });
 
-const store = useUserSettingsStore();
-const storeData = ref('');
+export default meta;
 
-// Initialize store with mock data when component mounts
-onMounted(() => {
-  // Example: Set some mock user settings
-  // store.someProperty = 'mock value';
-
-  // Display store state
-  updateStoreData();
-});
-
-function updateStoreData() {
-  storeData.value = JSON.stringify(
-    {
-      // Show relevant store properties
-      initialized: 'Store is initialized',
-      note: 'You can access and modify store state here',
+export const StoreAccessExample = meta.story({
+  render: () => ({
+    setup() {
+      const store = useUserSettingsStore();
+      const storeData = ref('');
+      onMounted(() => {
+        storeData.value = JSON.stringify(
+          { storeId: store.$id, note: 'Store is initialized (pinia is registered in preview.ts)' },
+          null,
+          2
+        );
+      });
+      return { storeData };
     },
-    null,
-    2
-  );
-}
-</script>
-
-<template>
-  <Story title="Examples/Working with Stores">
-    <Variant title="Store Access Example">
+    template: `
       <div class="bg-white q-pa-md" style="max-width: 600px">
         <div class="text-h6 q-mb-md">Pinia Store Example</div>
 
         <p class="text-body2 q-mb-md">
-          This example shows how to access and initialize Pinia stores in Histoire stories.
+          This example shows how to access and initialize Pinia stores in stories.
         </p>
 
         <q-card flat bordered class="q-mb-md">
           <q-card-section>
             <div class="text-subtitle2 q-mb-sm">Store State:</div>
-            <pre class="text-caption">{{ storeData }}</pre>
+            <pre class="text-caption" style="background: #f5f5f5; padding: 12px; border-radius: 4px; overflow-x: auto;">{{ storeData }}</pre>
           </q-card-section>
         </q-card>
 
@@ -62,9 +53,14 @@ function updateStoreData() {
           </div>
         </q-banner>
       </div>
-    </Variant>
+    `,
+  }),
+});
 
-    <Variant title="Interactive Component Example">
+export const InteractiveComponentExample = meta.story({
+  render: () => ({
+    data: () => ({ text: 'user-settings' }),
+    template: `
       <div class="bg-white q-pa-md" style="max-width: 600px">
         <div class="text-h6 q-mb-md">Simple Interactive Component</div>
 
@@ -79,7 +75,7 @@ function updateStoreData() {
         </div>
 
         <div class="q-mb-md">
-          <q-input v-model="store.$id" label="Text Input" outlined dense />
+          <q-input v-model="text" label="Text Input" outlined dense />
         </div>
 
         <div class="q-mb-md">
@@ -90,9 +86,13 @@ function updateStoreData() {
           <q-checkbox label="Checkbox" />
         </div>
       </div>
-    </Variant>
+    `,
+  }),
+});
 
-    <Variant title="Best Practices">
+export const BestPractices = meta.story({
+  render: () => ({
+    template: `
       <div class="bg-grey-2 q-pa-md" style="max-width: 700px">
         <div class="text-h6 q-mb-md">Working with Complex Components</div>
 
@@ -102,12 +102,8 @@ function updateStoreData() {
               <q-icon color="positive" name="check_circle" />
             </q-item-section>
             <q-item-section>
-              <q-item-label class="text-weight-medium"
-                >Use Histoire for visual reference</q-item-label
-              >
-              <q-item-label caption
-                >Show different visual states, layouts, and variations</q-item-label
-              >
+              <q-item-label class="text-weight-medium">Use Storybook for visual reference</q-item-label>
+              <q-item-label caption>Show different visual states, layouts, and variations</q-item-label>
             </q-item-section>
           </q-item>
 
@@ -119,9 +115,7 @@ function updateStoreData() {
             </q-item-section>
             <q-item-section>
               <q-item-label class="text-weight-medium">Mock simple data</q-item-label>
-              <q-item-label caption
-                >Use onMounted() to initialize stores with mock data</q-item-label
-              >
+              <q-item-label caption>Use onMounted() to initialize stores with mock data</q-item-label>
             </q-item-section>
           </q-item>
 
@@ -132,9 +126,7 @@ function updateStoreData() {
               <q-icon color="info" name="lightbulb" />
             </q-item-section>
             <q-item-section>
-              <q-item-label class="text-weight-medium"
-                >Create presentational components</q-item-label
-              >
+              <q-item-label class="text-weight-medium">Create presentational components</q-item-label>
               <q-item-label caption>Separate data-fetching logic from presentation</q-item-label>
             </q-item-section>
           </q-item>
@@ -147,9 +139,7 @@ function updateStoreData() {
             </q-item-section>
             <q-item-section>
               <q-item-label class="text-weight-medium">Use Vitest for complex testing</q-item-label>
-              <q-item-label caption
-                >Test behavior, store interactions, and API calls with proper mocking</q-item-label
-              >
+              <q-item-label caption>Test behavior, store interactions, and API calls with proper mocking</q-item-label>
             </q-item-section>
           </q-item>
         </q-list>
@@ -161,23 +151,12 @@ function updateStoreData() {
             <strong>When a component heavily depends on backend/stores:</strong>
           </p>
           <ol class="q-pl-md">
-            <li>
-              Create a mock implementation showing the rendered output (see WdPlaceTitle story)
-            </li>
+            <li>Create a mock implementation showing the rendered output (see WdPlaceTitle story)</li>
             <li>Or create a simplified "_ComponentDemo.vue" version without store dependencies</li>
             <li>Or use Vitest component testing with createTestingPinia()</li>
           </ol>
         </div>
       </div>
-    </Variant>
-  </Story>
-</template>
-
-<style scoped>
-pre {
-  background: #f5f5f5;
-  padding: 12px;
-  border-radius: 4px;
-  overflow-x: auto;
-}
-</style>
+    `,
+  }),
+});
