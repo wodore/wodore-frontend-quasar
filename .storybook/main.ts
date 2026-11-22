@@ -39,11 +39,11 @@ export default defineMain({
   viteFinal: async config => {
     config.define = {
       ...config.define,
-      'process.env.WODORE_API_HOST': JSON.stringify(process.env.WODORE_API_HOST),
-      'process.env.WODORE_API_VERSION': JSON.stringify(process.env.WODORE_API_VERSION),
-      'process.env.WODORE_IMAGOR_KEY': JSON.stringify(process.env.WODORE_IMAGOR_KEY),
-      'process.env.WODORE_IMAGOR_URL': JSON.stringify(process.env.WODORE_IMAGOR_URL),
-      'process.env.WODORE_IMAGOR_REPLACE_API_HOST_MEDIA': JSON.stringify(
+      'import.meta.env.WODORE_API_HOST': JSON.stringify(process.env.WODORE_API_HOST),
+      'import.meta.env.WODORE_API_VERSION': JSON.stringify(process.env.WODORE_API_VERSION),
+      'import.meta.env.WODORE_IMAGOR_KEY': JSON.stringify(process.env.WODORE_IMAGOR_KEY),
+      'import.meta.env.WODORE_IMAGOR_URL': JSON.stringify(process.env.WODORE_IMAGOR_URL),
+      'import.meta.env.WODORE_IMAGOR_REPLACE_API_HOST_MEDIA': JSON.stringify(
         process.env.WODORE_IMAGOR_REPLACE_API_HOST_MEDIA
       ),
     };
@@ -84,12 +84,24 @@ export default defineMain({
         '@stores': path.join(__dirname, '../src/stores'),
         '@components': path.join(__dirname, '../src/components'),
         '@composables': path.join(__dirname, '../src/composables'),
+        '@selection': path.join(__dirname, '../src/selection'),
         '@layouts': path.join(__dirname, '../src/layouts'),
         '@pages': path.join(__dirname, '../src/pages'),
         '@assets': path.join(__dirname, '../src/assets'),
         '@boot': path.join(__dirname, '../src/boot'),
         '@types': path.join(__dirname, '../src/types'),
+        // Legacy v2 aliases — mirror quasar.config build.alias so imports
+        // like 'components/utils/WdIcon.vue' resolve here too
         src: path.join(__dirname, '../src'),
+        components: path.join(__dirname, '../src/components'),
+        layouts: path.join(__dirname, '../src/layouts'),
+        pages: path.join(__dirname, '../src/pages'),
+        boot: path.join(__dirname, '../src/boot'),
+        stores: path.join(__dirname, '../src/stores'),
+        selection: path.join(__dirname, '../src/selection'),
+        clients: path.join(__dirname, '../src/clients'),
+        types: path.join(__dirname, '../src/types'),
+        assets: path.join(__dirname, '../src/assets'),
       },
     };
 

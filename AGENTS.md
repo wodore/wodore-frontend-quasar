@@ -101,11 +101,11 @@ pnpm lint # Check code
 pnpm lint:fix # Fix linting issues
 pnpm format # Format with Prettier
 
-# Component development (Histoire)
+# Component development (Storybook)
 
-pnpm story:dev # Start Histoire dev server
-pnpm story:build # Build static Histoire site
-pnpm story:preview # Preview built Histoire site
+pnpm sb:dev # Start Storybook dev server (port 6006)
+pnpm sb:build # Build static Storybook site
+pnpm sb:preview # Preview built Storybook site
 
 ````
 
@@ -298,7 +298,7 @@ All paths are relative to the repository root (`wodore-frontend-quasar/`).
 wodore-frontend-quasar/
 ├── docs/
 │   └── specs/               # Feature specifications and design docs
-├── stories/                 # Histoire component stories
+├── stories/                 # Storybook component stories
 │   ├── components/          # Component stories (mirrors src/components/)
 │   └── README.md            # Stories documentation
 ├── src/
@@ -318,7 +318,6 @@ wodore-frontend-quasar/
 │   ├── services/            # Business logic and services
 │   ├── stores/              # Pinia stores (state management)
 │   ├── types/               # TypeScript type definitions
-│   ├── histoire-setup.ts    # Histoire configuration/setup
 │   ├── App.vue              # Root component
 │   └── env.d.ts             # Environment type definitions
 ├── src-pwa/                 # PWA-specific files
@@ -327,7 +326,6 @@ wodore-frontend-quasar/
 ├── .env                     # Environment variables (committed)
 ├── .env.local               # Local overrides (gitignored)
 ├── .env.[dev|prod]          # Environment-specific vars
-├── histoire.config.ts       # Histoire configuration
 ├── quasar.config.ts         # Quasar framework configuration
 ├── Dockerfile               # Multi-stage Docker build
 └── package.json             # Dependencies and scripts
@@ -385,7 +383,7 @@ pnpm gen:api-local  # Local development API
 - **Package Manager**: Yarn
 - **Linting**: ESLint with TypeScript and Vue plugins
 - **Formatting**: Prettier
-- **Component Development**: [Histoire](https://histoire.dev/) - Component story/playground tool
+- **Component Development**: [Storybook](https://storybook.js.org/) 10 - Component story/playground tool (`pnpm sb:dev`; Histoire retired 2026-11)
 - **Icons**:
   - [Quasar Icons](https://quasar.dev/vue-components/icon) (Material Icons, etc.)
   - Custom `wd` icons via [Fantasticon](https://github.com/tancredi/fantasticon)

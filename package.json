@@ -22,9 +22,6 @@
     "allure:generate": "rm -rf allure-results/merged && mkdir -p allure-results/merged && cp -R allure-results/unit/. allure-results/merged/ && if [ -d allure-results/e2e ]; then cp -R allure-results/e2e/. allure-results/merged/; fi; rm -rf allure-report && allure generate allure-results/merged",
     "allure:open": "allure open allure-report",
     "allure:clean": "rm -rf allure-results allure-report playwright-report test-results",
-    "story:dev": "histoire dev",
-    "story:build": "histoire build",
-    "story:preview": "histoire preview",
     "sb:dev": "storybook dev --port 6006",
     "sb:build": "storybook build -o dist/storybook",
     "sb:preview": "npx serve dist/storybook",
@@ -55,13 +52,12 @@
     "gen:api-local": "node scripts/gen-api.mjs --local",
     "gen:api-version": "node scripts/gen-api.mjs --version",
     "preicons:fix": "npm exec -c 'mkdir -p src/extras/icons/svg/build/fixed && rm -rf src/extras/icons/svg/build/fixed/*'",
-    "icons:fix": "pnpm run oslllo-svg-fixer -s src/extras/icons/svg/source/ -d src/extras/icons/svg/build/fixed --sp",
+    "icons:fix": "oslllo-svg-fixer -s src/extras/icons/svg/source/ -d src/extras/icons/svg/build/fixed --sp",
     "pregen:icons": "pnpm run icons:fix",
     "gen:icons": "fantasticon src/extras/icons/svg/build/fixed -o src/extras/icons/dist -p wd --normalize -t woff woff2",
-    "gen:icons:watch": "watch 'pnpm run gen:icons' src/extras/icons/svg/source",
-    "postgen:icons": "node scripts/scope-icon-selectors.mjs && pnpm run eslint --fix src/extras/icons/dist/icons.ts",
-    "gen:favs": "icongenie generate -p src/assets/icongenie/",
-    "gen:realfavs": "real-favicon generate src/assets/realfavgen.json src/assets/realfavgen_result.json public/realfavgen"
+    "gen:icons:watch": "chokidar \"src/extras/icons/svg/source/**/*.svg\" -c \"pnpm run gen:icons\"",
+    "postgen:icons": "node scripts/scope-icon-selectors.mjs && pnpm exec eslint --fix src/extras/icons/dist/icons.ts",
+    "gen:favs": "icongenie generate -p src/assets/icongenie/"
   },
   "dependencies": {
     "@capacitor/core": "^8.5.3",
@@ -104,13 +100,11 @@
     "vue-i18n": "^11.4.23",
     "vue-inline-svg": "^4.0.1",
     "vue-router": "^5.4.0",
-    "vue3-text-clamp": "^0.1.2",
-    "watch": "^1.0.2"
+    "vue3-text-clamp": "^0.1.2"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^10.0.1",
-    "@histoire/plugin-vue": "^1.0.0-beta.1",
     "@iconify/json": "^2.2.202",
     "@intlify/unplugin-vue-i18n": "^11",
     "@playwright/test": "^1.58.2",
@@ -137,7 +131,6 @@
     "allure-playwright": "^3.13.0",
     "allure-vitest": "^3.15.0",
     "autoprefixer": "^10.4.2",
-    "cli-real-favicon": "^0.0.9",
     "dotenv": "^17.2.3",
     "esbuild": "^0.25.12",
     "eslint": "^10.12.0",
@@ -148,7 +141,6 @@
     "git-cliff": "^2.8.0",
     "git-rev-sync": "^3.0.2",
     "happy-dom": "^21.0.4",
-    "histoire": "^1.0.0-beta.1",
     "lint-staged": "^17.6.0",
     "maplibre-font-maker-node": "^0.5.0",
     "oslllo-svg-fixer": "^6.0.1",
@@ -163,7 +155,8 @@
     "vite-tsconfig-paths": "^6.0.5",
     "vitest": "^4.1.12",
     "vue-eslint-parser": "^10.4.1",
-    "vue-tsc": "^3.2.3"
+    "vue-tsc": "^3.2.3",
+    "chokidar-cli": "^3.0.0"
   },
   "engines": {
     "node": "^24 || ^22"
@@ -173,15 +166,13 @@
     "overrides": {
       "handlebars": "^4.7.10",
       "fast-xml-parser": "^5.12.0",
-      "undici": "^7.30.1",
       "piscina": "^4.9.4",
-      "markdown-it": "^14.3.3",
-      "shell-quote": "^1.11.0",
-      "launch-editor": "^2.14.2",
-      "brace-expansion@1": "^1.1.21",
-      "minimatch@3": "^3.1.4",
-      "js-yaml@3": "^3.15.2",
-      "defu": "^6.1.5"
+      "phin@2": "^3.7.1",
+      "workbox-build@7.4.0": "7.4.1",
+      "@xmldom/xmldom@0.7": "^0.8.15",
+      "glob@11": "14.0.6",
+      "glob@13": "14.0.6",
+      "glob@10": "14.0.6"
     }
   }
 }

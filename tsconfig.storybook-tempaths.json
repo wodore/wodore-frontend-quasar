@@ -29,6 +29,5 @@
     }
   },
   "include": ["src/**/*", "stories/**/*", ".storybook/**/*"],
-  "exclude": ["node_modules"],
-  "references": ["./src/env.d.ts", "./src/components.d.ts"]
+  "exclude": ["node_modules"]
 }
