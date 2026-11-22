@@ -18,7 +18,7 @@
  *    ?net=fast3g   … Fast-3G-ish                (?net=off disables)
  *    ?cache=off    no-store everywhere + the app bypasses its service
  *                  worker and clears CacheStorage (true cold loads;
- *                  see register-service-worker.ts)  (?cache=on restores)
+ *                  see register-sw.ts)  (?cache=on restores)
  *  Pair both for cold+slow splash testing: /?net=slow3g&cache=off */
 import http from 'node:http';
 import https from 'node:https';

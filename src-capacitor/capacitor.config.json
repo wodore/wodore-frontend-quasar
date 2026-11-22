@@ -1,8 +1,0 @@
-{
-  "appId": "com.wodore.app",
-  "appName": "Wodore",
-  "webDir": "www",
-  "android": {
-    "adjustMarginsForEdgeToEdge": "disable"
-  }
-}
