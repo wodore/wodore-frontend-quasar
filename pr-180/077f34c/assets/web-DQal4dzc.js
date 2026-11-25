@@ -1,0 +1,2 @@
+import{r as e}from"./dist-DHjjB8zm.js";var t=class extends e{async getAppUpdateInfo(){throw Error(`Web platform is not supported.`)}async openAppStore(){throw Error(`Web platform is not supported.`)}async performImmediateUpdate(){throw Error(`Web platform is not supported.`)}async startFlexibleUpdate(){throw Error(`Web platform is not supported.`)}async completeFlexibleUpdate(){throw Error(`Web platform is not supported.`)}};export{t as AppUpdateWeb};
+//# sourceMappingURL=web-DQal4dzc.js.map

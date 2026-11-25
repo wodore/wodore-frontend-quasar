@@ -1,0 +1,2 @@
+function e(){if(typeof window>`u`)return!0;try{let e=window.localStorage.getItem(`umami.disabled`);return e!==null&&e!==`false`}catch{return!1}}function t(t,n){if(!e()){if(typeof umami<`u`)console.debug(`track data: "`+t+`"`,n),umami.track(t,n);else{console.warn(`Umami is not available.`);return}}}function n(n,r,i=15e3){if(typeof window>`u`||e())return;let a=()=>typeof umami>`u`?!1:(t(n,r),!0);if(a())return;let o=Date.now(),s=window.setInterval(()=>{(a()||Date.now()-o>=i)&&window.clearInterval(s)},500)}export{n,e as r,t};
+//# sourceMappingURL=analytics-e_6Bryie.js.map

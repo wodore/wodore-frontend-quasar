@@ -1,0 +1,2 @@
+var e=typeof window<`u`?window.__WODORE_RUNTIME_ENV__??{}:{};function t(e){return e!==void 0&&e!==``&&!e.startsWith(`@@`)}function n(n){let r=e[n];if(t(r))return r;if(typeof process<`u`)return{}[n]}export{n as t};
+//# sourceMappingURL=runtimeEnv-DKvZiFrV.js.map

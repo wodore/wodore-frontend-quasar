@@ -1,0 +1,2 @@
+import{V as e,_ as t,g as n,q as r,w as i,xt as a}from"./map-shell-stores-CvUbSTfv.js";import{t as o}from"./useActiveDetailEntry-Bfdr7OEf.js";var s=i({__name:`WdDetailBodyHost`,props:{slug:{}},setup(i){let{body:s}=o();return(o,c)=>a(s)?(e(),n(r(a(s)),{key:0,slug:i.slug},null,8,[`slug`])):t(``,!0)}});export{s as default};
+//# sourceMappingURL=WdDetailBodyHost-Bi0tgy8W.js.map

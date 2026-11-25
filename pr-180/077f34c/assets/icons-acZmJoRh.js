@@ -1,0 +1,2 @@
+import{ft as e}from"./quasar-BWgRr4UO.js";var t=e(({app:e})=>{e.config.globalProperties.$q.iconMapFn=e=>{if(e.startsWith(`wd-`)===!0)return{cls:`wd `+e}}});export{t as default};
+//# sourceMappingURL=icons-acZmJoRh.js.map

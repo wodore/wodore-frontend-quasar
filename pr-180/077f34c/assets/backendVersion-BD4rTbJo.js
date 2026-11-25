@@ -1,0 +1,2 @@
+import{t as e}from"./clients-OGR-0RE4.js";var t=3e5,n=null,r=null;function i(){return n&&Date.now()-n.at<t?n.info:null}async function a(){let t=i();if(t)return t;r??=(async()=>{let{data:t,error:r}=await e.GET(`/v1/version`,{});if(r||!t)throw Error(r?JSON.stringify(r):`no version payload`);let i=t,a={version:i.version??``,hash:i.hash??``,hashLong:i.hash_long??``,api:i.api};return n={at:Date.now(),info:a},a})();try{return await r}finally{r=null}}export{a as t};
+//# sourceMappingURL=backendVersion-BD4rTbJo.js.map

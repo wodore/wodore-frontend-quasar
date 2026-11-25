@@ -1,0 +1,2 @@
+function e(e,t=1500){return typeof window>`u`?Promise.resolve().then(e):typeof window.requestIdleCallback==`function`?new Promise(n=>{window.requestIdleCallback(()=>n(e()),{timeout:t})}):new Promise(t=>{window.setTimeout(()=>t(e()),200)})}export{e as t};
+//# sourceMappingURL=idle-Do76yWnA.js.map

@@ -1,0 +1,2 @@
+import{ct as e}from"./quasar-BWgRr4UO.js";import{V as t,g as n,q as r,rt as i,w as a}from"./map-shell-stores-CvUbSTfv.js";var o=a({__name:`QIconify`,props:{is:{}},setup(a){return(o,s)=>(t(),n(e,null,{default:i(()=>[(t(),n(r(a.is)))]),_:1}))}});export{o as t};
+//# sourceMappingURL=QIconify-BfCAGu7H.js.map

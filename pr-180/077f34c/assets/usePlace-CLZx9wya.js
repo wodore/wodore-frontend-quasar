@@ -1,0 +1,2 @@
+import{m as e,mt as t}from"./map-shell-stores-CvUbSTfv.js";import{a as n,c as r,l as i,o as a,u as o}from"./selection-store-D26NVR4X.js";var s=e=>o({source:`geoplace`,id:e});function c(e,t,n){if(!e)return;let i=a(t,n);i&&r(s(e),i)}function l(r){let a=e(()=>r.value?{key:s(r.value),source:`geoplace`,id:r.value,props:{}}:null),o=t(n),{detail:c,loading:l,error:u,refetch:d}=i(a,{entry:o});return{place:e(()=>c.value?c.value:void 0),loading:l,error:u,refetch:d}}export{l as n,c as t};
+//# sourceMappingURL=usePlace-CLZx9wya.js.map
