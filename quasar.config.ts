@@ -386,6 +386,14 @@ export default defineConfig(ctx => {
           if (id.includes('maplibre-gl-worker') || id.includes('?worker')) {
             return undefined;
           }
+          // The NATIVE map bridge (@capawesome/capacitor-maplibre) must
+          // NOT match this rule despite its name: pinning it here drags
+          // @capacitor/core — a boot-path module — into the maplibre vendor
+          // chunk, which puts the full 250 KB vendor chunk on the entry's
+          // static import list (measured: boot 541 -> 800 KB). It belongs
+          // in the lazy WdNativeMapView chunk; exclude the whole @capawesome
+          // scope and let the generic path below assign it.
+          if (id.includes('@capawesome/')) return undefined;
           if (id.includes('maplibre-gl') || id.includes('vue-maplibre-gl')) {
             return 'maplibre';
           }
