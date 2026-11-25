@@ -18,7 +18,7 @@ import {
   useEventListener,
   useMediaQuery,
 } from '@vueuse/core';
-import { useQuasar } from 'quasar';
+import { useQuasar, Platform } from 'quasar';
 import { useBasemapStore, mapProfileForTier } from '@stores/map/basemap-store';
 import { useOverlayStore } from '@stores/map/overlay-store';
 import { useMapCatalogStore } from '@stores/map/map-catalog-store';
@@ -27,6 +27,15 @@ import { startRevealLoop } from './reveal-scheduler';
 // Non-WebGL fallback (POC): Leaflet + clustered hut dots, async-loaded
 // so the Leaflet chunk never downloads for WebGL users.
 const WdFallbackMapView = defineAsyncComponent(() => import('./WdFallbackMapView.vue'));
+// Capacitor (PoC): the NATIVE MapLibre SDK renders behind the WebView
+// (@capawesome/capacitor-maplibre) — async so web builds never pull the
+// plugin's JS bridge into the MapPage chunk.
+const WdNativeMapView = defineAsyncComponent(() => import('./WdNativeMapView.vue'));
+
+// Renderer choice: native on Capacitor, else MapLibre GL JS when WebGL is
+// available, else the Leaflet fallback (see the template's v-if chain).
+// The overlay strip + basemap rail are shared by all three.
+const isNativeCapacitor = !!Platform.is.capacitor;
 import { useLocalPropertiesStore } from '@stores/local-properties-store';
 import { showErrorDialogPersistent, ErrorCode } from '@components/error';
 import type { Map, PaddingOptions } from 'maplibre-gl';
@@ -2392,8 +2401,10 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
   <!-- @map:render="onMapRender" -->
   <q-no-ssr>
     <div ref="mapDiv" class="wd-map-fill" :class="{ 'wd-map-fill--rendered': mapRendered }">
+      <!-- Capacitor (PoC): native MapLibre map behind the WebView. -->
+      <WdNativeMapView v-if="isNativeCapacitor" />
       <MglMap
-        v-if="webglSupported"
+        v-else-if="webglSupported"
         @map:load="onMapLoad"
         @map:error="onMapError"
         @map:styledata="onMapStyledata"
@@ -2505,7 +2516,7 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
       <!-- Non-WebGL fallback (POC): Leaflet + clustered hut dots. Reveals
            through the same choreography (splash out, chrome in) once the
            fallback map is initialized. -->
-      <WdFallbackMapView v-else @ready="onFallbackReady" />
+      <WdFallbackMapView v-else-if="!isNativeCapacitor" @ready="onFallbackReady" />
 
       <!-- ── Shared control strip (hoisted out of the MglMap slot) ──────
            Renders in BOTH modes so the Leaflet fallback gets THE SAME
@@ -2520,12 +2531,14 @@ function onMapStyledata(e: MglEvent<'styledata'>) {
            containers in DOM order and wins ties. -->
       <q-page-sticky
         position="bottom-right"
-        :offset="webglSupported ? [12, 14] : [12, 66]"
+        :offset="isNativeCapacitor || webglSupported ? [12, 14] : [12, 66]"
         class="wd-map-ctl-sticky"
       >
         <div class="wd-map-ctl-col">
-          <WdOverlayControl :renderer-profile="webglSupported ? 'full' : 'subset'" />
-          <WdBasemapControl v-if="webglSupported" />
+          <WdOverlayControl
+            :renderer-profile="isNativeCapacitor || webglSupported ? 'full' : 'subset'"
+          />
+          <WdBasemapControl v-if="isNativeCapacitor || webglSupported" />
         </div>
       </q-page-sticky>
       <!-- Translucent footer shade (native app): keeps the attribution
