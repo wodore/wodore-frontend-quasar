@@ -10,6 +10,13 @@ import { getGPUTier } from '@pmndrs/detect-gpu';
 import { useOverlayStore } from './overlay-store';
 import { withOverlayMinZoom } from './utils/map-constants';
 import {
+  hideReplacedPresence,
+  presenceFamilies,
+  presenceVisibility,
+  resolveOverlayAnchor,
+  type PresenceOwner,
+} from './utils/basemap-presence';
+import {
   withCountryFallback,
   isCenterInBbox,
   COUNTRY_BASEMAP_MIN_ZOOM,
@@ -390,6 +397,7 @@ export const useBasemapStore = defineStore('basemap', () => {
     const inBbox = isCenterInBbox([center.lng, center.lat], countryBbox);
     const countryVisible = inBbox;
     const fallbackVisible = !inBbox || map.getZoom() < countryMinZoom;
+    let changed = false;
     if (countryVisible !== lastCountryVisible) {
       for (const id of countryLayerIds) {
         if (map.getLayer(id)) {
@@ -397,6 +405,7 @@ export const useBasemapStore = defineStore('basemap', () => {
         }
       }
       lastCountryVisible = countryVisible;
+      changed = true;
     }
     if (fallbackVisible !== lastFallbackVisible) {
       for (const id of fallbackLayerIds) {
@@ -405,6 +414,43 @@ export const useBasemapStore = defineStore('basemap', () => {
         }
       }
       lastFallbackVisible = fallbackVisible;
+      changed = true;
+    }
+    // The sweep sets EVERY default-basemap layer visible — the composed
+    // presence layers included. Re-apply the always-replace contract so
+    // an active overlay's family stays replaced across the transition.
+    if (changed) syncPresenceVisibility();
+  }
+
+  /** Always-replace contract on the LIVE style (backend #506, see
+   *  utils/basemap-presence.ts): every basemap-owned presence layer
+   *  (`wd-basemap-<family>-*`) is hidden while an overlay of its family
+   *  is active and visible otherwise. Idempotent — the overlay control
+   *  runs it after every toggle/group switch, the country-fallback sweep
+   *  after its own visibility pass. Basemap switches are covered by
+   *  transformStyle baking the same state into the new document. */
+  function syncPresenceVisibility(): void {
+    const map = mapRef.map;
+    if (!map) return;
+    // SAFETY: overlays is the reactive OverlaySwitchItem[]; the widened
+    // cast reads name/catalogSlug/active only (TS2589, same as the other
+    // casts in this file).
+    const families = presenceFamilies(overlayStore.overlays as unknown as PresenceOwner[]);
+    if (families.length === 0) return;
+    // Beneath a country raster the default basemap is switched off as a
+    // whole (country-fallback.ts): presence layers the sweep keeps
+    // hidden stay hidden — "restoring" them would only flash through
+    // while the raster tiles load.
+    const hiddenByCountry = lastFallbackVisible === false ? fallbackLayerIds : [];
+    for (const layer of map.getStyle().layers) {
+      const visibility = presenceVisibility(layer.id, families);
+      if (visibility === undefined) continue;
+      if (visibility === 'visible' && hiddenByCountry.includes(layer.id)) continue;
+      // Only layers that actually change: an untouched style carries no
+      // explicit visibility on its presence layers — keep it that way
+      // (no layout write, no re-render) for families that are simply off.
+      if ((map.getLayoutProperty(layer.id, 'visibility') ?? 'visible') === visibility) continue;
+      map.setLayoutProperty(layer.id, 'visibility', visibility);
     }
   }
 
@@ -766,7 +812,25 @@ export const useBasemapStore = defineStore('basemap', () => {
         // Build ordered layer array based on basemap's layer configuration
         // Handle case where nextStyle.layers might not be iterable
         const nextLayers = Array.isArray(nextStyle.layers) ? nextStyle.layers : [];
-        const orderedLayers = [...nextLayers];
+        // Presence layers the backend composed into the INCOMING basemap
+        // (wd-basemap-<family>-*): an active overlay of the family
+        // replaces its presence, so the new style must arrive with those
+        // layers hidden — the only hook before MapLibre applies the
+        // document (a new style resets every runtime layout property,
+        // hence on EVERY basemap switch; see utils/basemap-presence.ts).
+        // SAFETY: overlays is the reactive OverlaySwitchItem[]; the widened
+        // cast only narrows the read to name/catalogSlug/active — fields
+        // every catalog item sets (TS2589 recursion break, same as the
+        // other casts in this file).
+        const presence = presenceFamilies(overlayStore.overlays as unknown as PresenceOwner[]);
+        const baseLayers = presence.some(f => f.hidden)
+          ? nextLayers.map(layer => hideReplacedPresence(layer, presence))
+          : nextLayers;
+        // The incoming basemap's own layer order — the overlay anchors
+        // resolve against it by id, so layers inserted further down
+        // never shift the result.
+        const baseLayerIds = baseLayers.map(layer => layer.id);
+        const orderedLayers = [...baseLayers];
 
         // Helper to insert layers before a specific layer ID
         function insertLayersBefore(
@@ -826,9 +890,7 @@ export const useBasemapStore = defineStore('basemap', () => {
                     : [{ id: 'default', url: nextStyle.sprite }]),
                   ...customSprites,
                 ]
-              : customSprites.length > 0
-                ? customSprites
-                : undefined,
+              : undefined,
           };
           // SAFETY: fallbackComposed is our own StyleSpecification-typed
           // object built above; the unknown hop only widens it to pin's
@@ -888,8 +950,19 @@ export const useBasemapStore = defineStore('basemap', () => {
         // layers (always on top)
         insertLayersBefore(backgroundLayers, currentBasemap.layers.background.before, 'background');
         insertLayersBefore(routesLayers, currentBasemap.layers.routes?.before, 'routes');
-        insertLayersBefore(waysLayers, currentBasemap.layers.ways.before, 'ways');
-        insertLayersBefore(placesLayers, currentBasemap.layers.places?.before, 'places');
+        // Icon overlays (ways/places): the basemap's anchor, capped below
+        // the keeper-label band — major city/peak labels render over the
+        // icons. Unanchored ways overlays used to append on top.
+        insertLayersBefore(
+          waysLayers,
+          resolveOverlayAnchor(currentBasemap.layers.ways.before, 'ways', baseLayerIds),
+          'ways'
+        );
+        insertLayersBefore(
+          placesLayers,
+          resolveOverlayAnchor(currentBasemap.layers.places?.before, 'places', baseLayerIds),
+          'places'
+        );
         insertLayersBefore(otherLayers, undefined, 'other');
 
         // Combine sprites
@@ -1566,6 +1639,7 @@ export const useBasemapStore = defineStore('basemap', () => {
     gpuSpecReady,
     findBasemapBySlug,
     resolveFallbackBasemap,
+    syncPresenceVisibility,
     //setEmitter,
   };
 });

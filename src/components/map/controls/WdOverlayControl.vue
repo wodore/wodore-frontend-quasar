@@ -34,6 +34,8 @@ import {
   type LayerGroup,
 } from '@stores/map/utils/layer-groups';
 import { withOverlayMinZoom } from '@stores/map/utils/map-constants';
+import { resolveOverlayAnchor } from '@stores/map/utils/basemap-presence';
+import { shareSpriteImages } from '@stores/map/utils/sprite-sheets';
 import { isDateGatedLayer, dateGatedVisibility } from '@stores/map/utils/overlay-huts';
 import { useI18n } from 'vue-i18n';
 import { LocalStorage } from 'quasar';
@@ -1147,6 +1149,17 @@ function applyGroupStateToMap(): void {
       setOverlayVisibility(item);
     }
   }
+  syncPresence();
+}
+
+/** Always-replace contract (backend #506): an ACTIVE overlay hides its
+ *  family's passive basemap presence (wd-basemap-<family>-* in the
+ *  basemap style), an inactive one restores it. Run once per action that
+ *  flips `active` — toggle, group switch, boot/catalog re-add — after the
+ *  overlay layers settled (basemap switches bake the same state into the
+ *  incoming style via transformStyle). */
+function syncPresence(): void {
+  basemapStore.syncPresenceVisibility();
 }
 
 /** Title dropdown: switch directly to a group */
@@ -1200,6 +1213,9 @@ interface AddOverlayLayerArgs {
   onLayer?: OverlaySwitchItem['onLayer'];
   defaultOpacity?: OpacitySpecification;
   beforeId?: string | undefined;
+  /** Active style's layer ids in order — the anchor resolver's view of
+   *  the map. Omitted: read from the map (one getStyle() per layer). */
+  styleLayerIds?: readonly string[];
 }
 
 function addOverlayLayer({
@@ -1207,6 +1223,7 @@ function addOverlayLayer({
   onLayer,
   defaultOpacity,
   beforeId,
+  styleLayerIds,
 }: AddOverlayLayerArgs): boolean {
   // Far zoomed-out view: overlays never render below the zoom floor — layers
   // reappear automatically when the camera zooms back in (see
@@ -1230,6 +1247,17 @@ function addOverlayLayer({
   if (_beforeId === undefined && onLayer) {
     _beforeId = basemap?.layers[onLayer]?.before;
   }
+  // Icon overlays (ways/places) never land above the basemap's
+  // keeper-label band: MapLibre places the topmost symbol layer first,
+  // so an overlay on top of the labels evicts them on collision (owner
+  // report 2026-11-23 — toggling accommodations blanked every city/peak
+  // label). Unanchored overlays used to append at the very end; they
+  // now settle right below the major city/peak labels.
+  _beforeId = resolveOverlayAnchor(
+    _beforeId,
+    onLayer,
+    styleLayerIds ?? mapRef.map?.getStyle().layers.map(l => l.id) ?? []
+  );
   if (_beforeId !== undefined && mapRef.map?.getLayer(_beforeId) === undefined) {
     // Startup race: the first style applied to the map can be the world
     // fallback (or a cached variant) without the basemap's label anchors.
@@ -1462,6 +1490,21 @@ function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwit
         mapRef.map?.removeSprite(id);
         swappedSpriteIds.add(id);
       }
+      // MapLibre admits ONE sprite id per URL and rejects addSprite
+      // silently otherwise: a DIFFERENT id already at this sheet (the
+      // family's basemap presence pack — transport's `wd-transport` vs
+      // `wd-basemap-transport`; huts' `wd-sdf` vs the accommodations
+      // presence) would leave this overlay's images unregistered and its
+      // icons undrawn. The holder may have visible layers of its own (huts
+      // is on by default), so nothing is evicted: the loaded sheet is
+      // shared — its images registered under this id too (see
+      // utils/sprite-sheets.ts).
+      const map = mapRef.map;
+      const sheetHolder = map?.getSprite().find(e => e.url === url);
+      if (sheetHolder && map) {
+        pendingSprites.push(shareSpriteImages(map, sheetHolder.id, id).then(() => undefined));
+        return;
+      }
       mapRef.map?.addSprite(id, url);
       // addSprite is async but has no completion callback in this MapLibre
       // version — wait for a known image from this sprite (shared, backed
@@ -1513,6 +1556,10 @@ function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwit
     }
   }
   const beforeId = findBeforeLayerId(overlay, overlaysOrder);
+  // One snapshot of the style's layer order for every layer of this
+  // overlay: the anchor resolver looks ids up by position, and layers
+  // added below never reorder the ones already present.
+  const styleLayerIds = mapRef.map?.getStyle().layers.map(l => l.id) ?? [];
   let allAdded = true;
   for (const layer of overlay.style.layers) {
     // Date-gated availability layers carry the PICKED-DATE visibility
@@ -1533,6 +1580,7 @@ function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwit
       defaultOpacity: overlay.opacity as OpacitySpecification,
       onLayer: overlay.onLayer,
       beforeId,
+      styleLayerIds,
     });
     if (added) addedLayerIds.add(layer.id);
     else allAdded = false;
@@ -1552,6 +1600,7 @@ function addOverlays(): void {
   for (const overlay of overlaysOrder) {
     if (overlay.active) addOverlay(overlay, overlaysOrder);
   }
+  syncPresence();
   configStore.reapplyAllFilters();
 }
 
@@ -1696,6 +1745,7 @@ function toggleLayer(item: OverlaySwitchItem): void {
     addOverlay(item, getOverlaysInRenderOrder());
   }
   setOverlayVisibility(item);
+  syncPresence();
 }
 
 // Map lifecycle: re-add overlays on EVERY style load (basemap switches
