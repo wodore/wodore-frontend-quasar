@@ -3,8 +3,9 @@
     Native MapLibre map (@capawesome/capacitor-maplibre) — Capacitor only.
     Renders a native map view BEHIND the WebView: the map div must stay
     empty and body/#q-app/.q-layout/.q-page/.wd-map-fill are made
-    transparent via the body class toggled below. Siblings (switches,
-    footer shade) float above the map as usual.
+    transparent via the body class toggled below. The overlay strip,
+    basemap rail and footer shade are the parent's (WdMapView) shared
+    chrome and float above the map as usual.
 
     Style strategy: the app's basemaps and overlays are MapLibre style
     fragments already — compose them into one full style JSON and
@@ -14,21 +15,10 @@
   <div class="wd-native-map-root">
     <div :id="mapElementId" class="wd-native-map-div"></div>
 
-    <!-- Map controls as DOM overlays (QPageSticky-based, work over the
-         native map): basemap switch + overlay switch. Geolocate /
-         navigation / scale / attribution controls are web-only for now. -->
-    <WdBasemapSwitch
-      :position="$q.platform.is.mobile ? 'bottom-right' : 'top-left'"
-      :direction="$q.platform.is.mobile ? 'left' : 'right'"
-      :offset="[$q.platform.is.mobile ? 12 : 12, $q.platform.is.mobile ? 20 : 14]"
-    />
-    <WdOverlaySwitch
-      position="top-left"
-      direction="down"
-      :offset="[$q.platform.is.mobile ? 12 : 12, $q.platform.is.mobile ? 12 : 68]"
-    />
-
-    <div class="map-footer-shade" aria-hidden="true"></div>
+    <!-- No controls here: the overlay strip + basemap rail are rendered
+         by WdMapView's shared control stack (same one the WebGL and
+         fallback renderers use) — this component is only the native map
+         surface behind the WebView. -->
 
     <!-- Scale bar (DOM overlay — MapLibre Native has no scale widget
          exposed through the plugin; computed from the camera) -->
@@ -41,7 +31,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useQuasar } from 'quasar';
 import type { LayerSpecification, StyleSpecification } from 'maplibre-gl';
 import { MapLibre } from '@capawesome/capacitor-maplibre';
 import type { PluginListenerHandle } from '@capacitor/core';
@@ -54,15 +43,13 @@ import { useHutsStore } from '@stores/huts-store';
 import { clientWodore } from '@clients/index';
 import openfreemapBrightStyle from '@assets/map-styles/openfreemap-bright.json';
 import type { Feature, FeatureCollection, Point } from 'geojson';
-import WdBasemapSwitch from './WdBasemapSwitch.vue';
-import WdOverlaySwitch from './WdOverlaySwitch.vue';
+import type { BasemapSwitchItem, OverlaySwitchItem } from '@stores/map/utils/interfaces';
 
 const MAP_ID = 'wd-native-map';
 const mapElementId = 'wd-native-map-element';
 const SELECT_ZOOM = 12;
 const MIN_FLY_ZOOM = 9;
 
-const $q = useQuasar();
 const route = useRoute();
 const router = useRouter();
 const basemapStore = useBasemapStore();
@@ -116,6 +103,25 @@ function probeMaptiler(): Promise<boolean> {
   return maptilerProbe;
 }
 
+// `basemaps` is a reactive() array whose element type deep-unwraps into
+// the recursive StyleSpecification union — Array.find on it directly trips
+// TS2589 (excessively deep instantiation). Same widened cast the store
+// itself uses (basemap-store getBasemapByName).
+// Plain-type view of the reactive overlay list — Array.map/filter on the
+// reactive() array trips TS2589 (recursive spec union), same as basemaps.
+function overlaySnapshot(): OverlaySwitchItem[] {
+  return overlayStore.overlays as unknown as OverlaySwitchItem[];
+}
+function overlayStateString(): string {
+  return overlaySnapshot()
+    .map(o => `${o.name}:${o.active ? 1 : 0}`)
+    .join('|');
+}
+
+function findBasemapByName(name: string): BasemapSwitchItem | undefined {
+  return (basemapStore.basemaps as unknown as BasemapSwitchItem[]).find(b => b.name === name);
+}
+
 async function resolveBasemapStyle(): Promise<StyleSpecification> {
   const resolved = await resolveBasemapStyleInner();
   // Inline styles can still depend on MapTiler tiles — probe and fall
@@ -125,13 +131,13 @@ async function resolveBasemapStyle(): Promise<StyleSpecification> {
       console.warn(
         '[WdNativeMapView] Basemap uses MapTiler tiles but the key is dead — falling back'
       );
-      const ofm = basemapStore.basemaps.find(b => b.name === 'openfreemap-bright');
+      const ofm = findBasemapByName('openfreemap-bright');
       if (ofm) {
         console.debug('[WdNativeMapView] resolve: fallback -> openfreemap-bright (bundled)');
         basemapStore.setBasemap(ofm);
         return JSON.parse(JSON.stringify(openfreemapBrightStyle));
       }
-      const full = basemapStore.basemaps.find(b => b.name === 'ch-swisstopo-full');
+      const full = findBasemapByName('ch-swisstopo-full');
       if (full && typeof full.style !== 'string') {
         console.debug('[WdNativeMapView] resolve: fallback -> ch-swisstopo-full');
         basemapStore.setBasemap(full);
@@ -172,14 +178,14 @@ async function resolveBasemapStyleInner(): Promise<StyleSpecification> {
       // natively. Fall back to the keyless OpenFreeMap vector style
       // (the store's designated fallback), then swisstopo-full raster.
       console.warn(`[WdNativeMapView] resolve: fetch failed (${style})`, e);
-      const ofm = basemapStore.basemaps.find(b => b.name === 'openfreemap-bright');
+      const ofm = findBasemapByName('openfreemap-bright');
       if (ofm) {
         // Bundled style — works even when the WebView cannot fetch it
         console.debug('[WdNativeMapView] resolve: fallback -> openfreemap-bright (bundled)');
         basemapStore.setBasemap(ofm);
         return JSON.parse(JSON.stringify(openfreemapBrightStyle));
       }
-      const full = basemapStore.basemaps.find(b => b.name === 'ch-swisstopo-full');
+      const full = findBasemapByName('ch-swisstopo-full');
       if (full && typeof full.style !== 'string') {
         console.debug('[WdNativeMapView] resolve: fallback -> ch-swisstopo-full');
         basemapStore.setBasemap(full);
@@ -575,17 +581,16 @@ watch(
 // the real opacity. The overlaysEpoch (backend catalog swap) and
 // parametersEpoch (live parameter re-resolution) ride the same key so
 // composed native style always reflects the current catalog items.
-let lastOverlayState = overlayStore.overlays.map(o => `${o.name}:${o.active ? 1 : 0}`).join('|');
+let lastOverlayState = overlayStateString();
 let revealTimer: ReturnType<typeof setTimeout> | undefined;
 watch(
-  () =>
-    `${overlayStore.overlays.map(o => `${o.name}:${o.active ? 1 : 0}`).join('|')}#${overlayStore.overlaysEpoch}#${overlayStore.parametersEpoch}`,
+  () => `${overlayStateString()}#${overlayStore.overlaysEpoch}#${overlayStore.parametersEpoch}`,
   next => {
     const prevState = lastOverlayState;
     lastOverlayState = next;
     clearTimeout(revealTimer);
     const newlyOn = new Set(
-      overlayStore.overlays
+      overlaySnapshot()
         .filter(o => o.active && !prevState.includes(`${o.name}:1`))
         .map(o => o.name)
     );

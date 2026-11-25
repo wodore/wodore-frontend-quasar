@@ -9,26 +9,29 @@ importers:
   .:
     dependencies:
       '@capacitor/android':
-        specifier: ^7.0.0
-        version: 7.6.9(@capacitor/core@7.6.9)
+        specifier: ^8.6.2
+        version: 8.6.2(@capacitor/core@8.6.2)
       '@capacitor/app':
-        specifier: ^7.0.0
-        version: 7.1.2(@capacitor/core@7.6.9)
+        specifier: ^8.1.2
+        version: 8.1.2(@capacitor/core@8.6.2)
       '@capacitor/cli':
-        specifier: ^7.0.0
-        version: 7.6.9
+        specifier: ^8.6.2
+        version: 8.6.2
       '@capacitor/core':
-        specifier: ^7.0.0
-        version: 7.6.9
+        specifier: ^8.6.2
+        version: 8.6.2
       '@capacitor/preferences':
         specifier: ^8.0.1
-        version: 8.0.1(@capacitor/core@7.6.9)
+        version: 8.0.1(@capacitor/core@8.6.2)
       '@capacitor/splash-screen':
         specifier: ^8.0.2
-        version: 8.0.2(@capacitor/core@7.6.9)
+        version: 8.0.2(@capacitor/core@8.6.2)
       '@capawesome/capacitor-app-update':
-        specifier: ^7.2.0
-        version: 7.2.0(@capacitor/core@7.6.9)
+        specifier: ^8.1.1
+        version: 8.1.1(@capacitor/core@8.6.2)
+      '@capawesome/capacitor-maplibre':
+        specifier: ^0.2.4
+        version: 0.2.4(@capacitor/core@8.6.2)
     devDependencies:
       '@capacitor/assets':
         specifier: ^4.0.0
@@ -39,28 +42,28 @@ importers:
 
 packages:
 
-  '@capacitor/android@7.6.9':
-    resolution: {integrity: sha512-jvfU42aOuj92/KJqRscfDm+5612WzJainFL09xjJgD9oI3OMXN4PBfccn8Ig9i8x7bkVqZv/XNwFshiIRqmggg==}
+  '@capacitor/android@8.6.2':
+    resolution: {integrity: sha512-dWXnXmOVTtxU91n5h11MzoQ7PAMjyzU1qguw0mBJZiwSuhGvLKTG/IlsQ75H8qeE0a1acV2f573x15wYvyzuVA==}
     peerDependencies:
-      '@capacitor/core': ^7.6.0
+      '@capacitor/core': ^8.6.0
 
-  '@capacitor/app@7.1.2':
-    resolution: {integrity: sha512-d4I/oF/PRu4megL7/IGKYfe5j7yzSON1FRFgq6kH+m5kH6g7V+wyjHRLauCzGNjdRx4S+nWOumINds0qcRBtKg==}
+  '@capacitor/app@8.1.2':
+    resolution: {integrity: sha512-uKBlsrXH0IdvUn69e/KKYbZ32A06pcrUdG8LWuZ/6y33YMXZXLEEdNSwl+jKS/SrsTWqnePs8EqSWaiQM3mUGA==}
     peerDependencies:
-      '@capacitor/core': '>=7.0.0'
+      '@capacitor/core': '>=8.0.0'
 
   '@capacitor/assets@4.0.0':
     resolution: {integrity: sha512-6fi6bYunaawAZ9kkbJheB1Kon7AbqS3AYblQ2ocAnHGyO7YQX3gsgcH7hptklrpbcLT8B6KMyuBZqfDgChCyrw==}
     engines: {node: '>=20.9.0'}
     hasBin: true
 
-  '@capacitor/cli@7.6.9':
-    resolution: {integrity: sha512-QBDEf38yBAFTJehbi5FvAmhDWV1I/e7Zr3Z6XX0Bj+9T+/OY5EkGbw5/1e+3oIyyeepq3WtdSkLWHs3VNH2gCA==}
-    engines: {node: '>=20.0.0'}
+  '@capacitor/cli@8.6.2':
+    resolution: {integrity: sha512-3HeNPX3cEWBSljJT0sJviZCxXRoToTLAufhUcIJh+JMj1xOhLFZpuj8oFRnJ0kNYAf7DIBHQDmilIXloK9+YYg==}
+    engines: {node: '>=22.0.0'}
     hasBin: true
 
-  '@capacitor/core@7.6.9':
-    resolution: {integrity: sha512-4DOh/xySC9S5ryhUIqpOppasIyi2WiTdF0JuZ/2DEs+vf5eunRzHDdNYBp1snA3faHciTw/3SVGXfR+WkYxsMA==}
+  '@capacitor/core@8.6.2':
+    resolution: {integrity: sha512-UEb9crRuqEAe2Iu2eGOEuQ8rLQxpwg7ZZIpl17UJoytEpnV1e4oXXW0K7yYS2NsCOGmJjyLeKjNlgG7tkAoX8g==}
 
   '@capacitor/preferences@8.0.1':
     resolution: {integrity: sha512-T6no3ebi79XJCk91U3Jp/liJUwgBdvHR+s6vhvPkPxSuch7z3zx5Rv1bdWM6sWruNx+pViuEGqZvbfCdyBvcHQ==}
@@ -72,10 +75,19 @@ packages:
     peerDependencies:
       '@capacitor/core': '>=8.0.0'
 
-  '@capawesome/capacitor-app-update@7.2.0':
-    resolution: {integrity: sha512-fwPxR9tV5qecn3FSgwS5wBwlHDV9JND5dnY1iqIYnqRG2s/Oq0h32u4hV6+/zpDARJFMZycb3pddEfwLwhglEg==}
+  '@capawesome/capacitor-app-update@8.1.1':
+    resolution: {integrity: sha512-1TzM4hMN4wgCDu3O0UhaIIoVspUFNfNJ+q+K/EKSQRKkfCbG79S1Fn/sXwMdtMO1Me55LQxdjw1I9rctFtKBOQ==}
     peerDependencies:
-      '@capacitor/core': '>=7.0.0'
+      '@capacitor/core': '>=8.0.0'
+
+  '@capawesome/capacitor-maplibre@0.2.4':
+    resolution: {integrity: sha512-cHSaZel3h1HyMspz8fMKieJxO3sFEac+kmEThiePyNXCQSa4Btu+522LNTP9wbJAG+3YyT4Dvg2q1gIkTMIwDg==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
+      maplibre-gl: ^6.4.1
+    peerDependenciesMeta:
+      maplibre-gl:
+        optional: true
 
   '@emnapi/runtime@1.11.3':
     resolution: {integrity: sha512-Xz4Tpyki7XyrpbUK1jR1AhdAdaXyhhY4lZ3neLodmhpuWfy2PAQN5B46sAiU4liOXGLkHypn/qU+jvfWSCYYLA==}
@@ -795,13 +807,13 @@ packages:
 
 snapshots:
 
-  '@capacitor/android@7.6.9(@capacitor/core@7.6.9)':
+  '@capacitor/android@8.6.2(@capacitor/core@8.6.2)':
     dependencies:
-      '@capacitor/core': 7.6.9
+      '@capacitor/core': 8.6.2
 
-  '@capacitor/app@7.1.2(@capacitor/core@7.6.9)':
+  '@capacitor/app@8.1.2(@capacitor/core@8.6.2)':
     dependencies:
-      '@capacitor/core': 7.6.9
+      '@capacitor/core': 8.6.2
 
   '@capacitor/assets@4.0.0':
     dependencies:
@@ -822,7 +834,7 @@ snapshots:
       - encoding
       - supports-color
 
-  '@capacitor/cli@7.6.9':
+  '@capacitor/cli@8.6.2':
     dependencies:
       '@ionic/cli-framework-output': 2.2.8
       '@ionic/utils-subprocess': 3.0.1
@@ -840,25 +852,30 @@ snapshots:
       semver: 7.8.5
       tar: 7.5.22
       tslib: 2.8.1
+      xcode: 4.0.0
       xml2js: 0.6.2
     transitivePeerDependencies:
       - supports-color
 
-  '@capacitor/core@7.6.9':
+  '@capacitor/core@8.6.2':
     dependencies:
       tslib: 2.8.1
 
-  '@capacitor/preferences@8.0.1(@capacitor/core@7.6.9)':
+  '@capacitor/preferences@8.0.1(@capacitor/core@8.6.2)':
     dependencies:
-      '@capacitor/core': 7.6.9
+      '@capacitor/core': 8.6.2
 
-  '@capacitor/splash-screen@8.0.2(@capacitor/core@7.6.9)':
+  '@capacitor/splash-screen@8.0.2(@capacitor/core@8.6.2)':
     dependencies:
-      '@capacitor/core': 7.6.9
+      '@capacitor/core': 8.6.2
 
-  '@capawesome/capacitor-app-update@7.2.0(@capacitor/core@7.6.9)':
+  '@capawesome/capacitor-app-update@8.1.1(@capacitor/core@8.6.2)':
     dependencies:
-      '@capacitor/core': 7.6.9
+      '@capacitor/core': 8.6.2
+
+  '@capawesome/capacitor-maplibre@0.2.4(@capacitor/core@8.6.2)':
+    dependencies:
+      '@capacitor/core': 8.6.2
 
   '@emnapi/runtime@1.11.3':
     dependencies:
