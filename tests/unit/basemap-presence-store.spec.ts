@@ -152,17 +152,28 @@ const MTK_HILL_LAYERS: Array<Record<string, unknown>> = [
     type: 'symbol',
     source: 'wd-basemap-accommodations',
     minzoom: 10,
-    layout: { 'icon-image': 'wd-sdf-accommodations:mono/x', 'text-field': 'x' },
+    layout: { 'icon-image': 'wd-sdf-accommodations:mono/x' },
   },
-  // ONE symbol per presence: icon + name in a single placement box
-  // (separate icon/label layers collided and the label evicted its own
-  // icon when zoomed in — backend presence merge 2026-11-26)
   {
     id: 'wd-basemap-transit-stations', // 87
     type: 'symbol',
     source: 'wd-basemap-transitland-stops',
     minzoom: 13,
-    layout: { 'icon-image': 'wd-basemap-transport:mono/x', 'text-field': 'x' },
+    layout: { 'icon-image': 'wd-basemap-transport:mono/x' },
+  },
+  {
+    id: 'wd-basemap-transit-stations-label', // 88
+    type: 'symbol',
+    source: 'wd-basemap-transitland-stops',
+    minzoom: 14,
+    layout: { 'text-field': 'x' },
+  },
+  {
+    id: 'wd-basemap-accommodations-labels', // 89
+    type: 'symbol',
+    source: 'wd-basemap-accommodations',
+    minzoom: 15,
+    layout: { 'text-field': 'x' },
   },
   { id: 'place_point_label_rank_5', type: 'symbol', source: 'mtk', minzoom: 13 },
   { id: 'place_point_label_rank_4', type: 'symbol', source: 'mtk', minzoom: 10 },
@@ -398,6 +409,7 @@ describe('basemap store — presence ↔ overlay contract (transformStyle)', () 
     const outLayers = out.layers as unknown as Array<Record<string, unknown>>;
 
     expect(visibilityOf(outLayers, 'wd-basemap-accommodations-icons')).toBe('none');
+    expect(visibilityOf(outLayers, 'wd-basemap-accommodations-labels')).toBe('none');
     // transport-stops is OFF: its presence stays, the served layer object untouched
     const transitIndex = MTK_HILL_IDS.indexOf('wd-basemap-transit-stations');
     const transit = outLayers.find(l => l.id === 'wd-basemap-transit-stations');
@@ -408,7 +420,6 @@ describe('basemap store — presence ↔ overlay contract (transformStyle)', () 
       nextStyle.layers[MTK_HILL_IDS.indexOf('wd-basemap-accommodations-icons')].layout
     ).toEqual({
       'icon-image': 'wd-sdf-accommodations:mono/x',
-      'text-field': 'x', // icon + name, one symbol
     });
   });
 
@@ -459,8 +470,8 @@ describe('basemap store — presence ↔ overlay contract (transformStyle)', () 
     )!;
     transport.active = true;
     const outLayers = transform(basemapDoc()).layers as unknown as Array<Record<string, unknown>>;
-    expect(visibilityOf(outLayers, 'wd-basemap-transit-stations')).toBe('none');
-    expect(visibilityOf(outLayers, 'wd-basemap-transit-stations')).toBe('none');
+    expect(visibilityOf(outLayers, 'wd-basemap-transit-stations-label')).toBe('none');
+    expect(visibilityOf(outLayers, 'wd-basemap-transit-stations-label')).toBe('none');
     expect(visibilityOf(outLayers, 'wd-basemap-accommodations-icons')).toBe('none');
   });
 
@@ -544,11 +555,14 @@ describe('basemap store — presence sync on the live map', () => {
     store.syncPresenceVisibility();
 
     expect(visibilityOf(h.live.layers, 'wd-basemap-accommodations-icons')).toBe('none');
+    expect(visibilityOf(h.live.layers, 'wd-basemap-accommodations-labels')).toBe('none');
     // the family that is simply OFF stays exactly as served — no explicit
     // visibility written, no layout call at all
     expect(visibilityOf(h.live.layers, 'wd-basemap-transit-stations')).toBeUndefined();
-    // ONE write: a presence is one symbol now (icon + name together)
-    expect(h.layoutCalls).toEqual([['wd-basemap-accommodations-icons', 'visibility', 'none']]);
+    expect(h.layoutCalls).toEqual([
+      ['wd-basemap-accommodations-icons', 'visibility', 'none'],
+      ['wd-basemap-accommodations-labels', 'visibility', 'none'],
+    ]);
     // idempotent: a second run writes nothing
     h.layoutCalls.length = 0;
     store.syncPresenceVisibility();
@@ -560,9 +574,8 @@ describe('basemap store — presence sync on the live map', () => {
     accommodations.active = false;
     store.syncPresenceVisibility();
     expect(visibilityOf(h.live.layers, 'wd-basemap-accommodations-icons')).toBe('visible');
-    // the restore writes once (the accumulator was cleared above): a
-    // presence is ONE symbol now (icon + name together)
-    expect(h.layoutCalls).toHaveLength(1);
+    expect(visibilityOf(h.live.layers, 'wd-basemap-accommodations-labels')).toBe('visible');
+    expect(h.layoutCalls).toHaveLength(2);
   });
 
   it('keeps an active family replaced across the country-fallback visibility sweep', async () => {

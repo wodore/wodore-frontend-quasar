@@ -22,11 +22,10 @@ const MTK_HILL_LAYER_IDS = [
   'land',
   'road_path_oneway_symbol', // 56 — the basemap's routes anchor
   'water_waterway_label_rank_5',
-  // ONE symbol per presence (icon + name in a single placement box —
-  // separate icon/label layers collided and the label evicted its own
-  // icon when zoomed in; backend presence merge 2026-11-26)
   'wd-basemap-accommodations-icons', // 86
   'wd-basemap-transit-stations', // 87
+  'wd-basemap-transit-stations-label', // 88
+  'wd-basemap-accommodations-labels', // 89
   'place_point_label_rank_5',
   'place_point_label_rank_4',
   'place_peak_label_rank_3', // 108 — first keeper label
@@ -40,8 +39,11 @@ const MTK_HILL_LAYER_IDS = [
   'place_point_label_rank_1',
 ];
 const BAND = 'place_peak_label_rank_3';
-const ACCOMMODATIONS_PRESENCE = ['wd-basemap-accommodations-icons'];
-const TRANSIT_PRESENCE = ['wd-basemap-transit-stations'];
+const ACCOMMODATIONS_PRESENCE = [
+  'wd-basemap-accommodations-icons',
+  'wd-basemap-accommodations-labels',
+];
+const TRANSIT_PRESENCE = ['wd-basemap-transit-stations', 'wd-basemap-transit-stations-label'];
 
 describe('presenceLayerPrefix', () => {
   it('derives the wd-basemap-<family>- namespace from the catalog slug', () => {
