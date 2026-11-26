@@ -5,8 +5,8 @@
  * families — `role=presence` rows the backend composes into the style
  * document at serve time, ids namespaced `wd-basemap-<family>-*`:
  *
- *   accommodations   → wd-basemap-accommodations-icons / -labels
- *   transport-stops  → wd-basemap-transit-stations / -stations-label
+ *   accommodations   → wd-basemap-accommodations-icons (icon + name, one symbol)
+ *   transport-stops  → wd-basemap-transit-stations (icon + name, one symbol)
  *                      (legacy namespace, see PRESENCE_PREFIX_ALIASES)
  *
  * Contract: overlay OFF → the presence IS the family's POI layer;
