@@ -98,8 +98,8 @@ importers:
         specifier: ^1.2.3
         version: 1.2.3(@mapbox/mapbox-gl-draw@1.5.2)
       maplibre-contour:
-        specifier: ^0.1.1
-        version: 0.1.1
+        specifier: ^0.2.0
+        version: 0.2.0
       maplibre-gl:
         specifier: ^6.16.0
         version: 6.16.0
@@ -4599,8 +4599,8 @@ packages:
   mapbox-gl@3.18.1:
     resolution: {integrity: sha512-Izc8dee2zkmb6Pn9hXFbVioPRLXJz1OFUcrvri69MhFACPU4bhLyVmhEsD9AyW1qOAP0Yvhzm60v63xdMIHPPw==}
 
-  maplibre-contour@0.1.1:
-    resolution: {integrity: sha512-0m267124bx+LJ5zM1mpB23uvO4sCrgOb4dWgwbUbGWGsDsWNA4g93XTXPoRQga6GAD6TDI7tzyowBzdADSPusg==}
+  maplibre-contour@0.2.0:
+    resolution: {integrity: sha512-C5MV4+wLkDkCh851/HkQYCTCtEMfkVaLymkYtsc4Bp7ziBLPfKrNhlXrw2IAblo1/Y3xjzgg0dO2bxRSjcAuZQ==}
 
   maplibre-font-maker-node@0.5.0:
     resolution: {integrity: sha512-GcXT/pYznnw8xwF0x5pxfOn379El5W60+FGydwsYEH4IzI87uLZd5UQFsqSSTWeEU/5UDUaPUQsH06V/ON0STA==}
@@ -11088,7 +11088,7 @@ snapshots:
       supercluster: 8.0.1
       tinyqueue: 3.0.0
 
-  maplibre-contour@0.1.1: {}
+  maplibre-contour@0.2.0: {}
 
   maplibre-font-maker-node@0.5.0:
     dependencies:

@@ -85,7 +85,7 @@
     "leaflet": "^1.9.4",
     "leaflet.markercluster": "^1.5.3",
     "mapbox-gl-draw-waypoint": "^1.2.3",
-    "maplibre-contour": "^0.1.1",
+    "maplibre-contour": "^0.2.0",
     "maplibre-gl": "^6.16.0",
     "oidc-client-ts": "^3.5.0",
     "openapi-fetch": "^0.17.0",
