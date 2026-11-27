@@ -86,8 +86,8 @@ importers:
         specifier: ^3.4.17
         version: 3.4.17
       js-sha256:
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.1.0
+        version: 1.1.0
       leaflet:
         specifier: ^1.9.4
         version: 1.9.4
@@ -4329,8 +4329,8 @@ packages:
     resolution: {integrity: sha512-X2BB11YZtrRqY4EnQcLX5Rh373zbK4alC1FW7D7MBhL2gtcC17cTnr6DmfHZeS0s2rTHjUTMMHfG7gO8SSdw+g==}
     engines: {node: '>=0.10.0'}
 
-  js-sha256@1.0.0:
-    resolution: {integrity: sha512-Bqxf6ENUzYIMzuELCmRNrJOVbjKH1oMgbfYJBKVr/W1Xf9fazpahqCbb24v1pR7XV1isuqhM+w9KWpK7zCyUQw==}
+  js-sha256@1.1.0:
+    resolution: {integrity: sha512-1RbCPZbbTi4BuTGrbREOz/AvAuLFcKowsALy9LhBrRMmlTMiNSwA1MwcqYbCFfVg6rvbFwJ/qqJlw8aBz3S9oA==}
 
   js-stringify@1.0.2:
     resolution: {integrity: sha512-rtS5ATOo2Q5k1G+DADISilDA6lv79zIiwFd6CcjuIxGKLFm5C+RLImRscVap9k55i+MOZwgliw+NejvkLuGD5g==}
@@ -10790,7 +10790,7 @@ snapshots:
 
   js-levenshtein@1.1.6: {}
 
-  js-sha256@1.0.0: {}
+  js-sha256@1.1.0: {}
 
   js-stringify@1.0.2: {}
 
