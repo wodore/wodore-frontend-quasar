@@ -23,17 +23,17 @@ importers:
   .:
     dependencies:
       '@capacitor/core':
-        specifier: ^8.5.3
-        version: 8.5.3
+        specifier: ^8.6.2
+        version: 8.6.2
       '@capacitor/preferences':
         specifier: ^8.0.1
-        version: 8.0.1(@capacitor/core@8.5.3)
+        version: 8.0.1(@capacitor/core@8.6.2)
       '@capawesome/capacitor-app-update':
         specifier: ^8.1.1
-        version: 8.1.1(@capacitor/core@8.5.3)
+        version: 8.1.1(@capacitor/core@8.6.2)
       '@capawesome/capacitor-maplibre':
         specifier: ^0.2.3
-        version: 0.2.3(@capacitor/core@8.5.3)(maplibre-gl@6.16.0)
+        version: 0.2.3(@capacitor/core@8.6.2)(maplibre-gl@6.16.0)
       '@fontsource/barlow':
         specifier: ^5.3.0
         version: 5.3.0
@@ -476,8 +476,8 @@ packages:
   '@cacheable/utils@2.5.0':
     resolution: {integrity: sha512-buipgOVDkkPXNR5+xBpDw7Zk2n1EvU7qBJCNUcL7rhQ//kfpOXPAvQ511Os0vpLYJ1pZnvudNytkQt2hst3wqA==}
 
-  '@capacitor/core@8.5.3':
-    resolution: {integrity: sha512-oBE1oGuYE4ZzYYrulC75OuHdSsD6zLUy7d5o1tFwDLG4govGoubY15cxpiI5l0+q87Lm5p0bhbehMdzJg4aFag==}
+  '@capacitor/core@8.6.2':
+    resolution: {integrity: sha512-UEb9crRuqEAe2Iu2eGOEuQ8rLQxpwg7ZZIpl17UJoytEpnV1e4oXXW0K7yYS2NsCOGmJjyLeKjNlgG7tkAoX8g==}
 
   '@capacitor/preferences@8.0.1':
     resolution: {integrity: sha512-T6no3ebi79XJCk91U3Jp/liJUwgBdvHR+s6vhvPkPxSuch7z3zx5Rv1bdWM6sWruNx+pViuEGqZvbfCdyBvcHQ==}
@@ -6925,21 +6925,21 @@ snapshots:
       hashery: 1.5.1
       keyv: 5.6.0
 
-  '@capacitor/core@8.5.3':
+  '@capacitor/core@8.6.2':
     dependencies:
       tslib: 2.9.1
 
-  '@capacitor/preferences@8.0.1(@capacitor/core@8.5.3)':
+  '@capacitor/preferences@8.0.1(@capacitor/core@8.6.2)':
     dependencies:
-      '@capacitor/core': 8.5.3
+      '@capacitor/core': 8.6.2
 
-  '@capawesome/capacitor-app-update@8.1.1(@capacitor/core@8.5.3)':
+  '@capawesome/capacitor-app-update@8.1.1(@capacitor/core@8.6.2)':
     dependencies:
-      '@capacitor/core': 8.5.3
+      '@capacitor/core': 8.6.2
 
-  '@capawesome/capacitor-maplibre@0.2.3(@capacitor/core@8.5.3)(maplibre-gl@6.16.0)':
+  '@capawesome/capacitor-maplibre@0.2.3(@capacitor/core@8.6.2)(maplibre-gl@6.16.0)':
     dependencies:
-      '@capacitor/core': 8.5.3
+      '@capacitor/core': 8.6.2
     optionalDependencies:
       maplibre-gl: 6.16.0
 
