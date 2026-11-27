@@ -33,7 +33,7 @@ importers:
         version: 8.1.1(@capacitor/core@8.5.3)
       '@capawesome/capacitor-maplibre':
         specifier: ^0.2.3
-        version: 0.2.3(@capacitor/core@8.5.3)(maplibre-gl@6.16.0)
+        version: 0.2.3(@capacitor/core@8.5.3)(maplibre-gl@6.19.0(@types/react@19.3.0)(react@19.2.4)(use-sync-external-store@1.7.0(react@19.2.4)))
       '@fontsource/barlow':
         specifier: ^5.3.0
         version: 5.3.0
@@ -48,7 +48,7 @@ importers:
         version: 5.3.0
       '@indoorequal/vue-maplibre-gl':
         specifier: ^9.0.1
-        version: 9.0.1(maplibre-gl@6.16.0)(vue@3.5.44(typescript@5.9.3))
+        version: 9.0.1(maplibre-gl@6.19.0(@types/react@19.3.0)(react@19.2.4)(use-sync-external-store@1.7.0(react@19.2.4)))(vue@3.5.44(typescript@5.9.3))
       '@mapbox/mapbox-gl-draw':
         specifier: ^1.5.2
         version: 1.5.2
@@ -101,8 +101,8 @@ importers:
         specifier: ^0.1.1
         version: 0.1.1
       maplibre-gl:
-        specifier: ^6.16.0
-        version: 6.16.0
+        specifier: ^6.19.0
+        version: 6.19.0(@types/react@19.3.0)(react@19.2.4)(use-sync-external-store@1.7.0(react@19.2.4))
       oidc-client-ts:
         specifier: ^3.5.0
         version: 3.5.0
@@ -1464,8 +1464,8 @@ packages:
   '@mapbox/unitbezier@1.0.0':
     resolution: {integrity: sha512-fqd515fjBmANKGGsQ286E2Wvj/XvDFpGzwJxq4CI6jMQue6Oy04uCKp+JWKF00xRTmk6cEu1jPJ9p3xqH8YWqQ==}
 
-  '@mapbox/vector-tile@2.0.4':
-    resolution: {integrity: sha512-AkOLcbgGTdXScosBWwmmD7cDlvOjkg/DetGva26pIRiZPdeJYjYKarIlb4uxVzi6bwHO6EWH82eZ5Nuv4T5DUg==}
+  '@mapbox/vector-tile@2.0.5':
+    resolution: {integrity: sha512-pXj8m7KTsqZt+1jsE0xIpGvqTSbblfkuEJL/NJmNePMtEwxO8V3XMDo9WMSfDeqHvCtBI9Lmt4mGcGR10zecmw==}
 
   '@mapbox/vector-tile@3.0.0':
     resolution: {integrity: sha512-Qf10S1uIHMk20ri/IVBnpS+esUEkVaR5Hftmz88jTInrpmWgPGJfPe3LVjjlE77trLx8tH6qjTG7uWH9hIq/0Q==}
@@ -1479,6 +1479,10 @@ packages:
 
   '@maplibre/maplibre-gl-style-spec@26.5.1':
     resolution: {integrity: sha512-9ufQ5LR+Ldn87SILPVyRNz4wVm/sBrM2ZRv9VfjLRKYKIGAcvC1VFw/DEkJLAHqfMV8m03zDz1DUNTIUj/GvdA==}
+    hasBin: true
+
+  '@maplibre/maplibre-gl-style-spec@26.9.0':
+    resolution: {integrity: sha512-cQZK2lG3d6I5FjriPZCgJx/LiVMpWqoVibF+cgp2mkQ/P4BIGOsrA3WsvLw1wB28Q9JU9v2fapsQUJUbjjwa6g==}
     hasBin: true
 
   '@maplibre/mlt@1.3.0':
@@ -4606,8 +4610,8 @@ packages:
     resolution: {integrity: sha512-GcXT/pYznnw8xwF0x5pxfOn379El5W60+FGydwsYEH4IzI87uLZd5UQFsqSSTWeEU/5UDUaPUQsH06V/ON0STA==}
     engines: {node: '>=18'}
 
-  maplibre-gl@6.16.0:
-    resolution: {integrity: sha512-gApO66EMtoDZuio680RUBvskR7ahFd/NNhLN4tBAs+Y7FeT4gQV8zVFgYVMRmFxQznOEzecW19w6xOd9XjZjiA==}
+  maplibre-gl@6.19.0:
+    resolution: {integrity: sha512-3bOrnfddggUYudLGJFsYFvqulUyvSxy4iQzd/uURI7ZhgYEZifdSrECujRSghaCpc+v/ZsFI0Y6ZsGSilEtE+w==}
     engines: {node: '>=16.14.0', npm: '>=8.1.0'}
 
   markdown-it@14.3.3:
@@ -5024,8 +5028,8 @@ packages:
     resolution: {integrity: sha512-//nshmD55c46FuFw26xV/xFAaB5HF9Xdap7HJBBnrKdAd6/GxDBaNA1870O79+9ueg61cZLSVc+OaFlfmObYVQ==}
     engines: {node: '>= 14.16'}
 
-  pbf@4.0.1:
-    resolution: {integrity: sha512-SuLdBvS42z33m8ejRbInMapQe8n0D3vN/Xd5fmWM3tufNgRQFBpaW2YVJxQZV4iPNqb0vEFvssMEo5w9c6BTIA==}
+  pbf@4.0.2:
+    resolution: {integrity: sha512-J0ajxARhZfpUEebxYs1vhMGMuLSXtBe1e+fFPDrf2uA2hgo+UshKfNUWOz92HJNz6/NFEXseQPddnHkTreWRqg==}
     hasBin: true
 
   pbf@5.2.0:
@@ -6547,6 +6551,24 @@ packages:
   zod@4.6.5:
     resolution: {integrity: sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q==}
 
+  zustand@5.1.0:
+    resolution: {integrity: sha512-ciJZlP48M1PTQbVQq81CGVFxHTLpZNrFjKqwjtCU34AWuXTZT/jrF3p9+fI84Cf1eSCMLapxqBy/SNTfwOBuqA==}
+    engines: {node: '>=12.20.0'}
+    peerDependencies:
+      '@types/react': '>=18.0.0'
+      immer: '>=9.0.6'
+      react: '>=18.0.0'
+      use-sync-external-store: '>=1.2.0'
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      immer:
+        optional: true
+      react:
+        optional: true
+      use-sync-external-store:
+        optional: true
+
 snapshots:
 
   '@acemir/cssom@0.9.33':
@@ -6937,11 +6959,11 @@ snapshots:
     dependencies:
       '@capacitor/core': 8.5.3
 
-  '@capawesome/capacitor-maplibre@0.2.3(@capacitor/core@8.5.3)(maplibre-gl@6.16.0)':
+  '@capawesome/capacitor-maplibre@0.2.3(@capacitor/core@8.5.3)(maplibre-gl@6.19.0(@types/react@19.3.0)(react@19.2.4)(use-sync-external-store@1.7.0(react@19.2.4)))':
     dependencies:
       '@capacitor/core': 8.5.3
     optionalDependencies:
-      maplibre-gl: 6.16.0
+      maplibre-gl: 6.19.0(@types/react@19.3.0)(react@19.2.4)(use-sync-external-store@1.7.0(react@19.2.4))
 
   '@clack/core@1.6.0':
     dependencies:
@@ -7315,9 +7337,9 @@ snapshots:
   '@img/sharp-win32-x64@0.35.5':
     optional: true
 
-  '@indoorequal/vue-maplibre-gl@9.0.1(maplibre-gl@6.16.0)(vue@3.5.44(typescript@5.9.3))':
+  '@indoorequal/vue-maplibre-gl@9.0.1(maplibre-gl@6.19.0(@types/react@19.3.0)(react@19.2.4)(use-sync-external-store@1.7.0(react@19.2.4)))(vue@3.5.44(typescript@5.9.3))':
     dependencies:
-      maplibre-gl: 6.16.0
+      maplibre-gl: 6.19.0(@types/react@19.3.0)(react@19.2.4)(use-sync-external-store@1.7.0(react@19.2.4))
       vue: 3.5.44(typescript@5.9.3)
 
   '@intlify/bundle-utils@11.0.3(vue-i18n@11.4.23(vue@3.5.44(typescript@5.9.3)))':
@@ -7920,11 +7942,11 @@ snapshots:
 
   '@mapbox/unitbezier@1.0.0': {}
 
-  '@mapbox/vector-tile@2.0.4':
+  '@mapbox/vector-tile@2.0.5':
     dependencies:
       '@mapbox/point-geometry': 1.1.0
       '@types/geojson': 7946.0.16
-      pbf: 4.0.1
+      pbf: 4.0.2
 
   '@mapbox/vector-tile@3.0.0':
     dependencies:
@@ -7939,6 +7961,15 @@ snapshots:
       kdbush: 4.1.0
 
   '@maplibre/maplibre-gl-style-spec@26.5.1':
+    dependencies:
+      '@mapbox/jsonlint-lines-primitives': 2.0.3
+      '@mapbox/unitbezier': 1.0.0
+      json-stringify-pretty-compact: 4.0.0
+      minimist: 1.2.8
+      quickselect: 3.0.0
+      tinyqueue: 3.0.0
+
+  '@maplibre/maplibre-gl-style-spec@26.9.0':
     dependencies:
       '@mapbox/jsonlint-lines-primitives': 2.0.3
       '@mapbox/unitbezier': 1.0.0
@@ -11066,7 +11097,7 @@ snapshots:
       '@mapbox/point-geometry': 1.1.0
       '@mapbox/tiny-sdf': 2.3.0
       '@mapbox/unitbezier': 0.0.1
-      '@mapbox/vector-tile': 2.0.4
+      '@mapbox/vector-tile': 2.0.5
       '@mapbox/whoots-js': 3.1.0
       '@types/geojson': 7946.0.16
       '@types/geojson-vt': 3.2.5
@@ -11082,7 +11113,7 @@ snapshots:
       kdbush: 4.1.0
       martinez-polygon-clipping: 0.8.1
       murmurhash-js: 1.0.0
-      pbf: 4.0.1
+      pbf: 4.0.2
       potpack: 2.1.0
       quickselect: 3.0.0
       supercluster: 8.0.1
@@ -11096,14 +11127,14 @@ snapshots:
       yaml: 2.9.1
       zod: 4.6.5
 
-  maplibre-gl@6.16.0:
+  maplibre-gl@6.19.0(@types/react@19.3.0)(react@19.2.4)(use-sync-external-store@1.7.0(react@19.2.4)):
     dependencies:
       '@mapbox/point-geometry': 1.1.0
       '@mapbox/tiny-sdf': 2.3.0
       '@mapbox/unitbezier': 1.0.0
       '@mapbox/vector-tile': 3.0.0
       '@maplibre/geojson-vt': 6.3.3
-      '@maplibre/maplibre-gl-style-spec': 26.5.1
+      '@maplibre/maplibre-gl-style-spec': 26.9.0
       '@maplibre/mlt': 1.3.0
       '@maplibre/vt-pbf': 4.3.3
       '@types/geojson': 7946.0.16
@@ -11116,6 +11147,12 @@ snapshots:
       potpack: 2.1.0
       quickselect: 3.0.0
       tinyqueue: 3.0.0
+      zustand: 5.1.0(@types/react@19.3.0)(react@19.2.4)(use-sync-external-store@1.7.0(react@19.2.4))
+    transitivePeerDependencies:
+      - '@types/react'
+      - immer
+      - react
+      - use-sync-external-store
 
   markdown-it@14.3.3:
     dependencies:
@@ -11604,7 +11641,7 @@ snapshots:
 
   pathval@2.0.1: {}
 
-  pbf@4.0.1:
+  pbf@4.0.2:
     dependencies:
       resolve-protobuf-schema: 2.1.0
 
@@ -13100,3 +13137,9 @@ snapshots:
       readable-stream: 4.7.0
 
   zod@4.6.5: {}
+
+  zustand@5.1.0(@types/react@19.3.0)(react@19.2.4)(use-sync-external-store@1.7.0(react@19.2.4)):
+    optionalDependencies:
+      '@types/react': 19.3.0
+      react: 19.2.4
+      use-sync-external-store: 1.7.0(react@19.2.4)
