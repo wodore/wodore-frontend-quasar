@@ -91,3 +91,64 @@ export function shareSpriteImages(
     setTimeout(check, delay);
   });
 }
+
+/** The map surface the retry needs: a share-capable map that also emits
+ *  MapLibre's `data` events. */
+export interface SpriteShareEventMapLike extends SpriteShareMapLike {
+  on(event: 'data', listener: (event: { dataType: string }) => void): unknown;
+  off(event: 'data', listener: (event: { dataType: string }) => void): unknown;
+}
+
+/**
+ * `shareSpriteImages` with a retry for a sheet that is still loading
+ * when the poll's deadline passes.
+ *
+ * On a style MapLibre had to REBUILD, the share starts the moment
+ * `style.load` fires — before the basemap's own sheet request has even
+ * answered. On a cold cache or a slow network that request can take
+ * longer than the poll; without a retry nothing would register the
+ * overlay's images until the next full style load, and the overlay drew
+ * its fallback glyphs for the rest of the session.
+ *
+ * After a failed poll this waits for the map's next `data` event of type
+ * `style` — MapLibre fires one when a sprite settles — and polls again,
+ * until a sheet is shared or `deadlineMs` have passed since the start.
+ */
+export function shareSpriteImagesWithRetry(
+  map: SpriteShareEventMapLike,
+  fromId: string,
+  toId: string,
+  timeoutMs = 5000,
+  deadlineMs = 30_000
+): Promise<boolean> {
+  const started = Date.now();
+  const attempt = (): Promise<boolean> =>
+    shareSpriteImages(map, fromId, toId, timeoutMs).then(shared => {
+      if (shared) return true;
+      const left = deadlineMs - (Date.now() - started);
+      if (left <= 0) return false;
+      return nextStyleData(map, left).then(fired => (fired ? attempt() : false));
+    });
+  return attempt();
+}
+
+/** Resolves once a `style` data event fired, or false after `timeoutMs`. */
+function nextStyleData(map: SpriteShareEventMapLike, timeoutMs: number): Promise<boolean> {
+  return new Promise(resolve => {
+    const onData = (event: { dataType: string }) => {
+      if (event.dataType !== 'style') return;
+      cleanup();
+      resolve(true);
+    };
+    // both settle paths run later than these declarations
+    const timer = setTimeout(() => {
+      cleanup();
+      resolve(false);
+    }, timeoutMs);
+    const cleanup = () => {
+      map.off('data', onData);
+      clearTimeout(timer);
+    };
+    map.on('data', onData);
+  });
+}

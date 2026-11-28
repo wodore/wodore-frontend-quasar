@@ -10,7 +10,7 @@
  */
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import type { StyleImage, StyleImageMetadata, StyleImageSource } from 'maplibre-gl';
-import { shareSpriteImages } from '@stores/map/utils/sprite-sheets';
+import { shareSpriteImages, shareSpriteImagesWithRetry } from '@stores/map/utils/sprite-sheets';
 
 /** A StyleImage with an RGBAImage-shaped pixel block (the public surface of MapLibre's class). */
 function image(tag: string): StyleImage {
@@ -114,5 +114,82 @@ describe('shareSpriteImages', () => {
     await vi.advanceTimersByTimeAsync(2500);
     await expect(promise).resolves.toBe(false);
     expect(f.added).toEqual([]);
+  });
+});
+
+// ── The retry: a sheet still loading when the poll's deadline passes ─────
+function eventedMap(f: ReturnType<typeof fakeMap>) {
+  const listeners = new Set<(event: { dataType: string }) => void>();
+  const map = {
+    ...f.map,
+    on: (_event: 'data', listener: (event: { dataType: string }) => void) => {
+      listeners.add(listener);
+    },
+    off: (_event: 'data', listener: (event: { dataType: string }) => void) => {
+      listeners.delete(listener);
+    },
+  };
+  return {
+    map,
+    listeners,
+    emit: (dataType: string) => {
+      for (const listener of [...listeners]) listener({ dataType });
+    },
+  };
+}
+
+describe('shareSpriteImagesWithRetry', () => {
+  it('shares at once when the sheet is loaded — no event listener is armed', async () => {
+    const f = fakeMap({ 'wd-sdf-accommodations': ['mono/hut'] });
+    const m = eventedMap(f);
+    await expect(
+      shareSpriteImagesWithRetry(m.map, 'wd-sdf-accommodations', 'wd-sdf')
+    ).resolves.toBe(true);
+    expect(f.images.has('wd-sdf:mono/hut')).toBe(true);
+    expect(m.listeners.size).toBe(0);
+  });
+
+  it('polls again on the next style data event once the sheet has loaded', async () => {
+    vi.useFakeTimers();
+    const f = fakeMap({}); // the rebuilt style's sheet request is still in flight
+    const m = eventedMap(f);
+    const promise = shareSpriteImagesWithRetry(
+      m.map,
+      'wd-sdf-accommodations',
+      'wd-sdf',
+      1000,
+      30_000
+    );
+    await vi.advanceTimersByTimeAsync(1600); // the first poll's deadline passes
+    expect(f.added).toEqual([]);
+    expect(m.listeners.size).toBe(1); // one retry is armed
+    // the sheet arrives; other data events do not trigger it
+    f.images.set('wd-sdf-accommodations:mono/hut', image('h'));
+    m.emit('source');
+    await vi.advanceTimersByTimeAsync(200);
+    expect(f.added).toEqual([]);
+    // MapLibre reports the settled sprite as a `style` data event
+    m.emit('style');
+    await vi.advanceTimersByTimeAsync(200);
+    await expect(promise).resolves.toBe(true);
+    expect(f.images.has('wd-sdf:mono/hut')).toBe(true);
+    expect(m.listeners.size).toBe(0);
+  });
+
+  it('gives up at the overall deadline and removes its listener', async () => {
+    vi.useFakeTimers();
+    const f = fakeMap({});
+    const m = eventedMap(f);
+    const promise = shareSpriteImagesWithRetry(
+      m.map,
+      'wd-sdf-accommodations',
+      'wd-sdf',
+      1000,
+      1500
+    );
+    await vi.advanceTimersByTimeAsync(2000);
+    await expect(promise).resolves.toBe(false);
+    expect(f.added).toEqual([]);
+    expect(m.listeners.size).toBe(0);
   });
 });

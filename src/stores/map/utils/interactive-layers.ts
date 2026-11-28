@@ -42,10 +42,11 @@ export interface TapQueryMap {
   getZoom(): number;
   getLayer(id: string): StyleLayer | undefined;
   queryRenderedFeatures(point: [number, number], options: { layers: string[] }): unknown[];
-  /** A layout property's current value; `undefined` when none is set. */
+  /** A layout property's value — the current one, including a
+   *  `visibility` baked into the style document (MapLibre routes a
+   *  layer's layout through these properties when it builds the layer);
+   *  `undefined` when none is set. */
   getLayoutProperty(id: string, name: string): unknown;
-  /** The style document — a visibility baked into a layer's layout counts. */
-  getStyle(): { layers: Array<{ id: string; layout?: { visibility?: unknown } }> } | undefined;
 }
 
 /** A registry entry's compiled claim: gate + target-building data. */
@@ -89,10 +90,9 @@ export function derivedInteractiveLayers(entries?: readonly Presentation[]): Int
 export function interactiveLayerIsShown(map: TapQueryMap, id: string): boolean {
   if (!map.getLayer(id)) return false;
   try {
-    const runtime = map.getLayoutProperty(id, 'visibility');
-    if (runtime !== undefined) return runtime !== 'none';
-    const baked = map.getStyle()?.layers.find(layer => layer.id === id)?.layout?.visibility;
-    return baked !== 'none';
+    // No getStyle() here: it serializes the whole style, and this runs for
+    // every claimed layer on every tap — twice (tap guard and click).
+    return map.getLayoutProperty(id, 'visibility') !== 'none';
   } catch {
     // Style not loaded / mid-basemap-switch — nothing to show
     return false;

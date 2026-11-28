@@ -35,7 +35,7 @@ import {
 } from '@stores/map/utils/layer-groups';
 import { withOverlayMinZoom } from '@stores/map/utils/map-constants';
 import { hasBasemapPresence, resolveOverlayAnchor } from '@stores/map/utils/basemap-presence';
-import { shareSpriteImages } from '@stores/map/utils/sprite-sheets';
+import { shareSpriteImagesWithRetry } from '@stores/map/utils/sprite-sheets';
 import { isDateGatedLayer, dateGatedVisibility } from '@stores/map/utils/overlay-huts';
 import { useI18n } from 'vue-i18n';
 import { LocalStorage } from 'quasar';
@@ -1512,7 +1512,11 @@ function ensureOverlaySprites(
       const map = mapRef.map;
       const sheetHolder = map?.getSprite().find(e => e.url === url);
       if (sheetHolder && map) {
-        pendingSprites.push(shareSpriteImages(map, sheetHolder.id, id).then(() => undefined));
+        // with a retry: on a rebuilt style this runs the moment
+        // style.load fires, before the basemap's own sheet has answered
+        pendingSprites.push(
+          shareSpriteImagesWithRetry(map, sheetHolder.id, id).then(() => undefined)
+        );
         return;
       }
       mapRef.map?.addSprite(id, url);
@@ -1902,6 +1906,10 @@ onBeforeUnmount(() => {
   }
   catalogSwapRetryArmed = false;
   catalogSwapPending = false;
+  // The map-event bindings of THIS instance die with it — a remount
+  // over the same map binds its own (bindMap's flag is per instance).
+  mapRef.map?.off('load', addOverlays);
+  mapRef.map?.off('style.load', ensureActiveOverlaysSprites);
 });
 </script>
 
