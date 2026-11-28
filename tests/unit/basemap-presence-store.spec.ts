@@ -436,6 +436,36 @@ describe('basemap store — presence ↔ overlay contract (transformStyle)', () 
     expect((out.sprite as Array<{ id: string }>).map(s => s.id)).toContain('wd-basemap-transport');
   });
 
+  it('drops a preserved overlay pack whose sheet the incoming basemap already carries (boot race 2026-11-28)', () => {
+    // Huts reached the EMPTY initial style before the first basemap, so
+    // its pack sat there as a real sprite entry. The basemap brings the
+    // same sheet as the accommodations presence. Carried over by id only,
+    // the document named that URL twice and MapLibre rejected the WHOLE
+    // basemap ("all the sprites' URLs must be unique") — a blank map
+    // beneath its overlays.
+    const sheet = 'https://tiles.example.com/sdf_sprite/accommodation';
+    const previous = previousStyleFor(overlays);
+    previous.sprite = [
+      ...clone(basemapDoc().sprite as Array<{ id: string; url: string }>),
+      { id: 'wd', url: 'https://tiles.example.com/sprite/accommodation,availability' },
+      { id: 'wd-sdf', url: sheet },
+    ];
+    const transformStyle = h.setStyleCalls[0]!.options!.transformStyle!;
+    const out = transformStyle(previous, clone(basemapDoc())) as StyleSpecification;
+    const sprites = out.sprite as Array<{ id: string; url: string }>;
+    // ONE id per sheet: the served pack stays, the overlay's entry is not
+    // carried over; its other sheet is preserved as before
+    expect(sprites.filter(s => s.url === sheet).map(s => s.id)).toEqual([
+      'wd-sdf-accommodations',
+    ]);
+    expect(sprites.map(s => s.id)).toContain('wd');
+    expect(new Set(sprites.map(s => s.url)).size).toBe(sprites.length);
+    // the overlay's layers survive with their `wd-sdf:` references — the
+    // control registers the shared sheet's images under that id after
+    // style.load (sprite-sheets.ts)
+    expect((out.layers as Array<{ id: string }>).map(l => l.id)).toContain('wd-huts');
+  });
+
   it('inserts ways and places overlays below the keeper labels, above the presence block', () => {
     const out = transform(basemapDoc());
     const ids = (out.layers as unknown as Array<Record<string, unknown>>).map(l => l.id);

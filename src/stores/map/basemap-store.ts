@@ -795,14 +795,38 @@ export const useBasemapStore = defineStore('basemap', () => {
         const previousSprites = normalizeSprites(previousStyle);
 
         // Filter out sprites that exist in next style (avoid duplicates)
+        // — by ID, and by SHEET. MapLibre admits one sprite id per URL
+        // (style-spec validateSprite: "all the sprites' URLs must be
+        // unique") and rejects the WHOLE document otherwise: the basemap
+        // never applied and the map stayed blank beneath its overlays
+        // (boot race 2026-11-28 — an overlay that reached the empty
+        // initial style before the first basemap, so its pack sat there
+        // as a real sprite entry: huts' `wd-sdf` ‖ the accommodations
+        // presence's `wd-sdf-accommodations`, one sheet). A preserved pack
+        // whose sheet the incoming basemap already carries is dropped
+        // exactly as the overlay control's addSprite guard drops it at
+        // runtime: its layers keep their `<id>:` icon references, and the
+        // control registers the loaded sheet's images under the overlay's
+        // id when it re-adds the overlay after style.load
+        // (utils/sprite-sheets.ts).
         const customSprites = previousSprites.filter(prevSprite => {
-          const isNew = !nextSprites.some(nextSprite => nextSprite.id === prevSprite.id);
-          if (isNew) {
-            console.debug(
-              `[transformStyle] Preserving custom sprite: ${prevSprite.id} from ${prevSprite.url}`
-            );
+          if (nextSprites.some(nextSprite => nextSprite.id === prevSprite.id)) {
+            return false;
           }
-          return isNew;
+          const sheetHolder = nextSprites.find(
+            nextSprite => nextSprite.url === prevSprite.url
+          );
+          if (sheetHolder) {
+            console.debug(
+              `[transformStyle] Sprite '${prevSprite.id}' shares the incoming sheet of ` +
+                `'${sheetHolder.id}' — not carried over, shared live after style.load`
+            );
+            return false;
+          }
+          console.debug(
+            `[transformStyle] Preserving custom sprite: ${prevSprite.id} from ${prevSprite.url}`
+          );
+          return true;
         });
         console.debug(`[transformStyle] Preserved ${customSprites.length} custom sprites`);
 
