@@ -1,3 +1,5 @@
+import { presenceLayerPrefix } from '@stores/map/utils/basemap-presence';
+
 /**
  * Style-layer id constants — the single home of the map-catalog naming
  * contract the selection framework depends on (work doc §2.6, D5).
@@ -38,6 +40,33 @@ export const TRANSPORT_STOP_LAYERS = [
   'transport-stops-icons',
   'transport-stops-icons-detail',
 ] as const;
+
+// ── Basemap PRESENCE layers (backend #506) ──────────────────────────────
+// Each POI family's PASSIVE presence is composed into the basemap
+// (`wd-basemap-<family>-*`, see basemap-presence.ts). With the family's
+// overlay OFF the presence IS its POI layer — so a click on a passive
+// icon must open the same place the overlay's popup opens (owner
+// 2026-11-26). The ids are derived from the ONE naming source
+// (presenceLayerPrefix — it carries the legacy `transit-` alias), so a
+// rename there follows here. Zoom floors = the presence layers' own
+// style minzooms (icons z14 / names z15 for transport, z10 / z15 for
+// accommodations).
+const PRESENCE_TRANSPORT = presenceLayerPrefix({ name: 'transport-stops' });
+const PRESENCE_ACCOMMODATIONS = presenceLayerPrefix({ name: 'accommodations' });
+/** Transport presence: station icons + their names. */
+export const TRANSPORT_PRESENCE_LAYERS = [
+  `${PRESENCE_TRANSPORT}stations`,
+  `${PRESENCE_TRANSPORT}stations-label`,
+] as const;
+/** Icon floors of the presence layers (click gate is strict `zoom > minZoom`,
+ *  so a claim passes floor − 1 to open exactly from the floor). */
+export const TRANSPORT_PRESENCE_MIN_ZOOM = 14;
+/** Accommodations presence: icons + their names. */
+export const ACCOMMODATIONS_PRESENCE_LAYERS = [
+  `${PRESENCE_ACCOMMODATIONS}icons`,
+  `${PRESENCE_ACCOMMODATIONS}labels`,
+] as const;
+export const ACCOMMODATIONS_PRESENCE_MIN_ZOOM = 10;
 
 // ── Amenity overlay family (backend amenity-overlays, 2026-11) ──────────
 // Catalog-driven geoplace overlays: one subtree per overlay, each style

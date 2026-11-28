@@ -34,7 +34,10 @@ import {
   type LayerGroup,
 } from '@stores/map/utils/layer-groups';
 import { withOverlayMinZoom } from '@stores/map/utils/map-constants';
-import { resolveOverlayAnchor } from '@stores/map/utils/basemap-presence';
+import {
+  hasBasemapPresence,
+  resolveOverlayAnchor,
+} from '@stores/map/utils/basemap-presence';
 import { shareSpriteImages } from '@stores/map/utils/sprite-sheets';
 import { isDateGatedLayer, dateGatedVisibility } from '@stores/map/utils/overlay-huts';
 import { useI18n } from 'vue-i18n';
@@ -1216,6 +1219,10 @@ interface AddOverlayLayerArgs {
   /** Active style's layer ids in order — the anchor resolver's view of
    *  the map. Omitted: read from the map (one getStyle() per layer). */
   styleLayerIds?: readonly string[];
+  /** Skip BOTH opacity curves (the generic zoom fade and the basemap's
+   *  slot-level curve) — POI families toggling against a solid basemap
+   *  presence (hasBasemapPresence). */
+  noFade?: boolean;
 }
 
 function addOverlayLayer({
@@ -1224,6 +1231,7 @@ function addOverlayLayer({
   defaultOpacity,
   beforeId,
   styleLayerIds,
+  noFade = false,
 }: AddOverlayLayerArgs): boolean {
   // Far zoomed-out view: overlays never render below the zoom floor — layers
   // reappear automatically when the camera zooms back in (see
@@ -1233,8 +1241,14 @@ function addOverlayLayer({
   const basemap = basemapStore.getBasemap();
   const basemapOpacity =
     basemap && onLayer !== undefined ? basemap.layers[onLayer]?.opacity : undefined;
+  // POI families toggle against a solid basemap presence — the caller
+  // passes noFade, so neither the generic zoom fade nor the basemap
+  // slot curve applies (the overlay would read as transparent next to
+  // its own presence).
   let autoOpacity = false;
-  if (defaultOpacity === undefined || defaultOpacity === true) {
+  if (noFade) {
+    defaultOpacity = false;
+  } else if (defaultOpacity === undefined || defaultOpacity === true) {
     autoOpacity = true;
     defaultOpacity = ['interpolate', ['linear'], ['zoom'], 8, 0.9, 14, 0.6, 22, 0.5];
   }
@@ -1268,7 +1282,7 @@ function addOverlayLayer({
     );
     _beforeId = undefined;
   }
-  if (basemapOpacity !== undefined) {
+  if (!noFade && basemapOpacity !== undefined) {
     opacity = basemapOpacity;
   }
   const _source = 'source' in layer ? layer.source : undefined;
@@ -1581,6 +1595,8 @@ function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwit
       onLayer: overlay.onLayer,
       beforeId,
       styleLayerIds,
+      // POI families toggle against a solid basemap presence — no fade
+      noFade: hasBasemapPresence(overlay),
     });
     if (added) addedLayerIds.add(layer.id);
     else allAdded = false;

@@ -15,7 +15,11 @@ import { amenityClusterEntry } from '@selection/entries/amenity-cluster';
 import { geoplaceDefaultEntry } from '@selection/entries/geoplace-default';
 import { transportEntry } from '@selection/entries/transport';
 import {
+  ACCOMMODATIONS_PRESENCE_LAYERS,
+  ACCOMMODATIONS_PRESENCE_MIN_ZOOM,
   AMENITY_SUBTREES,
+  TRANSPORT_PRESENCE_LAYERS,
+  TRANSPORT_PRESENCE_MIN_ZOOM,
   WD_ACCOMMODATIONS_CLUSTER_LAYER,
   WD_ACCOMMODATIONS_LAYER,
 } from '@selection/map-layer-ids';
@@ -87,6 +91,67 @@ describe('derived interactive layers', () => {
     } finally {
       setDefaultRegistry(createRegistry([]));
     }
+  });
+
+  it('claims the TRANSPORT presence layers — a passive station icon is clickable (backend #506)', () => {
+    // With the overlay OFF the presence IS the family's POI layer: a click
+    // on a passive station icon/names opens the same place the overlay's
+    // popup opens (owner 2026-11-26). Same entry → same popup pipeline.
+    setDefaultRegistry(createRegistry([transportEntry]));
+    try {
+      const layers = derivedInteractiveLayers();
+      const claims = derivedClaimedLayers();
+      for (const layer of TRANSPORT_PRESENCE_LAYERS) {
+        // the click gate is strict (zoom > minZoom): floor − 1 opens
+        // exactly from the presence's own style floor
+        expect(layers).toContainEqual({ id: layer, minZoom: TRANSPORT_PRESENCE_MIN_ZOOM - 1 });
+        const claim = claims.find(c => c.id === layer);
+        expect(claim?.entry.id).toBe('transport');
+        expect(claim?.idProp).toBe('onestop_id');
+      }
+    } finally {
+      setDefaultRegistry(createRegistry([]));
+    }
+  });
+
+  it('presence ids follow the ONE naming source (legacy transit- alias included)', () => {
+    // Derived from presenceLayerPrefix — a rename there follows here.
+    expect([...TRANSPORT_PRESENCE_LAYERS]).toEqual([
+      'wd-basemap-transit-stations',
+      'wd-basemap-transit-stations-label',
+    ]);
+    expect([...ACCOMMODATIONS_PRESENCE_LAYERS]).toEqual([
+      'wd-basemap-accommodations-icons',
+      'wd-basemap-accommodations-labels',
+    ]);
+  });
+
+  it('claims the ACCOMMODATIONS presence layers — a passive icon is clickable', () => {
+    setDefaultRegistry(createRegistry([accommodationEntry]));
+    try {
+      const layers = derivedInteractiveLayers();
+      const claims = derivedClaimedLayers();
+      for (const layer of ACCOMMODATIONS_PRESENCE_LAYERS) {
+        expect(layers).toContainEqual({ id: layer, minZoom: ACCOMMODATIONS_PRESENCE_MIN_ZOOM - 1 });
+        const claim = claims.find(c => c.id === layer);
+        expect(claim?.entry.id).toBe('accommodation');
+        expect(claim?.idProp).toBe('slug');
+      }
+    } finally {
+      setDefaultRegistry(createRegistry([]));
+    }
+  });
+
+  it('a tap on a presence station opens from its floor (strict gate)', () => {
+    const map = stubMap({ zoom: TRANSPORT_PRESENCE_MIN_ZOOM, layers: [...TRANSPORT_PRESENCE_LAYERS], hits: 1 });
+    expect(tapTargetsInteractiveLayer(map, 10, 10, [
+      { id: TRANSPORT_PRESENCE_LAYERS[0], minZoom: TRANSPORT_PRESENCE_MIN_ZOOM - 1 },
+    ])).toBe(true);
+    // one zoom below the floor nothing renders → no claim
+    const below = stubMap({ zoom: TRANSPORT_PRESENCE_MIN_ZOOM - 1, layers: [...TRANSPORT_PRESENCE_LAYERS], hits: 1 });
+    expect(tapTargetsInteractiveLayer(below, 10, 10, [
+      { id: TRANSPORT_PRESENCE_LAYERS[0], minZoom: TRANSPORT_PRESENCE_MIN_ZOOM - 1 },
+    ])).toBe(false);
   });
 
   it('claims all ten amenity symbol layers at their tier floors', () => {

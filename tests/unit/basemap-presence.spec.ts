@@ -209,3 +209,28 @@ describe('resolveOverlayAnchor', () => {
     expect(resolveOverlayAnchor('Other place labels', 'ways', external)).toBe('Other place labels');
   });
 });
+
+// ── Opacity: POI families do not fade ──────────────────────────────────────
+import { PRESENCE_FAMILIES, hasBasemapPresence } from '@stores/map/utils/basemap-presence';
+
+describe('hasBasemapPresence — the no-fade predicate', () => {
+  it('is true for the two POI families that ship a basemap presence', () => {
+    expect(hasBasemapPresence({ name: 'transport-stops' })).toBe(true);
+    expect(hasBasemapPresence({ name: 'accommodations' })).toBe(true);
+  });
+
+  it('prefers the catalog slug over the display name', () => {
+    expect(hasBasemapPresence({ name: 'Public transport stops', catalogSlug: 'transport-stops' })).toBe(true);
+    expect(hasBasemapPresence({ name: 'transport-stops', catalogSlug: 'huts' })).toBe(false);
+  });
+
+  it('is false for every other overlay — the generic zoom fade still applies', () => {
+    for (const name of ['huts', 'mtb', 'cycling', 'slopes', 'ch.swisstopo.swisstlm3d-wanderwege']) {
+      expect(hasBasemapPresence({ name })).toBe(false);
+    }
+  });
+
+  it('the family list matches the presence rows the backend seeds', () => {
+    expect([...PRESENCE_FAMILIES].sort()).toEqual(['accommodations', 'transport-stops']);
+  });
+});

@@ -153,3 +153,27 @@ export function resolveOverlayAnchor(
   if (anchorIndex === -1) return layerIds[bandIndex];
   return anchorIndex < bandIndex ? anchor : layerIds[bandIndex];
 }
+
+// ── Opacity: POI families do not FADE ──────────────────────────────────────
+//
+// A family with a basemap presence draws the same icons in two states —
+// the passive presence (solid, the basemap's own) and the interactive
+// overlay. The generic overlay path applies a zoom-interpolated fade
+// (0.9 → 0.6 → 0.5), which made the overlay read as "transparent" next
+// to its own presence and changed a station's look on toggle (owner
+// report 2026-11-26: "the overlays are transparent"). For these
+// families the overlay stays solid, like the presence it replaces —
+// the fade is not moved onto the presence (basemap content must not
+// fade).
+
+/** Overlay catalog slugs that ship a basemap presence row (the backend
+ *  seeds `<slug>-presence`). ONE list, aligned with the backend's
+ *  presence rows — add a family here when it gains a presence. */
+export const PRESENCE_FAMILIES: readonly string[] = ['accommodations', 'transport-stops'];
+
+/** Whether an overlay's family has a basemap presence — i.e. it toggles
+ *  against a passive twin and must not fade. */
+export function hasBasemapPresence(overlay: Pick<PresenceOwner, 'name' | 'catalogSlug'>): boolean {
+  const slug = overlay.catalogSlug || overlay.name;
+  return PRESENCE_FAMILIES.includes(slug);
+}
