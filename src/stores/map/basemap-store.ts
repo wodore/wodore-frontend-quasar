@@ -813,9 +813,7 @@ export const useBasemapStore = defineStore('basemap', () => {
           if (nextSprites.some(nextSprite => nextSprite.id === prevSprite.id)) {
             return false;
           }
-          const sheetHolder = nextSprites.find(
-            nextSprite => nextSprite.url === prevSprite.url
-          );
+          const sheetHolder = nextSprites.find(nextSprite => nextSprite.url === prevSprite.url);
           if (sheetHolder) {
             console.debug(
               `[transformStyle] Sprite '${prevSprite.id}' shares the incoming sheet of ` +

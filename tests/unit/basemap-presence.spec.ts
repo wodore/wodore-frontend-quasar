@@ -220,7 +220,9 @@ describe('hasBasemapPresence — the no-fade predicate', () => {
   });
 
   it('prefers the catalog slug over the display name', () => {
-    expect(hasBasemapPresence({ name: 'Public transport stops', catalogSlug: 'transport-stops' })).toBe(true);
+    expect(
+      hasBasemapPresence({ name: 'Public transport stops', catalogSlug: 'transport-stops' })
+    ).toBe(true);
     expect(hasBasemapPresence({ name: 'transport-stops', catalogSlug: 'huts' })).toBe(false);
   });
 

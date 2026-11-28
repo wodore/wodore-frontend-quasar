@@ -143,15 +143,27 @@ describe('derived interactive layers', () => {
   });
 
   it('a tap on a presence station opens from its floor (strict gate)', () => {
-    const map = stubMap({ zoom: TRANSPORT_PRESENCE_MIN_ZOOM, layers: [...TRANSPORT_PRESENCE_LAYERS], hits: 1 });
-    expect(tapTargetsInteractiveLayer(map, 10, 10, [
-      { id: TRANSPORT_PRESENCE_LAYERS[0], minZoom: TRANSPORT_PRESENCE_MIN_ZOOM - 1 },
-    ])).toBe(true);
+    const map = stubMap({
+      zoom: TRANSPORT_PRESENCE_MIN_ZOOM,
+      layers: [...TRANSPORT_PRESENCE_LAYERS],
+      hits: 1,
+    });
+    expect(
+      tapTargetsInteractiveLayer(map, 10, 10, [
+        { id: TRANSPORT_PRESENCE_LAYERS[0], minZoom: TRANSPORT_PRESENCE_MIN_ZOOM - 1 },
+      ])
+    ).toBe(true);
     // one zoom below the floor nothing renders → no claim
-    const below = stubMap({ zoom: TRANSPORT_PRESENCE_MIN_ZOOM - 1, layers: [...TRANSPORT_PRESENCE_LAYERS], hits: 1 });
-    expect(tapTargetsInteractiveLayer(below, 10, 10, [
-      { id: TRANSPORT_PRESENCE_LAYERS[0], minZoom: TRANSPORT_PRESENCE_MIN_ZOOM - 1 },
-    ])).toBe(false);
+    const below = stubMap({
+      zoom: TRANSPORT_PRESENCE_MIN_ZOOM - 1,
+      layers: [...TRANSPORT_PRESENCE_LAYERS],
+      hits: 1,
+    });
+    expect(
+      tapTargetsInteractiveLayer(below, 10, 10, [
+        { id: TRANSPORT_PRESENCE_LAYERS[0], minZoom: TRANSPORT_PRESENCE_MIN_ZOOM - 1 },
+      ])
+    ).toBe(false);
   });
 
   it('claims all ten amenity symbol layers at their tier floors', () => {

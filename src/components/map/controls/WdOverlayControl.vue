@@ -34,10 +34,7 @@ import {
   type LayerGroup,
 } from '@stores/map/utils/layer-groups';
 import { withOverlayMinZoom } from '@stores/map/utils/map-constants';
-import {
-  hasBasemapPresence,
-  resolveOverlayAnchor,
-} from '@stores/map/utils/basemap-presence';
+import { hasBasemapPresence, resolveOverlayAnchor } from '@stores/map/utils/basemap-presence';
 import { shareSpriteImages } from '@stores/map/utils/sprite-sheets';
 import { isDateGatedLayer, dateGatedVisibility } from '@stores/map/utils/overlay-huts';
 import { useI18n } from 'vue-i18n';

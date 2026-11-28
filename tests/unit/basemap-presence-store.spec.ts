@@ -455,9 +455,7 @@ describe('basemap store — presence ↔ overlay contract (transformStyle)', () 
     const sprites = out.sprite as Array<{ id: string; url: string }>;
     // ONE id per sheet: the served pack stays, the overlay's entry is not
     // carried over; its other sheet is preserved as before
-    expect(sprites.filter(s => s.url === sheet).map(s => s.id)).toEqual([
-      'wd-sdf-accommodations',
-    ]);
+    expect(sprites.filter(s => s.url === sheet).map(s => s.id)).toEqual(['wd-sdf-accommodations']);
     expect(sprites.map(s => s.id)).toContain('wd');
     expect(new Set(sprites.map(s => s.url)).size).toBe(sprites.length);
     // the overlay's layers survive with their `wd-sdf:` references — the
