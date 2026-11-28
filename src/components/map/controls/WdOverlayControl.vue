@@ -567,7 +567,13 @@ function deleteActiveGroup(): void {
   // Removed group's layers return to ungrouped (they stay in the flat
   // All-layers list automatically once no group references them).
   overlayStore.syncGroupSettings();
+  // cycleGroup SWITCHES groups: the store re-derives every overlay's
+  // `active` from the next group. Apply that to the map like the other
+  // switch handlers do — otherwise the deleted group's overlays stay
+  // drawn, and the next toggle's presence sync would un-hide their
+  // passive presence underneath them (doubled icons).
   overlayStore.cycleGroup();
+  applyGroupStateToMap();
 }
 
 /** Check if a layer is in the active group */
@@ -1241,13 +1247,16 @@ function addOverlayLayer({
   // POI families toggle against a solid basemap presence — the caller
   // passes noFade, so neither the generic zoom fade nor the basemap
   // slot curve applies (the overlay would read as transparent next to
-  // its own presence).
+  // its own presence). An EXPLICIT catalog opacity still applies:
+  // noFade only replaces the automatic fade.
   let autoOpacity = false;
-  if (noFade) {
-    defaultOpacity = false;
-  } else if (defaultOpacity === undefined || defaultOpacity === true) {
-    autoOpacity = true;
-    defaultOpacity = ['interpolate', ['linear'], ['zoom'], 8, 0.9, 14, 0.6, 22, 0.5];
+  if (defaultOpacity === undefined || defaultOpacity === true) {
+    if (!noFade) {
+      autoOpacity = true;
+      defaultOpacity = ['interpolate', ['linear'], ['zoom'], 8, 0.9, 14, 0.6, 22, 0.5];
+    } else {
+      defaultOpacity = false;
+    }
   }
   if (mapRef.map?.getLayer(layer.id) !== undefined) {
     return true; // already on the map
