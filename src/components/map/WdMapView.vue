@@ -62,6 +62,7 @@ import { isBasemapStyleGone } from '@stores/map/utils/basemap-fallback';
 import {
   derivedClaimedLayers,
   derivedInteractiveLayers,
+  interactiveLayerIsShown,
   tapTargetsInteractiveLayer,
 } from '@stores/map/utils/interactive-layers';
 import { createWhatsHereGesture } from '@stores/map/utils/whats-here-gesture';
@@ -1248,9 +1249,12 @@ function onMapClick(e: MapLayerEventType['click']): void {
     minZoom: c.minZoom,
     entry: c.entry,
   }));
-  // Query only claim layers that exist on the current style; keep the
-  // style-not-loaded guard (same class as the tap guard).
-  const ids = claims.map(c => c.id).filter(id => map.getLayer(id));
+  // Query only claim layers that are SHOWN on the current style: they
+  // must exist AND not be hidden — queryRenderedFeatures ignores
+  // `visibility`, so a family's passive presence, hidden while its
+  // overlay is on, would still answer and make invisible stops
+  // tappable. Same guard class as the tap guard (style not loaded).
+  const ids = claims.map(c => c.id).filter(id => interactiveLayerIsShown(map, id));
   if (ids.length === 0) return;
   let features: readonly RenderedFeatureLike[];
   try {

@@ -1,3 +1,5 @@
+import { presenceLayerPrefix } from '@stores/map/utils/basemap-presence';
+
 /**
  * Style-layer id constants — the single home of the map-catalog naming
  * contract the selection framework depends on (work doc §2.6, D5).
@@ -38,6 +40,38 @@ export const TRANSPORT_STOP_LAYERS = [
   'transport-stops-icons',
   'transport-stops-icons-detail',
 ] as const;
+
+// ── Basemap PRESENCE layers (backend #506) ──────────────────────────────
+// Each POI family's PASSIVE presence is composed into the basemap
+// (`wd-basemap-<family>-*`, see basemap-presence.ts). With the family's
+// overlay OFF the presence IS its POI layer — so a click on a passive
+// icon must open the same place the overlay's popup opens (owner
+// 2026-11-26). The ids are derived from the ONE naming source
+// (presenceLayerPrefix — it carries the legacy `transit-` alias), so a
+// rename there follows here. Zoom floors: the LOWEST icon floor the
+// backend has served for these layers — transport z13 (before backend
+// #506 raised it to z14), accommodations z10. The click gate only has
+// to be at or below the RENDERED floor: a tap where nothing renders
+// hits nothing, while a gate above the rendered floor leaves dead
+// icons — so transport keeps 13 until the raised floor is deployed
+// everywhere (and it costs nothing after that).
+const PRESENCE_TRANSPORT = presenceLayerPrefix({ name: 'transport-stops' });
+const PRESENCE_ACCOMMODATIONS = presenceLayerPrefix({ name: 'accommodations' });
+/** Transport presence: station icons + their names. */
+export const TRANSPORT_PRESENCE_LAYERS = [
+  `${PRESENCE_TRANSPORT}stations`,
+  `${PRESENCE_TRANSPORT}stations-label`,
+] as const;
+/** Transport presence icon floor the click gate trusts (the gate is
+ *  strict `zoom > minZoom`, so a claim passes floor − 1 to open from
+ *  the floor). */
+export const TRANSPORT_PRESENCE_MIN_ZOOM = 13;
+/** Accommodations presence: icons + their names. */
+export const ACCOMMODATIONS_PRESENCE_LAYERS = [
+  `${PRESENCE_ACCOMMODATIONS}icons`,
+  `${PRESENCE_ACCOMMODATIONS}labels`,
+] as const;
+export const ACCOMMODATIONS_PRESENCE_MIN_ZOOM = 10;
 
 // ── Amenity overlay family (backend amenity-overlays, 2026-11) ──────────
 // Catalog-driven geoplace overlays: one subtree per overlay, each style

@@ -42,6 +42,11 @@ export interface TapQueryMap {
   getZoom(): number;
   getLayer(id: string): StyleLayer | undefined;
   queryRenderedFeatures(point: [number, number], options: { layers: string[] }): unknown[];
+  /** A layout property's value — the current one, including a
+   *  `visibility` baked into the style document (MapLibre routes a
+   *  layer's layout through these properties when it builds the layer);
+   *  `undefined` when none is set. */
+  getLayoutProperty(id: string, name: string): unknown;
 }
 
 /** A registry entry's compiled claim: gate + target-building data. */
@@ -76,10 +81,30 @@ export function derivedInteractiveLayers(entries?: readonly Presentation[]): Int
 }
 
 /**
+ * Whether a claimed layer is SHOWN on the map: it exists, and it is not
+ * hidden. `queryRenderedFeatures` ignores `visibility`, so a hidden layer
+ * — a family's passive presence while its overlay is on — still answers
+ * with features; the click handler and the tap guard drop such layers
+ * themselves, or invisible features stay tappable.
+ */
+export function interactiveLayerIsShown(map: TapQueryMap, id: string): boolean {
+  if (!map.getLayer(id)) return false;
+  try {
+    // No getStyle() here: it serializes the whole style, and this runs for
+    // every claimed layer on every tap — twice (tap guard and click).
+    return map.getLayoutProperty(id, 'visibility') !== 'none';
+  } catch {
+    // Style not loaded / mid-basemap-switch — nothing to show
+    return false;
+  }
+}
+
+/**
  * Whether any interactive layer claims the tap at this point: a layer
- * above its zoom gate that exists on the current map AND renders a
- * feature under the point. Mirrors MapLibre's layer-scoped click
- * dispatch, so the focus-mode guard cannot drift from the handlers.
+ * above its zoom gate that is SHOWN on the current map (exists, not
+ * hidden — see interactiveLayerIsShown) AND renders a feature under the
+ * point. Mirrors MapLibre's layer-scoped click dispatch, so the
+ * focus-mode guard cannot drift from the handlers.
  */
 export function tapTargetsInteractiveLayer(
   map: TapQueryMap,
@@ -90,7 +115,10 @@ export function tapTargetsInteractiveLayer(
   const zoom = map.getZoom();
   const ids: string[] = [];
   for (const layer of layers) {
-    if ((layer.minZoom === undefined || zoom > layer.minZoom) && map.getLayer(layer.id)) {
+    if (
+      (layer.minZoom === undefined || zoom > layer.minZoom) &&
+      interactiveLayerIsShown(map, layer.id)
+    ) {
       ids.push(layer.id);
     }
   }

@@ -11,6 +11,8 @@ import { consumePrefetchedHut } from '@services/hut-prefetch';
 import { clientWodore } from '@clients/index';
 import { PlaceRequestError } from '@composables/usePlaceDetail';
 import {
+  ACCOMMODATIONS_PRESENCE_LAYERS,
+  ACCOMMODATIONS_PRESENCE_MIN_ZOOM,
   MIN_HUT_CLICK_ZOOM,
   WD_ACCOMMODATIONS_LAYER,
   WD_HUTS_CLICK_LAYERS,
@@ -96,6 +98,16 @@ export const accommodationEntry = definePresentation<HutDetails>({
       idProp: 'slug',
     })),
     { layer: WD_ACCOMMODATIONS_LAYER, minZoom: 5, idProp: 'slug' },
+    // the family's passive basemap presence (accommodation icons +
+    // names, backend #506) — clickable when the overlay is OFF; hidden
+    // when it is ON (hidden layers are skipped at click/tap time —
+    // queryRenderedFeatures itself ignores visibility)
+    ...ACCOMMODATIONS_PRESENCE_LAYERS.map(layer => ({
+      layer,
+      idProp: 'slug',
+      // strict gate (zoom > minZoom): floor − 1 opens from the floor
+      minZoom: ACCOMMODATIONS_PRESENCE_MIN_ZOOM - 1,
+    })),
   ],
   fetch: async (ctx): Promise<HutDetails> => {
     // Deep-link prefetch handoff (perf/hut-fast-first-paint): if the boot

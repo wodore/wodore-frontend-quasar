@@ -34,6 +34,8 @@ import {
   type LayerGroup,
 } from '@stores/map/utils/layer-groups';
 import { withOverlayMinZoom } from '@stores/map/utils/map-constants';
+import { hasBasemapPresence, resolveOverlayAnchor } from '@stores/map/utils/basemap-presence';
+import { shareSpriteImagesWithRetry } from '@stores/map/utils/sprite-sheets';
 import { isDateGatedLayer, dateGatedVisibility } from '@stores/map/utils/overlay-huts';
 import { useI18n } from 'vue-i18n';
 import { LocalStorage } from 'quasar';
@@ -565,7 +567,13 @@ function deleteActiveGroup(): void {
   // Removed group's layers return to ungrouped (they stay in the flat
   // All-layers list automatically once no group references them).
   overlayStore.syncGroupSettings();
+  // cycleGroup SWITCHES groups: the store re-derives every overlay's
+  // `active` from the next group. Apply that to the map like the other
+  // switch handlers do — otherwise the deleted group's overlays stay
+  // drawn, and the next toggle's presence sync would un-hide their
+  // passive presence underneath them (doubled icons).
   overlayStore.cycleGroup();
+  applyGroupStateToMap();
 }
 
 /** Check if a layer is in the active group */
@@ -1147,6 +1155,17 @@ function applyGroupStateToMap(): void {
       setOverlayVisibility(item);
     }
   }
+  syncPresence();
+}
+
+/** Always-replace contract (backend #506): an ACTIVE overlay hides its
+ *  family's passive basemap presence (wd-basemap-<family>-* in the
+ *  basemap style), an inactive one restores it. Run once per action that
+ *  flips `active` — toggle, group switch, boot/catalog re-add — after the
+ *  overlay layers settled (basemap switches bake the same state into the
+ *  incoming style via transformStyle). */
+function syncPresence(): void {
+  basemapStore.syncPresenceVisibility();
 }
 
 /** Title dropdown: switch directly to a group */
@@ -1200,6 +1219,13 @@ interface AddOverlayLayerArgs {
   onLayer?: OverlaySwitchItem['onLayer'];
   defaultOpacity?: OpacitySpecification;
   beforeId?: string | undefined;
+  /** Active style's layer ids in order — the anchor resolver's view of
+   *  the map. Omitted: read from the map (one getStyle() per layer). */
+  styleLayerIds?: readonly string[];
+  /** Skip BOTH opacity curves (the generic zoom fade and the basemap's
+   *  slot-level curve) — POI families toggling against a solid basemap
+   *  presence (hasBasemapPresence). */
+  noFade?: boolean;
 }
 
 function addOverlayLayer({
@@ -1207,6 +1233,8 @@ function addOverlayLayer({
   onLayer,
   defaultOpacity,
   beforeId,
+  styleLayerIds,
+  noFade = false,
 }: AddOverlayLayerArgs): boolean {
   // Far zoomed-out view: overlays never render below the zoom floor — layers
   // reappear automatically when the camera zooms back in (see
@@ -1216,10 +1244,19 @@ function addOverlayLayer({
   const basemap = basemapStore.getBasemap();
   const basemapOpacity =
     basemap && onLayer !== undefined ? basemap.layers[onLayer]?.opacity : undefined;
+  // POI families toggle against a solid basemap presence — the caller
+  // passes noFade, so neither the generic zoom fade nor the basemap
+  // slot curve applies (the overlay would read as transparent next to
+  // its own presence). An EXPLICIT catalog opacity still applies:
+  // noFade only replaces the automatic fade.
   let autoOpacity = false;
   if (defaultOpacity === undefined || defaultOpacity === true) {
-    autoOpacity = true;
-    defaultOpacity = ['interpolate', ['linear'], ['zoom'], 8, 0.9, 14, 0.6, 22, 0.5];
+    if (!noFade) {
+      autoOpacity = true;
+      defaultOpacity = ['interpolate', ['linear'], ['zoom'], 8, 0.9, 14, 0.6, 22, 0.5];
+    } else {
+      defaultOpacity = false;
+    }
   }
   if (mapRef.map?.getLayer(layer.id) !== undefined) {
     return true; // already on the map
@@ -1230,6 +1267,17 @@ function addOverlayLayer({
   if (_beforeId === undefined && onLayer) {
     _beforeId = basemap?.layers[onLayer]?.before;
   }
+  // Icon overlays (ways/places) never land above the basemap's
+  // keeper-label band: MapLibre places the topmost symbol layer first,
+  // so an overlay on top of the labels evicts them on collision (owner
+  // report 2026-11-23 — toggling accommodations blanked every city/peak
+  // label). Unanchored overlays used to append at the very end; they
+  // now settle right below the major city/peak labels.
+  _beforeId = resolveOverlayAnchor(
+    _beforeId,
+    onLayer,
+    styleLayerIds ?? mapRef.map?.getStyle().layers.map(l => l.id) ?? []
+  );
   if (_beforeId !== undefined && mapRef.map?.getLayer(_beforeId) === undefined) {
     // Startup race: the first style applied to the map can be the world
     // fallback (or a cached variant) without the basemap's label anchors.
@@ -1240,7 +1288,7 @@ function addOverlayLayer({
     );
     _beforeId = undefined;
   }
-  if (basemapOpacity !== undefined) {
+  if (!noFade && basemapOpacity !== undefined) {
     opacity = basemapOpacity;
   }
   const _source = 'source' in layer ? layer.source : undefined;
@@ -1390,27 +1438,17 @@ function waitForSpriteImage(probeImage: string, spriteId: string): Promise<void>
   return promise;
 }
 
-function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwitchItem>): boolean {
-  if (addedOverlays.has(overlay.name)) return true;
-  // No MapLibre map mounted (the Leaflet fallback is active — its own
-  // adapter renders from the shared store): the toggle stays a
-  // menu/state change; addOverlayLayer's warn+retry path must not fire
-  // with nothing to add to.
-  if (!mapRef.map) return true;
-  for (const label in overlay.style.sources) {
-    if (mapRef.map?.getSource(label) === undefined) {
-      mapRef.map?.addSource(label, overlay.style.sources[label]);
-      addedSourceIds.add(label);
-      appliedSourceSpecs.set(label, sourceSpecKey(overlay.style.sources[label]));
-    } else if (!appliedSourceSpecs.has(label)) {
-      // Present but untracked (kept unchanged by the reapply guard, or
-      // survived a style transform that carries overlay sources
-      // verbatim): adopt the overlay's spec as the mounted truth so the
-      // reapply guard manages this source from now on.
-      appliedSourceSpecs.set(label, sourceSpecKey(overlay.style.sources[label]));
-      addedSourceIds.add(label);
-    }
-  }
+/** The overlay's sprite packs, through the addSprite guard — one sprite
+ *  id per URL: a pack whose sheet the style already carries under
+ *  ANOTHER id is not added; the loaded sheet's images are registered
+ *  under this id instead (utils/sprite-sheets.ts). Idempotent: an entry
+ *  that is already there with the same URL is left alone, and images
+ *  shared before are skipped. Runs when the overlay is added and again
+ *  for every active overlay on style.load (ensureActiveOverlaysSprites). */
+function ensureOverlaySprites(
+  overlay: OverlaySwitchItem,
+  overlaysOrder: Array<OverlaySwitchItem>
+): void {
   // Add sprites if defined (loads e.g. wd:color/* and wd-sdf/mono/* hut symbols).
   // addSprite is ASYNC — the sprite JSON+PNG load in the background. The
   // completion callback triggers a style update once loaded, so layers
@@ -1462,6 +1500,25 @@ function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwit
         mapRef.map?.removeSprite(id);
         swappedSpriteIds.add(id);
       }
+      // MapLibre admits ONE sprite id per URL and rejects addSprite
+      // silently otherwise: a DIFFERENT id already at this sheet (the
+      // family's basemap presence pack — transport's `wd-transport` vs
+      // `wd-basemap-transport`; huts' `wd-sdf` vs the accommodations
+      // presence) would leave this overlay's images unregistered and its
+      // icons undrawn. The holder may have visible layers of its own (huts
+      // is on by default), so nothing is evicted: the loaded sheet is
+      // shared — its images registered under this id too (see
+      // utils/sprite-sheets.ts).
+      const map = mapRef.map;
+      const sheetHolder = map?.getSprite().find(e => e.url === url);
+      if (sheetHolder && map) {
+        // with a retry: on a rebuilt style this runs the moment
+        // style.load fires, before the basemap's own sheet has answered
+        pendingSprites.push(
+          shareSpriteImagesWithRetry(map, sheetHolder.id, id).then(() => undefined)
+        );
+        return;
+      }
       mapRef.map?.addSprite(id, url);
       // addSprite is async but has no completion callback in this MapLibre
       // version — wait for a known image from this sprite (shared, backed
@@ -1512,7 +1569,52 @@ function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwit
       });
     }
   }
+}
+
+/** Re-run the sprite guard for every active overlay once a style is
+ *  loaded (basemap switch, catalog re-splice). A style swap re-creates
+ *  the image store whenever MapLibre cannot diff the two documents, and
+ *  a SHARED pack leaves no trace in the serialized style to carry over:
+ *  the overlay's layers keep their `<id>:` icon references, but nothing
+ *  would re-register the images — the icons silently degrade until the
+ *  next catalog swap. On a diffed swap the old images merely survive,
+ *  which is why this went unnoticed. ensureOverlaySprites is idempotent,
+ *  so running it on every style.load is safe. */
+function ensureActiveOverlaysSprites(): void {
+  const overlaysOrder = getOverlaysInRenderOrder();
+  for (const overlay of overlaysOrder) {
+    if (overlay.active) ensureOverlaySprites(overlay, overlaysOrder);
+  }
+}
+
+function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwitchItem>): boolean {
+  if (addedOverlays.has(overlay.name)) return true;
+  // No MapLibre map mounted (the Leaflet fallback is active — its own
+  // adapter renders from the shared store): the toggle stays a
+  // menu/state change; addOverlayLayer's warn+retry path must not fire
+  // with nothing to add to.
+  if (!mapRef.map) return true;
+  for (const label in overlay.style.sources) {
+    if (mapRef.map?.getSource(label) === undefined) {
+      mapRef.map?.addSource(label, overlay.style.sources[label]);
+      addedSourceIds.add(label);
+      appliedSourceSpecs.set(label, sourceSpecKey(overlay.style.sources[label]));
+    } else if (!appliedSourceSpecs.has(label)) {
+      // Present but untracked (kept unchanged by the reapply guard, or
+      // survived a style transform that carries overlay sources
+      // verbatim): adopt the overlay's spec as the mounted truth so the
+      // reapply guard manages this source from now on.
+      appliedSourceSpecs.set(label, sourceSpecKey(overlay.style.sources[label]));
+      addedSourceIds.add(label);
+    }
+  }
+  // the sprite packs go through the guard (also re-run on style.load)
+  ensureOverlaySprites(overlay, overlaysOrder);
   const beforeId = findBeforeLayerId(overlay, overlaysOrder);
+  // One snapshot of the style's layer order for every layer of this
+  // overlay: the anchor resolver looks ids up by position, and layers
+  // added below never reorder the ones already present.
+  const styleLayerIds = mapRef.map?.getStyle().layers.map(l => l.id) ?? [];
   let allAdded = true;
   for (const layer of overlay.style.layers) {
     // Date-gated availability layers carry the PICKED-DATE visibility
@@ -1533,6 +1635,9 @@ function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwit
       defaultOpacity: overlay.opacity as OpacitySpecification,
       onLayer: overlay.onLayer,
       beforeId,
+      styleLayerIds,
+      // POI families toggle against a solid basemap presence — no fade
+      noFade: hasBasemapPresence(overlay),
     });
     if (added) addedLayerIds.add(layer.id);
     else allAdded = false;
@@ -1552,6 +1657,7 @@ function addOverlays(): void {
   for (const overlay of overlaysOrder) {
     if (overlay.active) addOverlay(overlay, overlaysOrder);
   }
+  syncPresence();
   configStore.reapplyAllFilters();
 }
 
@@ -1696,6 +1802,7 @@ function toggleLayer(item: OverlaySwitchItem): void {
     addOverlay(item, getOverlaysInRenderOrder());
   }
   setOverlayVisibility(item);
+  syncPresence();
 }
 
 // Map lifecycle: re-add overlays on EVERY style load (basemap switches
@@ -1707,6 +1814,9 @@ function bindMap(map: MapLibreMap): void {
   mapLoadBound = true;
   if (map.isStyleLoaded()) addOverlays();
   map.on('load', addOverlays);
+  // every style load: a shared sprite pack is not part of the style
+  // document, so a swap that rebuilds the image store drops its images
+  map.on('style.load', ensureActiveOverlaysSprites);
 }
 
 watch(
@@ -1796,6 +1906,10 @@ onBeforeUnmount(() => {
   }
   catalogSwapRetryArmed = false;
   catalogSwapPending = false;
+  // The map-event bindings of THIS instance die with it — a remount
+  // over the same map binds its own (bindMap's flag is per instance).
+  mapRef.map?.off('load', addOverlays);
+  mapRef.map?.off('style.load', ensureActiveOverlaysSprites);
 });
 </script>
 
