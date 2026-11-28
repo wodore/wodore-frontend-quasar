@@ -100,7 +100,8 @@ export const accommodationEntry = definePresentation<HutDetails>({
     { layer: WD_ACCOMMODATIONS_LAYER, minZoom: 5, idProp: 'slug' },
     // the family's passive basemap presence (accommodation icons +
     // names, backend #506) — clickable when the overlay is OFF; hidden
-    // (never returned by queryRenderedFeatures) when it is ON
+    // when it is ON (hidden layers are skipped at click/tap time —
+    // queryRenderedFeatures itself ignores visibility)
     ...ACCOMMODATIONS_PRESENCE_LAYERS.map(layer => ({
       layer,
       idProp: 'slug',

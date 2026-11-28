@@ -22,8 +22,10 @@ export const transportEntry = definePresentation<Record<string, unknown>>({
   // presence is the family's POI layer, and a click on a passive icon
   // opens the same place (the presence source promotes the same
   // onestop_id; the popup is keyed on this entry's match.source). With
-  // the overlay ON the presence layers are visibility:none, so
-  // queryRenderedFeatures never returns them — no double handling.
+  // the overlay ON the presence layers are visibility:none — hidden
+  // layers are skipped where the click and the tap guard pick their
+  // layers (interactive-layers.ts `interactiveLayerIsShown`); they are
+  // NOT hidden from queryRenderedFeatures, which ignores visibility.
   mapLayers: [
     ...TRANSPORT_STOP_LAYERS.map(layer => ({
       layer,

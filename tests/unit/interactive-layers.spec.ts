@@ -24,11 +24,23 @@ import {
   WD_ACCOMMODATIONS_LAYER,
 } from '@selection/map-layer-ids';
 
-/** Minimal MapLibre stub — only what tapTargetsInteractiveLayer needs. */
-function stubMap(opts: { zoom: number; layers: string[]; hits?: number }): TapQueryMap {
+/** Minimal MapLibre stub — only what the tap guard needs. `hidden`:
+ *  layers whose visibility was set at runtime; `bakedHidden`: layers
+ *  hidden in the style document itself. */
+function stubMap(opts: {
+  zoom: number;
+  layers: string[];
+  hits?: number;
+  hidden?: string[];
+  bakedHidden?: string[];
+}): TapQueryMap {
   return {
     getZoom: () => opts.zoom,
     getLayer: (id: string) => (opts.layers.includes(id) ? ({ id } as StyleLayer) : undefined),
+    getLayoutProperty: (id: string) => ((opts.hidden ?? []).includes(id) ? 'none' : undefined),
+    getStyle: () => ({
+      layers: (opts.bakedHidden ?? []).map(id => ({ id, layout: { visibility: 'none' } })),
+    }),
     queryRenderedFeatures: vi.fn(() => new Array(opts.hits ?? 0)),
   };
 }
@@ -239,6 +251,33 @@ describe('tapTargetsInteractiveLayer', () => {
   it('falls through when no feature renders above the gate', () => {
     const map = stubMap({ zoom: 12, layers: ['wd-huts'], hits: 0 });
     expect(tapTargetsInteractiveLayer(map, 5, 5, LAYERS)).toBe(false);
+  });
+
+  it('ignores a HIDDEN claimed layer even where a feature renders', () => {
+    // queryRenderedFeatures does not check `visibility`: a family's
+    // passive presence, hidden while its overlay is on, still answers.
+    // Without this filter an invisible stop would claim the tap and
+    // keep it from the overlay's own icons.
+    const hidden = stubMap({ zoom: 12, layers: ['wd-huts'], hits: 1, hidden: ['wd-huts'] });
+    expect(tapTargetsInteractiveLayer(hidden, 5, 5, LAYERS)).toBe(false);
+    expect(hidden.queryRenderedFeatures).not.toHaveBeenCalled();
+    // …also when the visibility is baked into the style document
+    // (transformStyle hides a replaced presence that way)
+    const baked = stubMap({ zoom: 12, layers: ['wd-huts'], hits: 1, bakedHidden: ['wd-huts'] });
+    expect(tapTargetsInteractiveLayer(baked, 5, 5, LAYERS)).toBe(false);
+    // a layer with no visibility set is shown
+    const shown = stubMap({ zoom: 12, layers: ['wd-huts'], hits: 1 });
+    expect(tapTargetsInteractiveLayer(shown, 5, 5, LAYERS)).toBe(true);
+  });
+
+  it('treats a layer as not shown while its style cannot answer', () => {
+    const broken = {
+      ...stubMap({ zoom: 12, layers: ['wd-huts'], hits: 1 }),
+      getLayoutProperty: () => {
+        throw new Error('style not loaded');
+      },
+    };
+    expect(tapTargetsInteractiveLayer(broken, 5, 5, LAYERS)).toBe(false);
   });
 
   it('skips layers absent from the current style (catalog epoch safety)', () => {

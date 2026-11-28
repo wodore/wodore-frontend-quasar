@@ -1438,27 +1438,17 @@ function waitForSpriteImage(probeImage: string, spriteId: string): Promise<void>
   return promise;
 }
 
-function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwitchItem>): boolean {
-  if (addedOverlays.has(overlay.name)) return true;
-  // No MapLibre map mounted (the Leaflet fallback is active — its own
-  // adapter renders from the shared store): the toggle stays a
-  // menu/state change; addOverlayLayer's warn+retry path must not fire
-  // with nothing to add to.
-  if (!mapRef.map) return true;
-  for (const label in overlay.style.sources) {
-    if (mapRef.map?.getSource(label) === undefined) {
-      mapRef.map?.addSource(label, overlay.style.sources[label]);
-      addedSourceIds.add(label);
-      appliedSourceSpecs.set(label, sourceSpecKey(overlay.style.sources[label]));
-    } else if (!appliedSourceSpecs.has(label)) {
-      // Present but untracked (kept unchanged by the reapply guard, or
-      // survived a style transform that carries overlay sources
-      // verbatim): adopt the overlay's spec as the mounted truth so the
-      // reapply guard manages this source from now on.
-      appliedSourceSpecs.set(label, sourceSpecKey(overlay.style.sources[label]));
-      addedSourceIds.add(label);
-    }
-  }
+/** The overlay's sprite packs, through the addSprite guard — one sprite
+ *  id per URL: a pack whose sheet the style already carries under
+ *  ANOTHER id is not added; the loaded sheet's images are registered
+ *  under this id instead (utils/sprite-sheets.ts). Idempotent: an entry
+ *  that is already there with the same URL is left alone, and images
+ *  shared before are skipped. Runs when the overlay is added and again
+ *  for every active overlay on style.load (ensureActiveOverlaysSprites). */
+function ensureOverlaySprites(
+  overlay: OverlaySwitchItem,
+  overlaysOrder: Array<OverlaySwitchItem>
+): void {
   // Add sprites if defined (loads e.g. wd:color/* and wd-sdf/mono/* hut symbols).
   // addSprite is ASYNC — the sprite JSON+PNG load in the background. The
   // completion callback triggers a style update once loaded, so layers
@@ -1575,6 +1565,47 @@ function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwit
       });
     }
   }
+}
+
+/** Re-run the sprite guard for every active overlay once a style is
+ *  loaded (basemap switch, catalog re-splice). A style swap re-creates
+ *  the image store whenever MapLibre cannot diff the two documents, and
+ *  a SHARED pack leaves no trace in the serialized style to carry over:
+ *  the overlay's layers keep their `<id>:` icon references, but nothing
+ *  would re-register the images — the icons silently degrade until the
+ *  next catalog swap. On a diffed swap the old images merely survive,
+ *  which is why this went unnoticed. ensureOverlaySprites is idempotent,
+ *  so running it on every style.load is safe. */
+function ensureActiveOverlaysSprites(): void {
+  const overlaysOrder = getOverlaysInRenderOrder();
+  for (const overlay of overlaysOrder) {
+    if (overlay.active) ensureOverlaySprites(overlay, overlaysOrder);
+  }
+}
+
+function addOverlay(overlay: OverlaySwitchItem, overlaysOrder: Array<OverlaySwitchItem>): boolean {
+  if (addedOverlays.has(overlay.name)) return true;
+  // No MapLibre map mounted (the Leaflet fallback is active — its own
+  // adapter renders from the shared store): the toggle stays a
+  // menu/state change; addOverlayLayer's warn+retry path must not fire
+  // with nothing to add to.
+  if (!mapRef.map) return true;
+  for (const label in overlay.style.sources) {
+    if (mapRef.map?.getSource(label) === undefined) {
+      mapRef.map?.addSource(label, overlay.style.sources[label]);
+      addedSourceIds.add(label);
+      appliedSourceSpecs.set(label, sourceSpecKey(overlay.style.sources[label]));
+    } else if (!appliedSourceSpecs.has(label)) {
+      // Present but untracked (kept unchanged by the reapply guard, or
+      // survived a style transform that carries overlay sources
+      // verbatim): adopt the overlay's spec as the mounted truth so the
+      // reapply guard manages this source from now on.
+      appliedSourceSpecs.set(label, sourceSpecKey(overlay.style.sources[label]));
+      addedSourceIds.add(label);
+    }
+  }
+  // the sprite packs go through the guard (also re-run on style.load)
+  ensureOverlaySprites(overlay, overlaysOrder);
   const beforeId = findBeforeLayerId(overlay, overlaysOrder);
   // One snapshot of the style's layer order for every layer of this
   // overlay: the anchor resolver looks ids up by position, and layers
@@ -1779,6 +1810,9 @@ function bindMap(map: MapLibreMap): void {
   mapLoadBound = true;
   if (map.isStyleLoaded()) addOverlays();
   map.on('load', addOverlays);
+  // every style load: a shared sprite pack is not part of the style
+  // document, so a swap that rebuilds the image store drops its images
+  map.on('style.load', ensureActiveOverlaysSprites);
 }
 
 watch(

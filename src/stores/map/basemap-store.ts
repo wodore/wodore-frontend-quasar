@@ -442,7 +442,11 @@ export const useBasemapStore = defineStore('basemap', () => {
     // hidden stay hidden — "restoring" them would only flash through
     // while the raster tiles load.
     const hiddenByCountry = lastFallbackVisible === false ? fallbackLayerIds : [];
-    for (const layer of map.getStyle().layers) {
+    // a style swap MapLibre cannot diff rebuilds the style object:
+    // getStyle() is undefined until the new one is loaded
+    const style = map.getStyle();
+    if (!style) return;
+    for (const layer of style.layers) {
       const visibility = presenceVisibility(layer.id, families);
       if (visibility === undefined) continue;
       if (visibility === 'visible' && hiddenByCountry.includes(layer.id)) continue;
@@ -806,9 +810,9 @@ export const useBasemapStore = defineStore('basemap', () => {
         // whose sheet the incoming basemap already carries is dropped
         // exactly as the overlay control's addSprite guard drops it at
         // runtime: its layers keep their `<id>:` icon references, and the
-        // control registers the loaded sheet's images under the overlay's
-        // id when it re-adds the overlay after style.load
-        // (utils/sprite-sheets.ts).
+        // control's sprite guard runs again for every active overlay on
+        // style.load, registering the loaded sheet's images under the
+        // overlay's id (utils/sprite-sheets.ts).
         const customSprites = previousSprites.filter(prevSprite => {
           if (nextSprites.some(nextSprite => nextSprite.id === prevSprite.id)) {
             return false;

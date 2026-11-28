@@ -19,8 +19,8 @@
  * icons did not draw). Evicting the holder is wrong whenever its layers
  * are visible — huts is active by default and would cost the accommodations
  * presence its sheet on every boot. So a pack whose sheet is already
- * loaded never loads again: its images are registered under the new id as
- * well — the same pixel blocks, no second request, both ids resolve.
+ * loaded never loads again: its images are registered under the new id
+ * as well — no second request, both ids resolve.
  *
  * Store-free and map-agnostic: the overlay control's addSprite guard is
  * the caller.
@@ -47,9 +47,10 @@ function shareLoadedSheet(map: SpriteShareMapLike, fromId: string, toId: string)
     if (map.hasImage(target)) continue; // shared before — nothing new
     const image = map.getImage(name);
     if (image === undefined) continue;
-    // Map.addImage takes the raw pixel block plus metadata: the SAME
-    // RGBAImage goes under the new id (no copy), with the holder's sdf /
-    // pixel ratio / stretch — an SDF glyph must stay an SDF glyph.
+    // Map.addImage takes the raw pixel block plus metadata: the holder's
+    // pixels go under the new id with its sdf / pixel ratio / stretch —
+    // an SDF glyph must stay an SDF glyph. (MapLibre copies the block
+    // into its own image: the share is cheap, not zero-copy.)
     const { data, ...metadata } = image;
     map.addImage(target, data, metadata);
   }

@@ -158,14 +158,14 @@ const MTK_HILL_LAYERS: Array<Record<string, unknown>> = [
     id: 'wd-basemap-transit-stations', // 87
     type: 'symbol',
     source: 'wd-basemap-transitland-stops',
-    minzoom: 13,
+    minzoom: 14,
     layout: { 'icon-image': 'wd-basemap-transport:mono/x' },
   },
   {
     id: 'wd-basemap-transit-stations-label', // 88
     type: 'symbol',
     source: 'wd-basemap-transitland-stops',
-    minzoom: 14,
+    minzoom: 15,
     layout: { 'text-field': 'x' },
   },
   {
@@ -498,7 +498,7 @@ describe('basemap store — presence ↔ overlay contract (transformStyle)', () 
     )!;
     transport.active = true;
     const outLayers = transform(basemapDoc()).layers as unknown as Array<Record<string, unknown>>;
-    expect(visibilityOf(outLayers, 'wd-basemap-transit-stations-label')).toBe('none');
+    expect(visibilityOf(outLayers, 'wd-basemap-transit-stations')).toBe('none');
     expect(visibilityOf(outLayers, 'wd-basemap-transit-stations-label')).toBe('none');
     expect(visibilityOf(outLayers, 'wd-basemap-accommodations-icons')).toBe('none');
   });
@@ -644,7 +644,7 @@ describe('basemap store — presence sync on the live map', () => {
     expect(visibilityOf(h.live.layers, 'ch-raster')).toBe('none');
     expect(visibilityOf(h.live.layers, 'land')).toBe('visible');
     expect(visibilityOf(h.live.layers, 'wd-basemap-accommodations-icons')).toBe('none');
-    expect(visibilityOf(h.live.layers, 'wd-basemap-accommodations-icons')).toBe('none');
+    expect(visibilityOf(h.live.layers, 'wd-basemap-accommodations-labels')).toBe('none');
     // transport-stops is off: its presence is back with the rest
     expect(visibilityOf(h.live.layers, 'wd-basemap-transit-stations')).toBe('visible');
     // the sweep's 'visible' precedes the contract's 'none' for the icon layer

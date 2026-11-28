@@ -48,9 +48,13 @@ export const TRANSPORT_STOP_LAYERS = [
 // icon must open the same place the overlay's popup opens (owner
 // 2026-11-26). The ids are derived from the ONE naming source
 // (presenceLayerPrefix — it carries the legacy `transit-` alias), so a
-// rename there follows here. Zoom floors = the presence layers' own
-// style minzooms (icons z14 / names z15 for transport, z10 / z15 for
-// accommodations).
+// rename there follows here. Zoom floors: the LOWEST icon floor the
+// backend has served for these layers — transport z13 (before backend
+// #506 raised it to z14), accommodations z10. The click gate only has
+// to be at or below the RENDERED floor: a tap where nothing renders
+// hits nothing, while a gate above the rendered floor leaves dead
+// icons — so transport keeps 13 until the raised floor is deployed
+// everywhere (and it costs nothing after that).
 const PRESENCE_TRANSPORT = presenceLayerPrefix({ name: 'transport-stops' });
 const PRESENCE_ACCOMMODATIONS = presenceLayerPrefix({ name: 'accommodations' });
 /** Transport presence: station icons + their names. */
@@ -58,9 +62,10 @@ export const TRANSPORT_PRESENCE_LAYERS = [
   `${PRESENCE_TRANSPORT}stations`,
   `${PRESENCE_TRANSPORT}stations-label`,
 ] as const;
-/** Icon floors of the presence layers (click gate is strict `zoom > minZoom`,
- *  so a claim passes floor − 1 to open exactly from the floor). */
-export const TRANSPORT_PRESENCE_MIN_ZOOM = 14;
+/** Transport presence icon floor the click gate trusts (the gate is
+ *  strict `zoom > minZoom`, so a claim passes floor − 1 to open from
+ *  the floor). */
+export const TRANSPORT_PRESENCE_MIN_ZOOM = 13;
 /** Accommodations presence: icons + their names. */
 export const ACCOMMODATIONS_PRESENCE_LAYERS = [
   `${PRESENCE_ACCOMMODATIONS}icons`,
